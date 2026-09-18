@@ -1,0 +1,145 @@
+info:
+  title: Sample Templates
+  version: 1.0.0
+
+templates: # Array of templates, each with a unique key
+  # Declaring `types:` is all it takes to route pages by their frontmatter: any
+  # page with `type: api-operation` is checked against this template, with no
+  # config entry and no flag. A user template also outranks a built-in serving
+  # the same doctype, which is how you override one for a repo.
+  api-operation-guide:
+    types: [api-operation]
+    $ref: "#/templates/api-operation"
+
+  # Start from a vetted built-in and disagree with it in one place, rather than
+  # copying it and drifting. TGDP does not mark "See also" optional, so
+  # `tgdp:how-to:1.6` requires it; plenty of real how-tos have none. `extends`
+  # merges through `sections` recursively, so everything else the built-in says
+  # - Overview, Before you start, the repeating task sections - is inherited.
+  house-how-to:
+    types: [how-to]
+    extends: tgdp:how-to:1.6
+    sections:
+      title:
+        sections:
+          see also:
+            required: false
+
+  how-to:
+    sections:
+      title:
+        paragraphs:
+          min: 1
+        sections:
+          overview:
+            heading:
+              const: Overview
+            paragraphs:
+              min: 1
+          before you start:
+            heading:
+              const: Before you start
+            paragraphs:
+              min: 1
+          task:
+            paragraphs:
+              min: 1
+            additionalSections: true
+            sections:
+              Sub-task:
+                paragraphs:
+                  min: 1
+          see also:
+            heading:
+              const: See also
+            paragraphs:
+              min: 1
+  api-operation:
+    sections:
+      overview:
+        heading:
+          const: "Overview"
+        paragraphs:
+          min: 1
+          max: 3
+      request-parameters:
+        $ref: "#/components/parameters"
+      response-parameters:
+        $ref: "#/components/parameters"
+      examples:
+        required: true
+        code_blocks:
+          min: 1
+        sections:
+          success:
+            heading:
+              const: "Success Response"
+            sequence:
+              - paragraphs:
+                  min: 1
+              - code_blocks:
+                  min: 1
+          error:
+            required: false
+            heading:
+              const: "Error Response"
+  Sample: # Template definition correspondings to the H1 level of the document
+    sections: # Array of sections, each with a unique key
+      Introduction: # Each sections corresponds to a heading level one below the parent, starting with an H1 at the first level
+        description: A template for how-to guides that include prerequisites, setup, usage, troubleshooting, and next steps sections.
+        sequence:
+          - paragraphs:
+              min: 2
+        paragraphs:
+          min: 2
+          max: 5
+        code_blocks:
+          max: 1 # Allow a maximum of 1 code block
+        sections: # Array of sections, each with a unique key
+          Prerequisites: # Each section corresponds to a heading level one below the parent, in this case Prerequisites is an H2
+            heading:
+              const: Prerequisites # Require the section to be titled "Prerequisites"
+            paragraphs:
+              max: 3
+            lists:
+              max: 1
+              items:
+                min: 1
+                max: 7
+          Setup:
+            paragraphs:
+              max: 5 # Allow a maximum of 5 paragraphs
+          Usage:
+            paragraphs:
+              max: 4
+            code_blocks:
+              min: 1 # Require at least one code block
+            additionalSections: true # Allow additional use case sections
+            sections:
+              Troubleshooting:
+                heading:
+                  const: Troubleshooting # Require the section to be titled "Troubleshooting"
+                paragraphs:
+                  max: 5
+          Next steps:
+            $ref: "#/components/sections/Next steps" # Reference the 'Next steps' section component
+
+components:
+  sections:
+    Next steps:
+      heading:
+        const: Next steps # Back to an H2 level section
+      required: false # Allow the section to be omitted
+      paragraphs:
+        min: 1
+      lists:
+        min: 1
+  parameters:
+    required: false
+    heading:
+      pattern: "^Parameters|Request Parameters$"
+    lists:
+      min: 1
+      items:
+        min: 1
+      

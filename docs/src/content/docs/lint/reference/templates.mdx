@@ -1,0 +1,340 @@
+---
+title: Templates reference
+description: "The template file format, the seven built-in TGDP doctypes, template refs, $template on a page, and how types: routes a doctype to a template."
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A **template** describes the shape a doctype promises. That is which sections a
+page of that kind has, in what order, and what has to be inside each one. `manni
+lint structure` resolves one template per page and matches the page's section
+tree against it.
+
+Templates are data, not code. There is no language model anywhere in this, and
+no network call except fetching a template you pointed at yourself.
+
+## The built-in set
+
+Seven templates ship in the package, derived from
+[The Good Docs Project](https://thegooddocsproject.dev/) templates pinned at
+`v1.6.0`:
+
+| Id | Doctypes it serves |
+|---|---|
+| `tgdp:how-to:1.6` | `how-to` |
+| `tgdp:tutorial:1.6` | `tutorial` |
+| `tgdp:reference:1.6` | `reference` |
+| `tgdp:concept:1.6` | `concept`, `explanation` |
+| `tgdp:troubleshooting:1.6` | `troubleshooting` |
+| `tgdp:release-notes:1.6` | `release-notes` |
+| `tgdp:readme:1.6` | `readme` |
+
+So the doctype vocabulary a page can declare out of the box is `concept`,
+`explanation`, `how-to`, `readme`, `reference`, `release-notes`,
+`troubleshooting` and `tutorial`. `manni lint templates` prints the same list
+from your own checkout, including whatever your config adds.
+
+The version in an id is a claim about which upstream revision it mirrors.
+Upstream is the authority. The project's own published Markdown templates are
+vendored and linted against these files, so the two cannot drift. Where they
+disagree, the template here is wrong.
+
+<Aside type="note" title="These doctypes are meta's vocabulary too">
+`type` is the same frontmatter key `manni meta`'s
+[built-in taxonomy schemas](/manni/meta/reference/taxonomy-schemas/)
+validate. A repository that already validates `type: how-to` against
+`tgdp:templates:1.0` gets structure routing for free: `meta` checks the page
+said what it is, and `lint` checks it is shaped like it.
+</Aside>
+
+## Template refs
+
+Everywhere a template is named, the value is a **ref**. That covers
+`-t/--template`, `lint.template`, `lint.types` values,
+`lint.overrides[].template`, and `extends`. There are three kinds:
+
+| Kind | Looks like | Notes |
+|---|---|---|
+| Built-in id | `tgdp:how-to:1.6` | Lowercase segments separated by `:`, no slash and no `.yaml` suffix. Names one template on its own. |
+| File path | `./templates.yaml`, `docs/shapes.json` | Relative to the **config file's** directory when it comes from config, and to the **page** when it comes from a page's `$template`. |
+| URL | `https://example.com/templates.yaml` | Fetched once per run, 10-second timeout. Never allowed from a page's `$template`. |
+
+<Aside type="caution" title="A template is trusted input">
+A template is code your configuration chooses to run. Its `patterns` are
+compiled as regular expressions, and a pattern written to backtrack can hang a
+run on a long heading. That is the same trust you extend to a JSON Schema in
+`manni meta`, so treat a template ref the way you treat a dependency.
+
+The practical rule is about where the ref comes from. A path in your own
+repository is reviewed like any other file. A URL is someone else's file,
+fetched fresh on every run, so point one at a source you would take a pull
+request from. A page can never choose it: `$template` refuses a URL for exactly
+this reason.
+</Aside>
+
+A file or URL ref may carry a `#name` fragment naming one template inside it:
+`./templates.yaml#how-to`. Without a fragment, a file holding exactly one
+template resolves unambiguously; a file holding several is an error that lists
+them. A fragment on a built-in id is an error, because a built-in id already
+names one template.
+
+```
+manni: ./templates.yaml defines 2 templates; name one with a "#" fragment (e.g. "./templates.yaml#how-to"). Available: how-to, reference.
+manni: Unknown built-in template "tgdp:howto:1.6". Available: tgdp:how-to:1.6, tgdp:tutorial:1.6, …
+```
+
+## The file format
+
+YAML or JSON. One file holds one or more named templates, plus any reusable
+fragments they share.
+
+```yaml title="templates.yaml"
+info:
+  title: Acme doctypes
+  version: "1.0"
+
+templates:
+  runbook:
+    types: [runbook]
+    sections:
+      title:
+        sections:
+          symptom:
+            heading:
+              const: Symptom
+            paragraphs:
+              min: 1
+          fix:
+            heading:
+              const: Fix
+            code_blocks:
+              min: 1
+          see also:
+            heading:
+              const: See also
+            required: false
+```
+
+| Top-level key | Type | Required | What it is |
+|---|---|---|---|
+| `templates` | object | yes | The doctype templates this file defines, keyed by name. A name matches `^[A-Za-z0-9-_]+$`. |
+| `info` | object | no | Free-form metadata: title, version, source. Never read by the linter, declared so a file that carries it is not rejected. |
+| `components` | object | no | Reusable fragments, targeted by `$ref` from elsewhere **in the same file**. |
+
+### A template
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `types` | string[] | none | Doctypes this template serves, matched against a page's `type:` frontmatter. This is how routing happens without a flag. |
+| `extends` | ref | none | Inherit another template's rules. See [extends](#extends). |
+| `additionalSections` | boolean | `false` | Allow top-level sections this template does not describe. |
+| `sections` | object | none | The section rules, keyed by name, **in document order**. |
+
+### A section rule
+
+Each key of a `sections` map is one heading a level below its parent, and the
+declared order is the order the document must use.
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `description` | string | none | Prose about the section's purpose. Never validated against. |
+| `heading` | object | none | `const` for exact heading text, `pattern` for a regular expression. A rule constraining neither is a **slot**: it matches any heading. |
+| `required` | boolean | required | Whether the section must be present. **Absent means required.** |
+| `repeat` | boolean | `false` | On an anchored rule, claim the run of consecutive sections whose headings satisfy it. That is how a doctype says "one or more `Symptom N` sections". On a slot, claim every section up to the next anchored rule that could claim one. |
+| `sequence` | array | none | Ordered runs of content the section must contain. Each item sets exactly one of `paragraphs`, `code_blocks` or `lists`. |
+| `paragraphs` | object | none | `min`, `max`, and `patterns[]`. The patterns are regular expressions applied to paragraphs in order, cycled when exhausted. |
+| `code_blocks` | object | none | `min`, `max`. |
+| `lists` | object | none | `min`, `max`, and `items`. Inside `items` are `min`, `max`, plus `paragraphs`, `code_blocks` and `lists`, applied to every item of every list and recursing arbitrarily deep. |
+| `additionalSections` | boolean | `false` | Allow subsections this template does not describe. |
+| `sections` | object | none | Nested section rules, one heading level down. |
+
+Validation is strict: `additionalProperties: false` at every level, so a
+`paragrafs` typo is named rather than ignored.
+
+```
+manni: ./templates.yaml is not a valid template file: /templates/how-to/sections/overview must NOT have additional properties ("paragrafs").
+```
+
+<Aside type="caution" title="A section name may not be all digits">
+`^(?![0-9]+$)[A-Za-z0-9-_ ]+$` is the name pattern. JavaScript enumerates
+integer-like object keys first, in ascending numeric order. A section named
+`2024` would therefore silently reorder the rules relative to how the template
+declares them. Declared order is most of what a section rule asserts.
+Prefix such a name: `v2024`, `step-1`.
+</Aside>
+
+<Aside type="caution" title="`required` and `repeat` carry no schema default">
+Neither is given a JSON Schema `default`, deliberately. A written-in default is
+indistinguishable from a value the author typed. A written-in value also wins an
+[`extends`](#extends) merge, so a child that tightens one nested rule would
+silently reset its parent's `required: false`. The code reads "absent" as
+required, and "absent" as not repeating.
+</Aside>
+
+### `$ref`
+
+`$ref` shares one rule between templates in the same file, usually via
+`components:`:
+
+```yaml title="templates.yaml"
+components:
+  see-also:
+    heading:
+      const: See also
+    required: false
+
+templates:
+  runbook:
+    types: [runbook]
+    sections:
+      title:
+        sections:
+          fix:
+            heading: { const: Fix }
+          see also:
+            $ref: "#/components/see-also"
+```
+
+Only same-document pointers are followed. A `$ref` at a path or a URL is
+refused, not fetched. A template file must not decide what the linter reads off
+the disk or off the network. Cross-file reuse is [`extends`](#extends), which
+goes through the same ref rules as everything else.
+
+### `extends`
+
+A template inherits another's rules by ref:
+
+```yaml
+templates:
+  acme-how-to:
+    types: [how-to]
+    extends: tgdp:how-to:1.6
+    sections:
+      title:
+        sections:
+          see also:
+            required: true
+```
+
+The merge is innermost first. `sections` merges by key, recursively, all the
+way down, so a child can tighten one nested rule and inherit the rest. Every
+other key the child sets replaces the parent's outright. A cycle is an error
+naming the loop:
+
+```
+manni: Template "extends" cycle: a -> b -> a.
+```
+
+## Routing a page
+
+Two keys on a page take part, and both are ordinary frontmatter.
+
+### `type`
+
+The page's doctype. It is matched against every template's `types:` list and
+against `lint.types` in config. This is the normal way a page finds its
+template, and it needs no flag and no glob.
+
+```md title="docs/rotate-key.md"
+---
+type: how-to
+---
+
+# Rotate an API key
+```
+
+A `type` nothing serves is a finding rather than a skip, because the page made
+an assertion the tool could not honour. The message suggests the nearest known
+doctype, or lists them all:
+
+```
+1:1  manni:lint/structure/unknown-type  No template serves type "how-two". Did you mean "how-to"? Declare it on a template with "types:", then pass that file with --templates.
+```
+
+A page with no `type` at all is **skipped**, not failed. That is what lets you
+point the tool at a whole tree on day one and only lint what has opted in.
+
+### `$template`
+
+One page naming its own template, by ref, overriding type routing for itself:
+
+```md title="docs/odd-one-out.md"
+---
+type: how-to
+$template: ./templates.yaml#legacy-how-to
+---
+```
+
+It sits second in the [resolution
+chain](/manni/lint/reference/configuration/#how-a-template-is-chosen), under
+`--template` and above everything in config. A relative ref is resolved beside
+the page.
+
+A `$template` naming a **URL** is refused, and the page gets a
+`manni:lint/structure/template` finding:
+
+```
+$template may not name a URL ("https://…"): a document must not choose what the linter fetches. Declare it in manni.config.yaml under "templates:" or "types:", or pass it with --template.
+```
+
+A document is content. Letting content pick a host for the linter to fetch from
+turns every contributor into someone who can make CI make an outbound request.
+
+### Which `types:` wins
+
+The doctype table is built from three sources, later overwriting earlier:
+
+1. The built-in TGDP templates.
+2. Every file in `lint.templates`, in order, then every `--templates` file, in
+   order.
+3. `lint.types`, the explicit map in config.
+
+So declaring `types: [how-to]` on your own template is all it takes to replace
+the built-in how-to shape for the whole repository. Nothing else changes, and
+no page is edited.
+
+## Formats a template can be matched against
+
+The template is format-agnostic. Every parser flattens its own syntax into the
+same section tree, and the rules run over that tree. One template therefore
+describes a how-to whether it is written in Markdown or DITA.
+
+| Format | Extensions |
+|---|---|
+| Markdown | `.md`, `.markdown` |
+| MDX | `.mdx` |
+| HTML | `.html`, `.htm` |
+| AsciiDoc | `.adoc`, `.asciidoc` |
+| reStructuredText | `.rst` |
+| XML | `.xml`, `.dita` |
+
+A directory walk picks up `.dita` but not every `.xml`, because a docs tree
+also holds `pom.xml` and `sitemap.xml`. Name such a file directly, or pass
+`--as xml`.
+
+`manni lint tools` prints this table from your own installation.
+
+## Removed: `instructions`
+
+`doc-structure-lint` templates could carry an `instructions:` key, evaluated by
+a language model. Structure checking here is deterministic, so the key is
+refused outright rather than silently ignored. The message quotes your own
+instruction back, in the shape the eval takes:
+
+```
+manni: ./templates.yaml: "templates.how-to.sections.title" uses `instructions`, which manni lint no longer evaluates — structure checking is deterministic. Move it to a manni docevals assertion eval in manni.config.yaml:
+
+  docevals:
+    evals:
+      how-to-title:
+        assertion: Must mention the intent of the document
+        grader: ai
+```
+
+## Related
+
+- [Configuration reference](/manni/lint/reference/configuration/). Where
+  templates are named, and the full resolution chain.
+- [CLI reference](/manni/lint/reference/cli/). `--templates`, `-t`,
+  `--explain`, and `manni lint templates`.
+- [Fix a failing check](/manni/lint/fix/). Each rule, and what to change.

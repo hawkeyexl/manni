@@ -117,6 +117,13 @@ jobs:
       # nobody can see is not a report. Drop this step if the minute ever
       # matters more than the visibility.
       - run: npm run test:coverage
+      # The lint domain's built-in templates are YAML files copied into dist/
+      # and read by path at runtime, so a path that is right in the repo can be
+      # wrong in the published package with every unit test still green — which
+      # is how it happened once. This runs the real dist/cli.js the way a user
+      # would. It re-runs `build` itself, for the same reason the step above
+      # repeats the matrix's: a few seconds against one canonical entry point.
+      - run: npm run smoke:lint
       # Same dogfood check the Docs workflow gates the deploy on. It only ran
       # on main before, so a docs frontmatter break could pass PR CI and then
       # fail the deploy after merge — which is exactly what happened in #52.

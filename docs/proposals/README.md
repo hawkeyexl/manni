@@ -64,6 +64,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17); superseded in part by 0047 |
 | [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
 | [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37) |
+| [0050](0050-lint-domain.md) | The `lint` domain: `manni lint check` runs every configured job and `manni lint structure` checks a page against its doctype template. Verbs name the job, config names the tool behind it | Maya · M10 / Devin · D9 / Theo · T5 | Proposed |
 | [0052](0052-term-domain.md) | The `term` domain. A term is a flat record with `type: term`, read from every format in one-per-file and many-per-file shapes. `manni term` checks the set, lints definitions and writes a Vale style. It renders the set to any format | Sara · S6 / Maya · M9 / Devin · D8 | Accepted |
 | [0053](0053-claim-history.md) | Claim history. A claim that no longer holds is read against the page's history, from the newest commit whose page held the pin. `check` says since when, and `claim-reanchored` separates a layout change from an edit | Maya · M5 / Theo · T2 / Devin · D5 | Implemented (#73) |
 | [0054](0054-marker-reanchoring.md) | Re-anchoring misplaced cite markers. A marker line inside a paragraph is `marker-misplaced`, a warning. `update` moves it where `add --marker` writes markers, and re-pins when the old pin still holds | Maya · M5 / Theo · T2 / Devin · D5 | Implemented (#68) |
@@ -80,6 +81,16 @@ These came out of a review of the shipped product against the intent recorded in
 0017 is the first proposal written under `CLAUDE.md § Supersede a proposal, never amend it`. It supersedes 0012 rather than correcting it. 0012's evidence grep searched for `sent to` while the docs said `sends`, so it concluded no page documented `fill`'s egress when one had for two weeks. The gap it was reaching for is real, and narrower. The docs say *that* content is sent, never *what*, *how much*, or *what is kept*. 0017 answers it mostly by changing the behavior rather than describing it.
 
 0011 shipped much smaller than it was written, and the reason is worth recording because it is the same lesson as 0017's. By the time it was implemented, most of what it asked for had already been done *incidentally* by the proposals downstream of it. 0017 added the M4 CUJ and the egress page while implementing itself, and 0001 renumbered the retrofit page's steps underneath it. What was left was the part no other proposal had a reason to touch. That is the retrofit row's missing M4 tag, the dangling `fill` source-of-truth row, and the two persona sentences. The proposal was not amended to match. It was implemented as written, and the items already satisfied were verified page by page rather than assumed. That check is what turned up the last published-page gap, which no proposal had named. The T1 fix-it page recommends `fill` without ever linking to the M4 egress page.
+
+## Sibling tools' logs
+
+A folded-in tool brings the decision log it kept as a separate project. Those
+records stay as written, under their own numbering, and the domain's `00NN`
+proposal above is what states how the tool works inside manni.
+
+| Tool | Log | Records |
+|---|---|---|
+| lint | [lint/](lint/README.md) | 01001–01008, imported with the tool. 01007 is superseded by [0050](0050-lint-domain.md) |
 
 ## Dependency order
 

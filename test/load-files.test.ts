@@ -1,7 +1,9 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
-import { dirname, join } from "node:path";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join, relative } from "node:path";
 import { resolveTargetSet, resolveTargets } from "../src/meta/core/load-files.js";
 import { DocmetaError } from "../src/meta/types.js";
 import { DOC, makeTempRepo, removeTempRepo } from "./helpers/temp-repo.js";
@@ -117,6 +119,144 @@ describe("resolveTargets: a named file that does not exist is an error", () => {
   it("ignores the stdin token when checking for missing files", async () => {
     const files = await resolveTargets({ inputs: ["-"], cwd: fixtures });
     expect(files).toEqual([]);
+  });
+});
+
+/**
+ * A directory argument is a path, not a pattern, and the two are not the same
+ * string. Both cases here were found by the lint tool against real trees and
+ * fixed in its own walker; the fixes moved here when it started sharing this
+ * one, because the failures are silent in the way that matters — a docset that
+ * is not checked, reported as "no files matched" or as a clean run.
+ */
+describe("resolveTargets: a directory is walked, not pattern-matched", () => {
+  let dir: string;
+
+  afterEach(async () => {
+    if (dir) await rm(dir, { recursive: true, force: true });
+  });
+
+  async function tree(...rel: string[]): Promise<void> {
+    dir = await mkdtemp(join(tmpdir(), "manni-walk-"));
+    for (const path of rel) {
+      const abs = join(dir, path);
+      await mkdir(dirname(abs), { recursive: true });
+      await writeFile(abs, "---\ntype: how-to\n---\n\n# T\n", "utf8");
+    }
+  }
+
+  // `docs (2024)` and `Program Files (x86)` are ordinary directories, and
+  // every one of `(`, `)`, `[`, `!`, `+`, `@` is a glob metacharacter.
+  // Interpolated raw, such a directory matches nothing and the run exits 2
+  // claiming it is empty.
+  it("escapes glob metacharacters in the directory's own name", async () => {
+    await tree("docs (2024)/a.md");
+    const files = await resolveTargets({ inputs: ["docs (2024)"], cwd: dir });
+    expect(files).toEqual(["docs (2024)/a.md"]);
+  });
+
+  // A directory outside cwd relativizes to a `../` chain, and a leading
+  // wildcard will not cross a `..` segment — so `..` leaves every ignore glob,
+  // the node_modules and .git defaults included, silently matching nothing.
+  it("still applies excludes when the directory is outside cwd", async () => {
+    await tree("docs/intro.md", "docs/drafts/wip.md");
+    const files = await resolveTargets({
+      inputs: [join(dir, "docs")],
+      exclude: ["**/drafts/**"],
+      cwd: here,
+    });
+    expect(files.some((f) => f.endsWith("/intro.md"))).toBe(true);
+    expect(files.some((f) => f.includes("/drafts/"))).toBe(false);
+  });
+});
+
+/**
+ * An ignore glob means one thing: it is written in the run's cwd frame,
+ * wherever the walked directory happens to sit.
+ *
+ * The alternative is what a directory-anchored walk produces by itself — an
+ * exclude read against the walked directory when the target escapes cwd and
+ * against cwd otherwise. One flag, two meanings, chosen by a property of the
+ * *target*; and both halves fail silently, one by checking a tree the author
+ * excluded, the other by dropping one they did not.
+ *
+ * A "drafts anywhere" pattern cannot tell the two frames apart, so every test
+ * here uses one that can.
+ */
+describe("resolveTargets: an exclude is read in the cwd frame", () => {
+  let dir: string;
+
+  afterEach(async () => {
+    if (dir) await rm(dir, { recursive: true, force: true });
+  });
+
+  async function tree(...rel: string[]): Promise<void> {
+    dir = await mkdtemp(join(tmpdir(), "manni-frame-"));
+    for (const path of rel) {
+      const abs = join(dir, path);
+      await mkdir(dirname(abs), { recursive: true });
+      await writeFile(abs, "---\ntype: how-to\n---\n\n# T\n", "utf8");
+    }
+  }
+
+  const posix = (p: string): string => p.replace(/\\/g, "/");
+
+  // `drafts/**` names `<cwd>/drafts`. A tree outside cwd has no such directory
+  // in it, so the pattern must remove nothing from it — rather than quietly
+  // matching a `drafts` the author was not talking about.
+  it("does not let a cwd-relative exclude reach a tree outside cwd", async () => {
+    await tree("docs/intro.md", "docs/drafts/wip.md");
+    const files = await resolveTargets({
+      inputs: [join(dir, "docs")],
+      exclude: ["drafts/**"],
+      cwd: here,
+    });
+    expect(files.some((f) => f.endsWith("/intro.md"))).toBe(true);
+    expect(files.some((f) => f.endsWith("/drafts/wip.md"))).toBe(true);
+  });
+
+  // ...and the pattern that *does* name that directory in the cwd frame has to
+  // work, or a tree outside cwd cannot be excluded at all.
+  it("applies an exclude written as the `../` path the run reports", async () => {
+    await tree("docs/intro.md", "docs/drafts/wip.md");
+    const drafts = posix(relative(here, join(dir, "docs", "drafts")));
+    const files = await resolveTargets({
+      inputs: [join(dir, "docs")],
+      exclude: [`${drafts}/**`],
+      cwd: here,
+    });
+    expect(files.some((f) => f.endsWith("/intro.md"))).toBe(true);
+    expect(files.some((f) => f.endsWith("/drafts/wip.md"))).toBe(false);
+  });
+
+  // The defaults are ignore globs like any other, so they shift frames like any
+  // other: a vendored docset resolves to nothing under cwd and to a file list
+  // outside it. Both spellings name the same kind of tree.
+  it("applies the node_modules default wherever the tree sits", async () => {
+    await tree("vendor/node_modules/pkg/docs/a.md");
+    const inside = await resolveTargets({
+      inputs: ["vendor/node_modules/pkg/docs"],
+      cwd: dir,
+    });
+    const outside = await resolveTargets({
+      inputs: [join(dir, "vendor", "node_modules", "pkg", "docs")],
+      cwd: here,
+    });
+    expect(inside).toEqual([]);
+    expect(outside).toEqual([]);
+  });
+
+  // `relative()` answers `..archive` for `<cwd>/..archive`, which begins with
+  // `..` without escaping anything. Read as an escape, an ordinary directory
+  // inside cwd had its excludes measured from the wrong place.
+  it("treats a directory whose name merely starts with `..` as inside cwd", async () => {
+    await tree("..archive/intro.md", "..archive/drafts/wip.md");
+    const files = await resolveTargets({
+      inputs: ["..archive"],
+      exclude: ["..archive/drafts/**"],
+      cwd: dir,
+    });
+    expect(files).toEqual(["..archive/intro.md"]);
   });
 });
 

@@ -411,6 +411,7 @@ GitHub annotations, ESLint, Vale and pa11y all use exactly these three words.
 | `manni meta validate` | `error` and `warning` | Every finding is an error except `location:external` and `location:page`, the warnings for a value stored on the side its schema's `x-manni-location` does not prefer. The reporters carry `notice` for sibling tools. |
 | `manni cite check` | all three | Per rule. Each rule has a default, and [`cite.severity.<rule>`](/manni/cite/reference/configuration/#severity) moves any of them, or sets it to `off`. |
 | `manni a11y check` | all three | Mapped from axe's `impact` when a page is read. Its [`--severity`](/manni/a11y/reference/cli/) flag then drops everything below a floor. |
+| `manni lint check` | `error` only | Every structural finding is an error, and there is no severity map. [Exit `1`](/manni/lint/reference/cli/#exit-codes) is defined on severity rather than on "any finding". |
 | `manni key rotate` | none | It has no findings model. A value either re-encrypts or is skipped, and a skip exits `1`. |
 
 So a repository that runs only `manni meta validate` sees errors, and warnings
@@ -424,6 +425,7 @@ puts notices on screen.
 | `pretty`, this tool | the word `notice`, dim, before the message | the word `warning`, yellow; a file with warnings and no errors is marked `⚠` | no word; the file line is `✗` |
 | `pretty`, `cite` | `ℹ`, dim | `↕`, yellow | `✗`, red |
 | `pretty`, `a11y` | the word `notice`, dim | the word `warning`, yellow | the word `error`, red |
+| `pretty`, `lint` | not emitted | not emitted | the file line is `✗`; each finding is `line:col`, the rule id, the message |
 | `json` | `"severity": "notice"` | `"severity": "warning"` | the field is absent in `meta`, and `"error"` in `cite` and `a11y` |
 | `github` | `::notice` | `::warning` | `::error` |
 | `sarif` | `"level": "note"` | `"level": "warning"` | `"level": "error"` |
@@ -432,8 +434,8 @@ puts notices on screen.
 `sarif` has no level named notice, so `note` is the nearest thing it defines.
 `junit` has no level below failure, and a `<failure>` that did not fail the run
 would make the tab disagree with the exit code. `sarif` and `junit` are emitted
-by this tool and by `manni cite`; `manni a11y check` reports in `pretty`, `json`
-and `github`.
+by this tool, by `manni cite` and by `manni lint`; `manni a11y check` reports in
+`pretty`, `json` and `github`.
 
 A pretty summary line counts the lower levels only when there are some. This
 tool prints `2 files checked, 2 passed, 0 failed, 0 errors, 1 warning, 2
@@ -447,6 +449,7 @@ notices`, and `manni cite check` prints the counts in parentheses, as
 | `manni meta validate` | A file with at least one error-severity finding. |
 | `manni cite check` | A file with at least one unbaselined error-severity finding. Warnings and notices never move it. |
 | `manni a11y check` | A page that failed to load, or one with any remaining violation. Severity is not consulted, so raising `--severity` is what stops a lower level failing the run. |
+| `manni lint check` | A file with at least one error-severity finding. |
 
 There is no `--fail-on` and no `--min-severity` anywhere in the family. A tool
 either fixes its levels, as this one does, or exposes the one lever its shape

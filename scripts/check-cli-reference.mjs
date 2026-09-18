@@ -37,6 +37,7 @@ const PAGES = new Map([
   ["a11y", "docs/src/content/docs/a11y/reference/cli.mdx"],
   ["cite", "docs/src/content/docs/cite/reference/cli.mdx"],
   ["key", "docs/src/content/docs/key/reference/cli.mdx"],
+  ["lint", "docs/src/content/docs/lint/reference/cli.mdx"],
   ["term", "docs/src/content/docs/term/reference/cli.mdx"],
 ]);
 

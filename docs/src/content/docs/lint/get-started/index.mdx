@@ -1,0 +1,294 @@
+---
+title: Get started
+description: Lint one how-to page against its doctype template, read the finding, fix the page, and watch the run go green. Then let the config supply the paths.
+---
+
+import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+This page takes you from one Markdown file to a structure check you can put in
+CI. You will lint a how-to that is missing a section, read what the finding
+says, fix the page, and see the run go green. Then you will ask the tool why it
+picked the template it picked, and move the paths into config.
+
+Every transcript below is real output from the built tool, over files committed
+in this repository.
+
+## Before you start
+
+- **Node.js 24 or newer.** Check with `node --version`.
+- **A page that says what it is.** Structure routing reads the `type:`
+  frontmatter key. A page without one is skipped rather than failed. You can
+  point the tool at a whole tree and lint only what has opted in.
+
+manni lint ships in the same package as manni meta. If you have one, you have
+the other.
+
+<Tabs>
+  <TabItem label="npx (no install)">
+    ```sh
+    npx @hawkeyexl/manni lint --help
+    ```
+  </TabItem>
+  <TabItem label="Global install">
+    ```sh
+    npm install -g @hawkeyexl/manni
+    manni lint --help
+    ```
+  </TabItem>
+</Tabs>
+
+<Aside type="tip" title="Without a global install">
+  The rest of this page writes commands as `manni lint …`. If you did not
+  install globally, prefix each one with `npx @hawkeyexl/manni`.
+</Aside>
+
+## See what can route a page
+
+Before linting anything, ask what templates exist:
+
+```sh
+manni lint templates
+```
+
+```
+Templates:
+  tgdp:how-to:1.6  —  How-to guide (The Good Docs Project)  types: how-to  [builtin]
+  tgdp:tutorial:1.6  —  Tutorial (The Good Docs Project)  types: tutorial  [builtin]
+  tgdp:reference:1.6  —  Reference (The Good Docs Project)  types: reference  [builtin]
+  tgdp:concept:1.6  —  Concept (The Good Docs Project)  types: concept, explanation  [builtin]
+  tgdp:troubleshooting:1.6  —  Troubleshooting (The Good Docs Project)  types: troubleshooting  [builtin]
+  tgdp:release-notes:1.6  —  Release notes (The Good Docs Project)  types: release-notes  [builtin]
+  tgdp:readme:1.6  —  README (The Good Docs Project)  types: readme  [builtin]
+```
+
+Seven built-in templates, derived from
+[The Good Docs Project](https://thegooddocsproject.dev/) at `v1.6.0`. The
+`types:` column is the vocabulary a page's `type:` frontmatter may use to route
+itself. Nothing here needs configuring.
+
+## Lint a how-to
+
+Here is the page. It declares `type: how-to`, so `tgdp:how-to:1.6` is what it
+will be held to:
+
+````md title="docs/rotate-key.md"
+---
+type: how-to
+---
+
+# Rotate an API key
+
+## Overview
+
+Rotating a key replaces the old secret without interrupting live traffic.
+
+## Before you start
+
+You need an account with the `admin` role.
+
+## Rotate the key
+
+Issue the replacement, then retire the old one.
+
+```bash
+widget keys rotate --id abc123
+```
+````
+
+<Steps>
+
+1. **Run the check.**
+
+   ```sh
+   manni lint structure docs/rotate-key.md
+   ```
+
+   ```
+   ✗ docs/rotate-key.md
+       5:1  manni:lint/structure/missing-section  Rotate an API key: Missing section "See also"
+
+   1 file checked, 0 passed, 1 failed, 0 skipped
+   ```
+
+   Exit code `1`.
+
+2. **Read the finding.** Four parts, left to right:
+
+   | Part | What it tells you |
+   | --- | --- |
+   | `5:1` | Line and column. Line 5 is the `# Rotate an API key` heading, because the section that is incomplete is the one the heading opens. |
+   | `manni:lint/structure/missing-section` | The rule id: `manni:lint` / the job / the rule. Durable, and the same string the GitHub annotation, the SARIF `ruleId` and the JUnit failure type carry. |
+   | `Rotate an API key:` | The section the finding is about, named by its heading. |
+   | `Missing section "See also"` | What to change. |
+
+   The how-to template asks for a `See also` section, and upstream does not
+   mark it optional the way it marks `Before you start`. So this page is a
+   how-to that does not say where to go next.
+
+3. **Fix the page.** Add the section:
+
+   ```md title="docs/rotate-key.md"
+   ## See also
+
+   Read about key scopes and expiry.
+   ```
+
+4. **Re-run.**
+
+   ```sh
+   manni lint structure docs/rotate-key.md
+   ```
+
+   ```
+   ✓ docs/rotate-key.md
+
+   1 file checked, 1 passed, 0 failed, 0 skipped
+   ```
+
+   Exit code `0`. That is the whole loop.
+
+</Steps>
+
+## Run every job at once
+
+`structure` is one job. `check` runs every job the repository configures, and
+names them on stderr so the report cannot be read against the wrong set:
+
+```sh
+manni lint check docs/rotate-key.md
+```
+
+```
+Checked: structure.
+✓ docs/rotate-key.md
+
+1 file checked, 1 passed, 0 failed, 0 skipped
+```
+
+`structure` is the only job, so the two commands report the same thing. `check`
+is the command for CI. It runs every job the configuration declares, and it
+carries no job's own flags.
+
+## Ask why a page routed where it did
+
+A page can be held to a template you did not expect, or to none at all.
+`--explain` prints the routing table and lints nothing:
+
+```sh
+manni lint structure docs/ --explain
+```
+
+```
+▸ docs/rotate-key.md
+    · cli                  --template not given
+    · frontmatter-template no $template in frontmatter
+    · config-override      no overrides configured
+    → type                 tgdp:how-to:1.6  type: how-to -> builtin template
+
+1 file, 1 routed, 0 unrouted
+```
+
+Five rungs are tried in order; `·` is a rung that did not decide and `→` is the
+one that did. Here the page's own `type: how-to` picked the built-in template,
+which is the ordinary case.
+
+<Aside type="caution" title="`--explain` always exits 0">
+  It answers a question about configuration. Its exit code says whether it
+  could answer, not whether the docs are clean. A page that routes nowhere is
+  an answered question. Read the ordinary run for the verdict.
+</Aside>
+
+## A page with no type
+
+Point the tool at a tree and most files will not have opted in yet. Those are
+skipped, counted apart, and never mistaken for passes:
+
+```
+- docs/notes.md  skipped: no type in frontmatter and no template resolved
+✓ docs/rotate-key.md
+
+1 file checked, 1 passed, 0 failed, 1 skipped
+```
+
+A page that declares a `type:` **nothing serves** is different. That is an
+assertion the tool could not honour, so it is a finding. The message
+suggests the nearest doctype it knows.
+
+```
+1:1  manni:lint/structure/unknown-type  No template serves type "how-two". Did you mean "how-to"? Declare it on a template with "types:", then pass that file with --templates.
+```
+
+## Let the config supply the paths
+
+Declare the pages once, under the family-level `collections:` key that every
+manni tool reads, and the command loses its arguments:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: guides
+    paths: ["docs/**/*.md"]
+    exclude: ["**/drafts/**"]
+```
+
+```sh
+manni lint check
+```
+
+The same command now runs locally and in CI, over exactly the pages
+`manni meta validate` runs over. A collection's `exclude` decides membership, so
+the drafts are not in the set at all rather than filtered out afterwards.
+
+Add your own doctype shapes beside it whenever the built-ins stop fitting:
+
+```yaml title="manni.config.yaml"
+lint:
+  templates:
+    - ./templates.yaml
+```
+
+A template in that file declaring `types: [how-to]` replaces the built-in
+how-to shape for the whole repository, and no page changes. The
+[templates reference](/manni/lint/reference/templates/) has the format.
+
+## Next steps
+
+You have linted one page, read a finding, fixed it, and moved the paths into
+config. To make it a standing guarantee, run the check on every push.
+
+<CardGrid>
+  <LinkCard
+    title="Gate structure in CI"
+    href="/manni/lint/ci/"
+    description="A workflow with PR annotations, the 0/1/2 exit-code contract, SARIF upload and JUnit output."
+  />
+  <LinkCard
+    title="Fix a failing check"
+    href="/manni/lint/fix/"
+    description="Every rule id, what it means, and what to change on the page."
+  />
+  <LinkCard
+    title="Templates reference"
+    href="/manni/lint/reference/templates/"
+    description="Write your own doctype shape, extend a built-in, and route it with types:."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/lint/reference/cli/"
+    description="Every command, argument and flag, and the five output formats."
+  />
+</CardGrid>
+
+{/* Doc Detective inline tests: verify this page's documented manni lint behavior
+    against the local build, exposed as `manni lint` / `npx @hawkeyexl/manni lint` via `npm link`
+    (see .github/workflows/docs-as-tests.yml), over committed fixtures.
+    Run with `npx doc-detective`. Config: .doc-detective.json. */}
+{/* test {"testId":"lint-get-started","description":"List the templates, lint a how-to that is missing a section, lint the fixed one, and explain the routing — over committed fixtures."} */}
+{/* step {"description":"Node.js prerequisite: `node --version` reports a version (page requires Node 24+).","runShell":{"command":"node --version","exitCodes":[0],"stdio":"/v\\d+\\./"}} */}
+{/* step {"description":"See what can route a page: the seven built-in TGDP templates are listed with the types they serve.","runShell":{"command":"npx @hawkeyexl/manni lint templates --no-config","exitCodes":[0],"stdio":"/tgdp:how-to:1\\.6[\\s\\S]*types: how-to[\\s\\S]*tgdp:readme:1\\.6/"}} */}
+{/* step {"description":"Lint a how-to missing its See also section: one finding, named by rule id and heading, exit 1.","runShell":{"command":"npx @hawkeyexl/manni lint structure --no-config test/lint/fixtures/formats/how-to-broken.md","exitCodes":[1],"stdio":"/manni:lint\\/structure\\/missing-section\\s+Rotate an API key: Missing section \"See also\"/"}} */}
+{/* step {"description":"The same page with the section present passes, and the summary says so.","runShell":{"command":"npx @hawkeyexl/manni lint structure --no-config test/lint/fixtures/formats/how-to.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 skipped"}} */}
+{/* step {"description":"`check` runs every configured job and names them before the report.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to.md","exitCodes":[0],"stdio":"Checked: structure."}} */}
+{/* step {"description":"--explain prints the routing table, shows the `type` rung deciding, and always exits 0.","runShell":{"command":"npx @hawkeyexl/manni lint structure --no-config --explain test/lint/fixtures/formats/how-to.md","exitCodes":[0],"stdio":"/type\\s+tgdp:how-to:1\\.6\\s+type: how-to -> builtin template/"}} */}
+{/* step {"description":"Every format is held to the same template: the MDX, AsciiDoc, reStructuredText, HTML and XML spellings of the page all pass.","runShell":{"command":"npx @hawkeyexl/manni lint structure --no-config test/lint/fixtures/formats/how-to.mdx test/lint/fixtures/formats/how-to.adoc test/lint/fixtures/formats/how-to.rst test/lint/fixtures/formats/how-to.html test/lint/fixtures/formats/how-to.xml","exitCodes":[0],"stdio":"5 files checked, 5 passed, 0 failed, 0 skipped"}} */}
+{/* step {"description":"A page read from stdin needs --as to pick a parser, and reports as <stdin>.","runShell":{"command":"cat test/lint/fixtures/formats/how-to-broken.md | npx @hawkeyexl/manni lint structure --no-config - --as markdown","exitCodes":[1],"stdio":"/<stdin>/"}} */}
+{/* test end */}

@@ -1,0 +1,188 @@
+---
+title: Fix a failing check
+description: Read a manni lint structure finding, map the rule id to the change your page needs, prove the fix locally, and use --explain when the page was held to the wrong template.
+---
+
+import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Your pull request is red and one of your pages carries an annotation you did
+not expect. You do not need to learn the tool. You need to know which rule
+fired, what it wants, and how to prove the fix before you push again.
+
+## Read the annotation
+
+A finding looks like this on a pull request:
+
+```
+::error file=docs/rotate-key.md,line=5,col=1,title=manni%3Alint/structure/missing-section::Rotate an API key: Missing section "See also"
+```
+
+and like this in a log or on your own machine:
+
+```
+✗ docs/rotate-key.md
+    5:1  manni:lint/structure/missing-section  Rotate an API key: Missing section "See also"
+```
+
+Four parts:
+
+| Part | What it tells you |
+| --- | --- |
+| `5:1` | Line and column. It points at the heading that opens the section the finding is about, not at the missing thing. A thing that is missing has no line. |
+| `manni:lint/structure/…` | The rule id. `manni:lint`, then the job, then the rule. Find it in the [table below](#every-rule). |
+| `Rotate an API key:` | The section, named by its heading. A whole-file finding has no prefix here. |
+| `Missing section "See also"` | What to change, in one sentence. |
+
+Every structural finding is an `error`. There is no severity dial to turn one
+down. A finding must be resolved, or the template that produced it must change.
+
+## Prove the fix locally
+
+Run the same command your CI job runs, on the one file:
+
+```sh
+npx @hawkeyexl/manni lint structure docs/rotate-key.md
+```
+
+```
+✓ docs/rotate-key.md
+
+1 file checked, 1 passed, 0 failed, 0 skipped
+```
+
+Exit `0`, and you are done. Drop the path to run over everything the
+repository's config declares, which is what CI does.
+
+## Every rule
+
+### The page's shape
+
+| Rule | What it means | What to do |
+| --- | --- | --- |
+| `manni:lint/structure/missing-section` | A section the template requires is absent, or is present but out of the order the template fixes. | Add the section, with the heading the message quotes, in the position the template declares. `manni lint templates` and the [templates reference](/manni/lint/reference/templates/) say what the shape is. |
+| `manni:lint/structure/unexpected-section` | The page carries a section the template does not describe. | Either fold the content into a section the template does have, or allow extras by setting `additionalSections: true` on the template. The message says so: `Unexpected section "X". Set additionalSections: true to allow sections the template does not describe.` |
+| `manni:lint/structure/heading-const` | A heading is not the exact text the template asks for. `Expected title "Overview", but found "Overvue"` | Fix the heading. Exact text means exact text, typos and plurals included. |
+| `manni:lint/structure/heading-pattern` | A heading does not match the pattern the template sets. `Title "X" doesn't match pattern "^Symptom"` | Rename the heading to fit the pattern. A template uses a pattern where the wording varies but the form does not, as in `Symptom 1`, `Symptom 2`. |
+
+### What is inside a section
+
+| Rule | What it means | What to do |
+| --- | --- | --- |
+| `manni:lint/structure/paragraphs-count` | Too few or too many paragraphs. `Expected at least 1 paragraphs, but found 0` | Usually a section with a heading and nothing under it. Write the sentence the section exists for. |
+| `manni:lint/structure/paragraph-pattern` | A paragraph does not match a pattern the template sets. `Paragraph 2 doesn't match expected pattern.` | Read the template's pattern for that section; it is usually enforcing an opening form, such as a step starting with a verb. |
+| `manni:lint/structure/code-blocks-count` | Too few or too many fenced blocks. `Expected at least 1 code blocks, but found 0` | A procedure section that shows no command is the common cause. Add the block, or move the prose to a section that does not require one. |
+| `manni:lint/structure/lists-count` | Too few or too many lists. `Expected at least 1 lists, but found 0` | Prose written where the template asks for a list. Turn it into one. |
+| `manni:lint/structure/list-items-count` | A list is shorter or longer than the template allows. `Expected at least 2 items in a list` | A one-item list is usually a sentence. Either add the second item or unwrap it into prose. |
+| `manni:lint/structure/sequence-length` | A section's content run is shorter or longer than its `sequence` declares. `Expected 3 content types in sequence, but found 2` | Something the ordered run expects is not there. Compare the section against the template's `sequence`. |
+| `manni:lint/structure/sequence-order` | Content appears in an order the section's `sequence` does not allow. `Expected sequence ["paragraphs","lists"], but found sequence ["lists","paragraphs"]` | Reorder the blocks. The message prints both sequences, so the move is usually one paragraph. |
+
+### Routing and loading
+
+These three are not about the prose. They mean the page and the template did
+not meet properly.
+
+| Rule | What it means | What to do |
+| --- | --- | --- |
+| `manni:lint/structure/unknown-type` | The page declares a `type:` no template serves. `No template serves type "how-two". Did you mean "how-to"? Declare it on a template with "types:", then pass that file with --templates.` | Usually a typo in the page's own frontmatter; take the suggestion. If the doctype is real and new, it needs a template that claims it with `types:`, which is a config change rather than a page change. |
+| `manni:lint/structure/template` | The template could not be resolved or is invalid. Also the refusal of a `$template` naming a URL: a document must not choose what the linter fetches. | If the page carries `$template`, check the ref. Otherwise this is a repository-level problem, not yours: the config names a template file that is missing, malformed, or unreachable. |
+| `manni:lint/structure/parse` | The document could not be parsed. | The message is the parser's own. It is usually broken frontmatter or an unclosed fence. |
+
+## When the page was held to the wrong template
+
+Sometimes the finding is right about the template and wrong about your page,
+because the page routed somewhere you did not expect. `--explain` prints the
+routing table and lints nothing:
+
+```sh
+npx @hawkeyexl/manni lint structure docs/rotate-key.md --explain
+```
+
+```
+▸ docs/rotate-key.md
+    · cli                  --template not given
+    · frontmatter-template no $template in frontmatter
+    · config-override      no overrides configured
+    → type                 tgdp:how-to:1.6  type: how-to -> builtin template
+
+1 file, 1 routed, 0 unrouted
+```
+
+Five rungs, in order. `·` is a rung that did not decide, `→` is the one that
+did. Reading down tells you which lever moved your page:
+
+| Rung | Means |
+| --- | --- |
+| `cli` | Somebody passed `-t/--template` on the command line. It applies to every file in the run, so this is usually a CI step rather than anything about your page. |
+| `frontmatter-template` | The page names its own template with `$template:` in its frontmatter. |
+| `config-override` | A glob in `lint.overrides` claimed the path. Repository policy outranks what the page says it is. |
+| `type` | The page's own `type:` found a template. The ordinary case. |
+| `config-default` | Nothing above answered, and `lint.template` supplied a fallback. |
+
+<Aside type="caution" title="`--explain` always exits 0">
+  It answers a question about configuration, so its exit code says whether it
+  could answer, not whether the docs are clean. A page that routes nowhere is
+  an answered question. Never wire this into a gate.
+</Aside>
+
+## Two things that are not failures
+
+**A page with no `type:` is skipped.** It is counted apart from passes and
+failures, and never mistaken for one:
+
+```
+- docs/notes.md  skipped: no type in frontmatter and no template resolved
+
+0 files checked, 0 passed, 0 failed, 1 skipped
+```
+
+Adding `type:` to a page is the act that opts it into structure checking. If
+you want your page gated, that is the line to write.
+
+**A skipped file is not a passing file.** In the JSON output it is
+`"success": false` with an empty `errors[]`, and in SARIF it is a tool
+notification rather than a result. Nothing anywhere reports "not linted" as
+"clean".
+
+## Still stuck?
+
+<Steps>
+
+1. **Ask what the template actually asks for.** `manni lint templates` lists
+   every template that could route a page, and where it came from. The
+   [templates reference](/manni/lint/reference/templates/) has the format, so
+   you can read the template file itself.
+
+2. **Ask which config governed the run.** In `pretty` output the tool says so:
+   `Using manni.config.yaml (.)`. Discovery walks upward, so the answer is
+   occasionally a file you did not know about.
+
+3. **Ask whether the template is wrong.** A rule that fires on a page everyone
+   agrees is correct is a template that does not describe the doctype. That is
+   a repository conversation, not a page fix. The
+   [configuration reference](/manni/lint/reference/configuration/) shows how a
+   repository adds or extends a template.
+
+</Steps>
+
+<CardGrid>
+  <LinkCard
+    title="Get started"
+    href="/manni/lint/get-started/"
+    description="The whole loop on one page: lint, read the finding, fix it, and re-run."
+  />
+  <LinkCard
+    title="Templates reference"
+    href="/manni/lint/reference/templates/"
+    description="What a template asks for, the built-in TGDP set, and how types: routes a page."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/lint/reference/cli/"
+    description="Every flag, the rule ids, the output formats, and the exit codes."
+  />
+  <LinkCard
+    title="Fix a failing metadata check"
+    href="/manni/meta/fix/"
+    description="The sibling page for manni meta validate, when the red check is about frontmatter rather than shape."
+  />
+</CardGrid>

@@ -76,6 +76,14 @@ Maya's older pages predate the standard, so the fields her gate now requires are
 
 **What success looks like.** A writer who types a deprecated name sees the preferred one in the Vale alert. A term edited without regenerating the style fails CI and names the file that would change.
 
+### M10 · Hold every page to the shape its doctype promises
+
+**Outcome.** A page that says `type: how-to` carries what a how-to carries: an overview, the prerequisites, the steps, and somewhere to go next. Maya finds out when one does not, before a reader does.
+
+**Steps.** The package is the one she already has. She runs `manni lint templates` to see the seven built-in doctype templates, derived from The Good Docs Project, and the `type` values each serves. Those are the same `type` values `manni meta` already validates, so her pages route themselves with no per-page change. `manni lint check docs/` reports each page that is missing a section, with the rule id, the heading, and the line. A page with no `type:` is skipped rather than failed. She can point the tool at the whole tree and gate only what has opted in. Where the built-in shape is not her shape, she writes her own template file, declares `types:` on it, and names it once under `lint.templates`. Its doctypes then outrank the built-ins. When a page routes somewhere she did not expect, `manni lint structure --explain` prints the five rungs of the resolution chain and marks the one that decided.
+
+**What success looks like.** One command over the same collections the metadata gate runs over, out of the same `manni.config.yaml`. No second tool to install, and no second config to keep in step.
+
 ---
 
 ## Devin, Platform / CI Engineer
@@ -133,6 +141,14 @@ Per-file schema validation cannot see a dangling cross-reference, a duplicate sl
 **Steps.** He runs `manni term write -f tbx -o build/terms.tbx`, and the translation system imports TBX v2 Core. The kind of label becomes each term's status: the label preferred, an alt-label admitted, a hidden-label deprecated. Where a system or a spreadsheet maps columns by header, he writes `-f csv` instead, with the language in each per-language header. To move a glossary, he reads a DocBook `<glossary>` and writes `-f markdown -o docs/terms/`, one page per term, because the trailing `/` names a directory. The reverse, `-f docbook -o glossary.xml`, writes one file. Each render into a construct that cannot hold a field drops it, and the run says which fields, on how many terms.
 
 **What success looks like.** One command per handoff, in CI or locally. The report names every field a target could not hold, before anyone finds it missing.
+
+### D9 · Gate document structure in CI
+
+**Outcome.** Every pull request reports which pages lost the shape their doctype promises, as annotations on the line of the heading. It runs in the job that already validates metadata, out of the one config file, over the one document set.
+
+**Steps.** Devin adds `manni lint check -f github` beside the metadata gate, with no paths, because `collections:` supplies them. He puts `if: always()` on the second step, so a metadata failure does not hide every structural finding. He learns the contract. Exit `0` is clean, `1` is at least one `error`-level finding, and `2` is operational. Operational covers a bad flag, an unresolvable template, a config carrying the moved `lint.paths` key, or a run in which every file was skipped. For code scanning he writes `-f sarif` to a file, with `continue-on-error` on the check and `if: always()` on the upload, since the run worth uploading is the failing one. For the tests tab he writes `-f junit`. Ramping in needs no baseline, because a page with no `type:` is skipped. He gates one collection, or one doctype, and reads `manni lint structure --explain` in a report-only step to watch the routed count climb. `manni lint tools` is what he runs when his machine and CI disagree, because it names the tool, its version, and the config file each actually read.
+
+**What success looks like.** One more step in a job he already has, and four CI formats he already consumes. The exit-code contract is identical to the other three domains'.
 
 ---
 
@@ -221,3 +237,11 @@ Theo's failure is usually a *missing* field rather than a malformed one, so `fil
 **Steps.** He reads the one line: the file and line, the rule id, and a message that names the value. He finds the rule on the fix page, which links to its entry in the rules reference. An `undefined-term` that names an alt-label tells him which entry claims it, so he writes that entry's preferred label in `concepts:`. A value that names nothing is a typo, or a term the set does not define yet. A `dangling-reference` is the same mistake inside a term's `broader`, `narrower`, `related-terms` or `see`. He fixes the spelling, or adds the missing term. A `label-collision` or a `duplicate-id` means two entries claim one name, so he renames one or merges them into one. A `broader-cycle` spells out the chain, and he removes the `broader` value that closes it. A `see-not-empty` is a redirect that still carries a definition, and he deletes the definition. A `manni:term/prose/…` finding comes from `manni term lint`, and he rewrites the definition until Vale passes it. A failed `manni term write -f vale --check` names the style file that fell behind. He runs `manni term write -f vale` and commits what it wrote. He reproduces each locally with `npx @hawkeyexl/manni term check`, `term lint` or `term write -f vale --check`, from the repository root. There the config names the same files CI reads. He sees green, and pushes.
 
 **What success looks like.** One rule, one edit, one re-run. He never has to know what a term record is.
+
+### T5 · Read a structure failure and fix it
+
+**Outcome.** Theo's pull request carries a `manni:lint/structure/missing-section` annotation on a page he edited, and he clears it without learning what a template is.
+
+**Steps.** He reads the one line: the file and line, the rule id, the section named by its heading, and one sentence saying what to change. The fix page maps the rule to the change. A section is missing or unexpected, a heading is not the exact text, or there are too few paragraphs, lists or code blocks. Content can also sit in an order the template does not allow. Each of those says what to add or move. Three rules are not about prose at all. `unknown-type` means the page's own `type:` is a typo, and the message suggests the nearest real one. `template` and `parse` mean the page and its template never met, which is usually a repository problem rather than his. Where the finding is right about the template and wrong about his page, `manni lint structure <page> --explain` shows which of the five rungs routed it. He can then say which lever moved it. He reproduces locally with `npx @hawkeyexl/manni lint structure <page>`, sees `✓` and exit `0`, and pushes.
+
+**What success looks like.** One rule id, one change, one re-run. He never has to read a template file.

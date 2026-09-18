@@ -1,0 +1,159 @@
+---
+title: manni lint
+description: "Check that every page has the shape its doctype promises: the sections a how-to needs, in order, with the steps and code blocks inside them."
+tableOfContents: false
+hero:
+  tagline: Check that every page has the shape its doctype promises. Deterministic, template-driven, built for CI.
+  actions:
+    - text: Get started
+      link: /manni/lint/get-started/
+      icon: right-arrow
+      variant: primary
+    - text: CLI reference
+      link: /manni/lint/reference/cli/
+      icon: open-book
+      variant: minimal
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Beta">
+`manni lint` is in beta. Its commands, config keys and output can change in
+any release, without notice.
+</Aside>
+
+`manni meta` checks what a page says it is. `manni lint` checks whether it is
+shaped like one. A page that declares `type: how-to` is supposed to carry an
+overview, the prerequisites, the steps, and somewhere to go next. Nothing
+enforces that but a reviewer's eye, and a reviewer's eye is the thing that runs
+out first.
+
+```sh
+npx @hawkeyexl/manni lint check docs/
+```
+
+```
+Checked: structure.
+✗ docs/rotate-key.md
+    5:1  manni:lint/structure/missing-section  Rotate an API key: Missing section "See also"
+
+1 file checked, 0 passed, 1 failed, 0 skipped
+```
+
+Exit `1`, with a line and a rule id. The command you run locally is the one
+that gates the pull request.
+
+## Jobs, not tools
+
+`manni lint` has one verb per **kind of check**, and one that runs them all:
+
+| Command | Runs |
+|---|---|
+| `manni lint check [paths...]` | Every configured job |
+| `manni lint structure [paths...]` | Document structure against doctype templates |
+| `manni lint templates` | The templates that could route a page, and the doctypes each serves |
+| `manni lint tools` | Each job, the tool that performs it, and what it reads |
+
+A **job** is what is being checked. The **tool** that answers it is an
+implementation you can swap. `structure` is the job, and this package's own
+engine, named `manni`, answers it. Naming the verbs after the jobs
+means swapping the tool underneath does not change the command anyone types.
+It also means running exactly one kind of check is one word rather than a flag.
+
+There is no default subcommand. `manni lint docs/` is a usage error that lists
+the verbs, because a domain with one verb still spells the verb.
+
+## What a template is
+
+A template describes the shape a doctype promises. That is which sections a page
+of that kind has, in what order, and what has to be inside each one. Inside can
+mean paragraphs, lists, code blocks, or an exact heading.
+
+Seven ship, derived from [The Good Docs
+Project](https://thegooddocsproject.dev/) at `v1.6.0`, covering `how-to`,
+`tutorial`, `reference`, `concept` and `explanation`, `troubleshooting`,
+`release-notes` and `readme`. A page routes to one by its own `type:`
+frontmatter, the same key `manni meta` already validates. A repository that
+declares doctypes gets structure checking with no per-page change at all.
+
+Your own templates are one config entry away, and they outrank the built-ins
+for the doctypes they claim. The [templates
+reference](/manni/lint/reference/templates/) has the format.
+
+## Deterministic, by design
+
+There is no language model here, and no network call except fetching a template
+you pointed at yourself. Two runs over the same bytes give the same findings, so
+a red check is reproducible and a green one means something.
+
+That line is load-bearing rather than decorative. The template format used to
+carry an `instructions:` key a model evaluated; it is refused now, with a
+message pointing at where that question belongs. Judgement about prose is a
+different tool's job.
+
+## Where things live
+
+One config file, `manni.config.yaml`, shared with every other manni tool. The
+document set is the family's `collections:` list, so `manni meta validate` and
+`manni lint check` run over exactly the same pages without being told twice.
+Everything else is under `lint:`.
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: guides
+    paths: ["docs/**/*.md"]
+    exclude: ["**/drafts/**"]
+
+lint:
+  templates:
+    - ./templates.yaml
+```
+
+With that, both gates are a bare command:
+
+```sh
+manni meta validate
+manni lint check
+```
+
+## Coming from `doc-structure-lint`?
+
+This is that package, folded into the manni bin. Same engine, same templates,
+same rules; a family surface around them. The command is `manni lint check`,
+the config moves under `lint:` in `manni.config.yaml`, and `paths:` / `exclude:`
+become a collection. The
+[migration table](/manni/lint/reference/configuration/#coming-from-doc-structure-lint)
+has every change.
+
+<CardGrid>
+  <LinkCard
+    title="Get started"
+    href="/manni/lint/get-started/"
+    description="Lint one how-to page, read the finding, fix it, and see the run go green. Then let the config supply the paths."
+  />
+  <LinkCard
+    title="Gate structure in CI"
+    href="/manni/lint/ci/"
+    description="manni lint check in a workflow, with PR annotations, SARIF upload, JUnit output, and the 0/1/2 exit-code contract."
+  />
+  <LinkCard
+    title="Fix a failing check"
+    href="/manni/lint/fix/"
+    description="Every rule id, what it means, and what to change on the page. Plus --explain, for when the page routed somewhere you did not expect."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/lint/reference/cli/"
+    description="Every command, argument and flag, the five output formats, the rule ids, and the exit codes."
+  />
+  <LinkCard
+    title="Configuration reference"
+    href="/manni/lint/reference/configuration/"
+    description="Every lint: key, the collections: list targets come from, the template resolution chain, and the keys that moved."
+  />
+  <LinkCard
+    title="Templates reference"
+    href="/manni/lint/reference/templates/"
+    description="The template file format, the built-in TGDP set, template refs, $template, and types: routing."
+  />
+</CardGrid>
