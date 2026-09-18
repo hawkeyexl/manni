@@ -27,7 +27,11 @@ export function fail(err: unknown): never {
       ? err.message
       : `Unexpected error: ${errorMessage(err)}`;
   const prefix = programName();
-  for (const line of msg.split("\n")) {
+  // A trailing newline is the message's own, not a line of its own. Splitting
+  // without dropping it would end the run on a bare `manni: `, which is what
+  // an unexpected error carrying a library's newline-terminated message would
+  // have printed.
+  for (const line of msg.replace(/\n+$/, "").split("\n")) {
     process.stderr.write(`${prefix}: ${line}\n`);
   }
   process.exit(2);
