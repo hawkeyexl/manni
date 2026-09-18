@@ -30,6 +30,7 @@ const RULE_DESCRIPTIONS: Readonly<Record<CiteRule, string>> = {
   "source-missing": "The cited source file is not tracked under the root, or cannot be decrypted.",
   "claim-moved": "The cited sentence moved to other lines of the page.",
   "claim-moved-ambiguous": "The cited sentence now appears at several places on the page.",
+  "claim-reanchored": "The cited sentence's words are unchanged since the claim's baseline, and only its layout moved.",
   "claim-changed": "The cited sentence was edited since the citation pinned it.",
   "marker-orphan": "A marker names an id no citation has.",
   "marker-invalid": "A marker is malformed, or the page has too many markers.",

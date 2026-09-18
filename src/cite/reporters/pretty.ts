@@ -157,10 +157,28 @@ function claimColumn(result: CitationResult): string {
       status = `moved, ${plural(at.length, "candidate")} (${at.join(", ")})`;
       break;
     }
+    case "reanchored": {
+      const since = claim.commitSha === undefined ? "" : ` since ${shortCommit(claim.commitSha)}`;
+      const to = claim.newFileLines === undefined ? "" : ` -> :${claim.newFileLines}`;
+      status = `reanchored${since}${to}`;
+      break;
+    }
+    case "changed":
+      status = changedText(claim);
+      break;
     default:
       status = claim.status;
   }
   return where === "" ? status : `${where} ${status}`;
+}
+
+/** How a changed claim's column says since when, as the source column does. */
+function changedText(claim: NonNullable<CitationResult["claim"]>): string {
+  if (claim.historyAvailable === false) return "changed (history unavailable; fetch-depth: 0)";
+  if (claim.commitSha === undefined) return "changed";
+  const since = claim.commitsSince ?? [];
+  const count = since.length === 0 ? "uncommitted" : plural(since.length, "commit");
+  return `changed since ${shortCommit(claim.commitSha)}, ${count}`;
 }
 
 /**
@@ -197,12 +215,27 @@ function diffLines(result: CitationResult, dim: (s: string) => string): string[]
   return out;
 }
 
-/** The page lines a changed claim covers now, dim and capped: what `--show-diff` adds. */
+/**
+ * What `--show-diff` adds under a claim row: the page's commit subjects since
+ * the baseline and the claim's own diff. With no baseline there is no diff to
+ * print, so a changed claim shows the lines it covers now instead.
+ */
 function claimLines(result: CitationResult, dim: (s: string) => string): string[] {
-  const text = result.claim?.text ?? [];
-  const shown = text.slice(0, DIFF_LINE_CAP);
+  const claim = result.claim;
+  const diff = claim?.diff;
+  if (claim === null || diff === undefined || diff === "") {
+    return capped(claim?.text ?? [], dim);
+  }
+  const out: string[] = [];
+  for (const subject of claim.commitsSince ?? []) out.push(dim(`        ${subject}`));
+  return [...out, ...capped(diff.split(/\r?\n/), dim)];
+}
+
+/** Lines under a row, dim and capped, with a count of the ones left out. */
+function capped(lines: readonly string[], dim: (s: string) => string): string[] {
+  const shown = lines.slice(0, DIFF_LINE_CAP);
   const out = shown.map((line) => dim(`        ${line}`));
-  const more = text.length - shown.length;
+  const more = lines.length - shown.length;
   if (more > 0) out.push(dim(`        … (${plural(more, "more line")})`));
   return out;
 }
@@ -319,7 +352,9 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
       }
       if (opts.showDiff) {
         if (own.some((f) => f.rule === "source-changed")) under.push(...diffLines(result, c.dim));
-        if (own.some((f) => f.rule === "claim-changed")) under.push(...claimLines(result, c.dim));
+        if (own.some((f) => f.rule === "claim-changed" || f.rule === "claim-reanchored")) {
+          under.push(...claimLines(result, c.dim));
+        }
       }
       const forgivenEnd = own.length > 0 && live.length === 0 ? c.dim(" (baselined)") : "";
       rows.push({
@@ -415,6 +450,28 @@ function widening(held: string, now: string): string {
   return `, ${parts.join(" and ")} newly pinned`;
 }
 
+/** Whether a re-pin covered a span other than the stored one. */
+function widened(rewrite: UpdateRewrite): boolean {
+  return (
+    rewrite.fromLines !== undefined &&
+    rewrite.toLines !== undefined &&
+    rewrite.fromLines !== rewrite.toLines
+  );
+}
+
+/** `lines 9 -> 9-12` for a re-pin that moved, `at line 9` for one that did not. */
+function movedSpan(rewrite: UpdateRewrite): string {
+  if (widened(rewrite)) return `lines ${rewrite.fromLines ?? ""} -> ${rewrite.toLines ?? ""}`;
+  const at = rewrite.toLines ?? rewrite.fromLines ?? String(rewrite.at ?? 0);
+  return `at ${spellAtSpec(at)}`;
+}
+
+/** What one claim `--accept` refused to re-pin says, and what to do about it. */
+export function refusalLine(rewrite: UpdateRewrite): string {
+  const at = shortCommit(rewrite.commitSha ?? "");
+  return `claim at ${spellAtSpec(String(rewrite.at ?? 0))} skipped: that line now holds different text than the claim at ${at}. Re-add it with cite add.`;
+}
+
 /** What one rewritten end says it did. */
 export function rewriteLine(rewrite: UpdateRewrite): string {
   const word = rewrite.from.includes("-") ? "lines" : "line";
@@ -424,6 +481,12 @@ export function rewriteLine(rewrite: UpdateRewrite): string {
   }
   if (rewrite.reason === "shifted") {
     return `claim ${word} ${rewrite.from} -> ${rewrite.to} (shifted by a marker)`;
+  }
+  // The words held while the anchor moved (0053). A claim-lines entry moved
+  // onto its new run, so the row names both spans.
+  if (rewrite.reason === "re-anchored" && rewrite.status === "reanchored") {
+    const since = rewrite.commitSha === undefined ? "" : ` since ${shortCommit(rewrite.commitSha)}`;
+    return `claim ${movedSpan(rewrite)} re-pinned (reanchored; words unchanged${since})`;
   }
   if (rewrite.reason === "re-anchored") {
     const held = rewrite.lines ?? "";
@@ -436,6 +499,11 @@ export function rewriteLine(rewrite: UpdateRewrite): string {
       : `source ${shortSrc(rewrite.from)} -> ${shortSrc(rewrite.to)} (moved)`;
   }
   if (rewrite.end === "claim") {
+    // A re-pin over a unit wider than the stored lines names both spans, so
+    // the widening is in the log as well as in the diff.
+    if (widened(rewrite)) {
+      return `claim ${movedSpan(rewrite)} re-pinned (${status}; now "${rewrite.text ?? ""}")`;
+    }
     // A marker anchors its claim, so the marker's line is where the entry is,
     // as `check` reports it. A claim-lines entry reads at the claim.
     const where =
@@ -462,6 +530,12 @@ export function renderUpdatePretty(run: UpdateRun, opts: PrettyOptions): string 
     for (const rewrite of page.rewritten) {
       const label = rewrite.id ?? `#${String(rewrite.index)}`;
       lines.push(`${page.file}: ${c.cyan(label)} ${rewriteLine(rewrite)}`);
+    }
+    // A claim `--accept` refused reads beside the rewrites, because it is the
+    // one row `--accept` was asked for and did not write.
+    for (const rewrite of page.refused) {
+      const label = rewrite.id ?? `#${String(rewrite.index)}`;
+      lines.push(`${page.file}: ${c.cyan(label)} ${refusalLine(rewrite)}`);
     }
     for (const finding of page.skipped) {
       const mark = severityMark(finding.severity, c);

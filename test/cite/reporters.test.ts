@@ -993,11 +993,12 @@ describe("update reporters", () => {
             src: "lib/limits.ts:5",
           },
         ],
+        refused: [],
         skipped: [finding({ rule: "source-missing", message: "missing", id: undefined, index: 2, src: "lib/gone.ts" })],
         diff: "--- docs/limits.md\n+++ docs/limits.md\n@@ -4,1 +4,1 @@\n-      lines: 14\n+      lines: 16\n",
         written: true,
       },
-      { file: "docs/other.md", rewritten: [], skipped: [], diff: "", written: false },
+      { file: "docs/other.md", rewritten: [], refused: [], skipped: [], diff: "", written: false },
     ],
     rewritten: 2,
     skipped: 1,
@@ -1027,6 +1028,7 @@ describe("update reporters", () => {
         {
           file: "docs/limits.md",
           rewritten: [],
+          refused: [],
           skipped: [
             finding({ rule: "source-changed", message: "changed" }),
             finding({ rule: "claim-moved-ambiguous", severity: "warning", message: "ambiguous" }),
@@ -1068,7 +1070,7 @@ describe("update reporters", () => {
     };
     const marked: UpdateRun = {
       ...run,
-      pages: [{ file: "docs/limits.md", rewritten: [accepted], skipped: [], diff: "", written: true }],
+      pages: [{ file: "docs/limits.md", rewritten: [accepted], refused: [], skipped: [], diff: "", written: true }],
     };
     const parsed = JSON.parse(renderUpdateJson(marked)) as UpdateRun;
     const { markerLine: _pretty, ...json } = accepted;

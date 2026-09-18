@@ -1,0 +1,8 @@
+Suggested LinkedIn caption for claim-history-1x1. This is a suggestion only.
+Posting is a human action, and the author posts it or does not.
+
+One line:
+
+92 stale citations, and 68 of them were only whitespace. manni cite check now reads the page's git history, so only the 24 whose words actually changed reach a human.
+
+#docsascode #technicalwriting #devtools #CI

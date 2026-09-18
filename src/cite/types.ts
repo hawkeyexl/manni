@@ -94,7 +94,13 @@ export type SourceStatus =
   | "never-true"
   | "skipped";
 
-export type ClaimStatus = "current" | "moved" | "moved-ambiguous" | "changed" | "skipped";
+export type ClaimStatus =
+  | "current"
+  | "moved"
+  | "moved-ambiguous"
+  | "reanchored"
+  | "changed"
+  | "skipped";
 
 /** Where a misplaced marker is, and where it belongs (proposal 0054). */
 export interface MisplacedMarkerReport {
@@ -131,6 +137,7 @@ export const CITE_RULES = [
   "source-missing",
   "claim-moved",
   "claim-moved-ambiguous",
+  "claim-reanchored",
   "claim-changed",
   "marker-orphan",
   "marker-invalid",
@@ -165,6 +172,22 @@ export interface ClaimEnd {
   candidateFileLines?: string[];
   /** For `changed`: the page lines at the claim now, for `--show-diff`. Pretty-only. */
   text?: string[];
+  /**
+   * For `changed` and `reanchored`: the baseline, the newest commit whose
+   * page held the pin. Derived from the page's history, never stored (0053).
+   */
+  commitSha?: string;
+  /** For `changed`: `false` when the walk hit a shallow boundary or its cap. */
+  historyAvailable?: boolean;
+  /** Subjects of the commits that touched the page since the baseline. Pretty-only. */
+  commitsSince?: string[];
+  /** Unified diff of the claim's lines since the baseline. Pretty-only, `--show-diff`. */
+  diff?: string;
+  /**
+   * The claim's lines as they were at the baseline. Never serialized: it is
+   * what `update --accept` reads to tell an edit from a replacement.
+   */
+  baselineText?: string[];
 }
 
 /** The source end of a classified citation. */
@@ -247,6 +270,25 @@ export interface PageCitationReport {
 /** What `showFile` answers: the bytes, or why it could not. */
 export type ShownFile = { text: string } | { missing: "commit" | "path" };
 
+/** One commit that touched a path. */
+export interface PageCommit {
+  /** The full hash. */
+  sha: string;
+  subject: string;
+}
+
+/**
+ * What `pageCommits` answers: the commits that touched a path, newest first.
+ * `shallow` is a repository whose oldest commit may have an unfetched parent,
+ * and `truncated` a list the cap cut short. Either means a walk that exhausts
+ * the list cannot say the pin never held.
+ */
+export interface PageHistory {
+  commits: PageCommit[];
+  shallow: boolean;
+  truncated: boolean;
+}
+
 /**
  * A thin git client over `execFile("git", …)`, memoized per call shape so a
  * page with a thousand citations against one path runs one `git show`.
@@ -259,6 +301,12 @@ export interface GitClient {
   showFile(commit: string, path: string): Promise<ShownFile>;
   subjectsSince(commit: string, path: string): Promise<string[]>;
   diffSince(commit: string, path: string): Promise<string>;
+  /**
+   * The commits that touched `path`, newest first, at most `cap` of them. A
+   * client without it reads no claim history, so a claim that no longer holds
+   * is `changed` with no baseline.
+   */
+  pageCommits?(path: string, cap: number): Promise<PageHistory>;
 }
 
 /**
@@ -289,6 +337,16 @@ export interface CheckPageOptions {
    * is inside a work tree. A caller that wants no git at all passes `noGit()`.
    */
   gitClient?: GitClient;
+  /**
+   * Directory the page's own path resolves from, and so the repository its
+   * history is read in. Defaults to `root`, the same directory unless
+   * `--root` sent the sources to another checkout.
+   */
+  pageRoot?: string;
+  /** The client the page's history is read through. Defaults to one over `pageRoot`. */
+  pageGitClient?: GitClient;
+  /** How many commits the claim history walk reads. Defaults to `MAX_PAGE_COMMITS`. */
+  pageCommitCap?: number;
   sourceIndex?: SourceIndex;
   /**
    * The page's citations as merged from a manifest, each with where it sits.
@@ -398,6 +456,11 @@ export interface CheckOptions {
    * test hands in a fake.
    */
   gitClient?: GitClient;
+  /**
+   * The client every page's own history is read through, over the directory
+   * the page paths resolve from. Defaults to one there; a test hands in a fake.
+   */
+  pageGitClient?: GitClient;
   /** Defaults to `process.env`; read for `MANNI_ENCRYPTION_KEY`. A test hands in its own. */
   env?: NodeJS.ProcessEnv;
 }
@@ -512,9 +575,17 @@ export interface UpdateRewrite {
   /** File line of the entry. */
   line?: number;
   end: "claim" | "source" | "marker";
-  reason: "moved" | "accepted" | "re-anchored" | "shifted";
-  /** The status that was repaired. */
-  status: "moved" | "changed" | "never-true" | "misplaced" | "current";
+  /**
+   * `re-anchored` covers both re-pins: the pin held over another span (0054),
+   * and the words held while the anchor moved (0053). `status` is what tells
+   * those apart. `replaced` is a claim `--accept` refused to re-pin.
+   */
+  reason: "moved" | "accepted" | "re-anchored" | "shifted" | "replaced";
+  /**
+   * The status that was repaired. `replaced` is a claim whose line held
+   * wholly other text, accepted because `--only` named it.
+   */
+  status: "moved" | "changed" | "reanchored" | "replaced" | "never-true" | "misplaced" | "current";
   /**
    * Before and after. A moved or shifted claim, and a moved marker: file
    * lines. A moved source: its `src`. An accepted or re-anchored end: its pin.
@@ -532,7 +603,7 @@ export interface UpdateRewrite {
   lines?: string;
   /** A re-anchored claim: the span now pinned, in file lines. */
   newLines?: string;
-  /** An accepted claim: its first file line. */
+  /** An accepted, re-anchored or refused claim: the file line of its first body line. */
   at?: number;
   /** An accepted claim a marker anchors: the marker's file line. Pretty-only. */
   markerLine?: number;
@@ -540,13 +611,23 @@ export interface UpdateRewrite {
   text?: string;
   /** An accepted source: its `src`. */
   src?: string;
-  /** An accepted source: the commit recorded in the entry, when it records one. */
+  /**
+   * An accepted source: the commit recorded in the entry, when it records
+   * one. A re-anchored or refused claim: the baseline its words were read
+   * against.
+   */
   commitSha?: string;
 }
 
 export interface UpdatePage {
   file: string;
   rewritten: UpdateRewrite[];
+  /**
+   * Claims `--accept` refused to re-pin, because the stored first line now
+   * holds text that shares no sentence with the claim at its baseline. Each
+   * carries `reason: "replaced"`, and each is work left undone: exit 1.
+   */
+  refused: UpdateRewrite[];
   skipped: CitationFinding[];
   diff: string;
   written: boolean;
