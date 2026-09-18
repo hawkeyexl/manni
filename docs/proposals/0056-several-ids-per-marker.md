@@ -10,7 +10,7 @@
     bookkeeping per paragraph, whether the entries sit in frontmatter or in a
     manifest.
 - **Depends on:** [0044](0044-citations-and-drift.md), which defines the
-  marker, the anchor rule, the four marker rules and the hashing rule this
+  marker, the anchor rule, the marker rules and the hashing rule this
   proposal leaves alone. [0034](0034-command-grammar.md), for one separator per
   list, which is what picks the space.
 - **Supersedes, in part:** [0044](0044-citations-and-drift.md). Its § Markers
@@ -19,8 +19,10 @@
   and its README row records the partial supersession.
 - **Relates to:** [0041](0041-collections.md) and
   [0037](0037-sidecar-metadata.md), for a page whose entries live in a
-  manifest. A sibling plan proposes a `remove` verb, and § 6 says what that
-  verb owes this grammar without waiting on it.
+  manifest. [0054](0054-marker-reanchoring.md), implemented in #68, whose
+  `marker-misplaced` and whose `update` re-anchoring both move a marker line
+  whole. `manni cite remove`, which ships today; § 6 says what this grammar
+  asks of it.
 - **Touches:** `src/cite/core/{statements,page,check-page}.ts`,
   `src/cite/commands/add.ts`, `src/cite/cli.ts`,
   `docs/src/content/docs/cite/reference/{citations,cli}.mdx`,
@@ -146,6 +148,11 @@ marker is `marker-invalid` instead, because that is one line and one fix. Two
 markers above one paragraph, each naming its own ids, stay legal and each
 anchors the paragraph. That is what keeps every page written under 0044 valid.
 
+`marker-misplaced` needs no change either. A marker line inside a paragraph is
+misplaced whatever its payload names, and `update` moves the line whole, so
+every id in the list travels together. 0054's marker run shrinks under this
+grammar. A stack of six lines becomes one line, which is a run of one.
+
 `anchor-invalid` grows one case. A `quote` entry anchors the next fenced block,
 and a plain entry anchors the paragraph. A marker whose list mixes the two
 would mean two spans on one line, and a reader could not see which id got
@@ -212,10 +219,12 @@ twenty-six is a paragraph to split.
 The 500-markers-per-page cap counts markers and does not change. A page may
 hold 500 markers of 25 ids each.
 
-**A `remove` verb**, proposed separately, owes this grammar two behaviours.
-Removing an id drops that word from the list, and drops the whole marker line
-when it was the last id. This proposal does not add the verb and does not wait
-on it.
+**`manni cite remove` drops a word, and not always a line.** The verb ships
+today, and it takes every marker naming the id out of the body, because a
+marker names one id. Under this grammar it drops the id's word from the list,
+and drops the whole line when that was the last id. Its refusal over a marker
+that shares its line with text is unchanged. That refusal is a property of the
+line rather than of the payload.
 
 ### 7. The forms, per format
 
@@ -582,7 +591,7 @@ loses none. One exported type renames a field, and one gains a field:
 | `formatStatement` | takes `{ kind: "ref"; ids: string[] }` |
 | `AddResult` | gains `markerJoined?: boolean`, so a caller can tell a written marker from a joined one |
 | `MAX_IDS_PER_MARKER` | new const, beside `MAX_MARKERS_PER_PAGE` |
-| `CITE_RULES` | unchanged, all fourteen |
+| `CITE_RULES` | unchanged; this proposal adds no rule |
 | `CiteError` | unchanged |
 | `buildProgram()` | unchanged |
 

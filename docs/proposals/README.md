@@ -65,6 +65,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
 | [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37) |
 | [0052](0052-term-domain.md) | The `term` domain. A term is a flat record with `type: term`, read from every format in one-per-file and many-per-file shapes. `manni term` checks the set, lints definitions and writes a Vale style. It renders the set to any format | Sara · S6 / Maya · M9 / Devin · D8 | Accepted |
+| [0054](0054-marker-reanchoring.md) | Re-anchoring misplaced cite markers. A marker line inside a paragraph is `marker-misplaced`, a warning. `update` moves it where `add --marker` writes markers, and re-pins when the old pin still holds. Needs PR #43 first | Maya · M5 / Theo · T2 / Devin · D5 | Proposed |
 | [0056](0056-several-ids-per-marker.md) | Several ids per marker. A marker's payload becomes one or more ids separated by spaces, so a paragraph that supports several claims carries one comment instead of six. `add --marker` joins the marker that is already there | Maya · M5, M6 / Theo · T2 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
@@ -141,7 +142,10 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 0045 ──┤                 (a schema keyword Ajv evaluates, and the one prompt the family asks)
 0046 ──┘                 (provenance kept in a manifest, the exception this generalizes)
 
-0044 ──┬─> 0056          (the marker, the anchor rule and the four marker rules, whose
+0044 ──> 0054            (the rule table, the marker reading and update's repair contract it extends;
+                          PR #43, the placement rule it repairs pages to, merges first)
+
+0044 ──┬─> 0056          (the marker, the anchor rule and the marker rules, whose
        │                  payload stress test 11 narrowed to a single id)
 0034 ──┘                 (one separator per list, which is what picks the space)
 ```

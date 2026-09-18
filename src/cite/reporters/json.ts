@@ -1,5 +1,6 @@
 /**
- * JSON output. `{ summary, pages }` for check; the `UpdateRun` for update.
+ * JSON output. `{ summary, pages }` for check; the run itself for update and
+ * remove.
  *
  * A citation prints its two ends and how they are anchored. `resolvedPath`,
  * `diff`, `commitsSince` and a changed claim's current lines are left out of
@@ -11,8 +12,10 @@ import type {
   CheckRun,
   CitationAnchor,
   CitationResult,
+  MarkerEnd,
   OriginKind,
   PageCitationReport,
+  RemoveRun,
   UpdateRun,
 } from "../types.js";
 
@@ -39,6 +42,8 @@ export interface PublicCitationResult {
   id?: string;
   origin: { kind: OriginKind; file: string; line?: number };
   anchor: CitationAnchor;
+  /** The marker that names the entry: its line, and its misplacement when it has one. */
+  marker?: MarkerEnd;
   claim: PublicClaimEnd | null;
   source: PublicSourceEnd;
 }
@@ -77,6 +82,7 @@ export function publicCitation(result: CitationResult): PublicCitationResult {
     ...(result.citation.id === undefined ? {} : { id: result.citation.id }),
     origin,
     anchor: result.anchor,
+    ...(result.marker === undefined ? {} : { marker: result.marker }),
     claim,
     source,
   };
@@ -92,6 +98,13 @@ export function publicPage(page: PageCitationReport): PublicPageReport {
 
 export function renderCheckJson(run: CheckRun): string {
   return JSON.stringify({ summary: run.summary, pages: run.pages.map(publicPage) }, null, 2);
+}
+
+export function renderRemoveJson(run: RemoveRun): string {
+  // The whole run, with nothing stripped: `RemoveRun` carries no
+  // pretty-only field, as `UpdateRewrite.markerLine` is below. A field added
+  // to it for the terminal alone is stripped here, as that one is.
+  return JSON.stringify(run, null, 2);
 }
 
 export function renderUpdateJson(run: UpdateRun): string {
