@@ -43,7 +43,7 @@ line. Nor for a typo fixed beside the sentence. The summary counts each apart:
 {/* cite fourteen-rules */}
 {/* cite severity-levels-off */}
 Every other rule is an error by default. The `severity:` map under `cite:` in
-`manni.config.yaml` can move any of the fifteen rules to `error`, `warning`,
+`manni.config.yaml` can move any of the sixteen rules to `error`, `warning`,
 `notice` or `off`. See the
 [configuration reference](/manni/cite/reference/configuration/#severity).
 
@@ -127,7 +127,7 @@ without it still runs. The sources are indexed by a directory walk instead of
 `git ls-files`, and the run says once what it gave up:
 
 ```
-manni: git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.
+manni: git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.
 ```
 
 {/* cite no-git-notice-when-commit */}

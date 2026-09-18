@@ -504,7 +504,7 @@ any of them.
 `current` and `skipped` are statuses, per end, and neither is a finding.
 `current` says the end hashes to its pin. `skipped` says the end was not read,
 which happens to every source end under `--no-check-sources`. Neither can be
-named in `severity:`, which takes the fifteen rule names below.
+named in `severity:`, which takes the sixteen rule names below.
 
 ### Source-end rules
 
@@ -538,21 +538,90 @@ once. A range longer than 5,000 lines, at either end, is `entry-invalid`.
 |---|---|---|---|
 | <span id="claim-moved">`claim-moved`</span> | The pinned page text is found verbatim at other lines, so nothing drifted. `update` rewrites `claim.lines`. For a marker, the pinned text is intact but the marker now anchors a different span, and `update` re-pins it there. | `fetch-timeout: the claim moved from line 9 to line 11.` | `notice` |
 | <span id="claim-moved-ambiguous">`claim-moved-ambiguous`</span> | The pinned text is found verbatim at several places. `update` skips it. | `fetch-timeout: the claim at line 9 now appears at lines 11 and 30.` | `warning` |
-| <span id="claim-changed">`claim-changed`</span> | The pinned page text is gone, so the sentence was edited. `update --accept` re-pins it. | `fetch-timeout: the claim at line 9 has changed since it was pinned.` | `warning` |
+| <span id="claim-reanchored">`claim-reanchored`</span> | The words the pin covered are unchanged since the claim's [baseline](#the-claims-baseline), and only the layout moved. Three changes reach it. A rewrapped paragraph, a hoisted marker, and a marker line the anchor rule stopped counting. A plain `update` re-pins it, with no `--accept`. | `retries: the claim at lines 15-17 was reanchored since 3f9c2a1. Its words are unchanged.` | `notice` |
+| <span id="claim-changed">`claim-changed`</span> | The words the pin covered were edited. The message says since when, where the claim has a [baseline](#the-claims-baseline). `update --accept` re-pins it, and a blanket accept refuses a line that shares no sentence with the claim at its baseline. Naming the id with `--only` accepts that line too. | `fetch-timeout: the claim at line 9 has changed since 3f9c2a1, 2 commits.` | `warning` |
 
 {/* cite claim-changed-warning */}
 {/* cite claim-changed-scope-lines */}
 {/* cite claim-changed-scope-marker */}
-`claim-changed` defaults to a **warning**, not an error. It fires on any edit
-to the pinned text, and a typo fix counts. Under claim lines that is an edit on
-those lines. Under a marker it is an edit anywhere in the paragraph or block
-the marker anchors. A red build for that would block prose work for nothing. A team that wants every edit to a
+`claim-changed` defaults to a **warning**, not an error. It fires on an edit to
+the words the pin covered, and a typo fix counts. Under claim lines that is an
+edit on those lines. Under a marker it is an edit anywhere in the paragraph or
+block the marker anchors. A red build for that would block prose work for nothing. A team that wants every edit to a
 cited sentence reviewed sets it to `error`.
+
+`claim-reanchored` is a **notice**, for the reason `claim-moved` is one. The
+words are found unchanged, so nothing on the page stopped being true, and
+`update` repairs it without being told. A rewrap or a hoisted marker therefore
+never fails a run at the default severities. At `off` the finding is dropped,
+and `update` re-pins the claim all the same.
 
 {/* cite no-claim-ambiguous */}
 There is no `claim-ambiguous`. A pinned range cannot be ambiguous on the page
 it was taken from. That is the whole gain of pinning the claim rather than
 copying it.
+
+### The claim's baseline
+
+A claim finding says since when, and the commit it names is the claim's
+**baseline**. Nothing stores it. `check` walks the commits that touched the
+page, newest first, and takes the newest one whose page still held the pin.
+The walk reads at most 256 of them. It reads the sidecar manifest beside the
+page at each commit, so an entry in a manifest has a baseline too.
+
+Where `HEAD` holds the pin and the working tree does not, the change is
+uncommitted, and the message says so rather than counting zero commits. Where
+no commit held the pin, the claim reads `claim-changed` with no baseline. A
+checkout whose history ends first reads `history unavailable` and names
+`fetch-depth: 0`. Where git is not available, the run says once that citations
+are checked without history. No claim reads `claim-reanchored` without a
+baseline, because the words test needs the text the pin covered then.
+
+### The words test
+
+The words test is what tells a layout change from an edit. It normalizes three
+strings the same way. Every line holding only a marker is dropped, and every
+run of whitespace, line breaks included, becomes one space. Punctuation,
+emphasis and inline markup count as words.
+
+- **The pinned words.** The words the pin covered at the baseline.
+- **The claim now.** The words the anchor covers now.
+- **The page then.** The whole page body at the baseline.
+
+The claim is `claim-reanchored` when the pinned words sit inside the claim now,
+and the claim now sits inside the page then. Both comparisons run at word
+boundaries. Otherwise the claim is `claim-changed`. The first condition catches
+a word edited inside the claim. The second catches a sentence added beside it,
+or a marker now anchoring a different paragraph.
+
+A claim that stores its own lines moves onto the run its words sit in, and the
+finding names that run:
+
+```
+page-size: the claim at line 21 was reanchored since 5d1e0b7, to lines 21-23. Its words are unchanged.
+```
+
+Where the claim's words sit at several runs of lines, the finding is
+`claim-moved-ambiguous` instead, with its own message. A `quote: true` claim is
+never reanchored by collapsed whitespace. Its test is equality on the lines
+[the hashing rule](#the-hashing-rule) reads, with marker lines dropped.
+
+### What a blanket accept is guarded against
+
+A blanket `update --accept` re-pins a changed claim over whatever its line
+holds now. One guard stands between it and a line that was replaced rather
+than edited.
+
+The guard refuses a claim whose line shares no sentence with the claim at its
+baseline. It needs a baseline to judge at all. A pin `update` minted has none
+until a commit holds it, so an accept run straight after an update is
+unguarded. `--dry-run` shows every claim a run would re-pin, with its text,
+before anything is written.
+
+Naming an id with `--only` bypasses the guard, because naming it is the
+judgement the guard asks for. The report says `replaced` there rather than
+`changed`. The [CLI reference](/manni/cite/reference/cli/#what-is-rewritten-and-what-is-not) has both
+report lines.
 
 ### Anchoring and entry rules
 
