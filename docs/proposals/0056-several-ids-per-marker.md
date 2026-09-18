@@ -383,8 +383,15 @@ With `--dry-run` the diff shows one changed line and no new line:
 +{/* cite fetch-timeout retries backoff */}
 ```
 
-Every other `add` report line is unchanged, including the manifest form,
-`added retries to docs-citations.yaml:59; joined the marker at line 6`.
+The manifest form gains the clause too. `add` builds one line and varies
+only where the entry went, so a manifest run that joins a marker reads:
+
+```
+docs/retries.md: added retries to docs-citations.yaml:59; joined the marker at line 6
+```
+
+Every `add` report line that writes no marker is unchanged, the manifest form
+0044 ships included.
 
 ### The output shapes
 
@@ -618,7 +625,7 @@ line 29, `no entry has id "retires"`, error, exit 1. The first draft made the
 whole marker invalid in that case. Its grounds were that a marker is one line
 and one fix.
 
-**Changed as a result:** a typo in one word does not stop the other three
+**Changed as a result:** a typo in one word does not stop the other
 citations from being checked. An orphan is per id, and a malformed marker is
 per marker. The boundary is whether the word is an id at all, which is the
 boundary the scanner can see.
