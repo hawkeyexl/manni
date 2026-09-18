@@ -13,13 +13,23 @@ import { CommanderError, type Command } from "commander";
 import { ToolError, errorMessage } from "./errors.js";
 import { programName, setProgramName } from "./program-name.js";
 
-/** Report an operational error on stderr and exit 2. */
+/**
+ * Report an operational error on stderr and exit 2.
+ *
+ * Almost every message is one line. A few name a list the user has to fix in
+ * one pass — every seed an `--exclude` pattern contradicts, say — and carry a
+ * `\n` between the lines. Each line gets the prefix, so a second line reads
+ * like a message from the tool rather than like wrapped output.
+ */
 export function fail(err: unknown): never {
   const msg =
     err instanceof ToolError
       ? err.message
       : `Unexpected error: ${errorMessage(err)}`;
-  process.stderr.write(`${programName()}: ${msg}\n`);
+  const prefix = programName();
+  for (const line of msg.split("\n")) {
+    process.stderr.write(`${prefix}: ${line}\n`);
+  }
   process.exit(2);
 }
 
