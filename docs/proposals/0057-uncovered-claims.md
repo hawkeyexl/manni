@@ -8,8 +8,7 @@
     stays deterministic, and a new rule rides the same baseline and formats.
 - **Depends on:** Five earlier proposals.
   - [0044](0044-citations-and-drift.md) is the citation, the hashing rule, the
-    claim search, the fourteen rules, and the baseline identity a fifteenth
-    joins.
+    claim search, the rule table, and the baseline identity a new rule joins.
   - [0017](0017-fill-egress-and-bounds.md) is the egress analysis this copies,
     and the provider flags this reuses rather than reinvents.
   - [0001](0001-validation-baseline.md) is the ratchet a new rule ramps in on.
@@ -19,15 +18,20 @@
 - **Supersedes, in part:** [0044](0044-citations-and-drift.md), for one
   sentence and for a new verb only. 0044's verdict says the check runs "from
   git alone, with no model and no network". That stays true of `check`. It
-  stops being true of the domain, because a second verb asks a model. 0044 is
+  stops being true of the domain, because a new verb asks a model. 0044 is
   left exactly as written.
-- **Relates to:** [0036](0036-a11y-fix.md), which declined inference inside a
-  gate and named what a proposal would have to carry. This is that proposal,
-  for cite rather than a11y.
+- **Relates to:** Two proposals.
+  - [0036](0036-a11y-fix.md) declined inference inside a gate, and named what a
+    proposal would have to carry. This is that proposal, for cite rather than
+    a11y.
+  - [0054](0054-marker-reanchoring.md) shipped `marker-misplaced`, which made
+    the rule table fifteen names long. It also decides what a misplaced marker
+    covers, which step 2 below has to answer. See stress test 16.
 - **Touches:** `src/cite/core/{runs,judge,verdicts}.ts` (new),
   `src/cite/core/{config,check-page,severity,adapt}.ts`,
   `src/cite/commands/{claims,check}.ts`, `src/cite/cli.ts`,
-  `src/cite/reporters/{pretty,json,github}.ts`, `src/cite/index.ts`,
+  `src/cite/reporters/{pretty,json,github,sarif,junit}.ts`, `src/cite/types.ts`,
+  `src/cite/index.ts`,
   `docs/src/content/docs/cite/**`, `docs/content-strategy/cujs.md`,
   `test/cite/**`, `test/fixtures/cite/**`
 - **Verdict:** Add `manni cite claims`. It segments a page's uncovered body
@@ -170,8 +174,10 @@ no prose that was not already in the page.
 
 ### 4. `claim-uncovered` severity is configurable
 
-It is the fifteenth rule, default `notice`, settable to `error`, `warning`,
-`notice` or `off` like every other. A team may gate on it.
+It is the sixteenth rule, default `notice`, settable to `error`, `warning`,
+`notice` or `off` like every other. A team may gate on it. main carries
+fifteen, the fourteen 0044 shipped plus 0054's `marker-misplaced`. A rule
+landing in parallel moves the ordinal and nothing else.
 
 That is safe because the verdict is recorded. Two runs of `check` on one commit
 read one file and reach one answer. A rule whose severity a team can raise to
@@ -307,7 +313,7 @@ every level:
 | `cite.claims.provider` | string | `auto` | no | Inference provider for `claims`. One of `auto`, `anthropic`, `openai`, `claude-cli`, `llama-cpp`, `mock`. An unknown name is an error, exit 2. |
 | `cite.claims.model` | string | provider default | no | Model override. Needs `provider` set to something other than `auto`, exit 2 otherwise. |
 | `cite.claims.concurrency` | number | `4` | no | Runs judged in parallel, between 1 and 64. |
-| `cite.severity.claim-uncovered` | level | `notice` | no | `error`, `warning`, `notice` or `off`, joining the fourteen rule names already accepted. |
+| `cite.severity.claim-uncovered` | level | `notice` | no | `error`, `warning`, `notice` or `off`, joining the fifteen rule names already accepted. |
 
 There is no key that turns `claims` on, and no key that lets `check` call a
 model. The verb is the switch. That is the "detect, don't switch" rule applied
@@ -473,10 +479,17 @@ The run's text and its hash are not in it.
 ::notice file=docs/src/content/docs/key/reference/cli.mdx,line=212,title=manni%3Acite/claim-uncovered::No citation covers the claim at lines 212-213.
 ```
 
-`sarif` is meta's renderer over the same finding. `ruleId` is
+`sarif` is cite's own renderer over meta's envelope. `ruleId` is
 `manni:cite/claim-uncovered`, `level` is `note` at `notice`, `warning` at
 `warning` and `error` at `error`, and `region.startLine` is the run's first
-line. `junit` is meta's renderer too. A notice or a warning is not a
+line. Two things the renderer keeps per rule need a new entry. The
+`RULE_DESCRIPTIONS` row reads "A run of body lines asserts behaviour and no
+citation covers it." The `helpUri` points at the rule's row of the citations
+reference, which means `citations.mdx` gains a `<span id="claim-uncovered">`
+row like `marker-misplaced`'s.
+
+`junit` is cite's renderer too, under the `manni.cite` classname, with the
+message the `github` annotation carries. A notice or a warning is not a
 `<failure>` and its testcase passes. At `error` the file's testcase carries one
 `<failure>` per finding, which matches the exit code.
 
@@ -648,8 +661,10 @@ pipeline can record what left the machine without a second invocation.
 | `runClaims` | function | The `claims` command core |
 | `renderClaimsPretty`, `renderClaimsJson`, `renderClaimsGithub` | functions | The three reporters |
 
-`DEFAULT_SEVERITY` gains `claim-uncovered`, and `isCiteRule` accepts it. Both
-are already exported, so neither is a new name.
+`CITE_RULES` in `src/cite/types.ts` gains `claim-uncovered`, so
+`DEFAULT_SEVERITY` carries it and `isCiteRule` accepts it. All three are
+already exported, so none of them is a new name. cite's SARIF renderer's
+`RULE_DESCRIPTIONS` gains its row, which is internal.
 
 ## Stress test
 
@@ -906,12 +921,44 @@ quote's paragraph are all blocks. A run sits inside one of them. A heading that
 asserts nothing costs one `false` verdict, recorded once, and is never asked
 about again.
 
+### 16. A marker that 0054 calls misplaced
+
+0054 shipped, so a marker line inside a paragraph is `marker-misplaced`, a
+warning, and `cite update` moves it where `add --marker` writes markers. Step 2
+of `claims` has to decide what such a marker covers before it has been moved.
+
+It covers what 0044 says it covers. That is the rest of its own line when the
+line is not blank, else the paragraph that follows. `claims` reads coverage from
+the marker where it sits today rather than from where `update` would put it.
+Predicting the repair would make coverage depend on a command nobody ran.
+
+**Changed as a result:** step 2 reads the anchored unit as `check` reads it, and
+nothing in `claims` knows about `marker-misplaced`. The cost is one wasted
+verdict. An `update` that re-anchors a marker changes which lines are covered,
+so the run beside it changes text and is judged again. The `claims` page says to
+run `update` before `claims` on a page with a misplaced marker.
+
+### 17. `cite remove` uncovers lines
+
+`cite remove` takes an entry out and deletes its markers, so lines that were
+covered stop being covered. Those lines become a run on the next `claims` run,
+and they are judged for the first time.
+
+That is correct rather than a defect. A sentence whose citation was removed is
+exactly a sentence nobody pinned. The record holds no verdict for it, because it
+was never a run, so nothing stale is reused.
+
+**Changed as a result:** nothing in the design. It is recorded because the
+sequence looks alarming in a diff. One `cite remove` can add several
+`claim-uncovered` findings on the next `check`. A reviewer should read that as
+the gate noticing rather than as the removal breaking something.
+
 ## Not breaking
 
 Additive. A repository with no verdict file behaves exactly as it does today,
 on every verb. `check` gains one optional file read and no provider code path.
 The new rule defaults to `notice`, which never touches an exit code. The two new
-config keys are optional, and the fourteen existing rule names still validate.
+config keys are optional, and the fifteen existing rule names still validate.
 
 `feat(cite):` and a minor release. Three commits on one branch, each with its
 tests and fixtures. The runs and the record, with `check` reading it. The
@@ -924,8 +971,9 @@ naming two sentences, and `cite check` reporting them.
 
 ## Consequences
 
-- `cite` gains a fourth verb, and the domain's reference page a fourth section.
-  `add` and `update` do not change.
+- `cite` gains a fifth verb, and the domain's reference page a fifth section.
+  `add`, `update` and `remove` do not change. `cite/index.mdx`'s "Four
+  commands" heading and its table become five.
 - The one sentence 0044 owns about models and networks becomes a sentence about
   `check`. Three published pages carry it, and each is rewritten to name the
   verb rather than the tool.

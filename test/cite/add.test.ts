@@ -30,6 +30,7 @@ import { runCheck } from "../../src/cite/commands/check.js";
 import { noGit } from "../../src/cite/core/git.js";
 import { hashRange } from "../../src/cite/core/hash.js";
 import { readPage } from "../../src/cite/core/page.js";
+import { shortPin, shortSrc } from "../../src/cite/core/spell.js";
 import { decryptSourcePath, encryptSourcePath } from "../../src/cite/core/sources.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { AddOptions, AddResult } from "../../src/cite/types.js";
@@ -181,9 +182,11 @@ describe("runAdd", () => {
 
     it("writes a range for a claim that spans lines", async () => {
       workspace("claim-range.md");
+      // Another source than the entry already there: the same lines on the
+      // same source would be a duplicate, and refused.
       const result = await add({
         page: "pages/claim-range.md",
-        src: "src/limits.ts:2",
+        src: "src/limits.ts:3",
         pageLines: { start: 15, end: 16 },
       });
       expect(result.citation.claim).toEqual({ lines: "3-4", integrity: WRAPPED_PIN });
@@ -373,6 +376,65 @@ describe("runAdd", () => {
         ),
       ).toBe(`${label}:6 has no paragraph or block for a marker to anchor.`);
     });
+
+    /** `count` numbered lines of prose, one paragraph with no blank line inside. */
+    const prose = (count: number): string[] =>
+      Array.from({ length: count }, (_, i) => `Line ${String(i + 1)} of a long paragraph.`);
+
+    it("refuses a paragraph longer than 5,000 lines, and writes nothing", async () => {
+      // Lines 4-5 are the heading and a blank, so the paragraph is 6-5006.
+      const label = write("long.md", ["---", "title: Limits", "---", "# Limits", "", ...prose(5001)]);
+      const before = onDisk(label);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:2",
+            pageLines: { start: 9, end: 9 },
+            marker: true,
+            id: "x",
+          }),
+        ),
+      ).toBe(
+        `${label}:9 is in a paragraph at lines 6-5006 that spans 5001 lines, more than 5000. A marker anchors the whole paragraph.`,
+      );
+      expect(onDisk(label)).toBe(before);
+    });
+
+    it("anchors a paragraph of exactly 5,000 lines", async () => {
+      const label = write("limit.md", ["---", "title: Limits", "---", "# Limits", "", ...prose(5000)]);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 9, end: 9 },
+        marker: true,
+        id: "x",
+      });
+      expect(result.written).toBe(true);
+      expect(result.markerLine).toBeDefined();
+      const span = result.claimLines;
+      expect(span === undefined ? 0 : span.end - span.start + 1).toBe(5000);
+    });
+
+    it("refuses a fenced block longer than 5,000 lines, naming it a block", async () => {
+      // The fences are lines 6 and 5007, so the block is 5002 lines with them.
+      const label = fenced("long-block.md", ["# Limits", ""], prose(5000));
+      const before = onDisk(label);
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:2",
+            pageLines: { start: 7, end: 7 },
+            marker: true,
+            id: "x",
+          }),
+        ),
+      ).toBe(
+        `${label}:7 is in a block at lines 6-5007 that spans 5002 lines, more than 5000. A marker anchors the whole block.`,
+      );
+      expect(onDisk(label)).toBe(before);
+    });
   });
 
   describe("--marker placement", () => {
@@ -481,7 +543,7 @@ describe("runAdd", () => {
         expect(lines[(result.markerLine ?? 0) - 1]).toBe(`<!-- cite ${id} -->`);
         expect(result.claimLines).toEqual({ start: text, end: text + 1 });
         expect(addMessage(result)).toBe(
-          `${label}: added ${id} to frontmatter; marker at line ${String(text - 1)}, claim pinned at lines ${String(text)}-${String(text + 1)}`,
+          `${label}: added ${id} to frontmatter; marker at line ${String(text - 1)}, claim pinned at lines ${String(text)}-${String(text + 1)} (sha256-93f59d1e…; source src/limits.ts:2 "${LINE_2}", sha256-78af1d33…, no commit)`,
         );
       }
     });
@@ -501,9 +563,45 @@ describe("runAdd", () => {
       expect(lines[13]).toBe("<!-- cite fetch-timeout -->");
       expect(lines[14]).toBe(WRAPPED);
       expect(addMessage(result)).toBe(
-        `${label}: added fetch-timeout to frontmatter; marker at line 14, claim pinned at lines 15-16`,
+        `${label}: added fetch-timeout to frontmatter; marker at line 14, claim pinned at lines 15-16 (sha256-93f59d1e…; source src/limits.ts:2 "${LINE_2}", sha256-78af1d33…, no commit)`,
       );
       expect(await recheck(label)).toEqual(CURRENT);
+    });
+
+    it("spells an encrypted source as its ciphertext, never as a path", async () => {
+      workspace("no-citations.md");
+      const config = tempConfig("", KEY);
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        marker: true,
+        id: "timeouts",
+        noConfig: false,
+        configPath: config,
+      });
+      const token = encryptSourcePath("src/limits.ts", KEY);
+      const message = addMessage(result);
+      expect(message).toBe(
+        `pages/no-citations.md: added timeouts to frontmatter; marker at line 14, claim pinned at line 15 (${shortPin(CLAIM_PIN)}; source ${shortSrc(`${token}:2`)}, ${shortPin(hashRange(LINE_2, undefined, KEY))}, no commit)`,
+      );
+      expect(message).not.toContain("limits.ts");
+    });
+
+    it("says a marker over a quoted block reproduces its source", async () => {
+      const label = fenced("marker-quote.md", ["# Limits", ""], [LINE_2], ["", "After."]);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 8 },
+        quote: true,
+        marker: true,
+        id: "block",
+      });
+      const lines = `${String(result.claimLines?.start ?? 0)}-${String(result.claimLines?.end ?? 0)}`;
+      expect(addMessage(result)).toBe(
+        `${label}: added block to frontmatter; marker at line ${String(result.markerLine ?? 0)}, claim pinned at lines ${lines} (a block that reproduces src/limits.ts:2)`,
+      );
     });
 
     it("refuses lines that run past the paragraph, and writes nothing", async () => {
@@ -1130,6 +1228,157 @@ describe("runAdd", () => {
     });
   });
 
+  describe("the claim's text elsewhere on the page", () => {
+    /** A page whose one sentence is repeated `copies` times, two lines apart. */
+    function repeated(name: string, copies: number): string {
+      const body: string[] = [];
+      for (let i = 0; i < copies; i++) body.push("", CLAIM);
+      return write(name, ["---", "title: Limits", "---", "# Limits", ...body]);
+    }
+
+    it("warns, names the other copy, and still writes the entry", async () => {
+      const label = repeated("twice.md", 2);
+      const notices: string[] = [];
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        id: "fetch-timeout",
+        onNotice: (m) => notices.push(m),
+      });
+      expect(result.written).toBe(true);
+      expect(notices).toEqual([
+        "fetch-timeout: the claim's text also appears at line 17, so a move would be ambiguous. Use --marker, or pin more lines.",
+      ]);
+    });
+
+    it("drops the id prefix when the entry has none", async () => {
+      const label = repeated("unnamed-twice.md", 2);
+      const notices: string[] = [];
+      await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        onNotice: (m) => notices.push(m),
+      });
+      expect(notices).toEqual([
+        "the claim's text also appears at line 16, so a move would be ambiguous. Use --marker, or pin more lines.",
+      ]);
+    });
+
+    it("names three copies and counts the rest", async () => {
+      const label = repeated("many.md", 6);
+      const notices: string[] = [];
+      await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        onNotice: (m) => notices.push(m),
+      });
+      expect(notices).toEqual([
+        "the claim's text also appears at lines 16, 18, 20 and 2 more, so a move would be ambiguous. Use --marker, or pin more lines.",
+      ]);
+    });
+
+    it("spells a repeated two-line claim as the range it is", async () => {
+      const wrapped = ["The fetch timeout is 10 seconds. It is", "not configurable."];
+      const label = write("wrapped-twice.md", [
+        "---",
+        "title: Limits",
+        "---",
+        "# Limits",
+        "",
+        ...wrapped,
+        "",
+        ...wrapped,
+      ]);
+      const notices: string[] = [];
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 7 },
+        onNotice: (m) => notices.push(m),
+      });
+      expect(result.citation.claim?.lines).toBe("3-4");
+      expect(notices).toEqual([
+        "the claim's text also appears at lines 17-18, so a move would be ambiguous. Use --marker, or pin more lines.",
+      ]);
+    });
+
+    it("says nothing when the claim's text appears once", async () => {
+      workspace("no-citations.md");
+      const notices: string[] = [];
+      await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        onNotice: (m) => notices.push(m),
+      });
+      expect(notices).toEqual([]);
+    });
+  });
+
+  describe("the pinned source line in the report", () => {
+    it("quotes the first pinned line beside the source", async () => {
+      workspace("no-citations.md");
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        id: "fetch-timeout",
+      });
+      expect(result.sourceLine).toBe(LINE_2);
+      expect(addMessage(result)).toBe(
+        `pages/no-citations.md: added fetch-timeout to frontmatter (claim at line 15, sha256-921b21cc…; source src/limits.ts:2 "${LINE_2}", sha256-78af1d33…, no commit)`,
+      );
+    });
+
+    it("collapses the line's whitespace and trims a long one to sixty characters", async () => {
+      workspace("no-citations.md");
+      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:6" });
+      expect(result.sourceLine).toBe("  return { MAX_FILES, FETCH_TIMEOUT_MS, RETRIES };");
+      expect(addMessage(result)).toContain(
+        'source src/limits.ts:6 "return { MAX_FILES, FETCH_TIMEOUT_MS, RETRIES };",',
+      );
+      const long = `  ${"x".repeat(80)}`;
+      expect(addMessage({ ...result, sourceLine: long })).toContain(`"${"x".repeat(60)}…"`);
+    });
+
+    it("quotes no line for a blank source line, as a whole-file pin does", async () => {
+      // src/limits.ts:4 is the blank line between the constants and the
+      // function. It collapses to nothing, so the report shows no quote.
+      workspace("no-citations.md");
+      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts:4" });
+      expect(result.sourceLine).toBe("");
+      expect(addMessage(result)).toBe(
+        "pages/no-citations.md: added a bare pin to frontmatter (source src/limits.ts:4, sha256-e3b0c442…, no commit)",
+      );
+    });
+
+    it("names no line for a whole-file bare pin", async () => {
+      workspace("no-citations.md");
+      const result = await add({ page: "pages/no-citations.md", src: "src/limits.ts" });
+      expect(result.sourceLine).toBeUndefined();
+      expect(addMessage(result)).toBe(
+        "pages/no-citations.md: added a bare pin to frontmatter (source src/limits.ts, sha256-aebba92f…, no commit)",
+      );
+    });
+
+    it("names no line for an encrypted source", async () => {
+      workspace("no-citations.md");
+      const config = tempConfig("", KEY);
+      const result = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        noConfig: false,
+        configPath: config,
+      });
+      expect(result.sourceLine).toBeUndefined();
+      expect(addMessage(result)).not.toContain(LINE_2);
+    });
+  });
+
   describe("refusals", () => {
     it("names the bad range, the short file, and the untracked source", async () => {
       workspace("no-citations.md");
@@ -1202,6 +1451,163 @@ describe("runAdd", () => {
       ).toBe("pages/current.md already has an entry fetch-timeout.");
     });
 
+    it("refuses an entry the page already has for these lines and this source", async () => {
+      workspace("current.md");
+      const before = onDisk("pages/current.md");
+      expect(
+        await refusal(
+          add({
+            page: "pages/current.md",
+            src: "src/limits.ts:2",
+            pageLines: { start: 15, end: 15 },
+          }),
+        ),
+      ).toBe(
+        "pages/current.md already has an entry for line 15 and src/limits.ts:2 (fetch-timeout).",
+      );
+      expect(onDisk("pages/current.md")).toBe(before);
+    });
+
+    it("names an entry with no id by its pointer, and a range by its range", async () => {
+      const label = write("unnamed.md", [
+        "---",
+        "title: Limits",
+        "citations:",
+        "  - claim:",
+        `      lines: "3-4"`,
+        `      integrity: ${WRAPPED_PIN}`,
+        "    source:",
+        "      file: src/limits.ts",
+        "      lines: 2",
+        `      integrity: ${PIN_L2}`,
+        "---",
+        "# Limits",
+        "",
+        "The fetch timeout is 10 seconds. It is",
+        "not configurable.",
+      ]);
+      expect(
+        await refusal(
+          add({ page: label, src: "src/limits.ts:2", pageLines: { start: 14, end: 15 } }),
+        ),
+      ).toBe(`${label} already has an entry for lines 14-15 and src/limits.ts:2 (/citations/0).`);
+    });
+
+    it("refuses a second bare pin over the same source", async () => {
+      workspace("whole-file.md");
+      expect(await refusal(add({ page: "pages/whole-file.md", src: "src/limits.ts" }))).toBe(
+        "pages/whole-file.md already has a bare pin for src/limits.ts (/citations/0).",
+      );
+    });
+
+    it("does not refuse a duplicate when the existing entry is encrypted, because the plain path never matches a ciphertext", async () => {
+      // The boundary `duplicateOf` in src/cite/commands/add.ts comments on:
+      // the caller's `src` is a plain path, an encrypted entry spells its
+      // source as a ciphertext, and the check compares the two as written.
+      workspace("no-citations.md");
+      const config = tempConfig("", KEY);
+      const keyed = { noConfig: false, configPath: config } as const;
+      const first = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        ...keyed,
+      });
+      // The entry pushed the claim down, so this names the same sentence and
+      // stores the same body line: an exact duplicate but for the ciphertext.
+      const second = await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 14, end: 14 },
+        ...keyed,
+      });
+      expect(second.written).toBe(true);
+      const entries = readPage(second.file, second.content).citations;
+      expect(entries).toHaveLength(2);
+      expect(entries.map((c) => c.citation.claim?.lines)).toEqual([3, 3]);
+      for (const { citation } of entries) {
+        expect(decryptSourcePath(citation.source.file, KEY)).toBe("src/limits.ts");
+        expect(citation.source.integrity.startsWith("hmac-sha256-")).toBe(true);
+      }
+      // And the same sequence with no key in sight is refused, so this case
+      // goes red the day the comparison starts decrypting.
+      workspace("no-citations.md");
+      await add({
+        page: "pages/no-citations.md",
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+      });
+      expect(
+        await refusal(
+          add({
+            page: "pages/no-citations.md",
+            src: "src/limits.ts:2",
+            pageLines: { start: 14, end: 14 },
+          }),
+        ),
+      ).toBe(
+        "pages/no-citations.md already has an entry for line 14 and src/limits.ts:2 (/citations/0).",
+      );
+      // The two entries spell their source identically, because encrypting a
+      // path under a key is deterministic. So the miss is about which string
+      // the check compares, not about the ciphertexts differing.
+      expect(second.citation.source.file).toBe(first.citation.source.file);
+      expect(first.citation.source.file).toBe(encryptSourcePath("src/limits.ts", KEY));
+    });
+
+    it("allows a second entry for the same lines when the source differs", async () => {
+      workspace("current.md");
+      const result = await add({
+        page: "pages/current.md",
+        src: "src/limits.ts:3",
+        pageLines: { start: 15, end: 15 },
+      });
+      expect(result.written).toBe(true);
+    });
+
+    it("refuses a claim that is one blank line, or one fence line", async () => {
+      workspace("no-citations.md");
+      expect(
+        await refusal(
+          add({
+            page: "pages/no-citations.md",
+            src: "src/limits.ts:2",
+            pageLines: { start: 5, end: 5 },
+          }),
+        ),
+      ).toBe("pages/no-citations.md:5 is blank.");
+      const label = fenced("fence.md", ["# Limits", ""], LINES_1_3);
+      expect(
+        await refusal(add({ page: label, src: "src/limits.ts:1", pageLines: { start: 6, end: 6 } })),
+      ).toBe(`${label}:6 is a fence line, not claim text.`);
+      expect(
+        await refusal(
+          add({ page: label, src: "src/limits.ts:1", pageLines: { start: 10, end: 10 } }),
+        ),
+      ).toBe(`${label}:10 is a fence line, not claim text.`);
+    });
+
+    it("refuses a range of nothing but blank and fence lines", async () => {
+      const label = fenced("empty-range.md", ["# Limits", ""], LINES_1_3);
+      expect(
+        await refusal(
+          add({ page: label, src: "src/limits.ts:1", pageLines: { start: 5, end: 6 } }),
+        ),
+      ).toBe(`${label}:5-6 holds no claim text.`);
+    });
+
+    it("takes the same fence lines as a quote, because a quote is fences and content", async () => {
+      const label = fenced("still-quotable.md", ["# Limits", ""], LINES_1_3);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:1-3",
+        pageLines: { start: 6, end: 10 },
+        quote: true,
+      });
+      expect(result.citation.quote).toBe(true);
+      expect(result.claimLines).toEqual({ start: 15, end: 19 });
+    });
+
     it("refuses a page that has no frontmatter to write to", async () => {
       workspace("marker.html");
       expect(await refusal(add({ page: "pages/marker.html", src: "src/limits.ts:3" }))).toBe(
@@ -1238,5 +1644,118 @@ describe("runAdd", () => {
         'Invalid id "Fetch Timeout": use lowercase letters, digits and hyphens, starting with a letter or digit.',
       );
     });
+  });
+});
+
+describe("runAdd: a paragraph a misplaced marker splits", () => {
+  /** A page whose marker sits inside its one paragraph, as the old `add --marker` left it. */
+  function split(): string {
+    return write("split.mdx", [
+      "---",
+      "title: Crawl",
+      "citations:",
+      "  - id: fresh-context",
+      "    claim:",
+      `      integrity: ${hashRange("Each URL is loaded fresh.\n", { start: 1, end: 1 })}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+      "---",
+      "Pages are checked one at a time.",
+      "{/* cite fresh-context */}",
+      "Each URL is loaded fresh.",
+    ]);
+  }
+
+  it("refuses --marker into it, and names the command that fixes it", async () => {
+    const label = split();
+    const before = readFileSync(join(cwd, label), "utf8");
+    expect(
+      await refusal(
+        add({
+          page: label,
+          pageLines: { start: 14, end: 14 },
+          src: "src/limits.ts:3",
+          id: "retry-once",
+          marker: true,
+        }),
+      ),
+    ).toBe(
+      `${label}:14 is in the paragraph at lines 12-14, which the marker at line 13 splits. Run manni cite update first.`,
+    );
+    expect(readFileSync(join(cwd, label), "utf8")).toBe(before);
+  });
+
+  it("refuses claim lines that hold the misplaced marker's line", async () => {
+    const label = split();
+    expect(
+      await refusal(
+        add({
+          page: label,
+          pageLines: { start: 12, end: 14 },
+          src: "src/limits.ts:3",
+          id: "retry-once",
+        }),
+      ),
+    ).toBe(
+      `${label}:12-14 holds the marker at line 13, which splits its paragraph. Run manni cite update first.`,
+    );
+  });
+
+  it("writes a marker under a heading, never above it", async () => {
+    const label = write("heading.md", [
+      "---",
+      "title: Limits",
+      "---",
+      "## Crawl scope",
+      "Only the start URL's host is crawled.",
+    ]);
+    const result = await add({
+      page: label,
+      pageLines: { start: 5, end: 5 },
+      src: "src/limits.ts:3",
+      id: "host-scope",
+      marker: true,
+    });
+    // The frontmatter gained a `citations:` block, so the body is read by
+    // what it says rather than by line number.
+    expect(result.content).toContain(
+      ["## Crawl scope", "<!-- cite host-scope -->", "Only the start URL's host is crawled.", ""].join("\n"),
+    );
+    // The pin covers the sentence, not the heading above it.
+    expect(result.citation.claim?.integrity).toBe(
+      hashRange("Only the start URL's host is crawled.\n", { start: 1, end: 1 }),
+    );
+  });
+
+  it("lets an add elsewhere on the page through", async () => {
+    const label = write("elsewhere.mdx", [
+      "---",
+      "title: Crawl",
+      "citations:",
+      "  - id: fresh-context",
+      "    claim:",
+      `      integrity: ${hashRange("Each URL is loaded fresh.\n", { start: 1, end: 1 })}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      `      integrity: ${PIN_L3}`,
+      "---",
+      "Pages are checked one at a time.",
+      "{/* cite fresh-context */}",
+      "Each URL is loaded fresh.",
+      "",
+      "Retries default to 3.",
+    ]);
+    const result = await add({
+      page: label,
+      pageLines: { start: 16, end: 16 },
+      src: "src/limits.ts:3",
+      id: "retries",
+      marker: true,
+    });
+    expect(result.written).toBe(true);
+    expect(result.content).toContain(["{/* cite retries */}", "Retries default to 3.", ""].join("\n"));
   });
 });

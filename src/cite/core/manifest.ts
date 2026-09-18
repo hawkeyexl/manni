@@ -17,7 +17,7 @@ import { readFile } from "node:fs/promises";
 import { posix } from "node:path";
 import { LineCounter, isMap, isNode, isScalar, isSeq, parseDocument } from "yaml";
 import { DocmetaError } from "../../meta/index.js";
-import { spliceManifestValue } from "../../meta/internal.js";
+import { removeManifestKey, spliceManifestValue } from "../../meta/internal.js";
 import { CiteError } from "../errors.js";
 import { unifiedDiff } from "./write.js";
 import { CITATIONS_KEY, type CitationManifest } from "./sidecar.js";
@@ -75,6 +75,26 @@ export class ManifestSet {
     });
     held.text = spliced.text;
     return { file: manifest.file, line: itemLine(spliced.text, entry, index, manifest.join) ?? spliced.line };
+  }
+
+  /**
+   * Take a page's `citations` key out of the manifest, for the removal that
+   * leaves it with no entries. The entry itself goes when that key was all it
+   * had, so a manifest never keeps a document nothing is recorded about.
+   */
+  async remove(manifest: CitationManifest, entry: string): Promise<void> {
+    const held = await this.hold(manifest);
+    try {
+      held.text = removeManifestKey(held.text, {
+        entry,
+        key: CITATIONS_KEY,
+        join: manifest.join,
+        file: manifest.file,
+      }).text;
+    } catch (error) {
+      if (error instanceof DocmetaError) throw new CiteError(error.message);
+      throw error;
+    }
   }
 
   /** The manifests this run rewrote, with the diff of each. */

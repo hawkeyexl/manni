@@ -399,4 +399,34 @@ describe("fill: a field its schema prefers in external metadata, with no manifes
     expect(confirm).not.toHaveBeenCalled();
     expect(run.results[0]?.content).toContain("owner: platform");
   });
+
+  it("a collection named beside stdin still asks, about the collection", async () => {
+    // A bare `-` is a run of its own, but `--collection` is a request: the
+    // flag names `site`, so its two pages are in the run beside stdin and
+    // they do need a manifest. The offer names the collection, never stdin.
+    const dir = copy("fill-external");
+    const confirm = vi.fn(() => Promise.resolve(false));
+    const run = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: ["-"],
+      collections: ["site"],
+      as: "markdown",
+      stdinContent: "---\ntitle: Piped\n---\n\n# Piped\n",
+      includeContent: true,
+      confirm,
+      inferenceProvider: owners(["platform", "platform", "platform"]),
+    });
+    expect(run.results.map((r) => r.file.replace(/\\/g, "/")).sort()).toEqual([
+      "<stdin>",
+      "docs/faq.md",
+      "docs/install.md",
+    ]);
+    expect(confirm).toHaveBeenCalledWith(
+      "Create site.metadata.yaml and add it to manni.config.yaml? ",
+    );
+    // Stdin is a member of nothing, so its value went into the page either way.
+    const piped = run.results.find((r) => r.file === "<stdin>");
+    expect(piped?.content).toContain("owner: platform");
+  });
 });

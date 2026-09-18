@@ -8,6 +8,9 @@
  * `claim-changed` is a warning, since it fires on any edit to a pinned
  * paragraph, a typo fix beside the cited sentence included. A repository that
  * wants either hard sets `severity: { claim-changed: error }`.
+ * `marker-misplaced` is a warning too: it annotates the pull request, and one
+ * `cite update` clears it, so a job that failed on it would block on a page
+ * that was fine yesterday (proposal 0054, stress test 15).
  */
 import { CITE_RULES, type CiteRule, type CiteSeverity } from "../types.js";
 
@@ -23,6 +26,7 @@ export const DEFAULT_SEVERITY: Readonly<Record<CiteRule, CiteSeverity>> = {
   "marker-orphan": "error",
   "marker-invalid": "error",
   "marker-repeated": "warning",
+  "marker-misplaced": "warning",
   "anchor-invalid": "error",
   "entry-invalid": "error",
   "quote-drift": "error",

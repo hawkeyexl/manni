@@ -136,6 +136,7 @@ Two collections, `site` and `guides`, and one manifest each. The pages under
 
 ## Where a finding lands
 
+{/* cite entry-finding-on-manifest-line */}
 A claim finding or a marker finding sits on the **page** line, where a
 reviewer reads the sentence. A finding about the entry itself sits on the
 **manifest**, on the entry's own first line:
@@ -147,6 +148,7 @@ reviewer reads the sentence. A finding about the entry itself sits on the
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
+{/* cite github-annotates-manifest */}
 The file that failed is still the page, because the page is what stopped being
 checkable. The location is the manifest, because that is the file to open.
 `-f github` annotates it there, so the comment appears on the manifest's diff
@@ -156,6 +158,7 @@ in the pull request:
 ::error file=docs-citations.yaml,line=42,title=manni%3Acite/entry-invalid::bad-pin (lib/limits.ts): /source/integrity must match pattern "^(?:sha256|hmac-sha256)-[0-9a-f]{64}$"
 ```
 
+{/* cite manifest-outside-repo-on-page */}
 SARIF drops a location outside the repository, so a manifest kept outside it
 is reported on the page instead.
 
@@ -168,6 +171,7 @@ is reported on the page instead.
 
 ## Half-moved pages are caught
 
+{/* cite half-moved-entry-invalid */}
 If you declare the manifest and forget to delete a page's own `citations:`,
 the page has two owners for one key. That is an error under both tools, and
 the message names the manifest and the collection:
@@ -180,15 +184,19 @@ the message names the manifest and the collection:
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
+{/* cite half-moved-meta-external-owned */}
 `meta validate` reports the same page as `external:owned`. So a half-finished
 migration cannot pass quietly, whichever gate runs first.
 
 ## Writing the manifest
 
+{/* cite manifest-splice-read-back */}
+{/* cite manifest-writers-rotate */}
 `add`, `update` and `manni key rotate` edit the manifest in place. They splice
 only that page's `citations` value, so comments, key order and every other
 byte survive, and they read the file back to confirm it.
 
+{/* cite add-placement-follows-config */}
 `add` needs no flag. Where the entry goes follows the config:
 
 ```sh
@@ -218,10 +226,12 @@ manni cite add docs/retries.md:6 lib/limits.ts:3 --id retries --dry-run
 docs/retries.md: added retries to docs-citations.yaml:59 (claim at line 6, sha256-d33051d7…; source lib/limits.ts:3, sha256-e9f5bdf9…, 9265563)
 ```
 
+{/* cite add-manifest-page-untouched */}
 The report says the claim is at line 6, which is the line you typed. On a
 frontmatter page the same `add` would have pushed the sentence ten lines down
 and reported line 16. The page was not touched here, so nothing moved.
 
+{/* cite update-writes-manifest-once */}
 `update` writes each manifest **once per run**, however many entries it
 repaired:
 
@@ -249,6 +259,7 @@ docs/moved.md: fetch-timeout source lib/moved.ts:2 -> lib/moved.ts:4 (moved)
 
 ## Keying by a page field instead of by path
 
+{/* cite join-field-key */}
 A manifest keyed by path is orphaned by a `git mv`. A `join:` key says to
 match on a page field instead, and the entry then travels with the page:
 
@@ -285,6 +296,7 @@ wherever the file moves to:
 1 file checked, 1 passed, 0 failed, 0 findings
 ```
 
+{/* cite duplicate-join-refused */}
 Two pages carrying one `join:` value is refused, because a write would land on
 whichever page the run reached last.
 

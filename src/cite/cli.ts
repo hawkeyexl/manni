@@ -1,7 +1,7 @@
 /**
  * The `cite` domain's commander program. Mounted by `src/cli.ts` under
  * `manni cite`; no entry point of its own. Grammar per proposal 0034: verbs are
- * `check`, `add`, `update`; there is no default subcommand.
+ * `check`, `add`, `update`, `remove`; there is no default subcommand.
  *
  * Follows clig.dev as meta's does: primary output to stdout, diagnostics to
  * stderr, colour only on a TTY and never under `NO_COLOR`/`--no-color`, exit
@@ -29,23 +29,26 @@ import {
   STDIN_TOKEN,
   isMachineFormat,
 } from "../meta/internal.js";
-import { REPORT_FORMATS, isReportFormat, render } from "../meta/index.js";
+import { REPORT_FORMATS, isReportFormat } from "../meta/index.js";
 import { runAdd } from "./commands/add.js";
 import { runCheck } from "./commands/check.js";
+import { runRemove } from "./commands/remove.js";
 import { runUpdate } from "./commands/update.js";
 import { CiteError, asCiteError } from "./errors.js";
 import { spellSource } from "./core/range.js";
-import { shortCommit, shortPin, shortSrc } from "./core/spell.js";
+import { shortCommit, shortLine, shortPin, shortSrc } from "./core/spell.js";
 import { renderCheckGithub } from "./reporters/github.js";
-import { renderCheckJson, renderUpdateJson } from "./reporters/json.js";
-import { renderCheckPretty, renderUpdatePretty } from "./reporters/pretty.js";
+import { renderCheckJson, renderRemoveJson, renderUpdateJson } from "./reporters/json.js";
+import { renderCheckJunit } from "./reporters/junit.js";
+import { renderCheckPretty, renderRemovePretty, renderUpdatePretty } from "./reporters/pretty.js";
+import { renderCheckSarif } from "./reporters/sarif.js";
 import type { AddResult, PageLines } from "./types.js";
-
-/** JUnit `classname` for the citation tool's findings. */
-const JUNIT_CLASSNAME = "manni.cite";
 
 const UPDATE_FORMATS = ["pretty", "json"] as const;
 type UpdateFormat = (typeof UPDATE_FORMATS)[number];
+/** The same two `update` has: a removal is a write, and writes report alike. */
+const REMOVE_FORMATS = UPDATE_FORMATS;
+type RemoveFormat = UpdateFormat;
 
 /**
  * Whether `command`'s output gets colour: this domain's `--no-color` and
@@ -79,6 +82,10 @@ function colorOwner(command: Command): Command {
 
 function isUpdateFormat(value: string): value is UpdateFormat {
   return (UPDATE_FORMATS as readonly string[]).includes(value);
+}
+
+function isRemoveFormat(value: string): value is RemoveFormat {
+  return (REMOVE_FORMATS as readonly string[]).includes(value);
 }
 
 /**
@@ -142,6 +149,13 @@ interface AddCliOptions {
   config?: string | boolean;
 }
 
+interface RemoveCliOptions extends Omit<InputCliOptions, "root"> {
+  /** `--only <id>`, repeatable; commander's default value is `[]`. */
+  only: string[];
+  dryRun?: boolean;
+  format: string;
+}
+
 interface UpdateCliOptions extends InputCliOptions {
   /** `--no-check-sources`: declared so the refusal names the flag rather than commander rejecting it. */
   checkSources: boolean;
@@ -172,7 +186,8 @@ function spellAt(lines: PageLines, noun = "line"): string {
  * What `add` says on success. One sentence composed from the result: what was
  * added, where it went, and what each end is pinned to. Lines are the page's
  * own, after the write. The source is spelled as it was written to the page,
- * abbreviated when it is a ciphertext.
+ * abbreviated when it is a ciphertext, and quoted with its first pinned line
+ * where the result carries one.
  */
 export function addMessage(result: AddResult): string {
   const { citation, claimLines } = result;
@@ -180,7 +195,9 @@ export function addMessage(result: AddResult): string {
   const name = citation.id ?? (claim === undefined ? "a bare pin" : "an entry");
   const src = shortSrc(spellSource(citation.source));
   const commit = citation.source["commit-sha"];
-  const pin = `${src}, ${shortPin(citation.source.integrity)}, ${commit === undefined ? "no commit" : shortCommit(commit)}`;
+  const quoted = result.sourceLine === undefined ? "" : shortLine(result.sourceLine);
+  const line = quoted === "" ? "" : ` "${quoted}"`;
+  const pin = `${src}${line}, ${shortPin(citation.source.integrity)}, ${commit === undefined ? "no commit" : shortCommit(commit)}`;
   // Where it went: the page's own frontmatter, or the manifest that owns the
   // page's citations, at the line the entry now sits on.
   const where =
@@ -192,7 +209,10 @@ export function addMessage(result: AddResult): string {
   if (result.markerLine !== undefined) {
     const at =
       claimLines === undefined ? "" : `, claim pinned at ${spellAt(claimLines)}`;
-    return `${head}; marker at line ${String(result.markerLine)}${at}`;
+    const marked = `${head}; marker at line ${String(result.markerLine)}${at}`;
+    if (claim === undefined) return marked;
+    if (citation.quote === true) return `${marked} (a block that reproduces ${src})`;
+    return `${marked} (${shortPin(claim.integrity)}; source ${pin})`;
   }
   if (claim === undefined || claimLines === undefined) {
     return `${head} (source ${pin})`;
@@ -332,14 +352,12 @@ export function buildProgram(): Command {
           case "github":
             text = renderCheckGithub(run);
             break;
-          default:
-            // sarif and junit ride meta's renderers over the adapted results:
-            // same rule ids, same fingerprints, same envelope.
-            text = render(format, run.results, run.summary, {
-              frame: run.frame,
-              classname: JUNIT_CLASSNAME,
-              onNotice: notice,
-            });
+          case "sarif":
+            text = renderCheckSarif(run, { onNotice: notice });
+            break;
+          case "junit":
+            text = renderCheckJunit(run);
+            break;
         }
         // Only `github` may say nothing on a clean run; every other format
         // owes its envelope even when empty.
@@ -543,6 +561,104 @@ export function buildProgram(): Command {
         // Exit 1 when something was skipped with an error-severity finding:
         // work left undone, `fill`'s precedent.
         process.exitCode = run.exitCode;
+      } catch (err) {
+        fail(err);
+      }
+    });
+
+  program
+    .command("remove")
+    .description("Remove the named citations from the given pages, markers and all")
+    .argument(
+      "[paths...]",
+      "files, directories, or globs to remove from (use - for stdin)",
+    )
+    .option(
+      "--collection <name>",
+      "configured collection to run over; repeatable",
+      collect,
+      [],
+    )
+    .option("--ext <list>", "comma-separated extensions for directory walks")
+    .option("--exclude <glob>", "glob to exclude; repeatable", collect, [])
+    .option("--as <format>", "force an input format for every input")
+    .option("-c, --config <path>", "path to a manni config file")
+    .option("--no-config", "ignore any discovered config file")
+    .option("--allow-empty", "treat zero matched files as success")
+    .option("--no-gitignore", "remove from files .gitignore covers")
+    .option(
+      "--only <id>",
+      "the entry to remove, by id or by pointer (/citations/N); required, and repeatable",
+      collect,
+      [],
+    )
+    .option("--dry-run", "print the diffs and the report; write nothing")
+    .option(
+      "-f, --format <format>",
+      `output: ${REMOVE_FORMATS.join(" | ")}`,
+      "pretty",
+    )
+    .addHelpText(
+      "after",
+      [
+        "",
+        "Examples:",
+        "  manni cite remove docs/limits.md --only fetch-timeout",
+        "  manni cite remove docs/ --only fetch-timeout --only retries --dry-run",
+        "  manni cite remove --collection site --only /citations/3 -f json",
+      ].join("\n"),
+    )
+    .action(async (paths: string[], options: RemoveCliOptions, command: Command) => {
+      try {
+        const format = options.format;
+        if (!isRemoveFormat(format)) {
+          throw new CiteError(
+            `Unknown --format "${format}". Use ${COMMON_FORMAT_LIST}.`,
+          );
+        }
+        const exts = options.ext ? splitList(options.ext) : undefined;
+        const usingStdin = paths.includes(STDIN_TOKEN);
+        const stdinContent = usingStdin ? await readStdin() : undefined;
+        const dryRun = Boolean(options.dryRun);
+        // With `-` the rewritten page owns stdout, exactly as on `update -`.
+        const pageToStdout = usingStdin && !dryRun;
+        const cwd = process.cwd();
+
+        const run = await runRemove({
+          inputs: paths,
+          collection: options.collection,
+          exts,
+          exclude: options.exclude,
+          as: options.as,
+          ...configOption(options.config),
+          onConfigLoaded: reportConfig(format === "pretty" && !pageToStdout, cwd),
+          stdinContent,
+          allowEmpty: options.allowEmpty ? true : undefined,
+          respectGitignore: explicitFalse(options.gitignore),
+          onNotice: notice,
+          only: options.only,
+          dryRun,
+        });
+
+        const text =
+          format === "json"
+            ? renderRemoveJson(run)
+            : renderRemovePretty(run, {
+                color: colorFor(command, process.stdout.isTTY),
+                // The diffs are the point of a dry run; a real run prints
+                // what it removed and leaves the file to say the rest.
+                showDiff: dryRun,
+                dryRun,
+              });
+        const stdinPage = pageToStdout ? run.pages.find((page) => page.content !== undefined) : undefined;
+        if (stdinPage?.content !== undefined) {
+          process.stdout.write(stdinPage.content);
+          process.stderr.write(`${text}\n`);
+        } else {
+          process.stdout.write(`${text}\n`);
+        }
+        // Everything named was removed, or previewed: there is no exit 1.
+        process.exitCode = 0;
       } catch (err) {
         fail(err);
       }

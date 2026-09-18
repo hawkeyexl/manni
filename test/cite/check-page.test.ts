@@ -373,8 +373,11 @@ describe("checkCitations", () => {
 describe("checkCitations: citations a manifest owns", () => {
   const HTML_PAGE = join(PAGES, "marker.html");
   const html = readFileSync(HTML_PAGE, "utf8");
-  /** What the marker in `marker.html` anchors: the paragraph runs to the end of the file. */
-  const ANCHORED = hashLines("<p>The fetch timeout is 10 seconds.</p>\n</body>\n</html>");
+  /**
+   * What the marker in `marker.html` anchors: the element below it. `</body>`
+   * and `</html>` are bound lines, so no paragraph runs across them (0054).
+   */
+  const ANCHORED = hashLines("<p>The fetch timeout is 10 seconds.</p>");
   const MANIFEST = "docs/citations.yaml";
 
   const injected = (entry: unknown): CitationInput[] => [

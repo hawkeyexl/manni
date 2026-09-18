@@ -15,14 +15,28 @@ hero:
       variant: minimal
 ---
 
-import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import { Aside, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
+<Aside type="note" title="Beta">
+`manni cite` is in beta. Its commands, config keys and output can change in
+any release, without notice.
+</Aside>
+
+{/* cite two-ends-claim */}
+{/* cite two-ends-source */}
+{/* cite checks-both-ends */}
 A citation has two ends, and both are pinned the same way. The **claim** is
 the page lines the sentence occupies, and a hash of them. The **source** is
 the file, the lines it rests on, a hash of those, and the commit they were
 read at. manni cite checks both ends and tells you which sentence stopped
 being true, not which page to re-read.
 
+{/* cite clean-run-one-hash */}
+{/* cite gained-neighbours-moved */}
+{/* cite moved-one-command */}
+{/* cite changed-with-commits */}
+{/* cite marker-edit-claim-changed */}
+{/* cite claim-lines-edit-beside */}
 It runs from git alone. No model, no network, one hash per end on a clean run.
 A line that gained neighbours above it is moved, and one command fixes that. A
 line whose bytes changed is changed, with the commits since, and a person
@@ -31,13 +45,14 @@ sentence. Under claim lines, a copy edit on a line beside it raises nothing.
 Under a marker, an edit anywhere in the anchored paragraph is a
 `claim-changed` warning by default.
 
-## Three commands
+## Four commands
 
 | Command | Does |
 | --- | --- |
 | `manni cite add <page>:L <src>:L` | Mints a citation over the page lines and the source range, and writes the entry to the page's frontmatter or to a sidecar manifest. |
 | `manni cite check [paths...]` | Classifies each end of every citation, and reports the findings through the same formats manni meta uses. |
 | `manni cite update [paths...]` | Rewrites moved ends in place, on either side. With `--accept`, re-pins changed ones. |
+| `manni cite remove [paths...] --only <id>` | Takes the entry out of the frontmatter or the manifest, deletes its markers, and moves the claims below them up. |
 
 ## A 30-second proof
 
@@ -50,9 +65,10 @@ npx @hawkeyexl/manni cite add docs/limits.md:9 lib/limits.ts:2 --id fetch-timeou
 ```
 
 ```
-docs/limits.md: added fetch-timeout to frontmatter (claim at line 19, sha256-c41f09aa…; source lib/limits.ts:2, sha256-78af1d33…, 9265563)
+docs/limits.md: added fetch-timeout to frontmatter (claim at line 19, sha256-c41f09aa…; source lib/limits.ts:2 "export const FETCH_TIMEOUT_MS = 10_000;", sha256-78af1d33…, 9265563)
 ```
 
+{/* cite stored-claim-body-lines */}
 The entry pushed the sentence down the file, and the stored claim line did not
 move: it counts the body, not the file. Check it:
 
@@ -77,6 +93,9 @@ changed, so metadata validation still passes. The citation check does not:
 1 file checked, 0 passed, 1 failed, 1 finding
 ```
 
+{/* cite finding-on-sentence */}
+{/* cite finding-on-sentence-anchor */}
+{/* cite exit-one-on-error */}
 The finding is annotated on line 19, the sentence. The exit code is `1`, so CI
 goes red on the line that needs a person, and nowhere else. That's the whole
 loop: pin, check, read the finding, fix the sentence, re-pin.
@@ -107,8 +126,8 @@ loop: pin, check, read the finding, fix the sentence, re-pin.
 </CardGrid>
 
 The reference shelf holds the exhaustive detail. The
-[CLI reference](/manni/cite/reference/cli/) covers every flag of `check`, `add`
-and `update`. The [configuration reference](/manni/cite/reference/configuration/)
+[CLI reference](/manni/cite/reference/cli/) covers every flag of `check`,
+`add`, `update` and `remove`. The [configuration reference](/manni/cite/reference/configuration/)
 covers the `cite:` keys of `manni.config.yaml`. The
 [citations reference](/manni/cite/reference/citations/) covers the entry shape,
 the file grammar, the hashing rule, markers and the sidecar manifest.
@@ -131,6 +150,9 @@ the file grammar, the hashing rule, markers and the sidecar manifest.
   </Card>
 </CardGrid>
 
+{/* cite own-config-key */}
+{/* cite one-config-file */}
+{/* cite bundles-citations-schema */}
 Citations are written in the `manni:citations` vocabulary. Its draft is open
 for review with the family's other vocabularies, and manni cite
 bundles it. It is not a built-in schema of manni meta. With the schema file in
