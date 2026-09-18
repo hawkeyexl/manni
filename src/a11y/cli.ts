@@ -176,6 +176,10 @@ export function configExcludeGlobs(
   globs: readonly string[],
   source: string | null,
 ): ExcludeGlob[] {
+  // The CLI reaches here only with a file behind it, since `cfg.exclude` is
+  // set, so the fallback is for a programmatic caller that passed a section
+  // with no source. It names the file a reader would look for rather than
+  // labelling an entry with "null".
   const file = source ?? FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml";
   return globs.map((glob, i) => ({ glob, source: excludeEntryLabel(file, i) }));
 }

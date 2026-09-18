@@ -159,6 +159,11 @@ export type ProgressEvent =
    * `patterns` patterns. Emitted once, before the browser starts, and only
    * when something was excluded. There is no event per excluded URL: a
    * pattern that removes four hundred pages would bury the ones checked.
+   *
+   * `urls` is what the seeds and the sitemap gave the run. Links are followed
+   * afterwards, and a page excluded that way is counted in `summary.excluded`
+   * without reaching this event, so the two can disagree and the summary is
+   * the authoritative total.
    */
   | { kind: "excluded"; urls: number; patterns: number }
   /** About to check page `index` (1-based); `queued` is every URL discovered so far. */

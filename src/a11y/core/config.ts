@@ -131,6 +131,9 @@ function asExcludes(value: unknown, source: string): string[] {
   const globs = asStringList(value, "exclude", source);
   globs.forEach((glob, i) => {
     const at = excludeEntryLabel(source, i);
+    // An empty string fails the slash check too, so this is only about which
+    // message it gets: "must be a non-empty string" names the mistake, where
+    // "must start with /" would describe a pattern that is not there.
     if (glob === "") throw new A11yError(`${at} must be a non-empty string.`);
     if (!isUrlPathGlob(glob)) throw new A11yError(`${at} ${MUST_START_WITH_SLASH}`);
   });
