@@ -131,14 +131,43 @@ export function claimMessageFor(result: CitationResult): string {
         id,
         `the claim at ${at(where ?? "?")} now appears at lines ${listOf(claim.candidateFileLines ?? [])}.`,
       );
+    case "reanchored": {
+      const since = claim.commitSha === undefined ? "" : ` since ${short(claim.commitSha)}`;
+      // A claim-lines entry moved onto its new run; a marker-anchored one
+      // never moves, because the marker travels with its own text.
+      const to =
+        claim.newFileLines === undefined ? "" : `, to ${at(claim.newFileLines)}`;
+      return named(
+        id,
+        `the claim at ${at(where ?? "?")} was reanchored${since}${to}. Its words are unchanged.`,
+      );
+    }
     case "changed":
-      return where === undefined
-        ? named(id, "the claim has no lines and no marker names the entry, so its pin anchors nothing.")
-        : named(id, `the claim at ${at(where)} has changed since it was pinned.`);
+      if (where === undefined) {
+        return named(
+          id,
+          "the claim has no lines and no marker names the entry, so its pin anchors nothing.",
+        );
+      }
+      return named(id, `the claim at ${at(where)} has ${claimChange(claim)}`);
     case "current":
     case "skipped":
       return "";
   }
+}
+
+/** How a changed claim says since when, which is what its history could say. */
+function claimChange(claim: ClaimEnd): string {
+  if (claim.historyAvailable === false) {
+    return "changed since it was pinned (history unavailable; fetch-depth: 0).";
+  }
+  if (claim.commitSha === undefined) return "changed since it was pinned.";
+  const at = short(claim.commitSha);
+  // Zero commits since would read as "just now". The working tree holding the
+  // change is what it actually means, so it says that.
+  const since = claim.commitsSince ?? [];
+  const count = since.length === 0 ? "uncommitted" : plural(since.length, "commit");
+  return `changed since ${at}, ${count}.`;
 }
 
 /**

@@ -1,0 +1,4 @@
+# Turns crawling off for every run that reads it. `--crawl` is what turns it
+# back on for one run.
+a11y:
+  crawl: false

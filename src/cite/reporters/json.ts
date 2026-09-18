@@ -16,6 +16,7 @@ import type {
   OriginKind,
   PageCitationReport,
   RemoveRun,
+  UpdateRewrite,
   UpdateRun,
 } from "../types.js";
 
@@ -25,6 +26,9 @@ export interface PublicClaimEnd {
   status: string;
   newLines?: string;
   candidates?: string[];
+  /** The baseline the claim was read against: the page's own history says it. */
+  commitSha?: string;
+  historyAvailable?: boolean;
 }
 
 export interface PublicSourceEnd {
@@ -74,6 +78,10 @@ export function publicCitation(result: CitationResult): PublicCitationResult {
     if (result.claim.fileLines !== undefined) claim.fileLines = result.claim.fileLines;
     if (result.claim.newLines !== undefined) claim.newLines = result.claim.newLines;
     if (result.claim.candidates !== undefined) claim.candidates = result.claim.candidates;
+    if (result.claim.commitSha !== undefined) claim.commitSha = result.claim.commitSha;
+    if (result.claim.historyAvailable !== undefined) {
+      claim.historyAvailable = result.claim.historyAvailable;
+    }
   }
 
   // Key order is the order the plan spells a citation in: what it is called,
@@ -110,9 +118,12 @@ export function renderRemoveJson(run: RemoveRun): string {
 export function renderUpdateJson(run: UpdateRun): string {
   // `markerLine` is the pretty report's line for a marker-anchored claim.
   // `at` is the claim's own first file line, which is what data says.
+  const strip = (rows: readonly UpdateRewrite[]): Omit<UpdateRewrite, "markerLine">[] =>
+    rows.map(({ markerLine: _pretty, ...rewrite }) => rewrite);
   const pages = run.pages.map((page) => ({
     ...page,
-    rewritten: page.rewritten.map(({ markerLine: _pretty, ...rewrite }) => rewrite),
+    rewritten: strip(page.rewritten),
+    refused: strip(page.refused),
   }));
   return JSON.stringify({ ...run, pages }, null, 2);
 }
