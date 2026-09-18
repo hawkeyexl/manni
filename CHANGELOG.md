@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.7.1](https://github.com/hawkeyexl/manni/compare/v2.7.0...v2.7.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* **cite:** a table row is its own claim, not the whole table ([#90](https://github.com/hawkeyexl/manni/issues/90)) ([489d126](https://github.com/hawkeyexl/manni/commit/489d126d52dd0e04886a4760095a562ca5d89bd9)), closes [#87](https://github.com/hawkeyexl/manni/issues/87)
+
 # [2.7.0](https://github.com/hawkeyexl/manni/compare/v2.6.0...v2.7.0) (2026-09-18)
 
 
