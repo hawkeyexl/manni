@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [2.7.0](https://github.com/hawkeyexl/manni/compare/v2.6.0...v2.7.0) (2026-09-18)
+
+
+### Features
+
+* **cite:** gate the docs on cite check, and publish a manni-cite hook ([#76](https://github.com/hawkeyexl/manni/issues/76)) ([71cb32f](https://github.com/hawkeyexl/manni/commit/71cb32fa93970acedfd7e6fc8ce7176ac7ab4ef7)), closes [#60](https://github.com/hawkeyexl/manni/issues/60) [#61](https://github.com/hawkeyexl/manni/issues/61) [#61](https://github.com/hawkeyexl/manni/issues/61) [#60](https://github.com/hawkeyexl/manni/issues/60) [#61](https://github.com/hawkeyexl/manni/issues/61) [#61](https://github.com/hawkeyexl/manni/issues/61)
+
 # [2.6.0](https://github.com/hawkeyexl/manni/compare/v2.5.2...v2.6.0) (2026-09-18)
 
 
