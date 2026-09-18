@@ -154,12 +154,14 @@ const ASCIIDOC_TITLE = /^={1,6}[ \t]/;
 const ADORNMENT = /^[ \t]*([-=~^"'*+#_:<>])(?:[ \t]*\1){2,}[ \t]*$/;
 /** A line that is nothing but one JSX or HTML tag, opening or closing. */
 const TAG_LINE = /^[ \t]*<\/?[A-Za-z][^<>]*>[ \t]*$/;
-/** A table row: a line whose text opens with a pipe. */
+/** A table row: a line whose first non-blank character is a pipe. */
 const TABLE_ROW = /^[ \t]*\|/;
 
 /**
  * Whether a line is a table row. The header row, the `|---|---|` delimiter row
- * and every body row all open with a pipe, so all three read as rows.
+ * and every body row all open with a pipe, so all three read as rows. Leading
+ * whitespace is allowed, because a table inside a list item is indented and is
+ * still a table.
  *
  * A row is a statement of its own. Nothing else separates one row from the
  * next, so a paragraph walk reads a whole table as one paragraph, and a claim

@@ -173,6 +173,10 @@ export type NoUnit = "outside" | "blank" | "fenced" | "not-a-paragraph" | "table
  * than redesigning it: one recorded line gives one row, and five give five.
  * Rows below a one-line claim are other statements, and a table that no longer
  * reaches the recorded end is a question only the author can answer.
+ *
+ * The unit comes back as `kind: "paragraph"`, since `ClaimUnit` distinguishes
+ * prose from a fenced block and nothing else. A caller wanting to know whether
+ * it holds rows has to ask `isTableRow` about the text, not read `kind`.
  */
 function rowsAt(
   line: number,

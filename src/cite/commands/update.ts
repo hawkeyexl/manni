@@ -798,6 +798,11 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       // The span the claim holds now, and the line it starts on. A table keeps
       // the span: the author chose how many rows the claim covers, and
       // `--accept` re-mints, never redesigns.
+      //
+      // Both are set for every claim that reaches here. `claimEnd` fills
+      // `fileLines` only on the `claim.lines` branch, and the marker branch is
+      // already excluded above, so the `undefined` arms below are the types
+      // being honest rather than a case a run can land in.
       const held = claim.fileLines === undefined ? undefined : parseLines(claim.fileLines);
       const at = held?.start;
       const unit: ClaimUnit | undefined =

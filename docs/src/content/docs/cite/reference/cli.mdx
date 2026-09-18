@@ -634,7 +634,8 @@ pinned text moved elsewhere is left for a run that names it.
 {/* cite accept-skips-blank-claim */}
 `update --accept` re-pins the unit at the claim's first line. That is the
 paragraph there, the fenced block there, or the table rows there. A line whose
-text starts with `|` is a table row.
+first non-blank character is `|` is a table row, so a table indented inside a
+list item counts.
 
 A paragraph that gained a sentence gained it as part of the same statement, so
 a claim over a paragraph grows with it. A table row is a statement of its own.
