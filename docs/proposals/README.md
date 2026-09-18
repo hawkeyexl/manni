@@ -67,6 +67,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0052](0052-term-domain.md) | The `term` domain. A term is a flat record with `type: term`, read from every format in one-per-file and many-per-file shapes. `manni term` checks the set, lints definitions and writes a Vale style. It renders the set to any format | Sara · S6 / Maya · M9 / Devin · D8 | Accepted |
 | [0054](0054-marker-reanchoring.md) | Re-anchoring misplaced cite markers. A marker line inside a paragraph is `marker-misplaced`, a warning. `update` moves it where `add --marker` writes markers, and re-pins when the old pin still holds. Needs PR #43 first | Maya · M5 / Theo · T2 / Devin · D5 | Proposed |
 | [0058](0058-a-manifest-per-page.md) | A manifest per page. `externalMetadata[].file` takes one placeholder, `{page}`, so a collection keeps each page's external metadata in a file named after that page. A concrete `file` keeps today's meaning | Maya · M6 / Devin · D5 | Proposed |
+| [0059](0059-a11y-crawl-exclusions.md) | Keeping the a11y crawl out of part of a site: `--exclude <glob>` repeatable, an `a11y.exclude:` key, globs matched against the URL path, and `summary.excluded` | Devin · D1, D3 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
