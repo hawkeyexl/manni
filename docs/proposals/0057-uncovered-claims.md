@@ -162,7 +162,7 @@ no verdict file it behaves exactly as it does today.
 ### 3. The record is committed
 
 `.manni-cite-claims.json` at the repository root by default, `verdicts:` under
-`cite:` in config, and `--verdicts [path]` on both verbs. It is committed, for
+`cite:` in config, and `--verdicts <path>` on both verbs. It is committed, for
 the same reason the baseline is. A verdict is a reviewable fact about the docs,
 and a reviewer should see it arrive in a diff.
 
@@ -329,7 +329,7 @@ manni cite claims [paths...] [options]
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `--since` | `<ref>` | none | Judge only the runs a git diff since this ref touches. Without it, every uncovered run in the set is in scope. An unresolvable ref is an error, exit 2. |
-| `--verdicts` | `[path]` | config `verdicts:`, else `.manni-cite-claims.json` | The record to read and write. The value is optional. |
+| `--verdicts` | `<path>` | config `verdicts:`, else `.manni-cite-claims.json` | The record to read and write. The value is required, so omitting the flag is the only way to take the default. A path that does not exist is created on the first run. |
 | `--rejudge` | n/a | off | Ignore recorded verdicts for the runs in scope and ask again. Implies `--no-cache`. |
 | `--prune` | n/a | off | Drop recorded entries whose text is no longer a run on their page. |
 | `--dry-run` | n/a | off | Print the run count and the exact prompt byte count, then stop. Calls nothing and writes nothing. |
@@ -362,7 +362,7 @@ contract. Exit `2` for a `CiteError`.
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
-| `--verdicts` | `[path]` | config `verdicts:`, else `.manni-cite-claims.json` | Report `claim-uncovered` from this record. A named file that does not exist is an error, exit 2. |
+| `--verdicts` | `<path>` | config `verdicts:`, else `.manni-cite-claims.json` | Report `claim-uncovered` from this record. The value is required, so omitting the flag is the only way to take the default. A named file that does not exist is an error, exit 2, because `check` never writes one. |
 | `--no-verdicts` | n/a | off | Ignore a record supplied by config for this run. |
 
 Every other flag, the baseline, the five formats and the exit contract are
@@ -773,8 +773,13 @@ a warning nobody can act on teaches people to ignore warnings.
 
 **Changed as a result:** a missing record at the *default* path is silence. A
 record named explicitly, by `--verdicts <path>` or by `verdicts:` in config,
-must exist, and its absence is exit 2. Naming a file is a statement that it is
-there.
+must exist **for `check`**, and its absence is exit 2. Naming a file is a
+statement that it is there, and `check` is the one verb that reads the record
+without writing it.
+
+`claims` is the other half of that rule. A named path it cannot find is created
+on the first run, exactly as the default path is. A verb that refused to start
+because the file it writes does not exist yet could never write the first one.
 
 ### 2. A verdict whose text was edited since
 
