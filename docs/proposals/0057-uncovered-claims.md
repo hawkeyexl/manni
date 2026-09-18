@@ -20,13 +20,18 @@
   git alone, with no model and no network". That stays true of `check`. It
   stops being true of the domain, because a new verb asks a model. 0044 is
   left exactly as written.
-- **Relates to:** Two proposals.
+- **Relates to:** Three proposals.
   - [0036](0036-a11y-fix.md) declined inference inside a gate, and named what a
     proposal would have to carry. This is that proposal, for cite rather than
     a11y.
-  - [0054](0054-marker-reanchoring.md) shipped `marker-misplaced`, which made
-    the rule table fifteen names long. It also decides what a misplaced marker
-    covers, which step 2 below has to answer. See stress test 16.
+  - [0053](0053-claim-history.md) shipped `claim-reanchored`, which reads a
+    claim that no longer holds against the page's history and separates a
+    layout change from an edit.
+  - [0054](0054-marker-reanchoring.md) shipped `marker-misplaced`. It also
+    decides what a misplaced marker covers, which step 2 below has to answer.
+    See stress test 16.
+
+  Those last two took the rule table to sixteen names.
 - **Touches:** `src/cite/core/{runs,judge,verdicts}.ts` (new),
   `src/cite/core/{config,check-page,severity,adapt}.ts`,
   `src/cite/commands/{claims,check}.ts`, `src/cite/cli.ts`,
@@ -174,10 +179,11 @@ no prose that was not already in the page.
 
 ### 4. `claim-uncovered` severity is configurable
 
-It is the sixteenth rule, default `notice`, settable to `error`, `warning`,
-`notice` or `off` like every other. A team may gate on it. main carries
-fifteen, the fourteen 0044 shipped plus 0054's `marker-misplaced`. A rule
-landing in parallel moves the ordinal and nothing else.
+It is the seventeenth rule, default `notice`, settable to `error`, `warning`,
+`notice` or `off` like every other. A team may gate on it. main carries sixteen
+in `CITE_RULES`, the fourteen 0044 shipped plus 0053's `claim-reanchored` and
+0054's `marker-misplaced`. A rule landing in parallel moves the ordinal and
+nothing else.
 
 That is safe because the verdict is recorded. Two runs of `check` on one commit
 read one file and reach one answer. A rule whose severity a team can raise to
@@ -313,7 +319,7 @@ every level:
 | `cite.claims.provider` | string | `auto` | no | Inference provider for `claims`. One of `auto`, `anthropic`, `openai`, `claude-cli`, `llama-cpp`, `mock`. An unknown name is an error, exit 2. |
 | `cite.claims.model` | string | provider default | no | Model override. Needs `provider` set to something other than `auto`, exit 2 otherwise. |
 | `cite.claims.concurrency` | number | `4` | no | Runs judged in parallel, between 1 and 64. |
-| `cite.severity.claim-uncovered` | level | `notice` | no | `error`, `warning`, `notice` or `off`, joining the fifteen rule names already accepted. |
+| `cite.severity.claim-uncovered` | level | `notice` | no | `error`, `warning`, `notice` or `off`, joining the sixteen rule names already accepted. |
 
 There is no key that turns `claims` on, and no key that lets `check` call a
 model. The verb is the switch. That is the "detect, don't switch" rule applied
@@ -1053,7 +1059,7 @@ the gate noticing rather than as the removal breaking something.
 Additive. A repository with no verdict file behaves exactly as it does today,
 on every verb. `check` gains one optional file read and no provider code path.
 The new rule defaults to `notice`, which never touches an exit code. The two new
-config keys are optional, and the fifteen existing rule names still validate.
+config keys are optional, and the sixteen existing rule names still validate.
 
 `feat(cite):` and a minor release. Three commits on one branch, each with its
 tests and fixtures. The runs and the record, with `check` reading it. The
