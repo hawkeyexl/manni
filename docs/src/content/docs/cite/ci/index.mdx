@@ -1,6 +1,6 @@
 ---
 title: Run it in CI
-description: Add the citation check to CI with inline PR annotations, SARIF or JUnit output, the 0/1/2 exit-code contract, a baseline for ramping in, and full git history so every status can be told apart.
+description: Add the citation check to CI with inline PR annotations, SARIF or JUnit output, the 0/1/2 exit-code contract, the published pre-commit hook, a baseline for ramping in, and full git history so every status can be told apart.
 ---
 
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -166,7 +166,7 @@ an unpacked archive.
          # `-f github` turns findings into annotations on the line of the
          # sentence; the exit code fails the job on any error.
          - name: Check citations
-           run: npx -y @hawkeyexl/manni cite check "docs/**/*.md" -f github
+           run: npx --yes @hawkeyexl/manni@latest cite check "docs/**/*.md" -f github
    ```
 
 2. **Adapt the targets.** Replace `"docs/**/*.md"` with the paths, directories
@@ -182,9 +182,76 @@ an unpacked archive.
 </Steps>
 
 <Aside type="note" title="Pin the version for reproducible runs">
-  `npx -y @hawkeyexl/manni` resolves the latest published version each run.
-  Pin the major, as in `npx -y @hawkeyexl/manni@2 cite check …`, and bump it
-  deliberately.
+  `npx --yes @hawkeyexl/manni@latest` resolves the latest published version
+  each run. Pin the major, as in `npx --yes @hawkeyexl/manni@2 cite check …`,
+  and bump it deliberately.
+</Aside>
+
+## Add it to a job you already have
+
+The check needs no workflow of its own. A repository that already builds its
+docs in CI can add one step beside the gates that job runs:
+
+```yaml
+- name: The docs' citations still reach their sources
+  run: npx --yes @hawkeyexl/manni@latest cite check -f github
+```
+
+That job still wants `fetch-depth: 0` on its checkout. Without the pin's commit
+in history, the check cannot tell a changed source from one the pin never
+matched. [Full history](#full-history) gives the complete picture.
+
+The step fails on an error-severity finding and on nothing else. So it sits
+beside a frontmatter or a style check without taking the job hostage.
+
+This project runs it that way. The citations on these pages are checked on
+every pull request, in the job that validates the frontmatter and the
+glossary.
+
+## pre-commit
+
+A pre-commit hook catches a broken pin before it reaches CI. manni publishes a
+[pre-commit](https://pre-commit.com/) hook for the citation check, beside the
+two the [metadata tool publishes](/manni/meta/ci/recipes/#pre-commit):
+
+```yaml title=".pre-commit-config.yaml"
+repos:
+  - repo: https://github.com/hawkeyexl/manni
+    rev: v2.6.0
+    hooks:
+      - id: manni-cite
+```
+
+pre-commit appends the staged paths, so the hook checks the citations on the
+pages you are about to commit. The sources resolve from the git root as they
+always do. Both ends therefore come out of one working tree, which is what
+makes the hook worth running locally.
+
+A source is read from disk rather than from `HEAD`. So staging `lib/limits.ts`
+beside `docs/limits.md` judges the page against the edit you just made. An
+edit inside a cited range is `source-changed`, an error, and the commit stops.
+An edit above the range is `source-moved`, a warning, and the commit lands.
+`manni cite update` rewrites the moved ones.
+
+The hook passes no `--no-check-sources`, and that is deliberate. The flag
+leaves the page-side rules only, so it drops the half that catches a source
+edit in the commit that makes it. Where the sources live in a second
+checkout, set `root:` under `cite:` in
+[config](/manni/cite/reference/configuration/#keys) instead.
+
+`rev` pins the hook definition, meaning its file pattern and its entry. It
+does not pin the CLI. The hook runs `@hawkeyexl/manni@latest`, so a newer CLI
+reaches you without a `rev` bump. Take the tag from [the latest
+release](https://github.com/hawkeyexl/manni/releases/latest), and let
+`pre-commit autoupdate` move it afterwards.
+
+<Aside type="note" title="It needs Node and git on the machine">
+  The hook runs `npx --yes @hawkeyexl/manni@latest`, so contributors need
+  Node.js 24 or newer on their `PATH`. pre-commit does not install Node for it. Without git
+  the check still runs, but it cannot read history. So it gives up
+  `source-never-true` and the source diffs, and says so once on stderr. A
+  changed source still stops the commit. [Full history](#full-history) covers
+  the rest.
 </Aside>
 
 ## Ramp in with a baseline
@@ -297,6 +364,8 @@ that:
 - One that only adds a paragraph above a cited sentence leaves it green with a
   `manni:cite/claim-moved` notice.
 - Running `manni cite update` in that branch clears both.
+- With the hook installed, `pre-commit run manni-cite --all-files` reports the
+  same findings before any of that reaches CI.
 
 To see the same lines locally, run with `-f github` from your shell; drop the
 flag for the readable report.
