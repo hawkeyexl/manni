@@ -372,8 +372,9 @@ The untracked row is the honest limit, and it matches what `add` already
 refuses. Sources resolve through `git ls-files` under a realpath containment
 check. So an untracked destination is not a file this tool reads. That holds
 whether a pin reached it or someone typed it. The message says the same thing
-it says today, `missing`, and the remedy is to commit the file or to re-add
-the citation.
+it says today, `missing`. The remedies are the three the tool already has.
+Commit the file, `cite add` the citation again, or `cite remove` it when the
+source is gone for good.
 
 A destination whose path the operator keeps private is a different case and
 needs nothing new. The entry's own form decides how the path is written, per
@@ -410,7 +411,7 @@ existing history search already handles a moved `src` under an old commit.
 ### Config
 
 No key changes, and no key is added. The `cite:` section keeps its six keys and
-their defaults, and `severity:` keeps its fourteen rule names. This repository's
+their defaults, and `severity:` keeps its fifteen rule names. This repository's
 own config file is unchanged, before and after:
 
 ```yaml title="manni.config.yaml (before and after, abridged)"
@@ -767,9 +768,10 @@ and the finding is `source-missing` at the old path with no hint at all.
 
 **Changed as a result:** this stays outside the design, and the record says so
 rather than implying otherwise. The pin is the only evidence this tool trusts,
-and a renamed and edited file has destroyed it. `add` is still the remedy, and
-0044's sentence about that case stands. What shrank is how often it is reached,
-because a rename with no edit and an edit with no rename are both answered now.
+and a renamed and edited file has destroyed it. `add` is still the remedy, with
+`remove` beside it for a citation nobody wants to re-mint, and 0044's sentence
+about that case stands. What shrank is how often it is reached, because a
+rename with no edit and an edit with no rename are both answered now.
 
 ### 4. Two identical copies of the pinned code
 
@@ -966,7 +968,8 @@ visible in the diff `--dry-run` prints, and both are named in the report line.
 
 - The fix page for `source-missing` in `docs/src/content/docs/cite/fix/` needs
   rewriting. A rename is no longer its headline case. What is left is an
-  untracked destination, a shallow clone, and a file that is gone.
+  untracked destination, a shallow clone, and a file that is gone, whose
+  remedies are `add` and `remove`.
 - The `add` reference's `--no-commit-sha` row gains the move search to the list
   of what the field buys.
 - `manni key rotate` re-encrypts cite's sources, and it skips an entry whose

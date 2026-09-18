@@ -96,6 +96,22 @@ export type SourceStatus =
 
 export type ClaimStatus = "current" | "moved" | "moved-ambiguous" | "changed" | "skipped";
 
+/** Where a misplaced marker is, and where it belongs (proposal 0054). */
+export interface MisplacedMarkerReport {
+  /** The paragraph the marker's run splits, in file lines. */
+  unit: string;
+  /** The file line the marker takes once its run has moved. */
+  to: number;
+}
+
+/** The marker that anchors a citation: its line, and its misplacement when it has one. */
+export interface MarkerEnd {
+  /** File line of the marker. */
+  line: number;
+  /** Present only when the marker line sits inside a paragraph. */
+  misplaced?: MisplacedMarkerReport;
+}
+
 /**
  * Why a source could not be read: not a tracked file under the root, an
  * encrypted source with no key to decrypt it, one that does not decrypt under
@@ -119,6 +135,7 @@ export const CITE_RULES = [
   "marker-orphan",
   "marker-invalid",
   "marker-repeated",
+  "marker-misplaced",
   "anchor-invalid",
   "entry-invalid",
   "quote-drift",
@@ -192,6 +209,8 @@ export interface CitationResult {
    * first line of the text a marker anchors. Where its findings sit.
    */
   anchorLine?: number;
+  /** The marker that names the entry, when one does, and its misplacement. */
+  marker?: MarkerEnd;
   /** `null` for an entry with no `claim`: a bare pin, or a marker with no drift check. */
   claim: ClaimEnd | null;
   source: SourceEnd;
@@ -461,6 +480,12 @@ export interface AddResult {
   claimLines?: PageLines;
   /** File line of the marker written above the claim, under `marker`. */
   markerLine?: number;
+  /**
+   * The first pinned source line, as the file holds it, so a mis-typed range
+   * is visible at write time. Absent for a whole file, which has no first
+   * line worth naming, and for an encrypted source, which no output reveals.
+   */
+  sourceLine?: string;
   /** The rewritten page. */
   content: string;
   diff: string;
@@ -473,23 +498,40 @@ export interface UpdateOptions extends Omit<CheckOptions, "baseline" | "writeBas
   dryRun?: boolean;
 }
 
-/** One end `update` rewrote. */
+/**
+ * One end `update` rewrote.
+ *
+ * Read the typed pairs: `fromLines`/`toLines` for lines, `fromPin`/`toPin`
+ * for pins. `from` and `to` carry the same values, but which of the two a row
+ * holds depends on the row, so they are easy to misuse.
+ */
 export interface UpdateRewrite {
   id?: string;
   /** Index in the page's `citations`. */
   index: number;
   /** File line of the entry. */
   line?: number;
-  end: "claim" | "source";
-  reason: "moved" | "accepted";
+  end: "claim" | "source" | "marker";
+  reason: "moved" | "accepted" | "re-anchored" | "shifted";
   /** The status that was repaired. */
-  status: "moved" | "changed" | "never-true";
+  status: "moved" | "changed" | "never-true" | "misplaced" | "current";
   /**
-   * Before and after. A moved claim: its file lines. A moved source: its
-   * `src`. An accepted end: its pin.
+   * Before and after. A moved or shifted claim, and a moved marker: file
+   * lines. A moved source: its `src`. An accepted or re-anchored end: its pin.
+   * The typed pairs below say which, so prefer them.
    */
   from: string;
   to: string;
+  /** A moved marker, or a moved or shifted claim: its file lines, before and after. */
+  fromLines?: string;
+  toLines?: string;
+  /** An accepted or re-anchored end: its pin, before and after. */
+  fromPin?: string;
+  toPin?: string;
+  /** A re-anchored claim: the span that held, in file lines. */
+  lines?: string;
+  /** A re-anchored claim: the span now pinned, in file lines. */
+  newLines?: string;
   /** An accepted claim: its first file line. */
   at?: number;
   /** An accepted claim a marker anchors: the marker's file line. Pretty-only. */
@@ -527,6 +569,45 @@ export interface UpdateRun {
   /** The manifests this run rewrote, each written once however many pages it holds. */
   manifests?: ManifestChange[];
   exitCode: 0 | 1;
+}
+
+export interface RemoveOptions
+  extends Omit<CheckOptions, "baseline" | "writeBaseline" | "checkSources" | "showDiff"> {
+  /**
+   * `--only <id>`, repeatable: the entries to remove, each named by its id or
+   * by its pointer (`/citations/N`). Required, and an empty list is a
+   * refusal: `remove` never takes every citation off a page.
+   */
+  only: string[];
+  dryRun?: boolean;
+}
+
+/** One entry `remove` took out, and the markers that went with it. */
+export interface Removal {
+  id?: string;
+  /** Index in the page's `citations`. Absent for a marker that named no entry. */
+  index?: number;
+  /** Where the entry was kept. Absent for a marker that named no entry. */
+  origin?: { kind: OriginKind; file: string; line?: number };
+  /** File lines of the markers removed with it, in the page as it was. */
+  markerLines: number[];
+}
+
+export interface RemovePage {
+  file: string;
+  removed: Removal[];
+  diff: string;
+  written: boolean;
+  /** The rewritten page, for the stdin input only: it has no file to be written to. */
+  content?: string;
+}
+
+export interface RemoveRun {
+  pages: RemovePage[];
+  /** Entries removed, counting a marker that named no entry as one. */
+  removed: number;
+  /** The manifests this run rewrote, each written once however many pages it holds. */
+  manifests?: ManifestChange[];
 }
 
 /** One citation `reencryptCitations` rewrote: where it sits, and its source before and after. */
