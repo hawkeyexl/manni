@@ -197,7 +197,10 @@ docs in CI can add one step beside the gates that job runs:
   run: npx -y @hawkeyexl/manni cite check -f github
 ```
 
-That job still wants `fetch-depth: 0` on its checkout, for the reason above.
+That job still wants `fetch-depth: 0` on its checkout. Without the pin's commit
+in history, the check cannot tell a changed source from one the pin never
+matched. [Full history](#full-history) gives the complete picture.
+
 The step fails on an error-severity finding and on nothing else. So it sits
 beside a frontmatter or a style check without taking the job hostage.
 
@@ -243,8 +246,8 @@ release](https://github.com/hawkeyexl/manni/releases/latest), and let
 `pre-commit autoupdate` move it afterwards.
 
 <Aside type="note" title="It needs Node and git on the machine">
-  The hook runs `npx @hawkeyexl/manni`, so contributors need Node.js 24 or
-  newer on their `PATH`. pre-commit does not install Node for it. Without git
+  The hook runs `npx --yes @hawkeyexl/manni@latest`, so contributors need
+  Node.js 24 or newer on their `PATH`. pre-commit does not install Node for it. Without git
   the check still runs, but it cannot read history. So it gives up
   `source-never-true` and the source diffs, and says so once on stderr. A
   changed source still stops the commit. [Full history](#full-history) covers
