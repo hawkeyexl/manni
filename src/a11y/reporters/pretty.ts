@@ -65,12 +65,22 @@ export function renderPretty(run: CheckRun, opts: RenderOptions): string {
 /**
  * How the pages were found. `--no-crawl` never looks for a sitemap, so a null
  * `sitemap` alone cannot tell "no crawl" from "crawled, found no sitemap".
+ *
+ * A sitemap that was found is not a sitemap that supplied pages. One whose
+ * every `<loc>` is on another host parses and yields nothing, which is what a
+ * built sitemap does when the built site is served on a local preview. So a
+ * named sitemap carries its count whenever links did some of the work, and
+ * the run that was wholly a sitemap's says so with the URL alone.
  */
 function where(run: CheckRun, c: Colors): string {
   const { summary } = run;
   if (!summary.crawl) return "no crawl";
   if (summary.sitemap === null) return "no sitemap; followed links";
-  return `sitemap: ${c.cyan(summary.sitemap)}`;
+  const found = `sitemap: ${c.cyan(summary.sitemap)}`;
+  const n = summary.sitemapPages;
+  if (n === 0) return `${found}, 0 pages; followed links`;
+  if (n >= summary.discovered) return found;
+  return `${found}, ${n} page${n === 1 ? "" : "s"}; followed links for the rest`;
 }
 
 function scoreText(page: PageResult): string {

@@ -58,6 +58,7 @@ function summarize(
     violations,
     bySeverity,
     sitemap: null,
+    sitemapPages: 0,
     crawl: true,
     ...over,
   };
@@ -98,10 +99,67 @@ describe("A11Y_FORMATS", () => {
 });
 
 describe("render pretty", () => {
-  it("names the sitemap in the header when one supplied pages", () => {
-    const run = checkRun([page({ url: `${S}/` })], { sitemap: SITEMAP });
+  it("names the sitemap alone when it supplied every discovered page", () => {
+    const run = checkRun([page({ url: `${S}/`, source: "sitemap" })], {
+      sitemap: SITEMAP,
+      sitemapPages: 1,
+    });
     const text = render("pretty", run, off);
     expect(text.split("\n")[0]).toBe(`Checked 1 of 1 pages (sitemap: ${SITEMAP})`);
+  });
+
+  it("counts the sitemap's share and credits links for the rest", () => {
+    const run = checkRun(
+      [
+        page({ url: `${S}/` }),
+        page({ url: `${S}/orphan`, source: "sitemap" }),
+        page({ url: `${S}/a`, source: "link" }),
+      ],
+      { sitemap: SITEMAP, sitemapPages: 2 },
+    );
+    const text = render("pretty", run, off);
+    expect(text.split("\n")[0]).toBe(
+      `Checked 3 of 3 pages (sitemap: ${SITEMAP}, 2 pages; followed links for the rest)`,
+    );
+  });
+
+  it("says the sitemap supplied nothing when every URL in it was out of scope", () => {
+    // What this repo's own CI does: the built sitemap lists production URLs,
+    // which are off-host from the 127.0.0.1 preview, so all of them are
+    // dropped and links reach every page. The header must not credit it.
+    const run = checkRun([page({ url: `${S}/` }), page({ url: `${S}/a`, source: "link" })], {
+      sitemap: SITEMAP,
+      sitemapPages: 0,
+    });
+    const text = render("pretty", run, off);
+    expect(text.split("\n")[0]).toBe(
+      `Checked 2 of 2 pages (sitemap: ${SITEMAP}, 0 pages; followed links)`,
+    );
+  });
+
+  it("says one page, not one pages, when the sitemap supplied a single URL", () => {
+    const run = checkRun([page({ url: `${S}/` }), page({ url: `${S}/a`, source: "link" })], {
+      sitemap: SITEMAP,
+      sitemapPages: 1,
+    });
+    const text = render("pretty", run, off);
+    expect(text.split("\n")[0]).toBe(
+      `Checked 2 of 2 pages (sitemap: ${SITEMAP}, 1 page; followed links for the rest)`,
+    );
+  });
+
+  it("colors the sitemap URL and nothing else in the partial header", () => {
+    const run = checkRun([page({ url: `${S}/` }), page({ url: `${S}/a`, source: "link" })], {
+      sitemap: SITEMAP,
+      sitemapPages: 0,
+    });
+    const header = render("pretty", run, { color: true, quiet: true }).split("\n")[0] ?? "";
+    expect(header).toContain(`\x1b[36m${SITEMAP}\x1b[39m`);
+    expect(header.replace(/\x1b\[[0-9;]*m/g, "")).toBe(
+      `Checked 2 of 2 pages (sitemap: ${SITEMAP}, 0 pages; followed links)`,
+    );
+    // Only the URL is painted: one open/close pair on the line.
+    expect(header.match(/\x1b\[/g)).toHaveLength(2);
   });
 
   it("says links were followed when there was no sitemap", () => {
