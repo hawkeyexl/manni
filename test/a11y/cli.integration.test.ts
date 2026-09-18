@@ -22,6 +22,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..", "..");
 const manni = resolve(root, "dist", "cli.js");
 const site = resolve(root, "test", "fixtures", "a11y", "site");
+/** A site whose sitemap parses and names only another host's pages (#77). */
+const offhostSite = resolve(root, "test", "fixtures", "a11y", "offhost-sitemap");
 
 const browser = await findBrowser();
 
@@ -102,18 +104,27 @@ const FILES: Record<string, string> = {
   "/sitemap-index.xml": "application/xml; charset=utf-8",
 };
 
+const OFFHOST_FILES: Record<string, string> = {
+  "/index.html": "text/html; charset=utf-8",
+  "/about.html": "text/html; charset=utf-8",
+  "/robots.txt": "text/plain; charset=utf-8",
+  "/sitemap.xml": "application/xml; charset=utf-8",
+};
+
 /**
- * The fixture site as routes. The port is only known once the server listens,
- * and the bodies need it, so each route is a function that fills `__ORIGIN__`
- * in at request time from the origin recorded after `listen`.
+ * A fixture directory as routes. The port is only known once the server
+ * listens, and the bodies need it, so each route is a function that fills
+ * `__ORIGIN__` in at request time from the origin recorded after `listen`.
  */
-async function serveSite(): Promise<SchemaServer> {
+async function serveFixture(
+  dir: string,
+  files: Record<string, string>,
+  extra: Record<string, RouteFn> = {},
+): Promise<SchemaServer> {
   let origin = "";
-  const routes: Record<string, RouteFn> = {
-    "/styles.css": () => ({ body: "body { margin: 0 }", contentType: "text/css" }),
-  };
-  for (const [path, contentType] of Object.entries(FILES)) {
-    const raw = readFileSync(resolve(site, path.slice(1)), "utf8");
+  const routes: Record<string, RouteFn> = { ...extra };
+  for (const [path, contentType] of Object.entries(files)) {
+    const raw = readFileSync(resolve(dir, path.slice(1)), "utf8");
     routes[path] = () => ({ body: raw.replaceAll("__ORIGIN__", origin), contentType });
   }
   const server = await startSchemaServer(routes);
@@ -121,9 +132,20 @@ async function serveSite(): Promise<SchemaServer> {
   return server;
 }
 
+function serveSite(): Promise<SchemaServer> {
+  return serveFixture(site, FILES, {
+    "/styles.css": () => ({ body: "body { margin: 0 }", contentType: "text/css" }),
+  });
+}
+
+function serveOffhostSite(): Promise<SchemaServer> {
+  return serveFixture(offhostSite, OFFHOST_FILES);
+}
+
 interface JsonRun {
   results: {
     url: string;
+    source: string;
     violations: { id: string; severity: string; impact: string }[];
     score: number | null;
     error?: string;
@@ -135,6 +157,8 @@ interface JsonRun {
     duplicates: number;
     failed: number;
     bySeverity: Record<string, number>;
+    sitemap: string | null;
+    sitemapPages: number;
   };
 }
 
@@ -297,7 +321,11 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
       expect(r.stdout).toContain(rule);
     }
     expect(r.stdout).toMatch(/score \d+/);
-    expect(r.stdout).toMatch(/^Checked 3 of 3 pages/m);
+    // The sitemap supplied every discovered page, so the header names it and
+    // says nothing else. Pinned whole: this is the line #77 must not disturb.
+    expect(r.stdout.split("\n")[0]).toBe(
+      `Checked 3 of 3 pages (sitemap: ${server.url}/sitemap.xml)`,
+    );
   }, 120_000);
 
   it("treats the seed's spelling and the sitemap's as one page across a trailing slash", async () => {
@@ -411,5 +439,45 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
     const ok = await run(["check", `${server.url}/index.html`, "--no-crawl", "-f", "github"]);
     expect(ok.status).toBe(0);
     expect(ok.stdout).toBe("");
+  }, 120_000);
+});
+
+/**
+ * Issue #77, end to end: a sitemap that is found, parses, and supplies no page
+ * the crawl can use, because every `<loc>` in it names another host. The run
+ * must credit the links that actually did the work, and still say which
+ * sitemap it read, since "found one, it was useless" is the thing a person
+ * debugging a short crawl wants to know.
+ */
+describe.skipIf(browser === null)("a sitemap that supplied no pages (built bin, real browser)", () => {
+  let server: SchemaServer;
+
+  beforeAll(async () => {
+    if (!existsSync(manni)) execSync("npm run build", { cwd: root, stdio: "ignore" });
+    server = await serveOffhostSite();
+  }, 180_000);
+
+  afterAll(async () => {
+    await server.close();
+  });
+
+  it("names the sitemap, its zero pages, and the links that found the site", async () => {
+    const r = await run(["check", `${server.url}/index.html`]);
+    expect(r.status).toBe(0);
+    expect(r.stdout.split("\n")[0]).toBe(
+      `Checked 2 of 2 pages (sitemap: ${server.url}/sitemap.xml, 0 pages; followed links)`,
+    );
+    expect(r.stdout).toContain(`${server.url}/about.html`);
+    expect(r.stdout).not.toContain("published.example");
+  }, 120_000);
+
+  it("agrees with itself: stdout, stderr and the JSON all report zero", async () => {
+    const r = await run(["check", `${server.url}/index.html`, "-f", "json", "--progress"]);
+    expect(r.stderr).toContain(`manni: sitemap ${server.url}/sitemap.xml (0 pages)`);
+    const json = JSON.parse(r.stdout) as JsonRun;
+    expect(json.summary.sitemap).toBe(`${server.url}/sitemap.xml`);
+    expect(json.summary.sitemapPages).toBe(0);
+    // The contradiction in #77: every page carries `link`, never `sitemap`.
+    expect(json.results.map((p) => p.source)).toEqual(["seed", "link"]);
   }, 120_000);
 });

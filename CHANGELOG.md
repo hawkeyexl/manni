@@ -4,6 +4,20 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.5.1](https://github.com/hawkeyexl/manni/compare/v2.5.0...v2.5.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* **a11y:** stop crediting a sitemap that supplied no pages ([#86](https://github.com/hawkeyexl/manni/issues/86)) ([ba0a661](https://github.com/hawkeyexl/manni/commit/ba0a661874ec608f2a99f5d5bf2d2cbc8ec94040)), closes [#77](https://github.com/hawkeyexl/manni/issues/77)
+
+# [2.5.0](https://github.com/hawkeyexl/manni/compare/v2.4.0...v2.5.0) (2026-09-18)
+
+
+### Features
+
+* **cite:** re-anchor a misplaced marker ([#68](https://github.com/hawkeyexl/manni/issues/68)) ([c6918af](https://github.com/hawkeyexl/manni/commit/c6918afec1ee9300522abd9e2bb03e6e099f68c4)), closes [#43](https://github.com/hawkeyexl/manni/issues/43) [pre-#43](https://github.com/pre-/issues/43) [#43](https://github.com/hawkeyexl/manni/issues/43)
+
 # [2.4.0](https://github.com/hawkeyexl/manni/compare/v2.3.10...v2.4.0) (2026-09-17)
 
 
