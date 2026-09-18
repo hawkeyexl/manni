@@ -244,6 +244,23 @@ describe("runCheck and the sitemap", () => {
       [`${S}/orphan`, "sitemap"],
     ]);
     expect(run.summary.sitemap).toBe(`${S}/sitemap.xml`);
+    // The off-host `<loc>` never reached the frontier, so it is not counted.
+    expect(run.summary.sitemapPages).toBe(1);
+  });
+
+  it("counts no sitemap pages when every URL in it was out of scope", async () => {
+    // The shape this repo's own CI hits: a sitemap that parses and lists only
+    // another host's pages. It was found, and it supplied nothing.
+    const fetcher = sitemapFetcher({
+      [`${S}/sitemap.xml`]: `<urlset><url><loc>https://example.org/a</loc></url><url><loc>https://example.org/b</loc></url></urlset>`,
+    });
+    const run = await runCheck(opts({}), {
+      analyzer: fakeAnalyzer({ [`${S}/`]: { links: [`${S}/a`] }, [`${S}/a`]: {} }),
+      fetcher,
+    });
+    expect(run.summary.sitemap).toBe(`${S}/sitemap.xml`);
+    expect(run.summary.sitemapPages).toBe(0);
+    expect(run.results.map((r) => r.source)).toEqual(["seed", "link"]);
   });
 
   it("looks up one sitemap per run, from the first seed only", async () => {
@@ -266,6 +283,7 @@ describe("runCheck and the sitemap", () => {
       fetcher: noSitemap(),
     });
     expect(run.summary.sitemap).toBeNull();
+    expect(run.summary.sitemapPages).toBe(0);
     expect(run.summary.crawl).toBe(true);
   });
 
@@ -278,6 +296,7 @@ describe("runCheck and the sitemap", () => {
     expect(fetcher.calls).toEqual([]);
     expect(run.results).toHaveLength(1);
     expect(run.summary.sitemap).toBeNull();
+    expect(run.summary.sitemapPages).toBe(0);
     // Reporters tell "no crawl" from "crawled, no sitemap" by this flag.
     expect(run.summary.crawl).toBe(false);
   });
@@ -307,6 +326,7 @@ describe("runCheck summary", () => {
       violations: 4,
       bySeverity: { notice: 0, warning: 1, error: 3 },
       sitemap: null,
+      sitemapPages: 0,
       crawl: true,
     });
   });

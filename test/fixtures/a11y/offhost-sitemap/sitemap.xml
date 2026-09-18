@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A sitemap that parses and supplies nothing. Every `<loc>` names the host the
+  site is published on, so none of them is in scope for a crawl of the local
+  preview that serves the same build. That is what a built Astro sitemap does,
+  and what this repository's own CI serves on 127.0.0.1.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://published.example/index.html</loc></url>
+  <url><loc>https://published.example/about.html</loc></url>
+</urlset>

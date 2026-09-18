@@ -118,7 +118,9 @@ jobs:
             You MUST submit a proper GitHub Pull Request Review (not loose line comments). Flow:
             1. mcp__github__get_pull_request_diff — load exact changed lines before commenting.
             2. mcp__github__create_pending_pull_request_review — start a pending review.
-            3. mcp__github__add_pull_request_review_comment_to_pending_review — one call per specific-line issue, targeting a line present in the diff.
+            3. mcp__github__add_comment_to_pending_review (older servers name it
+               mcp__github__add_pull_request_review_comment_to_pending_review) — one call
+               per specific-line issue, targeting a line present in the diff.
             4. mcp__github__submit_pending_pull_request_review — submit with event = APPROVE, REQUEST_CHANGES, or COMMENT.
 
             The review body is your summary comment. Structure it as:
@@ -131,4 +133,4 @@ jobs:
             --model claude-sonnet-4-6
             --max-turns 100
             --mcp-config /tmp/mcp-config.json
-            --allowedTools "Bash(git diff:*),Bash(git log:*),Read,Glob,mcp__github__get_pull_request_diff,mcp__github__create_pending_pull_request_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_issue_comments,mcp__context7__resolve-library-id,mcp__context7__query-docs"
+            --allowedTools "Bash(git diff:*),Bash(git log:*),Read,Glob,mcp__github__get_pull_request_diff,mcp__github__create_pending_pull_request_review,mcp__github__add_comment_to_pending_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_issue_comments,mcp__context7__resolve-library-id,mcp__context7__query-docs"

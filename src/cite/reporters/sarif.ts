@@ -34,6 +34,7 @@ const RULE_DESCRIPTIONS: Readonly<Record<CiteRule, string>> = {
   "marker-orphan": "A marker names an id no citation has.",
   "marker-invalid": "A marker is malformed, or the page has too many markers.",
   "marker-repeated": "Two markers name the same citation id.",
+  "marker-misplaced": "A marker line sits inside the paragraph it anchors, and splits it.",
   "anchor-invalid": "A citation's anchor cannot work.",
   "entry-invalid": "A citation entry is malformed.",
   "quote-drift": "A quoted block no longer reproduces its source.",

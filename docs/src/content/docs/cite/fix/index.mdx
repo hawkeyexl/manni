@@ -36,7 +36,7 @@ it carries **both ends**:
 | --- | --- |
 | `<mark>` | `✓` fine, `↕` a warning, `ℹ` a notice, `✗` an error, `·` skipped or baselined. |
 | `<id>` | The citation's `id`. An entry without one leaves the column empty, and the two ends identify it. |
-| `<claim end>` | The page lines the sentence occupies, and their status: `:13 current`, `:13 moved -> :15`, `:13 changed`. A marker-anchored claim reads `marker :13`. Empty for a bare pin. |
+| `<claim end>` | The page lines the sentence occupies, and their status: `:13 current`, `:13 moved -> :15`, `:13 changed`. A marker-anchored claim reads `marker :13`, and `marker :13 -> :11` when the marker is misplaced. Empty for a bare pin. |
 | `<source end>` | The source as the entry spells it (`lib/limits.ts:2`, `lib/limits.ts:1-3`, a bare path for a whole file, or a ciphertext such as `~AQm4…:5`), then its status. |
 | `<manifest>` | The sidecar that owns the entry, and the entry's line in it. Empty when the entry lives in the page's frontmatter. |
 
@@ -61,6 +61,7 @@ the entry's own line, in the manifest when a sidecar owns it.
 | [`marker-orphan`](#marker-orphan) | error | A marker names an id no entry has. | Fix the id, or add the entry |
 | [`marker-invalid`](#marker-invalid) | error | A marker the tool cannot read, including one carrying JSON. | Write an id, and keep the entry out of the body |
 | [`marker-repeated`](#marker-repeated) | warning | Two markers name one id. | Delete one, or give the second entry its own id |
+| [`marker-misplaced`](#marker-misplaced) | warning | A marker line sits inside a paragraph and splits it. | `manni cite update` |
 | [`anchor-invalid`](#anchor-invalid) | error | The entry's anchor cannot work. | Keep one anchor |
 | [`entry-invalid`](#entry-invalid) | error | An entry is malformed, or an id is repeated. | Fix the entry, or let `add` write it |
 | [`quote-drift`](#quote-drift) | error | The fenced block does not reproduce the cited lines. | Paste the lines again |
@@ -219,6 +220,7 @@ history would be a guess. Where git is available, sources resolve through
 **Fix.** Remove the entry and add it again against the new path:
 
 ```sh
+manni cite remove docs/limits.md --only fetch-timeout
 manni cite add docs/limits.md:11 lib/config/limits.ts:2 --id fetch-timeout
 ```
 
@@ -272,8 +274,9 @@ docs/limits.md: fetch-timeout claim line 13 -> 15 (moved)
 ```
 
 {/* cite marker-claim-never-moves */}
-A marker-anchored claim never reaches this rule. The marker travels with its
-text, so there is nothing to rewrite.
+A marker-anchored claim reaches this rule only when the marker no longer
+anchors the span the pin holds. The marker travels with its text otherwise.
+`update` re-pins it over the span the marker anchors now, with no flag.
 
 ### claim-moved-ambiguous
 
@@ -348,7 +351,11 @@ marker, or an entry that was deleted.
 
 {/* cite cite-true-names-id-true */}
 **Fix.** Correct the id in the marker, or add the entry it refers to. Note
-that `cite true` names the id `true`.
+that `cite true` names the id `true`. To delete the stray marker instead:
+
+```sh
+manni cite remove docs/limits.md --only nope
+```
 
 ### marker-invalid
 
@@ -381,6 +388,35 @@ nothing, so this is a **warning**.
 
 **Fix.** Delete the second marker, or give the paragraph its own entry and
 its own id.
+
+### marker-misplaced
+
+```
+⚠ docs/limits.md
+    ↕ host-scope   marker :44 -> :41 moved   lib/scope.ts:9 current
+```
+
+The marker sits inside a paragraph, between two lines of text. MDX and
+CommonMark both end a paragraph at a comment line, so the page renders two
+paragraphs split mid-sentence. The tool reads it the same way, which leaves
+the lines above the marker anchored by nothing. Its place is above the first
+line of the paragraph, where `cite add --marker` writes one.
+
+The claim beside it often reads `claim-moved`, a notice. The pinned text is
+still on the page, at a span the marker no longer anchors.
+
+**Fix.** `manni cite update`. The marker moves, and the claim is re-pinned
+over the whole paragraph. Every entry the move pushed along has its lines
+rewritten in the same write. No flag is needed.
+
+A marker whose claim holds nowhere stays put, and says so:
+
+```
+docs/limits.md: robots  ↕ skipped: robots: the marker at line 70 stays, because its claim changed since it was pinned. update --accept moves it and re-pins.
+```
+
+Read the sentence first with `cite check --show-diff`, then
+`update --accept --only <id>` moves it and re-pins it.
 
 ### anchor-invalid
 
@@ -434,9 +470,16 @@ fetch-timeout: a plain source is pinned with sha256-, not hmac-sha256-.
 And a page that still carries its own `citations:` while a manifest owns the
 key is the other. Move those entries into the manifest.
 
-**Fix.** Correct the entry, or delete it and let `add` write a well-formed
-one. The [citations reference](/manni/cite/reference/citations/) has the full
-shape and the file grammar.
+**Fix.** Correct the entry, or remove it and let `add` write a well-formed
+one. `remove` reads the entries as they are written. A broken one is still
+reachable by its id, or by its pointer when it has none:
+
+```sh
+manni cite remove docs/limits.md --only /citations/3
+```
+
+The [citations reference](/manni/cite/reference/citations/) has the full shape
+and the file grammar.
 
 ### quote-drift
 

@@ -7,7 +7,9 @@
  * holds at the recorded lines: `current`. The same text is found verbatim
  * elsewhere in the body: `moved`, once, or `moved-ambiguous`. Nowhere:
  * `changed`, the sentence was edited. A marker-anchored claim pins what the
- * marker anchors, so it never moves; it is `current` or `changed`.
+ * marker anchors, so its text never moves on the page; it is `current`,
+ * `changed`, or, when the pin holds over a span the marker no longer anchors,
+ * `moved`. `src/cite/core/reanchor.ts` reads those spans.
  */
 import type {
   ClaimEnd,
@@ -16,6 +18,11 @@ import type {
   PageLines,
 } from "../types.js";
 import { findWindows, parseLines, pinOfLines, spellLines, toFileLines } from "../../shared/pin.js";
+import {
+  markerClaimEnd,
+  misplacedMarkerAt,
+  type MisplacedMarker,
+} from "./reanchor.js";
 import {
   anchoredLines,
   fenceSpanAt,
@@ -82,11 +89,11 @@ export function claimEnd(
   page: PageCitations,
   entry: PageCitation,
   lines: readonly string[],
+  misplaced?: MisplacedMarker,
 ): ClaimEnd | null {
   const { citation, marker } = entry;
   const claim = citation.claim;
   if (claim === undefined) return null;
-  const quote = citation.quote === true;
   const body = page.bodyLine;
 
   if (claim.lines !== undefined) {
@@ -129,12 +136,14 @@ export function claimEnd(
   }
 
   if (marker !== undefined) {
-    // The marker moves with its text, so a marker-anchored claim never moves.
-    const unit = anchoredLines(page.content, marker.end, page.format, quote);
-    if (unit === undefined) return { status: "changed" };
-    const end: ClaimEnd = { fileLines: spellLines(unit), status: "changed" };
-    if (pinOfLines(lines, unit) === claim.integrity) return { ...end, status: "current" };
-    return { ...end, text: textAt(lines, unit) };
+    // The marker travels with its text, so what moves is the span the marker
+    // anchors, not the text. `reanchor.ts` reads the three spans.
+    return markerClaimEnd(
+      page,
+      entry,
+      lines,
+      misplaced ?? misplacedMarkerAt(page, lines, marker.line, entry),
+    );
   }
 
   // A claim pin with neither lines nor a marker anchors nothing at all.

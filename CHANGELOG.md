@@ -4,6 +4,42 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.5.1](https://github.com/hawkeyexl/manni/compare/v2.5.0...v2.5.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* **a11y:** stop crediting a sitemap that supplied no pages ([#86](https://github.com/hawkeyexl/manni/issues/86)) ([ba0a661](https://github.com/hawkeyexl/manni/commit/ba0a661874ec608f2a99f5d5bf2d2cbc8ec94040)), closes [#77](https://github.com/hawkeyexl/manni/issues/77)
+
+# [2.5.0](https://github.com/hawkeyexl/manni/compare/v2.4.0...v2.5.0) (2026-09-18)
+
+
+### Features
+
+* **cite:** re-anchor a misplaced marker ([#68](https://github.com/hawkeyexl/manni/issues/68)) ([c6918af](https://github.com/hawkeyexl/manni/commit/c6918afec1ee9300522abd9e2bb03e6e099f68c4)), closes [#43](https://github.com/hawkeyexl/manni/issues/43) [pre-#43](https://github.com/pre-/issues/43) [#43](https://github.com/hawkeyexl/manni/issues/43)
+
+# [2.4.0](https://github.com/hawkeyexl/manni/compare/v2.3.10...v2.4.0) (2026-09-17)
+
+
+### Features
+
+* **cite:** manni cite remove ([#71](https://github.com/hawkeyexl/manni/issues/71)) ([e14f4ab](https://github.com/hawkeyexl/manni/commit/e14f4abe8bc08f6c06c407aa30a5dbd516ea4cfd))
+
+## [2.3.10](https://github.com/hawkeyexl/manni/compare/v2.3.9...v2.3.10) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a duplicate or empty claim, and name the pinned source line ([#67](https://github.com/hawkeyexl/manni/issues/67)) ([4774b48](https://github.com/hawkeyexl/manni/commit/4774b4894c88117de6cd7bcdfc52568491a6faf3)), closes [#65](https://github.com/hawkeyexl/manni/issues/65) [#61](https://github.com/hawkeyexl/manni/issues/61) [#61](https://github.com/hawkeyexl/manni/issues/61) [#61](https://github.com/hawkeyexl/manni/issues/61)
+
+## [2.3.9](https://github.com/hawkeyexl/manni/compare/v2.3.8...v2.3.9) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** sarif and junit describe cite rules, not schema keywords ([#60](https://github.com/hawkeyexl/manni/issues/60)) ([f026967](https://github.com/hawkeyexl/manni/commit/f02696717b8553587b1f01fa2e6c4cd59d075b6f))
+* **collections:** honour --collection with stdin beside it ([#61](https://github.com/hawkeyexl/manni/issues/61)) ([541b63e](https://github.com/hawkeyexl/manni/commit/541b63e5caae981cc8278f8557a60990633e1d9e))
+
 ## [2.3.8](https://github.com/hawkeyexl/manni/compare/v2.3.7...v2.3.8) (2026-09-17)
 
 

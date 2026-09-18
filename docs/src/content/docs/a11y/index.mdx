@@ -138,7 +138,9 @@ as a PDF, an image, or a stylesheet. Those URLs join the queue right after the
 seeds, deduped against them with a trailing slash ignored. Link following still
 runs on top, so a page the sitemap missed but a checked page links to is found
 too. `--max-pages` caps the whole run. The header line names the sitemap that
-was used, and `summary.sitemap` carries its URL.
+was found. It also says how many pages the sitemap supplied when link
+following did some of the work. `summary.sitemap` carries its URL, and
+`summary.sitemapPages` the count.
 
 ### When there is none
 
