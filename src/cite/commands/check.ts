@@ -206,12 +206,18 @@ export async function prepareRun(
   // tree. Where it is not, the index is a walk and history is off, and a page
   // whose citations wanted history says so (see `checkCitations`).
   const git = opts.gitClient ?? gitClient(run.root);
+  // A claim's history is the page's own, so it is read in the repository the
+  // page paths resolve from, which is not the sources' under `--root`.
+  const pageGit =
+    opts.pageGitClient ?? (run.base === run.root ? git : gitClient(run.base));
   const pageOptions: CheckPageOptions = {
     root: run.root,
     checkSources,
     key: run.key,
     severity: config?.severity,
     gitClient: git,
+    pageRoot: run.base,
+    pageGitClient: pageGit,
   };
   if (checkSources) pageOptions.sourceIndex = await sourceIndexFor(run.root, git);
 

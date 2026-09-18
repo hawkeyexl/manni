@@ -4,6 +4,27 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [2.6.0](https://github.com/hawkeyexl/manni/compare/v2.5.2...v2.6.0) (2026-09-18)
+
+
+### Features
+
+* **cite:** read the page's history for a changed claim ([#73](https://github.com/hawkeyexl/manni/issues/73)) ([114208e](https://github.com/hawkeyexl/manni/commit/114208e908bd271f1bc33ee462c0754a15347ab9)), closes [#68](https://github.com/hawkeyexl/manni/issues/68) [#43](https://github.com/hawkeyexl/manni/issues/43) [#68](https://github.com/hawkeyexl/manni/issues/68) [#60](https://github.com/hawkeyexl/manni/issues/60)
+
+## [2.5.2](https://github.com/hawkeyexl/manni/compare/v2.5.1...v2.5.2) (2026-09-18)
+
+
+### Bug Fixes
+
+* **a11y:** let the CLI turn crawling and the page cap back on ([#85](https://github.com/hawkeyexl/manni/issues/85)) ([6358e7e](https://github.com/hawkeyexl/manni/commit/6358e7e907182bb125ac81ee4dea5e4b71e7cd3b)), closes [#79](https://github.com/hawkeyexl/manni/issues/79)
+
+## [2.5.1](https://github.com/hawkeyexl/manni/compare/v2.5.0...v2.5.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* **a11y:** stop crediting a sitemap that supplied no pages ([#86](https://github.com/hawkeyexl/manni/issues/86)) ([ba0a661](https://github.com/hawkeyexl/manni/commit/ba0a661874ec608f2a99f5d5bf2d2cbc8ec94040)), closes [#77](https://github.com/hawkeyexl/manni/issues/77)
+
 # [2.5.0](https://github.com/hawkeyexl/manni/compare/v2.4.0...v2.5.0) (2026-09-18)
 
 
