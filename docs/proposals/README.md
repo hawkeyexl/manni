@@ -67,6 +67,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0052](0052-term-domain.md) | The `term` domain. A term is a flat record with `type: term`, read from every format in one-per-file and many-per-file shapes. `manni term` checks the set, lints definitions and writes a Vale style. It renders the set to any format | Sara · S6 / Maya · M9 / Devin · D8 | Accepted |
 | [0053](0053-claim-history.md) | Claim history. A claim that no longer holds is read against the page's history, from the newest commit whose page held the pin. `check` says since when, and `claim-reanchored` separates a layout change from an edit | Maya · M5 / Theo · T2 / Devin · D5 | Implemented (#73) |
 | [0054](0054-marker-reanchoring.md) | Re-anchoring misplaced cite markers. A marker line inside a paragraph is `marker-misplaced`, a warning. `update` moves it where `add --marker` writes markers, and re-pins when the old pin still holds | Maya · M5 / Theo · T2 / Devin · D5 | Implemented (#68) |
+| [0055](0055-following-a-source.md) | Following a source across files, and inside a changed range. A pin that holds nowhere in its file is searched for in the files a commit touched, so a rename reads `source-moved` rather than `source-missing`. A changed source carries the span its pinned lines now cover, and `update --accept` re-mints there | Maya · M5 / Devin · D5 / Theo · T2 | Proposed |
 | [0058](0058-a-manifest-per-page.md) | A manifest per page. `externalMetadata[].file` takes one placeholder, `{page}`, so a collection keeps each page's external metadata in a file named after that page. A concrete `file` keeps today's meaning | Maya · M6 / Devin · D5 | Proposed |
 | [0059](0059-a11y-crawl-exclusions.md) | Keeping the a11y crawl out of part of a site: `--exclude <glob>` repeatable, an `a11y.exclude:` key, globs matched against the URL path, and `summary.excluded` | Devin · D1, D3 | Proposed |
 
@@ -147,6 +148,11 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 0044 ──> 0053            (the claim pin, read against the page's history as the source
                           end reads its commit-sha)
 0044 ──> 0054            (the rule table, the marker reading and update's repair contract it extends)
+
+0044 ──┬─> 0055          (the pin, the statuses and the two search regimes it extends;
+       │                  its stress test 15, which this supersedes in part)
+0045 ──┘                 (the family key, the cite-src context and the keyed pin a moved
+                          private source keeps)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.
