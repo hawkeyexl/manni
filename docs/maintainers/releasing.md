@@ -61,10 +61,17 @@ nobody can install:
 | npm serves exactly that version | a publish that failed after `prepare` bumped `package.json` moves the tag to an unpublished tree |
 | the `vX.Y.Z` tag is on the remote | the major tag is aimed at a tag that was never pushed |
 
-The npm check waits up to about five minutes, 30 tries 10 seconds apart,
-because the registry lags the publish. A version that changed but fails
-either of the last two gates is a half-published release. The step fails with an `::error::` annotation rather
-than skipping, so someone looks.
+The npm check waits about ten minutes, backing off from 5 to 60 seconds. The
+registry lags the publish, and that lag has no documented bound. It reads two
+ways, the exact-version document and the package's version list, and takes
+either one.
+
+Failing either of the last two gates leaves the tag where it was, so the step
+exits non-zero with an `::error::` annotation. The two messages stay apart. npm
+not serving the version inside the budget is nearly always propagation, and
+that message names which tag does exist. npm serving it while the remote has no
+version tag is a genuinely half-published release. Both print the command that
+finishes the job by hand, version already substituted.
 
 It tags `v$version` rather than `HEAD`, because semantic-release commits the
 changelog and version bump itself, so `HEAD` is not necessarily what it tagged.

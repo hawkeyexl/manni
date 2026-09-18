@@ -137,15 +137,18 @@ jobs:
       #   in `prepare`, before `publish`, so a failed publish still changes the
       #   version. The printed version is compared rather than the exit status
       #   trusted, because older npm exits 0 with no output for a missing
-      #   version. Retried for about five minutes, 30 tries 10 seconds apart,
-      #   because the registry lags the publish: 2.0.1 was still not served
-      #   forty seconds after npm reported it published.
+      #   version. Retried, because the registry lags the publish: 2.0.1 was
+      #   still not served forty seconds after npm reported it published.
       # - The `v$version` tag is on the remote. The major tag is moved to that
       #   tag, so a release that failed before pushing it has nothing to aim at.
       #
-      # A release that changed the version but fails one of the last two gates
-      # is a half-published release, so the step fails loudly rather than
-      # skipping quietly.
+      # Failing either of the last two gates leaves the major tag where it was,
+      # so the step exits non-zero either way. They are different problems and
+      # say so. npm not serving the version inside the budget is nearly always
+      # propagation, and that message names which tag does exist rather than
+      # guessing; npm serving it while the remote has no version tag is a
+      # genuinely half-published release. Both print the command that finishes
+      # the job by hand, version already substituted.
       #
       # The token is passed explicitly because `checkout` above sets
       # `persist-credentials: false`: the job holds `contents: write`, but no
@@ -180,22 +183,92 @@ jobs:
               ;;
           esac
           name="$(node -p "require('./package.json').name")"
-          served=""
-          for attempt in $(seq 1 30); do
-            served="$(npm view "$name@$version" version 2>/dev/null || true)"
-            if [ "$served" = "$version" ]; then break; fi
-            if [ "$attempt" -lt 30 ]; then sleep 10; fi
-          done
-          if [ "$served" != "$version" ]; then
-            echo "::error::package.json says $version, but npm does not serve $name@$version; leaving the major tag alone. The release is half-published."
-            exit 1
-          fi
-          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          if ! git ls-remote --exit-code --tags "$remote" "refs/tags/v$version" >/dev/null 2>&1; then
-            echo "::error::npm serves $name@$version, but the remote has no v$version tag; leaving the major tag alone. The release is half-published."
-            exit 1
-          fi
           major="v${version%%.*}"
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          # Does npm serve this version yet? Two read paths, because they go
+          # through different registry caches and one can be current while the
+          # other still answers as though the version does not exist: the
+          # exact-version document first, then the package's version list.
+          # Either one showing it is proof enough. Both are wrapped so a
+          # transient network failure reads as "not yet" instead of killing the
+          # step mid-poll.
+          npm_serves_version() {
+            if [ "$(npm view "$name@$version" version 2>/dev/null || true)" = "$version" ]; then
+              return 0
+            fi
+            if { npm view "$name" versions --json 2>/dev/null || true; } | grep -Fq "\"$version\""; then
+              return 0
+            fi
+            return 1
+          }
+
+          # About ten minutes of waiting, backing off 5s, 10s, 20s, 40s, then
+          # 60s. Fourteen attempts and thirteen sleeps, and the last sleep
+          # overshoots, so the budget is spent at 615s rather than at exactly
+          # 600. The old poll was flat: thirty tries ten seconds apart, five
+          # minutes, and five minutes was not enough. The 2.7.0 release polled
+          # 03:16:55 to 03:21:54, failed this step, and npm was serving 2.7.0
+          # as `latest` soon after. Nothing was wrong with that release but
+          # this tag.
+          #
+          # Registry lag after a publish has no documented bound, so the number
+          # comes from what the job can afford rather than from the registry.
+          # That run reached this step 5m10s in, install through
+          # semantic-release, and `timeout-minutes: 20` covers the lot, so ten
+          # minutes of waiting leaves about four minutes spare. Going higher
+          # trades a clear failure for a cancelled job, and a cancelled job
+          # skips this step's `if` and reports nothing at all.
+          #
+          # Backing off rather than polling flat is what keeps that budget
+          # affordable to the registry. Fourteen attempts at two reads each is
+          # 28 reads; a flat ten seconds across the same budget would be about
+          # sixty attempts, so about 120.
+          budget_minutes=10
+          budget_seconds=$((budget_minutes * 60))
+          waited=0
+          delay=5
+          served=no
+          while :; do
+            if npm_serves_version; then
+              served=yes
+              break
+            fi
+            if [ "$waited" -ge "$budget_seconds" ]; then
+              break
+            fi
+            echo "npm does not serve $name@$version yet; waiting ${delay}s (${waited}s of ${budget_seconds}s)."
+            sleep "$delay"
+            waited=$((waited + delay))
+            delay=$((delay * 2))
+            if [ "$delay" -gt 60 ]; then delay=60; fi
+          done
+
+          if git ls-remote --exit-code --tags "$remote" "refs/tags/v$version" >/dev/null 2>&1; then
+            tagged=yes
+          else
+            tagged=no
+          fi
+
+          if [ "$served" != yes ]; then
+            if [ "$tagged" = yes ]; then
+              known="the v$version tag is on the remote, so the release got that far"
+            else
+              known="the remote has no v$version tag either, so check whether the publish ran at all"
+            fi
+            echo "::error::npm did not serve $name@$version within $budget_minutes minutes, so $major still points where it did. That is usually npm lagging the publish rather than a failed publish, and $known. Confirm with: npm view $name@$version version"
+            echo "Once npm serves $version, move the major tag by hand:"
+            echo "git fetch origin --tags && git tag -f $major v$version && git push --force origin refs/tags/$major"
+            exit 1
+          fi
+
+          if [ "$tagged" != yes ]; then
+            echo "::error::npm serves $name@$version, but the remote has no v$version tag; leaving the major tag alone. The release is half-published: it reached every consumer of the package and left $major nothing to aim at."
+            echo "Once you have checked that origin/main is still the release commit, tag it and move the major tag by hand:"
+            echo "git fetch origin && git tag v$version origin/main && git push origin refs/tags/v$version && git tag -f $major v$version && git push --force origin refs/tags/$major"
+            exit 1
+          fi
+
           # Anchored to the concrete version tag semantic-release just created,
           # not to HEAD: semantic-release commits the changelog and version bump
           # itself, so HEAD here is not necessarily what it tagged.
