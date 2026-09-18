@@ -177,7 +177,8 @@ minted, and an append never renumbers or reorders a word somebody else wrote.
 already carries a stack of six keeps the stack, and the seventh citation joins
 the sixth marker. Collapsing an existing stack is an edit to somebody's prose
 file, and § Consequences records it as an open question rather than doing it
-here.
+here. When the nearest marker already holds 25 ids, `add --marker` writes a
+new marker line instead of joining, and stress test 12 walks the case through.
 
 `--id` stays one id. `add` mints one entry per run, each with its own source
 range and its own pin. A list there would have nothing to pair the second id
@@ -712,6 +713,45 @@ A page of 500 markers naming 25 ids each holds 12,500 citations and is legal.
 The cap that would bite first is the entry count the page or the manifest can
 hold, which nothing bounds today. That is left where 0044 left it, since the
 list grammar lowers the number of markers a page needs rather than raising it.
+
+**12. Joining into a full marker.** `docs/limits.md:30` is a paragraph whose
+marker at line 29 already holds 25 ids, and a twenty-sixth citation is minted
+over it.
+
+```console
+$ manni cite add docs/limits.md:30 lib/limits.ts:9 --id backoff --marker
+docs/limits.md: added backoff to frontmatter; marker at line 30, claim pinned at line 31
+```
+
+The report line is 0044's, because a marker was written rather than joined. The
+page now carries two marker lines over the one paragraph:
+
+```markdown
+{/* cite fetch-timeout retries ... twenty-three more ... */}
+{/* cite backoff */}
+The client waits two seconds for a response, retries three times, and
+backs off exponentially between attempts.
+```
+
+`check` reports twenty-six rows, one per citation. Twenty-five carry
+`marker :29` and the twenty-sixth carries `marker :30`:
+
+```console
+$ manni cite check docs/limits.md
+✓ docs/limits.md
+    ✓ fetch-timeout   marker :29 current   lib/limits.ts:2 current
+    ✓ retries         marker :29 current   lib/limits.ts:5 current
+    ...
+    ✓ backoff         marker :30 current   lib/limits.ts:9 current
+```
+
+**Changed as a result:** the overflow writes a marker rather than refusing.
+A refusal would leave no way to cite the paragraph short of editing the marker
+line by hand. `add` should not fail for a reason the user cannot act on.
+The cap bounds one line's length, not how many citations a paragraph may carry.
+The resulting shape is stress test 4's, which `check` has read since 0044.
+Every page written before this proposal carries a stack, so the outcome is a
+shape the tool already understands.
 
 ## Verification
 
