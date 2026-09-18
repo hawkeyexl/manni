@@ -271,36 +271,53 @@ layout is something the author writes. That keeps "detect, don't switch":
 **The split runs through the page, in two runs.** `relocate` has two ends, the
 page and the declared manifest. A shared file and a per page file are both the
 manifest end. It cannot move a value between them, because only one of the two
-is ever declared. Declaring both is not available either: a key has exactly
+is ever declared. Nor would naming a file choose a direction, since the
+direction comes from the schema. Declaring both is not available either:
+a key has exactly
 one manifest in a collection, and a second entry claiming `citations` is a
 config refusal (`src/shared/collections.ts:325-335`).
 
-So the migration is two config edits and two `relocate` runs, in one working
-tree. The two runs are the same command, and the config edits between them are
-what make the second one do something different. Both edits are shown.
+So the migration is one config edit, one throwaway schema and two `relocate`
+runs, in one working tree.
+
+The throwaway schema is the part worth naming. `relocate` takes its direction
+from the schema, not from the config. `removeKey` fires only where a key's
+preference is `page` (`src/meta/core/relocation.ts:908-915`), and
+`manni:citations` marks `citations` as `external`. So emptying `keys:` by hand
+would not pull the values out. It would stop them being read and strand them
+in a file nothing declares. The lever that does work is `-s`, which overrides
+the preferences for one run, and 0047 § 6 is where the reverse direction is
+documented.
 
 ```console
-# 1. Edit manni.config.yaml. Empty the shared entry's keys, keeping the entry.
-#      externalMetadata:
-#        - file: ./site.metadata.yaml
-#    -     keys: [citations]
-#    +     keys: []
+# 1. A one-off schema saying citations belongs in the page, for this run only.
+$ cat > /tmp/citations-to-page.schema.json <<'JSON'
+{ "properties": { "citations": { "x-manni-location": "page" } } }
+JSON
 
-# 2. Move every value back into its page.
-$ manni meta relocate --fields citations
+# 2. Move every value back into its page. relocate removes the key from
+#    keys:, and the entry with it, because keys: is then empty.
+$ manni meta relocate --fields citations -s /tmp/citations-to-page.schema.json
 Removing citations from site.metadata.yaml's keys moves it into every page in collection site.
 site.metadata.yaml no longer owns any keys and is no longer declared; delete it when you are ready.
+docs/src/content/docs/a11y/ci/index.mdx
+    citations  ← site.metadata.yaml
+…
 30 files, 1941 values moved into pages
 
-# 3. Edit manni.config.yaml again. Point the entry at a file per page.
+# 3. Edit manni.config.yaml. Declare a file per page, where step 2 left no
+#    externalMetadata: at all.
 #      externalMetadata:
-#    -     - file: ./site.metadata.yaml
-#    -       keys: []
 #    +     - file: "{page}.citations.yaml"
 #    +       keys: [citations]
 
-# 4. Move every value out into its own manifest.
+# 4. Move every value out into its own manifest. No -s: the vocabulary's own
+#    external mark is the one that applies now.
 $ manni meta relocate --fields citations
+Adding citations to {page}.citations.yaml's keys moves it out of every page in collection site.
+docs/src/content/docs/a11y/ci/index.mdx
+    citations  → docs/src/content/docs/a11y/ci/index.citations.yaml:2
+…
 30 files, 1941 values moved to 30 manifests
 
 # 5. Delete the shared file and commit.
@@ -308,6 +325,19 @@ $ rm site.metadata.yaml
 $ manni cite check
 ✓ 1941 citations, no findings
 ```
+
+**What step 2's second line means.** It is `relocate`'s own wording
+(`src/meta/reporters/relocate.ts:144-150`), and both halves are already true
+when it prints. `relocate` removed `citations` from `keys:`, then deleted the
+emptied entry, then deleted `externalMetadata:` because the list was empty
+(`src/meta/core/relocation.ts:1416-1422`). So nothing declares the file any
+more, and the operator does not undeclare it in a later step. "Delete it when
+you are ready" is about the file, which step 5 removes. 0047 stress test 10 is
+why the tool leaves it rather than deleting a file that may carry history.
+
+Step 4's first line names the pattern rather than a path, because a placeholder
+entry has no single file to name. That is this proposal's one change to
+`relocate`'s output.
 
 The halfway state is verifiable. After step 2 every citation is in its page's
 frontmatter, and `manni cite check` passes there, which is the channel 0044
@@ -583,9 +613,14 @@ docs/src/content/docs/cite/index.mdx   docs/src/content/docs/cite/index.citation
 same. `origin.file` now carries the page's own manifest, and `origin.line` is
 a line in it, so both numbers get small.
 
-**`meta relocate -f pretty`.** The summary already counts distinct manifests
-(`src/meta/reporters/relocate.ts:186-196`), so a split reports `to 30
-manifests` with no change to the line.
+**`meta relocate -f pretty`.** The summary needs nothing. It already counts
+distinct manifests (`src/meta/reporters/relocate.ts:186-196`), so a split
+reports `to 30 manifests` on the line as it stands.
+
+One line above it changes. The keys-added and keys-removed lines name
+`m.file` (`src/meta/reporters/relocate.ts:124-141`), and a placeholder entry
+has no single file to name. So those lines print the pattern, as § 4 step 4
+shows. A concrete entry prints its path, unchanged.
 
 ### The ladder
 
