@@ -6,13 +6,14 @@
  * the page, `source.lines` for a source found elsewhere in its file. A marker
  * never moves, because it travels with its own text.
  *
- * `--accept` re-pins a changed end. A claim is re-pinned over the paragraph or
- * fenced block now at its first line, and the report prints that text, so the
- * log shows exactly what was accepted; a claim whose line is blank, or now a
- * different kind of block, or longer than the 5,000-line range limit, is
- * skipped, and a sentence that was reworded *and*
- * moved is an `add` again. A source is re-minted at HEAD, with a new
- * `commit-sha` where the entry records one.
+ * `--accept` re-pins a changed end. A claim is re-pinned over the paragraph,
+ * fenced block or table rows now at its first line, and the report prints that
+ * text, so the log shows exactly what was accepted. A paragraph grows with the
+ * sentence it gained; a table keeps the number of rows the claim was minted
+ * over, because a row is a statement of its own. A claim it cannot re-pin is
+ * skipped with the reason named, and a sentence that was reworded *and* moved
+ * is an `add` again. A source is re-minted at HEAD, with a new `commit-sha`
+ * where the entry records one.
  *
  * Every finding the run did not resolve is reported as skipped, and an
  * error-severity one is work left undone: exit 1, as `fill` has it. Writes by
@@ -23,13 +24,14 @@ import { writeFileAtomic } from "../../meta/index.js";
 import { STDIN_LABEL } from "../../meta/internal.js";
 import { checkCitations } from "../core/check-page.js";
 import {
-  claimLine,
+  noUnitAt,
   normalizeWhitespace,
   pinOfLines,
   toBodyLines,
   toFileLines,
   unitAt,
   type ClaimUnit,
+  type NoUnit,
 } from "../core/claims.js";
 import { GIT_UNAVAILABLE_COMMIT } from "../core/git.js";
 import { splitLines } from "../core/hash.js";
@@ -145,6 +147,28 @@ type Plan =
 interface Declined {
   rule: string;
   why: string;
+}
+
+/**
+ * Why `--accept` re-pinned nothing at the claim's line, said plainly. Each
+ * reason is a different problem: a blank line lost the sentence, a fenced line
+ * moved it into code, a line that starts no paragraph is a heading underline
+ * or an unclosed fence, a line outside the body is a range the page no longer
+ * reaches, and a short table lost rows the claim was minted over.
+ */
+function sayNoUnit(reason: NoUnit): string {
+  switch (reason) {
+    case "outside":
+      return "the line is outside the page body";
+    case "blank":
+      return "the line is blank";
+    case "fenced":
+      return "the line sits inside a fenced block";
+    case "not-a-paragraph":
+      return "the line does not start a paragraph";
+    case "table-short":
+      return "the table no longer holds every row the claim covers";
+  }
 }
 
 /** The rule a plan settles, so its finding is not also reported as skipped. */
@@ -769,12 +793,20 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     // A marker-anchored claim is re-pinned against the page the move left,
     // so the caller plans that one.
     if (claim !== null && claim.status === "changed" && entry !== undefined && result.anchor !== "marker") {
-      // The paragraph or block now at the claim's first line. Anything else
-      // is left for a fresh `cite add`.
-      const unit = ((): ClaimUnit | undefined => {
-        const at = claimLine(claim);
-        return at === undefined ? undefined : unitAt(page, at, lines);
-      })();
+      // The paragraph, block or row now at the claim's first line. Anything
+      // else is left for a fresh `cite add`, and says why.
+      // The span the claim holds now, and the line it starts on. A table keeps
+      // the span: the author chose how many rows the claim covers, and
+      // `--accept` re-mints, never redesigns.
+      //
+      // Both are set for every claim that reaches here. `claimEnd` fills
+      // `fileLines` only on the `claim.lines` branch, and the marker branch is
+      // already excluded above, so the `undefined` arms below are the types
+      // being honest rather than a case a run can land in.
+      const held = claim.fileLines === undefined ? undefined : parseLines(claim.fileLines);
+      const at = held?.start;
+      const unit: ClaimUnit | undefined =
+        at === undefined ? undefined : unitAt(page, at, lines, held);
       const wantsBlock = entry.citation.quote === true;
       const pin = unit === undefined ? undefined : pinOfLines(lines, unit.lines);
       // A unit past the range limit would pin more than a citation may hold.
@@ -784,7 +816,15 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
           rule: "claim-changed",
           why: `Not re-pinned: the ${unit.kind} ${wide}.`,
         });
-      } else if (unit !== undefined && pin !== undefined && (!wantsBlock || unit.kind === "block")) {
+      } else if (unit === undefined) {
+        const why = at === undefined ? undefined : noUnitAt(page, at, lines, held);
+        if (why !== undefined) {
+          declined.set(result.origin.index, {
+            rule: "claim-changed",
+            why: `Not re-pinned: ${sayNoUnit(why)}.`,
+          });
+        }
+      } else if (pin !== undefined && (!wantsBlock || unit.kind === "block")) {
         const replaced = replacementAt(claim, unit.text, page.format);
         // `plansFor` runs only for a selected entry, so a run with `only` set
         // has named this one. `selected` says which repairs run; the bypass

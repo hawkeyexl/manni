@@ -43,6 +43,7 @@ export {
   formatStatement,
   insideFence,
   isBoundLine,
+  isTableRow,
   lineAt,
   offsetOfLine,
   paragraphAfter,
@@ -55,13 +56,14 @@ export {
   claimEnd,
   claimLine,
   markerUnit,
+  noUnitAt,
   normalizeWhitespace,
   pinOfLines,
   toBodyLines,
   toFileLines,
   unitAt,
 } from "./core/claims.js";
-export type { ClaimUnit } from "./core/claims.js";
+export type { ClaimUnit, NoUnit } from "./core/claims.js";
 export {
   GIT_UNAVAILABLE_COMMIT,
   GIT_UNAVAILABLE_HISTORY,

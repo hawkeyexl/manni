@@ -19,6 +19,7 @@ import {
   claimLineNow,
   claimLinesNow,
   markerUnit,
+  noUnitAt,
   normalizeWhitespace,
   pinOfLines,
   toBodyLines,
@@ -269,6 +270,119 @@ describe("unitAt", () => {
       expect(unitAt(page, line, lines)).toBeUndefined();
     }
     expect(unitAt(page, page.bodyLine, lines)).toMatchObject({ kind: "paragraph" });
+  });
+});
+
+describe("unitAt: a table row", () => {
+  it("gives a body row alone, not the rows under it", () => {
+    const page = fixture("table-row.md");
+    const lines = splitLines(page.content);
+    expect(unitAt(page, 17, lines)).toEqual({
+      lines: { start: 17, end: 17 },
+      kind: "paragraph",
+      text: ["| `--retries` | 5 | How many times a request is retried. |"],
+    });
+  });
+
+  it("gives the header row and the delimiter row alone too", () => {
+    const page = fixture("table-row.md");
+    const lines = splitLines(page.content);
+    expect(unitAt(page, 15, lines)).toEqual({
+      lines: { start: 15, end: 15 },
+      kind: "paragraph",
+      text: ["| Flag | Default | What it does |"],
+    });
+    expect(unitAt(page, 16, lines)).toEqual({
+      lines: { start: 16, end: 16 },
+      kind: "paragraph",
+      text: ["|---|---|---|"],
+    });
+  });
+
+  it("gives the last row alone where prose follows the table with no blank line", () => {
+    const content = "---\ntitle: T\n---\n| a | b |\n|---|---|\n| 1 | 2 |\nProse right after.\n";
+    const page = readPage("p.md", content);
+    const lines = splitLines(page.content);
+    expect(unitAt(page, 6, lines)).toEqual({
+      lines: { start: 6, end: 6 },
+      kind: "paragraph",
+      text: ["| 1 | 2 |"],
+    });
+  });
+
+  it("gives the one row of a one-row table", () => {
+    const content = "---\ntitle: T\n---\n| only |\n";
+    const page = readPage("p.md", content);
+    const lines = splitLines(page.content);
+    expect(unitAt(page, 4, lines)).toEqual({
+      lines: { start: 4, end: 4 },
+      kind: "paragraph",
+      text: ["| only |"],
+    });
+  });
+
+  it("keeps the recorded span of a claim over several rows", () => {
+    const page = fixture("table-span.md");
+    const lines = splitLines(page.content);
+    expect(unitAt(page, 17, lines, { start: 17, end: 19 })).toEqual({
+      lines: { start: 17, end: 19 },
+      kind: "paragraph",
+      text: [
+        "| `claim-changed` | error |",
+        "| `claim-moved` | warning |",
+        "| `source-moved` | warning |",
+      ],
+    });
+  });
+
+  it("refuses a recorded span the table no longer covers", () => {
+    const content = "---\ntitle: T\n---\n| a | b |\n|---|---|\nProse replaced the row.\n";
+    const page = readPage("p.md", content);
+    const lines = splitLines(page.content);
+    expect(unitAt(page, 4, lines, { start: 4, end: 6 })).toBeUndefined();
+    expect(noUnitAt(page, 4, lines, { start: 4, end: 6 })).toBe("table-short");
+    // The rows it does still cover are re-pinned as they are.
+    expect(unitAt(page, 4, lines, { start: 4, end: 5 })).toMatchObject({
+      lines: { start: 4, end: 5 },
+    });
+  });
+
+  it("refuses a recorded span that runs past the end of the page", () => {
+    const page = fixture("table-span.md");
+    const lines = splitLines(page.content);
+    expect(noUnitAt(page, 19, lines, { start: 19, end: 21 })).toBe("table-short");
+  });
+
+  it("reads a pipe line inside a fenced block as fenced, not as a row", () => {
+    const content = "---\ntitle: T\n---\n```\n| a | b |\n```\n";
+    const page = readPage("p.md", content);
+    const lines = splitLines(page.content);
+    expect(unitAt(page, 5, lines)).toBeUndefined();
+  });
+});
+
+describe("noUnitAt", () => {
+  const page = (body: string): PageCitations => readPage("p.md", `---\ntitle: T\n---\n${body}`);
+
+  it("names a blank line, a fenced line, a line that starts no paragraph, and one outside the body", () => {
+    const blank = page("\nText.\n");
+    expect(noUnitAt(blank, 4, splitLines(blank.content))).toBe("blank");
+
+    const fenced = page("```ts\nconst a = 1;\n```\n");
+    expect(noUnitAt(fenced, 5, splitLines(fenced.content))).toBe("fenced");
+
+    const broken = page("----\n");
+    expect(noUnitAt(broken, 4, splitLines(broken.content))).toBe("not-a-paragraph");
+
+    const short = page("Text.\n");
+    const lines = splitLines(short.content);
+    expect(noUnitAt(short, lines.length + 1, lines)).toBe("outside");
+    expect(noUnitAt(short, 1, lines)).toBe("outside");
+  });
+
+  it("is undefined where a unit is found", () => {
+    const plain = page("Text.\n");
+    expect(noUnitAt(plain, 4, splitLines(plain.content))).toBeUndefined();
   });
 });
 

@@ -27,6 +27,7 @@ import {
   anchoredLines,
   fenceSpanAt,
   insideFence,
+  isTableRow,
   lineAt,
   offsetOfLine,
   paragraphAfter,
@@ -158,31 +159,102 @@ export interface ClaimUnit {
 }
 
 /**
- * The paragraph or fenced block at a file line. Undefined when the line is
- * blank, outside the body, or inside a fenced block rather than opening one:
- * those are the claims `update --accept` skips.
+ * Why no unit sits at a file line. Each one is a different problem with a
+ * different repair, so `update --accept` names which it hit rather than
+ * leaving the entry skipped with no reason.
+ */
+export type NoUnit = "outside" | "blank" | "fenced" | "not-a-paragraph" | "table-short";
+
+/**
+ * The rows a claim on a table re-pins over, or why there are none.
+ *
+ * A row is a statement, so a claim over N rows is a claim over N statements.
+ * The extent is the author's, and re-pinning re-mints the hash over it rather
+ * than redesigning it: one recorded line gives one row, and five give five.
+ * Rows below a one-line claim are other statements, and a table that no longer
+ * reaches the recorded end is a question only the author can answer.
+ *
+ * The unit comes back as `kind: "paragraph"`, since `ClaimUnit` distinguishes
+ * prose from a fenced block and nothing else. A caller wanting to know whether
+ * it holds rows has to ask `isTableRow` about the text, not read `kind`.
+ */
+function rowsAt(
+  line: number,
+  lines: readonly string[],
+  recorded: PageLines | undefined,
+): ClaimUnit | NoUnit {
+  const width = recorded === undefined ? 1 : Math.max(1, recorded.end - recorded.start + 1);
+  const end = line + width - 1;
+  if (end > lines.length) return "table-short";
+  for (let n = line; n <= end; n++) {
+    if (!isTableRow(lines[n - 1] ?? "")) return "table-short";
+  }
+  return { lines: { start: line, end }, kind: "paragraph", text: lines.slice(line - 1, end) };
+}
+
+/**
+ * The unit at a file line, or why there is none. `unitAt` and `noUnitAt` are
+ * the two halves a caller reads, so the guards are written once. `recorded` is
+ * the span the claim holds now, which only a table reads.
+ */
+function unitOrWhy(
+  page: PageCitations,
+  line: number,
+  lines: readonly string[],
+  recorded?: PageLines,
+): ClaimUnit | NoUnit {
+  if (line < page.bodyLine || line > lines.length) return "outside";
+  const own = lines[line - 1] ?? "";
+  if (own.trim() === "") return "blank";
+  const block = fenceSpanAt(page.content, line, page.format);
+  if (block !== undefined) {
+    return { lines: block, kind: "block", text: lines.slice(block.start - 1, block.end) };
+  }
+  if (insideFence(page.content, page.bodyOffset, line, page.format)) return "fenced";
+  // A table row is a statement of its own, and nothing between two rows ends a
+  // paragraph, so the walk below would read the rest of the table as one.
+  if (isTableRow(own)) return rowsAt(line, lines, recorded);
+  const paragraph = paragraphAfter(page.content, offsetOfLine(page.content, line));
+  if (paragraph === undefined || paragraph.line !== line) return "not-a-paragraph";
+  const span: PageLines = { start: line, end: lineAt(page.content, paragraph.end) };
+  return { lines: span, kind: "paragraph", text: lines.slice(span.start - 1, span.end) };
+}
+
+/**
+ * The paragraph, fenced block or table rows at a file line. Undefined when the
+ * line is blank, outside the body, or inside a fenced block rather than
+ * opening one: those are the claims `update --accept` skips, and `noUnitAt`
+ * says which of them it is.
  *
  * A paragraph runs from this line to its end, not from the paragraph's own
  * first line. The line asked about is the claim's first line, and re-pinning
  * has to leave that where it is, so a claim that started mid-paragraph keeps
- * starting there.
+ * starting there. A paragraph that gained a sentence gained it as part of the
+ * same statement, which is why a claim grows with it.
+ *
+ * A table does not work that way. Each row is a statement, so a claim keeps
+ * the number of rows `recorded` gives it, and refuses when the table no longer
+ * reaches that far. Callers that know the claim's current span pass it.
  */
 export function unitAt(
   page: PageCitations,
   line: number,
   lines: readonly string[],
+  recorded?: PageLines,
 ): ClaimUnit | undefined {
-  if (line < page.bodyLine || line > lines.length) return undefined;
-  if ((lines[line - 1] ?? "").trim() === "") return undefined;
-  const block = fenceSpanAt(page.content, line, page.format);
-  if (block !== undefined) {
-    return { lines: block, kind: "block", text: lines.slice(block.start - 1, block.end) };
-  }
-  if (insideFence(page.content, page.bodyOffset, line, page.format)) return undefined;
-  const paragraph = paragraphAfter(page.content, offsetOfLine(page.content, line));
-  if (paragraph === undefined || paragraph.line !== line) return undefined;
-  const span: PageLines = { start: line, end: lineAt(page.content, paragraph.end) };
-  return { lines: span, kind: "paragraph", text: lines.slice(span.start - 1, span.end) };
+  const found = unitOrWhy(page, line, lines, recorded);
+  return typeof found === "string" ? undefined : found;
+}
+
+/** Why `unitAt` found nothing at a file line, or undefined when it found a unit. */
+export function noUnitAt(
+  page: PageCitations,
+  line: number,
+  lines: readonly string[],
+  recorded?: PageLines,
+): NoUnit | undefined {
+  const found = unitOrWhy(page, line, lines, recorded);
+  return typeof found === "string" ? found : undefined;
 }
 
 /** The lines a marker anchors now, for `update --accept` on a marker-anchored claim. */

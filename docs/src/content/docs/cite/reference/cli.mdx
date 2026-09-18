@@ -632,11 +632,31 @@ names the entry. The page has already moved under them. An entry whose
 pinned text moved elsewhere is left for a run that names it.
 
 {/* cite accept-skips-blank-claim */}
-`update --accept` skips a claim whose first line is now blank, or inside a
-different kind of block. It also skips a paragraph or block longer than 5,000
-lines, and says so. A sentence that was reworded **and** moved has left
-that line. `--accept` then re-pins whatever paragraph now starts there, so read
-the printed text. If it is not the sentence, `cite add` the sentence again.
+`update --accept` re-pins the unit at the claim's first line. That is the
+paragraph there, the fenced block there, or the table rows there. A line whose
+first non-blank character is `|` is a table row, so a table indented inside a
+list item counts.
+
+A paragraph that gained a sentence gained it as part of the same statement, so
+a claim over a paragraph grows with it. A table row is a statement of its own.
+A claim keeps the number of rows it was minted over. One recorded line re-pins
+one row, and five re-pin five. When the table no longer reaches that far, the
+claim is skipped rather than guessed at.
+
+It skips a claim it cannot re-pin, and names the reason beside the finding:
+
+| The claim's first line | Message |
+|---|---|
+| Is blank | `Not re-pinned: the line is blank.` |
+| Sits inside a fenced block | `Not re-pinned: the line sits inside a fenced block.` |
+| Starts no paragraph | `Not re-pinned: the line does not start a paragraph.` |
+| Is outside the page body | `Not re-pinned: the line is outside the page body.` |
+| Opens fewer rows than the claim covers | `Not re-pinned: the table no longer holds every row the claim covers.` |
+| Opens a unit over 5,000 lines | `Not re-pinned: the paragraph spans 6000 lines, more than 5000.` |
+
+A sentence that was reworded **and** moved has left that line. `--accept` then
+re-pins whatever now starts there, so read the printed text. If it is not the
+sentence, `cite add` the sentence again.
 
 Two guards bound an accepted claim. The first refuses a line that was
 replaced rather than edited. Both texts, the claim at its baseline and what

@@ -403,7 +403,235 @@ describe("runUpdate: the claim end", () => {
     const run = await update({ inputs: [label], accept: true });
     expect(run).toMatchObject({ rewritten: 0, skipped: 1, exitCode: 0 });
     expect(run.pages[0]?.skipped.map((f) => f.rule)).toEqual(["claim-changed"]);
+    expect(run.pages[0]?.skipped[0]?.message).toContain("Not re-pinned: the line is blank.");
     expect(onDisk(label)).toBe(before);
+  });
+
+  it("says a changed claim now sits inside a fenced block", async () => {
+    workspace();
+    const label = write("fenced.md", [
+      "---",
+      "citations:",
+      "  - id: buried",
+      "    claim:",
+      "      lines: 4",
+      `      integrity: ${hashLines("A sentence nobody kept.")}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "---",
+      "Before.",
+      "",
+      "```ts",
+      "const a = 1;",
+      "```",
+    ]);
+    const before = onDisk(label);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.skipped.map((f) => f.rule)).toEqual(["claim-changed"]);
+    expect(run.pages[0]?.skipped[0]?.message).toContain(
+      "Not re-pinned: the line sits inside a fenced block.",
+    );
+    expect(onDisk(label)).toBe(before);
+  });
+
+  it("says a changed claim's line no longer starts a paragraph", async () => {
+    workspace();
+    const label = write("adorned.md", [
+      "---",
+      "citations:",
+      "  - id: underlined",
+      "    claim:",
+      "      lines: 1",
+      `      integrity: ${hashLines("A sentence nobody kept.")}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "---",
+      "----",
+      "",
+      "Something else entirely.",
+    ]);
+    const before = onDisk(label);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.skipped.map((f) => f.rule)).toEqual(["claim-changed"]);
+    expect(run.pages[0]?.skipped[0]?.message).toContain(
+      "Not re-pinned: the line does not start a paragraph.",
+    );
+    expect(onDisk(label)).toBe(before);
+  });
+
+  it("says a changed claim's line is outside the page body", async () => {
+    workspace();
+    const label = write("short.md", [
+      "---",
+      "citations:",
+      "  - id: past-the-end",
+      "    claim:",
+      "      lines: 40",
+      `      integrity: ${hashLines("A sentence nobody kept.")}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "---",
+      "Something else entirely.",
+    ]);
+    const before = onDisk(label);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.skipped.map((f) => f.rule)).toEqual(["claim-changed"]);
+    expect(run.pages[0]?.skipped[0]?.message).toContain(
+      "Not re-pinned: the line is outside the page body.",
+    );
+    expect(onDisk(label)).toBe(before);
+  });
+
+  it("--accept re-pins a table row alone, leaving the rows under it", async () => {
+    workspace("table-row.md");
+    const label = "pages/table-row.md";
+    const row = "| `--retries` | 5 | How many times a request is retried. |";
+    const pin = hashLines(row);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.at, r.text, r.to])).toEqual([
+      ["retries-row", 17, row, pin],
+    ]);
+    const after = onDisk(label);
+    // The claim still spans one line, and the rows under it keep their text.
+    expect(after).toContain("      lines: 5\n");
+    expect(after).toContain(`      integrity: ${pin}\n`);
+    expect(after).toContain("| `--timeout` | 10 | Seconds a request waits before it is given up. |\n");
+    expect(after).toContain("| `--max-files` | 10000 | Files one run reads at most. |\n");
+    expect(await ends(label)).toEqual([["current", "current"]]);
+  });
+
+  it("--accept keeps the span of a claim pinned over several rows", async () => {
+    workspace("table-span.md");
+    const label = "pages/table-span.md";
+    const rows = [
+      "| `claim-changed` | error |",
+      "| `claim-moved` | warning |",
+      "| `source-moved` | warning |",
+    ];
+    const pin = hashLines(rows.join("\n"));
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.at, r.to])).toEqual([
+      ["severity-rows", 17, pin],
+    ]);
+    const after = onDisk(label);
+    // The author chose three rows, so the re-mint covers three rows.
+    expect(after).toContain("      lines: 5-7\n");
+    expect(after).toContain(`      integrity: ${pin}\n`);
+    expect(await ends(label)).toEqual([["current", "current"]]);
+  });
+
+  it("refuses a multi-row claim whose table shrank under it", async () => {
+    workspace();
+    const label = write("shrank.md", [
+      "---",
+      "citations:",
+      "  - id: shrank",
+      "    claim:",
+      "      lines: 1-3",
+      `      integrity: ${hashLines("| a | b |\n|---|---|\n| c | d |")}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "---",
+      "| a | b |",
+      "|---|---|",
+      "Prose replaced the row.",
+    ]);
+    const before = onDisk(label);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten).toEqual([]);
+    expect(run.pages[0]?.skipped.map((f) => f.rule)).toEqual(["claim-changed"]);
+    expect(run.pages[0]?.skipped[0]?.message).toContain(
+      "Not re-pinned: the table no longer holds every row the claim covers.",
+    );
+    expect(onDisk(label)).toBe(before);
+  });
+
+  it("--accept re-pins a header row alone", async () => {
+    workspace();
+    const header = "| Flag | Default |";
+    const label = write("header-row.md", [
+      "---",
+      "citations:",
+      "  - id: header",
+      "    claim:",
+      "      lines: 1",
+      `      integrity: ${hashLines("| Option | Default |")}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "---",
+      header,
+      "|---|---|",
+      "| `--timeout` | 10 |",
+    ]);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.at, r.text, r.to])).toEqual([
+      ["header", 12, header, hashLines(header)],
+    ]);
+    expect(onDisk(label)).toContain("      lines: 1\n");
+    expect(await ends(label)).toEqual([["current", "current"]]);
+  });
+
+  it("--accept keeps the prose under a table out of a row's re-pin", async () => {
+    workspace();
+    const row = "| 1 | 2 |";
+    const label = write("table-then-prose.md", [
+      "---",
+      "citations:",
+      "  - id: last-row",
+      "    claim:",
+      "      lines: 3",
+      `      integrity: ${hashLines("| 1 | 3 |")}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "---",
+      "| a | b |",
+      "|---|---|",
+      row,
+      "Prose right after.",
+    ]);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.at, r.text, r.to])).toEqual([
+      ["last-row", 14, row, hashLines(row)],
+    ]);
+    expect(onDisk(label)).toContain("      lines: 3\n");
+    expect(await ends(label)).toEqual([["current", "current"]]);
+  });
+
+  it("--accept re-pins the one row of a one-row table", async () => {
+    workspace();
+    const row = "| only | 2 |";
+    const label = write("one-row.md", [
+      "---",
+      "citations:",
+      "  - id: only-row",
+      "    claim:",
+      "      lines: 1",
+      `      integrity: ${hashLines("| only | 1 |")}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "---",
+      row,
+    ]);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.at, r.text, r.to])).toEqual([
+      ["only-row", 12, row, hashLines(row)],
+    ]);
+    expect(onDisk(label)).toContain("      lines: 1\n");
+    expect(await ends(label)).toEqual([["current", "current"]]);
   });
 
   it("skips a changed quote whose claim lines are no longer a fenced block", async () => {
