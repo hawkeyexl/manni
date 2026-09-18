@@ -166,7 +166,7 @@ an unpacked archive.
          # `-f github` turns findings into annotations on the line of the
          # sentence; the exit code fails the job on any error.
          - name: Check citations
-           run: npx -y @hawkeyexl/manni cite check "docs/**/*.md" -f github
+           run: npx --yes @hawkeyexl/manni@latest cite check "docs/**/*.md" -f github
    ```
 
 2. **Adapt the targets.** Replace `"docs/**/*.md"` with the paths, directories
@@ -182,9 +182,9 @@ an unpacked archive.
 </Steps>
 
 <Aside type="note" title="Pin the version for reproducible runs">
-  `npx -y @hawkeyexl/manni` resolves the latest published version each run.
-  Pin the major, as in `npx -y @hawkeyexl/manni@2 cite check …`, and bump it
-  deliberately.
+  `npx --yes @hawkeyexl/manni@latest` resolves the latest published version
+  each run. Pin the major, as in `npx --yes @hawkeyexl/manni@2 cite check …`,
+  and bump it deliberately.
 </Aside>
 
 ## Add it to a job you already have
@@ -194,7 +194,7 @@ docs in CI can add one step beside the gates that job runs:
 
 ```yaml
 - name: The docs' citations still reach their sources
-  run: npx -y @hawkeyexl/manni cite check -f github
+  run: npx --yes @hawkeyexl/manni@latest cite check -f github
 ```
 
 That job still wants `fetch-depth: 0` on its checkout. Without the pin's commit
