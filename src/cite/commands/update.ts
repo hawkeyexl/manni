@@ -33,6 +33,7 @@ import {
 } from "../core/claims.js";
 import { GIT_UNAVAILABLE_COMMIT } from "../core/git.js";
 import { splitLines } from "../core/hash.js";
+import { claimWords, sharesSentence } from "../core/history.js";
 import { mintCitation } from "../core/mint.js";
 import { ManifestSet } from "../core/manifest.js";
 import { readPage } from "../core/page.js";
@@ -51,6 +52,7 @@ import type {
   Citation,
   CitationResult,
   CiteRule,
+  ClaimEnd,
   LineSpec,
   ManifestChange,
   PageCitation,
@@ -80,6 +82,11 @@ type Plan =
       unit: ClaimUnit;
       pin: string;
       lines?: LineSpec;
+      /**
+       * The line held wholly other text and `--only` named the entry, so the
+       * accept stands. The report says so rather than reading as an edit.
+       */
+      replaced?: true;
       /** The marker's line on the page this run leaves, where one anchors. */
       markerLine?: number;
     }
@@ -99,6 +106,36 @@ type Plan =
       lines: LineSpec;
       from: string;
       to: string;
+    }
+  /**
+   * The words the pin covered are unchanged and only the layout moved
+   * (proposal 0053). A plain `update` re-pins it, and rewrites its `lines:`
+   * when the entry has them.
+   */
+  | {
+      kind: "claim-words-held";
+      result: CitationResult;
+      pin: string;
+      /** The file line of the claim's first body line, after any marker move. */
+      at: number;
+      /** The stored span and the span now pinned, in file lines. */
+      fromLines: string;
+      toLines: string;
+      commitSha?: string;
+      lines?: LineSpec;
+    }
+  /**
+   * A changed claim `--accept` refused to re-pin: the line now holds text
+   * sharing no sentence with the claim at its baseline. Nothing is written.
+   */
+  | {
+      kind: "claim-replaced";
+      result: CitationResult;
+      at: number;
+      commitSha: string;
+      /** The pin that stands, and the one that was not written. */
+      pin: string;
+      would: string;
     };
 
 /**
@@ -125,6 +162,12 @@ function settles(plan: Plan): string {
       return "marker-misplaced";
     case "claim-reanchored":
       return "claim-moved";
+    case "claim-words-held":
+      return "claim-reanchored";
+    // A refused claim leaves nothing written, but its finding is the row the
+    // refusal prints, so it is not also reported as skipped.
+    case "claim-replaced":
+      return "claim-changed";
     // A shifted entry was `current`, so it had no finding to settle.
     case "claim-shifted":
       return "";
@@ -139,6 +182,15 @@ function apply(content: string, format: string, plan: Plan): string {
       return spliceEntryField(content, format, index, ["claim", "lines"], plan.lines);
     case "claim-reanchored":
       return spliceEntryField(content, format, index, ["claim", "integrity"], plan.pin);
+    case "claim-words-held": {
+      let out = spliceEntryField(content, format, index, ["claim", "integrity"], plan.pin);
+      if (plan.lines !== undefined) {
+        out = spliceEntryField(out, format, index, ["claim", "lines"], plan.lines);
+      }
+      return out;
+    }
+    // Nothing is written for a refused claim; the report is the whole of it.
+    case "claim-replaced":
     // The move is a page rewrite, applied to the whole page before any splice.
     case "marker-moved":
       return content;
@@ -199,6 +251,15 @@ function applyToEntry(entry: unknown, plan: Plan): boolean {
       claim.integrity = plan.pin;
       return true;
     }
+    case "claim-words-held": {
+      const claim = end("claim");
+      if (claim === undefined) return false;
+      claim.integrity = plan.pin;
+      if (plan.lines !== undefined) claim.lines = plan.lines;
+      return true;
+    }
+    // Nothing is written for a refused claim.
+    case "claim-replaced":
     // The page holds the marker, so the manifest has nothing to change.
     case "marker-moved":
       return true;
@@ -275,6 +336,37 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         newLines: plan.now,
       };
     }
+    case "claim-words-held": {
+      const was = citation.claim?.integrity ?? "";
+      const out: UpdateRewrite = {
+        ...base,
+        end: "claim",
+        reason: "re-anchored",
+        status: "reanchored",
+        from: was,
+        to: plan.pin,
+        fromPin: was,
+        toPin: plan.pin,
+        fromLines: plan.fromLines,
+        toLines: plan.toLines,
+        at: plan.at,
+      };
+      if (plan.commitSha !== undefined) out.commitSha = plan.commitSha;
+      return out;
+    }
+    case "claim-replaced":
+      return {
+        ...base,
+        end: "claim",
+        reason: "replaced",
+        status: "changed",
+        from: plan.pin,
+        to: plan.would,
+        fromPin: plan.pin,
+        toPin: plan.would,
+        at: plan.at,
+        commitSha: plan.commitSha,
+      };
     case "claim-shifted":
       return {
         ...base,
@@ -301,14 +393,23 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         ...base,
         end: "claim",
         reason: "accepted",
-        status: "changed",
+        // A bypassed guard reads `replaced`, so the log shows that the line
+        // held other text and a named accept took it anyway.
+        status: plan.replaced === true ? "replaced" : "changed",
         from: was,
         to: plan.pin,
         fromPin: was,
         toPin: plan.pin,
         at: plan.unit.lines.start,
-        text: normalizeWhitespace(plan.unit.text.join("\n")),
+        text: quoted(plan.unit.text),
       };
+      // A re-pin over a unit wider than the stored lines names both spans.
+      const stored = plan.result.claim?.fileLines;
+      const now = spellLines(plan.unit.lines);
+      if (stored !== undefined && stored !== now) {
+        out.fromLines = stored;
+        out.toLines = now;
+      }
       // Where the report says the claim is: its marker, when one anchors it.
       // A marker this run moved reads at the line it now sits on, so the row
       // and the move above it name one line rather than two.
@@ -334,6 +435,47 @@ function rewriteOf(plan: Plan): UpdateRewrite {
       return out;
     }
   }
+}
+
+/**
+ * The baseline, when a re-pin over `text` would bless a line that now holds
+ * wholly other text: a neighbouring table row after a shift, or a block
+ * inserted under a marker. `undefined` lets the accept stand, which is also
+ * what happens with no baseline to read the claim against.
+ *
+ * The test is sentence intersection. A claim whose paragraph was edited still
+ * shares a sentence with what it said at the baseline; one whose line was
+ * replaced shares none.
+ *
+ * The guard only asks about an entry the run did not name. Naming an id with
+ * `--only` is the human judgement the guard exists to demand, so a reviewer
+ * who has read the claim and its source re-pins a reworded sentence without a
+ * remove and an add. What the guard is for is a blanket `--accept` quietly
+ * re-pinning a hundred claims, one of which now holds a neighbouring table
+ * row. A bypass is reported rather than hidden.
+ */
+function replacementAt(
+  claim: ClaimEnd,
+  text: readonly string[],
+  format: string,
+): string | undefined {
+  const was = claim.baselineText;
+  const commit = claim.commitSha;
+  if (was === undefined || commit === undefined) return undefined;
+  if (sharesSentence(claimWords(was, format), claimWords(text, format))) return undefined;
+  return commit;
+}
+
+/** How many characters of re-pinned text the report quotes before it elides. */
+const QUOTE_CAP = 200;
+
+/**
+ * The text a re-pin quotes: whitespace collapsed, and capped, because the
+ * unit may be a whole paragraph and the report is one line per rewrite.
+ */
+function quoted(text: readonly string[]): string {
+  const all = normalizeWhitespace(text.join("\n"));
+  return all.length <= QUOTE_CAP ? all : `${all.slice(0, QUOTE_CAP)}…`;
 }
 
 /** `<id>: <text>`, or the text alone for an entry with no id. */
@@ -584,6 +726,38 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         });
       }
     }
+    // The words the pin covered are unchanged, and the run they sit in moved.
+    // A plain `update` re-pins it and rewrites the entry's lines (0053).
+    if (
+      result.anchor !== "marker" &&
+      claim !== null &&
+      claim.status === "reanchored" &&
+      claim.newLines !== undefined
+    ) {
+      const at = parseLines(claim.newLines);
+      const file = at === undefined ? undefined : toFileLines(at, page.bodyLine);
+      const pin = file === undefined ? undefined : pinOfLines(lines, file);
+      const to =
+        file === undefined ? undefined : { start: lineNow(file.start), end: lineNow(file.end) };
+      if (
+        file !== undefined &&
+        to !== undefined &&
+        pin !== undefined &&
+        to.end - to.start === file.end - file.start
+      ) {
+        const plan: Plan = {
+          kind: "claim-words-held",
+          result,
+          pin,
+          at: to.start,
+          fromLines: claim.fileLines ?? "",
+          toLines: spellLines(to),
+          lines: lineSpec(toBodyLines(to, page.bodyLine)),
+        };
+        if (claim.commitSha !== undefined) plan.commitSha = claim.commitSha;
+        out.push(plan);
+      }
+    }
     if (result.source.status === "moved" && result.source.newLines !== undefined) {
       const at = parseLines(result.source.newLines);
       if (at !== undefined && result.source.newSrc !== undefined) {
@@ -611,16 +785,36 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
           why: `Not re-pinned: the ${unit.kind} ${wide}.`,
         });
       } else if (unit !== undefined && pin !== undefined && (!wantsBlock || unit.kind === "block")) {
-        const plan: Plan = { kind: "claim-accepted", result, unit, pin };
-        // A paragraph that grew or shrank moves the claim's last line too.
-        if (entry.citation.claim?.lines !== undefined) {
-          const body = toBodyLines(unit.lines, page.bodyLine);
-          const recorded = parseLines(entry.citation.claim.lines);
-          if (recorded === undefined || recorded.start !== body.start || recorded.end !== body.end) {
-            plan.lines = lineSpec(body);
+        const replaced = replacementAt(claim, unit.text, page.format);
+        // `plansFor` runs only for a selected entry, so a run with `only` set
+        // has named this one. `selected` says which repairs run; the bypass
+        // says which entries `--accept` may re-pin, and both hold here.
+        if (replaced !== undefined && only === undefined) {
+          out.push({
+            kind: "claim-replaced",
+            result,
+            at: unit.lines.start,
+            commitSha: replaced,
+            pin: entry.citation.claim?.integrity ?? "",
+            would: pin,
+          });
+        } else {
+          const plan: Plan = { kind: "claim-accepted", result, unit, pin };
+          if (replaced !== undefined) plan.replaced = true;
+          // A paragraph that grew or shrank moves the claim's last line too.
+          if (entry.citation.claim?.lines !== undefined) {
+            const body = toBodyLines(unit.lines, page.bodyLine);
+            const recorded = parseLines(entry.citation.claim.lines);
+            if (
+              recorded === undefined ||
+              recorded.start !== body.start ||
+              recorded.end !== body.end
+            ) {
+              plan.lines = lineSpec(body);
+            }
           }
+          out.push(plan);
         }
-        out.push(plan);
       }
     }
     if (result.source.status === "changed" || result.source.status === "never-true") {
@@ -667,6 +861,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     });
     const lines = splitLines(content);
     const rewritten: UpdateRewrite[] = [];
+    const refused: UpdateRewrite[] = [];
     /** `<index>\0<rule>` of every finding a rewrite settled. */
     const settled = new Set<string>();
     /**
@@ -740,6 +935,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         if (now !== undefined && now.pin !== recorded) {
           // A `current` claim already covers the unit the marker belongs to,
           // so only a move that split its run can leave it needing a pin.
+          const unitText = afterLines.slice(now.span.start - 1, now.span.end);
           if (status === "moved" || (status === "current" && move !== undefined)) {
             plans.push({
               kind: "claim-reanchored",
@@ -748,6 +944,18 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
               held: result.claim.fileLines ?? "",
               now: spellLines(now.span),
             });
+          } else if (status === "reanchored") {
+            // The marker travels with its text, so nothing moves but the pin.
+            const held: Plan = {
+              kind: "claim-words-held",
+              result,
+              pin: now.pin,
+              at: now.span.start,
+              fromLines: result.claim.fileLines ?? "",
+              toLines: spellLines(now.span),
+            };
+            if (result.claim.commitSha !== undefined) held.commitSha = result.claim.commitSha;
+            plans.push(held);
           } else if (status === "changed" && accept) {
             const kind = quote ? "block" : "paragraph";
             // A marker pins everything it anchors, so the range limit applies
@@ -759,17 +967,28 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
                 why: `Not re-pinned: the ${kind} ${wide}.`,
               });
             } else {
-              plans.push({
-                kind: "claim-accepted",
-                result,
-                pin: now.pin,
-                markerLine: lineNow(marker.line),
-                unit: {
-                  lines: now.span,
-                  kind,
-                  text: afterLines.slice(now.span.start - 1, now.span.end),
-                },
-              });
+              const replaced = replacementAt(result.claim, unitText, format);
+              // `--only` naming the entry is the judgement the guard demands,
+              // so a named accept stands and says `replaced` in the log.
+              plans.push(
+                replaced === undefined || only !== undefined
+                  ? {
+                      kind: "claim-accepted",
+                      result,
+                      pin: now.pin,
+                      markerLine: lineNow(marker.line),
+                      unit: { lines: now.span, kind, text: unitText },
+                      ...(replaced === undefined ? {} : { replaced: true as const }),
+                    }
+                  : {
+                      kind: "claim-replaced",
+                      result,
+                      at: now.span.start,
+                      commitSha: replaced,
+                      pin: recorded,
+                      would: now.pin,
+                    },
+              );
             }
           }
         }
@@ -815,6 +1034,13 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       }
 
       for (const plan of plans) {
+        // A refused claim writes nothing, in either channel; its row is the
+        // whole of it, and it keeps the finding from being reported twice.
+        if (plan.kind === "claim-replaced") {
+          refused.push(rewriteOf(plan));
+          settled.add(`${String(result.origin.index)}\0${settles(plan)}`);
+          continue;
+        }
         if (plan.kind === "marker-moved") {
           // The page already carries the move.
         } else if (result.origin.kind === "manifest") {
@@ -884,7 +1110,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       }
       writes.record(path, label, content);
     }
-    const out: UpdatePage = { file: label, rewritten, skipped, diff, written };
+    const out: UpdatePage = { file: label, rewritten, refused, skipped, diff, written };
     // The stdin page has nowhere to be written; the caller prints it instead.
     if (path === undefined) out.content = after;
     pages.push(out);
@@ -924,8 +1150,13 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   sayNotices(reports, opts.onNotice, reminted && !(await git.available()) ? [GIT_UNAVAILABLE_COMMIT] : []);
 
   const rewritten = pages.reduce((n, page) => n + citationsIn(page.rewritten), 0);
-  const skipped = pages.reduce((n, page) => n + page.skipped.length, 0);
-  const undone = pages.some((page) => page.skipped.some((finding) => finding.severity === "error"));
+  // A refused claim counts as skipped: `--accept` was asked for it and the
+  // run left it undone, which is what the summary's second number means.
+  const skipped = pages.reduce((n, page) => n + page.skipped.length + page.refused.length, 0);
+  const undone = pages.some(
+    (page) =>
+      page.refused.length > 0 || page.skipped.some((finding) => finding.severity === "error"),
+  );
   return {
     pages,
     rewritten,

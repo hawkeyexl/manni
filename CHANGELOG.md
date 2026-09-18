@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.5.2](https://github.com/hawkeyexl/manni/compare/v2.5.1...v2.5.2) (2026-09-18)
+
+
+### Bug Fixes
+
+* **a11y:** let the CLI turn crawling and the page cap back on ([#85](https://github.com/hawkeyexl/manni/issues/85)) ([6358e7e](https://github.com/hawkeyexl/manni/commit/6358e7e907182bb125ac81ee4dea5e4b71e7cd3b)), closes [#79](https://github.com/hawkeyexl/manni/issues/79)
+
 ## [2.5.1](https://github.com/hawkeyexl/manni/compare/v2.5.0...v2.5.1) (2026-09-18)
 
 

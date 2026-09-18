@@ -65,7 +65,8 @@ These came out of a review of the shipped product against the intent recorded in
 | [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
 | [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37) |
 | [0052](0052-term-domain.md) | The `term` domain. A term is a flat record with `type: term`, read from every format in one-per-file and many-per-file shapes. `manni term` checks the set, lints definitions and writes a Vale style. It renders the set to any format | Sara · S6 / Maya · M9 / Devin · D8 | Accepted |
-| [0054](0054-marker-reanchoring.md) | Re-anchoring misplaced cite markers. A marker line inside a paragraph is `marker-misplaced`, a warning. `update` moves it where `add --marker` writes markers, and re-pins when the old pin still holds. Needs PR #43 first | Maya · M5 / Theo · T2 / Devin · D5 | Proposed |
+| [0053](0053-claim-history.md) | Claim history. A claim that no longer holds is read against the page's history, from the newest commit whose page held the pin. `check` says since when, and `claim-reanchored` separates a layout change from an edit | Maya · M5 / Theo · T2 / Devin · D5 | Implemented (#73) |
+| [0054](0054-marker-reanchoring.md) | Re-anchoring misplaced cite markers. A marker line inside a paragraph is `marker-misplaced`, a warning. `update` moves it where `add --marker` writes markers, and re-pins when the old pin still holds | Maya · M5 / Theo · T2 / Devin · D5 | Implemented (#68) |
 | [0056](0056-several-ids-per-marker.md) | Several ids per marker. A marker's payload becomes one or more ids separated by spaces, so a paragraph that supports several claims carries one comment instead of six. `add --marker` joins the marker that is already there | Maya · M5, M6 / Theo · T2 | Proposed |
 | [0059](0059-a11y-crawl-exclusions.md) | Keeping the a11y crawl out of part of a site: `--exclude <glob>` repeatable, an `a11y.exclude:` key, globs matched against the URL path, and `summary.excluded` | Devin · D1, D3 | Proposed |
 
@@ -143,8 +144,9 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 0045 ──┤                 (a schema keyword Ajv evaluates, and the one prompt the family asks)
 0046 ──┘                 (provenance kept in a manifest, the exception this generalizes)
 
-0044 ──> 0054            (the rule table, the marker reading and update's repair contract it extends;
-                          PR #43, the placement rule it repairs pages to, merges first)
+0044 ──> 0053            (the claim pin, read against the page's history as the source
+                          end reads its commit-sha)
+0044 ──> 0054            (the rule table, the marker reading and update's repair contract it extends)
 
 0044 ──┬─> 0056          (the marker, the anchor rule and the marker rules, whose
        │                  payload stress test 11 narrowed to a single id)

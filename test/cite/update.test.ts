@@ -40,7 +40,7 @@ const CLAIM_RETRIES = "sha256-3049e93e72873542aac2c1c4778fa655e70656f03c08f20244
 const source = (name: string): string => readFileSync(join(SRC, name), "utf8");
 const CHANGED_L2 = hashRange(source("changed.ts"), { start: 2, end: 2 });
 const NO_HISTORY =
-  "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.";
+  "git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.";
 const NO_COMMIT = "git is not available here, so the citation records no commit.";
 
 let cwd = "";
@@ -369,6 +369,10 @@ describe("runUpdate: the claim end", () => {
         to: pin,
         fromPin: CLAIM_10,
         toPin: pin,
+        // The re-pin covers a line the old one did not, so the row names both
+        // spans (proposal 0053, section 7).
+        fromLines: "12",
+        toLines: "12-13",
         at: 12,
         // The report collapses the whitespace, so a two-line claim reads as one.
         text: "The fetch timeout is 30 seconds. It is not configurable either.",
@@ -739,14 +743,24 @@ describe("runUpdate: both ends, and what is left", () => {
   });
 
   it("says nothing about git when nothing needed it", async () => {
-    workspace("moved.md", "claim-changed.md");
+    workspace("moved.md");
     const notices: string[] = [];
     await update({
-      inputs: ["pages/moved.md", "pages/claim-changed.md"],
+      inputs: ["pages/moved.md"],
       accept: true,
       onNotice: (m) => notices.push(m),
     });
     expect(notices).toEqual([]);
+  });
+
+  it("says history is off for a changed claim, which wants the page's past", async () => {
+    workspace("claim-changed.md");
+    const notices: string[] = [];
+    await update({
+      inputs: ["pages/claim-changed.md"],
+      onNotice: (m) => notices.push(m),
+    });
+    expect(notices).toEqual([NO_HISTORY]);
   });
 
   it("says history is off for a citation with a commit, then that the re-mint records none", async () => {

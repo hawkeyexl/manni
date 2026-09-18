@@ -38,7 +38,7 @@ const OTHER = "another-key-0123456789abcdef012345";
 const PIN_L2 = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
 const UNKNOWN = "0123456789abcdef0123456789abcdef01234567";
 const NO_HISTORY =
-  "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.";
+  "git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.";
 
 const source = (name: string): string => readFileSync(join(SRC, name), "utf8");
 const page = (name: string): string => readFileSync(join(PAGES, name), "utf8");

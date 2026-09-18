@@ -69,8 +69,10 @@ manni a11y check [urls...] [options]
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `-f, --format` | `<pretty\|json\|github>` | `pretty` | [Output format](#output-formats). An unknown value is an error (exit 2). |
+| `--crawl` | n/a | on | Crawl from the given URLs, following the sitemap and same-host links. This is the default, so pass it to undo `crawl: false` in config for one run. |
 | `--no-crawl` | n/a | on | Check exactly the given URLs, with no sitemap lookup and no link following. Crawling is on by default. Overrides config `crawl:`. |
 | `--max-pages` | `<n>` | | Cap on pages checked. Whatever is still queued at the cap is reported as `skipped`. Without it every discovered page is checked. Must be an integer of 1 or more (exit 2 otherwise). Overrides config `maxPages:`. |
+| `--no-max-pages` | n/a | off | Check every page found, ignoring a `maxPages:` in config. No cap is the default, so this is how a configured one is lifted for one run. `--max-pages` and `--no-max-pages` set the same option, so the one written later on the command line wins. |
 | `--tags` | `<list>` | | Comma-separated axe tags, given once; restrict axe to rules carrying any of them, for example `wcag2a,wcag2aa,wcag21aa,best-practice`. Whitespace around commas is trimmed and empty items are dropped. A second `--tags` replaces the first. Without it axe runs its default rule set. Overrides config `tags:`. |
 | `--severity` | `<level>` | `notice` | Minimum severity reported and counted, on the family scale: `notice`, `warning`, or `error`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. An unknown level is an error (exit 2). axe's four impact levels are folded onto these three when a page is read. Every finding keeps axe's own value as `impact`, and the [github format](#output-formats) has the table. Overrides config `severity:`. |
 | `--timeout` | `<ms>` | `30000` | Per-page navigation timeout in milliseconds. Overrides config `timeout:`. |
@@ -403,6 +405,11 @@ manni a11y check https://docs.example.com/ -f github --max-pages 50 -c ci/manni.
 
 # Scripts: the JSON envelope, piped to jq.
 manni a11y check https://docs.example.com/ -f json | jq '.summary'
+
+# Config says crawl: false and maxPages: 50; this one run ignores both and
+# walks the whole site. The rest of the file, collections: included, still
+# applies, which is what separates this from --no-config.
+manni a11y check https://docs.example.com/ --crawl --no-max-pages
 
 # Every option at once. Two seeds (space-separated); sitemap and links; cap
 # 250 pages; one comma-separated --tags list; warning floor; 60 s per page;
