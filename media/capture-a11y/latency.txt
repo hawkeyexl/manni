@@ -1,0 +1,5 @@
+full exit 0
+real	1m46.641s
+excluded exit 0
+real	1m7.458s
+seed-clash exit 2 532ms

@@ -72,6 +72,9 @@ function terminalReporter(opts: ProgressOptions): ProgressListener {
         if (event.source === null) show("No sitemap; following links");
         else showUrl("Sitemap: ", event.source, ` (${plural(event.urls, "page")})`);
         return;
+      case "excluded":
+        show(`Excluded ${plural(event.urls, "page")} (${plural(event.patterns, "pattern")})`);
+        return;
       case "page":
         queued = event.queued;
         showUrl(`${c.dim(counter(event.index, queued))} `, event.url);
@@ -107,6 +110,9 @@ function plainReporter(stream: ProgressOptions["stream"]): ProgressListener {
       case "sitemap":
         if (event.source === null) say("no sitemap; following links");
         else say(`sitemap ${event.source} (${plural(event.urls, "page")})`);
+        return;
+      case "excluded":
+        say(`excluded ${plural(event.urls, "page")} (${plural(event.patterns, "pattern")})`);
         return;
       case "page":
         queued = event.queued;

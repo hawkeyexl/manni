@@ -29,6 +29,8 @@ const a11yConfig = resolve(root, "test", "fixtures", "a11y", "config");
 const crawlFalse = resolve(a11yConfig, "crawl-false.yaml");
 /** `a11y.maxPages: 1`, so only `--no-max-pages` can uncap a run that reads it. */
 const maxPagesOne = resolve(a11yConfig, "max-pages-1.yaml");
+/** `a11y.exclude: ["/about.html"]`, so a typed `--exclude` has a list to replace. */
+const excludeAbout = resolve(a11yConfig, "exclude-about.yaml");
 
 const browser = await findBrowser();
 
@@ -160,6 +162,7 @@ interface JsonRun {
     discovered: number;
     skipped: number;
     duplicates: number;
+    excluded: number;
     failed: number;
     bySeverity: Record<string, number>;
     sitemap: string | null;
@@ -302,6 +305,78 @@ describe("manni a11y check (usage errors, no browser needed)", () => {
     );
     // Both halves of each pair are on the screen, not just the negation.
     expect(r.stdout).toMatch(/--no-crawl\s+check\s+exactly\s+the\s+given\s+URLs/);
+  });
+
+  it("rejects an --exclude pattern that cannot match a path", async () => {
+    const r = await run(["check", "https://x.example/", "--exclude", "proposals/**"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toMatch(
+      /^manni: --exclude "proposals\/\*\*" must start with "\/": it matches a URL path\./,
+    );
+  });
+
+  it("refuses a seed its own --exclude pattern excludes", async () => {
+    const r = await run([
+      "check",
+      "https://example.com/proposals/",
+      "--exclude",
+      "/proposals/**",
+    ]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toMatch(
+      /^manni: --exclude "\/proposals\/\*\*" excludes the seed https:\/\/example\.com\/proposals\/\./,
+    );
+  });
+
+  it("names every excluded seed before exiting, not just the first", async () => {
+    const r = await run([
+      "check",
+      "https://example.com/proposals/",
+      "https://example.com/blog/",
+      "--exclude",
+      "/proposals/**",
+      "--exclude",
+      "/blog/**",
+    ]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr.trimEnd().split("\n")).toEqual([
+      'manni: --exclude "/proposals/**" excludes the seed https://example.com/proposals/.',
+      'manni: --exclude "/blog/**" excludes the seed https://example.com/blog/.',
+    ]);
+  });
+
+  it("refuses a seed a configured pattern excludes, naming the file and the key", async () => {
+    // No --exclude is typed, so the message must not mention one. The fixture
+    // holds `a11y.exclude: ["/about.html"]` as its only entry.
+    const r = await run([
+      "check",
+      "https://example.com/about.html",
+      "-c",
+      excludeAbout,
+    ]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr).toContain(
+      'a11y.exclude[0]" excludes the seed https://example.com/about.html.',
+    );
+    expect(r.stderr).not.toContain("--exclude");
+  });
+
+  it("wants a value for --exclude", async () => {
+    const r = await run(["check", "https://x.example/", "--exclude"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/option '--exclude <glob>' argument missing/);
+  });
+
+  it("documents --exclude as repeatable, one glob per occurrence", async () => {
+    const r = await run(["check", "--help"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(
+      /--exclude <glob>\s+URL path glob to keep out of the crawl; repeatable/,
+    );
   });
 
   it("a11y alone is a usage error with no default subcommand", async () => {
@@ -465,6 +540,117 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
     const uncappedJson = JSON.parse(uncapped.stdout) as JsonRun;
     expect(uncappedJson.summary.checked).toBe(3);
     expect(uncappedJson.summary.skipped).toBe(0);
+  }, 120_000);
+
+  it("--exclude keeps a page out and counts it beside the discovered total", async () => {
+    const r = await run([
+      "check",
+      `${server.url}/index.html`,
+      "--exclude",
+      "/about.html",
+      "-f",
+      "json",
+    ]);
+    const json = JSON.parse(r.stdout) as JsonRun;
+    expect(json.results.map((p) => p.url)).toEqual([
+      `${server.url}/index.html`,
+      `${server.url}/orphan.html`,
+    ]);
+    expect(json.summary).toMatchObject({ discovered: 2, checked: 2, excluded: 1 });
+    // The identity holds: an excluded URL never entered the frontier.
+    const { checked, skipped, duplicates, discovered } = json.summary;
+    expect(checked + skipped + duplicates).toBe(discovered);
+  }, 120_000);
+
+  it("takes one glob per --exclude occurrence and never splits on a comma", async () => {
+    const repeated = await run([
+      "check",
+      `${server.url}/index.html`,
+      "--exclude",
+      "/about.html",
+      "--exclude",
+      "/orphan.html",
+      "-f",
+      "json",
+    ]);
+    const repeatedJson = JSON.parse(repeated.stdout) as JsonRun;
+    expect(repeatedJson.summary).toMatchObject({ checked: 1, excluded: 2 });
+
+    // One value with a comma in it is one pattern, which matches no path here,
+    // so nothing is excluded and every page is checked.
+    const commas = await run([
+      "check",
+      `${server.url}/index.html`,
+      "--exclude",
+      "/about.html,/orphan.html",
+      "-f",
+      "json",
+    ]);
+    const commasJson = JSON.parse(commas.stdout) as JsonRun;
+    expect(commasJson.summary).toMatchObject({ checked: 3, excluded: 0 });
+  }, 180_000);
+
+  it("a typed --exclude replaces a11y.exclude rather than adding to it", async () => {
+    const fromConfig = await run([
+      "check",
+      `${server.url}/index.html`,
+      "-c",
+      excludeAbout,
+      "-f",
+      "json",
+    ]);
+    const configJson = JSON.parse(fromConfig.stdout) as JsonRun;
+    expect(configJson.results.map((p) => p.url)).toEqual([
+      `${server.url}/index.html`,
+      `${server.url}/orphan.html`,
+    ]);
+    expect(configJson.summary.excluded).toBe(1);
+
+    const overridden = await run([
+      "check",
+      `${server.url}/index.html`,
+      "-c",
+      excludeAbout,
+      "--exclude",
+      "/orphan.html",
+      "-f",
+      "json",
+    ]);
+    const overriddenJson = JSON.parse(overridden.stdout) as JsonRun;
+    // about.html is checked again: the flag replaced the config's list.
+    expect(overriddenJson.results.map((p) => p.url)).toEqual([
+      `${server.url}/index.html`,
+      `${server.url}/about.html`,
+    ]);
+    expect(overriddenJson.summary.excluded).toBe(1);
+  }, 180_000);
+
+  it("the pretty footer says how much was excluded, and --progress says it once", async () => {
+    const r = await run([
+      "check",
+      `${server.url}/index.html`,
+      "--exclude",
+      "/about.html",
+      "--exclude",
+      "/orphan.html",
+      "--progress",
+    ]);
+    expect(r.stdout.trimEnd().split("\n").at(-1)).toBe(
+      "0 violations on 0 of 1 pages; 2 excluded",
+    );
+    const lines = r.stderr.trimEnd().split("\n");
+    expect(lines).toContain("manni: excluded 2 pages (2 patterns)");
+    expect(lines.filter((l) => l.includes("excluded"))).toHaveLength(1);
+    // The exclusion line lands once discovery has settled, before the browser.
+    expect(lines.indexOf("manni: excluded 2 pages (2 patterns)")).toBeLessThan(
+      lines.indexOf("manni: starting browser"),
+    );
+  }, 120_000);
+
+  it("says nothing about exclusions on a run that excludes nothing", async () => {
+    const r = await run(["check", `${server.url}/index.html`, "--progress"]);
+    expect(r.stdout).not.toContain("excluded");
+    expect(r.stderr).not.toContain("excluded");
   }, 120_000);
 
   it("takes the last of --crawl and --no-crawl, the way commander does", async () => {

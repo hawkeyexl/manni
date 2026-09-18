@@ -103,6 +103,13 @@ export interface CheckSummary {
    * checked nor skipped: `checked + skipped + duplicates === discovered`.
    */
   duplicates: number;
+  /**
+   * Distinct URLs an `--exclude` pattern kept out of the crawl, counted once
+   * each however many pages linked to them, and keyed the way the frontier
+   * dedupes. It sits **outside** the identity above, because an excluded URL
+   * never entered the frontier. `0` on a run that excludes nothing.
+   */
+  excluded: number;
   /** Pages with ≥1 remaining violation or an `error`. Drives exit 1. */
   failed: number;
   /** Total remaining violations across pages (rules, not nodes). */
@@ -147,6 +154,18 @@ export type ProgressEvent =
   | { kind: "browser" }
   /** Discovery finished: the sitemap that was found (or none), and how many in-scope URLs it gave. */
   | { kind: "sitemap"; source: string | null; urls: number }
+  /**
+   * Discovery settled and `--exclude` took `urls` distinct URLs out, across
+   * `patterns` patterns. Emitted once, before the browser starts, and only
+   * when something was excluded. There is no event per excluded URL: a
+   * pattern that removes four hundred pages would bury the ones checked.
+   *
+   * `urls` is what the seeds and the sitemap gave the run. Links are followed
+   * afterwards, and a page excluded that way is counted in `summary.excluded`
+   * without reaching this event, so the two can disagree and the summary is
+   * the authoritative total.
+   */
+  | { kind: "excluded"; urls: number; patterns: number }
   /** About to check page `index` (1-based); `queued` is every URL discovered so far. */
   | { kind: "page"; index: number; queued: number; url: string }
   /**

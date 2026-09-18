@@ -73,6 +73,7 @@ manni a11y check [urls...] [options]
 | `--no-crawl` | n/a | on | Check exactly the given URLs, with no sitemap lookup and no link following. Crawling is on by default. Overrides config `crawl:`. |
 | `--max-pages` | `<n>` | | Cap on pages checked. Whatever is still queued at the cap is reported as `skipped`. Without it every discovered page is checked. Must be an integer of 1 or more (exit 2 otherwise). Overrides config `maxPages:`. |
 | `--no-max-pages` | n/a | off | Check every page found, ignoring a `maxPages:` in config. No cap is the default, so this is how a configured one is lifted for one run. `--max-pages` and `--no-max-pages` set the same option, so the one written later on the command line wins. |
+| `--exclude` | `<glob>` | | Glob matched against a URL's path; a match keeps that page out of the crawl. Repeatable, one glob per occurrence, never comma-separated. A pattern must start with `/`. A pattern that excludes a seed is an error, and it names every excluded seed under the source that pattern came from. Both exit 2. See [what a pattern matches](#what-a-pattern-matches). Replaces config `exclude:` rather than adding to it. |
 | `--tags` | `<list>` | | Comma-separated axe tags, given once; restrict axe to rules carrying any of them, for example `wcag2a,wcag2aa,wcag21aa,best-practice`. Whitespace around commas is trimmed and empty items are dropped. A second `--tags` replaces the first. Without it axe runs its default rule set. Overrides config `tags:`. |
 | `--severity` | `<level>` | `notice` | Minimum severity reported and counted, on the family scale: `notice`, `warning`, or `error`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. An unknown level is an error (exit 2). axe's four impact levels are folded onto these three when a page is read. Every finding keeps axe's own value as `impact`, and the [github format](#output-formats) has the table. Overrides config `severity:`. |
 | `--timeout` | `<ms>` | `30000` | Per-page navigation timeout in milliseconds. Overrides config `timeout:`. |
@@ -85,7 +86,7 @@ manni a11y check [urls...] [options]
 
 <Aside type="note">
 `--tags` is a `<list>` option: one comma-separated value, given once. It does
-not accumulate across repeats, the way `manni meta`'s `--exclude <glob>` does.
+not accumulate across repeats, the way `--exclude <glob>` does.
 Positional seeds are space-separated, because that is what argv is.
 </Aside>
 
@@ -170,6 +171,62 @@ Failures split by where they happen. A seed that fails to load or analyze stops
 the run with exit `2`, because nothing was checked. A crawled page that fails is
 recorded with an `error` on that page, the crawl continues, and the page counts
 as failed for the exit code.
+
+### What a pattern matches
+
+`--exclude` and config `exclude:` take globs, and a glob is matched against the
+URL's **path** alone. Not the scheme, not the host, not the port, not the
+query, not the fragment. So `/proposals/**` covers
+`https://example.com/proposals/0035/` and
+`http://127.0.0.1:4321/proposals/0035/` alike, which is what lets one pattern
+serve a local preview and production. A pattern cannot tell two hosts apart.
+Run them separately with `--collection` when that matters.
+
+The base path is part of the path. On a site served under `/manni/` the
+pattern is `/manni/proposals/**`, not `/proposals/**`.
+
+A trailing slash is not part of the comparison. The path is matched with any
+trailing slash removed, so `/proposals/` and `/proposals` are one thing. A
+pattern ending `/**` covers the directory itself as well as everything under
+it, so `/proposals/**` reaches the section index without a second pattern.
+Both rules exist because a crawl produces both spellings. A sitemap usually
+lists `/proposals/` and a bare link usually points at `/proposals`.
+
+Matching otherwise follows the same rules as a collection's `paths:`. A `*`
+stops at a path segment, a `**` crosses segments, and a dot segment is matched
+like any other. A pattern that does not begin with `/` could never match a
+path, and is an error rather than a silent near-miss:
+
+```
+manni: --exclude "proposals/**" must start with "/": it matches a URL path.
+```
+
+The filter runs where a URL enters the frontier, beside the same-host check
+and the asset-extension check. An excluded URL is never fetched, never
+analyzed, and never counted in `discovered`. `summary.excluded` counts it
+instead, once per URL however many pages linked to it. The
+[pretty footer](#output-formats) adds `; K excluded` when the count is not
+zero, beside the clauses for a cap and for dropped duplicates.
+
+A seed an exclusion pattern matches is a contradiction, and both halves of it
+are what the user asked for. The run refuses rather than guessing, and names
+every excluded seed before it exits, so two wrong patterns cost one run rather
+than two:
+
+```
+manni: --exclude "/proposals/**" excludes the seed https://example.com/proposals/.
+manni: --exclude "/blog/**" excludes the seed https://example.com/blog/.
+```
+
+Each line names where its pattern came from. A pattern that came from config
+is named by its file and its entry, so a run with no flag typed never reports
+one:
+
+```
+manni: manni.config.yaml: "a11y.exclude[0]" excludes the seed https://example.com/proposals/.
+```
+
+Every one of these messages exits `2`, and nothing is checked.
 
 ### The score
 
@@ -283,6 +340,7 @@ when a redirect landed on a page that was also queued under another spelling.
     "checked": 1,
     "skipped": 2,
     "duplicates": 0,
+    "excluded": 0,
     "failed": 1,
     "violations": 1,
     "bySeverity": {
@@ -322,6 +380,7 @@ And `summary`:
 | `checked` | integer | Pages actually analyzed. |
 | `skipped` | integer | Discovered but not checked because `--max-pages` was reached. `0` when no cap is set. |
 | `duplicates` | integer | Discovered, then dropped without loading because a redirect had already landed on the same page under another spelling. `checked + skipped + duplicates` equals `discovered`. |
+| `excluded` | integer | Distinct URLs an [exclusion pattern](#what-a-pattern-matches) kept out of the crawl, counted once each however many pages linked to them. It sits outside the identity above, because an excluded URL never entered the frontier. This is the authoritative total for a finished run, and it can exceed what the [progress](#progress) line reported. `0` when nothing was excluded. |
 | `failed` | integer | Pages with at least one remaining violation or an `error`. Drives exit `1`. |
 | `violations` | integer | Remaining violations across all pages, counted per rule rather than per node. |
 | `bySeverity` | object | Violation counts keyed `notice`, `warning`, `error`. All three keys are always present. |
@@ -372,6 +431,19 @@ it was. Pass `--progress` to see it in a CI log anyway. Pass `--no-progress`
 to silence it. Either way stdout carries the report alone, so
 `-f json | jq` keeps working.
 
+An exclusion gets one line of its own, written once discovery settles and only
+when something was kept out. It reads `manni: excluded 41 pages (2 patterns)`.
+There is no line per excluded URL, because a pattern that removes four hundred
+pages would bury the ones that were checked.
+
+That line counts what the seeds and the sitemap gave the run and a pattern
+then removed, before the browser started. It lands early on purpose. A pattern
+that matched far more than intended is then visible while the run is still
+cheap to stop. Links are followed afterwards, and a page excluded that way is
+added to the total later. So the line can report fewer pages than the run ends
+up excluding. `summary.excluded` in `-f json` is the authoritative total for a
+finished run.
+
 ### Exit codes
 
 | Code | Meaning |
@@ -406,16 +478,30 @@ manni a11y check https://docs.example.com/ -f github --max-pages 50 -c ci/manni.
 # Scripts: the JSON envelope, piped to jq.
 manni a11y check https://docs.example.com/ -f json | jq '.summary'
 
+# Leave a section out of the gate. One glob per --exclude, never a comma.
+manni a11y check https://docs.example.com/ --exclude "/proposals/**"
+
+# Two sections out, and the count of what went on stderr as it happens.
+manni a11y check https://docs.example.com/ \
+  --exclude "/proposals/**" --exclude "/reference/api/**" --progress
+
+# Config says exclude: ["/proposals/**"]; this run checks the proposals and
+# leaves the API reference out instead. The flag replaces the list.
+manni a11y check --exclude "/reference/api/**"
+
 # Config says crawl: false and maxPages: 50; this one run ignores both and
 # walks the whole site. The rest of the file, collections: included, still
 # applies, which is what separates this from --no-config.
 manni a11y check https://docs.example.com/ --crawl --no-max-pages
 
 # Every option at once. Two seeds (space-separated); sitemap and links; cap
-# 250 pages; one comma-separated --tags list; warning floor; 60 s per page;
-# quiet; ignore any discovered config; json; no color.
+# 250 pages; two exclusion globs, one per occurrence; one comma-separated
+# --tags list; warning floor; 60 s per page; quiet; ignore any discovered
+# config; json; no color.
 manni a11y check https://docs.example.com/ https://www.example.com/ \
   --max-pages 250 \
+  --exclude "/proposals/**" \
+  --exclude "/reference/api/**" \
   --tags wcag2a,wcag2aa,wcag21aa,best-practice \
   --severity warning \
   --timeout 60000 \
@@ -453,6 +539,15 @@ manni a11y check https://x.example/ -f sarif
 
 manni a11y check https://x.example/            # with no browser installed
 # manni: No browser found. Install one with `npx playwright install chromium`, or install Google Chrome or Microsoft Edge.
+
+manni a11y check https://x.example/ --exclude "proposals/**"
+# manni: --exclude "proposals/**" must start with "/": it matches a URL path.
+
+manni a11y check https://x.example/proposals/ --exclude "/proposals/**"
+# manni: --exclude "/proposals/**" excludes the seed https://x.example/proposals/.
+
+manni a11y check https://x.example/ --exclude
+# error: option '--exclude <glob>' argument missing
 ```
 
 ## Configuration
@@ -476,6 +571,7 @@ a11y:
   tags: ["wcag2a", "wcag2aa"]
   severity: error
   timeout: 30000
+  exclude: ["/proposals/**"]
 ```
 
 | Key | Type | Default | Description |
@@ -486,6 +582,7 @@ a11y:
 | `tags` | `string[]` | none | axe tags to restrict the rule set to. Mirrors `--tags`, one item per entry. |
 | `severity` | `notice` \| `warning` \| `error` | `notice` | Minimum severity reported and counted, on the family scale. Mirrors `--severity`. |
 | `timeout` | integer ≥ 1 | `30000` | Per-page navigation timeout in milliseconds. Mirrors `--timeout`. |
+| `exclude` | `string[]` | `[]` | Globs matched against a URL's path; a match keeps that page out of the crawl. One glob per entry. An explicit `[]` means the same as the key being absent. Each entry must start with `/`, and the error names the entry by its position. A typed `--exclude` replaces this list rather than adding to it. See [what a pattern matches](#what-a-pattern-matches). |
 
 {/* cite config-unknown-key */}
 An unknown key, a wrong type, an empty `urls` entry, or a `urls` entry that is

@@ -175,8 +175,14 @@ crawl continues, and the page counts as failed. That is exit `1`.
 
 {/* cite pages-checked-sequentially */}
 Pages are checked one at a time, in a real browser, so the wall clock is roughly
-a second or two per page. A few hundred pages is a coffee break. Four things
+a second or two per page. A few hundred pages is a coffee break. Five things
 shorten it, in the order worth trying.
+
+**Leave out what the team does not own.** `--exclude "/proposals/**"` keeps a
+section out of the crawl. It is repeatable, one glob per occurrence, and the
+glob matches the URL's path, so one pattern serves a local preview and
+production. The footer says how many pages went, and `--progress` says it once
+before the browser starts.
 
 {/* cite max-pages-cap */}
 {/* cite max-pages-skipped */}

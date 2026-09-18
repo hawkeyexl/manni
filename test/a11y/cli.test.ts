@@ -5,8 +5,60 @@
  * cheaper to enumerate here.
  */
 import { describe, expect, it } from "vitest";
-import { parseMaxPages, positiveInteger, resolveCrawl, resolveMaxPages } from "../../src/a11y/cli.js";
+import {
+  assertExcludeGlobs,
+  configExcludeGlobs,
+  parseMaxPages,
+  positiveInteger,
+  resolveCrawl,
+  resolveMaxPages,
+} from "../../src/a11y/cli.js";
 import { A11yError } from "../../src/a11y/types.js";
+
+describe("assertExcludeGlobs", () => {
+  it("passes patterns that can match a path, each named as the flag", () => {
+    expect(assertExcludeGlobs(["/proposals/**", "/"])).toEqual([
+      { glob: "/proposals/**", source: '--exclude "/proposals/**"' },
+      { glob: "/", source: '--exclude "/"' },
+    ]);
+    expect(assertExcludeGlobs([])).toEqual([]);
+  });
+
+  it("rejects a pattern that cannot, naming it and saying why", () => {
+    expect(() => assertExcludeGlobs(["proposals/**"])).toThrow(
+      new A11yError('--exclude "proposals/**" must start with "/": it matches a URL path.'),
+    );
+    expect(() => assertExcludeGlobs(["/ok/**", "**/drafts"])).toThrow(
+      new A11yError('--exclude "**/drafts" must start with "/": it matches a URL path.'),
+    );
+  });
+
+  it("takes a value containing a comma as one pattern", () => {
+    expect(assertExcludeGlobs(["/a,/b"])).toEqual([
+      { glob: "/a,/b", source: '--exclude "/a,/b"' },
+    ]);
+  });
+});
+
+describe("configExcludeGlobs", () => {
+  it("names each entry by the file it came from and its position", () => {
+    expect(configExcludeGlobs(["/proposals/**", "/blog/**"], "ci/manni.config.yaml")).toEqual([
+      { glob: "/proposals/**", source: 'ci/manni.config.yaml: "a11y.exclude[0]"' },
+      { glob: "/blog/**", source: 'ci/manni.config.yaml: "a11y.exclude[1]"' },
+    ]);
+  });
+
+  it("falls back to the family file's name when no source was recorded", () => {
+    expect(configExcludeGlobs(["/blog/**"], null)).toEqual([
+      { glob: "/blog/**", source: 'manni.config.yaml: "a11y.exclude[0]"' },
+    ]);
+  });
+
+  it("is empty for an empty list, whatever the source", () => {
+    expect(configExcludeGlobs([], null)).toEqual([]);
+    expect(configExcludeGlobs([], "manni.config.yaml")).toEqual([]);
+  });
+});
 
 describe("positiveInteger", () => {
   it("parses a canonical positive integer", () => {

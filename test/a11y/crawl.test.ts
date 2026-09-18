@@ -6,6 +6,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { crawl, type CrawlOptions } from "../../src/a11y/core/crawl.js";
+import { createExcludeFilter } from "../../src/a11y/core/exclude.js";
+import { flagGlobs } from "../helpers/exclude-globs.js";
 import { A11yError, type ProgressEvent } from "../../src/a11y/types.js";
 import { fakeAnalyzer, violation, type FakeSite } from "../helpers/fake-analyzer.js";
 
@@ -267,6 +269,75 @@ describe("crawl and the trailing slash", () => {
     const analyzer = fakeAnalyzer({ [`${S}/`]: { links: [`${S}/a`, `${S}/a/`, `${S}/b/`, `${S}/b`] } });
     const out = await crawl(options({ maxPages: 1 }), analyzer);
     expect(out).toMatchObject({ discovered: 3, skipped: 2, duplicates: 0 });
+  });
+});
+
+describe("crawl and --exclude", () => {
+  it("never enqueues an excluded link, and counts it outside discovered", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/proposals/0035/`, `${S}/about`] },
+      [`${S}/about`]: {},
+    };
+    const analyzer = fakeAnalyzer(site);
+    const out = await crawl(
+      options({ exclude: createExcludeFilter(flagGlobs("/proposals/**")) }),
+      analyzer,
+    );
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/`, `${S}/about`]);
+    expect(out).toMatchObject({ discovered: 2, excluded: 1, skipped: 0, duplicates: 0 });
+  });
+
+  it("excludes a sitemap URL the same way", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/`]: {}, [`${S}/about`]: {} });
+    const out = await crawl(
+      options({
+        extra: [`${S}/proposals/`, `${S}/about`],
+        exclude: createExcludeFilter(flagGlobs("/proposals/**")),
+      }),
+      analyzer,
+    );
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/`, `${S}/about`]);
+    expect(out).toMatchObject({ discovered: 2, excluded: 1 });
+  });
+
+  it("counts one excluded URL once, however many pages link to it", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/proposals/`, `${S}/a`, `${S}/b`] },
+      [`${S}/a`]: { links: [`${S}/proposals`, `${S}/proposals/`] },
+      [`${S}/b`]: { links: [`${S}/proposals/#top`] },
+    };
+    const out = await crawl(
+      options({ exclude: createExcludeFilter(flagGlobs("/proposals/**")) }),
+      fakeAnalyzer(site),
+    );
+    expect(out).toMatchObject({ discovered: 3, excluded: 1 });
+  });
+
+  it("leaves the max-pages cap to work on what survives exclusion", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/proposals/a`, `${S}/x`, `${S}/y`, `${S}/z`] },
+      [`${S}/x`]: {},
+      [`${S}/y`]: {},
+      [`${S}/z`]: {},
+    };
+    const analyzer = fakeAnalyzer(site);
+    const out = await crawl(
+      options({ maxPages: 2, exclude: createExcludeFilter(flagGlobs("/proposals/**")) }),
+      analyzer,
+    );
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/`, `${S}/x`]);
+    expect(out).toMatchObject({ discovered: 4, excluded: 1, skipped: 2, duplicates: 0 });
+  });
+
+  it("excludes nothing with an empty pattern list", async () => {
+    const site: FakeSite = { [`${S}/`]: { links: [`${S}/proposals/`] }, [`${S}/proposals/`]: {} };
+    const out = await crawl(options({ exclude: createExcludeFilter(flagGlobs()) }), fakeAnalyzer(site));
+    expect(out).toMatchObject({ discovered: 2, excluded: 0 });
+  });
+
+  it("reports excluded: 0 when no filter is given at all", async () => {
+    const out = await crawl(options({}), fakeAnalyzer({ [`${S}/`]: {} }));
+    expect(out.excluded).toBe(0);
   });
 });
 

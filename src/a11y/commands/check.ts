@@ -8,6 +8,7 @@
  */
 import type { PageAnalyzer } from "../core/analyzer.js";
 import { crawl, type CrawlOutcome } from "../core/crawl.js";
+import { createExcludeFilter, type ExcludeGlob } from "../core/exclude.js";
 import { NO_SEEDS_MESSAGE } from "../core/seeds.js";
 import { discoverSitemap, type Fetcher, type SitemapDiscovery } from "../core/sitemap.js";
 import { isHttpUrl, normalizeUrl } from "../core/url.js";
@@ -34,6 +35,15 @@ export interface CheckOptions {
   severity: Severity;
   /** Per-page navigation timeout in ms. Default `30000`. */
   timeout: number;
+  /**
+   * Globs matched against a URL's path; a match keeps the page out of the
+   * crawl. Default `[]`, which excludes nothing. A pattern that excludes a
+   * seed is an error, since the seed and the pattern are both the caller's
+   * statement and a contradiction is not this command's to resolve. Each
+   * pattern carries the name the refusal gives it, so the message points at
+   * the flag or the config key the pattern actually came from.
+   */
+  exclude: ExcludeGlob[];
 }
 
 export interface CheckDeps {
@@ -58,6 +68,7 @@ export const CHECK_DEFAULTS: Readonly<Omit<CheckOptions, "urls">> = Object.freez
   tags: [],
   severity: "notice",
   timeout: 30000,
+  exclude: [],
 });
 
 /**
@@ -65,9 +76,13 @@ export const CHECK_DEFAULTS: Readonly<Omit<CheckOptions, "urls">> = Object.freez
  *    seeds with `resolveSeeds` and never arrives here empty; a programmatic
  *    caller that passed none hears the same thing.
  * 2. Any non-http(s) url → A11yError(`Not an http(s) URL: "<url>".`)
- * 3. When `crawl`: `discoverSitemap(firstSeed)` (one sitemap per run, the first seed's origin).
- * 4. `crawl(...)`, then per page: drop violations below `severity`, compute `score`.
- * 5. Build `CheckSummary`. Always awaits `analyzer.close()` in `finally`.
+ * 3. Any seed an `exclude` pattern matches → A11yError naming **every** such
+ *    seed, one per line, each under the pattern's own `source`. A user who
+ *    typed two wrong patterns should not need one run per fix, and nothing is
+ *    checked either way.
+ * 4. When `crawl`: `discoverSitemap(firstSeed)` (one sitemap per run, the first seed's origin).
+ * 5. `crawl(...)`, then per page: drop violations below `severity`, compute `score`.
+ * 6. Build `CheckSummary`. Always awaits `analyzer.close()` in `finally`.
  */
 export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<CheckRun> {
   const { analyzer } = deps;
@@ -79,6 +94,15 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
       if (!isHttpUrl(url)) throw new A11yError(`Not an http(s) URL: "${url}".`);
     }
     const seeds = opts.urls.map(normalizeUrl);
+
+    const exclude = createExcludeFilter(opts.exclude);
+    const contradictions = seeds
+      .map((seed) => {
+        const pattern = exclude.match(seed);
+        return pattern === null ? null : `${pattern.source} excludes the seed ${seed}.`;
+      })
+      .filter((line): line is string => line !== null);
+    if (contradictions.length > 0) throw new A11yError(contradictions.join("\n"));
 
     let sitemap: SitemapDiscovery = { source: null, urls: [] };
     const first = seeds[0];
@@ -93,6 +117,7 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
         crawl: opts.crawl,
         maxPages: opts.maxPages,
         extra: sitemap.urls,
+        exclude,
         analyze: { tags: opts.tags, timeout: opts.timeout },
         onProgress: deps.onProgress,
       },
@@ -120,7 +145,7 @@ function finishPage(page: Omit<PageResult, "score">, floor: Severity): PageResul
 
 function summarize(
   results: PageResult[],
-  { discovered, skipped, duplicates }: CrawlOutcome,
+  { discovered, skipped, duplicates, excluded }: CrawlOutcome,
   sitemap: SitemapDiscovery,
   crawl: boolean,
 ): CheckSummary {
@@ -140,6 +165,7 @@ function summarize(
     checked: results.length,
     skipped,
     duplicates,
+    excluded,
     failed,
     violations,
     bySeverity,

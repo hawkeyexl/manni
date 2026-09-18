@@ -10,10 +10,12 @@
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
 import { shouldColor } from "../shared/color.js";
+import { FAMILY_CONFIG_NAMES } from "../shared/config-file.js";
 import { fail } from "../shared/run.js";
 import { CHECK_DEFAULTS, runCheck } from "./commands/check.js";
 import { createPlaywrightAnalyzer } from "./core/analyzer.js";
-import { loadA11yConfig, type LoadedA11yConfig } from "./core/config.js";
+import { excludeEntryLabel, loadA11yConfig, type LoadedA11yConfig } from "./core/config.js";
+import { MUST_START_WITH_SLASH, isUrlPathGlob, type ExcludeGlob } from "./core/exclude.js";
 import { resolveSeeds } from "./core/seeds.js";
 import { A11Y_FORMAT_LIST, isA11yFormat, render } from "./reporters/index.js";
 import { CLEAR_LINE, createProgressReporter } from "./reporters/progress.js";
@@ -26,9 +28,9 @@ import {
 } from "./types.js";
 
 /**
- * `--collection <name>`: one name per occurrence, never split on commas. The
- * two lines are meta's `collect`, copied rather than imported: a tool does not
- * reach into a sibling tool's CLI.
+ * `--collection <name>` and `--exclude <glob>`: one value per occurrence,
+ * never split on commas. The two lines are meta's `collect`, copied rather
+ * than imported: a tool does not reach into a sibling tool's CLI.
  */
 function collect(value: string, prev: string[]): string[] {
   return prev.concat([value]);
@@ -147,6 +149,41 @@ export function resolveCrawl(flag: boolean | undefined, configured: boolean | un
   return flag ?? configured ?? CHECK_DEFAULTS.crawl;
 }
 
+/**
+ * Every `--exclude` value has to be able to match a path, which always starts
+ * with `/`. Checked before the config file is read and long before a browser
+ * launches, so a pattern that could only ever miss costs a message. Each
+ * survivor carries the flag spelling a later message names it by.
+ * Exported for its unit test only.
+ */
+export function assertExcludeGlobs(globs: readonly string[]): ExcludeGlob[] {
+  return globs.map((glob) => {
+    if (!isUrlPathGlob(glob)) {
+      throw new A11yError(`--exclude "${glob}" ${MUST_START_WITH_SLASH}`);
+    }
+    return { glob, source: `--exclude "${glob}"` };
+  });
+}
+
+/**
+ * The same list as it arrives from `a11y.exclude:`, named the way the config
+ * errors name it. A run whose patterns came from a file never reports them as
+ * a flag, which would send a reader looking through a shell history for
+ * something they never typed.
+ * Exported for its unit test only.
+ */
+export function configExcludeGlobs(
+  globs: readonly string[],
+  source: string | null,
+): ExcludeGlob[] {
+  // The CLI reaches here only with a file behind it, since `cfg.exclude` is
+  // set, so the fallback is for a programmatic caller that passed a section
+  // with no source. It names the file a reader would look for rather than
+  // labelling an entry with "null".
+  const file = source ?? FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml";
+  return globs.map((glob, i) => ({ glob, source: excludeEntryLabel(file, i) }));
+}
+
 function assertSeverity(value: string): Severity {
   if (!isSeverity(value)) {
     throw new A11yError(`Unknown --severity "${value}". Use ${SEVERITY_LIST}.`);
@@ -173,6 +210,8 @@ interface CheckCliOptions {
   progress?: boolean;
   /** `--collection <name>`, one value per occurrence. `[]` when never given. */
   collection: string[];
+  /** `--exclude <glob>`, one value per occurrence. `[]` when never given. */
+  exclude: string[];
   /** `-c <path>` | `--no-config` → false. */
   config?: string | false;
 }
@@ -214,6 +253,12 @@ export function buildProgram(): Command {
       "cap on pages checked; the rest are reported as skipped (default: no cap)",
     )
     .option("--no-max-pages", "check every page found, ignoring a configured maxPages")
+    .option(
+      "--exclude <glob>",
+      "URL path glob to keep out of the crawl; repeatable",
+      collect,
+      [],
+    )
     .option("--tags <list>", "comma-separated axe tags to restrict the rules to")
     .option(
       "--severity <level>",
@@ -255,6 +300,7 @@ export function buildProgram(): Command {
         const severity = assertSeverity(options.severity);
         const maxPages = parseMaxPages(options.maxPages);
         const timeout = positiveInteger(options.timeout, "--timeout");
+        const exclude = assertExcludeGlobs(options.exclude);
 
         const loaded: LoadedA11yConfig =
           options.config === false
@@ -290,6 +336,13 @@ export function buildProgram(): Command {
               options.tags !== undefined
                 ? splitList(options.tags)
                 : (cfg.tags ?? CHECK_DEFAULTS.tags),
+            // A typed flag replaces the config list entirely; the two do not
+            // merge. Merging would only ever let a run exclude *more* than
+            // the repository's default, so checking one excluded section on
+            // purpose would need --no-config, which also drops collections:.
+            exclude: typed("exclude")
+              ? exclude
+              : configExcludeGlobs(cfg.exclude ?? [], loaded.source),
             severity: typed("severity") ? severity : (cfg.severity ?? CHECK_DEFAULTS.severity),
             timeout: typed("timeout") ? timeout : (cfg.timeout ?? CHECK_DEFAULTS.timeout),
           },
