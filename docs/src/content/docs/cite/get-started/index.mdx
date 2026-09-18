@@ -183,7 +183,7 @@ Each citation gets one line under its page, with both ends on it:
 | --- | --- |
 | `<mark>` | `✓` current, `↕` a warning, `ℹ` a notice, `✗` an error, `·` skipped or baselined. The glyph carries the meaning, not only the colour. |
 | `<id>` | The entry's `id`. An entry without one leaves the column empty; the two ends say which entry it is. |
-| `<claim end>` | The page lines and their status, as in `:16-17 current` or `:9 moved -> :11`. A marker-anchored claim reads `marker :30 current`. Empty for a bare pin. |
+| `<claim end>` | The page lines and their status, as in `:16-17 current` or `:9 moved -> :11`. A marker-anchored claim reads `marker :30 current`, and `marker :30 -> :28 current` when the marker is misplaced. Empty for a bare pin. |
 | `<source end>` | The source as the entry spelled it, then its status: `lib/limits.ts:2 current`, `~AQm4…:5 changed since 3f9c2a1, 1 commit`. |
 | `<manifest>` | Where the entry is kept, when a [sidecar](/manni/cite/reference/citations/#the-sidecar) owns it, as in `docs-citations.yaml:6`. Empty for a frontmatter entry. |
 

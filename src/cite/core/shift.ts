@@ -11,16 +11,10 @@
  * change what the pin covers. That is a refusal, and nothing is written.
  */
 import { CiteError } from "../errors.js";
-import type { LineSpec, PageCitation, PageLines } from "../types.js";
+import type { LineSpec, PageCitation } from "../types.js";
 import { toFileLines } from "./claims.js";
 import { lineSpec, parseLines } from "./range.js";
-
-/** `line 9`, or `lines 9-12` for a range. */
-export function spellAt(lines: PageLines): string {
-  return lines.start === lines.end
-    ? `line ${String(lines.start)}`
-    : `lines ${String(lines.start)}-${String(lines.end)}`;
-}
+import { spellAt } from "./spell.js";
 
 /** The new `claim.lines` of each entry the change moves, by where the entry lives. */
 export interface Shifted {

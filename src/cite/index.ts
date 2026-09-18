@@ -18,9 +18,21 @@ export {
   spellSource,
 } from "./core/range.js";
 export { hashLines, hashRange, isKeyedPin, normalizeText, sliceLines, splitLines } from "./core/hash.js";
-export { shortCommit, shortLine, shortPin, shortSrc } from "./core/spell.js";
+export { shortCommit, shortLine, shortPin, shortSrc, spellAt } from "./core/spell.js";
 export { buildSourceIndex, readSource } from "./core/sources.js";
 export type { BuildIndexOptions, ReadSourceResult } from "./core/sources.js";
+export {
+  isUnitText,
+  markerClaimEnd,
+  markerRunAt,
+  misplacedMarkerAt,
+  misplacedMarkers,
+  movedUnit,
+  pre43Span,
+  splitUnit,
+  unitText,
+} from "./core/reanchor.js";
+export type { MisplacedMarker } from "./core/reanchor.js";
 export {
   anchoredLines,
   detectEol,
@@ -30,6 +42,7 @@ export {
   fencedBlocks,
   formatStatement,
   insideFence,
+  isBoundLine,
   lineAt,
   offsetOfLine,
   paragraphAfter,
@@ -62,7 +75,7 @@ export {
   readPage,
   validateEntry,
 } from "./core/page.js";
-export { shiftedEntries, spellAt, withClaimLines } from "./core/shift.js";
+export { shiftedEntries, withClaimLines } from "./core/shift.js";
 export type { ShiftOptions, Shifted } from "./core/shift.js";
 export {
   CITATIONS_KEY,
@@ -83,7 +96,14 @@ export { ManifestSet, itemLine, splice } from "./core/manifest.js";
 export type { HeldManifest } from "./core/manifest.js";
 export type { ReadPageOptions } from "./core/page.js";
 export { checkCitations } from "./core/check-page.js";
-export { claimMessageFor, errorSite, findingsFor, messageFor, toValidationResult } from "./core/adapt.js";
+export {
+  claimMessageFor,
+  errorSite,
+  findingsFor,
+  messageFor,
+  misplacedMessageFor,
+  toValidationResult,
+} from "./core/adapt.js";
 export {
   appendFrontmatterCitation,
   entryObject,

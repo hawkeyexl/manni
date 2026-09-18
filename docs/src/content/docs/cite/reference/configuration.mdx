@@ -261,7 +261,7 @@ exit code. `off` is not reported at all. The rules themselves are defined on the
 [citations reference](/manni/cite/reference/citations/#statuses-and-rules).
 
 {/* cite fourteen-rules */}
-`severity:` takes exactly these fourteen names. `current` and `skipped` are
+`severity:` takes exactly these fifteen names. `current` and `skipped` are
 statuses, per end, and neither is a rule, so neither can be named here.
 
 | Rule | Default | Why |
@@ -277,6 +277,7 @@ statuses, per end, and neither is a rule, so neither can be named here.
 | `marker-orphan` | `error` | A marker names an id no entry has. |
 | `marker-invalid` | `error` | A marker the tool cannot read, including one carrying JSON. |
 | `marker-repeated` | `warning` | Two markers name one id; the first anchors it. |
+| `marker-misplaced` | `warning` | A marker line sits inside a paragraph, splitting it. `update` moves it whatever this says, because a move is repair and not a report. |
 | `anchor-invalid` | `error` | The anchor cannot work, so neither end can be judged. |
 | `entry-invalid` | `error` | An entry the schema refuses, a duplicate id, or a pin prefix that does not match the source. |
 | `quote-drift` | `error` | The fenced block does not reproduce the cited lines. |
