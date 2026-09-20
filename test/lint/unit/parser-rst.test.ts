@@ -652,6 +652,34 @@ describe("rst parser: tables", () => {
     ]);
     expect(at(table.children, 1, "body row").header).toBe(false);
   });
+
+  // The third path, and the one most real documents take. `:header:` supplies
+  // a header row that is not in the data; `:header-rows:` promotes rows that
+  // are, which is a different branch of the scanner.
+  it("reads a csv-table's :header-rows: option as header rows", () => {
+    const tree = parse(
+      [
+        "A",
+        "=",
+        "",
+        ".. csv-table::",
+        "   :header-rows: 1",
+        "",
+        "   H1, H2",
+        "   1, 2",
+        "",
+      ].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children).toHaveLength(2);
+    expect(at(table.children, 0, "header row").header).toBe(true);
+    expect(at(table.children, 0, "header row").children.map((c) => c.text)).toEqual([
+      "H1",
+      "H2",
+    ]);
+    expect(at(table.children, 1, "body row").header).toBe(false);
+  });
 });
 
 describe("rst parser: positions", () => {

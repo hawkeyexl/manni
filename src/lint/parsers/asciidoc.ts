@@ -730,7 +730,11 @@ function contentNode(
       return {
         kind: "definitionList",
         position,
-        text: children.map((item) => item.term).join("\n"),
+        // `item.text`, which is `"term: definition"`, not `item.term`. A
+        // node's `text` is its flattened rendering, so dropping the definition
+        // bodies here would make a pattern rule find a word in every format
+        // except this one.
+        text: children.map((item) => item.text).join("\n"),
         children,
       };
     }

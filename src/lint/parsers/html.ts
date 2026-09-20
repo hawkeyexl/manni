@@ -345,8 +345,18 @@ function cellNode(cell: Element): TableCellNode {
   };
 }
 
-/** One `<tr>`. `header` is set from `<thead>` membership, or - failing that - from every cell being a `<th>`. Never inferred from position. */
-function rowNode(tr: Element, inHead: boolean): TableRowNode {
+/**
+ * Which grouping a row was found in. `none` is a bare `<tr>` under the table.
+ *
+ * A footer has to be told apart from a body, rather than both being "not the
+ * head". `<tfoot><tr><th>Total</th></tr></tfoot>` is an ordinary way to label
+ * a totals row, and the every-cell-is-a-`<th>` rule below would otherwise read
+ * it as a header.
+ */
+type RowGroup = "head" | "body" | "foot" | "none";
+
+/** One `<tr>`. `header` is set from `<thead>` membership, or - failing that - from every cell being a `<th>`. Never inferred from position, and never in a footer. */
+function rowNode(tr: Element, group: RowGroup): TableRowNode {
   const cells: TableCellNode[] = [];
   let allHeaderCells = true;
   for (const child of elementChildren(tr)) {
@@ -359,21 +369,24 @@ function rowNode(tr: Element, inHead: boolean): TableRowNode {
     kind: "tableRow",
     position: positionOf(tr),
     text: flatText(tr),
-    header: inHead || (cells.length > 0 && allHeaderCells),
+    header:
+      group === "head" || (group !== "foot" && cells.length > 0 && allHeaderCells),
     children: cells,
   };
 }
 
 /** Rows from `<thead>`/`<tbody>`/`<tfoot>` or bare `<tr>` children, in document order. */
-function collectRows(parent: Element, out: TableRowNode[], inHead: boolean): void {
+function collectRows(parent: Element, out: TableRowNode[], group: RowGroup): void {
   for (const child of elementChildren(parent)) {
     const tag = tagOf(child);
     if (tag === "thead") {
-      collectRows(child, out, true);
-    } else if (tag === "tbody" || tag === "tfoot") {
-      collectRows(child, out, inHead);
+      collectRows(child, out, "head");
+    } else if (tag === "tbody") {
+      collectRows(child, out, "body");
+    } else if (tag === "tfoot") {
+      collectRows(child, out, "foot");
     } else if (tag === "tr") {
-      out.push(rowNode(child, inHead));
+      out.push(rowNode(child, group));
     }
     // `<caption>`/`<colgroup>` carry no rows and are not content of their own.
   }
@@ -382,7 +395,7 @@ function collectRows(parent: Element, out: TableRowNode[], inHead: boolean): voi
 /** `<table>` as a table node. */
 function tableNode(table: Element): TableNode {
   const rows: TableRowNode[] = [];
-  collectRows(table, rows, false);
+  collectRows(table, rows, "none");
   return {
     kind: "table",
     position: positionOf(table),

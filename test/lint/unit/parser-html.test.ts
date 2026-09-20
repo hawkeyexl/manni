@@ -406,6 +406,21 @@ describe("html parser", () => {
       expect(table.children.map((r) => r.header)).toEqual([true, false]);
     });
 
+    // A footer is not a header, whatever it holds. `<tfoot>` commonly carries
+    // `<th>` row labels, which is the case that would otherwise slip through
+    // the all-`<th>` rule above.
+    it("never marks a <tfoot> row as a header, even when its cells are <th>", () => {
+      const tree = parse(
+        doc(
+          "<h1>A</h1><table><thead><tr><th>Name</th></tr></thead>" +
+            "<tbody><tr><td>x</td></tr></tbody>" +
+            "<tfoot><tr><th>Total</th></tr></tfoot></table>",
+        ),
+      );
+      const table = firstContent(tree) as TableNode;
+      expect(table.children.map((r) => r.header)).toEqual([true, false, false]);
+    });
+
     it("marks a header row when every cell is a <th>, with no <thead>", () => {
       const tree = parse(doc("<h1>A</h1><table><tr><th>Name</th><th>Age</th></tr></table>"));
       const table = firstContent(tree) as TableNode;

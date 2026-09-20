@@ -393,6 +393,14 @@ describe("content kinds: definitionList", () => {
     expect(
       at(dlist.children, 0, "first item").definition.map((n) => n.text),
     ).toEqual(["Central Processing Unit"]);
+
+    // The list's own `text` carries the definitions, not just the terms. A
+    // node's `text` is its flattened rendering, and a pattern rule reads it -
+    // so terms alone would make a word findable in every other format and not
+    // in this one.
+    expect(dlist.text).toBe(
+      "CPU: Central Processing Unit\nRAM: Random Access Memory",
+    );
   });
 
   it("joins multiple terms sharing one description", () => {
