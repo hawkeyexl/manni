@@ -67,6 +67,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0050](0050-lint-domain.md) | The `lint` domain: `manni lint check` runs every configured job and `manni lint structure` checks a page against its doctype template. Verbs name the job, config names the tool behind it | Maya · M10 / Devin · D9 / Theo · T5 | Proposed |
 | [0052](0052-term-domain.md) | The `term` domain. A term is a flat record with `type: term`, read from every format in one-per-file and many-per-file shapes. `manni term` checks the set, lints definitions and writes a Vale style. It renders the set to any format | Sara · S6 / Maya · M9 / Devin · D8 | Accepted |
 | [0053](0053-content-model.md) | One content model for the family: the block kinds a page is made of, named once for `manni lint` and for Doc Detective's AST detection, with the method for naming the next one | all (the body of a page) | Proposed |
+| [0054](0054-lint-template-grammar.md) | The lint template format is an ordered list of rules rather than a map, with one occurrence vocabulary, heading alternation, repeating groups, and a matcher that aligns sections to rules by cost | Sara · S7 / Maya · M10 / Theo · T5 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
