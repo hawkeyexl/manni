@@ -14,7 +14,15 @@ import { describe, expect, it } from "vitest";
 import { rstParser } from "../../../src/lint/parsers/rst.js";
 import { loadTemplate } from "../../../src/lint/core/template-registry.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
-import type { CodeNode, ListNode, SectionNode } from "../../../src/lint/types.js";
+import type {
+  AdmonitionNode,
+  BlockquoteNode,
+  CodeNode,
+  DefinitionListNode,
+  ListNode,
+  SectionNode,
+  TableNode,
+} from "../../../src/lint/types.js";
 import { at, defined } from "../helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -321,9 +329,10 @@ describe("rst parser: content", () => {
 
 describe("rst parser: skipping", () => {
   // The Markdown parser skips blockquotes and tables rather than mapping them
-  // onto a nearest neighbour, and for the same reason: a note is not a
-  // paragraph, and counting it as one breaks `paragraphs: {max: n}`.
-  it("skips directives other than code, and comments", () => {
+  // onto a nearest neighbour, and this parser used to skip the same shapes.
+  // What remains genuinely unread - a plain comment, a target, a substitution
+  // definition, and a directive this parser does not map - stays skipped.
+  it("skips directives it does not map, and comments", () => {
     const tree = parse(
       [
         "A",
@@ -331,12 +340,9 @@ describe("rst parser: skipping", () => {
         "",
         "Real paragraph.",
         "",
-        ".. note::",
+        ".. seealso::",
         "",
-        "   This admonition is not a paragraph.",
-        "",
-        ".. image:: diagram.png",
-        "   :alt: A diagram",
+        "   Not one of the mapped directives.",
         "",
         ".. This is a plain comment,",
         "   continued on a second line.",
@@ -356,7 +362,7 @@ describe("rst parser: skipping", () => {
     ]);
   });
 
-  it("skips tables, doctest blocks, block quotes, and definition lists", () => {
+  it("skips doctest blocks", () => {
     const tree = parse(
       [
         "A",
@@ -364,21 +370,8 @@ describe("rst parser: skipping", () => {
         "",
         "Real paragraph.",
         "",
-        "===== =====",
-        "col a col b",
-        "===== =====",
-        "",
-        "+-------+",
-        "| cell  |",
-        "+-------+",
-        "",
         ">>> doctest()",
         "output",
-        "",
-        "   An indented block quote.",
-        "",
-        "term",
-        "   its definition",
         "",
         "Second real paragraph.",
         "",
@@ -402,6 +395,262 @@ describe("rst parser: skipping", () => {
     const title = at(tree.sections, 0, "title section");
     expect(title.level).toBe(1);
     expect(title.children.map((c) => c.text)).toEqual(["Body."]);
+  });
+});
+
+describe("rst parser: admonitions", () => {
+  it("maps note/tip/important/caution/warning/danger to their own variant", () => {
+    const tree = parse(
+      ["A", "=", "", ".. warning::", "", "   Back up first.", ""].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const node = at(a.children, 0, "admonition") as AdmonitionNode;
+    expect(node).toMatchObject({ kind: "admonition", variant: "warning" });
+    expect(node.text).toBe("Back up first.");
+  });
+
+  it("nests block content inside an admonition", () => {
+    const tree = parse(
+      ["A", "=", "", ".. note::", "", "   First line.", "", "   * a", "   * b", ""].join(
+        "\n",
+      ),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const node = at(a.children, 0, "admonition") as AdmonitionNode;
+    expect(node.variant).toBe("note");
+    expect(node.children.map((c) => c.kind)).toEqual(["paragraph", "list"]);
+  });
+
+  // `attention`, `hint`, `error` and the generic `admonition` directive name
+  // no six-value variant. Rather than invent an equivalence (`hint` as `tip`,
+  // `error` as `danger`), they still become an admonition, just with no
+  // `variant` field - so a `variant: tip` rule never matches a page that
+  // never said tip, and a plain count rule still counts them.
+  it("maps attention, hint, error, and the generic admonition with no variant", () => {
+    const tree = parse(
+      [
+        "A",
+        "=",
+        "",
+        ".. attention::",
+        "",
+        "   x",
+        "",
+        ".. hint::",
+        "",
+        "   y",
+        "",
+        ".. error::",
+        "",
+        "   z",
+        "",
+        ".. admonition:: Custom",
+        "",
+        "   w",
+        "",
+      ].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    expect(a.children.map((c) => c.kind)).toEqual([
+      "admonition",
+      "admonition",
+      "admonition",
+      "admonition",
+    ]);
+    for (const node of a.children as AdmonitionNode[]) {
+      expect(node.variant).toBeUndefined();
+    }
+    expect(a.children.map((c) => c.text)).toEqual(["x", "y", "z", "w"]);
+  });
+});
+
+describe("rst parser: images", () => {
+  it("reads an image directive's url and alt", () => {
+    const tree = parse(
+      ["A", "=", "", ".. image:: diagram.png", "   :alt: A diagram", ""].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const image = at(a.children, 0, "image");
+    expect(image).toMatchObject({ kind: "image", url: "diagram.png", alt: "A diagram" });
+  });
+
+  it("reads a figure directive the same way, defaulting alt to empty", () => {
+    const tree = parse(["A", "=", "", ".. figure:: shot.png", ""].join("\n"));
+    const a = at(tree.sections, 0, "section A");
+    expect(at(a.children, 0, "image")).toMatchObject({
+      kind: "image",
+      url: "shot.png",
+      alt: "",
+    });
+  });
+});
+
+describe("rst parser: block quotes", () => {
+  it("reads an indented block with no `::` ahead as a blockquote", () => {
+    const tree = parse(
+      ["A", "=", "", "Real paragraph.", "", "   A quoted block.", "", "Second.", ""].join(
+        "\n",
+      ),
+    );
+    const a = at(tree.sections, 0, "section A");
+    expect(a.children.map((c) => c.kind)).toEqual([
+      "paragraph",
+      "blockquote",
+      "paragraph",
+    ]);
+    const bq = at(a.children, 1, "blockquote") as BlockquoteNode;
+    expect(bq.text).toBe("A quoted block.");
+    expect(bq.children.map((c) => c.kind)).toEqual(["paragraph"]);
+  });
+});
+
+describe("rst parser: definition lists", () => {
+  it("reads a term and its indented definition", () => {
+    const tree = parse(["A", "=", "", "term", "   its definition", "", "Body.", ""].join("\n"));
+    const a = at(tree.sections, 0, "section A");
+    expect(a.children.map((c) => c.kind)).toEqual(["definitionList", "paragraph"]);
+    const dl = at(a.children, 0, "definition list") as DefinitionListNode;
+    expect(dl.children).toHaveLength(1);
+    const item = at(dl.children, 0, "definition item");
+    expect(item.term).toBe("term");
+    expect(item.definition.map((d) => d.text)).toEqual(["its definition"]);
+  });
+
+  it("groups consecutive term/definition pairs into one list", () => {
+    const tree = parse(["A", "=", "", "one", "   first", "two", "   second", ""].join("\n"));
+    const a = at(tree.sections, 0, "section A");
+    expect(a.children.map((c) => c.kind)).toEqual(["definitionList"]);
+    const dl = at(a.children, 0, "definition list") as DefinitionListNode;
+    expect(dl.children.map((item) => item.term)).toEqual(["one", "two"]);
+  });
+});
+
+describe("rst parser: tables", () => {
+  it("reads a grid table with a header row", () => {
+    const tree = parse(
+      [
+        "A",
+        "=",
+        "",
+        "+-------+-------+",
+        "| A     | B     |",
+        "+=======+=======+",
+        "| 1     | 2     |",
+        "+-------+-------+",
+        "",
+      ].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children).toHaveLength(2);
+    const header = at(table.children, 0, "header row");
+    expect(header.header).toBe(true);
+    expect(header.children.map((c) => c.text)).toEqual(["A", "B"]);
+    const body = at(table.children, 1, "body row");
+    expect(body.header).toBe(false);
+    expect(body.children.map((c) => c.text)).toEqual(["1", "2"]);
+  });
+
+  it("reads a simple table with a header row", () => {
+    const tree = parse(
+      [
+        "A",
+        "=",
+        "",
+        "=====  =====",
+        "col a  col b",
+        "=====  =====",
+        "1      2",
+        "3      4",
+        "=====  =====",
+        "",
+      ].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    const header = at(table.children, 0, "header row");
+    expect(header.header).toBe(true);
+    expect(header.children.map((c) => c.text)).toEqual(["col a", "col b"]);
+    expect(table.children.slice(1).every((r) => !r.header)).toBe(true);
+    expect(table.children.slice(1).map((r) => r.children.map((c) => c.text))).toEqual([
+      ["1", "2"],
+      ["3", "4"],
+    ]);
+  });
+
+  it("reads a simple table with no header when there is no separator", () => {
+    const tree = parse(
+      ["A", "=", "", "=====  =====", "1      2", "=====  =====", ""].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children).toHaveLength(1);
+    expect(table.children[0]?.header).toBe(false);
+  });
+
+  it("reads a list-table with header-rows", () => {
+    const tree = parse(
+      [
+        "A",
+        "=",
+        "",
+        ".. list-table::",
+        "   :header-rows: 1",
+        "",
+        "   * - Col A",
+        "     - Col B",
+        "   * - 1",
+        "     - 2",
+        "",
+      ].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children).toHaveLength(2);
+    expect(at(table.children, 0, "header row").header).toBe(true);
+    expect(at(table.children, 0, "header row").children.map((c) => c.text)).toEqual([
+      "Col A",
+      "Col B",
+    ]);
+    expect(at(table.children, 1, "body row").header).toBe(false);
+  });
+
+  it("reads a list-table with no header when :header-rows: is absent", () => {
+    const tree = parse(
+      ["A", "=", "", ".. list-table::", "", "   * - 1", "     - 2", ""].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children.every((r) => !r.header)).toBe(true);
+  });
+
+  it("reads a csv-table's inline rows, with no header by default", () => {
+    const tree = parse(
+      ["A", "=", "", ".. csv-table::", "", "   1, 2", "   3, 4", ""].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children).toHaveLength(2);
+    expect(table.children.every((r) => !r.header)).toBe(true);
+    expect(table.children.map((r) => r.children.map((c) => c.text))).toEqual([
+      ["1", "2"],
+      ["3", "4"],
+    ]);
+  });
+
+  it("reads a csv-table's :header: option as a header row", () => {
+    const tree = parse(
+      ["A", "=", "", ".. csv-table::", '   :header: "A", "B"', "", "   1, 2", ""].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children).toHaveLength(2);
+    expect(at(table.children, 0, "header row")).toMatchObject({ header: true });
+    expect(at(table.children, 0, "header row").children.map((c) => c.text)).toEqual([
+      "A",
+      "B",
+    ]);
+    expect(at(table.children, 1, "body row").header).toBe(false);
   });
 });
 
@@ -525,6 +774,23 @@ describe("rst parser: registration", () => {
     });
     expect(parse("A\n=\n").format).toBe("rst");
     expect(rstParser.parse("A\n=\n", "docs/a.rst").filePath).toBe("docs/a.rst");
+  });
+
+  it("declares exactly the content kinds it emits", () => {
+    expect(rstParser.kinds).toEqual([
+      "paragraph",
+      "codeBlock",
+      "list",
+      "listItem",
+      "table",
+      "tableRow",
+      "tableCell",
+      "admonition",
+      "image",
+      "blockquote",
+      "definitionList",
+      "definitionItem",
+    ]);
   });
 });
 
