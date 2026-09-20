@@ -182,9 +182,16 @@ export interface RuleContext {
   position: Position;
 }
 
-/** The context for rules run against a section's own content. */
+/**
+ * The context for rules run against a section's own content.
+ *
+ * The heading is normalised to `null` when there is none, as `match.ts` and
+ * `validator.ts` both do. A headless section carries `title: ""`, and the JSON
+ * reporter's `heading` is a wire key `manni docevals` parses rather than
+ * validates, so `""` and `null` would reach it as two spellings of one fact.
+ */
 export function sectionContext(section: SectionNode): RuleContext {
-  return { heading: section.title, position: section.position };
+  return { heading: section.title || null, position: section.position };
 }
 
 /* -------------------------------------------------------------------------- *
@@ -317,6 +324,25 @@ export type { ContentRun } from "./sequence.js";
  * template, the section, or the file. Every caller must route the result
  * through the same containment a template load failure gets, or one bad
  * pattern takes the whole run down with it.
+ *
+ * ## A pattern that compiles can still hang
+ *
+ * This checks syntax, and syntax is all it checks. `(a+)+b$` is a valid regex
+ * that backtracks catastrophically against a heading it cannot match, and
+ * `loadTemplateFile` will fetch a template over HTTP, so an untrusted template
+ * can supply one.
+ *
+ * Capping the input length is not the answer, however cheap it looks. The
+ * blow-up is exponential in the length of the input, so a cap generous enough
+ * for a real heading is already far past the point of hanging: `(a+)+b$` needs
+ * on the order of 2^n steps, and n of 64 is out of reach. Any cap that
+ * actually bounded the work would reject headings people legitimately write.
+ *
+ * The boundary that does hold is the one proposal 0015 drew for schemas: a
+ * template from a URL is a trust decision made when the URL is configured, not
+ * something this function can take back. Validating patterns for backtracking
+ * safety at load time is the fix if that decision is ever delegated, and it is
+ * a dependency and a proposal rather than a line here.
  */
 const compiled = new Map<string, RegExp>();
 

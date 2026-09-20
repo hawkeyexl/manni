@@ -164,11 +164,22 @@ async function loadBuiltin(id: string): Promise<Template> {
   }
   const raw = await readBuiltinFile(id, entry.file);
 
+  // The same guard `loadTemplateFile` applies to an outside file. A built-in
+  // is ours and should never fail it, which is the point: if one ever does,
+  // this says which file and what it held, rather than letting `dereference`
+  // report something opaque about a value it did not expect.
+  const parsed: unknown = parseYaml(raw);
+  if (!isRecord(parsed)) {
+    throw new LintError(
+      `Built-in template "${id}" (${entry.file}) is not a template file: ` +
+        `expected an object at the top level, got ${
+          parsed === null ? "null" : Array.isArray(parsed) ? "an array" : typeof parsed
+        }.`,
+    );
+  }
+
   const file = validateTemplateFile(
-    await dereference<Record<string, unknown>>(
-      parseYaml(raw) as Record<string, unknown>,
-      DEREFERENCE_OPTIONS,
-    ),
+    await dereference<Record<string, unknown>>(parsed, DEREFERENCE_OPTIONS),
     entry.file,
   );
   const names = Object.keys(file.templates ?? {});

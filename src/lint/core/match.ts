@@ -425,6 +425,19 @@ class Heap {
     return this.items.length;
   }
 
+  /*
+   * Every `?? 0` in this class is unreachable, and is here only because
+   * `noUncheckedIndexedAccess` cannot see the bounds the arithmetic already
+   * guarantees. `costs` and `items` are pushed and popped together and so
+   * always have the same length; `child` is the index just pushed, and
+   * `parent = (child - 1) >> 1` is in bounds whenever `child > 0`; `left` and
+   * `right` are compared against `length` before they are read.
+   *
+   * Worth stating rather than leaving to inference: were an index ever out of
+   * bounds, the fallback would read as cost 0, quietly inverting the heap
+   * order rather than throwing. It is a type-checker concession, not a
+   * defensive default.
+   */
   push(cost: number, item: number): void {
     this.costs.push(cost);
     this.items.push(item);

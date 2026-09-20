@@ -42,7 +42,12 @@ export function checkElementsIn(
   const tags = rule.tag === undefined ? undefined : Array.isArray(rule.tag) ? rule.tag : [rule.tag];
   const matching = tags ? elementsOf(content).filter((element) => tags.includes(element.name)) : elementsOf(content);
 
-  const noun = tags ? `${tags.map((tag) => `"${tag}"`).join(", ")} element` : "element";
+  // "or", not a comma list: the count applies to one combined label, so
+  // `"Note", "Tip" element` reads as two nouns with a singular verb where
+  // `"Note" or "Tip" element` reads as the one thing being counted.
+  const noun = tags
+    ? `${tags.map((tag) => `"${tag}"`).join(" or ")} element`
+    : "element";
   const findings = checkCount(matching.length, rule, noun, "elements_count_error", ctx);
 
   if (rule.attributes) {
