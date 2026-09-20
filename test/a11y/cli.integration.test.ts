@@ -79,7 +79,16 @@ writeFileSync(
   "utf8",
 );
 
-function run(args: string[], timeout = 120_000, dir = cwd): Promise<Run> {
+/**
+ * The child's own timeout, deliberately below every case's vitest timeout. The
+ * two used to be the same 120s, so a child that had to be killed was killed at
+ * the exact moment vitest gave up, and nothing was left to report the kill.
+ * Under it, a killed child still returns through `close` and
+ * `parseJsonRun` names the status.
+ */
+const CHILD_TIMEOUT = 90_000;
+
+function run(args: string[], timeout = CHILD_TIMEOUT, dir = cwd): Promise<Run> {
   return new Promise((done) => {
     const child = spawn("node", [manni, "a11y", ...args], {
       cwd: dir,
@@ -170,6 +179,29 @@ interface JsonRun {
   };
 }
 
+/**
+ * A report run's stdout, parsed only once the run itself looks sound.
+ *
+ * `JSON.parse` on its own turns any failed run into `Unexpected end of JSON
+ * input`, which names neither the exit status nor the cause. A Chromium that
+ * crashes, is killed, or launches too slowly is the likeliest reason a report
+ * is missing here, and that has to read as a browser failure rather than as
+ * malformed JSON. A clean run exits 0 and a run with violations exits 1; both
+ * print a report, so anything else means no report was written.
+ */
+function parseJsonRun(result: Run): JsonRun {
+  const status =
+    result.status === null ? "no exit status (killed)" : `exit ${String(result.status)}`;
+  const tail = result.stderr.trim().slice(-500) || "(stderr empty)";
+  if (result.status !== 0 && result.status !== 1) {
+    throw new Error(`manni a11y check failed: ${status}. stderr: ${tail}`);
+  }
+  if (result.stdout.trim() === "") {
+    throw new Error(`manni a11y check wrote no report: ${status}. stderr: ${tail}`);
+  }
+  return JSON.parse(result.stdout) as JsonRun;
+}
+
 describe("manni a11y check (usage errors, no browser needed)", () => {
   beforeAll(() => {
     if (!existsSync(manni)) execSync("npm run build", { cwd: root, stdio: "ignore" });
@@ -191,8 +223,26 @@ describe("manni a11y check (usage errors, no browser needed)", () => {
     );
   });
 
+  it("parseJsonRun reports a failed command as a failed command", async () => {
+    // The regression this pins: every JSON case used to call
+    // `JSON.parse(r.stdout)` straight. A run that dies before printing
+    // anything then fails as `SyntaxError: Unexpected end of JSON input`,
+    // naming neither the exit status nor the reason, so a killed Chromium read
+    // as malformed JSON. This run is the cheap stand-in: it exits non-zero
+    // with an empty stdout and a real message on stderr.
+    const r = await run(["check", "--no-config"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(() => parseJsonRun(r)).toThrow(/exit 2/);
+    expect(() => parseJsonRun(r)).toThrow(/No URLs to check/);
+  });
+
   it("refuses --collection together with positional URLs", async () => {
-    const r = await run(["check", "--collection", "guides", "https://x.example/"], 120_000, collectionsCwd);
+    const r = await run(
+      ["check", "--collection", "guides", "https://x.example/"],
+      CHILD_TIMEOUT,
+      collectionsCwd,
+    );
     expect(r.status).toBe(2);
     expect(r.stdout).toBe("");
     expect(r.stderr).toMatch(
@@ -201,14 +251,14 @@ describe("manni a11y check (usage errors, no browser needed)", () => {
   });
 
   it("refuses a --collection that declares no url:", async () => {
-    const r = await run(["check", "--collection", "blog"], 120_000, collectionsCwd);
+    const r = await run(["check", "--collection", "blog"], CHILD_TIMEOUT, collectionsCwd);
     expect(r.status).toBe(2);
     expect(r.stdout).toBe("");
     expect(r.stderr).toMatch(/^manni: collection "blog" has no url: to check\./);
   });
 
   it("refuses an unknown --collection, listing what is configured", async () => {
-    const r = await run(["check", "--collection", "gides"], 120_000, collectionsCwd);
+    const r = await run(["check", "--collection", "gides"], CHILD_TIMEOUT, collectionsCwd);
     expect(r.status).toBe(2);
     expect(r.stdout).toBe("");
     expect(r.stderr).toMatch(
@@ -222,7 +272,7 @@ describe("manni a11y check (usage errors, no browser needed)", () => {
   it("refuses --collection when the config is refused", async () => {
     const r = await run(
       ["check", "--collection", "guides", "--no-config"],
-      120_000,
+      CHILD_TIMEOUT,
       collectionsCwd,
     );
     expect(r.status).toBe(2);
@@ -428,7 +478,7 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
     // loads. The sitemap lists `/index.html`, and that spelling must not be
     // checked as a second page.
     const r = await run(["check", `${server.url}/index.html/`, "-f", "json"]);
-    const json = JSON.parse(r.stdout) as JsonRun;
+    const json = parseJsonRun(r);
     const urls = json.results.map((p) => p.url);
     expect(urls[0]).toBe(`${server.url}/index.html/`);
     expect(urls).not.toContain(`${server.url}/index.html`);
@@ -441,7 +491,7 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
   it("--no-crawl checks exactly the given page", async () => {
     const r = await run(["check", `${server.url}/index.html`, "--no-crawl", "-f", "json"]);
     expect(r.status).toBe(0);
-    const json = JSON.parse(r.stdout) as JsonRun;
+    const json = parseJsonRun(r);
     expect(json.results.map((p) => p.url)).toEqual([`${server.url}/index.html`]);
     expect(json.summary.checked).toBe(1);
     expect(json.summary.failed).toBe(0);
@@ -450,7 +500,7 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
 
   it("--max-pages caps the run and reports the rest as skipped", async () => {
     const r = await run(["check", `${server.url}/index.html`, "--max-pages", "1", "-f", "json"]);
-    const json = JSON.parse(r.stdout) as JsonRun;
+    const json = parseJsonRun(r);
     expect(json.summary.checked).toBe(1);
     expect(json.summary.skipped).toBeGreaterThanOrEqual(1);
     expect(r.stdout).not.toContain("about.html");
@@ -458,7 +508,7 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
 
   it("--crawl turns a configured crawl: false back on for one run", async () => {
     const off = await run(["check", `${server.url}/index.html`, "-c", crawlFalse, "-f", "json"]);
-    const capped = JSON.parse(off.stdout) as JsonRun;
+    const capped = parseJsonRun(off);
     expect(capped.summary.checked).toBe(1);
 
     const on = await run([
@@ -470,14 +520,14 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
       "-f",
       "json",
     ]);
-    const json = JSON.parse(on.stdout) as JsonRun;
+    const json = parseJsonRun(on);
     expect(json.summary.checked).toBe(3);
     expect(json.results.map((p) => p.url)).toContain(`${server.url}/about.html`);
   }, 120_000);
 
   it("--no-max-pages removes a configured maxPages for one run", async () => {
     const off = await run(["check", `${server.url}/index.html`, "-c", maxPagesOne, "-f", "json"]);
-    const capped = JSON.parse(off.stdout) as JsonRun;
+    const capped = parseJsonRun(off);
     expect(capped.summary.checked).toBe(1);
     expect(capped.summary.skipped).toBeGreaterThanOrEqual(1);
 
@@ -490,7 +540,7 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
       "-f",
       "json",
     ]);
-    const json = JSON.parse(on.stdout) as JsonRun;
+    const json = parseJsonRun(on);
     expect(json.summary.checked).toBe(3);
     expect(json.summary.skipped).toBe(0);
   }, 120_000);
@@ -504,7 +554,7 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
       "-f",
       "json",
     ]);
-    const json = JSON.parse(r.stdout) as JsonRun;
+    const json = parseJsonRun(r);
     expect(json.summary.checked).toBe(3);
     expect(json.summary.discovered).toBe(3);
     expect(json.summary.skipped).toBe(0);
@@ -524,7 +574,7 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
       "-f",
       "json",
     ]);
-    const cappedJson = JSON.parse(capped.stdout) as JsonRun;
+    const cappedJson = parseJsonRun(capped);
     expect(cappedJson.summary.checked).toBe(1);
     expect(cappedJson.summary.skipped).toBe(2);
 
@@ -537,10 +587,15 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
       "-f",
       "json",
     ]);
-    const uncappedJson = JSON.parse(uncapped.stdout) as JsonRun;
+    const uncappedJson = parseJsonRun(uncapped);
     expect(uncappedJson.summary.checked).toBe(3);
     expect(uncappedJson.summary.skipped).toBe(0);
-  }, 120_000);
+    // 240s, not the 120s every other case gets. This is the only case that
+    // runs two real crawls of the three-page fixture, and it took 75 of its
+    // 120 seconds on a loaded macOS runner before it flaked. Two children may
+    // each need up to CHILD_TIMEOUT, so the vitest budget has to clear
+    // 2 x 90s for a kill to be reported rather than raced.
+  }, 240_000);
 
   it("--exclude keeps a page out and counts it beside the discovered total", async () => {
     const r = await run([
@@ -662,7 +717,7 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
       "-f",
       "json",
     ]);
-    expect((JSON.parse(off.stdout) as JsonRun).summary.checked).toBe(1);
+    expect(parseJsonRun(off).summary.checked).toBe(1);
 
     const on = await run([
       "check",
@@ -672,7 +727,7 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
       "-f",
       "json",
     ]);
-    expect((JSON.parse(on.stdout) as JsonRun).summary.checked).toBe(3);
+    expect(parseJsonRun(on).summary.checked).toBe(3);
   }, 120_000);
 
   it("--severity error keeps every finding on the about page, and each carries axe's impact", async () => {
@@ -690,7 +745,7 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
       "json",
     ]);
     expect(r.status).toBe(1);
-    const json = JSON.parse(r.stdout) as JsonRun;
+    const json = parseJsonRun(r);
     const found = Object.fromEntries(
       (json.results[0]?.violations ?? []).map((v) => [v.id, [v.severity, v.impact]]),
     );
@@ -722,7 +777,7 @@ describe.skipIf(browser === null)("manni a11y check (built bin, real browser)", 
     expect(r.stderr).toMatch(/^manni: checked 3 pages, 0 skipped$/m);
     expect(r.stderr).not.toContain("\x1b");
     // The report is still the whole of stdout.
-    const json = JSON.parse(r.stdout) as JsonRun;
+    const json = parseJsonRun(r);
     expect(json.summary.checked).toBe(3);
   }, 120_000);
 
@@ -788,7 +843,7 @@ describe.skipIf(browser === null)("a sitemap that supplied no pages (built bin, 
   it("agrees with itself: stdout, stderr and the JSON all report zero", async () => {
     const r = await run(["check", `${server.url}/index.html`, "-f", "json", "--progress"]);
     expect(r.stderr).toContain(`manni: sitemap ${server.url}/sitemap.xml (0 pages)`);
-    const json = JSON.parse(r.stdout) as JsonRun;
+    const json = parseJsonRun(r);
     expect(json.summary.sitemap).toBe(`${server.url}/sitemap.xml`);
     expect(json.summary.sitemapPages).toBe(0);
     // The contradiction in #77: every page carries `link`, never `sitemap`.
