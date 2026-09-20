@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.8.1](https://github.com/hawkeyexl/manni/compare/v2.8.0...v2.8.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **cite:** refuse an accept that would pin text the claim never made ([#96](https://github.com/hawkeyexl/manni/issues/96)) ([7c0197c](https://github.com/hawkeyexl/manni/commit/7c0197cf9fcc1a964aa778b16a0f0a4bf7e64b57))
+
 # [2.8.0](https://github.com/hawkeyexl/manni/compare/v2.7.1...v2.8.0) (2026-09-18)
 
 
