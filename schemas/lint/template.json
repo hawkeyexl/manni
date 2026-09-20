@@ -69,7 +69,7 @@
       ]
     },
     "attributes": {
-      "description": "Literal attributes the node must carry. A string is the required value; `true` requires the attribute to be present.",
+      "description": "Literal attributes the node must carry. A string is the required value; `true` requires the attribute to be present, and `false` requires it to be absent.",
       "type": "object",
       "additionalProperties": { "type": ["string", "boolean"] }
     },
@@ -219,8 +219,15 @@
         "min": { "$ref": "#/definitions/min" },
         "max": { "$ref": "#/definitions/max" },
         "language": {
-          "description": "Language the block must be tagged with, as the node model spells it.",
-          "type": "string"
+          "description": "Language every code block must be tagged with, as the node model spells it. A list is one-of: the block must declare one of them.",
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          ]
         },
         "fenceInfo": {
           "description": "Info-string tail after the language, where the format carries one.",
@@ -315,8 +322,15 @@
         "min": { "$ref": "#/definitions/min" },
         "max": { "$ref": "#/definitions/max" },
         "tag": {
-          "description": "The element's name, as an author of the format would write it.",
-          "type": "string"
+          "description": "The element's name, as an author of the format would write it. A list is one-of: an element counts when it carries any of them.",
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          ]
         },
         "attributes": { "$ref": "#/definitions/attributes" },
         "sequence": { "$ref": "#/definitions/sequence" },

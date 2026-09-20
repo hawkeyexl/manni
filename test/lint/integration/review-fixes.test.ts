@@ -300,23 +300,21 @@ describe("a bare list item counts the same in every format", () => {
   // mdast puts a list item's principal text in a paragraph child; HTML and XML
   // iterated element children only, so `<li>text</li>` had none and
   // `lists.items.paragraphs.min` meant different things per format.
+  //
+  // The template's subject is the page, so its `sections` are the page title's
+  // subsections rather than the title itself - every fixture below is one `H1`
+  // with a `Steps` section under it.
   const template: Template = {
     sections: [
       {
-        id: "title",
+        id: "steps",
         max: 1,
-        sections: [
-          {
-            id: "steps",
-            max: 1,
-            contains: {
-              lists: {
-                min: 1,
-                items: { min: 1, contains: { paragraphs: { min: 1 } } },
-              },
-            },
+        contains: {
+          lists: {
+            min: 1,
+            items: { min: 1, contains: { paragraphs: { min: 1 } } },
           },
-        ],
+        },
       },
     ],
   };

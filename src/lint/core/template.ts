@@ -18,6 +18,7 @@
  * deliberate: the node model names one node (`codeBlock`), while a template key
  * carries a count (`codeBlocks: { min: 1 }`).
  */
+import type { ContentKind } from "../types.js";
 import { compilePattern } from "../rules/index.js";
 
 /** Shared by every counted rule: how many of the thing there must be. */
@@ -37,7 +38,10 @@ export interface Occurrences {
  */
 export type HeadingRule = string | string[] | { pattern: string } | false;
 
-/** Attributes a node must carry. `true` requires the attribute's presence. */
+/**
+ * Attributes a node must carry. A string is the required value, `true`
+ * requires the attribute's presence, and `false` requires its absence.
+ */
 export type AttributesRule = Record<string, string | boolean>;
 
 /** `paragraphs:` - how many paragraphs, and what each must look like. */
@@ -48,7 +52,9 @@ export interface ParagraphsRule extends Occurrences {
 
 /** `codeBlocks:` - how many code blocks, and how they are tagged. */
 export interface CodeBlocksRule extends Occurrences {
-  language?: string;
+  /** Language, or languages, every code block must declare one of. */
+  language?: string | string[];
+  /** Info-string tail after the language; narrows which blocks count. */
   fenceInfo?: string;
 }
 
@@ -83,7 +89,8 @@ export interface ImagesRule extends Occurrences {
 
 /** `elements:` - how many named wrappers, and what they hold. */
 export interface ElementsRule extends Occurrences {
-  tag?: string;
+  /** Name, or names, an element must carry to be counted by this rule. */
+  tag?: string | string[];
   attributes?: AttributesRule;
   sequence?: BlockRule[];
   contains?: BlockRule;
@@ -122,6 +129,30 @@ export const BLOCK_KINDS: readonly BlockKind[] = [
   "definitionLists",
   "elements",
 ];
+
+/**
+ * The node a block-rule key counts: `codeBlocks` counts `codeBlock` nodes.
+ *
+ * It is what lets the validator ask a parser whether a rule can run at all -
+ * a parser declares the kinds it emits, and a rule about a kind absent from
+ * that list is reported rather than silently passing.
+ *
+ * `rules/sequence.ts` holds the same map, written against the rules' own copy
+ * of the DSL. The duplication is the one this file's header describes: the two
+ * vocabularies are kept apart deliberately, and this is the copy the loader and
+ * the validator read.
+ */
+export const BLOCK_KIND_NODE: Record<BlockKind, ContentKind> = {
+  paragraphs: "paragraph",
+  codeBlocks: "codeBlock",
+  lists: "list",
+  tables: "table",
+  admonitions: "admonition",
+  images: "image",
+  blockquotes: "blockquote",
+  definitionLists: "definitionList",
+  elements: "element",
+};
 
 /** One rule: a section of the page, or a repeated run of sections. */
 export interface Rule extends Occurrences {
@@ -177,12 +208,20 @@ export function isWildcard(rule: Rule): boolean {
  * The defaults live here rather than in the schema. A default written into the
  * data by Ajv is indistinguishable from a value the author typed, so it wins
  * the `extends` merge against the parent's real value.
+ *
+ * One default is not the naive `min ?? 1`. `max: 0` is how the format forbids
+ * a thing outright, and a bare `max: 0` has to be satisfiable by a page that
+ * truly has none of it. A blanket "min defaults to 1" makes it unsatisfiable -
+ * at least one demanded, at most zero permitted - so `min` defaults to 0
+ * exactly when `max` is written as `0` and `min` itself is not, and to 1
+ * otherwise. `checkCount` in `rules/index.ts` states the same rule for the
+ * content counts; the two agree deliberately.
  */
 export function occurrenceRange(rule: Occurrences): {
   min: number;
   max: number | null;
 } {
-  return { min: rule.min ?? 1, max: rule.max ?? null };
+  return { min: rule.min ?? (rule.max === 0 ? 0 : 1), max: rule.max ?? null };
 }
 
 /** Whether a section's title satisfies a rule's `heading`. */

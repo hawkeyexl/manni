@@ -48,6 +48,7 @@ import {
   resolveTargetSet,
   STDIN_TOKEN,
 } from "../../meta/internal.js";
+import { isErrorSeverity } from "../../meta/index.js";
 import { resolveLintRun, type LintConfig } from "../core/config.js";
 
 /** File label used for a document read from stdin. */
@@ -250,6 +251,21 @@ function cliTemplateRef(
   return `${templatePaths[templatePaths.length - 1] ?? ""}#${template}`;
 }
 
+/**
+ * Which file a template came from and what it is called there.
+ *
+ * The validator and the matcher both name the template in messages - the
+ * state-cap failure, and the warning about a rule a format cannot answer - and
+ * neither can work either out from a `Template` object, which carries no
+ * record of where it was loaded from. The ref does: `./templates.yaml#how-to`
+ * is a file and a name, and a built-in id is both at once.
+ */
+function templateIdentity(ref: string): { source: string; template: string } {
+  const hash = ref.lastIndexOf("#");
+  if (hash === -1) return { source: ref, template: ref };
+  return { source: ref.slice(0, hash), template: ref.slice(hash + 1) };
+}
+
 /** The finding a page gets when it declares a doctype nothing serves. */
 function unknownTypeFinding(
   resolution: Resolution,
@@ -438,7 +454,10 @@ async function lintOne(
 
   let findings: Finding[];
   try {
-    findings = validateDocument(tree, template);
+    findings = validateDocument(tree, template, {
+      ...templateIdentity(ref),
+      kinds: parser.kinds,
+    });
   } catch (err) {
     // Validation can raise for the same reason loading can: a template the
     // author got wrong - an uncompilable `heading.pattern` is the live case.
@@ -451,7 +470,13 @@ async function lintOne(
 
   return withResolution({
     file: label,
-    success: findings.length === 0,
+    // "Linted and found nothing wrong", which is not the same as "produced no
+    // findings". A `warning` - today, a rule this file's format cannot answer -
+    // says something about the run rather than about the document, and the
+    // exit code follows `success`, so counting it as a failure would turn a
+    // docset of mixed formats permanently red. The family's rule, and the one
+    // meta and cite already apply: `ok` is "no error-severity finding".
+    success: !findings.some(isErrorSeverity),
     findings,
     template: resolution.ref,
   });
