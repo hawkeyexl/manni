@@ -161,7 +161,6 @@ is a family file or an explicit `-c`.
 
 ### Selecting collections on the command line
 
-{/* cite no-paths-reads-every-collection */}
 With no positional paths, a run reads **every** collection, in declaration
 order. `--collection <name>` narrows it, and is available on `validate`, `get`,
 `query`, `fill`, `schemas infer` and `a11y check`.
@@ -1206,7 +1205,6 @@ yet.
 
 ### Unknown keys are errors
 
-{/* cite unknown-meta-key-is-exit-2 */}
 Any key outside the table above is an operational error (exit 2), naming the
 key it did not recognize and listing the ones it accepts. The same rule applies
 inside every nested mapping: `schemas[]` entries, `checks[]` entries,
@@ -2097,7 +2095,6 @@ does not forgive the others.
 }
 ```
 
-{/* cite derived-segment-is-reserved */}
 The ref is shaped like `check:<name>`, so the rule id everywhere, in SARIF,
 JUnit and the baseline, is the ordinary join `derived:stale/derived`. The
 `derived` segment is reserved as a first segment beside `check` and
