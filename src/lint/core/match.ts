@@ -367,9 +367,15 @@ function automatonFor(rules: Rule[], options: MatchOptions): Automaton {
   const states = expandedStates(rules);
   if (states > STATE_LIMIT) {
     const source = options.source ?? "template";
-    const name = options.template ?? "the rule list";
+    // A template is referred to as `./templates.yaml#how-to` everywhere else,
+    // so a named template fragment joins the source the same way here. Absent
+    // a name - the file failed to compile a rule list outside any named
+    // template - there is nothing to put after a `#`, so the sentence falls
+    // back to its old, colon-joined phrasing.
+    const label =
+      options.template != null ? `${source}#${options.template}` : `${source}: the rule list`;
     throw new LintError(
-      `${source}: ${name} expands to ${states} states; the limit is ${STATE_LIMIT}. ` +
+      `${label} expands to ${states} states; the limit is ${STATE_LIMIT}. ` +
         `Cap a max, or split the template.`,
     );
   }

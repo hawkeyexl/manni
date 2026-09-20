@@ -435,7 +435,7 @@ describe("the state cap", () => {
     expect(() =>
       matchSections(doc, rules, { source: "tpl.yaml", template: "how-to" }),
     ).toThrow(
-      "tpl.yaml: how-to expands to 3001 states; the limit is 2000. Cap a max, or split the template.",
+      "tpl.yaml#how-to expands to 3001 states; the limit is 2000. Cap a max, or split the template.",
     );
   });
 

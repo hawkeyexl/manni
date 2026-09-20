@@ -66,9 +66,21 @@ function describeFinding(finding: Finding): string {
     : finding.message;
 }
 
+/**
+ * A finding's level prefix, meta's shape: nothing for an error, since the
+ * `✗`/`✓` mark already says that; the word itself, coloured, for anything
+ * milder. Keeps a passing file's warning from reading as just another
+ * anonymous line once it is printed beside real errors on a failing one.
+ */
+function levelPrefix(c: Colors, severity: Finding["severity"]): string {
+  if (severity === "error") return "";
+  return `${severity === "notice" ? c.dim("notice") : c.yellow("warning")} `;
+}
+
 export function renderPretty(run: LintRun, opts: ReportOptions = {}): string {
   const c = palette(opts.color ?? false);
   const lines: string[] = [];
+  let warnings = 0;
 
   for (const result of run.results) {
     // A skip is reported, never silently dropped: an unreadable format that
@@ -78,23 +90,35 @@ export function renderPretty(run: LintRun, opts: ReportOptions = {}): string {
       lines.push(`${c.yellow("-")} ${result.file}  ${c.dim(`skipped: ${why}`)}`);
       continue;
     }
-    if (result.success) {
+    if (result.success && result.findings.length === 0) {
       lines.push(`${c.green("✓")} ${result.file}`);
       continue;
     }
-    lines.push(`${c.red("✗")} ${result.file}`);
+    // `success` means "no error-severity finding", not "no findings" - a
+    // passing file can still hold a warning, such as
+    // `unsupported_content_kind`. Reusing `✓` for it would hide the warning
+    // behind the same glyph a clean file gets; reusing `✗` would fail a file
+    // nothing actually failed. `⚠` (meta's and cite's mark for the same case)
+    // says "passing, but read this" without claiming either extreme.
+    const mark = result.success ? c.yellow("⚠") : c.red("✗");
+    lines.push(`${mark} ${result.file}`);
     for (const finding of result.findings) {
+      if (finding.severity !== "error") warnings++;
       // The namespaced id rather than the bare `type`: it is what SARIF,
       // JUnit and the GitHub annotation file the finding under, so the string
       // a reader copies out of the terminal is the one they can search for.
       lines.push(
-        `    ${c.dim(locate(finding))}  ${c.cyan(ruleId(finding.type))}  ${describeFinding(finding)}`,
+        `    ${c.dim(locate(finding))}  ${c.cyan(ruleId(finding.type))}  ` +
+          `${levelPrefix(c, finding.severity)}${describeFinding(finding)}`,
       );
     }
   }
 
   const { checked, passed, failed, skipped } = run.summary;
-  const summary = `${plural(checked, "file")} checked, ${passed} passed, ${failed} failed, ${skipped} skipped`;
+  // Named only when there are any, as meta and cite do: every run against a
+  // format that reports every content kind has none.
+  const warningsText = warnings > 0 ? `, ${plural(warnings, "warning")}` : "";
+  const summary = `${plural(checked, "file")} checked, ${passed} passed, ${failed} failed, ${skipped} skipped${warningsText}`;
   if (lines.length > 0) lines.push("");
   lines.push(failed > 0 ? c.red(summary) : c.green(summary));
   return lines.join("\n");
@@ -125,6 +149,12 @@ export function renderJson(run: LintRun): string {
       heading: finding.heading,
       message: finding.message,
       position: finding.position,
+      // Additive too, and the reason it has to be: `success: true` beside a
+      // non-empty `errors` array is exactly what a warning-only file looks
+      // like now that `success` means "no error-severity finding" rather than
+      // "no findings". Without this key a consumer has no way to tell that
+      // apart from an error the JSON shape simply forgot to fail on.
+      severity: finding.severity,
     })),
     // Additive, and the one thing this shape could not say. A skipped file is
     // `{success: false, errors: []}`, which is also what a failure whose

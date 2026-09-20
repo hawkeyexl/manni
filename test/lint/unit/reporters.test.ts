@@ -109,9 +109,9 @@ describe("json reporter", () => {
     expect(parsed[1].errors).toHaveLength(2);
   });
 
-  // `type` keeps its place and its spelling. `ruleId` and `tool` join it:
-  // additive keys are safe, a rename is not.
-  it("uses exactly the error keys { type, ruleId, tool, heading, message, position }", () => {
+  // `type` keeps its place and its spelling. `ruleId`, `tool` and `severity`
+  // join it: additive keys are safe, a rename is not.
+  it("uses exactly the error keys { type, ruleId, tool, heading, message, position, severity }", () => {
     const error: Record<string, unknown> = JSON.parse(renderJson(run))[1].errors[0];
     expect(Object.keys(error)).toEqual([
       "type",
@@ -120,10 +120,19 @@ describe("json reporter", () => {
       "heading",
       "message",
       "position",
+      "severity",
     ]);
     expect(error.type).toBe("missing_section");
     expect(error.heading).toBe("Prerequisites");
     expect(error.message).toBe("Required section is missing");
+  });
+
+  // `severity` is what lets a consumer tell a warning-only file (`success:
+  // true` with a non-empty `errors` array) apart from a finding the shape
+  // simply forgot to fail on.
+  it("carries the finding's severity", () => {
+    const error: Record<string, unknown> = JSON.parse(renderJson(run))[1].errors[0];
+    expect(error.severity).toBe("error");
   });
 
   it("carries the namespaced rule id and the tool that produced it", () => {
@@ -238,6 +247,86 @@ describe("pretty reporter", () => {
   it("emits ANSI only when color is on", () => {
     expect(renderPretty(run, { color: true }).includes(ESC)).toBe(true);
     expect(renderPretty(run).includes(ESC)).toBe(false);
+  });
+
+  // `success` means "no error-severity finding", not "no findings": a file
+  // whose only finding is a warning (e.g. `unsupported_content_kind`) still
+  // passes, but it is not silent about it either - unlike the old behaviour,
+  // where the findings loop was never reached for a `success: true` result.
+  describe("a passing file with only a warning", () => {
+    const warningRun: LintRun = {
+      results: [
+        {
+          file: "warned.md",
+          success: true,
+          findings: [
+            finding({
+              type: "unsupported_content_kind",
+              heading: null,
+              message: 'The markdown parser does not report tables, so the "no-tables" rule is not checked for this file.',
+              severity: "warning",
+            }),
+          ],
+          template: "how-to",
+        },
+      ],
+      summary: { checked: 1, passed: 1, failed: 0, skipped: 0 },
+    };
+
+    it("marks the file distinctly from both a pass and a failure", () => {
+      const out = renderPretty(warningRun, { color: false });
+      expect(out).toContain("⚠ warned.md");
+      expect(out).not.toContain("✓ warned.md");
+      expect(out).not.toContain("✗ warned.md");
+    });
+
+    it("lists the warning under the file, marked as a warning rather than an error", () => {
+      const out = renderPretty(warningRun, { color: false });
+      expect(out).toContain("manni:lint/structure/unsupported-content-kind");
+      expect(out).toContain(
+        'warning The markdown parser does not report tables, so the "no-tables" rule is not checked for this file.',
+      );
+    });
+
+    it("counts the file as passed and names the warning on the summary line", () => {
+      const out = renderPretty(warningRun, { color: false });
+      expect(out).toContain("1 file checked, 1 passed, 0 failed, 0 skipped, 1 warning");
+      // A passing summary stays green: nothing here failed the run.
+      expect(out).not.toContain(ESC + "[31m");
+    });
+  });
+
+  // A file can fail on an error and still carry a warning in the same run -
+  // the state cap and `unsupported_content_kind` are independent. Both
+  // findings print, each carrying its own severity.
+  it("distinguishes a warning from an error on a failing file, and counts only the warning", () => {
+    const mixedRun: LintRun = {
+      results: [
+        {
+          file: "mixed.md",
+          success: false,
+          findings: [
+            finding(),
+            finding({
+              type: "unsupported_content_kind",
+              heading: null,
+              message: "The markdown parser does not report tables.",
+              severity: "warning",
+            }),
+          ],
+          template: "how-to",
+        },
+      ],
+      summary: { checked: 1, passed: 0, failed: 1, skipped: 0 },
+    };
+    const out = renderPretty(mixedRun, { color: false });
+    expect(out).toContain("✗ mixed.md");
+    // The error line carries no level word - the `✗` already says so.
+    expect(out).toContain("manni:lint/structure/missing-section  Prerequisites: Required section is missing");
+    expect(out).toContain(
+      "manni:lint/structure/unsupported-content-kind  warning The markdown parser does not report tables.",
+    );
+    expect(out).toContain("1 file checked, 0 passed, 1 failed, 0 skipped, 1 warning");
   });
 });
 
