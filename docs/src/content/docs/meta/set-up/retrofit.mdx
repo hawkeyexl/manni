@@ -15,6 +15,8 @@ A green build with a working gate beats a red build with a perfect standard. Onc
 
 ## Step 1: Take a coverage reading
 
+{/* cite infer-counts-metadata-keys */}
+{/* cite infer-is-offline */}
 Before you pick a schema, find out what the repo already has. [`manni meta schemas infer`](/manni/meta/reference/cli/#meta-schemas-infer) reads every metadata block in a docset and counts it. It is purely statistical, with no network, no model, and no credentials, so it is safe to run against anything, including in CI.
 
 ```sh
@@ -37,6 +39,7 @@ This table is the whole retrofit plan in one screen:
 - **`type` at 61.4%.** Requiring it breaks 39% of the repo. This is a step 6 ratchet, not a day-one rule.
 - **`lastReviewed` at 3.2%.** One team's convention. Adopting it as a standard would create 1,165 pages of new debt for a field almost nobody uses.
 
+{/* cite infer-reports-files-without-metadata */}
 And read the **`38 with no metadata block`** count carefully; it is the number the rest of this page keeps coming back to.
 
 <Aside type="note" title="`infer` never marks anything required">
@@ -45,14 +48,17 @@ It reports; you decide. There is deliberately no flag that turns a coverage perc
 
 ## Step 2: Start with a permissive schema
 
+{/* cite okf-requires-only-type */}
 The built-in [`google:okf:0.1`](/manni/meta/schemas/) schema requires a single field, `type`. That is lenient, but on a repo that has never enforced metadata, even one required field may fail a lot of pages. For a true day-one-green adoption, start from a schema that **requires nothing** and tighten from there.
 
+{/* cite infer-out-writes-the-draft-schema */}
 You do not have to write it by hand. `--out` turns the reading you just took into exactly that schema, with your repo's real properties in it:
 
 ```sh
 npx @hawkeyexl/manni meta schemas infer docs/ --out ./schemas/permissive.json
 ```
 
+{/* cite infer-draft-has-empty-required */}
 What comes out looks like this, with nothing in `required` and a constraint only where one was observed:
 
 ```json title="schemas/permissive.json"
@@ -66,8 +72,11 @@ What comes out looks like this, with nothing in `required` and a constraint only
 }
 ```
 
+{/* cite infer-draft-constrains-only-observed-fields */}
 This schema requires no field. It only checks format **when a field is present**, so a `title:` that is accidentally empty fails, but a doc with no `title` at all passes. You get format enforcement immediately without demanding any field be filled in yet.
 
+{/* cite infer-out-refuses-to-overwrite */}
+{/* cite infer-out-refuses-a-gitignored-path */}
 The draft is a starting point, not a verdict. Read it and cut anything that is noise rather than standard. (`--out` refuses to overwrite an existing file, so your edits are safe on a re-run. It also refuses a path `.gitignore` covers, because a schema you cannot commit is missing in CI.)
 
 Point your config at it:
@@ -97,12 +106,14 @@ A file with no frontmatter block at all still gets validated. With a require-not
 
 ## Step 3: Wire the CI gate
 
+{/* cite validate-exit-zero-pass-one-fail */}
 With a green baseline committed, add the gate now, before the standard is perfect. manni meta exits `0` when everything passes and `1` when a file fails, so any CI system can use a bare `manni meta validate` as a pass/fail step. Wiring it early means the gate starts catching regressions immediately, even while the schema is still permissive.
 
 ```bash
 npx -y @hawkeyexl/manni meta validate --format github
 ```
 
+{/* cite github-format-emits-workflow-annotations */}
 The `--format github` flag turns failures into inline annotations on the pull-request diff. The full recipe (workflow file, the exit-code contract, and annotation behavior) lives in the CI track; copy it instead of assembling your own.
 
 <LinkCard
@@ -113,6 +124,7 @@ The `--format github` flag turns failures into inline annotations on the pull-re
 
 ## Step 4: Scope what gets checked
 
+{/* cite collections-supply-inputs-for-a-bare-run */}
 A real repo has files you do not want to validate yet: archived content, generated pages, drafts. Your collection is what decides which documents exist. Narrow it with `paths` and `exclude` to cover only what you are ready to stand behind on day one. Widen it as you go.
 
 <Steps>
@@ -148,6 +160,7 @@ These globs decide which files are **in** the collection. They do not filter a p
 
 ## Step 5: Roll out folder by folder
 
+{/* cite overrides-assign-schema-set-per-area */}
 You rarely tighten the whole repo at once. Use per-folder **overrides** to hold a stricter schema where the metadata is already clean. The rest of the repo stays on the permissive default. New and well-maintained areas adopt the real standard first; legacy areas catch up on their own timeline.
 
 ```yaml title="manni.config.yaml"
@@ -169,6 +182,8 @@ meta:
         - ./schemas/guide.json
 ```
 
+{/* cite first-matching-override-wins */}
+{/* cite override-may-select-by-files-glob */}
 Files in the `guides` collection are held to `guide.json` (which can require `type`, `title`, and more); everything else stays on the permissive default. As another area reaches full coverage, declare it as a collection and add an override for it, or widen an existing collection's `paths`. Overrides are evaluated in order and the first matching entry wins, so order them most-specific first. For an exception too small to be worth a collection, an override can still take a bare `files:` glob.
 
 <LinkCard
@@ -179,6 +194,8 @@ Files in the `guides` collection are held to `guide.json` (which can require `ty
 
 ## Step 6: Ratchet strictness with a baseline
 
+{/* cite baseline-fails-only-on-new-findings */}
+{/* cite write-baseline-reports-added-and-removed */}
 The permissive schema was only ever a starting line. Once the gate is wired, tighten the standard. You do not have to wait for coverage before you do it. Add the field to `required`, record the existing violations once, and let manni meta fail only on new ones:
 
 ```bash
@@ -190,6 +207,7 @@ Baseline written to .manni-baseline.json
   412 findings recorded (+412 new, -0 no longer occur)
 ```
 
+{/* cite baseline-config-key-enables-comparison */}
 Commit that file and point your config at it:
 
 ```yaml title="manni.config.yaml"
@@ -197,6 +215,7 @@ meta:
   baseline: .manni-baseline.json
 ```
 
+{/* cite baseline-debt-printed-on-every-run */}
 From here the build is green, the stricter rule applies to everything anyone writes, and the summary reports the outstanding debt on every run. Raise the bar one field at a time; each promotion costs one re-record rather than a backlog sprint.
 
 <LinkCard
@@ -209,10 +228,15 @@ From here the build is green, the stricter rule applies to everything anyone wri
 
 Ratcheting works because new pages arrive already compliant. It does nothing for the pages that were already there, and on a mature repo that backlog is most of the docset. Typing `description:` into four hundred existing files by hand is the reason adoption stalls at step 6.
 
+{/* cite fill-uses-validate-schema-resolution */}
+{/* cite fill-candidates-are-missing-or-invalid */}
+{/* cite fill-candidates-come-from-schema-properties */}
 [`manni meta fill`](/manni/meta/reference/cli/#meta-fill) works that backlog down. For each page it resolves the same schema set the gate uses. It asks an LLM to infer the properties that are missing or invalid, and writes back only the values it is confident about. Because the schema drives the prompt, the fields it proposes are exactly the ones you are about to require.
 
 That inference is the one part of manni meta that leaves your machine. So before you point it at a whole docset, read [Run `fill` under a data-egress policy](/manni/meta/set-up/fill-providers/). It covers what each call transmits, what the proposal cache keeps afterwards, and how to keep inference local.
 
+{/* cite fill-summary-names-provider-threshold-counts */}
+{/* cite fill-default-confidence-threshold-is-0-7 */}
 Preview before you trust it:
 
 ```sh
@@ -238,14 +262,20 @@ manni meta fill docs/reference/ && git diff
 `fill` writes to your files by default. `--dry-run` is the flag that holds it back. Run it on a clean working tree so `git diff` shows exactly what changed, and keep the blast radius to one folder per commit.
 </Aside>
 
+{/* cite fill-records-meta-provenance-entry */}
+{/* cite meta-provenance-skipped-on-schema-mismatch */}
 Each page `fill` writes to also gains a `meta-provenance` entry, naming the model and the fields it wrote. That is the review list. Delete a page's entry once a person has checked its values, so a surviving entry always means machine metadata nobody has read. A schema that does not allow the key gets the fields without the entry, and the report says so.
 
+{/* cite confidence-gate-skips-below-threshold */}
+{/* cite low-confidence-fields-listed-with-scores */}
+{/* cite confidence-flag-sets-write-threshold */}
 Values below the threshold are skipped, and the report lists each one by name and score. Those pages genuinely need a human, and now you have a short list of them to work through. Raise `--confidence` when you want only near-certain values:
 
 ```sh
 manni meta fill docs/reference/ --confidence 0.9 --dry-run
 ```
 
+{/* cite cache-stores-pre-gate-proposals */}
 Re-running at a different threshold re-scores the cached proposals, so tuning the gate costs nothing after the first pass.
 
 Once a folder is filled and reviewed, promote its field to `required` using the ratchet from step 6. `fill` is what makes that promotion cheap.

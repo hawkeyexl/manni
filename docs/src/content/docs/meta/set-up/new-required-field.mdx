@@ -13,6 +13,7 @@ A **baseline** removes that trade-off. You record today's violations once, and f
 A baseline is a file of violation fingerprints, keyed by document path. On each run manni meta fingerprints the findings it sees and subtracts the ones already recorded. A recorded violation is forgiven; anything else fails the run. Nothing about the schema is relaxed, so a new doc that omits the field fails on the pull request that adds it.
 </Aside>
 
+{/* cite builtin-schemas-are-immutable */}
 This guide assumes you already have a working `manni.config.yaml` and a schema you control. If you are still using the built-in OKF schema, [author your own schema first](/manni/meta/schemas/) so you have a file to edit. You cannot add fields to a built-in.
 
 ## Step 1: Add the field as required
@@ -43,6 +44,7 @@ Run a pass to see the size of the backlog you are about to record:
 npx @hawkeyexl/manni meta validate
 ```
 
+{/* cite validate-exits-one-when-a-file-fails */}
 That run exits `1` and lists every doc missing `owner`. This is the wall of red the baseline exists to absorb. Read it once, so you know what you are agreeing to forgive.
 
 ## Step 2: Record the backlog
@@ -56,6 +58,8 @@ Baseline written to .manni-baseline.json
   412 findings recorded (+412 new, -0 no longer occur)
 ```
 
+{/* cite write-baseline-reports-added-and-removed */}
+{/* cite write-baseline-records-then-exits-zero */}
 Commit `.manni-baseline.json` alongside the schema change. It is a source file, and reviewers should see it grow or shrink in the diff. A pull request that adds entries is a pull request that added violations.
 
 <Aside type="caution" title="Read the two numbers, every time">
@@ -64,6 +68,10 @@ Commit `.manni-baseline.json` alongside the schema change. It is a source file, 
 
 ## Step 3: Turn the baseline on
 
+{/* cite configured-baseline-applies-without-a-flag */}
+{/* cite pretty-marks-per-file-baselined-count */}
+{/* cite pretty-summary-line-shape */}
+{/* cite summary-reports-baselined-finding-count */}
 Point your config at the file so every run, yours and CI's, compares against it:
 
 ```yaml title="manni.config.yaml"
@@ -139,6 +147,8 @@ A required-field rule flags **every** non-compliant file, including files with n
 
 ## The one-statement ratchet, for when a backfill is honest
 
+{/* cite alter-not-null-adds-key-to-required */}
+{/* cite alter-default-backfills-the-corpus */}
 A baseline exists because most required fields have **per-document values nobody can invent in bulk**. Every page's `owner` is a fact you have to go find. But some rollouts start from a uniform value that is simply true: `reviewed: pending`, `visibility: internal`, `language: en`. For those, carrying a backlog is the long way around. One `ALTER` statement adds the field to your schema as required **and** backfills every file, in the same write:
 
 ```bash
@@ -146,8 +156,11 @@ npx @hawkeyexl/manni meta query "ALTER TABLE docs
   ADD COLUMN reviewed TEXT NOT NULL DEFAULT 'pending'" docs/
 ```
 
+{/* cite query-dry-run-previews-without-writing */}
+{/* cite query-preview-names-schema-file-edits */}
 The preview (run it with `--dry-run` first) names every file it will touch and the schema file it will edit. Afterwards `validate` is green with no baseline entry, because no document is missing the field. As a rule of thumb, **ratchet when a starting value is honest, and baseline when the value is a fact per document.** The two compose, so you ratchet the uniform fields and baseline the rest.
 
+{/* cite alter-edits-resolved-schema-or-forks-builtin */}
 `ALTER` edits the schema the corpus resolves, either your file in place or a local fork if the corpus runs on a built-in. [Gate on rules that span files](/manni/meta/ci/query-gates/) introduces the query surface this rides on, and [the `query` reference](/manni/meta/reference/query/#ddl-edits-the-schema) has the full DDL rules.
 
 ## What you have now
