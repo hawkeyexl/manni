@@ -1,47 +1,66 @@
 /**
- * `heading:` - the section's title must equal a constant and/or match a regex.
+ * `heading:` - the section's title against a string, a one-of list, a
+ * `{ pattern }`, or `false` for "no heading of its own".
+ *
+ * One finding type, `heading_error`, covers all four forms; the message
+ * names which form failed. v1 split this into `heading_const_error` and
+ * `heading_pattern_error`, each of which could fire independently for the
+ * same section. v2's `heading:` is one value, so it fires at most once.
  */
 
 import type { Finding, SectionNode } from "../types.js";
-import { compilePattern } from "./index.js";
-import type { HeadingRule } from "./index.js";
+import { compilePattern, type HeadingRule } from "./index.js";
 
 /**
- * Checks a section's title against the template's heading rule.
+ * A section's own title, in the vocabulary `heading:` speaks: `null` when the
+ * section has no heading of its own (the implicit lead section), the title
+ * text otherwise.
  *
- * Both constraints are independent: a rule carrying `const` and `pattern` can
- * produce two findings for one title.
+ * `SectionNode.title` is `""` rather than `null` for that section - `null` is
+ * reserved for "no heading" so `headingMatches`-style checks elsewhere don't
+ * have to special-case the empty string. This bridges the two.
  */
+function ownTitle(section: SectionNode): string | null {
+  return section.titlePosition === null ? null : section.title;
+}
+
+/** Checks a section's title against the template's `heading:` rule. */
 export function checkHeading(
   section: SectionNode,
-  rule: HeadingRule | undefined
+  rule: HeadingRule | undefined,
 ): Finding[] {
-  const findings: Finding[] = [];
-  if (!rule) return findings;
+  if (rule === undefined) return [];
 
   // The heading itself is the offending node when it has a span of its own;
   // the implicit lead section has none, so fall back to the section.
   const position = section.titlePosition ?? section.position;
+  const title = ownTitle(section);
+  const found = title === null ? "no heading" : `"${title}"`;
 
-  if (rule.const && section.title !== rule.const) {
-    findings.push({
-      type: "heading_const_error",
+  const fail = (message: string): Finding[] => [
+    {
+      type: "heading_error",
       heading: section.title,
-      message: `Expected title "${rule.const}", but found "${section.title}"`,
+      message,
       position,
       severity: "error",
-    });
+    },
+  ];
+
+  if (rule === false) {
+    return title === null ? [] : fail(`Expected no heading of its own, but found ${found}`);
   }
 
-  if (rule.pattern && !compilePattern(rule.pattern).test(section.title)) {
-    findings.push({
-      type: "heading_pattern_error",
-      heading: section.title,
-      message: `Title "${section.title}" doesn't match pattern "${rule.pattern}"`,
-      position,
-      severity: "error",
-    });
+  if (typeof rule === "string") {
+    return title === rule ? [] : fail(`Expected title "${rule}", but found ${found}`);
   }
 
-  return findings;
+  if (Array.isArray(rule)) {
+    if (title !== null && rule.includes(title)) return [];
+    return fail(`Expected one of ${rule.map((option) => `"${option}"`).join(", ")}, but found ${found}`);
+  }
+
+  // { pattern }
+  if (title !== null && compilePattern(rule.pattern).test(title)) return [];
+  return fail(`Expected title matching /${rule.pattern}/, but found ${found}`);
 }
