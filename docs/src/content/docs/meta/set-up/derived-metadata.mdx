@@ -5,6 +5,11 @@ description: "Let manni meta stamp created, last-updated, authors, owner, review
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
+{/* cite derive-sources-are-git-codeowners-and-host-reviews */}
+{/* cite review-record-read-through-gh-or-glab */}
+{/* cite non-builtin-field-derives-from-command-source */}
+{/* cite derive-stamps-managed-fields-into-document */}
+{/* cite validate-compares-managed-fields-and-fails */}
 A **managed** field is a stewardship field whose value comes from evidence
 rather than from a person's memory. The evidence is git history, a
 CODEOWNERS file, and the pull request or merge request history GitHub or
@@ -13,6 +18,7 @@ the output of [a command you name](#derive-a-field-with-a-command).
 `manni meta derive` stamps the value into the page. `manni meta validate` compares what is stamped against
 what the evidence says, and a stamp that disagrees fails the build.
 
+{/* cite derived-value-never-merges-into-schema-view */}
 The page stays the truth for validation. Nothing is merged in from outside,
 and nothing about the schema changes. What changes is that a stamped date can
 no longer be quietly wrong.
@@ -36,6 +42,8 @@ team in CODEOWNERS, and `owner` never hears about it. A reviewer approves the
 pull request, and nobody transcribes the approval. Every field is present and
 well-formed, so the run is green.
 
+{/* cite field-to-source-precedence-table */}
+{/* cite six-derivable-stewardship-fields */}
 Batami Gold's comment on the vocabulary named the gap. She asked for a
 built-in system that forces whoever updates a page, human or agent, to answer
 these questions at check-in. This page is that system, and it is honest about
@@ -50,6 +58,7 @@ config](#derive-a-field-with-a-command) reads it. Who has a stake in a page
 is a judgment no history holds. For that, `required` in the schema is the
 whole enforcement, and the finding it produces is the reminder.
 
+{/* cite provenance-is-seventh-managed-field */}
 A seventh managed field answers a question the vocabulary does not ask. Which
 lines of the page did a machine write? `provenance` records them as pinned
 ranges, from the same git history. [See which lines a machine
@@ -105,6 +114,8 @@ about where the value lives, so the config is refused.
 
 ## Run it locally
 
+{/* cite derive-runs-over-configured-collections */}
+{/* cite derive-summary-line-counts-files-changes-fields */}
 From the repository, over every configured collection:
 
 ```sh
@@ -119,15 +130,23 @@ docs/faq.md  current
 2 files, 1 changed, 2 fields written
 ```
 
+{/* cite last-updated-from-newest-body-commit */}
+{/* cite codeowners-evidence-is-file-and-line */}
+{/* cite agreeing-field-is-current-and-unwritten */}
 Each line says what changed, and the parenthesis says why. The body of
 `install.md` last changed in commit `424f71a`, so that commit's date is what
 `last-updated` should say. Line 12 of CODEOWNERS names the owner. `faq.md`
 already agreed with the evidence, so nothing was written.
 
+{/* cite derive-writes-by-default */}
+{/* cite dry-run-reports-without-writing */}
+{/* cite check-turns-stale-field-into-finding */}
 `derive` writes by default, like `fill` and `query`. Pass `--dry-run` to see
 the same report with nothing touched. Pass `--check` to make a stale field a
 finding instead, which is what CI runs.
 
+{/* cite get-reads-evidence-without-writing */}
+{/* cite get-annotates-disagreement-with-evidence */}
 To see the evidence for one field without writing anything:
 
 ```sh
@@ -138,10 +157,13 @@ npx -y @hawkeyexl/manni meta get last-updated docs/install.md
 docs/install.md: last-updated=2026-08-20  (asserted; git says 2026-09-07, body changed in 424f71a)
 ```
 
+{/* cite derivation-is-on-by-default-in-get */}
 The page asserts one date and git says another, so the line says both. No
 flag is needed for that, and [See what a page resolves
 to](#see-what-a-page-resolves-to) has the rest of the read surface.
 
+{/* cite validate-holds-every-page-to-managed-field */}
+{/* cite stale-finding-carries-derived-stale-schema */}
 Once a field is managed, `validate` holds every page to it:
 
 ```
@@ -151,11 +173,14 @@ docs/install.md
 1 file checked, 1 failed
 ```
 
+{/* cite stale-message-ends-with-run-manni-meta-derive */}
 The message names the fix. Run `manni meta derive`, commit, and the page is
 current.
 
 ## See what a page resolves to
 
+{/* cite resolved-value-prefers-asserted-key */}
+{/* cite get-annotates-derived-origin-with-source */}
 A page with no `owner` in its frontmatter can still have an owner. CODEOWNERS
 may cover the path, and nobody wrote it down. `get` answers that without a
 flag, because a read gives back the **resolved value**. That is the asserted
@@ -170,6 +195,7 @@ docs/install.md: owner=@platform-docs  (derived, codeowners: .github/CODEOWNERS:
 docs/faq.md: owner=@docs-team  (asserted)
 ```
 
+{/* cite no-derived-consults-no-source */}
 `install.md` says nothing about ownership, and CODEOWNERS line 12 answers for
 it. `faq.md` names its own owner, which is what the page publishes, so that
 is what comes back. To see only what the pages store, and consult nothing:
@@ -182,6 +208,8 @@ npx -y @hawkeyexl/manni meta get owner docs/install.md --no-derived
 docs/install.md: owner=(unset)
 ```
 
+{/* cite resolved-table-origin-column */}
+{/* cite resolved-table-is-read-only */}
 Across a corpus, the same question is SQL. `query` builds a read-only
 [`resolved` table](/manni/meta/reference/query/#the-resolved-table) whose
 `_origin` column says, per field, which side won:
@@ -206,6 +234,7 @@ page is about a resolved **value**.
 
 ## Derive a field with a command
 
+{/* cite command-key-makes-field-derivable */}
 Batami's first question was "what version did you check this against?" No
 history answers it, but the repository usually knows the version. It is in
 `package.json`, a `VERSION` file, or one `git describe` away. A **command**
@@ -222,6 +251,11 @@ meta:
         run: ["jq", "-r", ".version", "package.json"]
 ```
 
+{/* cite command-argv-is-never-a-shell-string */}
+{/* cite command-runs-in-config-directory */}
+{/* cite whole-run-command-value-copied-to-every-page */}
+{/* cite structured-json-stdout-is-parsed */}
+{/* cite bare-scalar-stdout-stays-text */}
 `run` is an argv list, never a shell string, so it means the same thing on
 every platform. The command runs once, in the config file's directory, and
 its trimmed stdout is the value for every page. Structured JSON is parsed, so
@@ -240,6 +274,7 @@ docs/install.md
 1 file, 1 changed, 1 field written
 ```
 
+{/* cite command-evidence-is-the-argv-line */}
 The evidence is the command itself, so anyone reading the report can run it
 by hand. From then on, a release that moves `package.json` makes every page
 still stamped with the old version a finding:
@@ -261,6 +296,9 @@ npx -y @hawkeyexl/manni meta get verified-against docs/install.md
 docs/install.md: verified-against=1.4.1  (asserted; command says 1.4.2, jq -r .version package.json)
 ```
 
+{/* cite path-placeholder-runs-command-per-document */}
+{/* cite command-timeout-defaults-to-sixty-seconds */}
+{/* cite command-timeout-must-be-whole-positive-seconds */}
 A field that differs per page takes `{path}` in the argv. The command then
 runs once per document, with the document's path in place of the
 placeholder, so a script can answer for one page:
@@ -275,6 +313,11 @@ meta:
         timeout: 30
 ```
 
+{/* cite empty-stdout-means-no-answer */}
+{/* cite command-failure-timeout-or-missing-is-exit-2 */}
+{/* cite shallow-clone-is-refused */}
+{/* cite command-failure-message-quotes-argv */}
+{/* cite command-may-not-claim-a-builtin-field */}
 A command that prints nothing and exits 0 has no answer, and the page is
 left alone. A command that fails, hangs past its timeout, or is not
 installed stops the run with exit 2. A shallow clone does the same, for the
@@ -302,6 +345,7 @@ fenced block, such as HTML, XML or DITA, where any change counts. The
 
 ## In a pull request
 
+{/* cite shallow-clone-reason-names-fetch-depth-zero */}
 Two things have to be true on the runner. The checkout needs history, and
 the `gh` or `glab` CLI needs a login. `actions/checkout` gives one commit by default,
 and one commit cannot say when a body last changed. `derive` refuses a
@@ -324,6 +368,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 ```
 
+{/* cite action-invokes-meta-validate */}
+{/* cite github-format-emits-line-anchored-annotation */}
+{/* cite action-args-input-appends-arguments */}
+{/* cite no-derive-skips-managed-field-comparison */}
 The Action runs `validate`, and `validate` compares every managed field. A
 stale stamp is an inline annotation on the diff, at the field's line, with
 the command to run in the message. The Action has no input for this. Anything
@@ -336,6 +384,7 @@ the opt-out:
           args: --no-derive
 ```
 
+{/* cite check-implies-dry-run */}
 To annotate what `derive` *would* write, rather than only what is stale, add
 a second step. `--check` implies a dry run, so it never touches the checkout:
 
@@ -354,6 +403,7 @@ tool exists to end. Narrow `--sources` when a source is genuinely out of
 reach.
 </Aside>
 
+{/* cite gitlab-source-uses-glab-cli */}
 On GitLab, the same recipe uses `glab`, which is one package install on the
 runner image, logged in with the job token:
 
@@ -372,6 +422,8 @@ validate-metadata:
 
 ## After approval
 
+{/* cite review-fields-come-from-host-approvals */}
+{/* cite fields-flag-overrides-config-derive-fields */}
 `reviewed-by` and `last-reviewed` come from the approval itself. A reviewer
 clicks approve, and GitHub or GitLab now knows who reviewed the change and when.
 Nothing has to transcribe it. A workflow that runs on the approval event
@@ -408,6 +460,8 @@ jobs:
           git push
 ```
 
+{/* cite open-pull-request-answer-is-never-cached */}
+{/* cite no-merged-change-derives-null-not-a-finding */}
 The pull request is still open, so its answer is never cached, and every run
 reads the approvals as they stand. Before the first approval the derived
 value is null, which is no finding. So `validate` does not fail a pull
@@ -424,6 +478,7 @@ final.
 
 ## Rolling out on an existing corpus
 
+{/* cite stale-and-unset-fields-become-findings */}
 The first `validate` after adding `derive.fields` reports every page whose
 body moved since its stamp. On a corpus that stamped dates by hand for a
 year, that is most of it. Two ways through.
@@ -433,6 +488,7 @@ The direct way is to stamp everything once and commit it. That is one
 readable because each line changes one field on one page, and the report
 says why.
 
+{/* cite write-baseline-records-current-findings */}
 The gradual way is the [baseline](/manni/meta/set-up/new-required-field/).
 Record today's stale stamps, and from then on fail only on new ones:
 
@@ -440,6 +496,7 @@ Record today's stale stamps, and from then on fail only on new ones:
 npx -y @hawkeyexl/manni meta validate --write-baseline
 ```
 
+{/* cite baselined-findings-count-line */}
 A stale stamp is a finding like any other, so it rides the same ratchet. The
 debt stays visible in the `N baselined findings` line on every run. It
 shrinks as pages are touched, because a page that goes through `derive` has
@@ -447,6 +504,8 @@ nothing left to forgive.
 
 ## Editing the values
 
+{/* cite only-derive-writes-a-managed-field */}
+{/* cite query-refuses-write-to-managed-field */}
 Only `derive` writes a managed field. That is what makes the stamp
 trustworthy, so the other writers refuse it by name:
 
@@ -455,6 +514,11 @@ $ manni meta query "UPDATE docs SET \"last-updated\" = '2026-09-07'"
 manni: "last-updated" is managed by derive; run manni meta derive instead.
 ```
 
+{/* cite fill-skips-managed-fields-visibly */}
+{/* cite fill-never-proposes-provenance-keys */}
+{/* cite fill-writes-meta-provenance-with-filled-fields */}
+{/* cite derived-table-one-row-per-page */}
+{/* cite resolved-view-holds-effective-value */}
 `fill` never proposes a managed field, and reports the skip so the omission
 is visible. It never proposes `provenance` or `meta-provenance` either, and
 leaves both out of what it sends a model. It writes `meta-provenance` itself,
@@ -466,11 +530,13 @@ holds what the evidence says, one row per page, and
 believe. So "every page whose stamp disagrees with git" is a SQL question,
 and so is "every page whose owner nobody wrote down".
 
+{/* cite unmanaged-field-is-no-longer-compared */}
 To stop managing a field, remove it from `derive.fields`. The stamp stays in
 the page as an ordinary asserted value, and nothing compares it any more.
 
 ## If the updater is an agent
 
+{/* cite finding-message-is-self-contained-instruction */}
 An agent that edits a page and opens a pull request hits the same gate a
 person does, and the gate is built for it. The finding's message is a
 complete instruction: `last-updated says 2026-08-20; git says 2026-09-07
@@ -479,6 +545,7 @@ CI output has the command to run, and running it produces a diff that
 explains itself. There is no prompt to write and no rule to teach. The
 message is the prompt.
 
+{/* cite every-writer-but-derive-refuses-managed-field */}
 The same holds in the other direction. An agent cannot make a stamp true by
 typing it, because `query` and `fill` refuse a managed field and `validate`
 holds the page to the evidence. What it can do is change the body and run

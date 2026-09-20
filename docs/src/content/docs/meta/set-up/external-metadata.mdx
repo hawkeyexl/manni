@@ -5,6 +5,7 @@ description: "Keep frontmatter values outside the page and merge them at run tim
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
+{/* cite external-metadata-merged-before-schema-resolution */}
 **External metadata** is a YAML **manifest** that supplies a fixed set of
 frontmatter keys for named documents. `manni meta` merges the values into each
 page's metadata before resolving its schema, so every command sees one object.
@@ -27,6 +28,7 @@ three share one manifest format and one set of rules.
    in another, by URL, public or private. See
    [Across repositories](#across-repositories).
 
+{/* cite external-metadata-declared-on-collection */}
 A manifest belongs to a **collection**, the named document set every manni tool
 reads. `externalMetadata:` sits inside the collection entry, beside the globs
 that select the pages the manifest describes. The two are declared together, so
@@ -139,6 +141,7 @@ title: Auth
 # Auth
 ```
 
+{/* cite get-prints-manifest-supplied-value */}
 The run sees the whole object. From the fixture directory,
 `manni meta get jira docs/auth.md` prints `docs/auth.md: jira=PLAT-412`, and a
 [corpus check](/manni/meta/ci/query-gates/) can phrase a rule over `jira` like
@@ -148,6 +151,10 @@ any other key. So can a query over the collection's own
 
 ### What a failure looks like
 
+{/* cite validate-summary-line-format */}
+{/* cite owned-key-message-names-manifest-and-collection */}
+{/* cite pretty-report-shows-manifest-location */}
+{/* cite finding-on-manifest-value-names-manifest-line */}
 The fixture's manifest is not the clean one above. One page has a malformed
 ticket in the manifest, one has no entry, and one carries `jira:` in its own
 frontmatter:
@@ -164,6 +171,8 @@ frontmatter:
 4 files checked, 1 passed, 3 failed, 3 errors
 ```
 
+{/* cite github-format-annotates-manifest-file */}
+{/* cite findings-exit-one */}
 Each line points at the place to fix. `billing.md`'s bad value is at
 `docs-meta.yaml:6`, so the manifest is what to edit. `new.md` needs an entry.
 `ops.md` needs its `jira:` line removed, because the manifest is the only place
@@ -171,6 +180,8 @@ that key may be set. The message names the collection whose manifest owns it.
 All three are exit 1, and `--format github` annotates the manifest line for
 the first and the page line for the other two.
 
+{/* cite orphan-path-entry-message-text */}
+{/* cite orphan-path-entry-checked-on-corpus-run */}
 A renamed page whose entry was not updated is different. On a run that reads the
 whole corpus it is exit 2. An entry naming a page the run did not load is a
 named input that is not there. The same fixture directory carries a second
@@ -226,6 +237,9 @@ private-repo/
     docs/guides/auth.md
 ```
 
+{/* cite path-outside-config-dir-is-member-of-nothing */}
+{/* cite sarif-drops-findings-outside-repository */}
+{/* cite sarif-uri-relative-to-repository-root */}
 Two sibling checkouts also run, and report worse. SARIF locates every finding
 relative to the nearest repository root and cannot represent a finding in
 another repository's file. From a sibling layout every document finding is
@@ -324,12 +338,15 @@ jobs:
       - uses: hawkeyexl/manni@v2
 ```
 
+{/* cite action-paths-default-to-config */}
 The Action passes no paths, so the targets come from the private config's
 `collections:` and the orphan check runs. Bump the submodule pointer when the
 public docs change, or the private run validates the pages as they were.
 
 ## Across repositories
 
+{/* cite manifest-file-accepts-https-url */}
+{/* cite url-manifest-fetched-every-run-never-cached */}
 `file:` accepts an `https://` URL as well as a path. The manifest is fetched at
 the start of every run, never cached, and merged exactly as a local one is.
 Use it when the run cannot check the manifest out. The public form comes
@@ -355,12 +372,14 @@ meta:
       schemas: [./schemas/owned.json]
 ```
 
+{/* cite url-manifest-reported-as-its-url */}
 The ordinary public workflow runs it unchanged. There is no secret to pass,
 and the public log shows only public values. A finding on a fetched value
 names the URL and the manifest line, so the catalog is what to edit.
 
 ### A private manifest
 
+{/* cite token-env-names-bearer-token-variable */}
 The manifest lives in a private repository the job does not check out, such as
 a platform team's catalog that serves several docsets. This is the
 [private values](#private-values-for-public-documents) case with the manifest
@@ -383,6 +402,7 @@ meta:
       schemas: [./schemas/private.json]
 ```
 
+{/* cite credential-in-url-refused-at-config-time */}
 The workflow passes the secret as that variable. The token never appears in
 the config, a message, or a report:
 
@@ -423,6 +443,9 @@ out. Never use it to feed a public run with private values. A public catalog
 has nothing to leak.
 </Aside>
 
+{/* cite manifest-load-failure-stops-run-before-documents */}
+{/* cite token-env-unset-message */}
+{/* cite offline-refuses-remote-manifest */}
 A run that cannot reach the manifest stops before any page is judged, and says
 why. The status is named and the token never is:
 
@@ -441,6 +464,7 @@ Every rule, including the timeout, the body cap, the redirect behaviour and
 
 ## Survive renames with a field join
 
+{/* cite path-entry-orphaned-by-absolute-path-lookup */}
 A path entry is orphaned the moment the page moves, and the next whole-corpus
 run is exit 2 until someone edits the manifest. That is the right default for a
 docset that rarely moves. It is the wrong shape for one that moves pages
@@ -448,6 +472,9 @@ often. It is also wrong for a manifest kept by a team that does not watch the
 docs repository's renames. The path is the one thing about a page the manifest
 author does not control.
 
+{/* cite join-accepts-any-top-level-field */}
+{/* cite join-keys-manifest-by-frontmatter-field */}
+{/* cite field-join-survives-rename */}
 `join:` keys the manifest by a top-level frontmatter field instead. The page
 carries the key with it, so a rename never orphans an entry. Any field works.
 A hand-written `id`, a Starlight `slug`, and a Docusaurus `id` are the same
@@ -505,6 +532,8 @@ mechanism.
 
 </Steps>
 
+{/* cite duplicate-join-pages-still-merge-entry */}
+{/* cite duplicate-join-finding-on-both-pages */}
 Two pages sharing one `id` is a finding on both, at the field's line. One
 entry matched both, and the manifest cannot tell them apart. Both pages
 still receive the entry's values, so the schema judges what the site would
@@ -517,6 +546,8 @@ publish. From `test/fixtures/external-metadata-join/`:
     /id  2 documents carry id "shared"; docs-meta.yaml cannot tell them apart (docs/dup-a.md)  (line 3)  [external:duplicate]
 ```
 
+{/* cite orphan-join-entry-checked-after-all-pages */}
+{/* cite orphan-join-message-text */}
 An entry whose id no page carries is still exit 2 on a whole-corpus run,
 checked once every page has been read:
 
@@ -525,6 +556,7 @@ $ manni meta validate -c manni.orphan.config.yaml
 manni: Manifest docs-meta.orphan.yaml:3 names id "gone-guide", which no loaded document carries. Fix the entry, or remove it.
 ```
 
+{/* cite duplicate-finding-fails-the-run */}
 The join key is contributor-controlled, and that is the trade. A pull request
 that sets `id: auth-guide` on a new page inherits every assertion the manifest
 makes about the real one. Three things bound that. The duplicate finding turns
@@ -534,6 +566,7 @@ is one. An entry that suddenly matches two pages shows up there as a duplicate
 first. A path join has none of this exposure, which is why it stays the
 default.
 
+{/* cite query-refuses-update-of-join-field */}
 `query` follows the same line. Renaming a field-joined page is allowed, which
 is the point. Changing its `id` is a write to the join, and is refused:
 
@@ -544,6 +577,7 @@ manni: "docs/auth.md": "id" is the field manifest docs-meta.yaml joins on, and t
 
 ## When a page is in two collections
 
+{/* cite two-collections-may-own-same-key */}
 Two collections may each have a manifest supplying `owner`. That is ordinary: a
 `guides` collection and a `blog` collection are separate sets with separate
 catalogs. It only becomes a question when one page is a member of both, which
@@ -563,6 +597,7 @@ collections:
         keys: [owner]
 ```
 
+{/* cite key-owned-by-two-collections-of-one-page-refused */}
 `docs/api/auth.md` is in both, and both own `owner`. There is no honest winner,
 so the run stops rather than picking one:
 
@@ -570,17 +605,21 @@ so the run stops rather than picking one:
 manni: docs/api/auth.md: "owner" is owned by manifests in two of its collections, guides (guides-meta.yaml) and api (api-meta.yaml); a key has one manifest per file. Narrow one collection's paths or exclude.
 ```
 
+{/* cite collection-exclude-decides-membership */}
 Two fixes, both in the config where the overlap was declared. Narrow `guides` so
 it stops covering `docs/api/`. `exclude: ["docs/api/**"]` does it, since a
 collection's `exclude` decides membership. Or move `owner` out of one of the two
 manifests, so only one owns the key for that page.
 
+{/* cite schema-set-resolved-first-match-wins */}
 Overlapping collections are otherwise fine, and useful. A page in both appears
 in both [views](/manni/meta/reference/query/#collections-as-views), and still
 resolves exactly one schema set by first-match-wins.
 
 ## Editing the values
 
+{/* cite writers-write-owned-keys-into-manifest */}
+{/* cite dry-run-change-count-and-hint */}
 A key the manifest owns is readable by every command, and every writer writes
 it into the manifest. The page is left alone. Again over the fixture corpus:
 
@@ -593,6 +632,10 @@ docs/auth.md: jira: PLAT-412 -> PLAT-1  [docs-meta.yaml]
 1 change across 1 file — dry run; run again without --dry-run to apply
 ```
 
+{/* cite manifest-splice-preserves-comments */}
+{/* cite derive-writes-managed-field-into-manifest */}
+{/* cite fill-writes-owned-key-into-manifest */}
+{/* cite query-change-line-names-manifest */}
 The bracket names the manifest the change lands in. `fill` writes a proposal
 for an owned key into the page's entry the same way, and `derive` stamps a
 managed field there, `owner` or `last-reviewed` included. Each splice keeps the
@@ -600,6 +643,7 @@ manifest's comments. A corpus check still sees every key the manifest supplies.
 So "every guide has a ticket in the open state" is a
 [SQL rule](/manni/meta/ci/query-gates/) like any other.
 
+{/* cite query-refuses-manifest-writes-before-writing */}
 Three writes are still refused. `query` refuses each before any file is
 written (exit 2):
 
@@ -614,6 +658,10 @@ written (exit 2):
 
 ### Moving keys in or out
 
+{/* cite relocate-config-edit-keeps-comments-and-order */}
+{/* cite x-manni-location-decides-key-direction */}
+{/* cite relocate-moves-values-both-directions */}
+{/* cite keys-change-reaches-every-member-page */}
 Adding a key to `keys:` by hand is only half the job. Every page that still
 carries the key then fails `external:owned` until its value is copied across.
 [`manni meta relocate`](/manni/meta/reference/cli/#meta-relocate) does both
