@@ -613,15 +613,21 @@ holds now. One guard stands between it and a line that was replaced rather
 than edited.
 
 The guard refuses a claim whose line shares no sentence with the claim at its
-baseline. It needs a baseline to judge at all. A pin `update` minted has none
-until a commit holds it, so an accept run straight after an update is
-unguarded. `--dry-run` shows every claim a run would re-pin, with its text,
-before anything is written.
+baseline. It refuses one holding under half the claim's words too, which is
+the drift onto a neighbouring table row. It needs a baseline to judge at all.
+A pin `update` minted has none until a commit holds it, so an accept run
+straight after an update is unguarded. `--dry-run` shows every claim a run
+would re-pin, with its text, before anything is written.
 
 Naming an id with `--only` bypasses the guard, because naming it is the
 judgement the guard asks for. The report says `replaced` there rather than
 `changed`. The [CLI reference](/manni/cite/reference/cli/#what-is-rewritten-and-what-is-not) has both
 report lines.
+
+Three refusals need no baseline. `--accept` refuses a cite marker, a span of
+table rules, and text the page repeats. The
+[CLI reference](/manni/cite/reference/cli/#what-is-rewritten-and-what-is-not)
+carries each message and the bypass.
 
 ### Anchoring and entry rules
 

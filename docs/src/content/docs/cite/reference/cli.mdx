@@ -653,23 +653,39 @@ It skips a claim it cannot re-pin, and names the reason beside the finding:
 | Is outside the page body | `Not re-pinned: the line is outside the page body.` |
 | Opens fewer rows than the claim covers | `Not re-pinned: the table no longer holds every row the claim covers.` |
 | Opens a unit over 5,000 lines | `Not re-pinned: the paragraph spans 6000 lines, more than 5000.` |
+| Holds a cite marker | `Not re-pinned: that line now holds a cite marker, not claim text.` |
+| Opens nothing but table rules | `Not re-pinned: that line is a table rule, not claim text.` |
+| Holds text the page repeats | `Not re-pinned: the text there also appears at line 16, so a pin cannot identify it. Re-run with --only dup to accept it anyway.` |
+
+The last three ask what the line holds, not what the claim said. `--only`
+naming the entry bypasses them and re-pins the line as it reads.
 
 A sentence that was reworded **and** moved has left that line. `--accept` then
 re-pins whatever now starts there, so read the printed text. If it is not the
 sentence, `cite add` the sentence again.
 
 Two guards bound an accepted claim. The first refuses a line that was
-replaced rather than edited. Both texts, the claim at its baseline and what
-the stored first line holds now, are split into sentences, with whitespace
-collapsed and case dropped. An empty intersection refuses the claim, which is
-reported and exits 1. So a blanket `--accept` blesses an edit to a paragraph,
-and hands a wholly replaced line back to `cite add`. With no baseline
-available, `--accept` behaves as it did before. The second guard is the
-report's. A re-pin over a unit wider than the stored lines still happens, and
-the line names both spans:
+replaced rather than edited. It reads the claim at its baseline against what
+the stored first line holds now, under two tests. Either one refuses.
+
+The sentence test splits both texts into sentences, with whitespace collapsed
+and case dropped. An empty intersection refuses the claim.
+
+The overlap test counts words. It takes the distinct words of each text, case
+dropped, and divides the size of their intersection by the baseline's own
+count. A line holding under half the claim's words is refused, and the report
+prints the share. Two rows of one table end alike often enough to share a
+sentence while saying other things, which is the drift this catches.
+
+Either refusal is reported and exits 1. So a blanket `--accept` blesses an
+edit to a paragraph, and hands a replaced line back to `cite add`. With no
+baseline available, `--accept` behaves as it did before. The second guard is
+the report's. A re-pin over a unit wider than the stored lines still happens,
+and the line names both spans:
 
 ```
 docs/limits.md: fetch-timeout claim at line 9 skipped: that line now holds different text than the claim at 3f9c2a1. Re-add it with cite add.
+docs/limits.md: show-diff claim at line 17 skipped: that line now holds text sharing 31% of the claim's words at 3f9c2a1. Re-add it with cite add.
 docs/limits.md: fetch-timeout claim lines 9 -> 9-12 re-pinned (changed; now "The fetch timeout is 30 seconds.")
 ```
 
@@ -689,9 +705,9 @@ docs/limits.md: fetch-timeout claim at line 9 re-pinned (replaced; now "Retries 
 #### How far the first guard reaches
 
 The guard refuses a claim whose line shares no sentence with the claim at its
-baseline. It needs a baseline to judge at all. A pin `update` minted has none
-until a commit holds it, so an accept run straight after an update is
-unguarded. `--dry-run` shows every claim a run would re-pin, with its text,
+baseline, or under half its words. It needs a baseline to judge at all. A pin
+`update` minted has none until a commit holds it, so an accept run straight
+after an update is unguarded. `--dry-run` shows every claim a run would re-pin, with its text,
 before anything is written.
 
 {/* cite anchor-findings-skipped */}

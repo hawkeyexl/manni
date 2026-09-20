@@ -44,9 +44,10 @@ const RST_FORMS: readonly StatementForm[] = [{ open: ".. (", close: ")" }];
 const ID = /^[a-z0-9][a-z0-9-]*$/;
 
 /**
- * A fence opener in any format. `paragraphAfter` and the claim search
- * (`claims.ts`) have no format parameter, so they treat every family's opener
- * as a fence; the per-format locators below are what `quote` anchoring uses.
+ * A fence opener in any format. `paragraphAfter` reads it whether or not it
+ * was given a format, and so does the claim search (`claims.ts`), so every
+ * family's opener counts; the per-format locators below are what `quote`
+ * anchoring uses.
  * A markdown fence keeps its meaning when indented, as inside a list item, so
  * it is read there too, matching the code skip in `src/shared/code-regions.ts`; the
  * asciidoc `----` stays at column 0.
@@ -171,6 +172,28 @@ const TABLE_ROW = /^[ \t]*\|/;
  */
 export function isTableRow(line: string): boolean {
   return TABLE_ROW.test(line);
+}
+
+/**
+ * A table rule: the `|---|---|` line under a header row. The outer pipes are
+ * optional, a cell may carry `:` alignment markers, and the whole line may be
+ * indented, because a table inside a list item is indented and is still a
+ * table.
+ *
+ * A rule has to carry at least one `|`, which is what the leading lookahead
+ * asks. Every pipe in the pattern that follows is optional on its own, so
+ * without that test a bare `---` reads as a table rule, and `---` is a
+ * thematic break or the underline of a setext heading instead.
+ *
+ * `isTableRow` reads a rule as a row, deliberately: a claim over a header, its
+ * rule and a body row covers three rows and keeps all three. This asks the
+ * narrower question `unitAt` needs, which is whether a span holds nothing but
+ * rules. Such a span carries no words, so `update --accept` refuses to pin one.
+ */
+const TABLE_RULE = /^(?=[^|]*\|)[ \t]*\|?(?:[ \t]*:?-+:?[ \t]*\|)*[ \t]*:?-+:?[ \t]*\|?[ \t]*$/;
+
+export function isTableSeparator(line: string): boolean {
+  return TABLE_RULE.test(line);
 }
 
 /**

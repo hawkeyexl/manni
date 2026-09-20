@@ -466,10 +466,19 @@ function movedSpan(rewrite: UpdateRewrite): string {
   return `at ${spellAtSpec(at)}`;
 }
 
-/** What one claim `--accept` refused to re-pin says, and what to do about it. */
+/**
+ * What one claim `--accept` refused to re-pin says, and what to do about it.
+ * The line names which test refused it: the share is printed when overlap is
+ * what fired, and the text is called different when no sentence was shared.
+ */
 export function refusalLine(rewrite: UpdateRewrite): string {
   const at = shortCommit(rewrite.commitSha ?? "");
-  return `claim at ${spellAtSpec(String(rewrite.at ?? 0))} skipped: that line now holds different text than the claim at ${at}. Re-add it with cite add.`;
+  const where = `claim at ${spellAtSpec(String(rewrite.at ?? 0))} skipped:`;
+  if (rewrite.wordShare !== undefined) {
+    const share = Math.round(rewrite.wordShare * 100);
+    return `${where} that line now holds text sharing ${String(share)}% of the claim's words at ${at}. Re-add it with cite add.`;
+  }
+  return `${where} that line now holds different text than the claim at ${at}. Re-add it with cite add.`;
 }
 
 /** What one rewritten end says it did. */

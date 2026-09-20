@@ -617,6 +617,12 @@ export interface UpdateRewrite {
    * against.
    */
   commitSha?: string;
+  /**
+   * A refused claim the word-overlap test refused: the share of the claim's
+   * words, from 0 to 1, that its line still holds. Absent on a claim the
+   * sentence test refused, which is how a report tells the two apart.
+   */
+  wordShare?: number;
 }
 
 export interface UpdatePage {
@@ -624,8 +630,9 @@ export interface UpdatePage {
   rewritten: UpdateRewrite[];
   /**
    * Claims `--accept` refused to re-pin, because the stored first line now
-   * holds text that shares no sentence with the claim at its baseline. Each
-   * carries `reason: "replaced"`, and each is work left undone: exit 1.
+   * holds text that shares no sentence with the claim at its baseline, or too
+   * few of its words. Each carries `reason: "replaced"`, and each is work left
+   * undone: exit 1.
    */
   refused: UpdateRewrite[];
   skipped: CitationFinding[];
