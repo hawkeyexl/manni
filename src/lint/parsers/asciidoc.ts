@@ -2,7 +2,7 @@
  * AsciiDoc parser.
  *
  * Asciidoctor already hands back a nested block tree, so the work here is the
- * same as `mdast.ts`'s: flatten it into ordered `Block`s and let `sectionize`
+ * same as `mdast.ts`'s: flatten it into ordered `Fragment`s and let `sectionize`
  * rebuild the nesting. Contexts outside `section`/`paragraph`/`listing`/
  * `literal`/`ulist`/`olist` are skipped rather than mapped to a nearest
  * neighbour, for the reason the Markdown parser skips blockquotes and tables -
@@ -38,7 +38,7 @@ import type {
 } from "../types.js";
 import { LintError } from "../types.js";
 import { errorMessage } from "../../shared/errors.js";
-import type { Block } from "./sectionize.js";
+import type { Fragment } from "./sectionize.js";
 import { sectionize } from "./sectionize.js";
 import {
   fencedPosition,
@@ -233,7 +233,7 @@ function flattenInline(html: string | undefined): string {
 type Draft =
   | { kind: "heading"; line: number; level: number; title: string }
   | { kind: "paragraph"; line: number; text: string }
-  | { kind: "code"; line: number; text: string; lang?: string }
+  | { kind: "codeBlock"; line: number; text: string; language?: string }
   | { kind: "list"; line: number; ordered: boolean; items: DraftItem[] };
 
 /** Every draft but a heading, which is the only kind that is not content. */
@@ -289,12 +289,12 @@ function draftOf(node: AdocNode): Draft | null {
     case "literal": {
       const lang = stringAttribute(node, "language");
       return {
-        kind: "code",
+        kind: "codeBlock",
         line: lineOf(node),
         // Raw, not converted: a code block's text is its source, and
         // `getContent()` would escape every `<` in it.
         text: node.getSource?.() ?? "",
-        ...(lang ? { lang } : {}),
+        ...(lang ? { language: lang } : {}),
       };
     }
     case "ulist":
@@ -368,8 +368,8 @@ function collect(nodes: AdocNode[], out: Draft[]): void {
  * level down because Asciidoctor reports where a block starts and nothing at
  * all about where it stops.
  */
-function place(drafts: Draft[], end: Point, index: LineIndex): Block[] {
-  return drafts.map((draft, i): Block => {
+function place(drafts: Draft[], end: Point, index: LineIndex): Fragment[] {
+  return drafts.map((draft, i): Fragment => {
     const next = drafts[i + 1];
     const boundary = next ? index.start(next.line) : end;
 
@@ -398,8 +398,8 @@ function place(drafts: Draft[], end: Point, index: LineIndex): Block[] {
 
 /** `place`, for content that cannot contain a heading. */
 function placeContent(drafts: Draft[], end: Point, index: LineIndex): ContentNode[] {
-  return place(drafts, end, index).flatMap((block) =>
-    block.type === "content" ? [block.node] : [],
+  return place(drafts, end, index).flatMap((fragment) =>
+    fragment.type === "content" ? [fragment.node] : [],
   );
 }
 
@@ -408,6 +408,7 @@ function placeItems(items: DraftItem[], end: Point, index: LineIndex): ListItemN
     const next = items[i + 1];
     const boundary = next ? index.start(next.line) : end;
     return {
+      kind: "listItem",
       position: { start: index.start(item.line), end: boundary },
       text: item.text,
       children: placeContent(item.children, boundary, index),
@@ -423,12 +424,12 @@ function contentNode(
   switch (draft.kind) {
     case "paragraph":
       return { kind: "paragraph", position, text: draft.text };
-    case "code":
+    case "codeBlock":
       return {
-        kind: "code",
+        kind: "codeBlock",
         position,
         text: draft.text,
-        ...(draft.lang ? { lang: draft.lang } : {}),
+        ...(draft.language ? { language: draft.language } : {}),
       };
     case "list":
       return {
@@ -580,6 +581,7 @@ function parse(content: string, filePath: string): DocumentTree {
 export const asciidocParser: DocumentParser = {
   name: "asciidoc",
   label: "AsciiDoc",
+  kinds: ["paragraph", "codeBlock", "list"],
   extensions: [".adoc", ".asciidoc"],
   parse,
 };

@@ -100,8 +100,8 @@ describe("asciidoc parser", () => {
   it("puts the preamble under a document title into the title's own content", () => {
     const tree = parse("= A\n\nLead prose.\n\n== B\n\nmore\n");
     const root = at(tree.sections, 0, "document title section");
-    expect(root.content.map((n) => n.kind)).toEqual(["paragraph"]);
-    expect(at(root.content, 0, "preamble paragraph").text).toBe("Lead prose.");
+    expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
+    expect(at(root.children, 0, "preamble paragraph").text).toBe("Lead prose.");
     expect(root.sections.map((s) => s.title)).toEqual(["B"]);
   });
 });
@@ -111,9 +111,9 @@ describe("content kinds", () => {
     const tree = parse(
       "= A\n\n== B\n\npara\n\n[source,js]\n----\ncode\n----\n\n* one\n* two\n",
     );
-    expect(section(tree.sections, "B").content.map((n) => n.kind)).toEqual([
+    expect(section(tree.sections, "B").children.map((n) => n.kind)).toEqual([
       "paragraph",
-      "code",
+      "codeBlock",
       "list",
     ]);
   });
@@ -121,19 +121,19 @@ describe("content kinds", () => {
   it("carries a listing's language and its unconverted source", () => {
     const tree = parse("= A\n\n[source,bash]\n----\nls -l && echo 'a < b'\n----\n");
     const root = at(tree.sections, 0, "document title section");
-    expect(at(root.content, 0, "listing block")).toMatchObject({
-      kind: "code",
-      lang: "bash",
+    expect(at(root.children, 0, "listing block")).toMatchObject({
+      kind: "codeBlock",
+      language: "bash",
       text: "ls -l && echo 'a < b'",
     });
   });
 
   it("reads an unlabelled listing and a literal block as code with no language", () => {
     const tree = parse("= A\n\n----\nplain\n----\n\n....\nliteral\n....\n");
-    const content = at(tree.sections, 0, "document title section").content;
-    expect(content.map((n) => n.kind)).toEqual(["code", "code"]);
-    expect(at(content, 0, "listing block")).not.toHaveProperty("lang");
-    expect(at(content, 1, "literal block")).not.toHaveProperty("lang");
+    const content = at(tree.sections, 0, "document title section").children;
+    expect(content.map((n) => n.kind)).toEqual(["codeBlock", "codeBlock"]);
+    expect(at(content, 0, "listing block")).not.toHaveProperty("language");
+    expect(at(content, 1, "literal block")).not.toHaveProperty("language");
   });
 
   it("distinguishes ordered from unordered lists", () => {
@@ -141,12 +141,12 @@ describe("content kinds", () => {
     // markers are one nested list to AsciiDoc, not two siblings.
     const tree = parse("= A\n\n== U\n\n* one\n* two\n\n== O\n\n. first\n. second\n. third\n");
     const unordered = at(
-      section(tree.sections, "U").content,
+      section(tree.sections, "U").children,
       0,
       "unordered list",
     ) as ListNode;
     const ordered = at(
-      section(tree.sections, "O").content,
+      section(tree.sections, "O").children,
       0,
       "ordered list",
     ) as ListNode;
@@ -162,16 +162,16 @@ describe("content kinds", () => {
   it("nests an item's own text and its attached blocks so item rules can run", () => {
     const tree = parse("= A\n\n* item text\n+\n[source,js]\n----\nx\n----\n");
     const root = at(tree.sections, 0, "document title section");
-    const list = at(root.content, 0, "list") as ListNode;
+    const list = at(root.children, 0, "list") as ListNode;
     const item = at(list.items, 0, "list item");
-    expect(item.children.map((c) => c.kind)).toEqual(["paragraph", "code"]);
+    expect(item.children.map((c) => c.kind)).toEqual(["paragraph", "codeBlock"]);
     expect(at(item.children, 0, "item text paragraph").text).toBe("item text");
   });
 
   it("nests a list inside the item that carries it", () => {
     const tree = parse("= A\n\n* outer\n. inner one\n. inner two\n");
     const root = at(tree.sections, 0, "document title section");
-    const list = at(root.content, 0, "list") as ListNode;
+    const list = at(root.children, 0, "list") as ListNode;
     const nested = at(
       at(list.items, 0, "outer list item").children,
       1,
@@ -207,7 +207,7 @@ describe("content kinds", () => {
         "",
       ].join("\n"),
     );
-    expect(at(tree.sections, 0, "document title section").content).toEqual([]);
+    expect(at(tree.sections, 0, "document title section").children).toEqual([]);
   });
 });
 
@@ -216,7 +216,7 @@ describe("positions", () => {
     const adoc = "= A\n\n== B\n\npara\n\n== C\n\npara\n";
     const tree = parse(adoc);
     const b = section(tree.sections, "B");
-    const heading = defined(b.headingPosition, "heading position");
+    const heading = defined(b.titlePosition, "heading position");
     expect(heading.start.line).toBe(3);
     expect(heading.start.column).toBe(1);
     expect(heading.start.offset).toBe(adoc.indexOf("== B"));
@@ -233,7 +233,7 @@ describe("positions", () => {
     expect(b.position.end.offset).toBe(c.position.start.offset);
     expect(c.position.start.offset).toBe(adoc.indexOf("== C"));
     // The span covers the blank lines a reader would call part of the section.
-    expect(at(b.content, 0, "paragraph in B").position.start.offset).toBeLessThan(
+    expect(at(b.children, 0, "paragraph in B").position.start.offset).toBeLessThan(
       b.position.end.offset,
     );
   });
@@ -256,11 +256,11 @@ describe("positions", () => {
     const first = at(root.sections, 0, "first Setup section");
     const second = at(root.sections, 1, "second Setup section");
     const firstHeading = defined(
-      first.headingPosition,
+      first.titlePosition,
       "first heading position",
     );
     const secondHeading = defined(
-      second.headingPosition,
+      second.titlePosition,
       "second heading position",
     );
     expect(firstHeading.start.line).toBe(3);
@@ -276,7 +276,7 @@ describe("positions", () => {
     const tree = parse(adoc);
     const root = at(tree.sections, 0, "document title section");
     const setup = at(root.sections, 0, "Setup section");
-    const heading = defined(setup.headingPosition, "heading position");
+    const heading = defined(setup.titlePosition, "heading position");
     expect(heading.start.line).toBe(4);
     expect(heading.start.offset).toBe(adoc.indexOf("== Setup"));
   });
@@ -285,8 +285,8 @@ describe("positions", () => {
     const adoc = "= A\n\n== B\n\none\n\ntwo\n\n== C\n";
     const tree = parse(adoc);
     const b = section(tree.sections, "B");
-    const one = at(b.content, 0, "first paragraph in B");
-    const two = at(b.content, 1, "second paragraph in B");
+    const one = at(b.children, 0, "first paragraph in B");
+    const two = at(b.children, 1, "second paragraph in B");
     expect(one.position.start.line).toBe(5);
     expect(two.position.start.line).toBe(7);
     expect(one.position.end.offset).toBe(two.position.start.offset);
@@ -334,16 +334,16 @@ describe("document metadata", () => {
     expect(tree.sections.map((s) => s.title)).toEqual(["T"]);
     const root = at(tree.sections, 0, "document title section");
     const overview = section(tree.sections, "Overview");
-    expect(root.content).toEqual([]);
+    expect(root.children).toEqual([]);
     expect(
-      defined(root.headingPosition, "document title heading position").start
+      defined(root.titlePosition, "document title heading position").start
         .line,
     ).toBe(5);
     expect(
-      defined(overview.headingPosition, "Overview heading position").start.line,
+      defined(overview.titlePosition, "Overview heading position").start.line,
     ).toBe(7);
     expect(
-      at(overview.content, 0, "paragraph in Overview").position.start.line,
+      at(overview.children, 0, "paragraph in Overview").position.start.line,
     ).toBe(9);
   });
 
@@ -366,8 +366,8 @@ describe("a metadata title standing in for a missing document title", () => {
   it("is anchored on the header, where the title actually is", () => {
     const tree = parse(":title: A\n\n== Overview\n");
     const root = at(tree.sections, 0, "document title section");
-    expect(root.headingPosition?.start.line).toBe(1);
-    expect(root.headingPosition?.start.offset).toBe(0);
+    expect(root.titlePosition?.start.line).toBe(1);
+    expect(root.titlePosition?.start.offset).toBe(0);
   });
 
   it("does not displace a real document title", () => {
@@ -385,7 +385,7 @@ describe("a metadata title standing in for a missing document title", () => {
   it("takes the content before the first heading with it", () => {
     const tree = parse(":title: A\n\nLead prose.\n\n== Overview\n");
     const root = at(tree.sections, 0, "document title section");
-    expect(root.content.map((n) => n.kind)).toEqual(["paragraph"]);
+    expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
     expect(root.sections.map((s) => s.title)).toEqual(["Overview"]);
   });
 });
@@ -459,13 +459,13 @@ describe("asciidoc parser: open blocks", () => {
   };
 
   it("shows a list item the blocks attached to it", () => {
-    const list = steps().content.find((c) => c.kind === "list");
+    const list = steps().children.find((c) => c.kind === "list");
     expect(list).toBeDefined();
     const items = (list as { items: { children: { kind: string }[] }[] }).items;
     expect(at(items, 0, "step item").children.map((c) => c.kind)).toEqual([
       "paragraph",
       "paragraph",
-      "code",
+      "codeBlock",
     ]);
   });
 
@@ -473,6 +473,6 @@ describe("asciidoc parser: open blocks", () => {
   // context, so it is skipped by the default branch just as mdast skips a
   // blockquote. Only the bare attach-blocks form still reports `open`.
   it("still skips an admonition built from a -- block", () => {
-    expect(steps().content.map((c) => c.kind)).toEqual(["list"]);
+    expect(steps().children.map((c) => c.kind)).toEqual(["list"]);
   });
 });

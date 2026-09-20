@@ -92,7 +92,7 @@ import type {
 } from "../types.js";
 import { LintError } from "../types.js";
 import { errorMessage } from "../../shared/errors.js";
-import type { Block } from "./sectionize.js";
+import type { Fragment } from "./sectionize.js";
 import { sectionize } from "./sectionize.js";
 
 /**
@@ -476,9 +476,9 @@ function nextInDocumentOrder(el: XmlNode): XmlNode | null {
   }
 }
 
-/** Flattens one document into ordered blocks under one vocabulary. */
+/** Flattens one document into ordered fragments under one vocabulary. */
 class Flattener {
-  readonly blocks: Block[] = [];
+  readonly fragments: Fragment[] = [];
 
   constructor(
     private readonly c: Compiled,
@@ -521,7 +521,7 @@ class Flattener {
         return;
       }
       const next = Math.min(level + 1, 6);
-      this.blocks.push({
+      this.fragments.push({
         type: "heading",
         level: next,
         title: flatten(title.textContent),
@@ -541,7 +541,7 @@ class Flattener {
     }
 
     const node = this.content(el);
-    if (node) this.blocks.push({ type: "content", node });
+    if (node) this.fragments.push({ type: "content", node });
     // Unmapped: skipped with its subtree, like a Markdown blockquote.
   }
 
@@ -561,10 +561,10 @@ class Flattener {
     if (this.c.code.has(name)) {
       const lang = this.langOf(el);
       return {
-        kind: "code",
+        kind: "codeBlock",
         position,
         text: codeText(el.textContent),
-        ...(lang ? { lang } : {}),
+        ...(lang ? { language: lang } : {}),
       };
     }
 
@@ -578,6 +578,7 @@ class Flattener {
         items: [...elementChildren(el)]
           .filter((item) => this.c.items.has(localName(item)))
           .map((item): ListItemNode => ({
+            kind: "listItem",
             position: this.span(item),
             text: flatten(item.textContent),
             children: this.itemChildren(item),
@@ -817,9 +818,9 @@ export function parseXml(
 
   const flattener = new Flattener(best, map);
   flattener.visit(root, 0);
-  const blocks = flattener.blocks;
+  const fragments = flattener.fragments;
 
-  if (!blocks.some((b) => b.type === "heading")) {
+  if (!fragments.some((b) => b.type === "heading")) {
     throw new LintError(
       `${filePath}: read as ${best.vocab.label}, but no titled section was found. ` +
         `A ${best.vocab.label} section is one of <${best.vocab.sections.join(">, <")}> ` +
@@ -844,13 +845,14 @@ export function parseXml(
             map.endOfLine(map.point(root)?.line ?? 1),
         }
       : null,
-    sections: sectionize(blocks, map.docEnd),
+    sections: sectionize(fragments, map.docEnd),
   };
 }
 
 export const xmlParser: DocumentParser = {
   name: "xml",
   label: "XML",
+  kinds: ["paragraph", "codeBlock", "list"],
   /**
    * `.dita` as well as `.xml`, because that is what a DITA topic is actually
    * called on disk and docmeta registers it too — a docset whose topics this

@@ -72,7 +72,7 @@ describe("markdown parser", () => {
     expect(a.position.end.offset).toBe(b.position.start.offset);
     // The last child ends well before the section does.
     expect(
-      at(a.content, 0, "first child of A").position.end.offset,
+      at(a.children, 0, "first child of A").position.end.offset,
     ).toBeLessThan(a.position.end.offset);
   });
 
@@ -84,27 +84,27 @@ describe("markdown parser", () => {
 
   it("classifies content into generic kinds, in document order", () => {
     const tree = parse("# A\n\npara\n\n```js\ncode\n```\n\n- one\n- two\n");
-    expect(firstSection(tree).content.map((n) => n.kind)).toEqual([
+    expect(firstSection(tree).children.map((n) => n.kind)).toEqual([
       "paragraph",
-      "code",
+      "codeBlock",
       "list",
     ]);
   });
 
   it("keeps code language and list ordering", () => {
     const tree = parse("# A\n\n```bash\nls\n```\n\n1. one\n2. two\n");
-    const [code, list] = firstSection(tree).content;
-    expect(code).toMatchObject({ kind: "code", lang: "bash", text: "ls" });
+    const [code, list] = firstSection(tree).children;
+    expect(code).toMatchObject({ kind: "codeBlock", language: "bash", text: "ls" });
     expect(list).toMatchObject({ kind: "list", ordered: true });
     expect((list as { items: unknown[] }).items).toHaveLength(2);
   });
 
   it("nests content inside list items so item rules can run", () => {
     const tree = parse("# A\n\n- item text\n\n  ```js\n  x\n  ```\n");
-    const list = firstSection(tree).content[0] as { items: { children: { kind: string }[] }[] };
+    const list = firstSection(tree).children[0] as { items: { children: { kind: string }[] }[] };
     expect(at(list.items, 0, "first list item").children.map((c) => c.kind)).toEqual([
       "paragraph",
-      "code",
+      "codeBlock",
     ]);
   });
 
@@ -112,15 +112,15 @@ describe("markdown parser", () => {
   // one would make `paragraphs: {max: N}` fail documents that satisfy it.
   it("ignores block types the DSL does not describe", () => {
     const tree = parse("# A\n\n> quoted\n\n---\n\n| a | b |\n| - | - |\n| 1 | 2 |\n");
-    expect(firstSection(tree).content).toHaveLength(0);
+    expect(firstSection(tree).children).toHaveLength(0);
   });
 
   it("puts content before any heading in an implicit lead section", () => {
     const tree = parse("intro prose\n\n## Prerequisites\n\nmore\n");
     const lead = firstSection(tree);
     expect(lead.level).toBe(0);
-    expect(lead.headingPosition).toBeNull();
-    expect(lead.content).toHaveLength(1);
+    expect(lead.titlePosition).toBeNull();
+    expect(lead.children).toHaveLength(1);
     // Later headings nest under the lead rather than closing it.
     expect(lead.sections.map((s) => s.title)).toEqual(["Prerequisites"]);
   });
@@ -150,8 +150,8 @@ describe("markdown parser", () => {
     it("is anchored on the frontmatter, where the title actually is", () => {
       const tree = parse("---\ntitle: A\n---\n\n## Overview\n");
       const root = firstSection(tree);
-      expect(root.headingPosition?.start.line).toBe(1);
-      expect(root.headingPosition?.start.offset).toBe(0);
+      expect(root.titlePosition?.start.line).toBe(1);
+      expect(root.titlePosition?.start.offset).toBe(0);
     });
 
     it("does not displace a real H1", () => {
@@ -188,7 +188,7 @@ describe("markdown parser", () => {
     it("takes the content before the first heading with it", () => {
       const tree = parse("---\ntitle: A\n---\n\nLead prose.\n\n## Overview\n");
       const root = firstSection(tree);
-      expect(root.content.map((n) => n.kind)).toEqual(["paragraph"]);
+      expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
       expect(root.sections.map((s) => s.title)).toEqual(["Overview"]);
     });
   });
@@ -201,7 +201,7 @@ describe("markdown parser", () => {
 
   it("excludes the frontmatter block from section content", () => {
     const tree = parse("---\ntype: how-to\n---\n\n# A\n\npara\n");
-    expect(firstSection(tree).content.map((n) => n.kind)).toEqual(["paragraph"]);
+    expect(firstSection(tree).children.map((n) => n.kind)).toEqual(["paragraph"]);
   });
 });
 
@@ -216,7 +216,7 @@ describe("mdx parser", () => {
   // separate processors selected by extension.
   it("leaves a literal brace alone in Markdown", () => {
     const tree = parse("# A\n\nUse {placeholder} here.\n");
-    const content = firstSection(tree).content;
+    const content = firstSection(tree).children;
     expect(at(content, 0, "first content node").text).toBe(
       "Use {placeholder} here.",
     );
@@ -251,8 +251,9 @@ describe("parser registry", () => {
   });
 
   // The list is exactly the formats the tool reads. A row carries a name, a
-  // label and extensions, and no state: a listed format is one that is read.
-  // Asserted exhaustively, so dropping a parser fails here.
+  // label, extensions, and the content kinds it emits, and no state beside
+  // that: a listed format is one that is read. Asserted exhaustively, so
+  // dropping a parser fails here.
   it("lists every format it reads, and no state beside it", () => {
     const formats = listFormats();
     expect(formats.map((f) => f.name).sort()).toEqual([
@@ -267,9 +268,13 @@ describe("parser registry", () => {
       expect(format.extensions.length, format.name).toBeGreaterThan(0);
       expect(Object.keys(format).sort(), format.name).toEqual([
         "extensions",
+        "kinds",
         "label",
         "name",
       ]);
+      // No parser emits the wider vocabulary yet - every format's own kinds
+      // are exactly the three every content model has always had.
+      expect(format.kinds, format.name).toEqual(["paragraph", "codeBlock", "list"]);
       expect(parserByName(format.name)?.name).toBe(format.name);
     }
   });

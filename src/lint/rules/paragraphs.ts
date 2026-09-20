@@ -16,7 +16,7 @@ export function checkParagraphs(
   section: SectionNode,
   rule: ParagraphsRule | undefined
 ): Finding[] {
-  return checkParagraphsIn(section.content, rule, sectionContext(section));
+  return checkParagraphsIn(section.children, rule, sectionContext(section));
 }
 
 /**

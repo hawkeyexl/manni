@@ -45,8 +45,8 @@ function paragraph(text: string, line = 10): ParagraphNode {
   return { kind: "paragraph", text, position: pos(line) };
 }
 
-function code(text = "npm install", line = 20, lang = "bash"): CodeNode {
-  return { kind: "code", text, lang, position: pos(line) };
+function code(text = "npm install", line = 20, language = "bash"): CodeNode {
+  return { kind: "codeBlock", text, language, position: pos(line) };
 }
 
 function listItem(
@@ -54,7 +54,7 @@ function listItem(
   line = 30,
   children: ContentNode[] = []
 ): ListItemNode {
-  return { text, position: pos(line), children };
+  return { kind: "listItem", text, position: pos(line), children };
 }
 
 function list(items: ListItemNode[], line = 30): ListNode {
@@ -68,7 +68,7 @@ function list(items: ListItemNode[], line = 30): ListNode {
 }
 
 function section(
-  content: ContentNode[],
+  children: ContentNode[],
   overrides: Partial<SectionNode> = {}
 ): SectionNode {
   return {
@@ -77,9 +77,9 @@ function section(
     level: 2,
     order: 1,
     parentSlug: null,
-    headingPosition: pos(HEADING_LINE),
+    titlePosition: pos(HEADING_LINE),
     position: pos(SECTION_LINE),
-    content,
+    children,
     sections: [],
     ...overrides,
   };
@@ -172,7 +172,7 @@ describe("checkHeading", () => {
   });
 
   it("anchors to the section when there is no heading of its own", () => {
-    const lead = section([], { headingPosition: null, title: "" });
+    const lead = section([], { titlePosition: null, title: "" });
     const findings = checkHeading(lead, { const: "Overview" });
 
     expect(findings[0]?.position).toEqual(pos(SECTION_LINE));
@@ -524,7 +524,7 @@ describe("groupRuns", () => {
       list([listItem("y", 14)], 14),
     ]);
 
-    expect(runs.map((run) => run.kind)).toEqual(["paragraph", "code", "list"]);
+    expect(runs.map((run) => run.kind)).toEqual(["paragraph", "codeBlock", "list"]);
     expect(runs[0]?.nodes).toHaveLength(2);
     expect(runs[0]?.position).toEqual({
       start: pos(10).start,
@@ -545,7 +545,7 @@ describe("groupRuns", () => {
 
     expect(runs.map((run) => run.kind)).toEqual([
       "paragraph",
-      "code",
+      "codeBlock",
       "paragraph",
     ]);
   });

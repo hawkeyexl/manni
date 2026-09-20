@@ -16,7 +16,7 @@ import { extractFrontmatter } from "../../meta/index.js";
 import type { DocumentParser, DocumentTree } from "../types.js";
 import { LintError } from "../types.js";
 import { errorMessage } from "../../shared/errors.js";
-import { documentEnd, toBlocks } from "./mdast.js";
+import { documentEnd, toFragments } from "./mdast.js";
 import { sectionize } from "./sectionize.js";
 import { fencedPosition as frontmatterPosition, withMetadataTitle as withFrontmatterTitle } from "./metadata.js";
 
@@ -58,7 +58,7 @@ function parseWith(
   }
 
   const meta = extractFrontmatter(content, format);
-  const tree = root as Parameters<typeof toBlocks>[0];
+  const tree = root as Parameters<typeof toFragments>[0];
 
   const frontmatter = meta.present ? meta.data : null;
   const metaPosition = frontmatterPosition(content);
@@ -69,7 +69,7 @@ function parseWith(
     frontmatter,
     frontmatterPosition: metaPosition,
     sections: sectionize(
-      withFrontmatterTitle(toBlocks(tree), frontmatter, metaPosition),
+      withFrontmatterTitle(toFragments(tree), frontmatter, metaPosition),
       documentEnd(tree),
     ),
   };
@@ -78,6 +78,7 @@ function parseWith(
 export const markdownParser: DocumentParser = {
   name: "markdown",
   label: "Markdown",
+  kinds: ["paragraph", "codeBlock", "list"],
   extensions: [".md", ".markdown"],
   parse: (content, filePath) =>
     parseWith(markdownProcessor, "markdown", content, filePath),
@@ -86,6 +87,7 @@ export const markdownParser: DocumentParser = {
 export const mdxParser: DocumentParser = {
   name: "mdx",
   label: "MDX",
+  kinds: ["paragraph", "codeBlock", "list"],
   extensions: [".mdx"],
   parse: (content, filePath) => parseWith(mdxProcessor, "mdx", content, filePath),
 };

@@ -27,7 +27,7 @@ function section(sections: SectionNode[], title: string): SectionNode {
 /** The first content node of the first section, which the code cases assert on. */
 function firstContent(tree: ReturnType<typeof parse>) {
   const root = at(tree.sections, 0, "top-level section");
-  return at(root.content, 0, "first content node");
+  return at(root.children, 0, "first content node");
 }
 
 /**
@@ -85,9 +85,9 @@ describe("html parser", () => {
       doc("<h1>A</h1><p>para</p><pre><code>code</code></pre><ul><li>one</li></ul>"),
     );
     const root = at(tree.sections, 0, "top-level section");
-    expect(root.content.map((n) => n.kind)).toEqual([
+    expect(root.children.map((n) => n.kind)).toEqual([
       "paragraph",
-      "code",
+      "codeBlock",
       "list",
     ]);
   });
@@ -105,7 +105,7 @@ describe("html parser", () => {
           "<hr>",
       ),
     );
-    expect(at(tree.sections, 0, "top-level section").content).toHaveLength(0);
+    expect(at(tree.sections, 0, "top-level section").children).toHaveLength(0);
   });
 
   it("descends through wrapper elements without emitting them", () => {
@@ -118,14 +118,14 @@ describe("html parser", () => {
     );
     expect(tree.sections.map((s) => s.title)).toEqual(["A"]);
     const root = at(tree.sections, 0, "top-level section");
-    expect(root.content.map((n) => n.kind)).toEqual(["paragraph"]);
+    expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
   });
 
   it("descends into unknown elements, so a custom wrapper does not hide content", () => {
     const tree = parse(doc("<my-callout><h2>Inside</h2><p>text</p></my-callout>"));
     const root = at(tree.sections, 0, "top-level section");
     expect(root.title).toBe("Inside");
-    expect(root.content.map((n) => n.kind)).toEqual(["paragraph"]);
+    expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
   });
 
   // Descending into an element already emitted as content would emit its prose
@@ -135,8 +135,8 @@ describe("html parser", () => {
       doc("<h1>A</h1><pre><code>x</code></pre><ul><li><p>item</p></li></ul>"),
     );
     const root = at(tree.sections, 0, "top-level section");
-    const kinds = root.content.map((n) => n.kind);
-    expect(kinds).toEqual(["code", "list"]);
+    const kinds = root.children.map((n) => n.kind);
+    expect(kinds).toEqual(["codeBlock", "list"]);
     // The list item's paragraph belongs to the item, not to the section.
     expect(kinds.filter((k) => k === "paragraph")).toHaveLength(0);
   });
@@ -145,7 +145,7 @@ describe("html parser", () => {
     const tree = parse(
       doc("<h1>A</h1><ul><li>one</li><li>two</li></ul><ol><li>first</li></ol>"),
     );
-    const content = at(tree.sections, 0, "top-level section").content;
+    const content = at(tree.sections, 0, "top-level section").children;
     const [unordered, ordered] = content as [ListNode, ListNode];
     expect(unordered).toMatchObject({ kind: "list", ordered: false });
     expect(unordered.items.map((i) => i.text)).toEqual(["one", "two"]);
@@ -164,7 +164,7 @@ describe("html parser", () => {
     const list = firstContent(tree) as ListNode;
     expect(at(list.items, 0, "first list item").children.map((c) => c.kind)).toEqual([
       "paragraph",
-      "code",
+      "codeBlock",
       "list",
     ]);
   });
@@ -173,17 +173,17 @@ describe("html parser", () => {
     const onCode = firstContent(
       parse(doc('<h1>A</h1><pre><code class="language-bash">ls -la</code></pre>')),
     ) as CodeNode;
-    expect(onCode).toMatchObject({ kind: "code", lang: "bash", text: "ls -la" });
+    expect(onCode).toMatchObject({ kind: "codeBlock", language: "bash", text: "ls -la" });
 
     const onPre = firstContent(
       parse(doc('<h1>A</h1><pre class="language-yaml">a: 1</pre>')),
     ) as CodeNode;
-    expect(onPre).toMatchObject({ kind: "code", lang: "yaml", text: "a: 1" });
+    expect(onPre).toMatchObject({ kind: "codeBlock", language: "yaml", text: "a: 1" });
 
     const none = firstContent(
       parse(doc("<h1>A</h1><pre><code>plain</code></pre>")),
     ) as CodeNode;
-    expect(none.lang).toBeUndefined();
+    expect(none.language).toBeUndefined();
   });
 
   it("keeps code whitespace but drops the newline the markup added", () => {
@@ -226,8 +226,8 @@ describe("html parser", () => {
       const html = doc("<h1>Title</h1>\n<p>Body text.</p>");
       const tree = parse(html);
       const root = at(tree.sections, 0, "top-level section");
-      const heading = defined(root.headingPosition, "heading position");
-      const paragraph = at(root.content, 0, "first content node").position;
+      const heading = defined(root.titlePosition, "heading position");
+      const paragraph = at(root.children, 0, "first content node").position;
 
       expect(html.slice(heading.start.offset, heading.end.offset)).toBe(
         "<h1>Title</h1>",
@@ -250,7 +250,7 @@ describe("html parser", () => {
       const a = at(tree.sections, 0, "first top-level section");
       const b = at(tree.sections, 1, "second top-level section");
       expect(a.position.end.offset).toBe(b.position.start.offset);
-      expect(at(a.content, 0, "first content node").position.end.offset).toBeLessThan(
+      expect(at(a.children, 0, "first content node").position.end.offset).toBeLessThan(
         a.position.end.offset,
       );
     });
@@ -286,7 +286,7 @@ describe("html parser", () => {
       expect(tree.frontmatterPosition?.start.line).toBe(1);
       expect(tree.frontmatterPosition?.start.offset).toBe(0);
       // The fence is metadata, not body text, so it is not content either.
-      expect(at(tree.sections, 0, "top-level section").content).toHaveLength(0);
+      expect(at(tree.sections, 0, "top-level section").children).toHaveLength(0);
     });
 
     it("reports no metadata when a page carries none", () => {
@@ -310,7 +310,7 @@ describe("html parser", () => {
     it("is anchored on the head, where the title actually is", () => {
       const tree = parse(doc("<h2>Overview</h2>", "<title>A</title>"));
       const root = at(tree.sections, 0, "top-level section");
-      expect(defined(root.headingPosition, "heading position").start.line).toBe(3);
+      expect(defined(root.titlePosition, "heading position").start.line).toBe(3);
     });
 
     it("does not displace a real H1", () => {
@@ -330,7 +330,7 @@ describe("html parser", () => {
     it("takes the content before the first heading with it", () => {
       const tree = parse(doc("<p>Lead prose.</p><h2>Overview</h2>", "<title>A</title>"));
       const root = at(tree.sections, 0, "top-level section");
-      expect(root.content.map((n) => n.kind)).toEqual(["paragraph"]);
+      expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
       expect(root.sections.map((s) => s.title)).toEqual(["Overview"]);
     });
   });
@@ -358,7 +358,7 @@ describe("html parser", () => {
       const tree = htmlParser.parse("<h1>A</h1>\n<p>b</p>\n", "fragment.html");
       const root = at(tree.sections, 0, "top-level section");
       expect(root.title).toBe("A");
-      expect(root.content.map((n) => n.kind)).toEqual(["paragraph"]);
+      expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
       expect(tree.frontmatterPosition).toBeNull();
     });
   });
@@ -392,7 +392,7 @@ describe("the how-to fixtures against tgdp:how-to:1.6", () => {
     const source = await fixture("how-to.html");
     const tree = htmlParser.parse(source, "how-to.html");
     const seeAlso = section(tree.sections, "See also");
-    const span = defined(seeAlso.headingPosition, "heading position");
+    const span = defined(seeAlso.titlePosition, "heading position");
     expect(source.slice(span.start.offset, span.end.offset)).toBe("<h2>See also</h2>");
     const line = at(source.split("\n"), span.start.line - 1, "heading source line");
     expect(line.trim()).toBe("<h2>See also</h2>");

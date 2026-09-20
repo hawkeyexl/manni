@@ -12,7 +12,7 @@
  * format the tool does not read. An extension no parser claims is skipped by
  * name, never parsed as Markdown the way the pre-rewrite `inferFileType` did.
  */
-import type { DocumentParser } from "../types.js";
+import type { ContentKind, DocumentParser } from "../types.js";
 import { markdownParser, mdxParser } from "./markdown.js";
 import { htmlParser } from "./html.js";
 import { rstParser } from "./rst.js";
@@ -55,10 +55,12 @@ export function listFormats(): {
   name: string;
   label: string;
   extensions: string[];
+  kinds: ContentKind[];
 }[] {
   return PARSERS.map((p) => ({
     name: p.name,
     label: p.label,
     extensions: p.extensions,
+    kinds: p.kinds,
   }));
 }

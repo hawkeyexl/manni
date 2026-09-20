@@ -15,6 +15,7 @@
  */
 import pkg from "../../../package.json" with { type: "json" };
 import { listFormats } from "../parsers/index.js";
+import type { ContentKind } from "../types.js";
 import {
   LINT_JOBS,
   resolveLintRun,
@@ -28,6 +29,8 @@ export interface FormatInfo {
   name: string;
   label: string;
   extensions: string[];
+  /** The content kinds this format's parser actually emits today. */
+  kinds: ContentKind[];
 }
 
 /** One job, and the tool that would perform it on this run. */

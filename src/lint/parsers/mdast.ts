@@ -10,7 +10,7 @@
 import { toString as mdastToString } from "mdast-util-to-string";
 import type { Position } from "../types.js";
 import type { ContentNode, ListItemNode } from "../types.js";
-import type { Block } from "./sectionize.js";
+import type { Fragment } from "./sectionize.js";
 
 /** Minimal structural view of an mdast node; avoids depending on @types/mdast shapes. */
 interface MdNode {
@@ -55,10 +55,10 @@ function toContentNode(node: MdNode): ContentNode | null {
       };
     case "code":
       return {
-        kind: "code",
+        kind: "codeBlock",
         position: positionOf(node),
         text: node.value ?? "",
-        ...(node.lang ? { lang: node.lang } : {}),
+        ...(node.lang ? { language: node.lang } : {}),
       };
     case "list":
       return {
@@ -70,6 +70,7 @@ function toContentNode(node: MdNode): ContentNode | null {
           .filter((child) => child.type === "listItem")
           .map(
             (item): ListItemNode => ({
+              kind: "listItem",
               position: positionOf(item),
               text: mdastToString(item as never),
               children: (item.children ?? [])
@@ -83,15 +84,15 @@ function toContentNode(node: MdNode): ContentNode | null {
   }
 }
 
-/** Flatten an mdast root's direct children into ordered blocks. */
-export function toBlocks(root: MdNode): Block[] {
-  const blocks: Block[] = [];
+/** Flatten an mdast root's direct children into ordered fragments. */
+export function toFragments(root: MdNode): Fragment[] {
+  const fragments: Fragment[] = [];
   for (const node of root.children ?? []) {
     // Frontmatter is metadata, not body content; the caller reads it separately.
     if (node.type === "yaml" || node.type === "toml") continue;
 
     if (node.type === "heading") {
-      blocks.push({
+      fragments.push({
         type: "heading",
         level: node.depth ?? 1,
         title: mdastToString(node),
@@ -101,9 +102,9 @@ export function toBlocks(root: MdNode): Block[] {
     }
 
     const content = toContentNode(node);
-    if (content) blocks.push({ type: "content", node: content });
+    if (content) fragments.push({ type: "content", node: content });
   }
-  return blocks;
+  return fragments;
 }
 
 /** End of the document, for closing the final sections. */

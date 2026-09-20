@@ -299,9 +299,12 @@ export function renderTemplates(
   return lines.join("\n");
 }
 
-/** One input format as `markdown  Markdown (.md, .markdown)`. */
+/** One input format as `markdown  Markdown (.md, .markdown)  kinds: paragraph, codeBlock, list`. */
 function formatLine(c: Colors, entry: FormatInfo): string {
-  return `      ${c.cyan(entry.name)}  ${entry.label} (${entry.extensions.join(", ")})`;
+  return (
+    `      ${c.cyan(entry.name)}  ${entry.label} (${entry.extensions.join(", ")})` +
+    `  ${c.dim(`kinds: ${entry.kinds.join(", ")}`)}`
+  );
 }
 
 /**

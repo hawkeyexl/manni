@@ -15,7 +15,7 @@ export function checkCodeBlocks(
   section: SectionNode,
   rule: CodeBlocksRule | undefined
 ): Finding[] {
-  return checkCodeBlocksIn(section.content, rule, sectionContext(section));
+  return checkCodeBlocksIn(section.children, rule, sectionContext(section));
 }
 
 /**

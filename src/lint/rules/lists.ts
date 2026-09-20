@@ -17,7 +17,7 @@ export function checkLists(
   section: SectionNode,
   rule: ListsRule | undefined
 ): Finding[] {
-  return checkListsIn(section.content, rule, sectionContext(section));
+  return checkListsIn(section.children, rule, sectionContext(section));
 }
 
 /**

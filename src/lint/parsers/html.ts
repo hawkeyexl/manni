@@ -2,7 +2,7 @@
  * HTML parser: parse5's DOM -> generic blocks -> the shared `sectionize` fold.
  *
  * The job is the same one `mdast.ts` does for Markdown - flatten a format's own
- * tree into ordered `Block`s - and the same skipping discipline applies. A
+ * tree into ordered `Fragment`s - and the same skipping discipline applies. A
  * `<blockquote>` is not a paragraph and a `<table>` is not a list; counting
  * either as one would make `paragraphs: {max: 3}` fail pages a reader would say
  * satisfy it.
@@ -32,7 +32,7 @@ import type {
   ListItemNode,
   Position,
 } from "../types.js";
-import type { Block } from "./sectionize.js";
+import type { Fragment } from "./sectionize.js";
 import { sectionize } from "./sectionize.js";
 import { fencedPosition, withMetadataTitle } from "./metadata.js";
 
@@ -202,10 +202,10 @@ function codeNode(pre: Element): CodeNode {
   const lang = langOf(pre) ?? (inner ? langOf(inner) : undefined);
   const text = rawText(pre).replace(/^\r?\n/, "").replace(/\s+$/, "");
   return {
-    kind: "code",
+    kind: "codeBlock",
     position: positionOf(pre),
     text,
-    ...(lang ? { lang } : {}),
+    ...(lang ? { language: lang } : {}),
   };
 }
 
@@ -218,6 +218,7 @@ function listItems(list: Element): ListItemNode[] {
     if (!defaultTreeAdapter.isElementNode(child)) continue;
     if (tagOf(child) !== "li") continue;
     items.push({
+      kind: "listItem",
       position: positionOf(child),
       text: flatText(child),
       children: itemChildren(child),
@@ -363,7 +364,7 @@ function contentIn(parent: ParentNode): ContentNode[] {
  *    point of writing it - honoring it changes nothing. It could only ever
  *    matter when it disagrees, and there the headings are what the reader sees.
  */
-function walk(parent: ParentNode, out: Block[]): void {
+function walk(parent: ParentNode, out: Fragment[]): void {
   for (const child of parent.childNodes) {
     if (!defaultTreeAdapter.isElementNode(child)) continue;
     const tag = tagOf(child);
@@ -476,8 +477,8 @@ function findHead(doc: DefaultTreeAdapterTypes.Document): Element | undefined {
 
 function parseHtml(content: string, filePath: string): DocumentTree {
   const doc = parse(content, { sourceCodeLocationInfo: true });
-  const blocks: Block[] = [];
-  walk(doc, blocks);
+  const fragments: Fragment[] = [];
+  walk(doc, fragments);
 
   const { frontmatter, position } = metadataOf(content, filePath, doc);
 
@@ -487,7 +488,7 @@ function parseHtml(content: string, filePath: string): DocumentTree {
     frontmatter,
     frontmatterPosition: position,
     sections: sectionize(
-      withMetadataTitle(blocks, frontmatter, position),
+      withMetadataTitle(fragments, frontmatter, position),
       documentEnd(content),
     ),
   };
@@ -496,6 +497,7 @@ function parseHtml(content: string, filePath: string): DocumentTree {
 export const htmlParser: DocumentParser = {
   name: "html",
   label: "HTML",
+  kinds: ["paragraph", "codeBlock", "list"],
   extensions: [".html", ".htm"],
   parse: parseHtml,
 };

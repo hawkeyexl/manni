@@ -70,7 +70,7 @@ export function checkSequence(
   if (!rule) return findings;
 
   const ctx = sectionContext(section);
-  const runs = groupRuns(section.content);
+  const runs = groupRuns(section.children);
 
   if (rule.length !== runs.length) {
     findings.push({
@@ -146,7 +146,7 @@ function sequenceKeyOf(kind: ContentKind): SequenceKey | null {
   switch (kind) {
     case "paragraph":
       return "paragraphs";
-    case "code":
+    case "codeBlock":
       return "code_blocks";
     case "list":
       return "lists";

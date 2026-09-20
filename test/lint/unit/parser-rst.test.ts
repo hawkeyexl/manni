@@ -160,7 +160,7 @@ describe("rst parser: section levels", () => {
     expect(tree.sections.map((s) => s.title)).toEqual([""]);
     const lead = at(tree.sections, 0, "lead section");
     expect(lead.level).toBe(0);
-    expect(lead.content.map((c) => c.text)).toEqual([
+    expect(lead.children.map((c) => c.text)).toEqual([
       "Overview of the thing",
       "Body text.",
     ]);
@@ -170,7 +170,7 @@ describe("rst parser: section levels", () => {
   it("skips a transition", () => {
     const tree = parse(["A", "=", "", "before", "", "-----", "", "after", ""].join("\n"));
     const a = at(tree.sections, 0, "section A");
-    expect(a.content.map((c) => c.text)).toEqual(["before", "after"]);
+    expect(a.children.map((c) => c.text)).toEqual(["before", "after"]);
   });
 });
 
@@ -193,9 +193,9 @@ describe("rst parser: content", () => {
       ].join("\n"),
     );
     const a = at(tree.sections, 0, "section A");
-    expect(a.content.map((c) => c.kind)).toEqual([
+    expect(a.children.map((c) => c.kind)).toEqual([
       "paragraph",
-      "code",
+      "codeBlock",
       "list",
     ]);
   });
@@ -205,7 +205,7 @@ describe("rst parser: content", () => {
       ["A", "=", "", "Run the ``lint`` command", "on **every** file.", ""].join("\n"),
     );
     const a = at(tree.sections, 0, "section A");
-    expect(at(a.content, 0, "paragraph").text).toBe(
+    expect(at(a.children, 0, "paragraph").text).toBe(
       "Run the lint command\non every file.",
     );
   });
@@ -216,21 +216,21 @@ describe("rst parser: content", () => {
     const tree = parse(
       ["A", "=", "", "Run this::", "", "   widget keys rotate", "   --id abc123", ""].join("\n"),
     );
-    const content = at(tree.sections, 0, "section A").content;
+    const content = at(tree.sections, 0, "section A").children;
     const para = at(content, 0, "paragraph");
     const code = at(content, 1, "literal block");
     expect(para).toMatchObject({ kind: "paragraph", text: "Run this:" });
     expect(code).toMatchObject({
-      kind: "code",
+      kind: "codeBlock",
       text: "widget keys rotate\n--id abc123",
     });
-    expect((code as CodeNode).lang).toBeUndefined();
+    expect((code as CodeNode).language).toBeUndefined();
   });
 
   it("drops a paragraph that is only the `::` marker", () => {
     const tree = parse(["A", "=", "", "::", "", "   just code", ""].join("\n"));
     const a = at(tree.sections, 0, "section A");
-    expect(a.content.map((c) => c.kind)).toEqual(["code"]);
+    expect(a.children.map((c) => c.kind)).toEqual(["codeBlock"]);
   });
 
   it("takes the language from a code directive and drops its options", () => {
@@ -246,10 +246,10 @@ describe("rst parser: content", () => {
         "",
       ].join("\n"),
     );
-    const content = at(tree.sections, 0, "section A").content;
+    const content = at(tree.sections, 0, "section A").children;
     expect(at(content, 0, "code block")).toMatchObject({
-      kind: "code",
-      lang: "python",
+      kind: "codeBlock",
+      language: "python",
       text: "print('hi')",
     });
   });
@@ -258,7 +258,7 @@ describe("rst parser: content", () => {
     const tree = parse(
       ["A", "=", "", "* one", "* two", "", "1. first", "2. second", ""].join("\n"),
     );
-    const content = at(tree.sections, 0, "section A").content as ListNode[];
+    const content = at(tree.sections, 0, "section A").children as ListNode[];
     const bullets = at(content, 0, "bullet list");
     const steps = at(content, 1, "enumerated list");
     expect(bullets).toMatchObject({ kind: "list", ordered: false });
@@ -269,14 +269,14 @@ describe("rst parser: content", () => {
 
   it("reads an auto-enumerated list as ordered", () => {
     const tree = parse(["A", "=", "", "#. first", "#. second", ""].join("\n"));
-    const content = at(tree.sections, 0, "section A").content;
+    const content = at(tree.sections, 0, "section A").children;
     expect(at(content, 0, "list")).toMatchObject({ kind: "list", ordered: true });
   });
 
   // Items separated by blank lines are one list, not one list per item.
   it("keeps blank-separated items in a single list", () => {
     const tree = parse(["A", "=", "", "* one", "", "* two", "", "* three", ""].join("\n"));
-    const content = at(tree.sections, 0, "section A").content;
+    const content = at(tree.sections, 0, "section A").children;
     const list = at(content, 0, "bullet list") as ListNode;
     expect(content).toHaveLength(1);
     expect(list.items).toHaveLength(3);
@@ -296,11 +296,11 @@ describe("rst parser: content", () => {
         "",
       ].join("\n"),
     );
-    const content = at(tree.sections, 0, "section A").content;
+    const content = at(tree.sections, 0, "section A").children;
     const list = at(content, 0, "enumerated list") as ListNode;
     const first = at(list.items, 0, "list item");
     const second = at(list.items, 1, "list item");
-    expect(first.children.map((c) => c.kind)).toEqual(["paragraph", "code"]);
+    expect(first.children.map((c) => c.kind)).toEqual(["paragraph", "codeBlock"]);
     expect(at(first.children, 1, "nested code block")).toMatchObject({
       text: "widget do",
     });
@@ -309,7 +309,7 @@ describe("rst parser: content", () => {
 
   it("nests a sublist inside its item", () => {
     const tree = parse(["A", "=", "", "* one", "", "  * inner", "", "* two", ""].join("\n"));
-    const content = at(tree.sections, 0, "section A").content;
+    const content = at(tree.sections, 0, "section A").children;
     const list = at(content, 0, "bullet list") as ListNode;
     expect(list.items).toHaveLength(2);
     expect(at(list.items, 0, "list item").children.map((c) => c.kind)).toEqual([
@@ -350,7 +350,7 @@ describe("rst parser: skipping", () => {
       ].join("\n"),
     );
     const a = at(tree.sections, 0, "section A");
-    expect(a.content.map((c) => c.text)).toEqual([
+    expect(a.children.map((c) => c.text)).toEqual([
       "Real paragraph.",
       "Second real paragraph.",
     ]);
@@ -385,7 +385,7 @@ describe("rst parser: skipping", () => {
       ].join("\n"),
     );
     const a = at(tree.sections, 0, "section A");
-    expect(a.content.map((c) => c.text)).toEqual([
+    expect(a.children.map((c) => c.text)).toEqual([
       "Real paragraph.",
       "Second real paragraph.",
     ]);
@@ -401,7 +401,7 @@ describe("rst parser: skipping", () => {
     expect(tree.sections).toHaveLength(1);
     const title = at(tree.sections, 0, "title section");
     expect(title.level).toBe(1);
-    expect(title.content.map((c) => c.text)).toEqual(["Body."]);
+    expect(title.children.map((c) => c.text)).toEqual(["Body."]);
   });
 });
 
@@ -412,14 +412,14 @@ describe("rst parser: positions", () => {
     const first = at(tree.sections, 0, "title section");
 
     // The heading spans the title line through its underline.
-    expect(first.headingPosition).toMatchObject({
+    expect(first.titlePosition).toMatchObject({
       start: { line: 1, column: 1, offset: 0 },
       end: { line: 2, column: 6 },
     });
-    const heading = defined(first.headingPosition, "heading position");
+    const heading = defined(first.titlePosition, "heading position");
     expect(rst.slice(0, heading.end.offset)).toBe("Title\n=====");
 
-    const para = at(first.content, 0, "paragraph");
+    const para = at(first.children, 0, "paragraph");
     expect(para.position.start).toMatchObject({ line: 4, column: 1 });
     expect(rst.slice(para.position.start.offset, para.position.end.offset)).toBe(
       "First paragraph.",
@@ -429,7 +429,7 @@ describe("rst parser: positions", () => {
   it("starts an indented block at its own column", () => {
     const rst = ["A", "=", "", "Code::", "", "   indented", ""].join("\n");
     const a = at(parse(rst).sections, 0, "section A");
-    const code = at(a.content, 1, "indented literal block");
+    const code = at(a.children, 1, "indented literal block");
     expect(code.position.start).toMatchObject({ line: 6, column: 4 });
     expect(rst.slice(code.position.start.offset, code.position.end.offset)).toBe("indented");
   });
@@ -440,7 +440,7 @@ describe("rst parser: positions", () => {
     const a = at(tree.sections, 0, "section A");
     const b = at(tree.sections, 1, "section B");
     expect(a.position.end.offset).toBe(b.position.start.offset);
-    expect(at(a.content, 0, "paragraph").position.end.offset).toBeLessThan(
+    expect(at(a.children, 0, "paragraph").position.end.offset).toBeLessThan(
       a.position.end.offset,
     );
     expect(b.position.end.offset).toBe(rst.length);
@@ -449,7 +449,7 @@ describe("rst parser: positions", () => {
   it("keeps line numbers exact across CRLF", () => {
     const tree = parse("Title\r\n=====\r\n\r\nPara.\r\n");
     const title = at(tree.sections, 0, "title section");
-    expect(at(title.content, 0, "paragraph").position.start.line).toBe(4);
+    expect(at(title.children, 0, "paragraph").position.start.line).toBe(4);
     expect(title.title).toBe("Title");
   });
 });
@@ -503,8 +503,8 @@ describe("rst parser: frontmatter", () => {
     );
     expect(tree.sections.map((s) => [s.title, s.level])).toEqual([["Rotate an API key", 1]]);
     const synthetic = at(tree.sections, 0, "synthetic H1 section");
-    expect(synthetic.headingPosition).toEqual(tree.frontmatterPosition);
-    expect(synthetic.content.map((c) => c.text)).toEqual(["Body prose."]);
+    expect(synthetic.titlePosition).toEqual(tree.frontmatterPosition);
+    expect(synthetic.children.map((c) => c.text)).toEqual(["Body prose."]);
   });
 
   it("does not prepend one when the body already has a level-1 section", () => {

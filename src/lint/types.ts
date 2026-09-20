@@ -44,9 +44,26 @@ export interface Position {
  * Content kinds a section can hold, named generically so a rule written once
  * works on every format. Each parser maps its own AST onto these: mdast
  * `paragraph`/`code`/`list`, Asciidoctor `paragraph`/`listing`/`ulist`|`olist`,
- * HTML `<p>`/`<pre>`/`<ul>`.
+ * HTML `<p>`/`<pre>`/`<ul>` - all three onto `paragraph`/`codeBlock`/`list`.
+ *
+ * The vocabulary is wider than any one parser emits today. `table`,
+ * `admonition`, `image`, `blockquote`, `definitionList`, and `element` are
+ * declared here, and in each `DocumentParser.kinds`, only once a parser
+ * actually produces them - see `src/lint/parsers/index.ts`.
  */
-export type ContentKind = "paragraph" | "code" | "list";
+export type ContentKind =
+  | "paragraph"
+  | "codeBlock"
+  | "list"
+  | "table"
+  | "tableRow"
+  | "tableCell"
+  | "admonition"
+  | "image"
+  | "blockquote"
+  | "definitionList"
+  | "definitionItem"
+  | "element";
 
 export interface ContentNodeBase {
   kind: ContentKind;
@@ -60,12 +77,15 @@ export interface ParagraphNode extends ContentNodeBase {
 }
 
 export interface CodeNode extends ContentNodeBase {
-  kind: "code";
-  /** Info string / language, when the format carries one. */
-  lang?: string;
+  kind: "codeBlock";
+  /** Language, when the format carries one. */
+  language?: string;
+  /** The info-string tail after the language, when the format carries one. */
+  fenceInfo?: string;
 }
 
 export interface ListItemNode {
+  kind: "listItem";
   position: Position;
   text: string;
   /** Nested content, so item-level paragraph/code/list rules can run. */
@@ -78,7 +98,77 @@ export interface ListNode extends ContentNodeBase {
   items: ListItemNode[];
 }
 
-export type ContentNode = ParagraphNode | CodeNode | ListNode;
+export interface TableCellNode extends ContentNodeBase {
+  kind: "tableCell";
+  children: ContentNode[];
+}
+
+export interface TableRowNode extends ContentNodeBase {
+  kind: "tableRow";
+  header: boolean;
+  children: TableCellNode[];
+}
+
+export interface TableNode extends ContentNodeBase {
+  kind: "table";
+  children: TableRowNode[];
+}
+
+/** `note`/`tip`/`important`/`caution`/`warning`/`danger` - an admonition's own flavor. */
+export interface AdmonitionNode extends ContentNodeBase {
+  kind: "admonition";
+  variant: "note" | "tip" | "important" | "caution" | "warning" | "danger";
+  children: ContentNode[];
+}
+
+export interface ImageNode extends ContentNodeBase {
+  kind: "image";
+  url: string;
+  alt: string;
+  title?: string;
+}
+
+export interface BlockquoteNode extends ContentNodeBase {
+  kind: "blockquote";
+  children: ContentNode[];
+}
+
+export interface DefinitionItemNode {
+  kind: "definitionItem";
+  position: Position;
+  text: string;
+  term: string;
+  definition: ContentNode[];
+}
+
+export interface DefinitionListNode extends ContentNodeBase {
+  kind: "definitionList";
+  children: DefinitionItemNode[];
+}
+
+/**
+ * A named wrapper - an MDX/JSX component today, and where HTML and DITA may
+ * eventually anchor a custom element. Its children are its own content, never
+ * the enclosing section's: a rule reading a section's `children` must not see
+ * inside an `<Element>` it did not ask about.
+ */
+export interface ElementNode extends ContentNodeBase {
+  kind: "element";
+  name: string;
+  attributes?: Record<string, string | true>;
+  children: ContentNode[];
+}
+
+export type ContentNode =
+  | ParagraphNode
+  | CodeNode
+  | ListNode
+  | TableNode
+  | AdmonitionNode
+  | ImageNode
+  | BlockquoteNode
+  | DefinitionListNode
+  | ElementNode;
 
 /**
  * One section of a document, demarcated by a heading.
@@ -86,8 +176,8 @@ export type ContentNode = ParagraphNode | CodeNode | ListNode;
  * `slug`/`title`/`level`/`order`/`parentSlug` intentionally match manni kg's
  * `Section` (dockg/src/types.ts), so its graph can be built from this tree.
  *
- * `content` is in document order and is the single source of truth: the
- * paragraph/code/list counts every rule needs are queries over it, not
+ * `children` is in document order and is the single source of truth: the
+ * paragraph/codeBlock/list counts every rule needs are queries over it, not
  * separately maintained arrays.
  */
 export interface SectionNode {
@@ -101,12 +191,12 @@ export interface SectionNode {
   order: number;
   /** Slug of the enclosing section, or null at the top level. */
   parentSlug: string | null;
-  /** Span of the heading itself. Null for the implicit lead section. */
-  headingPosition: Position | null;
+  /** Span of the title itself. Null for the implicit lead section. */
+  titlePosition: Position | null;
   /** Span of the whole section: its heading through the last node before the next sibling heading. */
   position: Position;
   /** Direct content, in document order, excluding anything owned by a subsection. */
-  content: ContentNode[];
+  children: ContentNode[];
   /** Nested sections, in document order. */
   sections: SectionNode[];
 }
@@ -138,6 +228,13 @@ export interface DocumentParser {
   name: string;
   /** Human-readable label for `manni lint tools`. */
   label: string;
+  /**
+   * The content kinds this parser actually emits today. A capability
+   * declaration, not the full `ContentKind` vocabulary: a kind absent here is
+   * one no rule will ever see from this parser's trees, whatever the format
+   * could in principle represent.
+   */
+  kinds: ContentKind[];
   /** Lowercase file extensions this parser handles, incl. dot (e.g. ".md"). */
   extensions: string[];
   /**

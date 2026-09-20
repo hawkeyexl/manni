@@ -115,7 +115,7 @@ export function paragraphsOf(content: ContentNode[]): ParagraphNode[] {
 
 /** The code blocks in an ordered content list, in document order. */
 export function codeBlocksOf(content: ContentNode[]): CodeNode[] {
-  return content.filter((node): node is CodeNode => node.kind === "code");
+  return content.filter((node): node is CodeNode => node.kind === "codeBlock");
 }
 
 /** The lists in an ordered content list, in document order. */

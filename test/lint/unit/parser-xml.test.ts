@@ -115,9 +115,9 @@ describe("xml parser: vocabularies", () => {
   it("maps both vocabularies onto the same content kinds", () => {
     for (const doc of [DITA_DOC, DOCBOOK_DOC]) {
       const setup = section(parse(doc).sections, "Setup");
-      expect(setup.content.map((n) => n.kind)).toEqual([
+      expect(setup.children.map((n) => n.kind)).toEqual([
         "paragraph",
-        "code",
+        "codeBlock",
         "list",
       ]);
     }
@@ -132,7 +132,7 @@ describe("xml parser: vocabularies", () => {
 </section>`;
     const tree = parse(xml);
     const root = at(tree.sections, 0, "root section");
-    expect(root.content.map((n) => n.kind)).toEqual(["paragraph"]);
+    expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
   });
 
   it("lets one exclusive content element outweigh a root-name match", () => {
@@ -145,7 +145,7 @@ describe("xml parser: vocabularies", () => {
 </section>`;
     const tree = parse(xml);
     const root = at(tree.sections, 0, "root section");
-    expect(root.content.map((n) => n.kind)).toEqual(["paragraph"]);
+    expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
   });
 
   it("reads a bespoke schema from a caller-supplied vocabulary", () => {
@@ -178,8 +178,8 @@ describe("xml parser: vocabularies", () => {
     const tree = parseXml(xml, "acme.xml", [acme]);
     expect(outline(tree.sections)).toEqual(["Manual@1", "First@2"]);
     const first = section(tree.sections, "First");
-    expect(first.content.map((n) => n.kind)).toEqual(["paragraph", "code"]);
-    expect(first.content[1]).toMatchObject({ kind: "code", lang: "go" });
+    expect(first.children.map((n) => n.kind)).toEqual(["paragraph", "codeBlock"]);
+    expect(first.children[1]).toMatchObject({ kind: "codeBlock", language: "go" });
   });
 
   it("ships DITA and DocBook as the built-ins", () => {
@@ -227,7 +227,7 @@ describe("xml parser: nesting and the fold", () => {
 </topic>`;
     const tree = parse(xml);
     expect(outline(tree.sections)).toEqual(["Only@1"]);
-    expect(at(tree.sections, 0, "root section").content.map((n) => n.kind)).toEqual([
+    expect(at(tree.sections, 0, "root section").children.map((n) => n.kind)).toEqual([
       "paragraph",
       "paragraph",
     ]);
@@ -255,7 +255,7 @@ describe("xml parser: nesting and the fold", () => {
     const tree = parse(DITA_DOC);
     const root = at(tree.sections, 0, "root section");
     expect(root.level).toBe(1);
-    expect(root.headingPosition).not.toBeNull();
+    expect(root.titlePosition).not.toBeNull();
   });
 });
 
@@ -271,7 +271,7 @@ describe("xml parser: content", () => {
     <table><tgroup><tbody><row><entry><p>Nor this.</p></entry></row></tbody></tgroup></table>
   </body>
 </topic>`;
-    const content = at(parse(xml).sections, 0, "root section").content;
+    const content = at(parse(xml).sections, 0, "root section").children;
     expect(content.map((n) => n.kind)).toEqual(["paragraph"]);
     expect(at(content, 0, "paragraph").text).toBe("Real prose.");
   });
@@ -285,7 +285,7 @@ describe("xml parser: content", () => {
     <steps><step><cmd>c</cmd></step></steps>
   </body>
 </topic>`;
-    const lists = at(parse(xml).sections, 0, "root section").content;
+    const lists = at(parse(xml).sections, 0, "root section").children;
     expect(lists.map((n) => (n as { ordered: boolean }).ordered)).toEqual([
       false,
       true,
@@ -305,7 +305,7 @@ describe("xml parser: content", () => {
     </ol>
   </body>
 </topic>`;
-    const content = at(parse(xml).sections, 0, "root section").content;
+    const content = at(parse(xml).sections, 0, "root section").children;
     const list = at(content, 0, "list") as {
       items: { text: string; children: { kind: string }[] }[];
     };
@@ -313,7 +313,7 @@ describe("xml parser: content", () => {
     const item = at(list.items, 0, "list item");
     expect(item.children.map((c) => c.kind)).toEqual([
       "paragraph",
-      "code",
+      "codeBlock",
     ]);
     expect(item.text).toBe("Run it. ls");
   });
@@ -329,17 +329,17 @@ describe("xml parser: content", () => {
   </body>
 </topic>`;
     const code = at(
-      at(parse(xml).sections, 0, "root section").content,
+      at(parse(xml).sections, 0, "root section").children,
       0,
       "code block",
     ) as {
       kind: string;
-      lang?: string;
+      language?: string;
       text: string;
     };
-    expect(code.kind).toBe("code");
+    expect(code.kind).toBe("codeBlock");
     // `outputclass="language-bash"` is the DITA spelling of a fence's info string.
-    expect(code.lang).toBe("bash");
+    expect(code.language).toBe("bash");
     expect(code.text).toBe("      one\n        two");
   });
 
@@ -360,7 +360,7 @@ describe("xml parser: content", () => {
     const root = at(tree.sections, 0, "root section");
     expect(root.title).toBe("Wrapped");
     // <info> itself is metadata, so nothing inside it becomes content.
-    expect(root.content.map((n) => n.kind)).toEqual(["paragraph"]);
+    expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
   });
 });
 
@@ -378,7 +378,7 @@ describe("xml parser: positions", () => {
 
   /** The lone paragraph of the document above, in any spelling of it. */
   const paragraph = (source: string) =>
-    at(at(parse(source).sections, 0, "root section").content, 0, "paragraph");
+    at(at(parse(source).sections, 0, "root section").children, 0, "paragraph");
 
   it("reports 1-based line and column with a 0-based offset", () => {
     const para = paragraph(xml);
@@ -396,7 +396,7 @@ describe("xml parser: positions", () => {
   it("spans a heading from its container's start tag through its title", () => {
     const tree = parse(xml);
     const root = at(tree.sections, 0, "root section");
-    const heading = defined(root.headingPosition, "heading position");
+    const heading = defined(root.titlePosition, "heading position");
     expect(xml.slice(heading.start.offset, heading.end.offset)).toBe(
       "<topic>\n  <title>Only</title>",
     );

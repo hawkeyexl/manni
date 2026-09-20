@@ -85,7 +85,7 @@ describe("the repository's own templates", () => {
     expect(root.level).toBe(1);
     expect(root.title).toBe("Sample");
     // Anchored on the frontmatter, which is where the title actually is.
-    expect(root.headingPosition?.start.line).toBe(1);
+    expect(root.titlePosition?.start.line).toBe(1);
     expect(root.sections.map((s) => s.title)).toContain("Prerequisites");
   });
 

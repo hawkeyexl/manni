@@ -199,12 +199,12 @@ describe("manni lint (built bin)", () => {
       });
       expect(typeof rows[0].version).toBe("string");
       // Every format the tool reads, which is exactly what `--as` accepts. A
-      // row is a name, a label and its extensions, and nothing that implies a
-      // format in some other state.
+      // row is a name, a label, its extensions, and the content kinds it
+      // emits, and nothing that implies a format in some other state.
       const formats = rows[0].formats as Record<string, unknown>[];
       expect(formats.length).toBeGreaterThan(1);
       for (const format of formats) {
-        expect(Object.keys(format).sort()).toEqual(["extensions", "label", "name"]);
+        expect(Object.keys(format).sort()).toEqual(["extensions", "kinds", "label", "name"]);
       }
       expect(formats.some((f) => f.name === "markdown")).toBe(true);
     });

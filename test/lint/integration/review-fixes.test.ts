@@ -320,7 +320,7 @@ describe("a bare list item counts the same in every format", () => {
   it("counts an item's own prose even when the item also nests a list", () => {
     const paragraphsOfFirstItem = (tree: DocumentTree): number => {
       const title = at(tree.sections, 0, "top-level section");
-      const list = at(title.sections, 0, "Steps section").content.find(
+      const list = at(title.sections, 0, "Steps section").children.find(
         (c) => c.kind === "list",
       );
       const item = at(
@@ -358,7 +358,7 @@ describe("a bare list item counts the same in every format", () => {
   it("does not fold a nested item's text into the parent's paragraph", () => {
     const parentProse = (tree: DocumentTree): string => {
       const title = at(tree.sections, 0, "top-level section");
-      const list = at(title.sections, 0, "Steps section").content.find(
+      const list = at(title.sections, 0, "Steps section").children.find(
         (c) => c.kind === "list",
       );
       const item = at(

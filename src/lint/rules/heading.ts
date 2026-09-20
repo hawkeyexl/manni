@@ -21,7 +21,7 @@ export function checkHeading(
 
   // The heading itself is the offending node when it has a span of its own;
   // the implicit lead section has none, so fall back to the section.
-  const position = section.headingPosition ?? section.position;
+  const position = section.titlePosition ?? section.position;
 
   if (rule.const && section.title !== rule.const) {
     findings.push({

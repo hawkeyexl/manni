@@ -5,7 +5,7 @@
  * usable reStructuredText parser for JavaScript, so this reads the source
  * directly: a line scanner that answers one question - what sections does this
  * document have, and what paragraphs, code blocks, and lists are in each - and
- * then hands `sectionize` the same `Block[]` every other format produces.
+ * then hands `sectionize` the same `Fragment[]` every other format produces.
  *
  * ## Section levels
  *
@@ -88,7 +88,7 @@ import type {
   Point,
   Position,
 } from "../types.js";
-import type { Block } from "./sectionize.js";
+import type { Fragment } from "./sectionize.js";
 import { sectionize } from "./sectionize.js";
 import {
   fencedPosition,
@@ -362,10 +362,10 @@ function scanRange(
   to: number,
   base: number,
   headings: boolean,
-): Block[] {
-  const blocks: Block[] = [];
+): Fragment[] {
+  const fragments: Fragment[] = [];
   const content = (node: ContentNode): void => {
-    blocks.push({ type: "content", node });
+    fragments.push({ type: "content", node });
   };
   let i = from;
 
@@ -380,7 +380,7 @@ function scanRange(
     if (headings) {
       const hit = titleAt(src, i, to);
       if (hit) {
-        blocks.push({
+        fragments.push({
           type: "heading",
           level: levelFor(levels, hit.style),
           title: hit.title,
@@ -395,7 +395,7 @@ function scanRange(
     // reads as a two-character run of `:`. The marker wins: an adornment of
     // colons could only ever underline a title one or two characters wide.
     if (line.trim() === "::") {
-      i = readParagraph(src, levels, blocks, i, to, base, headings);
+      i = readParagraph(src, levels, fragments, i, to, base, headings);
       continue;
     }
 
@@ -423,10 +423,10 @@ function scanRange(
         while (codeStart < bodyEnd && isBlank(src.text[codeStart])) codeStart++;
         const codeEnd = lastContentLine(src, codeStart, bodyEnd) + 1;
         content({
-          kind: "code",
+          kind: "codeBlock",
           position: spanOf(src, i, Math.max(codeEnd - 1, i)),
           text: codeStart < codeEnd ? dedent(src, codeStart, codeEnd) : "",
-          ...(lang ? { lang } : {}),
+          ...(lang ? { language: lang } : {}),
         });
       }
       i = Math.max(bodyEnd, i + 1);
@@ -481,10 +481,10 @@ function scanRange(
       continue;
     }
 
-    i = readParagraph(src, levels, blocks, i, to, base, headings);
+    i = readParagraph(src, levels, fragments, i, to, base, headings);
   }
 
-  return blocks;
+  return fragments;
 }
 
 /**
@@ -581,10 +581,11 @@ function parseList(
     const bodyEnd = Math.max(indentedBlockEnd(src, start + 1, to, base), start + 1);
     const last = lastContentLine(src, start, bodyEnd);
     const children = scanRange(src, levels, start, bodyEnd, marker.contentIndent, false)
-      .filter((b): b is Extract<Block, { type: "content" }> => b.type === "content")
+      .filter((b): b is Extract<Fragment, { type: "content" }> => b.type === "content")
       .map((b) => b.node);
 
     items.push({
+      kind: "listItem",
       position: spanOf(src, start, Math.max(last, start), base + 1),
       text: children.map((c) => c.text).join("\n"),
       children,
@@ -617,7 +618,7 @@ function parseList(
 function readParagraph(
   src: Source,
   levels: Levels,
-  blocks: Block[],
+  fragments: Fragment[],
   from: number,
   to: number,
   base: number,
@@ -653,7 +654,7 @@ function readParagraph(
       : rawText.replace(/(\s*)::$/, (_m, space: string) => (space === "" ? ":" : ""));
 
   if (text.trim() !== "") {
-    blocks.push({
+    fragments.push({
       type: "content",
       node: { kind: "paragraph", position: spanOf(src, from, end - 1), text },
     });
@@ -668,10 +669,10 @@ function readParagraph(
 
   const blockEnd = indentedBlockEnd(src, start, to, base);
   const last = lastContentLine(src, start, blockEnd);
-  blocks.push({
+  fragments.push({
     type: "content",
     node: {
-      kind: "code",
+      kind: "codeBlock",
       position: spanOf(src, start, Math.max(last, start)),
       text: dedent(src, start, blockEnd),
     },
@@ -776,6 +777,7 @@ function readMetadata(content: string, filePath: string, src: Source): Metadata 
 export const rstParser: DocumentParser = {
   name: "rst",
   label: "reStructuredText",
+  kinds: ["paragraph", "codeBlock", "list"],
   extensions: [".rst"],
   parse(content, filePath): DocumentTree {
     const src = indexLines(content);
@@ -785,7 +787,7 @@ export const rstParser: DocumentParser = {
     // reads those same lines to place the metadata span. Swapped, the docinfo
     // field list is already blank and every metadata position collapses.
     const { frontmatter, position, bodyStart } = readMetadata(content, filePath, src);
-    const blocks = scanRange(
+    const fragments = scanRange(
       src,
       { styles: [] },
       Math.max(bodyStart, 0),
@@ -800,7 +802,7 @@ export const rstParser: DocumentParser = {
       frontmatter,
       frontmatterPosition: position,
       sections: sectionize(
-        withFrontmatterTitle(blocks, frontmatter, position),
+        withFrontmatterTitle(fragments, frontmatter, position),
         src.end,
       ),
     };
