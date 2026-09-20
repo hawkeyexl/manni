@@ -678,6 +678,146 @@ describe("runUpdate: the claim end", () => {
   });
 });
 
+describe("runUpdate: --accept over text that is no claim", () => {
+  const MARKER_PAGE = (): string[] => [
+    "---",
+    "citations:",
+    "  - id: gone",
+    "    claim:",
+    "      lines: 1",
+    `      integrity: ${hashLines("A sentence nobody kept.")}`,
+    "    source:",
+    "      file: src/limits.ts",
+    "      lines: 2",
+    `      integrity: ${PIN_L2}`,
+    "  - id: anchored",
+    "    claim:",
+    `      integrity: ${hashLines("Something else entirely.")}`,
+    "    source:",
+    "      file: src/limits.ts",
+    "      lines: 2",
+    `      integrity: ${PIN_L2}`,
+    "---",
+    "<!-- cite anchored -->",
+    "Something else entirely.",
+  ];
+
+  const RULE_PAGE = (lines: string, pinned: string): string[] => [
+    "---",
+    "citations:",
+    "  - id: rule",
+    "    claim:",
+    `      lines: ${lines}`,
+    `      integrity: ${hashLines(pinned)}`,
+    "    source:",
+    "      file: src/limits.ts",
+    "      lines: 2",
+    `      integrity: ${PIN_L2}`,
+    "---",
+    "| Flag | Default |",
+    "|---|---|",
+    "| `--retries` | 5 |",
+  ];
+
+  it("refuses a claim whose line now holds a cite marker", async () => {
+    workspace();
+    const label = write("marker-line.md", MARKER_PAGE());
+    const before = onDisk(label);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten).toEqual([]);
+    expect(run.pages[0]?.skipped.map((f) => f.rule)).toEqual(["claim-changed"]);
+    expect(run.pages[0]?.skipped[0]?.message).toContain(
+      "Not re-pinned: that line now holds a cite marker, not claim text.",
+    );
+    expect(onDisk(label)).toBe(before);
+  });
+
+  it("re-pins the marker line once --only names the entry", async () => {
+    workspace();
+    const label = write("marker-line.md", MARKER_PAGE());
+    const whole = hashLines("<!-- cite anchored -->\nSomething else entirely.");
+    const run = await update({ inputs: [label], accept: true, only: ["gone"] });
+    expect(run.pages[0]?.rewritten.map((r) => [r.end, r.to])).toEqual([["claim", whole]]);
+    expect(onDisk(label)).toContain(`      integrity: ${whole}\n`);
+    expect(onDisk(label)).toContain("      lines: 1-2\n");
+  });
+
+  it("refuses a claim whose line is now a table rule", async () => {
+    workspace();
+    const label = write("rule-line.md", RULE_PAGE("2", "| gone | row |"));
+    const before = onDisk(label);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten).toEqual([]);
+    expect(run.pages[0]?.skipped.map((f) => f.rule)).toEqual(["claim-changed"]);
+    expect(run.pages[0]?.skipped[0]?.message).toContain(
+      "Not re-pinned: that line is a table rule, not claim text.",
+    );
+    expect(onDisk(label)).toBe(before);
+  });
+
+  it("re-pins the table rule once --only names the entry", async () => {
+    workspace();
+    const label = write("rule-line.md", RULE_PAGE("2", "| gone | row |"));
+    const rule = hashLines("|---|---|");
+    const run = await update({ inputs: [label], accept: true, only: ["rule"] });
+    expect(run.pages[0]?.rewritten.map((r) => [r.end, r.to])).toEqual([["claim", rule]]);
+    expect(onDisk(label)).toContain(`      integrity: ${rule}\n`);
+  });
+
+  const DUP_PAGE = (): string[] => [
+    "---",
+    "citations:",
+    "  - id: dup",
+    "    claim:",
+    "      lines: 1",
+    `      integrity: ${hashLines("A sentence nobody kept.")}`,
+    "    source:",
+    "      file: src/limits.ts",
+    "      lines: 2",
+    `      integrity: ${PIN_L2}`,
+    "---",
+    "Repeated line.",
+    "",
+    "Other text.",
+    "",
+    "Repeated line.",
+  ];
+
+  it("refuses a claim whose line now holds text the page repeats", async () => {
+    workspace();
+    const label = write("repeated.md", DUP_PAGE());
+    const before = onDisk(label);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten).toEqual([]);
+    expect(run.pages[0]?.skipped.map((f) => f.rule)).toEqual(["claim-changed"]);
+    expect(run.pages[0]?.skipped[0]?.message).toContain(
+      "Not re-pinned: the text there also appears at line 16, so a pin cannot identify it. Re-run with --only dup to accept it anyway.",
+    );
+    expect(onDisk(label)).toBe(before);
+  });
+
+  it("re-pins the repeated text once --only names the entry", async () => {
+    workspace();
+    const label = write("repeated.md", DUP_PAGE());
+    const pin = hashLines("Repeated line.");
+    const run = await update({ inputs: [label], accept: true, only: ["dup"] });
+    expect(run.pages[0]?.rewritten.map((r) => [r.end, r.to])).toEqual([["claim", pin]]);
+    expect(onDisk(label)).toContain(`      integrity: ${pin}\n`);
+  });
+
+  it("re-pins a claim that covers a header, its rule and a body row", async () => {
+    workspace();
+    const label = write(
+      "rule-span.md",
+      RULE_PAGE("1-3", "| gone | row |\n|---|---|\n| old | row |"),
+    );
+    const whole = hashLines("| Flag | Default |\n|---|---|\n| `--retries` | 5 |");
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.rewritten.map((r) => [r.end, r.to])).toEqual([["claim", whole]]);
+    expect(onDisk(label)).toContain(`      integrity: ${whole}\n`);
+  });
+});
+
 describe("runUpdate: the source end", () => {
   it("splices a moved source's lines", async () => {
     workspace("moved.md");

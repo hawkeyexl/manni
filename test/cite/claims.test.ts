@@ -21,7 +21,9 @@ import {
   markerUnit,
   noUnitAt,
   normalizeWhitespace,
+  otherClaimSpans,
   pinOfLines,
+  spellElsewhere,
   toBodyLines,
   toFileLines,
   unitAt,
@@ -284,7 +286,7 @@ describe("unitAt: a table row", () => {
     });
   });
 
-  it("gives the header row and the delimiter row alone too", () => {
+  it("gives the header row alone, and holds no claim at the rule under it", () => {
     const page = fixture("table-row.md");
     const lines = splitLines(page.content);
     expect(unitAt(page, 15, lines)).toEqual({
@@ -292,11 +294,9 @@ describe("unitAt: a table row", () => {
       kind: "paragraph",
       text: ["| Flag | Default | What it does |"],
     });
-    expect(unitAt(page, 16, lines)).toEqual({
-      lines: { start: 16, end: 16 },
-      kind: "paragraph",
-      text: ["|---|---|---|"],
-    });
+    // The rule carries no words, so a pin over it would say nothing.
+    expect(noUnitAt(page, 16, lines)).toBe("table-rule");
+    expect(unitAt(page, 16, lines)).toBeUndefined();
   });
 
   it("gives the last row alone where prose follows the table with no blank line", () => {
@@ -358,6 +358,94 @@ describe("unitAt: a table row", () => {
     const page = readPage("p.md", content);
     const lines = splitLines(page.content);
     expect(unitAt(page, 5, lines)).toBeUndefined();
+  });
+});
+
+describe("unitAt: a cite marker", () => {
+  const page = (body: string): PageCitations => readPage("p.md", `---\ntitle: T\n---\n${body}`);
+
+  it("holds no claim: a line that is one marker and nothing else", () => {
+    const marked = page("<!-- cite c1 -->\nThe fetch timeout is 10 seconds.\n");
+    const lines = splitLines(marked.content);
+    expect(noUnitAt(marked, 4, lines)).toBe("marker");
+    expect(unitAt(marked, 4, lines)).toBeUndefined();
+  });
+
+  it("ends the unit above a marker, so a re-pin never covers one", () => {
+    const marked = page("The fetch timeout is 10 seconds.\n<!-- cite c1 -->\nMore prose.\n");
+    const lines = splitLines(marked.content);
+    expect(unitAt(marked, 4, lines)).toEqual({
+      lines: { start: 4, end: 4 },
+      kind: "paragraph",
+      text: ["The fetch timeout is 10 seconds."],
+    });
+  });
+
+  it("gives the marker line and the text under it once the entry is named", () => {
+    const marked = page("<!-- cite c1 -->\nThe fetch timeout is 10 seconds.\n");
+    const lines = splitLines(marked.content);
+    expect(unitAt(marked, 4, lines, undefined, true)).toEqual({
+      lines: { start: 4, end: 5 },
+      kind: "paragraph",
+      text: ["<!-- cite c1 -->", "The fetch timeout is 10 seconds."],
+    });
+    expect(noUnitAt(marked, 4, lines, undefined, true)).toBeUndefined();
+  });
+});
+
+describe("unitAt: a table rule", () => {
+  const page = (body: string): PageCitations => readPage("p.md", `---\ntitle: T\n---\n${body}`);
+  const TABLE = "| Flag | Default |\n|---|---|\n| `--retries` | 5 |\n";
+
+  it("holds no claim: a span that is nothing but rules", () => {
+    const table = page(TABLE);
+    const lines = splitLines(table.content);
+    expect(noUnitAt(table, 5, lines)).toBe("table-rule");
+    expect(unitAt(table, 5, lines)).toBeUndefined();
+  });
+
+  it("keeps a claim that covers a header, its rule and a body row", () => {
+    const table = page(TABLE);
+    const lines = splitLines(table.content);
+    expect(unitAt(table, 4, lines, { start: 4, end: 6 })).toEqual({
+      lines: { start: 4, end: 6 },
+      kind: "paragraph",
+      text: ["| Flag | Default |", "|---|---|", "| `--retries` | 5 |"],
+    });
+  });
+
+  it("gives the rule row once the entry is named", () => {
+    const table = page(TABLE);
+    const lines = splitLines(table.content);
+    expect(unitAt(table, 5, lines, undefined, true)).toEqual({
+      lines: { start: 5, end: 5 },
+      kind: "paragraph",
+      text: ["|---|---|"],
+    });
+  });
+});
+
+describe("otherClaimSpans", () => {
+  const REPEATED = "---\ntitle: T\n---\nRepeated line.\n\nOther.\n\nRepeated line.\n";
+
+  it("names where else in the body the same text sits, in file lines", () => {
+    const page = readPage("p.md", REPEATED);
+    const lines = splitLines(page.content);
+    const span = { start: 4, end: 4 };
+    const pin = pinOfLines(lines, span);
+    expect(pin).toBeDefined();
+    const spans = otherClaimSpans(lines, span, pin ?? "", page.bodyLine);
+    expect(spans).toEqual([{ start: 8, end: 8 }]);
+    expect(spellElsewhere(spans)).toBe("line 8");
+  });
+
+  it("is empty for text that sits in one place", () => {
+    const page = readPage("p.md", REPEATED);
+    const lines = splitLines(page.content);
+    const span = { start: 6, end: 6 };
+    const pin = pinOfLines(lines, span);
+    expect(pin).toBeDefined();
+    expect(otherClaimSpans(lines, span, pin ?? "", page.bodyLine)).toEqual([]);
   });
 });
 

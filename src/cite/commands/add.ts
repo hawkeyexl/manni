@@ -19,9 +19,15 @@ import { relative, resolve } from "node:path";
 import { locateFrontmatter, writeFileAtomic } from "../../meta/index.js";
 import { STDIN_LABEL, STDIN_TOKEN } from "../../meta/internal.js";
 import { ensureEncryptionKey } from "../../shared/prompt.js";
-import { findWindows } from "../../shared/pin.js";
 import { isEncryptedValue } from "../../shared/encryption.js";
-import { blockMatches, pinOfLines, toBodyLines, toFileLines } from "../core/claims.js";
+import {
+  blockMatches,
+  otherClaimSpans,
+  pinOfLines,
+  spellElsewhere,
+  toBodyLines,
+  toFileLines,
+} from "../core/claims.js";
 import { resolveCiteRun } from "../core/config.js";
 import { GIT_UNAVAILABLE_COMMIT, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
@@ -160,40 +166,6 @@ function emptyClaimRefusal(
   if (pageLines.start !== pageLines.end) return `${at} holds no claim text.`;
   const only = span[0] ?? "";
   return only.trim() === "" ? `${at} is blank.` : `${at} is a fence line, not claim text.`;
-}
-
-/**
- * Where else in the body the claim's text sits, as file lines. A claim whose
- * text repeats is `moved-ambiguous` the moment it moves, so `add` says so
- * while the pin is still being written. The search is the classifier's own.
- */
-function otherClaimSpans(
-  lines: readonly string[],
-  pageLines: PageLines,
-  pin: string,
-  bodyLine: number,
-): PageLines[] {
-  const width = pageLines.end - pageLines.start + 1;
-  const found = findWindows(lines.slice(bodyLine - 1), width, pin, undefined, {
-    around: toBodyLines(pageLines, bodyLine).start,
-  });
-  return found.starts
-    .map((start) => toFileLines({ start, end: start + width - 1 }, bodyLine))
-    .filter((span) => span.start !== pageLines.start);
-}
-
-/** How many other locations a notice names before it starts counting them. */
-const NAMED_SPANS = 3;
-
-/** `line 17`, `lines 16 and 18`, `lines 16, 18, 20 and 2 more`. */
-function spellElsewhere(spans: readonly PageLines[]): string {
-  const first = spans[0];
-  const noun = spans.length === 1 && first !== undefined && first.start === first.end ? "line" : "lines";
-  const named = spans.slice(0, NAMED_SPANS).map((span) => spellLines(span));
-  const rest = spans.length - named.length;
-  if (rest > 0) return `${noun} ${named.join(", ")} and ${String(rest)} more`;
-  const last = named.pop() ?? "";
-  return named.length === 0 ? `${noun} ${last}` : `${noun} ${named.join(", ")} and ${last}`;
 }
 
 export async function runAdd(opts: AddOptions): Promise<AddResult> {

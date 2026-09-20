@@ -26,7 +26,9 @@ import { checkCitations } from "../core/check-page.js";
 import {
   noUnitAt,
   normalizeWhitespace,
+  otherClaimSpans,
   pinOfLines,
+  spellElsewhere,
   toBodyLines,
   toFileLines,
   unitAt,
@@ -154,7 +156,8 @@ interface Declined {
  * reason is a different problem: a blank line lost the sentence, a fenced line
  * moved it into code, a line that starts no paragraph is a heading underline
  * or an unclosed fence, a line outside the body is a range the page no longer
- * reaches, and a short table lost rows the claim was minted over.
+ * reaches, a short table lost rows the claim was minted over, and a marker or
+ * a table rule is a line that holds no claim text at all.
  */
 function sayNoUnit(reason: NoUnit): string {
   switch (reason) {
@@ -164,10 +167,14 @@ function sayNoUnit(reason: NoUnit): string {
       return "the line is blank";
     case "fenced":
       return "the line sits inside a fenced block";
+    case "marker":
+      return "that line now holds a cite marker, not claim text";
     case "not-a-paragraph":
       return "the line does not start a paragraph";
     case "table-short":
       return "the table no longer holds every row the claim covers";
+    case "table-rule":
+      return "that line is a table rule, not claim text";
   }
 }
 
@@ -805,8 +812,11 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       // being honest rather than a case a run can land in.
       const held = claim.fileLines === undefined ? undefined : parseLines(claim.fileLines);
       const at = held?.start;
+      // Naming an id is the operator saying they have read the line, so the
+      // refusals that ask whether it can be claim text at all stand down.
+      const named = only !== undefined;
       const unit: ClaimUnit | undefined =
-        at === undefined ? undefined : unitAt(page, at, lines, held);
+        at === undefined ? undefined : unitAt(page, at, lines, held, named);
       const wantsBlock = entry.citation.quote === true;
       const pin = unit === undefined ? undefined : pinOfLines(lines, unit.lines);
       // A unit past the range limit would pin more than a citation may hold.
@@ -817,7 +827,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
           why: `Not re-pinned: the ${unit.kind} ${wide}.`,
         });
       } else if (unit === undefined) {
-        const why = at === undefined ? undefined : noUnitAt(page, at, lines, held);
+        const why = at === undefined ? undefined : noUnitAt(page, at, lines, held, named);
         if (why !== undefined) {
           declined.set(result.origin.index, {
             rule: "claim-changed",
@@ -825,11 +835,26 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
           });
         }
       } else if (pin !== undefined && (!wantsBlock || unit.kind === "block")) {
+        // Where else the same text sits. A pin cannot tell two copies apart,
+        // so re-pinning over one of them writes a claim that is
+        // `moved-ambiguous` the moment anything above it shifts. `add` refuses
+        // the same pin for the same reason, before it is ever written.
+        const elsewhere = named ? [] : otherClaimSpans(lines, unit.lines, pin, page.bodyLine);
         const replaced = replacementAt(claim, unit.text, page.format);
-        // `plansFor` runs only for a selected entry, so a run with `only` set
-        // has named this one. `selected` says which repairs run; the bypass
-        // says which entries `--accept` may re-pin, and both hold here.
-        if (replaced !== undefined && only === undefined) {
+        if (elsewhere.length > 0) {
+          // `--only` takes an id, so an entry without one has no way to say
+          // "accept it anyway"; the advice is left off rather than made up.
+          const id = result.citation.id;
+          const anyway = id === undefined ? "" : ` Re-run with --only ${id} to accept it anyway.`;
+          declined.set(result.origin.index, {
+            rule: "claim-changed",
+            why: `Not re-pinned: the text there also appears at ${spellElsewhere(elsewhere)}, so a pin cannot identify it.${anyway}`,
+          });
+        } else if (replaced !== undefined && only === undefined) {
+          // `plansFor` runs only for a selected entry, so a run with `only`
+          // set has named this one. `selected` says which repairs run; the
+          // bypass says which entries `--accept` may re-pin, and both hold
+          // here.
           out.push({
             kind: "claim-replaced",
             result,
