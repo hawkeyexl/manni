@@ -56,10 +56,17 @@ function checkVariant(
   const findings: Finding[] = [];
   for (const admonition of admonitions) {
     if (admonition.variant !== variant) {
+      // A format may name a flavor this vocabulary does not have, or none at
+      // all: reStructuredText's `hint`, a bare HTML `<aside>`. The node then
+      // carries no variant, and saying "found a undefined" would be worse
+      // than saying what is true.
+      const found = admonition.variant
+        ? `but found a ${admonition.variant}`
+        : "but found one with no type";
       findings.push({
         type: "admonitions_variant_error",
         heading: ctx.heading,
-        message: `Expected a ${variant} admonition, but found a ${admonition.variant}`,
+        message: `Expected a ${variant} admonition, ${found}`,
         position: admonition.position,
         severity: "error",
       });
