@@ -719,6 +719,92 @@ describe.skipIf(!HAS_GIT)("update over the page's history", () => {
     }
   });
 
+  // The overlap guard. A claim that drifted onto a neighbouring table row can
+  // still share a sentence with its baseline, because the rows end alike. The
+  // word share is what tells the two apart.
+  const TABLE_BODY = [
+    "# Limits",
+    "",
+    "| Flag | What it does |",
+    "|---|---|",
+    "| `--show-diff` | Print a unified diff under each drifted claim. Off by default. |",
+    "| `-q, --quiet` | Suppress every line but the totals. Off by default. |",
+    "",
+  ].join("\n");
+
+  /** The page with the cited row deleted, so the claim's line holds its neighbour. */
+  const DROPPED_ROW =
+    "| `--show-diff` | Print a unified diff under each drifted claim. Off by default. |\n";
+
+  it("refuses --accept on a line that drifted onto a neighbouring row, and exits 1", async () => {
+    const pageText = makePage({ body: TABLE_BODY, claim: { start: 17 }, id: "show-diff" });
+    const repo = repoWith(pageText);
+    try {
+      const first = commit(repo.dir, "docs: add limits");
+      const dropped = pageText.replace(DROPPED_ROW, "");
+      writeFileSync(join(repo.dir, "docs", "limits.md"), dropped, "utf8");
+      commit(repo.dir, "docs(limits): drop the --show-diff row");
+      const out = await run(repo.dir, { accept: true });
+      expect(out.exitCode).toBe(1);
+      expect(out.rewritten).toBe(0);
+      expect(out.skipped).toBe(1);
+      expect(out.pages[0]?.refused[0]?.reason).toBe("replaced");
+      expect(out.pages[0]?.refused[0]?.wordShare).toBeCloseTo(4 / 13, 5);
+      expect(renderUpdatePretty(out, { color: false }).split("\n")[0]).toBe(
+        `docs/limits.md: show-diff claim at line 17 skipped: that line now holds text sharing 31% of the claim's words at ${first.slice(0, 7)}. Re-add it with cite add.`,
+      );
+      expect(onDisk(repo.dir)).toBe(dropped);
+    } finally {
+      removeTempRepo(repo.dir);
+    }
+  });
+
+  it("accepts a heavy edit that still holds half the claim's words", async () => {
+    const body = [
+      "# Limits",
+      "",
+      "The fetch timeout is 10 seconds. It is not configurable.",
+      "",
+    ].join("\n");
+    const pageText = makePage({ body, claim: { start: 15 } });
+    const repo = repoWith(pageText);
+    try {
+      commit(repo.dir, "docs: add limits");
+      const edited = pageText.replace(
+        "The fetch timeout is 10 seconds. It is not configurable.\n",
+        "The fetch timeout is 30 seconds, and the retry budget is three. It is not configurable.\n",
+      );
+      writeFileSync(join(repo.dir, "docs", "limits.md"), edited, "utf8");
+      commit(repo.dir, "docs(limits): say what the retry budget is");
+      const out = await run(repo.dir, { accept: true });
+      expect(out.exitCode).toBe(0);
+      expect(out.rewritten).toBe(1);
+      expect(out.pages[0]?.refused).toEqual([]);
+      expect(out.pages[0]?.rewritten[0]?.reason).toBe("accepted");
+      expect(out.pages[0]?.rewritten[0]?.status).toBe("changed");
+    } finally {
+      removeTempRepo(repo.dir);
+    }
+  });
+
+  it("accepts a drifted row when --only names it", async () => {
+    const pageText = makePage({ body: TABLE_BODY, claim: { start: 17 }, id: "show-diff" });
+    const repo = repoWith(pageText);
+    try {
+      commit(repo.dir, "docs: add limits");
+      const dropped = pageText.replace(DROPPED_ROW, "");
+      writeFileSync(join(repo.dir, "docs", "limits.md"), dropped, "utf8");
+      commit(repo.dir, "docs(limits): drop the --show-diff row");
+      const out = await run(repo.dir, { accept: true, only: ["show-diff"] });
+      expect(out.exitCode).toBe(0);
+      expect(out.rewritten).toBe(1);
+      expect(out.pages[0]?.refused).toEqual([]);
+      expect(out.pages[0]?.rewritten[0]?.status).toBe("replaced");
+    } finally {
+      removeTempRepo(repo.dir);
+    }
+  });
+
   it("names each id, so several --only entries each bypass the guard", async () => {
     const body = [
       "# Limits",

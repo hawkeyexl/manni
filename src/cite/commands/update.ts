@@ -37,7 +37,7 @@ import {
 } from "../core/claims.js";
 import { GIT_UNAVAILABLE_COMMIT } from "../core/git.js";
 import { splitLines } from "../core/hash.js";
-import { claimWords, sharesSentence } from "../core/history.js";
+import { claimWords, sharesSentence, wordShare } from "../core/history.js";
 import { mintCitation } from "../core/mint.js";
 import { ManifestSet } from "../core/manifest.js";
 import { readPage } from "../core/page.js";
@@ -130,13 +130,16 @@ type Plan =
     }
   /**
    * A changed claim `--accept` refused to re-pin: the line now holds text
-   * sharing no sentence with the claim at its baseline. Nothing is written.
+   * sharing no sentence with the claim at its baseline, or too few of its
+   * words. Nothing is written.
    */
   | {
       kind: "claim-replaced";
       result: CitationResult;
       at: number;
       commitSha: string;
+      /** The share of the claim's words held, when overlap is what refused it. */
+      wordShare?: number;
       /** The pin that stands, and the one that was not written. */
       pin: string;
       would: string;
@@ -397,6 +400,7 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         toPin: plan.would,
         at: plan.at,
         commitSha: plan.commitSha,
+        ...(plan.wordShare === undefined ? {} : { wordShare: plan.wordShare }),
       };
     case "claim-shifted":
       return {
@@ -469,14 +473,39 @@ function rewriteOf(plan: Plan): UpdateRewrite {
 }
 
 /**
- * The baseline, when a re-pin over `text` would bless a line that now holds
- * wholly other text: a neighbouring table row after a shift, or a block
- * inserted under a marker. `undefined` lets the accept stand, which is also
- * what happens with no baseline to read the claim against.
+ * How much of the claim's words its line must still hold for a blanket
+ * `--accept` to re-pin it, as `wordShare` measures it.
  *
- * The test is sentence intersection. A claim whose paragraph was edited still
- * shares a sentence with what it said at the baseline; one whose line was
- * replaced shares none.
+ * A replay of 65 proposed `--accept` re-pins over this repository's own
+ * corpus, every one with a baseline to read, put the seven wrong re-pins at
+ * 0.38 and below and every safe one at 0.74 and above. Each of the seven had
+ * drifted onto a neighbouring table row, and the sentence test below let all
+ * seven through. Nothing measured landed between the two bands, so the number
+ * is fixed here. A config key would be a knob over a gap no corpus fills.
+ */
+const CLAIM_WORD_SHARE = 0.5;
+
+/** Why a re-pin was refused: the baseline, and the share when overlap is what fired. */
+interface Replacement {
+  /** The baseline the claim's words were read against. */
+  commit: string;
+  /** Set only when the overlap test fired: the share of the claim's words held. */
+  share?: number;
+}
+
+/**
+ * Why a re-pin over `text` would bless a line that no longer carries the
+ * claim: a neighbouring table row after a shift, or a block inserted under a
+ * marker. `undefined` lets the accept stand, which is also what happens with
+ * no baseline to read the claim against.
+ *
+ * Two tests, either of which refuses. The first is sentence intersection: a
+ * claim whose paragraph was edited still shares a sentence with what it said
+ * at the baseline, and one whose line was replaced outright shares none. The
+ * second is word overlap, for the drift the first misses. Two rows of one
+ * table end alike often enough to share a sentence while saying different
+ * things, so a line holding less than `CLAIM_WORD_SHARE` of the claim's words
+ * is refused too, and the report names the share.
  *
  * The guard only asks about an entry the run did not name. Naming an id with
  * `--only` is the human judgement the guard exists to demand, so a reviewer
@@ -489,12 +518,16 @@ function replacementAt(
   claim: ClaimEnd,
   text: readonly string[],
   format: string,
-): string | undefined {
+): Replacement | undefined {
   const was = claim.baselineText;
   const commit = claim.commitSha;
   if (was === undefined || commit === undefined) return undefined;
-  if (sharesSentence(claimWords(was, format), claimWords(text, format))) return undefined;
-  return commit;
+  const before = claimWords(was, format);
+  const now = claimWords(text, format);
+  if (!sharesSentence(before, now)) return { commit };
+  const share = wordShare(before, now);
+  if (share < CLAIM_WORD_SHARE) return { commit, share };
+  return undefined;
 }
 
 /** How many characters of re-pinned text the report quotes before it elides. */
@@ -859,7 +892,8 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
             kind: "claim-replaced",
             result,
             at: unit.lines.start,
-            commitSha: replaced,
+            commitSha: replaced.commit,
+            ...(replaced.share === undefined ? {} : { wordShare: replaced.share }),
             pin: entry.citation.claim?.integrity ?? "",
             would: pin,
           });
@@ -1049,7 +1083,8 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
                       kind: "claim-replaced",
                       result,
                       at: now.span.start,
-                      commitSha: replaced,
+                      commitSha: replaced.commit,
+                      ...(replaced.share === undefined ? {} : { wordShare: replaced.share }),
                       pin: recorded,
                       would: now.pin,
                     },

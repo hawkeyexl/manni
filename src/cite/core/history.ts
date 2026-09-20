@@ -71,6 +71,37 @@ export function sharesSentence(a: string, b: string): boolean {
   return sentencesOf(b).some((sentence) => left.has(sentence));
 }
 
+/** A text's distinct words, case dropped. Whitespace is the only separator. */
+function wordSet(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((word) => word !== ""),
+  );
+}
+
+/**
+ * How much of `was` the text `now` still holds, from 0 to 1: the size of the
+ * two word sets' intersection over `was`'s own size.
+ *
+ * Intersection over the baseline, not over the union, so the number reads as
+ * the share of the claim's words that survived, and a line that grew around
+ * the claim is not punished for the words it gained.
+ *
+ * Distinct words, because a table row's repeated `|` says nothing about
+ * whether this is the same statement. A baseline with no words scores 1:
+ * there is nothing for the line to have lost.
+ */
+export function wordShare(was: string, now: string): number {
+  const left = wordSet(was);
+  if (left.size === 0) return 1;
+  const right = wordSet(now);
+  let held = 0;
+  for (const word of left) if (right.has(word)) held++;
+  return held / left.size;
+}
+
 /** `true` when `inner`'s words sit inside `outer`'s, in order, at word boundaries. */
 export function holdsWords(outer: string, inner: string): boolean {
   if (inner === "") return true;
