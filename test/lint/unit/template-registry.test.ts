@@ -815,17 +815,28 @@ describe("the template schema", () => {
     expect(message).toContain("/templates/how-to/sections/0/sequence/0");
   });
 
+  // The message, not just the path. Ajv renders a `not` as "must NOT be
+  // valid", which names where the problem is and nothing about what it is.
   it("rejects a rule that sets both `sequence` and `contains`", () => {
     const message = thrownMessage(() =>
       load(one({ sequence: [{ paragraphs: { min: 1 } }], contains: { lists: {} } })),
     );
     expect(message).toContain("/templates/how-to/sections/0");
+    expect(message).toContain("sets both sequence and contains");
+    expect(message).not.toContain("must NOT be valid");
+  });
+
+  it("says what is wrong with a rule that sets both `heading` and `repeat`", () => {
+    const message = thrownMessage(() =>
+      load(one({ heading: "Symptoms", repeat: [{ heading: "Symptom" }] })),
+    );
+    expect(message).toContain("a repeat group has no heading of its own");
+    expect(message).not.toContain("must NOT be valid");
   });
 
   // The same exclusivity, one level down. `elements` and `listItems` take a
-  // body of their own, and `elements.ts` runs `sequence` *or* `contains` on
-  // it - so if the schema let both through, the second would be dropped in
-  // silence. It does not, and this is what says so.
+  // body of their own, so if the schema let both through, one would be checked
+  // and the other dropped in silence. It does not, and this is what says so.
   it("rejects an `elements` rule that sets both `sequence` and `contains`", () => {
     const message = thrownMessage(() =>
       load(
@@ -841,6 +852,7 @@ describe("the template schema", () => {
       ),
     );
     expect(message).toContain("/templates/how-to/sections/0/contains/elements");
+    expect(message).toContain("sets both sequence and contains");
   });
 
   it("rejects a `listItems` rule that sets both `sequence` and `contains`", () => {
@@ -854,6 +866,7 @@ describe("the template schema", () => {
       ),
     );
     expect(message).toContain("/templates/how-to/sections/0/contains/lists/items");
+    expect(message).toContain("sets both sequence and contains");
   });
 
   it("rejects a rule that sets both `heading` and `repeat`", () => {

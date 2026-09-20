@@ -581,12 +581,36 @@ function checkTemplateFile(file: TemplateFile, source: string): void {
   }
 }
 
+/**
+ * What each `not` constraint means, in the words its author needs.
+ *
+ * Ajv renders every `not` as "must NOT be valid", which names the path and
+ * then says nothing whatsoever about what is wrong with it. The schema carries
+ * a `description` on each of these; the sentence lives here instead because it
+ * is user-facing text, and every other message in this file does too.
+ */
+const NOT_CONSTRAINTS: Record<string, string> = {
+  oneOfSequenceOrContains:
+    "sets both sequence and contains; a rule says what it holds in order, or in any order, never both",
+  noHeadingOnRepeat:
+    "sets both heading and repeat; a repeat group has no heading of its own, so put the heading on the first rule inside it",
+  noInstructions: "carries an instructions key, which this tool does not read",
+};
+
 /** `/templates/how-to/sections/title must NOT have additional properties (foo)`. */
 function describeError(error: ErrorObject): string {
+  const where = error.instancePath || "/";
+
+  if (error.keyword === "not") {
+    for (const [name, why] of Object.entries(NOT_CONSTRAINTS)) {
+      if (error.schemaPath.includes(name)) return `${where} ${why}`;
+    }
+  }
+
   const params = error.params as { additionalProperty?: unknown };
   const extra =
     typeof params.additionalProperty === "string" ? ` ("${params.additionalProperty}")` : "";
-  return `${error.instancePath || "/"} ${error.message ?? "is invalid"}${extra}`;
+  return `${where} ${error.message ?? "is invalid"}${extra}`;
 }
 
 /**

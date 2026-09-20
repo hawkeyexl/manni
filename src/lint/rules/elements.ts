@@ -56,14 +56,16 @@ export function checkElementsIn(
     }
   }
 
+  // Both, unconditionally, as `validator.ts` runs them against a section. Each
+  // no-ops on an absent rule, and the schema refuses a rule that writes both
+  // (`oneOfSequenceOrContains`), so only one can ever fire. Writing it as a
+  // choice made this file's behaviour depend on a constraint declared in
+  // another, which reads like a silent drop whether or not it is one.
   if (rule.sequence || rule.contains) {
     for (const element of matching) {
       const elementCtx: RuleContext = { heading: ctx.heading, position: element.position };
-      if (rule.sequence) {
-        findings.push(...checkSequenceIn(element.children, rule.sequence, elementCtx));
-      } else if (rule.contains) {
-        findings.push(...checkContainsIn(element.children, rule.contains, elementCtx));
-      }
+      findings.push(...checkSequenceIn(element.children, rule.sequence, elementCtx));
+      findings.push(...checkContainsIn(element.children, rule.contains, elementCtx));
     }
   }
 
