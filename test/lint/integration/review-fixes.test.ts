@@ -22,7 +22,7 @@ import { supportedExtensions } from "../../../src/lint/parsers/index.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
 import { refRelativeTo } from "../../../src/lint/core/template-registry.js";
 import { fencedPosition } from "../../../src/lint/parsers/metadata.js";
-import type { V1Template as Template } from "../../../src/lint/core/template-v1.js";
+import type { Template } from "../../../src/lint/core/template.js";
 import { LintError } from "../../../src/lint/types.js";
 import type { DocumentTree, ListItemNode } from "../../../src/lint/types.js";
 import { at, defined } from "../helpers.js";
@@ -59,15 +59,12 @@ describe("the matcher does not strand sections a later rule needs", () => {
     const doc = subsectionsOf(
       "# T\n\n## Overview\n\n## Install it\n\n## See also\n\n## Before you start\n",
     );
-    const { findings } = matchSections(doc, {
-      overview: { heading: { const: "Overview" } },
-      "before you start": {
-        heading: { const: "Before you start" },
-        required: false,
-      },
-      task: {},
-      "see also": { heading: { const: "See also" } },
-    });
+    const { findings } = matchSections(doc, [
+      { heading: "Overview", max: 1 },
+      { heading: "Before you start", min: 0, max: 1 },
+      { id: "task", max: 1 },
+      { heading: "See also", max: 1 },
+    ]);
 
     expect(findings.map((f) => f.type)).toEqual(["unexpected_section"]);
     expect(at(findings, 0, "unexpected_section finding").message).toContain(
@@ -82,14 +79,14 @@ describe("the matcher does not strand sections a later rule needs", () => {
     const doc = subsectionsOf(
       "# T\n\n## Symptom A\n\n## Symptom B\n\n## Symptom summary\n",
     );
-    const { matches, findings } = matchSections(doc, {
-      symptom: { heading: { pattern: "^Symptom" }, repeat: true },
-      resolution: { heading: { const: "Symptom summary" } },
-    });
+    const { matches, findings } = matchSections(doc, [
+      { id: "symptom", heading: { pattern: "^Symptom" } },
+      { id: "resolution", heading: "Symptom summary", max: 1 },
+    ]);
 
     expect(findings).toEqual([]);
     expect(
-      matches.filter((m) => m.name === "symptom").map((m) => m.section.title),
+      matches.filter((m) => m.rule.id === "symptom").map((m) => m.section.title),
     ).toEqual(["Symptom A", "Symptom B"]);
   });
 
@@ -100,13 +97,13 @@ describe("the matcher does not strand sections a later rule needs", () => {
   // than the case above.
   it("does not let a loose rule take a heading a later exact rule names", () => {
     const doc = subsectionsOf("# T\n\n## Symptom summary\n");
-    const { matches, findings } = matchSections(doc, {
-      symptom: { heading: { pattern: "^Symptom" }, required: false, repeat: true },
-      resolution: { heading: { const: "Symptom summary" } },
-    });
+    const { matches, findings } = matchSections(doc, [
+      { id: "symptom", heading: { pattern: "^Symptom" }, min: 0 },
+      { id: "resolution", heading: "Symptom summary", max: 1 },
+    ]);
 
     expect(findings).toEqual([]);
-    expect(matches.map((m) => m.name)).toEqual(["resolution"]);
+    expect(matches.map((m) => m.rule.id)).toEqual(["resolution"]);
   });
 
   // The other direction of the same guard, and the reason it is asymmetric.
@@ -115,13 +112,13 @@ describe("the matcher does not strand sections a later rule needs", () => {
   // it can do without - a clean document reporting a missing section.
   it("does not make a required rule yield to an optional later one", () => {
     const doc = subsectionsOf("# T\n\n## Symptom summary\n");
-    const { matches, findings } = matchSections(doc, {
-      symptom: { heading: { pattern: "^Symptom" } },
-      summary: { heading: { const: "Symptom summary" }, required: false },
-    });
+    const { matches, findings } = matchSections(doc, [
+      { id: "symptom", heading: { pattern: "^Symptom" }, max: 1 },
+      { id: "summary", heading: "Symptom summary", min: 0, max: 1 },
+    ]);
 
     expect(findings).toEqual([]);
-    expect(matches.map((m) => m.name)).toEqual(["symptom"]);
+    expect(matches.map((m) => m.rule.id)).toEqual(["symptom"]);
   });
 });
 
@@ -304,13 +301,24 @@ describe("a bare list item counts the same in every format", () => {
   // iterated element children only, so `<li>text</li>` had none and
   // `lists.items.paragraphs.min` meant different things per format.
   const template: Template = {
-    sections: {
-      title: {
-        sections: {
-          steps: { lists: { min: 1, items: { min: 1, paragraphs: { min: 1 } } } },
-        },
+    sections: [
+      {
+        id: "title",
+        max: 1,
+        sections: [
+          {
+            id: "steps",
+            max: 1,
+            contains: {
+              lists: {
+                min: 1,
+                items: { min: 1, contains: { paragraphs: { min: 1 } } },
+              },
+            },
+          },
+        ],
       },
-    },
+    ],
   };
 
   // The same rule, one level down. `<li>Parent<ul>…</ul></li>` has a child, so

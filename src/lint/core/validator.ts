@@ -10,65 +10,51 @@
  *
  * Everything here is synchronous. It was async only to await a language model,
  * which this tool no longer has.
+ *
+ * This is the v2 wiring at its thinnest: match, check the heading and the
+ * section's own content, recurse. The chunk that owns this file reconciles the
+ * two block-rule vocabularies (`core/template.ts` and `rules/index.ts` still
+ * disagree about `codeBlocks.language` and `elements.tag`) and decides what a
+ * template's own `contains`/`sequence` mean for the page as a whole.
  */
 import type { DocumentTree, Finding, SectionNode } from "../types.js";
-import {
-  checkCodeBlocks,
-  checkHeading,
-  checkLists,
-  checkParagraphs,
-  checkSequence,
-} from "../rules/index.js";
+import { checkContains, checkHeading, checkSequence } from "../rules/index.js";
 import { matchSections } from "./match.js";
-import type { Template } from "./template.js";
-import type { TemplateSection, V1Template } from "./template-v1.js";
+import type { Rule, Template } from "./template.js";
 
 /** Content and heading rules for one matched pair, without recursion. */
-function checkSection(section: SectionNode, rule: TemplateSection): Finding[] {
-  const findings: Finding[] = [];
-  if (rule.heading) findings.push(...checkHeading(section, rule.heading));
-  if (rule.sequence) findings.push(...checkSequence(section, rule.sequence));
-  if (rule.paragraphs) findings.push(...checkParagraphs(section, rule.paragraphs));
-  if (rule.code_blocks) findings.push(...checkCodeBlocks(section, rule.code_blocks));
-  if (rule.lists) findings.push(...checkLists(section, rule.lists));
-  return findings;
+function checkSection(section: SectionNode, rule: Rule): Finding[] {
+  return [
+    ...checkHeading(section, rule.heading),
+    ...checkSequence(section, rule.sequence),
+    ...checkContains(section, rule.contains),
+  ];
 }
 
 /** Match one level of sections, check each pair, then recurse. */
 export function validateSections(
   sections: SectionNode[],
-  templateSections: Record<string, TemplateSection> | undefined,
-  options: { additionalSections?: boolean; parent?: SectionNode | null } = {},
+  rules: Rule[] | undefined,
+  options: { parent?: SectionNode | null } = {},
 ): Finding[] {
-  const { matches, findings } = matchSections(sections, templateSections, options);
+  const { matches, findings } = matchSections(sections, rules, options);
   const all = [...findings];
 
   for (const match of matches) {
     all.push(...checkSection(match.section, match.rule));
-    if (match.rule.sections) {
-      all.push(
-        ...validateSections(match.section.sections, match.rule.sections, {
-          additionalSections: match.rule.additionalSections,
-          parent: match.section,
-        }),
-      );
-    }
+    all.push(
+      ...validateSections(match.section.sections, match.rule.sections, {
+        parent: match.section,
+      }),
+    );
   }
 
   return all;
 }
 
 /** Findings for one document against one template, in document order. */
-export function validateDocument(
-  tree: DocumentTree,
-  template: Template | V1Template,
-): Finding[] {
-  // A bridge, not a design. The loader now returns the v2 template shape, whose
-  // `sections` is a list of rules; the matcher below still reads v1's map. The
-  // matcher rewrite lands next and deletes both this cast and `template-v1.ts`.
-  const v1 = template as V1Template;
-  const findings = validateSections(tree.sections, v1.sections, {
-    additionalSections: v1.additionalSections,
+export function validateDocument(tree: DocumentTree, template: Template): Finding[] {
+  const findings = validateSections(tree.sections, template.sections, {
     parent: null,
   });
 
