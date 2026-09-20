@@ -63,7 +63,11 @@ export { extractorByName, extractorForExtension, listFormats } from "./extractor
 // `removeManifestKey` is the other half: `manni cite remove` takes a page's
 // last citation out, and an entry left with `citations:` and nothing under it
 // would be a key nobody wrote.
-export { removeManifestKey, spliceManifestValue } from "./core/external-metadata-write.js";
+export {
+  readManifestValue,
+  removeManifestKey,
+  spliceManifestValue,
+} from "./core/external-metadata-write.js";
 export type {
   SpliceManifestOptions,
   SplicedManifest,
