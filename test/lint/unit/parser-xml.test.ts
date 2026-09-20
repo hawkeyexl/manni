@@ -261,15 +261,15 @@ describe("xml parser: nesting and the fold", () => {
 
 describe("xml parser: content", () => {
   it("skips unmapped elements together with their subtree", () => {
-    // A DITA <note> is an admonition, not a paragraph; counting the <p> inside
-    // it would be the mistake the Markdown parser avoids with blockquotes.
+    // <prolog> and <related-links> stay in no bucket at all, unlike <note> and
+    // <table> which now map onto admonition and table.
     const xml = `<topic>
   <title>Only</title>
   <body>
     <p>Real prose.</p>
-    <note><p>Not prose.</p></note>
-    <table><tgroup><tbody><row><entry><p>Nor this.</p></entry></row></tbody></tgroup></table>
+    <related-links><link href="x"/></related-links>
   </body>
+  <prolog><author>Not prose either.</author></prolog>
 </topic>`;
     const content = at(parse(xml).sections, 0, "root section").children;
     expect(content.map((n) => n.kind)).toEqual(["paragraph"]);
@@ -361,6 +361,197 @@ describe("xml parser: content", () => {
     expect(root.title).toBe("Wrapped");
     // <info> itself is metadata, so nothing inside it becomes content.
     expect(root.children.map((n) => n.kind)).toEqual(["paragraph"]);
+  });
+});
+
+describe("xml parser: tables", () => {
+  it("maps a DITA CALS <table> and <simpletable>, marking the thead/sthead row as header", () => {
+    const xml = `<topic>
+  <title>Only</title>
+  <body>
+    <table>
+      <tgroup cols="2">
+        <thead>
+          <row><entry>Name</entry><entry>Value</entry></row>
+        </thead>
+        <tbody>
+          <row><entry>a</entry><entry>1</entry></row>
+        </tbody>
+      </tgroup>
+    </table>
+    <simpletable>
+      <sthead><stentry>Col A</stentry><stentry>Col B</stentry></sthead>
+      <strow><stentry>x</stentry><stentry>y</stentry></strow>
+    </simpletable>
+  </body>
+</topic>`;
+    const content = at(parse(xml).sections, 0, "root section").children;
+    expect(content.map((n) => n.kind)).toEqual(["table", "table"]);
+
+    const cals = content[0] as { children: { header: boolean; children: { text: string }[] }[] };
+    expect(cals.children.map((r) => r.header)).toEqual([true, false]);
+    expect(cals.children[0]?.children.map((c) => c.text)).toEqual(["Name", "Value"]);
+    expect(cals.children[1]?.children.map((c) => c.text)).toEqual(["a", "1"]);
+
+    const simple = content[1] as { children: { header: boolean; children: { text: string }[] }[] };
+    expect(simple.children.map((r) => r.header)).toEqual([true, false]);
+    expect(simple.children[0]?.children.map((c) => c.text)).toEqual(["Col A", "Col B"]);
+    expect(simple.children[1]?.children.map((c) => c.text)).toEqual(["x", "y"]);
+  });
+
+  it("maps DocBook's <table> and <informaltable>, CALS thead/tbody shape", () => {
+    const xml = `<chapter xmlns="http://docbook.org/ns/docbook">
+  <title>Guide</title>
+  <informaltable>
+    <thead><row><entry>Name</entry><entry>Value</entry></row></thead>
+    <tbody><row><entry>a</entry><entry>1</entry></row></tbody>
+  </informaltable>
+</chapter>`;
+    const content = at(parse(xml).sections, 0, "root section").children;
+    expect(content.map((n) => n.kind)).toEqual(["table"]);
+    const table = content[0] as { children: { header: boolean; children: { text: string }[] }[] };
+    expect(table.children.map((r) => r.header)).toEqual([true, false]);
+    expect(table.children[0]?.children.map((c) => c.text)).toEqual(["Name", "Value"]);
+  });
+});
+
+describe("xml parser: admonitions", () => {
+  it("names a DITA <note>'s variant from @type, defaulting to note when absent", () => {
+    const xml = `<topic>
+  <title>Only</title>
+  <body>
+    <note type="tip"><p>Use caching.</p></note>
+    <note><p>Default note.</p></note>
+    <note type="restriction"><p>Not one of the six.</p></note>
+  </body>
+</topic>`;
+    const content = at(parse(xml).sections, 0, "root section").children;
+    // Still three admonitions - the @type="restriction" note is not skipped,
+    // it simply names no variant in the six-value set. Inventing an
+    // equivalence (e.g. mapping it onto "note") would make `variant: note`
+    // pass on a page that never said "note".
+    expect(content.map((n) => n.kind)).toEqual(["admonition", "admonition", "admonition"]);
+    const [tip, note, restriction] = content as {
+      variant?: string;
+      children: { kind: string; text: string }[];
+    }[];
+    expect(tip?.variant).toBe("tip");
+    expect(tip?.children.map((c) => ({ kind: c.kind, text: c.text }))).toEqual([
+      { kind: "paragraph", text: "Use caching." },
+    ]);
+    expect(note?.variant).toBe("note");
+    expect(note?.children.map((c) => ({ kind: c.kind, text: c.text }))).toEqual([
+      { kind: "paragraph", text: "Default note." },
+    ]);
+    expect(restriction?.variant).toBeUndefined();
+    expect(restriction?.children.map((c) => ({ kind: c.kind, text: c.text }))).toEqual([
+      { kind: "paragraph", text: "Not one of the six." },
+    ]);
+  });
+
+  it("names a DocBook admonition's variant from the element itself", () => {
+    const xml = `<chapter xmlns="http://docbook.org/ns/docbook">
+  <title>Guide</title>
+  <warning><para>Careful.</para></warning>
+  <tip><para>Handy.</para></tip>
+</chapter>`;
+    const content = at(parse(xml).sections, 0, "root section").children;
+    expect(content.map((n) => n.kind)).toEqual(["admonition", "admonition"]);
+    const [warning, tip] = content as { variant: string }[];
+    expect(warning?.variant).toBe("warning");
+    expect(tip?.variant).toBe("tip");
+  });
+});
+
+describe("xml parser: images", () => {
+  it("reads a DITA <image>'s href/alt directly, and a <fig>'s from its nested <image>", () => {
+    const xml = `<topic>
+  <title>Only</title>
+  <body>
+    <image href="diagram.png"><alt>A diagram</alt></image>
+    <fig>
+      <title>Figure caption</title>
+      <image href="fig.png"><alt>Figure alt</alt></image>
+    </fig>
+  </body>
+</topic>`;
+    const content = at(parse(xml).sections, 0, "root section").children;
+    expect(content.map((n) => n.kind)).toEqual(["image", "image"]);
+    const [image, fig] = content as { url: string; alt: string; title?: string }[];
+    expect(image).toMatchObject({ url: "diagram.png", alt: "A diagram" });
+    expect(image?.title).toBeUndefined();
+    expect(fig).toMatchObject({ url: "fig.png", alt: "Figure alt", title: "Figure caption" });
+  });
+
+  it("reads a DocBook <mediaobject>/<figure>'s url from the nested <imagedata fileref>", () => {
+    const xml = `<chapter xmlns="http://docbook.org/ns/docbook">
+  <title>Guide</title>
+  <mediaobject>
+    <imageobject><imagedata fileref="diagram.png"/></imageobject>
+  </mediaobject>
+  <figure>
+    <title>Figure caption</title>
+    <mediaobject><imageobject><imagedata fileref="fig.png"/></imageobject></mediaobject>
+  </figure>
+</chapter>`;
+    const content = at(parse(xml).sections, 0, "root section").children;
+    expect(content.map((n) => n.kind)).toEqual(["image", "image"]);
+    const [media, figure] = content as { url: string; title?: string }[];
+    expect(media?.url).toBe("diagram.png");
+    expect(figure).toMatchObject({ url: "fig.png", title: "Figure caption" });
+  });
+});
+
+describe("xml parser: blockquotes", () => {
+  it("maps DITA's <lq>", () => {
+    const xml = `<topic><title>Only</title><body><lq><p>Quoted text.</p></lq></body></topic>`;
+    const content = at(parse(xml).sections, 0, "root section").children;
+    expect(content.map((n) => n.kind)).toEqual(["blockquote"]);
+    const quote = content[0] as { children: { kind: string; text: string }[] };
+    expect(quote.children.map((c) => ({ kind: c.kind, text: c.text }))).toEqual([
+      { kind: "paragraph", text: "Quoted text." },
+    ]);
+  });
+
+  it("maps DocBook's <blockquote>", () => {
+    const xml = `<chapter xmlns="http://docbook.org/ns/docbook"><title>Guide</title><blockquote><para>Quoted.</para></blockquote></chapter>`;
+    const content = at(parse(xml).sections, 0, "root section").children;
+    expect(content.map((n) => n.kind)).toEqual(["blockquote"]);
+  });
+});
+
+describe("xml parser: definition lists", () => {
+  it("pairs DITA's <dt>/<dd> inside <dlentry>", () => {
+    const xml = `<topic><title>Only</title><body>
+  <dl><dlentry><dt>Term</dt><dd><p>Definition text.</p></dd></dlentry></dl>
+</body></topic>`;
+    const content = at(parse(xml).sections, 0, "root section").children;
+    expect(content.map((n) => n.kind)).toEqual(["definitionList"]);
+    const list = content[0] as {
+      children: { kind: string; term: string; definition: { kind: string; text: string }[] }[];
+    };
+    expect(list.children).toHaveLength(1);
+    expect(list.children[0]?.term).toBe("Term");
+    expect(list.children[0]?.definition.map((c) => ({ kind: c.kind, text: c.text }))).toEqual([
+      { kind: "paragraph", text: "Definition text." },
+    ]);
+  });
+
+  it("pairs DocBook's <term>/<listitem> inside <varlistentry>", () => {
+    const xml = `<chapter xmlns="http://docbook.org/ns/docbook"><title>Guide</title>
+  <variablelist>
+    <varlistentry><term>Term</term><listitem><para>Definition text.</para></listitem></varlistentry>
+  </variablelist>
+</chapter>`;
+    const content = at(parse(xml).sections, 0, "root section").children;
+    expect(content.map((n) => n.kind)).toEqual(["definitionList"]);
+    const list = content[0] as {
+      children: { term: string; definition: { kind: string; text: string }[] }[];
+    };
+    expect(list.children[0]?.term).toBe("Term");
+    expect(list.children[0]?.definition.map((c) => ({ kind: c.kind, text: c.text }))).toEqual([
+      { kind: "paragraph", text: "Definition text." },
+    ]);
   });
 });
 
@@ -510,6 +701,23 @@ describe("xml parser: registry shape", () => {
     // a map has no titled section, so every map would report as unparseable.
     expect(xmlParser.extensions).toEqual([".xml", ".dita"]);
     expect(xmlParser.extensions).not.toContain(".ditamap");
+  });
+
+  it("declares exactly the kinds it emits", () => {
+    expect(xmlParser.kinds).toEqual([
+      "paragraph",
+      "codeBlock",
+      "list",
+      "listItem",
+      "table",
+      "tableRow",
+      "tableCell",
+      "admonition",
+      "image",
+      "blockquote",
+      "definitionList",
+      "definitionItem",
+    ]);
   });
 
   it("reports its own format on the tree", () => {
