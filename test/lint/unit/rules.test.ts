@@ -288,8 +288,12 @@ describe("checkHeading", () => {
 
     expect(findings).toEqual([
       {
+        // `null`, not `""`. The lead section has no heading, and every other
+        // findings path spells that `null`; the JSON reporter's `heading` is
+        // parsed rather than validated downstream, so one nil is all it may
+        // have.
         type: "heading_error",
-        heading: "",
+        heading: null,
         message: `Expected title "Overview", but found no heading`,
         position: pos(SECTION_LINE),
         severity: "error",

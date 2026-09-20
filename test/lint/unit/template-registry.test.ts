@@ -822,6 +822,40 @@ describe("the template schema", () => {
     expect(message).toContain("/templates/how-to/sections/0");
   });
 
+  // The same exclusivity, one level down. `elements` and `listItems` take a
+  // body of their own, and `elements.ts` runs `sequence` *or* `contains` on
+  // it - so if the schema let both through, the second would be dropped in
+  // silence. It does not, and this is what says so.
+  it("rejects an `elements` rule that sets both `sequence` and `contains`", () => {
+    const message = thrownMessage(() =>
+      load(
+        one({
+          contains: {
+            elements: {
+              tag: "Steps",
+              sequence: [{ paragraphs: {} }],
+              contains: { lists: {} },
+            },
+          },
+        }),
+      ),
+    );
+    expect(message).toContain("/templates/how-to/sections/0/contains/elements");
+  });
+
+  it("rejects a `listItems` rule that sets both `sequence` and `contains`", () => {
+    const message = thrownMessage(() =>
+      load(
+        one({
+          contains: {
+            lists: { items: { sequence: [{ paragraphs: {} }], contains: { lists: {} } } },
+          },
+        }),
+      ),
+    );
+    expect(message).toContain("/templates/how-to/sections/0/contains/lists/items");
+  });
+
   it("rejects a rule that sets both `heading` and `repeat`", () => {
     const message = thrownMessage(() =>
       load(one({ heading: "Symptoms", repeat: [{ heading: "Symptom" }] })),

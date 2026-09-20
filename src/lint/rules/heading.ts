@@ -40,7 +40,11 @@ export function checkHeading(
   const fail = (message: string): Finding[] => [
     {
       type: "heading_error",
-      heading: section.title,
+      // `|| null`, as `sectionContext` and `match.ts`'s `anchor` both do. A
+      // headless section's title is `""`, and the JSON reporter's `heading` is
+      // a wire key `manni docevals` parses rather than validates, so two
+      // spellings of "no heading" would reach it as two different facts.
+      heading: section.title || null,
       message,
       position,
       severity: "error",

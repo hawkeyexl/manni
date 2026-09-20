@@ -463,7 +463,14 @@ function sameOccurrenceRange(a: Occurrences, b: Occurrences): boolean {
   return rangeA.min === rangeB.min && rangeA.max === rangeB.max;
 }
 
-/** Compile an author's pattern here, so a broken one names the file it is in. */
+/**
+ * Compile an author's pattern here, so a broken one names the file it is in.
+ *
+ * "Broken" means it does not compile. A pattern that compiles can still hang
+ * the run by backtracking, and this does not catch that; `compilePattern` in
+ * `../rules/index.ts` carries the full note, including why a length cap is not
+ * the mitigation it looks like.
+ */
 function checkPattern(pattern: string | undefined, source: string): void {
   if (pattern === undefined) return;
   try {

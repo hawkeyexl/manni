@@ -442,14 +442,21 @@ export function validateDocument(
   template: Template,
   options: ValidateOptions = {},
 ): Finding[] {
-  const kinds = options.kinds ?? parserByName(tree.format)?.kinds;
-  const pruned = kinds ? prune(template, kinds) : undefined;
-  const rules = pruned?.template ?? template;
+  // An unrecognised format falls back to *no* kinds rather than to no pruning.
+  // Every tree the CLI builds carries a registered parser's own name, so this
+  // is only reachable through the exported API, with a tree somebody else
+  // parsed. Such a format has promised nothing, so no content rule can be said
+  // to have run against it, and the alternative is the one 0053 rules out:
+  // applying every rule to a format that may answer none of them, which makes
+  // a green run mean two different things.
+  const kinds = options.kinds ?? parserByName(tree.format)?.kinds ?? [];
+  const pruned = prune(template, kinds);
+  const rules = pruned.template;
   // The template's own name, for the messages that have to say which template
   // asked. The caller knows it; `title` is the next best thing a file carries.
   const name = options.template ?? template.title ?? "unnamed";
 
-  const findings: Finding[] = (pruned?.gaps ?? []).map((gap) =>
+  const findings: Finding[] = pruned.gaps.map((gap) =>
     uncheckedFinding(tree.format, name, gap),
   );
 
