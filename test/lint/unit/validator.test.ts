@@ -446,15 +446,20 @@ describe("a rule about a kind the parser does not report", () => {
     ]);
   });
 
+  // `definitionLists` rather than `tables`: the markdown parser reports GFM
+  // tables, so a table rule against it now runs and finds nothing, which is a
+  // real finding rather than an unanswered one. Markdown has no definition-list
+  // syntax and declares none, so that is the rule this parser genuinely cannot
+  // answer.
   it("takes the parser's kinds from the registry when none are passed", () => {
     const doc = tree([section({ title: "Overview" })], "markdown");
     const template: Template = {
-      sections: [{ heading: "Overview", contains: { tables: { min: 1 } } }],
+      sections: [{ heading: "Overview", contains: { definitionLists: { min: 1 } } }],
     };
     const findings = validateDocument(doc, template, { template: "reference" });
     expect(messages(findings)).toEqual([
-      'The markdown parser does not report tables, so the "tables" rule in ' +
-        'template "reference" is not checked for this file.',
+      'The markdown parser does not report definition lists, so the ' +
+        '"definitionLists" rule in template "reference" is not checked for this file.',
     ]);
   });
 });
@@ -538,6 +543,8 @@ describe("a warning never changes the exit code", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
+  // A definition list, not a table: markdown reports GFM tables now, so only a
+  // kind it genuinely cannot see still produces the warning this test is about.
   const TEMPLATE = [
     "templates:",
     "  page:",
@@ -545,7 +552,7 @@ describe("a warning never changes the exit code", () => {
     "    sections:",
     "      - heading: Overview",
     "        contains:",
-    "          tables:",
+    "          definitionLists:",
     "            min: 1",
     "",
   ].join("\n");
