@@ -3,6 +3,7 @@
 templates:
   how-to:
     sections:
-      overview:
-        paragrafs:
-          min: 1
+      - id: overview
+        contains:
+          paragrafs:
+            min: 1

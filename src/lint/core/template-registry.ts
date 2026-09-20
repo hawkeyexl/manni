@@ -31,7 +31,16 @@ import * as AjvNs from "ajv";
 import type { ErrorObject, SchemaObject, ValidateFunction } from "ajv";
 import { LintError } from "../types.js";
 import { errorMessage } from "../../shared/errors.js";
-import type { Template, TemplateFile, TemplateSection } from "./template.js";
+import { warn } from "../../shared/warn.js";
+import { BLOCK_KINDS, isWildcard } from "./template.js";
+import type {
+  BlockRule,
+  ListItemsRule,
+  Occurrences,
+  Rule,
+  Template,
+  TemplateFile,
+} from "./template.js";
 import templateFileSchema from "../../../schemas/lint/template.json" with { type: "json" };
 import tgdpManifest from "../../../templates/lint/tgdp/manifest.json" with { type: "json" };
 
@@ -216,9 +225,12 @@ export interface LoadTemplateOptions {
  * Validation
  * -------------------------------------------------------------------------- */
 
-// `useDefaults` is not cosmetic: it is what fills in `required: true` on every
-// section rule that does not say otherwise, which the matcher reads.
-const ajv = new Ajv({ useDefaults: true });
+// `useDefaults` is deliberately off, and the schema declares no `default`
+// anywhere. A default Ajv writes into the data is indistinguishable from a
+// value the author typed, so it beats the parent's real value in an `extends`
+// merge. Every default in this format lives in the code that reads it
+// (`occurrenceRange`), where an absent key stays absent.
+const ajv = new Ajv();
 
 let compiled: ValidateFunction | null = null;
 
@@ -325,6 +337,214 @@ function instructionsMessage(source: string, hit: InstructionsHit): string {
   ].join("\n");
 }
 
+/* -------------------------------------------------------------------------- *
+ * Refusing a v1 file
+ *
+ * v1 never shipped, so there is no migration mode and no alias. What there is
+ * instead is a sentence per key naming the v2 spelling, because a v1 file is
+ * what anyone who tried the format early still has on disk. Left to the schema
+ * these all read as "must NOT have additional properties", which says nothing
+ * about where the key went.
+ *
+ * The scan runs before Ajv, for the same reason the `instructions` scan does.
+ * -------------------------------------------------------------------------- */
+
+/** v1 keys that are gone outright, and what to write instead. */
+const V1_KEYS: Record<string, string> = {
+  required: '"required" is not a template key. A rule is optional with "min: 0".',
+  additionalSections:
+    '"additionalSections" is not a template key. v2 has no equivalent, so drop it.',
+  code_blocks: '"code_blocks" is not a template key. The v2 spelling is "codeBlocks".',
+};
+
+const V1_SECTIONS_MAP =
+  '"sections" is a list of rules, not a map. Name each rule with "id" and list them in order.';
+
+const V1_REPEAT_BOOLEAN =
+  '"repeat" is a list of rules, not a boolean. A rule repeats through "min" and "max".';
+
+const V1_PARAGRAPH_PATTERNS =
+  '"patterns" is not a paragraphs key. The v2 spelling is "pattern", one regular expression.';
+
+/**
+ * The first v1 key anywhere under `templates` or `components`.
+ *
+ * `info` is skipped: it is free-form by contract, so a key of one of these
+ * names in it is the author's own metadata rather than a template rule.
+ *
+ * A node carrying a `sections` *map* returns before its children are walked.
+ * Inside such a map the keys are section names the author chose, and a v1
+ * template with a section named `required` must not be reported as using the
+ * `required` key.
+ */
+function findV1Key(node: unknown, seen = new WeakSet()): string | null {
+  if (typeof node !== "object" || node === null) return null;
+  if (seen.has(node)) return null;
+  seen.add(node);
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const hit = findV1Key(item, seen);
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  const record = node as Record<string, unknown>;
+  for (const [key, message] of Object.entries(V1_KEYS)) {
+    if (key in record) return message;
+  }
+  if (isRecord(record.sections)) return V1_SECTIONS_MAP;
+  if (typeof record.repeat === "boolean") return V1_REPEAT_BOOLEAN;
+  if (isRecord(record.paragraphs) && "patterns" in record.paragraphs) {
+    return V1_PARAGRAPH_PATTERNS;
+  }
+
+  for (const value of Object.values(record)) {
+    const hit = findV1Key(value, seen);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function findV1File(data: unknown): string | null {
+  if (!isRecord(data)) return null;
+  return findV1Key(data.templates) ?? findV1Key(data.components);
+}
+
+/* -------------------------------------------------------------------------- *
+ * Checks JSON Schema cannot express
+ *
+ * Three of these compare two siblings, which draft-07 has no keyword for, and
+ * one compiles a regular expression, which it has no opinion about. The fifth
+ * is a warning rather than an error: the template is legal, and only its author
+ * can say whether the ambiguity is intended.
+ * -------------------------------------------------------------------------- */
+
+/** How a rule is named in a message: its id where it has one, else its path. */
+function ruleLabel(rule: Rule, path: string): string {
+  return rule.id === undefined ? path : `"${rule.id}"`;
+}
+
+/**
+ * `max` below `min`, where the author wrote both.
+ *
+ * Only where both are written. `min` defaults to one, so comparing against the
+ * default would refuse `max: 0`, which is how the format spells "none of
+ * these".
+ */
+function checkRange(range: Occurrences, source: string, label: string): void {
+  const { min, max } = range;
+  if (min !== undefined && max !== undefined && max < min) {
+    throw new LintError(`${source}: rule ${label} sets max ${max} below min ${min}.`);
+  }
+}
+
+/** Compile an author's pattern here, so a broken one names the file it is in. */
+function checkPattern(pattern: string | undefined, source: string): void {
+  if (pattern === undefined) return;
+  try {
+    new RegExp(pattern);
+  } catch (err) {
+    throw new LintError(
+      `Invalid pattern "${pattern}" in ${source}: ${errorMessage(err)}.`,
+    );
+  }
+}
+
+function checkListItems(items: ListItemsRule, source: string, path: string): void {
+  checkRange(items, source, path);
+  if (items.contains) checkBlockRule(items.contains, source, `${path}.contains`);
+  items.sequence?.forEach((entry, index) => {
+    checkBlockRule(entry, source, `${path}.sequence[${index}]`);
+  });
+}
+
+function checkBlockRule(block: BlockRule, source: string, path: string): void {
+  for (const kind of BLOCK_KINDS) {
+    const counted: Occurrences | undefined = block[kind];
+    if (counted) checkRange(counted, source, `${path}.${kind}`);
+  }
+  checkPattern(block.paragraphs?.pattern, source);
+  if (block.lists?.items) {
+    checkListItems(block.lists.items, source, `${path}.lists.items`);
+  }
+  const element = block.elements;
+  if (element?.contains) {
+    checkBlockRule(element.contains, source, `${path}.elements.contains`);
+  }
+  element?.sequence?.forEach((entry, index) => {
+    checkBlockRule(entry, source, `${path}.elements.sequence[${index}]`);
+  });
+}
+
+/** Everything a rule and a template share. A template is a rule. */
+function checkRuleBody(rule: Rule, source: string, path: string): void {
+  const heading = rule.heading;
+  if (typeof heading === "object" && !Array.isArray(heading)) {
+    checkPattern(heading.pattern, source);
+  }
+  if (rule.contains) checkBlockRule(rule.contains, source, `${path}.contains`);
+  rule.sequence?.forEach((entry, index) => {
+    checkBlockRule(entry, source, `${path}.sequence[${index}]`);
+  });
+  checkRuleList(rule.repeat, source, `${path}.repeat`);
+  checkRuleList(rule.sections, source, `${path}.sections`);
+}
+
+/**
+ * One list of sibling rules: their ids, their ranges, and whether two
+ * neighbours are told apart by nothing but their order.
+ */
+function checkRuleList(rules: Rule[] | undefined, source: string, path: string): void {
+  if (!rules) return;
+
+  const ids = new Set<string>();
+  for (const [index, rule] of rules.entries()) {
+    const here = `${path}[${index}]`;
+    if (rule.id !== undefined) {
+      if (ids.has(rule.id)) {
+        throw new LintError(`${source}: two sibling rules share the id "${rule.id}".`);
+      }
+      ids.add(rule.id);
+    }
+    checkRange(rule, source, ruleLabel(rule, here));
+    checkRuleBody(rule, source, here);
+  }
+
+  // A warning, not an error. Two adjacent wildcards are how TGDP's "{Task
+  // name}" then "{Next task}" is written, and that is legal. It is also how a
+  // template accidentally describes one section twice, and nothing in the file
+  // distinguishes the two cases.
+  for (const [index, rule] of rules.entries()) {
+    const next = rules[index + 1];
+    if (!next) break;
+    if (
+      isWildcard(rule) &&
+      rule.repeat === undefined &&
+      isWildcard(next) &&
+      next.repeat === undefined
+    ) {
+      warn(
+        `${source}: two adjacent rules have no heading and no repeat; only rule order tells them apart.`,
+      );
+      break;
+    }
+  }
+}
+
+/** The checks that run over a validated file, template by template. */
+function checkTemplateFile(file: TemplateFile, source: string): void {
+  for (const [name, template] of Object.entries(file.templates ?? {})) {
+    if (template.min !== undefined || template.max !== undefined) {
+      throw new LintError(
+        `${source}: a template may not set min or max; a page is one page.`,
+      );
+    }
+    checkRuleBody(template, source, `templates.${name}`);
+  }
+}
+
 /** `/templates/how-to/sections/title must NOT have additional properties (foo)`. */
 function describeError(error: ErrorObject): string {
   const params = error.params as { additionalProperty?: unknown };
@@ -345,13 +565,20 @@ export function validateTemplateFile(data: unknown, source: string): TemplateFil
   const instructions = findInstructions(data);
   if (instructions) throw new LintError(instructionsMessage(source, instructions));
 
+  // Before Ajv, so a v1 file is told where its keys went rather than that it
+  // has additional properties.
+  const v1 = findV1File(data);
+  if (v1) throw new LintError(`${source}: ${v1}`);
+
   const validate = fileValidator();
   if (!validate(data)) {
     const errors = validate.errors ?? [];
     const detail = errors.map(describeError).join("; ") || "does not match the template schema";
     throw new LintError(`${source} is not a valid template file: ${detail}.`);
   }
-  return data as TemplateFile;
+  const file = data as TemplateFile;
+  checkTemplateFile(file, source);
+  return file;
 }
 
 /* -------------------------------------------------------------------------- *
@@ -584,48 +811,51 @@ export type TemplateResolver = (ref: string) => Promise<Template>;
 /**
  * Merge a child template onto its parent.
  *
- * Recursion follows `sections` and stops there. A section's own rules are units:
- * overriding `paragraphs` means replacing that rule, not merging a child's `min`
- * into the parent's `max` and hoping the pair still means something. But
- * `sections` is a container, not a rule - replacing it wholesale would mean that
- * tightening one nested section silently discards every sibling the parent
- * declared, which is the opposite of what `extends` is for.
+ * Recursion follows `sections` and stops there. A rule's own keys are units:
+ * overriding `contains` means replacing it, not merging a child's `min` into
+ * the parent's `max` and hoping the pair still means something. But `sections`
+ * is a container, not a rule. Replacing it wholesale would mean that tightening
+ * one nested rule silently discards every sibling the parent declared, which is
+ * the opposite of what `extends` is for.
  *
- * So: `sections` merges by key, recursively, all the way down; every other key
- * the child sets replaces the parent's outright.
+ * `sections` is a list in v2, so "merges by key" now means "merges by `id`". A
+ * child rule carrying an id the parent also uses replaces that rule where the
+ * parent had it, keeping the parent's order. A child rule with no id, or with
+ * an id the parent does not use, is appended. Every other key the child sets
+ * replaces the parent's outright, `repeat` included: a repeated run is one
+ * unit, and merging two of them by position would be guesswork.
  */
-function mergeSectionMaps(
-  parent: Record<string, TemplateSection> | undefined,
-  child: Record<string, TemplateSection> | undefined,
-): Record<string, TemplateSection> | undefined {
+function mergeRuleLists(
+  parent: Rule[] | undefined,
+  child: Rule[] | undefined,
+): Rule[] | undefined {
   if (!parent) return child;
   if (!child) return parent;
 
-  // Parent order first, so inherited sections keep the document order the
-  // parent declared and child-only additions land at the end.
-  const merged: Record<string, TemplateSection> = { ...parent };
-  for (const [name, childSection] of Object.entries(child)) {
-    const parentSection = parent[name];
-    merged[name] = parentSection
-      ? mergeSections(parentSection, childSection)
-      : childSection;
+  // Parent order first, so inherited rules keep the document order the parent
+  // declared and child-only additions land at the end.
+  const merged: Rule[] = [...parent];
+  for (const childRule of child) {
+    const id = childRule.id;
+    const index =
+      id === undefined ? -1 : merged.findIndex((rule) => rule.id === id);
+    const target = index === -1 ? undefined : merged[index];
+    if (target === undefined) merged.push(childRule);
+    else merged[index] = mergeRules(target, childRule);
   }
   return merged;
 }
 
-function mergeSections(
-  parent: TemplateSection,
-  child: TemplateSection,
-): TemplateSection {
-  const merged: TemplateSection = { ...parent, ...child };
-  const sections = mergeSectionMaps(parent.sections, child.sections);
+function mergeRules(parent: Rule, child: Rule): Rule {
+  const merged: Rule = { ...parent, ...child };
+  const sections = mergeRuleLists(parent.sections, child.sections);
   if (sections) merged.sections = sections;
   return merged;
 }
 
 function mergeTemplates(parent: Template, child: Template): Template {
   const merged: Template = { ...parent, ...child };
-  const sections = mergeSectionMaps(parent.sections, child.sections);
+  const sections = mergeRuleLists(parent.sections, child.sections);
   if (sections) merged.sections = sections;
   // The chain is resolved; leaving `extends` on would invite resolving twice.
   delete merged.extends;

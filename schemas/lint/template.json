@@ -1,12 +1,16 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "manni-lint:template:1",
+  "$id": "manni-lint:template:2",
   "title": "manni lint template file",
-  "description": "A template file: named doctype templates, plus the reusable fragments they point at with `$ref`. Validated after dereferencing, so no `$ref` survives to be seen here.",
+  "description": "A template file: named doctype templates, plus the reusable fragments they point at with `$ref`. Validated after dereferencing, so no `$ref` survives to be seen here. A template is itself a rule: it describes the page, and it takes every rule key plus `title`, `types` and `extends`.",
   "type": "object",
   "additionalProperties": false,
   "required": ["templates"],
   "properties": {
+    "$schema": {
+      "description": "URL of this schema, so an editor can offer completion. Read by editors, never by the linter.",
+      "type": "string"
+    },
     "info": {
       "description": "Free-form metadata about the file (title, version, author). Never read by the linter; declared so a file that carries it is not rejected.",
       "type": "object"
@@ -16,7 +20,7 @@
       "type": "object",
       "additionalProperties": false,
       "patternProperties": {
-        "^[A-Za-z0-9-_]+$": { "$ref": "#/definitions/template" }
+        "^[A-Za-z][A-Za-z0-9-_]*$": { "$ref": "#/definitions/template" }
       }
     },
     "components": {
@@ -25,102 +29,172 @@
     }
   },
   "definitions": {
+    "min": {
+      "description": "Fewest occurrences. Absent means one. Deliberately carries no JSON Schema `default`, and neither does any other key in this file: Ajv's `useDefaults` would write one in at load time, and a written-in value is indistinguishable from a value the author typed, so it wins the `extends` merge against the parent's real value. The code reads `undefined` instead.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "max": {
+      "description": "Most occurrences. Absent is unbounded, so write `max: 1` for exactly once and `max: 0` to forbid. Must be at least `min` where both are written; the loader checks that, because JSON Schema cannot compare two siblings.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "id": {
+      "description": "Handle for this rule, unique among its siblings. It appears in messages, and `extends` targets it to replace one inherited rule in place.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9-_]*$"
+    },
+    "description": {
+      "description": "Prose description of what the rule is for. Never checked.",
+      "type": "string"
+    },
+    "heading": {
+      "description": "The heading of the section this rule describes. Absent means any heading, or none. A string is exact text, a list is one-of, `{ pattern }` is an unanchored regular expression, and `false` means the section has no heading of its own.",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pattern"],
+          "properties": {
+            "pattern": { "type": "string", "minLength": 1 }
+          }
+        },
+        { "const": false }
+      ]
+    },
+    "attributes": {
+      "description": "Literal attributes the node must carry. A string is the required value; `true` requires the attribute to be present.",
+      "type": "object",
+      "additionalProperties": { "type": ["string", "boolean"] }
+    },
+    "oneOfSequenceOrContains": {
+      "description": "A rule says what it holds in order (`sequence`) or in any order (`contains`), never both.",
+      "not": { "required": ["sequence", "contains"] }
+    },
+    "noHeadingOnRepeat": {
+      "description": "`repeat` groups sibling rules into one repeated unit, so the group has no heading of its own. Put the heading on the first rule inside it.",
+      "not": { "required": ["heading", "repeat"] }
+    },
+    "noInstructions": {
+      "description": "`instructions` was the language-model hook of doc-structure-lint. manni lint is deterministic and has no model, so a template carrying it is rejected outright rather than silently ignored; the loader turns this into a migration message pointing at manni docevals.",
+      "not": { "required": ["instructions"] }
+    },
     "template": {
-      "description": "One doctype template: the section rules a document of that type must satisfy.",
+      "description": "One doctype template. A template is a rule describing the page itself, so it takes every rule key, plus `title`, `types` and `extends`.",
       "type": "object",
       "additionalProperties": false,
+      "allOf": [
+        { "$ref": "#/definitions/noInstructions" },
+        { "$ref": "#/definitions/oneOfSequenceOrContains" },
+        { "$ref": "#/definitions/noHeadingOnRepeat" }
+      ],
       "properties": {
+        "title": {
+          "description": "Human-readable name for the template, shown by `manni lint templates`.",
+          "type": "string"
+        },
         "types": {
           "description": "Doctypes this template serves, matched against a page's `type` frontmatter.",
           "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
+          "items": { "type": "string", "minLength": 1 }
         },
         "extends": {
           "description": "Template reference (built-in id, path, or URL, optionally with a `#name` fragment) whose rules this template inherits.",
           "type": "string",
           "minLength": 1
         },
-        "additionalSections": {
-          "description": "Allow top-level document sections this template does not describe.",
-          "type": "boolean"
+        "id": { "$ref": "#/definitions/id" },
+        "description": { "$ref": "#/definitions/description" },
+        "heading": { "$ref": "#/definitions/heading" },
+        "repeat": { "$ref": "#/definitions/repeat" },
+        "min": {
+          "description": "Refused on a template: a page is one page. Declared here only so the loader can say that in a sentence, rather than leaving Ajv to report an unexpected key.",
+          "type": "integer",
+          "minimum": 0
         },
-        "sections": {
-          "$ref": "#/definitions/sections"
-        }
+        "max": {
+          "description": "Refused on a template, for the same reason as `min`.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "sequence": { "$ref": "#/definitions/sequence" },
+        "contains": { "$ref": "#/definitions/blockRules" },
+        "sections": { "$ref": "#/definitions/rules" }
       }
     },
-    "sections": {
-      "description": "Section rules keyed by name, in document order. Each key describes one heading a level below its parent. A name may not consist only of digits: JavaScript enumerates integer-like object keys first, in ascending numeric order, so an all-digit name would silently reorder the rules relative to how the template declares them - and declared order is most of what a section rule asserts. Prefix such a name (`v2024`, `step-1`).",
+    "rule": {
+      "description": "One rule. It describes a section of the page, or, with `repeat`, a run of sections matched as one unit.",
       "type": "object",
       "additionalProperties": false,
-      "patternProperties": {
-        "^(?![0-9]+$)[A-Za-z0-9-_ ]+$": { "$ref": "#/definitions/section" }
-      }
-    },
-    "section": {
-      "description": "A section of a document, demarcated by a heading.",
-      "type": "object",
-      "additionalProperties": false,
-      "not": {
-        "description": "`instructions` was the language-model hook of doc-structure-lint. manni lint is deterministic and has no model, so a template carrying it is rejected outright rather than silently ignored; the loader turns this into a migration message pointing at manni docevals.",
-        "required": ["instructions"]
-      },
+      "allOf": [
+        { "$ref": "#/definitions/noInstructions" },
+        { "$ref": "#/definitions/oneOfSequenceOrContains" },
+        { "$ref": "#/definitions/noHeadingOnRepeat" }
+      ],
       "properties": {
-        "description": {
-          "description": "Prose description of the section's purpose. Not validated against.",
-          "type": "string"
-        },
-        "heading": {
-          "$ref": "#/definitions/heading"
-        },
-        "required": {
-          "description": "Whether the section must be present. Absent means required. Deliberately carries no JSON Schema `default`: Ajv's `useDefaults` would write one into every section at load time, and those written-in values then win the `extends` merge, so a child that tightens one nested rule would silently reset its parent's `required: false`. The code reads `undefined` as required.",
-          "type": "boolean"
-        },
-        "repeat": {
-          "description": "Whether this rule may claim more than one section. On a rule that constrains its heading, it claims the run of consecutive sections whose headings satisfy it - how a doctype says \"one or more sections named `Symptom N`\". On a slot (a rule constraining neither `heading.const` nor `heading.pattern`) it claims every section up to the next anchored rule that could claim one. Without it either kind claims exactly one, so two adjacent slots each get their own section. Absent means false; see `required` for why no `default` is declared.",
-          "type": "boolean"
-        },
-        "sequence": {
-          "description": "Ordered runs of content the section must contain.",
-          "type": "array",
-          "minItems": 1,
-          "items": { "$ref": "#/definitions/sequence_item" }
-        },
-        "paragraphs": {
-          "$ref": "#/definitions/paragraphs"
-        },
-        "code_blocks": {
-          "$ref": "#/definitions/code_blocks"
-        },
-        "lists": {
-          "$ref": "#/definitions/lists"
-        },
-        "additionalSections": {
-          "description": "Allow subsections this template does not describe. Absent means false; see `required` for why no `default` is declared.",
-          "type": "boolean"
-        },
-        "sections": {
-          "$ref": "#/definitions/sections"
-        }
+        "id": { "$ref": "#/definitions/id" },
+        "description": { "$ref": "#/definitions/description" },
+        "heading": { "$ref": "#/definitions/heading" },
+        "repeat": { "$ref": "#/definitions/repeat" },
+        "min": { "$ref": "#/definitions/min" },
+        "max": { "$ref": "#/definitions/max" },
+        "sequence": { "$ref": "#/definitions/sequence" },
+        "contains": { "$ref": "#/definitions/blockRules" },
+        "sections": { "$ref": "#/definitions/rules" }
       }
     },
-    "heading": {
-      "description": "Heading rules. A section that constrains neither `const` nor `pattern` is a slot: it matches any heading.",
+    "rules": {
+      "description": "Rules for the subsections, in document order.",
+      "type": "array",
+      "items": { "$ref": "#/definitions/rule" }
+    },
+    "repeat": {
+      "description": "Rules matched in order as one unit, repeated by this rule's `min` and `max`.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/rule" }
+    },
+    "sequence": {
+      "description": "What the section holds, in order. Each entry is one run of one content kind.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "allOf": [
+          { "$ref": "#/definitions/blockRules" },
+          { "type": "object", "maxProperties": 1 }
+        ]
+      }
+    },
+    "blockRules": {
+      "description": "Block rules, keyed by content kind. The key is plural because it carries a count: the node model says `codeBlock`, a template says `codeBlocks: { min: 1 }`.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "paragraphs": { "$ref": "#/definitions/paragraphs" },
+        "codeBlocks": { "$ref": "#/definitions/codeBlocks" },
+        "lists": { "$ref": "#/definitions/lists" },
+        "tables": { "$ref": "#/definitions/tables" },
+        "admonitions": { "$ref": "#/definitions/admonitions" },
+        "images": { "$ref": "#/definitions/images" },
+        "blockquotes": { "$ref": "#/definitions/counted" },
+        "definitionLists": { "$ref": "#/definitions/counted" },
+        "elements": { "$ref": "#/definitions/elements" }
+      }
+    },
+    "counted": {
+      "description": "A block rule that only counts.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "const": {
-          "description": "Exact heading text of the section.",
-          "type": "string"
-        },
-        "pattern": {
-          "description": "Regular expression the heading must match.",
-          "type": "string"
-        }
+        "min": { "$ref": "#/definitions/min" },
+        "max": { "$ref": "#/definitions/max" }
       }
     },
     "paragraphs": {
@@ -128,35 +202,29 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "min": {
-          "description": "Minimum number of paragraphs.",
-          "type": "integer",
-          "minimum": 0
-        },
-        "max": {
-          "description": "Maximum number of paragraphs.",
-          "type": "integer"
-        },
-        "patterns": {
-          "description": "Regular expressions applied to paragraphs in order, cycled when exhausted.",
-          "type": "array",
-          "items": { "type": "string" }
+        "min": { "$ref": "#/definitions/min" },
+        "max": { "$ref": "#/definitions/max" },
+        "pattern": {
+          "description": "Unanchored regular expression every paragraph in the run must match.",
+          "type": "string",
+          "minLength": 1
         }
       }
     },
-    "code_blocks": {
+    "codeBlocks": {
       "description": "Code block requirements.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "min": {
-          "description": "Minimum number of code blocks.",
-          "type": "integer",
-          "minimum": 0
+        "min": { "$ref": "#/definitions/min" },
+        "max": { "$ref": "#/definitions/max" },
+        "language": {
+          "description": "Language the block must be tagged with, as the node model spells it.",
+          "type": "string"
         },
-        "max": {
-          "description": "Maximum number of code blocks.",
-          "type": "integer"
+        "fenceInfo": {
+          "description": "Info-string tail after the language, where the format carries one.",
+          "type": "string"
         }
       }
     },
@@ -165,59 +233,95 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "min": {
-          "description": "Minimum number of lists.",
-          "type": "integer",
-          "minimum": 0
+        "min": { "$ref": "#/definitions/min" },
+        "max": { "$ref": "#/definitions/max" },
+        "ordered": {
+          "description": "Whether the list must be ordered. Absent accepts either.",
+          "type": "boolean"
         },
-        "max": {
-          "description": "Maximum number of lists.",
-          "type": "integer"
-        },
-        "items": {
-          "description": "Requirements applied to every item of every list. Recurses arbitrarily deep.",
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "min": {
-              "description": "Minimum number of items in a list.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "max": {
-              "description": "Maximum number of items in a list.",
-              "type": "integer"
-            },
-            "paragraphs": { "$ref": "#/definitions/paragraphs" },
-            "code_blocks": { "$ref": "#/definitions/code_blocks" },
-            "lists": { "$ref": "#/definitions/lists" }
-          }
+        "items": { "$ref": "#/definitions/listItems" }
+      }
+    },
+    "listItems": {
+      "description": "Requirements applied to every item of every list in the run. Recurses arbitrarily deep.",
+      "type": "object",
+      "additionalProperties": false,
+      "allOf": [{ "$ref": "#/definitions/oneOfSequenceOrContains" }],
+      "properties": {
+        "min": { "$ref": "#/definitions/min" },
+        "max": { "$ref": "#/definitions/max" },
+        "sequence": { "$ref": "#/definitions/sequence" },
+        "contains": { "$ref": "#/definitions/blockRules" }
+      }
+    },
+    "tables": {
+      "description": "Table requirements.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min": { "$ref": "#/definitions/min" },
+        "max": { "$ref": "#/definitions/max" },
+        "columns": {
+          "description": "The header cells, in order.",
+          "type": "array",
+          "items": { "type": "string" }
         }
       }
     },
-    "sequence_item": {
-      "description": "One run of a `sequence`. Exactly one key is set; it names the content kind expected at that position.",
+    "admonitions": {
+      "description": "Admonition requirements.",
       "type": "object",
-      "anyOf": [
-        {
-          "additionalProperties": false,
-          "properties": {
-            "paragraphs": { "$ref": "#/definitions/paragraphs" }
-          }
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "code_blocks": { "$ref": "#/definitions/code_blocks" }
-          }
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "lists": { "$ref": "#/definitions/lists" }
-          }
+      "additionalProperties": false,
+      "properties": {
+        "min": { "$ref": "#/definitions/min" },
+        "max": { "$ref": "#/definitions/max" },
+        "variant": {
+          "description": "Which flavor of admonition. The node model's `variant`, not any one format's spelling.",
+          "enum": [
+            "note",
+            "tip",
+            "important",
+            "caution",
+            "warning",
+            "danger"
+          ]
         }
-      ]
+      }
+    },
+    "images": {
+      "description": "Image requirements.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min": { "$ref": "#/definitions/min" },
+        "max": { "$ref": "#/definitions/max" },
+        "url": {
+          "description": "Where the image must point.",
+          "type": "string"
+        },
+        "alt": {
+          "description": "Alternative text the image must carry.",
+          "type": "string"
+        },
+        "attributes": { "$ref": "#/definitions/attributes" }
+      }
+    },
+    "elements": {
+      "description": "Named-wrapper requirements. `sequence` and `contains` here describe what the element holds, which is never the enclosing section's content.",
+      "type": "object",
+      "additionalProperties": false,
+      "allOf": [{ "$ref": "#/definitions/oneOfSequenceOrContains" }],
+      "properties": {
+        "min": { "$ref": "#/definitions/min" },
+        "max": { "$ref": "#/definitions/max" },
+        "tag": {
+          "description": "The element's name, as an author of the format would write it.",
+          "type": "string"
+        },
+        "attributes": { "$ref": "#/definitions/attributes" },
+        "sequence": { "$ref": "#/definitions/sequence" },
+        "contains": { "$ref": "#/definitions/blockRules" }
+      }
     }
   }
 }

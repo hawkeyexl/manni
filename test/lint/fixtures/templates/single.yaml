@@ -5,12 +5,11 @@ templates:
   how-to:
     types: [how-to]
     sections:
-      overview:
-        heading:
-          const: Overview
-        paragraphs:
-          min: 1
-      before you start:
-        required: false
-        heading:
-          const: Before you start
+      - id: overview
+        heading: Overview
+        contains:
+          paragraphs:
+            min: 1
+      - id: before-you-start
+        min: 0
+        heading: Before you start

@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { markdownParser } from "../../../src/lint/parsers/markdown.js";
 import { matchSections } from "../../../src/lint/core/match.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
-import type { Template, TemplateSection } from "../../../src/lint/core/template.js";
+import type {
+  V1Template as Template,
+  TemplateSection,
+} from "../../../src/lint/core/template-v1.js";
 import { at } from "../helpers.js";
 
 /** Sibling sections one level below a single H1, the common template shape. */

@@ -35,7 +35,7 @@ import {
   isRequired,
   isSlot,
   type TemplateSection,
-} from "./template.js";
+} from "./template-v1.js";
 
 /** One rule paired with the section (if any) it claimed. */
 export interface Match {

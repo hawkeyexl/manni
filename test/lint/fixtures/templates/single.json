@@ -2,12 +2,13 @@
   "templates": {
     "concept": {
       "types": ["concept"],
-      "sections": {
-        "overview": {
-          "heading": { "const": "Overview" },
-          "paragraphs": { "min": 1 }
+      "sections": [
+        {
+          "id": "overview",
+          "heading": "Overview",
+          "contains": { "paragraphs": { "min": 1 } }
         }
-      }
+      ]
     }
   }
 }

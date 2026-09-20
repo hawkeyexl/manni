@@ -3,14 +3,13 @@ templates:
   how-to:
     types: [how-to, howto]
     sections:
-      overview:
-        heading:
-          const: Overview
+      - id: overview
+        heading: Overview
   reference:
     types: [reference]
     sections:
-      syntax:
-        heading:
-          const: Syntax
-        code_blocks:
-          min: 1
+      - id: syntax
+        heading: Syntax
+        contains:
+          codeBlocks:
+            min: 1

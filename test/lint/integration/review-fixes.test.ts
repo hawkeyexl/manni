@@ -22,7 +22,7 @@ import { supportedExtensions } from "../../../src/lint/parsers/index.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
 import { refRelativeTo } from "../../../src/lint/core/template-registry.js";
 import { fencedPosition } from "../../../src/lint/parsers/metadata.js";
-import type { Template } from "../../../src/lint/core/template.js";
+import type { V1Template as Template } from "../../../src/lint/core/template-v1.js";
 import { LintError } from "../../../src/lint/types.js";
 import type { DocumentTree, ListItemNode } from "../../../src/lint/types.js";
 import { at, defined } from "../helpers.js";

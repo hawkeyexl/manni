@@ -8,5 +8,4 @@ templates:
   how-to:
     types: [how-to]
     sections:
-      overview:
-        $ref: "./test/lint/fixtures/templates/single.yaml#/templates/how-to/sections/overview"
+      - $ref: "./test/lint/fixtures/templates/single.yaml#/templates/how-to/sections/0"

@@ -21,7 +21,7 @@ import {
   loadTemplateFile,
   resolveExtends,
 } from "../../../src/lint/core/template-registry.js";
-import type { Template } from "../../../src/lint/core/template.js";
+import type { V1Template as Template } from "../../../src/lint/core/template-v1.js";
 import { at, defined } from "../helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -123,9 +123,12 @@ describe("the repository's own templates", () => {
       'Missing section "See also"',
     ]);
 
-    const house = await resolveExtends(
+    // The loader now returns the v2 template shape, while this file and the
+    // matcher still read v1's map. Both are rewritten in the chunks that
+    // follow; the cast is the bridge until then.
+    const house = (await resolveExtends(
       await loadTemplate(`${TEMPLATES}#house-how-to`),
-    );
+    )) as unknown as Template;
     expect(validateDocument(tree, house)).toEqual([]);
     // Inherited, not restated: the child names only `see also`.
     const inherited = house.sections?.["title"]?.sections ?? {};

@@ -20,7 +20,8 @@ import {
   checkSequence,
 } from "../rules/index.js";
 import { matchSections } from "./match.js";
-import type { Template, TemplateSection } from "./template.js";
+import type { Template } from "./template.js";
+import type { TemplateSection, V1Template } from "./template-v1.js";
 
 /** Content and heading rules for one matched pair, without recursion. */
 function checkSection(section: SectionNode, rule: TemplateSection): Finding[] {
@@ -58,9 +59,16 @@ export function validateSections(
 }
 
 /** Findings for one document against one template, in document order. */
-export function validateDocument(tree: DocumentTree, template: Template): Finding[] {
-  const findings = validateSections(tree.sections, template.sections, {
-    additionalSections: template.additionalSections,
+export function validateDocument(
+  tree: DocumentTree,
+  template: Template | V1Template,
+): Finding[] {
+  // A bridge, not a design. The loader now returns the v2 template shape, whose
+  // `sections` is a list of rules; the matcher below still reads v1's map. The
+  // matcher rewrite lands next and deletes both this cast and `template-v1.ts`.
+  const v1 = template as V1Template;
+  const findings = validateSections(tree.sections, v1.sections, {
+    additionalSections: v1.additionalSections,
     parent: null,
   });
 
