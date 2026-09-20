@@ -16,6 +16,12 @@
 # The `(\(Optional\) )?` alternative in each pattern is what lets upstream's own
 # file lint clean: it ships the authoring marker in the literal heading text,
 # where a real page writes just the section name.
+#
+# v2: the page's own body - the summary and the definition that follows it,
+# which upstream deliberately leaves without a heading of its own - is the
+# template's own `contains:` rather than a `title` section's. A concept page
+# explains something, and explanations grow sections the published template
+# never named; the trailing `min: 0` rule is what lets those through.
 info:
   title: Concept (The Good Docs Project)
   version: "1.6.0"
@@ -26,44 +32,46 @@ templates:
     types:
       - concept
       - explanation
+    description: >-
+      The page title, whatever the author calls the concept. Its body is the
+      summary that introduces the concept and the definition that follows -
+      upstream notes the definition deliberately carries no heading of its
+      own, so it is checked here rather than in a section.
+    contains:
+      paragraphs:
+        min: 1
     sections:
-      title:
+      - id: background
+        description: Context, prehistory, or background for the concept.
+        heading:
+          pattern: '^(\(Optional\) )?Background$'
+        min: 0
+        max: 1
+      - id: use-cases
         description: >-
-          The page title, whatever the author calls the concept. Its body is the
-          summary that introduces the concept and the definition that follows -
-          upstream notes the definition deliberately carries no heading of its
-          own, so it lives here rather than in a section.
-        paragraphs:
-          min: 1
-        # A concept page explains something, and explanations grow sections the
-        # published template never named. The four below are the ones TGDP
-        # names; anything else the author needs is allowed through.
-        additionalSections: true
-        sections:
-          background:
-            description: Context, prehistory, or background for the concept.
-            heading:
-              pattern: '^(\(Optional\) )?Background$'
-            required: false
-          use cases:
-            description: >-
-              How a reader benefits from the concept. The one section upstream
-              does not mark optional.
-            heading:
-              const: Use cases
-          comparison:
-            description: >-
-              A comparison of the options or alternatives the concept sits
-              among. Upstream titles it `Comparison of {thing being compared}`,
-              so only the literal prefix is anchored.
-            heading:
-              pattern: '^(\(Optional\) )?Comparison( of .+)?$'
-            required: false
-          related resources:
-            description: >-
-              Links out to related documentation. Upstream recommends "Related
-              concepts" or "Additional information" as more descriptive names,
-              so all three are accepted.
-            heading:
-              pattern: '^(\(Optional\) )?(Related resources|Related concepts|Additional information)$'
-            required: false
+          How a reader benefits from the concept. The one section upstream
+          does not mark optional.
+        heading: Use cases
+        max: 1
+      - id: comparison
+        description: >-
+          A comparison of the options or alternatives the concept sits
+          among. Upstream titles it `Comparison of {thing being compared}`,
+          so only the literal prefix is anchored.
+        heading:
+          pattern: '^(\(Optional\) )?Comparison( of .+)?$'
+        min: 0
+        max: 1
+      - id: related-resources
+        description: >-
+          Links out to related documentation. Upstream recommends "Related
+          concepts" or "Additional information" as more descriptive names,
+          so all three are accepted.
+        heading:
+          pattern: '^(\(Optional\) )?(Related resources|Related concepts|Additional information)$'
+        min: 0
+        max: 1
+      # A concept page explains something, and explanations grow sections the
+      # published template never named. The four above are the ones TGDP
+      # names; anything else the author needs is allowed through.
+      - min: 0

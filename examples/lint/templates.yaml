@@ -14,132 +14,166 @@ templates: # Array of templates, each with a unique key
   # Start from a vetted built-in and disagree with it in one place, rather than
   # copying it and drifting. TGDP does not mark "See also" optional, so
   # `tgdp:how-to:1.6` requires it; plenty of real how-tos have none. `extends`
-  # merges through `sections` recursively, so everything else the built-in says
-  # - Overview, Before you start, the repeating task sections - is inherited.
+  # merges `sections:` by `id`, so everything else the built-in says -
+  # Overview, Before you start, the repeating task sections - is inherited.
   house-how-to:
     types: [how-to]
     extends: tgdp:how-to:1.6
     sections:
-      title:
-        sections:
-          see also:
-            required: false
+      - id: see-also
+        min: 0
 
   how-to:
+    contains:
+      paragraphs:
+        min: 1
     sections:
-      title:
-        paragraphs:
-          min: 1
+      - id: overview
+        heading: Overview
+        max: 1
+        contains:
+          paragraphs:
+            min: 1
+      - id: before-you-start
+        heading: Before you start
+        max: 1
+        contains:
+          paragraphs:
+            min: 1
+      - id: task
+        max: 1
+        contains:
+          paragraphs:
+            min: 1
         sections:
-          overview:
-            heading:
-              const: Overview
-            paragraphs:
-              min: 1
-          before you start:
-            heading:
-              const: Before you start
-            paragraphs:
-              min: 1
-          task:
-            paragraphs:
-              min: 1
-            additionalSections: true
-            sections:
-              Sub-task:
-                paragraphs:
-                  min: 1
-          see also:
-            heading:
-              const: See also
-            paragraphs:
-              min: 1
+          - id: sub-task
+            contains:
+              paragraphs:
+                min: 1
+          - min: 0
+      - id: see-also
+        heading: See also
+        max: 1
+        contains:
+          paragraphs:
+            min: 1
+
   api-operation:
     sections:
-      overview:
-        heading:
-          const: "Overview"
-        paragraphs:
-          min: 1
-          max: 3
-      request-parameters:
+      - id: overview
+        heading: Overview
+        max: 1
+        contains:
+          paragraphs:
+            min: 1
+            max: 3
+      - id: request-parameters
         $ref: "#/components/parameters"
-      response-parameters:
+      - id: response-parameters
         $ref: "#/components/parameters"
-      examples:
-        required: true
-        code_blocks:
-          min: 1
+      - id: examples
+        max: 1
+        contains:
+          codeBlocks:
+            min: 1
         sections:
-          success:
-            heading:
-              const: "Success Response"
+          - id: success
+            heading: Success Response
+            max: 1
             sequence:
               - paragraphs:
                   min: 1
-              - code_blocks:
+              - codeBlocks:
                   min: 1
-          error:
-            required: false
-            heading:
-              const: "Error Response"
-  Sample: # Template definition correspondings to the H1 level of the document
-    sections: # Array of sections, each with a unique key
-      Introduction: # Each sections corresponds to a heading level one below the parent, starting with an H1 at the first level
-        description: A template for how-to guides that include prerequisites, setup, usage, troubleshooting, and next steps sections.
-        sequence:
-          - paragraphs:
-              min: 2
-        paragraphs:
+          - id: error
+            heading: Error Response
+            min: 0
+            max: 1
+
+  # v2: the template *is* the page, so what used to be a `Sample` template
+  # wrapping one `Introduction` section - the H1 - is now `Sample` itself.
+  # `Introduction`'s own `sequence` and its separate `paragraphs`/`code_blocks`
+  # counts were checked additively in v1; a v2 rule may carry only one of
+  # `sequence` or `contains`, and the `sequence` here already pins the intro to
+  # exactly one run of paragraphs (so a stray code block would already fail as
+  # a content-order mismatch), so the max is folded into the sequence entry
+  # and the redundant `code_blocks: { max: 1 }` is dropped.
+  Sample: # Template definition corresponding to the H1 level of the document
+    description: >-
+      A template for how-to guides that include prerequisites, setup, usage,
+      troubleshooting, and next steps sections.
+    sequence:
+      - paragraphs:
           min: 2
           max: 5
-        code_blocks:
-          max: 1 # Allow a maximum of 1 code block
-        sections: # Array of sections, each with a unique key
-          Prerequisites: # Each section corresponds to a heading level one below the parent, in this case Prerequisites is an H2
-            heading:
-              const: Prerequisites # Require the section to be titled "Prerequisites"
-            paragraphs:
-              max: 3
-            lists:
-              max: 1
-              items:
-                min: 1
-                max: 7
-          Setup:
-            paragraphs:
-              max: 5 # Allow a maximum of 5 paragraphs
-          Usage:
-            paragraphs:
-              max: 4
-            code_blocks:
-              min: 1 # Require at least one code block
-            additionalSections: true # Allow additional use case sections
-            sections:
-              Troubleshooting:
-                heading:
-                  const: Troubleshooting # Require the section to be titled "Troubleshooting"
-                paragraphs:
-                  max: 5
-          Next steps:
-            $ref: "#/components/sections/Next steps" # Reference the 'Next steps' section component
+    sections: # Array of rules, each naming or slotting one heading-level-below section
+      - id: prerequisites
+        heading: Prerequisites # Require the section to be titled "Prerequisites"
+        max: 1
+        contains:
+          paragraphs:
+            max: 3
+          lists:
+            max: 1
+            items:
+              min: 1
+              max: 7
+      - id: setup
+        # No heading: a slot, matched positionally. Adjacent to the next slot
+        # below, which is why neither repeats - see the matcher test this
+        # fixture backs, "gives adjacent unconstrained sections one section
+        # each".
+        max: 1
+        contains:
+          paragraphs:
+            max: 5 # Allow a maximum of 5 paragraphs
+      - id: usage
+        max: 1
+        contains:
+          paragraphs:
+            max: 4
+          codeBlocks:
+            min: 1 # Require at least one code block
+        sections:
+          - id: troubleshooting
+            heading: Troubleshooting # Require the section to be titled "Troubleshooting"
+            # min: 0 - optional, not required. The sample document carries an
+            # unnamed "Advanced Features" subsection ahead of it; matching a
+            # required, exactly-once rule against the wrong heading first
+            # would coerce that stray section into this one and report a
+            # heading mismatch. Optional lets the trailing wildcard below
+            # absorb both instead, which is what "additional use case
+            # sections" already meant in v1.
+            min: 0
+            max: 1
+            contains:
+              paragraphs:
+                max: 5
+          - min: 0 # Allow additional use case sections
+      - id: next-steps
+        $ref: "#/components/nextSteps" # Reference the 'next steps' section component
 
+# Left unconstrained by the schema: a fragment is validated where it is
+# inlined, not where it is declared. `sections` is deliberately not a key
+# here - it collides with the "v1 `sections` is a map" detector the loader
+# runs before schema validation, which does not know a top-level `components`
+# key is the author's own name rather than a rule's children.
 components:
-  sections:
-    Next steps:
-      heading:
-        const: Next steps # Back to an H2 level section
-      required: false # Allow the section to be omitted
+  nextSteps:
+    heading: Next steps # Back to an H2 level section
+    min: 0 # Allow the section to be omitted
+    max: 1
+    contains:
       paragraphs:
         min: 1
       lists:
         min: 1
   parameters:
-    required: false
+    min: 0
     heading:
       pattern: "^Parameters|Request Parameters$"
-    lists:
-      min: 1
-      items:
+    contains:
+      lists:
         min: 1
-      
+        items:
+          min: 1

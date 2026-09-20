@@ -168,24 +168,31 @@ describe("a broken template is contained, not fatal", () => {
   // `heading.pattern` is author text compiled with `new RegExp`, and
   // `validateDocument` was the one call in `lintOne` with no try - so one bad
   // pattern aborted the whole run and the other pages were never reported.
+  //
+  // v2 also compiles every pattern in a file eagerly, at load time (`Invalid
+  // pattern "Step (" in bad.yaml`), rather than only when a page actually
+  // matches against it. Loading `bad.yaml` through a page's own `$template`
+  // keeps that failure scoped to the page that named it: `--templates`/
+  // `types:` registration loads every routing file up front to build the type
+  // index for the whole run, which is a *usage* error and does abort the run
+  // - see "still reports a template that cannot be loaded" below for that
+  // path. `$template` resolves lazily, per page, inside the same try that
+  // used to have nothing to catch.
   it("reports an uncompilable pattern against the pages that route to it", async () => {
-    const templates = await file(
+    await file(
       "bad.yaml",
       [
         "templates:",
         "  bad:",
-        "    types: [bad]",
-        "    sections:",
-        "      title:",
-        "        heading:",
-        '          pattern: "Step ("',
+        "    heading:",
+        '      pattern: "Step ("',
         "",
       ].join("\n"),
     );
-    await file("a.md", "---\ntype: bad\n---\n\n# A\n");
+    await file("a.md", "---\n$template: ./bad.yaml#bad\n---\n\n# A\n");
     await file("b.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
 
-    const run = await runLint({ inputs: [dir], templates, cwd: dir });
+    const run = await runLint({ inputs: [dir], cwd: dir });
     const bad = defined(
       run.results.find((r) => r.file.endsWith("a.md")),
       "result for a.md",
@@ -239,8 +246,7 @@ describe("template refs resolve against the file that declared them", () => {
         "templates:",
         "  base:",
         "    sections:",
-        "      title:",
-        "        additionalSections: true",
+        "      - min: 0",
         "",
       ].join("\n"),
     );
@@ -275,10 +281,8 @@ describe("template refs resolve against the file that declared them", () => {
         "  house:",
         "    extends: tgdp:how-to:1.6",
         "    sections:",
-        "      title:",
-        "        sections:",
-        "          see also:",
-        "            required: false",
+        "      - id: see-also",
+        "        min: 0",
         "",
       ].join("\n"),
     );
@@ -504,8 +508,7 @@ describe("a bare --template filename names a file", () => {
         "templates:",
         "  only:",
         "    sections:",
-        "      title:",
-        "        additionalSections: true",
+        "      - min: 0",
         "",
       ].join("\n"),
     );
@@ -516,8 +519,7 @@ describe("a bare --template filename names a file", () => {
         "  other:",
         "    types: [other]",
         "    sections:",
-        "      title:",
-        "        additionalSections: true",
+        "      - min: 0",
         "",
       ].join("\n"),
     );

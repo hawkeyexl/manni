@@ -12,10 +12,11 @@
 # `## Fixes`, or a "Bug fixes" section placed above "New features" is reported,
 # while a page that simply omits four of the six categories is not.
 #
-# That assertion is why the page-level rule does not set `additionalSections`:
+# That assertion is why the template itself carries no trailing wildcard rule:
 # an unrecognised H2 has to be reported for the naming check to have any force.
 # Inside a category the opposite holds - upstream prescribes the category
-# headings, not how a category is subdivided - so each H2 allows subsections.
+# headings, not how a category is subdivided - so each one ends with a
+# trailing `min: 0` rule that lets any subsection through.
 #
 # There are no paragraph, list, or code-block minimums anywhere. Upstream marks
 # only the release date as non-optional prose, and a category whose body is a
@@ -31,72 +32,77 @@ templates:
   release-notes:
     types:
       - release-notes
+    description: >-
+      The page itself. Upstream titles it
+      `Release notes - {Product name} {Release number}`; only the braced
+      parts are placeholders, so the literal prefix is the one thing this
+      template insists on. Its body carries the release version, the
+      release date, and an optional high-level summary.
+    heading:
+      pattern: '^Release [Nn]otes\b'
     sections:
-      release-notes:
-        description: >-
-          The page itself. Upstream titles it
-          `Release notes - {Product name} {Release number}`; only the braced
-          parts are placeholders, so the literal prefix is the one thing this
-          template insists on. Its body carries the release version, the
-          release date, and an optional high-level summary.
-        heading:
-          pattern: '^Release [Nn]otes\b'
+      - id: new-features
+        description: Functionality this release adds. Omitted by a release that adds none.
+        heading: New features
+        min: 0
+        max: 1
         sections:
-          new-features:
-            description: Functionality this release adds. Omitted by a release that adds none.
-            heading:
-              const: New features
-            required: false
-            additionalSections: true
+          - min: 0
 
-          new-features-requiring-configuration-updates:
+      - id: new-features-requiring-configuration-updates
+        description: >-
+          New functionality that does not switch itself on. Separated from
+          `New features` upstream because these entries are action items
+          for the reader, not announcements.
+        heading: New features requiring configuration updates
+        min: 0
+        max: 1
+        sections:
+          - min: 0
+
+      - id: improvements
+        description: Changes to functionality that already existed - speed, usability, behaviour.
+        heading: Improvements
+        min: 0
+        max: 1
+        sections:
+          - min: 0
+
+      - id: api-web-service-updates
+        description: Changes to programmatic interfaces, which have a different audience from the rest of the page.
+        heading: API/Web service updates
+        min: 0
+        max: 1
+        sections:
+          - min: 0
+
+      - id: bug-fixes
+        description: Defects resolved in this release.
+        heading: Bug fixes
+        min: 0
+        max: 1
+        sections:
+          - id: known-issues
             description: >-
-              New functionality that does not switch itself on. Separated from
-              `New features` upstream because these entries are action items
-              for the reader, not announcements.
-            heading:
-              const: New features requiring configuration updates
-            required: false
-            additionalSections: true
-
-          improvements:
-            description: Changes to functionality that already existed - speed, usability, behaviour.
-            heading:
-              const: Improvements
-            required: false
-            additionalSections: true
-
-          api-web-service-updates:
-            description: Changes to programmatic interfaces, which have a different audience from the rest of the page.
-            heading:
-              const: API/Web service updates
-            required: false
-            additionalSections: true
-
-          bug-fixes:
-            description: Defects resolved in this release.
-            heading:
-              const: Bug fixes
-            required: false
-            additionalSections: true
+              Defects that are known and *not* resolved. Upstream nests this
+              under `Bug fixes` rather than making it a category of its own,
+              which puts what is still broken next to what was fixed.
+            heading: Known issues
+            min: 0
+            max: 1
             sections:
-              known-issues:
-                description: >-
-                  Defects that are known and *not* resolved. Upstream nests this
-                  under `Bug fixes` rather than making it a category of its own,
-                  which puts what is still broken next to what was fixed.
-                heading:
-                  const: Known issues
-                required: false
-                additionalSections: true
+              - min: 0
+          - min: 0
 
-          deprecation-notice:
-            description: >-
-              Functionality being retired, with the date it stops being
-              supported and what replaces it. Upstream writes the heading as
-              `Optional: Deprecation notice`, so the pattern accepts the
-              published form as well as the one a real page would use.
-            heading:
-              pattern: '^(Optional: )?Deprecation notice$'
-            required: false
-            additionalSections: true
+      - id: deprecation-notice
+        description: >-
+          Functionality being retired, with the date it stops being
+          supported and what replaces it. Upstream writes the heading as
+          `Optional: Deprecation notice`, so the pattern accepts the
+          published form as well as the one a real page would use.
+        heading:
+          pattern: '^(Optional: )?Deprecation notice$'
+        min: 0
+        max: 1
+        sections:
+          - min: 0

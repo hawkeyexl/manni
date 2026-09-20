@@ -12,7 +12,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { markdownParser } from "../../../src/lint/parsers/markdown.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
@@ -29,10 +29,15 @@ const examples = join(here, "..", "..", "..", "examples", "lint");
 const TEMPLATES = join(examples, "templates.yaml");
 const sample = (name: string): string => join(examples, name);
 
-const templates = parse(readFileSync(TEMPLATES, "utf8")).templates as Record<
-  string,
-  Template
->;
+// `$ref` only survives to be seen dereferenced: `loadTemplateFile` resolves
+// every same-document pointer before validating, which a raw `parse()` does
+// not. Loaded once, in `beforeAll`, since every `it` below reads from it.
+let templates: Record<string, Template>;
+
+beforeAll(async () => {
+  const file = await loadTemplateFile(TEMPLATES);
+  templates = file.templates ?? {};
+});
 
 const lint = (docPath: string, templateName: string) =>
   validateDocument(
@@ -59,10 +64,13 @@ describe("the repository's own templates", () => {
   // every section after it.
   it("reports a mismatched template as heading mismatches, not a cascade", () => {
     const findings = lint(sample("sample_markdown.md"), "how-to");
+    // v1 split this into `heading_const_error`/`heading_pattern_error`; v2
+    // collapses every form into one `heading_error`, and the message says
+    // which form failed.
     expect(findings.map((f) => f.type)).toEqual([
-      "heading_const_error",
-      "heading_const_error",
-      "heading_const_error",
+      "heading_error",
+      "heading_error",
+      "heading_error",
     ]);
     expect(findings.map((f) => f.heading)).toEqual([
       "Prerequisites",
@@ -127,23 +135,33 @@ describe("the repository's own templates", () => {
       await loadTemplate(`${TEMPLATES}#house-how-to`),
     );
     expect(validateDocument(tree, house)).toEqual([]);
-    // Inherited, not restated: the child names only `see also`.
-    const inherited = house.sections?.[0]?.sections ?? [];
+    // Inherited, not restated: the child names only `see-also`. The template
+    // *is* the page in v2, so `sections` is house's own list directly - no
+    // `title` wrapper to index through first.
+    const inherited = house.sections ?? [];
     expect(inherited.map((rule) => rule.id)).toEqual([
       "overview",
-      "before you start",
+      "before-you-start",
       "task",
-      "see also",
+      "see-also",
     ]);
   });
 
   it("resolves a $ref component into the section that uses it", () => {
-    // `Sample` reaches `Next steps` through `$ref: "#/components/sections/..."`.
-    // Read raw (undereferenced) here: the registry dereferences on load, so
-    // this asserts the fixture still exercises the feature.
-    const raw = parse(readFileSync(TEMPLATES, "utf8"));
-    expect(raw.templates.Sample.sections.Introduction.sections["Next steps"]).toEqual(
-      { $ref: "#/components/sections/Next steps" },
+    // `Sample` reaches its trailing section through
+    // `$ref: "#/components/nextSteps"`. Read raw (undereferenced) here: the
+    // registry dereferences on load, so this asserts the fixture still
+    // exercises the feature. `sections` is a list in v2, so the ref is found
+    // by id rather than by map key.
+    const raw = parse(readFileSync(TEMPLATES, "utf8")) as {
+      templates: { Sample: { sections: { id?: string; $ref?: string }[] } };
+    };
+    const nextSteps = raw.templates.Sample.sections.find(
+      (rule) => rule.id === "next-steps",
     );
+    expect(nextSteps).toEqual({
+      id: "next-steps",
+      $ref: "#/components/nextSteps",
+    });
   });
 });

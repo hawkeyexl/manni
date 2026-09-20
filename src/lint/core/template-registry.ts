@@ -32,7 +32,7 @@ import type { ErrorObject, SchemaObject, ValidateFunction } from "ajv";
 import { LintError } from "../types.js";
 import { errorMessage } from "../../shared/errors.js";
 import { warn } from "../../shared/warn.js";
-import { BLOCK_KINDS, isWildcard } from "./template.js";
+import { BLOCK_KINDS, isWildcard, occurrenceRange } from "./template.js";
 import type {
   BlockRule,
   ListItemsRule,
@@ -440,6 +440,18 @@ function checkRange(range: Occurrences, source: string, label: string): void {
   }
 }
 
+/**
+ * Whether two rules claim the same occurrence range, the one comparison the
+ * ambiguity warning below needs. Compares what `occurrenceRange` resolves
+ * `min`/`max` to, not the raw (possibly absent) fields, so a written `min: 1`
+ * and an absent `min` - both one occurrence by default - count as the same.
+ */
+function sameOccurrenceRange(a: Occurrences, b: Occurrences): boolean {
+  const rangeA = occurrenceRange(a);
+  const rangeB = occurrenceRange(b);
+  return rangeA.min === rangeB.min && rangeA.max === rangeB.max;
+}
+
 /** Compile an author's pattern here, so a broken one names the file it is in. */
 function checkPattern(pattern: string | undefined, source: string): void {
   if (pattern === undefined) return;
@@ -515,7 +527,12 @@ function checkRuleList(rules: Rule[] | undefined, source: string, path: string):
   // A warning, not an error. Two adjacent wildcards are how TGDP's "{Task
   // name}" then "{Next task}" is written, and that is legal. It is also how a
   // template accidentally describes one section twice, and nothing in the file
-  // distinguishes the two cases.
+  // distinguishes the two cases - unless their occurrence ranges differ, in
+  // which case the matcher can still tell them apart: one claims a fixed count
+  // of sections and the other claims however many are left. That is
+  // `reference-description` (`max: 1`) next to `structured-entry` (`min: 0`,
+  // no `max`) in tgdp:reference - legal and unambiguous, so only a shared range
+  // is flagged.
   for (const [index, rule] of rules.entries()) {
     const next = rules[index + 1];
     if (!next) break;
@@ -523,7 +540,8 @@ function checkRuleList(rules: Rule[] | undefined, source: string, path: string):
       isWildcard(rule) &&
       rule.repeat === undefined &&
       isWildcard(next) &&
-      next.repeat === undefined
+      next.repeat === undefined &&
+      sameOccurrenceRange(rule, next)
     ) {
       warn(
         `${source}: two adjacent rules have no heading and no repeat; only rule order tells them apart.`,

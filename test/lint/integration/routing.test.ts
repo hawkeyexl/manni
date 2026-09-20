@@ -157,12 +157,10 @@ describe("user templates", () => {
     "  house-how-to:",
     "    types: [how-to]",
     "    sections:",
-    "      title:",
-    "        additionalSections: true",
-    "        sections:",
-    "          overview:",
-    "            heading:",
-    "              const: Overview",
+    "      - id: overview",
+    "        heading: Overview",
+    "        max: 1",
+    "      - min: 0",
     "",
   ].join("\n");
 
@@ -340,8 +338,7 @@ describe("a $template naming a URL", () => {
         "templates:",
         "  house:",
         "    sections:",
-        "      title:",
-        "        additionalSections: true",
+        "      - min: 0",
         "",
       ].join("\n"),
     );

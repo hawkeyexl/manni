@@ -71,18 +71,23 @@
     "attributes": {
       "description": "Literal attributes the node must carry. A string is the required value; `true` requires the attribute to be present, and `false` requires it to be absent.",
       "type": "object",
-      "additionalProperties": { "type": ["string", "boolean"] }
+      "additionalProperties": {
+        "oneOf": [{ "type": "string" }, { "type": "boolean" }]
+      }
     },
     "oneOfSequenceOrContains": {
       "description": "A rule says what it holds in order (`sequence`) or in any order (`contains`), never both.",
+      "type": "object",
       "not": { "required": ["sequence", "contains"] }
     },
     "noHeadingOnRepeat": {
       "description": "`repeat` groups sibling rules into one repeated unit, so the group has no heading of its own. Put the heading on the first rule inside it.",
+      "type": "object",
       "not": { "required": ["heading", "repeat"] }
     },
     "noInstructions": {
       "description": "`instructions` was the language-model hook of doc-structure-lint. manni lint is deterministic and has no model, so a template carrying it is rejected outright rather than silently ignored; the loader turns this into a migration message pointing at manni docevals.",
+      "type": "object",
       "not": { "required": ["instructions"] }
     },
     "template": {

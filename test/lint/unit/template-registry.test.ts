@@ -163,6 +163,26 @@ describe("built-ins", () => {
     expect(message).toContain("#typo");
     expect(message).toContain("tgdp:how-to:1.6");
   });
+
+  // A tool that prints a diagnostic on every run of its own built-ins trains
+  // people to ignore its stderr. `captureStderr` catches both `warn()` and
+  // Ajv's own strict-mode `console.warn` - the ajv instance writes through
+  // `process.stderr.write` either way - so this is one check for both.
+  // `clearTemplateCaches` forces every built-in to actually load (and
+  // schema-validate) rather than serve a result already cached by an earlier
+  // test in this file.
+  it("loads every shipped built-in without printing anything to stderr", async () => {
+    const stderr = captureStderr();
+    try {
+      clearTemplateCaches();
+      for (const { id } of listBuiltins()) {
+        await loadTemplate(id);
+      }
+    } finally {
+      stderr.restore();
+    }
+    expect(stderr.text()).toBe("");
+  });
 });
 
 describe("loadTemplateFile", () => {
@@ -959,6 +979,55 @@ describe("the checks the schema cannot make", () => {
                 { id: "b" },
                 // A `repeat` group is told apart by what it repeats.
                 { id: "c", repeat: [{ heading: "Symptom" }] },
+              ],
+            },
+          },
+        },
+        "t.yaml",
+      );
+    } finally {
+      stderr.restore();
+    }
+    expect(stderr.text()).toBe("");
+  });
+
+  it("warns when two wildcards claim the same occurrence range", () => {
+    const stderr = captureStderr();
+    try {
+      validateTemplateFile(
+        {
+          templates: {
+            "how-to": {
+              sections: [
+                { id: "a", max: 1 },
+                { id: "b", max: 1 },
+              ],
+            },
+          },
+        },
+        "t.yaml",
+      );
+    } finally {
+      stderr.restore();
+    }
+    expect(stderr.text()).toContain(
+      "t.yaml: two adjacent rules have no heading and no repeat; only rule order tells them apart.",
+    );
+  });
+
+  it("says nothing when two wildcards claim different occurrence ranges", () => {
+    // `reference-description` (exactly once) next to `structured-entry` (any
+    // number, no upper bound) - tgdp:reference's actual pair. The ranges
+    // differ, so the matcher can tell the rules apart without a heading.
+    const stderr = captureStderr();
+    try {
+      validateTemplateFile(
+        {
+          templates: {
+            "how-to": {
+              sections: [
+                { id: "reference-description", max: 1 },
+                { id: "structured-entry", min: 0 },
               ],
             },
           },

@@ -63,9 +63,24 @@ describe.each(manifest.templates)("$id", (entry) => {
     const template = await loadTemplate(entry.id);
 
     const findings = validateDocument(tree, template);
-    expect(
-      findings.map((f) => `${f.position.start.line}: [${f.type}] ${f.message}`),
-    ).toEqual([]);
+    const rendered = findings.map(
+      (f) => `${f.position.start.line}: [${f.type}] ${f.message}`,
+    );
+
+    if (entry.id === "tgdp:reference:1.6") {
+      // The reference doctype is table-heavy, and every parser this tool
+      // ships still reports only paragraph, codeBlock and list (proposal
+      // 0053) - so the "structured entry" rule's `tables: { min: 1 }` is
+      // pruned before matching and reported as a warning instead of
+      // silently passing, or failing a page for a shape no format here can
+      // see. The template stays green; the warning says why the rule did
+      // not run.
+      expect(rendered).toEqual([
+        '1: [unsupported_content_kind] The markdown parser does not report tables, so the "tables" rule in template "unnamed" is not checked for this file.',
+      ]);
+      return;
+    }
+    expect(rendered).toEqual([]);
   });
 
   it("declares the doctypes the manifest says it serves", async () => {
