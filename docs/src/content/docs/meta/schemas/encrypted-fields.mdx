@@ -12,6 +12,7 @@ Some fields your standard requires are not for publishing. An `owner`, an
 internal ticket, the name of a service. You still want every page to carry one,
 and you still want the value checked against the rules you wrote.
 
+{/* cite encrypt-keyword-is-x-manni-encrypt */}
 `x-manni-encrypt` is the keyword for that. The page holds a ciphertext, and
 validation checks the real value wherever the key is available. This page
 follows one such value from the schema through every command that touches it.
@@ -40,6 +41,7 @@ The mark sits on the property, beside the rules it keeps. Nothing else changes:
 `owner` is still required, and its `enum` still holds. What the mark adds is
 that a page carrying the word `platform` in the open now fails.
 
+{/* cite mark-counts-where-the-validator-evaluates-it */}
 The mark counts wherever the validator evaluates it. That includes a `$ref`, an
 `allOf`, a referenced built-in, and the `anyOf`, `oneOf` and `if`/`then`
 branches the validator takes. A mark behind a failing `if` does not count. A
@@ -50,6 +52,7 @@ rules in full.
 
 ## Follow the value
 
+{/* cite ciphertext-is-tilde-plus-82-chars */}
 A page carries the ciphertext, `~` and at least 82 base64url characters:
 
 ```yaml title="docs/auth.md"
@@ -87,6 +90,7 @@ The second row is the one worth dwelling on. `enum`, `pattern`, `format` and
 the rest all apply to the real value, so the standard you wrote is enforced on
 a value the page never shows. No finding ever prints the plaintext or the key.
 
+{/* cite validation-works-on-a-decrypted-copy */}
 Validation works on a copy of the metadata with every readable value decrypted.
 The page itself is never rewritten.
 
@@ -100,6 +104,7 @@ one across many pages at once.
 
 ## With no key, the check goes quiet
 
+{/* cite findings-under-an-encrypted-value-are-dropped */}
 Findings at or under an encrypted value are dropped, and one warning on stderr
 counts them. The exit code is not affected by what was dropped:
 
@@ -129,6 +134,7 @@ Three things follow, and all three matter to whoever owns the schema.
 
 ## What writes a ciphertext, and what does not
 
+{/* cite fill-encrypts-a-plain-value */}
 Two commands write a marked value, and both report `(encrypted)` in place of
 it. `manni meta fill` encrypts a valid value the page already holds in plain
 text, with no model call:
@@ -140,6 +146,7 @@ Using manni.config.yaml (.)
     /owner  (encrypted)  1.00
 ```
 
+{/* cite query-writes-a-marked-property-encrypted */}
 A `manni meta query` `UPDATE` or `INSERT` writes a marked top-level property
 encrypted, resolving each file's schema set the way `validate` does:
 
@@ -150,6 +157,7 @@ docs/auth.md: owner: (unset) -> (encrypted)
 ✓ 1 change across 1 file — written
 ```
 
+{/* cite reads-do-not-decrypt */}
 Reads do not decrypt. `manni meta get` and a `SELECT` both return what the page
 holds:
 
@@ -164,11 +172,13 @@ docs/wrong-key.md  ~AaE3zLy97i-pW5wvuARqsjGu1v4PbTxbyAL_WfkvNy2Mcq4cCeVeBBQwGR_v
 4 rows
 ```
 
+{/* cite equal-ciphertexts-make-joins-work */}
 So a `WHERE owner = 'platform'` matches only the page that failed the check.
 Equal values do encrypt to equal ciphertexts, so comparing one page's column
 with another's still finds the pages that share an owner. The [query
 reference](/manni/meta/reference/query/#encrypted-values) has the rest.
 
+{/* cite only-top-level-properties-are-written-encrypted */}
 A nested mark is validated and never written. Only top-level properties are
 written encrypted.
 
@@ -242,9 +252,11 @@ Encryption key written to manni.config.yaml.
 # exit 0
 ```
 
+{/* cite rotation-finds-values-by-ciphertext */}
 Rotation finds values by their ciphertext rather than by your marks. A mark
 behind a remote `$ref` the run cannot reach still cannot hide a value from it.
 
+{/* cite undecryptable-value-stops-the-rotation */}
 One thing does reach back to you. A value that decrypts under neither key stops
 the whole rotation, and it is named:
 
@@ -264,6 +276,7 @@ deciding what its `owner` should have been is your call.
 
 ## Choose which fields to mark
 
+{/* cite equal-values-encrypt-alike */}
 Equal values encrypt to equal ciphertexts. That is deliberate, and it is what
 lets a manifest join on one and a query group by one. It also leaks on a small
 vocabulary.

@@ -12,11 +12,13 @@ individually valid, so `validate` waves them all through. Catching them takes a
 **join**, and that is what `manni meta query` is for. Every file's metadata becomes
 one row in a SQL table, and any query that returns rows can fail the build.
 
+{/* cite query-engine-is-node-sqlite */}
 Nothing new is installed for this. The engine is `node:sqlite`, which ships in
 the Node.js your runner already has.
 
 ## One file, one row
 
+{/* cite docs-table-system-columns */}
 `query` builds an in-memory table named `docs` from the files you point it at.
 There is one row per file, one column per top-level metadata key, and four
 system columns. Those are `_path` (the file), `_format`, `_present` (did the
@@ -42,6 +44,7 @@ intro  1
 
 ## Turn a join into a gate
 
+{/* cite check-turns-rows-into-the-exit-code */}
 `--check` makes rows mean findings: any result row exits `1`, an empty result
 exits `0`. That is the whole contract. The query itself is the rule, so anything
 you can phrase as "SELECT the violations" is now a CI gate.
@@ -117,6 +120,7 @@ contract](/manni/meta/reference/output-and-exit-codes/)):
       "docs/**/*.md"
 ```
 
+{/* cite param-binds-a-named-parameter */}
 A gate that takes a runtime value should **bind** it rather than splice it into
 the SQL string. One apostrophe in the value would otherwise break the statement.
 Think of this release's version, or the team being audited. `--param name=value`
@@ -128,6 +132,7 @@ npx @hawkeyexl/manni meta query --check --param author=ghost \
   "SELECT _path FROM docs WHERE author = :author" docs/
 ```
 
+{/* cite unbound-parameter-is-refused */}
 Values bind as strings, which is what metadata mostly is; `name:=value` parses
 the value as JSON when you deliberately mean a number or boolean. A parameter
 the SQL references but nothing binds is refused (exit 2) rather than silently
@@ -169,6 +174,7 @@ meta:
           (SELECT slug FROM docs GROUP BY slug HAVING count(*) > 1)
 ```
 
+{/* cite check-column-convention */}
 and the CI step becomes the one you already have. A bare `npx @hawkeyexl/manni meta validate`
 runs the checks after the per-file schemas. One command and one exit code cover
 both. Each row a check returns is now an ordinary finding. `path` names the
@@ -199,6 +205,7 @@ Two behaviors to know about, both there to keep the answers honest:
   *new* violations. That is the same adoption ramp a stricter schema gets. It
   lets a corpus rule turn on before the backlog is fixed.
 
+{/* cite query-check-takes-findings-formats */}
 The ad-hoc spelling stays available. `query --check` now takes `-f github|sarif|junit` too ([rows as findings](/manni/meta/reference/query/#rows-as-findings)). That suits a rule you are still drafting, or a one-off audit, with the same column convention and findings named `check:query`.
 
 ## Feed the same table to your tooling
@@ -211,6 +218,7 @@ consume [validation results](/manni/meta/ci/consume-results/):
 npx @hawkeyexl/manni meta query "SELECT _path, title FROM docs WHERE draft = 1" docs/ -f json
 ```
 
+{/* cite csv-always-prints-a-header-row */}
 `--format csv` prints the same rows as CSV for the spreadsheet hop. "Which pages
 are stale, by team" goes straight into Sheets or `pandas.read_csv`, with no `jq`
 in between. The header row is always there. A zero-row result (the header alone)
@@ -241,6 +249,7 @@ tooling, not part of the published package.
 
 ## Writes exist, and `--dry-run` previews them
 
+{/* cite check-implies-the-dry-run */}
 The same table accepts standard DML. `UPDATE` sets keys, and `SET k = NULL`
 removes them. `INSERT` creates files, `DELETE` strips a metadata block, and
 `ALTER TABLE` evolves the governing schema itself. A mutating statement applies
@@ -261,6 +270,7 @@ docs/gamma.md: reviewed: (unset) -> todo
 3 changes across 3 files — dry run; run again without --dry-run to apply
 ```
 
+{/* cite attach-and-vacuum-refused-by-name */}
 Statements that could write outside the corpus refuse by name: `ATTACH`,
 `VACUUM`, `DROP TABLE`, and multi-statement input. The refusal says what to run
 instead. The [vocabulary table](/manni/meta/reference/query/#the-sql-vocabulary) is

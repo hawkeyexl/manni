@@ -79,6 +79,7 @@ A common pattern is to require almost nothing at first, so existing docs pass. T
 
 ## Constrain values with types and formats
 
+{/* cite formats-come-from-ajv-formats */}
 Requiring a field guarantees it exists; constraining it guarantees it's *usable*. JSON Schema gives you the building blocks, and manni meta supports the standard `format` checks through [ajv-formats](https://github.com/ajv-validator/ajv-formats). Two formats come up constantly in document metadata:
 
 <Tabs>
@@ -135,6 +136,7 @@ Setting `"additionalProperties": false`? A document's own `$schema:` key won't t
 
 ## The built-in OKF schema, a fuller example
 
+{/* cite default-set-is-okf-and-seven-action */}
 The schema anchoring manni meta's default set is [Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md), addressed as `google:okf:0.1`. Run `manni meta schemas` for the full built-in list. OKF is a useful reference because it combines every technique on this page in a realistic standard. Reading it is the fastest way to see how the pieces fit together. When no other schema applies, manni meta falls back to a *set* rather than to OKF alone. That set is `google:okf:0.1` together with [`passo-uno:seven-action:1.0`](/manni/meta/reference/taxonomy-schemas/), which constrains an optional `action` field and requires nothing of its own.
 
 ```json title="src/schemas/okf/0.1.json"
@@ -204,6 +206,7 @@ If OKF's field set is close to what you need, copy it into a file and adjust it.
 
 ## Borrow a schema instead of writing one
 
+{/* cite manni-ships-23-builtin-schemas */}
 Everything above assumes you're defining the field set yourself. manni meta ships twenty-three schemas you can adopt without authoring anything. The [built-in schema registry](/manni/meta/reference/built-in-schemas/) lists all of them in one table, with what each constrains and which two are on by default.
 
 If your site is built with Docusaurus, start with [`docusaurus:docs:3.10`](/manni/meta/reference/docusaurus-schemas/) and its blog and pages counterparts. They encode the front matter contract of Docusaurus 3.10 and require nothing. Switching one on cannot fail a page that was already building. It only catches a `sidebar_position: "2"` that your site would have rejected later. They claim none of the `type` or `action` keys below, so they stack with any of the vocabularies. They do share `tags` with OKF, which allows only strings where Docusaurus also allows tag objects. See [the overlap note](/manni/meta/reference/built-in-schemas/#two-kinds-of-built-in) before pairing those two.
@@ -230,6 +233,7 @@ reference](/manni/meta/reference/taxonomy-schemas/).
 
 ## Point a document at its schema
 
+{/* cite document-names-its-own-schema */}
 A schema only matters once documents are validated against it. The most direct way to connect the two is to let a document name its own schema with a `$schema` key in its frontmatter. manni meta reads that key and validates the file against whatever it points to.
 
 Here is a document naming the built-in OKF schema, the [`schema-ref.md`](https://github.com/hawkeyexl/manni/blob/main/test/fixtures/schema-ref.md) fixture:
@@ -246,6 +250,7 @@ title: Self-Describing Document
 This file names its own schema via `$schema`.
 ```
 
+{/* cite the-three-reference-kinds */}
 The `$schema` value can be a built-in id (as here), a path to a `.json` file you wrote, or a URL. To point at a local schema file instead:
 
 ```markdown
@@ -282,6 +287,7 @@ Naming the schema inside a document is the most self-contained option. You can a
 
 ## Keep a value encrypted on the page
 
+{/* cite x-manni-encrypt-keyword */}
 Some fields your standard requires are not for publishing. An `owner`, an
 internal ticket, a service name. Mark the property `x-manni-encrypt`, and the
 page has to hold that value encrypted:
@@ -290,6 +296,7 @@ page has to hold that value encrypted:
 "owner": { "type": "string", "enum": ["platform", "billing"], "x-manni-encrypt": true }
 ```
 
+{/* cite encrypted-value-checked-after-decrypt */}
 The field stays required and your `enum` still holds, because validation checks
 the decrypted value against the property's whole schema. [Require a field and
 keep its value private](/manni/meta/schemas/encrypted-fields/) follows one such
@@ -298,6 +305,7 @@ finds it](/manni/key/set-up/) settles where the key lives first.
 
 ## Say where each field lives
 
+{/* cite x-manni-location-keyword */}
 Some fields are for whoever fetches the page, and some only serve the people
 and the CI that maintain it. Mark a property `x-manni-location` to say which:
 
@@ -305,6 +313,7 @@ and the CI that maintain it. Mark a property `x-manni-location` to say which:
 "owner": { "type": "string", "x-manni-location": "external" }
 ```
 
+{/* cite location-page-or-external */}
 `page` keeps a value in the document, and `external` keeps it in the
 collection's external-metadata manifest. `validate` warns about a value on the
 wrong side, and `manni meta relocate` moves it. [Keep maintainer metadata out
