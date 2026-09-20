@@ -874,16 +874,14 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         // the same pin for the same reason, before it is ever written.
         const elsewhere = named ? [] : otherClaimSpans(lines, unit.lines, pin, page.bodyLine);
         const replaced = replacementAt(claim, unit.text, page.format);
-        if (elsewhere.length > 0) {
-          // `--only` takes an id, so an entry without one has no way to say
-          // "accept it anyway"; the advice is left off rather than made up.
-          const id = result.citation.id;
-          const anyway = id === undefined ? "" : ` Re-run with --only ${id} to accept it anyway.`;
-          declined.set(result.origin.index, {
-            rule: "claim-changed",
-            why: `Not re-pinned: the text there also appears at ${spellElsewhere(elsewhere)}, so a pin cannot identify it.${anyway}`,
-          });
-        } else if (replaced !== undefined && only === undefined) {
+        // The order of these two matters, and it is the baseline that goes
+        // first. Both refusals stop the same re-pin, but they do not carry the
+        // same weight. The one the baseline earns says the line no longer
+        // holds the claim, which is work left undone, and it exits 1. The
+        // uniqueness refusal only reads the line as it stands and exits 0. So
+        // a claim that trips both has to keep the stronger signal, or a
+        // repeated line would quietly turn a failing run green.
+        if (replaced !== undefined && only === undefined) {
           // `plansFor` runs only for a selected entry, so a run with `only`
           // set has named this one. `selected` says which repairs run; the
           // bypass says which entries `--accept` may re-pin, and both hold
@@ -896,6 +894,15 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
             ...(replaced.share === undefined ? {} : { wordShare: replaced.share }),
             pin: entry.citation.claim?.integrity ?? "",
             would: pin,
+          });
+        } else if (elsewhere.length > 0) {
+          // `--only` takes an id, so an entry without one has no way to say
+          // "accept it anyway"; the advice is left off rather than made up.
+          const id = result.citation.id;
+          const anyway = id === undefined ? "" : ` Re-run with --only ${id} to accept it anyway.`;
+          declined.set(result.origin.index, {
+            rule: "claim-changed",
+            why: `Not re-pinned: the text there also appears at ${spellElsewhere(elsewhere)}, so a pin cannot identify it.${anyway}`,
           });
         } else {
           const plan: Plan = { kind: "claim-accepted", result, unit, pin };

@@ -570,4 +570,10 @@ describe("isTableSeparator", () => {
     expect(isTableSeparator("|")).toBe(false);
     expect(isTableSeparator("")).toBe(false);
   });
+
+  it("reads a bare rule as something else, because it carries no pipe", () => {
+    // `---` is a thematic break, or the underline of a setext heading.
+    expect(isTableSeparator("---")).toBe(false);
+    expect(isTableSeparator("  ---  ")).toBe(false);
+  });
 });

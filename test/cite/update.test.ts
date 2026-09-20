@@ -1254,6 +1254,56 @@ describe("runUpdate: both ends, and what is left", () => {
       const check = await runCheck({ cwd: repo, inputs: ["docs/limits.md"], noConfig: true, env: {} });
       expect(check.pages[0]?.citations.map((c) => c.source.status)).toEqual(["current", "current"]);
     });
+
+    // The uniqueness refusal and the baseline refusal both stop a re-pin, and
+    // a claim can trip both at once. This is that claim: its line drifted onto
+    // text the page repeats, *and* the text shares no sentence with what the
+    // claim said at the baseline. The baseline refusal has to win, because it
+    // exits 1 and the uniqueness one exits 0. A repeated line must not turn a
+    // failing `--accept` green. It lives here rather than beside the other
+    // uniqueness cases because a baseline needs real history to read.
+    it("keeps the exit-1 refusal for a claim that is both replaced and repeated", async () => {
+      repo = makeTempRepo({ files: { "src/limits.ts": source("limits.ts") } });
+      mkdirSync(join(repo, "docs"));
+      const page = join(repo, "docs", "limits.md");
+      const frontmatter = [
+        "---",
+        "citations:",
+        "  - id: dup",
+        "    claim:",
+        "      lines: 1",
+        `      integrity: ${CLAIM_10}`,
+        "    source:",
+        "      file: src/limits.ts",
+        "      lines: 2",
+        `      integrity: ${PIN_L2}`,
+        "---",
+      ];
+      const body = (first: string): string =>
+        [...frontmatter, first, "", "Other text.", "", "Repeated line.", ""].join("\n");
+      writeFileSync(page, body("The fetch timeout is 10 seconds."), "utf8");
+      const first = commitAll(repo, "docs: add limits");
+      // The claim's line now holds text that already sits further down the
+      // page, and says nothing the claim said.
+      const after = body("Repeated line.");
+      writeFileSync(page, after, "utf8");
+      commitAll(repo, "docs: swap the cited line out");
+
+      const run = await runUpdate({
+        cwd: repo,
+        inputs: ["docs/limits.md"],
+        noConfig: true,
+        accept: true,
+        env: {},
+      });
+      expect(run).toMatchObject({ rewritten: 0, skipped: 1, exitCode: 1 });
+      expect(run.pages[0]?.refused.map((r) => [r.end, r.reason, r.commitSha])).toEqual([
+        ["claim", "replaced", first],
+      ]);
+      expect(run.pages[0]?.skipped).toEqual([]);
+      // Nothing was written: the pin still stands.
+      expect(readFileSync(page, "utf8")).toBe(after);
+    });
   });
 });
 

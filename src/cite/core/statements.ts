@@ -180,12 +180,17 @@ export function isTableRow(line: string): boolean {
  * indented, because a table inside a list item is indented and is still a
  * table.
  *
+ * A rule has to carry at least one `|`, which is what the leading lookahead
+ * asks. Every pipe in the pattern that follows is optional on its own, so
+ * without that test a bare `---` reads as a table rule, and `---` is a
+ * thematic break or the underline of a setext heading instead.
+ *
  * `isTableRow` reads a rule as a row, deliberately: a claim over a header, its
  * rule and a body row covers three rows and keeps all three. This asks the
  * narrower question `unitAt` needs, which is whether a span holds nothing but
  * rules. Such a span carries no words, so `update --accept` refuses to pin one.
  */
-const TABLE_RULE = /^[ \t]*\|?(?:[ \t]*:?-+:?[ \t]*\|)*[ \t]*:?-+:?[ \t]*\|?[ \t]*$/;
+const TABLE_RULE = /^(?=[^|]*\|)[ \t]*\|?(?:[ \t]*:?-+:?[ \t]*\|)*[ \t]*:?-+:?[ \t]*\|?[ \t]*$/;
 
 export function isTableSeparator(line: string): boolean {
   return TABLE_RULE.test(line);
