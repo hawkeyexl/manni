@@ -16764,13 +16764,13 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: okf-requires-type-field
       claim:
-        lines: 52-53
-        integrity: sha256-a80db1ac075577568ad5bbadd13ddc3623e0da4f989c9b0cc07bb53e7074174c
+        lines: 53
+        integrity: sha256-67799a6454a73d28678585e5c27d15da2debdd4b67805f3b53619501b2e02936
       source:
         file: src/meta/schemas/okf/0.1.json
         lines: 7
         integrity: sha256-0e2f5437eb92e030b655c86a57a2dd15bb2acd051cc9be386ce3f58619f6000b
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        commit-sha: 9dc7b50da705029382efce3e62061b920e8e728d
 docs/src/content/docs/meta/fix/index.mdx:
   citations:
     - id: exit-2-operational-error
