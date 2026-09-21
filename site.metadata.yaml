@@ -5808,14 +5808,6 @@ docs/src/content/docs/cite/reference/citations.mdx:
         lines: 209-212
         integrity: sha256-77ac61a30e422cde7f04d98f8cfc3a631fe9d0c7bc76a2a26f968f9b33cf68b3
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-    - id: sidecar-writing-splice
-      claim:
-        integrity: sha256-0489712fbe78c0301c3972b850bdd07c4e70fd47c7478b48de48978fecda4511
-      source:
-        file: src/cite/core/manifest.ts
-        lines: 157-182
-        integrity: sha256-10a066043b74f8bfb17712597bafb86fb162c44f660d87ffd386370b11a5b1b1
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: sidecar-update-writes-once
       claim:
         integrity: sha256-0489712fbe78c0301c3972b850bdd07c4e70fd47c7478b48de48978fecda4511
@@ -6562,6 +6554,14 @@ docs/src/content/docs/cite/reference/citations.mdx:
         lines: 33
         integrity: sha256-39e1f1cdbf582f5e84f2776487dbb79d993e218efaf1ad1bcd89e518de24d32e
         commit-sha: 012f6c4e65cb1bce53d640a150721dc9244f6bb3
+    - id: sidecar-writing-splice
+      claim:
+        integrity: sha256-0489712fbe78c0301c3972b850bdd07c4e70fd47c7478b48de48978fecda4511
+      source:
+        file: src/cite/core/manifest.ts
+        lines: 97-123
+        integrity: sha256-ae940337f9ed4e2ecaabf2c220cf13ca78a0379b8994e53960776654caec749c
+        commit-sha: c5467c6d37d343fd22844c41d50a2f9da063dc24
 docs/src/content/docs/cite/reference/cli.mdx:
   citations:
     - id: check
@@ -8898,15 +8898,6 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         lines: 400-401
         integrity: sha256-f05edba3de967672071fa9a9dec5a9138e8bb7958b7b3fea68b90415d4c21f80
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-    - id: manifest-splice-citations
-      claim:
-        lines: 189-190
-        integrity: sha256-faf026456f3fcee2d46dda16c951f9b0f0d920c44f5f5e96f99275e4bb6a95b7
-      source:
-        file: src/cite/core/manifest.ts
-        lines: 163-178
-        integrity: sha256-8dca3d3fa94a5c113ac7b87c29e93f5bedf38b680f8c1875e2e18494f7671ff2
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: url-manifest-refused
       claim:
         lines: 190
@@ -9100,6 +9091,15 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         lines: 545-555
         integrity: sha256-537cebc222cbede7983d0d01e1e617dc443a3136c31031555a78c490f20408ae
         commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: manifest-splice-citations
+      claim:
+        lines: 189-190
+        integrity: sha256-faf026456f3fcee2d46dda16c951f9b0f0d920c44f5f5e96f99275e4bb6a95b7
+      source:
+        file: src/cite/core/manifest.ts
+        lines: 103-119
+        integrity: sha256-59b9f1b6dc87d4888dee820ce1abc1a88866751d60bc4586c7bf04d1b3c6a8ea
+        commit-sha: c5467c6d37d343fd22844c41d50a2f9da063dc24
 docs/src/content/docs/cite/set-up/require-citations.mdx:
   citations:
     - id: vocabulary-id

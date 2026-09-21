@@ -1,0 +1,10 @@
+# A local manifest owns owner, and title stays on the page: one fill of one
+# file writes both, which is what a refused manifest write has to put back.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./site-meta.yaml
+        keys: [owner]
+meta:
+  schemas: [./steward.schema.json]
