@@ -33,7 +33,10 @@ opposite responses. That is the same split
 [`manni a11y check`](/manni/a11y/ci/#exit-codes) use.
 
 Exit `1` is defined as **at least one `error`-level finding**, not "any
-finding". Every structural finding is an error, so the two are the same thing.
+finding". Every structural finding is an error but one. A rule asking about
+content this file's format cannot report is a
+[warning](/manni/lint/fix/#a-rule-that-never-ran), it annotates as `::warning`,
+and it never fails the job.
 
 **`-f github` produces inline annotations.** One workflow command per finding,
 anchored to the file and the line, with the rule id as the title:
@@ -144,8 +147,8 @@ to meet another.
 | Format | Use it for | Shape |
 | --- | --- | --- |
 | `pretty` | People, and local runs. The default. | One line per file, findings indented under it, a summary line. `check` also names the jobs it ran, on stderr. |
-| `github` | GitHub Actions annotations. | `::error` workflow commands, one per finding, `title=manni:lint/<job>/<rule>`. Nothing at all on a clean run. |
-| `json` | Scripts and dashboards. | A top-level array, one object per file, each with `file`, `success`, and `errors[]` carrying `type`, `ruleId`, `tool`, `heading`, `message` and `position`. |
+| `github` | GitHub Actions annotations. | Workflow commands, one per finding, `title=manni:lint/<job>/<rule>`. The command is the finding's severity, so a warning is `::warning`. Nothing at all on a clean run. |
+| `json` | Scripts and dashboards. | A top-level array, one object per file, each with `file`, `success`, and `errors[]` carrying `type`, `ruleId`, `tool`, `heading`, `message`, `position` and `severity`. |
 | `sarif` | GitHub code scanning and any SARIF consumer. | One result per finding with `ruleId: manni:lint/<job>/<rule>`, `level`, and the full line/column span. Skipped files ride along as tool notifications, never as results. |
 | `junit` | The CI "Tests" tab. | One `testcase` per linted file, `classname="manni.lint"`, one `failure` per finding whose `type` is the rule id. |
 

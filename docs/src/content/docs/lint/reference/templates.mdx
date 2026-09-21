@@ -1,17 +1,21 @@
 ---
 title: Templates reference
-description: "The template file format, the seven built-in TGDP doctypes, template refs, $template on a page, and how types: routes a doctype to a template."
+description: "The template grammar, every rule and block key, the content kinds each format reports, how sections are matched, and how a template is routed to a page."
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
 A **template** describes the shape a doctype promises. That is which sections a
-page of that kind has, in what order, and what has to be inside each one. `manni
-lint structure` resolves one template per page and matches the page's section
-tree against it.
+page of that kind has, in what order, and what has to be inside each one.
+`manni lint structure` resolves one template per page and aligns the page's
+section tree against it.
 
 Templates are data, not code. There is no language model anywhere in this, and
 no network call except fetching a template you pointed at yourself.
+
+To write your first one, follow
+[Write a template](/manni/lint/set-up/write-a-template/). This page is the
+exhaustive key list behind it.
 
 ## The built-in set
 
@@ -43,7 +47,7 @@ disagree, the template here is wrong.
 `type` is the same frontmatter key `manni meta`'s
 [built-in taxonomy schemas](/manni/meta/reference/taxonomy-schemas/)
 validate. A repository that already validates `type: how-to` against
-`tgdp:templates:1.0` gets structure routing for free: `meta` checks the page
+`tgdp:templates:1.0` gets structure routing for free. `meta` checks the page
 said what it is, and `lint` checks it is shaped like it.
 </Aside>
 
@@ -51,7 +55,7 @@ said what it is, and `lint` checks it is shaped like it.
 
 Everywhere a template is named, the value is a **ref**. That covers
 `-t/--template`, `lint.template`, `lint.types` values,
-`lint.overrides[].template`, and `extends`. There are three kinds:
+`lint.overrides[].template`, and `extends`. There are three kinds.
 
 | Kind | Looks like | Notes |
 |---|---|---|
@@ -60,7 +64,7 @@ Everywhere a template is named, the value is a **ref**. That covers
 | URL | `https://example.com/templates.yaml` | Fetched once per run, 10-second timeout. Never allowed from a page's `$template`. |
 
 <Aside type="caution" title="A template is trusted input">
-A template is code your configuration chooses to run. Its `patterns` are
+A template is code your configuration chooses to run. Its patterns are
 compiled as regular expressions, and a pattern written to backtrack can hang a
 run on a long heading. That is the same trust you extend to a JSON Schema in
 `manni meta`, so treat a template ref the way you treat a dependency.
@@ -68,13 +72,13 @@ run on a long heading. That is the same trust you extend to a JSON Schema in
 The practical rule is about where the ref comes from. A path in your own
 repository is reviewed like any other file. A URL is someone else's file,
 fetched fresh on every run, so point one at a source you would take a pull
-request from. A page can never choose it: `$template` refuses a URL for exactly
+request from. A page can never choose it. `$template` refuses a URL for exactly
 this reason.
 </Aside>
 
-A file or URL ref may carry a `#name` fragment naming one template inside it:
-`./templates.yaml#how-to`. Without a fragment, a file holding exactly one
-template resolves unambiguously; a file holding several is an error that lists
+A file or URL ref may carry a `#name` fragment naming one template inside it,
+as in `./templates.yaml#how-to`. Without a fragment, a file holding exactly one
+template resolves unambiguously. A file holding several is an error that lists
 them. A fragment on a built-in id is an error, because a built-in id already
 names one template.
 
@@ -83,12 +87,23 @@ manni: ./templates.yaml defines 2 templates; name one with a "#" fragment (e.g. 
 manni: Unknown built-in template "tgdp:howto:1.6". Available: tgdp:how-to:1.6, tgdp:tutorial:1.6, …
 ```
 
-## The file format
+## The file
 
 YAML or JSON. One file holds one or more named templates, plus any reusable
 fragments they share.
 
+| Top-level key | Type | Required | What it is |
+|---|---|---|---|
+| `templates` | object | yes | The doctype templates this file defines, keyed by name. A name starts with a letter and holds letters, digits, `-` and `_`. |
+| `components` | object | no | Reusable fragments, targeted by `$ref` from elsewhere **in the same file**. Left unconstrained, because a fragment is validated where it is inlined. |
+| `info` | object | no | Free-form metadata such as title, version and source. Never read by the linter, declared so a file that carries it is not rejected. |
+| `$schema` | string | no | URL of the template schema, so an editor can offer completion. Read by editors, never by the linter. |
+
+Point `$schema` at the published copy to get completion and inline errors while
+you type:
+
 ```yaml title="templates.yaml"
+$schema: https://hawkeyexl.github.io/manni/schemas/lint/template/2.json
 info:
   title: Acme doctypes
   version: "1.0"
@@ -96,130 +111,433 @@ info:
 templates:
   runbook:
     types: [runbook]
+    contains:
+      paragraphs:
+        min: 1
     sections:
-      title:
-        sections:
-          symptom:
-            heading:
-              const: Symptom
-            paragraphs:
-              min: 1
-          fix:
-            heading:
-              const: Fix
-            code_blocks:
-              min: 1
-          see also:
-            heading:
-              const: See also
-            required: false
+      - id: symptom
+        heading: Symptom
+        max: 1
+      - id: fix
+        heading: Fix
+        max: 1
+        contains:
+          codeBlocks:
+            min: 1
+      - id: see-also
+        heading: See also
+        min: 0
+        max: 1
 ```
 
-| Top-level key | Type | Required | What it is |
-|---|---|---|---|
-| `templates` | object | yes | The doctype templates this file defines, keyed by name. A name matches `^[A-Za-z0-9-_]+$`. |
-| `info` | object | no | Free-form metadata: title, version, source. Never read by the linter, declared so a file that carries it is not rejected. |
-| `components` | object | no | Reusable fragments, targeted by `$ref` from elsewhere **in the same file**. |
-
-### A template
-
-| Key | Type | Default | What it does |
-|---|---|---|---|
-| `types` | string[] | none | Doctypes this template serves, matched against a page's `type:` frontmatter. This is how routing happens without a flag. |
-| `extends` | ref | none | Inherit another template's rules. See [extends](#extends). |
-| `additionalSections` | boolean | `false` | Allow top-level sections this template does not describe. |
-| `sections` | object | none | The section rules, keyed by name, **in document order**. |
-
-### A section rule
-
-Each key of a `sections` map is one heading a level below its parent, and the
-declared order is the order the document must use.
-
-| Key | Type | Default | What it does |
-|---|---|---|---|
-| `description` | string | none | Prose about the section's purpose. Never validated against. |
-| `heading` | object | none | `const` for exact heading text, `pattern` for a regular expression. A rule constraining neither is a **slot**: it matches any heading. |
-| `required` | boolean | required | Whether the section must be present. **Absent means required.** |
-| `repeat` | boolean | `false` | On an anchored rule, claim the run of consecutive sections whose headings satisfy it. That is how a doctype says "one or more `Symptom N` sections". On a slot, claim every section up to the next anchored rule that could claim one. |
-| `sequence` | array | none | Ordered runs of content the section must contain. Each item sets exactly one of `paragraphs`, `code_blocks` or `lists`. |
-| `paragraphs` | object | none | `min`, `max`, and `patterns[]`. The patterns are regular expressions applied to paragraphs in order, cycled when exhausted. |
-| `code_blocks` | object | none | `min`, `max`. |
-| `lists` | object | none | `min`, `max`, and `items`. Inside `items` are `min`, `max`, plus `paragraphs`, `code_blocks` and `lists`, applied to every item of every list and recursing arbitrarily deep. |
-| `additionalSections` | boolean | `false` | Allow subsections this template does not describe. |
-| `sections` | object | none | Nested section rules, one heading level down. |
-
-Validation is strict: `additionalProperties: false` at every level, so a
+Validation is strict. `additionalProperties: false` holds at every level, so a
 `paragrafs` typo is named rather than ignored.
 
 ```
-manni: ./templates.yaml is not a valid template file: /templates/how-to/sections/overview must NOT have additional properties ("paragrafs").
+manni: ./templates.yaml is not a valid template file: /templates/runbook/sections/0 must NOT have additional properties ("paragrafs").
 ```
 
-<Aside type="caution" title="A section name may not be all digits">
-`^(?![0-9]+$)[A-Za-z0-9-_ ]+$` is the name pattern. JavaScript enumerates
-integer-like object keys first, in ascending numeric order. A section named
-`2024` would therefore silently reorder the rules relative to how the template
-declares them. Declared order is most of what a section rule asserts.
-Prefix such a name: `v2024`, `step-1`.
+## A template is a rule
+
+A template describes the page, so it takes **every rule key**. Its `heading`
+constrains the page's own title, its `sequence` or `contains` describes what
+sits before the first heading, and its `sections` are the headings under it.
+
+Three keys belong to a template alone.
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `title` | string | none | Human-readable name, shown by `manni lint templates`. |
+| `types` | string[] | none | Doctypes this template serves, matched against a page's `type` frontmatter. This is how routing happens without a flag. |
+| `extends` | ref | none | Inherit another template's rules. See [extends](#extends). |
+
+Two keys are refused on a template. `min` and `max` describe how often a rule
+occurs, and a page occurs once.
+
+```
+manni: ./templates.yaml: a template may not set min or max; a page is one page.
+```
+
+## Rule keys
+
+`sections` is a **list**, and its order is the order the document must use.
+Duplicate headings are legal, because two sections named `Example` are two
+entries in a list rather than two keys in a map.
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `id` | string | none | Handle for this rule, unique among its siblings. It appears in messages and in `--explain`, and `extends` targets it. Starts with a letter, then letters, digits, `-` and `_`. |
+| `heading` | string, string[], object, or `false` | any heading | What the section is called. [Four forms](#the-four-forms-of-heading). |
+| `repeat` | rule[] | none | Sibling rules matched in order as **one unit**, repeated by this rule's `min` and `max`. See [repeat](#repeat). |
+| `min` | integer | `1` | Fewest occurrences. `min: 0` makes the rule optional. |
+| `max` | integer | no limit | Most occurrences. Write `max: 1` for exactly once, and `max: 0` to forbid the section outright. |
+| `sequence` | block rule[] | none | What the section holds, **in order**. Each entry names exactly one content kind. |
+| `contains` | block rule | none | What the section holds, **in any order**, keyed by content kind. |
+| `sections` | rule[] | none | Rules for the subsections, one heading level down, in document order. |
+| `description` | string | none | Prose about what the rule is for. Never checked. |
+
+A rule carries `sequence` or `contains`, never both. A rule carries `heading`
+or `repeat`, never both.
+
+```
+manni: ./templates.yaml: rule "steps" sets both sequence and contains; a rule says what it holds in order, or in any order, never both.
+```
+
+An absent `sections` says nothing about the subsections. An empty list says no
+subsection is permitted, so every one of them reports as unexpected.
+
+<Aside type="note" title="One occurrence vocabulary, and no defaults written in">
+`min` and `max` count sections, and the same two words count paragraphs,
+tables and every other kind of content. Neither key carries a JSON Schema
+`default`. A written-in default is indistinguishable from a value the author
+typed, and it would win an [`extends`](#extends) merge against the parent's
+real value. The code reads an absent `min` as one and an absent `max` as no
+limit.
 </Aside>
 
-<Aside type="caution" title="`required` and `repeat` carry no schema default">
-Neither is given a JSON Schema `default`, deliberately. A written-in default is
-indistinguishable from a value the author typed. A written-in value also wins an
-[`extends`](#extends) merge, so a child that tightens one nested rule would
-silently reset its parent's `required: false`. The code reads "absent" as
-required, and "absent" as not repeating.
+### The four forms of `heading`
+
+| Form | Written | Matches |
+|---|---|---|
+| Exact text | `heading: Overview` | A section titled exactly `Overview`. |
+| One of | `heading: [Next steps, Where to go next]` | A section titled any one of them. |
+| Pattern | `heading: { pattern: '^[Ss]ymptoms?\b' }` | An unanchored regular expression over the heading text. |
+| No heading | `heading: false` | A section with no heading of its own, such as an include fragment whose host page owns the title. |
+
+Omitting `heading` altogether makes the rule a **wildcard**. It matches any
+heading, or none, and is how a doctype says "however many sections the task
+takes, each named by the author".
+
+```yaml title="examples/lint/nginx.yaml"
+- id: prerequisites
+  heading:
+    - Prerequisites
+    - Before you begin
+    - What you need
+  min: 0
+  max: 1
+- id: task
+  description: However many sections the task itself takes, each named by the author.
+  min: 1
+```
+
+<Aside type="caution" title="A heading's text is flattened, so inline markup is gone">
+Every parser renders a heading down to plain text before any rule sees it.
+`` ## `manni lint check` `` reaches a template as `manni lint check`, with no
+backticks in it. A pattern written against the markup matches nothing at all:
+
+```yaml
+# Never matches. The backticks are not there by the time a rule sees it.
+heading:
+  pattern: '^`manni .*`$'
+```
+
+Match the text instead:
+
+```yaml
+heading:
+  pattern: '^manni\b'
+```
+
+The same holds for bold, italics and links in a heading.
+`examples/lint/manni-docs.yaml` carries this note beside the rule it bit.
 </Aside>
 
-### `$ref`
+### `repeat`
 
-`$ref` shares one rule between templates in the same file, usually via
-`components:`:
+`repeat` groups sibling rules into one repeated unit, and the group's own
+`min` and `max` say how often the unit occurs. The group has no heading of its
+own, so put the heading on the first rule inside it.
 
-```yaml title="templates.yaml"
-components:
-  see-also:
-    heading:
-      const: See also
-    required: false
+This is the shape a map of section rules could not express. A troubleshooting
+doctype is one or more symptoms, each with a cause and the solution to it:
 
+```yaml title="templates/lint/tgdp/troubleshooting.yaml"
+- id: cause-or-solution
+  repeat:
+    - id: cause
+      heading:
+        pattern: '^[Cc]auses?\b'
+      max: 1
+    - id: solution
+      heading:
+        pattern: '^([Ss]olutions?|[Ww]orkarounds?)\b'
+      min: 0
+      max: 1
+```
+
+A copy of the group that is absent whole reports once, as
+`manni:lint/structure/missing-group`, rather than once per member.
+
+### Allowing sections the template does not describe
+
+A trailing rule with `min: 0` and no heading absorbs whatever follows. It
+composes, so putting it after the steps allows extras only there:
+
+```yaml
+- id: steps
+  heading: Steps
+  max: 1
+- min: 0
+```
+
+That is also what the `unexpected_section` message tells you to write:
+
+```
+Unexpected section "Benchmarks". Add a trailing rule with min: 0 to allow sections the template does not describe.
+```
+
+<Aside type="note" title="Two adjacent wildcards are warned about">
+Two neighbouring rules with no heading, no `repeat`, and the same occurrence
+range are told apart by nothing but their order. That is legal, and it is also
+how a template accidentally describes one section twice, so the loader says so
+on stderr:
+
+```
+manni: ./templates.yaml: two adjacent rules have no heading and no repeat; only rule order tells them apart.
+```
+</Aside>
+
+## Block rules
+
+`sequence` and `contains` are both written in the same block keys. A key is
+plural because it carries a count. The content model says `codeBlock`, and a
+template says `codeBlocks: { min: 1 }`.
+
+Every block key takes `min` and `max`. These are the keys each one adds.
+
+| Block key | Counts | Extra keys |
+|---|---|---|
+| `paragraphs` | Paragraphs | `pattern`, an unanchored regular expression every paragraph in the run must match. |
+| `codeBlocks` | Fenced or literal code blocks | `language`, the tag every block must declare (a list is one-of); `fenceInfo`, a pattern over the info-string tail where the format carries one. |
+| `lists` | Bulleted and numbered lists | `ordered`, a boolean (absent accepts either); `items`, applied to every item of every list in the run. |
+| `tables` | Tables | `columns`, the header cells in order. |
+| `admonitions` | Notes, tips and warnings | `variant`, one of `note`, `tip`, `important`, `caution`, `warning`, `danger`. |
+| `images` | Images | `url`, where the image must point; `alt`, the alternative text it must carry; `attributes`. |
+| `blockquotes` | Block quotes | None. A count only. |
+| `definitionLists` | Definition lists | None. A count only. |
+| `elements` | Named wrappers, such as an MDX component or a DITA element | `tag`, the element's name as an author writes it (a list is one-of); `attributes`; `sequence` or `contains`, describing what the element holds. |
+
+`items` under `lists` takes `min`, `max`, and either `sequence` or `contains`.
+It recurses arbitrarily deep.
+
+`attributes` is a map of name to value. A string is the required value, `true`
+requires the attribute to be present, and `false` requires it to be absent.
+
+Some extra keys report a finding of their own, and the rest narrow what the
+count sees. `language`, `columns`, `ordered`, `variant` and `elements`'
+`attributes` each report. `fenceInfo`, `tag`, and `images`' `url`, `alt` and
+`attributes` filter, so a node that does not match is simply not counted and
+the count rule is what fires. An `images` rule with any `attributes` at all
+therefore counts nothing, because an image node carries no attributes in the
+content model.
+
+### `sequence` or `contains`
+
+`contains` asks what is there. `sequence` asks what is there and in what order,
+one entry per run of one kind.
+
+```yaml title="examples/lint/doc-detective.yaml"
+- id: step
+  heading:
+    pattern: '^Step \d+:'
+  sequence:
+    - paragraphs:
+        min: 1
+    - codeBlocks:
+        min: 1
+```
+
+That section must hold a run of paragraphs followed by a run of code blocks. A
+code block above the prose reports as `manni:lint/structure/content-order`.
+Write `contains` instead where the order is the author's business.
+
+An element's `sequence` or `contains` describes what the element holds, never
+the enclosing section's content. A section holding a `<Steps>` component holds
+one thing, not the four paragraphs inside it, so a template reaches inside
+deliberately by naming the element:
+
+```yaml title="examples/lint/manni-docs.yaml"
+- elements:
+    tag: CardGrid
+    max: 1
+    contains:
+      elements:
+        tag: [Card, LinkCard]
+        min: 1
+```
+
+## Which kinds each format reports
+
+A parser declares the content kinds it can emit. `manni lint tools` prints the
+matrix from your own installation, one `kinds:` line per format.
+
+| Block key | Markdown | MDX | HTML | AsciiDoc | reStructuredText | XML |
+|---|---|---|---|---|---|---|
+| `paragraphs` | yes | yes | yes | yes | yes | yes |
+| `codeBlocks` | yes | yes | yes | yes | yes | yes |
+| `lists` | yes | yes | yes | yes | yes | yes |
+| `tables` | yes | yes | yes | yes | yes | yes |
+| `admonitions` | yes | yes | yes | yes | yes | yes |
+| `images` | yes | yes | yes | yes | yes | yes |
+| `blockquotes` | yes | yes | yes | yes | yes | yes |
+| `definitionLists` | no | no | yes | yes | yes | yes |
+| `elements` | no | yes | no | no | no | no |
+
+`elements` is MDX's alone, because plain Markdown has no JSX and reads
+`<Steps>` as raw HTML. `definitionLists` is absent from both Markdown flavours,
+which have no definition list in the spec.
+
+The file extensions behind those columns:
+
+| Format | Extensions |
+|---|---|
+| Markdown | `.md`, `.markdown` |
+| MDX | `.mdx` |
+| HTML | `.html`, `.htm` |
+| AsciiDoc | `.adoc`, `.asciidoc` |
+| reStructuredText | `.rst` |
+| XML | `.xml`, `.dita` |
+
+A directory walk picks up `.dita` but not every `.xml`, because a docs tree
+also holds `pom.xml` and `sitemap.xml`. Name such a file directly, or pass
+`--as xml`.
+
+### A rule that cannot run is a warning
+
+A rule about a kind this file's format cannot report is removed before matching
+and reported once, anchored at the top of the file:
+
+```
+1:1  warning  manni:lint/structure/unsupported-content-kind  The markdown parser does not report definition lists, so the "glossary" rule in template "reference" is not checked for this file.
+```
+
+Removing the rule is the point. Left standing, a table rule counts zero tables
+in a format with no tables. It then fails a page nothing is wrong with, while
+the report says the rule was never checked.
+
+A warning never moves the exit code. A docset of mixed formats stays green
+while still saying which rules went unchecked, and where.
+
+## How sections are matched
+
+The linter lines the page's sections up against the rule list and picks the
+pairing with the fewest problems. You do not need the algorithm. You need to
+know what "fewest problems" counts, because that is what decides which finding
+you see.
+
+| What happened | What it costs |
+|---|---|
+| A rule matched a section its `heading` accepts | 0 |
+| A rule was pushed onto a section its `heading` rejects | 1 |
+| A required occurrence found no section | 2 |
+| A section found no rule | 2 |
+
+Coercion costing less than the alternative is why one wrong heading reads as
+one finding. Reporting it as a missing section plus an unexpected one would
+cost 4, so the pairing that says `Expected title "Overview", but found
+"Overvue"` wins.
+
+Coercion is open only to a **required** rule whose `max` is 1. An optional rule
+loses nothing by standing aside, so it never adopts a stray section and then
+complains about its heading.
+
+When two pairings cost the same, three tie-breaks settle it, in order:
+
+1. A rule that names its heading beats a wildcard taking the same section.
+2. A repeating rule prefers its sections adjacent.
+3. The earlier rule wins.
+
+These weights and tie-breaks are **interface**. Changing one changes the report
+for documents nobody edited, so a test pins them.
+
+### Seeing the pairing it chose
+
+`--explain` prints the alignment under each routed file, so an unexpected
+finding is one command away from an explanation:
+
+```sh
+manni lint structure docs/rotate-key.md --explain
+```
+
+```
+▸ docs/rotate-key.md
+    · cli                  --template not given
+    · frontmatter-template no $template in frontmatter
+    · config-override      no overrides configured
+    → type                 tgdp:how-to:1.6  type: how-to -> builtin template
+    alignment
+      (page)                 ← "Rotate an API key"
+        overview             ← "Overview"
+        before-you-start     ← "Before you start"
+        task                 ← "Rotate the key"
+        see-also             ← "See also"
+
+1 file, 1 routed, 0 unrouted
+```
+
+A rule is named by its `id`, or by its literal heading, or `(any)` for a
+wildcard. A rule that took several sections collapses to `×N` with the first
+and last. A rule that took nothing reads `← (missing)`, a section no rule took
+reads `(unexpected)`, and a pushed pairing is marked `(coerced)`. The
+[CLI reference](/manni/lint/reference/cli/#explain) has the full grammar of the
+block.
+
+## `$ref`
+
+`$ref` shares one rule between templates in the same file, usually through
+`components:`. The fragment's keys are merged in beside whatever you write next
+to the `$ref`:
+
+```yaml title="examples/lint/doc-detective.yaml"
 templates:
-  runbook:
-    types: [runbook]
+  schema-reference:
+    types: [schema-reference]
     sections:
-      title:
-        sections:
-          fix:
-            heading: { const: Fix }
-          see also:
-            $ref: "#/components/see-also"
+      - $ref: "#/components/fields"
+
+components:
+  fields:
+    id: fields
+    heading: Fields
+    max: 1
+    contains:
+      tables:
+        min: 1
+        columns: [Field, Type, Description, Default]
 ```
 
 Only same-document pointers are followed. A `$ref` at a path or a URL is
-refused, not fetched. A template file must not decide what the linter reads off
-the disk or off the network. Cross-file reuse is [`extends`](#extends), which
-goes through the same ref rules as everything else.
+refused, not fetched, and the schema then rejects the leftover `$ref` key. A
+template file must not decide what the linter reads off the disk or off the
+network. Cross-file reuse is [`extends`](#extends), which goes through the same
+ref rules as everything else.
 
-### `extends`
+## `extends`
 
-A template inherits another's rules by ref:
+A template inherits another's rules by ref, and the merge happens **by `id`**:
 
-```yaml
+```yaml title="examples/lint/templates.yaml"
 templates:
-  acme-how-to:
+  house-how-to:
     types: [how-to]
     extends: tgdp:how-to:1.6
     sections:
-      title:
-        sections:
-          see also:
-            required: true
+      - id: see-also
+        min: 0
 ```
 
-The merge is innermost first. `sections` merges by key, recursively, all the
-way down, so a child can tighten one nested rule and inherit the rest. Every
-other key the child sets replaces the parent's outright. A cycle is an error
-naming the loop:
+A child rule whose `id` the parent uses replaces that rule in place. A child
+rule with an unused `id`, or with none at all, is appended. Every other key the
+child sets replaces the parent's outright, `repeat` included, because merging
+two repeated runs by position would be guesswork.
+
+Matching by `id` rather than by position is what makes this safe. Inserting a
+rule in the parent cannot silently re-target an override below it. The handle
+is `id` rather than `name` so that `name` means one thing in the whole file,
+which is the name of an element.
+
+The chain resolves innermost first, and a cycle is an error naming the loop:
 
 ```
 manni: Template "extends" cycle: a -> b -> a.
@@ -253,6 +571,9 @@ doctype, or lists them all:
 
 A page with no `type` at all is **skipped**, not failed. That is what lets you
 point the tool at a whole tree on day one and only lint what has opted in.
+
+A corpus that carries no doctype at all routes by path instead, through
+`lint.overrides`. `examples/lint/manni-docs.yaml` is written that way.
 
 ### `$template`
 
@@ -293,28 +614,25 @@ So declaring `types: [how-to]` on your own template is all it takes to replace
 the built-in how-to shape for the whole repository. Nothing else changes, and
 no page is edited.
 
-## Formats a template can be matched against
+## Keys the loader refuses
 
-The template is format-agnostic. Every parser flattens its own syntax into the
-same section tree, and the rules run over that tree. One template therefore
-describes a how-to whether it is written in Markdown or DITA.
+Each of these is named in a sentence of its own rather than reported as an
+unexpected property. A schema error says nothing about where the key went.
 
-| Format | Extensions |
+| Written | Message |
 |---|---|
-| Markdown | `.md`, `.markdown` |
-| MDX | `.mdx` |
-| HTML | `.html`, `.htm` |
-| AsciiDoc | `.adoc`, `.asciidoc` |
-| reStructuredText | `.rst` |
-| XML | `.xml`, `.dita` |
+| `required: false` | `"required" is not a template key. A rule is optional with "min: 0".` |
+| `additionalSections` | `"additionalSections" is not a template key. v2 has no equivalent, so drop it.` |
+| `code_blocks` | `"code_blocks" is not a template key. The v2 spelling is "codeBlocks".` |
+| `sections` as a map | `"sections" is a list of rules, not a map. Name each rule with "id" and list them in order.` |
+| `repeat: true` | `"repeat" is a list of rules, not a boolean. A rule repeats through "min" and "max".` |
+| `paragraphs.patterns` | `"patterns" is not a paragraphs key. The v2 spelling is "pattern", one regular expression.` |
 
-A directory walk picks up `.dita` but not every `.xml`, because a docs tree
-also holds `pom.xml` and `sitemap.xml`. Name such a file directly, or pass
-`--as xml`.
+`manni lint` had not shipped when the grammar replaced the earlier draft, so
+there is no published template to migrate and no alias for a renamed key. The
+refusals exist for a working copy on someone's disk.
 
-`manni lint tools` prints this table from your own installation.
-
-## Removed: `instructions`
+### `instructions`
 
 `doc-structure-lint` templates could carry an `instructions:` key, evaluated by
 a language model. Structure checking here is deterministic, so the key is
@@ -333,8 +651,10 @@ manni: ./templates.yaml: "templates.how-to.sections.title" uses `instructions`, 
 
 ## Related
 
+- [Write a template](/manni/lint/set-up/write-a-template/). The journey from one
+  page to a routed doctype shape.
 - [Configuration reference](/manni/lint/reference/configuration/). Where
   templates are named, and the full resolution chain.
-- [CLI reference](/manni/lint/reference/cli/). `--templates`, `-t`,
-  `--explain`, and `manni lint templates`.
+- [CLI reference](/manni/lint/reference/cli/). `--templates`, `-t`, `--explain`,
+  `manni lint templates` and `manni lint templates infer`.
 - [Fix a failing check](/manni/lint/fix/). Each rule, and what to change.
