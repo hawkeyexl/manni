@@ -843,6 +843,11 @@ async function lintWithDitaOt(run: DitaOtRun): Promise<LintFileResult[]> {
     return list;
   };
 
+  // A topic DITA-OT names that nobody targeted becomes a result of its own, so
+  // `checked` can exceed the number of paths the user typed. That is the
+  // answer, not an inflation of it: pointing at a map is how you ask about the
+  // topics it gathers, and a finding against `topic.dita` has to be reported
+  // against `topic.dita` for anyone to fix it. One map in, two files checked.
   for (const { target, messages } of results) {
     const invoked = labelOf(target);
     for (const message of messages) {

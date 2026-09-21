@@ -449,6 +449,9 @@ const DITAMAP: XmlVocabulary = {
     "colophon",
     "amendments",
   ],
+  // `navtitle` sits in both buckets on purpose, because DITA spells it either
+  // way. The element form wins: `headingOf` asks `titleOf` first, so
+  // `@navtitle` is read only when the entry has no `<topicmeta><navtitle>`.
   titles: ["title", "navtitle", "mainbooktitle"],
   titleAttributes: ["navtitle"],
   titleWrappers: ["topicmeta", "booktitle"],

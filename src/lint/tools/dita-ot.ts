@@ -439,6 +439,10 @@ export async function runDitaOtValidate(
        * nor stdout nor stderr. Trusting the parse of that log reported the
        * file as passing, which is the false green this guard exists for.
        */
+      // Only an `error` accounts for it. A warning or a notice is something
+      // DITA-OT says while finishing the job, and it exits 0 having said it,
+      // so a non-zero exit alongside nothing worse than `DOTJ047I` is still a
+      // failure this log does not explain.
       const explained =
         messages !== null && messages.some((m) => m.severity === "error");
 
@@ -491,6 +495,10 @@ export async function probeDitaOt(
   if (result.code !== 0) return { available: false, version: null };
   return {
     available: true,
+    // Both channels, because which one carries the banner is not fixed: the
+    // shell launcher prints it on stdout, and the Windows `.bat` run through
+    // `cmd.exe` has been seen to put it on stderr. Reading one would report a
+    // toolkit that is plainly there as versionless on the other platform.
     version: parseDitaOtVersion(`${result.stdout}\n${result.stderr}`),
   };
 }

@@ -80,6 +80,12 @@ const manni: StructureToolDescriptor = {
   // Nothing to look for: the engine is this package, so it is available
   // wherever the CLI is. A tool that shells out answers this by looking.
   probe: () => Promise.resolve({ available: true, version: pkg.version }),
+  // `-` is stdin, and it is in this list so the derivation in `lint.ts` has
+  // one place to learn that manni owns it. The refusal itself is not shaped
+  // like the others, because "option" is the wrong word for a positional:
+  // `assertOptionsOwned` special-cases it to say "cannot read stdin" instead.
+  // A tool that copies this list without reading that guard gets the right
+  // ownership and the wrong sentence.
   ownedOptions: ["--template", "--templates", "--explain", "--as", "-"],
 };
 
