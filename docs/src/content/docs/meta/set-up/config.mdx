@@ -152,7 +152,7 @@ A schema reference can be one of three kinds:
 - A **local file path** to a `.json` schema, such as `./schemas/article.json`.
 - An **`http(s)` URL** to a remotely hosted schema.
 
-If you omit `schemas` entirely, manni meta falls back to the built-in [`google:okf:0.1`](/manni/meta/schemas/) schema, which requires a `type` field.
+If you omit `schemas` entirely, manni meta falls back to two built-in schemas: [`google:okf:0.1`](/manni/meta/schemas/), which requires a `type` field, and `passo-uno:seven-action:1.0`, which constrains `action` and requires nothing.
 
 ### `overrides`
 

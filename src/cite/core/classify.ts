@@ -83,10 +83,11 @@ export async function historyOf(
     return { kind: "original", lines: joined.split("\n") };
   }
 
-  // Not at the recorded lines. `update` rewrites `src` for a move and keeps
-  // `commit`, so the lines the pin was minted from may sit elsewhere in the
-  // file as it was then. Only a pin found nowhere there never held. A
-  // whole-file pin has nowhere else to be.
+  // Not at the recorded lines. An entry can carry a `commit` older than its
+  // `lines`: one pinned by hand, or one an `update` before this rule
+  // re-anchored without advancing the commit. So the lines the pin was minted
+  // from may sit elsewhere in the file as it was then. Only a pin found
+  // nowhere there never held. A whole-file pin has nowhere else to be.
   if (range.start === undefined) return { kind: "never-true" };
   const length = (range.end ?? range.start) - range.start + 1;
   const search: FindWindowsOptions = { around: range.start };

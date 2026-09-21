@@ -3,8 +3,10 @@
  *
  * A moved end gets its `lines` spliced where it stands, so comments and
  * quoting are untouched: `claim.lines` for a claim found verbatim elsewhere on
- * the page, `source.lines` for a source found elsewhere in its file. A marker
- * never moves, because it travels with its own text.
+ * the page, `source.lines` for a source found elsewhere in its file. A moved
+ * source is re-minted over the range it moved to, so its `commit-sha` names a
+ * commit its new lines are true at. A marker never moves, because it travels
+ * with its own text.
  *
  * `--accept` re-pins a changed end. A claim is re-pinned over the paragraph,
  * fenced block or table rows now at its first line, and the report prints that
@@ -79,7 +81,18 @@ import {
 
 type Plan =
   | { kind: "claim-moved"; result: CitationResult; lines: LineSpec; from: string; to: string }
-  | { kind: "source-moved"; result: CitationResult; lines: LineSpec; to: string }
+  /**
+   * The pinned lines sit elsewhere in the file now. The entry is re-minted
+   * over them, so its `lines`, its `integrity` and its `commit-sha` are three
+   * parts of one reading rather than two new ones and a stale third.
+   */
+  | {
+      kind: "source-moved";
+      result: CitationResult;
+      lines: LineSpec;
+      to: string;
+      minted: Citation;
+    }
   | {
       kind: "claim-accepted";
       result: CitationResult;
@@ -156,11 +169,12 @@ interface Declined {
 
 /**
  * Why `--accept` re-pinned nothing at the claim's line, said plainly. Each
- * reason is a different problem: a blank line lost the sentence, a fenced line
- * moved it into code, a line that starts no paragraph is a heading underline
- * or an unclosed fence, a line outside the body is a range the page no longer
- * reaches, a short table lost rows the claim was minted over, and a marker or
- * a table rule is a line that holds no claim text at all.
+ * reason is a different problem: a blank line lost the sentence, a claim that
+ * runs out of its fenced block covers a fence rather than code, a line that
+ * starts no paragraph is a heading underline or an unclosed fence, a line
+ * outside the body is a range the page no longer reaches, a short table lost
+ * rows the claim was minted over, and a marker or a table rule is a line that
+ * holds no claim text at all.
  */
 function sayNoUnit(reason: NoUnit): string {
   switch (reason) {
@@ -168,8 +182,8 @@ function sayNoUnit(reason: NoUnit): string {
       return "the line is outside the page body";
     case "blank":
       return "the line is blank";
-    case "fenced":
-      return "the line sits inside a fenced block";
+    case "fence-crossed":
+      return "the claim's lines are not all inside one fenced block";
     case "marker":
       return "that line now holds a cite marker, not claim text";
     case "not-a-paragraph":
@@ -179,6 +193,11 @@ function sayNoUnit(reason: NoUnit): string {
     case "table-rule":
       return "that line is a table rule, not claim text";
   }
+}
+
+/** A unit named in a refusal. `fenced-lines` is a span of code, not a block. */
+function unitNoun(kind: ClaimUnit["kind"]): string {
+  return kind === "fenced-lines" ? "fenced text" : kind;
 }
 
 /** The rule a plan settles, so its finding is not also reported as skipped. */
@@ -228,8 +247,23 @@ function apply(content: string, format: string, plan: Plan): string {
     // The move is a page rewrite, applied to the whole page before any splice.
     case "marker-moved":
       return content;
-    case "source-moved":
-      return spliceEntryField(content, format, index, ["source", "lines"], plan.lines);
+    case "source-moved": {
+      let out = spliceEntryField(content, format, index, ["source", "lines"], plan.lines);
+      out = spliceEntryField(
+        out,
+        format,
+        index,
+        ["source", "integrity"],
+        plan.minted.source.integrity,
+      );
+      const commit = plan.minted.source["commit-sha"];
+      // As on a re-mint: HEAD is written only where the entry already records
+      // a commit, because the splice replaces a scalar and never adds a key.
+      if (commit !== undefined) {
+        out = spliceEntryField(out, format, index, ["source", "commit-sha"], commit);
+      }
+      return out;
+    }
     case "claim-accepted": {
       let out = spliceEntryField(content, format, index, ["claim", "integrity"], plan.pin);
       if (plan.lines !== undefined) {
@@ -301,6 +335,9 @@ function applyToEntry(entry: unknown, plan: Plan): boolean {
       const source = end("source");
       if (source === undefined) return false;
       source.lines = plan.lines;
+      source.integrity = plan.minted.source.integrity;
+      const commit = plan.minted.source["commit-sha"];
+      if (commit !== undefined) source["commit-sha"] = commit;
       return true;
     }
     case "claim-accepted": {
@@ -824,8 +861,49 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     }
     if (result.source.status === "moved" && result.source.newLines !== undefined) {
       const at = parseLines(result.source.newLines);
-      if (at !== undefined && result.source.newSrc !== undefined) {
-        out.push({ kind: "source-moved", result, lines: lineSpec(at), to: result.source.newSrc });
+      const to = result.source.newSrc;
+      const recorded = result.citation.source["commit-sha"];
+      if (at !== undefined && to !== undefined) {
+        try {
+          // Re-minted over the range it moved to, not just re-pointed at it.
+          // A pin whose `lines` were rewritten under an older `commit-sha`
+          // names a range that commit may not even reach, and the next
+          // command to ask for history reads it as a claim that never held.
+          const minted = await mintCitation({
+            root: run.root,
+            src: to,
+            ...(run.key === undefined ? {} : { key: run.key }),
+            ...(recorded === undefined ? { commitSha: false as const } : {}),
+            gitClient: git,
+            ...(pageOptions.sourceIndex === undefined
+              ? {}
+              : { sourceIndex: pageOptions.sourceIndex }),
+          });
+          // An entry that records a commit needs one to advance to. Without
+          // git there is none, and writing the new lines alone would leave the
+          // entry naming a range its own commit cannot hold, which is the
+          // state this re-mint exists to prevent. So nothing is written: a
+          // whole stale entry is one a later run repairs, and a half-written
+          // one is not. An entry that records no commit has nothing to keep in
+          // step, and is rewritten as before.
+          if (recorded !== undefined && minted.source["commit-sha"] === undefined) {
+            declined.set(result.origin.index, {
+              rule: "source-moved",
+              why: "Not rewritten: git is not available here, so the entry's commit-sha cannot advance with its lines.",
+            });
+          } else {
+            out.push({ kind: "source-moved", result, lines: lineSpec(at), to, minted });
+          }
+        } catch (error) {
+          // A range the re-mint cannot read leaves its finding reported, as a
+          // source `--accept` could not re-mint does, and the finding says why
+          // rather than reading as a repair that silently did nothing.
+          if (!(error instanceof CiteError)) throw error;
+          declined.set(result.origin.index, {
+            rule: "source-moved",
+            why: `Not rewritten: ${error.message}`,
+          });
+        }
       }
     }
     if (!accept) return out;
@@ -857,7 +935,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       if (unit !== undefined && wide !== undefined) {
         declined.set(result.origin.index, {
           rule: "claim-changed",
-          why: `Not re-pinned: the ${unit.kind} ${wide}.`,
+          why: `Not re-pinned: the ${unitNoun(unit.kind)} ${wide}.`,
         });
       } else if (unit === undefined) {
         const why = at === undefined ? undefined : noUnitAt(page, at, lines, held, named);
@@ -867,7 +945,16 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
             why: `Not re-pinned: ${sayNoUnit(why)}.`,
           });
         }
-      } else if (pin !== undefined && (!wantsBlock || unit.kind === "block")) {
+      } else if (wantsBlock && unit.kind !== "block") {
+        // A `quote: true` entry's claim lines are a whole fenced block, fences
+        // included; `check` reads anything else as `anchor-invalid`. So a
+        // quote whose first line drifted into prose, or into the middle of a
+        // block, is left for a fresh `cite add` and says so.
+        declined.set(result.origin.index, {
+          rule: "claim-changed",
+          why: "Not re-pinned: quote: true, and the line no longer opens a fenced block.",
+        });
+      } else if (pin !== undefined) {
         // Where else the same text sits. A pin cannot tell two copies apart,
         // so re-pinning over one of them writes a claim that is
         // `moved-ambiguous` the moment anything above it shifts. `add` refuses

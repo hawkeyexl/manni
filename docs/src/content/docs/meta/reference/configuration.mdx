@@ -162,8 +162,10 @@ is a family file or an explicit `-c`.
 ### Selecting collections on the command line
 
 With no positional paths, a run reads **every** collection, in declaration
-order. `--collection <name>` narrows it, and is available on `validate`, `get`,
-`query`, `fill`, `schemas infer` and `a11y check`.
+order. `--collection <name>` narrows it. In `meta` it is on `validate`, `get`,
+`query`, `fill`, `derive`, `relocate` and `schemas infer`. The other domains
+take it wherever they read documents, so `cite check`, `cite update`,
+`cite remove`, `a11y check`, `key rotate` and the `term` verbs all have it.
 
 ```sh
 manni meta validate                                   # every collection
@@ -1190,6 +1192,7 @@ files a run reads.
 | `schemaCache` | `SchemaCache` | none | Settings for the [cross-run schema cache](/manni/meta/reference/schema-resolution/#the-cross-run-cache). See [Schema cache](#schema-cache). |
 | `schemaTrust` | `SchemaTrust` | none | How far a document's own `$schema` is trusted. Absent means `any`, which is every reference kind, as manni meta has always behaved. See [Schema trust](#schema-trust). |
 | `fill` | `Fill` | none | Defaults for [`manni meta fill`](/manni/meta/reference/cli/#meta-fill). See [Fill](#fill). |
+| `elements` | `string[]` | none | Extra [element paths](/manni/meta/reference/element-metadata/) to lift, beyond each format's convention. They accumulate with every matching `overrides:` entry. See [`elements`](#elements). |
 
 {/* cite meta-section-must-be-a-mapping */}
 The section must be a YAML mapping. `schemas` takes [two
@@ -1421,10 +1424,10 @@ that genuinely distrusts its contributors, the honest setting is
 </Aside>
 
 <Aside type="caution" title="Pin the manni meta version in CI">
-A version older than 3.11 has never heard of `schemaTrust:`, so it reads the
-config, ignores the key, and **silently does nothing**. No guard, no warning.
-That is inherent to any new guard, because an old release predates it and cannot
-report a key it does not know is missing.
+Every release of `@hawkeyexl/manni` reads `schemaTrust:`. An older `docmeta`
+has never heard of it. It reads the config, ignores the key, and **silently does
+nothing**. No guard, no warning. That is inherent to any new guard, because an
+old release predates it and cannot report a key it does not know is missing.
 
 The mitigation is a version floor wherever the gate runs:
 
@@ -1599,7 +1602,7 @@ ratchet](/manni/meta/reference/cli/#baselines).
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `name` | `string` | yes | The check's identity. Must match `[a-z0-9][a-z0-9._-]*` and not end in `.json`. Two checks may not share a name, and `query` is reserved as the rule id `query --check` files ad-hoc findings under. |
+| `name` | `string` | yes | The check's identity. Must match `[a-z0-9][a-z0-9._-]*` and not end in `.json`. Two checks may not share a name. `query` and `derive` are both reserved. `query --check` files its ad-hoc findings under `check:query`, and a check reporting as `check:derive` would read as that verb's findings. |
 | `query` | `string` | yes | One SQL SELECT following the column convention below. Checks are **read-only**. The projection runs under `query_only`, so a mutating statement is refused with the check named (edits belong to `manni meta query`). `ATTACH`/`VACUUM` are refused by name. Checks bind no parameters, so a named parameter (`$x`, `:x`, `@x`) is refused too. An unbound name would bind NULL and green the gate on a typo, so inline the value. |
 
 ```yaml
@@ -2100,7 +2103,8 @@ JUnit and the baseline, is the ordinary join `derived:stale/derived`. The
 `derived` segment is reserved as a first segment beside `check` and
 `external`, and is listed with the other [reserved rule
 ids](/manni/meta/reference/output-and-exit-codes/#reserved-rule-ids). The
-finding's `file` is never set, because a managed value lives in the document.
+finding's `file` names the manifest whenever one supplied the value, and `line`
+then refers to that file. A value the document holds sets neither.
 
 #### Exit codes
 

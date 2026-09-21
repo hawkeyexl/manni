@@ -510,7 +510,7 @@ named in `severity:`, which takes the sixteen rule names below.
 
 | Rule | Meaning | Message | Default |
 |---|---|---|---|
-| <span id="source-moved">`source-moved`</span> | The pin does not hold at its range, and exactly one window of the same length elsewhere in the file hashes to it. `update` rewrites `source.lines`. A whole-file citation never moves. | `moved -> lib/limits.ts:4` | `warning` |
+| <span id="source-moved">`source-moved`</span> | The pin does not hold at its range, and exactly one window of the same length elsewhere in the file hashes to it. `update` rewrites `source.lines` and advances `source.commit-sha`. A whole-file citation never moves. | `moved -> lib/limits.ts:4` | `warning` |
 | <span id="source-moved-ambiguous">`source-moved-ambiguous`</span> | Two or more windows hash to the pin; the tool will not guess which. Widen the range. | `moved, 2 candidates (lib/limits.ts:4, lib/limits.ts:11); widen the range` | `error` |
 | <span id="source-changed">`source-changed`</span> | No window hashes to the pin. With a commit and history: since when, and how many commits touched the path. With a commit git cannot show: `history unavailable`, plus one run notice about `fetch-depth: 0`. Where git is not available, a bare `changed`, plus one run notice. | `changed since 3f9c2a1, 2 commits` | `error` |
 | <span id="source-never-true">`source-never-true`</span> | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit. | `never true: the pin does not match at 3f9c2a1` | `error` |
