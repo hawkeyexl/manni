@@ -1,0 +1,13 @@
+# owner is derived into the manifest that owns it; created stays on the page,
+# so one file writes both.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./site-meta.yaml
+        keys: [owner]
+meta:
+  schemas: [./steward.schema.json]
+  derive:
+    fields: [created, owner]
+    sources: [git, codeowners]
