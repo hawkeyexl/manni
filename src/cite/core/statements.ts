@@ -44,9 +44,10 @@ const RST_FORMS: readonly StatementForm[] = [{ open: ".. (", close: ")" }];
 const ID = /^[a-z0-9][a-z0-9-]*$/;
 
 /**
- * A fence opener in any format. `paragraphAfter` and the claim search
- * (`claims.ts`) have no format parameter, so they treat every family's opener
- * as a fence; the per-format locators below are what `quote` anchoring uses.
+ * A fence opener in any format. `paragraphAfter` reads it whether or not it
+ * was given a format, and so does the claim search (`claims.ts`), so every
+ * family's opener counts; the per-format locators below are what `quote`
+ * anchoring uses.
  * A markdown fence keeps its meaning when indented, as inside a list item, so
  * it is read there too, matching the code skip in `src/shared/code-regions.ts`; the
  * asciidoc `----` stays at column 0.
@@ -143,6 +144,90 @@ export function isMarkerLine(line: string, format: string): boolean {
   });
 }
 
+/** An ATX heading: one to six `#`, then a space or the end of the line. */
+const ATX_HEADING = /^[ \t]*#{1,6}([ \t]|$)/;
+/** An asciidoc section title: one to six `=`, then a space. */
+const ASCIIDOC_TITLE = /^={1,6}[ \t]/;
+/**
+ * A line of one punctuation character repeated three or more times, spaces
+ * allowed: a setext underline, a thematic break, an rst adornment.
+ */
+const ADORNMENT = /^[ \t]*([-=~^"'*+#_:<>])(?:[ \t]*\1){2,}[ \t]*$/;
+/** A line that is nothing but one JSX or HTML tag, opening or closing. */
+const TAG_LINE = /^[ \t]*<\/?[A-Za-z][^<>]*>[ \t]*$/;
+/** A table row: a line whose first non-blank character is a pipe. */
+const TABLE_ROW = /^[ \t]*\|/;
+
+/**
+ * Whether a line is a table row. The header row, the `|---|---|` delimiter row
+ * and every body row all open with a pipe, so all three read as rows. Leading
+ * whitespace is allowed, because a table inside a list item is indented and is
+ * still a table.
+ *
+ * A row is a statement of its own. Nothing else separates one row from the
+ * next, so a paragraph walk reads a whole table as one paragraph, and a claim
+ * pinned to one row would re-pin every row below it. `unitAt` in
+ * `src/cite/core/claims.ts` reads this instead, so a re-pin covers the row and
+ * no more.
+ */
+export function isTableRow(line: string): boolean {
+  return TABLE_ROW.test(line);
+}
+
+/**
+ * A table rule: the `|---|---|` line under a header row. The outer pipes are
+ * optional, a cell may carry `:` alignment markers, and the whole line may be
+ * indented, because a table inside a list item is indented and is still a
+ * table.
+ *
+ * A rule has to carry at least one `|`, which is what the leading lookahead
+ * asks. Every pipe in the pattern that follows is optional on its own, so
+ * without that test a bare `---` reads as a table rule, and `---` is a
+ * thematic break or the underline of a setext heading instead.
+ *
+ * `isTableRow` reads a rule as a row, deliberately: a claim over a header, its
+ * rule and a body row covers three rows and keeps all three. This asks the
+ * narrower question `unitAt` needs, which is whether a span holds nothing but
+ * rules. Such a span carries no words, so `update --accept` refuses to pin one.
+ */
+const TABLE_RULE = /^(?=[^|]*\|)[ \t]*\|?(?:[ \t]*:?-+:?[ \t]*\|)*[ \t]*:?-+:?[ \t]*\|?[ \t]*$/;
+
+export function isTableSeparator(line: string): boolean {
+  return TABLE_RULE.test(line);
+}
+
+/**
+ * Whether a line is a **bound line**: one the format makes a block on its own,
+ * so no paragraph continues across it, and no pin covers it beside text.
+ *
+ * | Format | Bound lines |
+ * |---|---|
+ * | markdown, mdx | An ATX heading, and a line that is nothing but one tag. |
+ * | html, xml | A line that is nothing but one tag. |
+ * | asciidoc | A section title. |
+ * | every format | An adornment: one of `-=~^"'*+#_:<>` repeated three or more times. |
+ *
+ * Proposal 0054 is the record, and its stress tests 8 and 9 say why a heading
+ * and a tag line are read this way rather than joined to the text below them.
+ * A tag line is bound in every format that reads one, so a marker under
+ * `<body>` anchors the element below it and never the whole document.
+ */
+export function isBoundLine(line: string, format: string): boolean {
+  if (ADORNMENT.test(line)) return true;
+  switch (format) {
+    case "markdown":
+    case "mdx":
+      return ATX_HEADING.test(line) || TAG_LINE.test(line);
+    case "html":
+    case "xml":
+      return TAG_LINE.test(line);
+    case "asciidoc":
+      return ASCIIDOC_TITLE.test(line);
+    default:
+      return false;
+  }
+}
+
 /** Scan a body for statements. `from` maps body offsets/lines to file offsets/lines. */
 export function parseStatements(
   body: string,
@@ -201,7 +286,9 @@ export function detectEol(text: string): "\n" | "\r\n" {
  * The paragraph starting at or after `offset` (skipping blank lines), as
  * `{ start, end, line }` file offsets and the file line it starts on. A fence
  * opener ends the search with no paragraph. Given a `format`, a marker-only
- * line is skipped like a blank one before the paragraph, and ends it after.
+ * line is skipped like a blank one before the paragraph, and ends it after,
+ * and a bound line is a unit of one line: it ends a paragraph above it, and
+ * stands alone when it is the first line found.
  */
 export function paragraphAfter(
   content: string,
@@ -209,6 +296,7 @@ export function paragraphAfter(
   format?: string,
 ): { start: number; end: number; line: number } | undefined {
   const marker = (text: string): boolean => format !== undefined && isMarkerLine(text, format);
+  const bound = (text: string): boolean => format !== undefined && isBoundLine(text, format);
   let pos = offset;
   // The rest of the line `offset` sits in counts when it carries text; when
   // it is blank the paragraph can only start on a later line.
@@ -225,11 +313,12 @@ export function paragraphAfter(
     if (ANY_FENCE.test(text)) return undefined;
     const start = pos;
     let last = end;
-    let cursor = end + 1;
+    // A bound line is its own unit, so it never gathers the lines under it.
+    let cursor = bound(text) ? content.length : end + 1;
     while (cursor < content.length) {
       const e = lineEnd(content, cursor);
       const t = lineText(content, cursor, e);
-      if (t.trim() === "" || ANY_FENCE.test(t) || marker(t)) break;
+      if (t.trim() === "" || ANY_FENCE.test(t) || marker(t) || bound(t)) break;
       last = e;
       cursor = e + 1;
     }
@@ -407,9 +496,9 @@ export function insideFence(
 /**
  * The paragraph or fenced block that holds `line`, as the lines it spans,
  * fences included: what a marker written above it anchors. A paragraph runs
- * up to a blank line, a fence, a marker-only line or the body's start, and
- * down as `paragraphAfter` reads it. Undefined for a blank line, a marker-only
- * line, or a line nothing can anchor.
+ * up to a blank line, a fence, a marker-only line, a bound line or the body's
+ * start, and down as `paragraphAfter` reads it. Undefined for a blank line, a
+ * marker-only line, or a line nothing can anchor.
  */
 export function unitHolding(
   text: string,
@@ -428,9 +517,17 @@ export function unitHolding(
   }
   if (ANY_FENCE.test(own)) return undefined;
   let start = line;
-  while (start - 1 >= body.line) {
+  // A bound line is its own unit, so the walk up never leaves it.
+  while (start - 1 >= body.line && !isBoundLine(own, format)) {
     const above = textOf(start - 1);
-    if (above.trim() === "" || ANY_FENCE.test(above) || isMarkerLine(above, format)) break;
+    if (
+      above.trim() === "" ||
+      ANY_FENCE.test(above) ||
+      isMarkerLine(above, format) ||
+      isBoundLine(above, format)
+    ) {
+      break;
+    }
     start--;
   }
   const paragraph = paragraphAfter(text, offsetOfLine(text, start), format);
@@ -492,7 +589,14 @@ function continuesList(
   if (columnOf(indentOf(textOfLine(text, n))) > column) return true;
   for (; n >= bodyLine; n--) {
     const above = textOfLine(text, n);
-    if (above.trim() === "" || ANY_FENCE.test(above) || isMarkerLine(above, format)) break;
+    if (
+      above.trim() === "" ||
+      ANY_FENCE.test(above) ||
+      isMarkerLine(above, format) ||
+      isBoundLine(above, format)
+    ) {
+      break;
+    }
     const item = listItemOf(above);
     if (item !== undefined && columnOf(item.lead) === column) return true;
   }

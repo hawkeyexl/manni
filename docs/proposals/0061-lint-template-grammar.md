@@ -1,4 +1,4 @@
-# 0054: The template format is a grammar over sections
+# 0061: The template format is a grammar over sections
 
 - **Status:** Proposed
 - **Serves:** Three journeys.
@@ -10,7 +10,7 @@
   - Theo · T5, "Read a structure failure and fix it". One wrong heading should
     read as one finding.
 - **Depends on:** Three.
-  - [0053](0053-content-model.md) names the content kinds. A template asks
+  - [0060](0060-content-model.md) names the content kinds. A template asks
     about them, so they had to be named first.
   - [0050](0050-lint-domain.md) folded lint in, with the v1 format this
     replaces.
@@ -135,7 +135,7 @@ documents nobody edited. They are exported, documented and pinned by a test.
 
 ### A rule that cannot run says so
 
-A parser declares which kinds it emits (0053). A rule about a kind this file's
+A parser declares which kinds it emits (0060). A rule about a kind this file's
 format cannot report is removed before matching and reported once, as a
 warning. Removing it is the point. Left standing, a table rule counts zero
 tables in a format with no tables, and fails the page. Meanwhile the report
@@ -210,7 +210,7 @@ needs it.
 
 ### 8. What about a heading inside a component?
 
-It is not a section. That follows from 0053, where an element's children are
+It is not a section. That follows from 0060, where an element's children are
 its own. It hides eight headings in two pages of this repository, all inside a
 tab. The alternative is worse: a page's shape would change with the tab it
 happens to show.

@@ -1,0 +1,557 @@
+{
+  "results": [
+    {
+      "url": "http://127.0.0.1:4321/manni/",
+      "violations": [],
+      "passes": 41,
+      "incomplete": 0,
+      "source": "seed",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/",
+      "violations": [],
+      "passes": 41,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/get-started/",
+      "violations": [],
+      "passes": 51,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/set-up/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/set-up/config/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/set-up/derived-metadata/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/set-up/different-schemas-per-folder/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/set-up/external-metadata/",
+      "violations": [],
+      "passes": 50,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/set-up/fill-providers/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/set-up/machine-authorship/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/set-up/new-required-field/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/set-up/retrofit/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/ci/",
+      "violations": [],
+      "passes": 48,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/ci/consume-results/",
+      "violations": [],
+      "passes": 48,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/ci/exit-codes-and-annotations/",
+      "violations": [],
+      "passes": 45,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/ci/govern-shared-schema/",
+      "violations": [],
+      "passes": 52,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/ci/query-gates/",
+      "violations": [],
+      "passes": 42,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/ci/recipes/",
+      "violations": [],
+      "passes": 48,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/schemas/",
+      "violations": [],
+      "passes": 48,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/schemas/resolution/",
+      "violations": [],
+      "passes": 51,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/schemas/versioning/",
+      "violations": [],
+      "passes": 51,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/schemas/encrypted-fields/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/schemas/field-location/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/fix/",
+      "violations": [],
+      "passes": 50,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/fix/faq/",
+      "violations": [],
+      "passes": 45,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/proposals/frontmatter-vocabularies/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/proposals/core/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/proposals/stewardship/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/proposals/audience/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/proposals/lifecycle/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/proposals/structure/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/proposals/ai-context/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/proposals/evals/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/proposals/kg/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/proposals/artifact-evals/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/proposals/citations/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/meta/proposals/terminology/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/a11y/",
+      "violations": [],
+      "passes": 41,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/a11y/get-started/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/a11y/ci/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/a11y/fix/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/a11y/reference/cli/",
+      "violations": [],
+      "passes": 45,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/cite/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/cite/get-started/",
+      "violations": [],
+      "passes": 52,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/cite/set-up/",
+      "violations": [],
+      "passes": 50,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/cite/set-up/citations-in-a-sidecar/",
+      "violations": [],
+      "passes": 50,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/cite/set-up/public-docs-private-code/",
+      "violations": [],
+      "passes": 50,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/cite/set-up/require-citations/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/cite/ci/",
+      "violations": [],
+      "passes": 50,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/cite/fix/",
+      "violations": [],
+      "passes": 50,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/cite/reference/cli/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/cite/reference/configuration/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/cite/reference/citations/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/key/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/key/set-up/",
+      "violations": [],
+      "passes": 50,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/key/ci/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/key/reference/cli/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/term/",
+      "violations": [],
+      "passes": 45,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/term/get-started/",
+      "violations": [],
+      "passes": 48,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/term/set-up/",
+      "violations": [],
+      "passes": 50,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/term/set-up/move-and-hand-off/",
+      "violations": [],
+      "passes": 50,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/term/ci/",
+      "violations": [],
+      "passes": 50,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/term/fix/",
+      "violations": [],
+      "passes": 50,
+      "incomplete": 1,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/term/reference/cli/",
+      "violations": [],
+      "passes": 45,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/term/reference/configuration/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/term/reference/terminology/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    },
+    {
+      "url": "http://127.0.0.1:4321/manni/term/reference/rules/",
+      "violations": [],
+      "passes": 46,
+      "incomplete": 0,
+      "source": "link",
+      "score": 100
+    }
+  ],
+  "summary": {
+    "discovered": 67,
+    "checked": 67,
+    "skipped": 0,
+    "duplicates": 0,
+    "excluded": 34,
+    "failed": 0,
+    "violations": 0,
+    "bySeverity": {
+      "notice": 0,
+      "warning": 0,
+      "error": 0
+    },
+    "sitemap": null,
+    "sitemapPages": 0,
+    "crawl": true
+  }
+}

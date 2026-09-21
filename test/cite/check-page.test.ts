@@ -51,7 +51,7 @@ function shallowGit(files: string[], available = true, shown?: ShownFile): GitCl
 const FIXTURE_FILES = ["src/a.txt", "src/limits.ts", "src/changed.ts", "src/moved.ts"];
 
 const NO_HISTORY =
-  "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.";
+  "git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.";
 const SHALLOW =
   "commit 0123456 not found in history; use fetch-depth: 0 to enable never-true and diffs";
 
@@ -373,8 +373,11 @@ describe("checkCitations", () => {
 describe("checkCitations: citations a manifest owns", () => {
   const HTML_PAGE = join(PAGES, "marker.html");
   const html = readFileSync(HTML_PAGE, "utf8");
-  /** What the marker in `marker.html` anchors: the paragraph runs to the end of the file. */
-  const ANCHORED = hashLines("<p>The fetch timeout is 10 seconds.</p>\n</body>\n</html>");
+  /**
+   * What the marker in `marker.html` anchors: the element below it. `</body>`
+   * and `</html>` are bound lines, so no paragraph runs across them (0054).
+   */
+  const ANCHORED = hashLines("<p>The fetch timeout is 10 seconds.</p>");
   const MANIFEST = "docs/citations.yaml";
 
   const injected = (entry: unknown): CitationInput[] => [

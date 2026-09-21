@@ -4,7 +4,7 @@
  *
  * v1's `items` took its own flat `paragraphs`/`code_blocks`/`lists` keys. v2
  * replaces that split with the same `sequence` | `contains` every other
- * container uses (proposal 0054), so item-level rules recurse through the
+ * container uses (proposal 0061), so item-level rules recurse through the
  * same two functions as everything else instead of a third, list-shaped one.
  */
 

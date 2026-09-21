@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { CHECK_DEFAULTS, runCheck, type CheckOptions } from "../../src/a11y/commands/check.js";
 import type { Fetcher } from "../../src/a11y/core/sitemap.js";
 import { A11yError, type ProgressEvent } from "../../src/a11y/types.js";
+import { configGlobs, flagGlobs } from "../helpers/exclude-globs.js";
 import { fakeAnalyzer, violation, type FakeSite } from "../helpers/fake-analyzer.js";
 
 const S = "https://site.example";
@@ -42,6 +43,7 @@ describe("CHECK_DEFAULTS", () => {
       tags: [],
       severity: "notice",
       timeout: 30000,
+      exclude: [],
     });
   });
 
@@ -77,6 +79,146 @@ describe("runCheck input validation", () => {
     const analyzer = fakeAnalyzer({});
     await expect(runCheck(opts({ urls: [] }), { analyzer })).rejects.toThrow(A11yError);
     expect(analyzer.closed).toBe(1);
+  });
+});
+
+describe("runCheck and an excluded seed", () => {
+  it("refuses a seed its own pattern excludes, naming the pattern and the seed", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/proposals/`]: {} });
+    await expect(
+      runCheck(opts({ urls: [`${S}/proposals/`], exclude: flagGlobs("/proposals/**") }), {
+        analyzer,
+        fetcher: noSitemap(),
+      }),
+    ).rejects.toThrow(
+      new A11yError(`--exclude "/proposals/**" excludes the seed ${S}/proposals/.`),
+    );
+    expect(analyzer.calls).toHaveLength(0);
+  });
+
+  it("names every excluded seed, so one run does not fix one pattern", async () => {
+    const analyzer = fakeAnalyzer({});
+    await expect(
+      runCheck(
+        opts({
+          urls: [`${S}/proposals/`, `${S}/ok/`, `${S}/blog/`],
+          exclude: flagGlobs("/proposals/**", "/blog/**"),
+        }),
+        { analyzer, fetcher: noSitemap() },
+      ),
+    ).rejects.toThrow(
+      new A11yError(
+        [
+          `--exclude "/proposals/**" excludes the seed ${S}/proposals/.`,
+          `--exclude "/blog/**" excludes the seed ${S}/blog/.`,
+        ].join("\n"),
+      ),
+    );
+    expect(analyzer.calls).toHaveLength(0);
+  });
+
+  it("names a configured pattern by its file and its key, never as a flag", async () => {
+    // A run seeded and excluded entirely from config must not report a flag
+    // the user never typed; that sends a reader through a shell history
+    // looking for something that was never there.
+    const analyzer = fakeAnalyzer({});
+    await expect(
+      runCheck(
+        opts({
+          urls: [`${S}/proposals/`],
+          exclude: configGlobs("manni.config.yaml", "/blog/**", "/proposals/**"),
+        }),
+        { analyzer, fetcher: noSitemap() },
+      ),
+    ).rejects.toThrow(
+      new A11yError(
+        `manni.config.yaml: "a11y.exclude[1]" excludes the seed ${S}/proposals/.`,
+      ),
+    );
+    expect(analyzer.calls).toHaveLength(0);
+  });
+
+  it("names each pattern by the source it came from, in one message", async () => {
+    // The CLI cannot produce this today, because a typed --exclude replaces
+    // the config list rather than adding to it. The message shape is pinned
+    // here anyway, so that neither label is wired to the other's source.
+    const analyzer = fakeAnalyzer({});
+    await expect(
+      runCheck(
+        opts({
+          urls: [`${S}/proposals/`, `${S}/blog/`],
+          exclude: [
+            ...configGlobs("manni.config.yaml", "/proposals/**"),
+            ...flagGlobs("/blog/**"),
+          ],
+        }),
+        { analyzer, fetcher: noSitemap() },
+      ),
+    ).rejects.toThrow(
+      new A11yError(
+        [
+          `manni.config.yaml: "a11y.exclude[0]" excludes the seed ${S}/proposals/.`,
+          `--exclude "/blog/**" excludes the seed ${S}/blog/.`,
+        ].join("\n"),
+      ),
+    );
+  });
+
+  it("does not look for a sitemap before refusing", async () => {
+    const fetcher = noSitemap();
+    await expect(
+      runCheck(opts({ urls: [`${S}/blog/`], exclude: flagGlobs("/blog/**") }), {
+        analyzer: fakeAnalyzer({}),
+        fetcher,
+      }),
+    ).rejects.toThrow(A11yError);
+    expect(fetcher.calls).toHaveLength(0);
+  });
+});
+
+describe("runCheck and --exclude", () => {
+  it("keeps the excluded pages out and counts them in the summary", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/proposals/0035/`, `${S}/about`] },
+      [`${S}/about`]: {},
+    };
+    const run = await runCheck(opts({ exclude: flagGlobs("/proposals/**") }), {
+      analyzer: fakeAnalyzer(site),
+      fetcher: noSitemap(),
+    });
+    expect(run.results.map((r) => r.url)).toEqual([`${S}/`, `${S}/about`]);
+    expect(run.summary).toMatchObject({ discovered: 2, checked: 2, excluded: 1 });
+  });
+
+  it("says once on progress how much came out, before the browser starts", async () => {
+    const site: FakeSite = { [`${S}/`]: { links: [`${S}/about`] }, [`${S}/about`]: {} };
+    const fetcher = sitemapFetcher({
+      [`${S}/sitemap.xml`]: `<urlset><url><loc>${S}/proposals/</loc></url><url><loc>${S}/blog/x</loc></url></urlset>`,
+    });
+    const events: ProgressEvent[] = [];
+    await runCheck(opts({ exclude: flagGlobs("/proposals/**", "/blog/**") }), {
+      analyzer: fakeAnalyzer(site),
+      fetcher,
+      onProgress: (e) => events.push(e),
+    });
+    expect(events.slice(0, 3)).toEqual([
+      { kind: "sitemap", source: `${S}/sitemap.xml`, urls: 2 },
+      { kind: "excluded", urls: 2, patterns: 2 },
+      { kind: "browser" },
+    ]);
+    // No line per excluded URL: a pattern that removes four hundred pages
+    // would otherwise bury the pages that were checked.
+    expect(events.filter((e) => e.kind === "excluded")).toHaveLength(1);
+  });
+
+  it("says nothing on progress when nothing was excluded", async () => {
+    const events: ProgressEvent[] = [];
+    await runCheck(opts({ exclude: flagGlobs("/proposals/**") }), {
+      analyzer: fakeAnalyzer({ [`${S}/`]: {} }),
+      fetcher: noSitemap(),
+      onProgress: (e) => events.push(e),
+    });
+    expect(events.filter((e) => e.kind === "excluded")).toEqual([]);
   });
 });
 
@@ -244,6 +386,23 @@ describe("runCheck and the sitemap", () => {
       [`${S}/orphan`, "sitemap"],
     ]);
     expect(run.summary.sitemap).toBe(`${S}/sitemap.xml`);
+    // The off-host `<loc>` never reached the frontier, so it is not counted.
+    expect(run.summary.sitemapPages).toBe(1);
+  });
+
+  it("counts no sitemap pages when every URL in it was out of scope", async () => {
+    // The shape this repo's own CI hits: a sitemap that parses and lists only
+    // another host's pages. It was found, and it supplied nothing.
+    const fetcher = sitemapFetcher({
+      [`${S}/sitemap.xml`]: `<urlset><url><loc>https://example.org/a</loc></url><url><loc>https://example.org/b</loc></url></urlset>`,
+    });
+    const run = await runCheck(opts({}), {
+      analyzer: fakeAnalyzer({ [`${S}/`]: { links: [`${S}/a`] }, [`${S}/a`]: {} }),
+      fetcher,
+    });
+    expect(run.summary.sitemap).toBe(`${S}/sitemap.xml`);
+    expect(run.summary.sitemapPages).toBe(0);
+    expect(run.results.map((r) => r.source)).toEqual(["seed", "link"]);
   });
 
   it("looks up one sitemap per run, from the first seed only", async () => {
@@ -266,6 +425,7 @@ describe("runCheck and the sitemap", () => {
       fetcher: noSitemap(),
     });
     expect(run.summary.sitemap).toBeNull();
+    expect(run.summary.sitemapPages).toBe(0);
     expect(run.summary.crawl).toBe(true);
   });
 
@@ -278,6 +438,7 @@ describe("runCheck and the sitemap", () => {
     expect(fetcher.calls).toEqual([]);
     expect(run.results).toHaveLength(1);
     expect(run.summary.sitemap).toBeNull();
+    expect(run.summary.sitemapPages).toBe(0);
     // Reporters tell "no crawl" from "crawled, no sitemap" by this flag.
     expect(run.summary.crawl).toBe(false);
   });
@@ -303,10 +464,12 @@ describe("runCheck summary", () => {
       checked: 2,
       skipped: 0,
       duplicates: 0,
+      excluded: 0,
       failed: 2,
       violations: 4,
       bySeverity: { notice: 0, warning: 1, error: 3 },
       sitemap: null,
+      sitemapPages: 0,
       crawl: true,
     });
   });

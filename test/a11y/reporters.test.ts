@@ -54,10 +54,12 @@ function summarize(
     checked: results.length,
     skipped: 0,
     duplicates: 0,
+    excluded: 0,
     failed,
     violations,
     bySeverity,
     sitemap: null,
+    sitemapPages: 0,
     crawl: true,
     ...over,
   };
@@ -98,10 +100,67 @@ describe("A11Y_FORMATS", () => {
 });
 
 describe("render pretty", () => {
-  it("names the sitemap in the header when one supplied pages", () => {
-    const run = checkRun([page({ url: `${S}/` })], { sitemap: SITEMAP });
+  it("names the sitemap alone when it supplied every discovered page", () => {
+    const run = checkRun([page({ url: `${S}/`, source: "sitemap" })], {
+      sitemap: SITEMAP,
+      sitemapPages: 1,
+    });
     const text = render("pretty", run, off);
     expect(text.split("\n")[0]).toBe(`Checked 1 of 1 pages (sitemap: ${SITEMAP})`);
+  });
+
+  it("counts the sitemap's share and credits links for the rest", () => {
+    const run = checkRun(
+      [
+        page({ url: `${S}/` }),
+        page({ url: `${S}/orphan`, source: "sitemap" }),
+        page({ url: `${S}/a`, source: "link" }),
+      ],
+      { sitemap: SITEMAP, sitemapPages: 2 },
+    );
+    const text = render("pretty", run, off);
+    expect(text.split("\n")[0]).toBe(
+      `Checked 3 of 3 pages (sitemap: ${SITEMAP}, 2 pages; followed links for the rest)`,
+    );
+  });
+
+  it("says the sitemap supplied nothing when every URL in it was out of scope", () => {
+    // What this repo's own CI does: the built sitemap lists production URLs,
+    // which are off-host from the 127.0.0.1 preview, so all of them are
+    // dropped and links reach every page. The header must not credit it.
+    const run = checkRun([page({ url: `${S}/` }), page({ url: `${S}/a`, source: "link" })], {
+      sitemap: SITEMAP,
+      sitemapPages: 0,
+    });
+    const text = render("pretty", run, off);
+    expect(text.split("\n")[0]).toBe(
+      `Checked 2 of 2 pages (sitemap: ${SITEMAP}, 0 pages; followed links)`,
+    );
+  });
+
+  it("says one page, not one pages, when the sitemap supplied a single URL", () => {
+    const run = checkRun([page({ url: `${S}/` }), page({ url: `${S}/a`, source: "link" })], {
+      sitemap: SITEMAP,
+      sitemapPages: 1,
+    });
+    const text = render("pretty", run, off);
+    expect(text.split("\n")[0]).toBe(
+      `Checked 2 of 2 pages (sitemap: ${SITEMAP}, 1 page; followed links for the rest)`,
+    );
+  });
+
+  it("colors the sitemap URL and nothing else in the partial header", () => {
+    const run = checkRun([page({ url: `${S}/` }), page({ url: `${S}/a`, source: "link" })], {
+      sitemap: SITEMAP,
+      sitemapPages: 0,
+    });
+    const header = render("pretty", run, { color: true, quiet: true }).split("\n")[0] ?? "";
+    expect(header).toContain(`\x1b[36m${SITEMAP}\x1b[39m`);
+    expect(header.replace(/\x1b\[[0-9;]*m/g, "")).toBe(
+      `Checked 2 of 2 pages (sitemap: ${SITEMAP}, 0 pages; followed links)`,
+    );
+    // Only the URL is painted: one open/close pair on the line.
+    expect(header.match(/\x1b\[/g)).toHaveLength(2);
   });
 
   it("says links were followed when there was no sitemap", () => {
@@ -230,6 +289,41 @@ describe("render pretty", () => {
     expect(one.split("\n").at(-1)).toBe(
       "0 violations on 0 of 2 pages; 2 skipped (--max-pages); 1 duplicate dropped",
     );
+  });
+
+  it("names what a pattern excluded, only when the count is not zero", () => {
+    const pages = [page({ url: `${S}/` }), page({ url: `${S}/a` })];
+    const none = render("pretty", checkRun(pages, { excluded: 0 }), off);
+    expect(none).not.toContain("excluded");
+    expect(none.split("\n").at(-1)).toBe("0 violations on 0 of 2 pages");
+    const some = render("pretty", checkRun(pages, { excluded: 41 }), off);
+    expect(some.split("\n").at(-1)).toBe("0 violations on 0 of 2 pages; 41 excluded");
+  });
+
+  it("carries the excluded clause beside the skipped one", () => {
+    const pages = [page({ url: `${S}/` }), page({ url: `${S}/a` })];
+    const run = checkRun(pages, { discovered: 4, skipped: 2, excluded: 3 });
+    expect(render("pretty", run, off).split("\n").at(-1)).toBe(
+      "0 violations on 0 of 2 pages; 2 skipped (--max-pages); 3 excluded",
+    );
+  });
+
+  it("carries excluded in the json summary, outside the discovered identity", () => {
+    const pages = [page({ url: `${S}/` }), page({ url: `${S}/a` })];
+    const run = checkRun(pages, { discovered: 2, excluded: 41 });
+    const parsed = JSON.parse(render("json", run, off)) as {
+      summary: { discovered: number; checked: number; skipped: number; duplicates: number; excluded: number };
+    };
+    expect(parsed.summary.excluded).toBe(41);
+    const { checked, skipped, duplicates, discovered } = parsed.summary;
+    expect(checked + skipped + duplicates).toBe(discovered);
+  });
+
+  it("emits no github annotation for a page a pattern excluded", () => {
+    // An excluded page is never analyzed, so it is in no `results[]` entry and
+    // the only thing `excluded` can do to this format is nothing.
+    const run = checkRun([page({ url: `${S}/` })], { excluded: 41 });
+    expect(render("github", run, off)).toBe("");
   });
 
   it("uses the singular when there is one violation", () => {

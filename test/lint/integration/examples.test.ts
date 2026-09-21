@@ -1,6 +1,6 @@
 /**
  * The three worked example template files under `examples/lint/`, each
- * demonstrating the v2 grammar (proposal 0054) against a real-world docset's
+ * demonstrating the v2 grammar (proposal 0061) against a real-world docset's
  * shape: this repository's own docs (path-routed, no `type:`), a
  * Fern-shaped MDX docset, and a Hugo-Markdown-shaped one.
  *

@@ -37,7 +37,7 @@ const FIXTURE_KEY = "cite-fixture-key-0123456789abcdef";
 /** Another fixed test key, for the runs that bring their own. */
 const CLI_KEY = "cli-key-0123456789abcdef0123456789abc";
 const NO_HISTORY =
-  "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.";
+  "git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.";
 const NO_COMMIT = "git is not available here, so the citation records no commit.";
 /** The pinned source line `add` quotes for `src/limits.ts:2`, as the report prints it. */
 const SRC_LINE_2 = '"export const FETCH_TIMEOUT_MS = 10_000;"';
@@ -493,7 +493,7 @@ describe("manni cite (usage errors)", () => {
     const r = cite(["check", "--root", ".", "pages/current.md"]);
     expect(r.status).toBe(2);
     expect(r.stderr.split(/\r?\n/)[0]).toBe(
-      'manni: Unknown key "changed" under cite.severity: in manni.config.yaml. Supported keys: source-moved, source-moved-ambiguous, source-changed, source-never-true, source-missing, claim-moved, claim-moved-ambiguous, claim-changed, marker-orphan, marker-invalid, marker-repeated, anchor-invalid, entry-invalid, quote-drift.',
+      'manni: Unknown key "changed" under cite.severity: in manni.config.yaml. Supported keys: source-moved, source-moved-ambiguous, source-changed, source-never-true, source-missing, claim-moved, claim-moved-ambiguous, claim-reanchored, claim-changed, marker-orphan, marker-invalid, marker-repeated, marker-misplaced, anchor-invalid, entry-invalid, quote-drift.',
     );
   });
 

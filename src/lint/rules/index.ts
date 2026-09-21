@@ -42,8 +42,8 @@ import type {
 /* -------------------------------------------------------------------------- *
  * Template rule shapes
  *
- * These mirror the v2 template DSL's block-rule vocabulary (proposal 0053 /
- * 0054): a block rule is keyed by a plural content kind and carries `min`
+ * These mirror the v2 template DSL's block-rule vocabulary (proposal 0060 /
+ * 0061): a block rule is keyed by a plural content kind and carries `min`
  * (default 1), `max` (absent unbounded, `0` forbids), plus per-kind keys.
  * -------------------------------------------------------------------------- */
 

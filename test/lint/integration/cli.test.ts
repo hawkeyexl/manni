@@ -371,7 +371,7 @@ describe("manni lint (built bin)", () => {
     });
 
     // `infer` is the escape from a format that is strict by default: proposal
-    // 0054's stress test 5 says the two ship together. The round trip is
+    // 0061's stress test 5 says the two ship together. The round trip is
     // covered in `test/lint/unit/infer.test.ts`; what is only real after a
     // build is the grammar - a third level under the `templates` noun, and a
     // `templates` verb that still lists.

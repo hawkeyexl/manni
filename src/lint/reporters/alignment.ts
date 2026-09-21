@@ -1,7 +1,7 @@
 /**
  * The alignment block `--explain` prints under each routed file: which rule
  * claimed which section, and why. It is lint's answer to "why did it say
- * that" for the matcher in `core/match.ts` - proposal 0054's stress test 3
+ * that" for the matcher in `core/match.ts` - proposal 0061's stress test 3
  * names this as the cost of an alignment matcher over a left-to-right one: a
  * tie is invisible unless something prints the pairing it chose.
  *

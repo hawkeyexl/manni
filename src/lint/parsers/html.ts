@@ -6,7 +6,7 @@
  * where the content model has no kind at all. A `<div>` is not content and a
  * `<figure>` with no image inside it is dropped whole, because counting
  * either would make `paragraphs: {max: 3}` fail a page a reader would say
- * satisfies it. Proposal 0053 widened the model, so `blockquote`, `table`,
+ * satisfies it. Proposal 0060 widened the model, so `blockquote`, `table`,
  * `figure`, and `dl` are no longer in that group: they map onto real nodes
  * now, alongside `admonition` from `<aside>`/`role="note"` and `image` from
  * `<img>`.
@@ -85,7 +85,7 @@ const HEADING_LEVELS = new Map<string, number>([
 /**
  * Elements that are a block on their own: emitted as one content node, never
  * descended into. `table`, `blockquote`, `dl`, `img` and `figure` used to sit
- * in `OPAQUE_TAGS` and be dropped whole; proposal 0053 gave each a node shape,
+ * in `OPAQUE_TAGS` and be dropped whole; proposal 0060 gave each a node shape,
  * so they move here instead. `aside` joins them because it is one of the two
  * HTML sources of `admonition` - the other, `role="note"`, is not a tag and is
  * checked separately in `roleOf`.
@@ -296,7 +296,7 @@ function imageNode(img: Element, position: Position, caption: string | null): Im
 
 /**
  * `<figure>` as a single image node. A figure with no `<img>` anywhere inside
- * it maps to nothing - the same as before 0053, when the whole subtree was
+ * it maps to nothing - the same as before 0060, when the whole subtree was
  * opaque - because the content model has no other kind to give it.
  */
 function figureNode(figure: Element): ImageNode | null {

@@ -5,7 +5,7 @@
 # linted against this file, so the two cannot drift. Where they disagree,
 # upstream is right.
 #
-# v2: the template *is* the page (proposal 0053's grammar). Upstream's `# Title`
+# v2: the template *is* the page (proposal 0061's grammar). Upstream's `# Title`
 # is a placeholder, so what used to be a `title` section wrapping everything is
 # now the template's own `sections:` directly - there is nothing to say about
 # the H1's heading text or its own content.

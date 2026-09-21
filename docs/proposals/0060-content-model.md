@@ -1,9 +1,9 @@
-# 0053: One content model for the family, and for Doc Detective
+# 0060: One content model for the family, and for Doc Detective
 
 - **Status:** Proposed
 - **Serves:** No journey of its own. It is the vocabulary three other proposals
   write in, so its readers are the people implementing them.
-  - [0054](0054-lint-template-grammar.md) is the first consumer. A template
+  - [0061](0061-lint-template-grammar.md) is the first consumer. A template
     names content kinds, so the kinds have to be named first.
   - Doc Detective's AST detection work is the second. Two tools over one docset
     should not describe a code block in two vocabularies.
@@ -174,7 +174,7 @@ hold for six formats.
 ### 2. Is an open kind list not just "add everything"?
 
 No. A kind earns its place by being something a template needs to assert. Each
-of the nine additions here has a rule behind it in 0054 and a corpus behind
+of the nine additions here has a rule behind it in 0061 and a corpus behind
 that rule. The inline kinds link, strong and emphasis are deliberately
 absent. Nothing asks for them yet, and the model is cheaper to widen later
 than to narrow.

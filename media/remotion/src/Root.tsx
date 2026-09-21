@@ -8,6 +8,7 @@ import { beats as provenanceBeats, totalFrames as provenanceTotalFrames, TYPING_
 import { beats as collectionsBeats, totalFrames as collectionsTotalFrames } from "./collections/beats";
 import { beats as locationBeats, totalFrames as locationTotalFrames, TYPING_MS as locationTypingMs } from "./location/beats";
 import { beats as termBeats, totalFrames as termTotalFrames, TYPING_MS as termTypingMs } from "./term/beats";
+import { beats as a11yBeats, totalFrames as a11yTotalFrames, TYPING_MS as a11yTypingMs } from "./a11y/beats";
 import { beats as lintBeats, totalFrames as lintTotalFrames, TYPING_MS as lintTypingMs } from "./lint/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
@@ -27,6 +28,9 @@ const DemoLocation: React.FC = () => <DemoView beats={locationBeats} fontPx={28}
 
 /** term-vale-1x1: 21 px / 82 columns, derived in media/term-vale-1x1.script.md (media/capture-term/cols.mjs). */
 const DemoTerm: React.FC = () => <DemoView beats={termBeats} fontPx={21} linePx={32} cols={82} typingMs={termTypingMs} ligatures={false} />;
+
+/** a11y-exclude-1x1: 32 px / 54 columns, derived in media/a11y-exclude-1x1.script.md (media/capture-a11y/cols.mjs). */
+const DemoA11y: React.FC = () => <DemoView beats={a11yBeats} fontPx={32} linePx={45} cols={54} typingMs={a11yTypingMs} ligatures={false} />;
 
 /**
  * lint-templates-infer-1x1: 22 px / 78 columns, derived in
@@ -93,6 +97,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={termTotalFrames}
+    />
+    <Composition
+      id="A11yExcludeDemo"
+      component={DemoA11y}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={a11yTotalFrames}
     />
     <Composition
       id="LintDemo"

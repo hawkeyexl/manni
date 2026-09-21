@@ -4,7 +4,7 @@
  * Asciidoctor already hands back a nested block tree, so the work here is the
  * same as `mdast.ts`'s: flatten it into ordered `Fragment`s and let `sectionize`
  * rebuild the nesting. `table`, `admonition`, `image`, `quote` and `dlist`
- * contexts map onto the shared content model (proposal 0053); a context that
+ * contexts map onto the shared content model (proposal 0060); a context that
  * still has no kind there - `sidebar`, a thematic break, `verse`, `example`,
  * and so on - is skipped whole rather than mapped to a nearest neighbour, for
  * the reason the Markdown parser skips a construct it does not model: a

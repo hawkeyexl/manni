@@ -109,7 +109,7 @@ only tracked files can be cited. `add` records `HEAD`, and history tells
 walk. A run that would have used git then warns once on stderr:
 
 ```
-manni: git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.
+manni: git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.
 manni: git is not available here, so the citation records no commit.
 ```
 
@@ -261,7 +261,7 @@ exit code. `off` is not reported at all. The rules themselves are defined on the
 [citations reference](/manni/cite/reference/citations/#statuses-and-rules).
 
 {/* cite fourteen-rules */}
-`severity:` takes exactly these fourteen names. `current` and `skipped` are
+`severity:` takes exactly these sixteen names. `current` and `skipped` are
 statuses, per end, and neither is a rule, so neither can be named here.
 
 | Rule | Default | Why |
@@ -273,10 +273,12 @@ statuses, per end, and neither is a rule, so neither can be named here.
 | `source-missing` | `error` | The path is not a tracked file under the root, or the ciphertext resolves to nothing. |
 | `claim-moved` | `notice` | The pinned page text is found verbatim elsewhere, so nothing drifted. `update` rewrites the lines. |
 | `claim-moved-ambiguous` | `warning` | The pinned text sits in more than one place, and the tool will not guess. |
-| `claim-changed` | `warning` | It fires on any edit to the pinned text, a typo fix included: the claim lines, or the whole paragraph or block a marker anchors. Set it to `error` to have every such edit reviewed. |
+| `claim-reanchored` | `notice` | The words the pin covered are unchanged since the claim's baseline, and only the layout moved. `update` re-pins it. |
+| `claim-changed` | `warning` | It fires on an edit to the words the pin covered, a typo fix included. Set it to `error` to have every such edit reviewed. |
 | `marker-orphan` | `error` | A marker names an id no entry has. |
 | `marker-invalid` | `error` | A marker the tool cannot read, including one carrying JSON. |
 | `marker-repeated` | `warning` | Two markers name one id; the first anchors it. |
+| `marker-misplaced` | `warning` | A marker line sits inside a paragraph, splitting it. `update` moves it whatever this says, because a move is repair and not a report. |
 | `anchor-invalid` | `error` | The anchor cannot work, so neither end can be judged. |
 | `entry-invalid` | `error` | An entry the schema refuses, a duplicate id, or a pin prefix that does not match the source. |
 | `quote-drift` | `error` | The fenced block does not reproduce the cited lines. |

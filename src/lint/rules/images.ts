@@ -2,7 +2,7 @@
  * `images:` - how many images, filtered by `url`, `alt`, and `attributes`.
  *
  * All three narrow the counted set rather than reporting their own finding -
- * proposal 0054's message table gives `images` only `images_count_error`, no
+ * proposal 0061's message table gives `images` only `images_count_error`, no
  * per-field diagnostic the way `elements.attributes` gets one. `attributes`
  * in particular can never match: `ImageNode` carries no `attributes` of its
  * own (the node model gave that field to `element` only), so any non-empty

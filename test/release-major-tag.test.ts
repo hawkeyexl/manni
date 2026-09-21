@@ -64,6 +64,8 @@ interface Scenario {
   npmServes: string | null;
   /** The first `npm view` attempt that serves it; earlier ones fail. Default 1. */
   npmServesFromAttempt?: number;
+  /** Whether the version-list read path includes the version. Default false. */
+  listIncludesVersion?: boolean;
   /** Whether `git ls-remote` finds `refs/tags/v<after>` on the remote. */
   tagOnRemote: boolean;
 }
@@ -99,14 +101,29 @@ function runStep(s: Scenario): Result {
       "}",
       // Each `npm view` runs in a command substitution, a subshell, so the
       // attempt count comes from the call log rather than a shell variable.
+      //
+      // The step reads the registry two ways per attempt and the stub answers
+      // them apart: `npm view <name>@<version> version` is the exact-version
+      // document, `npm view <name> versions --json` the version list. They hit
+      // different registry caches, so either one alone has to be enough, and a
+      // stub that answered both at once could not show that.
       "npm() {",
       '  __log "npm $*"',
+      '  case "$*" in',
+      "    *versions*)",
+      ...(s.listIncludesVersion === true
+        ? [`      printf '["0.0.1","%s"]\\n' ${shellQuote(s.after)}`]
+        : ["      return 1"]),
+      "      ;;",
+      "    *)",
       ...(s.npmServes === null
-        ? ["  return 1"]
+        ? ["      return 1"]
         : [
-            `  if [ "$(grep -c '^npm ' ${shellQuote(log.replace(/\\/g, "/"))})" -lt ${String(s.npmServesFromAttempt ?? 1)} ]; then return 1; fi`,
-            `  echo ${shellQuote(s.npmServes)}`,
+            `      if [ "$(grep -c ' version$' ${shellQuote(log.replace(/\\/g, "/"))})" -lt ${String(s.npmServesFromAttempt ?? 1)} ]; then return 1; fi`,
+            `      echo ${shellQuote(s.npmServes)}`,
           ]),
+      "      ;;",
+      "  esac",
       "}",
       "git() {",
       '  __log "git $*"',
@@ -139,6 +156,10 @@ function runStep(s: Scenario): Result {
     rmSync(dir, { recursive: true, force: true });
   }
 }
+
+/** The exact-version `npm view <name>@<version> version` reads. */
+const docReads = (r: Result): string[] =>
+  r.calls.filter((c) => c.startsWith("npm view") && c.endsWith(" version"));
 
 /** Whether the script moved a tag: a `git tag -f` or a push. */
 const moved = (r: Result): boolean =>
@@ -191,16 +212,59 @@ describe.skipIf(!hasBash)("the major tag step's script", () => {
     expect(r.status).toBe(1);
     expect(moved(r)).toBe(false);
     expect(r.stdout).toContain("::error::");
-    // Thirty tries ten seconds apart, about five minutes. The 2.0.1 release
-    // published at 13:34:58 and npm still did not serve it when five tries over
-    // forty seconds ran out, so the step refused a version that was already
-    // released and `v2` was never created.
-    expect(r.calls.filter((c) => c.startsWith("npm view")).length).toBe(30);
+    // The message reports propagation, names what is known, and does not claim
+    // the release is half-published: 2.7.0 failed this step with that claim
+    // while npm was serving it as `latest` and `v2.7.0` was on the remote.
+    expect(r.stdout).toContain(
+      "npm did not serve @hawkeyexl/manni@2.0.1 within 10 minutes",
+    );
+    expect(r.stdout).toContain("usually npm lagging the publish");
+    expect(r.stdout).toContain("the v2.0.1 tag is on the remote");
+    expect(r.stdout).not.toContain("half-published");
+    // Recovery is one copy-paste, with the version already substituted.
+    expect(r.stdout).toContain(
+      "git fetch origin --tags && git tag -f v2 v2.0.1 && git push --force origin refs/tags/v2",
+    );
+    // Fourteen attempts over about ten minutes, backing off 5s to 60s. Two
+    // reads an attempt, so 28 registry reads across ten minutes where the old
+    // flat budget spent 30 across five and then gave up on 2.7.0.
+    expect(r.calls.filter((c) => c.startsWith("npm view")).length).toBe(28);
+    expect(docReads(r)).toHaveLength(14);
     // The waits are all stubbed: a real `sleep` here is what timed these tests
     // out on the Windows runners.
     const waits = r.calls.filter((c) => c.startsWith("sleep"));
-    expect(waits).toHaveLength(29);
-    expect(new Set(waits)).toEqual(new Set(["sleep 10"]));
+    expect(waits).toEqual([
+      "sleep 5",
+      "sleep 10",
+      "sleep 20",
+      "sleep 40",
+      ...Array<string>(9).fill("sleep 60"),
+    ]);
+  });
+
+  it("names the missing version tag when neither npm nor the remote has it", () => {
+    const r = runStep({ before: "2.0.0", after: "2.0.1", npmServes: null, tagOnRemote: false });
+    expect(r.status).toBe(1);
+    expect(moved(r)).toBe(false);
+    expect(r.stdout).toContain("the remote has no v2.0.1 tag either");
+  });
+
+  it("accepts a version the version list serves while the exact-version read lags", () => {
+    // The two reads hit different registry caches, so one can be current while
+    // the other still answers for a version that is not there. Either one
+    // showing it is proof enough that the publish landed.
+    const r = runStep({
+      before: "2.0.0",
+      after: "2.0.1",
+      npmServes: null,
+      listIncludesVersion: true,
+      tagOnRemote: true,
+    });
+    expect(r.status, r.stdout).toBe(0);
+    expect(r.calls).toContain("npm view @hawkeyexl/manni@2.0.1 version");
+    expect(r.calls).toContain("npm view @hawkeyexl/manni versions --json");
+    expect(r.calls).toContain("git tag -f v2 v2.0.1");
+    expect(r.calls.filter((c) => c.startsWith("sleep"))).toHaveLength(0);
   });
 
   it("moves the tag once npm starts serving the version partway through the wait", () => {
@@ -212,7 +276,8 @@ describe.skipIf(!hasBash)("the major tag step's script", () => {
       tagOnRemote: true,
     });
     expect(r.status, r.stdout).toBe(0);
-    expect(r.calls.filter((c) => c.startsWith("npm view")).length).toBe(7);
+    expect(docReads(r)).toHaveLength(7);
+    expect(r.calls.filter((c) => c.startsWith("sleep"))).toHaveLength(6);
     expect(r.calls).toContain("git tag -f v2 v2.0.1");
   });
 
@@ -229,5 +294,16 @@ describe.skipIf(!hasBash)("the major tag step's script", () => {
     expect(r.status).toBe(1);
     expect(moved(r)).toBe(false);
     expect(r.stdout).toContain("::error::");
+    // Its own message. npm serving the version while no tag exists really is a
+    // half-published release, and reads nothing like the registry lagging.
+    expect(r.stdout).toContain(
+      "npm serves @hawkeyexl/manni@2.0.1, but the remote has no v2.0.1 tag",
+    );
+    expect(r.stdout).toContain("half-published");
+    expect(r.stdout).not.toContain("did not serve");
+    // Recovery here creates the version tag first, then moves the major tag.
+    expect(r.stdout).toContain(
+      "git fetch origin && git tag v2.0.1 origin/main && git push origin refs/tags/v2.0.1 && git tag -f v2 v2.0.1 && git push --force origin refs/tags/v2",
+    );
   });
 });

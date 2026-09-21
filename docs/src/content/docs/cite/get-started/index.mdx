@@ -183,7 +183,7 @@ Each citation gets one line under its page, with both ends on it:
 | --- | --- |
 | `<mark>` | `✓` current, `↕` a warning, `ℹ` a notice, `✗` an error, `·` skipped or baselined. The glyph carries the meaning, not only the colour. |
 | `<id>` | The entry's `id`. An entry without one leaves the column empty; the two ends say which entry it is. |
-| `<claim end>` | The page lines and their status, as in `:16-17 current` or `:9 moved -> :11`. A marker-anchored claim reads `marker :30 current`. Empty for a bare pin. |
+| `<claim end>` | The page lines and their status, as in `:16-17 current` or `:9 moved -> :11`. A marker-anchored claim reads `marker :30 current`, and `marker :30 -> :28 current` when the marker is misplaced. Empty for a bare pin. |
 | `<source end>` | The source as the entry spelled it, then its status: `lib/limits.ts:2 current`, `~AQm4…:5 changed since 3f9c2a1, 1 commit`. |
 | `<manifest>` | Where the entry is kept, when a [sidecar](/manni/cite/reference/citations/#the-sidecar) owns it, as in `docs-citations.yaml:6`. Empty for a frontmatter entry. |
 
@@ -395,12 +395,12 @@ docs/limits.md: fetch-timeout claim at line 18 re-pinned (changed; now "The fetc
 1 citation rewritten in 1 file, 0 skipped
 ```
 
-{/* cite accept-unit-at-first-line */}
 {/* cite accept-prints-claim-text */}
-`--accept` re-pins over the paragraph or fenced block now at the claim's first
-line, and prints it. So the log says exactly what was accepted. A sentence
-that was reworded **and** moved has left that line. `--accept` then re-pins
-whatever paragraph now starts there, so read the printed text. If it is not
+{/* cite accept-unit-at-first-line */}
+`--accept` re-pins over the paragraph, fenced block or table rows now at the
+claim's first line, and prints it. So the log says exactly what was accepted.
+A sentence that was reworded **and** moved has left that line. `--accept` then
+re-pins whatever now starts there, so read the printed text. If it is not
 the sentence, `cite add` the sentence again.
 
 {/* cite severity-config-levels */}

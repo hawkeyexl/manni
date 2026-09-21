@@ -20,6 +20,7 @@ import {
   formatStatement,
   insideFence,
   isMarkerLine,
+  isTableSeparator,
   lineAt,
   offsetOfLine,
   paragraphAfter,
@@ -550,5 +551,29 @@ describe("isMarkerLine", () => {
     expect(isMarkerLine("   <!-- cite x --> The claim.", "markdown")).toBe(false);
     expect(isMarkerLine("   <!-- a note -->", "markdown")).toBe(false);
     expect(isMarkerLine("   The claim.", "markdown")).toBe(false);
+  });
+});
+
+describe("isTableSeparator", () => {
+  it("reads a rule with outer pipes, alignment markers or indentation", () => {
+    expect(isTableSeparator("|---|---|")).toBe(true);
+    expect(isTableSeparator("| --- | --- |")).toBe(true);
+    expect(isTableSeparator("| :--- | ---: | :---: |")).toBe(true);
+    expect(isTableSeparator("---|---")).toBe(true);
+    expect(isTableSeparator("  |---|---|")).toBe(true);
+    expect(isTableSeparator("|---|")).toBe(true);
+  });
+
+  it("reads a header row, a body row and a bare pipe as something else", () => {
+    expect(isTableSeparator("| Flag | Default |")).toBe(false);
+    expect(isTableSeparator("| `--retries` | 5 |")).toBe(false);
+    expect(isTableSeparator("|")).toBe(false);
+    expect(isTableSeparator("")).toBe(false);
+  });
+
+  it("reads a bare rule as something else, because it carries no pipe", () => {
+    // `---` is a thematic break, or the underline of a setext heading.
+    expect(isTableSeparator("---")).toBe(false);
+    expect(isTableSeparator("  ---  ")).toBe(false);
   });
 });

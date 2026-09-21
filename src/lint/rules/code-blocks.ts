@@ -5,7 +5,7 @@
  * `language` reports per offending block (every code block must declare one
  * of the accepted languages), the same way v1 reported nothing about
  * language at all - this is new in v2. `fenceInfo` has no message form of its
- * own in proposal 0054's table, so it narrows which blocks count toward
+ * own in proposal 0061's table, so it narrows which blocks count toward
  * `min`/`max` instead, the way `elements.tag` does.
  */
 

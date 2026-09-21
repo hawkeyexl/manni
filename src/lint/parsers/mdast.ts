@@ -2,7 +2,7 @@
  * mdast -> generic fragments. Shared by the Markdown and MDX parsers, which
  * differ only in which unified processor produced the tree.
  *
- * The mapping is onto the family content model (proposal 0053), never onto a
+ * The mapping is onto the family content model (proposal 0060), never onto a
  * nearest neighbour: a blockquote is a `blockquote` and a table is a `table`,
  * because counting either as a paragraph would make `paragraphs: {max: 3}`
  * fail documents a reader would say satisfy it. A node type the model has no
@@ -211,7 +211,7 @@ function toElement(node: MdNode): ElementNode {
     ...(attributes ? { attributes } : {}),
     // The element's own children, never the enclosing section's: a section
     // holding one `<Steps>` holds one block, not the four paragraphs inside
-    // it (proposal 0053, stress test 4). A heading inside one is dropped with
+    // it (proposal 0060, stress test 4). A heading inside one is dropped with
     // everything else the model has no kind for, which stress test 5 records.
     children: childContent(node),
   };

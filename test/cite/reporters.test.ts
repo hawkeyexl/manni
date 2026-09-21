@@ -928,6 +928,42 @@ describe("rewriteLine", () => {
       ),
     ).toBe("source lib/limits.ts:5 re-pinned (never true; sha256-78af1d33… -> sha256-78af1d33…)");
   });
+
+  it("says where a misplaced marker went", () => {
+    expect(
+      rewriteLine(
+        rewrite({ end: "marker", reason: "re-anchored", status: "misplaced", from: "42", to: "40" }),
+      ),
+    ).toBe("marker line 42 -> 40 (misplaced)");
+  });
+
+  it("names the lines a re-pin over the unit newly covers", () => {
+    const reanchored = (lines: string, newLines: string): string =>
+      rewriteLine(
+        rewrite({ reason: "re-anchored", status: "moved", from: CLAIM_PIN, to: PIN, lines, newLines }),
+      );
+    expect(reanchored("44-46", "42-46")).toBe(
+      "claim re-pinned over lines 42-46 (moved; was lines 44-46, lines 42-43 newly pinned)",
+    );
+    expect(reanchored("44-46", "44-48")).toBe(
+      "claim re-pinned over lines 44-48 (moved; was lines 44-46, lines 47-48 newly pinned)",
+    );
+    // A span that only lost marker lines gains nothing, and says so.
+    expect(reanchored("58-61", "59-61")).toBe(
+      "claim re-pinned over lines 59-61 (moved; was lines 58-61, which held a marker line)",
+    );
+  });
+
+  it("says a claim a marker's move shifted", () => {
+    expect(
+      rewriteLine(
+        rewrite({ reason: "shifted", status: "current", from: "40-41", to: "42-43" }),
+      ),
+    ).toBe("claim lines 40-41 -> 42-43 (shifted by a marker)");
+    expect(rewriteLine(rewrite({ reason: "shifted", status: "current", from: "40", to: "42" }))).toBe(
+      "claim line 40 -> 42 (shifted by a marker)",
+    );
+  });
 });
 
 describe("update reporters", () => {
@@ -957,11 +993,12 @@ describe("update reporters", () => {
             src: "lib/limits.ts:5",
           },
         ],
+        refused: [],
         skipped: [finding({ rule: "source-missing", message: "missing", id: undefined, index: 2, src: "lib/gone.ts" })],
         diff: "--- docs/limits.md\n+++ docs/limits.md\n@@ -4,1 +4,1 @@\n-      lines: 14\n+      lines: 16\n",
         written: true,
       },
-      { file: "docs/other.md", rewritten: [], skipped: [], diff: "", written: false },
+      { file: "docs/other.md", rewritten: [], refused: [], skipped: [], diff: "", written: false },
     ],
     rewritten: 2,
     skipped: 1,
@@ -991,6 +1028,7 @@ describe("update reporters", () => {
         {
           file: "docs/limits.md",
           rewritten: [],
+          refused: [],
           skipped: [
             finding({ rule: "source-changed", message: "changed" }),
             finding({ rule: "claim-moved-ambiguous", severity: "warning", message: "ambiguous" }),
@@ -1032,7 +1070,7 @@ describe("update reporters", () => {
     };
     const marked: UpdateRun = {
       ...run,
-      pages: [{ file: "docs/limits.md", rewritten: [accepted], skipped: [], diff: "", written: true }],
+      pages: [{ file: "docs/limits.md", rewritten: [accepted], refused: [], skipped: [], diff: "", written: true }],
     };
     const parsed = JSON.parse(renderUpdateJson(marked)) as UpdateRun;
     const { markerLine: _pretty, ...json } = accepted;

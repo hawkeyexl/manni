@@ -1,5 +1,5 @@
 # Hugo-Markdown-shaped doctypes, worked in the v2 template grammar (proposal
-# 0054) over the shared content model (0053). nginx's own docs are Hugo
+# 0061) over the shared content model (0060). nginx's own docs are Hugo
 # Markdown with a heavy diet of include files; nothing here is nginx's text -
 # it is a synthetic docset shaped like that split, so the fixtures that lint
 # against it are original pages.

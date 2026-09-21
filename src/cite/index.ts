@@ -18,9 +18,21 @@ export {
   spellSource,
 } from "./core/range.js";
 export { hashLines, hashRange, isKeyedPin, normalizeText, sliceLines, splitLines } from "./core/hash.js";
-export { shortCommit, shortLine, shortPin, shortSrc } from "./core/spell.js";
+export { shortCommit, shortLine, shortPin, shortSrc, spellAt } from "./core/spell.js";
 export { buildSourceIndex, readSource } from "./core/sources.js";
 export type { BuildIndexOptions, ReadSourceResult } from "./core/sources.js";
+export {
+  isUnitText,
+  markerClaimEnd,
+  markerRunAt,
+  misplacedMarkerAt,
+  misplacedMarkers,
+  movedUnit,
+  pre43Span,
+  splitUnit,
+  unitText,
+} from "./core/reanchor.js";
+export type { MisplacedMarker } from "./core/reanchor.js";
 export {
   anchoredLines,
   detectEol,
@@ -30,6 +42,8 @@ export {
   fencedBlocks,
   formatStatement,
   insideFence,
+  isBoundLine,
+  isTableRow,
   lineAt,
   offsetOfLine,
   paragraphAfter,
@@ -42,14 +56,34 @@ export {
   claimEnd,
   claimLine,
   markerUnit,
+  noUnitAt,
   normalizeWhitespace,
   pinOfLines,
   toBodyLines,
   toFileLines,
   unitAt,
 } from "./core/claims.js";
-export type { ClaimUnit } from "./core/claims.js";
-export { GIT_UNAVAILABLE_COMMIT, GIT_UNAVAILABLE_HISTORY, gitClient, noGit } from "./core/git.js";
+export type { ClaimUnit, NoUnit } from "./core/claims.js";
+export {
+  GIT_UNAVAILABLE_COMMIT,
+  GIT_UNAVAILABLE_HISTORY,
+  PAGE_HISTORY_UNAVAILABLE,
+  gitClient,
+  noGit,
+} from "./core/git.js";
+export {
+  MAX_PAGE_COMMITS,
+  claimDiff,
+  claimHistory,
+  claimWords,
+  holdsWords,
+  refineClaim,
+  runsHolding,
+  sentencesOf,
+  sharesSentence,
+  stripMarkers,
+} from "./core/history.js";
+export type { ClaimHistory, ClaimHistoryInput, RefineClaimInput } from "./core/history.js";
 export { MAX_RANGE_LINES, MOVE_BUDGET_BYTES, MOVE_WINDOW_LINES, classifyCitation, findWindows, historyOf } from "./core/classify.js";
 export type { ClassifyOptions, FindWindowsOptions, History } from "./core/classify.js";
 export {
@@ -62,7 +96,7 @@ export {
   readPage,
   validateEntry,
 } from "./core/page.js";
-export { shiftedEntries, spellAt, withClaimLines } from "./core/shift.js";
+export { shiftedEntries, withClaimLines } from "./core/shift.js";
 export type { ShiftOptions, Shifted } from "./core/shift.js";
 export {
   CITATIONS_KEY,
@@ -83,7 +117,14 @@ export { ManifestSet, itemLine, splice } from "./core/manifest.js";
 export type { HeldManifest } from "./core/manifest.js";
 export type { ReadPageOptions } from "./core/page.js";
 export { checkCitations } from "./core/check-page.js";
-export { claimMessageFor, errorSite, findingsFor, messageFor, toValidationResult } from "./core/adapt.js";
+export {
+  claimMessageFor,
+  errorSite,
+  findingsFor,
+  messageFor,
+  misplacedMessageFor,
+  toValidationResult,
+} from "./core/adapt.js";
 export {
   appendFrontmatterCitation,
   entryObject,
@@ -105,6 +146,7 @@ export { runUpdate } from "./commands/update.js";
 export { reencryptCitationEntries, reencryptCitations } from "./core/reencrypt.js";
 export type { ReencryptEntriesResult, ReencryptOptions } from "./core/reencrypt.js";
 export {
+  refusalLine,
   removalLine,
   renderCheckPretty,
   renderRemovePretty,

@@ -1,0 +1,5 @@
+# Keeps /about.html out of every run that reads it. A typed `--exclude`
+# replaces this list rather than adding to it, which is what lets one run
+# check the section this one leaves out.
+a11y:
+  exclude: ["/about.html"]

@@ -1,0 +1,10 @@
+{
+  "full": "Checked 101 of 101 pages (no sitemap; followed links)\n\n\u001b[32m0 violations on 0 of 101 pages\u001b[39m\n\nreal    1m46.641s\nuser    0m0.015s\nsys     0m0.000s\n",
+  "excluded": "Checked 67 of 67 pages (no sitemap; followed links)\n\n\u001b[32m0 violations on 0 of 67 pages; 34 excluded\u001b[39m\n\nreal    1m7.458s\nuser    0m0.000s\nsys     0m0.015s\n",
+  "seed-clash": "manni: --exclude \"/manni/meta/reference/**\" excludes the seed http://127.0.0.1:4321/manni/meta/reference/.\n",
+  "exits": {
+    "full": "0",
+    "excluded": "0",
+    "seedClash": "2"
+  }
+}

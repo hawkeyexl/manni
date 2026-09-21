@@ -6,7 +6,7 @@
  * every rule is one occurrence, and an undescribed section is a finding - so a
  * template inferred from a page that does not then lint that page clean is
  * worse than no template at all: it hands a new author a screen of findings
- * about the very document they pointed at. Proposal 0054's stress test 5 is the
+ * about the very document they pointed at. Proposal 0061's stress test 5 is the
  * record.
  *
  * So every one of the seven vendored TGDP pages is inferred from, reloaded
@@ -39,7 +39,7 @@ import { defined } from "../helpers.js";
 const here = dirname(fileURLToPath(import.meta.url));
 const vendored = join(here, "..", "fixtures", "tgdp");
 
-/** The seven vendored TGDP pages: one per doctype, and the corpus 0054 cites. */
+/** The seven vendored TGDP pages: one per doctype, and the corpus 0061 cites. */
 const TGDP_PAGES = [
   "template_concept.md",
   "template_how-to.md",

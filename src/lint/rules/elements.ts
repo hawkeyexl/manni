@@ -2,7 +2,7 @@
  * `elements:` - named-wrapper counts, filtered and labeled by `tag`, the
  * literal `attributes` a matched element must carry, and what it holds via
  * `sequence` | `contains` recursing into the element's own `children` -
- * never the enclosing section's, per proposal 0053 stress test 4.
+ * never the enclosing section's, per proposal 0060 stress test 4.
  *
  * `tag` narrows the counted set the way `codeBlocks.fenceInfo` and
  * `images.url`/`alt` do, and also names the noun in count messages: `elements:

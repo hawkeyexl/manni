@@ -2,7 +2,7 @@
  * `paragraphs:` - paragraph counts and a per-paragraph pattern.
  *
  * v1 took a cycling `patterns: string[]`; v2 simplifies to one `pattern`
- * every paragraph in the run must match, per proposal 0054's block-rule
+ * every paragraph in the run must match, per proposal 0061's block-rule
  * vocabulary.
  */
 

@@ -5,7 +5,7 @@
  * The format is strict by default: every rule is one occurrence, and a section
  * no rule describes is a finding. A new author's first run against a
  * hand-written template is therefore a screen of unexpected sections, and this
- * is the escape. Proposal 0054's stress test 5 records it, and says the two
+ * is the escape. Proposal 0061's stress test 5 records it, and says the two
  * ship together.
  *
  * Two rules govern everything here.

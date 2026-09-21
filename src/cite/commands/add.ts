@@ -19,18 +19,33 @@ import { relative, resolve } from "node:path";
 import { locateFrontmatter, writeFileAtomic } from "../../meta/index.js";
 import { STDIN_LABEL, STDIN_TOKEN } from "../../meta/internal.js";
 import { ensureEncryptionKey } from "../../shared/prompt.js";
-import { findWindows } from "../../shared/pin.js";
 import { isEncryptedValue } from "../../shared/encryption.js";
-import { blockMatches, pinOfLines, toBodyLines, toFileLines } from "../core/claims.js";
+import {
+  blockMatches,
+  otherClaimSpans,
+  pinOfLines,
+  spellElsewhere,
+  toBodyLines,
+  toFileLines,
+} from "../core/claims.js";
 import { resolveCiteRun } from "../core/config.js";
 import { GIT_UNAVAILABLE_COMMIT, gitClient } from "../core/git.js";
 import { sliceLines, splitLines } from "../core/hash.js";
 import { mintCitation } from "../core/mint.js";
 import { bodyLineOf, readPage } from "../core/page.js";
-import { formatSrc, lineSpec, parseLines, parseSrc, spellLines, spellSource, tooWide } from "../core/range.js";
-import { shiftedEntries, spellAt, withClaimLines, type Shifted } from "../core/shift.js";
+import {
+  formatSrc,
+  lineSpec,
+  parseLines,
+  parseSrc,
+  spellLines,
+  spellSource,
+  tooWide,
+} from "../core/range.js";
+import { misplacedMarkers } from "../core/reanchor.js";
+import { shiftedEntries, withClaimLines, type Shifted } from "../core/shift.js";
 import { readSource, sourceIndexFor } from "../core/sources.js";
-import { shortSrc } from "../core/spell.js";
+import { shortSrc, spellAt } from "../core/spell.js";
 import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
 import {
@@ -153,40 +168,6 @@ function emptyClaimRefusal(
   return only.trim() === "" ? `${at} is blank.` : `${at} is a fence line, not claim text.`;
 }
 
-/**
- * Where else in the body the claim's text sits, as file lines. A claim whose
- * text repeats is `moved-ambiguous` the moment it moves, so `add` says so
- * while the pin is still being written. The search is the classifier's own.
- */
-function otherClaimSpans(
-  lines: readonly string[],
-  pageLines: PageLines,
-  pin: string,
-  bodyLine: number,
-): PageLines[] {
-  const width = pageLines.end - pageLines.start + 1;
-  const found = findWindows(lines.slice(bodyLine - 1), width, pin, undefined, {
-    around: toBodyLines(pageLines, bodyLine).start,
-  });
-  return found.starts
-    .map((start) => toFileLines({ start, end: start + width - 1 }, bodyLine))
-    .filter((span) => span.start !== pageLines.start);
-}
-
-/** How many other locations a notice names before it starts counting them. */
-const NAMED_SPANS = 3;
-
-/** `line 17`, `lines 16 and 18`, `lines 16, 18, 20 and 2 more`. */
-function spellElsewhere(spans: readonly PageLines[]): string {
-  const first = spans[0];
-  const noun = spans.length === 1 && first !== undefined && first.start === first.end ? "line" : "lines";
-  const named = spans.slice(0, NAMED_SPANS).map((span) => spellLines(span));
-  const rest = spans.length - named.length;
-  if (rest > 0) return `${noun} ${named.join(", ")} and ${String(rest)} more`;
-  const last = named.pop() ?? "";
-  return named.length === 0 ? `${noun} ${last}` : `${noun} ${named.join(", ")} and ${last}`;
-}
-
 export async function runAdd(opts: AddOptions): Promise<AddResult> {
   const cwd = resolve(opts.cwd ?? process.cwd());
   const run = await resolveCiteRun({
@@ -301,6 +282,27 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       // one, so a check would call it `current` whatever the prose does.
       const empty = emptyClaimRefusal(lines, pageLines, at);
       if (empty !== undefined) throw new CiteError(empty);
+    }
+    // `add` does not move a marker it did not write, so it refuses to write
+    // where a misplaced one would make its entry wrong (proposal 0054).
+    const split = misplacedMarkers(page, lines);
+    const held = split.find(
+      (found) => found.line >= pageLines.start && found.line <= pageLines.end,
+    );
+    if (held !== undefined) {
+      throw new CiteError(
+        `${at} holds the marker at line ${String(held.line)}, which splits its paragraph. Run manni cite update first.`,
+      );
+    }
+    const inside = marker
+      ? split.find(
+          (found) => pageLines.start >= found.unit.start && pageLines.start <= found.unit.end,
+        )
+      : undefined;
+    if (inside !== undefined) {
+      throw new CiteError(
+        `${at} is in the paragraph at ${spellAt(inside.unit)}, which the marker at line ${String(inside.line)} splits. Run manni cite update first.`,
+      );
     }
   }
 
@@ -437,6 +439,8 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // but for a marker.
   const manifests = new ManifestSet();
   let placed: AddResult["manifest"];
+  /** Which item of the entry's `citations` this run added, for the line report. */
+  let index = 0;
   if (owner !== undefined) {
     if (sidecar?.entry === undefined) {
       throw new CiteError(
@@ -448,7 +452,8 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       return moved === undefined ? input.entry : withClaimLines(input.entry, moved);
     });
     const list = [...existing, entryObject(citation)];
-    const at = await manifests.write(owner, sidecar.entry, list, list.length - 1);
+    index = list.length - 1;
+    const at = await manifests.write(owner, sidecar.entry, list, index);
     const [changed] = manifests.changed();
     placed = {
       file: at.file,
@@ -485,8 +490,19 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // marker went into the body; there is then nothing to write.
   result.written = path !== undefined && opts.dryRun !== true && after !== content;
   if (result.written && path !== undefined) await writeFileAtomic(path, after);
+  // The entry goes in under compare-and-swap, so what lands may be a replay
+  // onto a manifest another command wrote while this one was running. The
+  // report names the bytes and the line that actually landed, not the ones
+  // this run spliced from.
   if (result.manifest !== undefined && opts.dryRun !== true) {
-    for (const changed of manifests.changed()) await writeFileAtomic(changed.path, changed.text);
+    const [settled] = await manifests.commit();
+    if (owner !== undefined && sidecar?.entry !== undefined) {
+      result.manifest.line = manifests.lineOf(owner, sidecar.entry, index) ?? result.manifest.line;
+    }
+    if (settled !== undefined) {
+      result.manifest.content = settled.text;
+      result.manifest.diff = settled.diff;
+    }
     result.manifest.written = true;
   }
   // The claim's text repeats, so a later move of it could not be told apart
