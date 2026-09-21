@@ -903,6 +903,48 @@ describe("runUpdate: the source end", () => {
     expect(await ends("pages/moved.md")).toEqual([["current", "current"]]);
   });
 
+  // The point of the re-mint is that an entry's lines, pin and commit agree.
+  // Where no commit can be recorded, writing the lines alone would break that
+  // agreement in a new way, so the whole entry is left as it stands.
+  it("leaves a moved source whole when git cannot supply the commit its lines would need", async () => {
+    const label = write("moved-commit.md", [
+      "---",
+      "citations:",
+      "  - id: pinned",
+      "    source:",
+      "      file: src/moved.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "      commit-sha: 0123456789abcdef0123456789abcdef01234567",
+      "  - id: loose",
+      "    source:",
+      "      file: src/moved.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "---",
+      "Body.",
+    ]);
+    const before = onDisk(label);
+    const run = await update({ inputs: [label] });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 1, exitCode: 0 });
+    // The entry that records no commit has nothing to keep in step, so it
+    // moves as it always did.
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.to])).toEqual([["loose", "src/moved.ts:4"]]);
+    expect(run.pages[0]?.skipped.map((f) => [f.id, f.rule, f.severity])).toEqual([
+      ["pinned", "source-moved", "warning"],
+    ]);
+    expect(run.pages[0]?.skipped[0]?.message).toContain(
+      "Not rewritten: git is not available here, so the entry's commit-sha cannot advance with its lines.",
+    );
+    // The only line that changed is the other entry's. The pinned entry keeps
+    // its lines, its pin and its commit, all three still agreeing.
+    const after = onDisk(label);
+    expect(after.split("\n").filter((line, i) => line !== before.split("\n")[i])).toEqual([
+      "      lines: 4",
+    ]);
+    expect(after).toContain("      commit-sha: 0123456789abcdef0123456789abcdef01234567\n");
+  });
+
   it("--accept re-mints a changed source, recording no commit where the entry records none", async () => {
     workspace("source-changed.md");
     const before = onDisk("pages/source-changed.md");

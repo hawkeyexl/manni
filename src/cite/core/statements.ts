@@ -484,7 +484,9 @@ export function fenceSpanAt(
 /**
  * The fenced block `line` sits inside rather than opens, as the lines it
  * spans, fences included. Undefined when the line opens a block, sits in no
- * block, or the format has no fence.
+ * block, or the format has no fence. The closing fence counts as inside, so a
+ * caller that wants a content line asks whether its span ends before the
+ * block does.
  */
 export function fenceAround(
   text: string,

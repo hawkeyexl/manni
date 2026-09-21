@@ -592,7 +592,7 @@ working tree so the rewrite is easy to review.
 
 | End and status | Without `--accept` | With `--accept` |
 |---|---|---|
-| `source-moved` | Re-minted over the new range: `source.lines` rewritten to it, and `source.commit-sha` set to `HEAD` where the entry already has one. | The same. |
+| `source-moved` | Re-minted over the new range: `source.lines` rewritten to it, and `source.commit-sha` set to `HEAD` where the entry already has one. Where the entry records a commit and git cannot give one, nothing is written and the finding says so. | The same. |
 | `source-changed`, `source-never-true` | Skipped, and reported. | `source.integrity` re-minted, and `source.commit-sha` set to `HEAD` where the entry already has one. |
 | `source-moved-ambiguous` | Skipped. The tool will not guess which copy. Widen the range and re-add. | The same. |
 | `source-missing` | Skipped. A path that is gone cannot be rewritten. `add` is the remedy. | The same. |

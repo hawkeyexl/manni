@@ -862,6 +862,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     if (result.source.status === "moved" && result.source.newLines !== undefined) {
       const at = parseLines(result.source.newLines);
       const to = result.source.newSrc;
+      const recorded = result.citation.source["commit-sha"];
       if (at !== undefined && to !== undefined) {
         try {
           // Re-minted over the range it moved to, not just re-pointed at it.
@@ -872,19 +873,36 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
             root: run.root,
             src: to,
             ...(run.key === undefined ? {} : { key: run.key }),
-            ...(result.citation.source["commit-sha"] === undefined
-              ? { commitSha: false as const }
-              : {}),
+            ...(recorded === undefined ? { commitSha: false as const } : {}),
             gitClient: git,
             ...(pageOptions.sourceIndex === undefined
               ? {}
               : { sourceIndex: pageOptions.sourceIndex }),
           });
-          out.push({ kind: "source-moved", result, lines: lineSpec(at), to, minted });
+          // An entry that records a commit needs one to advance to. Without
+          // git there is none, and writing the new lines alone would leave the
+          // entry naming a range its own commit cannot hold, which is the
+          // state this re-mint exists to prevent. So nothing is written: a
+          // whole stale entry is one a later run repairs, and a half-written
+          // one is not. An entry that records no commit has nothing to keep in
+          // step, and is rewritten as before.
+          if (recorded !== undefined && minted.source["commit-sha"] === undefined) {
+            declined.set(result.origin.index, {
+              rule: "source-moved",
+              why: "Not rewritten: git is not available here, so the entry's commit-sha cannot advance with its lines.",
+            });
+          } else {
+            out.push({ kind: "source-moved", result, lines: lineSpec(at), to, minted });
+          }
         } catch (error) {
           // A range the re-mint cannot read leaves its finding reported, as a
-          // source `--accept` could not re-mint does.
+          // source `--accept` could not re-mint does, and the finding says why
+          // rather than reading as a repair that silently did nothing.
           if (!(error instanceof CiteError)) throw error;
+          declined.set(result.origin.index, {
+            rule: "source-moved",
+            why: `Not rewritten: ${error.message}`,
+          });
         }
       }
     }
