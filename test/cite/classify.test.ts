@@ -166,7 +166,12 @@ describe("classifyCitation agrees with the ladder", () => {
       const result = await classifyCitation(page(citation), {
         root,
         index: indexOf(current === null ? [] : [PATH]),
-        git: fakeGit(atCommit),
+        // A path that does not resolve now reaches history, because `git show`
+        // reads the file at the recorded commit rather than from disk, and
+        // that is what makes a rename answerable (proposal 0055 decision 1).
+        // The ladder's row for it names a commit but no text, so the fake
+        // answers as a checkout that does not have that commit would.
+        git: fakeGit(current === null && atCommit === undefined ? "unavailable" : atCommit),
         ...keyFor(opts),
       });
       // `reason` and `fileLines` are the ladder's own; SourceEnd has no field

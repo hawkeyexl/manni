@@ -1,6 +1,6 @@
 # 0044: citations and drift: pin a claim to the lines it rests on
 
-- **Status:** Implemented (#17); superseded in part by 0053
+- **Status:** Implemented (#17); superseded in part by 0053 and 0055
 - **Serves:** Devin · D4 · Theo · T1 · Maya · M2 · Sara · S1
 - **Depends on:** [0023](0023-metadata-vocabularies.md), the family this
   vocabulary joins as its tenth id, and whose `source-of-truth` is the

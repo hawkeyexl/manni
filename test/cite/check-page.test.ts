@@ -14,6 +14,7 @@ import { checkCitations } from "../../src/cite/core/check-page.js";
 import { noGit } from "../../src/cite/core/git.js";
 import { hashLines, hashRange } from "../../src/cite/core/hash.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
+import { shortSrc } from "../../src/cite/core/spell.js";
 import type {
   CheckPageOptions,
   CitationInput,
@@ -699,7 +700,7 @@ describe("checkCitations: encrypted sources and the leak sentinel", () => {
     expect(sourceStatuses(report)).toEqual(["current", "moved", "missing"]);
     expect(report.citations[0]?.source.resolvedPath).toBe(SECRET);
     expect(messages(report)).toEqual([
-      `moved -> ${token}:2`,
+      `moved -> ${shortSrc(`${token}:2`)}`,
       "missing (no tracked file matches; wrong --root?)",
     ]);
     const text = JSON.stringify({ findings: report.findings, notices: report.notices });

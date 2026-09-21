@@ -108,6 +108,15 @@ export const MOVE_BUDGET_BYTES = 64 * 1024 * 1024;
 /** The widest range an entry may name, at either end: a wider one is refused. */
 export const MAX_RANGE_LINES = 5000;
 
+/**
+ * Bytes left to spend on settling one pin. Every search that classifies the
+ * same end shares one of these, so the cap is the cost of settling that pin
+ * rather than the cost of each search in turn (proposal 0055 § the budget).
+ */
+export interface SearchBudget {
+  left: number;
+}
+
 export interface FindWindowsOptions {
   /** The 1-based start line the range was pinned at: the blind search begins around it. */
   around?: number;
@@ -115,6 +124,8 @@ export interface FindWindowsOptions {
   original?: readonly string[];
   /** Hashing budget for the blind search, in bytes. Default `MOVE_BUDGET_BYTES`. */
   budget?: number;
+  /** A budget shared with the other searches settling this pin. Wins over `budget`. */
+  counter?: SearchBudget;
 }
 
 /**
@@ -155,7 +166,8 @@ export function findWindows(
 
   // Blind: the band around the original position first, then the rest, so the
   // common small shift is found before the budget is anywhere near spent.
-  const budget = opts?.budget ?? MOVE_BUDGET_BYTES;
+  const counter = opts?.counter;
+  const budget = counter?.left ?? opts?.budget ?? MOVE_BUDGET_BYTES;
   const around = opts?.around ?? 1;
   const bandStart = Math.max(1, around - MOVE_WINDOW_LINES);
   const bandEnd = Math.min(lastStart, around + MOVE_WINDOW_LINES);
@@ -168,10 +180,14 @@ export function findWindows(
   for (const start of order) {
     const text = joined(start);
     const bytes = Buffer.byteLength(text, "utf8");
-    if (spent + bytes > budget) return { starts, truncated: true };
+    if (spent + bytes > budget) {
+      if (counter !== undefined) counter.left = budget - spent;
+      return { starts, truncated: true };
+    }
     spent += bytes;
     if (hashLines(text, key) === pin) starts.push(start);
   }
+  if (counter !== undefined) counter.left = budget - spent;
   return { starts, truncated: false };
 }
 

@@ -124,6 +124,17 @@ export function gitClient(root: string): GitClient {
         return out.stdout.split(/\r?\n/).filter((line) => line !== "");
       }),
 
+    // `HEAD` is written out: with no second revision git compares the commit
+    // to the working tree, and this list is committed changes only, so a move
+    // that is merely saved is never followed into a page (0055 stress test 8).
+    changedSince: (commit) =>
+      once(`changed\0${commit}`, async () => {
+        if (!(await available())) return [];
+        const out = await run(root, ["diff", "--name-only", "--end-of-options", commit, "HEAD"]);
+        if (!out.ok) throw failed("diff", out);
+        return out.stdout.split(/\r?\n/).filter((line) => line !== "");
+      }),
+
     diffSince: (commit, path) =>
       once(`diff\0${commit}\0${path}`, async () => {
         const out = await run(root, ["diff", "--end-of-options", commit, "--", path]);
@@ -196,6 +207,7 @@ export function noGit(): GitClient {
     showFile: () => Promise.resolve({ missing: "commit" }),
     subjectsSince: () => Promise.resolve([]),
     diffSince: () => Promise.resolve(""),
+    changedSince: () => Promise.resolve([]),
     pageCommits: () => Promise.resolve({ commits: [], shallow: false, truncated: false }),
   };
 }

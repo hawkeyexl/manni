@@ -193,11 +193,12 @@ function sourceColumn(
 ): string {
   const { source } = result;
   const src = shortSrc(source.src);
-  const revealed =
-    opts.reveal && source.resolvedPath !== undefined && citesEncrypted(source.src)
-      ? ` ${dim(`(${source.resolvedPath})`)}`
-      : "";
-  return `${src}${revealed} ${messageFor(source)}`;
+  const encrypted = citesEncrypted(source.src);
+  const reveal = (path: string | undefined): string =>
+    opts.reveal === true && path !== undefined && encrypted ? ` ${dim(`(${path})`)}` : "";
+  // A source that followed its text to another file has a second ciphertext
+  // in the message, and `--reveal` is the one place either is a path.
+  return `${src}${reveal(source.resolvedPath)} ${messageFor(source)}${reveal(source.resolvedNewPath)}`;
 }
 
 /** The subjects and diff under a changed source, dim, the diff capped. */
@@ -522,7 +523,17 @@ export function rewriteLine(rewrite: UpdateRewrite): string {
     return `claim at ${where} re-pinned (${status}; now "${rewrite.text ?? ""}")`;
   }
   const at = rewrite.commitSha === undefined ? "" : ` at ${shortCommit(rewrite.commitSha)}`;
-  return `source ${shortSrc(rewrite.src ?? "")} re-pinned${at} (${status}; ${shortPin(rewrite.from)} -> ${shortPin(rewrite.to)})`;
+  const src = shortSrc(rewrite.src ?? "");
+  // A re-mint over the span the old first and last line now bracket names both
+  // ranges, so the log says which lines were accepted.
+  const where = rewrite.toLines === undefined ? src : `${src} -> ${atLines(src, rewrite.toLines)}`;
+  return `source ${where} re-pinned${at} (${status}; ${shortPin(rewrite.from)} -> ${shortPin(rewrite.to)})`;
+}
+
+/** The same source spelled at other lines: `path:200-212` and `"200-215"` read `path:200-215`. */
+function atLines(src: string, lines: string): string {
+  const colon = src.lastIndexOf(":");
+  return `${colon === -1 ? src : src.slice(0, colon)}:${lines}`;
 }
 
 export function renderUpdatePretty(run: UpdateRun, opts: PrettyOptions): string {
