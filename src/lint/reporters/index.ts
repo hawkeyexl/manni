@@ -4,7 +4,7 @@
  * anything a consumer has to parse around.
  */
 import { LintError, type Finding } from "../types.js";
-import type { LintRun } from "../commands/lint.js";
+import type { LintFileResult, LintRun } from "../commands/lint.js";
 import type { FormatInfo, ToolInfo } from "../commands/tools.js";
 import type { TemplateInfo, TemplatesInfo } from "../commands/templates.js";
 import { palette, type Colors } from "../../shared/color.js";
@@ -17,6 +17,7 @@ import { REPORT_FORMAT_LIST } from "../../meta/internal.js";
 import { ruleId, TOOL_NAME } from "../core/rule-id.js";
 import { renderJunit } from "./junit.js";
 import { renderSarif } from "./sarif.js";
+import { explainAlignment, formatAlignment, type ExplainSource } from "./alignment.js";
 
 export { renderJunit, toValidationResults } from "./junit.js";
 
@@ -221,6 +222,20 @@ export function renderGithub(run: LintRun): string {
  * intended. A report that showed only the winning stage would hide exactly the
  * thing being looked for.
  */
+/**
+ * The alignment block riding on a result. `commands/lint.ts` attaches the tree
+ * and the loaded template under `alignment` when `--explain` asked for them,
+ * and only for a file that routed; a result without it prints as it always did.
+ *
+ * It is a nested key rather than two flat ones because `template` at the top
+ * level is already the template's *ref*, the string the routing line shows.
+ */
+function alignmentFor(result: LintFileResult): string[] | null {
+  const source: ExplainSource | undefined = result.alignment;
+  if (!source) return null;
+  return formatAlignment(explainAlignment(source.tree, source.template));
+}
+
 export function renderExplain(run: LintRun, opts: ReportOptions = {}): string {
   const c = palette(opts.color ?? false);
   const lines: string[] = [];
@@ -241,6 +256,12 @@ export function renderExplain(run: LintRun, opts: ReportOptions = {}): string {
       const label = step.ref ? c.bold(step.ref) : c.dim(step.detail);
       const suffix = step.ref ? `  ${c.dim(step.detail)}` : "";
       lines.push(`    ${mark} ${step.stage.padEnd(20)} ${label}${suffix}`);
+    }
+
+    const alignment = chosen ? alignmentFor(result) : null;
+    if (alignment && alignment.length > 0) {
+      lines.push(`    ${c.dim("alignment")}`);
+      for (const row of alignment) lines.push(`      ${row}`);
     }
 
     const cause = result.resolution?.cause;
