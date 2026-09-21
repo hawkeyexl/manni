@@ -44,6 +44,22 @@ function releaseCommitTemplate(): string {
   throw new Error("no @semantic-release/git plugin with a message option");
 }
 
+/** Index of a plugin entry in the configured order, by name. */
+function pluginIndex(name: string): number {
+  return releaserc.plugins.findIndex((p) => (Array.isArray(p) ? p[0] === name : p === name));
+}
+
+/** The `assets` option of the @semantic-release/git plugin entry. */
+function gitAssets(): string[] {
+  for (const plugin of releaserc.plugins) {
+    if (Array.isArray(plugin) && plugin[0] === "@semantic-release/git") {
+      const assets = plugin[1]["assets"];
+      if (Array.isArray(assets)) return assets as string[];
+    }
+  }
+  throw new Error("no @semantic-release/git plugin with an assets option");
+}
+
 describe("the release commit guard", () => {
   it("skips exactly the commits semantic-release creates", () => {
     const guard = workflow.jobs["release"]?.if;
@@ -103,5 +119,32 @@ describe("the release commit guard", () => {
     // The marker is inherited by squash merges. Nothing in this repo can stop
     // that, so the message must not carry one.
     expect(releaseCommitTemplate()).not.toMatch(/skip[ -](ci|actions)/i);
+  });
+});
+
+describe("re-anchoring citations during the release", () => {
+  // Two pages cite CHANGELOG.md, and @semantic-release/changelog prepends to
+  // it on every release, so every release moves both pins. Re-anchoring inside
+  // the release is the only point where the new changelog exists and the
+  // release commit has not been made yet.
+  it("runs after the changelog is written and before the release commit", () => {
+    const changelog = pluginIndex("@semantic-release/changelog");
+    const cite = pluginIndex("./scripts/release-cite-update.mjs");
+    const git = pluginIndex("@semantic-release/git");
+    expect(changelog, "no @semantic-release/changelog plugin").toBeGreaterThanOrEqual(0);
+    expect(cite, "no ./scripts/release-cite-update.mjs plugin").toBeGreaterThanOrEqual(0);
+    expect(git, "no @semantic-release/git plugin").toBeGreaterThanOrEqual(0);
+    // Each of these contributes a `prepare` step, and semantic-release runs
+    // them in this order. Before the changelog is written the update re-anchors
+    // against the old file; after the git plugin its writes are not committed.
+    expect(cite).toBeGreaterThan(changelog);
+    expect(cite).toBeLessThan(git);
+  });
+
+  it("commits the file the citations live in", () => {
+    // The pins are external metadata, not frontmatter: they sit in
+    // site.metadata.yaml, which the docs globs in `assets` do not reach.
+    // Without it there, the re-anchoring happens and is then thrown away.
+    expect(gitAssets()).toContain("site.metadata.yaml");
   });
 });
