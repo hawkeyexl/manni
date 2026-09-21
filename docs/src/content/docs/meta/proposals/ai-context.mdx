@@ -95,11 +95,12 @@ sample-questions:
 
 ## What reviewers should poke at
 
-Two questions. Do `generated-by` and `provenance` belong here or in
-[core](/manni/meta/proposals/core/)? The eval bias check and the kg harvest
-both read `generated-by`, which argues for the one vocabulary that is
-always present. And is `risks` the right name for a field that carries
+One question. Is `risks` the right name for a field that carries
 assurances (`read-only`) alongside cautions?
+
+Placement is settled. `provenance` and `meta-provenance` were candidates for
+[core](/manni/meta/proposals/core/), since the eval bias check and the kg
+harvest read them. They stay here.
 
 Proposal 0046 changes both production records, in draft
 `1.0.0-proposal.2`. `provenance` becomes a record of which machine wrote
@@ -111,9 +112,8 @@ today, while the drafts stay under review. The per-model field
 attribution that `1.0.0-proposal.1` called `provenance` is renamed `meta-provenance`, with the same
 review semantics. Its `fields` become JSON Pointers, so `/kg/label` reaches
 into a block. It also takes over the kg block's `provenance` and the eval
-vocabularies' `eval-provenance`. After review, the page-level `generated-by`
-would be dropped, since `provenance` names the machines per range.
+vocabularies' `eval-provenance`. The draft drops the page-level
+`generated-by`, since `provenance` names the machines per range.
 `manni meta fill` already writes `meta-provenance` for the fields it fills, and
 `manni docevals fill` for the evals it proposes. `manni docevals` reads both
 records for its [self-preference warning](/manni/docevals/judge/#self-preference).
-Both records would stay in ai-context, which answers the first question.

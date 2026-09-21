@@ -38,7 +38,7 @@ const OTHER = "another-key-0123456789abcdef012345";
 const PIN_L2 = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
 const UNKNOWN = "0123456789abcdef0123456789abcdef01234567";
 const NO_HISTORY =
-  "git is not available here, so citations are checked without history: no never-true, no diffs, no commit subjects.";
+  "git is not available here, so citations are checked without history: no never-true, no reanchored claims, no diffs, no commit subjects.";
 
 const source = (name: string): string => readFileSync(join(SRC, name), "utf8");
 const page = (name: string): string => readFileSync(join(PAGES, name), "utf8");
@@ -54,6 +54,9 @@ const messages = (run: CheckRun, i = 0): string[] =>
 function check(over: Partial<CheckOptions> & { inputs: string[] }): Promise<CheckRun> {
   return runCheck({ cwd: ROOT, root: ROOT, noConfig: true, gitClient: noGit(), env: {}, ...over });
 }
+
+const UNTERMINATED = (label: string): string =>
+  `${label}: Unterminated front matter fence: the opening fence has no matching close, so the page's citations cannot be read. Add a closing fence.`;
 
 async function refusal(promise: Promise<unknown>): Promise<string> {
   try {
@@ -499,6 +502,11 @@ describe("runCheck: the run", () => {
     expect(await refusal(check({ inputs: [] }))).toBe(
       "No files to check. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
     );
+  });
+
+  it("refuses a page whose frontmatter fence never closes, rather than reading no citations", async () => {
+    const message = await refusal(check({ inputs: ["broken/unterminated-fence.mdx"] }));
+    expect(message).toBe(UNTERMINATED("broken/unterminated-fence.mdx"));
   });
 
   it("refuses an unknown --as format, naming the supported extensions", async () => {
@@ -972,5 +980,144 @@ describe.skipIf(!gitAvailable())("with git", () => {
     ]);
     expect(blind.pages[0]?.citations[0]?.source.historyAvailable).toBeUndefined();
     expect(notices).toEqual([NO_HISTORY]);
+  });
+});
+
+describe("runCheck: a marker inside a paragraph", () => {
+  const MISPLACED = (name: string): string => `misplaced/${name}`;
+  /** Each citation's marker end: its line, and its misplacement when it has one. */
+  const markers = (run: CheckRun): (unknown[] | undefined)[] =>
+    (run.pages[0]?.citations ?? []).map((c) =>
+      c.marker === undefined ? undefined : [c.marker.line, c.marker.misplaced],
+    );
+
+  it("reports marker-misplaced and reads the claim as moved, in markdown and mdx", async () => {
+    for (const name of ["mid-paragraph.md", "mid-paragraph.mdx"]) {
+      const run = await check({ inputs: [MISPLACED(name)] });
+      expect(ends(run)).toEqual([["moved", "current"]]);
+      expect(rules(run)).toEqual(["marker-misplaced", "claim-moved"]);
+      expect(messages(run)).toEqual([
+        "fresh-context: the marker at line 16 splits the paragraph at lines 14-18. Its place is above line 14.",
+        "fresh-context: the claim moved from lines 17-18 to lines 15-18.",
+      ]);
+      expect(markers(run)).toEqual([[16, { unit: "14-18", to: 14 }]]);
+      // A warning and a notice, so the page still passes.
+      expect(run.summary.errors).toBe(0);
+      expect(run.pages[0]?.findings.map((f) => [f.line, f.severity])).toEqual([
+        [16, "warning"],
+        [17, "notice"],
+      ]);
+    }
+  });
+
+  it("reports every marker of a run, each with the place its order gives it", async () => {
+    const run = await check({ inputs: [MISPLACED("stacked-run.mdx")] });
+    expect(ends(run)).toEqual([
+      ["moved", "current"],
+      ["changed", "current"],
+    ]);
+    expect(messages(run)).toEqual([
+      "one-at-a-time: the marker at line 22 splits the paragraph at lines 21-24. Its place is above line 21.",
+      "robots: the marker at line 23 splits the paragraph at lines 21-24. Its place is above line 21.",
+      "one-at-a-time: the claim moved from line 24 to lines 23-24.",
+      "robots: the claim at line 24 has changed since it was pinned.",
+    ]);
+    expect(markers(run)).toEqual([
+      [22, { unit: "21-24", to: 21 }],
+      [23, { unit: "21-24", to: 22 }],
+    ]);
+  });
+
+  it("says a quote marker's place is above the block it anchors, and leaves its pin alone", async () => {
+    const run = await check({ inputs: [MISPLACED("quote-mid.md")] });
+    expect(ends(run)).toEqual([["current", "current"]]);
+    expect(messages(run)).toEqual([
+      "retries-block: the marker at line 16 splits the paragraph at lines 15-17. Its place is above the block at line 19.",
+    ]);
+  });
+
+  it("reports a marker between two list items", async () => {
+    const run = await check({ inputs: [MISPLACED("list-items.md")] });
+    expect(messages(run)).toEqual([
+      "retries: the marker at line 15 splits the paragraph at lines 14-16. Its place is above line 14.",
+      "retries: the claim moved from line 16 to lines 15-16.",
+    ]);
+  });
+
+  it("reports nothing for a marker under a heading or under a JSX tag line", async () => {
+    for (const name of ["under-heading.md", "jsx-tag.mdx"]) {
+      const run = await check({ inputs: [MISPLACED(name)] });
+      expect(ends(run)).toEqual([["current", "current"]]);
+      expect(rules(run)).toEqual([]);
+    }
+  });
+
+  it("reads a pre-#43 pin over a sibling marker line as moved, with the marker in place", async () => {
+    const run = await check({ inputs: [MISPLACED("pre-43-sibling-pin.mdx")] });
+    expect(ends(run)).toEqual([
+      ["moved", "current"],
+      ["current", "current"],
+    ]);
+    expect(rules(run)).toEqual(["claim-moved"]);
+    expect(messages(run)).toEqual(["host-scope: the claim moved from lines 22-23 to line 23."]);
+    expect(markers(run)).toEqual([
+      [21, undefined],
+      [22, undefined],
+    ]);
+  });
+
+  it("reads a claim that already covers the unit as current, marker aside", async () => {
+    const run = await check({ inputs: [MISPLACED("claim-across.md")] });
+    expect(ends(run)).toEqual([
+      ["current", "current"],
+      ["current", "current"],
+    ]);
+    expect(rules(run)).toEqual(["marker-misplaced"]);
+  });
+
+  it("fails the run when the config sets marker-misplaced to error, and drops it under off", async () => {
+    const hard = await check({
+      inputs: [MISPLACED("mid-paragraph.mdx")],
+      noConfig: false,
+      configPath: tempConfig("severity:\n  marker-misplaced: error"),
+    });
+    expect(hard.pages[0]?.findings.map((f) => [f.rule, f.severity])).toEqual([
+      ["marker-misplaced", "error"],
+      ["claim-moved", "notice"],
+    ]);
+    expect(hard.summary.failed).toBe(1);
+
+    const off = await check({
+      inputs: [MISPLACED("mid-paragraph.mdx")],
+      noConfig: false,
+      configPath: tempConfig("severity:\n  marker-misplaced: off"),
+    });
+    expect(rules(off)).toEqual(["claim-moved"]);
+  });
+
+  it("reports an orphan marker in a run with no id, beside its marker-orphan", async () => {
+    const dir = tempDir();
+    mkdirSync(join(dir, "pages"));
+    writeFileSync(
+      join(dir, "pages", "orphan-run.md"),
+      [
+        "---",
+        "title: Limits",
+        "---",
+        "# Limits",
+        "",
+        "The fetch timeout is 10 seconds.",
+        "<!-- cite nobody -->",
+        "Retries default to 3.",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    const run = await check({ cwd: dir, inputs: ["pages/orphan-run.md"] });
+    expect(rules(run)).toEqual(["marker-orphan", "marker-misplaced"]);
+    expect(messages(run)).toEqual([
+      'no entry has id "nobody"',
+      "the marker at line 7 splits the paragraph at lines 6-8. Its place is above line 6.",
+    ]);
   });
 });

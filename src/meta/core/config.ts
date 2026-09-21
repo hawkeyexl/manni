@@ -1542,7 +1542,10 @@ export interface RunConfigOptions {
   noConfig?: boolean;
   /**
    * Positional inputs; empty means fall back to the configured collections'
-   * `paths:` (proposal 0041).
+   * `paths:` (proposal 0041). The stdin token `-` cancels that implicit
+   * fallback like any other input, but never an explicit `--collection`:
+   * stdin is no path, so it rides beside the flag and the named collection is
+   * still resolved.
    */
   inputs: string[];
   /**
@@ -1568,7 +1571,8 @@ export interface RunConfig {
   config: DocmetaConfig | null;
   /**
    * What to resolve: the positional inputs, or the selected collections'
-   * `paths:`, concatenated in declaration order.
+   * `paths:` concatenated in declaration order — with the stdin token, when
+   * `--collection` put both in one run, kept at the front.
    */
   inputs: string[];
   /**
@@ -1579,7 +1583,9 @@ export interface RunConfig {
    * both, so there is exactly one base per run and no ambiguity about which it
    * is. Positional paths are typed by a person standing in a shell, so they
    * stay relative to the working directory; a collection's globs were written
-   * next to the config, so they resolve from there.
+   * next to the config, so they resolve from there. Stdin decides nothing
+   * here: it is no path, so it needs no base of its own, and a `-` beside
+   * `--collection` leaves the base to the collections.
    */
   base: string;
   /**
@@ -1629,9 +1635,10 @@ export interface RunConfig {
    */
   declaredCollections: CollectionConfig[];
   /**
-   * Whether `inputs` came from the collections rather than the command line.
+   * Whether the collections supplied `inputs` rather than the command line.
    * The corpus invariant every scoped check reads: a positional path means the
-   * operator chose part of the corpus.
+   * operator chose part of the corpus. True whenever `--collection` named one,
+   * stdin beside it included.
    */
   fromCollections: boolean;
   /**
@@ -1659,13 +1666,13 @@ export async function resolveRunConfig(
   // paths nor `--no-config`. Both refusals come before discovery, so the
   // message is about the flags rather than about whatever the walk found.
   const wanted = opts.collections ?? [];
-  if (wanted.length > 0) {
-    const typed = opts.inputs.filter((i) => i !== STDIN_TOKEN_LITERAL);
-    if (typed.length > 0) {
-      throw new DocmetaError(
-        "--collection selects a configured collection; it cannot be combined with paths.",
-      );
-    }
+  // The paths the operator actually typed. Stdin is not one of them, which is
+  // what lets a `-` ride beside the flag instead of being refused as a path.
+  const typedInputs = opts.inputs.filter((i) => i !== STDIN_TOKEN_LITERAL);
+  if (wanted.length > 0 && typedInputs.length > 0) {
+    throw new DocmetaError(
+      "--collection selects a configured collection; it cannot be combined with paths.",
+    );
   }
 
   const loaded = opts.noConfig ? null : await loadConfig(opts.configPath, cwd);
@@ -1689,11 +1696,29 @@ export async function resolveRunConfig(
       )
     : [];
 
-  const fromCollections = opts.inputs.length === 0;
-  const inputs = fromCollections
+  // `--collection` is a request, and a run has to honour it: the flag names a
+  // collection, so the collection's files are resolved even when stdin rides
+  // beside it. Counting `-` as a path made `validate - --as markdown
+  // --collection guides` check stdin, open no file of the collection, print no
+  // warning and exit 0 — a green run that checked nothing the flag named.
+  //
+  // The *implicit* fallback is not a request, and a lone `-` cancels it as
+  // before. A piped document is a run of its own: it has no history to derive
+  // from and is a member of nothing, so pulling the whole configured corpus in
+  // beside it would be a surprise rather than a service.
+  const fromCollections = wanted.length > 0 || opts.inputs.length === 0;
+  const collectionPaths = fromCollections
     ? collections.flatMap((c) => c.paths)
+    : [];
+  // Stdin keeps its typed position; the collections' globs follow it in
+  // declaration order.
+  const inputs = fromCollections
+    ? [...opts.inputs, ...collectionPaths]
     : opts.inputs;
-  const base = fromCollections && inputs.length > 0 && loaded ? loaded.dir : cwd;
+  // One base per run, and only a *path* needs one: the base follows the
+  // collections' globs when they contributed, and stays at the working
+  // directory otherwise — including for a run whose only input is stdin.
+  const base = collectionPaths.length > 0 && loaded ? loaded.dir : cwd;
 
   return {
     config,

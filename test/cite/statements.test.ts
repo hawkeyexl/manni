@@ -19,6 +19,8 @@ import {
   fencedBlocks,
   formatStatement,
   insideFence,
+  isMarkerLine,
+  isTableSeparator,
   lineAt,
   offsetOfLine,
   paragraphAfter,
@@ -449,6 +451,42 @@ describe("anchoredLines", () => {
     expect(anchoredLines(content, after, "markdown")).toEqual({ start: 2, end: 3 });
   });
 
+  it("skips markers stacked below it, in every form, and never pins them", () => {
+    const content = [
+      "<!-- cite a -->",
+      "{/* cite b */}",
+      "[comment]: # (cite c)",
+      "The claim. It is",
+      "not configurable.",
+      "<!-- cite d -->",
+      "Next.",
+    ].join("\n");
+    for (const format of ["markdown", "mdx"]) {
+      const after = content.indexOf("-->") + 3;
+      expect(anchoredLines(content, after, format)).toEqual({ start: 4, end: 5 });
+    }
+    const adoc = "// (cite a)\n// (cite b)\n----\ncode\n----\n";
+    expect(anchoredLines(adoc, adoc.indexOf(")") + 1, "asciidoc")).toEqual({ start: 3, end: 5 });
+    // A line with text beside the marker is not a marker-only line.
+    const beside = "<!-- cite a -->\n<!-- cite b --> The claim.\n";
+    expect(anchoredLines(beside, beside.indexOf("-->") + 3, "markdown")).toEqual({ start: 2, end: 2 });
+  });
+
+  it("skips indented markers stacked in a list item, spaces or tabs", () => {
+    const content = [
+      "1. Step.",
+      "",
+      "   {/* cite a */}",
+      "   {/* cite b */}",
+      "   The claim, in the item.",
+      "",
+      "2. Next.",
+    ].join("\n");
+    expect(anchoredLines(content, content.indexOf("*/}") + 3, "mdx")).toEqual({ start: 5, end: 5 });
+    const tabbed = "\t<!-- cite a -->\n\t<!-- cite b -->\n\tThe claim.\n";
+    expect(anchoredLines(tabbed, tabbed.indexOf("-->") + 3, "markdown")).toEqual({ start: 3, end: 3 });
+  });
+
   it("takes the fenced block when one sits where the paragraph would", () => {
     const content = "<!-- cite x -->\n```ts\nconst a = 1;\n```\n";
     const after = content.indexOf("-->") + 3;
@@ -497,5 +535,45 @@ describe("formatStatement", () => {
     expect(() => formatStatement("nope", { kind: "ref", id: "x" })).toThrow(
       'No marker syntax for format "nope".',
     );
+  });
+});
+
+describe("isMarkerLine", () => {
+  it("is true for a marker alone on its line, whatever its indentation", () => {
+    for (const line of ["<!-- cite x -->", "   <!-- cite x -->", "\t<!-- cite x -->", "  <!-- cite x -->  "]) {
+      expect(isMarkerLine(line, "markdown")).toBe(true);
+    }
+    expect(isMarkerLine("     {/* cite x */}", "mdx")).toBe(true);
+    expect(isMarkerLine("  .. (cite x)", "rst")).toBe(true);
+  });
+
+  it("is false for text beside a marker, or a comment that is not a cite", () => {
+    expect(isMarkerLine("   <!-- cite x --> The claim.", "markdown")).toBe(false);
+    expect(isMarkerLine("   <!-- a note -->", "markdown")).toBe(false);
+    expect(isMarkerLine("   The claim.", "markdown")).toBe(false);
+  });
+});
+
+describe("isTableSeparator", () => {
+  it("reads a rule with outer pipes, alignment markers or indentation", () => {
+    expect(isTableSeparator("|---|---|")).toBe(true);
+    expect(isTableSeparator("| --- | --- |")).toBe(true);
+    expect(isTableSeparator("| :--- | ---: | :---: |")).toBe(true);
+    expect(isTableSeparator("---|---")).toBe(true);
+    expect(isTableSeparator("  |---|---|")).toBe(true);
+    expect(isTableSeparator("|---|")).toBe(true);
+  });
+
+  it("reads a header row, a body row and a bare pipe as something else", () => {
+    expect(isTableSeparator("| Flag | Default |")).toBe(false);
+    expect(isTableSeparator("| `--retries` | 5 |")).toBe(false);
+    expect(isTableSeparator("|")).toBe(false);
+    expect(isTableSeparator("")).toBe(false);
+  });
+
+  it("reads a bare rule as something else, because it carries no pipe", () => {
+    // `---` is a thematic break, or the underline of a setext heading.
+    expect(isTableSeparator("---")).toBe(false);
+    expect(isTableSeparator("  ---  ")).toBe(false);
   });
 });

@@ -1,0 +1,8 @@
+progressive-lens:
+  label: progressive lens
+  alt-labels: [PAL]
+  hidden-labels: [no-line bifocal]
+  definition: A lens whose power rises with no line.
+corrective-lens:
+  label: corrective lens
+  definition: A lens worn to correct the eye.

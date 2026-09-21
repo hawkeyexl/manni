@@ -1,0 +1,19 @@
+---
+title: Validation
+description: What validation is in manni meta, the validate command CI gates on, and how it differs from extraction.
+type: term
+id: validation
+label: validation
+related-terms: [extraction, schema set]
+abstract: Checking extracted metadata against its schema set.
+definition: >-
+  The operation that checks that extracted metadata satisfies its schema set.
+---
+
+<p>{frontmatter.definition}</p>
+
+That is the `validate` command, the one CI gates on. Validation and
+[extraction](/manni/meta/reference/glossary/extraction/) are two distinct
+operations, exposed as two commands. Every validation begins with an
+extraction, but you can extract without validating. See the
+[CLI reference](/manni/meta/reference/cli/).

@@ -16,6 +16,7 @@ import { buildProgram as buildCite } from "./cite/cli.js";
 import { buildProgram as buildDocevals } from "./docevals/cli.js";
 import { buildProgram as buildKey } from "./key/cli.js";
 import { buildProgram as buildMeta } from "./meta/cli.js";
+import { buildProgram as buildTerm } from "./term/index.js";
 import { runIfMain } from "./shared/run.js";
 
 export function buildProgram(): Command {
@@ -74,6 +75,11 @@ export function buildProgram(): Command {
       .description(
         "Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter",
       ),
+  );
+  program.addCommand(
+    buildTerm()
+      .name("term")
+      .description("Check, lint and render a docset's terms and the references into them"),
   );
   // Not a tool but a family resource with verbs (proposal 0045).
   program.addCommand(

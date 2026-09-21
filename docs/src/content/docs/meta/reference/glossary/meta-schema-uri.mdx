@@ -1,0 +1,22 @@
+---
+title: Meta-schema URI
+description: What the meta-schema URI inside a schema declares, and how it differs from a document's $schema key.
+type: term
+id: meta-schema-uri
+label: meta-schema URI
+related-terms: [$schema key, dialect]
+abstract: The URI that declares the dialect a schema is written in.
+definition: >-
+  The URI a schema's own $schema key holds, which declares the schema's
+  dialect.
+---
+
+<p>{frontmatter.definition}</p>
+
+It is a different use of the same key a document carries, found **inside a
+schema** rather than a document. There, `$schema` is the meta-schema URI that
+declares the schema's [dialect](/manni/meta/reference/glossary/dialect/), for
+example `https://json-schema.org/draft/2020-12/schema`. manni meta reads it to
+decide which validator to compile the schema with. Don't confuse it with the
+document [`$schema` key](/manni/meta/reference/glossary/schema-key/): one
+selects a dialect, the other selects which schema validates a document.

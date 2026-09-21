@@ -5,12 +5,14 @@ description: "Exactly what manni meta fill transmits on each inference call, how
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
+{/* cite fill-is-the-only-egress-command */}
 [`manni meta fill`](/manni/meta/reference/cli/#meta-fill) is the one command that sends your documents somewhere. Every other part of manni meta reads files and JSON Schema and stays on the machine it runs on. `fill` asks a model to infer the metadata you are missing. To do that, it has to show the model your content.
 
 If your organization has a data-egress policy, that makes `fill` a decision before it is a tool. This page gives you the facts a security review asks for: *what* leaves, *how much* leaves, and *what is kept afterwards*. It then covers the flags that bound or eliminate the egress. It does not restate the flag surface; [the CLI reference](/manni/meta/reference/cli/#meta-fill) is where every flag and default lives.
 
 ## What leaves your machine
 
+{/* cite per-call-prompt-contents */}
 Per inference call, `fill` transmits:
 
 | What | Exactly what goes |
@@ -23,28 +25,41 @@ Per inference call, `fill` transmits:
 
 Two consequences are worth stating plainly, because neither is what a reader guesses.
 
+{/* cite defs-reproduced-so-refs-resolve */}
 The `$defs` row is the one that surprises people. `fill` reproduces the definition blocks so that a `$ref` inside a lifted subschema still resolves. It has no way to know in advance which ones a given property will reach, so it sends all of them. If your schema set includes an internal schema with definitions unrelated to the properties being filled, those definitions still go.
 
+{/* cite dry-run-only-suppresses-the-write */}
 And `--dry-run` does **not** change any of this. It holds back the write to your files; the inference call has already happened by then. `--dry-run` is a review gate, not an egress control.
 
 <Aside type="note" title="Per call, not per file">
+{/* cite prompt-header-repeats-per-chunk */}
 Everything in the table above is sent on *each* call. A document split across several calls repeats the path, the metadata block, and the property list every time. Only the slice of document text differs.
 </Aside>
 
 ## How much of the document
 
+{/* cite chunking-sends-the-entire-file */}
 All of it.
 
+{/* cite over-budget-file-is-split-into-chunks */}
+{/* cite chunk-proposals-merge-by-highest-confidence */}
+{/* cite chunk-chars-default-is-12000 */}
 A file longer than the chunk budget is split and sent across several calls. The per-chunk proposals are merged by keeping the **most confident value for each property**. `--chunk-chars` sets that budget, defaulting to 12,000 characters per call. Every character of the file reaches the provider; the budget only decides how many calls that takes.
 
+{/* cite model-content-includes-front-matter */}
+{/* cite provenance-keys-deleted-from-document-copy */}
 The text sent is the **whole file, front matter included**, rather than the body after it. So the metadata block travels twice: once as the JSON in the prompt's own metadata section, and again inside the document text. `provenance` and `meta-provenance` are removed from that copy as well, wherever the format's writer can remove a key. A model is never shown the hashes it would be asked to invent, or its own attribution.
 
 <Aside type="tip" title="If fill did badly on your long pages">
+{/* cite pre-chunking-truncation-history */}
 Before chunking, `fill` sent only the first 12,000 characters and replaced the rest with a truncation marker. A long reference page was then described from its introduction, and its own conclusion was never read. That is the usual explanation for a weak `description` on a long page filled with an older version. Re-running on a current version is the fix.
 </Aside>
 
 ## What is kept afterwards
 
+{/* cite proposal-cache-directory-path */}
+{/* cite cache-stores-pre-gating-proposals */}
+{/* cite cached-proposal-carries-reasoning */}
 `fill` writes a proposal cache to `.manni/meta/cache`, and what it stores is **pre-gating**. That means every value the model returned, including the ones rejected for low confidence and the ones reverted for failing your schema. The model's stated reasoning for each is stored with them.
 
 That is the opposite of the natural assumption. The cache records everything the model said about your content, whether or not you took it. It is not a record of what `fill` wrote into your files. Treat it as **exactly as sensitive as the documents themselves**, because it is derived from them.
@@ -56,10 +71,12 @@ It is otherwise unremarkable to operate:
 - **Safe to delete** at any time.
 - **Skippable** entirely with `--no-cache`.
 
+{/* cite cache-key-excludes-confidence-threshold */}
 Deleting the cache costs nothing but a re-run. Keeping it lets you re-score proposals at a different `--confidence` for free, which is [covered in the CLI reference](/manni/meta/reference/cli/#the-confidence-gate). Weigh that against a retained copy of the model's full output, and delete the cache when the retrofit is done.
 
 ## The provider is detected, and that can surprise you
 
+{/* cite provider-defaults-to-auto */}
 By default `--provider` is `auto`, which means `fill` picks the first provider your machine can actually use. The order is in [the CLI reference](/manni/meta/reference/cli/#meta-fill) and is not repeated here. The consequence is what matters:
 
 A developer on your team set `OPENAI_API_KEY` months ago for an unrelated side project. It is still in their shell profile. They clone the docs repo, read [the retrofit guide](/manni/meta/set-up/retrofit/#step-7-close-the-backlog-with-fill), and run:
@@ -76,6 +93,7 @@ The fix is to stop leaving the choice to the environment. Pin the provider expli
 manni meta fill docs/internal/ --provider anthropic
 ```
 
+{/* cite fill-provider-config-key-pins-provider */}
 Or pin it once for the whole repo, so nobody's local shell decides. The family's
 `providers:` map is read by every manni tool that calls a model, so one line
 covers `manni docevals` as well:
@@ -111,12 +129,15 @@ And if the answer is that this content may not go to a hosted provider at all, t
 
 ## Keeping content on this machine
 
+{/* cite local-refuses-hosted-provider-after-detection */}
 `--local` runs inference on this machine with `llama-cpp`, **whatever the config names**:
 
 ```sh
 manni meta fill docs/internal/ --local
 ```
 
+{/* cite local-overrides-auto-detection-to-llama-cpp */}
+{/* cite provider-resolution-failure-is-exit-2 */}
 It overrides every other choice. Detection never runs, so an `OPENAI_API_KEY` in the environment cannot redirect the run. A hosted provider in `meta.fill.provider` or `providers.provider` is set aside, and `fill` says so once on stderr:
 
 ```
@@ -136,6 +157,8 @@ That is exit 2. Drop whichever of the two you did not mean.
 `--local` never picks **`claude-cli`**, and that is the part to internalize. The rest of the CLI treats `claude-cli` as the local-ish option: no API key, no per-token bill, just a binary on your `PATH`. But the binary is what runs locally; the inference does not. It is the one provider where "local" is true of the process and false of the thing your policy is about. `--local` means `llama-cpp`, and nothing else.
 
 <Aside type="caution" title="Two flags, two boundaries">
+{/* cite offline-scoped-to-schema-loading */}
+{/* cite local-scoped-to-document-egress */}
 `--offline` means *never fetch a remote schema*. It says nothing about inference. `--local` means *never send document content off this machine*. It says nothing about schema fetching. Neither implies the other, so pass both when you want the run to touch no network service at all:
 
 ```sh
@@ -165,6 +188,9 @@ A whole-docset `fill` is many calls, and chunking means it is more calls than it
 manni meta fill docs/ --max-turns 200
 ```
 
+{/* cite max-turns-counts-calls-not-files */}
+{/* cite max-turns-reached-summary-line */}
+{/* cite skipped-file-names-max-turns-as-reason */}
 It counts **inference calls, not files**. That distinction is the user-visible face of chunking. A short page costs one call and a long reference page costs several, so 200 turns is not 200 files. When the cap is reached the run says so. Each file it never got to is reported by name, with `--max-turns` given as the reason. You can see how far it got, and resume against a narrower target rather than guessing.
 
 `--max-turns` is the control worth setting before the first real run on an unfamiliar docset. At that point you do not yet know how long the pages are. Pair it with `--dry-run` and one folder to calibrate, then widen.

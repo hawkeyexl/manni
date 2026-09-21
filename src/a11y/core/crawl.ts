@@ -9,6 +9,7 @@
  */
 import type { AnalyzeOptions, PageAnalyzer } from "./analyzer.js";
 import type { PageResult, ProgressListener } from "../types.js";
+import type { ExcludeFilter } from "./exclude.js";
 import { dedupeKey, isPageLink, normalizeUrl, sameHost } from "./url.js";
 
 export interface CrawlOptions {
@@ -20,6 +21,11 @@ export interface CrawlOptions {
   maxPages?: number;
   /** Extra URLs to enqueue right after the seeds (from the sitemap). */
   extra: string[];
+  /**
+   * Keeps matching URLs out of the frontier, beside the same-host and
+   * asset-extension checks. Absent means nothing is excluded.
+   */
+  exclude?: ExcludeFilter;
   analyze: AnalyzeOptions;
   /** Told about each step as it happens. Absent means silent. */
   onProgress?: ProgressListener;
@@ -38,6 +44,12 @@ export interface CrawlOutcome {
    * `discovered`.
    */
   duplicates: number;
+  /**
+   * Distinct URLs (by `dedupeKey`) an `exclude` pattern kept out. Never part
+   * of `discovered`: an excluded URL is dropped where an off-host URL and a
+   * `.png` link are, before the frontier.
+   */
+  excluded: number;
 }
 
 type Source = PageResult["source"];
@@ -62,6 +74,10 @@ interface Candidate {
  * - With `maxPages` set, stops when `pages.length === maxPages`; `skipped` =
  *   frontier left behind. Without it, runs the frontier dry and `skipped` is 0.
  * - With `crawl: false`, `extra` is ignored and no links are followed.
+ * - With `exclude` set, a URL whose path a pattern matches is never enqueued,
+ *   never fetched and never counted in `discovered`; `excluded` counts those,
+ *   once per key. `onProgress` hears one `excluded` event before `browser`
+ *   when the count is not zero.
  * - `onProgress` hears `browser` once before the first analyze (that is where
  *   the lazy launch happens), `page` before each analyze, `checked` after
  *   each, and `done` at the end. A failing seed rethrows before `checked`.
@@ -72,6 +88,8 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
   const seen = new Set<string>();
   /** Keys analyzed, or that the browser landed on. */
   const visited = new Set<string>();
+  /** Keys an `exclude` pattern kept out, so a page linked thirty times counts once. */
+  const excluded = new Set<string>();
   const progress = opts.onProgress ?? (() => undefined);
 
   const enqueue = (raw: string, source: Source): void => {
@@ -87,6 +105,13 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
     // it still has to be on its own host, which it is by definition.
     if (source !== "seed" && !isPageLink(url)) return;
     if (!opts.seeds.some((seed) => sameHost(seed, url))) return;
+    // After the scope checks, so an off-host or asset URL is not also counted
+    // as excluded; the two filters answer different questions and a URL that
+    // was never in scope was not kept out by a pattern.
+    if (opts.exclude?.matches(url) === true) {
+      excluded.add(key);
+      return;
+    }
     if (seen.has(key)) return;
     seen.add(key);
     frontier.push({ url, key, source });
@@ -106,6 +131,12 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
 
   for (const seed of opts.seeds) enqueue(seed, "seed");
   if (opts.crawl) for (const url of opts.extra) enqueue(url, "sitemap");
+  // Discovery has settled as far as it can before a page is fetched, and this
+  // is where a pattern that matched far more than intended is worth seeing:
+  // the browser has not launched yet, so the run is still cheap to stop.
+  if (excluded.size > 0) {
+    progress({ kind: "excluded", urls: excluded.size, patterns: opts.exclude?.patterns.length ?? 0 });
+  }
 
   const pages: CrawlOutcome["pages"] = [];
   let duplicates = 0;
@@ -138,5 +169,5 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
 
   const skipped = frontier.length - pages.length - duplicates;
   progress({ kind: "done", checked: pages.length, skipped });
-  return { pages, discovered: frontier.length, skipped, duplicates };
+  return { pages, discovered: frontier.length, skipped, duplicates, excluded: excluded.size };
 }

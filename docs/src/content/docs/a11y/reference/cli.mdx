@@ -10,6 +10,7 @@ import { Aside } from '@astrojs/starlight/components';
     enforced in CI. Keep flags, arguments, and defaults in sync with the code;
     descriptions are free-form. */}
 
+{/* cite one-subcommand-check */}
 manni a11y exposes one subcommand, [`check`](#a11y-check). It crawls a site
 from one or more seed URLs and runs axe-core against every page it reaches.
 There is no default subcommand: `manni a11y <url>` is a usage error, and the
@@ -30,9 +31,11 @@ Global options are accepted before the subcommand.
 
 ## `a11y`
 
+{/* cite a11y-no-subcommand-help */}
+{/* cite a11y-no-subcommand-exit-2 */}
 The accessibility tool. `a11y` accepts its own `-V, --version` (the same
-version) and `-h, --help`. Run with no subcommand it prints a usage error and
-`(add --help for usage)`, exit `2`.
+version) and `-h, --help`. Run with no subcommand it prints its help on
+stderr and exits `2`.
 
 ```sh
 manni a11y [options] check [urls...] [command options]
@@ -46,6 +49,7 @@ manni a11y [options] check [urls...] [command options]
 
 ## `a11y check`
 
+{/* cite check-exit-1-on-failed */}
 Crawl a site from the given seeds, or from a collection's `url:` or `a11y.urls`
 in config, and run axe-core against every page. Exit `1` when any page keeps a
 violation at or above the severity floor.
@@ -58,15 +62,18 @@ manni a11y check [urls...] [options]
 
 | Argument | Description |
 |---|---|
-| `[urls...]` | Seed URLs, space-separated, each `http:` or `https:`. Every seed's host is in crawl scope. Optional, and falls back to a collection's `url:` or config `a11y.urls`; none of the three is an error (exit 2). See [where seeds come from](#where-seeds-come-from). A seed that is not `http(s)` is rejected before any browser launches. |
+| `[urls...]` | Seed URLs, space-separated, each `http:` or `https:`. Links are followed on every seed's host, and sitemap URLs stay on the first seed's host. Optional, and falls back to a collection's `url:` or config `a11y.urls`; none of the three is an error (exit 2). See [where seeds come from](#where-seeds-come-from). A seed that is not `http(s)` is rejected before any browser launches. |
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `-f, --format` | `<pretty\|json\|github>` | `pretty` | [Output format](#output-formats). An unknown value is an error (exit 2). |
+| `--crawl` | n/a | on | Crawl from the given URLs, following the sitemap and same-host links. This is the default, so pass it to undo `crawl: false` in config for one run. |
 | `--no-crawl` | n/a | on | Check exactly the given URLs, with no sitemap lookup and no link following. Crawling is on by default. Overrides config `crawl:`. |
 | `--max-pages` | `<n>` | | Cap on pages checked. Whatever is still queued at the cap is reported as `skipped`. Without it every discovered page is checked. Must be an integer of 1 or more (exit 2 otherwise). Overrides config `maxPages:`. |
+| `--no-max-pages` | n/a | off | Check every page found, ignoring a `maxPages:` in config. No cap is the default, so this is how a configured one is lifted for one run. `--max-pages` and `--no-max-pages` set the same option, so the one written later on the command line wins. |
+| `--exclude` | `<glob>` | | Glob matched against a URL's path; a match keeps that page out of the crawl. Repeatable, one glob per occurrence, never comma-separated. A pattern must start with `/`. A pattern that excludes a seed is an error, and it names every excluded seed under the source that pattern came from. Both exit 2. See [what a pattern matches](#what-a-pattern-matches). Replaces config `exclude:` rather than adding to it. |
 | `--tags` | `<list>` | | Comma-separated axe tags, given once; restrict axe to rules carrying any of them, for example `wcag2a,wcag2aa,wcag21aa,best-practice`. Whitespace around commas is trimmed and empty items are dropped. A second `--tags` replaces the first. Without it axe runs its default rule set. Overrides config `tags:`. |
 | `--severity` | `<level>` | `notice` | Minimum severity reported and counted, on the family scale: `notice`, `warning`, or `error`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. An unknown level is an error (exit 2). axe's four impact levels are folded onto these three when a page is read. Every finding keeps axe's own value as `impact`, and the [github format](#output-formats) has the table. Overrides config `severity:`. |
 | `--timeout` | `<ms>` | `30000` | Per-page navigation timeout in milliseconds. Overrides config `timeout:`. |
@@ -79,12 +86,13 @@ manni a11y check [urls...] [options]
 
 <Aside type="note">
 `--tags` is a `<list>` option: one comma-separated value, given once. It does
-not accumulate across repeats, the way `manni meta`'s `--exclude <glob>` does.
+not accumulate across repeats, the way `--exclude <glob>` does.
 Positional seeds are space-separated, because that is what argv is.
 </Aside>
 
 ### Where seeds come from
 
+{/* cite seed-sources-first-non-empty */}
 Four sources can name a seed. The first non-empty one wins, and the rest are
 ignored:
 
@@ -98,6 +106,7 @@ ignored:
 documentation collection covers, such as a marketing or status page. Nothing
 that already sets `a11y.urls` changes behaviour by adding a collection `url:`.
 
+{/* cite named-collection-without-url-refused */}
 Naming a collection that declares no `url:` is an error, while a collection
 without one simply contributing nothing to rung 4 is not. `--collection blog`
 asked for something specific and has to be told it cannot be done; a bare
@@ -110,14 +119,19 @@ manni: --collection needs a config file to select from.
 manni: No URLs to check. Pass one or more, set url: on a collection, or set a11y.urls in manni.config.yaml.
 ```
 
+{/* cite seed-errors-exit-2 */}
 All four exit `2`.
 
 ### The crawl
 
+{/* cite crawl-scope-same-host */}
+{/* cite crawl-scope-sitemap-first-seed-host */}
+{/* cite crawl-scope-one-sitemap-first-seed */}
 Scope is the host. Two URLs are on the same site when their hostnames match
 case-insensitively and their non-default ports match. `http://` and `https://`
 of one host are one site, and `www.example.com` is not `example.com`. Each seed
-adds its own host to the scope.
+adds its own host to the scope for links. Sitemap URLs stay on the first seed's
+host, as [proposal 0035](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0035-a11y-domain.md#1-why-one-sitemap-from-the-first-seed) records.
 
 The frontier is filled in this order:
 
@@ -142,6 +156,7 @@ The frontier is filled in this order:
    `.jpg`, `.svg`, `.css`, `.js`, `.json`, `.xml`, `.txt`, `.mp4`, `.woff2`,
    among others).
 
+{/* cite dedupe-trailing-slash */}
 Each normalized URL enters the frontier once, and a trailing slash does not make
 a second page. `/install` and `/install/` are one entry, under whichever
 spelling arrived first. Where the browser lands after a redirect counts as
@@ -151,10 +166,67 @@ and every result records its `source`: `seed`, `sitemap`, or `link`. The run
 goes on until the frontier is empty. With `--max-pages`, it stops once that many
 pages have been checked, and the frontier left behind is the `skipped` count.
 
+{/* cite failures-seed-vs-crawled */}
 Failures split by where they happen. A seed that fails to load or analyze stops
 the run with exit `2`, because nothing was checked. A crawled page that fails is
 recorded with an `error` on that page, the crawl continues, and the page counts
 as failed for the exit code.
+
+### What a pattern matches
+
+`--exclude` and config `exclude:` take globs, and a glob is matched against the
+URL's **path** alone. Not the scheme, not the host, not the port, not the
+query, not the fragment. So `/proposals/**` covers
+`https://example.com/proposals/0035/` and
+`http://127.0.0.1:4321/proposals/0035/` alike, which is what lets one pattern
+serve a local preview and production. A pattern cannot tell two hosts apart.
+Run them separately with `--collection` when that matters.
+
+The base path is part of the path. On a site served under `/manni/` the
+pattern is `/manni/proposals/**`, not `/proposals/**`.
+
+A trailing slash is not part of the comparison. The path is matched with any
+trailing slash removed, so `/proposals/` and `/proposals` are one thing. A
+pattern ending `/**` covers the directory itself as well as everything under
+it, so `/proposals/**` reaches the section index without a second pattern.
+Both rules exist because a crawl produces both spellings. A sitemap usually
+lists `/proposals/` and a bare link usually points at `/proposals`.
+
+Matching otherwise follows the same rules as a collection's `paths:`. A `*`
+stops at a path segment, a `**` crosses segments, and a dot segment is matched
+like any other. A pattern that does not begin with `/` could never match a
+path, and is an error rather than a silent near-miss:
+
+```
+manni: --exclude "proposals/**" must start with "/": it matches a URL path.
+```
+
+The filter runs where a URL enters the frontier, beside the same-host check
+and the asset-extension check. An excluded URL is never fetched, never
+analyzed, and never counted in `discovered`. `summary.excluded` counts it
+instead, once per URL however many pages linked to it. The
+[pretty footer](#output-formats) adds `; K excluded` when the count is not
+zero, beside the clauses for a cap and for dropped duplicates.
+
+A seed an exclusion pattern matches is a contradiction, and both halves of it
+are what the user asked for. The run refuses rather than guessing, and names
+every excluded seed before it exits, so two wrong patterns cost one run rather
+than two:
+
+```
+manni: --exclude "/proposals/**" excludes the seed https://example.com/proposals/.
+manni: --exclude "/blog/**" excludes the seed https://example.com/blog/.
+```
+
+Each line names where its pattern came from. A pattern that came from config
+is named by its file and its entry, so a run with no flag typed never reports
+one:
+
+```
+manni: manni.config.yaml: "a11y.exclude[0]" excludes the seed https://example.com/proposals/.
+```
+
+Every one of these messages exits `2`, and nothing is checked.
 
 ### The score
 
@@ -162,6 +234,7 @@ as failed for the exit code.
 score = round(100 × passes ÷ (passes + violations))
 ```
 
+{/* cite score-after-floor-null */}
 `passes` is the number of axe rules that ran and passed on the page.
 `violations` is the number of rules that failed at or above the `--severity`
 floor, counted per rule rather than per element. The result is the share of
@@ -170,32 +243,42 @@ score: nothing is weighted, and a page with one `error` still fails the run
 whatever its score says. The score is `null` when the page did not load
 or when no rule applied.
 
-Rules axe could not decide are reported as `incomplete` and never counted as
-failures.
+{/* cite incomplete-not-failures */}
+{/* cite incomplete-json-only */}
+Rules axe could not decide are reported as `incomplete` in `json` output only,
+and never counted as failures.
 
 ### Output formats
 
+{/* cite pretty-header-pages-footer */}
 **`pretty`** (the default) is for people. It prints a header, one line per page,
 the violations under each failing page, and a footer:
 
 ```
-Checked 3 of 3 pages (sitemap: http://localhost:8080/sitemap.xml)
-✓ http://localhost:8080/index.html   score 100
-✗ http://localhost:8080/about.html   score 71   2 errors, 1 notice
-    error  image-alt (axe: critical)  3 nodes  Images must have alternate text  https://dequeuniversity.com/rules/axe/4.13/image-alt
-      img.hero  → Fix any of the following: Element does not have an alt attribute; …
-      img.map  → Fix any of the following: Element does not have an alt attribute; …
-      img.logo  → Fix any of the following: Element does not have an alt attribute; …
-    error  html-has-lang (axe: serious)  1 node  <html> element must have a lang attribute  https://dequeuniversity.com/rules/axe/4.13/html-has-lang
+Checked 3 of 3 pages (sitemap: http://127.0.0.1:4173/sitemap.xml)
+✓ http://127.0.0.1:4173/index.html  score 100
+✗ http://127.0.0.1:4173/about.html  score 78  4 errors
+    error  button-name (axe: critical)  1 node  Buttons must have discernible text  https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright
+      button  → Fix any of the following: Element does not have inner text that is visible to screen readers; aria-label attribute does not exist or is empty; aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty; Element has no title attribute; Element does not have an implicit (wrapped) <label>; Element does not have an explicit <label>; Element's default semantics were not overridden with role="none" or role="presentation"
+    error  color-contrast (axe: serious)  1 node  Elements must meet minimum color contrast ratio thresholds  https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright
+      p  → Fix any of the following: Element has insufficient color contrast of 2.84 (foreground color: #999999, background color: #ffffff, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1
+    error  html-has-lang (axe: serious)  1 node  <html> element must have a lang attribute  https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright
       html  → Fix any of the following: The <html> element does not have a lang attribute
-    notice  region (axe: minor)  1 node  All page content should be contained by landmarks  https://dequeuniversity.com/rules/axe/4.13/region
-      p  → Fix any of the following: Some page content is not contained by landmarks
-✗ http://localhost:8080/orphan.html  could not load: net::ERR_CONNECTION_REFUSED
-4 violations on 2 of 3 pages
+    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+      img  → Fix any of the following: Element does not have an alt attribute; aria-label attribute does not exist or is empty; aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty; Element has no title attribute; Element's default semantics were not overridden with role="none" or role="presentation"
+✗ http://127.0.0.1:4173/orphan.html  score 94  1 error
+    error  image-alt (axe: critical)  1 node  Images must have alternative text  https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright
+      img  → Fix any of the following: Element does not have an alt attribute; aria-label attribute does not exist or is empty; aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty; Element has no title attribute; Element's default semantics were not overridden with role="none" or role="presentation"
+
+5 violations on 2 of 3 pages
 ```
 
-The header names the sitemap that supplied pages, or reads `(no sitemap;
-followed links)`. Under `--no-crawl` it reads `(no crawl)`. Each violation line
+{/* cite pretty-header-where */}
+The header names the sitemap that was found, or reads `(no sitemap;
+followed links)`. Under `--no-crawl` it reads `(no crawl)`. Finding a sitemap
+is not the same as using one. When it supplied some of the discovered pages,
+the header adds its count and `followed links for the rest`. When it supplied
+none, the header adds `0 pages; followed links`. Each violation line
 carries the severity, the rule id, and axe's own impact in parentheses. Then
 come the node count, axe's short help text, and the rule's Deque University
 URL. The severity is what the floor and the exit code use. The impact is there
@@ -207,49 +290,73 @@ could not load prints `could not load: <reason>`. The footer adds
 when a redirect landed on a page that was also queued under another spelling.
 `-q` hides pages with no remaining violations.
 
+{/* cite json-whole-run */}
 **`json`** prints one object, the whole run, for scripts:
 
 ```json
 {
   "results": [
     {
-      "url": "https://docs.example.com/install/",
-      "source": "sitemap",
+      "url": "http://127.0.0.1:4173/orphan.html",
       "violations": [
         {
           "id": "image-alt",
           "severity": "error",
           "impact": "critical",
-          "help": "Images must have alternate text",
-          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/image-alt",
-          "tags": ["cat.text-alternatives", "wcag2a", "wcag111"],
+          "help": "Images must have alternative text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright",
+          "tags": [
+            "cat.text-alternatives",
+            "wcag2a",
+            "wcag111",
+            "section508",
+            "section508.22.a",
+            "TTv5",
+            "TT7.a",
+            "TT7.b",
+            "EN-301-549",
+            "EN-9.1.1.1",
+            "ACT",
+            "RGAAv4",
+            "RGAA-1.1.1"
+          ],
           "nodes": [
             {
-              "target": "img.hero",
-              "html": "<img src=\"hero.png\" class=\"hero\">",
-              "summary": "Fix any of the following:\n  Element does not have an alt attribute"
+              "target": "img",
+              "html": "<img src=\"y.png\">",
+              "summary": "Fix any of the following:\n  Element does not have an alt attribute\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
             }
           ]
         }
       ],
-      "passes": 7,
-      "incomplete": 2,
-      "score": 88
+      "passes": 15,
+      "incomplete": 0,
+      "source": "seed",
+      "score": 94
     }
   ],
   "summary": {
-    "discovered": 42,
-    "checked": 42,
-    "skipped": 0,
+    "discovered": 3,
+    "checked": 1,
+    "skipped": 2,
     "duplicates": 0,
-    "failed": 2,
-    "violations": 3,
-    "bySeverity": { "notice": 0, "warning": 1, "error": 2 },
-    "sitemap": "https://docs.example.com/sitemap.xml",
+    "excluded": 0,
+    "failed": 1,
+    "violations": 1,
+    "bySeverity": {
+      "notice": 0,
+      "warning": 0,
+      "error": 1
+    },
+    "sitemap": "http://127.0.0.1:4173/sitemap.xml",
+    "sitemapPages": 3,
     "crawl": true
   }
 }
 ```
+
+That run was capped with `--max-pages 1`, so `summary` counts three pages
+discovered, one checked, and two skipped.
 
 Each entry of `results[]`:
 
@@ -273,27 +380,33 @@ And `summary`:
 | `checked` | integer | Pages actually analyzed. |
 | `skipped` | integer | Discovered but not checked because `--max-pages` was reached. `0` when no cap is set. |
 | `duplicates` | integer | Discovered, then dropped without loading because a redirect had already landed on the same page under another spelling. `checked + skipped + duplicates` equals `discovered`. |
+| `excluded` | integer | Distinct URLs an [exclusion pattern](#what-a-pattern-matches) kept out of the crawl, counted once each however many pages linked to them. It sits outside the identity above, because an excluded URL never entered the frontier. This is the authoritative total for a finished run, and it can exceed what the [progress](#progress) line reported. `0` when nothing was excluded. |
 | `failed` | integer | Pages with at least one remaining violation or an `error`. Drives exit `1`. |
 | `violations` | integer | Remaining violations across all pages, counted per rule rather than per node. |
 | `bySeverity` | object | Violation counts keyed `notice`, `warning`, `error`. All three keys are always present. |
-| `sitemap` | string \| `null` | The sitemap URL that supplied pages, or `null` when none was used. |
-| `crawl` | boolean | Whether pages beyond the seeds were discovered. `false` under `--no-crawl`. |
+| `sitemap` | string \| `null` | The sitemap URL that was found, or `null` when none was. Finding one is not the same as using one, which `sitemapPages` reports. |
+| `sitemapPages` | integer | In-scope page URLs that sitemap contributed to the frontier. `0` when no sitemap was found, and `0` when one was found whose entries were all out of scope. |
+| `crawl` | boolean | Whether crawling was on for the run, with a sitemap lookup and link following. `false` under `--no-crawl`. |
 
+{/* cite github-one-per-finding */}
 **`github`** prints one workflow command per finding, and nothing when the run
 is clean:
 
 ```
-::error title=a11y/image-alt::Images must have alternate text — 2 nodes on https://docs.example.com/install/ (https://dequeuniversity.com/rules/axe/4.13/image-alt)
-::warning title=a11y/landmark-unique::Ensures landmarks are unique — 1 node on https://docs.example.com/install/ (https://dequeuniversity.com/rules/axe/4.13/landmark-unique)
-::error title=a11y/load::https://docs.example.com/old/: net::ERR_NAME_NOT_RESOLVED
+::error title=a11y/button-name::Buttons must have discernible text — 1 node on http://127.0.0.1:4173/about.html (https://dequeuniversity.com/rules/axe/4.13/button-name?application=playwright)
+::error title=a11y/color-contrast::Elements must meet minimum color contrast ratio thresholds — 1 node on http://127.0.0.1:4173/about.html (https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright)
+::error title=a11y/html-has-lang::<html> element must have a lang attribute — 1 node on http://127.0.0.1:4173/about.html (https://dequeuniversity.com/rules/axe/4.13/html-has-lang?application=playwright)
+::error title=a11y/image-alt::Images must have alternative text — 1 node on http://127.0.0.1:4173/about.html (https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright)
+::error title=a11y/image-alt::Images must have alternative text — 1 node on http://127.0.0.1:4173/orphan.html (https://dequeuniversity.com/rules/axe/4.13/image-alt?application=playwright)
 ```
 
+{/* cite github-level-is-severity */}
 GitHub renders each as an annotation on the workflow run. There is no file or
 line to anchor to, since the finding is about a URL. The command's level is the
 finding's severity. The family scale was chosen to match GitHub's, so the
 annotations are one-to-one. axe's four impact levels were folded onto that scale
-when the page was read, and this is the map. A page that did not load is always
-`error`.
+when the page was read, and this is the map. A page that did not load gets one
+`::error title=a11y/load::` command naming the URL and the reason.
 
 | axe impact | Severity | Annotation |
 | --- | --- | --- |
@@ -304,6 +417,7 @@ when the page was read, and this is the map. A page that did not load is always
 
 ### Progress
 
+{/* cite progress-events-narrated */}
 The report waits for the whole crawl, and a fifty-page site takes a minute. So
 `check` narrates the run on stderr while it works. It says when the browser is
 starting, which sitemap it found, and which page it is on, as
@@ -311,10 +425,24 @@ starting, which sitemap it found, and which page it is on, as
 line, rewritten in place and cleared before the report prints. Off a terminal
 it is one line per event, each prefixed `manni: `, with no escape codes.
 
+{/* cite progress-default-stderr-tty */}
 Progress is on by default only when stderr is a terminal, so a CI log stays as
 it was. Pass `--progress` to see it in a CI log anyway. Pass `--no-progress`
 to silence it. Either way stdout carries the report alone, so
 `-f json | jq` keeps working.
+
+An exclusion gets one line of its own, written once discovery settles and only
+when something was kept out. It reads `manni: excluded 41 pages (2 patterns)`.
+There is no line per excluded URL, because a pattern that removes four hundred
+pages would bury the ones that were checked.
+
+That line counts what the seeds and the sitemap gave the run and a pattern
+then removed, before the browser started. It lands early on purpose. A pattern
+that matched far more than intended is then visible while the run is still
+cheap to stop. Links are followed afterwards, and a page excluded that way is
+added to the total later. So the line can report fewer pages than the run ends
+up excluding. `summary.excluded` in `-f json` is the authoritative total for a
+finished run.
 
 ### Exit codes
 
@@ -322,7 +450,7 @@ to silence it. Either way stdout carries the report alone, so
 |---|---|
 | `0` | Every page loaded and none has a violation at or above the severity floor. |
 | `1` | At least one page has a remaining violation, or a crawled page failed to load. `summary.failed` is greater than zero. |
-| `2` | Usage or operational error. The causes are an unknown flag value, a non-`http(s)` URL, or no URLs and no config. They also include a seed that could not be loaded, or no browser found. One line on stderr prefixed `manni: `. |
+| `2` | Usage or operational error. The causes are an unknown flag value, a non-`http(s)` URL, or no URLs and no config. They also include a seed that could not be loaded, or no browser found. Most print one line on stderr prefixed `manni: `. A missing or unknown subcommand prints the help or commander's own message instead. |
 
 ### Examples
 
@@ -331,7 +459,7 @@ three rungs, a bare crawl, `--no-crawl`, and the zero-argument config form.
 Continuing from there:
 
 ```bash
-# Several seeds: each seed's host is in scope; one sitemap lookup, from the first seed.
+# Several seeds: links on both hosts; sitemap URLs from the first seed's host only.
 manni a11y check https://docs.example.com/ https://blog.example.com/
 
 # One collection, seeded from its url: — the same name meta validates by.
@@ -350,11 +478,30 @@ manni a11y check https://docs.example.com/ -f github --max-pages 50 -c ci/manni.
 # Scripts: the JSON envelope, piped to jq.
 manni a11y check https://docs.example.com/ -f json | jq '.summary'
 
+# Leave a section out of the gate. One glob per --exclude, never a comma.
+manni a11y check https://docs.example.com/ --exclude "/proposals/**"
+
+# Two sections out, and the count of what went on stderr as it happens.
+manni a11y check https://docs.example.com/ \
+  --exclude "/proposals/**" --exclude "/reference/api/**" --progress
+
+# Config says exclude: ["/proposals/**"]; this run checks the proposals and
+# leaves the API reference out instead. The flag replaces the list.
+manni a11y check --exclude "/reference/api/**"
+
+# Config says crawl: false and maxPages: 50; this one run ignores both and
+# walks the whole site. The rest of the file, collections: included, still
+# applies, which is what separates this from --no-config.
+manni a11y check https://docs.example.com/ --crawl --no-max-pages
+
 # Every option at once. Two seeds (space-separated); sitemap and links; cap
-# 250 pages; one comma-separated --tags list; warning floor; 60 s per page;
-# quiet; ignore any discovered config; json; no color.
+# 250 pages; two exclusion globs, one per occurrence; one comma-separated
+# --tags list; warning floor; 60 s per page; quiet; ignore any discovered
+# config; json; no color.
 manni a11y check https://docs.example.com/ https://www.example.com/ \
   --max-pages 250 \
+  --exclude "/proposals/**" \
+  --exclude "/reference/api/**" \
   --tags wcag2a,wcag2aa,wcag21aa,best-practice \
   --severity warning \
   --timeout 60000 \
@@ -364,11 +511,19 @@ manni a11y check https://docs.example.com/ https://www.example.com/ \
   --no-color
 ```
 
-Usage errors are one line on stderr, prefixed `manni: `, exit `2`:
+{/* cite usage-errors-subcommand-commander */}
+{/* cite usage-errors-one-line-prefixed */}
+Usage errors exit `2` and write to stderr. A missing or unknown subcommand gets
+the help or commander's message. Every other error is one line prefixed
+`manni: `:
 
 ```bash
 manni a11y
-# usage error: no subcommand given; commander prints the problem and "(add --help for usage)"
+# (prints the a11y help)
+
+manni a11y https://x.example/
+# error: unknown command 'https://x.example/'
+# (add --help for usage)
 
 manni a11y check not-a-url
 # manni: Not an http(s) URL: "not-a-url".
@@ -384,10 +539,20 @@ manni a11y check https://x.example/ -f sarif
 
 manni a11y check https://x.example/            # with no browser installed
 # manni: No browser found. Install one with `npx playwright install chromium`, or install Google Chrome or Microsoft Edge.
+
+manni a11y check https://x.example/ --exclude "proposals/**"
+# manni: --exclude "proposals/**" must start with "/": it matches a URL path.
+
+manni a11y check https://x.example/proposals/ --exclude "/proposals/**"
+# manni: --exclude "/proposals/**" excludes the seed https://x.example/proposals/.
+
+manni a11y check https://x.example/ --exclude
+# error: option '--exclude <glob>' argument missing
 ```
 
 ## Configuration
 
+{/* cite config-discovery */}
 `a11y` reads its own key of the shared `manni.config.yaml`, discovered the same
 way `meta` discovers it, walking up from the working directory. `-c <path>`
 names the file explicitly, and `--no-config` ignores any discovered one. A flag
@@ -406,6 +571,7 @@ a11y:
   tags: ["wcag2a", "wcag2aa"]
   severity: error
   timeout: 30000
+  exclude: ["/proposals/**"]
 ```
 
 | Key | Type | Default | Description |
@@ -416,10 +582,13 @@ a11y:
 | `tags` | `string[]` | none | axe tags to restrict the rule set to. Mirrors `--tags`, one item per entry. |
 | `severity` | `notice` \| `warning` \| `error` | `notice` | Minimum severity reported and counted, on the family scale. Mirrors `--severity`. |
 | `timeout` | integer ≥ 1 | `30000` | Per-page navigation timeout in milliseconds. Mirrors `--timeout`. |
+| `exclude` | `string[]` | `[]` | Globs matched against a URL's path; a match keeps that page out of the crawl. One glob per entry. An explicit `[]` means the same as the key being absent. Each entry must start with `/`, and the error names the entry by its position. A typed `--exclude` replaces this list rather than adding to it. See [what a pattern matches](#what-a-pattern-matches). |
 
+{/* cite config-unknown-key */}
 An unknown key, a wrong type, an empty `urls` entry, or a `urls` entry that is
 not `http(s)` is an error. The error names the file and the key (exit 2).
 
+{/* cite config-collections-without-section */}
 `urls` is optional. A repository that declares its documents as
 [collections](/manni/meta/reference/configuration/#collections) can give each
 one a `url:` and leave the `a11y:` section to the options above, or omit it

@@ -18,9 +18,10 @@ import {
   extractorForExtension,
   locateFrontmatter,
   supportedExtensions,
+  type ExtractedMetadata,
   type MetadataExtractor,
 } from "../../meta/index.js";
-import { extractorByName } from "../../meta/internal.js";
+import { extractorByName, hasFrontmatterFence } from "../../meta/internal.js";
 import { isEncryptedValue } from "../../shared/encryption.js";
 import { CiteError } from "../errors.js";
 import type {
@@ -33,7 +34,7 @@ import type {
   PageCitations,
 } from "../types.js";
 import { isKeyedPin } from "./hash.js";
-import { parseLines, spellSource } from "./range.js";
+import { parseLines, spellSource, tooWide } from "./range.js";
 import { DEFAULT_SEVERITY, ruleId } from "./severity.js";
 import { lineAt, parseStatements } from "./statements.js";
 
@@ -41,6 +42,8 @@ export const MAX_MARKERS_PER_PAGE = 500;
 
 /** Formats whose leading fenced block is frontmatter meta would read. */
 const ELEMENT_BACKED = new Set(["html", "xml"]);
+/** Formats whose only metadata channel is a fenced block. */
+const FENCE_ONLY = new Set(["markdown", "mdx"]);
 
 /** What a marker with a JSON payload is told, since an entry never lives in the body. */
 export const MARKER_JSON =
@@ -161,7 +164,7 @@ function subjectOf(entry: unknown): Pick<FindingExtra, "id" | "src"> {
 export function pickExtractor(file: string, format: string | undefined): MetadataExtractor {
   if (format !== undefined) {
     const forced = extractorByName(format);
-    if (!forced?.implemented) {
+    if (forced === undefined) {
       throw new CiteError(
         `Unknown format "${format}". Supported extensions: ${supportedExtensions().join(", ")}.`,
       );
@@ -191,6 +194,28 @@ export function bodyLineOf(content: string, bodyOffset: number): number {
   return content.charCodeAt(bodyOffset - 1) === 10 ? line : line + 1;
 }
 
+/**
+ * A page's citation entries as they are written, each with where it sits: the
+ * manifest's when one owns them, else the page's own frontmatter. The entries
+ * are raw, so one the schema refuses is still in the list at its own index,
+ * which is how `remove` reaches an entry `check` can only report.
+ */
+export function citationInputs(
+  file: string,
+  extracted: ExtractedMetadata,
+  injected?: readonly CitationInput[],
+): CitationInput[] {
+  if (injected !== undefined) return [...injected];
+  const raw: unknown = extracted.data.citations;
+  const list: unknown[] = Array.isArray(raw) ? (raw as unknown[]) : [];
+  return list.map((entry, index) => {
+    const origin: CitationInput["origin"] = { kind: "frontmatter", file };
+    const line = extracted.lineFor(`/citations/${String(index)}`);
+    if (line !== undefined) origin.line = line;
+    return { entry, origin };
+  });
+}
+
 export function readPage(
   file: string,
   content: string,
@@ -198,6 +223,15 @@ export function readPage(
 ): PageCitations {
   const extractor = pickExtractor(file, opts?.format);
   const format = extractor.name;
+  // An opening fence with no close is not a block, so the extractor reads no
+  // metadata and every entry the page carries would silently vanish. rst and
+  // asciidoc read a stray fence as body on purpose, ahead of their native
+  // headers; the fence-only formats have no such reading.
+  if (FENCE_ONLY.has(format) && hasFrontmatterFence(content) && locateFrontmatter(content) === null) {
+    throw new CiteError(
+      `${file}: Unterminated front matter fence: the opening fence has no matching close, so the page's citations cannot be read. Add a closing fence.`,
+    );
+  }
   const extracted = extractor.extract(content, file);
   const data = extracted.data;
   const bodyOffset = ELEMENT_BACKED.has(format)
@@ -246,15 +280,7 @@ export function readPage(
       }),
     );
   }
-  const inputs: CitationInput[] =
-    injected !== undefined
-      ? [...injected]
-      : (Array.isArray(rawCitations) ? (rawCitations as unknown[]) : []).map((entry, index) => {
-          const origin: CitationInput["origin"] = { kind: "frontmatter", file };
-          const line = extracted.lineFor(`/citations/${String(index)}`);
-          if (line !== undefined) origin.line = line;
-          return { entry, origin };
-        });
+  const inputs = citationInputs(file, extracted, injected);
 
   inputs.forEach((input, index) => {
     const origin: CitationOrigin = { ...input.origin, index };
@@ -288,6 +314,20 @@ export function readPage(
           subject,
         ),
       );
+      return;
+    }
+
+    // A range wider than the cap is refused at either end (proposal 0044).
+    const wide = (["claim", "source"] as const)
+      .map((end) => {
+        const lines = end === "claim" ? citation.claim?.lines : citation.source.lines;
+        const parsed = lines === undefined ? undefined : parseLines(lines);
+        const reason = parsed === undefined ? undefined : tooWide(parsed);
+        return reason === undefined ? undefined : `${end}.lines "${String(lines)}" ${reason}`;
+      })
+      .find((message) => message !== undefined);
+    if (wide !== undefined) {
+      findings.push(finding("entry-invalid", named(citation.id, wide), subject));
       return;
     }
 

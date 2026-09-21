@@ -510,19 +510,15 @@ describe("runGet", () => {
 });
 
 describe("getSchemasInfo", () => {
-  it("lists OKF and marks markdown, asciidoc, rst, xml and html implemented", () => {
+  it("lists OKF and the markdown, asciidoc, rst, xml and html formats", () => {
     const info = getSchemasInfo();
     expect(info.builtins.map((b) => b.id)).toContain("google:okf:0.1");
-    const md = info.formats.find((f) => f.name === "markdown");
-    const adoc = info.formats.find((f) => f.name === "asciidoc");
-    const rst = info.formats.find((f) => f.name === "rst");
-    const xml = info.formats.find((f) => f.name === "xml");
-    const html = info.formats.find((f) => f.name === "html");
-    expect(md?.implemented).toBe(true);
-    expect(adoc?.implemented).toBe(true);
-    expect(rst?.implemented).toBe(true);
-    expect(xml?.implemented).toBe(true);
-    expect(html?.implemented).toBe(true);
+    expect(info.formats.map((f) => f.name)).toEqual(
+      expect.arrayContaining(["markdown", "asciidoc", "rst", "xml", "html"]),
+    );
+    for (const f of info.formats) {
+      expect(f).not.toHaveProperty("implemented");
+    }
   });
 });
 

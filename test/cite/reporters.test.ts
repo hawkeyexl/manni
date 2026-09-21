@@ -10,9 +10,12 @@
  * reach output only through pretty under `--reveal` / `--show-diff`. The
  * sentinel test at the end is the rule stated as a test.
  */
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { renderCheckGithub } from "../../src/cite/reporters/github.js";
+import { NAMES_ITS_SUBJECT, renderCheckGithub } from "../../src/cite/reporters/github.js";
 import { renderCheckJson, renderUpdateJson } from "../../src/cite/reporters/json.js";
+import { renderCheckJunit } from "../../src/cite/reporters/junit.js";
 import {
   DIFF_LINE_CAP,
   renderCheckPretty,
@@ -20,6 +23,7 @@ import {
   rewriteLine,
   splitBaselined,
 } from "../../src/cite/reporters/pretty.js";
+import { renderCheckSarif, type SarifLog } from "../../src/cite/reporters/sarif.js";
 import type {
   CheckRun,
   CitationFinding,
@@ -30,8 +34,9 @@ import type {
   UpdateRewrite,
   UpdateRun,
 } from "../../src/cite/types.js";
+import { CITE_RULES, type CiteRule } from "../../src/cite/types.js";
 import { toValidationResult } from "../../src/cite/core/adapt.js";
-import type { RunSummary, ValidationResult } from "../../src/meta/index.js";
+import { renderSarif, type RunSummary, type ValidationResult } from "../../src/meta/index.js";
 
 const PIN = "sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f";
 const CLAIM_PIN = "sha256-921b21cccab21a4577f224ec4171aa56a3414bb3a5a4704ab8b6f314c46aa094";
@@ -285,8 +290,55 @@ describe("renderCheckPretty: one citation, one row", () => {
       }),
     ]);
     expect(renderCheckPretty(run, NO_COLOR).split("\n").slice(1, 3)).toEqual([
-      "    ✓ fetch-timeout   :12 current   lib/limits.ts:2 current",
       "    ✓ a               :9 current    lib/a.ts:1 current",
+      "    ✓ fetch-timeout   :12 current   lib/limits.ts:2 current",
+    ]);
+  });
+
+  it("sorts the rows by anchor line, a marker by its marker line, a bare pin last", () => {
+    const run = runOf([
+      page({
+        citations: [
+          citation(),
+          citation({
+            citation: { source: { file: "lib/whole.ts", integrity: PIN } },
+            origin: { kind: "frontmatter", file: "docs/limits.md", index: 1, line: 9 },
+            anchor: null,
+            claim: null,
+            source: sourceEnd({ src: "lib/whole.ts" }),
+          }),
+          citation({
+            citation: {
+              id: "retries",
+              claim: { integrity: CLAIM_PIN },
+              source: { file: "lib/limits.ts", lines: 3, integrity: PIN },
+            },
+            origin: { kind: "frontmatter", file: "docs/limits.md", index: 2, line: 14 },
+            anchor: "marker",
+            markerLine: 30,
+            anchorLine: 31,
+            claim: { fileLines: "31", status: "current" },
+            source: sourceEnd({ src: "lib/limits.ts:3" }),
+          }),
+          citation({
+            citation: { id: "a", source: { file: "lib/a.ts", lines: 1, integrity: PIN } },
+            origin: { kind: "frontmatter", file: "docs/limits.md", index: 3, line: 19 },
+            claim: claim({ lines: "1", fileLines: "9" }),
+            source: sourceEnd({ src: "lib/a.ts:1" }),
+          }),
+        ],
+      }),
+    ]);
+    // The entries were written 12, bare, marker :30, 9. The rows read low to high.
+    const rows = renderCheckPretty(run, NO_COLOR)
+      .split("\n")
+      .slice(1, 5)
+      .map((row) => row.trim().replace(/\s{2,}/g, " | "));
+    expect(rows).toEqual([
+      "✓ a | :9 current | lib/a.ts:1 current",
+      "✓ fetch-timeout | :12 current | lib/limits.ts:2 current",
+      "✓ retries | marker :30 current | lib/limits.ts:3 current",
+      "✓ | lib/whole.ts current",
     ]);
   });
 });
@@ -839,6 +891,23 @@ describe("rewriteLine", () => {
     ).toBe('claim at line 9 re-pinned (changed; now "The fetch timeout is 30 seconds.")');
   });
 
+  it("says a marker-anchored accepted claim at its marker line", () => {
+    expect(
+      rewriteLine(
+        rewrite({
+          id: "retries",
+          reason: "accepted",
+          status: "changed",
+          from: CLAIM_PIN,
+          to: PIN,
+          at: 31,
+          markerLine: 30,
+          text: "Retries default to 5.",
+        }),
+      ),
+    ).toBe('claim at marker line 30 re-pinned (changed; now "Retries default to 5.")');
+  });
+
   it("says an accepted source by its src, its commit and its pins, and spells never-true", () => {
     expect(
       rewriteLine(
@@ -858,6 +927,42 @@ describe("rewriteLine", () => {
         rewrite({ end: "source", reason: "accepted", status: "never-true", from: PIN, to: PIN, src: "lib/limits.ts:5" }),
       ),
     ).toBe("source lib/limits.ts:5 re-pinned (never true; sha256-78af1d33… -> sha256-78af1d33…)");
+  });
+
+  it("says where a misplaced marker went", () => {
+    expect(
+      rewriteLine(
+        rewrite({ end: "marker", reason: "re-anchored", status: "misplaced", from: "42", to: "40" }),
+      ),
+    ).toBe("marker line 42 -> 40 (misplaced)");
+  });
+
+  it("names the lines a re-pin over the unit newly covers", () => {
+    const reanchored = (lines: string, newLines: string): string =>
+      rewriteLine(
+        rewrite({ reason: "re-anchored", status: "moved", from: CLAIM_PIN, to: PIN, lines, newLines }),
+      );
+    expect(reanchored("44-46", "42-46")).toBe(
+      "claim re-pinned over lines 42-46 (moved; was lines 44-46, lines 42-43 newly pinned)",
+    );
+    expect(reanchored("44-46", "44-48")).toBe(
+      "claim re-pinned over lines 44-48 (moved; was lines 44-46, lines 47-48 newly pinned)",
+    );
+    // A span that only lost marker lines gains nothing, and says so.
+    expect(reanchored("58-61", "59-61")).toBe(
+      "claim re-pinned over lines 59-61 (moved; was lines 58-61, which held a marker line)",
+    );
+  });
+
+  it("says a claim a marker's move shifted", () => {
+    expect(
+      rewriteLine(
+        rewrite({ reason: "shifted", status: "current", from: "40-41", to: "42-43" }),
+      ),
+    ).toBe("claim lines 40-41 -> 42-43 (shifted by a marker)");
+    expect(rewriteLine(rewrite({ reason: "shifted", status: "current", from: "40", to: "42" }))).toBe(
+      "claim line 40 -> 42 (shifted by a marker)",
+    );
   });
 });
 
@@ -888,11 +993,12 @@ describe("update reporters", () => {
             src: "lib/limits.ts:5",
           },
         ],
+        refused: [],
         skipped: [finding({ rule: "source-missing", message: "missing", id: undefined, index: 2, src: "lib/gone.ts" })],
         diff: "--- docs/limits.md\n+++ docs/limits.md\n@@ -4,1 +4,1 @@\n-      lines: 14\n+      lines: 16\n",
         written: true,
       },
-      { file: "docs/other.md", rewritten: [], skipped: [], diff: "", written: false },
+      { file: "docs/other.md", rewritten: [], refused: [], skipped: [], diff: "", written: false },
     ],
     rewritten: 2,
     skipped: 1,
@@ -922,6 +1028,7 @@ describe("update reporters", () => {
         {
           file: "docs/limits.md",
           rewritten: [],
+          refused: [],
           skipped: [
             finding({ rule: "source-changed", message: "changed" }),
             finding({ rule: "claim-moved-ambiguous", severity: "warning", message: "ambiguous" }),
@@ -945,6 +1052,29 @@ describe("update reporters", () => {
 
   it("serializes the run as is", () => {
     expect(JSON.parse(renderUpdateJson(run))).toEqual(run);
+  });
+
+  it("leaves the marker line out of json, where `at` is the claim's first line", () => {
+    const accepted: UpdateRewrite = {
+      id: "retries",
+      index: 0,
+      line: 4,
+      end: "claim",
+      reason: "accepted",
+      status: "changed",
+      from: CLAIM_PIN,
+      to: PIN,
+      at: 31,
+      markerLine: 30,
+      text: "Retries default to 5.",
+    };
+    const marked: UpdateRun = {
+      ...run,
+      pages: [{ file: "docs/limits.md", rewritten: [accepted], refused: [], skipped: [], diff: "", written: true }],
+    };
+    const parsed = JSON.parse(renderUpdateJson(marked)) as UpdateRun;
+    const { markerLine: _pretty, ...json } = accepted;
+    expect(parsed.pages[0]?.rewritten).toEqual([json]);
   });
 });
 
@@ -989,5 +1119,77 @@ describe("the output rule", () => {
     expect(renderCheckPretty(sentinel, { ...NO_COLOR, reveal: true })).toContain(`~AQx7…:2 (${SECRET})`);
     expect(renderCheckPretty(sentinel, { ...NO_COLOR, reveal: true })).not.toContain("--- a/");
     expect(renderCheckPretty(sentinel, { ...NO_COLOR, showDiff: true })).toContain(`--- a/${SECRET}`);
+  });
+});
+
+describe("sarif and junit describe cite rules, not schema keywords", () => {
+  /** One finding per rule, each about an entry, plus one about no entry. */
+  const run = runOf([
+    page({
+      findings: [
+        ...CITE_RULES.map((rule, index) => finding({ rule, index, message: `${rule} message` })),
+        finding({ rule: "marker-invalid", index: undefined, message: "a page-level marker-invalid" }),
+      ],
+    }),
+  ]);
+
+  it("describes each rule in plain words and links its row of the citations reference", () => {
+    const sarif = JSON.parse(renderCheckSarif(run)) as SarifLog;
+    const driver = sarif.runs[0]?.tool.driver;
+    expect(driver?.informationUri).toBe("https://hawkeyexl.github.io/manni/cite/");
+    expect(driver?.rules.map((r) => r.id)).toEqual(CITE_RULES.map((rule) => `manni:cite/${rule}`));
+    for (const rule of driver?.rules ?? []) {
+      const name = rule.id.slice("manni:cite/".length);
+      expect(rule.shortDescription.text).not.toMatch(/schema|keyword/i);
+      expect(rule.shortDescription.text).toMatch(/^[A-Z].*\.$/);
+      expect(rule.helpUri).toBe(`https://hawkeyexl.github.io/manni/cite/reference/citations/#${name}`);
+    }
+    const descriptions = new Set(driver?.rules.map((r) => r.shortDescription.text));
+    expect(descriptions.size).toBe(CITE_RULES.length);
+  });
+
+  /** A message the github annotation would carry: the subject first, unless the message already names it. */
+  function expectedMessage(rule: CiteRule): string {
+    return NAMES_ITS_SUBJECT.has(rule) ? `${rule} message` : `fetch-timeout (lib/limits.ts:2): ${rule} message`;
+  }
+
+  it("gives a SARIF result the github annotation's message, with no pointer prefix", () => {
+    const sarif = JSON.parse(renderCheckSarif(run)) as SarifLog;
+    const messages = sarif.runs[0]?.results.map((r) => r.message.text);
+    expect(messages).toEqual([...CITE_RULES.map(expectedMessage), "a page-level marker-invalid"]);
+  });
+
+  it("keeps meta's rule ids and fingerprints", () => {
+    const ours = JSON.parse(renderCheckSarif(run)) as { runs: { results: unknown[] }[] };
+    const metas = JSON.parse(renderSarif(run.results, { frame: run.frame })) as {
+      runs: { results: { message: unknown }[] }[];
+    };
+    const strip = (results: unknown[]): unknown[] =>
+      results.map((r) => ({ ...(r as Record<string, unknown>), message: null }));
+    expect(strip(ours.runs[0]?.results ?? [])).toEqual(strip(metas.runs[0]?.results ?? []));
+  });
+
+  it("gives a JUnit failure the github annotation's message under the cite classname", () => {
+    const junit = renderCheckJunit(run);
+    expect(junit).toContain('classname="manni.cite"');
+    expect(junit).not.toContain('message="/citations/');
+    expect(junit).not.toContain('message="(root)');
+    expect(junit).toContain(
+      '<failure type="manni:cite/source-moved" message="fetch-timeout (lib/limits.ts:2): source-moved message (line 12)"/>',
+    );
+    expect(junit).toContain('<failure type="manni:cite/claim-changed" message="claim-changed message (line 12)"/>');
+    expect(junit).toContain(
+      '<failure type="manni:cite/marker-invalid" message="a page-level marker-invalid (line 12)"/>',
+    );
+  });
+});
+
+describe("the citations reference anchors every rule", () => {
+  it("renders an id per rule for a SARIF helpUri to land on", () => {
+    const source = readFileSync(
+      fileURLToPath(new URL("../../docs/src/content/docs/cite/reference/citations.mdx", import.meta.url)),
+      "utf8",
+    );
+    for (const rule of CITE_RULES) expect(source).toContain(`id="${rule}"`);
   });
 });

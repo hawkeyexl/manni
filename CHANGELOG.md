@@ -4,6 +4,169 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.8.3](https://github.com/hawkeyexl/manni/compare/v2.8.2...v2.8.3) (2026-09-21)
+
+
+### Bug Fixes
+
+* **meta:** stop concurrent writes losing filled and derived metadata ([#103](https://github.com/hawkeyexl/manni/issues/103)) ([6ca9252](https://github.com/hawkeyexl/manni/commit/6ca9252ebfd59d8879579a1599d4d3a5d00125c3)), closes [#98](https://github.com/hawkeyexl/manni/issues/98)
+
+## [2.8.2](https://github.com/hawkeyexl/manni/compare/v2.8.1...v2.8.2) (2026-09-21)
+
+
+### Bug Fixes
+
+* **cite:** stop concurrent writes losing citations ([#98](https://github.com/hawkeyexl/manni/issues/98)) ([29a58ff](https://github.com/hawkeyexl/manni/commit/29a58ff26669edd6bba0b86ca048336eb23004ef))
+
+## [2.8.1](https://github.com/hawkeyexl/manni/compare/v2.8.0...v2.8.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **cite:** refuse an accept that would pin text the claim never made ([#96](https://github.com/hawkeyexl/manni/issues/96)) ([7c0197c](https://github.com/hawkeyexl/manni/commit/7c0197cf9fcc1a964aa778b16a0f0a4bf7e64b57))
+
+# [2.8.0](https://github.com/hawkeyexl/manni/compare/v2.7.1...v2.8.0) (2026-09-18)
+
+
+### Features
+
+* **a11y:** --exclude keeps the crawl out of part of a site ([#91](https://github.com/hawkeyexl/manni/issues/91)) ([cac43a4](https://github.com/hawkeyexl/manni/commit/cac43a4a3190b4eb7d0a110e9c20ca427839104b)), closes [#80](https://github.com/hawkeyexl/manni/issues/80) [#58a6ff](https://github.com/hawkeyexl/manni/issues/58a6ff)
+
+## [2.7.1](https://github.com/hawkeyexl/manni/compare/v2.7.0...v2.7.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* **cite:** a table row is its own claim, not the whole table ([#90](https://github.com/hawkeyexl/manni/issues/90)) ([489d126](https://github.com/hawkeyexl/manni/commit/489d126d52dd0e04886a4760095a562ca5d89bd9)), closes [#87](https://github.com/hawkeyexl/manni/issues/87)
+
+# [2.7.0](https://github.com/hawkeyexl/manni/compare/v2.6.0...v2.7.0) (2026-09-18)
+
+
+### Features
+
+* **cite:** gate the docs on cite check, and publish a manni-cite hook ([#76](https://github.com/hawkeyexl/manni/issues/76)) ([71cb32f](https://github.com/hawkeyexl/manni/commit/71cb32fa93970acedfd7e6fc8ce7176ac7ab4ef7)), closes [#60](https://github.com/hawkeyexl/manni/issues/60) [#61](https://github.com/hawkeyexl/manni/issues/61) [#61](https://github.com/hawkeyexl/manni/issues/61) [#60](https://github.com/hawkeyexl/manni/issues/60) [#61](https://github.com/hawkeyexl/manni/issues/61) [#61](https://github.com/hawkeyexl/manni/issues/61)
+
+# [2.6.0](https://github.com/hawkeyexl/manni/compare/v2.5.2...v2.6.0) (2026-09-18)
+
+
+### Features
+
+* **cite:** read the page's history for a changed claim ([#73](https://github.com/hawkeyexl/manni/issues/73)) ([114208e](https://github.com/hawkeyexl/manni/commit/114208e908bd271f1bc33ee462c0754a15347ab9)), closes [#68](https://github.com/hawkeyexl/manni/issues/68) [#43](https://github.com/hawkeyexl/manni/issues/43) [#68](https://github.com/hawkeyexl/manni/issues/68) [#60](https://github.com/hawkeyexl/manni/issues/60)
+
+## [2.5.2](https://github.com/hawkeyexl/manni/compare/v2.5.1...v2.5.2) (2026-09-18)
+
+
+### Bug Fixes
+
+* **a11y:** let the CLI turn crawling and the page cap back on ([#85](https://github.com/hawkeyexl/manni/issues/85)) ([6358e7e](https://github.com/hawkeyexl/manni/commit/6358e7e907182bb125ac81ee4dea5e4b71e7cd3b)), closes [#79](https://github.com/hawkeyexl/manni/issues/79)
+
+## [2.5.1](https://github.com/hawkeyexl/manni/compare/v2.5.0...v2.5.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* **a11y:** stop crediting a sitemap that supplied no pages ([#86](https://github.com/hawkeyexl/manni/issues/86)) ([ba0a661](https://github.com/hawkeyexl/manni/commit/ba0a661874ec608f2a99f5d5bf2d2cbc8ec94040)), closes [#77](https://github.com/hawkeyexl/manni/issues/77)
+
+# [2.5.0](https://github.com/hawkeyexl/manni/compare/v2.4.0...v2.5.0) (2026-09-18)
+
+
+### Features
+
+* **cite:** re-anchor a misplaced marker ([#68](https://github.com/hawkeyexl/manni/issues/68)) ([c6918af](https://github.com/hawkeyexl/manni/commit/c6918afec1ee9300522abd9e2bb03e6e099f68c4)), closes [#43](https://github.com/hawkeyexl/manni/issues/43) [pre-#43](https://github.com/pre-/issues/43) [#43](https://github.com/hawkeyexl/manni/issues/43)
+
+# [2.4.0](https://github.com/hawkeyexl/manni/compare/v2.3.10...v2.4.0) (2026-09-17)
+
+
+### Features
+
+* **cite:** manni cite remove ([#71](https://github.com/hawkeyexl/manni/issues/71)) ([e14f4ab](https://github.com/hawkeyexl/manni/commit/e14f4abe8bc08f6c06c407aa30a5dbd516ea4cfd))
+
+## [2.3.10](https://github.com/hawkeyexl/manni/compare/v2.3.9...v2.3.10) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a duplicate or empty claim, and name the pinned source line ([#67](https://github.com/hawkeyexl/manni/issues/67)) ([4774b48](https://github.com/hawkeyexl/manni/commit/4774b4894c88117de6cd7bcdfc52568491a6faf3)), closes [#65](https://github.com/hawkeyexl/manni/issues/65) [#61](https://github.com/hawkeyexl/manni/issues/61) [#61](https://github.com/hawkeyexl/manni/issues/61) [#61](https://github.com/hawkeyexl/manni/issues/61)
+
+## [2.3.9](https://github.com/hawkeyexl/manni/compare/v2.3.8...v2.3.9) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** sarif and junit describe cite rules, not schema keywords ([#60](https://github.com/hawkeyexl/manni/issues/60)) ([f026967](https://github.com/hawkeyexl/manni/commit/f02696717b8553587b1f01fa2e6c4cd59d075b6f))
+* **collections:** honour --collection with stdin beside it ([#61](https://github.com/hawkeyexl/manni/issues/61)) ([541b63e](https://github.com/hawkeyexl/manni/commit/541b63e5caae981cc8278f8557a60990633e1d9e))
+
+## [2.3.8](https://github.com/hawkeyexl/manni/compare/v2.3.7...v2.3.8) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a marker paragraph over the 5,000-line limit ([#62](https://github.com/hawkeyexl/manni/issues/62)) ([4a4cdb2](https://github.com/hawkeyexl/manni/commit/4a4cdb200b41cc6949b9e39725744475cf6ac9fe))
+
+## [2.3.7](https://github.com/hawkeyexl/manni/compare/v2.3.6...v2.3.7) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** read the reports in one order ([#65](https://github.com/hawkeyexl/manni/issues/65)) ([3ba88fb](https://github.com/hawkeyexl/manni/commit/3ba88fb5bc65fca47b8ae4ac77094eb4979ea508))
+
+## [2.3.6](https://github.com/hawkeyexl/manni/compare/v2.3.5...v2.3.6) (2026-09-17)
+
+
+### Bug Fixes
+
+* **shared:** exit quietly when stdout's reader closes early ([#58](https://github.com/hawkeyexl/manni/issues/58)) ([289fcd4](https://github.com/hawkeyexl/manni/commit/289fcd45db96f50f91fedfaaa36378170186d520))
+
+## [2.3.5](https://github.com/hawkeyexl/manni/compare/v2.3.4...v2.3.5) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a page whose frontmatter fence never closes ([#56](https://github.com/hawkeyexl/manni/issues/56)) ([04ef174](https://github.com/hawkeyexl/manni/commit/04ef1747dd8eb3e0ac8afd636690641c31081f11))
+
+## [2.3.4](https://github.com/hawkeyexl/manni/compare/v2.3.3...v2.3.4) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** refuse a missing --root on add ([#49](https://github.com/hawkeyexl/manni/issues/49)) ([9121f1f](https://github.com/hawkeyexl/manni/commit/9121f1fc144dd17faa495aa07446b94326c3d3f4))
+
+## [2.3.3](https://github.com/hawkeyexl/manni/compare/v2.3.2...v2.3.3) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** enforce the 5,000-line range limit ([#50](https://github.com/hawkeyexl/manni/issues/50)) ([58fef71](https://github.com/hawkeyexl/manni/commit/58fef71afe5d80b53526f3bbee0544c853b5876a))
+* **cite:** indent add --marker to the paragraph it anchors ([#52](https://github.com/hawkeyexl/manni/issues/52)) ([93733e4](https://github.com/hawkeyexl/manni/commit/93733e4b697473b06c3223c3067101606c6432e0))
+
+## [2.3.2](https://github.com/hawkeyexl/manni/compare/v2.3.1...v2.3.2) (2026-09-17)
+
+
+### Bug Fixes
+
+* **term:** compare ids ignoring case, and describe --allow-empty ([#48](https://github.com/hawkeyexl/manni/issues/48)) ([b70661b](https://github.com/hawkeyexl/manni/commit/b70661bcd479b1a4b2cf1af07e894a84d2baa70c))
+
+## [2.3.1](https://github.com/hawkeyexl/manni/compare/v2.3.0...v2.3.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* **cite:** anchor stacked markers, and place add --marker above its paragraph ([#43](https://github.com/hawkeyexl/manni/issues/43)) ([6f3df3c](https://github.com/hawkeyexl/manni/commit/6f3df3cfc43742bd0a6cd67edfb444253a89267d))
+
+# [2.3.0](https://github.com/hawkeyexl/manni/compare/v2.2.0...v2.3.0) (2026-09-17)
+
+
+### Features
+
+* **term:** the manni term domain, for terms held in any format ([#40](https://github.com/hawkeyexl/manni/issues/40)) ([a73a7da](https://github.com/hawkeyexl/manni/commit/a73a7daea122b9ad2178187909363166f1ca61d1))
+
+# [2.2.0](https://github.com/hawkeyexl/manni/compare/v2.1.0...v2.2.0) (2026-09-15)
+
+
+### Features
+
+* **meta:** x-manni-location and manni meta relocate (0047) ([#37](https://github.com/hawkeyexl/manni/issues/37)) ([221970e](https://github.com/hawkeyexl/manni/commit/221970edbe879b72de398bf08b1aa96cfd1d8ecb))
+
 # [2.1.0](https://github.com/hawkeyexl/manni/compare/v2.0.1...v2.1.0) (2026-09-13)
 
 

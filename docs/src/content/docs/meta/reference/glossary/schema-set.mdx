@@ -1,0 +1,19 @@
+---
+title: Schema set
+description: What a schema set is in manni meta, and why a file must satisfy every schema in it.
+type: term
+id: schema-set
+label: schema set
+related-terms: [schema]
+abstract: The schemas resolved for one file, all of which apply.
+definition: >-
+  The one-or-more schemas resolved for a single file.
+---
+
+<p>{frontmatter.definition}</p>
+
+manni meta resolves a schema **set** per file, then validates the file's
+metadata against **every** [schema](/manni/meta/reference/glossary/schema/) in
+it. A file passes only when it satisfies all schemas in its set, and each
+reported error is tagged with the schema that produced it. See
+[Schema resolution](/manni/meta/reference/schema-resolution/#validating-against-the-whole-set).

@@ -72,6 +72,14 @@ describe("progress reporter on a terminal", () => {
     expect(s.out[3]).toBe(`${CLEAR}[2/3] ✗ could not load: timeout  ${S}/a`);
   });
 
+  it("shows the exclusion count in place, like the sitemap line", () => {
+    const s = stream(80);
+    const report = createProgressReporter({ stream: s, color: false, tty: true });
+    report({ kind: "excluded", urls: 41, patterns: 2 });
+    expect(s.out[0]).toBe(`${CLEAR}Excluded 41 pages (2 patterns)`);
+    for (const chunk of s.out) expect(chunk).not.toContain("\n");
+  });
+
   it("clears the line on done so the report starts clean", () => {
     const s = stream(80);
     const report = createProgressReporter({ stream: s, color: false, tty: true });
@@ -169,6 +177,26 @@ describe("progress reporter off a terminal", () => {
       "manni: [1/1] ✗ 1 violation\n",
       "manni: checked 1 page, 1 skipped\n",
     ]);
+  });
+
+  it("says once how much a pattern took out, and never lists a URL", () => {
+    const s = stream();
+    const report = createProgressReporter({ stream: s, color: false, tty: false });
+    report({ kind: "sitemap", source: `${S}/sitemap.xml`, urls: 101 });
+    report({ kind: "excluded", urls: 41, patterns: 2 });
+    report({ kind: "browser" });
+    expect(s.out).toEqual([
+      `manni: sitemap ${S}/sitemap.xml (101 pages)\n`,
+      "manni: excluded 41 pages (2 patterns)\n",
+      "manni: starting browser\n",
+    ]);
+  });
+
+  it("uses singular forms for one excluded page and one pattern", () => {
+    const s = stream();
+    const report = createProgressReporter({ stream: s, color: false, tty: false });
+    report({ kind: "excluded", urls: 1, patterns: 1 });
+    expect(s.out).toEqual(["manni: excluded 1 page (1 pattern)\n"]);
   });
 
   it("never truncates a URL, since nothing is rewriting the line", () => {

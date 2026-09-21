@@ -12,6 +12,7 @@ page is for the "wait, but what about…" follow-ups.
 
 ## What if a file has no frontmatter at all?
 
+{/* cite empty-metadata-still-fails */}
 It still fails, as long as the schema requires any field. A file with no
 frontmatter block reads as empty metadata. So a schema that requires `type`, as
 the built-in default does, reports the same "must have required property 'type'"
@@ -25,12 +26,15 @@ frontmatter at all](/manni/meta/fix/#no-frontmatter-at-all) for the fix.
 
 ## Which schema validated my file, and why did *this* rule fire?
 
+{/* cite schema-precedence-chain */}
+{/* cite error-line-ends-with-schema-in-brackets */}
 Every error line ends with the schema that produced it, in brackets. For example
 `[google:okf:0.1]`. That's the schema whose rule you tripped. If you're
 surprised by *which* schema applied, manni meta picks it through a fixed precedence
 chain. A `--schema` flag wins over a `$schema` key in your file. That wins over
 config `overrides`, then config `schemas`, then the built-in default.
 
+{/* cite first-source-wins-no-merging */}
 The first source that yields a schema wins, and lower sources are ignored for
 that file. Say your repo's config assigns a strict schema to `/api/**`, and your
 file is under `/api`. That's the rule that fired, even if you never set anything
@@ -44,11 +48,13 @@ in the file itself.
 
 ## Can I validate just one field?
 
+{/* cite validate-checks-whole-schemas */}
 No. `validate` checks a file against whole schemas, not individual fields. There
 is no "validate only `type`" mode. What you *can* do is narrow which schema
 applies (via `$schema`, config `overrides`, or `--schema`) so that only the rules
 you care about run.
 
+{/* cite get-extracts-without-validating */}
 If your goal is just to *read* a field's value rather than validate it, that's a
 different command. `get` extracts named field values without validating
 anything.
@@ -62,6 +68,7 @@ references for each command's full surface.
 
 ## How do I validate content coming from stdin?
 
+{/* cite dash-is-the-stdin-token */}
 Pass `-` as the path and tell manni meta which format to use with `--as`, since
 there's no filename extension to detect from:
 
@@ -69,6 +76,8 @@ there's no filename extension to detect from:
 cat page.md | manni meta validate - --as markdown
 ```
 
+{/* cite as-takes-an-extractor-name */}
+{/* cite stdin-without-as-is-an-error */}
 `--as` takes an extractor name (`markdown`, `mdx`, `asciidoc`, and so on). The
 same pattern works for `get`. Without `--as`, stdin is an error.
 
@@ -86,6 +95,8 @@ Use `--ext` to restrict which extensions directory and glob walks pick up:
 manni meta validate docs/ --ext md
 ```
 
+{/* cite ext-keeps-only-listed-extensions */}
+{/* cite ext-list-is-comma-separated */}
 This walks `docs/` but considers only `.md` files, leaving `.mdx`, `.adoc`, and
 the rest untouched. Pass a comma-separated list for more than one, as in `--ext md,mdx`.
 
@@ -115,6 +126,7 @@ gates on this code, so the distinction matters when you read a raw log.
 
 ## Does manni meta check my prose or page content?
 
+{/* cite validation-sees-only-metadata */}
 No. manni meta validates the **presence and format of metadata**, the fields in
 your frontmatter, and nothing about the body of the document. It won't flag
 spelling, broken links, tone, or anything in the prose. A red check always points
@@ -124,14 +136,18 @@ at a frontmatter field, never at your writing.
 
 Exclude them by glob, in one of two places, and the difference matters.
 
+{/* cite default-ignores-are-node-modules-and-git */}
 On the command line, `--exclude` filters whatever this run walks:
 
 ```sh
 manni meta validate docs/ --exclude "**/drafts/**"
 ```
 
+{/* cite exclude-merges-with-default-ignores */}
+{/* cite exclude-is-repeatable */}
 It is repeatable and merges with the default ignores (`node_modules`, `.git`).
 
+{/* cite collection-exclude-shapes-membership */}
 In config, `exclude:` belongs to a collection and decides what that collection
 *contains*:
 
@@ -142,6 +158,7 @@ collections:
     exclude: ["**/drafts/**"]
 ```
 
+{/* cite bare-run-reads-collections */}
 A bare `manni meta validate` reads the collections, so the drafts are skipped
 every run, locally and in CI.
 

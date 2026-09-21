@@ -1,0 +1,20 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:08.000
+Every page, every time: manni a11y check crawls every page the site links to. 101 pages, 1 minute 47, every pull request.
+
+2
+00:00:08.000 --> 00:00:16.867
+One glob, one section: --exclude takes a glob matched against the URL path. Here it drops the reference shelf.
+
+3
+00:00:16.867 --> 00:00:21.300
+34 pages never fetched: 67 pages checked, 34 excluded, 39 seconds saved. An excluded URL is never fetched and never counted.
+
+4
+00:00:21.300 --> 00:00:33.400
+Seed and pattern disagree: A seed the pattern excludes is a contradiction. manni refuses with exit 2, before anything loads.
+

@@ -19,6 +19,7 @@ import type {
   CiteRule,
   CiteSeverity,
   ClaimEnd,
+  GitClient,
   PageCitation,
   PageCitationReport,
   PageCitations,
@@ -26,12 +27,16 @@ import type {
   SourceEnd,
   SourceIndex,
 } from "../types.js";
-import { findingsFor } from "./adapt.js";
+import { findingsFor, misplacedMessageFor } from "./adapt.js";
+import { misplacedMarkers, type MisplacedMarker } from "./reanchor.js";
+import { spellLines } from "../../shared/pin.js";
 import { classifyCitation, MOVE_BUDGET_BYTES } from "./classify.js";
 import { blockMatches, claimEnd, claimLineNow, claimLinesNow } from "./claims.js";
-import { GIT_UNAVAILABLE_HISTORY, gitClient } from "./git.js";
+import { GIT_UNAVAILABLE_HISTORY, PAGE_HISTORY_UNAVAILABLE, gitClient } from "./git.js";
+import { claimHistory, refineClaim } from "./history.js";
 import { hashLines, sliceLines, splitLines } from "./hash.js";
 import { readPage } from "./page.js";
+import { STDIN_LABEL } from "../../meta/internal.js";
 import { parseSrc, sourceRange, spellSource } from "./range.js";
 import { buildSourceIndex, readSource } from "./sources.js";
 import { resolveSeverity, ruleId } from "./severity.js";
@@ -153,6 +158,22 @@ async function quoteFindings(
   ];
 }
 
+/** The marker end of a result: its line, plus its misplacement when it has one. */
+function markerEnd(
+  entry: PageCitation,
+  misplaced: MisplacedMarker | undefined,
+): Pick<CitationResult, "marker"> {
+  const { marker } = entry;
+  if (marker === undefined) return {};
+  if (misplaced === undefined) return { marker: { line: marker.line } };
+  return {
+    marker: {
+      line: marker.line,
+      misplaced: { unit: spellLines(misplaced.unit), to: misplaced.to },
+    },
+  };
+}
+
 /** How a citation is anchored, and the page line it anchors to. */
 function anchorOf(
   entry: PageCitation,
@@ -190,6 +211,13 @@ export async function checkCitations(
   const read = readPage(page.file, page.content, readOptions);
   const severity = resolveSeverity(opts.severity);
   const client = opts.gitClient ?? gitClient(opts.root);
+  // The page's history lives in the page's own repository, which is not the
+  // sources' when `--root` sent those to another checkout.
+  const pageGit =
+    opts.pageGitClient ??
+    (opts.pageRoot === undefined || opts.pageRoot === opts.root
+      ? client
+      : gitClient(opts.pageRoot));
   const checkSources = opts.checkSources !== false;
   const lines = splitLines(read.content);
 
@@ -223,8 +251,17 @@ export async function checkCitations(
     ...(opts.key === undefined ? {} : { key: opts.key }),
   };
 
+  // Every marker line that splits a paragraph, read once for the page: its
+  // entry's claim is judged against it, and each one is its own finding.
+  const misplaced = misplacedMarkers(read, lines);
+  const misplacedAt = new Map(misplaced.map((found) => [found.line, found]));
+
   for (const entry of read.citations) {
-    const claim = claimEnd(read, entry, lines);
+    const split = entry.marker === undefined ? undefined : misplacedAt.get(entry.marker.line);
+    const claim = await withClaimHistory(
+      { page: read, entry, claim: claimEnd(read, entry, lines, split), lines },
+      { path: read.file, git: pageGit, ...(opts.pageCommitCap === undefined ? {} : { cap: opts.pageCommitCap }), ...(opts.owned === undefined ? {} : { manifest: opts.owned.file }) },
+    );
     const source: SourceEnd =
       classifyOpts === undefined
         ? skippedSource(entry)
@@ -233,6 +270,7 @@ export async function checkCitations(
       citation: entry.citation,
       origin: entry.origin,
       ...anchorOf(entry, claim, read),
+      ...markerEnd(entry, split),
       claim,
       source,
     };
@@ -255,15 +293,52 @@ export async function checkCitations(
     }
   }
 
+  // One finding per misplaced marker, so a run of three is three. An orphan
+  // in a run is reported too, with no id, beside its `marker-orphan`.
+  const misplacedLevel = severity["marker-misplaced"];
+  if (misplacedLevel !== "off") {
+    for (const found of misplaced) {
+      const entry = found.entry;
+      const finding: CitationFinding = {
+        rule: "marker-misplaced",
+        ruleId: ruleId("marker-misplaced"),
+        severity: misplacedLevel,
+        message: misplacedMessageFor(entry?.citation.id, {
+          line: found.line,
+          unit: spellLines(found.unit),
+          place: found.place,
+          block: found.block,
+        }),
+        line: found.line,
+      };
+      if (entry !== undefined) {
+        finding.index = entry.origin.index;
+        finding.src = spellSource(entry.citation.source);
+        if (entry.citation.id !== undefined) finding.id = entry.citation.id;
+      }
+      findings.push(finding);
+    }
+  }
+
   findings.push(...findingsFor(results, severity));
 
-  // History is read for a citation with a commit, so a page that holds one
-  // and has no git to read it through says why its verdicts are plainer.
-  // With the sources off nothing is classified, and git is never asked.
-  const wantsHistory =
+  // History is read for a citation with a commit, and for every claim that no
+  // longer holds, so a page holding either and with no git to read it through
+  // says why its verdicts are plainer. With the sources off nothing is
+  // classified, but a claim end still is, and it still wants the page's past.
+  const wantsSourceHistory =
     checkSources &&
     read.citations.some(({ citation }) => citation.source["commit-sha"] !== undefined);
-  if (wantsHistory && !(await client.available())) notices.push(GIT_UNAVAILABLE_HISTORY);
+  const wantsClaimHistory = results.some((r) => r.claim?.status === "changed");
+  if (wantsSourceHistory && !(await client.available())) notices.push(GIT_UNAVAILABLE_HISTORY);
+  else if (wantsClaimHistory && !(await pageGit.available())) {
+    notices.push(GIT_UNAVAILABLE_HISTORY);
+  }
+  // A claim whose walk ran out of commits: the rest of the history would have
+  // told a layout change from an edit.
+  if (results.some((r) => r.claim?.historyAvailable === false)) {
+    notices.push(PAGE_HISTORY_UNAVAILABLE);
+  }
 
   const unavailable = results.find((r) => r.source.historyAvailable === false);
   if (unavailable?.source.commitSha !== undefined) {
@@ -284,6 +359,29 @@ export async function checkCitations(
     findings: findings.sort(byLine),
     notices,
   };
+}
+
+/**
+ * The claim end read against the page's history, for a claim that no longer
+ * holds. Every other status is what it was: the walk runs only where a
+ * verdict is in doubt, so a clean corpus costs no git at all.
+ */
+async function withClaimHistory(
+  now: {
+    page: PageCitations;
+    entry: PageCitation;
+    claim: ClaimEnd | null;
+    lines: readonly string[];
+  },
+  read: { path: string; git: GitClient; cap?: number; manifest?: string },
+): Promise<ClaimEnd | null> {
+  const { claim } = now;
+  if (claim === null || claim.status !== "changed") return claim;
+  // A page read from stdin has no path in the repository, so it has no history.
+  if (read.path === STDIN_LABEL) return claim;
+  const input = { page: now.page, entry: now.entry, claim, ...read };
+  const history = await claimHistory(input);
+  return refineClaim({ ...input, lines: now.lines, history });
 }
 
 /** With `--no-check-sources` no file is read, so every source end is `skipped`. */

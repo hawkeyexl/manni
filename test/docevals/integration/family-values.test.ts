@@ -98,7 +98,7 @@ describe("manni docevals configuration", () => {
     expect(run.status).toBe(2);
     expect(run.stderr).toMatch(/^manni: Invalid config in .*manni\.config\.yaml:\n/);
     expect(run.stderr).toContain(
-      '\n  /docevals/judge: unknown key "ensemble-runs"; did you mean "ensembleRuns"?\n',
+      '\nmanni:   /docevals/judge: unknown key "ensemble-runs"; did you mean "ensembleRuns"?\n',
     );
   });
 
@@ -106,7 +106,7 @@ describe("manni docevals configuration", () => {
     const run = manni(["list", "docs/page.md"], join(ROOT, "test/docevals/fixtures/info-severity"));
     expect(run.status).toBe(2);
     expect(run.stderr).toContain(
-      "\n  /docevals/evals/fresh-enough/severity: must be equal to one of the allowed values\n",
+      "\nmanni:   /docevals/evals/fresh-enough/severity: must be equal to one of the allowed values\n",
     );
   });
 });

@@ -1,0 +1,18 @@
+Suggested LinkedIn caption for a11y-exclude-1x1. This is a suggestion only.
+Posting is a human action, and the author posts it or does not.
+
+One line:
+
+Our accessibility gate crawled 101 pages on every pull request, 34 of them a reference shelf nobody was going to fix. manni a11y check --exclude takes one glob against the URL path, and the run drops to 67 pages and 39 seconds less.
+
+Longer:
+
+An accessibility crawl used to be all or nothing. --no-crawl checks only the URLs you name, which means listing every page you do want. --max-pages is a count, so it stops somewhere and never tells you which pages went unchecked.
+
+manni a11y check --exclude takes a glob, matched against the URL path and nothing else. The same pattern works against a local preview and against production, because the host is the part that changes. It repeats, one glob per occurrence.
+
+On this repository's own docs site: 101 pages in 1m46s becomes 67 pages in 1m7s, and the footer says 34 excluded. An excluded URL is never fetched, never analyzed and never counted.
+
+A pattern that excludes one of your seeds is a contradiction. The run names it and refuses with exit 2, rather than guessing which half you meant.
+
+#docsascode #accessibility #a11y #technicalwriting #devtools #CI

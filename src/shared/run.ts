@@ -13,13 +13,27 @@ import { CommanderError, type Command } from "commander";
 import { ToolError, errorMessage } from "./errors.js";
 import { programName, setProgramName } from "./program-name.js";
 
-/** Report an operational error on stderr and exit 2. */
+/**
+ * Report an operational error on stderr and exit 2.
+ *
+ * Almost every message is one line. A few name a list the user has to fix in
+ * one pass — every seed an `--exclude` pattern contradicts, say — and carry a
+ * `\n` between the lines. Each line gets the prefix, so a second line reads
+ * like a message from the tool rather than like wrapped output.
+ */
 export function fail(err: unknown): never {
   const msg =
     err instanceof ToolError
       ? err.message
       : `Unexpected error: ${errorMessage(err)}`;
-  process.stderr.write(`${programName()}: ${msg}\n`);
+  const prefix = programName();
+  // A trailing newline is the message's own, not a line of its own. Splitting
+  // without dropping it would end the run on a bare `manni: `, which is what
+  // an unexpected error carrying a library's newline-terminated message would
+  // have printed.
+  for (const line of msg.replace(/\n+$/, "").split("\n")) {
+    process.stderr.write(`${prefix}: ${line}\n`);
+  }
   process.exit(2);
 }
 
@@ -96,8 +110,34 @@ export function isMainModule(moduleUrl: string): boolean {
   }
 }
 
+/**
+ * Treat a closed reader on stdout or stderr as the end of output.
+ *
+ * `manni cite check | head -1` closes the pipe while the command is still
+ * writing, and the next write fails with EPIPE. Node emits that as an `error`
+ * event on the stream, and with no listener it is thrown as an uncaught
+ * exception: a stack trace and exit 1 from a command that did nothing wrong.
+ *
+ * The listener swallows EPIPE and nothing else, so any other stream error
+ * still surfaces the way it did. The command then runs to completion and exits
+ * with its own code rather than a fixed 0: `set -o pipefail; manni meta
+ * validate | head` must still fail when validation does. Writes after the
+ * pipe closed go nowhere, which is what the reader asked for.
+ */
+export function endOutputOnClosedReader(
+  streams: readonly NodeJS.EventEmitter[] = [process.stdout, process.stderr],
+): void {
+  for (const stream of streams) {
+    stream.on("error", (err: NodeJS.ErrnoException) => {
+      if (err.code === "EPIPE") return;
+      throw err;
+    });
+  }
+}
+
 /** Run `build()` as a bin when `moduleUrl` is the entry, and not when imported. */
 export function runIfMain(moduleUrl: string, build: () => Command): void {
   if (!isMainModule(moduleUrl)) return;
+  endOutputOnClosedReader();
   runProgram(build()).catch(fail);
 }

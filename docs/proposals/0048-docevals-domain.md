@@ -1,7 +1,7 @@
 # 0048: the `docevals` domain: evals join the family
 
 - **Status:** Proposed
-- **Serves:** Devin · D8, D9 · Sara · S6–S9 · Maya · M9–M13 · Theo · T4
+- **Serves:** Devin · D9, D10 · Sara · S7–S10 · Maya · M10–M14 · Theo · T5
 - **Depends on:** [0033](0033-manni-monorepo.md), the umbrella this domain
   mounts on and the import recipe it follows. [0034](0034-command-grammar.md),
   the grammar: spelled verbs, no default subcommand, one separator per list.
@@ -358,7 +358,7 @@ set of flat files, and a tool that joins brings no directory of its own
   by name. Their docevals needs are short additions to their entries. Priya,
   Nate and Iris are Maya as a platform lead, as a solo owner and as a
   retrofitter, so they fold into Maya. a11y added no persona either (0035).
-- **CUJs.** The twelve journeys are M9–M13, D8–D9, S6–S9 and T4 in
+- **CUJs.** The twelve journeys are M10–M14, D9–D10, S7–S10 and T5 in
   `docs/content-strategy/cujs.md`.
 - **IA.** `information-architecture.md` gains the `docevals/` content set, with
   each page's CUJs and launch status.

@@ -384,8 +384,8 @@ formats](/manni/meta/reference/formats/).
 
 | Export | Purpose |
 |---|---|
-| `extractorForExtension` | The implemented extractor for a file extension (including the dot), or `undefined`. |
-| `supportedExtensions` | Every extension an implemented extractor handles, which is the default set for directory and glob walks. |
+| `extractorForExtension` | The extractor for a file extension (including the dot), or `undefined`. |
+| `supportedExtensions` | Every extension a registered extractor handles, which is the default set for directory and glob walks. |
 | `MetadataExtractor` (type) | The extractor interface. Name, extensions, and the read and write entry points. |
 | `ExtractedMetadata` (type) | The format-independent result of extraction: whether metadata was present, the parsed data, and any parse error. |
 | `ExtractOptions` (type) | Per-run inputs to extraction beyond the document itself, currently the `elements:` paths, which lift metadata held in elements rather than attributes. Pass the same value to `apply`, or a writer re-reads without them and cannot find the key it just wrote. |
@@ -426,6 +426,6 @@ to. Each namespace is documented on its own tool's pages.
 
 | Export | Purpose |
 |---|---|
-| `cite` | The citation tool's programmatic API. It carries the command cores `runCheck`, `runAdd` and `runUpdate`; the per-page check `checkCitations`, the minter `mintCitation` and the re-encrypter `reencryptCitations`; and the primitives `hashRange`, `parseSrc` and `parseStatements`. `toValidationResult` turns a page report into the `ValidationResult` above, so the reporters and the baseline work unchanged. `CiteError` is its exit-2 failure. `import { cite } from "@hawkeyexl/manni"`. See [the cite reference](/manni/cite/reference/cli/). |
+| `cite` | The citation tool's programmatic API. It carries the command cores `runCheck`, `runAdd`, `runUpdate` and `runRemove`; the per-page check `checkCitations`, the minter `mintCitation` and the re-encrypter `reencryptCitations`; and the primitives `hashRange`, `parseSrc` and `parseStatements`. `toValidationResult` turns a page report into the `ValidationResult` above, so the reporters and the baseline work unchanged. `CiteError` is its exit-2 failure. `import { cite } from "@hawkeyexl/manni"`. See [the cite reference](/manni/cite/reference/cli/). |
 | `docevals` | The evals tool's programmatic API. It carries `runRun`, `runList` and `loadConfig`, the judge and provider factories, the reporters, and the page vocabulary it validates against (`frontmatterSchema`, `FRONTMATTER_SCHEMA_ID`). `import { docevals } from "@hawkeyexl/manni"`. See [the docevals reference](/manni/docevals/reference/). |
 | `key` | The family encryption key's API. It carries the command cores `runKeySet` and `runKeyRotate` with their option and result types, and the family's encryption primitives: `encryptValue`, `decryptValue`, `isEncryptedValue`, and `resolveEncryptionKey` with its `KeySource`. `KeyError` is its exit-2 failure. `import { key } from "@hawkeyexl/manni"`. See [the key reference](/manni/key/reference/cli/). |

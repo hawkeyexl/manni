@@ -93,7 +93,14 @@ import {
 } from "../core/encrypted.js";
 import { encryptValue } from "../../shared/encryption.js";
 import { ensureEncryptionKey } from "../../shared/prompt.js";
-import { spliceManifestValue } from "../core/external-metadata-write.js";
+import {
+  applyManifestOp,
+  holdManifestFile,
+  recordManifestOp,
+  settleManifest,
+  type MetaHeldManifest,
+  type MetaManifestOp,
+} from "../core/manifest-writes.js";
 import {
   FILL_PROMPT_VERSION,
   FILL_SYSTEM_PROMPT,
@@ -515,39 +522,55 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
    * Each manifest this run writes, read once and spliced in memory. It is
    * saved after each file that changes it, once that file's page is written,
    * so a run that aborts on a later file keeps the entries of the pages it
-   * already wrote. `written` is the text on disk; `saving` serializes the
-   * saves, each of which writes the latest text.
+   * already wrote. `saving` is the queue those saves run on.
+   *
+   * Files are filled concurrently, so the edits go on the queue too rather
+   * than onto the held text where they were computed. A save reads the held
+   * text, re-reads the file and writes; another file splicing into that text
+   * across one of those awaits would be written by a save that had already
+   * decided it was done. On the queue, each file's edits and its save are one
+   * turn, and nothing interleaves with them.
    */
-  interface HeldManifest {
-    path: string;
-    text: string;
-    written: string;
+  interface Holding {
+    held: MetaHeldManifest;
     saving: Promise<void>;
   }
-  const heldManifests = new Map<string, HeldManifest>();
-  const holding = new Map<string, Promise<HeldManifest>>();
-  const saveManifest = (held: HeldManifest): Promise<void> => {
-    held.saving = held.saving.then(async () => {
-      const text = held.text;
-      if (text === held.written) return;
-      await writeFileAtomic(held.path, text);
-      held.written = text;
+  const heldManifests = new Map<string, Holding>();
+  const holding = new Map<string, Promise<Holding>>();
+  /** Queue one file's edits to one manifest, and the save that lands them. */
+  const saveManifest = (h: Holding, ops: readonly MetaManifestOp[]): Promise<void> => {
+    h.saving = h.saving.then(async () => {
+      for (const op of ops) {
+        const after = applyManifestOp(h.held.text, op);
+        if (after === h.held.text) continue;
+        recordManifestOp(h.held, op);
+        h.held.text = after;
+      }
+      if (!dryRun) await settleManifest(h.held);
     });
-    return held.saving;
+    return h.saving;
   };
-  const holdManifest = (home: { absPath: string; file: string }) => {
+  /**
+   * Put a page back after a refused manifest write, and say which happened.
+   * `relocate` words a failed restore the same way: the run cannot fix it, so
+   * it names the file and hands the reader to version control.
+   */
+  const restorePage = async (label: string, before: string): Promise<string> => {
+    try {
+      await writeFileAtomic(resolve(base, label), before);
+      return `${label} was restored.`;
+    } catch (err) {
+      return `${label} could not be restored: ${errorMessage(err)}. Restore it from version control.`;
+    }
+  };
+  const holdManifest = (home: { absPath: string; file: string }): Promise<Holding> => {
     let held = holding.get(home.absPath);
     if (held === undefined) {
-      held = readFile(home.absPath, "utf8").then(
-        (before) => {
-          const h: HeldManifest = { path: home.absPath, text: before, written: before, saving: Promise.resolve() };
-          heldManifests.set(home.absPath, h);
-          return h;
-        },
-        (err: unknown) => {
-          throw new DocmetaError(`Manifest ${home.file} could not be read: ${errorMessage(err)}`);
-        },
-      );
+      held = holdManifestFile(home.absPath, home.file).then((m) => {
+        const h: Holding = { held: m, saving: Promise.resolve() };
+        heldManifests.set(home.absPath, h);
+        return h;
+      });
       holding.set(home.absPath, held);
     }
     return held;
@@ -1211,61 +1234,66 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       metaProvenance = { written: false, skipReason: "unwritable" };
     }
 
-    // Every manifest this file writes is held first. The splices are computed
-    // once to refuse the file before its page is written, then again over the
-    // held text once the page is: from that splice to the commit nothing
-    // awaits, so no other file's splice can interleave, and a page that was
-    // never written leaves no entry behind.
+    // Every manifest this file writes is held first, and each edit is kept as
+    // the descriptor that made it rather than as the text it produced, so a
+    // manifest another command moved under the run can be replayed onto. The
+    // edits are applied once to refuse the file before its page is written,
+    // then again over the held text once the page is: from there to the save
+    // nothing awaits, so no other file's edit can interleave, and a page that
+    // was never written leaves no entry behind.
     const helds = await Promise.all(entryWrites.map((w) => holdManifest(w.home)));
-    const splice = (): Map<string, string> => {
-      const texts = new Map<string, string>();
-      for (const [i, w] of entryWrites.entries()) {
-        const held = helds[i];
-        /* c8 ignore next -- one hold per write, by construction. */
-        if (held === undefined) continue;
-        const text = texts.get(held.path) ?? held.text;
-        texts.set(
-          held.path,
-          spliceManifestValue(text, {
-            entry: w.home.entry,
-            key: w.key,
-            value: w.value,
-            join: w.home.join,
-            file: w.home.file,
-          }).text,
-        );
-      }
-      return texts;
-    };
+    const ops: { at: Holding; op: MetaManifestOp }[] = [];
+    for (const [i, w] of entryWrites.entries()) {
+      const at = helds[i];
+      /* c8 ignore next -- one hold per write, by construction. */
+      if (at === undefined) continue;
+      ops.push({
+        at,
+        op: {
+          kind: "splice",
+          entry: w.home.entry,
+          key: w.key,
+          value: w.value,
+          join: w.home.join,
+          file: w.home.file,
+        },
+      });
+    }
     let manifestChanged = false;
     try {
-      manifestChanged = [...splice()].some(([path, text]) => heldManifests.get(path)?.text !== text);
+      const texts = new Map<string, string>();
+      for (const { at, op } of ops) {
+        texts.set(at.held.path, applyManifestOp(texts.get(at.held.path) ?? at.held.text, op));
+      }
+      manifestChanged = [...texts].some(([path, text]) => heldManifests.get(path)?.held.text !== text);
     } catch (err) {
       if (!(err instanceof DocmetaError)) throw err;
       return errorResult(label, extractor.name, err.message, schemaSet, fields);
     }
 
     const changed = next !== content || manifestChanged;
-    if (next !== content && !dryRun && label !== "<stdin>") {
+    const pageWritten = next !== content && !dryRun && label !== "<stdin>";
+    if (pageWritten) {
       await writeFileAtomic(resolve(base, label), next);
     }
     if (manifestChanged) {
-      let texts: Map<string, string>;
+      const perManifest = new Map<Holding, MetaManifestOp[]>();
+      for (const { at, op } of ops) {
+        const list = perManifest.get(at);
+        if (list === undefined) perManifest.set(at, [op]);
+        else list.push(op);
+      }
+      const saves = [...perManifest].map(([at, list]) => saveManifest(at, list));
       try {
-        texts = splice();
+        await Promise.all(saves);
       } catch (err) {
-        /* c8 ignore next 2 -- the same splices succeeded before the page write. */
-        if (!(err instanceof DocmetaError)) throw err;
-        return errorResult(label, extractor.name, err.message, schemaSet, fields);
+        // The page goes first, so a refused manifest leaves it changed with
+        // nothing recorded about it. Put it back, and say which happened.
+        if (!pageWritten) throw err;
+        const note = await restorePage(label, content);
+        if (err instanceof DocmetaError) throw new DocmetaError(`${err.message} ${note}`);
+        throw err;
       }
-      const saves: Promise<void>[] = [];
-      for (const [path, text] of texts) {
-        const held = heldManifests.get(path);
-        if (held === undefined || held.text === text) continue;
-        held.text = text;
-        if (!dryRun) saves.push(saveManifest(held));
-      }
-      await Promise.all(saves);
     }
     return {
       file: label,
@@ -1322,7 +1350,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
 
   // Each manifest was saved after each file that changed it; wait for the
   // last save of each.
-  await Promise.all([...heldManifests.values()].map((held) => held.saving));
+  await Promise.all([...heldManifests.values()].map((h) => h.saving));
 
   // W1 and W2 (0047): a value its schema prefers in external metadata that
   // went to the page, or would have. One line per collection, not per page.

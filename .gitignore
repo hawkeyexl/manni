@@ -27,5 +27,9 @@ media/scratch-*/
 # Run output, not a source file.
 .dd-baseline.json
 
-# Vale styles are fetched by `vale sync`, not committed
-.vale/styles/
+# Vale styles are fetched by `vale sync`, not committed. The one exception is
+# Terms/, which `manni term write -f vale` generates from the docs glossary.
+# The Vale workflow runs no Node build to generate it, so it is committed, and
+# the Docs workflow fails when it no longer matches the glossary.
+.vale/styles/*
+!.vale/styles/Terms/

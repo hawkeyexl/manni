@@ -68,7 +68,17 @@ Maya's older pages predate the standard, so the fields her gate now requires are
 
 ---
 
-### M9 · Stand up a first eval gate
+### M9 · Keep the terms and the docs in step
+
+**Outcome.** Maya's prose uses the names the termbase prefers. A deprecated spelling, a term in the wrong case, or an acronym used before its expansion is flagged where it was written. The definitions themselves read in the house voice.
+
+**Steps.** She names Vale's configuration once, under `tools.vale.config` in `manni.config.yaml`. She runs `manni term write -f vale`, which asks Vale where its styles live and writes a style named `Terms` there. The run prints the `BasedOnStyles` line to add when no section uses `Terms`, and she adds it to `.vale.ini` herself. From then on Vale flags a hidden-label as deprecated and enforces each label's casing. It also asks for an all-caps alt-label's expansion on first use. She runs `manni term lint`, which holds each definition, abstract and scope note to the same Vale configuration. Definitions are often one long noun phrase, so she adds a `[*.definition.md]` section that relaxes the sentence-length rule for them alone. She commits `Terms/`, and CI runs `manni term write -f vale --check`, which exits `1` when a term changed and the style did not.
+
+**What success looks like.** A writer who types a deprecated name sees the preferred one in the Vale alert. A term edited without regenerating the style fails CI and names the file that would change.
+
+---
+
+### M10 · Stand up a first eval gate
 
 **Outcome.** A pull request in Maya's own repo goes red because a page stopped meeting a named, written-down assertion. Its author can see which one and why.
 
@@ -80,7 +90,7 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 ---
 
-### M10 · Keep one eval library the whole corpus shares
+### M11 · Keep one eval library the whole corpus shares
 
 **Outcome.** Pages name a suite and a few evals, the assertions live once in `manni.config.yaml`, and changing one changes every page that uses it.
 
@@ -90,7 +100,7 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 ---
 
-### M11 · Report the linters we already run through one gate
+### M12 · Report the linters we already run through one gate
 
 **Outcome.** Vale, markdownlint, manni meta and a structure linter report through one `manni docevals run`, as evals with names and severities in one output format. Their separate CI steps are gone.
 
@@ -102,21 +112,21 @@ The claim this journey carries is that docevals orchestrates and does not reimpl
 
 ---
 
-### M12 · Propose evals for a corpus nobody annotated
+### M13 · Propose evals for a corpus nobody annotated
 
 **Outcome.** Every page in a directory carries evals nobody hand-wrote. Maya knew how much work the pass would do before it ran, and she reviewed what landed rather than assuming it is right.
 
-**Steps.** She runs `manni docevals fill --dry-run` over one directory and reads the proposals. That dry run is where the inference calls are spent, and the write pass after it is a cache hit. Proposals are cached before the confidence gate, so re-running at a different `--confidence` costs nothing. `fill` spends one call per uncached page, so the page count of a batch is its size, and `--max-turns` caps it before the first call. She writes the proposals, reviews them like any other change, and converts the good ones into cheap deterministic checks (S9).
+**Steps.** She runs `manni docevals fill --dry-run` over one directory and reads the proposals. That dry run is where the inference calls are spent, and the write pass after it is a cache hit. Proposals are cached before the confidence gate, so re-running at a different `--confidence` costs nothing. `fill` spends one call per uncached page, so the page count of a batch is its size, and `--max-turns` caps it before the first call. She writes the proposals, reviews them like any other change, and converts the good ones into cheap deterministic checks (S10).
 
 **What success looks like.** A directory covered in an afternoon, a call count she predicted, and a review step rather than a claim that the corpus is now covered.
 
 ---
 
-### M13 · Get a legacy corpus onto the eval ratchet without a wall of red
+### M14 · Get a legacy corpus onto the eval ratchet without a wall of red
 
 **Outcome.** Every eval is on at `error` from day one. Today's findings are recorded in a committed baseline, and CI fails only on new ones. The recorded count is falling, and no assertion was weakened to get there.
 
-**Steps.** First she decides what should not be evaluated at all, and excludes it from the collection before anything is recorded. Narrowing scope afterwards produces an alarming `removed` count. She sets `baseline:` in the config so a recorded file is actually read. She records today's findings with `manni docevals run --write-baseline` and commits the file. She gates CI on new findings only. On every re-record she reads the `(+added, -removed)` line, `removed` above all. A baseline forgives silently by construction. She learns what it does not cover. A finding's identity is per rule per file, not per occurrence, and it holds deterministic findings only, not judged verdicts. She proposes evals one directory at a time (M12). Judged evals go in a capability suite with a target below 1.0. She burns down one section and re-records so the baseline shrinks. `severity: warning` is kept for a finding class the team will never gate on.
+**Steps.** First she decides what should not be evaluated at all, and excludes it from the collection before anything is recorded. Narrowing scope afterwards produces an alarming `removed` count. She sets `baseline:` in the config so a recorded file is actually read. She records today's findings with `manni docevals run --write-baseline` and commits the file. She gates CI on new findings only. On every re-record she reads the `(+added, -removed)` line, `removed` above all. A baseline forgives silently by construction. She learns what it does not cover. A finding's identity is per rule per file, not per occurrence, and it holds deterministic findings only, not judged verdicts. She proposes evals one directory at a time (M13). Judged evals go in a capability suite with a target below 1.0. She burns down one section and re-records so the baseline shrinks. `severity: warning` is kept for a finding class the team will never gate on.
 
 **What success looks like.** At the end of a quarter, one section is gated at `error` with no baseline entries. The burn-down is going the right way, and nobody weakened the standard.
 
@@ -170,17 +180,27 @@ Per-file schema validation cannot see a dangling cross-reference, a duplicate sl
 
 ---
 
-### D8 · Gate evals in CI
+### D8 · Hand the termbase to localization
+
+**Outcome.** Devin gives the translation team the termbase in a format their system imports. A glossary kept in one construct moves to another without hand work.
+
+**Steps.** He runs `manni term write -f tbx -o build/terms.tbx`, and the translation system imports TBX v2 Core. The kind of label becomes each term's status: the label preferred, an alt-label admitted, a hidden-label deprecated. Where a system or a spreadsheet maps columns by header, he writes `-f csv` instead, with the language in each per-language header. To move a glossary, he reads a DocBook `<glossary>` and writes `-f markdown -o docs/terms/`, one page per term, because the trailing `/` names a directory. The reverse, `-f docbook -o glossary.xml`, writes one file. Each render into a construct that cannot hold a field drops it, and the run says which fields, on how many terms.
+
+**What success looks like.** One command per handoff, in CI or locally. The report names every field a target could not hold, before anyone finds it missing.
+
+---
+
+### D9 · Gate evals in CI
 
 **Outcome.** One parameterized job, identical across repos, blocks a pull request on findings, annotates the offending lines, and routes operational failures somewhere other than the author.
 
-**Steps.** Devin adds the job on his platform, then takes the same recipe for GitLab CI, Jenkins and pre-commit. He routes on the exit code. `0` passes, and `1` is findings and blocks the author. `2` is operational, such as a missing credential, an unreachable provider or a malformed config, and it is his. He runs `-f github` so each finding annotates its line. He supplies the provider credential from a secret, naming `provider` in config rather than leaving it to whatever the runner's environment detects. He persists the response cache between runs, keyed on what invalidates it. A cold cache re-judges the corpus on every push and spends turns a warm one would not. He feeds `-f json` into the tooling he already has. The fork problem first appears at the credential step, and this journey hands it to D9 rather than half-answering it.
+**Steps.** Devin adds the job on his platform, then takes the same recipe for GitLab CI, Jenkins and pre-commit. He routes on the exit code. `0` passes, and `1` is findings and blocks the author. `2` is operational, such as a missing credential, an unreachable provider or a malformed config, and it is his. He runs `-f github` so each finding annotates its line. He supplies the provider credential from a secret, naming `provider` in config rather than leaving it to whatever the runner's environment detects. He persists the response cache between runs, keyed on what invalidates it. A cold cache re-judges the corpus on every push and spends turns a warm one would not. He feeds `-f json` into the tooling he already has. The fork problem first appears at the credential step, and this journey hands it to D10 rather than half-answering it.
 
 **What success looks like.** A recipe he pastes into four repos unchanged, which never wakes him up, and whose inference calls he can point at on a graph.
 
 ---
 
-### D9 · Bound what the eval gate can spend and what it can execute
+### D10 · Bound what the eval gate can spend and what it can execute
 
 **Outcome.** A fork pull request cannot execute its author's code on a runner or reach a provider credential. No run makes more inference calls than a budget set in config.
 
@@ -206,7 +226,7 @@ Sara needs to understand how manni meta resolves which schema(s) apply to any gi
 
 ### S3 · Version and evolve the schema safely
 
-Sara needs to ship a stricter version of the schema without immediately breaking CI in every consuming repo. She needs to understand: JSON Schema dialects (2020-12 through draft-04), manni meta's dialect detection, the versioning policy, and a migration path for consumers.
+Sara needs to ship a stricter version of the schema without immediately breaking CI in every consuming repo. She needs to understand JSON Schema dialects, from 2020-12 through draft-04, and manni meta's dialect detection. She also needs the versioning policy and a migration path for consumers.
 
 ---
 
@@ -230,7 +250,17 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 ---
 
-### S6 · Write assertions the judge can decide
+### S6 · Define our terminology and make `concepts:` mean something
+
+**Outcome.** Every value of a page's `concepts:` names a term Sara's set defines. A term has one preferred label, a definition, and its place among other terms.
+
+**Steps.** She writes one page per term, marked `type: term`, with the flat terminology fields at the root: `label`, `definition`, and where they apply `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `abstract` and `scope-note`. A glossary already kept as a DITA `<glossgroup>`, a DocBook `<glossary>` or a definition list is read as it is. She runs `manni term list` to see the set, then `manni term check`. It resolves every `concepts:` value against the preferred labels and reports `undefined-term` at the line, naming the entry when the value is an alt-label. It also reports collisions, dangling references, cycles, and a `see` redirect that still carries a definition. `unused-term` is a notice for a term no page names yet, and she turns it off under `term.severity` while the set is ahead of the pages.
+
+**What success looks like.** A `concepts:` value that is not a defined term fails the check at its line. The set has no two entries claiming one name.
+
+---
+
+### S7 · Write assertions the judge can decide
 
 **Outcome.** Two people reading the same page agree on the assertion, and so does the judge. Its failure tells the author which sentence to change.
 
@@ -240,7 +270,7 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 ---
 
-### S7 · Prove the judge is trustworthy enough to gate a build
+### S8 · Prove the judge is trustworthy enough to gate a build
 
 **Outcome.** A calibration report shows agreement above the threshold and a false-positive rate below the alert. Sara can hand it to a skeptic and be believed.
 
@@ -250,17 +280,17 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 ---
 
-### S8 · Clear the human-review queue
+### S9 · Clear the human-review queue
 
 **Outcome.** A recorded verdict with a reviewer and a note unblocks the pull request. It persists for later runs and expires on its own when the page changes.
 
-**Steps.** She lists what is waiting with `manni docevals review`, no arguments. She reads why this eval landed in the review zone. She records a verdict with `manni docevals review <file> <eval> pass|fail --reviewer <name>`. She knows the verdict holds only while the reviewed page body is unchanged, which is what makes persistence safe. She decides, as a policy question rather than a default, whether `--fail-on-review` blocks the build. The deciding question is whether someone owns the queue. An eval that lands in review every run is a diagnosis, and its repair is S6, not answering it faster forever.
+**Steps.** She lists what is waiting with `manni docevals review`, no arguments. She reads why this eval landed in the review zone. She records a verdict with `manni docevals review <file> <eval> pass|fail --reviewer <name>`. She knows the verdict holds only while the reviewed page body is unchanged, which is what makes persistence safe. She decides, as a policy question rather than a default, whether `--fail-on-review` blocks the build. The deciding question is whether someone owns the queue. An eval that lands in review every run is a diagnosis, and its repair is S7, not answering it faster forever.
 
 **What success looks like.** A queue somebody clears, a review zone nobody wants turned off, and Theo told to escalate rather than left to guess.
 
 ---
 
-### S9 · Move evals down the grader hierarchy
+### S10 · Move evals down the grader hierarchy
 
 **Outcome.** Evals that could always have been code are `command` evals with committed, reviewable scripts. The next run makes measurably fewer inference calls with no loss of coverage.
 
@@ -300,7 +330,17 @@ Theo's failure is usually a *missing* field rather than a malformed one, so `fil
 
 ---
 
-### T4 · Fix a failing eval
+### T4 · Fix a failing term check
+
+**Outcome.** Theo's PR carries one `manni:term/<rule>` annotation, or a `manni:term/prose/<Style.Rule>` one, on a page he may not have written. He gets the check green without learning how the termbase was built.
+
+**Steps.** He reads the one line: the file and line, the rule id, and a message that names the value. He finds the rule on the fix page, which links to its entry in the rules reference. An `undefined-term` that names an alt-label tells him which entry claims it, so he writes that entry's preferred label in `concepts:`. A value that names nothing is a typo, or a term the set does not define yet. A `dangling-reference` is the same mistake inside a term's `broader`, `narrower`, `related-terms` or `see`. He fixes the spelling, or adds the missing term. A `label-collision` or a `duplicate-id` means two entries claim one name, so he renames one or merges them into one. A `broader-cycle` spells out the chain, and he removes the `broader` value that closes it. A `see-not-empty` is a redirect that still carries a definition, and he deletes the definition. A `manni:term/prose/…` finding comes from `manni term lint`, and he rewrites the definition until Vale passes it. A failed `manni term write -f vale --check` names the style file that fell behind. He runs `manni term write -f vale` and commits what it wrote. He reproduces each locally with `npx @hawkeyexl/manni term check`, `term lint` or `term write -f vale --check`, from the repository root. There the config names the same files CI reads. He sees green, and pushes.
+
+**What success looks like.** One rule, one edit, one re-run. He never has to know what a term record is.
+
+---
+
+### T5 · Fix a failing eval
 
 **Outcome.** Theo's pull request is red on an eval he did not write. He identifies which check failed, makes the smallest correct change or escalates to the right person, and confirms locally, having read one page.
 

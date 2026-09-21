@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glossgroup id="lenses">
+  <title>Lenses</title>
+  <glossentry id="bifocal">
+    <glossterm>bifocal</glossterm>
+    <glossdef>Lenses with two powers.</glossdef>
+  </glossentry>
+  <glossentry>
+    <glossterm>Trifocal Lens</glossterm>
+  </glossentry>
+  <glossentry id="empty">
+    <glossdef>No term here.</glossdef>
+  </glossentry>
+</glossgroup>

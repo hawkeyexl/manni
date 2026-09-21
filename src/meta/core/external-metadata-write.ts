@@ -216,6 +216,38 @@ export function spliceManifestValue(
 }
 
 /**
+ * The value one document entry holds for one owned key, as the manifest text
+ * stands. `undefined` when the entry or the key is absent, and for text that
+ * is not a manifest at all.
+ *
+ * A writer that re-reads its target before replacing it needs this: it tells
+ * the writer whether the entry it is about to rewrite is the one it read, or
+ * one another process has changed since. Every refusal a malformed manifest
+ * deserves is the splice's to raise, so this answers `undefined` rather than
+ * throwing, and two `undefined`s compare equal.
+ */
+export function readManifestValue(
+  text: string,
+  options: { entry: string; key: string; join?: string },
+): unknown {
+  const join = options.join ?? PATH_JOIN;
+  const doc = parseDocument(text, { uniqueKeys: false });
+  if (doc.errors.length > 0) return undefined;
+  const root = doc.contents;
+  if (!isMap(root)) return undefined;
+  const same =
+    join === PATH_JOIN
+      ? (a: string, b: string) => posix.normalize(a) === posix.normalize(b)
+      : (a: string, b: string) => a === b;
+  const pair = root.items.find((p) => same(keyString(p.key), options.entry));
+  const held = pair?.value;
+  if (!isMap(held)) return undefined;
+  const kv = held.items.find((p) => keyString(p.key) === options.key);
+  const node = kv?.value;
+  return isNode(node) ? (node.toJSON() as unknown) : undefined;
+}
+
+/**
  * Remove `options.key` from `options.entry` in the manifest `text`, and change
  * no other byte. An entry left with no keys goes too, since the loader refuses
  * an entry that is not a mapping, along with the blank line that spaced it.

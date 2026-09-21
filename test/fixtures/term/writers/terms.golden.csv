@@ -1,0 +1,7 @@
+ID,Term [en],Definition [en],Abstract [en],Alt labels [en],Hidden labels [en],Scope note [en],Term [de],Definition [de],Abstract [de],Alt labels [de],Hidden labels [de],Scope note [de],Broader,Narrower,Related terms,See
+progressive-lens,progressive lens,"A spectacle lens whose power changes gradually, with no visible line.",A lens with no line.,PAL | graduated lens,no-line bifocal,"Eyewear only, not camera optics.",,,,,,,Spectacle lens,,bifocal,
+spectacle-lens,spectacle lens,A lens worn in front of the eye to correct vision.,,,,,,,,,,,,progressive-lens,,
+kubernetes,Kubernetes,"An orchestrator for ""containers"", services, and jobs.",,K8s,Kubernates,,,,,,,,,,,https://kubernetes.io/docs/
+api,API,A contract <between> programs & their callers.,,application programming interface,,,,,,,,,,,,
+cpp,C++,A compiled programming language.,,CPP,,,,,,,,,,,API,
+gleitsichtglas,,,,,,,Gleitsichtglas,"Ein Brillenglas, dessen Stärke stufenlos zunimmt.",,Gleitsichtbrille,,,,,,

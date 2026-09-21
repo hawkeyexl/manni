@@ -11,6 +11,8 @@ The file has two halves. A top-level `collections:` list says which documents ex
 
 ## Where manni meta looks for the config
 
+{/* cite meta-section-key-is-meta */}
+{/* cite one-family-config-file-per-repo */}
 `manni.config.yaml` is one file shared by every tool under `manni`. `collections:` sits at the top level, and each tool owns one top-level key of its own; the metadata tool's is `meta:`:
 
 ```yaml title="manni.config.yaml"
@@ -29,10 +31,16 @@ manni meta finds your config in one of two ways:
 - **Discovery.** With no `--config` flag, manni meta looks in the current working directory for `manni.config.yaml`, then `manni.config.yml`, and then repeats that in each parent directory. The first file carrying a `meta:` key **or** a `collections:` list wins, and the search stops at your repo root. That is the first directory containing `.git`. If no parent is a repository, only the current directory is checked.
 - **Explicit path.** Pass `-c <path>` (or `--config <path>`) to point at a specific file. If that file does not exist, manni meta exits with an error rather than falling back to discovery.
 
+{/* cite collections-only-file-is-metas-config */}
 A file with `collections:` and no `meta:` is still the metadata tool's config. That is deliberate. One file describes the repository, so a repo that declares its documents has declared them for every tool. That holds whether or not it has tuned that tool yet.
 
+{/* cite deprecated-config-names-warn-on-stderr */}
+{/* cite docmeta-config-is-an-unwrapped-meta-section */}
+{/* cite legacy-file-carries-no-collections */}
 One older file name is still read, with a warning on stderr. `docmeta.config.yaml` holds the `meta:` section as its whole document, with no wrapper key. A legacy file has no top-level, so it cannot carry collections; rename it to `manni.config.yaml` and split its keys across the two halves. The [configuration reference](/manni/meta/reference/configuration/#discovery) has the full order.
 
+{/* cite using-config-line-names-the-file */}
+{/* cite no-config-skips-discovery */}
 Because the search walks up, `manni meta validate` gives the same verdict from your repo root as it does from `docs/` or from a package subdirectory. When a config governs a run, manni meta prints a line naming it, such as `Using manni.config.yaml (../..)`. To run against the built-in defaults instead, pass `--no-config`.
 
 <Aside type="note" title="What relative paths are relative to">
@@ -41,6 +49,7 @@ Relative paths written **in** the config resolve against the config file's own d
 
 ## `collections:`, the document sets
 
+{/* cite collections-declared-once-for-every-tool */}
 A **collection** is a named set of documents. It is declared once, at the top level, and every manni tool reads the same declaration:
 
 ```yaml title="manni.config.yaml"
@@ -56,6 +65,7 @@ collections:
       - "authors/**"
 ```
 
+{/* cite bare-run-reads-collections-in-declaration-order */}
 With this in place, a bare `manni meta validate` reads every collection, in declaration order. Pass paths explicitly and they take priority, so `manni meta validate README.md` validates only `README.md`.
 
 The keys of one collection:
@@ -76,18 +86,23 @@ The [configuration reference](/manni/meta/reference/configuration/#collections) 
 
 ### Why this is not a `meta:` key
 
+{/* cite collections-belongs-to-no-tool */}
 `collections:` is the one top-level key that belongs to no tool. Which documents exist is a fact about the repository, not about the validator, and more than one tool needs it. That is clearest in `url:`, which the metadata tool never reads at all: it is where `manni a11y check` starts crawling when you give it no URLs. One declaration, several tools.
 
+{/* cite meta-paths-and-exclude-refused-with-remedy */}
 If you are upgrading from a config with `meta.paths` or `meta.exclude`, manni refuses those keys and the message names their new home:
 
 ```
 manni: manni.config.yaml: "paths" is no longer a meta key. Document sets are declared once for every tool, under a top-level collections: list. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#collections
 ```
 
+{/* cite moved-key-refusal-exits-2 */}
 That is exit `2`, and there is no alias. Move the globs into a collection and the run works again.
 
 ### Narrowing a run to one collection
 
+{/* cite collection-flag-selects-named-only */}
+{/* cite collection-flag-repeatable-never-splits-commas */}
 `--collection <name>` runs over the named collections only. It is repeatable, one name per occurrence, and it never splits on commas:
 
 ```bash
@@ -95,6 +110,10 @@ npx @hawkeyexl/manni meta validate --collection authors
 npx @hawkeyexl/manni meta validate --collection authors --collection pages
 ```
 
+{/* cite collection-flag-refuses-positional-paths */}
+{/* cite collection-flag-needs-a-config */}
+{/* cite scoped-run-skips-corpus-checks */}
+{/* cite notices-go-to-stderr */}
 It selects from the config, so it cannot be combined with positional paths (`--collection selects a configured collection; it cannot be combined with paths.`), and it needs a config to select from. It is most useful as a CI gate over one part of a docs set. One thing it turns off: corpus [`checks:`](/manni/meta/reference/configuration/#checks) read the whole corpus or nothing, so a scoped run skips them with a notice on stderr.
 
 <Aside type="caution" title="`exclude` decides membership, not what a typed path covers">
@@ -117,6 +136,7 @@ Everything under `meta:` is the metadata tool's business: which schemas apply, a
 
 ### `schemas`
 
+{/* cite every-schema-in-the-set-is-applied */}
 The default schema **set** applied to every matched file. Each file must satisfy **all** schemas in the list: they are validated against the set, not against the first match.
 
 ```yaml title="manni.config.yaml"
@@ -135,11 +155,13 @@ If you omit `schemas` entirely, manni meta falls back to the built-in [`google:o
 
 ### `overrides`
 
+{/* cite override-carries-exactly-one-of-files-or-collection */}
 A list of rules that assign a different schema set to a subset of files. Each entry carries a `schemas` list, plus exactly one of two ways to say which files it governs:
 
 - **`collection: <name>`** points at a declared collection. Use it when the subset is a real document set the whole family cares about.
 - **`files: <glob>`** takes globs, or a list of them. Use it for a one-off subset that only affects schema choice.
 
+{/* cite first-matching-override-wins */}
 The first override whose files match wins, and its schema set replaces the default `schemas` for that file.
 
 ```yaml title="manni.config.yaml"
@@ -157,6 +179,7 @@ meta:
         - ./schemas/api-reference.json
 ```
 
+{/* cite schema-resolution-precedence-order */}
 Overrides are how you require stricter metadata for one area of the repo without affecting the rest. They are not the last word, though: a file's own `$schema` field and the CLI `--schema` flag both take precedence over them. The dedicated overrides guide walks through the full resolution order, and when to reach for `collection:` rather than `files:`.
 
 <LinkCard

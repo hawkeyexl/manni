@@ -11,6 +11,7 @@ both a passing and a failing result, including the summary line that CI watches.
 
 ## Before you start
 
+{/* cite node-24-or-newer */}
 manni meta runs on [Node.js](https://nodejs.org/) 24 or newer. Check your version:
 
 ```sh
@@ -101,6 +102,8 @@ every problem it found:
 1 file checked, 0 passed, 1 failed, 1 error
 ```
 
+{/* cite error-line-parts */}
+{/* cite root-means-whole-document */}
 Each error line names **the field**, **what's wrong**, the **line** (when manni meta
 can locate it), and the **schema** that flagged it, in brackets. Here `(root)`
 means the problem is with the document as a whole rather than one field. The
@@ -115,6 +118,7 @@ this line.
 
 ## Read the summary line
 
+{/* cite summary-line-shape */}
 Every run ends with one summary line. CI and humans both read it at a glance:
 
 ```
@@ -128,6 +132,8 @@ N files checked, M passed, K failed, E errors
 | `K failed` | Files with at least one error. |
 | `E errors` | Total errors across all files. A single file can contribute several. |
 
+{/* cite summary-green-follows-exit-code */}
+{/* cite summary-third-code-operational */}
 A run is green only when `K failed` is `0`. The exit code follows: `0` when
 nothing failed, `1` when one or more files failed validation. (A third code,
 `2`, signals an operational problem such as a missing schema or no files to

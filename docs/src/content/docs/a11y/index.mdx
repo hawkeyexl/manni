@@ -17,6 +17,9 @@ hero:
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
+{/* cite violation-shape */}
+{/* cite exit-1-on-violation */}
+{/* cite exit-1-failed-count */}
 `manni a11y check` takes a URL, crawls the site behind it, and runs
 [axe-core](https://github.com/dequelabs/axe-core) against every page it reaches.
 Each page gets a list of violations. Each violation carries the rule that fired,
@@ -35,15 +38,22 @@ is no `--fix`, because the check never sees the Markdown, template, or component
 tree that produced the page. [Fix a failing check](/manni/a11y/fix/) covers what
 it hands the person who fixes the page, and what a green run does not prove.
 
+{/* cite no-bundled-browser */}
 axe runs inside a real browser, and installing `@hawkeyexl/manni` does not
 download one. [Get started](/manni/a11y/get-started/) has the one-time install.
 
 ## How the crawl works
 
+{/* cite same-host-scope */}
+{/* cite every-seed-host-in-scope */}
+{/* cite sitemap-urls-first-seed-host */}
+{/* cite sitemap-read-from-first-seed */}
 The crawl stays on the host of the URL you gave it. `docs.example.com` and
 `example.com` are different hosts, and so is `www.example.com`; `http://` and
-`https://` of one host are the same site. Give several seeds and every seed's
-host is in scope.
+`https://` of one host are the same site. Give several seeds and links are
+followed on every seed's host. Sitemap URLs stay on the first seed's host,
+because one sitemap is read per run, from the first seed, as
+[proposal 0035](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0035-a11y-domain.md#1-why-one-sitemap-from-the-first-seed) records.
 
 Pages come from two places, in this order:
 
@@ -52,9 +62,18 @@ Pages come from two places, in this order:
    [Sitemaps](#sitemaps) for when it is read, how it is found, and what
    happens without one.
 2. **Links.** Every page that loads contributes the same-host `<a href>` links
-   in its rendered DOM. Anchors, `mailto:`, `tel:`, and links to assets such as
-   PDFs, images, and stylesheets are skipped.
+   in its rendered DOM. `mailto:`, `tel:`, and links to assets such as PDFs,
+   images, and stylesheets are skipped. A link's fragment is dropped, so an
+   in-page anchor resolves to the page it sits on, which is already queued.
 
+{/* cite one-at-a-time */}
+{/* cite checked-once-dedupe */}
+{/* cite redirect-counts-checked */}
+{/* cite max-pages-cap */}
+{/* cite no-cap-default */}
+{/* cite max-pages-skipped */}
+{/* cite no-crawl-no-sitemap */}
+{/* cite no-crawl-no-links */}
 Pages are checked one at a time, in the order they were discovered. Each URL is
 checked once regardless of fragment, host casing, or a trailing slash. A page
 the browser reached by redirect counts as checked too. There is no cap by
@@ -63,6 +82,10 @@ it, and anything still queued at the cap is reported as `skipped`, not failed.
 `--no-crawl` checks exactly the URLs you named, with no sitemap lookup and no
 link following.
 
+{/* cite seed-load-exit-2-code */}
+{/* cite seed-load-rethrows */}
+{/* cite crawled-page-fails-run */}
+{/* cite crawled-page-error-continues */}
 A seed that does not load is exit `2`, because nothing was checked. A crawled
 page that does not load is recorded against that page and the crawl continues;
 the page counts as failed, so the run exits `1`.
@@ -71,12 +94,16 @@ the page counts as failed, so the run exits `1`.
 
 ### When it is looked up
 
+{/* cite sitemap-first-seed */}
+{/* cite sitemap-no-crawl-skips */}
 Once per run, before the browser starts, and only when crawling. The lookup
 uses the first seed's origin and path. `--no-crawl` skips it and checks exactly
 the URLs you named.
 
 ### How it is found
 
+{/* cite sitemap-fetch-timeout */}
+{/* cite sitemap-first-valid-wins */}
 Plain HTTP requests, no browser, each with a 10-second timeout. Candidates are
 tried in this order, and the first that answers 2xx and parses as a sitemap
 wins:
@@ -86,6 +113,8 @@ wins:
    the files `sitemap.xml`, `sitemap-index.xml`, and `sitemap_index.xml` in
    each directory.
 
+{/* cite sitemap-walk-example */}
+{/* cite sitemap-non-xml-skipped */}
 For `https://h/manni/meta/fix/` the walk asks `/manni/meta/fix/`, then
 `/manni/meta/`, then `/manni/`, then `/`. The walk exists for project sites
 published under a path. `https://hawkeyexl.github.io/manni/` serves
@@ -94,6 +123,14 @@ not sitemap XML is skipped, and the next candidate is tried.
 
 ### When one is there
 
+{/* cite sitemap-index-limits */}
+{/* cite sitemap-index-recursion */}
+{/* cite sitemap-loc-filter */}
+{/* cite sitemap-joins-after-seeds */}
+{/* cite sitemap-dedupe-seeds */}
+{/* cite links-on-top-of-sitemap */}
+{/* cite sitemap-header-line */}
+{/* cite sitemap-summary-field */}
 A `<sitemapindex>` is followed into its child sitemaps, up to three levels deep
 and fifty children in total. Every `<loc>` is kept when it is on the seed's
 host and looks like a page. That means `http` or `https`, and not an asset such
@@ -101,22 +138,30 @@ as a PDF, an image, or a stylesheet. Those URLs join the queue right after the
 seeds, deduped against them with a trailing slash ignored. Link following still
 runs on top, so a page the sitemap missed but a checked page links to is found
 too. `--max-pages` caps the whole run. The header line names the sitemap that
-was used, and `summary.sitemap` carries its URL.
+was found. It also says how many pages the sitemap supplied when link
+following did some of the work. `summary.sitemap` carries its URL, and
+`summary.sitemapPages` the count.
 
 ### When there is none
 
+{/* cite no-sitemap-not-an-error */}
+{/* cite no-sitemap-breadth-first */}
+{/* cite no-sitemap-header */}
 A 404, a network error, or an unparseable body all mean "no sitemap". None of
 them fails the run. The crawl falls back to same-host links from each checked
 page, breadth first, and the header reads `(no sitemap; followed links)`.
 
-### What it does not do yet
+### Scope
 
-Two gaps are recorded as deferred in proposal 0035. `Disallow` rules in
-`robots.txt` are not honoured, and gzipped sitemaps (`.xml.gz`) are not
-decompressed.
+{/* cite robots-disallow-ignored */}
+{/* cite gzip-not-decompressed */}
+`Disallow` rules in `robots.txt` are not honoured. Gzipped sitemaps (`.xml.gz`)
+are not decompressed.
 
 ## What the score means
 
+{/* cite score-share-of-passes */}
+{/* cite score-after-severity-floor */}
 Each page reports a score from `0` to `100`. It is the share of axe rules that
 applied to the page and passed. The `--severity` floor has already dropped the
 violations you chose not to count:
@@ -125,17 +170,28 @@ violations you chose not to count:
 score = round(100 × passes ÷ (passes + violations))
 ```
 
+{/* cite score-unweighted */}
+{/* cite score-97-still-fails */}
+{/* cite no-score-unloaded-or-empty */}
 It is **not a Lighthouse score**. Lighthouse weights rules; this does not. A
 page with one `error` and thirty passing rules scores `97`, and it still fails
 the run. Read the score as a trend across pages and across runs, and
 read the exit code as the verdict. A page that did not load, or where no rule
 applied, has no score.
 
+{/* cite incomplete-not-failures */}
+{/* cite incomplete-counted */}
+{/* cite incomplete-json-only */}
 Rules axe could not decide (its `incomplete` results, such as contrast over a
-background image) are counted and reported but never treated as failures.
+background image) are counted but never treated as failures. Only `-f json`
+reports the count, as `incomplete` on each page.
 
 ## Configuration
 
+{/* cite a11y-config-section */}
+{/* cite flag-over-config-over-default */}
+{/* cite flag-over-config-resolution */}
+{/* cite config-keys-optional */}
 The `a11y:` key of `manni.config.yaml` sits beside `meta:` in the same file.
 Every key is optional; a flag on the command line wins over the same key in
 config, and config wins over the default.
@@ -150,6 +206,12 @@ a11y:
   timeout: 30000                         # integer ≥ 1, ms
 ```
 
+{/* cite tags-restrict-rules */}
+{/* cite severity-floor-filter */}
+{/* cite severity-floor-compare */}
+{/* cite severity-family-values */}
+{/* cite impact-to-severity-map */}
+{/* cite impact-kept */}
 `tags` restricts axe to rules carrying any of those tags, so a gate can be
 "WCAG 2.1 AA and nothing else". `severity` is the floor: findings below it are
 dropped before the score and the exit code are decided. Its values are the

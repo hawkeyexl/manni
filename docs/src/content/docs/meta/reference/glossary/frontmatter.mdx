@@ -1,0 +1,25 @@
+---
+title: Frontmatter
+description: What frontmatter is in manni meta, the three fence flavors, and where each document format keeps it.
+type: term
+id: frontmatter
+label: frontmatter
+related-terms: [metadata]
+abstract: The metadata block at the very top of a document.
+definition: >-
+  A block of metadata at the very top of a document, set off from the body.
+---
+
+<p>{frontmatter.definition}</p>
+
+Markdown, MDX, AsciiDoc, and reStructuredText all accept the same fenced block
+in any of three flavors: YAML (`---`), TOML (`+++`), or JSON (`;;;`). AsciiDoc
+and rst fall back to a native header when no fence is present, using AsciiDoc
+attributes or an RST field list. XML and HTML have no fenced form, because their
+metadata lives in element attributes or head tags. A fenced block must be the
+first thing in the file, or manni meta won't recognize it. Whichever flavor or
+format is used, manni meta reads only the frontmatter, never the body, and
+normalizes it to the same [metadata](/manni/meta/reference/glossary/metadata/)
+shape it validates. See
+[Supported formats](/manni/meta/reference/formats/#frontmatter-flavors) for the
+fence flavors and where each format keeps its frontmatter.

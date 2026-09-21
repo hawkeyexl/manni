@@ -1,0 +1,11 @@
+Your glossary says "progressive lens (PAL)". Your guides say "a PAL", "Progressive Lens", and a name you retired last year. Who checks that?
+
+manni term reads a docset's terms from the format they already live in. That can be term pages, a YAML manifest, DITA, DocBook or a definition list.
+
+Run manni term write -f vale and it writes a Vale style named Terms. There is a casing rule per term and a swap for every retired name. Each acronym gets a rule asking for the expansion on first use. Add Terms to your .vale.ini, and Vale flags all three mistakes in the guide with exit 1.
+
+The same command renders the glossary elsewhere. Here it writes one Markdown page per term.
+
+Change a term, rerun write, and the style follows. write -f vale --check fails CI when the committed style falls behind.
+
+#docsascode #technicalwriting #vale #devtools

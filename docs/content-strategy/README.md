@@ -20,7 +20,7 @@ Before drafting or editing any user-facing documentation:
 
 1. **Identify the relevant persona.** Is this page for Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor hitting a red check)? A page may serve more than one, but there is usually a primary.
 
-2. **Find the matching CUJ in `cujs.md`.** Each persona has a numbered series of journeys across the tools (M1–M13, D1–D9, S1–S9, T1–T4). Understand the end-to-end outcome the persona needs to reach.
+2. **Find the matching CUJ in `cujs.md`.** Each persona has a numbered series of journeys across the tools (M1–M14, D1–D10, S1–S10, T1–T5). Understand the end-to-end outcome the persona needs to reach.
 
 3. **Structure content around that journey, not by document type.** Do not impose a Diátaxis-style tutorial/how-to/explanation/reference split as the organizing principle. Ask: "What does this persona need to know, and in what order, to reach the outcome?" Let the journey sequence the content.
 

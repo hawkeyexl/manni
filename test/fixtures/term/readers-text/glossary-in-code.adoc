@@ -1,0 +1,11 @@
+= Writing a glossary
+
+----
+[glossary]
+mud:: wet, cold dirt
+----
+
+[glossary]
+----
+jam:: sweet, sticky mess
+----

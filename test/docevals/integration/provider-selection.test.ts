@@ -84,7 +84,7 @@ describe("docevals.provider in manni.config.yaml", () => {
     const [first, ...rest] = r.stderr.split("\n");
     expect(first).toMatch(/^manni: Invalid config in .*manni\.config\.yaml:$/);
     expect(rest.join("\n")).toBe(
-      `  /docevals/provider: must be string; ` +
+      `manni:   /docevals/provider: must be string; ` +
         `"provider" is now a provider name; per-provider settings moved to the top-level providers: map\n`,
     );
     expect(r.status).toBe(2);

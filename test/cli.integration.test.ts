@@ -3521,25 +3521,42 @@ describe("cli --collection (0041, built bin)", () => {
     );
   });
 
-  it("accepts - beside the flag and exits by findings", () => {
+  it("accepts - beside the flag and still opens the collection", () => {
     // Stdin is not a path, so it says nothing about which collections the run
-    // covers — but it is the only input, so the collections' globs stay unused.
+    // covers — and `--collection` is a request the run has to honour. Counting
+    // `-` as a path made this run check stdin, leave every file of the named
+    // collection unopened, and exit by stdin alone.
     const bad = runIn(
       ["validate", "--collection", "guides", "-", "--as", "markdown", "-f", "json"],
       "---\ntitle: piped\n---\n",
     );
     expect(bad.status).toBe(1);
-    expect(validated(bad)).toEqual(["<stdin>"]);
+    // Stdin first, then the collection's files, as any run with both reports.
+    expect(validated(bad)).toEqual(["<stdin>", "docs/guides/auth.md"]);
     // `base` is missing, not `owner`: stdin is a member of nothing, so the
-    // per-collection override never reaches it.
+    // per-collection override never reaches it — while the collection's own
+    // file is judged by the override, which is how we know it was really read.
     expect(bad.stdout).toContain("required property 'base'");
+    expect(resolved(bad)["docs/guides/auth.md"]).toEqual(["./guides.json"]);
 
     const ok = runIn(
       ["validate", "--collection", "blog", "-", "--as", "markdown", "-f", "json"],
       "---\ntitle: piped\nbase: b\n---\n",
     );
     expect(ok.status).toBe(0);
-    expect(validated(ok)).toEqual(["<stdin>"]);
+    expect(validated(ok)).toEqual(["<stdin>", "blog/hello.md"]);
+  });
+
+  it("a bare - with no flag is a run of its own", () => {
+    // `--collection` is a request; the *implicit* collections fallback is not,
+    // and a bare `-` cancels it as any other input would. A piped document has
+    // no history and is a member of nothing, so the corpus stays out of it.
+    const r = runIn(
+      ["validate", "-", "--as", "markdown", "-f", "json"],
+      "---\ntitle: piped\nbase: b\n---\n",
+    );
+    expect(r.status).toBe(0);
+    expect(validated(r)).toEqual(["<stdin>"]);
   });
 
   it("scopes a query run, collection views included", () => {

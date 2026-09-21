@@ -39,7 +39,7 @@ import {
   type CitationSidecars,
   type PageSidecar,
 } from "../core/sidecar.js";
-import { buildSourceIndex } from "../core/sources.js";
+import { sourceIndexFor } from "../core/sources.js";
 import { CiteError } from "../errors.js";
 import type {
   CheckOptions,
@@ -48,7 +48,6 @@ import type {
   CiteRun,
   GitClient,
   PageCitationReport,
-  SourceIndex,
 } from "../types.js";
 
 /** What `check` and `update` settle before touching a page. */
@@ -121,17 +120,12 @@ export function joinHits(): JoinHits {
   };
 }
 
-function isEnoent(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
-}
-
-async function indexFor(root: string, client: GitClient): Promise<SourceIndex> {
-  try {
-    return await buildSourceIndex(root, { gitClient: client });
-  } catch (error) {
-    if (isEnoent(error)) throw new CiteError(`Root directory not found: ${root}.`);
-    throw error;
-  }
+/** What a command's sources mean to it, where that is not `check`'s answer. */
+export interface SourceNeeds {
+  /** The run cannot work without them: `--no-check-sources` is refused (`update`). */
+  require?: boolean;
+  /** The run resolves `src:` paths at all. `false` for `remove`, which edits the page. */
+  resolve?: boolean;
 }
 
 /**
@@ -143,8 +137,9 @@ export async function prepareRun(
   opts: CheckOptions,
   action: string,
   verb: string,
-  requireSources = false,
+  sources: SourceNeeds = {},
 ): Promise<PreparedRun> {
+  const requireSources = sources.require === true;
   const cwd = resolve(opts.cwd ?? process.cwd());
   const run = await resolveCiteRun({
     cwd,
@@ -156,6 +151,7 @@ export async function prepareRun(
     onConfigLoaded: opts.onConfigLoaded,
     onNotice: opts.onNotice,
     env: opts.env,
+    ...(sources.resolve === false ? { resolvesSources: false } : {}),
   });
   const { config, inputs, base } = run;
 
@@ -171,7 +167,7 @@ export async function prepareRun(
 
   const usingStdin = inputs.includes(STDIN_TOKEN);
   const forced = opts.as === undefined ? undefined : extractorByName(opts.as);
-  if (opts.as !== undefined && forced?.implemented !== true) {
+  if (opts.as !== undefined && forced === undefined) {
     throw new CiteError(
       `Unknown format "${opts.as}". Supported extensions: ${supportedExtensions().join(", ")}.`,
     );
@@ -210,14 +206,20 @@ export async function prepareRun(
   // tree. Where it is not, the index is a walk and history is off, and a page
   // whose citations wanted history says so (see `checkCitations`).
   const git = opts.gitClient ?? gitClient(run.root);
+  // A claim's history is the page's own, so it is read in the repository the
+  // page paths resolve from, which is not the sources' under `--root`.
+  const pageGit =
+    opts.pageGitClient ?? (run.base === run.root ? git : gitClient(run.base));
   const pageOptions: CheckPageOptions = {
     root: run.root,
     checkSources,
     key: run.key,
     severity: config?.severity,
     gitClient: git,
+    pageRoot: run.base,
+    pageGitClient: pageGit,
   };
-  if (checkSources) pageOptions.sourceIndex = await indexFor(run.root, git);
+  if (checkSources) pageOptions.sourceIndex = await sourceIndexFor(run.root, git);
 
   // The sidecar manifests, read once per run. Membership is every declared
   // collection's, whatever this run selected, so a page given by path still

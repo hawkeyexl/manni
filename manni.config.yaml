@@ -46,6 +46,20 @@ collections:
     # of documents lives, not a setting of the accessibility tool — the whole
     # reason a collection is declared once for every tool to read.
     url: http://127.0.0.1:4321/manni/
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [citations]
+
+# Where Vale's configuration is, for the tools that run Vale. `manni term lint`
+# runs it over the glossary's definitions, and `manni term write -f vale` reads
+# it to say whether a section uses the `Terms` style it writes. It is the same
+# .vale.ini the repo's prose check reads, so a term definition is held to the
+# house voice every other page is. The terminology tool needs no section of its
+# own: every `term:` key has a default, and the glossary's term pages are
+# already members of `site`, so a bare `manni term check` finds them.
+tools:
+  vale:
+    config: .vale.ini
 
 meta:
   # Every published page must declare a non-empty title and description. Scoped

@@ -1,0 +1,7 @@
+Wrote 2 terms to styles/Terms
+  Lowercase.yml   2 terms
+  Deprecated.yml  1 swap
+  PAL.yml         1 acronym
+notice: no section of .vale.ini uses the Terms style. Add it to BasedOnStyles:
+  [*.md]
+  BasedOnStyles = Vale, Terms

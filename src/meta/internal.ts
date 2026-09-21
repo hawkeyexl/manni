@@ -56,11 +56,18 @@ export {
   formatList,
   isMachineFormat,
 } from "./reporters/index.js";
-export { extractorByName, listFormats } from "./extractors/index.js";
+export { extractorByName, extractorForExtension, listFormats } from "./extractors/index.js";
 // `manni cite` keeps its citations in an external-metadata manifest and is the
 // first writer of one. Text in, text out; meta's own commands never call it,
 // so `meta fill` and `meta query` stay read-only on manifests.
-export { spliceManifestValue } from "./core/external-metadata-write.js";
+// `removeManifestKey` is the other half: `manni cite remove` takes a page's
+// last citation out, and an entry left with `citations:` and nothing under it
+// would be a key nobody wrote.
+export {
+  readManifestValue,
+  removeManifestKey,
+  spliceManifestValue,
+} from "./core/external-metadata-write.js";
 export type {
   SpliceManifestOptions,
   SplicedManifest,
@@ -86,3 +93,6 @@ export type {
 } from "./core/meta-provenance.js";
 export { provenanceEntries } from "./core/derive/provenance.js";
 export type { ProvenanceEntry } from "./core/derive/provenance.js";
+// `manni cite` refuses a page whose opening fence never closes. The locator
+// reads that page as having no block, which would read as no citations.
+export { hasFrontmatterFence } from "./extractors/frontmatter.js";

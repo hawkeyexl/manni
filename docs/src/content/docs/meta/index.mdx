@@ -17,6 +17,8 @@ hero:
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
+{/* cite failure-fails-the-build */}
+{/* cite default-run-requires-type */}
 manni meta checks that your documents carry the metadata your tooling depends on.
 It checks that every page declares a `type`, that timestamps are real dates, and
 that required fields are actually present. It fails your build when they aren't.
@@ -45,6 +47,7 @@ A file with complete, well-formed metadata passes:
 1 file checked, 1 passed, 0 failed, 0 errors
 ```
 
+{/* cite error-line-names-field-line-and-schema */}
 A file that's missing a required field fails, and tells you which field, on
 which line, and which schema flagged it:
 
@@ -90,6 +93,7 @@ which requires only `type`.
   />
 </CardGrid>
 
+{/* cite twenty-three-built-in-schemas */}
 Not sure you need to write a schema at all? manni meta ships twenty-three. They run
 from the Hugo, Jekyll, Starlight, Docusaurus, Antora and Sphinx front matter
 contracts to the Diátaxis and Good Docs vocabularies. They also cover Dublin

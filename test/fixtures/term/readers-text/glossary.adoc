@@ -1,0 +1,25 @@
+= Glossary
+:page-type: reference
+
+[glossary]
+.Terms
+mud:: wet, cold dirt
+jam::
+  sweet, sticky
+  mess
+command-line interface::
+CLI:: a program you drive
+by typing commands.
++
+It prints to a terminal.
+
+yak:: an animal
+
+This paragraph ends the list.
+
+[glossary]
+orphan::
+
+== Next section
+
+plain:: not a glossary entry

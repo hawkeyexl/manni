@@ -16,9 +16,10 @@ import { resultFor, splitBaselined } from "./pretty.js";
 /**
  * The rules whose message already names what it is about: every claim,
  * marker and anchor message is written as a sentence about the entry, so
- * prefixing it with the subject again would say the name twice.
+ * prefixing it with the subject again would say the name twice. Exported so
+ * a test asserting the composed messages reads this set rather than a copy.
  */
-const NAMES_ITS_SUBJECT = new Set<CiteRule>([
+export const NAMES_ITS_SUBJECT = new Set<CiteRule>([
   "claim-moved",
   "claim-moved-ambiguous",
   "claim-changed",
@@ -32,8 +33,9 @@ const NAMES_ITS_SUBJECT = new Set<CiteRule>([
  * `<id> (<src>): <message>`, or `<src>: <message>` when the entry has no id.
  * A message that names its own subject, by its rule or by opening with the
  * id (an `entry-invalid` about a pin prefix does), is left to say it once.
+ * SARIF and JUnit carry the same message.
  */
-function annotationMessage(finding: CitationFinding): string {
+export function findingMessage(finding: CitationFinding): string {
   const subject = finding.id ?? finding.src;
   if (subject === undefined) return finding.message;
   if (NAMES_ITS_SUBJECT.has(finding.rule)) return finding.message;
@@ -55,7 +57,7 @@ export function renderCheckGithub(run: CheckRun): string {
       if (site.line !== undefined) params.push(`line=${String(site.line)}`);
       params.push(`title=${escapeWorkflowCommandProperty(finding.ruleId)}`);
       lines.push(
-        `::${finding.severity} ${params.join(",")}::${escapeWorkflowCommandMessage(annotationMessage(finding))}`,
+        `::${finding.severity} ${params.join(",")}::${escapeWorkflowCommandMessage(findingMessage(finding))}`,
       );
     }
   });

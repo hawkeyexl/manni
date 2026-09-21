@@ -1,0 +1,19 @@
+---
+title: Extraction
+description: What extraction is in manni meta, the get command that does it alone, and how it differs from validation.
+type: term
+id: extraction
+label: extraction
+related-terms: [validation, extractor]
+abstract: Reading metadata out of a document.
+definition: >-
+  The operation that reads metadata out of a document.
+---
+
+<p>{frontmatter.definition}</p>
+
+The `get` command prints named field values and validates nothing. Extraction
+and [validation](/manni/meta/reference/glossary/validation/) are two distinct
+operations, exposed as two commands. Every validation begins with an
+extraction, but you can extract without validating. See the
+[CLI reference](/manni/meta/reference/cli/).

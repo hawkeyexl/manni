@@ -47,6 +47,7 @@ import type {
 } from "../../shared/collections.js";
 import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
 import { classifyRef } from "./schema-registry.js";
+import { ManifestCache } from "./manifest-cache.js";
 import { fetchExternalMetadata } from "./external-metadata-fetch.js";
 import { STDIN_LABEL } from "./load-files.js";
 import { escapePointerSegment, positionForFactory } from "../extractors/pointer.js";
@@ -114,6 +115,38 @@ export interface ExternalMetadataEntry {
 }
 
 type Values = Map<string, ExternalMetadataValue>;
+
+/**
+ * The same mapping as `Values`, as a cached parse hands it out. A caller that
+ * holds one may read it and may copy it, and cannot write into the parse the
+ * next command will be given.
+ */
+type ReadonlyValues = ReadonlyMap<string, ExternalMetadataValue>;
+
+/**
+ * One manifest's parse, on its own: the values it supplies, indexed the way
+ * its join indexes them, and the entries it declares. Isolated rather than
+ * merged in place, because the same result is handed to the next command that
+ * reads the same file.
+ *
+ * Readonly to the bottom of the maps, not just at the top. An outer
+ * `ReadonlyMap` of mutable inner ones stops an add and a remove on the key set
+ * and stops nothing else: anything holding an inner map could `set` a value
+ * straight into the parse the next command is given. The copy-in below is
+ * careful today, and the type is what keeps the change after it careful.
+ */
+interface ParsedManifest {
+  readonly values: ReadonlyMap<string, ReadonlyValues>;
+  readonly entries: readonly ExternalMetadataEntry[];
+}
+
+/**
+ * Every manifest this process has parsed, by path, `mtimeMs` and size. A
+ * manifest is data a whole run is judged against, so a stale parse would be a
+ * wrong verdict rather than a slow one; `manifest-cache.ts` says what keeps it
+ * fresh, and why a stat alone is not enough.
+ */
+const parsedManifests = new ManifestCache<ParsedManifest>();
 
 /** Every manifest of a run, loaded once and consulted per document. */
 export interface ExternalMetadataIndex {
@@ -214,6 +247,15 @@ function reportedPath(abs: string, base: string): string {
   return rel === "" ? "." : posix(rel);
 }
 
+/**
+ * One value or entry of a cached parse, spelled the way this run reports its
+ * manifest. Answers the original when the spelling already matches, which is
+ * every run that parsed the manifest itself.
+ */
+function reported<T extends { file: string }>(of: T, file: string): T {
+  return of.file === file ? of : { ...of, file };
+}
+
 /** The join an external-metadata config asks for: `path` unless it names a field. */
 export function externalMetadataJoin(
   manifest: Pick<ExternalMetadataConfig, "join">,
@@ -251,29 +293,63 @@ export async function loadExternalMetadata(
     // file label. Either way the manifest's *keys* resolve from the config
     // directory, so a remote manifest names documents the same way a local
     // one does.
-    let text: string;
+    const join = externalMetadataJoin(manifest);
+    let parsed: ParsedManifest;
     let file: string;
     if (classifyRef(manifest.file).kind === "url") {
       file = manifest.file;
-      text = await fetchExternalMetadata(manifest.file, {
+      const text = await fetchExternalMetadata(manifest.file, {
         ...(manifest.tokenEnv !== undefined ? { tokenEnv: manifest.tokenEnv } : {}),
         ...(opts.offline !== undefined ? { offline: opts.offline } : {}),
         ...(opts.timeoutMs !== undefined ? { timeoutMs: opts.timeoutMs } : {}),
         ...(opts.env !== undefined ? { env: opts.env } : {}),
       });
+      parsed = parseManifest(manifest, collection, text, file, opts.configDir, join);
     } else {
       const abs = isAbsolute(manifest.file)
         ? manifest.file
         : resolve(opts.configDir, manifest.file);
-      file = reportedPath(abs, opts.base);
-      text = await readManifest(abs, file);
+      const label = reportedPath(abs, opts.base);
+      file = label;
+      // One parse per file, per declaration. A manifest unchanged since
+      // another command in this process read it is not read again; a written
+      // one was dropped by `writeFileAtomic`, and one edited from outside by
+      // its `mtimeMs` and size.
+      parsed = await parsedManifests.parse(
+        abs,
+        // The keys are sorted because they reach the variant as an array, and
+        // two declarations that own the same keys in a different order parse
+        // to the same thing.
+        //
+        // `label` is deliberately not part of this. It is the manifest as this
+        // run reports it, which is a function of the run's base rather than of
+        // the bytes, so two runs over one corpus from two directories parse
+        // identically and differ only in a string each value carries. Keying
+        // on it would miss the cache for exactly the runs that share a
+        // process, which is what a test suite is. The copy-in below writes
+        // this run's spelling onto every value and entry instead.
+        JSON.stringify([
+          collection,
+          join,
+          opts.configDir,
+          [...manifest.keys].sort(),
+        ]),
+        async () =>
+          parseManifest(
+            manifest,
+            collection,
+            await readManifest(abs, label),
+            label,
+            opts.configDir,
+            join,
+          ),
+      );
     }
     for (const key of manifest.keys) {
       const list = owners.get(key);
       if (list) list.push({ collection, file });
       else owners.set(key, [{ collection, file }]);
     }
-    const join = externalMetadataJoin(manifest);
     let target: Map<string, Values>;
     if (join === PATH_JOIN) {
       target = byPath;
@@ -285,16 +361,19 @@ export async function loadExternalMetadata(
         byField.set(join, target);
       }
     }
-    parseManifest(
-      manifest,
-      collection,
-      text,
-      file,
-      opts.configDir,
-      join,
-      target,
-      entries,
-    );
+    // Copied in rather than handed over. The parse is shared with whatever
+    // command reads this manifest next, so nothing downstream may hold a
+    // reference into it.
+    //
+    // The copy is also where `file` is set, because the parse may have been
+    // made by a run with another base and carries that run's spelling. The
+    // walk happens either way, so rewriting costs one object per value.
+    for (const [indexKey, values] of parsed.values) {
+      const into = target.get(indexKey) ?? new Map<string, ExternalMetadataValue>();
+      for (const [key, value] of values) into.set(key, reported(value, file));
+      target.set(indexKey, into);
+    }
+    for (const entry of parsed.entries) entries.push(reported(entry, file));
   }
   return { owners, byPath, byField, entries };
 }
@@ -317,9 +396,9 @@ function parseManifest(
   file: string,
   configDir: string,
   join: string,
-  target: Map<string, Values>,
-  entries: ExternalMetadataEntry[],
-): void {
+): ParsedManifest {
+  const target = new Map<string, Values>();
+  const entries: ExternalMetadataEntry[] = [];
   const lc = new LineCounter();
   // `uniqueKeys: false`, so a document named twice reaches the dedicated
   // check below and is reported by name and line, rather than as a generic
@@ -333,7 +412,8 @@ function parseManifest(
   }
   const root = doc.contents;
   // An empty manifest is a mapping with no entries: legal, and merges nothing.
-  if (root === null || (isScalar(root) && root.value === null)) return;
+  if (root === null || (isScalar(root) && root.value === null))
+    return { values: target, entries };
   if (!isMap(root)) {
     throw new DocmetaError(
       `Manifest ${file}: the manifest must be a mapping from document ${join === PATH_JOIN ? "path" : `"${join}"`} to owned keys.`,
@@ -406,6 +486,7 @@ function parseManifest(
       ...(entryLine === undefined ? {} : { line: entryLine }),
     });
   }
+  return { values: target, entries };
 }
 
 /**

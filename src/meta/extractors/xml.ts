@@ -26,7 +26,6 @@ export const xmlExtractor: MetadataExtractor = {
   // DITA topics and maps are XML, and their metadata lives on the root element
   // (`id`, `type`, `xml:lang`, …), so they need no extractor of their own.
   extensions: [".xml", ".dita", ".ditamap"],
-  implemented: true,
   extract(content, filePath, options): ExtractedMetadata {
     return toExtracted(readXml(content, filePath, options));
   },

@@ -1,0 +1,235 @@
+---
+title: Get started
+description: "Write two term pages, point a guide's concepts: at them, run manni term check, and fix the finding it reports."
+---
+
+import { Steps, Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+This page takes a docset from a `concepts:` field that can say anything to one
+whose every value names a defined term. You'll write two term pages, list
+them, and reference them from a guide. Then you'll run the check, read the
+finding, and fix it.
+
+{/* cite transcripts-from-fixtures */}
+{/* cite transcripts-from-fixtures-clean */}
+Every transcript below is real output from the built tool, run over the
+fixtures in `test/fixtures/term/cli/`.
+
+## Before you start
+
+- **Node.js 24 or newer.** Check with `node --version`.
+- **A docset with frontmatter.** The pages here are Markdown. A term page
+  works the same way in every format manni meta reads.
+
+{/* cite ships-with-meta */}
+manni term ships in the same package as manni meta.
+
+<Tabs>
+  <TabItem label="npx (no install)">
+    ```sh
+    npx @hawkeyexl/manni term --help
+    ```
+  </TabItem>
+  <TabItem label="Global install">
+    ```sh
+    npm install -g @hawkeyexl/manni
+    manni term --help
+    ```
+  </TabItem>
+</Tabs>
+
+<Aside type="tip" title="Without a global install">
+  The rest of this page writes commands as `manni term …`. If you didn't
+  install globally, prefix each one with `npx @hawkeyexl/manni`.
+</Aside>
+
+## Write the terms
+
+<Steps>
+
+1. **Write one page per term.** `type: term` marks the page. `label` is the
+   preferred name, and `definition` says what it means. The other fields are
+   optional:
+
+   ```markdown title="docs/terms/corrective-lens.md"
+   ---
+   type: term
+   id: corrective-lens
+   label: corrective lens
+   narrower: [progressive lens]
+   definition: A lens worn to correct a refractive error of the eye.
+   ---
+   ```
+
+   ```markdown title="docs/terms/progressive-lens.md"
+   ---
+   type: term
+   id: progressive-lens
+   label: progressive lens
+   alt-labels: [PAL, graduated lens]
+   hidden-labels: [no-line bifocal]
+   broader: [corrective lens]
+   abstract: Lenses that correct presbyopia without a visible line.
+   definition: >-
+     Corrective lenses whose optical power increases continuously from the top of
+     the lens to the bottom, correcting presbyopia without the visible boundary a
+     bifocal carries.
+   ---
+   ```
+
+   `alt-labels` are other names a writer may use. `hidden-labels` are names
+   nobody should. Every field is on the
+   [terminology reference](/manni/term/reference/terminology/).
+
+2. **Declare the docset as a collection.** The family config file names the
+   documents once, for every tool:
+
+   ```yaml title="manni.config.yaml"
+   collections:
+     - name: site
+       paths:
+         - "docs/**/*.md"
+   ```
+
+   No `term:` section is needed. The terms are the pages that say
+   `type: term`, wherever they sit.
+
+3. **List what the tool found.**
+
+   ```sh
+   manni term list
+   ```
+
+   ```
+   corrective-lens    corrective lens
+   progressive-lens   progressive lens   PAL, graduated lens
+   2 terms
+   ```
+
+</Steps>
+
+## Reference a term from a guide
+
+{/* cite concepts-on-any-page */}
+{/* cite concepts-values-are-preferred-labels */}
+`concepts:` on any page says which terms the page is about. Its values are
+preferred labels:
+
+```markdown title="docs/guides/fitting.md"
+---
+title: Fitting lenses
+concepts: [PAL, corrective lens, progressive lens]
+---
+# Fitting lenses
+```
+
+<Steps>
+
+1. **Run the check.**
+
+   ```sh
+   manni term check
+   ```
+
+   ```
+   docs/guides/fitting.md:3
+     error  manni:term/undefined-term       concepts: "PAL" names no entry.
+                                            "progressive lens" lists it as an alt-label.
+
+   1 error in 2 terms
+   ```
+
+   The exit code is `1`. `PAL` is a name the set knows, but `concepts:` wants
+   the preferred label, so the message says which entry claims it.
+
+2. **Fix the reference.** The guide already names `progressive lens`, so the
+   alt-label is a duplicate. Remove it:
+
+   ```markdown title="docs/guides/fitting.md"
+   ---
+   title: Fitting lenses
+   concepts: [progressive lens, corrective lens]
+   ---
+   # Fitting lenses
+   ```
+
+3. **Check again.**
+
+   ```
+   ✓ 2 terms, 2 references, no findings
+   ```
+
+   The exit code is `0`.
+
+</Steps>
+
+## Add a term nothing uses yet
+
+A termbase grows ahead of the pages. Add a third term, a child of
+`corrective lens`:
+
+```markdown title="docs/terms/bifocal.md"
+---
+type: term
+id: bifocal
+label: bifocal
+broader: [corrective lens]
+definition: Lenses with two distinct optical powers, divided by a visible line.
+---
+```
+
+```
+docs/terms/bifocal.md:1
+  notice manni:term/unused-term           no page's concepts: names this term
+docs/terms/corrective-lens.md:5
+  warning manni:term/asymmetric-hierarchy  narrower: omits "bifocal", which lists this entry as broader
+
+1 warning, 1 notice in 3 terms
+```
+
+{/* cite neither-fails-default-levels */}
+{/* cite neither-fails-only-errors-fail */}
+{/* cite warning-names-field-line */}
+{/* cite narrower-fix-clears-warning */}
+Neither finding fails the run, and the exit code is `0`. The warning names the
+line to change. Add `bifocal` to the `narrower` list of `corrective lens`, and
+the warning goes:
+
+```
+docs/terms/bifocal.md:1
+  notice manni:term/unused-term          no page's concepts: names this term
+
+1 notice in 3 terms
+```
+
+{/* cite notice-stays-until-named */}
+{/* cite severity-off-config */}
+{/* cite severity-off-drops-findings */}
+The notice stays until a page names `bifocal` in its `concepts:`. A set written
+ahead of its pages can turn it off with `severity: {unused-term: off}` under
+`term:`.
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Keep the terms and the docs in step"
+    href="/manni/term/set-up/"
+    description="Generate a Vale style from the set, so deprecated names, casing and acronyms are flagged in the prose. Then lint the definitions."
+  />
+  <LinkCard
+    title="Run it in CI"
+    href="/manni/term/ci/"
+    description="Annotations, the baseline ramp, and the drift check that keeps the generated style current."
+  />
+  <LinkCard
+    title="Check rules"
+    href="/manni/term/reference/rules/"
+    description="All ten rules, their default severities, and what fixes each one."
+  />
+  <LinkCard
+    title="Move and hand off a termbase"
+    href="/manni/term/set-up/move-and-hand-off/"
+    description="Read a glossary from DocBook, DITA, HTML or a definition list, and write it as pages, TBX or CSV."
+  />
+</CardGrid>

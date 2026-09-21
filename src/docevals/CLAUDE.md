@@ -67,8 +67,8 @@ here.**
 
 - `docs/content-strategy/personas.md`, the four personas. docevals folded its
   own six into them: Priya, Nate and Iris are Maya's entry now.
-- `docs/content-strategy/cujs.md`, the journeys. docevals's are M9–M13, D8–D9,
-  S6–S9 and T4.
+- `docs/content-strategy/cujs.md`, the journeys. docevals's are M10–M14, D9–D10,
+  S7–S10 and T5.
 - `docs/content-strategy/information-architecture.md`, the content set, with
   the `docevals/` section's tree.
 
