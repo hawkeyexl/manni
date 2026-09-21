@@ -5,6 +5,7 @@ description: The pretty, json, github, sarif, and junit output formats; the 0/1/
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
 
+{/* cite output-five-formats */}
 `manni meta validate` renders results in one of five formats, chosen with
 [`-f/--format`](/manni/meta/reference/cli/#options). Whatever the format, the process exit
 code follows a fixed [contract](#exit-codes) so CI can branch on it.
@@ -14,6 +15,7 @@ code follows a fixed [contract](#exit-codes) so CI can branch on it.
 <Tabs>
 <TabItem label="pretty">
 
+{/* cite output-pretty-marks-pass-and-fail */}
 The default. Human-readable, one line per file, with per-error detail and a
 summary. A passing file is marked `✓`; a failing file is marked `✗`.
 
@@ -36,6 +38,7 @@ Each error line has the form:
 - `(line N)` is omitted when no source line is known.
 - `[schema-id]` is the schema that produced the error.
 
+{/* cite output-a-manifest-value-is-located-in-the-manifest */}
 When the value at fault came from an [external-metadata
 manifest](/manni/meta/reference/configuration/#external-metadata) rather than the
 document, the location names the manifest instead, as `(docs-meta.yaml:6)`.
@@ -47,11 +50,13 @@ identity; the parenthesis is where the value was written.
     /jira  must match pattern "^PLAT-[0-9]+$"  (docs-meta.yaml:6)  [./private.schema.json]
 ```
 
+{/* cite output-summary-line-shape */}
 The summary line is `N files checked, M passed, K failed, E errors`, where `E`
 is the total number of error lines across all files. Pass
 [`-q/--quiet`](/manni/meta/reference/cli/#options) to hide passing files and show only
 failures and the summary.
 
+{/* cite output-gitignore-skips-named-on-the-summary */}
 When [`.gitignore`](/manni/meta/reference/cli/#gitignore) removed candidate
 documents from the walk, the line says so too. A gate that got quieter is
 visible rather than inferred from a count that shrank:
@@ -60,12 +65,14 @@ visible rather than inferred from a count that shrank:
 1 file checked, 1 passed, 0 failed, 0 errors, 1 skipped by .gitignore
 ```
 
+{/* cite output-gitignore-clause-omitted-at-zero */}
 The clause is omitted when nothing was skipped, which is every run in a repo
 that ignores no documents.
 
 </TabItem>
 <TabItem label="json">
 
+{/* cite output-json-is-one-object */}
 Machine-readable. Prints a single JSON object with a run `summary` and a
 `results` array.
 
@@ -125,6 +132,7 @@ Machine-readable. Prints a single JSON object with a run `summary` and a
 | `results[].errors[].col` | number | 1-based column. Supplied by the `html` and `xml` extractors, from the `content=` attribute of a `<meta>` tag or the value of an XML attribute. Omitted for every other format, and for a `required` violation in any format. That error reports the parent object, and a missing property has no column. |
 | `results[].errors[].file` | string | The file `line` and `col` refer to, when it is not `results[].file`. Set only for a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, spelled the way the run spells file labels (`docs-meta.yaml`). Omitted for every violation whose value is in the document, which is every violation a run with no `externalMetadata:` on any collection produces. The finding's subject file stays `results[].file`; this names where the value was written. |
 
+{/* cite output-keyword-and-subject-are-machine-stable */}
 `keyword` and `subject` are the machine-stable half of a violation's identity.
 They are what a script should key on when it needs to recognize "the same
 violation" across runs or across manni meta versions. `message` is for humans.
@@ -132,6 +140,7 @@ violation" across runs or across manni meta versions. `message` is for humans.
 </TabItem>
 <TabItem label="github">
 
+{/* cite output-github-annotation-levels */}
 GitHub Actions workflow-command annotations. Prints one `::error::` line per
 finding, which GitHub renders inline on the pull request. A finding whose
 `severity` is `warning` prints as `::warning::` instead, and one whose
@@ -148,6 +157,7 @@ Each line has the form:
 ::error file=<file>,line=<N>,col=<N>::[<schema-id>] <field> <message>
 ```
 
+{/* cite output-github-line-form */}
 `line` and `col` are included only when known. `col` today means an `html` or
 `xml` document and a violation other than `required`. `<field>` is the field
 path, or `(root)` for a whole-document error. For a value an [external-metadata
@@ -159,6 +169,7 @@ should land on:
 ::error file=docs-meta.yaml,line=6::[./private.schema.json] /jira must match pattern "^PLAT-[0-9]+$"
 ```
 
+{/* cite output-github-message-escaping */}
 The message is escaped the way GitHub's workflow-command protocol requires: `%`
 becomes `%25`, a carriage return becomes `%0D`, and a newline becomes `%0A`.
 GitHub decodes them again when it renders the annotation, so you see the
@@ -172,6 +183,7 @@ and `:` are special in the `file=` / `line=` properties, not in the message.
 </TabItem>
 <TabItem label="sarif">
 
+{/* cite output-sarif-findings-are-tracked-alerts */}
 [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html),
 the interchange format GitHub code scanning, GitLab, and Azure DevOps ingest
 directly. Where `github` annotations vanish with the job log, SARIF findings
@@ -238,6 +250,7 @@ which `upload-sarif` rejects.
 
 #### Reserved rule ids
 
+{/* cite output-reserved-rule-ids */}
 manni meta's own failures do not get a rule id built from `(parse)`. A document
 whose metadata block could not be read reports `manni/parse-error`, and one
 whose schema set could not be resolved reports `manni/schema-error`. Each is a
@@ -253,6 +266,7 @@ documents sharing one value of a manifest's [join field](/manni/meta/reference/c
 Its `rules[]` entry reads "Two documents carry the same value of a manifest's
 join field, so one manifest entry matched both."
 
+{/* cite output-encrypted-rule-ids */}
 A property its schema marks
 [`x-manni-encrypt`](/manni/meta/reference/schema-resolution/#encrypted-values)
 reports one of two more, both with the reserved `encrypted` first segment. A
@@ -269,6 +283,7 @@ Those last two ids were `sidecar:owned/sidecar` and `sidecar:duplicate/sidecar`
 before external metadata was renamed, and a baseline recorded under the old ones
 [no longer matches](#the-rename-invalidates-two-baselined-findings).
 
+{/* cite output-derived-stale-rule-id */}
 A [managed field](/manni/meta/reference/configuration/#derive) whose stamp
 disagrees with the evidence reports `derived:stale/derived`, with the field
 as its instance path. Its `rules[]` entry reads "The document's stamp for a
@@ -278,11 +293,13 @@ is the third reserved first segment, beside `check` and `external`. A
 adds the first file line of the range, and the subject `provenance
 <integrity>`, so each range has its own fingerprint.
 
+{/* cite output-stdin-produces-no-sarif-result */}
 The `-` (stdin) input produces **no** SARIF result. `<stdin>` is not a path any
 consumer can resolve, and a location pointing at one would be dropped anyway.
 
 #### SARIF paths are repository-root-relative
 
+{/* cite output-sarif-paths-are-repo-relative */}
 GitHub resolves `artifactLocation.uri` **against the repository root**, and
 silently drops results that do not resolve. A wrong path means the upload
 *succeeds* with zero alerts, which reads as a clean scan. So manni meta rebases
@@ -290,6 +307,7 @@ every path onto the nearest git repository root.
 `manni meta validate api.md -f sarif` run from inside `docs/` reports
 `docs/api.md`, exactly as a run from the repository root does.
 
+{/* cite output-unresolvable-sarif-paths-are-reported */}
 When there is no git repository above the working directory, paths stay relative
 to that directory and manni meta says so on stderr. A file **outside** the
 repository, validated through a `../` path, has no repository-relative name at
@@ -298,6 +316,7 @@ quietly missing from the log.
 
 #### The fingerprint does not include the path
 
+{/* cite output-fingerprint-excludes-the-path */}
 `partialFingerprints` carries the [baseline](/manni/meta/reference/cli/#baselines)
 fingerprint verbatim, which deliberately excludes the file path. The path sits
 beside it in `artifactLocation.uri`, exactly as the baseline keeps it as the
@@ -307,6 +326,7 @@ still track as separate alerts. GitHub derives alert identity from fingerprint
 
 #### Severity
 
+{/* cite output-sarif-level-follows-severity */}
 SARIF's `level` is its main triage axis, and a finding's `severity` maps onto
 it directly. A finding is `error` by default, `warning` for a warning, and
 `note` for a notice, since SARIF has no level named notice. Every finding manni meta's own
@@ -333,6 +353,7 @@ upload.
 </TabItem>
 <TabItem label="junit">
 
+{/* cite output-junit-renders-in-the-tests-tab */}
 JUnit XML, which Jenkins, GitLab, CircleCI, and Azure render natively in their
 "Tests" tab. A clean run still prints a complete envelope.
 
@@ -359,6 +380,7 @@ JUnit XML, which Jenkins, GitLab, CircleCI, and Azure render natively in their
 | `type` | `failure` | The same rule id SARIF uses: `<schema-ref>/<keyword>`. |
 | `message` | `failure` | The field path (or `(root)`), the violation message, and `(line N)` when the line is known. For a value an [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) supplied, the location is `(docs-meta.yaml:6)`, as in the pretty format. |
 
+{/* cite output-one-junit-test-per-file */}
 One test per **file** is deliberate. The tab then reads "2 tests, 1 failed" and
 matches `2 files checked, 1 failed`. One test per *violation* would make the
 test count rise and fall with document quality, which reads as a suite someone
@@ -383,6 +405,7 @@ same `(parse)` label with `keyword` set to `schema`.
 
 ### Baseline fields
 
+{/* cite output-baseline-block-only-with-a-baseline */}
 `summary.baseline` appears only when a [baseline](/manni/meta/reference/cli/#baselines)
 governed the run.
 
@@ -398,6 +421,7 @@ governed the run.
 
 ## Severity across the family
 
+{/* cite output-one-severity-scale-for-the-family */}
 Every manni tool speaks one severity scale, `notice | warning | error`, least
 severe first. It is defined once for the whole family rather than per tool. A
 `warning` therefore means the same thing in `manni cite check` output as it
@@ -413,6 +437,7 @@ GitHub annotations, ESLint, Vale and pa11y all use exactly these three words.
 | `manni a11y check` | all three | Mapped from axe's `impact` when a page is read. Its [`--severity`](/manni/a11y/reference/cli/) flag then drops everything below a floor. |
 | `manni key rotate` | none | It has no findings model. A value either re-encrypts or is skipped, and a skip exits `1`. |
 
+{/* cite output-meta-alone-sees-errors-and-warnings */}
 So a repository that runs only `manni meta validate` sees errors, and warnings
 once its schemas carry `x-manni-location` marks. Adding a second tool is what
 puts notices on screen.
@@ -429,12 +454,14 @@ puts notices on screen.
 | `sarif` | `"level": "note"` | `"level": "warning"` | `"level": "error"` |
 | `junit` | not a `<failure>`; the testcase passes | not a `<failure>`; the testcase passes | one `<failure>` element |
 
+{/* cite output-sarif-has-no-notice-level */}
 `sarif` has no level named notice, so `note` is the nearest thing it defines.
 `junit` has no level below failure, and a `<failure>` that did not fail the run
 would make the tab disagree with the exit code. `sarif` and `junit` are emitted
 by this tool and by `manni cite`; `manni a11y check` reports in `pretty`, `json`
 and `github`.
 
+{/* cite output-summary-counts-lower-levels-only-when-present */}
 A pretty summary line counts the lower levels only when there are some. This
 tool prints `2 files checked, 2 passed, 0 failed, 0 errors, 1 warning, 2
 notices`, and `manni cite check` prints the counts in parentheses, as
@@ -448,12 +475,14 @@ notices`, and `manni cite check` prints the counts in parentheses, as
 | `manni cite check` | A file with at least one unbaselined error-severity finding. Warnings and notices never move it. |
 | `manni a11y check` | A page that failed to load, or one with any remaining violation. Severity is not consulted, so raising `--severity` is what stops a lower level failing the run. |
 
+{/* cite output-no-fail-on-flag */}
 There is no `--fail-on` and no `--min-severity` anywhere in the family. A tool
 either fixes its levels, as this one does, or exposes the one lever its shape
 allows.
 
 ### How a domain maps its own scale on
 
+{/* cite output-a-foreign-scale-folds-on */}
 A tool whose source speaks another scale folds onto these three and keeps the
 source's own value in a field of its own. Nothing is lost for lookup, and one
 word still means one thing across the family.
@@ -468,10 +497,12 @@ violation carries both:
 | `moderate` | `warning` |
 | `minor`, or none | `notice` |
 
+{/* cite output-a11y-keeps-impact-beside-severity */}
 A violation keeps `impact` as its own JSON field, and the pretty line prints
 both, as `error  image-alt (axe: critical)`. The severity is what the floor and
 the exit code use. The impact is what you look up in axe's own documentation.
 
+{/* cite output-cite-assigns-severity-per-rule */}
 `manni cite` has no foreign scale to fold. It assigns a severity per rule
 instead, and adds one value the family scale does not have. A rule set to `off`
 produces no finding in any format and never enters a baseline. The [cite
@@ -486,17 +517,20 @@ fourteen rules and their defaults.
 | `1` | One or more files failed validation. |
 | `2` | Operational or usage error. That covers an **unknown flag**, an **unknown subcommand**, or a **missing required argument**. It also covers no inputs, **no files matched**, an unknown `--format`, a missing config file, a missing `--baseline` file, and an unresolvable schema. |
 
+{/* cite output-parser-rejections-are-also-exit-2 */}
 The first three are the parser's own rejections; the rest are a `DocmetaError`.
 Both are exit `2`, because both mean the invocation was wrong rather than the
 documents. `manni meta validate --nope docs/` is a mistyped command, not a
 non-conformant file, and a pipeline that branches on `1` must not see it there.
 
+{/* cite output-exit-1-vs-exit-2-meaning */}
 Exit code `1` reflects validation failures in the documents. Exit code `2`
 reflects a problem running manni meta itself, and means no validation verdict was
 produced.
 
 ### Exit codes with a baseline
 
+{/* cite output-a-baseline-relaxes-no-schema */}
 A baseline changes which findings count toward exit `1`; it does not relax any
 schema.
 
@@ -527,6 +561,7 @@ This is the one upgrade action the rename costs. Nothing else in a baseline is
 affected.
 </Aside>
 
+{/* cite output-fingerprint-includes-the-schema-ref */}
 A [fingerprint](/manni/meta/reference/cli/#baselines) is built from the schema
 ref, the instance path, the keyword and the subject. The schema ref of these two
 findings *is* the identity that was renamed. `sidecar:owned` became
@@ -542,6 +577,7 @@ to decode.
 
 ### Exit 2 when nothing was checked
 
+{/* cite output-zero-files-is-exit-2 */}
 An input set that resolves to **zero files** is exit 2, not exit 0. Two shapes,
 both covered by `--allow-empty` (or config `allowEmpty: true`):
 
@@ -550,6 +586,7 @@ both covered by `--allow-empty` (or config `allowEmpty: true`):
 | A named path that does not exist, even if other inputs matched. | `File not found: "docs/typo.md".` |
 | Nothing matched, whether a glob with no hits, a missing directory, or an `--ext`/`--exclude` filter that removed everything. | `No files matched. Patterns tried: …` |
 
+{/* cite output-nothing-checked-is-exit-2-not-1 */}
 Exit 2 rather than 1 is deliberate, because nothing was validated, so no verdict
 exists. `1` sends you looking for a bad document; `2` sends you to look at the
 invocation, which is where the problem is. Reading stdin with `-` is one input,
@@ -557,6 +594,7 @@ so a piped document still produces a verdict, even an empty one.
 
 ### Exit 2 when a fetched schema is not a schema
 
+{/* cite output-a-url-schema-is-checked-before-compiling */}
 A schema reference that is a URL is checked before it is compiled, because a
 `200 OK` response is not proof that the body is a schema. These are exit 2.
 manni meta could not establish the contract, so it produces no verdict rather than
@@ -570,6 +608,7 @@ a green one:
 | A non-2xx status. | `Failed to fetch schema "<url>": HTTP 404.` |
 | The body is not JSON at all. | `Schema "<url>" did not return valid JSON: …` |
 
+{/* cite output-a-non-schema-would-exit-0 */}
 The first row is the one worth internalizing: without that check the run exits
 **0**, because a schema with no constraints passes every document. Exiting 2
 means a broken gate announces itself instead of reporting success. The error
@@ -613,6 +652,7 @@ is nothing about the document to fix.
 
 ### Exit 2 from collection selection
 
+{/* cite output-collection-refusals-are-usage-errors */}
 [`--collection`](/manni/meta/reference/cli/#collections-as-inputs) selects a
 configured collection, so all three of its refusals are usage errors:
 
@@ -633,6 +673,7 @@ manni: corpus checks skipped: run is scoped to collections guides, blog
 
 ### Exit 2 from a derive source
 
+{/* cite output-a-source-that-cannot-answer-is-exit-2 */}
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config,
 `validate`, `derive`, `get`, and a `query` naming the
 [`derived`](/manni/meta/reference/query/#the-derived-table) or
@@ -685,6 +726,7 @@ The deliberate opt-outs are `--no-derive` on `validate`, `--no-derived` on
 | A `query` write would touch a managed key. | `"last-updated" is managed by derive; run manni meta derive instead.` |
 | A `query` write names the `resolved` table. | ``cannot modify resolved because it is a view; the resolved table is read-only — it is `docs` and the evidence joined, so write to docs, or stamp the evidence with manni meta derive.`` |
 
+{/* cite output-stale-stamp-is-exit-1 */}
 A stamp that disagrees with the evidence is exit 1, from `validate` and from
 `derive --check`. That is a verdict about the document.
 
@@ -706,6 +748,7 @@ manni: docs/limits.md: no uncommitted body lines; --generated-by attributes only
 | [`relocate`](/manni/meta/reference/cli/#meta-relocate) | At least one value stayed on the side its schema's `x-manni-location` does not prefer, or on the page while a manifest owns its key. Each is named with its reason: `no-home`, `read-only-format`, `no-join-value`, `values-differ`, `url-manifest` or `unreadable`. A run that moved everything, or found nothing to move, exits `0`. Its exit 2 causes, `-`, `--no-config`, an unmarked `--fields` name and an undeclared file at the manifest path among them, are listed under [`meta relocate`](/manni/meta/reference/cli/#meta-relocate). |
 | `schemas` | Never. |
 
+{/* cite output-location-findings-exit-0 */}
 A `location:external` or `location:page` finding from `validate` is a warning,
 so on its own it exits `0`. On a terminal, `validate` then asks whether to move
 the values. The question, and relocate's report after a yes, go to stderr, and
@@ -737,6 +780,7 @@ manni meta validate docs/ -f json > results.json
 
 ## Color behavior
 
+{/* cite output-color-only-for-pretty */}
 Color applies only to `pretty` output, and only when it is appropriate for the
 destination:
 
@@ -747,10 +791,12 @@ destination:
 | stdout is **not** a TTY (e.g. piped or redirected) | off |
 | stdout is a TTY and none of the above | on |
 
+{/* cite output-machine-formats-are-never-colored */}
 The `json`, `github`, `sarif`, and `junit` formats are never colored, whatever
 the conditions above say. A machine format that changed shape with the terminal
 would not be a machine format.
 
+{/* cite output-machine-formats-own-stdout */}
 For the same reason, those four own stdout completely. The "Using
 manni.config.yaml" notice that `pretty` prints to stdout goes to **stderr**
 instead, so the report stays parseable.

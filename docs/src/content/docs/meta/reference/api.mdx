@@ -10,6 +10,7 @@ import { Aside } from '@astrojs/starlight/components';
     enforced in CI. Every published symbol must appear in an `Export` cell;
     purposes are free-form. */}
 
+{/* cite api-entry-point-alongside-the-cli */}
 manni meta publishes a programmatic entry point alongside the CLI. A Node.js or TypeScript tool can call the same cores the CLI is built on. There is no process to spawn and no stdout to parse. [Consume manni meta results](/manni/meta/ci/consume-results/) shows the worked example; this page is the exhaustive list.
 
 ```ts
@@ -17,6 +18,7 @@ import { runValidate } from "@hawkeyexl/manni";
 ```
 
 <Aside type="note" title="ESM, Node 24+">
+{/* cite api-is-esm-only */}
 manni meta is an ES module targeting Node.js 24 or newer. Import it from ESM (or a
 `.mts` / `.ts` file compiled to ESM); there is no CommonJS `require` entry.
 Type-only exports are marked as such in the tables below and erase at compile
@@ -25,6 +27,7 @@ time.
 
 ## Command cores
 
+{/* cite api-cores-have-no-cli-plumbing */}
 One function per subcommand, each taking an options object and resolving to a
 structured result. The cores contain no CLI or IO plumbing: they do not read
 `process.argv`, do not write to stdout, and do not call `process.exit`. Turning
@@ -71,6 +74,7 @@ The cores throw a [`DocmetaError`](#errors) for operational problems: no inputs 
 
 ## Validation engine and results
 
+{/* cite api-json-format-serializes-these-shapes */}
 The shapes below are the ones `--format json` serializes, so a programmatic
 caller and a subprocess caller are reading the same data model.
 
@@ -89,6 +93,7 @@ caller and a subprocess caller are reading the same data model.
 
 ## Collections
 
+{/* cite api-what-a-collection-is */}
 A **collection** is a named set of documents, declared once at the top level of
 `manni.config.yaml` and read by every tool in the family. It carries the globs
 that select its files, the globs that exclude them, and the external metadata
@@ -98,6 +103,7 @@ configuration reference for the keys, and [collections as
 inputs](/manni/meta/reference/cli/#collections-as-inputs) for what the CLI does
 with them.
 
+{/* cite api-collections-live-in-the-shared-layer */}
 These live in the shared layer rather than the metadata tool's, because the
 document set is not one tool's business. A caller that wants the same file sets
 `manni meta` sees parses them once and asks `isMember` or `memberOf` per file.
@@ -114,6 +120,7 @@ document set is not one tool's business. A caller that wants the same file sets
 
 ## External metadata
 
+{/* cite api-manifest-joins-at-run-time */}
 The manifest that keeps frontmatter values outside the document, joined to a
 collection's members at run time. See [external
 metadata](/manni/meta/reference/configuration/#external-metadata) in the
@@ -185,6 +192,7 @@ identities are renamed with the vocabulary, which
 
 ## Encrypted values
 
+{/* cite api-reencrypt-is-metas-half */}
 A property whose schema marks it
 [`x-manni-encrypt`](/manni/meta/reference/schema-resolution/#encrypted-values)
 is held encrypted on the page, under the family's
@@ -199,6 +207,7 @@ is held encrypted on the page, under the family's
 
 ## Derived metadata
 
+{/* cite api-derived-values-never-merge */}
 Values computed from git history, CODEOWNERS, GitHub and GitLab rather than written
 by hand. A derived value never merges into what the schema sees. `manni meta
 derive` stamps the managed fields into the document, and `validate` reports a
@@ -267,6 +276,7 @@ below are the shared vocabulary and the two pure steps every source feeds.
 
 ## Schema resolution
 
+{/* cite api-resolution-precedence-chain */}
 The precedence chain that decides which schemas apply to a given file. See
 [Schema resolution](/manni/meta/reference/schema-resolution/) for the rules these
 implement.
@@ -297,6 +307,7 @@ implement.
 
 ## Schema cache
 
+{/* cite api-schema-cache-is-shared-across-runs */}
 The on-disk cache for schemas fetched over `http(s)`, shared across runs.
 
 | Export | Purpose |
@@ -311,6 +322,7 @@ The on-disk cache for schemas fetched over `http(s)`, shared across runs.
 
 ## Configuration
 
+{/* cite api-config-loading-exports */}
 Loading, parsing, and merging `manni.config.yaml`. See the [configuration
 reference](/manni/meta/reference/configuration/) for what each key means. The
 top-level `collections:` key is family-wide rather than the metadata tool's, and
@@ -338,6 +350,7 @@ its exports are under [Collections](#collections).
 
 ## Reporters
 
+{/* cite api-reporters-are-pure-formatting */}
 Pure formatting. A reporter turns a core's result into text and never writes it anywhere. `--quiet` lives here rather than in the cores, so a programmatic caller can never mistake a filtered run for an empty one.
 
 | Export | Purpose |
@@ -377,6 +390,7 @@ Pure formatting. A reporter turns a core's result into text and never writes it 
 
 ## Extractors
 
+{/* cite api-extraction-is-a-seam */}
 The per-format metadata layer. Everything after extraction operates on the
 generic `ExtractedMetadata` shape, which is why a new input format never touches
 validation, resolution, or reporting. See [supported
@@ -392,6 +406,7 @@ formats](/manni/meta/reference/formats/).
 
 ### Frontmatter
 
+{/* cite api-frontmatter-path-is-shared */}
 The fenced-block path shared by Markdown, MDX, and the fenced form of AsciiDoc
 and reStructuredText.
 
@@ -420,6 +435,7 @@ and reStructuredText.
 
 ## Sibling tools
 
+{/* cite api-namespace-cannot-collide */}
 Each other tool in the family is one namespace export. Its API cannot collide
 with the flat surface above, and a consumer can see which tool a name belongs
 to. Each namespace is documented on its own tool's pages.

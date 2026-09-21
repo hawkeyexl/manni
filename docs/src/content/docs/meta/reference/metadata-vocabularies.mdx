@@ -20,11 +20,13 @@ card renderer, a catalogue, or another publisher's build.
 
 ## `ogp:article:1.0`
 
+{/* cite vocab-ogp-requires-four-properties */}
 The [Open Graph protocol](https://ogp.me/) basic properties plus the `article`
 object type. This is the built-in that checks something **no build tool
 checks**. Nothing fails when `og:image` is missing. The page builds and deploys
 perfectly, then renders as a grey box everywhere it is shared.
 
+{/* cite vocab-property-read-alongside-name */}
 In HTML these live on `<meta property="…">`. manni meta reads `property` alongside
 `name`, so an ordinary HTML page needs no special handling:
 
@@ -35,6 +37,7 @@ In HTML these live on `<meta property="…">`. manni meta reads `property` along
 <meta property="og:image" content="https://example.com/img/card.png" />
 ```
 
+{/* cite vocab-og-keys-in-front-matter */}
 In front matter they are ordinary keys, quoted because they contain a colon:
 
 ```markdown
@@ -81,6 +84,7 @@ table are there for front matter, where a real list is possible.
 
 ## `dcmi:elements:1.1`
 
+{/* cite vocab-dcmi-recommendation-2020 */}
 The fifteen elements of the Dublin Core Metadata Element Set, as published in
 the DCMI Recommendation of 2020-01-20. That date is worth noticing: this is a
 frozen specification, so unlike the toolchain pins, `1.1` will stay accurate
@@ -90,6 +94,7 @@ indefinitely.
 `identifier`, `language`, `publisher`, `relation`, `rights`, `source`,
 `subject`, `title`, `type`.
 
+{/* cite vocab-dcmi-requires-nothing */}
 DCMI marks **no element mandatory**, so the schema requires nothing. Every
 element is repeatable in Dublin Core, so each accepts a single value or a list:
 
@@ -102,6 +107,7 @@ date: 2026-08
 ---
 ```
 
+{/* cite vocab-dcmi-date-is-w3cdtf */}
 `date` is the one element with a format. It is encoded as W3CDTF, which permits
 reduced precision, so `2026`, `2026-08`, and `2026-08-23` are all valid. A full
 datetime carries a timezone. `June 5th` is not.
@@ -125,6 +131,7 @@ covered by this built-in.
 
 ## `microsoft:learn:1.0`
 
+{/* cite vocab-ms-learn-requires-five-attributes */}
 The front matter Microsoft Learn requires and recommends on a documentation
 article. Of every built-in, this is the closest analogue to what manni meta itself
 does: five attributes whose absence fails a real publishing build.
@@ -166,6 +173,7 @@ articles, so `ms.topic` is checked for presence and shape only.
 
 ## `x:cards:1.0`
 
+{/* cite vocab-x-cards-is-the-ogp-companion */}
 The `twitter:*` meta tags that decide how a link renders when someone shares it
 on X. It is the companion to `ogp:article:1.0`, on the same `<meta>` channel and
 through the same extractor. The two normally ship together, which is why a site
@@ -194,15 +202,18 @@ with Open Graph tags and no card tags is the usual half-finished state.
 
 ### Why only `twitter:card` is required
 
+{/* cite vocab-other-card-tags-fall-back-to-og */}
 Every other tag on the card has an Open Graph fallback: X reads `og:title`,
 `og:description` and `og:image` when the `twitter:` equivalents are absent. A
 page carrying good Open Graph tags and no `twitter:title` is *correct*, so
 requiring one here would fail it.
 
+{/* cite vocab-twitter-card-has-no-fallback */}
 `twitter:card` is the exception. It has no fallback, and X will not infer a card
 type from Open Graph alone. Without it no card renders at all, however complete
 the rest of the markup is. That is the whole of what this schema insists on.
 
+{/* cite vocab-twitter-image-must-be-https */}
 The length caps are real limits rather than style advice: X truncates past them.
 And `twitter:image` must be HTTPS, because an image served over plain HTTP is
 dropped and the card renders without it.

@@ -5,6 +5,7 @@ description: The built-in schema for agent definition front matter under .claude
 
 import { Aside } from '@astrojs/starlight/components';
 
+{/* cite subagent-schema-id-and-scope */}
 A subagent is a markdown file under `.claude/agents/`: YAML front matter that
 configures a delegate, then a body that becomes its system prompt. The front
 matter has one contract, and `anthropic:claude-subagent:2.1` is it.
@@ -13,16 +14,19 @@ matter has one contract, and `anthropic:claude-subagent:2.1` is it.
 manni meta validate .claude/agents/**/*.md -s anthropic:claude-subagent:2.1
 ```
 
+{/* cite subagent-eighteen-fields-two-required */}
 Eighteen fields. Two of them, `name` and `description`, are required. That makes
 this the second built-in that demands anything of an agent file. It is the first
 that demands it because the *runtime* refuses to load without it.
 
 ## Why it requires two fields when the skill schema requires none
 
+{/* cite subagent-skill-schema-requires-nothing */}
 `anthropic:claude-skill:2.1` requires nothing, because Claude Code marks every
 `SKILL.md` field optional. A skill with no front matter at all still loads, and
 takes its description from the first paragraph of the body.
 
+{/* cite subagent-missing-description-is-refused */}
 An agent definition has no such fallback. Drop `name` and the file is skipped.
 It is treated as documentation and not reported, so the agent you wrote simply
 does not appear in the Agent tool listing. Drop `description` and it is refused
@@ -67,6 +71,7 @@ Skills schemas](/manni/meta/reference/agent-skills-schemas/).
 | `observer` | string | Agent type auto-spawned to watch this one work. |
 | `observerMessage` | string | Extra instruction appended to each digest sent to the `observer`. |
 
+{/* cite subagent-plugin-agents-ignore-three-fields */}
 `permissionMode`, `hooks` and `mcpServers` are read for a project or user agent
 and **ignored for a plugin agent**. Claude Code warns about that rather than
 failing. The schema validates them wherever they appear, because a field that is
@@ -74,6 +79,7 @@ ignored is still a field that was meant to do something.
 
 ## `background` is not the flag a skill uses
 
+{/* cite subagent-background-takes-only-true-or-false */}
 This is the one difference worth memorising, because both spellings are boolean
 and only one file type takes six of them. A `SKILL.md` flag accepts `yes`, `no`,
 `on`, `off`, `1` and `0` alongside `true` and `false`. The agent loader accepts a
@@ -94,10 +100,12 @@ background: true    # the only form both accept
 
 ## `name` is checked for one rule, not the documented three
 
+{/* cite subagent-name-may-not-begin-with-a-hyphen */}
 The loader enforces exactly one character rule. A name may not begin with `-`,
 and a file that breaks it is dropped with an error. Nothing else about the name
 is checked at load time: capitals work, underscores work, digits work.
 
+{/* cite subagent-name-convention-is-not-enforced */}
 The documentation describes a lowercase-and-hyphens convention, and it is a good
 convention. It is not what the runtime refuses, and agent types with capitals in
 them ship today. A schema holding `name` to `^[a-z-]+$` would fail agents that
@@ -106,12 +114,14 @@ to you. That is the same call the [platform
 schemas](/manni/meta/reference/platform-schemas/) make about requiring exactly what
 the tool refuses to build without.
 
+{/* cite subagent-avoid-a-colon-in-a-name */}
 One thing to avoid anyway is a `:` in a name. It is the separator in a
 plugin-scoped identifier such as `my-plugin:reviewer`, so a name containing one
 is asking for an ambiguous address.
 
 ## What is enumerated, and what deliberately is not
 
+{/* cite subagent-five-enumerated-fields */}
 Five fields have closed, published value sets, so a typo in one is an error:
 
 ```text
@@ -119,6 +129,7 @@ Five fields have closed, published value sets, so a typo in one is an error:
     /permissionMode  must be equal to one of the allowed values  (line 5)  [anthropic:claude-subagent:2.1]
 ```
 
+{/* cite subagent-color-is-a-closed-set-of-eight */}
 `color` is worth checking even though it is cosmetic. An unknown colour is
 dropped *without* a warning, so the only symptom is an agent that never takes
 the colour you gave it. `magenta` is the one that catches people. It is a
@@ -128,17 +139,20 @@ normalises to `default` before checking, so both spellings are legal.
 `isolation` lists `worktree` and `remote`; the published documentation names
 only the first, and the schema follows the loader.
 
+{/* cite subagent-model-is-not-enumerated */}
 `model` is not enumerated. Its accepted values move with the product, and an
 organisation's `availableModels` allowlist narrows them further. A list written
 here would reject agents that work. `observer` is not enumerated either, for the
 matching reason. It names an agent type, and the set includes whatever the
 project, its plugins and you define.
 
+{/* cite subagent-hooks-and-mcpservers-shape-only */}
 `hooks` and `mcpServers` are checked for shape and no further. A hooks block is
 an object and a server list is a list. What goes *inside* either one is a
 separate contract, versioned separately from the agent file. Pinning it here
 would date this schema to whichever week it was written.
 
+{/* cite subagent-three-string-fields-need-a-non-space */}
 `initialPrompt`, `observer` and `observerMessage` are checked for one thing
 beyond being strings: they have to contain a non-space character. That is the
 `color` rule again rather than tidiness. The loader keeps each of them only when
@@ -147,6 +161,7 @@ the value survives a `.trim()`, and discards it silently otherwise. So
 
 ## Two fields that take a YAML number or a quoted string
 
+{/* cite subagent-two-fields-take-number-or-string */}
 `maxTurns` and `effort` both reach the validator as either type, depending on
 how the value was written. Both are typed as two rather than one:
 
@@ -158,15 +173,18 @@ effort: 8          # integer — also accepted
 effort: "8"        # quoted integer — also accepted
 ```
 
+{/* cite subagent-quoted-integer-effort */}
 The quoted integer matters more than it looks. A templating tool that quotes
 every scalar produces it by accident. The loader reaches the numeric form
 through `parseInt` on the string, so `"8"` and `8` are the same value to it.
 
+{/* cite subagent-maxturns-is-type-scoped */}
 The constraint keywords are type-scoped, so each applies to only one of the two
 forms. A wrong value is reported once, against the key, rather than once per
 failed branch. `maxTurns: 0`, `maxTurns: -3` and `maxTurns: null` all fail; the
 loader treats `null` as an invalid value rather than as an absent one.
 
+{/* cite subagent-effort-has-no-lower-bound */}
 **`effort` has no such lower bound, and that asymmetry is deliberate.**
 `maxTurns` is checked for a *positive* integer and warns otherwise. `effort` is
 checked with a bare integer test, so `effort: 0` and `effort: -3` are both
@@ -224,5 +242,6 @@ overrides:
       - anthropic:claude-skill:2.1
 ```
 
+{/* cite subagent-first-matching-override-wins */}
 The first matching override wins, so keep the two globs disjoint. `agents/` and
 `skills/` already are.
