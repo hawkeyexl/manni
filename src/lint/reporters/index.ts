@@ -4,7 +4,7 @@
  * anything a consumer has to parse around.
  */
 import { LintError, type Finding } from "../types.js";
-import type { LintRun } from "../commands/lint.js";
+import type { LintFileResult, LintRun } from "../commands/lint.js";
 import type { FormatInfo, ToolInfo } from "../commands/tools.js";
 import type { TemplateInfo, TemplatesInfo } from "../commands/templates.js";
 import { palette, type Colors } from "../../shared/color.js";
@@ -17,6 +17,7 @@ import { REPORT_FORMAT_LIST } from "../../meta/internal.js";
 import { ruleId, TOOL_NAME } from "../core/rule-id.js";
 import { renderJunit } from "./junit.js";
 import { renderSarif } from "./sarif.js";
+import { explainAlignment, formatAlignment, type ExplainSource } from "./alignment.js";
 
 export { renderJunit, toValidationResults } from "./junit.js";
 
@@ -66,9 +67,21 @@ function describeFinding(finding: Finding): string {
     : finding.message;
 }
 
+/**
+ * A finding's level prefix, meta's shape: nothing for an error, since the
+ * `✗`/`✓` mark already says that; the word itself, coloured, for anything
+ * milder. Keeps a passing file's warning from reading as just another
+ * anonymous line once it is printed beside real errors on a failing one.
+ */
+function levelPrefix(c: Colors, severity: Finding["severity"]): string {
+  if (severity === "error") return "";
+  return `${severity === "notice" ? c.dim("notice") : c.yellow("warning")} `;
+}
+
 export function renderPretty(run: LintRun, opts: ReportOptions = {}): string {
   const c = palette(opts.color ?? false);
   const lines: string[] = [];
+  let warnings = 0;
 
   for (const result of run.results) {
     // A skip is reported, never silently dropped: an unreadable format that
@@ -78,23 +91,35 @@ export function renderPretty(run: LintRun, opts: ReportOptions = {}): string {
       lines.push(`${c.yellow("-")} ${result.file}  ${c.dim(`skipped: ${why}`)}`);
       continue;
     }
-    if (result.success) {
+    if (result.success && result.findings.length === 0) {
       lines.push(`${c.green("✓")} ${result.file}`);
       continue;
     }
-    lines.push(`${c.red("✗")} ${result.file}`);
+    // `success` means "no error-severity finding", not "no findings" - a
+    // passing file can still hold a warning, such as
+    // `unsupported_content_kind`. Reusing `✓` for it would hide the warning
+    // behind the same glyph a clean file gets; reusing `✗` would fail a file
+    // nothing actually failed. `⚠` (meta's and cite's mark for the same case)
+    // says "passing, but read this" without claiming either extreme.
+    const mark = result.success ? c.yellow("⚠") : c.red("✗");
+    lines.push(`${mark} ${result.file}`);
     for (const finding of result.findings) {
+      if (finding.severity !== "error") warnings++;
       // The namespaced id rather than the bare `type`: it is what SARIF,
       // JUnit and the GitHub annotation file the finding under, so the string
       // a reader copies out of the terminal is the one they can search for.
       lines.push(
-        `    ${c.dim(locate(finding))}  ${c.cyan(ruleId(finding.type))}  ${describeFinding(finding)}`,
+        `    ${c.dim(locate(finding))}  ${c.cyan(ruleId(finding.type))}  ` +
+          `${levelPrefix(c, finding.severity)}${describeFinding(finding)}`,
       );
     }
   }
 
   const { checked, passed, failed, skipped } = run.summary;
-  const summary = `${plural(checked, "file")} checked, ${passed} passed, ${failed} failed, ${skipped} skipped`;
+  // Named only when there are any, as meta and cite do: every run against a
+  // format that reports every content kind has none.
+  const warningsText = warnings > 0 ? `, ${plural(warnings, "warning")}` : "";
+  const summary = `${plural(checked, "file")} checked, ${passed} passed, ${failed} failed, ${skipped} skipped${warningsText}`;
   if (lines.length > 0) lines.push("");
   lines.push(failed > 0 ? c.red(summary) : c.green(summary));
   return lines.join("\n");
@@ -125,6 +150,12 @@ export function renderJson(run: LintRun): string {
       heading: finding.heading,
       message: finding.message,
       position: finding.position,
+      // Additive too, and the reason it has to be: `success: true` beside a
+      // non-empty `errors` array is exactly what a warning-only file looks
+      // like now that `success` means "no error-severity finding" rather than
+      // "no findings". Without this key a consumer has no way to tell that
+      // apart from an error the JSON shape simply forgot to fail on.
+      severity: finding.severity,
     })),
     // Additive, and the one thing this shape could not say. A skipped file is
     // `{success: false, errors: []}`, which is also what a failure whose
@@ -150,7 +181,9 @@ export function renderJson(run: LintRun): string {
  * The level is the severity, not a constant `error`. The family scale was
  * chosen to be GitHub's for exactly this: `::warning` and `::notice` render
  * inline like `::error` but do not fail the check, which is the severity
- * invariant in GitHub's terms. Every structural finding is an `error` today.
+ * invariant in GitHub's terms, and it is load-bearing rather than theoretical:
+ * `unsupported_content_kind` is a `warning`, so it annotates the file without
+ * failing the job.
  *
  * Line breaks are escaped rather than collapsed to spaces, as this once did.
  * `%0A` is the format's own answer and GitHub renders it as a multi-line
@@ -191,6 +224,20 @@ export function renderGithub(run: LintRun): string {
  * intended. A report that showed only the winning stage would hide exactly the
  * thing being looked for.
  */
+/**
+ * The alignment block riding on a result. `commands/lint.ts` attaches the tree
+ * and the loaded template under `alignment` when `--explain` asked for them,
+ * and only for a file that routed; a result without it prints as it always did.
+ *
+ * It is a nested key rather than two flat ones because `template` at the top
+ * level is already the template's *ref*, the string the routing line shows.
+ */
+function alignmentFor(result: LintFileResult): string[] | null {
+  const source: ExplainSource | undefined = result.alignment;
+  if (!source) return null;
+  return formatAlignment(explainAlignment(source.tree, source.template));
+}
+
 export function renderExplain(run: LintRun, opts: ReportOptions = {}): string {
   const c = palette(opts.color ?? false);
   const lines: string[] = [];
@@ -211,6 +258,12 @@ export function renderExplain(run: LintRun, opts: ReportOptions = {}): string {
       const label = step.ref ? c.bold(step.ref) : c.dim(step.detail);
       const suffix = step.ref ? `  ${c.dim(step.detail)}` : "";
       lines.push(`    ${mark} ${step.stage.padEnd(20)} ${label}${suffix}`);
+    }
+
+    const alignment = chosen ? alignmentFor(result) : null;
+    if (alignment && alignment.length > 0) {
+      lines.push(`    ${c.dim("alignment")}`);
+      for (const row of alignment) lines.push(`      ${row}`);
     }
 
     const cause = result.resolution?.cause;
@@ -299,9 +352,12 @@ export function renderTemplates(
   return lines.join("\n");
 }
 
-/** One input format as `markdown  Markdown (.md, .markdown)`. */
+/** One input format as `markdown  Markdown (.md, .markdown)  kinds: paragraph, codeBlock, list`. */
 function formatLine(c: Colors, entry: FormatInfo): string {
-  return `      ${c.cyan(entry.name)}  ${entry.label} (${entry.extensions.join(", ")})`;
+  return (
+    `      ${c.cyan(entry.name)}  ${entry.label} (${entry.extensions.join(", ")})` +
+    `  ${c.dim(`kinds: ${entry.kinds.join(", ")}`)}`
+  );
 }
 
 /**

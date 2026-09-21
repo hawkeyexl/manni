@@ -200,6 +200,16 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 ---
 
+### S7 · Describe a doctype as a template
+
+**Outcome.** The shape Sara's team agreed on for a how-to, a reference page or a release note is written down. `manni lint` holds every page of that doctype to it.
+
+**Steps.** She starts from a page that already has the shape she wants and runs `manni lint templates infer` on it, which writes a first template. Then she loosens it, because one page cannot show what varies. A closer that has four spellings becomes a list of headings. A section that only some pages carry gets `min: 0`. A pair that repeats, such as a symptom and its cause, becomes a `repeat:` group. Where the doctype is defined by its content rather than its headings, she says so. A reference page asks for a table with named columns. A how-to asks for a code block in each step. She routes the template by the page's `type:` frontmatter, or by path in `overrides:` where the corpus carries no doctype. A rule about content a format cannot report becomes a warning that names the rule. She learns which of her assertions the parser never checked.
+
+**What success looks like.** A doctype's shape is one reviewable file, and a page that drifts from it fails at the heading that drifted.
+
+---
+
 ## Theo, Contributor
 
 ### T1 · Fix a failing metadata check fast

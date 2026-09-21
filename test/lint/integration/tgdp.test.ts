@@ -63,9 +63,18 @@ describe.each(manifest.templates)("$id", (entry) => {
     const template = await loadTemplate(entry.id);
 
     const findings = validateDocument(tree, template);
-    expect(
-      findings.map((f) => `${f.position.start.line}: [${f.type}] ${f.message}`),
-    ).toEqual([]);
+    const rendered = findings.map(
+      (f) => `${f.position.start.line}: [${f.type}] ${f.message}`,
+    );
+
+    // `tgdp:reference:1.6` used to be the exception here. The reference
+    // doctype is table-heavy, and while the markdown parser reported only
+    // paragraph, codeBlock and list, its `tables: { min: 1 }` rule was pruned
+    // before matching and reported as a warning saying the rule had not run.
+    // The parser reports GFM tables now, so the rule runs, upstream's own
+    // table satisfies it, and the page is clean for the reason a reader would
+    // expect rather than because nothing looked.
+    expect(rendered).toEqual([]);
   });
 
   it("declares the doctypes the manifest says it serves", async () => {

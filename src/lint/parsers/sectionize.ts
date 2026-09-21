@@ -1,10 +1,14 @@
 /**
- * Fold a flat list of blocks into a nested section tree.
+ * Fold a flat list of fragments into a nested section tree.
  *
- * Every format arrives here as an ordered list of `Block`s - a heading, or a
- * piece of content - and leaves as `SectionNode[]`. Keeping the fold in one
- * place is what makes a new format one `toBlocks` function rather than a second
- * copy of the nesting, position, and slug logic.
+ * Every format arrives here as an ordered list of `Fragment`s - a heading, or
+ * a piece of content - and leaves as `SectionNode[]`. Keeping the fold in one
+ * place is what makes a new format one `toFragments` function rather than a
+ * second copy of the nesting, position, and slug logic.
+ *
+ * Named `Fragment` rather than `Block`, deliberately: "block" is the
+ * block-level content vocabulary (`ContentKind`'s `table`, `blockquote`, and
+ * so on), and this internal pipeline type never leaves `src/lint/parsers/`.
  *
  * Two position rules are deliberate:
  *
@@ -20,7 +24,7 @@
 import GithubSlugger from "github-slugger";
 import type { ContentNode, Position, SectionNode } from "../types.js";
 
-export interface HeadingBlock {
+export interface HeadingFragment {
   type: "heading";
   /** 1-6. */
   level: number;
@@ -28,12 +32,12 @@ export interface HeadingBlock {
   position: Position;
 }
 
-export interface ContentBlock {
+export interface ContentFragment {
   type: "content";
   node: ContentNode;
 }
 
-export type Block = HeadingBlock | ContentBlock;
+export type Fragment = HeadingFragment | ContentFragment;
 
 /** Mutable while open; frozen into a `SectionNode` on close. */
 interface OpenSection {
@@ -43,10 +47,10 @@ interface OpenSection {
 }
 
 /**
- * @param blocks   Document blocks in source order, frontmatter excluded.
- * @param docEnd   End of the document, used to close the final sections.
+ * @param fragments Document fragments in source order, frontmatter excluded.
+ * @param docEnd    End of the document, used to close the final sections.
  */
-export function sectionize(blocks: Block[], docEnd: Position["end"]): SectionNode[] {
+export function sectionize(fragments: Fragment[], docEnd: Position["end"]): SectionNode[] {
   const slugger = new GithubSlugger();
   const roots: SectionNode[] = [];
   const stack: OpenSection[] = [];
@@ -89,35 +93,35 @@ export function sectionize(blocks: Block[], docEnd: Position["end"]): SectionNod
       level: 0,
       order: 0,
       parentSlug: null,
-      headingPosition: null,
+      titlePosition: null,
       position: { start: { ...start }, end: { ...start } },
-      content: [],
+      children: [],
       sections: [],
     });
 
-  for (const block of blocks) {
-    if (block.type === "heading") {
-      closeTo(block.level, block.position.start);
+  for (const fragment of fragments) {
+    if (fragment.type === "heading") {
+      closeTo(fragment.level, fragment.position.start);
       push({
-        slug: slugger.slug(block.title),
-        title: block.title,
-        level: block.level,
+        slug: slugger.slug(fragment.title),
+        title: fragment.title,
+        level: fragment.level,
         order: 0,
         parentSlug: null,
-        headingPosition: { ...block.position },
-        position: { start: { ...block.position.start }, end: { ...block.position.end } },
-        content: [],
+        titlePosition: { ...fragment.position },
+        position: { start: { ...fragment.position.start }, end: { ...fragment.position.end } },
+        children: [],
         sections: [],
       });
       continue;
     }
 
-    const current = stack.at(-1) ?? openLead(block.node.position.start);
-    current.node.content.push(block.node);
-    current.lastEnd = block.node.position.end;
+    const current = stack.at(-1) ?? openLead(fragment.node.position.start);
+    current.node.children.push(fragment.node);
+    current.lastEnd = fragment.node.position.end;
     // Every enclosing section grows with its descendants, so a parent's span
     // always covers its children even before it is closed.
-    for (const open of stack) open.node.position.end = { ...block.node.position.end };
+    for (const open of stack) open.node.position.end = { ...fragment.node.position.end };
   }
 
   closeTo(0, docEnd);

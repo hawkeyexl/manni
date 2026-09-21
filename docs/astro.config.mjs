@@ -208,10 +208,9 @@ export default defineConfig({
             },
           ],
         },
-        // `lint` is the structure tool. Same shape as `a11y`: three journey
-        // tracks and a reference shelf. No set-up track, because what a repo
-        // configures is templates, and those are reference material the
-        // journeys link into.
+        // `lint` is the structure tool. Four journey tracks and a reference
+        // shelf. The set-up track is Sara's: writing the doctype template a
+        // repository is then held to (S7), which the reference shelf backs.
         {
           label: "lint",
           collapsed: true,
@@ -222,6 +221,11 @@ export default defineConfig({
               label: "Get started",
               collapsed: true,
               items: [{ autogenerate: { directory: "lint/get-started" } }],
+            },
+            {
+              label: "Set up",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "lint/set-up" } }],
             },
             {
               label: "Run it in CI",

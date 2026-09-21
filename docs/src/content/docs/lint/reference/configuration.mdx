@@ -201,8 +201,9 @@ changes are these:
 | `exclude:` under the tool's config | The same collection's `exclude:` |
 | `doc-structure-lint lint` as a default subcommand | No default subcommand. `manni lint` alone lists the four verbs and exits `2`. |
 | `doc-structure-lint formats` | `manni lint tools`, which lists the formats under the tool that reads them |
-| `heading_pattern_error` in output | `manni:lint/structure/heading-pattern`. The JSON reporter still carries the old name as `type`, beside the new `ruleId`. |
-| `"error" \| "warning"` severities of its own | The [family scale](/manni/meta/reference/output-and-exit-codes/#severity-across-the-family). Every structural finding is `error`. |
+| `heading_pattern_error` in output | One `manni:lint/structure/heading` rule covers every form of `heading`. The JSON reporter carries the machine name as `type`, beside the `ruleId`. |
+| `"error" \| "warning"` severities of its own | The [family scale](/manni/meta/reference/output-and-exit-codes/#severity-across-the-family). Every structural finding is `error` but one, and that warning never changes the exit code. |
+| A template as a map of section rules | A [grammar](/manni/lint/reference/templates/). `sections:` is an ordered list, `required:` and `additionalSections` are gone, and `repeat:` groups rules rather than taking a boolean. The loader refuses each old key by name and prints the new spelling. |
 | `instructions:` in a template | Removed. Structure checking is deterministic; the loader refuses the key and prints the `manni docevals` eval to move it to. |
 
 The published `doc-structure-lint` package is unaffected by any of this. It is

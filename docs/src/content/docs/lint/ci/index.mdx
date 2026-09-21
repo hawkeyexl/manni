@@ -33,14 +33,21 @@ opposite responses. That is the same split
 [`manni a11y check`](/manni/a11y/ci/#exit-codes) use.
 
 Exit `1` is defined as **at least one `error`-level finding**, not "any
-finding". Every structural finding is an error, so the two are the same thing.
+finding". Every structural finding is an error but one. A rule asking about
+content this file's format cannot report is a
+[warning](/manni/lint/fix/#a-rule-that-never-ran), it annotates as `::warning`,
+and it never fails the job.
 
 **`-f github` produces inline annotations.** One workflow command per finding,
 anchored to the file and the line, with the rule id as the title:
 
 ```
-::error file=docs/rotate-key.md,line=5,col=1,title=manni%3Alint/structure/missing-section::Rotate an API key: Missing section "See also"
+::error file=docs/rotate-key.md,line=22,col=1,title=manni%3Alint/structure/missing-section::Rotate an API key: Missing section "See also"
 ```
+
+A missing section is anchored where it would go. This page ends without its
+`See also`, so the annotation lands at the end of the file. A gap in the middle
+of a page anchors on the section standing where the missing one belongs.
 
 GitHub renders each as an annotation on the pull request diff, so a reviewer
 sees which page lost its shape without opening the log. The colon in the rule
@@ -107,8 +114,8 @@ comma-and-colon delimited. A clean run prints nothing at all and exits `0`.
    The flag is repeatable, one name per occurrence, never comma-separated.
 
 4. **Commit and push.** On the next pull request the job runs. A page missing a
-   section its template requires fails the job and annotates the line of the
-   heading.
+   section its template requires fails the job, and the annotation lands where
+   that section belongs.
 
 </Steps>
 
@@ -140,8 +147,8 @@ to meet another.
 | Format | Use it for | Shape |
 | --- | --- | --- |
 | `pretty` | People, and local runs. The default. | One line per file, findings indented under it, a summary line. `check` also names the jobs it ran, on stderr. |
-| `github` | GitHub Actions annotations. | `::error` workflow commands, one per finding, `title=manni:lint/<job>/<rule>`. Nothing at all on a clean run. |
-| `json` | Scripts and dashboards. | A top-level array, one object per file, each with `file`, `success`, and `errors[]` carrying `type`, `ruleId`, `tool`, `heading`, `message` and `position`. |
+| `github` | GitHub Actions annotations. | Workflow commands, one per finding, `title=manni:lint/<job>/<rule>`. The command is the finding's severity, so a warning is `::warning`. Nothing at all on a clean run. |
+| `json` | Scripts and dashboards. | A top-level array, one object per file, each with `file`, `success`, and `errors[]` carrying `type`, `ruleId`, `tool`, `heading`, `message`, `position` and `severity`. |
 | `sarif` | GitHub code scanning and any SARIF consumer. | One result per finding with `ruleId: manni:lint/<job>/<rule>`, `level`, and the full line/column span. Skipped files ride along as tool notifications, never as results. |
 | `junit` | The CI "Tests" tab. | One `testcase` per linted file, `classname="manni.lint"`, one `failure` per finding whose `type` is the rule id. |
 
@@ -260,7 +267,8 @@ Open a pull request that deletes a required section from a page that declares a
 `type:`. Then check that:
 
 - The job is red, and the page carries an inline annotation titled
-  `manni:lint/structure/missing-section` on the line of its heading.
+  `manni:lint/structure/missing-section`, anchored where the deleted section
+  used to be.
 - Restoring the section turns the job green.
 - A page with no `type:` produces no annotation and does not fail the job.
 - A `type:` no template serves fails the job with
@@ -299,7 +307,7 @@ flag for the readable report.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"lint-ci","description":"The properties the CI integration rests on: exit codes, annotations, and the four machine formats, run against the local CLI build and committed fixtures."} */}
 {/* step {"description":"A clean page exits 0 so the job stays green.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to.md -f github","exitCodes":[0]}} */}
-{/* step {"description":"A page missing a required section exits 1 and emits an ::error workflow command titled with the percent-encoded rule id, anchored to the file and line.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to-broken.md -f github","exitCodes":[1],"stdio":"/::error file=.*,line=5,col=1,title=manni%3Alint\\/structure\\/missing-section::/"}} */}
+{/* step {"description":"A page missing a required section exits 1 and emits an ::error workflow command titled with the percent-encoded rule id, anchored to the file and line.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to-broken.md -f github","exitCodes":[1],"stdio":"/::error file=.*,line=22,col=1,title=manni%3Alint\\/structure\\/missing-section::/"}} */}
 {/* step {"description":"The JSON envelope is a top-level array carrying type, ruleId and tool per finding.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to-broken.md -f json","exitCodes":[1],"stdio":"/\"ruleId\": \"manni:lint\\/structure\\/missing-section\"[\\s\\S]*\"tool\": \"manni\"/"}} */}
 {/* step {"description":"SARIF carries the rule id and an error level, for code scanning.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to-broken.md -f sarif","exitCodes":[1],"stdio":"/\"ruleId\": \"manni:lint\\/structure\\/missing-section\"[\\s\\S]*\"level\": \"error\"/"}} */}
 {/* step {"description":"A clean SARIF run still writes its envelope, because upload-sarif rejects an empty file.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to.md -f sarif","exitCodes":[0],"stdio":"/\"results\": \\[\\]/"}} */}

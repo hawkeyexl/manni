@@ -15,6 +15,8 @@
  */
 import pkg from "../../../package.json" with { type: "json" };
 import { listFormats } from "../parsers/index.js";
+import type { ContentKind } from "../types.js";
+import { BLOCK_KIND_NODE } from "../core/template.js";
 import {
   LINT_JOBS,
   resolveLintRun,
@@ -23,11 +25,26 @@ import {
   type LintTool,
 } from "../core/config.js";
 
+/**
+ * The content kinds a template rule can actually name - `BLOCK_KIND_NODE`'s
+ * values, the nine block-rule keys map onto. `manni lint tools` lists this
+ * column to answer "can my rule run against this format", and a rule can
+ * never ask about `listItem`, `tableRow`, `tableCell`, or `definitionItem`:
+ * those are structural kinds a parser reports so the content model can
+ * describe a list's items or a table's cells, not kinds a `sections:` rule
+ * counts on its own. What a parser *declares* (`DocumentParser.kinds`, read by
+ * the pruner in `validator.ts`) is untouched - this is a display decision, so
+ * it belongs here rather than trimming the declaration itself.
+ */
+const REPORTABLE_KINDS = new Set<ContentKind>(Object.values(BLOCK_KIND_NODE));
+
 export interface FormatInfo {
   /** Parser name, also what `--as` accepts. */
   name: string;
   label: string;
   extensions: string[];
+  /** The content kinds this format's parser actually emits today. */
+  kinds: ContentKind[];
 }
 
 /** One job, and the tool that would perform it on this run. */
@@ -86,6 +103,11 @@ export async function runTools(opts: ToolsOptions = {}): Promise<ToolInfo[]> {
     inputs: [],
   });
 
+  const formats = listFormats().map((format) => ({
+    ...format,
+    kinds: format.kinds.filter((kind) => REPORTABLE_KINDS.has(kind)),
+  }));
+
   return LINT_JOBS.map((job) => ({
     job,
     tool: run.config[job]?.tool ?? "manni",
@@ -95,6 +117,6 @@ export async function runTools(opts: ToolsOptions = {}): Promise<ToolInfo[]> {
     available: true,
     version: pkg.version,
     config: run.configSource ?? BUILT_IN_DEFAULTS,
-    formats: listFormats(),
+    formats,
   }));
 }

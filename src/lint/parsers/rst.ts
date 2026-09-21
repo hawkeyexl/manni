@@ -4,8 +4,8 @@
  * Unlike its siblings this parser has no AST library under it. There is no
  * usable reStructuredText parser for JavaScript, so this reads the source
  * directly: a line scanner that answers one question - what sections does this
- * document have, and what paragraphs, code blocks, and lists are in each - and
- * then hands `sectionize` the same `Block[]` every other format produces.
+ * document have, and what content is in each - and then hands `sectionize` the
+ * same `Fragment[]` every other format produces.
  *
  * ## Section levels
  *
@@ -37,15 +37,26 @@
  *    sections it would contribute are invisible.
  *  - **Transitions** (a lone adornment run between paragraphs) - skipped, like
  *    Markdown thematic breaks.
- *  - **Definition lists**, **option lists**, and **line blocks** (`|`) -
- *    skipped, not mapped onto `list`. A definition list is not a bullet list,
- *    and counting it as one would make `lists: {max: 1}` fail a document a
- *    reader would say satisfies it. This is the same call `mdast.ts` makes for
- *    blockquotes and tables.
+ *  - **Option lists** and **line blocks** (`|`) - skipped, not mapped onto
+ *    anything. **Definition lists** are mapped: a term line followed by an
+ *    indented definition becomes a `definitionList`/`definitionItem` pair,
+ *    and consecutive pairs group into one list the way blank-separated bullet
+ *    items do.
  *  - **Doctest blocks** (`>>>`) - recognised so they are not mis-read as prose,
- *    but skipped rather than emitted as `code`.
- *  - **Tables**, grid and simple - recognised and skipped, for the same reason.
- *  - **Block quotes** (a bare indented block) - skipped.
+ *    but skipped rather than emitted as `codeBlock`.
+ *  - **Tables** - grid (`+---+`), simple (`===  ===`), `list-table`, and
+ *    `csv-table` all become `table` nodes. Grid and simple tables take their
+ *    columns from the border itself, so a spanning cell (a row border that
+ *    omits one `+`, or a simple-table row that straddles a column gap) is read
+ *    as if it were not spanned - the rectangular case, not the general grid
+ *    grammar. A simple table's body is one row per physical line; only its
+ *    header, if it has one, merges multiple lines into one row.  `list-table`
+ *    and `csv-table` carry a header row only when `:header-rows:` (both) or
+ *    `:header:` (`csv-table`) says so - without one, the table has real rows
+ *    and no header, which is the honest answer. A `csv-table`'s external
+ *    `:file:`/`:url:` source is never read, the same call `include` gets.
+ *  - **Block quotes** (an indented block with no `::` ahead of it) - mapped to
+ *    `blockquote`, its own content parsed the same way a list item's is.
  *  - **Quoted literal blocks** (an unindented literal block quoted with
  *    punctuation) - not recognised; read as prose.
  *  - **Enumerator styles beyond `1.`/`1)`/`#.`/`#)`** - alphabetic and Roman
@@ -63,9 +74,17 @@
  *  - **Document title promotion** - docutils promotes a lone top-level section
  *    to the document title. Here it stays a level-1 section, which is what the
  *    doctype templates model (a title with its subsections hanging under it).
- *  - **Directive options and content semantics** - only `code-block`, `code`,
- *    and `sourcecode` produce a node at all; every other directive is skipped
- *    whole.
+ *  - **Directive options and content semantics beyond what is listed above** -
+ *    `code-block`/`code`/`sourcecode` become `codeBlock`; `note`, `tip`,
+ *    `important`, `caution`, `warning`, and `danger` become `admonition` with
+ *    that word as `variant`; `image` and `figure` become `image`; `list-table`
+ *    and `csv-table` become `table`. `attention`, `hint`, `error`, and the
+ *    generic `admonition` directive also become `admonition`, but with no
+ *    `variant` at all - `AdmonitionNode.variant` has no six-value member for
+ *    them, and inventing an equivalence (`hint` as `tip`, `error` as `danger`)
+ *    is exactly what this parser does not do. A plain count rule still counts
+ *    them; a `variant:` rule reports them as a mismatch instead of a false
+ *    match. Every other directive is skipped whole.
  *  - **Anything an unterminated fenced block would need** - a *complete* fenced
  *    front matter block is cut from the body before scanning, because `---`
  *    reads as a transition and the YAML under it as prose. An unterminated one
@@ -81,14 +100,20 @@
  */
 import { extractFrontmatter, extractorForExtension, locateFrontmatter } from "../../meta/index.js";
 import type {
+  AdmonitionNode,
   ContentNode,
+  DefinitionItemNode,
   DocumentParser,
   DocumentTree,
   ListItemNode,
+  ListNode,
   Point,
   Position,
+  TableCellNode,
+  TableNode,
+  TableRowNode,
 } from "../types.js";
-import type { Block } from "./sectionize.js";
+import type { Fragment } from "./sectionize.js";
 import { sectionize } from "./sectionize.js";
 import {
   fencedPosition,
@@ -107,10 +132,34 @@ const EXPLICIT = /^[ \t]*\.\.(?:[ \t]|$)/;
 const DIRECTIVE = /^([ \t]*)\.\.[ \t]+([\w.+:-]+)::[ \t]*(.*)$/;
 /** Directives that carry a literal block, with the language as the argument. */
 const CODE_DIRECTIVES = new Set(["code", "code-block", "sourcecode"]);
+/** Admonition directives that name one of the six variants directly. */
+const ADMONITION_VARIANTS = new Map<string, AdmonitionNode["variant"]>([
+  ["note", "note"],
+  ["tip", "tip"],
+  ["important", "important"],
+  ["caution", "caution"],
+  ["warning", "warning"],
+  ["danger", "danger"],
+]);
+/**
+ * Every admonition directive this parser reads, variant-naming or not.
+ * `attention`, `hint`, `error`, and the generic `admonition` directive still
+ * become an `admonition` node - just with no `variant`, since none of the six
+ * is honestly theirs. See the file header.
+ */
+const ADMONITION_DIRECTIVES = new Set([
+  ...ADMONITION_VARIANTS.keys(),
+  "attention",
+  "hint",
+  "error",
+  "admonition",
+]);
 /** A field-list entry: `:name:` or `:name: value`. */
 const FIELD = /^[ \t]*:[^:\s][^:]*:(?:[ \t]|$)/;
 /** A directive option inside a directive body, e.g. `:linenos:`. */
 const OPTION = /^[ \t]*:[\w-]+:(?:[ \t].*)?$/;
+/** A directive option, capturing its key and value: `:header-rows: 1`. */
+const OPTION_KV = /^[ \t]*:([\w-]+):(?:[ \t]+(.*))?$/;
 /** A bullet-list item. The marker must be followed by whitespace or nothing. */
 const BULLET = /^([ \t]*)([*+-])(?:([ \t]+)(.*))?$/;
 /** An enumerated-list item, arabic or auto (`#`), with a `.` or `)` suffix. */
@@ -348,6 +397,277 @@ function levelFor(levels: Levels, style: string): number {
   return Math.min(index + 1, 6);
 }
 
+/** A directive's `:key: value` option block, read up to the first non-option line. */
+function readOptions(
+  src: Source,
+  from: number,
+  to: number,
+): { options: Record<string, string>; next: number } {
+  const options: Record<string, string> = {};
+  let i = from;
+  while (i < to) {
+    const match = OPTION_KV.exec(src.text[i] ?? "");
+    if (!match) break;
+    const key = (match[1] ?? "").toLowerCase();
+    options[key] = (match[2] ?? "").trim();
+    i++;
+  }
+  return { options, next: i };
+}
+
+/** First content line of a directive body, after its options and any blank lines. */
+function directiveContentStart(src: Source, from: number, to: number): number {
+  const { next } = readOptions(src, from, to);
+  let start = next;
+  while (start < to && isBlank(src.text[start])) start++;
+  return start;
+}
+
+/** Index of every `+` in a grid-table border line - the table's column edges. */
+function gridColumns(border: string): number[] {
+  const cols: number[] = [];
+  for (let i = 0; i < border.length; i++) {
+    if (border[i] === "+") cols.push(i);
+  }
+  return cols;
+}
+
+/** The substrings a grid-table content line holds between `cols`' column edges. */
+function gridCells(line: string, cols: number[]): string[] {
+  const cells: string[] = [];
+  for (let k = 0; k < cols.length - 1; k++) {
+    const start = (cols[k] ?? 0) + 1;
+    const end = cols[k + 1] ?? line.length;
+    cells.push(line.slice(start, end));
+  }
+  return cells;
+}
+
+/**
+ * A grid table (`+---+---+` borders), read from its top border at `from`.
+ *
+ * Column edges come from the top border alone, so a row whose own border omits
+ * a `+` (a spanning cell) is read as if it were not spanned - see the file
+ * header. A row is `header: true` when the border that closes it carries `=`.
+ */
+function parseGridTable(src: Source, from: number, to: number): { node: TableNode; next: number } {
+  let end = from;
+  while (end < to && !isBlank(src.text[end])) end++;
+
+  const cols = gridColumns(src.text[from] ?? "");
+  const rows: TableRowNode[] = [];
+  let current: number[] = [];
+
+  const flush = (header: boolean): void => {
+    if (current.length === 0) return;
+    const first = current[0] ?? from;
+    const last = current[current.length - 1] ?? first;
+    const perColumn: string[][] = cols.slice(0, -1).map(() => []);
+    for (const lineIdx of current) {
+      const cells = gridCells(src.text[lineIdx] ?? "", cols);
+      cells.forEach((text, idx) => perColumn[idx]?.push(text));
+    }
+    const cellNodes: TableCellNode[] = perColumn.map((lines) => {
+      const text = flattenInline(lines.join(" ").trim());
+      return {
+        kind: "tableCell",
+        position: spanOf(src, first, last),
+        text,
+        children: text === "" ? [] : [{ kind: "paragraph", position: spanOf(src, first, last), text }],
+      };
+    });
+    rows.push({
+      kind: "tableRow",
+      header,
+      position: spanOf(src, first, last),
+      text: cellNodes.map((c) => c.text).join(" | "),
+      children: cellNodes,
+    });
+    current = [];
+  };
+
+  for (let i = from + 1; i < end; i++) {
+    const line = src.text[i] ?? "";
+    if (GRID_TABLE.test(line)) {
+      flush(/=/.test(line));
+      continue;
+    }
+    current.push(i);
+  }
+  flush(false);
+
+  const last = lastContentLine(src, from, end);
+  return {
+    node: {
+      kind: "table",
+      position: spanOf(src, from, Math.max(last, from)),
+      text: rows.map((r) => r.text).join("\n"),
+      children: rows,
+    },
+    next: end,
+  };
+}
+
+/** Column spans (`[start, end)`) from a simple-table border's `=`/`-` runs. */
+function simpleColumns(border: string): [number, number][] {
+  const spans: [number, number][] = [];
+  const re = /[-=]+/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(border)) !== null) {
+    spans.push([match.index, match.index + match[0].length]);
+  }
+  return spans;
+}
+
+/** One simple-table row, built from one or more physical lines over `spans`. */
+function simpleRow(
+  src: Source,
+  lines: number[],
+  spans: [number, number][],
+  header: boolean,
+): TableRowNode {
+  const first = lines[0] ?? 0;
+  const last = lines[lines.length - 1] ?? first;
+  const perColumn: string[][] = spans.map(() => []);
+  for (const lineIdx of lines) {
+    const raw = src.text[lineIdx] ?? "";
+    spans.forEach(([start, endCol], idx) => {
+      const isLast = idx === spans.length - 1;
+      perColumn[idx]?.push(raw.slice(start, isLast ? raw.length : endCol));
+    });
+  }
+  const cells: TableCellNode[] = perColumn.map((columnLines) => {
+    const text = flattenInline(columnLines.join(" ").trim());
+    return {
+      kind: "tableCell",
+      position: spanOf(src, first, last),
+      text,
+      children: text === "" ? [] : [{ kind: "paragraph", position: spanOf(src, first, last), text }],
+    };
+  });
+  return {
+    kind: "tableRow",
+    header,
+    position: spanOf(src, first, last),
+    text: cells.map((c) => c.text).join(" | "),
+    children: cells,
+  };
+}
+
+/**
+ * A simple table (`===  ===` rules), read from its top border at `from`.
+ *
+ * One physical line is one row, with one exception: every line between the
+ * top border and the header separator, if there is one, merges into a single
+ * multi-line header row. Without a header separator, the table has no header.
+ */
+function parseSimpleTable(src: Source, from: number, to: number): { node: TableNode; next: number } {
+  let end = from;
+  while (end < to && !isBlank(src.text[end])) end++;
+
+  const spans = simpleColumns(src.text[from] ?? "");
+  const borders: number[] = [];
+  for (let i = from; i < end; i++) {
+    if (SIMPLE_TABLE.test(src.text[i] ?? "")) borders.push(i);
+  }
+  const top = borders[0] ?? from;
+  const bottom = borders[borders.length - 1] ?? end - 1;
+  const interior = borders.filter((idx) => idx !== top && idx !== bottom);
+  const headerSep = interior[0];
+
+  const headerLines: number[] = [];
+  const bodyLines: number[] = [];
+  for (let i = top + 1; i < bottom; i++) {
+    if (interior.includes(i)) continue;
+    if (headerSep !== undefined && i < headerSep) headerLines.push(i);
+    else bodyLines.push(i);
+  }
+
+  const rows: TableRowNode[] = [];
+  if (headerLines.length > 0) rows.push(simpleRow(src, headerLines, spans, true));
+  for (const lineIdx of bodyLines) rows.push(simpleRow(src, [lineIdx], spans, false));
+
+  const last = lastContentLine(src, from, end);
+  return {
+    node: {
+      kind: "table",
+      position: spanOf(src, from, Math.max(last, from)),
+      text: rows.map((r) => r.text).join("\n"),
+      children: rows,
+    },
+    next: end,
+  };
+}
+
+/**
+ * A `csv-table`'s own naive split: comma-delimited, `"`-quoted fields with
+ * `""` as an escaped quote. Not the general CSV grammar, just enough for the
+ * directive's inline rows.
+ */
+function splitCsvLine(line: string): string[] {
+  const fields: string[] = [];
+  let field = "";
+  let quoted = false;
+  let i = 0;
+  while (i < line.length) {
+    const ch = line[i];
+    // `i < line.length` already guarantees this, but `noUncheckedIndexedAccess`
+    // cannot see it, and a `?? ""` fallback would silently swallow a real
+    // bounds bug instead of ending the scan.
+    if (ch === undefined) break;
+    if (quoted) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') {
+          field += '"';
+          i += 2;
+          continue;
+        }
+        quoted = false;
+        i++;
+        continue;
+      }
+      field += ch;
+      i++;
+      continue;
+    }
+    if (ch === '"' && field.trim() === "") {
+      quoted = true;
+      i++;
+      continue;
+    }
+    if (ch === ",") {
+      fields.push(field.trim());
+      field = "";
+      i++;
+      continue;
+    }
+    field += ch;
+    i++;
+  }
+  fields.push(field.trim());
+  return fields;
+}
+
+/** One `csv-table` row, from already-split fields. */
+function csvRow(src: Source, lineIdx: number, fields: string[], header: boolean): TableRowNode {
+  const cells: TableCellNode[] = fields.map((field) => {
+    const text = flattenInline(field);
+    return {
+      kind: "tableCell",
+      position: spanOf(src, lineIdx, lineIdx),
+      text,
+      children: text === "" ? [] : [{ kind: "paragraph", position: spanOf(src, lineIdx, lineIdx), text }],
+    };
+  });
+  return {
+    kind: "tableRow",
+    header,
+    position: spanOf(src, lineIdx, lineIdx),
+    text: cells.map((c) => c.text).join(" | "),
+    children: cells,
+  };
+}
+
 /**
  * Scan `from..to` at indent `base` into ordered blocks.
  *
@@ -362,10 +682,10 @@ function scanRange(
   to: number,
   base: number,
   headings: boolean,
-): Block[] {
-  const blocks: Block[] = [];
+): Fragment[] {
+  const fragments: Fragment[] = [];
   const content = (node: ContentNode): void => {
-    blocks.push({ type: "content", node });
+    fragments.push({ type: "content", node });
   };
   let i = from;
 
@@ -380,7 +700,7 @@ function scanRange(
     if (headings) {
       const hit = titleAt(src, i, to);
       if (hit) {
-        blocks.push({
+        fragments.push({
           type: "heading",
           level: levelFor(levels, hit.style),
           title: hit.title,
@@ -395,7 +715,7 @@ function scanRange(
     // reads as a two-character run of `:`. The marker wins: an adornment of
     // colons could only ever underline a title one or two characters wide.
     if (line.trim() === "::") {
-      i = readParagraph(src, levels, blocks, i, to, base, headings);
+      i = readParagraph(src, levels, fragments, i, to, base, headings);
       continue;
     }
 
@@ -408,12 +728,15 @@ function scanRange(
 
     const lineIndent = indentOf(line);
 
-    // Explicit markup. A code directive becomes a `code` node; every other
-    // directive, comment, target, and substitution definition is skipped whole.
+    // Explicit markup: a directive, a comment, a target, or a substitution
+    // definition. Some directives become a node of their own; every other
+    // directive, comment, target, and substitution definition is skipped
+    // whole - see the file header for exactly which.
     if (EXPLICIT.test(line)) {
       const bodyEnd = indentedBlockEnd(src, i + 1, to, lineIndent);
       const directive = DIRECTIVE.exec(line);
       const name = directive?.[2]?.toLowerCase();
+
       if (name && CODE_DIRECTIVES.has(name)) {
         const lang = (directive?.[3] ?? "").trim();
         // Drop the directive's own options (`:linenos:` and friends) before the
@@ -423,11 +746,109 @@ function scanRange(
         while (codeStart < bodyEnd && isBlank(src.text[codeStart])) codeStart++;
         const codeEnd = lastContentLine(src, codeStart, bodyEnd) + 1;
         content({
-          kind: "code",
+          kind: "codeBlock",
           position: spanOf(src, i, Math.max(codeEnd - 1, i)),
           text: codeStart < codeEnd ? dedent(src, codeStart, codeEnd) : "",
-          ...(lang ? { lang } : {}),
+          ...(lang ? { language: lang } : {}),
         });
+      } else if (name && ADMONITION_DIRECTIVES.has(name)) {
+        const variant = ADMONITION_VARIANTS.get(name);
+        const start = directiveContentStart(src, i + 1, bodyEnd);
+        const children =
+          start < bodyEnd
+            ? scanRange(src, levels, start, bodyEnd, indentOf(src.text[start] ?? ""), false)
+                .filter((f): f is Extract<Fragment, { type: "content" }> => f.type === "content")
+                .map((f) => f.node)
+            : [];
+        const last = lastContentLine(src, i, bodyEnd);
+        content({
+          kind: "admonition",
+          position: spanOf(src, i, Math.max(last, i)),
+          text: children.map((c) => c.text).join("\n"),
+          ...(variant ? { variant } : {}),
+          children,
+        });
+      } else if (name === "image" || name === "figure") {
+        const url = (directive?.[3] ?? "").trim();
+        if (url) {
+          const { options } = readOptions(src, i + 1, bodyEnd);
+          const alt = options["alt"] ?? "";
+          const last = lastContentLine(src, i, bodyEnd);
+          content({
+            kind: "image",
+            position: spanOf(src, i, Math.max(last, i)),
+            text: alt,
+            url,
+            alt,
+          });
+        }
+      } else if (name === "list-table") {
+        const start = directiveContentStart(src, i + 1, bodyEnd);
+        if (start < bodyEnd) {
+          const { options } = readOptions(src, i + 1, bodyEnd);
+          const headerRows = Number.parseInt(options["header-rows"] ?? "", 10) || 0;
+          const rowsFragment = scanRange(
+            src,
+            levels,
+            start,
+            bodyEnd,
+            indentOf(src.text[start] ?? ""),
+            false,
+          ).find(
+            (f): f is Extract<Fragment, { type: "content" }> =>
+              f.type === "content" && f.node.kind === "list",
+          );
+          if (rowsFragment && rowsFragment.node.kind === "list") {
+            const rows: TableRowNode[] = rowsFragment.node.items.map((item, index) => {
+              const cellsList = item.children.find((c): c is ListNode => c.kind === "list");
+              const cells: TableCellNode[] = (cellsList?.items ?? []).map((cellItem) => ({
+                kind: "tableCell",
+                position: cellItem.position,
+                text: cellItem.text,
+                children: cellItem.children,
+              }));
+              return {
+                kind: "tableRow",
+                header: index < headerRows,
+                position: item.position,
+                text: cells.map((c) => c.text).join(" | "),
+                children: cells,
+              };
+            });
+            const last = lastContentLine(src, i, bodyEnd);
+            content({
+              kind: "table",
+              position: spanOf(src, i, Math.max(last, i)),
+              text: rows.map((r) => r.text).join("\n"),
+              children: rows,
+            });
+          }
+        }
+      } else if (name === "csv-table") {
+        const { options } = readOptions(src, i + 1, bodyEnd);
+        const bodyStart = directiveContentStart(src, i + 1, bodyEnd);
+        const rowLines: number[] = [];
+        for (let li = bodyStart; li < bodyEnd; li++) {
+          if (!isBlank(src.text[li])) rowLines.push(li);
+        }
+        const headerOption = options["header"];
+        if (rowLines.length > 0 || headerOption !== undefined) {
+          const headerRows = Number.parseInt(options["header-rows"] ?? "", 10) || 0;
+          const rows: TableRowNode[] = [];
+          if (headerOption !== undefined) {
+            rows.push(csvRow(src, i, splitCsvLine(headerOption), true));
+          }
+          rowLines.forEach((lineIdx, index) => {
+            rows.push(csvRow(src, lineIdx, splitCsvLine(src.text[lineIdx] ?? ""), index < headerRows));
+          });
+          const last = lastContentLine(src, i, bodyEnd);
+          content({
+            kind: "table",
+            position: spanOf(src, i, Math.max(last, i)),
+            text: rows.map((r) => r.text).join("\n"),
+            children: rows,
+          });
+        }
       }
       i = Math.max(bodyEnd, i + 1);
       continue;
@@ -443,7 +864,7 @@ function scanRange(
       continue;
     }
 
-    if (DOCTEST.test(line) || GRID_TABLE.test(line) || SIMPLE_TABLE.test(line)) {
+    if (DOCTEST.test(line)) {
       // Consume the run of non-blank lines the construct occupies.
       let end = i;
       while (end < to && !isBlank(src.text[end])) end++;
@@ -451,9 +872,35 @@ function scanRange(
       continue;
     }
 
-    // An indented block with no `::` ahead of it is a block quote.
+    if (GRID_TABLE.test(line)) {
+      const table = parseGridTable(src, i, to);
+      content(table.node);
+      i = table.next;
+      continue;
+    }
+
+    if (SIMPLE_TABLE.test(line)) {
+      const table = parseSimpleTable(src, i, to);
+      content(table.node);
+      i = table.next;
+      continue;
+    }
+
+    // An indented block with no `::` ahead of it is a block quote. Its own
+    // content is parsed the same way a list item's body is.
     if (lineIndent > base) {
-      i = Math.max(indentedBlockEnd(src, i, to, base), i + 1);
+      const bqEnd = indentedBlockEnd(src, i, to, base);
+      const children = scanRange(src, levels, i, bqEnd, lineIndent, false)
+        .filter((f): f is Extract<Fragment, { type: "content" }> => f.type === "content")
+        .map((f) => f.node);
+      const last = lastContentLine(src, i, bqEnd);
+      content({
+        kind: "blockquote",
+        position: spanOf(src, i, Math.max(last, i)),
+        text: children.map((c) => c.text).join("\n"),
+        children,
+      });
+      i = Math.max(bqEnd, i + 1);
       continue;
     }
 
@@ -474,17 +921,19 @@ function scanRange(
     }
 
     // A term whose next line is indented is a definition list, not a paragraph
-    // followed by a block quote. Skipped, like every other undescribed kind.
+    // followed by a block quote.
     const next = src.text[i + 1];
     if (i + 1 < to && !isBlank(next) && indentOf(next ?? "") > base) {
-      i = Math.max(indentedBlockEnd(src, i + 1, to, base), i + 1);
+      const dl = parseDefinitionList(src, levels, i, to, base);
+      content(dl.node);
+      i = dl.next;
       continue;
     }
 
-    i = readParagraph(src, levels, blocks, i, to, base, headings);
+    i = readParagraph(src, levels, fragments, i, to, base, headings);
   }
 
-  return blocks;
+  return fragments;
 }
 
 /**
@@ -581,10 +1030,11 @@ function parseList(
     const bodyEnd = Math.max(indentedBlockEnd(src, start + 1, to, base), start + 1);
     const last = lastContentLine(src, start, bodyEnd);
     const children = scanRange(src, levels, start, bodyEnd, marker.contentIndent, false)
-      .filter((b): b is Extract<Block, { type: "content" }> => b.type === "content")
+      .filter((b): b is Extract<Fragment, { type: "content" }> => b.type === "content")
       .map((b) => b.node);
 
     items.push({
+      kind: "listItem",
       position: spanOf(src, start, Math.max(last, start), base + 1),
       text: children.map((c) => c.text).join("\n"),
       children,
@@ -607,6 +1057,64 @@ function parseList(
 }
 
 /**
+ * A run of term/definition pairs starting at `from`: an unindented term line
+ * immediately followed by an indented definition. Items may be separated by
+ * blank lines, the same tolerance `parseList` gives bulleted items.
+ */
+function parseDefinitionList(
+  src: Source,
+  levels: Levels,
+  from: number,
+  to: number,
+  base: number,
+): { node: ContentNode; next: number } {
+  const items: DefinitionItemNode[] = [];
+  let i = from;
+  let end = from;
+
+  while (i < to) {
+    let start = i;
+    while (start < to && isBlank(src.text[start])) start++;
+    if (start >= to) break;
+
+    const line = src.text[start] ?? "";
+    if (indentOf(line) !== base) break;
+    const next = src.text[start + 1];
+    if (start + 1 >= to || isBlank(next) || indentOf(next ?? "") <= base) break;
+
+    const term = flattenInline(line.trim());
+    const defStart = start + 1;
+    const defIndent = indentOf(next ?? "");
+    const defEnd = Math.max(indentedBlockEnd(src, defStart, to, base), defStart);
+    const last = lastContentLine(src, start, defEnd);
+    const definition = scanRange(src, levels, defStart, defEnd, defIndent, false)
+      .filter((f): f is Extract<Fragment, { type: "content" }> => f.type === "content")
+      .map((f) => f.node);
+
+    items.push({
+      kind: "definitionItem",
+      position: spanOf(src, start, Math.max(last, start)),
+      text: [term, ...definition.map((d) => d.text)].join("\n"),
+      term,
+      definition,
+    });
+    i = defEnd;
+    end = defEnd;
+  }
+
+  const last = lastContentLine(src, from, end);
+  return {
+    node: {
+      kind: "definitionList",
+      position: spanOf(src, from, Math.max(last, from)),
+      text: items.map((item) => item.text).join("\n"),
+      children: items,
+    },
+    next: Math.max(i, from + 1),
+  };
+}
+
+/**
  * Read one paragraph, and the literal block it may introduce.
  *
  * A paragraph ending in `::` opens a literal block: the indented block after
@@ -617,7 +1125,7 @@ function parseList(
 function readParagraph(
   src: Source,
   levels: Levels,
-  blocks: Block[],
+  fragments: Fragment[],
   from: number,
   to: number,
   base: number,
@@ -653,7 +1161,7 @@ function readParagraph(
       : rawText.replace(/(\s*)::$/, (_m, space: string) => (space === "" ? ":" : ""));
 
   if (text.trim() !== "") {
-    blocks.push({
+    fragments.push({
       type: "content",
       node: { kind: "paragraph", position: spanOf(src, from, end - 1), text },
     });
@@ -668,10 +1176,10 @@ function readParagraph(
 
   const blockEnd = indentedBlockEnd(src, start, to, base);
   const last = lastContentLine(src, start, blockEnd);
-  blocks.push({
+  fragments.push({
     type: "content",
     node: {
-      kind: "code",
+      kind: "codeBlock",
       position: spanOf(src, start, Math.max(last, start)),
       text: dedent(src, start, blockEnd),
     },
@@ -776,6 +1284,20 @@ function readMetadata(content: string, filePath: string, src: Source): Metadata 
 export const rstParser: DocumentParser = {
   name: "rst",
   label: "reStructuredText",
+  kinds: [
+    "paragraph",
+    "codeBlock",
+    "list",
+    "listItem",
+    "table",
+    "tableRow",
+    "tableCell",
+    "admonition",
+    "image",
+    "blockquote",
+    "definitionList",
+    "definitionItem",
+  ],
   extensions: [".rst"],
   parse(content, filePath): DocumentTree {
     const src = indexLines(content);
@@ -785,7 +1307,7 @@ export const rstParser: DocumentParser = {
     // reads those same lines to place the metadata span. Swapped, the docinfo
     // field list is already blank and every metadata position collapses.
     const { frontmatter, position, bodyStart } = readMetadata(content, filePath, src);
-    const blocks = scanRange(
+    const fragments = scanRange(
       src,
       { styles: [] },
       Math.max(bodyStart, 0),
@@ -800,7 +1322,7 @@ export const rstParser: DocumentParser = {
       frontmatter,
       frontmatterPosition: position,
       sections: sectionize(
-        withFrontmatterTitle(blocks, frontmatter, position),
+        withFrontmatterTitle(fragments, frontmatter, position),
         src.end,
       ),
     };

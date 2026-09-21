@@ -56,11 +56,29 @@ export type {
 export { validateDocument, validateSections } from "./core/validator.js";
 export { matchSections } from "./core/match.js";
 export type { Match, MatchResult } from "./core/match.js";
-export { headingMatches, isRequired, isSlot } from "./core/template.js";
+export {
+  BLOCK_KINDS,
+  headingMatches,
+  isWildcard,
+  occurrenceRange,
+} from "./core/template.js";
 export type {
+  AdmonitionsRule,
+  AttributesRule,
+  BlockKind,
+  BlockRule,
+  CodeBlocksRule,
+  ElementsRule,
+  HeadingRule,
+  ImagesRule,
+  ListItemsRule,
+  ListsRule,
+  Occurrences,
+  ParagraphsRule,
+  Rule,
+  TablesRule,
   Template,
   TemplateFile,
-  TemplateSection,
 } from "./core/template.js";
 export {
   listBuiltins,

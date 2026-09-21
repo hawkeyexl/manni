@@ -14,7 +14,15 @@ import { describe, expect, it } from "vitest";
 import { rstParser } from "../../../src/lint/parsers/rst.js";
 import { loadTemplate } from "../../../src/lint/core/template-registry.js";
 import { validateDocument } from "../../../src/lint/core/validator.js";
-import type { CodeNode, ListNode, SectionNode } from "../../../src/lint/types.js";
+import type {
+  AdmonitionNode,
+  BlockquoteNode,
+  CodeNode,
+  DefinitionListNode,
+  ListNode,
+  SectionNode,
+  TableNode,
+} from "../../../src/lint/types.js";
 import { at, defined } from "../helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -160,7 +168,7 @@ describe("rst parser: section levels", () => {
     expect(tree.sections.map((s) => s.title)).toEqual([""]);
     const lead = at(tree.sections, 0, "lead section");
     expect(lead.level).toBe(0);
-    expect(lead.content.map((c) => c.text)).toEqual([
+    expect(lead.children.map((c) => c.text)).toEqual([
       "Overview of the thing",
       "Body text.",
     ]);
@@ -170,7 +178,7 @@ describe("rst parser: section levels", () => {
   it("skips a transition", () => {
     const tree = parse(["A", "=", "", "before", "", "-----", "", "after", ""].join("\n"));
     const a = at(tree.sections, 0, "section A");
-    expect(a.content.map((c) => c.text)).toEqual(["before", "after"]);
+    expect(a.children.map((c) => c.text)).toEqual(["before", "after"]);
   });
 });
 
@@ -193,9 +201,9 @@ describe("rst parser: content", () => {
       ].join("\n"),
     );
     const a = at(tree.sections, 0, "section A");
-    expect(a.content.map((c) => c.kind)).toEqual([
+    expect(a.children.map((c) => c.kind)).toEqual([
       "paragraph",
-      "code",
+      "codeBlock",
       "list",
     ]);
   });
@@ -205,7 +213,7 @@ describe("rst parser: content", () => {
       ["A", "=", "", "Run the ``lint`` command", "on **every** file.", ""].join("\n"),
     );
     const a = at(tree.sections, 0, "section A");
-    expect(at(a.content, 0, "paragraph").text).toBe(
+    expect(at(a.children, 0, "paragraph").text).toBe(
       "Run the lint command\non every file.",
     );
   });
@@ -216,21 +224,21 @@ describe("rst parser: content", () => {
     const tree = parse(
       ["A", "=", "", "Run this::", "", "   widget keys rotate", "   --id abc123", ""].join("\n"),
     );
-    const content = at(tree.sections, 0, "section A").content;
+    const content = at(tree.sections, 0, "section A").children;
     const para = at(content, 0, "paragraph");
     const code = at(content, 1, "literal block");
     expect(para).toMatchObject({ kind: "paragraph", text: "Run this:" });
     expect(code).toMatchObject({
-      kind: "code",
+      kind: "codeBlock",
       text: "widget keys rotate\n--id abc123",
     });
-    expect((code as CodeNode).lang).toBeUndefined();
+    expect((code as CodeNode).language).toBeUndefined();
   });
 
   it("drops a paragraph that is only the `::` marker", () => {
     const tree = parse(["A", "=", "", "::", "", "   just code", ""].join("\n"));
     const a = at(tree.sections, 0, "section A");
-    expect(a.content.map((c) => c.kind)).toEqual(["code"]);
+    expect(a.children.map((c) => c.kind)).toEqual(["codeBlock"]);
   });
 
   it("takes the language from a code directive and drops its options", () => {
@@ -246,10 +254,10 @@ describe("rst parser: content", () => {
         "",
       ].join("\n"),
     );
-    const content = at(tree.sections, 0, "section A").content;
+    const content = at(tree.sections, 0, "section A").children;
     expect(at(content, 0, "code block")).toMatchObject({
-      kind: "code",
-      lang: "python",
+      kind: "codeBlock",
+      language: "python",
       text: "print('hi')",
     });
   });
@@ -258,7 +266,7 @@ describe("rst parser: content", () => {
     const tree = parse(
       ["A", "=", "", "* one", "* two", "", "1. first", "2. second", ""].join("\n"),
     );
-    const content = at(tree.sections, 0, "section A").content as ListNode[];
+    const content = at(tree.sections, 0, "section A").children as ListNode[];
     const bullets = at(content, 0, "bullet list");
     const steps = at(content, 1, "enumerated list");
     expect(bullets).toMatchObject({ kind: "list", ordered: false });
@@ -269,14 +277,14 @@ describe("rst parser: content", () => {
 
   it("reads an auto-enumerated list as ordered", () => {
     const tree = parse(["A", "=", "", "#. first", "#. second", ""].join("\n"));
-    const content = at(tree.sections, 0, "section A").content;
+    const content = at(tree.sections, 0, "section A").children;
     expect(at(content, 0, "list")).toMatchObject({ kind: "list", ordered: true });
   });
 
   // Items separated by blank lines are one list, not one list per item.
   it("keeps blank-separated items in a single list", () => {
     const tree = parse(["A", "=", "", "* one", "", "* two", "", "* three", ""].join("\n"));
-    const content = at(tree.sections, 0, "section A").content;
+    const content = at(tree.sections, 0, "section A").children;
     const list = at(content, 0, "bullet list") as ListNode;
     expect(content).toHaveLength(1);
     expect(list.items).toHaveLength(3);
@@ -296,11 +304,11 @@ describe("rst parser: content", () => {
         "",
       ].join("\n"),
     );
-    const content = at(tree.sections, 0, "section A").content;
+    const content = at(tree.sections, 0, "section A").children;
     const list = at(content, 0, "enumerated list") as ListNode;
     const first = at(list.items, 0, "list item");
     const second = at(list.items, 1, "list item");
-    expect(first.children.map((c) => c.kind)).toEqual(["paragraph", "code"]);
+    expect(first.children.map((c) => c.kind)).toEqual(["paragraph", "codeBlock"]);
     expect(at(first.children, 1, "nested code block")).toMatchObject({
       text: "widget do",
     });
@@ -309,7 +317,7 @@ describe("rst parser: content", () => {
 
   it("nests a sublist inside its item", () => {
     const tree = parse(["A", "=", "", "* one", "", "  * inner", "", "* two", ""].join("\n"));
-    const content = at(tree.sections, 0, "section A").content;
+    const content = at(tree.sections, 0, "section A").children;
     const list = at(content, 0, "bullet list") as ListNode;
     expect(list.items).toHaveLength(2);
     expect(at(list.items, 0, "list item").children.map((c) => c.kind)).toEqual([
@@ -321,9 +329,10 @@ describe("rst parser: content", () => {
 
 describe("rst parser: skipping", () => {
   // The Markdown parser skips blockquotes and tables rather than mapping them
-  // onto a nearest neighbour, and for the same reason: a note is not a
-  // paragraph, and counting it as one breaks `paragraphs: {max: n}`.
-  it("skips directives other than code, and comments", () => {
+  // onto a nearest neighbour, and this parser used to skip the same shapes.
+  // What remains genuinely unread - a plain comment, a target, a substitution
+  // definition, and a directive this parser does not map - stays skipped.
+  it("skips directives it does not map, and comments", () => {
     const tree = parse(
       [
         "A",
@@ -331,12 +340,9 @@ describe("rst parser: skipping", () => {
         "",
         "Real paragraph.",
         "",
-        ".. note::",
+        ".. seealso::",
         "",
-        "   This admonition is not a paragraph.",
-        "",
-        ".. image:: diagram.png",
-        "   :alt: A diagram",
+        "   Not one of the mapped directives.",
         "",
         ".. This is a plain comment,",
         "   continued on a second line.",
@@ -350,13 +356,13 @@ describe("rst parser: skipping", () => {
       ].join("\n"),
     );
     const a = at(tree.sections, 0, "section A");
-    expect(a.content.map((c) => c.text)).toEqual([
+    expect(a.children.map((c) => c.text)).toEqual([
       "Real paragraph.",
       "Second real paragraph.",
     ]);
   });
 
-  it("skips tables, doctest blocks, block quotes, and definition lists", () => {
+  it("skips doctest blocks", () => {
     const tree = parse(
       [
         "A",
@@ -364,28 +370,15 @@ describe("rst parser: skipping", () => {
         "",
         "Real paragraph.",
         "",
-        "===== =====",
-        "col a col b",
-        "===== =====",
-        "",
-        "+-------+",
-        "| cell  |",
-        "+-------+",
-        "",
         ">>> doctest()",
         "output",
-        "",
-        "   An indented block quote.",
-        "",
-        "term",
-        "   its definition",
         "",
         "Second real paragraph.",
         "",
       ].join("\n"),
     );
     const a = at(tree.sections, 0, "section A");
-    expect(a.content.map((c) => c.text)).toEqual([
+    expect(a.children.map((c) => c.text)).toEqual([
       "Real paragraph.",
       "Second real paragraph.",
     ]);
@@ -401,7 +394,291 @@ describe("rst parser: skipping", () => {
     expect(tree.sections).toHaveLength(1);
     const title = at(tree.sections, 0, "title section");
     expect(title.level).toBe(1);
-    expect(title.content.map((c) => c.text)).toEqual(["Body."]);
+    expect(title.children.map((c) => c.text)).toEqual(["Body."]);
+  });
+});
+
+describe("rst parser: admonitions", () => {
+  it("maps note/tip/important/caution/warning/danger to their own variant", () => {
+    const tree = parse(
+      ["A", "=", "", ".. warning::", "", "   Back up first.", ""].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const node = at(a.children, 0, "admonition") as AdmonitionNode;
+    expect(node).toMatchObject({ kind: "admonition", variant: "warning" });
+    expect(node.text).toBe("Back up first.");
+  });
+
+  it("nests block content inside an admonition", () => {
+    const tree = parse(
+      ["A", "=", "", ".. note::", "", "   First line.", "", "   * a", "   * b", ""].join(
+        "\n",
+      ),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const node = at(a.children, 0, "admonition") as AdmonitionNode;
+    expect(node.variant).toBe("note");
+    expect(node.children.map((c) => c.kind)).toEqual(["paragraph", "list"]);
+  });
+
+  // `attention`, `hint`, `error` and the generic `admonition` directive name
+  // no six-value variant. Rather than invent an equivalence (`hint` as `tip`,
+  // `error` as `danger`), they still become an admonition, just with no
+  // `variant` field - so a `variant: tip` rule never matches a page that
+  // never said tip, and a plain count rule still counts them.
+  it("maps attention, hint, error, and the generic admonition with no variant", () => {
+    const tree = parse(
+      [
+        "A",
+        "=",
+        "",
+        ".. attention::",
+        "",
+        "   x",
+        "",
+        ".. hint::",
+        "",
+        "   y",
+        "",
+        ".. error::",
+        "",
+        "   z",
+        "",
+        ".. admonition:: Custom",
+        "",
+        "   w",
+        "",
+      ].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    expect(a.children.map((c) => c.kind)).toEqual([
+      "admonition",
+      "admonition",
+      "admonition",
+      "admonition",
+    ]);
+    for (const node of a.children as AdmonitionNode[]) {
+      expect(node.variant).toBeUndefined();
+    }
+    expect(a.children.map((c) => c.text)).toEqual(["x", "y", "z", "w"]);
+  });
+});
+
+describe("rst parser: images", () => {
+  it("reads an image directive's url and alt", () => {
+    const tree = parse(
+      ["A", "=", "", ".. image:: diagram.png", "   :alt: A diagram", ""].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const image = at(a.children, 0, "image");
+    expect(image).toMatchObject({ kind: "image", url: "diagram.png", alt: "A diagram" });
+  });
+
+  it("reads a figure directive the same way, defaulting alt to empty", () => {
+    const tree = parse(["A", "=", "", ".. figure:: shot.png", ""].join("\n"));
+    const a = at(tree.sections, 0, "section A");
+    expect(at(a.children, 0, "image")).toMatchObject({
+      kind: "image",
+      url: "shot.png",
+      alt: "",
+    });
+  });
+});
+
+describe("rst parser: block quotes", () => {
+  it("reads an indented block with no `::` ahead as a blockquote", () => {
+    const tree = parse(
+      ["A", "=", "", "Real paragraph.", "", "   A quoted block.", "", "Second.", ""].join(
+        "\n",
+      ),
+    );
+    const a = at(tree.sections, 0, "section A");
+    expect(a.children.map((c) => c.kind)).toEqual([
+      "paragraph",
+      "blockquote",
+      "paragraph",
+    ]);
+    const bq = at(a.children, 1, "blockquote") as BlockquoteNode;
+    expect(bq.text).toBe("A quoted block.");
+    expect(bq.children.map((c) => c.kind)).toEqual(["paragraph"]);
+  });
+});
+
+describe("rst parser: definition lists", () => {
+  it("reads a term and its indented definition", () => {
+    const tree = parse(["A", "=", "", "term", "   its definition", "", "Body.", ""].join("\n"));
+    const a = at(tree.sections, 0, "section A");
+    expect(a.children.map((c) => c.kind)).toEqual(["definitionList", "paragraph"]);
+    const dl = at(a.children, 0, "definition list") as DefinitionListNode;
+    expect(dl.children).toHaveLength(1);
+    const item = at(dl.children, 0, "definition item");
+    expect(item.term).toBe("term");
+    expect(item.definition.map((d) => d.text)).toEqual(["its definition"]);
+  });
+
+  it("groups consecutive term/definition pairs into one list", () => {
+    const tree = parse(["A", "=", "", "one", "   first", "two", "   second", ""].join("\n"));
+    const a = at(tree.sections, 0, "section A");
+    expect(a.children.map((c) => c.kind)).toEqual(["definitionList"]);
+    const dl = at(a.children, 0, "definition list") as DefinitionListNode;
+    expect(dl.children.map((item) => item.term)).toEqual(["one", "two"]);
+  });
+});
+
+describe("rst parser: tables", () => {
+  it("reads a grid table with a header row", () => {
+    const tree = parse(
+      [
+        "A",
+        "=",
+        "",
+        "+-------+-------+",
+        "| A     | B     |",
+        "+=======+=======+",
+        "| 1     | 2     |",
+        "+-------+-------+",
+        "",
+      ].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children).toHaveLength(2);
+    const header = at(table.children, 0, "header row");
+    expect(header.header).toBe(true);
+    expect(header.children.map((c) => c.text)).toEqual(["A", "B"]);
+    const body = at(table.children, 1, "body row");
+    expect(body.header).toBe(false);
+    expect(body.children.map((c) => c.text)).toEqual(["1", "2"]);
+  });
+
+  it("reads a simple table with a header row", () => {
+    const tree = parse(
+      [
+        "A",
+        "=",
+        "",
+        "=====  =====",
+        "col a  col b",
+        "=====  =====",
+        "1      2",
+        "3      4",
+        "=====  =====",
+        "",
+      ].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    const header = at(table.children, 0, "header row");
+    expect(header.header).toBe(true);
+    expect(header.children.map((c) => c.text)).toEqual(["col a", "col b"]);
+    expect(table.children.slice(1).every((r) => !r.header)).toBe(true);
+    expect(table.children.slice(1).map((r) => r.children.map((c) => c.text))).toEqual([
+      ["1", "2"],
+      ["3", "4"],
+    ]);
+  });
+
+  it("reads a simple table with no header when there is no separator", () => {
+    const tree = parse(
+      ["A", "=", "", "=====  =====", "1      2", "=====  =====", ""].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children).toHaveLength(1);
+    expect(table.children[0]?.header).toBe(false);
+  });
+
+  it("reads a list-table with header-rows", () => {
+    const tree = parse(
+      [
+        "A",
+        "=",
+        "",
+        ".. list-table::",
+        "   :header-rows: 1",
+        "",
+        "   * - Col A",
+        "     - Col B",
+        "   * - 1",
+        "     - 2",
+        "",
+      ].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children).toHaveLength(2);
+    expect(at(table.children, 0, "header row").header).toBe(true);
+    expect(at(table.children, 0, "header row").children.map((c) => c.text)).toEqual([
+      "Col A",
+      "Col B",
+    ]);
+    expect(at(table.children, 1, "body row").header).toBe(false);
+  });
+
+  it("reads a list-table with no header when :header-rows: is absent", () => {
+    const tree = parse(
+      ["A", "=", "", ".. list-table::", "", "   * - 1", "     - 2", ""].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children.every((r) => !r.header)).toBe(true);
+  });
+
+  it("reads a csv-table's inline rows, with no header by default", () => {
+    const tree = parse(
+      ["A", "=", "", ".. csv-table::", "", "   1, 2", "   3, 4", ""].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children).toHaveLength(2);
+    expect(table.children.every((r) => !r.header)).toBe(true);
+    expect(table.children.map((r) => r.children.map((c) => c.text))).toEqual([
+      ["1", "2"],
+      ["3", "4"],
+    ]);
+  });
+
+  it("reads a csv-table's :header: option as a header row", () => {
+    const tree = parse(
+      ["A", "=", "", ".. csv-table::", '   :header: "A", "B"', "", "   1, 2", ""].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children).toHaveLength(2);
+    expect(at(table.children, 0, "header row")).toMatchObject({ header: true });
+    expect(at(table.children, 0, "header row").children.map((c) => c.text)).toEqual([
+      "A",
+      "B",
+    ]);
+    expect(at(table.children, 1, "body row").header).toBe(false);
+  });
+
+  // The third path, and the one most real documents take. `:header:` supplies
+  // a header row that is not in the data; `:header-rows:` promotes rows that
+  // are, which is a different branch of the scanner.
+  it("reads a csv-table's :header-rows: option as header rows", () => {
+    const tree = parse(
+      [
+        "A",
+        "=",
+        "",
+        ".. csv-table::",
+        "   :header-rows: 1",
+        "",
+        "   H1, H2",
+        "   1, 2",
+        "",
+      ].join("\n"),
+    );
+    const a = at(tree.sections, 0, "section A");
+    const table = at(a.children, 0, "table") as TableNode;
+    expect(table.children).toHaveLength(2);
+    expect(at(table.children, 0, "header row").header).toBe(true);
+    expect(at(table.children, 0, "header row").children.map((c) => c.text)).toEqual([
+      "H1",
+      "H2",
+    ]);
+    expect(at(table.children, 1, "body row").header).toBe(false);
   });
 });
 
@@ -412,14 +689,14 @@ describe("rst parser: positions", () => {
     const first = at(tree.sections, 0, "title section");
 
     // The heading spans the title line through its underline.
-    expect(first.headingPosition).toMatchObject({
+    expect(first.titlePosition).toMatchObject({
       start: { line: 1, column: 1, offset: 0 },
       end: { line: 2, column: 6 },
     });
-    const heading = defined(first.headingPosition, "heading position");
+    const heading = defined(first.titlePosition, "heading position");
     expect(rst.slice(0, heading.end.offset)).toBe("Title\n=====");
 
-    const para = at(first.content, 0, "paragraph");
+    const para = at(first.children, 0, "paragraph");
     expect(para.position.start).toMatchObject({ line: 4, column: 1 });
     expect(rst.slice(para.position.start.offset, para.position.end.offset)).toBe(
       "First paragraph.",
@@ -429,7 +706,7 @@ describe("rst parser: positions", () => {
   it("starts an indented block at its own column", () => {
     const rst = ["A", "=", "", "Code::", "", "   indented", ""].join("\n");
     const a = at(parse(rst).sections, 0, "section A");
-    const code = at(a.content, 1, "indented literal block");
+    const code = at(a.children, 1, "indented literal block");
     expect(code.position.start).toMatchObject({ line: 6, column: 4 });
     expect(rst.slice(code.position.start.offset, code.position.end.offset)).toBe("indented");
   });
@@ -440,7 +717,7 @@ describe("rst parser: positions", () => {
     const a = at(tree.sections, 0, "section A");
     const b = at(tree.sections, 1, "section B");
     expect(a.position.end.offset).toBe(b.position.start.offset);
-    expect(at(a.content, 0, "paragraph").position.end.offset).toBeLessThan(
+    expect(at(a.children, 0, "paragraph").position.end.offset).toBeLessThan(
       a.position.end.offset,
     );
     expect(b.position.end.offset).toBe(rst.length);
@@ -449,7 +726,7 @@ describe("rst parser: positions", () => {
   it("keeps line numbers exact across CRLF", () => {
     const tree = parse("Title\r\n=====\r\n\r\nPara.\r\n");
     const title = at(tree.sections, 0, "title section");
-    expect(at(title.content, 0, "paragraph").position.start.line).toBe(4);
+    expect(at(title.children, 0, "paragraph").position.start.line).toBe(4);
     expect(title.title).toBe("Title");
   });
 });
@@ -503,8 +780,8 @@ describe("rst parser: frontmatter", () => {
     );
     expect(tree.sections.map((s) => [s.title, s.level])).toEqual([["Rotate an API key", 1]]);
     const synthetic = at(tree.sections, 0, "synthetic H1 section");
-    expect(synthetic.headingPosition).toEqual(tree.frontmatterPosition);
-    expect(synthetic.content.map((c) => c.text)).toEqual(["Body prose."]);
+    expect(synthetic.titlePosition).toEqual(tree.frontmatterPosition);
+    expect(synthetic.children.map((c) => c.text)).toEqual(["Body prose."]);
   });
 
   it("does not prepend one when the body already has a level-1 section", () => {
@@ -525,6 +802,23 @@ describe("rst parser: registration", () => {
     });
     expect(parse("A\n=\n").format).toBe("rst");
     expect(rstParser.parse("A\n=\n", "docs/a.rst").filePath).toBe("docs/a.rst");
+  });
+
+  it("declares exactly the content kinds it emits", () => {
+    expect(rstParser.kinds).toEqual([
+      "paragraph",
+      "codeBlock",
+      "list",
+      "listItem",
+      "table",
+      "tableRow",
+      "tableCell",
+      "admonition",
+      "image",
+      "blockquote",
+      "definitionList",
+      "definitionItem",
+    ]);
   });
 });
 

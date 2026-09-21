@@ -59,15 +59,12 @@ describe("the matcher does not strand sections a later rule needs", () => {
     const doc = subsectionsOf(
       "# T\n\n## Overview\n\n## Install it\n\n## See also\n\n## Before you start\n",
     );
-    const { findings } = matchSections(doc, {
-      overview: { heading: { const: "Overview" } },
-      "before you start": {
-        heading: { const: "Before you start" },
-        required: false,
-      },
-      task: {},
-      "see also": { heading: { const: "See also" } },
-    });
+    const { findings } = matchSections(doc, [
+      { heading: "Overview", max: 1 },
+      { heading: "Before you start", min: 0, max: 1 },
+      { id: "task", max: 1 },
+      { heading: "See also", max: 1 },
+    ]);
 
     expect(findings.map((f) => f.type)).toEqual(["unexpected_section"]);
     expect(at(findings, 0, "unexpected_section finding").message).toContain(
@@ -82,14 +79,14 @@ describe("the matcher does not strand sections a later rule needs", () => {
     const doc = subsectionsOf(
       "# T\n\n## Symptom A\n\n## Symptom B\n\n## Symptom summary\n",
     );
-    const { matches, findings } = matchSections(doc, {
-      symptom: { heading: { pattern: "^Symptom" }, repeat: true },
-      resolution: { heading: { const: "Symptom summary" } },
-    });
+    const { matches, findings } = matchSections(doc, [
+      { id: "symptom", heading: { pattern: "^Symptom" } },
+      { id: "resolution", heading: "Symptom summary", max: 1 },
+    ]);
 
     expect(findings).toEqual([]);
     expect(
-      matches.filter((m) => m.name === "symptom").map((m) => m.section.title),
+      matches.filter((m) => m.rule.id === "symptom").map((m) => m.section.title),
     ).toEqual(["Symptom A", "Symptom B"]);
   });
 
@@ -100,13 +97,13 @@ describe("the matcher does not strand sections a later rule needs", () => {
   // than the case above.
   it("does not let a loose rule take a heading a later exact rule names", () => {
     const doc = subsectionsOf("# T\n\n## Symptom summary\n");
-    const { matches, findings } = matchSections(doc, {
-      symptom: { heading: { pattern: "^Symptom" }, required: false, repeat: true },
-      resolution: { heading: { const: "Symptom summary" } },
-    });
+    const { matches, findings } = matchSections(doc, [
+      { id: "symptom", heading: { pattern: "^Symptom" }, min: 0 },
+      { id: "resolution", heading: "Symptom summary", max: 1 },
+    ]);
 
     expect(findings).toEqual([]);
-    expect(matches.map((m) => m.name)).toEqual(["resolution"]);
+    expect(matches.map((m) => m.rule.id)).toEqual(["resolution"]);
   });
 
   // The other direction of the same guard, and the reason it is asymmetric.
@@ -115,13 +112,13 @@ describe("the matcher does not strand sections a later rule needs", () => {
   // it can do without - a clean document reporting a missing section.
   it("does not make a required rule yield to an optional later one", () => {
     const doc = subsectionsOf("# T\n\n## Symptom summary\n");
-    const { matches, findings } = matchSections(doc, {
-      symptom: { heading: { pattern: "^Symptom" } },
-      summary: { heading: { const: "Symptom summary" }, required: false },
-    });
+    const { matches, findings } = matchSections(doc, [
+      { id: "symptom", heading: { pattern: "^Symptom" }, max: 1 },
+      { id: "summary", heading: "Symptom summary", min: 0, max: 1 },
+    ]);
 
     expect(findings).toEqual([]);
-    expect(matches.map((m) => m.name)).toEqual(["symptom"]);
+    expect(matches.map((m) => m.rule.id)).toEqual(["symptom"]);
   });
 });
 
@@ -171,24 +168,31 @@ describe("a broken template is contained, not fatal", () => {
   // `heading.pattern` is author text compiled with `new RegExp`, and
   // `validateDocument` was the one call in `lintOne` with no try - so one bad
   // pattern aborted the whole run and the other pages were never reported.
+  //
+  // v2 also compiles every pattern in a file eagerly, at load time (`Invalid
+  // pattern "Step (" in bad.yaml`), rather than only when a page actually
+  // matches against it. Loading `bad.yaml` through a page's own `$template`
+  // keeps that failure scoped to the page that named it: `--templates`/
+  // `types:` registration loads every routing file up front to build the type
+  // index for the whole run, which is a *usage* error and does abort the run
+  // - see "still reports a template that cannot be loaded" below for that
+  // path. `$template` resolves lazily, per page, inside the same try that
+  // used to have nothing to catch.
   it("reports an uncompilable pattern against the pages that route to it", async () => {
-    const templates = await file(
+    await file(
       "bad.yaml",
       [
         "templates:",
         "  bad:",
-        "    types: [bad]",
-        "    sections:",
-        "      title:",
-        "        heading:",
-        '          pattern: "Step ("',
+        "    heading:",
+        '      pattern: "Step ("',
         "",
       ].join("\n"),
     );
-    await file("a.md", "---\ntype: bad\n---\n\n# A\n");
+    await file("a.md", "---\n$template: ./bad.yaml#bad\n---\n\n# A\n");
     await file("b.md", `---\ntype: how-to\n---\n\n${HOW_TO}`);
 
-    const run = await runLint({ inputs: [dir], templates, cwd: dir });
+    const run = await runLint({ inputs: [dir], cwd: dir });
     const bad = defined(
       run.results.find((r) => r.file.endsWith("a.md")),
       "result for a.md",
@@ -242,8 +246,7 @@ describe("template refs resolve against the file that declared them", () => {
         "templates:",
         "  base:",
         "    sections:",
-        "      title:",
-        "        additionalSections: true",
+        "      - min: 0",
         "",
       ].join("\n"),
     );
@@ -278,10 +281,8 @@ describe("template refs resolve against the file that declared them", () => {
         "  house:",
         "    extends: tgdp:how-to:1.6",
         "    sections:",
-        "      title:",
-        "        sections:",
-        "          see also:",
-        "            required: false",
+        "      - id: see-also",
+        "        min: 0",
         "",
       ].join("\n"),
     );
@@ -303,14 +304,23 @@ describe("a bare list item counts the same in every format", () => {
   // mdast puts a list item's principal text in a paragraph child; HTML and XML
   // iterated element children only, so `<li>text</li>` had none and
   // `lists.items.paragraphs.min` meant different things per format.
+  //
+  // The template's subject is the page, so its `sections` are the page title's
+  // subsections rather than the title itself - every fixture below is one `H1`
+  // with a `Steps` section under it.
   const template: Template = {
-    sections: {
-      title: {
-        sections: {
-          steps: { lists: { min: 1, items: { min: 1, paragraphs: { min: 1 } } } },
+    sections: [
+      {
+        id: "steps",
+        max: 1,
+        contains: {
+          lists: {
+            min: 1,
+            items: { min: 1, contains: { paragraphs: { min: 1 } } },
+          },
         },
       },
-    },
+    ],
   };
 
   // The same rule, one level down. `<li>Parent<ul>…</ul></li>` has a child, so
@@ -320,7 +330,7 @@ describe("a bare list item counts the same in every format", () => {
   it("counts an item's own prose even when the item also nests a list", () => {
     const paragraphsOfFirstItem = (tree: DocumentTree): number => {
       const title = at(tree.sections, 0, "top-level section");
-      const list = at(title.sections, 0, "Steps section").content.find(
+      const list = at(title.sections, 0, "Steps section").children.find(
         (c) => c.kind === "list",
       );
       const item = at(
@@ -358,7 +368,7 @@ describe("a bare list item counts the same in every format", () => {
   it("does not fold a nested item's text into the parent's paragraph", () => {
     const parentProse = (tree: DocumentTree): string => {
       const title = at(tree.sections, 0, "top-level section");
-      const list = at(title.sections, 0, "Steps section").content.find(
+      const list = at(title.sections, 0, "Steps section").children.find(
         (c) => c.kind === "list",
       );
       const item = at(
@@ -498,8 +508,7 @@ describe("a bare --template filename names a file", () => {
         "templates:",
         "  only:",
         "    sections:",
-        "      title:",
-        "        additionalSections: true",
+        "      - min: 0",
         "",
       ].join("\n"),
     );
@@ -510,8 +519,7 @@ describe("a bare --template filename names a file", () => {
         "  other:",
         "    types: [other]",
         "    sections:",
-        "      title:",
-        "        additionalSections: true",
+        "      - min: 0",
         "",
       ].join("\n"),
     );

@@ -1,9 +1,14 @@
 /**
- * `paragraphs:` - paragraph counts and per-paragraph patterns.
+ * `paragraphs:` - paragraph counts and a per-paragraph pattern.
+ *
+ * v1 took a cycling `patterns: string[]`; v2 simplifies to one `pattern`
+ * every paragraph in the run must match, per proposal 0054's block-rule
+ * vocabulary.
  */
 
-import type { ContentNode, Finding, ParagraphNode, SectionNode } from "../types.js";
+import type { ContentNode, Finding, SectionNode } from "../types.js";
 import {
+  checkCount,
   compilePattern,
   paragraphsOf,
   sectionContext,
@@ -14,9 +19,9 @@ import {
 /** Checks the paragraphs a section holds directly. */
 export function checkParagraphs(
   section: SectionNode,
-  rule: ParagraphsRule | undefined
+  rule: ParagraphsRule | undefined,
 ): Finding[] {
-  return checkParagraphsIn(section.content, rule, sectionContext(section));
+  return checkParagraphsIn(section.children, rule, sectionContext(section));
 }
 
 /**
@@ -29,69 +34,34 @@ export function checkParagraphs(
 export function checkParagraphsIn(
   content: ContentNode[],
   rule: ParagraphsRule | undefined,
-  ctx: RuleContext
+  ctx: RuleContext,
 ): Finding[] {
-  const findings: Finding[] = [];
-  if (!rule) return findings;
+  if (!rule) return [];
 
   const paragraphs = paragraphsOf(content);
+  const findings = checkCount(
+    paragraphs.length,
+    rule,
+    "paragraph",
+    "paragraphs_count_error",
+    ctx,
+  );
 
-  if (rule.min && paragraphs.length < rule.min) {
-    findings.push({
-      type: "paragraphs_count_error",
-      heading: ctx.heading,
-      message: `Expected at least ${rule.min} paragraphs, but found ${paragraphs.length}`,
-      position: ctx.position,
-      severity: "error",
+  const pattern = rule.pattern;
+  if (pattern) {
+    const regex = compilePattern(pattern);
+    paragraphs.forEach((paragraph, index) => {
+      if (!regex.test(paragraph.text)) {
+        findings.push({
+          type: "paragraphs_pattern_error",
+          heading: ctx.heading,
+          message: `Paragraph ${index + 1} does not match /${pattern}/`,
+          position: paragraph.position,
+          severity: "error",
+        });
+      }
     });
   }
 
-  if (rule.max !== undefined && paragraphs.length > rule.max) {
-    findings.push({
-      type: "paragraphs_count_error",
-      heading: ctx.heading,
-      message: `Expected at most ${rule.max} paragraphs, but found ${paragraphs.length}`,
-      position: ctx.position,
-      severity: "error",
-    });
-  }
-
-  findings.push(...checkPatterns(paragraphs, rule.patterns, ctx));
-
   return findings;
-}
-
-/**
- * Applies `patterns` to paragraphs in order, cycling the list when there are
- * more paragraphs than patterns.
- */
-function checkPatterns(
-  paragraphs: ParagraphNode[],
-  patterns: string[] | undefined,
-  ctx: RuleContext
-): Finding[] {
-  const findings: Finding[] = [];
-  if (!patterns || patterns.length === 0) return findings;
-
-  const regexes = compilePatterns(patterns);
-
-  paragraphs.forEach((paragraph, index) => {
-    const regex = regexes[index % regexes.length];
-    if (regex && !regex.test(paragraph.text)) {
-      findings.push({
-        type: "paragraph_pattern_error",
-        heading: ctx.heading,
-        message: `Paragraph ${index + 1} doesn't match expected pattern.`,
-        position: paragraph.position,
-        severity: "error",
-      });
-    }
-  });
-
-  return findings;
-}
-
-/** A pattern that will not compile is a broken template, not a lint finding. */
-function compilePatterns(patterns: string[]): RegExp[] {
-  return patterns.map(compilePattern);
 }

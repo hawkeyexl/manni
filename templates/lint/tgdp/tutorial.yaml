@@ -12,6 +12,10 @@
 # steps may be a numbered list, a run of subsections, or a mix, and a minimum
 # tuned to the sample page would reject real pages that are perfectly good
 # tutorials.
+#
+# v2: upstream's `# Title` is a placeholder, so there is nothing to say about
+# the page's own heading or content - what used to wrap everything in a
+# `title` section is now the template's own `sections:`.
 info:
   title: Tutorial (The Good Docs Project)
   version: "1.6.0"
@@ -23,53 +27,48 @@ templates:
     types:
       - tutorial
     sections:
-      title:
+      - id: overview
+        heading: Overview
+        max: 1
         description: >-
-          The page title. Upstream's `# Title` is a placeholder, so this rule
-          constrains no heading text; it exists to carry the H2 sections
-          beneath it.
-        sections:
-          overview:
-            heading:
-              const: Overview
-            description: >-
-              What the reader will be able to do by the end, who the tutorial
-              is for, and the background knowledge it assumes. The guide calls
-              this the section that decides whether a reader starts at all, so
-              it must say something in prose.
-            paragraphs:
-              min: 1
-          background:
-            heading:
-              const: Background
-            description: >-
-              Context the reader needs before starting - what the feature is,
-              or how a supplied starter project is laid out. Upstream marks
-              this section optional in the template body ("{This section is
-              optional.}").
-            required: false
-          before you start:
-            heading:
-              const: Before you start
-            description: >-
-              Prerequisites: prior knowledge, software, environments, access.
-              No content minimum - a prerequisites section that is nothing but
-              a bulleted list is idiomatic.
-          task:
-            description: >-
-              One task the tutorial walks the reader through. Upstream heads it
-              with a placeholder (`## {Task name}`), so this rule constrains no
-              heading text. It repeats: a tutorial is a sequence of these, and
-              the placeholder stands for however many the page needs.
-            repeat: true
-          summary:
-            heading:
-              const: Summary
-            description: >-
-              The skills and knowledge the reader has gained, stated as
-              outcomes rather than as a repeat of the learning objectives.
-          next steps:
-            heading:
-              const: Next steps
-            description: >-
-              Links onward - related tutorials, articles, videos.
+          What the reader will be able to do by the end, who the tutorial
+          is for, and the background knowledge it assumes. The guide calls
+          this the section that decides whether a reader starts at all, so
+          it must say something in prose.
+        contains:
+          paragraphs:
+            min: 1
+      - id: background
+        heading: Background
+        min: 0
+        max: 1
+        description: >-
+          Context the reader needs before starting - what the feature is,
+          or how a supplied starter project is laid out. Upstream marks
+          this section optional in the template body ("{This section is
+          optional.}").
+      - id: before-you-start
+        heading: Before you start
+        max: 1
+        description: >-
+          Prerequisites: prior knowledge, software, environments, access.
+          No content minimum - a prerequisites section that is nothing but
+          a bulleted list is idiomatic.
+      - id: task
+        description: >-
+          One task the tutorial walks the reader through. Upstream heads it
+          with a placeholder (`## {Task name}`), so this rule constrains no
+          heading text. Leaving `max` unbounded is what lets a tutorial be a
+          sequence of these: the placeholder stands for however many the
+          page needs.
+      - id: summary
+        heading: Summary
+        max: 1
+        description: >-
+          The skills and knowledge the reader has gained, stated as
+          outcomes rather than as a repeat of the learning objectives.
+      - id: next-steps
+        heading: Next steps
+        max: 1
+        description: >-
+          Links onward - related tutorials, articles, videos.

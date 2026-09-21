@@ -1,27 +1,26 @@
 /**
- * `sequence:` - the ordered runs of content a section must contain.
+ * `sequence:` - the ordered runs of content a section (or an element's or
+ * list item's own content) must hold.
  *
- * Content arrives flat and in document order, so consecutive nodes of the same
- * kind are first grouped into runs: `[p, p, code, list]` becomes three runs
- * (paragraphs, code_blocks, lists). Those runs are then matched positionally
- * against the template's sequence, and each run is handed to the ordinary
- * count/pattern rule for its kind.
+ * Content arrives flat and in document order, so consecutive nodes of the
+ * same kind are first grouped into runs: `[p, p, code, table]` becomes three
+ * runs (paragraph, codeBlock, table). Those runs are then matched
+ * positionally against the template's sequence, and each run is handed to
+ * `checkContainsIn` for its one set key.
+ *
+ * v1 reported a length mismatch and an order mismatch as two finding types,
+ * `sequence_length_error` and `sequence_order_error`. v2 collapses both into
+ * one `content_order_error`: the message states the full expected and actual
+ * kind lists, which communicates a length difference as plainly as an order
+ * one, and a template widening from three kinds to nine does not need a
+ * matching widening of finding types. The bail-on-mismatch behavior stays -
+ * once the runs are the wrong shape, per-run findings are noise about
+ * content the author has not arranged yet.
  */
 
-import type {
-  ContentKind,
-  ContentNode,
-  Finding,
-  Position,
-  SectionNode,
-} from "../types.js";
-import { sectionContext, type RuleContext, type SequenceRule } from "./index.js";
-import { checkParagraphsIn } from "./paragraphs.js";
-import { checkCodeBlocksIn } from "./code-blocks.js";
-import { checkListsIn } from "./lists.js";
-
-/** The template keys a run can correspond to. */
-type SequenceKey = "paragraphs" | "code_blocks" | "lists";
+import type { ContentKind, ContentNode, Finding, Position, SectionNode } from "../types.js";
+import { BLOCK_KINDS, sectionContext, type BlockKind, type BlockRule, type RuleContext } from "./index.js";
+import { checkContainsIn } from "./contains.js";
 
 /** A maximal stretch of consecutive content nodes sharing one kind. */
 export interface ContentRun {
@@ -55,102 +54,110 @@ export function groupRuns(content: ContentNode[]): ContentRun[] {
   return runs;
 }
 
-/**
- * Checks a section's content against the template's sequence.
- *
- * Bails after the first structural failure: once the runs are the wrong length
- * or the wrong order, per-run findings are noise about content the author has
- * not arranged yet.
- */
+/** The content kind a block-rule key names, e.g. `codeBlocks` -> `codeBlock`. */
+const KIND_OF_BLOCK: Record<BlockKind, ContentKind> = {
+  paragraphs: "paragraph",
+  codeBlocks: "codeBlock",
+  lists: "list",
+  tables: "table",
+  admonitions: "admonition",
+  images: "image",
+  blockquotes: "blockquote",
+  definitionLists: "definitionList",
+  elements: "element",
+};
+
+/** The short noun a `content_order_error` message uses for one kind. */
+function sequenceLabel(kind: ContentKind): string {
+  switch (kind) {
+    case "paragraph":
+      return "paragraph";
+    case "codeBlock":
+      return "code";
+    case "list":
+      return "list";
+    case "table":
+      return "table";
+    case "admonition":
+      return "admonition";
+    case "image":
+      return "image";
+    case "blockquote":
+      return "blockquote";
+    case "definitionList":
+      return "definition list";
+    case "element":
+      return "element";
+    default:
+      // tableRow/tableCell/definitionItem/listItem never appear as a top-level
+      // ContentNode.kind; groupRuns only ever sees the nine kinds above.
+      return kind;
+  }
+}
+
+/** The one key set on a `sequence:` entry, or `null` for a malformed one. */
+function keyOf(entry: BlockRule): BlockKind | null {
+  for (const kind of BLOCK_KINDS) {
+    if (entry[kind] !== undefined) return kind;
+  }
+  return null;
+}
+
+/** Checks a section's own content against a `sequence:` rule. */
 export function checkSequence(
   section: SectionNode,
-  rule: SequenceRule | undefined
+  rule: BlockRule[] | undefined,
 ): Finding[] {
+  return checkSequenceIn(section.children, rule, sectionContext(section));
+}
+
+/**
+ * The reusable core: checks any ordered content list against a `sequence:`
+ * rule - a section's content, a list item's `children`, or an element's own
+ * `children`.
+ */
+export function checkSequenceIn(
+  content: ContentNode[],
+  rule: BlockRule[] | undefined,
+  ctx: RuleContext,
+): Finding[] {
+  if (!rule) return [];
+
+  const runs = groupRuns(content);
+  const expectedKinds = rule.map((entry) => {
+    const key = keyOf(entry);
+    return key ? KIND_OF_BLOCK[key] : null;
+  });
+  const actualKinds = runs.map((run) => run.kind);
+
+  const matches =
+    expectedKinds.length === actualKinds.length &&
+    expectedKinds.every((kind, index) => kind === actualKinds[index]);
+
+  if (!matches) {
+    const expected = expectedKinds.map((kind) => (kind ? sequenceLabel(kind) : "?"));
+    const found = actualKinds.length > 0 ? actualKinds.map(sequenceLabel) : ["nothing"];
+    return [
+      {
+        type: "content_order_error",
+        heading: ctx.heading,
+        message: `Expected ${expected.join(" then ")}, but found ${found.join(" then ")}`,
+        position: ctx.position,
+        severity: "error",
+      },
+    ];
+  }
+
   const findings: Finding[] = [];
-  if (!rule) return findings;
-
-  const ctx = sectionContext(section);
-  const runs = groupRuns(section.content);
-
-  if (rule.length !== runs.length) {
-    findings.push({
-      type: "sequence_length_error",
-      heading: ctx.heading,
-      message: `Expected ${rule.length} content types in sequence, but found ${runs.length}`,
-      position: ctx.position,
-      severity: "error",
-    });
-    return findings;
-  }
-
-  const templateKeys = rule.map((item) => Object.keys(item)[0] ?? null);
-  const runKeys = runs.map((run) => sequenceKeyOf(run.kind));
-
-  if (runKeys.includes(null)) {
-    findings.push({
-      type: "sequence_order_error",
-      heading: ctx.heading,
-      message: "Unexpected content type found in sequence",
-      position: ctx.position,
-      severity: "error",
-    });
-    return findings;
-  }
-
-  if (JSON.stringify(templateKeys) !== JSON.stringify(runKeys)) {
-    findings.push({
-      type: "sequence_order_error",
-      heading: ctx.heading,
-      message: `Expected sequence ${JSON.stringify(templateKeys)}, but found sequence ${JSON.stringify(runKeys)}`,
-      position: ctx.position,
-      severity: "error",
-    });
-    return findings;
-  }
-
   runs.forEach((run, index) => {
-    const item = rule[index];
-    if (!item) return;
-
-    // A run holds one kind, so the rule for that kind sees exactly the nodes in
-    // this stretch, not the section's other content of the same kind.
+    const entry = rule[index];
+    if (!entry) return;
     const runCtx: RuleContext = { heading: ctx.heading, position: run.position };
-    const key = runKeys[index] ?? null;
-
-    switch (key) {
-      case "paragraphs":
-        findings.push(...checkParagraphsIn(run.nodes, item.paragraphs, runCtx));
-        break;
-      case "code_blocks":
-        findings.push(...checkCodeBlocksIn(run.nodes, item.code_blocks, runCtx));
-        break;
-      case "lists":
-        findings.push(...checkListsIn(run.nodes, item.lists, runCtx));
-        break;
-      default:
-        findings.push({
-          type: "sequence_order_error",
-          heading: ctx.heading,
-          message: `Unexpected content type (${String(key)}) found in sequence`,
-          position: ctx.position,
-          severity: "error",
-        });
-    }
+    // A run holds one kind, so `checkContainsIn` sees exactly the nodes in
+    // this stretch, not the section's other content of the same kind - the
+    // entry has only that one key set, so every other dispatch is a no-op.
+    findings.push(...checkContainsIn(run.nodes, entry, runCtx));
   });
 
   return findings;
-}
-
-/** Maps a content kind onto the template key that names it. */
-function sequenceKeyOf(kind: ContentKind): SequenceKey | null {
-  switch (kind) {
-    case "paragraph":
-      return "paragraphs";
-    case "code":
-      return "code_blocks";
-    case "list":
-      return "lists";
-    default:
-      return null;
-  }
 }

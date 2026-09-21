@@ -13,10 +13,10 @@ import remarkGfm from "remark-gfm";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkMdx from "remark-mdx";
 import { extractFrontmatter } from "../../meta/index.js";
-import type { DocumentParser, DocumentTree } from "../types.js";
+import type { ContentKind, DocumentParser, DocumentTree } from "../types.js";
 import { LintError } from "../types.js";
 import { errorMessage } from "../../shared/errors.js";
-import { documentEnd, toBlocks } from "./mdast.js";
+import { documentEnd, toFragments } from "./mdast.js";
 import { sectionize } from "./sectionize.js";
 import { fencedPosition as frontmatterPosition, withMetadataTitle as withFrontmatterTitle } from "./metadata.js";
 
@@ -58,7 +58,7 @@ function parseWith(
   }
 
   const meta = extractFrontmatter(content, format);
-  const tree = root as Parameters<typeof toBlocks>[0];
+  const tree = root as Parameters<typeof toFragments>[0];
 
   const frontmatter = meta.present ? meta.data : null;
   const metaPosition = frontmatterPosition(content);
@@ -69,15 +69,35 @@ function parseWith(
     frontmatter,
     frontmatterPosition: metaPosition,
     sections: sectionize(
-      withFrontmatterTitle(toBlocks(tree), frontmatter, metaPosition),
+      withFrontmatterTitle(toFragments(tree), frontmatter, metaPosition),
       documentEnd(tree),
     ),
   };
 }
 
+/**
+ * What both formats emit. `element` is MDX's alone: plain Markdown has no JSX,
+ * so `<Steps>` is raw HTML to it and no tree it produces carries an element.
+ * Declaring one here would report a rule about elements as checked on every
+ * `.md` file it silently could not see.
+ */
+const SHARED_KINDS: ContentKind[] = [
+  "paragraph",
+  "codeBlock",
+  "list",
+  "listItem",
+  "table",
+  "tableRow",
+  "tableCell",
+  "admonition",
+  "image",
+  "blockquote",
+];
+
 export const markdownParser: DocumentParser = {
   name: "markdown",
   label: "Markdown",
+  kinds: SHARED_KINDS,
   extensions: [".md", ".markdown"],
   parse: (content, filePath) =>
     parseWith(markdownProcessor, "markdown", content, filePath),
@@ -86,6 +106,7 @@ export const markdownParser: DocumentParser = {
 export const mdxParser: DocumentParser = {
   name: "mdx",
   label: "MDX",
+  kinds: [...SHARED_KINDS, "element"],
   extensions: [".mdx"],
   parse: (content, filePath) => parseWith(mdxProcessor, "mdx", content, filePath),
 };

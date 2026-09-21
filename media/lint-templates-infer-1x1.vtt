@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:05.733
+A page with no template: This page is already the shape you want. Nothing in the repo describes that shape.
+
+2
+00:00:05.733 --> 00:00:15.100
+Writing one by hand: A half-written template makes every real section unexpected. Three findings, exit 1.
+
+3
+00:00:15.100 --> 00:00:22.333
+Infer it from the page: manni lint templates infer reads the page and writes the template that describes it.
+
+4
+00:00:22.333 --> 00:00:33.167
+Save it, and it passes: Save it over the stub, and the same lint command passes.
+
+5
+00:00:33.167 --> 00:00:43.767
+Break the page: Delete the required See also section: one finding, anchored at line 23, exit 1.
+

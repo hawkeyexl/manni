@@ -8,7 +8,7 @@
  */
 import { locateFrontmatter } from "../../meta/index.js";
 import type { Position } from "../types.js";
-import type { Block } from "./sectionize.js";
+import type { Fragment } from "./sectionize.js";
 
 /**
  * Span of a leading fenced metadata block (`--- … ---`, `+++ … +++`,
@@ -65,21 +65,21 @@ export function fencedPosition(content: string): Position | null {
  * should not.
  */
 export function withMetadataTitle(
-  blocks: Block[],
+  fragments: Fragment[],
   metadata: Record<string, unknown> | null,
   position: Position | null,
-): Block[] {
+): Fragment[] {
   const declared = metadata?.["title"];
   const title = typeof declared === "string" ? declared.trim() : null;
   // Trimmed, not merely non-empty: `title: "   "` is as absent as no title at
   // all, and admitting it would give the document a synthetic H1 with a blank
   // heading - which every template then reports as the wrong title, naming
   // nothing the author could search for.
-  if (title === null || title.length === 0) return blocks;
-  if (position === null) return blocks;
-  if (blocks.some((b) => b.type === "heading" && b.level === 1)) return blocks;
+  if (title === null || title.length === 0) return fragments;
+  if (position === null) return fragments;
+  if (fragments.some((b) => b.type === "heading" && b.level === 1)) return fragments;
 
-  return [{ type: "heading", level: 1, title, position }, ...blocks];
+  return [{ type: "heading", level: 1, title, position }, ...fragments];
 }
 
 /**
