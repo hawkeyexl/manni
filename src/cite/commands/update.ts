@@ -482,6 +482,9 @@ function rewriteOf(plan: Plan): UpdateRewrite {
  * drifted onto a neighbouring table row, and the sentence test below let all
  * seven through. Nothing measured landed between the two bands, so the number
  * is fixed here. A config key would be a knob over a gap no corpus fills.
+ *
+ * The bands were measured with `wordSet`'s tokenization, which leaves
+ * punctuation attached to a word. Changing that moves every number above.
  */
 const CLAIM_WORD_SHARE = 0.5;
 

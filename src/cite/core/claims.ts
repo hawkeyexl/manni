@@ -292,7 +292,10 @@ function unitOrWhy(
   if (isTableRow(own)) return rowsAt(line, lines, recorded, named);
   // The format ends the paragraph at a marker under it, so a re-pin never
   // swallows another entry's anchor. A named entry sitting on a marker is read
-  // without it, because there the marker is the line being accepted.
+  // without it, because there the marker is the line being accepted. Two
+  // adjacent markers then both land in the unit. That is the --only bypass
+  // working as designed, since naming the entry is the judgement the marker
+  // refusal exists to demand.
   const paragraph = paragraphAfter(
     page.content,
     offsetOfLine(page.content, line),
