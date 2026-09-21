@@ -32,17 +32,50 @@ interface Droppable {
   drop(path: string): void;
 }
 
-/** Every live cache, so one write can reach all of them. */
-const caches = new Set<Droppable>();
+/**
+ * Every live cache, so one write can reach all of them.
+ *
+ * The references are weak, so registering does not keep a cache alive. A
+ * second instance — one a test builds after `vi.resetModules()`, or one a
+ * second tool builds and discards — is collected like any other object, and
+ * the sweep below clears the dead reference it leaves behind. Nothing has to
+ * be disposed by hand, which is the point: a cache that must be deregistered
+ * is a cache someone forgets to deregister.
+ */
+const caches = new Set<WeakRef<Droppable>>();
+
+/** Register `cache` for the invalidation sweep without retaining it. */
+function register(cache: Droppable): void {
+  caches.add(new WeakRef(cache));
+}
 
 /**
  * Forget every parse of `path`, whatever it was read as.
  *
  * Called from `writeFileAtomic` for every write it performs. Most of those
  * paths were never manifests, and dropping an absent entry costs a map lookup.
+ *
+ * Deleting from a `Set` while iterating it is defined: an entry removed before
+ * the iterator reaches it is skipped, and one removed after has already been
+ * visited. So clearing the dead references in the same pass is safe.
  */
 export function invalidateManifestCache(path: string): void {
-  for (const cache of caches) cache.drop(path);
+  for (const ref of caches) {
+    const cache = ref.deref();
+    if (cache === undefined) caches.delete(ref);
+    else cache.drop(path);
+  }
+}
+
+/**
+ * How many caches the sweep would reach, after clearing the dead references.
+ *
+ * Not a user-facing surface and not part of the cache's contract: it exists so
+ * a test can assert that a cache which went out of scope is not retained here.
+ */
+export function registeredManifestCaches(): number {
+  for (const ref of caches) if (ref.deref() === undefined) caches.delete(ref);
+  return caches.size;
 }
 
 /** What a file looked like when it was read. */
@@ -76,7 +109,7 @@ export class ManifestCache<T> {
   private readonly slots = new Map<string, { sig: Signature; variants: Map<string, T> }>();
 
   constructor() {
-    caches.add(this);
+    register(this);
   }
 
   drop(path: string): void {

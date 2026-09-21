@@ -38,6 +38,15 @@ const wait = (ms: number): Promise<void> =>
  * refusing to write at all would be worse than a non-atomic write.
  */
 export async function writeFileAtomic(
+  /**
+   * Absolute, or relative to the process's current directory. The manifest
+   * cache is keyed on absolute paths, and the invalidation in the `finally`
+   * below resolves `path` against that same implicit directory — so a caller
+   * that resolved its own path against some other base would invalidate a key
+   * no cache holds, and the stale parse would survive the write. That miss is
+   * silent, which is why the requirement is stated here rather than left to be
+   * discovered.
+   */
   path: string,
   /**
    * A `Uint8Array` writes byte-for-byte. `schemas vendor` needs that: the

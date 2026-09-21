@@ -295,7 +295,16 @@ export async function loadExternalMetadata(
       // its `mtimeMs` and size.
       parsed = await parsedManifests.parse(
         abs,
-        JSON.stringify([collection, join, label, opts.configDir, manifest.keys]),
+        // The keys are sorted because they reach the variant as an array, and
+        // two declarations that own the same keys in a different order parse
+        // to the same thing.
+        JSON.stringify([
+          collection,
+          join,
+          label,
+          opts.configDir,
+          [...manifest.keys].sort(),
+        ]),
         async () =>
           parseManifest(
             manifest,
