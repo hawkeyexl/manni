@@ -193,16 +193,18 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
     // A marker that keeps an id keeps its line: the word goes out of the list
     // and nothing below it moves. Only a marker that loses its last id is a
     // line to delete (proposal 0056).
-    const kept = new Map<number, string[]>();
+    const kept = new Map<number, [string, ...string[]]>();
     const ordered: number[] = [];
     for (const line of touched) {
       const held = dropped.get(line);
-      const ids =
+      // Destructured rather than cast: a marker that keeps nothing is a line
+      // to delete, and the head is what tells the two apart.
+      const [head, ...rest] =
         held === undefined || held.statement.payload.kind !== "ref"
           ? []
           : held.statement.payload.ids.filter((id) => !held.ids.has(id));
-      if (ids.length === 0) ordered.push(line);
-      else kept.set(line, ids);
+      if (head === undefined) ordered.push(line);
+      else kept.set(line, [head, ...rest]);
     }
 
     // What stays, moved up by the marker lines going out above it.

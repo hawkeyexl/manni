@@ -397,7 +397,9 @@ export function readPage(
     // Each named id reports on its own: an orphan is a well-formed id with a
     // missing entry, so each one is its own subject and its own fix. A
     // malformed marker is one line and one fix, and was handled above.
-    const marked: PageCitation[] = [];
+    // The entries this marker actually anchors. An id the marker repeats is
+    // reported and left to the marker that won it, so it never lands here.
+    const anchored: PageCitation[] = [];
     for (const id of payload.ids) {
       const target = byId.get(id);
       if (target === undefined) {
@@ -409,7 +411,6 @@ export function readPage(
         );
         continue;
       }
-      marked.push(target);
       const first = markedAt.get(target);
       if (first !== undefined) {
         findings.push(
@@ -428,12 +429,13 @@ export function readPage(
       }
       markedAt.set(target, statement.line);
       target.marker = statement;
+      anchored.push(target);
     }
     // A quote entry anchors the next fenced block and a plain one anchors the
     // paragraph, so a list that mixes them would mean two spans on one line,
     // and the page would not say which id got which.
-    const quoted = marked.find((entry) => entry.citation.quote === true);
-    const plain = marked.find((entry) => entry.citation.quote !== true);
+    const quoted = anchored.find((entry) => entry.citation.quote === true);
+    const plain = anchored.find((entry) => entry.citation.quote !== true);
     if (quoted !== undefined && plain !== undefined) {
       const mixed: FindingExtra = {
         line: statement.line,

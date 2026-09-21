@@ -640,6 +640,18 @@ describe("formatStatement", () => {
     );
   });
 
+  it("will not take an empty list, which would write a marker with no id", () => {
+    const empty: string[] = [];
+    // @ts-expect-error a ref carries at least one id, so `[]` is a type error
+    // rather than a `<!-- cite  -->` the scanner then calls malformed.
+    formatStatement("markdown", { kind: "ref", ids: empty });
+    const content = "<!-- cite retries -->\nThe claim.\n";
+    const [statement] = parseStatements(content, "markdown");
+    if (statement === undefined) throw new Error("no statement");
+    // @ts-expect-error the same guarantee on the respelling side.
+    respellStatement(content, statement, empty);
+  });
+
   it("refuses a format with no marker syntax", () => {
     expect(() => formatStatement("nope", { kind: "ref", ids: ["x"] })).toThrow(CiteError);
     expect(() => formatStatement("nope", { kind: "ref", ids: ["x"] })).toThrow(

@@ -395,7 +395,7 @@ export interface InlineStatement {
    * to a space-separated list, and every id in the list anchors the same text.
    */
   payload:
-    | { kind: "ref"; ids: string[] }
+    | { kind: "ref"; ids: [string, ...string[]] }
     | { kind: "bad"; reason: string; json?: boolean };
   /** The marker text between the delimiters, trimmed. */
   raw: string;

@@ -145,7 +145,11 @@ function payloadOf(payload: string): InlineStatement["payload"] {
   if (/[\r\n]/.test(payload)) {
     return { kind: "bad", reason: "a marker is one line; write two markers" };
   }
-  const words = payload.split(" ").filter((word) => word !== "");
+  // Destructured rather than cast: a `ref` carries at least one id, and the
+  // head is what proves it to the compiler.
+  const [head, ...rest] = payload.split(" ").filter((word) => word !== "");
+  if (head === undefined) return { kind: "bad", reason: "empty payload" };
+  const words: [string, ...string[]] = [head, ...rest];
   // An entry lives in frontmatter or a manifest; the body carries names. This
   // runs before the id test so the more actionable message fires.
   if (words.some((word) => word.startsWith("{"))) {
@@ -492,7 +496,7 @@ function writtenForm(format: string): StatementForm {
 /** Render a marker in the format's first form, e.g. `<!-- cite fetch-timeout -->`. */
 export function formatStatement(
   format: string,
-  payload: { kind: "ref"; ids: readonly string[] },
+  payload: { kind: "ref"; ids: readonly [string, ...string[]] },
 ): string {
   const form = writtenForm(format);
   // `[comment]: # (`, `// (` and `.. (` hug their parentheses; the comment
@@ -513,7 +517,7 @@ export function formatStatement(
 export function respellStatement(
   content: string,
   statement: InlineStatement,
-  ids: readonly string[],
+  ids: readonly [string, ...string[]],
 ): string {
   const text = content.slice(statement.start, statement.end);
   // No open delimiter carries `cite`, so the first occurrence of the trimmed

@@ -604,6 +604,26 @@ describe("readPage: a marker naming several ids", () => {
     expect(page.citations.map((c) => c.marker?.line)).toEqual([17, 17]);
   });
 
+  it("says nothing about a mix the repeated id never anchored", () => {
+    // The quote id is anchored by the first marker. In the second it is
+    // `marker-repeated` and anchors nothing there, so the plain id beside it
+    // shares a line with no quote and the mix rule must stay quiet.
+    const fence = String.fromCharCode(96, 96, 96);
+    const content =
+      `---\ntitle: Limits\ncitations:\n` +
+      `  - id: quoted-limits\n    quote: true\n    source:\n      file: src/limits.ts\n      integrity: ${PIN}\n` +
+      `  - id: fetch-timeout\n    claim:\n      integrity: ${CLAIM_PIN}\n    source:\n      file: src/limits.ts\n      integrity: ${PIN}\n` +
+      `---\n# Limits\n\n<!-- cite quoted-limits -->\n${fence}ts\nexport const FETCH_TIMEOUT_MS = 10_000;\n${fence}\n\n` +
+      `<!-- cite quoted-limits fetch-timeout -->\nThe fetch timeout is 10 seconds.\n`;
+    const page = readPage("p.md", content);
+    expect(rules(page.findings)).toEqual(["marker-repeated"]);
+    expect(page.findings[0]?.message).toBe(
+      "quoted-limits is named by markers at lines 18 and 23; the first anchors it.",
+    );
+    // The first marker keeps the quote; the plain id takes the second.
+    expect(page.citations.map((c) => c.marker?.line)).toEqual([18, 23]);
+  });
+
   it("refuses more than 25 ids on one marker, and reads no id from it", () => {
     const ids = Array.from({ length: 26 }, (_v, n) => `id-${String(n)}`).join(" ");
     const page = readPage("p.md", three(`<!-- cite ${ids} -->\nThe claim.\n`));
