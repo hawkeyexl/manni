@@ -5,11 +5,13 @@ description: Every schema shipped with manni meta in one table, showing what eac
 
 import { Aside, Tabs, TabItem, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
+{/* cite registry-twenty-three-bundled-schemas */}
 manni meta bundles twenty-three schemas. You reference any of them by id, with no file
 to write, no URL to host, and no network call at validation time. This page is
 the registry: what each one constrains, whether it requires anything, and which
 are applied when you pass no flags at all.
 
+{/* cite registry-schemas-prints-the-same-list */}
 Run `manni meta schemas` to print the same list from the version you have
 installed.
 
@@ -41,11 +43,13 @@ installed.
 | `mkdocs:material:9.7` | 19 MkDocs and Material front matter keys | nothing | No | [`mkdocs-material/9.7.json`](/manni/schemas/mkdocs-material/9.7.json) | [Platform schemas](/manni/meta/reference/platform-schemas/) |
 | `anthropic:claude-subagent:2.1` | 18 Claude Code agent definition fields | `name`, `description` | No | [`claude-subagent/2.1.json`](/manni/schemas/claude-subagent/2.1.json) | [Claude Code subagent schema](/manni/meta/reference/claude-subagent-schema/) |
 
+{/* cite registry-all-draft-2020-12-and-builtin-refs */}
 All twenty-three use [Draft
 2020-12](/manni/meta/reference/schema-resolution/#dialects) and are [built-in
 references](/manni/meta/reference/schema-resolution/#reference-kinds). A typo in an
 id is reported as an unknown built-in rather than a missing file.
 
+{/* cite registry-twenty-two-allow-additional-properties */}
 Twenty-two of them allow additional properties. `agentskills:skill:1.0` is the
 one exception, and not out of strictness. The tooling that packages a skill for
 distribution *hard-errors* on a key outside the standard's six rather than
@@ -55,6 +59,7 @@ schemas](/manni/meta/reference/agent-skills-schemas/).
 
 ## The published URLs
 
+{/* cite registry-both-published-bases-resolve */}
 Every built-in is also served as plain JSON, at a version-pinned path under
 `https://hawkeyexl.github.io/manni/schemas/`. The same bytes stay served under
 the pre-rename base, `https://hawkeyexl.github.io/docmeta/schemas/`, and manni
@@ -88,10 +93,12 @@ https://hawkeyexl.github.io/manni/schemas/mkdocs-material/9.7.json
 https://hawkeyexl.github.io/manni/schemas/claude-subagent/2.1.json
 ```
 
+{/* cite registry-published-urls-have-three-jobs */}
 They exist for three jobs. You can `$ref` a built-in from a schema of your own,
 or use one with a JSON Schema tool that is not manni meta. You can also read the
 actual JSON instead of a description of it.
 
+{/* cite registry-a-published-url-costs-nothing */}
 **Inside manni meta, a published URL costs nothing.** manni meta recognises its own
 URLs and answers them from the copy bundled in the package. There is no request,
 no timeout, and no dependence on GitHub Pages being up. `--offline` and an
@@ -122,6 +129,7 @@ resolve.
 
 ### Extend a built-in with `$ref`
 
+{/* cite registry-ref-a-builtin-by-either-name */}
 The reason a URL beats a copy-paste. Reference a built-in from your own schema
 and add to it, by either name. The id and the URL both work, and neither touches
 the network:
@@ -138,6 +146,7 @@ the network:
 }
 ```
 
+{/* cite registry-ref-narrows-where-a-set-applies-whole */}
 Every rule the built-in carries still applies, and yours are added on top. That
 is composition *inside* one schema. Listing two schemas in a set is different. A
 set applies each schema whole and attributes failures separately. A `$ref` lets
@@ -161,6 +170,7 @@ repository and reference the local copy.
 
 The **Requires** column above is the distinction that matters when you pick one.
 
+{/* cite registry-editorial-schemas-demand-their-key */}
 **Editorial schemas** describe what a page *is*. `google:okf:0.1` and the two
 `type` vocabularies demand their key. Adopting them is a claim that every page
 carries that classification, which makes an unclassified page a gap rather than
@@ -172,6 +182,7 @@ schema requires **exactly what the generator refuses to build without**, and
 nothing more. What it demands is a fact about the tool, not an editorial choice
 manni meta made for you.
 
+{/* cite registry-platform-schemas-require-what-the-tool-does */}
 That cuts both ways. The three `docusaurus:*` schemas and `sphinx:docinfo:9.1`
 require nothing, because those tools mark no field as mandatory. Switching one
 on cannot fail a page that was already building. `astro:starlight:0.41` and
@@ -179,6 +190,7 @@ on cannot fail a page that was already building. `astro:starlight:0.41` and
 *error* without a page title. A page failing that check was already broken, and
 manni meta is only telling you sooner.
 
+{/* cite registry-three-agent-schemas */}
 The three agent schemas are platform schemas of a different sort: the platform
 is the agent runtime rather than a site generator. `anthropic:claude-skill:2.1`
 requires nothing, because Claude Code marks every `SKILL.md` field optional.
@@ -195,6 +207,7 @@ schemas](/manni/meta/reference/agent-skills-schemas/), [Claude Code subagent
 schema](/manni/meta/reference/claude-subagent-schema/) and [Docusaurus
 schemas](/manni/meta/reference/docusaurus-schemas/) pages.
 
+{/* cite registry-vocabulary-schemas-face-outward */}
 **Vocabulary schemas** are a third kind. They describe a document to something
 *outside* your docs site: a social card renderer (`ogp:article:1.0`), a
 catalogue or repository (`dcmi:elements:1.1`), or another publisher's build
@@ -203,6 +216,7 @@ build tool checks. Nothing fails when `og:image` is missing, and the page just
 renders badly everywhere it is shared. See [Metadata
 vocabularies](/manni/meta/reference/metadata-vocabularies/).
 
+{/* cite registry-a-set-attributes-each-failure */}
 The two kinds mostly claim different keys, so they compose. One run can hold a
 page to your generator's contract and to your own standard, attributing each
 failure to the schema that raised it:
@@ -237,12 +251,14 @@ compose](/manni/meta/reference/taxonomy-schemas/#which-ones-compose).
 
 ## What runs when you pass no flags
 
+{/* cite registry-only-two-in-the-default-set */}
 Only two of the twenty-three are in the default set:
 
 ```text
 google:okf:0.1 + passo-uno:seven-action:1.0
 ```
 
+{/* cite registry-seven-action-safe-by-default */}
 Everything else is opt-in. Seven-Action is safe to carry by default because it
 requires nothing. It rules that an `action`, if present, is legitimate, without
 insisting on one. The default set sits at the bottom of the [precedence
@@ -251,6 +267,7 @@ no `--schema` flag, no in-file `$schema`, and no config rule matched.
 
 ## Turn one on
 
+{/* cite registry-three-ways-in-precedence-order */}
 Three ways, in [precedence
 order](/manni/meta/reference/schema-resolution/#precedence). The first one that
 matches wins, and each replaces the set rather than adding to it.
@@ -258,6 +275,7 @@ matches wins, and each replaces the set rather than adding to it.
 <Tabs>
 <TabItem label="Command line">
 
+{/* cite registry-repeat-s-to-build-a-set */}
 Repeat `-s` to build a set. This overrides everything else for the whole run:
 
 ```bash
@@ -291,6 +309,7 @@ meta:
 </TabItem>
 <TabItem label="In the document">
 
+{/* cite registry-document-schema-beats-config */}
 A document can name its own schema, which beats any config rule:
 
 ```markdown
@@ -300,6 +319,7 @@ type: how-to
 ---
 ```
 
+{/* cite registry-schema-key-is-stripped */}
 `$schema` also takes a list, and manni meta strips the key before validating, so it
 never trips a schema that forbids unknown properties.
 
@@ -308,6 +328,7 @@ never trips a schema that forbids unknown properties.
 
 ## Version ids
 
+{/* cite registry-id-is-vendor-name-version */}
 A built-in id is `vendor:name:version`. The version segment tracks the upstream
 standard, not manni meta's own release number:
 

@@ -25,12 +25,14 @@ registry](/manni/meta/reference/built-in-schemas/).
 | Reference kind | [builtin](/manni/meta/reference/schema-resolution/#reference-kinds) |
 | JSON | [`schemas/okf/0.1.json`](/manni/schemas/okf/0.1.json) |
 
+{/* cite okf-published-url-resolves-to-the-bundle */}
 The JSON above is the schema itself, served at a
 [permanent, version-pinned URL](/manni/meta/reference/built-in-schemas/#the-published-urls).
 Read it, `$ref` it from a schema of your own, or hand it to a JSON Schema tool
 that is not manni meta. Naming that URL inside manni meta costs no network call: it
 resolves to the same bundled copy `google:okf:0.1` does.
 
+{/* cite okf-requires-only-type */}
 OKF requires only `type`. Every other field is recommended, and unknown keys are
 explicitly tolerated, so a file may carry extra metadata without failing.
 
@@ -63,6 +65,7 @@ for **format** when present. A `resource` that is not a valid URI, or a
 
 ## Example
 
+{/* cite okf-minimal-file-needs-only-type */}
 A minimal file that passes against `google:okf:0.1`:
 
 ```md

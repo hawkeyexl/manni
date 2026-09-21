@@ -24,10 +24,12 @@ should say. That makes them safe to stack under any vocabulary.
 
 ## What a platform schema requires
 
+{/* cite platform-require-what-the-generator-refuses-without */}
 The rule across every platform built-in is to **require exactly what the
 generator refuses to build without**. What one demands is therefore a fact about
 the tool, not a judgement manni meta made on your behalf.
 
+{/* cite platform-starlight-and-antora-demand-title */}
 Docusaurus and Sphinx mark no field as mandatory, so their schemas require
 nothing. They can only ever fail a page on the *shape* of a value it already
 carries. Starlight and Antora both error without a page title, so both schemas
@@ -35,6 +37,7 @@ demand `title`. A page failing that check was already broken, and manni meta is
 telling you at review time instead of at build time. MyST requires nothing
 because it will lift a missing `title` from the first heading in the document.
 
+{/* cite platform-four-generators-require-nothing */}
 Hugo, Jekyll, VitePress and MkDocs require nothing either, for the plainest
 reason of the lot. All four render a page that has no front matter at all. Hugo
 falls back to a title derived from the file name. MkDocs works down a list of
@@ -47,6 +50,7 @@ wrongly.
 
 ## `astro:starlight:0.41`
 
+{/* cite platform-starlight-tolerates-unknown-keys */}
 Starlight defines its front matter as a schema you extend rather than replace,
 so unknown keys are expected and tolerated here too.
 
@@ -67,6 +71,7 @@ so unknown keys are expected and tolerated here too.
 | `draft` | boolean | Excluded from production builds. |
 | `sidebar` | object | `label`, `order`, `hidden`, `badge`, `attrs`. |
 
+{/* cite platform-starlight-toc-uses-if-then */}
 `tableOfContents` is written with `if`/`then` rather than `anyOf` so a bad
 heading level is reported against `/tableOfContents/maxHeadingLevel`. An `anyOf`
 collapses every branch failure onto the parent object, which puts the caret on
@@ -83,6 +88,7 @@ unexamined.
 
 ## `antora:page:3.1`
 
+{/* cite platform-antora-reads-the-document-header */}
 Antora page metadata lives in the AsciiDoc document header, not in front matter.
 The reader takes the `= Title` line plus every `:name: value` attribute entry
 above the first blank line.
@@ -110,12 +116,14 @@ around both:
   `true`, and the unset form `:!page-partial:` is `false`. Numbers are typed too,
   so `:page-toclevels: 3` is the number 3 and not `"3"`.
 
+{/* cite platform-antora-custom-page-attributes-pass */}
 Antora defines only three predefined page attributes: `page-aliases`,
 `page-layout` and `page-partial`. The rest of the `page-*` namespace is yours,
 and custom attributes pass unchecked.
 
 ## `sphinx:docinfo:9.1`
 
+{/* cite platform-sphinx-requires-nothing */}
 Sphinx reads file-wide metadata from a field list at the top of the document.
 Every field is optional, and flag fields are written bare.
 
@@ -127,6 +135,7 @@ Every field is optional, and flag fields are written bare.
 | `no-search` | boolean | Excludes the page from full-text search. |
 | `nosearch` | boolean | Deprecated spelling of `no-search`. |
 
+{/* cite platform-sphinx-docinfo-values-are-strings */}
 The set is small on purpose. Sphinx parses every docinfo value as a string, so a
 field list cannot carry a list or a mapping. Anything richer belongs somewhere
 else.
@@ -140,6 +149,7 @@ the tool accepts would be asserting something untrue about the tool.
 
 ## `myst:frontmatter:1.10`
 
+{/* cite platform-myst-caps-are-the-constraint */}
 The largest built-in, and the one whose value is mostly in its length caps. MyST
 silently truncates or rejects over-long values, so the caps are the constraint a
 real document trips.
@@ -149,6 +159,7 @@ real document trips.
 | `title`, `subtitle`, `description`, `label` | 500 characters |
 | `short_title`, `subject` | 40 characters |
 
+{/* cite platform-myst-identity-and-publication-fields */}
 Beyond those, the schema types the identity and publication fields. Those are
 `authors`, `editors`, `reviewers`, `affiliations`, `doi`, `arxiv`, `pmid`,
 `pmcid`, `license`, `open_access`, `venue`, `volume`, `issue` and `funding`. It
@@ -156,6 +167,7 @@ also types the source links `github`, `edit_url`, `source_url` and `binder`, and
 the execution blocks `kernelspec` and `execute`. `pmcid` is checked against
 `PMC` followed by digits.
 
+{/* cite platform-myst-project-keys-not-described */}
 Project-level keys that belong in `myst.yml` rather than a page are not
 described, and pass as unknown keys. Those are `bibliography`, `references`,
 `requirements` and `social`.
@@ -172,6 +184,7 @@ documents.
 
 ## `hugo:page:0.165`
 
+{/* cite platform-hugo-defines-28-fields */}
 The 28 fields Hugo itself defines. Everything else you see in a Hugo site is a
 user-configured taxonomy or a custom parameter rather than something Hugo
 defines. It passes as an unknown key. That covers `tags`, `categories`,
@@ -192,6 +205,7 @@ defines. It passes as an unknown key. That covers `tags`, `categories`,
 | `resources` | array | Each entry needs `src`. |
 | `params`, `sites` | map | |
 
+{/* cite platform-hugo-weight-and-draft */}
 The two checks that pay for this schema are `weight` and `draft`. Both are
 routinely written quoted, both are accepted by Hugo without a word, and both
 then behave wrongly. A string `weight` sorts lexically, so `"10"` lands before
@@ -212,6 +226,7 @@ then fits both fences, and a local date does not silently become a timestamp.
 
 ## `jekyll:page:4.4`
 
+{/* cite platform-jekyll-is-the-smallest-builtin */}
 Deliberately the smallest built-in, because Jekyll's own contract is small:
 three global variables and four more for posts.
 
@@ -223,6 +238,7 @@ three global variables and four more for posts.
 | `date` | string | Overrides the date parsed from the file name. |
 | `category`, `categories`, `tags` | string \| string array | A YAML list or a space-separated string. |
 
+{/* cite platform-jekyll-published-must-be-a-boolean */}
 The check worth having is `published`. `published: "false"` is a string, every
 string is truthy, and the post you meant to hold back goes live.
 
@@ -235,6 +251,7 @@ Pair this schema with one of your own if you want them checked.
 
 ## `vitepress:page:1.6`
 
+{/* cite platform-vitepress-four-options-plus-theme-toggles */}
 The four options every VitePress theme honours, plus the default theme's
 page-level toggles.
 
@@ -251,6 +268,7 @@ page-level toggles.
 | `navbar`, `sidebar`, `editLink`, `footer`, `isHome` | boolean | Page-level toggles. |
 | `pageClass` | string | |
 
+{/* cite platform-vitepress-outline-takes-four-shapes */}
 `outline` is the field this schema exists for. It takes four different shapes,
 and VitePress ignores a value it does not recognise rather than complaining. So
 `outline: 9` silently gives you the default rather than a deep outline.
@@ -269,6 +287,7 @@ The bundled schema describes VitePress 1.6 front matter. Its id,
 
 ## `mkdocs:material:9.7`
 
+{/* cite platform-mkdocs-covers-both */}
 The two keys MkDocs itself defines, plus the seventeen Material for MkDocs adds
 on top of them. Material is the theme the overwhelming majority of MkDocs sites
 run. It is where nearly all of the front matter surface lives. Core MkDocs reads
@@ -295,6 +314,7 @@ run. It is where nearly all of the front matter surface lives. Core MkDocs reads
 | `slug` | string | Overrides a post's URL segment. |
 | `links` | array | A post's sidebar links, in `nav` shape. |
 
+{/* cite platform-mkdocs-hide-values */}
 `hide` is the field this schema exists for. Material decides what to hide by
 testing membership of the list, with `"navigation" in page.meta.hide`. It says
 nothing at all about an entry it does not recognise, so `hide: [sidebar]` builds
@@ -302,6 +322,7 @@ cleanly and hides nothing. The six values are transcribed from the templates
 that test them, not from a documentation page, so the list is what the theme
 actually honours.
 
+{/* cite platform-mkdocs-blog-typing */}
 The rest of the value is in the typing. `readtime`, `draft` and `pin` go through
 the blog plugin's own configuration validation, which refuses a quoted number or
 a quoted boolean outright. `tags` reaches a search plugin that checks

@@ -14,6 +14,7 @@ schemas, one per content plugin:
 | `docusaurus:blog:3.10` | `@docusaurus/plugin-content-blog` | 20 | [Blog front matter](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-blog#markdown-front-matter) | [`docusaurus-blog/3.10.json`](/manni/schemas/docusaurus-blog/3.10.json) |
 | `docusaurus:pages:3.10` | `@docusaurus/plugin-content-pages` | 9 | [Pages front matter](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-pages#markdown-front-matter) | [`docusaurus-pages/3.10.json`](/manni/schemas/docusaurus-pages/3.10.json) |
 
+{/* cite docusaurus-json-links-are-published-urls */}
 Each **JSON** link is the schema itself, at a [permanent, version-pinned
 URL](/manni/meta/reference/built-in-schemas/#the-published-urls). A Docusaurus
 site's front matter contract is the thing most likely to be checked by something
@@ -29,6 +30,7 @@ other than manni meta. These are the three worth handing to another tool directl
 
 ## Format checks, not presence checks
 
+{/* cite docusaurus-no-field-is-required */}
 Docusaurus marks **no front matter field as required** in any of the three
 plugins. A page with an empty `---` block builds fine. These schemas mirror
 that: they constrain the shape of every field the plugins document, and demand
@@ -133,6 +135,7 @@ not a substitute for it. They earn their place three ways:
 | `draft` | boolean | not both with `unlisted` |
 | `unlisted` | boolean | not both with `draft` |
 
+{/* cite docusaurus-pages-set-is-the-smallest */}
 Standalone pages carry no sidebar, pagination, or tag metadata, which is why
 this set is the smallest of the three.
 
@@ -141,6 +144,7 @@ this set is the smallest of the three.
 
 ### The rules worth knowing
 
+{/* cite docusaurus-sidebar-position-is-a-number */}
 **`sidebar_position` is a number.** Quoting it makes it a string, and Docusaurus
 rejects it. This is the most common front matter mistake these schemas catch:
 
@@ -149,6 +153,7 @@ rejects it. This is the most common front matter mistake these schemas catch:
     /sidebar_position  must be number  (line 3)  [docusaurus:docs:3.10]
 ```
 
+{/* cite docusaurus-draft-and-unlisted-are-exclusive */}
 **`draft` and `unlisted` are mutually exclusive.** Setting both to `true` is the
 one cross-field rule Docusaurus enforces, and the schemas encode it. Either flag
 on its own is fine. Because JSON Schema expresses this as a conditional, it
@@ -162,14 +167,17 @@ reports twice. Once on the field to change, and once on the rule as a whole:
 
 Read the first line, then drop `unlisted` (or `draft`) and both clear.
 
+{/* cite docusaurus-last-update-forbids-unknown-keys */}
 **`last_update` takes `author`, `date`, or both, and nothing else.** It is the
 only place the schemas forbid unknown keys, because a misspelled `autor` there
 is silently dropped rather than reported.
 
+{/* cite docusaurus-uri-reference-allows-a-root-path */}
 **`image` and `custom_edit_url` are URI *references*.** A site-root path like
 `/img/social/card.png` is legal. These use `uri-reference` rather than `uri`,
 which would wrongly reject every relative path.
 
+{/* cite docusaurus-tag-objects-need-both-halves */}
 **Tag objects need both halves.** A tag is either a plain string or an object
 carrying `label` *and* `permalink`. Half an object fails.
 
@@ -251,6 +259,7 @@ meta:
         - docusaurus:pages:3.10
 ```
 
+{/* cite docusaurus-docs-is-a-refused-collection-name */}
 Two things about the names. `docs` is refused, because `manni meta query` builds
 a table of that name and each collection becomes a view beside it. So the
 Docusaurus `docs/` root is `guides` here. That leaves `pages` free for
@@ -258,6 +267,7 @@ Docusaurus `docs/` root is `guides` here. That leaves `pages` free for
 for it. And once the roots are named, a run can address one of them:
 `manni meta validate --collection blog`.
 
+{/* cite docusaurus-first-matching-override-wins */}
 The first matching override wins, so order them from most to least specific. For
 a one-off run, pass the id directly:
 
@@ -292,6 +302,7 @@ proposal will not be caught by a later `validate` run.
 
 ## Versioning
 
+{/* cite docusaurus-version-segment-is-the-minor */}
 The version segment is the Docusaurus **minor** release the contract was
 transcribed from, because that is where fields are added. `sidebar_key` is a
 recent arrival. A new minor arrives as a new id rather than a change to
