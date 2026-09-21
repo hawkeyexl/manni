@@ -185,7 +185,14 @@ export function otherClaimSpans(
 /** How many other locations a notice names before it starts counting them. */
 const NAMED_SPANS = 3;
 
-/** `line 17`, `lines 16 and 18`, `lines 16, 18, 20 and 2 more`. */
+/**
+ * `line 17`, `lines 16 and 18`, `lines 16, 18, 20 and 2 more`.
+ *
+ * Called only with a non-empty list. `add`'s notice and `update`'s
+ * uniqueness refusal both guard on one, so the empty case cannot be reached.
+ * It would spell `lines ` with a trailing space, and no branch is added for
+ * a caller that does not exist.
+ */
 export function spellElsewhere(spans: readonly PageLines[]): string {
   const first = spans[0];
   const noun = spans.length === 1 && first !== undefined && first.start === first.end ? "line" : "lines";

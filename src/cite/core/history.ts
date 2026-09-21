@@ -71,7 +71,15 @@ export function sharesSentence(a: string, b: string): boolean {
   return sentencesOf(b).some((sentence) => left.has(sentence));
 }
 
-/** A text's distinct words, case dropped. Whitespace is the only separator. */
+/**
+ * A text's distinct words, case dropped. Whitespace is the only separator.
+ *
+ * Punctuation stays attached, so `default.` and `default,` are distinct
+ * words. That is deliberate, not an oversight. The overlap bands that fixed
+ * `CLAIM_WORD_SHARE` at 0.5 were measured with this tokenization. Stripping
+ * punctuation now would move every number the threshold was calibrated
+ * against.
+ */
 function wordSet(text: string): Set<string> {
   return new Set(
     text

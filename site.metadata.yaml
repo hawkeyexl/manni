@@ -4987,7 +4987,7 @@ docs/src/content/docs/cite/get-started/index.mdx:
         integrity: sha256-ad1f25849b110862a5768bc85259c17477bc1d553f952753e3ee10883c2c0a56
       source:
         file: src/cite/core/claims.ts
-        lines: 263-297
+        lines: 270-304
         integrity: sha256-2f6dad3588e32d13fbb8c1079030e8932ed8c0c9a1ecaee238875f0687d69bc5
         commit-sha: 32d52298622613c32a1a303eaf0c04222a9387b1
 docs/src/content/docs/cite/index.mdx:
@@ -7504,7 +7504,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-80be391e61bc8d9087122f6508463fe0fcbde642a65210be15362686b69484e8
       source:
         file: src/cite/core/claims.ts
-        lines: 238-297
+        lines: 245-304
         integrity: sha256-b31f02c3b92e197e1df97ca4ce146fc81b6cf66f3b668a252e083bdcdf66688e
         commit-sha: 32d52298622613c32a1a303eaf0c04222a9387b1
 docs/src/content/docs/cite/reference/configuration.mdx:
