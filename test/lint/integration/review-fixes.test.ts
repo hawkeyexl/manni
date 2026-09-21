@@ -145,8 +145,11 @@ describe("a run that checks nothing", () => {
     );
 
     expect(message).toContain("Nothing was checked");
+    // The sentence names the running tool, because the advice differs by
+    // tool: `--as` is manni's option, and a tool that does not own it gets
+    // the formats half alone. `tool-dispatch.test.ts` pins the other side.
     expect(message).toContain(
-      '1 had no parser for their format: pass --as <format> to force one, or target files in a format "manni lint tools" lists.',
+      '1 is in a format manni does not read: pass --as <format> to force one, or target files in a format "manni lint tools" lists.',
     );
     expect(message).not.toContain("implemented");
     expect(message).not.toContain('"type:"');
@@ -765,7 +768,7 @@ describe("a directory walk keeps to the formats lint can parse", () => {
   // a filter that was never applied and sends the reader after the wrong
   // extension.
   it("names its own extension set when nothing matched", async () => {
-    await file("map.ditamap", "<map><topicref href='a.dita'/></map>\n");
+    await file("notes.txt", "Not a format any parser reads.\n");
 
     const message = await runLint({ inputs: [dir], cwd: dir }).then(
       () => "resolved",

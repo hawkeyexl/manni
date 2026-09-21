@@ -20,8 +20,20 @@ import { at, defined } from "../helpers.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, "..", "fixtures", "formats");
+const maps = join(here, "..", "fixtures", "ditamap");
 
 const parse = (xml: string, file = "test.xml") => xmlParser.parse(xml, file);
+
+/** One `.ditamap` fixture, parsed under its own name so the extension is real. */
+const parseMap = (name: string) => {
+  const file = join(maps, name);
+  return xmlParser.parse(readFileSync(file, "utf8"), file);
+};
+
+/** Every section of a tree, depth-first. */
+function all(sections: SectionNode[]): SectionNode[] {
+  return sections.flatMap((s) => [s, ...all(s.sections)]);
+}
 
 /** Depth-first section lookup by title. */
 function find(sections: SectionNode[], title: string): SectionNode | undefined {
@@ -183,8 +195,12 @@ describe("xml parser: vocabularies", () => {
     expect(first.children[1]).toMatchObject({ kind: "codeBlock", language: "go" });
   });
 
-  it("ships DITA and DocBook as the built-ins", () => {
-    expect(XML_VOCABULARIES.map((v) => v.name)).toEqual(["dita", "docbook"]);
+  it("ships DITA, DocBook and DITA maps as the built-ins", () => {
+    expect(XML_VOCABULARIES.map((v) => v.name)).toEqual([
+      "dita",
+      "docbook",
+      "ditamap",
+    ]);
   });
 });
 
@@ -683,12 +699,151 @@ describe("xml parser: failure modes", () => {
   });
 
   it("names the gap when a vocabulary matches but nothing is titled", () => {
-    // A ditamap is recognizably DITA-ish but holds no titled section element,
-    // so there is no structure to check - and saying that beats returning an
-    // empty tree that lints as "missing every section".
-    const xml = `<map><title>Nav</title><topicref href="a.dita"/></map>`;
-    expect(() => parse(xml, "nav.xml")).toThrow(
-      /nav\.xml: read as DITA, but no titled section was found/,
+    // A DITA topic must be titled: its title is an element in the body, and a
+    // topic without one has no structure to check. Saying that beats returning
+    // an empty tree that lints as "missing every section". (A map is the other
+    // case, and is titled by its nesting - see the DITA maps block below.)
+    const xml = `<topic id="x"><body><p>Prose.</p></body></topic>`;
+    expect(() => parse(xml, "untitled.xml")).toThrow(
+      /untitled\.xml: read as DITA, but no titled section was found/,
+    );
+  });
+});
+
+/**
+ * DITA maps.
+ *
+ * A map is a table of contents, which is to say a tree of navigation entries -
+ * exactly what a section tree is. The entries are usually untitled, because a
+ * real map points by `@keyref` or `@href` and lets the referenced topic supply
+ * the title, so an untitled entry has to be a section rather than a failure.
+ */
+describe("xml parser: DITA maps", () => {
+  it("reads a map of untitled keyref entries as a section tree", () => {
+    const tree = parseMap("keyref-toc.ditamap");
+    expect(outline(tree.sections)).toEqual(["@1", "@2", "@3", "@3", "@2"]);
+    for (const node of all(tree.sections)) {
+      expect(node.title).toBe("");
+      // Untitled, but still a heading with a place in the file: an entry the
+      // fold dropped would take its children up a level with it.
+      expect(node.titlePosition).not.toBeNull();
+    }
+  });
+
+  it("nests a topicref inside a topicref as a child section", () => {
+    const map = at(parseMap("keyref-toc.ditamap").sections, 0, "map");
+    expect(map.sections).toHaveLength(2);
+    expect(at(map.sections, 0, "first entry").sections).toHaveLength(2);
+    expect(at(map.sections, 1, "second entry").sections).toEqual([]);
+  });
+
+  it("titles an entry from @navtitle and from <topicmeta><navtitle>", () => {
+    expect(outline(parseMap("navtitles.ditamap").sections)).toEqual([
+      "DITA Open Toolkit@1",
+      "Attribute form@2",
+      "Element form@2",
+    ]);
+  });
+
+  it("keeps the literal text of a title split by an inline key reference", () => {
+    // `<title>DITA Open Toolkit <keyword keyref="release"/></title>`: the key
+    // resolves at build time, so the text present is the whole of the title.
+    expect(at(parseMap("navtitles.ditamap").sections, 0, "map").title).toBe(
+      "DITA Open Toolkit",
+    );
+  });
+
+  it("carries a map entry's <shortdesc> as its prose", () => {
+    const entry = section(parseMap("navtitles.ditamap").sections, "Element form");
+    expect(entry.children.map((n) => n.kind)).toEqual(["paragraph"]);
+    expect(at(entry.children, 0, "paragraph")).toMatchObject({
+      text: "A map entry can carry prose.",
+    });
+  });
+
+  it("skips a reltable and a keydef with their subtrees", () => {
+    expect(outline(parseMap("reltable-keydef.ditamap").sections)).toEqual([
+      "Relationships@1",
+      "Navigation@2",
+    ]);
+  });
+
+  it("reads a glossref as a navigation entry", () => {
+    expect(outline(parseMap("glossary.ditamap").sections)).toEqual([
+      "Glossary entries@1",
+      "@2",
+      "@3",
+      "@3",
+    ]);
+  });
+
+  it("passes straight through a topicgroup", () => {
+    const xml = `<map>
+  <title>Grouped</title>
+  <topicgroup>
+    <topicref navtitle="A" href="a.dita"/>
+    <topicref navtitle="B" href="b.dita"/>
+  </topicgroup>
+</map>`;
+    expect(outline(parse(xml, "grouped.ditamap").sections)).toEqual([
+      "Grouped@1",
+      "A@2",
+      "B@2",
+    ]);
+  });
+
+  it("reads a bookmap's divisions, with <frontmatter> as a wrapper", () => {
+    // The fixture titles itself <booktitle><mainbooktitle>, as a real bookmap
+    // does, and the <booklibrary> beside it names the series, not the book.
+    expect(outline(parseMap("bookmap.ditamap").sections)).toEqual([
+      "Toolkit Guide@1",
+      "About this guide@2",
+      "Getting started@2",
+      "Install@3",
+      "Reference@2",
+    ]);
+  });
+
+  it("takes a bookmap's plain <title> too, the other legal spelling", () => {
+    const xml = `<bookmap>
+  <title>Toolkit Guide</title>
+  <chapter navtitle="Install" href="install.dita"/>
+</bookmap>`;
+    expect(outline(parse(xml, "book.ditamap").sections)).toEqual([
+      "Toolkit Guide@1",
+      "Install@2",
+    ]);
+  });
+
+  it("spans an entry's heading across its own start tag", () => {
+    const xml = [
+      `<?xml version="1.0"?>`, //          line 1
+      `<map>`, //                          line 2
+      `  <title>Nav</title>`, //           line 3
+      `  <topicref keyref="a">`, //        line 4
+      `    <topicref keyref="b"/>`, //     line 5
+      `  </topicref>`, //                  line 6
+      `</map>`, //                         line 7
+      ``,
+    ].join("\n");
+    const outer = at(
+      at(parse(xml, "nav.ditamap").sections, 0, "map").sections,
+      0,
+      "outer entry",
+    );
+    expect(outer.position.start.line).toBe(4);
+    const heading = defined(outer.titlePosition, "heading position");
+    // There is no title element to end on, so the heading ends where the start
+    // tag does - any further and it would swallow the nested entry's own.
+    expect(xml.slice(heading.start.offset, heading.end.offset)).toBe(
+      `<topicref keyref="a">`,
+    );
+
+    const inner = at(outer.sections, 0, "inner entry");
+    expect(inner.position.start.line).toBe(5);
+    const innerHeading = defined(inner.titlePosition, "inner heading position");
+    expect(xml.slice(innerHeading.start.offset, innerHeading.end.offset)).toBe(
+      `<topicref keyref="b"/>`,
     );
   });
 });
@@ -697,11 +852,10 @@ describe("xml parser: registry shape", () => {
   it("declares itself as the .xml parser", () => {
     expect(xmlParser.name).toBe("xml");
     expect(xmlParser.label).toBe("XML");
-    // `.dita` too: that is what a DITA topic is called on disk, and a docset of
-    // them would otherwise be walked past. `.ditamap` is deliberately absent —
-    // a map has no titled section, so every map would report as unparseable.
-    expect(xmlParser.extensions).toEqual([".xml", ".dita"]);
-    expect(xmlParser.extensions).not.toContain(".ditamap");
+    // `.dita` and `.ditamap` too: that is what a DITA topic and a DITA map are
+    // called on disk, and a docset of them would otherwise be walked past.
+    expect(xmlParser.extensions).toEqual([".xml", ".dita", ".ditamap"]);
+    expect(xmlParser.walkExtensions).toEqual([".dita", ".ditamap"]);
   });
 
   it("declares exactly the kinds it emits", () => {

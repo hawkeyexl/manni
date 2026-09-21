@@ -36,6 +36,20 @@
  * That last rule is why `transparent` has to exist as its own bucket: without
  * it, skipping the unmapped `<body>` would skip the whole topic.
  *
+ * ## Titles that are not elements, and sections that carry none
+ *
+ * Two more fields, both earned by a DITA map:
+ *
+ *  - `titleAttributes` names attributes that title a section, for the schemas
+ *    that spell a title as one (`<topicref navtitle="Install"/>`). An attribute
+ *    has no position of its own, so the heading ends where the start tag does.
+ *  - `untitledSections` says a `sections` element opens a section even with no
+ *    title at all. Off by default, because an untitled DITA `<section>` is
+ *    prose belonging to the topic around it. On for a map, where an entry names
+ *    its target by `@keyref` or `@href` and lets the referenced topic supply
+ *    the title, so untitled is the normal case and dropping those entries would
+ *    flatten the whole table of contents.
+ *
  * ## Extending it for a bespoke schema
  *
  * Add one entry to `XML_VOCABULARIES` (or pass your own array to `parseXml`):
@@ -130,6 +144,17 @@ export interface XmlVocabulary {
   sections: readonly string[];
   /** Elements that carry a section's title. */
   titles: readonly string[];
+  /**
+   * Attributes that carry a section's title when no `titles` element does,
+   * first one present wins. A DITA map spells one `<topicref navtitle="...">`.
+   */
+  titleAttributes?: readonly string[];
+  /**
+   * Whether a `sections` element with no title of any kind still opens a
+   * section. Default false: an untitled container adds no heading, and its
+   * content belongs to the section that encloses it.
+   */
+  untitledSections?: boolean;
   /** Children to look inside for a title (DocBook's `<info>`). */
   titleWrappers: readonly string[];
   /** Structural wrappers: no section, no content, walk through. */
@@ -362,10 +387,96 @@ const DOCBOOK: XmlVocabulary = {
 };
 
 /**
+ * DITA maps, `<map>` and `<bookmap>`. No namespace to detect on, as with DITA
+ * itself, so recognition leans on `<topicref>` and the rest of the navigation
+ * vocabulary.
+ *
+ * A map is a table of contents, which is a tree of titled nodes - and a tree of
+ * titled nodes is what a section tree is. `<topicref>` nesting is section
+ * nesting. The one thing a map does that a topic never does is leave its nodes
+ * untitled: a real entry points by `@keyref` or `@href` and lets the referenced
+ * topic supply the title, so `untitledSections` is on and an untitled entry is
+ * an untitled section rather than a failure. A titled entry may be titled
+ * either way, as `<topicmeta><navtitle>` or as `@navtitle`, so `titles` and
+ * `titleAttributes` both name it.
+ *
+ * `sections` is wide because navigation is. `<glossref>`, `<mapref>`,
+ * `<navref>`, `<topicset>` and a bookmap's `<chapter>`/`<part>`/`<appendix>`
+ * are all `<topicref>` specializations, and a map that nests its entries in one
+ * of them - DITA-OT's own glossary map nests thirteen `<glossref>`s - would
+ * otherwise parse to a tree with nothing in it.
+ *
+ * `<reltable>` and `<keydef>` are in no bucket at all, so they and their
+ * contents are skipped, the blockquote rule. A relationship table states which
+ * topics relate to each other, and a key definition binds a key to a resource.
+ * Neither is navigation, and counting their `<topicref>`s as sections would
+ * make every map's shape a lie. A `<glossref>` carrying `@keys` is the case
+ * that looks like both, and it is a section: `<keydef>` defaults to
+ * `processing-role="resource-only"` and so never appears in a table of
+ * contents, while `<glossref>` processes normally and does. That is a fact
+ * about DITA, not a preference.
+ *
+ * `<topicmeta>` is both a title wrapper and transparent. Wrapping is how
+ * `<navtitle>` is found; transparency is how the `<shortdesc>` and `<linktext>`
+ * beside it are read, since a map has no other prose and they live nowhere
+ * else. `<booktitle>` is a wrapper only: a bookmap titles itself
+ * `<booktitle><mainbooktitle>`, and the optional `<booklibrary>` beside it
+ * names the series rather than the book, so only `<mainbooktitle>` is a title.
+ */
+const DITAMAP: XmlVocabulary = {
+  name: "ditamap",
+  label: "DITA map",
+  namespaces: [],
+  roots: ["map", "bookmap"],
+  sections: [
+    "map",
+    "bookmap",
+    "topicref",
+    "topichead",
+    "mapref",
+    "glossref",
+    "anchorref",
+    "navref",
+    "topicset",
+    "topicsetref",
+    "chapter",
+    "part",
+    "appendix",
+    "appendices",
+    "preface",
+    "notices",
+    "dedication",
+    "colophon",
+    "amendments",
+  ],
+  titles: ["title", "navtitle", "mainbooktitle"],
+  titleAttributes: ["navtitle"],
+  titleWrappers: ["topicmeta", "booktitle"],
+  untitledSections: true,
+  transparent: [
+    "topicgroup",
+    "topicmeta",
+    "frontmatter",
+    "backmatter",
+    "booklists",
+  ],
+  paragraphs: ["shortdesc", "linktext"],
+  code: [],
+  codeLangAttributes: [],
+  unorderedLists: [],
+  orderedLists: [],
+  listItems: [],
+};
+
+/**
  * The vocabularies tried, in declaration order (which breaks scoring ties).
  * Exported so a bespoke schema is an array entry rather than a fork.
  */
-export const XML_VOCABULARIES: readonly XmlVocabulary[] = [DITA, DOCBOOK];
+export const XML_VOCABULARIES: readonly XmlVocabulary[] = [
+  DITA,
+  DOCBOOK,
+  DITAMAP,
+];
 
 /** Precomputed lookups for one vocabulary. */
 interface Compiled {
@@ -707,13 +818,45 @@ class Flattener {
     return null;
   }
 
+  /**
+   * The exclusive end of an element's start tag: where its first child begins,
+   * which for indented XML is the character right after `>`. A childless
+   * element has no such node and falls back to the end of the element, which
+   * for `<topicref keyref="a"/>` is the same character anyway.
+   */
+  private startTagEnd(el: XmlElement): Point {
+    return this.map.point(el.firstChild) ?? this.span(el).end;
+  }
+
+  /**
+   * The heading a section container carries: its text, and where the heading
+   * ends. A `titles` element ends it at its own end. An attribute title and an
+   * absent one both end it at the end of the start tag, since neither has a
+   * position and anything further would swallow a nested section's heading.
+   * Null when the vocabulary says an untitled container is not a section.
+   */
+  private headingOf(el: XmlElement): { title: string; end: Point } | null {
+    const title = this.titleOf(el);
+    if (title) {
+      return { title: flatten(title.textContent), end: this.span(title).end };
+    }
+    for (const attr of this.c.vocab.titleAttributes ?? []) {
+      const value = el.getAttribute(attr);
+      if (value) return { title: flatten(value), end: this.startTagEnd(el) };
+    }
+    if (this.c.vocab.untitledSections) {
+      return { title: "", end: this.startTagEnd(el) };
+    }
+    return null;
+  }
+
   /** Walk one element: section, wrapper, content, or skipped subtree. */
   visit(el: XmlElement, level: number): void {
     const name = localName(el);
 
     if (this.c.sections.has(name)) {
-      const title = this.titleOf(el);
-      if (!title) {
+      const heading = this.headingOf(el);
+      if (!heading) {
         // An untitled section container adds no heading, so it adds no level
         // either; its content belongs to the section that encloses it.
         this.walkChildren(el, level);
@@ -723,12 +866,12 @@ class Flattener {
       this.fragments.push({
         type: "heading",
         level: next,
-        title: flatten(title.textContent),
+        title: heading.title,
         // From the container's start tag through the end of its title: the
         // container is the section, so a section that began at its `<title>`
         // would leave its own opening tag outside itself and stop adjacent
         // sections from tiling the document.
-        position: { start: this.span(el).start, end: this.span(title).end },
+        position: { start: this.span(el).start, end: heading.end },
       });
       this.walkChildren(el, next);
       return;
@@ -1226,22 +1369,24 @@ export const xmlParser: DocumentParser = {
     "definitionItem",
   ],
   /**
-   * `.dita` as well as `.xml`, because that is what a DITA topic is actually
-   * called on disk and docmeta registers it too — a docset whose topics this
-   * parser was written for would otherwise be walked past entirely.
+   * `.dita` and `.ditamap` as well as `.xml`, because that is what a DITA topic
+   * and a DITA map are actually called on disk and docmeta registers both — a
+   * docset whose topics this parser was written for would otherwise be walked
+   * past entirely.
    *
-   * Not `.ditamap`: a map is a table of contents, with no titled section and no
-   * prose, so every map in a docset would report as unparseable. A map is not a
-   * page and has no doctype to check.
+   * A map carries no prose, but it is a tree of navigation entries, and that is
+   * the same thing a section tree is: `<topicref>` nesting is section nesting.
+   * A docset of maps with no map template matches nothing and is skipped as
+   * `no-template`, exactly as an untyped Markdown page is.
    */
-  extensions: [".xml", ".dita"],
+  extensions: [".xml", ".dita", ".ditamap"],
   /**
-   * A directory walk collects `.dita` but not `.xml`. A `.dita` file is a
-   * documentation topic by definition; `.xml` is a container a repository uses
-   * for build files, sitemaps, and project metadata, none of which match a
+   * A directory walk collects `.dita` and `.ditamap` but not `.xml`. Both of
+   * those are documentation by definition; `.xml` is a container a repository
+   * uses for build files, sitemaps, and project metadata, none of which match a
    * documentation vocabulary. Sweeping those in made one `pom.xml` fail an
    * otherwise clean tree. Naming an `.xml` file explicitly still parses it.
    */
-  walkExtensions: [".dita"],
+  walkExtensions: [".dita", ".ditamap"],
   parse: (content, filePath) => parseXml(content, filePath),
 };
