@@ -1,0 +1,20 @@
+# The manifest owns `evals` and the page keeps a copy. Meta calls that
+# `external:owned`; docevals says the same sentence as a page problem, so the
+# run exits 1 rather than grading one of two declarations.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [evals]
+
+docevals:
+  evals:
+    fresh-enough:
+      assertion: The page was reviewed this century.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 36500
+      severity: error

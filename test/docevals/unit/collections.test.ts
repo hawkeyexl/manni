@@ -36,8 +36,13 @@ function emptyDir(): string {
   return mkdtempSync(join(tmpdir(), "manni-docevals-collections-"));
 }
 
-function filesOf(cwd: string, paths: string[], opts: Parameters<typeof runList>[1] = {}): string[] {
-  return runList(paths, { cwd, ...opts }).plans.map((p) => p.page.file);
+async function filesOf(
+  cwd: string,
+  paths: string[],
+  opts: Parameters<typeof runList>[1] = {},
+): Promise<string[]> {
+  const run = await runList(paths, { cwd, ...opts });
+  return run.plans.map((p) => p.page.file);
 }
 
 describe("docevals.files is no longer a key", () => {
@@ -63,44 +68,44 @@ describe("docevals.files is no longer a key", () => {
 });
 
 describe("the document set", () => {
-  it("is the union of every collection's paths when no paths are given", () => {
-    expect(filesOf(COLLECTIONS, [])).toEqual(["blog/post.md", "docs/guide.md"]);
+  it("is the union of every collection's paths when no paths are given", async () => {
+    expect(await filesOf(COLLECTIONS, [])).toEqual(["blog/post.md", "docs/guide.md"]);
   });
 
-  it("resolves a collection's paths from the config directory, not cwd", () => {
-    expect(filesOf(join(COLLECTIONS, "docs"), [])).toEqual([
+  it("resolves a collection's paths from the config directory, not cwd", async () => {
+    expect(await filesOf(join(COLLECTIONS, "docs"), [])).toEqual([
       "../blog/post.md",
       "guide.md",
     ]);
   });
 
-  it("narrows to the collections --collection names", () => {
-    expect(filesOf(COLLECTIONS, [], { collection: ["blog"] })).toEqual(["blog/post.md"]);
+  it("narrows to the collections --collection names", async () => {
+    expect(await filesOf(COLLECTIONS, [], { collection: ["blog"] })).toEqual(["blog/post.md"]);
   });
 
-  it("takes positional files, directories and globs, relative to cwd", () => {
-    expect(filesOf(COLLECTIONS, ["outside/other.md"])).toEqual(["outside/other.md"]);
-    expect(filesOf(COLLECTIONS, ["docs"])).toEqual(["docs/drafts/wip.md", "docs/guide.md"]);
-    expect(filesOf(COLLECTIONS, ["*/*.md"])).toEqual([
+  it("takes positional files, directories and globs, relative to cwd", async () => {
+    expect(await filesOf(COLLECTIONS, ["outside/other.md"])).toEqual(["outside/other.md"]);
+    expect(await filesOf(COLLECTIONS, ["docs"])).toEqual(["docs/drafts/wip.md", "docs/guide.md"]);
+    expect(await filesOf(COLLECTIONS, ["*/*.md"])).toEqual([
       "blog/post.md",
       "docs/guide.md",
       "outside/other.md",
     ]);
   });
 
-  it("applies a collection's exclude only to the collection, never to a typed path", () => {
-    expect(filesOf(COLLECTIONS, [])).not.toContain("docs/drafts/wip.md");
-    expect(filesOf(COLLECTIONS, ["docs/drafts/wip.md"])).toEqual(["docs/drafts/wip.md"]);
+  it("applies a collection's exclude only to the collection, never to a typed path", async () => {
+    expect(await filesOf(COLLECTIONS, [])).not.toContain("docs/drafts/wip.md");
+    expect(await filesOf(COLLECTIONS, ["docs/drafts/wip.md"])).toEqual(["docs/drafts/wip.md"]);
   });
 
-  it("applies --exclude to paths and collections alike", () => {
-    expect(filesOf(COLLECTIONS, [], { exclude: ["blog/**"] })).toEqual(["docs/guide.md"]);
-    expect(filesOf(COLLECTIONS, ["docs"], { exclude: ["**/drafts/**"] })).toEqual([
+  it("applies --exclude to paths and collections alike", async () => {
+    expect(await filesOf(COLLECTIONS, [], { exclude: ["blog/**"] })).toEqual(["docs/guide.md"]);
+    expect(await filesOf(COLLECTIONS, ["docs"], { exclude: ["**/drafts/**"] })).toEqual([
       "docs/guide.md",
     ]);
   });
 
-  it("never reads node_modules, the family-wide exclusion", () => {
+  it("never reads node_modules, the family-wide exclusion", async () => {
     const dir = emptyDir();
     cpSync(COLLECTIONS, dir, { recursive: true });
     mkdirSync(join(dir, "docs", "node_modules", "pkg"), { recursive: true });
@@ -108,34 +113,36 @@ describe("the document set", () => {
       join(dir, "docs", "node_modules", "pkg", "readme.md"),
       "---\ntitle: Vendored\nlast-reviewed: 2026-01-01\n---\n\n# Vendored\n",
     );
-    expect(filesOf(dir, [])).toEqual(["blog/post.md", "docs/guide.md"]);
-    expect(filesOf(dir, ["docs"])).toEqual(["docs/drafts/wip.md", "docs/guide.md"]);
+    expect(await filesOf(dir, [])).toEqual(["blog/post.md", "docs/guide.md"]);
+    expect(await filesOf(dir, ["docs"])).toEqual(["docs/drafts/wip.md", "docs/guide.md"]);
   });
 
-  it("with --no-config reads only the typed paths", () => {
-    expect(filesOf(COLLECTIONS, ["blog"], { noConfig: true })).toEqual(["blog/post.md"]);
+  it("with --no-config reads only the typed paths", async () => {
+    expect(await filesOf(COLLECTIONS, ["blog"], { noConfig: true })).toEqual(["blog/post.md"]);
   });
 });
 
 describe("usage errors", () => {
-  it("refuses --collection beside paths", () => {
-    expect(() => runList(["docs"], { cwd: COLLECTIONS, collection: ["guides"] })).toThrow(
-      WITH_PATHS,
-    );
+  it("refuses --collection beside paths", async () => {
+    await expect(
+      runList(["docs"], { cwd: COLLECTIONS, collection: ["guides"] }),
+    ).rejects.toThrow(WITH_PATHS);
   });
 
-  it("refuses --collection with no config file", () => {
-    expect(() => runList([], { cwd: emptyDir(), collection: ["guides"] })).toThrow(NEEDS_CONFIG);
+  it("refuses --collection with no config file", async () => {
+    await expect(
+      runList([], { cwd: emptyDir(), collection: ["guides"] }),
+    ).rejects.toThrow(NEEDS_CONFIG);
   });
 
-  it("refuses --collection under --no-config", () => {
-    expect(() =>
+  it("refuses --collection under --no-config", async () => {
+    await expect(
       runList([], { cwd: COLLECTIONS, noConfig: true, collection: ["guides"] }),
-    ).toThrow(NEEDS_CONFIG);
+    ).rejects.toThrow(NEEDS_CONFIG);
   });
 
-  it("reports an unknown collection with the shared message", () => {
-    expect(() => runList([], { cwd: COLLECTIONS, collection: ["nope"] })).toThrow(
+  it("reports an unknown collection with the shared message", async () => {
+    await expect(runList([], { cwd: COLLECTIONS, collection: ["nope"] })).rejects.toThrow(
       'no collection named "nope" in manni.config.yaml. Configured: guides, blog.',
     );
   });
@@ -149,12 +156,14 @@ describe("usage errors", () => {
 });
 
 describe("no paths and no collections", () => {
-  it("list", () => {
-    expect(() => runList([], { cwd: emptyDir() })).toThrow(noFiles("list"));
+  it("list", async () => {
+    await expect(runList([], { cwd: emptyDir() })).rejects.toThrow(noFiles("list"));
   });
 
-  it("list, under --no-config beside a config that declares collections", () => {
-    expect(() => runList([], { cwd: COLLECTIONS, noConfig: true })).toThrow(noFiles("list"));
+  it("list, under --no-config beside a config that declares collections", async () => {
+    await expect(runList([], { cwd: COLLECTIONS, noConfig: true })).rejects.toThrow(
+      noFiles("list"),
+    );
   });
 
   it("run", async () => {

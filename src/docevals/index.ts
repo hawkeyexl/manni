@@ -3,6 +3,13 @@ export { loadConfig, parseConfig, DEFAULT_CONFIG_FILENAME } from "./core/config.
 export type { DocevalsConfig, EvalDef, SuiteDef, ProviderName } from "./core/config.js";
 export { discoverPages, readPage, stripFrontmatterBlock } from "./core/discover.js";
 export type { PageFile } from "./core/discover.js";
+export {
+  loadExternalReader,
+  withExternalMetadata,
+  EVAL_KEYS,
+  EXTERNAL_KEYS,
+} from "./core/external.js";
+export type { ExternalMetadataReader, PageExternal } from "./core/external.js";
 export { resolvePage, resolvePages } from "./core/resolve.js";
 export type { ResolvedEval, ResolvedPagePlan, PageProblem } from "./core/resolve.js";
 export { runList, renderList } from "./commands/list.js";
@@ -104,5 +111,6 @@ export { frontmatterSchema, FRONTMATTER_SCHEMA_ID } from "./schema.js";
 // composition by hand, which is how that script silently keyed on the raw page
 // body after the judge started prefixing the chunk budget.
 export { cacheKey, judgeCacheBody } from "./judge/cache.js";
+export type { JudgeCacheBody } from "./judge/cache.js";
 export { readTarget } from "./core/target.js";
 export * from "./types.js";

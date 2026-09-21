@@ -1,0 +1,29 @@
+# A corpus whose evals still live in its pages. `manni meta relocate` moves
+# them into a manifest and rewrites this file to declare it, and the same
+# `manni docevals run` has to report the same verdicts afterwards.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+docevals:
+  evals:
+    fresh-enough:
+      assertion: The page was reviewed this century.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 36500
+      severity: error
+    long-overdue:
+      assertion: The page was reviewed in the last day.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 1
+      severity: error
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [fresh-enough]

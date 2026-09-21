@@ -1,0 +1,4 @@
+install-page:
+  eval-suite: reference
+  evals:
+    - use: fresh-enough

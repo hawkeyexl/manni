@@ -28,7 +28,9 @@ const SECOND: NewEvalEntry = {
   examples: { pass: "Links resolve.", fail: "A link 404s." },
 };
 
-const ajv = new Ajv2020({ allErrors: true });
+// `strict: false`, as the tool itself compiles the draft: proposal.4 annotates
+// its three keys with `x-manni-location`, which Ajv's strict mode refuses.
+const ajv = new Ajv2020({ allErrors: true, strict: false });
 const validateFrontmatter = ajv.compile(frontmatterSchema);
 
 /** Parse the frontmatter block of `content` and validate it against the published schema. */

@@ -1,5 +1,5 @@
 /**
- * The page vocabulary manni docevals implements: `manni:evals:1.0.0-proposal.3`,
+ * The page vocabulary manni docevals implements: `manni:evals:1.0.0-proposal.4`,
  * the evals draft proposal 0023 publishes for review. Pages are validated
  * against the draft itself, imported from `docs/proposals/` and bundled into
  * the build, so the built CLI never reads `docs/` at runtime.
@@ -11,10 +11,10 @@
  * copies the draft into their repository, as the citations vocabulary's
  * consumers do, or validates programmatically against the object below.
  */
-import schema from "../../docs/proposals/0023/schemas/evals/1.0.0-proposal.3.json" with { type: "json" };
+import schema from "../../docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json" with { type: "json" };
 
 /** The evals draft, for validators that accept an inline schema. */
 export const frontmatterSchema = schema as Record<string, unknown>;
 
-/** The draft's `$id`: `manni:evals:1.0.0-proposal.3`. */
+/** The draft's `$id`: `manni:evals:1.0.0-proposal.4`. */
 export const FRONTMATTER_SCHEMA_ID: string = schema.$id;

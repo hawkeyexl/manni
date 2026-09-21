@@ -4,7 +4,7 @@ description: Every field an eval can carry, and how page evals resolve against c
 ---
 
 Eval declarations live in page frontmatter under three keys, validated against
-[`manni:evals:1.0.0-proposal.3`](/manni/meta/proposals/evals/), the common vocabulary manni meta
+[`manni:evals:1.0.0-proposal.4`](/manni/meta/proposals/evals/), the common vocabulary manni meta
 proposes for per-page quality assertions. manni docevals validates against that draft itself,
 bundled into the CLI, and implements the graders behind it. Which machines wrote the page and
 proposed its evals is recorded in two keys from
@@ -229,11 +229,11 @@ what. The field definitions themselves are the
 No copy of the evals draft ships in the package, and no URL serves it while it is
 [open for review](/manni/meta/proposals/evals/). To check declarations with `manni meta validate`,
 copy
-[`1.0.0-proposal.3.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/evals/1.0.0-proposal.3.json)
+[`1.0.0-proposal.4.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json)
 into your repository beside your own schemas, and commit it:
 
 ```bash
-manni meta validate --schema schema/evals-1.0.0-proposal.3.json docs/
+manni meta validate --schema schema/evals-1.0.0-proposal.4.json docs/
 ```
 
 Or wire it in as an eval, so bad declarations fail the run like any other check:
@@ -245,7 +245,7 @@ docevals:
       assertion: Page frontmatter matches the evals vocabulary.
       grader: tool:docmeta
       options:
-        schemas: ["schema/evals-1.0.0-proposal.3.json"]
+        schemas: ["schema/evals-1.0.0-proposal.4.json"]
       severity: error
 ```
 
@@ -257,5 +257,5 @@ Programmatic consumers can import the draft as an object:
 ```js
 import { docevals } from "@hawkeyexl/manni";
 const { frontmatterSchema, FRONTMATTER_SCHEMA_ID } = docevals;
-// FRONTMATTER_SCHEMA_ID is "manni:evals:1.0.0-proposal.3"
+// FRONTMATTER_SCHEMA_ID is "manni:evals:1.0.0-proposal.4"
 ```

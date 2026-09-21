@@ -1,0 +1,26 @@
+# Evals kept where proposal 0023's proposal.4 says they may live: in the
+# collection's external-metadata manifest rather than in the page. The pages
+# below carry no `evals:` at all, and a run over them has to resolve the same
+# plan a run over pages carrying their own would.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [evals, eval-suite, eval-skip, last-reviewed]
+
+docevals:
+  evals:
+    fresh-enough:
+      assertion: The page was reviewed this century.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 36500
+      severity: error
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [fresh-enough]

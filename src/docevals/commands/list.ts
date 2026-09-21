@@ -11,6 +11,7 @@ import {
   runConfigOptions,
   type DocumentInputOptions,
 } from "../core/discover.js";
+import { withExternalMetadata } from "../core/external.js";
 import { resolvePages, type ResolvedPagePlan } from "../core/resolve.js";
 import { applySelection } from "../core/engine.js";
 import {
@@ -34,10 +35,22 @@ export interface ListRun {
   exitCode: 0 | 1;
 }
 
-export function runList(paths: string[], options: ListOptions = {}): ListRun {
+/**
+ * Asynchronous because a page's evals may not be in the page: an owning
+ * manifest is a file to read (proposal 0037). `list` and `run` have to answer
+ * the same question about the same corpus, so it reads them the same way.
+ */
+export async function runList(
+  paths: string[],
+  options: ListOptions = {},
+): Promise<ListRun> {
   const cwd = options.cwd ?? process.cwd();
   const config = loadRunConfig(runConfigOptions(paths, options), cwd);
-  const pages = discoverPages(config, documentSet(paths, options, "list"), cwd);
+  const pages = await withExternalMetadata(
+    discoverPages(config, documentSet(paths, options, "list"), cwd),
+    config,
+    cwd,
+  );
   const plans = resolvePages(pages, config);
   // `false`: list executes nothing, so an eval that resolves but is skipped is
   // a legitimate answer here — and this is the command `run`'s empty-match

@@ -1,0 +1,3 @@
+docs/install.md:
+  evals:
+    - use: fresh-enough

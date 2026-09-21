@@ -10,6 +10,7 @@ import {
   runConfigOptions,
   type DocumentInputOptions,
 } from "../core/discover.js";
+import { withExternalMetadata } from "../core/external.js";
 import { resolvePages } from "../core/resolve.js";
 import { makeGenerateScripts } from "../graders/scriptgen.js";
 import {
@@ -46,7 +47,11 @@ export async function runGenerate(
   // Checked before discovery, and even when nothing needs generating: a typo
   // is a usage error on every run, not only on the runs that reach a model.
   assertProviderSelection(selectProvider(config, flags));
-  const pages = discoverPages(config, documentSet(paths, options, "read"), cwd);
+  const pages = await withExternalMetadata(
+    discoverPages(config, documentSet(paths, options, "read"), cwd),
+    config,
+    cwd,
+  );
   const plans = resolvePages(pages, config);
 
   const targets: GraderTarget[] = [];

@@ -14,6 +14,7 @@ import type {
 } from "../types.js";
 import { loadRunConfig, type DocevalsConfig, type ExecutionGrant } from "./config.js";
 import { discoverPages } from "./discover.js";
+import { withExternalMetadata } from "./external.js";
 import { resolvePages, type ResolvedPagePlan } from "./resolve.js";
 import {
   applyBaseline,
@@ -650,14 +651,21 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
       cwd,
     );
   const exec = options.exec ?? realExec;
-  const pages = discoverPages(
+  // Read the way `meta validate` reads: the frontmatter block, plus whatever
+  // an owning manifest of one of the page's collections supplies. A corpus
+  // that relocated its evals resolves the same plan it did before the move.
+  const pages = await withExternalMetadata(
+    discoverPages(
+      config,
+      {
+        paths,
+        verb: "evaluate",
+        ...(options.collection === undefined ? {} : { collection: options.collection }),
+        ...(options.exclude === undefined ? {} : { exclude: options.exclude }),
+      },
+      cwd,
+    ),
     config,
-    {
-      paths,
-      verb: "evaluate",
-      ...(options.collection === undefined ? {} : { collection: options.collection }),
-      ...(options.exclude === undefined ? {} : { exclude: options.exclude }),
-    },
     cwd,
   );
   // Refused up front, not at the end: a re-record rebuilds the file from this
@@ -745,7 +753,9 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
 
   const problems: RunProblem[] = plans.flatMap((p) =>
     p.problems.map((pr) => ({
-      file: p.page.file,
+      // A value a manifest supplied is reported against that manifest, at its
+      // line there: the page has nothing at that pointer to fix.
+      file: pr.file ?? p.page.file,
       message: pr.message,
       level: pr.level,
       line: pr.line,

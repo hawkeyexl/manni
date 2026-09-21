@@ -1,0 +1,25 @@
+# A field-joined manifest (proposal 0039): entries are keyed on the page's own
+# `doc-id` rather than on its path, so the evals follow the page when it moves.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [evals, eval-suite]
+        join: doc-id
+
+docevals:
+  evals:
+    fresh-enough:
+      assertion: The page was reviewed this century.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 36500
+      severity: error
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [fresh-enough]

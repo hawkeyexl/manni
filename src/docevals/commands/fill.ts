@@ -17,6 +17,7 @@ import {
   runConfigOptions,
   type DocumentInputOptions,
 } from "../core/discover.js";
+import { withExternalMetadata } from "../core/external.js";
 import { resolvePages, type ResolvedPagePlan } from "../core/resolve.js";
 import { appendPageEvals, type NewEvalEntry } from "../core/frontmatter-edit.js";
 import {
@@ -162,7 +163,11 @@ export async function runFill(
   // Checked up front, and regardless of an injected provider: it costs nothing,
   // and a typo must fail on a run where no page needs a model too.
   assertProviderSelection(selectProvider(config, flags));
-  const pages = discoverPages(config, documentSet(paths, options, "fill"), cwd);
+  const pages = await withExternalMetadata(
+    discoverPages(config, documentSet(paths, options, "fill"), cwd),
+    config,
+    cwd,
+  );
   const plans = resolvePages(pages, config);
 
   const threshold = options.confidence ?? config.fill.confidenceThreshold;

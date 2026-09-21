@@ -170,7 +170,7 @@ export function buildProgram(): Command {
     .option("--eval <name>", "Show only this eval (repeatable)", collectArg, [])
     .option("--suite <name>", "Show only evals in this suite")
     .action(
-      (
+      async (
         paths: string[],
         opts: {
           config?: string | boolean;
@@ -182,7 +182,7 @@ export function buildProgram(): Command {
         },
       ) => {
       try {
-        const run = runList(paths, {
+        const run = await runList(paths, {
           ...documentOptions(opts),
           format: opts.format,
           evalNames: opts.eval,

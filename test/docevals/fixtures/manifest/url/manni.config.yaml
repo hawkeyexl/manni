@@ -1,0 +1,20 @@
+# A URL manifest may supply plenty of keys, but not an eval key: docevals
+# writes those, and a URL is not somewhere to write. The refusal lands before
+# anything is fetched, so this host is never resolved.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: https://example.invalid/site.metadata.yaml
+        keys: [evals]
+
+docevals:
+  evals:
+    fresh-enough:
+      assertion: The page was reviewed this century.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 36500
+      severity: error

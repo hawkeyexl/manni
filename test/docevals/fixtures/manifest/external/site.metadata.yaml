@@ -1,0 +1,10 @@
+docs/install.md:
+  eval-suite: reference
+  evals:
+    - use: fresh-enough
+docs/dated.md:
+  eval-suite: reference
+  last-reviewed: 2026-02-03
+docs/skipped.md:
+  eval-skip: true
+  eval-suite: reference

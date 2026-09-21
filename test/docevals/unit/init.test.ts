@@ -79,11 +79,11 @@ describe("runInit", () => {
   // Asserted through resolution rather than against the file's text, for the
   // reason the whole file exists: what matters is what the loader does with
   // it, not which characters it contains.
-  it("attaches its own suite to a page carrying no eval frontmatter", () => {
+  it("attaches its own suite to a page carrying no eval frontmatter", async () => {
     const root = dir();
     runInit(root);
     page(root, "sample.md");
-    const { plans } = runList([], { cwd: root });
+    const { plans } = await runList([], { cwd: root });
     expect(plans).toHaveLength(1);
     expect(plans[0]?.suite).toBe("default");
     expect(plans[0]?.evals.map((e) => e.name).sort()).toEqual([

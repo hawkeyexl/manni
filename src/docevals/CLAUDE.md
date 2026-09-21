@@ -294,7 +294,7 @@ and Node touch.
   to execute", and a fork's pages are not this corpus. The only complete
   control is restricting the job to same-repo pull requests; the
   docs-as-tests workflow carries that gate. Never remove it.
-- The page vocabulary is **`manni:evals:1.0.0-proposal.3`**, proposed by the
+- The page vocabulary is **`manni:evals:1.0.0-proposal.4`**, proposed by the
   metadata tool (proposal 0023) and implemented here (ADRs 01009 and 01045).
   `src/docevals/schema.ts` imports the draft from
   `docs/proposals/0023/schemas/evals/` and tsup bundles it, so `dist` never
@@ -302,6 +302,24 @@ and Node touch.
   tool used to publish drifted from the draft twice. Three flat page keys:
   `evals`, `eval-suite` and `eval-skip`, plus a reserved `eval-` prefix, so an
   unrecognized `eval-*` key, `eval-provenance` included, is a page error.
+  proposal.4 marks all three `x-manni-location: external`, which is why the
+  Ajv instance compiles with `strict: false`, as `src/cite/core/page.ts` does.
+- **A page's metadata is its frontmatter plus its manifests.** Those three
+  keys, ai-context's `provenance` and `meta-provenance`, and stewardship's
+  `last-reviewed` may all live in a collection's external-metadata manifest
+  (proposal 0037, 0041). `src/docevals/core/external.ts` merges them in
+  through meta's own `loadExternalMetadata` / `mergeExternalMetadata`, once
+  per run, and hands each `PageFile` back with the merged values as its
+  `frontmatter`. So resolution, the freshness grader, the self-preference
+  check and `target: frontmatter` read them without knowing a manifest
+  exists, and `target: raw` stays the file verbatim. Never grow a second
+  loader. Membership is decided by **every declared collection**, not by the
+  ones `--collection` or the positional paths selected. Two refusals are
+  docevals' own because docevals *writes* eval keys: a URL manifest owning one
+  is exit 2, and so is a page whose collections both keep one in a manifest.
+  A page carrying a key its manifest owns is an error-level page problem, in
+  meta's `external:owned` sentence. The `location:external` warning for an
+  eval key left in a page stays `meta validate`'s; docevals adds none.
 - **Machine attribution is ai-context's, not this vocabulary's** (proposal
   0046). `provenance` pins the body lines a machine wrote, and
   `meta-provenance` names the fields and evals a machine proposed. There is no

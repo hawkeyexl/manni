@@ -13,6 +13,7 @@ import {
   runConfigOptions,
   type DocumentInputOptions,
 } from "../core/discover.js";
+import { withExternalMetadata } from "../core/external.js";
 import { resolvePages } from "../core/resolve.js";
 import {
   hasEditableEval,
@@ -128,7 +129,11 @@ export async function runPromote(
   const flags = { provider: options.provider, model: options.model, local: options.local };
   // Checked before discovery, and even when nothing is ai-graded.
   assertProviderSelection(selectProvider(config, flags));
-  const pages = discoverPages(config, documentSet(paths, options, "read"), cwd);
+  const pages = await withExternalMetadata(
+    discoverPages(config, documentSet(paths, options, "read"), cwd),
+    config,
+    cwd,
+  );
   const plans = resolvePages(pages, config);
 
   // Built on first use, not up front. A corpus with no ai-graded evals has

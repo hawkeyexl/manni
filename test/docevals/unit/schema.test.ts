@@ -1,6 +1,6 @@
 /**
  * Pages are validated against the evals draft proposal 0023 publishes for
- * review, `manni:evals:1.0.0-proposal.3`, read from `docs/proposals/` and
+ * review, `manni:evals:1.0.0-proposal.4`, read from `docs/proposals/` and
  * bundled into the build. docevals ships no schema copy of its own: a copy
  * would be a second artifact to keep in step with the draft, and it drifted
  * once (its severity scale and its `eval-provenance` outlived the draft).
@@ -23,12 +23,12 @@ import {
 } from "../../../src/docevals/schema.js";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
-const DRAFT = "docs/proposals/0023/schemas/evals/1.0.0-proposal.3.json";
+const DRAFT = "docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json";
 
 describe("the page schema", () => {
   it("is the evals draft, byte for byte", () => {
     expect(frontmatterSchema).toEqual(JSON.parse(readFileSync(resolve(ROOT, DRAFT), "utf8")));
-    expect(FRONTMATTER_SCHEMA_ID).toBe("manni:evals:1.0.0-proposal.3");
+    expect(FRONTMATTER_SCHEMA_ID).toBe("manni:evals:1.0.0-proposal.4");
   });
 
   it("ships no copy of its own", () => {
@@ -77,7 +77,10 @@ describe("the page schema", () => {
  * frontmatter, not just the `evals` key — the `eval-` prefix reservation is a
  * statement about the page root, so it can only be tested there.
  */
-const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
+// `strict: false`, as `src/cite/core/page.ts` compiles its own draft: the
+// vocabulary annotates its external keys with `x-manni-location`, and Ajv's
+// strict mode throws on a keyword it does not know.
+const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true, strict: false });
 const validate = ajv.compile(frontmatterSchema);
 
 const cases: [string, boolean, string][] = [

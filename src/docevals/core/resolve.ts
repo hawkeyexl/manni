@@ -4,12 +4,18 @@
  * them (with overrides) or define inline evals. Page entries win on id
  * collision.
  *
- * The page vocabulary is `manni:evals:1.0.0-proposal.3` — three flat
+ * The page vocabulary is `manni:evals:1.0.0-proposal.4` — three flat
  * page-level keys (`evals`, `eval-suite`, `eval-skip`) and a reserved `eval-`
  * prefix, rather than the closed `evals:` object 0.1 used. The
  * whole frontmatter object is validated, not a synthetic `{evals}`: the prefix
  * reservation is a claim about the page root, and it cannot be enforced from a
  * fragment.
+ *
+ * `page.frontmatter` is the page's metadata *after* `core/external.ts` merged
+ * in whatever an owning manifest supplies, so a page whose `evals` live in a
+ * manifest resolves the plan it declares rather than none. What the page
+ * itself carries and what a manifest supplied are told apart only when a
+ * problem has to name a place: `locationOf` below.
  */
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { ErrorObject } from "ajv";
@@ -64,6 +70,12 @@ export interface PageProblem {
   message: string;
   level: "error" | "warning";
   line?: number;
+  /**
+   * The manifest that supplied the value this problem is about, when one did
+   * (`external-metadata`, proposal 0037). Absent for everything the page
+   * carries, which the run then reports against the page as it always has.
+   */
+  file?: string;
 }
 
 export interface ResolvedPagePlan {
@@ -75,7 +87,11 @@ export interface ResolvedPagePlan {
   problems: PageProblem[];
 }
 
-const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
+// `strict: false`, as `src/cite/core/page.ts` compiles its own draft: from
+// `1.0.0-proposal.4` the vocabulary annotates its three keys with
+// `x-manni-location: external`, and Ajv's strict mode throws on a keyword it
+// does not know rather than ignoring the annotation.
+const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true, strict: false });
 // The draft as published: its severity is the family scale, so nothing is
 // patched in memory.
 const validateFrontmatter = ajv.compile(frontmatterSchema);
@@ -192,6 +208,22 @@ function describeError(e: ErrorObject): string {
   return e.message ?? "is invalid";
 }
 
+/**
+ * Where a problem about `pointer` should point: the manifest that supplied the
+ * value, or the page's own line for it.
+ *
+ * A manifest line without a file would read as a line of the page, which is
+ * the one place the value is not. So the two travel together or not at all.
+ */
+function locationOf(
+  page: PageFile,
+  pointer: string,
+): Pick<PageProblem, "file" | "line"> {
+  const where = page.external?.locate(pointer);
+  if (where === undefined) return { line: page.frontmatter.lineFor(pointer) ?? 1 };
+  return { file: where.file, ...(where.line === undefined ? {} : { line: where.line }) };
+}
+
 /** Resolve one page's plan. Never throws; problems are collected per page. */
 export function resolvePage(
   page: PageFile,
@@ -210,6 +242,18 @@ export function resolvePage(
     return empty;
   }
 
+  // A key a manifest owns and the page carries anyway. Meta files this as
+  // `external:owned` on the document; docevals says the same sentence, at
+  // error level, because there are then two declarations of what to check and
+  // grading either one would be a guess.
+  for (const c of page.external?.collisions ?? []) {
+    problems.push({
+      message: `"${c.key}" is owned by manifest ${c.file} (collection ${c.collection}); remove it from the document`,
+      level: "error",
+      line: page.frontmatter.lineFor(`/${c.key}`) ?? 1,
+    });
+  }
+
   const data = page.frontmatter.data;
   // The whole object, not just the eval keys: `eval-` prefix reservation is a
   // statement about the page root. Sibling tools' keys stay legal — the schema
@@ -220,7 +264,7 @@ export function resolvePage(
       problems.push({
         message: `frontmatter${e.instancePath}: ${describeError(e)}`,
         level: "error",
-        line: page.frontmatter.lineFor(e.instancePath) ?? 1,
+        ...locationOf(page, e.instancePath),
       });
     }
     return empty;
@@ -235,7 +279,7 @@ export function resolvePage(
     problems.push({
       message: `Unknown suite "${declaredSuite}" (not defined in ${config.configPath})`,
       level: "error",
-      line: page.frontmatter.lineFor("/eval-suite") ?? 1,
+      ...locationOf(page, "/eval-suite"),
     });
     return { ...empty, skip: pageSkip };
   }
@@ -279,7 +323,7 @@ export function resolvePage(
             `but a string is an assertion now, not a reference. ` +
             `Write "use: ${entry}" to run that eval.`,
           level: "warning",
-          line: page.frontmatter.lineFor(linePtr) ?? 1,
+          ...locationOf(page, linePtr),
         });
       }
       const name = shorthandName(i, claimed);
@@ -297,7 +341,7 @@ export function resolvePage(
         problems.push({
           message: `Unknown eval "${ref.use}" (not defined in ${config.configPath})`,
           level: "error",
-          line: page.frontmatter.lineFor(linePtr) ?? 1,
+          ...locationOf(page, linePtr),
         });
         continue;
       }
@@ -323,7 +367,7 @@ export function resolvePage(
       problems.push({
         message: `Duplicate eval id "${inline.id}" on page — the later entry replaces the earlier one`,
         level: "error",
-        line: page.frontmatter.lineFor(linePtr) ?? 1,
+        ...locationOf(page, linePtr),
       });
     }
     const ev = fromDef(inline.id, reportSuite, normalizeEvalDef(inline), "page");
@@ -333,7 +377,7 @@ export function resolvePage(
       problems.push({
         message: `Eval "${inline.id}": ai-graded evals work best with examples.pass/examples.fail`,
         level: "warning",
-        line: page.frontmatter.lineFor(linePtr) ?? 1,
+        ...locationOf(page, linePtr),
       });
     }
   }

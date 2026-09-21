@@ -20,6 +20,7 @@ import pc from "picocolors";
 import { DocevalsError } from "../types.js";
 import { loadConfig } from "../core/config.js";
 import { readPage } from "../core/discover.js";
+import { loadExternalReader } from "../core/external.js";
 import { resolvePage } from "../core/resolve.js";
 import { contentHash, loadReviews } from "../core/reviews.js";
 import { makeJudge } from "../judge/judge.js";
@@ -328,6 +329,8 @@ export async function runCalibrate(
   const results: CalibrationCaseResult[] = [];
   const targets: GraderTarget[] = [];
   const targetIndex: number[] = [];
+  // One load for the whole golden set, not one per case.
+  const external = await loadExternalReader(config, cwd);
 
   for (const goldenCase of cases) {
     const absPath = resolve(cwd, goldenCase.file);
@@ -335,7 +338,8 @@ export async function runCalibrate(
       results.push({ ...goldenCase, error: "page not found" });
       continue;
     }
-    const page = readPage(absPath, cwd);
+    const read = readPage(absPath, cwd);
+    const page = external === null ? read : external.forPage(read);
     const plan = resolvePage(page, config);
     const ev = plan.evals.find(
       (e) => e.name === goldenCase.eval && e.grader === "ai",

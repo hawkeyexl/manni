@@ -207,17 +207,17 @@ describe("selection: list answers what run refuses", () => {
   // `list` must not: it executes nothing by design, and showing that the eval
   // resolves but is skipped is the answer the user came for — it is also the
   // command run's own error message points at.
-  it("list shows the resolved plan instead of throwing", () => {
-    const run_ = runList([], { cwd: skippedButDeclared(), evalNames: ["always-passes"] });
+  it("list shows the resolved plan instead of throwing", async () => {
+    const run_ = await runList([], { cwd: skippedButDeclared(), evalNames: ["always-passes"] });
     expect(run_.plans).toHaveLength(1);
     expect(run_.plans[0]?.skip).toBe(true);
     expect(run_.plans[0]?.evals.map((e) => e.name)).toEqual(["always-passes"]);
   });
 
-  it("list still errors on a name that resolves nowhere", () => {
-    expect(() => runList([], { cwd: scaffold(), evalNames: ["no-such-eval"] })).toThrow(
-      /no-such-eval/,
-    );
+  it("list still errors on a name that resolves nowhere", async () => {
+    await expect(
+      runList([], { cwd: scaffold(), evalNames: ["no-such-eval"] }),
+    ).rejects.toThrow(/no-such-eval/);
   });
 });
 

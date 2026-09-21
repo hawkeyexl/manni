@@ -1,0 +1,25 @@
+# Two collections hold the same page, and each keeps `evals` in a manifest of
+# its own. There is no tiebreak to pick: the run is refused.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [evals]
+  - name: guides
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./guides.metadata.yaml
+        keys: [evals]
+
+docevals:
+  evals:
+    fresh-enough:
+      assertion: The page was reviewed this century.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 36500
+      severity: error

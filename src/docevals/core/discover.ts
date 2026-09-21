@@ -11,6 +11,7 @@ import { extractFrontmatter, type ExtractedMetadata } from "../../meta/index.js"
 import { selectCollections } from "../../shared/collections.js";
 import { errorMessage } from "../../shared/errors.js";
 import { DocevalsError } from "../types.js";
+import type { PageExternal } from "./external.js";
 import {
   assertCollectionWithoutPaths,
   DEFAULT_CONFIG_FILENAME,
@@ -26,7 +27,18 @@ export interface PageFile {
   content: string;
   /** Content with the leading frontmatter block removed (judge input). */
   body: string;
+  /**
+   * The page's metadata, with every key an owning manifest supplies already
+   * merged in (`core/external.ts`). Identical to the frontmatter block when no
+   * collection of this page's declares a manifest, which is the common case.
+   */
   frontmatter: ExtractedMetadata;
+  /**
+   * Where a merged value lives, when a manifest supplied it. Absent when the
+   * run read no manifest, and its `locate` answers `undefined` for every key
+   * the page itself carries.
+   */
+  external?: PageExternal;
   /** Set when frontmatter extraction failed; the page is reported as errored. */
   extractError?: string;
 }
