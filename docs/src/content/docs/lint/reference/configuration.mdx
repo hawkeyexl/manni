@@ -41,6 +41,12 @@ lint:
   overrides:
     - files: "docs/api/**"
       template: tgdp:reference:1.6
+
+# An outside tool's settings, for the run that starts it. Not under `lint:`,
+# because a tool is not any one domain's.
+tools:
+  dita-ot:
+    home: /opt/dita-ot
 ```
 
 Every key is optional. A repository whose pages all declare a `type:` a
@@ -111,7 +117,7 @@ refused. Name the collection for what it holds: `guides`, `site`, `pages`,
 |---|---|---|---|---|
 | `allowEmpty` | boolean | `false` | no | Treat a run that matched zero files as success rather than an operational error. For a shared CI template or a pre-commit hook whose file list may legitimately be empty. The same key, with the same meaning, as `cite.allowEmpty`. `--allow-empty` sets it for one run. |
 | `structure` | object | absent | no | The structure job. Declaring it with no keys is how a repository says the job applies. |
-| `structure.tool` | string, `manni` | `manni` | no | Which tool performs the job. `manni` is this package's own engine and the only value. Anything else is refused by name. `--tool <name>` names the same thing for one run. |
+| `structure.tool` | string, `manni` or `dita-ot` | `manni` | no | Which tool performs the job. `manni` is this package's own engine. `dita-ot` is DITA Open Toolkit, which you install yourself and which settles references across files. Anything else is refused by name. `--tool <name>` names the same thing for one run. See [Choose a structure tool](/lint/set-up/choose-a-structure-tool/). |
 | `templates` | string[] | none | no | Template files to load. Their templates' `types:` join the doctype routing table and outrank the built-ins. Adopting a repository's own how-to shape is one entry here and no flag. Each entry is a [template ref](/manni/lint/reference/templates/#template-refs). `--templates <path>` adds more. |
 | `template` | string | none | no | Template ref applied to a page that declares no doctype and matches no override. The **last** rung of the chain, not an override. |
 | `types` | object | none | no | Explicit doctype → template ref map, for a doctype no template file claims with its own `types:`. Keys are the vocabulary your pages' `type:` frontmatter is written in, so they are your names rather than the tool's. |
@@ -127,6 +133,25 @@ An override is template policy over a glob, not a document set. A
 `collection:` key there would be a second way to spell membership, and
 `collections:` already owns that. Proposal 0050 records the decision.
 </Aside>
+
+## `tools:` keys
+
+An outside tool's settings sit at the top level, beside `collections:`, not
+under `lint:`. A tool is not any one domain's. Vale is the case in point, since
+`manni term lint` runs it and so does a docevals grader. Each should read one
+description of where a tool lives, not two that can disagree.
+
+Each tool gets a namespace of its own keys rather than a shared shape, because
+tools do not have the same settings.
+
+| Key | Type | Default | Required | What it does |
+|---|---|---|---|---|
+| `tools.dita-ot` | object | absent | no | DITA Open Toolkit's settings, read by the run that starts it. |
+| `tools.dita-ot.home` | string | none | no | DITA-OT's installation directory, relative to this file. Unset means the `dita` on your `PATH`. A directory rather than a path to the launcher, because that is the unit DITA-OT ships as. |
+
+A path is kept as you spelled it and resolved when it is used. Whether it
+exists is a question for the run that needs it, so `manni lint tools` reports
+an install it cannot find as `unavailable` rather than refusing to print.
 
 ## How a template is chosen
 

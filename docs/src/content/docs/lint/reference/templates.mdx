@@ -390,11 +390,21 @@ The file extensions behind those columns:
 | HTML | `.html`, `.htm` |
 | AsciiDoc | `.adoc`, `.asciidoc` |
 | reStructuredText | `.rst` |
-| XML | `.xml`, `.dita` |
+| XML | `.xml`, `.dita`, `.ditamap` |
 
-A directory walk picks up `.dita` but not every `.xml`, because a docs tree
-also holds `pom.xml` and `sitemap.xml`. Name such a file directly, or pass
-`--as xml`.
+A directory walk picks up `.dita` and `.ditamap` but not every `.xml`, because a
+docs tree also holds `pom.xml` and `sitemap.xml`. Name such a file directly, or
+pass `--as xml`.
+
+A DITA map is read as a tree of titled entries. A `topicref` nests the way a
+heading does, and so do `topichead`, `mapref`, `glossref`, and a bookmap's
+`chapter` and `appendix`.
+
+An entry that points by `keyref` alone carries no title of its own. That is
+ordinary in a real map. So a template that requires a title on every entry will
+fail maps that are correct.
+
+A `reltable` and a `keydef` are not navigation. Neither appears in the tree.
 
 ### A rule that cannot run is a warning
 

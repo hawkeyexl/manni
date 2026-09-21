@@ -13989,7 +13989,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-7d0655d425264f026c5f5d326f212ee791e1abffd5be4c9c1888551df0e07087
       source:
         file: src/shared/tools.ts
-        lines: 104-108
+        lines: 143-147
         integrity: sha256-e031656b7d919f957129e2cb6d1848230e626368ce9b7ab0878bdd22a7114185
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: empty-term-section-no-keys
@@ -14053,7 +14053,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-9c5cab61e3f16882afd2267e1200f1bd9637a91a3c7fb08d64925d17f8e48a07
       source:
         file: src/shared/tools.ts
-        lines: 88-95
+        lines: 106-113
         integrity: sha256-89a62db24651e4ff0d7e68e1a4eb8ff708197e112d44c4befc89a9e6bef9b3f7
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: vale-finds-own-config
@@ -14061,7 +14061,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-9c5cab61e3f16882afd2267e1200f1bd9637a91a3c7fb08d64925d17f8e48a07
       source:
         file: src/shared/tools.ts
-        lines: 99-108
+        lines: 138-147
         integrity: sha256-6aff5155a3feb38d23abf880bb71b1217811969f279e30e8827145c91bd18ba5
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: manifests-list-of-paths
@@ -15327,15 +15327,15 @@ docs/src/content/docs/term/set-up/index.mdx:
       source:
         file: src/shared/tools.ts
         lines: 60-76
-        integrity: sha256-e8ddbe7617f14497088681654ea4d130e8b7752aca5ff121ee2742c611cae03e
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        integrity: sha256-9208f5f5b4de16e7e690bb02da306dc0c9358d2a276c0405779d7450d47b8b4a
+        commit-sha: 235138a66d00970ea96dca34d7760c0aca6aafa3
     - id: no-tools-vale-config-vale-finds-own
       claim:
         lines: 56-57
         integrity: sha256-6fd6e0343f14cf4c389fe0e6975610db2e14cca6d6b6b708a4f2649973352c8b
       source:
         file: src/shared/tools.ts
-        lines: 99-108
+        lines: 138-147
         integrity: sha256-6aff5155a3feb38d23abf880bb71b1217811969f279e30e8827145c91bd18ba5
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: no-o-asks-vale-styles-path
@@ -18545,15 +18545,15 @@ docs/src/content/docs/meta/reference/configuration.mdx:
       source:
         file: src/shared/tools.ts
         lines: 27-33
-        integrity: sha256-4e6faf129a375f35dc2565c66f95ddb579519582f476c6dcded6a68638268a3f
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        integrity: sha256-d29993cac76eb5f87c8ba303307d1e7c4efc117abe8a6f292557b3f708aca97d
+        commit-sha: 235138a66d00970ea96dca34d7760c0aca6aafa3
     - id: vale-config-is-resolved-from-the-config-file
       claim:
         lines: 1145
         integrity: sha256-37884aceebadf79a78d801577742cd7f54ce5064943a7ebbd08ae3a192df6e20
       source:
         file: src/shared/tools.ts
-        lines: 104-108
+        lines: 143-147
         integrity: sha256-e031656b7d919f957129e2cb6d1848230e626368ce9b7ab0878bdd22a7114185
         commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
     - id: term-starts-vale-with-the-configured-file
@@ -19894,7 +19894,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-f2dfce69e12af45c9db5bed8ba9cefd07a977340dad0a21032eb7b53e486cc70
       source:
         file: src/shared/tools.ts
-        lines: 104-108
+        lines: 143-147
         integrity: sha256-e031656b7d919f957129e2cb6d1848230e626368ce9b7ab0878bdd22a7114185
         commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
     - id: override-globs-match-the-config-relative-path
@@ -20019,8 +20019,8 @@ docs/src/content/docs/meta/reference/configuration.mdx:
       source:
         file: src/shared/tools.ts
         lines: 60-76
-        integrity: sha256-e8ddbe7617f14497088681654ea4d130e8b7752aca5ff121ee2742c611cae03e
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        integrity: sha256-9208f5f5b4de16e7e690bb02da306dc0c9358d2a276c0405779d7450d47b8b4a
+        commit-sha: 235138a66d00970ea96dca34d7760c0aca6aafa3
     - id: missing-vale-config-refused-when-vale-runs
       claim:
         lines: 1163-1164
