@@ -23,6 +23,7 @@ How you express the version depends on which of the three reference kinds your c
 <Tabs>
 <TabItem label="Built-in">
 
+{/* cite builtin-id-carries-its-version */}
 A built-in id already carries its version in the third segment of `vendor:name:version`. The bundled OKF schema is `google:okf:0.1`, and the `0.1` *is* the pin. A revised built-in schema gets a new id, and an existing id never changes. A consumer naming `google:okf:0.1` keeps validating against exactly the schema they chose until they edit that reference themselves.
 
 ```yaml title="manni.config.yaml"
@@ -31,6 +32,7 @@ meta:
     - google:okf:0.1   # pinned; a new built-in version is a new id
 ```
 
+{/* cite builtin-versions-are-decided-by-manni */}
 Built-in versions are decided by manni meta, not by you: you adopt them, you don't author them. If you're defining your own standard, you'll version a file or URL schema instead.
 
 </TabItem>
@@ -116,6 +118,7 @@ This add-then-ratchet pattern is the heart of tightening a standard without a fl
 
 ### DDL moves schema and corpus in one statement
 
+{/* cite alter-table-edits-the-resolved-schema */}
 When the corpus and the schema live in the same repo, the three steps above
 collapse into one statement. `manni meta query` treats the resolved schema as the
 table definition, so `ALTER TABLE` edits it:
@@ -127,6 +130,7 @@ npx @hawkeyexl/manni meta query "ALTER TABLE docs
 
 adds `reviewed` to `properties` and `required` **and** backfills every file in the same write. The corpus is compliant with the stricter schema the moment the schema is stricter. `DROP COLUMN` and `RENAME COLUMN` retire and rename a key from the schema and every file together. Run any of them with `--dry-run` first to see the exact plan before it applies. When the corpus resolves more than one schema and the statement cannot tell which to evolve, `-s <schema>` names the contract directly. Same guards, your choice of target.
 
+{/* cite declared-type-maps-to-a-format */}
 The constraints schema authors reach for first, `format` and `enum`, ride the same statement. A declared type equal to a format name the validator enforces writes the format, and `CHECK (col IN (…))` writes the enum:
 
 ```bash
@@ -139,12 +143,15 @@ npx @hawkeyexl/manni meta query "ALTER TABLE docs
   ADD COLUMN status TEXT CHECK (status IN ('draft','review','final'))" docs/
 ```
 
+{/* cite default-rejected-by-the-mapped-format */}
 so evolving "one of these values" or "must be a date" is one reviewed statement rather than a hand edit plus a hand migration. (`DATETIME` and `TIMESTAMP` alias to `date-time`. Hyphenated format names are quoted types, as in `ADD COLUMN updated "date-time"`.) The guard that keeps the ratchet honest extends with it. A `DEFAULT` the mapped format rejects, such as `DATE DEFAULT 'yesterday'`, refuses before anything is written. A `DEFAULT` outside the enum is refused by the CHECK itself. A rename carries the whole hand-written property. An `enum`, `format`, or `description` you added by hand survives `RENAME COLUMN` intact.
 
+{/* cite builtin-forks-to-a-local-copy */}
 What "the schema" means follows your reference kind. A **file** schema you maintain is edited in place, keeping your indent and git as the review surface. An `integrity:` pin is refreshed if the config carries one. A **built-in** is immutable, so it forks to a local copy, with the config and any in-file `$schema` repointed in the same write. What DDL deliberately does *not* do is bump your version for you. The preview names the schema file it will edit. Encoding the new version, whether in the filename, the `$id`, or the URL, stays the deliberate move this page is about. Additive `ADD` is the minor-version case; `DROP` and `RENAME` are the breaking ones.
 
 ## Dialects are detected, not configured
 
+{/* cite versioning-dialect-read-from-schema-line */}
 The second thing that can break a schema is the JSON Schema *dialect* you wrote it in, rather than a field you changed. JSON Schema has evolved through several versions: draft-04, draft-06, draft-07, 2019-09, and 2020-12. They aren't fully compatible, and a schema written for one dialect can fail to compile under another. manni meta handles this for you. It reads each schema's own `$schema` line, the URI at the top that names the dialect's *meta-schema*. Then it compiles that schema with the matching validation engine.
 
 manni meta supports these dialects:
@@ -198,6 +205,7 @@ Both schemas validate the same documents here; the only difference is which engi
 
 ### Mixing dialects across a schema set is fine
 
+{/* cite each-schema-compiles-in-its-own-engine */}
 A file can be validated against more than one schema, through a list-valued `$schema`, several config entries, or layered `--schema` flags. Those schemas don't all have to share a dialect. manni meta detects the dialect of **each schema independently** and compiles each one in its own engine. A 2020-12 house-style schema and a draft-07 schema you fetched from a partner can validate the same file in the same run. Each is held to its own dialect's rules.
 
 This is why adopting a schema from elsewhere never forces you to rewrite it to match your other schemas. That covers an older internal standard, or a third-party schema that still targets draft-07. Drop it into the set as-is; its `$schema` line tells manni meta how to read it.

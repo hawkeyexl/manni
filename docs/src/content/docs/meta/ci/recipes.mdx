@@ -11,6 +11,7 @@ complete, runnable recipes for four common setups. The [GitHub Actions
 gate](/manni/meta/ci/) is on its own page; the first recipe here adds persistence
 on top of it.
 
+{/* cite recipes-exit-0-and-1 */}
 Every recipe relies on the same contract. manni meta exits `0` when all files are
 valid and `1` when one or more files fail validation. An operational or usage
 error exits `2`. Each platform fails the job on a non-zero exit, so the gate is
@@ -166,6 +167,7 @@ validate-metadata:
       junit: manni-junit.xml
 ```
 
+{/* cite junit-one-test-per-file */}
 Each file becomes one test, so the widget's count matches manni meta's
 `N files checked, M failed` summary.
 
@@ -259,6 +261,7 @@ repos:
       - id: manni-meta
 ```
 
+{/* cite derive-hook-stamps-managed-fields */}
 `manni-meta` validates the staged files. `manni-meta-derive` runs first and
 stamps the [managed fields](/manni/meta/set-up/derived-metadata/) into them,
 including [`provenance`](/manni/meta/set-up/machine-authorship/). With
@@ -277,16 +280,19 @@ snippet really will go stale. Take the tag from [the latest
 release](https://github.com/hawkeyexl/manni/releases/latest), and let
 `pre-commit autoupdate` move it for you afterwards.
 
+{/* cite hook-entry-runs-the-latest-cli */}
 What `rev` pins is the hook definition, meaning its file pattern and its entry.
 It does not pin the CLI. The published hook runs the newest published CLI,
 `@hawkeyexl/manni@latest`, so a newer CLI reaches you without a `rev` bump.
 
+{/* cite hook-files-pattern-covers-every-format */}
 The hook fails the commit when manni meta returns a non-zero exit code. It already
 knows which files to look at, covering every extension manni meta reads, matched
 case-insensitively. You do not write a `files` pattern, and that matters more
 than it sounds. A hand-written one is easy to narrow to `\.md$` and then quietly
 stop checking the AsciiDoc and DITA in the same repo.
 
+{/* cite validate-judges-the-derived-stamp */}
 The hook needs nothing more to judge [managed stewardship
 fields](/manni/meta/set-up/derived-metadata/), because `validate` compares a
 stamp against the evidence on staged files too.

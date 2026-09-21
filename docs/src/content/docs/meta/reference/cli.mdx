@@ -36,6 +36,8 @@ Global options are accepted before the subcommand.
 
 ## `meta`
 
+{/* cite docmeta-bin-runs-the-same-program */}
+{/* cite meta-has-its-own-version-flag */}
 The metadata tool. Every command on this page lives under it. It is the same
 program the package's `docmeta` bin runs, so `docmeta validate …` and
 `manni meta validate …` are one command with two spellings. `meta` accepts
@@ -51,6 +53,7 @@ manni meta [options] [command] [command options] [arguments]
 |---|---|
 | `--no-color` | Disable colored output. See [color behavior](/manni/meta/reference/output-and-exit-codes/#color-behavior). |
 
+{/* cite validate-is-the-default-command */}
 `validate` is the default command, so `manni meta <paths...>` runs validation
 without naming the subcommand.
 
@@ -99,6 +102,9 @@ Repeatable flags (`-s/--schema`, `--exclude`) accumulate; pass the flag once per
 value, for example `-s a -s b`.
 </Aside>
 
+{/* cite validate-merges-manifest-values-first */}
+{/* cite external-owned-finding-per-owned-key */}
+{/* cite manifest-entry-for-an-unloaded-document-refused */}
 With [`externalMetadata:`](/manni/meta/reference/configuration/#external-metadata)
 on a collection, `validate` merges each manifest's values into the document
 before resolving its schema set. Which manifests apply is decided by
@@ -111,6 +117,13 @@ config-corpus run it refuses (exit 2) a manifest entry naming a document the
 run did not load. That last check runs on the same invariant the corpus checks
 use and has no flag of its own. A positional path is what turns it off.
 
+{/* cite location-finding-is-a-warning */}
+{/* cite location-warning-does-not-move-the-exit-code */}
+{/* cite location-external-sits-at-the-page-line */}
+{/* cite location-page-sits-at-the-manifest-line */}
+{/* cite validate-offers-relocate-once-per-collection */}
+{/* cite no-offer-off-a-terminal-or-under-no-config */}
+{/* cite no-offer-for-a-piped-document */}
 When a schema marks a top-level property
 [`x-manni-location`](/manni/meta/reference/schema-resolution/#field-location),
 `validate` reports a value stored on the other side as a warning. The exit
@@ -128,6 +141,8 @@ hold its values; a collection `--collection` named beside it is asked about as
 usual. [Keep maintainer metadata out of delivered
 pages](/manni/meta/schemas/field-location/) is the journey.
 
+{/* cite validate-stale-stamp-is-a-finding */}
+{/* cite validate-unanswerable-source-is-exit-2 */}
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config,
 `validate` derives every managed field once for the run and compares each
 file's stamp against the evidence. A stamp that disagrees is a
@@ -149,6 +164,8 @@ manni meta validate --write-baseline   # record today's findings, then exit 0
 manni meta validate --baseline         # from now on, fail only on new ones
 ```
 
+{/* cite baseline-file-is-path-keyed */}
+{/* cite baseline-fingerprints-are-sorted */}
 The file is JSON, path-keyed, with a sorted array of violation fingerprints per
 document, so it diffs and merges legibly:
 
@@ -163,10 +180,12 @@ document, so it diffs and merges legibly:
 }
 ```
 
+{/* cite legacy-baseline-name-still-read */}
 Commit it. Reviewers should see it grow or shrink in a diff. A baseline
 recorded before the rename as `.docmeta-baseline.json` is still read when no
 `.manni-baseline.json` exists, with a warning on stderr to rename it.
 
+{/* cite fingerprint-is-16-hex-of-four-fields */}
 A fingerprint is 16 hex characters of
 `sha256(schema + NUL + instancePath + NUL + keyword + NUL + subject)`, the four
 [machine-stable
@@ -190,6 +209,8 @@ Three things do change a fingerprint, and each is recovered with one
   stable `subject`, so a violation of the edited rule keeps its fingerprint. A
   violation that moves to a *different* keyword does not.
 
+{/* cite schema-ref-measured-from-the-config-dir */}
+{/* cite baseline-path-measured-from-the-config-dir */}
 A local file schema reference is measured **relative to the config file's
 directory**, and so is a `baseline:` path. The same repo then produces the same
 fingerprints whether the command runs from the repo root or from a subdirectory.
@@ -204,6 +225,7 @@ instead:
 3 baselined findings, 1 no longer occurs — run --write-baseline to prune
 ```
 
+{/* cite stale-baseline-entries-are-never-fatal */}
 Entries that no longer occur are **never fatal**. They are only reported, so a
 run that fixes violations stays green. `--write-baseline` reports its change in
 both directions:
@@ -240,6 +262,8 @@ manni meta validate --baseline                     # fail only on new findings
 Print the values of one or more metadata fields from each file. Useful for
 scripted extraction. `get` reads and reports values; it does not validate.
 
+{/* cite get-derivation-is-on-by-default */}
+{/* cite get-exit-code-unchanged-by-derivation */}
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config, `get`
 prints the **resolved value** of each field. That is the asserted value when
 the document carries the key, and the derived one otherwise, with the origin
@@ -260,6 +284,7 @@ manni meta get [fields] [paths...] [options]
 | `[fields]` | Comma-separated metadata field references to print, when `--fields` is not used. Each is a top-level key (`title`), or a dot-notation path into nested objects and arrays (`author.name`, `tags.0`). A [JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901) works too, when prefixed with `/` (`/author/name`, `/tags/0`). See [naming the fields](#naming-the-fields). |
 | `[paths...]` | Files, directories, or globs to read. Use `-` to read from stdin. Optional, and falls back to the configured [collections](#collections-as-inputs). See the [shared input model](#shared-input-model). |
 
+{/* cite get-absent-field-is-unset */}
 A requested field that is absent from a file is reported as unset rather than
 as an error.
 
@@ -279,6 +304,8 @@ manni meta get --fields title                    # no paths: the collections app
 `--fields` is the same flag [`fill`](#meta-fill) takes, and it is the unambiguous
 spelling: with it, nothing about a path can be mistaken for a field.
 
+{/* cite get-no-fields-is-exit-2 */}
+{/* cite get-path-in-the-field-slot-is-exit-2 */}
 Naming no fields at all is an error (exit 2) rather than an empty report. So is
 a *path* in the field-list position, which is the mistake the positional form
 invites:
@@ -290,6 +317,8 @@ manni: "docs/intro.md" looks like a path, not a field list. Pass fields first
 exit=2
 ```
 
+{/* cite get-path-detection-rules */}
+{/* cite get-field-list-detection */}
 A token is read as a path when it exists on disk, is a glob, ends in a
 [supported extension](/manni/meta/reference/formats/), or contains a path
 separator. A comma-separated list and a leading-slash JSON Pointer are
@@ -311,6 +340,8 @@ accepted:
   validation failure works verbatim. Use it to address keys that contain dots
   (`/odd.key`) or slashes (`/a~1b` for the key `a/b`).
 
+{/* cite get-parent-key-returns-the-whole-value */}
+{/* cite get-inherited-members-are-missing */}
 Requesting a parent key (`author`) returns the whole nested value. A path that
 descends into a scalar, or whose segment is missing, is reported as unset. Only
 a key's own properties resolve; inherited members such as `toString` or
@@ -342,12 +373,16 @@ unaffected.
 
 ### Output
 
+{/* cite get-pretty-one-line-per-field */}
+{/* cite get-json-object-shape */}
 In `pretty` format, `get` prints one `<file>: <field>=<value>` line per
 requested field per file. Unset fields print as `(unset)`. In `json` format it
 prints an array of `{ file, present, values }` objects, where `values` maps each
 requested field to its value. A requested field that is unset is omitted from
 `values`. `present` reports whether the file had a metadata block at all.
 
+{/* cite get-prints-the-resolved-value */}
+{/* cite get-no-derived-drops-the-annotation */}
 With config [`derive:`](/manni/meta/reference/configuration/#derive), the
 value on each line is the resolved one and an annotation says where it came
 from. There are four shapes, and `--no-derived` drops the annotation
@@ -363,12 +398,15 @@ $ manni meta get title docs/install.md --no-derived
 docs/install.md: title=Install the operator
 ```
 
+{/* cite get-unset-prints-with-no-annotation */}
 A field neither the document nor any source has prints `(unset)`, with no
 annotation after it. The third line above is the drift case. The document
 asserts a value, the evidence disagrees, and the asserted one is what `get`
 prints, because that is what the page publishes. `validate` reports the same
 disagreement as `derived:stale`.
 
+{/* cite get-json-adds-resolved-and-origin */}
+{/* cite get-quiet-hides-after-resolving */}
 In `json`, each file's object gains a `resolved` record and an `origin`
 record beside the existing `values`, and a `derived` record carrying the raw
 derived values and their evidence. `values` is untouched, so a consumer
@@ -376,10 +414,13 @@ reading only what the document stores sees exactly what it saw before.
 `--quiet` hides a file when every requested field is unset **after**
 resolving, so a page whose only `owner` comes from CODEOWNERS still prints.
 
+{/* cite get-stdin-derives-nothing */}
 Stdin derives nothing, and that is not an error. A piped document has no
 path, so no source can speak for it, and `cat page.md | manni meta get title -
 --as markdown` resolves to the document's own values.
 
+{/* cite get-unreadable-block-reported-per-file */}
+{/* cite get-unreadable-block-exits-1 */}
 A file whose metadata block could not be **read at all** is reported against
 that file, rather than ending the run. That means frontmatter that is not valid
 YAML, or that parses to something other than a mapping. In `pretty` it prints as
@@ -387,6 +428,8 @@ YAML, or that parses to something other than a mapping. In `pretty` it prints as
 `error` string, with `present: false` and an empty `values`. Every other file in
 the run is read and reported as usual, and the run exits `1`.
 
+{/* cite get-error-only-for-an-unreadable-block */}
+{/* cite get-quiet-never-hides-an-error */}
 `error` is set only for a block that could not be read. A file with no metadata
 block, and a file where every requested field is unset, are both answers rather
 than the absence of one. They carry no `error` and leave the exit code at `0`.
@@ -434,6 +477,8 @@ manni meta query [sql] [paths...] [options]
 | `[sql]` | One SQL statement, run against the `docs` table described below, when `--query` is not used. A second statement after a `;` is refused rather than silently ignored. Optional when `--db` is given, because exporting needs no query. |
 | `[paths...]` | Files, directories, or globs to load. Use `-` to read from stdin. Optional, and falls back to the configured [collections](#collections-as-inputs). See the [shared input model](#shared-input-model). |
 
+{/* cite cli-query-positional-rule */}
+{/* cite cli-path-in-the-sql-slot-refused */}
 The same rule as `get`'s field list applies: if `--query` is present, **every**
 positional is a path; otherwise the first positional is the SQL. A token in the
 SQL slot that looks like a path is an error naming the remedy, and `-` is
@@ -441,11 +486,15 @@ always stdin, never SQL.
 
 ### The `docs` table
 
+{/* cite cli-docs-table-has-four-system-columns */}
+{/* cite cli-docs-table-is-built-in-memory */}
 One row per input file. Your top-level metadata keys become columns, plus four
 of manni meta's own, `_path`, `_format`, `_present`, and `_data`, which frontmatter
 cannot shadow. The database is built in memory on every run and discarded;
 `--db` exports a copy.
 
+{/* cite cli-statements-judged-by-effects */}
+{/* cite cli-only-ddl-consults-resolution */}
 Statements are judged by their **effects** on that disposable projection: reads
 return rows, and everything else maps back into file space. Like `get`, `query`
 resolves no schema on plain reads and DML, and makes no network requests. A
@@ -480,6 +529,7 @@ table](/manni/meta/reference/query/#the-docs-table).
 | `--no-gitignore` | n/a | on | Load files `.gitignore` covers as well. Filtering is on by default; see [default ignores](#default-ignores). Overrides config `respectGitignore:`. |
 | `--offline` | n/a | off | Accepted for parity with the other commands. It has no effect here. Reads and DML load no schema, and DDL resolves its set from disk and the bundled built-ins only. A URL ref refuses with "vendor it first" before anything could fetch, so there is no network request to suppress. |
 
+{/* cite cli-query-has-no-quiet */}
 There is no `-q/--quiet`. `get` uses it to hide files and `validate` to hide
 passes, and a query result has no analogous noise. The rows are exactly what was
 asked for.
@@ -494,6 +544,9 @@ manni meta query --param author="O'Brien" \
   "SELECT _path FROM docs WHERE author = \$author" docs/
 ```
 
+{/* cite cli-param-binds-a-string */}
+{/* cite cli-param-typed-json-bind */}
+{/* cite cli-param-unbound-and-unreferenced-refused */}
 `--param name=value` binds a **string**, referred to as `$name`, `:name`, or
 `@name`; `name:=value` parses the value as JSON for a typed bind. A parameter
 the SQL references with nothing bound, and a `--param` the statement never
@@ -503,6 +556,7 @@ parameters](/manni/meta/reference/query/#bound-parameters).
 
 ### Exporting the database
 
+{/* cite cli-db-export-is-the-whole-job */}
 `--db <path>` writes the same table, collection views included, to a SQLite file
 for any other tool to open. With no SQL, the export is the whole job:
 
@@ -511,6 +565,7 @@ manni meta query --db docs.db docs/
 datasette docs.db        # a browsable UI and JSON API over the corpus
 ```
 
+{/* cite cli-db-overwrite-rules */}
 The file is a regenerated artifact, so manni meta overwrites a SQLite database or
 an empty file at that path and refuses anything else. See [exporting the
 database](/manni/meta/reference/query/#exporting-the-database).
@@ -529,6 +584,8 @@ manni meta query "UPDATE docs SET draft = false WHERE draft IS NULL" docs/
 manni meta query --check "UPDATE docs SET draft = false WHERE draft IS NULL" docs/
 ```
 
+{/* cite cli-mutating-statement-applies-by-default */}
+{/* cite cli-check-implies-the-dry-run */}
 **A mutating statement applies by default**, matching `fill`'s convention. One
 `--dry-run` flag means "show, don't do" across every command that writes.
 `--check` **implies** the dry run, so a CI drift gate is always a read-only
@@ -551,6 +608,8 @@ bridge](/manni/meta/reference/query/#the-type-bridge) that turns formats and
 `CHECK` lists into schema constraints, and
 [`-s/--schema`](/manni/meta/reference/query/#naming-the-ddl-target-directly).
 
+{/* cite cli-owned-key-written-to-the-manifest */}
+{/* cite cli-manifest-refusals-before-any-write */}
 A key an [external-metadata
 manifest](/manni/meta/reference/configuration/#external-metadata) owns is
 readable in every row and written to that manifest. The page is left alone,
@@ -566,6 +625,9 @@ manifest meaning.
 
 ### Rows as findings
 
+{/* cite cli-findings-rule-id */}
+{/* cite cli-findings-junit-classname */}
+{/* cite cli-findings-format-needs-check */}
 With `--check` and `-f github|sarif|junit`, result rows render as findings. That is one `::error` annotation, SARIF result, or JUnit `<failure>` per row, through
 the same [column convention](/manni/meta/reference/configuration/#the-column-convention)
 named `checks:` use. Findings carry the rule id `check:query/check`, and JUnit
@@ -580,6 +642,8 @@ spelling of the same pipeline.
 
 ### CSV output
 
+{/* cite cli-csv-header-and-lf */}
+{/* cite cli-csv-refuses-changes-and-db-only */}
 `-f csv` renders **result rows** as CSV, for the single-table hop into a
 spreadsheet or a pandas one-liner (`--db` remains the heavyweight export). A
 header row is always emitted, line endings are LF, SQL `NULL` is an empty field,
@@ -590,6 +654,8 @@ dialect](/manni/meta/reference/query/#the-csv-dialect).
 
 ### Output and exit codes
 
+{/* cite cli-query-pretty-table-and-count */}
+{/* cite cli-query-json-bare-array */}
 In `pretty` format, an aligned table (header row, then values; SQL `NULL` prints
 as `(null)`) is followed by a row count. With `--check`, a ✓/✗ verdict line
 follows instead. A mutating statement renders as its diff instead: `<file>:
@@ -600,10 +666,16 @@ objects](/manni/meta/reference/query/#the-change-objects-in-json) for an edit. T
 `--check` verdict travels in the exit code, not the envelope. In `csv` format:
 the [CSV dialect above](#csv-output), rows only.
 
+{/* cite cli-db-only-export-summary-is-the-report */}
+{/* cite cli-db-note-goes-to-stderr */}
 With `--db` and no SQL, the export summary (`Wrote <path> …`) is the report.
 With both, the rows own stdout and the export note goes to stderr as a
 diagnostic.
 
+{/* cite cli-query-exit-0 */}
+{/* cite cli-query-exit-1-only-from-check */}
+{/* cite cli-query-exit-2-operational */}
+{/* cite cli-query-exit-2-settled-in-run */}
 Exit `0` means the query ran. With `--check`, it also returned no rows or
 pending changes; a mutating statement also applied cleanly. Exit `1` comes only
 from `--check`, when rows or pending changes came back (`--check` never applies,
@@ -702,6 +774,10 @@ used, in both output formats.
 
 ### Which properties get filled
 
+{/* cite fill-candidate-is-missing-or-invalid */}
+{/* cite fill-skips-schema-wiring */}
+{/* cite fill-manifest-owned-candidate-goes-to-the-manifest */}
+{/* cite fill-url-manifest-candidate-is-a-per-file-error */}
 A schema property is a candidate when it is **missing** from the file's
 metadata, or **present but invalid**. A property that is already present and
 valid is never touched, and neither is `$schema`, which is schema wiring, not
@@ -736,21 +812,27 @@ mechanical checks run first, and a high confidence cannot override any of them:
 3. **The document must still validate afterwards.** Any value that would leave
    the page failing its own schema is reverted and reported.
 
+{/* cite confidence-is-the-last-gate */}
+{/* cite low-confidence-reported-by-name-and-score */}
 Only then is `--confidence` applied. Values below the threshold are **skipped,
 and reported by name and score** so you know what still needs a human. The
 confidence and the model's reasoning stay in the report; they never reach your
 document.
 
+{/* cite fill-cache-stores-before-gating */}
 Because the cache stores the proposal *before* gating, re-running with a
 different `--confidence` re-scores the cached proposals and costs nothing. That
 is the intended way to tune the threshold on a real docset.
 
+{/* cite fill-cache-dir */}
 The cache lives in `.manni/meta/cache` relative to the working directory. It is
 machine-local and safe to delete at any time. Add `.manni/meta/` to your
 `.gitignore`. Pass `--no-cache` to bypass it entirely.
 
 ### Which formats can be written
 
+{/* cite fill-writable-formats */}
+{/* cite fill-unwritable-file-is-a-per-file-error */}
 `fill` can only write formats it can round-trip without disturbing the rest of
 the document. `markdown` and `mdx` are always writable. `rst` and `asciidoc` are
 writable **only when the file already has a fenced front matter block**. Their
@@ -762,6 +844,7 @@ failed run.
 
 ### Exit codes
 
+{/* cite fill-exit-1-on-unfilled-required */}
 `fill` exits **1** when a property your schema lists as `required` could not be
 filled confidently, or when any file errored. That is work still to do. Skipped
 *optional* properties are a normal outcome and leave the exit code at **0**.
@@ -769,6 +852,7 @@ Usage and operational failures exit **2**, as elsewhere.
 
 ### github annotations
 
+{/* cite fill-github-annotates-unfilled-required */}
 `-f github` reports the work `fill` could **not** do. That is one [workflow
 command](/manni/meta/ci/exit-codes-and-annotations/#github) per property the schema
 requires that was not filled. It is exactly the set that drives exit 1, and
@@ -778,6 +862,7 @@ optional skips stay silent, matching the exit-code rule.
 ::error file=docs/api/legacy.md::[fill] /description is required and was not filled (confidence 0.42 is below the 0.7 threshold)
 ```
 
+{/* cite fill-annotation-has-no-line */}
 There is no `line=`. A proposal is about a property that is *missing* from the
 document, so there is nothing in the file to point at. GitHub anchors a
 file-only annotation to line 1.
@@ -789,12 +874,16 @@ document owns stdout and the report goes to stderr, where GitHub never reads
 the combination is refused rather than silently degraded.
 </Aside>
 
+{/* cite fill-github-available-with-or-without-dry-run */}
 The format is available whether or not `--dry-run` is set. Annotations describe
 what is still missing, which is as useful on a run that writes as on one that
 previews.
 
 ### The meta-provenance entry
 
+{/* cite meta-provenance-written-with-the-fields */}
+{/* cite meta-provenance-pointer-escaped */}
+{/* cite meta-provenance-appends-to-an-existing-model-entry */}
 For each file where `fill` writes at least one field, it records those fields
 in `meta-provenance` in the same write. `--dry-run` reports the entry it would
 write. The entry names the run's model, the JSON Pointer of each field
@@ -810,6 +899,7 @@ reviewed.
     meta-provenance  claude-sonnet-4-5: /description, /intent
 ```
 
+{/* cite meta-provenance-never-moves-the-exit-code */}
 The entry is a side record. It never changes the summary or the exit code.
 Three cases leave it out while the fields are still written. In `json`,
 `metaProvenance` is then `{"written": false, "skipReason": "<reason>"}`, and
@@ -821,6 +911,8 @@ Three cases leave it out while the fields are still written. In `json`,
 | A URL manifest in one of the page's collections owns `meta-provenance`. | `meta-provenance not written: owned by manifest https://example.com/meta.yaml, which is fetched and cannot be written` | `manifest-owned` |
 | The format's writer cannot hold a list of entries, as in an HTML or XML attribute. | `meta-provenance not written: html metadata cannot hold it` | `unwritable` |
 
+{/* cite meta-provenance-never-a-candidate */}
+{/* cite provenance-keys-kept-out-of-the-prompt */}
 A written entry is `{"written": true, "entry": {...}}`. When a local manifest
 owns `meta-provenance`, the entry is merged into the page's entry there, the
 pretty line ends with `→ private/meta.yaml`, and `json` adds
@@ -894,6 +986,9 @@ finding without touching anything.
 
 ### What gets written
 
+{/* cite managed-field-written-when-non-null-and-different */}
+{/* cite lists-compare-as-sets */}
+{/* cite missing-evidence-leaves-the-field-alone */}
 A managed field is written when its derived value is non-null and differs
 from what the document carries. Lists compare as sets, so a reordered
 `authors` is not a change. A field whose evidence is missing is left alone
@@ -904,6 +999,8 @@ cannot write is reported as a per-file error here too. The rules for each
 field are in [the derivable
 fields](/manni/meta/reference/configuration/#the-derivable-fields).
 
+{/* cite provenance-not-fenced-is-a-per-file-error */}
+{/* cite provenance-judged-range-by-range */}
 `provenance` is judged range by range. A range whose pinned text changed, a
 range git attributes to another machine, and machine lines with no entry are
 each re-derived and written. A range that only moved gets its `lines`
@@ -934,6 +1031,7 @@ offers to create the manifest.
 
 ### A source that cannot answer
 
+{/* cite unanswerable-source-is-exit-2-never-skipped */}
 A requested source that cannot answer is an error (exit 2) naming the fix,
 never a skipped field. A skipped field would make a stale stamp read as
 current, which is the false green the comparison exists to end.
@@ -949,6 +1047,8 @@ current, which is the false green the comparison exists to end.
 | A configured command's program is not on `PATH`. | ``command source unavailable: `jq` is not on PATH (derive.commands.verified-against); narrow --sources or --fields`` |
 | A configured command ran past its `timeout`. | ``command source unavailable: `node scripts/source-for.mjs docs/install.md` timed out after 60s; narrow --sources or --fields`` |
 
+{/* cite gh-present-but-not-logged-in-refused */}
+{/* cite missing-codeowners-path-refused */}
 A `gh` or `glab` that is present and not logged in is refused the same way,
 naming `gh auth login` or `glab auth login`. So is a config `codeowners:`
 path that is not there, naming the path. Narrow `--sources`, or config
@@ -957,6 +1057,8 @@ source is excluded derives null and is never stale.
 
 ### Output and exit codes
 
+{/* cite derive-json-run-shape */}
+{/* cite derive-check-renders-a-stale-finding */}
 In `pretty` format, each changed file lists its fields as
 `<field>  <from> → <to>  (<source>: <evidence>)`, an unchanged file prints
 `current`, and a summary line counts files, changes, and fields written.
@@ -978,6 +1080,7 @@ docs/limits.md
     provenance  lines 16-18: claude-fable-5 → re-derived  (git: pin)
 ```
 
+{/* cite derive-summary-counts-ranges */}
 The four shapes are a new range, a moved one, one git attributes to another
 machine, and one whose pinned text changed. When a manifest holds the record,
 the file header names it, as `private/provenance.yaml (for docs/limits.md)`.
@@ -985,6 +1088,9 @@ The summary counts ranges rather than fields when `provenance` is among the
 fields, as `1 file, 1 changed, 1 range written`. Under `--check`, each changed,
 stale or unset range is its own finding at the range's first file line.
 
+{/* cite derive-json-provenance-ranges */}
+{/* cite derive-provenance-status-values */}
+{/* cite derive-provenance-from-on-moved-or-stale */}
 In `json` format the `provenance` field adds `ranges`, one object per range.
 Each has `lines` in file lines, `generated-by`, `integrity`, `status`,
 `evidence` and `written`. `status` is `current`, `moved`, `changed`, `stale`
@@ -1001,6 +1107,9 @@ docs/faq.md  current
 2 files, 1 changed, 2 fields written
 ```
 
+{/* cite derive-exit-0-applied-or-nothing */}
+{/* cite derive-exit-1-unreadable-or-unwritable */}
+{/* cite derive-exit-2-settled-in-run */}
 Exit `0` means the run applied, or had nothing to do. Exit `1` means a file
 could not be read or written, with or without `--check`. That covers an
 unparseable document, a read-only format, and `provenance` on a page whose
@@ -1043,6 +1152,13 @@ manni meta relocate [paths...] [options]
 `--dry-run` to see what would move and what would be created.
 </Aside>
 
+{/* cite manifest-is-the-first-collection-the-page-is-in */}
+{/* cite no-collections-creates-collection-default */}
+{/* cite one-collection-gets-the-target-appended */}
+{/* cite several-collections-and-no-membership-the-value-stays */}
+{/* cite manifest-is-the-first-local-file-entry */}
+{/* cite config-created-at-the-git-root */}
+{/* cite config-edits-keep-comments-and-order */}
 A value with no manifest gets one. A page in a collection uses the first one it
 belongs to. With no collections, `relocate` creates one named `default` whose
 `paths:` are the targets you typed (`docs/` becomes `docs/**`). With exactly
@@ -1052,6 +1168,13 @@ collection's first local `file:` entry, or `<collection>.metadata.yaml` beside
 the config file. With no config file, `manni.config.yaml` is created at the git
 root, else the working directory. Config edits keep comments and key order.
 
+{/* cite keys-change-moves-every-page-in-the-collection */}
+{/* cite keys-change-count-is-reported */}
+{/* cite a-path-addition-moves-every-owned-key */}
+{/* cite a-key-leaving-keys-stays-on-the-page */}
+{/* cite a-join-field-never-moves */}
+{/* cite the-agreeing-copy-is-dropped */}
+{/* cite relocate-rolls-back-a-failed-write */}
 A change to a manifest's `keys:` moves that key for **every** page in the
 collection, including pages outside the paths you named. The output says how
 many. A path appended to `paths:` moves every key the manifest owns out of the
@@ -1086,6 +1209,7 @@ lands whole or not at all.
 
 ### Output and exit codes
 
+{/* cite pages-reached-by-a-keys-change-are-counted */}
 In `pretty` format, the first lines say what the config gains or loses. Then
 each page lists its values as `<key>  → <manifest>:<line>` (out of the page),
 `<key>  ← <manifest>` (into the page), or `<key>  stays: <reason>`. A page
@@ -1104,6 +1228,7 @@ docs/install.md
 2 files, 3 values moved to 1 manifest
 ```
 
+{/* cite dry-run-config-line-wording */}
 Under `--dry-run` a config line leads with `Would create`, `Would add` or
 `Would remove`, and says `would own`. The summary says `would move`, and no
 manifest line is printed. A dry `keys:` change reads
@@ -1130,6 +1255,9 @@ A value that stays names its reason:
 | `url-manifest` | `owner    stays: https://example.com/owners.yaml is fetched and cannot be written`, in either direction |
 | `unreadable` | `owner    stays: this document could not be parsed: Invalid YAML frontmatter: <parser message>` |
 
+{/* cite only-outside-pages-stay-unreadable */}
+{/* cite named-unparseable-page-stops-the-run */}
+{/* cite unreadable-page-blocks-a-key-removal */}
 Only a page outside the paths you named stays as `unreadable`. A named page
 that cannot be parsed stops the run with exit 2. A key cannot leave `keys:`
 while an `unreadable` page may still take its value from the manifest.
@@ -1145,6 +1273,9 @@ In `json` format the run is one object:
 | `files[].stayed[]` | `{ key, reason }`, with a reason from the table above |
 | `summary` | `{ files, moved, stayed, manifestsCreated }` |
 
+{/* cite relocate-exit-0-and-1 */}
+{/* cite relocate-exit-1-when-a-value-stayed */}
+{/* cite relocate-exit-2-settled-in-run */}
 Exit 0 when every value is where it belongs afterwards, or there was nothing to
 do (`0 files, nothing to move`). Exit 1 when at least one value stayed. Exit 2
 for an operational error:
@@ -1175,6 +1306,7 @@ manni meta relocate -f json --dry-run            # the scripting form
 
 ## `meta schemas`
 
+{/* cite schemas-takes-no-paths */}
 List the built-in schemas and the supported input formats. On its own it takes
 no positional arguments and reads no files. Its [`infer`](#meta-schemas-infer)
 subcommand reads your documents; its [`vendor`](#meta-schemas-vendor) subcommand is
@@ -1190,6 +1322,8 @@ manni meta schemas [options]
 |---|---|---|---|
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. Anything else is a usage error (exit `2`), including `github`, `sarif`, and `junit`. See [which command produces which format](/manni/meta/ci/exit-codes-and-annotations/#output-formats). |
 
+{/* cite schemas-pretty-lists-builtins-and-formats */}
+{/* cite schemas-json-shape */}
 In `pretty` format, `schemas` lists each built-in schema by id and title. It
 then lists each input format with its extensions and whether
 [`fill`](#meta-fill) can write to it. In `json` format it prints
@@ -1204,6 +1338,7 @@ manni meta schemas -f json
 
 ## `meta schemas infer`
 
+{/* cite infer-is-statistical-and-offline */}
 Report what metadata your documents already carry, and draft a schema from it.
 Purely statistical and **offline**, with no inference provider, no network, and
 no model. It reads the metadata blocks, counts them, and prints a table.
@@ -1255,15 +1390,19 @@ Each column answers one question:
 | **types** | A distribution with counts. `string ×900, number ×4` is four data errors, not a type union. The four are listed by file and line beneath the table. |
 | **sample** | What the values look like, which is what tells you whether the key means what its name suggests. |
 
+{/* cite infer-no-block-files-get-their-own-line */}
 **Files with no metadata block get their own line**, not a quieter denominator.
 They pass a require-nothing schema and fail the moment any key becomes
 `required`, so their count is the number you need before you ratchet.
 
+{/* cite infer-always-exits-0 */}
 `infer` always exits `0` when it produced a report. It has no findings and no
 verdict; it is a measurement, and the decisions are yours.
 
 ### The draft schema
 
+{/* cite infer-draft-constrains-what-was-observed */}
+{/* cite infer-draft-adds-min-length-one */}
 `--out` writes a schema that **requires nothing** and constrains only what was
 observed. That is the dominant type per key. It adds `minLength: 1` on a string
 key where no empty value was ever seen. It adds an `enum` where the values are
@@ -1287,12 +1426,15 @@ Two more rules keep the draft honest:
   every `title` is unique passes a ratio test alone and would produce a 30-value
   `enum` for prose.
 
+{/* cite infer-out-refuses-to-overwrite */}
+{/* cite infer-out-refuses-an-ignored-path */}
 `--out` refuses to overwrite an existing file. The draft is a starting point you
 then edit, and clobbering it would throw the edits away. It also refuses a path
 `.gitignore` covers, for the same reason [`vendor`](#meta-schemas-vendor) does. A
 generated schema you cannot commit validates on your machine and is simply
 absent in CI.
 
+{/* cite infer-reports-only-top-level-keys */}
 Only **top-level keys** are reported. Whether `author` is present across the
 docset is the standard-level question; whether `author.name` exists is a
 schema-authoring detail you settle while editing the draft.
@@ -1326,6 +1468,8 @@ manni meta schemas vendor <url> [options]
 | `--dir` | `<path>` | `./schema` | Directory for the committed copy. Must be a path the repository tracks; see below. |
 | `-c, --config` | `<path>` | discovered | Path to the [config file](/manni/meta/reference/configuration/) to rewrite. |
 
+{/* cite vendor-records-a-sha256-digest */}
+{/* cite vendor-writes-file-and-config-entry */}
 Vendoring writes two things. One is the schema file itself. The other is a
 `schemas:` entry naming it, where it came from, and the digest of the bytes that
 were fetched.
@@ -1337,6 +1481,7 @@ schemas:
     integrity: sha256-392da4339d91f59e3161a083a5d95913b6c7f98668e2bdfbebae53dc123e8994
 ```
 
+{/* cite vendored-bytes-change-is-an-integrity-failure */}
 Commit both. From then on the schema resolves from the local copy, so the run no
 longer depends on the origin being reachable. Any later change to those bytes is
 an [integrity failure](/manni/meta/reference/schema-resolution/), rather than a
@@ -1389,6 +1534,8 @@ read a file whose extension manni meta would not otherwise recognize.
 
 ### Collections as inputs
 
+{/* cite no-paths-covers-every-collection */}
+{/* cite collections-run-in-declaration-order */}
 A [collection](/manni/meta/reference/configuration/#collections) is a named set
 of documents, declared once at the top level of `manni.config.yaml` and read by
 every tool in the family. With no positional paths, a run covers **every**
@@ -1408,6 +1555,7 @@ separator per list is the rule across the whole CLI.
 - A `<list>` option is comma-separated and given once.
 - A repeatable option takes one value per occurrence.
 
+{/* cite collection-never-splits-on-commas */}
 So `--collection guides,blog` is a single name, and no collection has it:
 
 ```console
@@ -1416,6 +1564,8 @@ manni: no collection named "guides,blog" in manni.config.yaml. Configured: guide
 exit=2
 ```
 
+{/* cite collection-repeats-collapse */}
+{/* cite undeclared-collection-is-an-error */}
 Naming a collection twice is not an error, because repeats collapse. Naming one
 that is not declared is, since a typo that silently narrowed a run to nothing
 would read as a clean pass. The other two refusals are structural. The flag
@@ -1432,8 +1582,11 @@ manni: --collection needs a config file to select from.
 exit=2
 ```
 
+{/* cite stdin-allowed-beside-collection */}
 `-` (stdin) is not a path in that sense and is allowed beside `--collection`.
 
+{/* cite no-inputs-and-no-collections-is-operational */}
+{/* cite the-verb-matches-the-command */}
 With no paths, no `--collection`, and nothing declared under `collections:`,
 there is nothing to run over, and that is an operational error rather than empty
 output. The verb matches the command. It is `validate`, `read` for both
@@ -1446,6 +1599,11 @@ manni: No files to validate. Pass paths/globs, or declare a collection under `co
 
 #### Membership, and what `exclude:` filters
 
+{/* cite membership-measured-from-the-config-dir */}
+{/* cite member-of-none-gets-no-manifests */}
+{/* cite membership-ignores-where-the-file-came-from */}
+{/* cite stdin-is-a-member-of-nothing */}
+{/* cite membership-is-paths-minus-exclude */}
 A file is a **member** of a collection when it matches one of that collection's
 `paths:` and none of its `exclude:`. Both are matched relative to the config
 file's directory. Membership is decided per file and it is what [external
@@ -1456,6 +1614,7 @@ walk or the command line, makes no difference. Membership is arithmetic on the
 path, so it costs nothing per file and never touches the filesystem. Stdin, and
 any path outside the config's directory, are members of nothing.
 
+{/* cite collection-exclude-does-not-filter-typed-paths */}
 That makes a collection's `exclude:` a membership rule and nothing more. It does
 not filter a path you type. `manni meta validate docs/` reads every document
 under `docs/`, including ones a collection excludes, because you named `docs/`.
@@ -1470,6 +1629,8 @@ relied on config to trim the walk needs those globs as `--exclude` now.
 
 #### Corpus checks and a narrowed run
 
+{/* cite corpus-checks-need-the-whole-corpus */}
+{/* cite scoped-run-skips-checks-with-a-notice */}
 [Corpus checks](/manni/meta/reference/configuration/#checks) run only when the
 resolved file set is the whole configured corpus. `--collection` narrows it, so
 they are skipped, with a notice on stderr naming the collections in declaration
@@ -1479,6 +1640,7 @@ order however they were given on the command line:
 manni: corpus checks skipped: run is scoped to collections guides, blog
 ```
 
+{/* cite every-collection-gets-a-view-even-unselected */}
 A check is SQL over the projection, and every unselected collection's view would
 be empty. A `FROM blog` check would therefore pass by having nothing to fail on.
 Skipping and saying so is the honest answer. Every declared collection still
@@ -1488,6 +1650,8 @@ gets its view, selected or not, so a
 
 ### Empty input sets
 
+{/* cite zero-files-is-an-error-not-a-pass */}
+{/* cite zero-files-exit-2-settled-in-run */}
 Resolving **zero files is an error** (exit 2), not a pass. Exit 0 means every
 file passed. With no files there is no verdict, so reporting success would turn
 a glob that stopped matching into a permanently green gate that checks nothing.
@@ -1499,6 +1663,9 @@ Two cases, both exit 2:
 | A named path that does not exist, as in `manni meta validate docs/typo.md` | `File not found: "docs/typo.md".` |
 | Everything resolved, but nothing matched, as in `manni meta validate "docs/**/*.nomatch"` | `No files matched. Patterns tried: …` |
 
+{/* cite named-path-reported-even-when-others-matched */}
+{/* cite ext-and-exclude-named-in-the-message */}
+{/* cite gitignore-skip-named-in-the-message */}
 A named path is reported even when other inputs did match, so
 `manni meta validate good.md typo.md` is an error rather than a partial success.
 `--ext` and `--exclude` filters are named in the message when they were in play.
@@ -1511,9 +1678,12 @@ No files matched. Patterns tried: "**/*.md".
 Filters applied — .gitignore skipped 12 (pass --no-gitignore to check them).
 ```
 
+{/* cite stdin-is-one-input-and-never-empty */}
 Reading stdin with `-` is one input, so an empty piped document still produces a
 verdict and is unaffected.
 
+{/* cite allow-empty-suppresses-both */}
+{/* cite allow-empty-can-come-from-config */}
 Pass `--allow-empty` (or set
 [`allowEmpty: true`](/manni/meta/reference/configuration/#keys)) when matching
 nothing is expected. That covers a shared CI template running across repos that
@@ -1538,6 +1708,8 @@ to anything from `--exclude`:
 | `**/node_modules/**` | Dependency directories. |
 | `**/.git/**` | The Git metadata directory. |
 
+{/* cite dotfiles-excluded-from-walks */}
+{/* cite an-explicitly-named-file-is-always-read */}
 Dotfiles and dot-directories are also excluded from directory and glob walks by
 default. An explicitly named file is always read, even if it matches an ignore
 glob or is a dotfile.
@@ -1555,6 +1727,7 @@ transformed or stripped front matter, which produces violations nobody can fix
 in source. Restating `.gitignore` in `exclude:` also means two lists to keep in
 sync.
 
+{/* cite gitignore-asks-git-once-per-run */}
 The question is put to **git itself**, one `git check-ignore` per run, so the
 answer is git's. Nested `.gitignore` files, directory-only patterns, anchoring,
 `.git/info/exclude`, and `core.excludesFile` all behave exactly as they do for

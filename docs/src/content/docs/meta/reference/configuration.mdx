@@ -5,6 +5,7 @@ description: "Every manni.config.yaml key: the top-level collections list every 
 
 import { Aside } from '@astrojs/starlight/components';
 
+{/* cite collections-declared-once-for-every-tool */}
 A `manni.config.yaml` file has two levels, and the split is the point.
 [`collections:`](#collections) at the top declares the **document sets**, once,
 for every tool in the family to read. [`meta:`](#keys) holds what is the
@@ -13,11 +14,13 @@ set](/manni/meta/reference/schema-resolution/), per-collection and per-glob
 overrides, cross-file checks, and the trust settings. With both in place CI can
 run a bare `manni meta validate`.
 
+{/* cite config-is-optional */}
 The config is optional. Every key has a default, and manni meta runs without a
 config when you pass paths and schemas on the command line.
 
 ## Migrating a 0.x config
 
+{/* cite three-meta-keys-refused-not-aliased */}
 Three keys left `meta:` in 1.0.0, and one key left `overrides[]`. Each is
 **refused**, not aliased, with a message naming where it went. An alias would be
 a permanent second place to declare a document set, which is the thing
@@ -64,6 +67,7 @@ meta:
 | `meta.sidecars` | `manni.config.yaml: "sidecars" is no longer a meta key. It is externalMetadata on a collection, under the top-level collections: list. See …#external-metadata` | [`collections[].externalMetadata`](#external-metadata) |
 | `overrides[].name` | `manni.config.yaml: overrides[0] no longer carries "name". Define a collection with that name and point the override at it with collection:.` | A collection with that name, and [`overrides[].collection`](#overrides) pointing at it |
 
+{/* cite moved-keys-refused-before-section-wrapping */}
 Each message prints the reference URL in full; it is elided above only to keep
 the table readable. All four are exit 2, and all four fire for a legacy
 `docmeta.config.yaml` too, since that file's whole document is the `meta:`
@@ -85,6 +89,7 @@ Three more things changed with the keys.
 
 ## Collections
 
+{/* cite collection-is-a-named-document-set */}
 A **collection** is a named set of documents, declared once at the top level and
 read by every tool that operates on documents. It carries the globs that select
 its files, the globs that exclude them, where the set is published, and the
@@ -113,11 +118,13 @@ collections:
 | `url` | `string` | no | none | One `http:` or `https:` root, where the collection is published. [`manni a11y check`](/manni/a11y/reference/cli/) seeds from it. See [Where a collection is published](#where-a-collection-is-published). |
 | `externalMetadata` | `ExternalMetadata[]` | no | `[]` | Manifests joined to this collection's members. See [External metadata](#external-metadata). An explicit `[]` is accepted. |
 
+{/* cite empty-collections-list-refused */}
 `collections:` absent means no configured documents, exactly as an absent
 `paths:` did, and a run then needs paths on the command line. An explicit
 `collections: []` is refused, because a key someone wrote and left empty reads
 as configured and is not.
 
+{/* cite collection-name-becomes-a-sql-view */}
 Every name becomes a SQL view name in
 [`query`](/manni/meta/reference/query/#collections-as-views), which is where
 four of the name rules come from. SQLite compares identifiers without regard to
@@ -127,6 +134,7 @@ backing table a query builds for [derived metadata](#derive), refused in any
 case.
 `sqlite_` is a prefix SQLite reserves.
 
+{/* cite collection-refusals-are-exit-2 */}
 The refusals, each exit 2:
 
 ```
@@ -145,6 +153,7 @@ manni.config.yaml: collections[0].url must be an http(s) URL.
 manni.config.yaml: collections[0].externalMetadata must be a list.
 ```
 
+{/* cite collections-errors-carry-no-section-prefix */}
 `collections:` is a top-level key, so these are never prefixed with a section
 name. A `meta:` error reads `manni.config.yaml: meta.overrides[0] …`; a
 collections error reads `manni.config.yaml: collections[0] …`, whether the file
@@ -162,12 +171,14 @@ manni meta validate --collection guides               # one
 manni meta validate --collection guides --collection blog   # two
 ```
 
+{/* cite collection-flag-is-one-name-per-occurrence */}
 It takes one name per occurrence and never splits on commas, so
 `--collection guides,blog` looks for a collection with that literal name and
 does not find one. Repeats collapse, names are matched exactly, and the run
 visits the collections in the order the config declares them however you
 ordered the flags.
 
+{/* cite collection-flag-usage-errors */}
 Three usage errors, each exit 2:
 
 ```
@@ -181,12 +192,14 @@ $ manni meta validate --collection guides --no-config
 manni: --collection needs a config file to select from.
 ```
 
+{/* cite stdin-allowed-beside-collection */}
 `-` (stdin) is allowed beside `--collection`, because stdin is one more input
 rather than a reshaping of the configured corpus. The named collection is still
 covered: the run reads the piped document and walks the collection's files. A
 bare `-` with no flag is a run of its own, because the fallback below is a
 default rather than a request.
 
+{/* cite collection-scope-skips-corpus-checks */}
 A run narrowed by `--collection` is a **scoped** run, so it skips the
 [corpus checks](#when-checks-run) with a notice naming the collections. It does
 not run a `FROM blog` rule over a corpus that does not contain the blog:
@@ -198,6 +211,7 @@ manni: corpus checks skipped: run is scoped to collections guides
 
 ### Membership
 
+{/* cite membership-decided-per-file */}
 Membership decides which collection's manifests a file takes, which
 [view](/manni/meta/reference/query/#collections-as-views) it appears in, and
 whether an [override](#overrides) naming a collection matches it. It is decided
@@ -249,6 +263,7 @@ collection to say so.
 
 ### Where a collection is published
 
+{/* cite url-is-where-the-collection-is-published */}
 `url:` is the site root the collection's documents appear at. It is a fact about
 the documents rather than a setting of any one tool, which is why it sits beside
 `paths:`. It is what [`manni a11y
@@ -261,6 +276,7 @@ collections:
     url: https://docs.example.com/guides/
 ```
 
+{/* cite seeds-first-non-empty-source-wins */}
 Seeds are decided in one order, and the first non-empty source wins:
 
 1. positional URLs on the command line;
@@ -268,6 +284,7 @@ Seeds are decided in one order, and the first non-empty source wins:
 3. `a11y.urls`;
 4. the `url` of every declared collection that has one.
 
+{/* cite urlless-collection-errors-only-when-named */}
 `a11y.urls` stays, because a site has entry points no documentation collection
 covers, such as a marketing page, a status page, or a staging host. A collection
 with no `url` contributes nothing, and is an error only when `--collection`
@@ -283,6 +300,7 @@ unrelated. `file:` names the manifest; `url:` sits at the collection level besid
 
 ### External metadata
 
+{/* cite manifests-supply-keys-for-named-documents */}
 `externalMetadata` is a list of YAML **manifests** joined to the collection's
 [members](#membership). Each supplies a fixed set of top-level keys for named
 documents. The values are merged into each document's extracted metadata before
@@ -290,6 +308,7 @@ schema resolution, so `validate`, `get`, `query` and `fill` all see one object.
 A manifest is never a document itself. No extractor reads it, and it has no row
 in the `docs` table. It is a join table.
 
+{/* cite external-values-merged-before-schema-resolution */}
 External metadata is frontmatter values kept outside the document and merged at
 run time. The document never holds the value. The contract on it stays with the
 document, in the same schema set, checked by the same `validate` run, with the
@@ -354,6 +373,7 @@ manni.config.yaml: collections[0].externalMetadata[0].join names "id", which the
 
 #### The manifest
 
+{/* cite manifest-is-a-mapping-of-document-to-owned-keys */}
 A manifest is a YAML mapping from document to a mapping of owned key to
 value. A document is named by path (the default) or by a field. By path:
 
@@ -366,6 +386,7 @@ docs/guides/billing.md:
   jira: PLAT-388
 ```
 
+{/* cite manifest-paths-resolve-from-the-config-directory */}
 Document paths are **exact**, relative to the config file's directory. There
 are no globs and no cascade. A silently merged result changes what the
 contract means, and a manifest has no specificity rule to decide which of two
@@ -373,6 +394,7 @@ matching patterns wins. "Every guide gets X" is not a manifest feature.
 [Joining by a field](#joining-by-a-field) names documents by a frontmatter
 value instead, so a rename never orphans an entry.
 
+{/* cite empty-manifest-merges-nothing */}
 An empty manifest is legal and merges nothing. Every other shape problem is an
 operational error (exit 2) naming the manifest and, where there is one, the
 entry's line. From `test/fixtures/external-metadata/`:
@@ -386,9 +408,11 @@ entry's line. From `test/fixtures/external-metadata/`:
 | An entry sets `$schema`. | `Manifest bad-schema-key.yaml:1: "docs/auth.md" sets "$schema" — a manifest never chooses the schema a document is judged by; use "overrides" in the config.` |
 | The file is missing. | `Manifest nope.yaml could not be read: ENOENT: no such file or directory, …` |
 
+{/* cite field-joined-manifest-says-its-own-noun */}
 A [field-joined](#joining-by-a-field) manifest reports the same shapes with its
 own noun: `the manifest must be a mapping from document "id" to owned keys.`
 
+{/* cite loader-keeps-a-line-per-item */}
 The loader keeps the line of each entry **and of each item inside it**, not
 only the line of the owned key. So a tool that finds a problem in the third
 citation of a page can report the line that citation sits on. `validate`'s own
@@ -397,6 +421,7 @@ value as a whole.
 
 #### A manifest that owns citations
 
+{/* cite citations-is-read-from-the-owning-manifest */}
 `citations` is the one owned key another tool in the family reads, and the one
 a tool **writes**. A collection that declares a manifest owning it keeps its
 pages' citation entries there, and the pages carry none:
@@ -418,6 +443,7 @@ docs/limits.md:
       source: { file: lib/limits.ts, lines: 2, integrity: sha256-78af1d33…, commit-sha: 3f9c2a1e… }
 ```
 
+{/* cite cite-reads-citations-through-the-merge */}
 `manni cite check`, `add` and `update`, and `manni key rotate`, read a page's
 citations from the manifest that owns them, through the merge above. `add`,
 `update` and `key rotate` also write it, splicing only that page's `citations`
@@ -435,6 +461,7 @@ Two rules are particular to this key:
   a location outside the repository, so a manifest kept outside it is reported
   on the page instead.
 
+{/* cite page-citations-beside-an-owning-manifest-is-invalid */}
 A page that still carries its own `citations:` while a manifest owns the key
 is [`external:owned`](#finding-identity) in `validate`, and `entry-invalid` in
 `cite check`. The [citations reference](/manni/cite/reference/citations/#the-sidecar)
@@ -442,6 +469,7 @@ has the entry shape and every refusal.
 
 #### Joining by a field
 
+{/* cite join-field-keys-the-manifest */}
 `join: <field>` keys the manifest by a top-level frontmatter field instead of
 a path. The page carries the key with it, so a rename never orphans an entry.
 `join` absent, or `join: path`, is the path behaviour above.
@@ -465,6 +493,7 @@ billing-guide:
   jira: PLAT-388
 ```
 
+{/* cite join-value-compared-as-a-string */}
 Any top-level field works. A hand-written `id`, a Starlight `slug`, and a
 Docusaurus `id` are one mechanism with no special cases. Matching is on the
 extracted value, so it works for every format and for a remote manifest. The
@@ -551,6 +580,7 @@ A path join has none of this exposure, which is why it stays the default.
 
 #### Remote manifests
 
+{/* cite manifest-file-may-be-a-url */}
 `file` may be an `https://` URL instead of a path. The manifest is fetched at
 the start of every run, parsed exactly as a local one is, and merged by the
 same rules. Its document paths still resolve from the config file's directory.
@@ -570,6 +600,7 @@ collections:
         keys: [team, owner]
 ```
 
+{/* cite tokenenv-is-sent-as-a-bearer-token */}
 **A private manifest.** The same URL form, plus `tokenEnv`, the name of an
 environment variable holding a bearer token. Its value is sent as
 `Authorization: Bearer <value>` to the origin the config names, and nowhere
@@ -785,6 +816,7 @@ has both keys in the manifest and is left alone.
 
 #### What relocate writes
 
+{/* cite only-relocate-edits-collections */}
 [`manni meta relocate`](/manni/meta/reference/cli/#meta-relocate), and the
 offers `validate`, `derive`, `fill` and `query` make on a terminal, are the
 only commands that edit `collections:`. Config gains no new key: each edit is
@@ -839,6 +871,7 @@ collections:
 
 #### Finding identity
 
+{/* cite external-owned-finding-shape */}
 A rule 2 finding carries the schema ref `external:owned`, the keyword
 `external`, the key as `subject`, `/<key>` as its instance path, and the
 document's line for the key:
@@ -854,16 +887,19 @@ document's line for the key:
 }
 ```
 
+{/* cite external-ref-classifies-as-a-builtin-id */}
 The ref is shaped like `check:<name>`, so the rule id everywhere, in SARIF,
 JUnit and the baseline, is the ordinary join `external:owned/external`. The
 `external` segment is reserved as a first segment beside `check`. It is listed
 with the other [reserved rule ids](/manni/meta/reference/output-and-exit-codes/#reserved-rule-ids).
 
+{/* cite duplicate-join-finding-shape */}
 A duplicate-join finding is shaped the same way. Its schema ref is
 `external:duplicate`, its `subject` is the shared value, and its instance path
 is `/<field>`, at the field's line in each page. Its rule id is
 `external:duplicate/external`. See [Joining by a field](#joining-by-a-field).
 
+{/* cite rule-6-finding-adds-only-a-file-field */}
 A rule 6 finding is not a new rule. It is whatever the schema said, with one
 extra JSON field: [`file`](/manni/meta/reference/output-and-exit-codes/#output-formats)
 naming the manifest, which `line` then refers to. Its subject file stays the
@@ -891,6 +927,7 @@ documents still need work.
 
 #### The orphan check
 
+{/* cite orphan-entry-is-the-rename-case */}
 A manifest entry whose document the run did not load is the rename case. The
 page moved, the entry did not, and nobody reads the entry again. That is the
 silent green an unread named input always produces, so it is exit 2:
@@ -901,12 +938,14 @@ manni: Manifest docs-meta.orphan.yaml:3 names "docs/gone.md", which this run did
                                                                                     exit 2
 ```
 
+{/* cite orphan-check-only-on-a-corpus */}
 It runs only when the resolved file set **is** a corpus. A positional path,
 stdin, `--as`, `--ext`, `--exclude`, `--no-gitignore` or `-s` means the operator
 chose to look at part of one. An entry for the rest is then expected rather than
 orphaned. `manni meta validate docs/auth.md` from the same directory passes
 without mentioning `docs/gone.md`.
 
+{/* cite collection-flag-keeps-the-orphan-check */}
 `--collection` is the exception, and it differs from [named
 checks](#when-checks-run) here. Naming collections does not reshape the corpus,
 it chooses one. The run loads all of every collection it names, so an entry of a
@@ -918,6 +957,7 @@ collection therefore keeps the check it relies on.
 Unlike checks, the orphan check has no opt-out flag. A corpus run is the one
 place the whole manifest is accountable, and the fix is a one-line edit.
 
+{/* cite field-join-orphan-check-runs-after-the-loop */}
 A [field-joined](#joining-by-a-field) entry has the same check, phrased for
 its key, and under the same invariant. It runs after the per-file loop,
 because the values are only known once every document is read:
@@ -944,6 +984,7 @@ private-repo/
     docs/guides/auth.md
 ```
 
+{/* cite sibling-layout-drops-sarif-findings */}
 The alternative, two sibling checkouts with
 `paths: ["../public/docs/**/*.md"]`, runs. It reports worse. SARIF locates every
 finding relative to the nearest repository root, and it cannot represent a
@@ -955,12 +996,14 @@ goes to stderr. The submodule layout keeps every document URI under the private 
 so the log is complete. `.gitignore` filtering applies per repository root in
 both layouts, so the public repository's ignores still hold for its files.
 
+{/* cite a-path-above-the-config-is-a-member-of-nothing */}
 A path that climbs out of the config's directory is also a member of nothing
 (see [Membership](#membership)). A sibling layout therefore gets no manifests at
 all. That is the second reason to prefer the submodule.
 
 #### `additionalProperties: false` in the page's schema
 
+{/* cite closed-schema-rejects-manifest-keys */}
 A schema that closes its object rejects every key the manifest supplies,
 because after the merge the key is in the object. That is correct, and honest.
 The page's schema has to leave room for what the manifest adds. The finding
@@ -986,6 +1029,7 @@ Two fixes:
 
 ## Encryption key
 
+{/* cite encryptionkey-is-a-top-level-family-key */}
 `encryptionKey:` is the family's one encryption key. It sits at the top level
 beside `collections:`, and every tool reads it. A value whose schema marks it
 [`x-manni-encrypt`](/manni/meta/reference/schema-resolution/#encrypted-values)
@@ -1020,6 +1064,7 @@ manni.config.yaml: "encryptionKey" must be at least 32 hex or base64url characte
 MANNI_ENCRYPTION_KEY must be at least 32 hex or base64url characters.
 ```
 
+{/* cite malformed-key-refused-by-the-first-run-that-needs-one */}
 A malformed `MANNI_ENCRYPTION_KEY` is refused by the first run that needs a
 key, not by every run in a repository that encrypts nothing.
 
@@ -1037,12 +1082,14 @@ For a shared or public repository, keep the key in `MANNI_ENCRYPTION_KEY`, set
 from a CI secret, and out of the config.
 </Aside>
 
+{/* cite key-is-expanded-not-stretched */}
 **Strength is the operator's.** The configured value is key material. It is
 expanded, not stretched, so a hand-picked value is only as strong as it is
 random. Let [`manni key set`](/manni/key/) generate one.
 
 ### When a write needs a key
 
+{/* cite fill-and-query-write-marked-values-encrypted */}
 `manni meta fill`, and a `manni meta query` `UPDATE` or `INSERT`, write a
 marked value encrypted. When no key is available, they offer to create one on a
 terminal, where stdin and stderr are both terminals:
@@ -1054,6 +1101,7 @@ Generate a key and write it to manni.config.yaml? [y/N] y
 Encryption key written to manni.config.yaml.
 ```
 
+{/* cite refused-key-prompt-is-exit-2 */}
 `fill` asks before its first model request, so a refused prompt never wastes a
 paid run. With no config file, the key goes to `manni.config.yaml` at the git
 root, else the working directory. The confirmation then reads `Created
@@ -1064,10 +1112,12 @@ answer, or no terminal to ask on stops the command with exit 2:
 manni: /owner must be encrypted, and no encryption key is available. Run `manni key set`, or set MANNI_ENCRYPTION_KEY.
 ```
 
+{/* cite reads-never-ask-for-a-key */}
 `validate`, `get`, a `query` `SELECT`, and a `query` `--dry-run` never ask.
 
 ### Joining on an encrypted field
 
+{/* cite encrypted-join-field-matched-on-the-decrypted-value */}
 A manifest [joined](#external-metadata) on a field the pages hold encrypted is
 matched on the decrypted value, when the key is available. With no key the run
 cannot match the entries, and refuses with exit 2:
@@ -1078,6 +1128,7 @@ externalMetadata join field "owner" is encrypted on these pages, and no encrypti
 
 ## Tools
 
+{/* cite tools-is-a-top-level-namespace-per-tool */}
 `tools:` holds the settings of an outside tool that a manni domain runs. It
 sits at the top level beside `collections:` and `encryptionKey:`, because an
 outside tool belongs to no one domain. Each tool gets a key of its own under
@@ -1140,6 +1191,7 @@ files a run reads.
 | `schemaTrust` | `SchemaTrust` | none | How far a document's own `$schema` is trusted. Absent means `any`, which is every reference kind, as manni meta has always behaved. See [Schema trust](#schema-trust). |
 | `fill` | `Fill` | none | Defaults for [`manni meta fill`](/manni/meta/reference/cli/#meta-fill). See [Fill](#fill). |
 
+{/* cite meta-section-must-be-a-mapping */}
 The section must be a YAML mapping. `schemas` takes [two
 forms](#schemas). `allowEmpty` and `respectGitignore` must be booleans. A quoted `"false"` is a string, and accepting it would turn a
 setting **on** for someone who wrote it off.
@@ -1160,6 +1212,7 @@ inside every nested mapping: `schemas[]` entries, `checks[]` entries,
 [`collections[]`](#collections) and its `externalMetadata[]` entries too, which
 are checked by the shared parser before any tool sees them.
 
+{/* cite unknown-key-rule-applies-to-nested-mappings */}
 This is what makes a typo visible. A dropped `schemaTust:` leaves a repository
 that reads as guarded and is not. A dropped `intergrity:` leaves a schema that
 reads as pinned and is not. Neither produces a diagnostic at any verbosity, so
@@ -1175,6 +1228,7 @@ only the newer one understands.
 
 ### Schemas
 
+{/* cite schemas-entry-is-a-string-or-a-mapping */}
 Each entry in `schemas:` is either a plain reference string or a mapping. Both
 forms can appear in the same list.
 
@@ -1193,6 +1247,7 @@ meta:
 | `source` | `string` | no | Where `ref` came from. Recorded by [`schemas vendor`](/manni/meta/reference/cli/#meta-schemas-vendor) so a re-vendor knows the URL, and so an error about the file can name it. |
 | `integrity` | `string` | no | `sha256-<64 hex characters>` over the file's bytes. A mismatch is an operational error (exit 2). |
 
+{/* cite both-schema-forms-resolve-the-same */}
 The two forms mean exactly the same thing to schema resolution. The `ref` string
 is what appears in reports, in [baseline
 fingerprints](/manni/meta/reference/cli/#baselines), and in `json` output's
@@ -1213,6 +1268,7 @@ Rules, all of them exit 2 when broken:
   which stores the parsed schema rather than what the server sent. So a pin on
   either could never be verified.
 
+{/* cite override-schemas-take-the-string-form-only */}
 `overrides[].schemas` takes the string form only. Pins live in one place, and an
 override that matched a pinned `ref` still gets that pin, because pins are keyed
 on the reference.
@@ -1225,6 +1281,7 @@ paths are relative to](#what-relative-paths-are-relative-to).
 
 ### `respectGitignore`
 
+{/* cite respectgitignore-false-checks-ignored-files */}
 Set it to `false` for a repository whose ignored files should still be checked,
 a vendored docset, or a generated tree you deliberately validate:
 
@@ -1233,6 +1290,7 @@ meta:
   respectGitignore: false
 ```
 
+{/* cite explicit-true-reports-when-git-cannot-answer */}
 Setting it to `true` says the same thing as the default, with one addition. It
 records that you *asked*. A run where git could not answer then prints one line
 to stderr, instead of silently checking everything. That is a run with no
@@ -1240,6 +1298,7 @@ repository, or no `git` on `PATH`. Worth doing in a CI image you do not control.
 
 ### Offline
 
+{/* cite offline-refuses-an-uncached-url-schema */}
 `offline: true` stops manni meta fetching a schema over the network at all. A `url`
 reference is served from the [schema cache](#schema-cache); one that is not
 cached is an operational error (exit 2) naming the URL. A [remote
@@ -1253,6 +1312,7 @@ meta:
   offline: true
 ```
 
+{/* cite offline-flag-is-per-run */}
 `--offline` sets it for a single run. There is no flag to turn it back off, so
 leave it out of config unless the whole project is meant to run that way.
 
@@ -1272,6 +1332,7 @@ meta:
     ttlHours: 1
 ```
 
+{/* cite ttlhours-bounds-are-rejected-not-clamped */}
 `ttlHours` must be a number between 0 and 8760 (one year). A negative value, a
 non-number, YAML's `1e999`, or anything past the upper bound is an error (exit
 2). Both bounds are rejected rather than clamped, and for symmetric reasons. A
@@ -1288,6 +1349,7 @@ directory should be committed.
 
 ### Schema trust
 
+{/* cite schematrust-governs-a-documents-own-schema */}
 `schemaTrust` decides how far a **document** is trusted to choose the schema it
 is judged against. A file's own `$schema` sits above config in the [precedence
 chain](/manni/meta/reference/schema-resolution/#precedence). That is the feature
@@ -1311,15 +1373,18 @@ meta:
 | `local` | A built-in id, or a file inside the repository. | Any URL. |
 | `none` | Nothing, because the key is ignored and the config decides. manni meta prints one line to stderr naming the file and the reference it dropped. | n/a |
 
+{/* cite schematrust-never-filters-an-operator-ref */}
 **This key never applies to a reference an operator supplied.** `schemas`,
 `overrides[].schemas`, and `-s/--schema` are unfiltered in every mode. Someone
 who can edit the config or pass a flag is not the person this key has in mind.
 
+{/* cite refused-document-ref-is-one-failing-file */}
 A refused document is **one failing file** (exit 1), not a stopped run. The
 refusal is reported as that file's error, so in `github` and `sarif` output the
 annotation lands on the offending document in the pull request. Every other file
 in the run is validated as usual.
 
+{/* cite builtin-id-allowed-in-every-mode */}
 A built-in id keeps working under `local`, which is what makes that mode safe to
 turn on. The [self-describing
 document](/manni/meta/reference/schema-resolution/#the-schema-key-in-a-file)
@@ -1328,16 +1393,19 @@ shipped inside manni meta, so it reaches nothing.
 
 #### Where "inside the repository" ends
 
+{/* cite document-path-must-resolve-inside-the-repository */}
 A document-supplied *path* must resolve inside the repository, in every mode
 that honors the reference, `any` included, because containment costs no existing
 setup anything. `$schema: ../../../../etc/passwd` is refused; a monorepo
 package's `$schema: ../shared/house.json` is not, because the boundary is the
 **git root** rather than the config's directory.
 
+{/* cite containment-boundary-falls-back-to-the-config-dir */}
 With no git repository anywhere above the run, the boundary falls back to the
 config's own directory, and the message says so. "Outside the repository" and
 "outside where you happen to be standing" stay distinguishable.
 
+{/* cite operator-paths-are-never-contained */}
 Paths in `schemas` and on `--schema` are never contained. A schema kept beside
 the project rather than in it is an ordinary setup, and an operator wrote it.
 
@@ -1373,6 +1441,7 @@ the answer to.
 
 ### Fill
 
+{/* cite fill-config-defaults-the-flags */}
 `fill` is a mapping of defaults for the [`fill`](/manni/meta/reference/cli/#meta-fill)
 command. Every key is optional, and every one is overridden by its CLI flag.
 
@@ -1402,6 +1471,7 @@ than failing the build.
 
 ### `elements`
 
+{/* cite elements-lifts-extra-element-paths */}
 Element paths to lift in addition to each format's convention. Slash-separated
 and absolute from the document root, optionally ending in `@attribute`:
 
@@ -1412,10 +1482,12 @@ meta:
     - html/head/link@href        # → head.link
 ```
 
+{/* cite element-key-comes-from-the-last-two-segments */}
 The key is derived from the path's last two segments and is never spelled here.
 Paths are validated when the config loads, so a typo is an error naming the file
 rather than a check that silently never runs.
 
+{/* cite elements-accumulate-across-overrides */}
 Unlike `schemas:`, these **accumulate**. The top-level list and every matching
 `overrides:` entry all contribute. Element paths are extra places to look,
 rather than a complete statement about how a file is judged. See [Element
@@ -1423,6 +1495,7 @@ metadata](/manni/meta/reference/element-metadata/).
 
 ### Overrides
 
+{/* cite overrides-is-a-list-of-mappings */}
 `overrides` is a list of mappings, each applying a schema set to a
 [collection](#collections) or to files matching a glob.
 
@@ -1433,10 +1506,12 @@ metadata](/manni/meta/reference/element-metadata/).
 | `schemas` | `string[]` | see below | The schema set applied to matching files. |
 | `elements` | `string[]` | no | Extra [element paths](/manni/meta/reference/element-metadata/) to lift for matching files. These accumulate rather than replacing. |
 
+{/* cite override-must-set-schemas-or-elements */}
 An entry must set `schemas`, `elements`, or both. One that sets neither is
 refused, because it is a rule that does nothing and reads as configured:
 `manni.config.yaml: meta.overrides[0] sets neither "schemas" nor "elements", so it has no effect.`
 
+{/* cite override-carries-exactly-one-of-files-or-collection */}
 Each entry carries **exactly one** of `collection` and `files`. Both would need a
 rule for how they combine, and neither governs nothing:
 
@@ -1444,6 +1519,7 @@ rule for how they combine, and neither governs nothing:
 manni.config.yaml: meta.overrides[0] must carry exactly one of "files" or "collection".
 ```
 
+{/* cite undeclared-override-collection-refused */}
 A `collection` that names no declared collection is refused too, once both halves
 of the family file are known:
 
@@ -1451,6 +1527,7 @@ of the family file are known:
 manni.config.yaml: meta.overrides[0].collection names "gides", which collections: does not define. Defined: guides, blog.
 ```
 
+{/* cite first-matching-override-wins */}
 For a given file, manni meta uses the **first** override that matches it (in list
 order); later matching overrides are ignored. That holds across the two kinds:
 a `collection:` entry and a `files:` entry compete in one ordered list. See
@@ -1488,6 +1565,7 @@ overlap where the old ones were disjoint by construction.
 
 #### Grouping several globs
 
+{/* cite override-files-list-matches-any-glob */}
 `files` accepts a list, and a file matches when **any** glob in it does. Use it
 when one schema set governs path shapes that no single pattern reaches. Brace
 expansion needs a common stem, and these have none:
@@ -1501,6 +1579,7 @@ meta:
       schemas: [agentskills:skill:1.0]
 ```
 
+{/* cite empty-override-glob-list-refused */}
 A list counts as **one** override for first-match-wins, so the whole group has a
 single position in the precedence order. An empty list is refused: it would match
 nothing and read as configured. A group of globs a second tool also needs to name
@@ -1508,6 +1587,7 @@ is a [collection](#collections) with two `paths` entries instead.
 
 ### Checks
 
+{/* cite checks-rows-become-findings */}
 `checks` is a list of named cross-file rules. Each is one SQL statement run over
 the same `docs` projection
 [`manni meta query`](/manni/meta/reference/query/#the-docs-table) builds, with one row
@@ -1533,6 +1613,7 @@ checks:
         (SELECT slug FROM docs GROUP BY slug HAVING count(*) > 1)
 ```
 
+{/* cite check-findings-carry-check-name-over-check */}
 Findings carry the schema ref `check:<name>` and the keyword `check`, so the
 rule id everywhere, in SARIF, JUnit and the baseline, is `check:<name>/check`.
 That is why the name grammar is enforced at parse time rather than hoped for.
@@ -1559,6 +1640,7 @@ entry, and any number of future duplicates stay forgiven.
 
 #### When checks run
 
+{/* cite checks-disqualified-by-cli-reshaping */}
 A corpus rule computed over half a corpus reports wrong answers, such as
 "dangling author" because `authors/` was not loaded. So named checks run only
 when the resolved file set **is** the config-resolved corpus. Any CLI reshaping
@@ -1576,6 +1658,7 @@ $ manni meta validate --collection guides --collection blog
 manni: corpus checks skipped: run is scoped to collections guides, blog
 ```
 
+{/* cite collection-flag-disqualifies-checks */}
 `--collection` disqualifies a run even though every declared collection still
 gets a [view](/manni/meta/reference/query/#collections-as-views). The views of the
 unselected collections would hold only what the run happened to load. A
@@ -1589,6 +1672,7 @@ requests, so `--offline` does not affect them.
 
 ### Derive
 
+{/* cite derive-names-the-managed-fields */}
 `derive` names the **managed** fields. A managed field is one whose value is
 computed from evidence rather than typed by a person. The evidence is git
 history, a CODEOWNERS file, and the pull request or merge request history
@@ -1598,12 +1682,14 @@ field, it is the output of a [command](#commands) the config names.
 compares what is stamped against what the evidence says, and a stamp that
 disagrees is a finding.
 
+{/* cite derived-value-is-never-merged */}
 A derived value is never merged into what the schema sees. That is the
 difference from [external metadata](#external-metadata). The document stays
 the truth for validation, and the evidence is what the document is held to.
 Only `derive` writes a managed field. `query` refuses an `UPDATE` of one, and
 `fill` skips it.
 
+{/* cite get-prints-the-resolved-value */}
 **A read derives, and says which value it gave back.** `get` prints the
 **resolved value** of each field, annotated with its origin. A resolved value
 is the asserted one where the document has the key, and the derived one where
@@ -1642,18 +1728,21 @@ meta:
     machines: ["*[bot]", "noreply@anthropic.com"]     # optional; default ["*[bot]"]
 ```
 
+{/* cite derive-absent-manages-nothing */}
 `derive:` absent is exactly the behaviour every config had before the key
 existed. No command spawns `git`, `gh`, `glab` or a configured program, and
 no field is managed.
 
 #### A field a manifest owns
 
+{/* cite managed-field-a-manifest-owns-is-kept-there */}
 A managed field that a collection's [`externalMetadata`](#external-metadata)
 manifest owns is kept in that manifest. `derive` compares the manifest's value,
 writes the page's entry there with a comment-preserving splice, and never
 touches the page. `derive --check` and `validate` point a stale finding at the
 manifest's line. A [`commands`](#commands) key works the same way.
 
+{/* cite url-manifest-owned-derive-field-refused */}
 A URL manifest is fetched, so it cannot be written. A `derive.fields` entry or
 a `commands` key that a URL manifest owns is refused when the config loads
 (exit 2):
@@ -1682,6 +1771,7 @@ there. Its copy at a past commit is simply not read as evidence.
 
 #### The derivable fields
 
+{/* cite derivable-fields-are-seven */}
 Six fields of the [stewardship
 vocabulary](/manni/meta/proposals/stewardship/) have a built-in source, and so
 does `provenance` from the [ai-context
@@ -1704,6 +1794,7 @@ against the product's own version file.
 
 #### The review sources
 
+{/* cite origin-remote-decides-github-or-gitlab */}
 `github` and `gitlab` are two sources, and each applies to the platform it
 names and to nothing else. `github` reaches GitHub through `gh`, `gitlab`
 reaches GitLab through `glab`, and neither ever stands in for the other. The
@@ -1712,6 +1803,7 @@ origin remote decides which one a repository is. A host whose name says
 GitLab. A host that says neither, such as `git.example.com`, is not guessed.
 The config names it, by listing exactly one of the two in `sources`.
 
+{/* cite unanswerable-review-configurations-are-exit-2 */}
 Three configurations cannot be answered and are exit 2 when `reviewed-by` or
 `last-reviewed` is managed. Naming only the one the origin does not match
 says `the origin remote is github.com, which is GitHub; add github to
@@ -1721,6 +1813,7 @@ git.example.com, which names neither GitHub nor GitLab; list exactly one of
 github, gitlab in derive.sources to say which it is`. A checkout with no
 origin remote says `no origin remote to tell GitHub from GitLab`.
 
+{/* cite merged-review-answers-are-cached */}
 manni never holds a token. The CLI's own login is what reaches the API, which
 is why an unauthenticated CLI is an error rather than a guess. A merged pull
 request's answer never changes, so it is cached under
@@ -1730,6 +1823,7 @@ it. `--no-cache` bypasses the cache for one run.
 
 #### Provenance
 
+{/* cite provenance-entry-shape */}
 `provenance` records which body lines a machine wrote. Each entry is a pin, as
 a [citation's](/manni/meta/proposals/citations/) claim end is. `lines` is
 where the pin was last seen, counted in body lines from the first line after
@@ -1744,6 +1838,7 @@ provenance:
     integrity: sha256-537bc424c34e7cbbd04cc73c49df009628e35a3ab292f6da30ad1f071bfe8b62
 ```
 
+{/* cite blame-runs-only-when-provenance-is-managed */}
 Blame runs only when `provenance` is managed. It reads the history of every
 line, which costs more than the per-file log the other git fields read.
 Nothing about it is cached. Each body line takes the first evidence that
@@ -1763,9 +1858,11 @@ answers:
    email when the name is empty.
 5. **Otherwise, no evidence.**
 
+{/* cite trailer-keys-compare-without-case */}
 Trailer keys compare without case. Among several trailers of one kind, the first that names a machine wins.
 Contiguous lines one machine wrote form one entry.
 
+{/* cite provenance-matched-by-integrity-first */}
 Each stamped entry is then matched with what the evidence derives, by
 integrity first:
 
@@ -1777,11 +1874,13 @@ integrity first:
 | `stale` | The evidence names a different machine for the pinned lines | `derived:stale` | re-derives the range |
 | `unset` | The evidence names a machine for lines no entry covers | `derived:stale` | adds an entry |
 
+{/* cite nearest-lines-takes-the-match */}
 No evidence is not a contradiction. A pin over lines whose commit names no
 machine stands for as long as its text matches. That is how a person can
 attribute lines after the fact. When two ranges hold identical text, the nearest `lines` value
 takes the match.
 
+{/* cite provenance-findings-are-in-file-lines */}
 The three findings read, in file lines:
 
 ```
@@ -1790,6 +1889,7 @@ provenance lines 29 say claude-sonnet-5; blame says Claude Opus 5 (6683e73) — 
 provenance is unset for lines 26; blame says Claude Opus 5 (ecb9b0a) — run manni meta derive
 ```
 
+{/* cite generated-by-range-attributes-file-lines */}
 `--generated-by` with a range, `<path>:L1-L2`, attributes those file lines
 whether or not they are committed. It is refused when evidence rules 2 to 4
 name a different machine for any of them. Several ranges of one file each
@@ -1800,6 +1900,7 @@ source](/manni/meta/reference/output-and-exit-codes/#exit-2-from-a-derive-source
 
 #### Commands
 
+{/* cite commands-names-a-program-per-field */}
 `commands` names a program per field, for a field no built-in source
 claims. The trimmed stdout is the derived value, and the field is then
 managed exactly as the seven built-ins are. `derive` stamps it, `validate`
@@ -1962,6 +2063,7 @@ manni: SQL error: cannot modify resolved because it is a view; the resolved tabl
 
 #### Finding identity
 
+{/* cite derived-stale-finding-shape */}
 A stale stamp carries the schema ref `derived:stale`, the keyword `derived`,
 and `/<field>` as its instance path, at the field's line in the document:
 
@@ -1975,6 +2077,7 @@ and `/<field>` as its instance path, at the field's line in the document:
 }
 ```
 
+{/* cite provenance-finding-carries-the-pin-as-subject */}
 A `provenance` finding differs in two ways. Its `line` is the first file line
 of the range, so the `github` and `sarif` formats annotate the prose. Its
 `subject` is `provenance <integrity>`, carrying the recorded pin, or the
@@ -2050,6 +2153,7 @@ meta:
           (SELECT slug FROM docs GROUP BY slug HAVING count(*) > 1)
 ```
 
+{/* cite overlapping-collections-resolve-one-schema-set */}
 `api` and `guides` overlap `pages` deliberately. `pages` is the corpus a bare
 `manni meta validate` reads; the other two are what `--collection guides`,
 `overrides[].collection` and `FROM guides` name. A file under `docs/api/` is a
@@ -2058,6 +2162,7 @@ first-match-wins, and appears in both views.
 
 ## Discovery
 
+{/* cite one-file-per-repository-one-key-per-tool */}
 `manni.config.yaml` is shared by every tool under `manni`: one file per
 repository, one top-level key per tool, plus the one key that is nobody's. The
 metadata tool reads [`collections:`](#collections) and `meta:` and ignores their
@@ -2065,6 +2170,7 @@ siblings, so a `docevals:` or `a11y:` section beside them never changes what
 `meta` does. The document set, being declared once, is the same set for all of
 them.
 
+{/* cite discovery-walks-cwd-then-parents */}
 When you do not pass `-c/--config`, manni meta searches the current working
 directory and then each parent directory in turn. In every directory it looks
 for these files, in order:
@@ -2086,6 +2192,7 @@ for these files, in order:
    [message](#migrating-a-0x-config) `meta.paths` gets, which is how its owner
    learns to migrate. Read with a warning that the name is deprecated.
 
+{/* cite first-config-found-wins-and-none-are-merged */}
 The **first file found wins** and the search stops there, and that now includes
 a file whose only relevant key is `collections:`. A repository mid-migration,
 with a `collections:`-only file above a per-tool file below it, sees the outer
@@ -2096,6 +2203,7 @@ one at the repo root for runs started inside `docs/`. That is the escape hatch
 for a subtree with genuinely different rules. For per-directory rules within one
 contract, prefer [`overrides`](#overrides) instead.
 
+{/* cite each-warning-is-said-once-on-stderr */}
 Each warning is said once per run, on stderr, so `json` and the other machine
 formats stay parseable. There is no flag to silence it; renaming the file is
 the fix, and takes one command:
@@ -2106,17 +2214,20 @@ mv docmeta.config.yaml manni.config.yaml
 
 then indent its contents under a `meta:` line.
 
+{/* cite discovery-stops-at-the-project-boundary */}
 The search stops at the **project boundary**, which is the first directory
 containing a `.git` entry, and that directory is itself searched. A git *file*,
 what a worktree or a submodule carries, counts as a boundary just as a directory
 does. If no ancestor is a repository, only the current working directory is
 searched; manni meta never reads a config from your home directory or from `/`.
 
+{/* cite no-config-means-the-builtin-default-set */}
 If no config is found, manni meta runs on the [built-in default schema
 set](/manni/meta/reference/schema-resolution/#precedence). Pass `--no-config` to
 skip discovery deliberately, which is useful for a one-off run against the
 defaults.
 
+{/* cite explicit-config-must-exist */}
 When you pass `-c/--config <path>` explicitly, no search happens at all and that
 file must exist; a missing config file is an error (exit 2). The file is read by
 the same rule whatever it is named. If it has a `meta:`, `collections:`,
@@ -2124,12 +2235,14 @@ the same rule whatever it is named. If it has a `meta:`, `collections:`,
 whole document is the `meta:` section. So `-c ./anything.yaml` works for
 both shapes without a flag, and an explicit path is never warned about.
 
+{/* cite governing-config-is-announced */}
 When a run is governed by a config, manni meta says so before the report:
 
 ```
 Using manni.config.yaml (../..)
 ```
 
+{/* cite config-line-goes-to-stderr-for-machine-formats */}
 The path in parentheses is the config's directory relative to where you ran the
 command. The line goes to stdout in `pretty` output, and to stderr for every
 machine format. `json`, `github`, `sarif`, and `junit` all keep it on stderr, so
@@ -2137,6 +2250,7 @@ machine-readable output stays parseable.
 
 ## What relative paths are relative to
 
+{/* cite config-paths-resolve-from-the-config-directory */}
 A config's relative paths mean what they look like they mean to whoever is
 editing the config. They resolve against **the config file's own directory**,
 not the directory you happened to run from. That applies to:
@@ -2154,6 +2268,7 @@ not the directory you happened to run from. That applies to:
 So a config means the same thing whether you run from the repo root, from
 `docs/`, or from a monorepo package script.
 
+{/* cite baseline-resolves-from-the-config-directory */}
 This matters most for `baseline`. Resolving it against the working directory
 instead would mean a run from a subdirectory quietly found no baseline. It would
 then report the entire recorded backlog as new. For the same reason, the schema
@@ -2167,6 +2282,7 @@ a person standing in a shell typed them there:
 - positional `[paths...]` on the command line, and `-s/--schema`;
 - a document's own `$schema` value.
 
+{/* cite one-base-per-run */}
 A single run uses *either* positional paths *or* the selected collections'
 `paths`, never both, so there is exactly one base per run. When the run takes its
 targets from `collections:`, reported file paths are relative to the config's
