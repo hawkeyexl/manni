@@ -25,11 +25,13 @@
     ],
     "@semantic-release/npm",
     "./scripts/release-sync-versions.mjs",
+    "./scripts/release-cite-update.mjs",
     [
       "@semantic-release/git",
       {
         "assets": [
           "CHANGELOG.md",
+          "site.metadata.yaml",
           "package.json",
           "package-lock.json",
           "README.md",
