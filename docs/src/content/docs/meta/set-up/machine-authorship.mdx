@@ -5,12 +5,17 @@ description: "Record which body lines an agent or a model wrote, pin each range 
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
+{/* cite changed-pin-fails-the-build */}
+{/* cite changed-pin-finding-at-first-file-line */}
+{/* cite provenance-derived-from-git-source */}
+{/* cite provenance-entry-names-machine-lines-integrity */}
 A **provenance pin** says that one machine wrote one range of a page's body.
 Each entry in a page's `provenance` list names the machine, the lines, and an
 integrity hash over those lines. `manni meta derive` stamps the entries from
 git. `manni meta validate` compares each pin with the page as it is now, and a
 range whose text changed fails the build at the line of the prose.
 
+{/* cite provenance-is-a-builtin-managed-field */}
 `provenance` is one more [managed field](/manni/meta/set-up/derived-metadata/).
 It rides the same channel as `last-updated` and `owner`, so nothing about the
 gate, the finding or the fix is new.
@@ -102,6 +107,7 @@ trailer is the machine's name in the record.
 
 ## Record an agent's edit
 
+{/* cite manni-generated-by-env-var-name */}
 Blame cannot see lines that are not committed yet. `MANNI_GENERATED_BY` names
 the machine that wrote them. An agent session exports it once, and it is one
 line in a repository's agent instructions.
@@ -137,6 +143,7 @@ provenance:
 ---
 ```
 
+{/* cite entries-store-body-lines-reports-use-file-lines */}
 `lines` in the YAML counts **body** lines, from the first line after the
 frontmatter. So a later stamp, which only grows the frontmatter, never moves a
 pin. Every report and message uses file lines, as an editor does.
@@ -165,12 +172,16 @@ file. Then name the agent's lines with a range instead, as the next section
 shows.
 </Aside>
 
+{/* cite variable-alone-never-refuses-flag-does */}
+{/* cite generated-by-flag-overrides-env-even-when-empty */}
+{/* cite blank-generated-by-value-is-unset */}
 A run that manages other fields, and not `provenance`, ignores the variable.
 `--generated-by <name>` is the same setting as a flag, and it wins over the
 variable. It wins even when empty, and an empty or blank name is unset.
 
 ## Attribute lines by hand
 
+{/* cite ranged-attribution-works-committed-or-not */}
 A range on the path names the lines, in the spelling `manni cite add` uses. A
 range works whether or not the lines are committed:
 
@@ -185,6 +196,7 @@ docs/limits.md
 1 file, 1 changed, 1 range written
 ```
 
+{/* cite generated-by-cannot-overrule-recorded-machine */}
 This is how you record a model's text that was pasted in by a person and
 committed without a trailer. A flag cannot overrule recorded evidence, so a
 range that git already attributes to another machine is refused:
@@ -194,6 +206,12 @@ $ manni meta derive docs/limits.md:13-15 --generated-by claude-sonnet-5
 manni: docs/limits.md:13-15: blame attributes these lines to claude-fable-5 (9badf21); --generated-by cannot overrule a recorded machine.
 ```
 
+{/* cite operational-refusal-is-exit-2 */}
+{/* cite range-without-generated-by-is-refused */}
+{/* cite range-past-end-of-file-is-refused */}
+{/* cite range-into-frontmatter-is-refused */}
+{/* cite range-must-name-one-file-derive-reads */}
+{/* cite several-ranges-per-page-accumulate */}
 That is exit 2, and nothing is written. So is a range with no
 `--generated-by`, a range past the end of the file, and a range that reaches
 into the frontmatter. A range on a directory or a glob is refused too, since a
@@ -201,12 +219,14 @@ range names lines of one file. Pass several ranges of one file to attribute
 each. The [output reference](/manni/meta/reference/output-and-exit-codes/#exit-2-from-a-derive-source)
 lists every message.
 
+{/* cite generated-by-trailer-is-evidence-rule-3 */}
 A `Generated-by: claude-fable-5` trailer in a commit message works too. It is
 there for a tool that commits without running `derive`, and every later run
 reads it.
 
 ## When a person edits machine text
 
+{/* cite stale-finding-line-is-range-start */}
 A person rewrites one of the agent's three lines and commits. The pin no longer
 matches, and `validate` says so at the first line of the range:
 
@@ -232,6 +252,7 @@ docs/limits.md
 1 file, 1 changed, 1 range written
 ```
 
+{/* cite changed-entry-with-no-evidence-is-dropped */}
 `derive` blames the range again. The two lines the agent's commit still owns
 keep their machine, because that commit carried the stamp. The line the person
 rewrote has no machine evidence, so it drops out of the record:
@@ -251,6 +272,8 @@ provenance:
 
 Commit that, and `validate` passes again.
 
+{/* cite moved-range-is-not-a-finding */}
+{/* cite moved-pin-keeps-entry-with-new-lines */}
 A range that only moved is not a finding. When someone adds a paragraph above
 the agent's text, every pin still matches somewhere below. `validate` and
 `derive --check` pass, and the next `derive` updates `lines`:
@@ -264,6 +287,7 @@ docs/limits.md
 1 file, 1 changed, 3 ranges written
 ```
 
+{/* cite uncovered-machine-lines-are-unset-findings */}
 Machine lines with no entry are a finding too. A commit whose trailer names a
 machine, stamped by nobody, reads like this:
 
@@ -320,15 +344,21 @@ docs/limits.md:
       integrity: sha256-0c679dbd56e909d1a679ca962c7a474dcbca6d5db59af1c0e25b809a2feb588b
 ```
 
+{/* cite empty-plan-removes-provenance-key */}
+{/* cite manifest-entry-with-no-keys-is-removed */}
 The page is untouched, so its body lines are its file lines minus the
 frontmatter it already had. Commit the page and the manifest together, and the
 manifest's copy at that commit is the evidence from then on. When every range
 of a page loses its evidence, `derive` removes `provenance` from the entry, as
 it does on a page. An entry left with no keys goes too.
 
+{/* cite url-manifest-cannot-own-provenance */}
+{/* cite page-record-lives-in-one-manifest */}
 The manifest must be a file in the repository, never a URL, because `derive`
 writes to it. Each page's record has to live in one manifest.
 
+{/* cite unfenced-format-refuses-provenance-stamp */}
+{/* cite derive-file-error-exits-1 */}
 HTML, XML and DITA keep their metadata inside the body a pin would hash. A
 stamp there would change the very lines it pins, so those formats need the
 manifest. Without one, the stamp is refused for that file, exit 1:
@@ -343,6 +373,7 @@ $ MANNI_GENERATED_BY=claude-fable-5 manni meta derive docs/page.html
 
 ## Review what fill proposed
 
+{/* cite fill-records-writes-in-meta-provenance */}
 `provenance` covers prose. [`manni meta fill`](/manni/meta/reference/cli/#meta-fill)
 proposes frontmatter, and it records what it wrote in a second key,
 `meta-provenance`. The report shows the entry under the fields:
@@ -370,11 +401,18 @@ meta-provenance:
 ---
 ```
 
+{/* cite meta-provenance-pointer-added-on-rewrite-only */}
+{/* cite meta-provenance-fields-are-json-pointers */}
 Each field is a JSON Pointer, so `/kg/label` reaches inside a block. Once you
 have reviewed the values, delete the entry. A surviving entry means machine
 metadata nobody has checked yet. `fill` adds a pointer back only when it writes
 that field again.
 
+{/* cite fill-never-proposes-provenance-keys */}
+{/* cite provenance-keys-withheld-from-model */}
+{/* cite meta-provenance-skipped-on-schema-mismatch */}
+{/* cite meta-provenance-schema-mismatch-note-text */}
+{/* cite meta-provenance-is-not-derivable */}
 `meta-provenance` is not managed, and nothing derives it. `fill` never proposes
 either provenance key, and it leaves both out of what it sends a model. A page
 whose schemas do not allow the key still gets its fields, with a note in place

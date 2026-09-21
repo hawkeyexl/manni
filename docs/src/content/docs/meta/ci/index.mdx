@@ -10,6 +10,7 @@ validates your document metadata, and fails the job when a file is
 non-conformant. Each failure is reported as an inline annotation on the pull
 request diff.
 
+{/* cite runner-needs-node-24 */}
 You do not need to install manni meta into your repository. The recipes here run it
 with `npx`, which fetches the published `manni meta` package on demand. The only
 requirement on the runner is Node.js 24 or newer.
@@ -115,6 +116,7 @@ deliberately.
 
 ### Let the config file supply the paths
 
+{/* cite no-paths-falls-back-to-collections */}
 If your repository has a `manni.config.yaml` at its root, its top-level
 `collections:` list already names the document sets. A run with no positional
 targets reads those. That lets the workflow step drop the glob entirely:
@@ -132,6 +134,7 @@ a11y gate beside this one reads the same list. See
 [Create your manni.config.yaml](/manni/meta/set-up/config/) for both halves of
 the file.
 
+{/* cite collection-flag-is-repeatable */}
 To gate one part of a docs set rather than all of it, name its collection.
 `--collection <name>` is repeatable, one name per occurrence:
 
@@ -140,6 +143,7 @@ To gate one part of a docs set rather than all of it, name its collection.
   run: npx -y @hawkeyexl/manni meta validate --collection guides --format github
 ```
 
+{/* cite scoped-run-skips-corpus-checks */}
 A scoped run does skip corpus
 [`checks:`](/manni/meta/reference/configuration/#checks), with a notice on
 stderr, because a rule that spans the corpus cannot be answered by part of it.
@@ -207,6 +211,7 @@ A Markdown file missing a required `type` field will do. Then check that:
 - The failing file shows an inline annotation on the changed line.
 - A passing change leaves the job green.
 
+{/* cite pretty-is-the-default-format */}
 If you want to see the same output locally before pushing, run the command from
 your shell. Locally, `--format github` prints the raw `::error` lines; drop the
 flag to get the readable pretty report:

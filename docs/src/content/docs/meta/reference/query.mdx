@@ -14,6 +14,7 @@ applied through the same writers `fill` uses. Where
 expressible at all: duplicate slugs, dangling author references, a tag used
 exactly once.
 
+{/* cite sqlite-loaded-only-when-a-query-runs */}
 The engine is Node's built-in [`node:sqlite`](https://nodejs.org/api/sqlite.html).
 Nothing is installed, and it is loaded only when a query actually runs.
 
@@ -25,15 +26,20 @@ files](/manni/meta/ci/query-gates/).
 
 ## The `docs` table
 
+{/* cite docs-table-is-in-memory */}
 One row per input file, built fresh in memory on every run and discarded when
 it ends. [`--db`](#exporting-the-database) writes a copy out; nothing else
 persists.
 
+{/* cite select-star-column-order */}
+{/* cite data-columns-sorted-by-name */}
 `SELECT *` returns a deterministic column order regardless of the order files
 were read: the four system columns first, then the data columns sorted by name.
 
 ### System columns
 
+{/* cite four-system-columns-are-reserved */}
+{/* cite other-underscore-keys-still-lift */}
 Four columns are manni meta's own. They are **reserved**. A frontmatter key named
 exactly `_path`, `_format`, `_present`, or `_data` is not lifted to a column, so
 ordinary metadata can never shadow one. The reservation is those four names, not
@@ -54,11 +60,14 @@ manni meta query "SELECT _path, _data ->> '\$._path' AS shadowed FROM docs" docs
 
 ### Data columns
 
+{/* cite data-columns-are-the-corpus-union */}
+{/* cite statement-named-key-widens-the-table */}
 The data columns are the **union of top-level metadata keys across the corpus**.
 They also include any key the statement itself names as a `SET` or `INSERT`
 target. That is how a key no file has yet gets created. A key absent from a file
 is SQL `NULL` in that row.
 
+{/* cite only-top-level-keys-are-lifted */}
 Only top-level keys are lifted. Nested values are reached through `_data` with
 SQLite's [JSON functions](https://sqlite.org/json1.html): `->>`, `json_extract`,
 and `json_each`. Keys that are not bare identifiers are ordinary quoted
@@ -68,6 +77,7 @@ identifiers:
 manni meta query 'SELECT "sidebar position" FROM docs' docs/
 ```
 
+{/* cite data-columns-have-no-type-affinity */}
 Data columns are declared with **no type affinity**. SQLite stores exactly what
 each file held, and never coerces one file's string into another file's number.
 The consequence worth knowing is that a bound *number* `2026` never equals a
@@ -88,6 +98,8 @@ had. See [type restoration](#type-restoration).
 
 ### Encrypted values
 
+{/* cite encrypted-select-returns-ciphertext */}
+{/* cite equal-values-encrypt-alike */}
 A column whose schema marks it
 [`x-manni-encrypt`](/manni/meta/reference/schema-resolution/#encrypted-values)
 holds what the page holds, the ciphertext. `SELECT` returns it, as `manni meta
@@ -95,6 +107,8 @@ get` does. A `WHERE owner = 'platform'` therefore matches nothing on pages whose
 owner is encrypted. Equal values encrypt to equal ciphertexts, so comparing one
 page's `owner` column with another's does find the pages that share a value.
 
+{/* cite encrypted-write-encrypts-the-value */}
+{/* cite encrypted-reports-show-a-placeholder */}
 An `UPDATE` or `INSERT` that writes a marked column writes it encrypted. Each
 written file's schema set is resolved the way `validate` resolves it: config
 `schemas:`, `overrides`, the file's `$schema`, and `-s`. A value that is already
@@ -105,6 +119,9 @@ the value, the `json` change objects included:
 docs/auth.md: owner: (encrypted) -> (encrypted)
 ```
 
+{/* cite encrypt-write-without-key-refused */}
+{/* cite encrypt-key-refusal-exits-2 */}
+{/* cite encrypt-dry-run-never-asks */}
 A write that needs a key when none is available asks for one on a terminal, and
 refuses off one with exit 2. See [When a write needs a
 key](/manni/meta/reference/configuration/#when-a-write-needs-a-key). A
@@ -121,6 +138,7 @@ Beyond everything stock SQLite provides, two functions are registered per run:
 
 ## Collections as views
 
+{/* cite every-collection-becomes-a-view */}
 Every [collection](/manni/meta/reference/configuration/#collections) becomes a
 **read-only SQL view** over `docs`, named for the collection. A rule can then
 say `FROM authors` instead of re-spelling the collection's globs in SQL:
@@ -158,6 +176,9 @@ The rules that define membership:
   completes the refusal with the write-through spelling:
   `UPDATE docs … WHERE _path IN (SELECT _path FROM "authors")`.
 
+{/* cite views-are-built-lazily */}
+{/* cite views-eager-for-db-export */}
+{/* cite views-eager-for-catalog-statements */}
 Views are built lazily, so a plain read that never names a collection does no
 membership work at all. They are built eagerly for a [`--db`
 export](#exporting-the-database), and for statements that observe the catalog.
@@ -184,6 +205,8 @@ both places.
 
 ## The `derived` table
 
+{/* cite derived-built-only-when-named */}
+{/* cite derived-missing-table-triggers-build */}
 With [`derive:`](/manni/meta/reference/configuration/#derive) in config, a
 second table is available. `derived` holds what the evidence says each
 managed field should be, one row per file. The evidence is git history, the
@@ -197,12 +220,15 @@ word inside a string literal or a comment does not count. A spelling the text
 search misses is caught by SQLite's own `no such table: derived`, which
 triggers the same build.
 
+{/* cite derived-only-the-columns-read */}
+{/* cite derived-star-derives-everything */}
 Only the columns the statement can read are derived. A statement that names
 `owner` alone consults the `codeowners` source and nothing else; one that
 selects `*`, or reads `_sources`, derives every column and consults every
 source `derive.sources` allows. A column the statement never names is `NULL`
 in the view.
 
+{/* cite provenance-derived-only-when-named */}
 `provenance` is the exception, because it costs a `git blame` per page. It is
 derived only when the statement names `provenance` or `derive.fields` lists
 it, so `SELECT *` and `SELECT count(*)` show it `NULL` otherwise.
@@ -220,6 +246,8 @@ it, so `SELECT *` and `SELECT count(*)` show it `NULL` otherwise.
 | one per key in `derive.commands` | TEXT | The command's trimmed stdout. A list or object is JSON text, as in `docs`. `verified-against` from `jq -r .version package.json` is `1.4.2`; from a script printing `{"name":"operator","version":"1.4.2"}` it is that object's JSON text. |
 | `_sources` | TEXT | JSON text, `{field: {source, evidence}}`, saying where each non-null value came from and why. For a command column the source is `command` and the evidence is the argv, `{path}` already substituted. |
 
+{/* cite derived-unnamed-column-is-null */}
+{/* cite derived-unanswerable-source-is-exit-2 */}
 Every built-in field column is present whether or not the field is managed,
 so one query shape serves every config. The command columns follow, one per
 key in [`derive.commands`](/manni/meta/reference/configuration/#commands),
@@ -240,6 +268,8 @@ manni meta query "SELECT d._path, d.\"last-updated\",
   WHERE docs.\"last-updated\" IS NOT d.\"last-updated\""
 ```
 
+{/* cite derived-write-is-refused */}
+{/* cite derived-not-in-db-export */}
 `derived` is a **view**, so a write to it is refused by SQLite and manni meta
 completes the refusal:
 `cannot modify derived because it is a view; a collection or the derived table is read-only`.
@@ -251,6 +281,8 @@ is closed, so an export cannot freeze a derived value. A managed field in
 `docs` is read-only too, for a different reason, given under [the DML
 constraints](#dml-statements-edit-files).
 
+{/* cite collection-cannot-be-named-derived */}
+{/* cite collection-name-clash-is-case-folded */}
 Because a query builds the `derived` view and its `_derived_rows` table beside
 `docs`, a [collection](/manni/meta/reference/configuration/#collections) may
 not take either name, in any case. The config is refused when it loads (exit 2).
@@ -264,6 +296,7 @@ resolution](/manni/meta/reference/schema-resolution/). This section is about a
 **resolved value**, meaning the value a read of one frontmatter key gives back.
 </Aside>
 
+{/* cite resolved-holds-resolved-frontmatter */}
 `resolved` is the third table, beside `docs` and `derived`. It holds the
 resolved frontmatter of every file, one row each. A resolved value is the
 asserted one when the document carries the key, and the derived one
@@ -272,6 +305,8 @@ otherwise. `_origin` says which of the two came back.
 The three tables answer three different questions. `docs` is what the file
 says. `derived` is what the evidence says. `resolved` is what to believe.
 
+{/* cite resolved-is-a-view-over-the-other-two */}
+{/* cite resolved-built-only-when-named */}
 `resolved` is a **view** over the other two, so it cannot disagree with them
 and costs no second read of the corpus. It is built under the same rule
 `derived` follows. A statement that never names it pays nothing, and a
@@ -288,6 +323,7 @@ statement that names it derives only the columns it can read. So
 | `_origin` | TEXT | JSON text, `{field: "asserted"}` or `{field: "derived"}`, carrying only the fields that resolved to something. A field neither side has is absent from the object. |
 | `_sources` | TEXT | JSON text, `{field: {source, evidence}}`, exactly as in [`derived`](#the-derived-table). |
 
+{/* cite resolved-presence-decided-by-data */}
 Presence is decided by `_data`, not by `NULL`. A column is `NULL` both when
 the key is absent and when the document writes `key: null`, so the view asks
 `_data` which of the two it is. That is the same rule the [system
@@ -295,6 +331,7 @@ columns](#system-columns) already state for `docs`. A document that writes
 `owner: null` has asserted a value, so `resolved` keeps the null and
 `_origin` says `asserted`.
 
+{/* cite resolved-asserted-value-wins */}
 Where a document asserts a value and the evidence disagrees, the asserted one
 wins, because that is what the page publishes. The drift is still visible.
 `validate` files it as `derived:stale`, and the join below asks for it
@@ -328,6 +365,7 @@ The `lines` column counts body lines, because that is what the record stores.
 A range attributed by hand after its lines were committed appears here and not
 in `derived`. The commit that wrote those lines names no machine.
 
+{/* cite resolved-write-is-refused */}
 Every write to `resolved` is refused, and the refusal names both ways
 forward:
 
@@ -337,6 +375,8 @@ manni meta query: SQL error: cannot modify resolved because it is a view; the re
                                                                       exit 2
 ```
 
+{/* cite resolved-not-in-db-export */}
+{/* cite collection-cannot-be-named-resolved */}
 A [`--db`](#exporting-the-database) export never carries it. `resolved` is
 dropped before the file closes, along with `derived` and its backing table,
 because half of every row is recomputed from the evidence on every run. A
@@ -345,10 +385,12 @@ called `resolved` either, and the config is refused when it loads (exit 2).
 
 ## The SQL vocabulary
 
+{/* cite one-statement-per-run */}
 One statement per run. Text after the first `;` is refused rather than silently
 dropped, because `prepare()` would compile only the first statement and ignore
 the rest.
 
+{/* cite statements-judged-by-effects */}
 Statements are judged by their **effects** on the disposable projection, never
 by parsing their syntax. A read leaves no diff and returns rows. A statement
 that changes a cell, adds a row, removes one, or changes the column set has done
@@ -462,6 +504,8 @@ Constraints on a DML statement:
 
 ### Type restoration
 
+{/* cite restored-to-the-type-the-file-held */}
+{/* cite dominant-type-for-a-new-key */}
 A value written back is restored to the type the file held for that key. `1`/`0`
 goes back to a boolean, JSON text back to an array or object, and a number stays
 a number. For a key **no file had**, the column's dominant type across the
@@ -469,6 +513,7 @@ corpus decides. When the corpus is tied, or the key is new everywhere, the value
 is written as SQL handed it back. A [DDL `BOOLEAN` add](#the-type-bridge) always
 restores real booleans.
 
+{/* cite bad-restoration-refuses-by-file-and-key */}
 A value the target type cannot hold refuses by file and key. That covers a
 non-boolean for a boolean key, or invalid JSON for an array key. An unquoted
 number for a string key, or a BLOB, does the same.
@@ -482,11 +527,13 @@ number for a string key, or a BLOB, does the same.
 | `DROP TABLE docs` | Refused as the accident-shaped spelling of two real statements; the message names both `DELETE FROM docs WHERE …` and `ALTER TABLE docs DROP COLUMN`. |
 | Anything after a `;` | A second statement would be compiled away silently. |
 
+{/* cite refusal-on-the-first-real-token */}
 The refusal is on the statement's first real token, and leading comments do not
 disguise it.
 
 ## Writes apply by default
 
+{/* cite there-is-no-write-flag */}
 **A mutating statement applies.** There is no `--write` flag. This is the
 polarity most people guess wrong, so it is worth stating flatly: running
 `manni meta query "UPDATE docs SET draft = false WHERE draft IS NULL" docs/` edits
@@ -502,10 +549,14 @@ every command that writes:
 | `manni meta query --check "UPDATE …" docs/` | `--check` **implies** the dry run. Pending changes are counted as findings and the exit code carries the verdict. Nothing is touched. |
 | `manni meta query -f csv "UPDATE …" docs/` | Refused (exit 2), because a diff has no tabular shape. The run was forced dry first, so the refusal is truthful and nothing landed. |
 
+{/* cite check-never-mutates */}
 Because `--check` never mutates, every `query --check` gate in CI is a read-only
 step by construction. That includes the ones whose statement is an `UPDATE`,
 which is how a backfill becomes a drift gate.
 
+{/* cite apply-is-all-or-nothing */}
+{/* cite apply-phase-two-writes-atomically */}
+{/* cite apply-aborts-on-a-changed-file */}
 Application is **all-or-nothing**. Phase one computes every file's new content.
 Any refusal aborts before a single byte lands. That covers an unwritable format,
 a bad restoration, or a file that changed on disk since it was read. Phase two
@@ -527,12 +578,15 @@ statement.
 | `ALTER TABLE docs DROP COLUMN k` | `properties.k` and its `required` entry are removed. | `k` is removed from every file. |
 | `ALTER TABLE docs RENAME COLUMN a TO b` | The property is renamed, carrying its whole subschema. | The key is renamed in every file, values verbatim. |
 
+{/* cite ddl-one-action-per-statement */}
+{/* cite ddl-needs-a-loaded-file */}
 One DDL action per statement, which is SQLite's own `ALTER` grammar. DDL needs
 at least one loaded file, because the backfill and the reconciliation both run
 over the corpus.
 
 ### Which schema an ALTER edits
 
+{/* cite ddl-schema-writes-stay-in-repo */}
 DDL is the one part of `query` that resolves schemas. It does so from disk and
 the bundled built-ins only, under the same trust boundary
 [`validate`](/manni/meta/reference/schema-resolution/) uses. A document's `$schema`
@@ -572,6 +626,7 @@ Where ownership is unclear, DDL refuses rather than guesses:
 
 ### The type bridge
 
+{/* cite type-bridge-mapping-order */}
 An `ALTER`'s declared column type becomes the JSON Schema property. The mapping
 is checked in this order, and the order is load-bearing. A bare affinity rule
 would let `/INT/` swallow `json-pointer`:
@@ -586,6 +641,7 @@ would let `/INT/` swallow `json-pointer`:
 | Anything matching `REAL`, `FLOA`, `DOUB`, `NUMERIC`, or `DEC` | `{ "type": "number" }` |
 | Anything else | No type. The property is added unconstrained. |
 
+{/* cite format-set-comes-from-the-validator */}
 The format set is derived from the validator's own registration rather than a
 parallel list, so a formats upgrade widens it for free. It currently holds
 `byte`, `date`, `date-time`, `duration`, `email`, `hostname`, `ipv4`, `ipv6`,
@@ -594,10 +650,14 @@ parallel list, so a formats upgrade widens it for free. It currently holds
 `url`, and `uuid`. A hyphenated name is written as a quoted type:
 `ADD COLUMN updated "date-time"`.
 
+{/* cite boolean-default-accepts-four-literals */}
+{/* cite boolean-backfill-writes-real-booleans */}
 `BOOLEAN` columns accept only `0`, `1`, `true`, or `false` as a `DEFAULT`, and
 the backfill writes real booleans into the files. The `1`/`0` encoding is a
 bind-layer detail, not a file-layer one.
 
+{/* cite check-becomes-enum-in-one-shape */}
+{/* cite check-literals-must-be-homogeneous */}
 A `CHECK` becomes an `enum`, in exactly one shape:
 `CHECK (<the-new-column> IN (<literals>))`, with the literals all strings or all
 numbers, agreeing with the declared type. A mixed list, an expression, another
@@ -614,6 +674,7 @@ docs/two.md: reviewed_on: (unset) -> 2026-08-26
 3 changes across 3 files — dry run; run again without --dry-run to apply
 ```
 
+{/* cite unknown-declared-type-adds-unconstrained */}
 `ADD COLUMN due "DUE-DATE"` maps to nothing and shows as an unconstrained
 `+ due`, which is the tell that the type name was wrong.
 
@@ -629,6 +690,8 @@ manni meta query -s ./schemas/house.json \
   "ALTER TABLE docs ADD COLUMN reviewed TEXT NOT NULL DEFAULT 'pending'" docs/
 ```
 
+{/* cite s-replaces-the-ddl-resolution-walk */}
+{/* cite s-leaves-views-and-reads-alone */}
 The flag is CLI precedence for the **DDL planner only**. The per-file resolution
 walk is skipped and the deduped `-s` refs are the set, unanimous by
 construction. Unlike `validate`'s `-s`, it does not reshape the corpus: named
@@ -646,6 +709,7 @@ quietly mean nothing:
 
 ## Rows as findings
 
+{/* cite check-turns-rows-into-findings */}
 `--check` reinterprets the result: **rows are findings**. Any returned row exits
 `1`; an empty result exits `0`. Pending changes count the same way, which is
 what makes a mutating statement a read-only drift gate. The `pretty` verdict
@@ -664,6 +728,8 @@ entries use:
 | `message` | The prose. |
 | anything else | Folded into the message as `col=value` pairs, NULL cells omitted. When nothing is left, the message is `check matched`. |
 
+{/* cite query-check-rule-id */}
+{/* cite query-junit-classname */}
 Findings from a `query --check` run carry the rule id `check:query/check`, and
 JUnit testcases ship under the classname `manni.query` rather than
 `manni.validate`:
@@ -672,6 +738,9 @@ JUnit testcases ship under the classname `manni.query` rather than
 ::error file=docs/alpha.md,line=3::[check:query] /slug duplicate slug alpha
 ```
 
+{/* cite findings-format-without-check-refused */}
+{/* cite check-result-without-path-refused */}
+{/* cite findings-format-on-changes-refused */}
 Three things are an error (exit 2). A findings format without `--check`. A
 `--check` result with no `path` column. A findings format on a statement that
 produced changes rather than rows.
@@ -709,6 +778,7 @@ manni meta query --param author="O'Brien" \
   `UPDATE`s. Anonymous `?` placeholders are not supported from the CLI, because
   flag order is not a contract to rely on.
 
+{/* cite param-string-is-the-default */}
 Strings are the default because metadata is mostly strings, and the data columns
 have no type affinity. A bound number `2026` would never equal a stored string
 `"2026"`. Mind the shell when a typed value is a string that looks like a
@@ -722,6 +792,7 @@ Two refusals (exit 2) keep a typo from becoming a silently-green gate:
 - A `--param` the statement **never references**, reported by the engine as an
   unknown named parameter.
 
+{/* cite param-one-name-two-prefixes-refused */}
 One bare name under two prefixes (`$p` and `:p` in one statement) is refused.
 Both spellings are named, rather than left to the engine's generic "conflicting
 names".
@@ -737,6 +808,7 @@ names".
 | `sarif` | One SARIF result per row. | Needs `--check` and a `path` column. |
 | `junit` | One JUnit `<failure>` per row. | Needs `--check` and a `path` column. |
 
+{/* cite query-declares-no-quiet-flag */}
 There is no `-q/--quiet`. `get` uses it to hide files and `validate` to hide
 passes, and a query result has no analogous noise. The rows are exactly what was
 asked for.
@@ -796,11 +868,14 @@ in brackets: `docs/auth.md: owner: (unset) -> platform  [docs-meta.yaml]`.
 - **Arrays and objects stay JSON text**, the same encoding `json` and the `--db`
   export use.
 
+{/* cite csv-with-check-is-legal */}
 `-f csv --check` is legal: a check's rows are still rows, the exit code carries
 the verdict, and the header-only output *is* the passing gate.
 
 ## Exporting the database
 
+{/* cite db-export-includes-collection-views */}
+{/* cite db-export-drops-derived-and-resolved */}
 `--db <path>` writes the built table, collection views included, to a SQLite
 file for any other tool to open. The [`derived`](#the-derived-table) and
 [`resolved`](#the-resolved-table) tables are the two things left out. Both
@@ -817,9 +892,13 @@ manni meta query --db docs.db docs/
 Wrote docs.db (4 files, 11 columns)
 ```
 
+{/* cite db-export-note-to-stderr */}
+{/* cite db-export-only-json-shape */}
 With SQL as well, the rows own stdout and the export note goes to stderr as a
 diagnostic. In `json`, an export-only run prints `{ path, files, columns }`.
 
+{/* cite db-overwrites-sqlite-or-empty-file */}
+{/* cite db-creates-missing-parent-dirs */}
 The file is a **regenerated artifact** of your corpus. Rebuild it whenever you
 like, and do not edit it expecting the files to notice. A SQLite database or an
 empty file at that path is overwritten. Anything else is refused, since anything
