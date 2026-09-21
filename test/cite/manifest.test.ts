@@ -95,6 +95,64 @@ describe("ManifestSet.commit", () => {
     );
   });
 
+  it("refuses an unreplayable conflict without spending the attempts", async () => {
+    const first = new ManifestSet();
+    const second = new ManifestSet();
+    await first.write(owner, "docs/a.md", [citation("aaaaaa")], 0);
+    await second.write(owner, "docs/a.md", [citation("bbbbbb")], 0);
+    await first.commit();
+
+    let reads = 0;
+    const read = async (at: string): Promise<string> => {
+      reads += 1;
+      return readFile(at, "utf8");
+    };
+    await expect(second.commit({ read })).rejects.toThrow(CiteError);
+    // The verdict is about a base fixed before the run started, so the refusal
+    // comes off the first fresh read rather than off the whole budget.
+    expect(reads).toBe(1);
+  });
+
+  it("spends a retry on a conflict it can replay", async () => {
+    const first = new ManifestSet();
+    const second = new ManifestSet();
+    await first.write(owner, "docs/a.md", [citation("aaaaaa")], 0);
+    await second.write(owner, "docs/b.md", [citation("bbbbbb")], 0);
+    await first.commit();
+
+    let reads = 0;
+    const read = async (at: string): Promise<string> => {
+      reads += 1;
+      return readFile(at, "utf8");
+    };
+    await second.commit({ read });
+    // One read to find the other entry and replay onto it, one to compare the
+    // replayed bytes against the file they are about to replace.
+    expect(reads).toBe(2);
+    const text = await readFile(path, "utf8");
+    expect(text).toContain("aaaaaa");
+    expect(text).toContain("bbbbbb");
+  });
+
+  it("hands a failed write to onError, and throws what it raises", async () => {
+    const set = new ManifestSet();
+    await set.write(owner, "docs/a.md", [citation("aaaaaa")], 0);
+    const seen: string[] = [];
+    await expect(
+      set.commit({
+        write: () => Promise.reject(new Error("no space left on device")),
+        onError: (change, error) => {
+          seen.push(change.file);
+          throw new CiteError(`rolled back after ${(error as Error).message}`);
+        },
+      }),
+    ).rejects.toThrow("rolled back after no space left on device");
+    // The callback is `update`'s route to putting the pages back, so it sees
+    // the manifest that failed, and what it raises is what the caller gets.
+    expect(seen).toEqual(["site.metadata.yaml"]);
+    expect(await readFile(path, "utf8")).toBe(MANIFEST);
+  });
+
   it("writes straight through when nothing else touched the manifest", async () => {
     const set = new ManifestSet();
     await set.write(owner, "docs/a.md", [citation("aaaaaa")], 0);

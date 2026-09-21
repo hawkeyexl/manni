@@ -5813,7 +5813,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-0489712fbe78c0301c3972b850bdd07c4e70fd47c7478b48de48978fecda4511
       source:
         file: src/cite/core/manifest.ts
-        lines: 147-172
+        lines: 157-182
         integrity: sha256-10a066043b74f8bfb17712597bafb86fb162c44f660d87ffd386370b11a5b1b1
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: sidecar-update-writes-once
@@ -8904,7 +8904,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-faf026456f3fcee2d46dda16c951f9b0f0d920c44f5f5e96f99275e4bb6a95b7
       source:
         file: src/cite/core/manifest.ts
-        lines: 153-168
+        lines: 163-178
         integrity: sha256-8dca3d3fa94a5c113ac7b87c29e93f5bedf38b680f8c1875e2e18494f7671ff2
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: url-manifest-refused

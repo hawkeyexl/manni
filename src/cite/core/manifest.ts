@@ -99,6 +99,11 @@ export interface ManifestChange {
   file: string;
   before: string;
   text: string;
+  /**
+   * `before` against `text`. A commit that rebased moves `before` to the bytes
+   * it compared against, so the diff then shows what this run added on top of
+   * a concurrent write rather than against the read `hold()` made.
+   */
   diff: string;
 }
 
@@ -106,6 +111,11 @@ export interface ManifestChange {
 export interface CommitIo {
   /** The byte writer; `writeFileAtomic` unless a test says otherwise. */
   write?: (path: string, text: string) => Promise<void>;
+  /**
+   * The compare-and-swap re-read, for a test counting the retries. It is that
+   * loop's read alone, not a general hook: `hold()` reads the file itself.
+   */
+  read?: (path: string) => Promise<string>;
   /** Called after each manifest lands, in write order. */
   after?: (change: ManifestChange) => void;
   /** Called when one manifest fails to land; must throw. */
@@ -212,11 +222,12 @@ export class ManifestSet {
    */
   async commit(io: CommitIo = {}): Promise<ManifestChange[]> {
     const write = io.write ?? writeFileAtomic;
+    const read = io.read ?? ((at: string): Promise<string> => readFile(at, "utf8"));
     const landed: ManifestChange[] = [];
     for (const held of this.held.values()) {
       if (held.text === held.before) continue;
       try {
-        await settle(held, write);
+        await settle(held, write, read);
       } catch (error) {
         if (io.onError !== undefined) await io.onError(changeOf(held), error);
         throw error;
@@ -304,11 +315,12 @@ function rebase(held: HeldManifest, current: string): string | undefined {
 async function settle(
   held: HeldManifest,
   write: (path: string, text: string) => Promise<void>,
+  read: (path: string) => Promise<string>,
 ): Promise<void> {
   for (let attempt = 1; attempt <= COMMIT_ATTEMPTS; attempt++) {
     let current: string;
     try {
-      current = await readFile(held.path, "utf8");
+      current = await read(held.path);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       throw new CiteError(`Manifest ${held.file} could not be read: ${reason}`);
@@ -318,9 +330,11 @@ async function settle(
       return;
     }
     const replayed = rebase(held, current);
-    // A replay that cannot be made leaves `before` alone, so the next attempt
-    // compares against the same bytes and never writes the stale text.
-    if (replayed === undefined) continue;
+    // A replay that cannot be made is a verdict about bytes just read, against
+    // a base fixed when this run first touched the entry. Neither side of that
+    // comparison moves on a re-read, so the attempts are left for the case
+    // they exist for, which is a file moving under replays that do succeed.
+    if (replayed === undefined) throw new CiteError(conflictRefusal(held.file));
     held.before = current;
     held.text = replayed;
   }
