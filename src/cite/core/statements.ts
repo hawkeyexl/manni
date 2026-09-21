@@ -481,6 +481,23 @@ export function fenceSpanAt(
   return { start: line, end: lineAt(text, block.end) };
 }
 
+/**
+ * The fenced block `line` sits inside rather than opens, as the lines it
+ * spans, fences included. Undefined when the line opens a block, sits in no
+ * block, or the format has no fence.
+ */
+export function fenceAround(
+  text: string,
+  bodyOffset: number,
+  line: number,
+  format: string,
+): { start: number; end: number } | undefined {
+  const block = fencedBlocks(text, bodyOffset, format).find(
+    (b) => line > b.line && line <= lineAt(text, b.end),
+  );
+  return block === undefined ? undefined : { start: block.line, end: lineAt(text, block.end) };
+}
+
 /** Whether `line` sits inside a fenced block rather than opening one. */
 export function insideFence(
   text: string,
@@ -488,9 +505,7 @@ export function insideFence(
   line: number,
   format: string,
 ): boolean {
-  return fencedBlocks(text, bodyOffset, format).some(
-    (block) => line > block.line && line <= lineAt(text, block.end),
-  );
+  return fenceAround(text, bodyOffset, line, format) !== undefined;
 }
 
 /**

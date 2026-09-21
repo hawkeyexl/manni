@@ -32,8 +32,8 @@ import {
 } from "./reanchor.js";
 import {
   anchoredLines,
+  fenceAround,
   fenceSpanAt,
-  insideFence,
   isMarkerLine,
   isTableRow,
   isTableSeparator,
@@ -196,10 +196,20 @@ export function spellElsewhere(spans: readonly PageLines[]): string {
   return named.length === 0 ? `${noun} ${last}` : `${noun} ${named.join(", ")} and ${last}`;
 }
 
-/** What `update --accept` re-pins over: the paragraph or fenced block at a line. */
+/**
+ * What `update --accept` re-pins over: the paragraph, whole fenced block, or
+ * lines inside a fenced block at a line.
+ *
+ * The three kinds are not interchangeable. `"block"` covers a fence, its
+ * content and its closing fence, which is the only shape a `quote: true`
+ * entry may hold. `"fenced-lines"` covers content lines inside a block and
+ * neither fence, which is what a claim minted over part of a code sample
+ * holds. `"paragraph"` covers prose, and table rows too, since `ClaimUnit`
+ * draws no line between them.
+ */
 export interface ClaimUnit {
   lines: PageLines;
-  kind: "paragraph" | "block";
+  kind: "paragraph" | "block" | "fenced-lines";
   text: string[];
 }
 
@@ -211,11 +221,22 @@ export interface ClaimUnit {
 export type NoUnit =
   | "outside"
   | "blank"
-  | "fenced"
+  | "fence-crossed"
   | "marker"
   | "not-a-paragraph"
   | "table-short"
   | "table-rule";
+
+/**
+ * The span a claim of the recorded width holds at a line. A unit whose extent
+ * is the author's, rather than the page's, keeps the number of lines it was
+ * minted over: table rows and lines inside a fenced block both. One recorded
+ * line gives one line, and five give five.
+ */
+function spanOf(line: number, recorded: PageLines | undefined): PageLines {
+  const width = recorded === undefined ? 1 : Math.max(1, recorded.end - recorded.start + 1);
+  return { start: line, end: line + width - 1 };
+}
 
 /**
  * The rows a claim on a table re-pins over, or why there are none.
@@ -226,9 +247,9 @@ export type NoUnit =
  * Rows below a one-line claim are other statements, and a table that no longer
  * reaches the recorded end is a question only the author can answer.
  *
- * The unit comes back as `kind: "paragraph"`, since `ClaimUnit` distinguishes
- * prose from a fenced block and nothing else. A caller wanting to know whether
- * it holds rows has to ask `isTableRow` about the text, not read `kind`.
+ * The unit comes back as `kind: "paragraph"`, since `ClaimUnit` names how a
+ * unit is bounded and not what it holds. A caller wanting to know whether it
+ * holds rows has to ask `isTableRow` about the text, not read `kind`.
  *
  * A span of nothing but `|---|---|` rules is refused. Those lines carry no
  * words, so a pin over them says nothing about what the page claims, and a
@@ -241,8 +262,7 @@ function rowsAt(
   recorded: PageLines | undefined,
   named: boolean,
 ): ClaimUnit | NoUnit {
-  const width = recorded === undefined ? 1 : Math.max(1, recorded.end - recorded.start + 1);
-  const end = line + width - 1;
+  const end = spanOf(line, recorded).end;
   if (end > lines.length) return "table-short";
   for (let n = line; n <= end; n++) {
     if (!isTableRow(lines[n - 1] ?? "")) return "table-short";
@@ -279,7 +299,18 @@ function unitOrWhy(
   if (block !== undefined) {
     return { lines: block, kind: "block", text: lines.slice(block.start - 1, block.end) };
   }
-  if (insideFence(page.content, page.bodyOffset, line, page.format)) return "fenced";
+  const around = fenceAround(page.content, page.bodyOffset, line, page.format);
+  if (around !== undefined) {
+    // The claim was minted over lines inside this block, so it is re-pinned
+    // over as many lines as it recorded, at the line it starts on. Re-pinning
+    // the block around them would widen what the pin covers, which is the one
+    // thing an accept may never do. A span reaching the closing fence, or past
+    // it, is not lines inside a block at all, and stays refused.
+    const span = spanOf(line, recorded);
+    return span.end < around.end
+      ? { lines: span, kind: "fenced-lines", text: lines.slice(span.start - 1, span.end) }
+      : "fence-crossed";
+  }
   // A table row is a statement of its own, and nothing between two rows ends a
   // paragraph, so the walk below would read the rest of the table as one.
   if (isTableRow(own)) return rowsAt(line, lines, recorded, named);
@@ -297,11 +328,11 @@ function unitOrWhy(
 }
 
 /**
- * The paragraph, fenced block or table rows at a file line. Undefined when the
- * line holds no claim at all: it is blank, outside the body, inside a fenced
- * block rather than opening one, another entry's marker, or a table rule.
- * Those are the claims `update --accept` skips, and `noUnitAt` says which of
- * them it is.
+ * The paragraph, fenced block, fenced lines or table rows at a file line.
+ * Undefined when the line holds no claim at all: it is blank, outside the
+ * body, another entry's marker, a table rule, or a line whose claim runs out
+ * of the fenced block it starts in. Those are the claims `update --accept`
+ * skips, and `noUnitAt` says which of them it is.
  *
  * A paragraph runs from this line to its end, not from the paragraph's own
  * first line. The line asked about is the claim's first line, and re-pinning

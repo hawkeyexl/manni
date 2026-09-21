@@ -254,14 +254,39 @@ describe("unitAt", () => {
     });
   });
 
-  it("skips a blank line, a line inside a fenced block, and a line past the page", () => {
+  it("skips a blank line, the closing fence and a line past the page", () => {
     const page = fixture("quote.md");
     const lines = splitLines(page.content);
     expect(lines[14]).toBe("");
     expect(unitAt(page, 15, lines)).toBeUndefined();
-    expect(unitAt(page, 17, lines)).toBeUndefined();
+    expect(noUnitAt(page, 15, lines)).toBe("blank");
+    // The closing fence is the block's own line, so a claim starting there is
+    // not inside the block.
     expect(unitAt(page, 20, lines)).toBeUndefined();
+    expect(noUnitAt(page, 20, lines)).toBe("fence-crossed");
     expect(unitAt(page, lines.length + 1, lines)).toBeUndefined();
+  });
+
+  it("gives the recorded lines a claim holds inside a fenced block", () => {
+    const page = fixture("quote.md");
+    const lines = splitLines(page.content);
+    expect(unitAt(page, 17, lines)).toEqual({
+      lines: { start: 17, end: 17 },
+      kind: "fenced-lines",
+      text: ["export const MAX_FILES = 10_000;"],
+    });
+    expect(unitAt(page, 18, lines, { start: 18, end: 19 })).toEqual({
+      lines: { start: 18, end: 19 },
+      kind: "fenced-lines",
+      text: ["export const FETCH_TIMEOUT_MS = 10_000;", "export const RETRIES = 3;"],
+    });
+  });
+
+  it("holds no claim when the recorded lines run past the closing fence", () => {
+    const page = fixture("quote.md");
+    const lines = splitLines(page.content);
+    expect(noUnitAt(page, 19, lines, { start: 19, end: 20 })).toBe("fence-crossed");
+    expect(unitAt(page, 19, lines, { start: 19, end: 20 })).toBeUndefined();
   });
 
   it("skips every line of the frontmatter", () => {
@@ -353,11 +378,17 @@ describe("unitAt: a table row", () => {
     expect(noUnitAt(page, 19, lines, { start: 19, end: 21 })).toBe("table-short");
   });
 
-  it("reads a pipe line inside a fenced block as fenced, not as a row", () => {
+  it("reads a pipe line inside a fenced block as fenced lines, not as a row", () => {
     const content = "---\ntitle: T\n---\n```\n| a | b |\n```\n";
     const page = readPage("p.md", content);
     const lines = splitLines(page.content);
-    expect(unitAt(page, 5, lines)).toBeUndefined();
+    // The fence is read first, so the recorded width decides the span and the
+    // table rules never run.
+    expect(unitAt(page, 5, lines)).toEqual({
+      lines: { start: 5, end: 5 },
+      kind: "fenced-lines",
+      text: ["| a | b |"],
+    });
   });
 });
 
@@ -452,12 +483,18 @@ describe("otherClaimSpans", () => {
 describe("noUnitAt", () => {
   const page = (body: string): PageCitations => readPage("p.md", `---\ntitle: T\n---\n${body}`);
 
-  it("names a blank line, a fenced line, a line that starts no paragraph, and one outside the body", () => {
+  it("names a blank line, a crossing claim, a line that starts no paragraph, and one outside the body", () => {
     const blank = page("\nText.\n");
     expect(noUnitAt(blank, 4, splitLines(blank.content))).toBe("blank");
 
     const fenced = page("```ts\nconst a = 1;\n```\n");
-    expect(noUnitAt(fenced, 5, splitLines(fenced.content))).toBe("fenced");
+    // Line 5 is code the claim can hold; a claim reaching line 6 covers the
+    // closing fence, and one starting there is on it.
+    expect(noUnitAt(fenced, 5, splitLines(fenced.content))).toBeUndefined();
+    expect(noUnitAt(fenced, 5, splitLines(fenced.content), { start: 5, end: 6 })).toBe(
+      "fence-crossed",
+    );
+    expect(noUnitAt(fenced, 6, splitLines(fenced.content))).toBe("fence-crossed");
 
     const broken = page("----\n");
     expect(noUnitAt(broken, 4, splitLines(broken.content))).toBe("not-a-paragraph");
