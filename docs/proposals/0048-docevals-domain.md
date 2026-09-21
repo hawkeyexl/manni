@@ -14,8 +14,8 @@
   one, whose choices this one copies. [0045](0045-family-encryption-key.md),
   the family-key precedent for a shared concept defined once under
   `src/shared/`
-- **Supersedes:** docevals [ADR 01003](docevals/01003-cuj-first-docs-site-and-content-strategy.md),
-  the co-located content strategy. Its Status line is the only edit
+- **Supersedes:** [ADR 01003](docevals/01003-cuj-first-docs-site-and-content-strategy.md),
+  the docevals co-located content strategy. Its Status line is the only edit
 - **Supersedes, in part:** docevals [ADR 01010](docevals/01010-kebab-case-is-the-file-vocabulary.md),
   for the keys of the `docevals:` section only. Eval, criterion and suite
   entries and grader options stay kebab-case as it decided. docevals
