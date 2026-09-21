@@ -114,7 +114,14 @@ import {
   offerExternalHomes,
   type ExternalWrite,
 } from "../core/location-writes.js";
-import { removeManifestKey, spliceManifestValue } from "../core/external-metadata-write.js";
+import {
+  applyManifestOp,
+  holdManifestFile,
+  recordManifestOp,
+  settleManifest,
+  type MetaHeldManifest,
+  type MetaManifestOp,
+} from "../core/manifest-writes.js";
 import { lineSpec, parseLines } from "../../shared/pin.js";
 import {
   compareDerived,
@@ -783,39 +790,33 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   // ---- Compare, and write ----------------------------------------------------
   /**
    * Each manifest this run writes, read once and spliced in memory (as cite
-   * holds them). `text` holds every committed edit; `written` is what is on disk.
+   * holds them). `text` holds every committed edit, and the edits themselves
+   * are kept as descriptors, so a manifest another command wrote while this
+   * run was working can be replayed onto rather than overwritten.
    */
-  const heldManifests = new Map<string, { path: string; written: string; text: string }>();
+  const heldManifests = new Map<string, MetaHeldManifest>();
   /** A field written into a manifest, whose line the report names once the manifest is settled. */
   const lineRequests: { field: DerivedField; absPath: string; entry: string; join: string }[] = [];
   const holdManifest = async (
     manifest: Pick<ProvenanceManifest, "absPath" | "file">,
-  ): Promise<{ path: string; written: string; text: string }> => {
+  ): Promise<MetaHeldManifest> => {
     const already = heldManifests.get(manifest.absPath);
     if (already !== undefined) return already;
-    let before: string;
-    try {
-      before = await readFile(manifest.absPath, "utf8");
-    } catch (err) {
-      throw new DocmetaError(`Manifest ${manifest.file} could not be read: ${errorMessage(err)}`);
-    }
-    const held = { path: manifest.absPath, written: before, text: before };
+    const held = await holdManifestFile(manifest.absPath, manifest.file);
     heldManifests.set(manifest.absPath, held);
     return held;
   };
   const results: DeriveFileResult[] = [];
-  /** Save every held manifest a committed edit changed. */
+  /** Save every held manifest a committed edit changed, compare-and-swap. */
   const saveManifests = async (): Promise<void> => {
-    for (const held of heldManifests.values()) {
-      if (held.text !== held.written) {
-        await writeFileAtomic(held.path, held.text);
-        held.written = held.text;
-      }
-    }
+    for (const held of heldManifests.values()) await settleManifest(held);
   };
   // A run that aborts part-way (a declined key prompt on a later file) still
   // saves the manifest edits of the pages it already wrote; a dry run saves
-  // nothing either way.
+  // nothing either way. That save is still a compare-and-swap, and a refusal
+  // there is still swallowed: the run is already unwinding the error that
+  // stopped it, and the refusal's own guarantee is that it wrote nothing, so
+  // reporting it would replace the reason the run stopped with a symptom.
   let settled = false;
   try {
     for (const label of files) {
@@ -926,15 +927,22 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       // only once its page write has succeeded (or it had none to make), so a
       // file that fails contributes no manifest edit.
       const staged = new Map<string, string>();
+      // The edit is recorded as the descriptor that made it, not as the text
+      // it produced, so the commit can replay it onto bytes read later. An
+      // edit that changes nothing records nothing: it is not this run's claim
+      // on that key, so another command writing the key is no conflict.
+      const stagedOps: { held: MetaHeldManifest; op: MetaManifestOp }[] = [];
       const stage = async (
         manifest: Pick<ProvenanceManifest, "absPath" | "file">,
-        edit: (text: string) => string,
+        op: MetaManifestOp,
       ): Promise<boolean> => {
         const held = await holdManifest(manifest);
         const before = staged.get(held.path) ?? held.text;
-        const after = edit(before);
+        const after = applyManifestOp(before, op);
         staged.set(held.path, after);
-        return after !== before;
+        if (after === before) return false;
+        stagedOps.push({ held, op });
+        return true;
       };
       /** Fields a staged manifest edit writes, marked written at the commit. */
       const manifestWritten: DerivedField[] = [];
@@ -944,10 +952,11 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         const plan = toManifest.judged.plan;
         // An empty record is no record, as on the page: `provenance` has
         // `minItems: 1`, so the key leaves the entry rather than holding `[]`.
-        const edited = await stage(place.manifest, (text) =>
+        const edited = await stage(
+          place.manifest,
           plan.length === 0
-            ? removeManifestKey(text, where).text
-            : spliceManifestValue(text, { ...where, value: plan }).text,
+            ? { ...where, kind: "remove" }
+            : { ...where, kind: "splice", value: plan },
         );
         if (edited) {
           changed = true;
@@ -957,15 +966,14 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       try {
         for (const { f, home, entry } of toEntries) {
           const value = isMarked(f.field) ? await sealField(f.field, f.derived, marks.marked) : f.derived;
-          const edited = await stage(home, (text) =>
-            spliceManifestValue(text, {
-              entry,
-              key: f.field,
-              value,
-              join: home.join,
-              file: home.file,
-            }).text,
-          );
+          const edited = await stage(home, {
+            kind: "splice",
+            entry,
+            key: f.field,
+            value,
+            join: home.join,
+            file: home.file,
+          });
           if (edited) {
             changed = true;
             manifestWritten.push(f);
@@ -1042,7 +1050,8 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       }
 
       // The page is written (or needed no write): commit this file's manifest
-      // edits to the held texts.
+      // edits to the held texts, and to the replay the save will need.
+      for (const { held, op } of stagedOps) recordManifestOp(held, op);
       for (const [path, text] of staged) {
         const held = heldManifests.get(path);
         if (held !== undefined) held.text = text;
