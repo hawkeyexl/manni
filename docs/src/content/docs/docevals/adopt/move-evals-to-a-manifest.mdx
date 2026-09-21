@@ -1,0 +1,182 @@
+---
+title: Move an annotated corpus into a manifest
+description: Lift evals out of every page into one collection manifest with manni meta relocate, without changing a single verdict.
+---
+
+Evals are bookkeeping. They tell CI what to check, and they tell a reader of the page nothing.
+Several docs platforms serve frontmatter unchanged in the markdown variant coding agents and
+retrieval pipelines fetch. On that surface every eval is bytes an agent reads and cannot use.
+
+The fix is to keep them in the collection's
+[external-metadata manifest](/manni/meta/set-up/external-metadata/) instead. This page moves a
+corpus that is already annotated, and shows that the move changes nothing about what is checked.
+
+## Start from a run you can compare against
+
+Record what the corpus reports now. That is the thing the move has to preserve:
+
+```console
+$ npx @hawkeyexl/manni docevals run --deterministic-only
+docs/install.md
+  pass fresh-enough
+docs/stale.md
+  FAIL long-overdue
+       error:3 [freshness/stale] Page last reviewed 2455 days ago (max 1)
+
+Suites
+  default: 0/1 passed — 0% vs target 100% below target
+  reference: 1/1 passed — 100% vs target 100% ok
+```
+
+One page passes, one fails. Both numbers have to survive.
+
+## See what would move
+
+`manni meta relocate` moves a value to where its schema says it belongs, and the evals draft marks
+all three eval keys `external`. Ask it first, and write nothing:
+
+```console
+$ npx @hawkeyexl/manni meta relocate --dry-run --fields evals,eval-suite -s schema/evals-1.0.0-proposal.4.json
+Using manni.config.yaml (.)
+Would create site.metadata.yaml; collections[site].externalMetadata[0] would own eval-suite, evals.
+docs/install.md
+    eval-suite  → site.metadata.yaml
+    evals       → site.metadata.yaml
+docs/stale.md
+    evals       → site.metadata.yaml
+2 files, 3 values would move to 1 manifest
+```
+
+Read the first line before the file list. It says the manifest does not exist yet and that
+relocate will declare it on the collection. Both are edits to files you own. A dry run is the only
+place to catch a manifest landing somewhere you did not want it.
+
+`--fields` names the keys to move, comma-separated, and `eval-skip` joins the list on a corpus that
+uses it. Without the flag relocate moves every marked value it finds. That is the right call for a
+corpus adopting a whole standard and the wrong one for a first pass.
+
+`-s` points at your copy of the draft, because no URL serves it while it is
+[open for review](/manni/meta/proposals/evals/). Drop the flag once your own schema composes the
+vocabulary.
+
+## Move them
+
+```console
+$ npx @hawkeyexl/manni meta relocate --fields evals,eval-suite -s schema/evals-1.0.0-proposal.4.json
+Using manni.config.yaml (.)
+Created site.metadata.yaml; collections[site].externalMetadata[0] owns eval-suite, evals.
+docs/install.md
+    eval-suite  → site.metadata.yaml:2
+    evals       → site.metadata.yaml:3
+docs/stale.md
+    evals       → site.metadata.yaml:6
+2 files, 3 values moved to 1 manifest
+```
+
+Three files changed. The pages lost their eval keys and kept everything else:
+
+```yaml title="docs/install.md"
+---
+title: Install
+last-reviewed: 2026-01-01
+---
+```
+
+The manifest holds them, keyed by the page's path:
+
+```yaml title="site.metadata.yaml"
+docs/install.md:
+  eval-suite: reference
+  evals:
+    - use: fresh-enough
+docs/stale.md:
+  evals:
+    - use: long-overdue
+```
+
+And the collection declares which keys that manifest owns, which is what every manni tool reads:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [eval-suite, evals]
+```
+
+Commit all three together. A manifest without the `externalMetadata:` entry declaring it is a file
+nothing reads, and pages stripped of evals with no manifest to supply them resolve nothing.
+
+## Check that nothing changed
+
+```console
+$ npx @hawkeyexl/manni docevals run --deterministic-only
+docs/install.md
+  pass fresh-enough
+docs/stale.md
+  FAIL long-overdue
+       error:3 [freshness/stale] Page last reviewed 2455 days ago (max 1)
+
+Suites
+  default: 0/1 passed — 0% vs target 100% below target
+  reference: 1/1 passed — 100% vs target 100% ok
+```
+
+Identical, down to the failing page. That is the whole claim of the move: relocation changes where
+a value is stored, never what it means. `manni docevals list` is the same comparison one step
+earlier, and it costs no grading.
+
+Findings still point at the page, because the page is what the grader read. A problem with a
+*declaration* now points at the manifest and its line there, since that is the file to edit.
+
+## What the writers do afterwards
+
+`fill`, `generate` and `promote --write` follow the same rule from here on. Each writes into your
+page's entry in the manifest, leaving every other entry, and every comment in the file, alone:
+
+```text
+filled   docs/install.md  +1 evals (states-the-problem 0.90)
+    evals → site.metadata.yaml
+```
+
+A page the manifest has no entry for is refused rather than written somewhere else. Where the
+manifest joins on a field rather than the path, a page missing that field gets the sentence naming
+what it lacks:
+
+```text
+docs/no-id.md carries no doc-id, which site.metadata.yaml joins on, so its evals has no entry there.
+```
+
+## Two things not to do
+
+**Do not leave a copy behind.** A page that keeps a key its manifest owns is an error, not a merge:
+
+```text
+error docs/install.md:4 "evals" is owned by manifest site.metadata.yaml (collection site); remove it from the document
+```
+
+Two declarations of what to check have no tiebreak. Delete the page's copy; relocate does that for
+you, and this error only appears where something else put one back.
+
+**Do not point `file:` at a URL.** A shared manifest over HTTP is fine for keys manni only reads.
+docevals writes eval keys, and nothing fetched can be written, so the run is refused with exit 2
+before a byte is fetched. The same goes for two collections both claiming one page's evals. The
+[frontmatter reference](/manni/docevals/reference/frontmatter/#where-evals-live) lists all three
+refusals.
+
+## Next
+
+- [Write evals](/manni/docevals/evals/), the declarations themselves, wherever they live
+- [Keep maintainer metadata out of delivered pages](/manni/meta/schemas/field-location/), the
+  standard behind the move
+- [Bootstrap a corpus with fill](/manni/docevals/adopt/), which writes into the manifest from here on
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"A collection's manifest supplies the eval keys, and the pages carry none.","runShell":{"command":"manni docevals run --deterministic-only --no-generate -c test/docevals/fixtures/manifest/external/manni.config.yaml","exitCodes":[0],"stdio":"pass fresh-enough"}} */}
+
+{/* step {"description":"A page that kept a key its manifest owns is an error, not a merge.","runShell":{"command":"manni docevals run --deterministic-only --no-generate -c test/docevals/fixtures/manifest/collision/manni.config.yaml","exitCodes":[1],"stdio":"remove it from the document"}} */}
+
+{/* step {"description":"A URL manifest owning an eval key is refused before anything is fetched.","runShell":{"command":"manni docevals run --deterministic-only -c test/docevals/fixtures/manifest/url/manni.config.yaml","exitCodes":[2],"stdio":"cannot come from a URL manifest"}} */}

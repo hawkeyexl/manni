@@ -88,6 +88,47 @@ Inline evals need an `id`, kebab-case and unique on the page. Everything else is
 defaults to `ai` and `type` to `regression`. The id is required rather than derived from position,
 because a position-derived name orphans every cached verdict as soon as entries move.
 
+## Evals can live beside the pages instead
+
+Everything above is a page carrying its own evals, and that is where they start. They are
+maintainer's bookkeeping though, not something a reader of the page wants, and some platforms serve
+frontmatter unchanged to whoever fetches the markdown.
+
+So a collection can keep them in one
+[external-metadata manifest](/manni/meta/set-up/external-metadata/) instead, keyed by page path:
+
+```yaml title="site.metadata.yaml"
+docs/install.md:
+  eval-suite: reference
+  evals:
+    - use: fresh-enough
+```
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [evals, eval-suite, eval-skip]
+```
+
+`docs/install.md` then carries no `evals` key at all, and every command reads the manifest's entry
+as though it sat on the page:
+
+```console
+$ npx @hawkeyexl/manni docevals list
+docs/install.md (suite: reference)
+  - fresh-enough [tool:freshness, regression, config]
+
+1 pages, 1 evals resolved
+```
+
+Declaring the same key in both places is an error rather than a merge. Nothing then says which
+declaration is the one CI runs, so pick one home per key. Moving an annotated corpus is
+[one command](/manni/docevals/adopt/move-evals-to-a-manifest/), and the
+[frontmatter reference](/manni/docevals/reference/frontmatter/#where-evals-live) has the rules.
+
 ## Prefer named evals
 
 An assertion pasted into twelve pages drifts into twelve slightly different assertions, and nobody
@@ -145,3 +186,5 @@ See [Frontmatter reference](/manni/docevals/reference/frontmatter/#validating-th
 {/* step {"description":"`list` prints name, grader, type, and source for each resolved eval.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/goTo.mdx","exitCodes":[0],"stdio":", regression, config]"}} */}
 
 {/* step {"description":"A page-level skip is honored.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/index.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}
+
+{/* step {"description":"A collection's manifest supplies the eval keys, and the pages carry none.","runShell":{"command":"manni docevals list -c test/docevals/fixtures/manifest/external/manni.config.yaml","exitCodes":[0],"stdio":"(suite: reference)"}} */}

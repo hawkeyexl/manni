@@ -67,7 +67,7 @@ here.**
 
 - `docs/content-strategy/personas.md`, the four personas. docevals folded its
   own six into them: Priya, Nate and Iris are Maya's entry now.
-- `docs/content-strategy/cujs.md`, the journeys. docevals's are M10–M14, D9–D10,
+- `docs/content-strategy/cujs.md`, the journeys. docevals's are M10–M15, D9–D10,
   S7–S10 and T5.
 - `docs/content-strategy/information-architecture.md`, the content set, with
   the `docevals/` section's tree.
@@ -141,6 +141,11 @@ and Node touch.
   reviews → aggregate. Deterministic graders go cheapest first, one `grade()`
   call per eval group. The judge and script generation are injected
   (`options.judge`, `options.generateScripts`) so the engine tests offline.
+- `src/docevals/core/external.ts` is the read side of a key's location. It
+  merges every manifest-owned key into each page's `frontmatter` before
+  resolution sees it, so nothing downstream knows a manifest exists.
+  `src/docevals/core/write-location.ts` is the write side: `EvalWriter` says
+  where a key goes and performs the manifest splice.
 - `src/docevals/core/resolve.ts` merges page frontmatter with the config's
   suites and named evals. The `evals` key takes array shorthand or object form
   with `suite`/`skip`. Page wins on name collision. `type` defaults to
@@ -321,6 +326,29 @@ and Node touch.
   A page carrying a key its manifest owns is an error-level page problem, in
   meta's `external:owned` sentence. The `location:external` warning for an
   eval key left in a page stays `meta validate`'s; docevals adds none.
+- **Every write goes where the key's location puts it** (proposal 0047).
+  Reading follows a key's location. A writer that always wrote to the page
+  would put the value in two places. That is an `external:owned` collision on
+  every page it touched. `fill`, `generate` and `promote --write` route each
+  key through the writer in `src/docevals/core/write-location.ts`, which
+  decides among three homes. A local manifest of one of the page's collections
+  takes the value. It is spliced into that page's entry, and no other byte of
+  the file changes. A manifest joining on a field the page lacks has no entry,
+  so the write is refused for that file in meta's own sentence. A URL manifest is the refusal above. Where nothing owns the
+  key the page keeps it, with P1 offered on a terminal and the W1/W2 line off
+  one. The rule and its helpers are meta's. They are reached through
+  `src/meta/internal.ts` (`keyHome`, `offerExternalHomes`,
+  `externalWriteWarnings`, `spliceManifestValue`); never grow a docevals copy.
+  Two things are docevals' own. The preference is read from the bundled evals
+  draft rather than from a resolved schema set, because every page is
+  validated against that draft anyway. The `RelocationContext` is built from
+  the config this tool already loaded. A `manni.config.yaml` holding only a
+  `docevals:` key is a single-tool file the metadata tool refuses. Where evals
+  go cannot depend on whether a sibling can read the same file.
+  `fill` reports `wroteTo` (`page` or the manifest path) and the destination
+  of its `meta-provenance` entry; `generate` reports `refusals`; `promote`
+  reports `error` on a promotable eval with nowhere to go. Exit codes are
+  unchanged by any of it.
 - **Machine attribution is ai-context's, not this vocabulary's** (proposal
   0046). `provenance` pins the body lines a machine wrote, and
   `meta-provenance` names the fields and evals a machine proposed. There is no

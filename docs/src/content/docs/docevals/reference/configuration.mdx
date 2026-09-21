@@ -74,6 +74,39 @@ A `files:` key under `docevals:` is refused by name with exit 2, its message poi
 collections reference, rather than reported as an unknown key. Move its `include` globs to a collection's `paths` and its `exclude`
 globs to that collection's `exclude`.
 
+## Where the eval keys may live
+
+A collection may also declare an
+[external-metadata manifest](/manni/meta/set-up/external-metadata/), and that manifest may own the
+three page keys `evals`, `eval-suite` and `eval-skip`. It is the same `externalMetadata:` entry
+every manni tool reads, and it is not a `docevals:` key either:
+
+```yaml
+collections:
+  - name: site
+    paths: ["docs/**/*.{md,mdx}"]
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [evals, eval-suite, eval-skip]
+
+docevals:
+```
+
+A page's metadata is then its frontmatter plus the keys its manifests own, for reading and for
+writing alike. Three rules follow, and the
+[frontmatter reference](/manni/docevals/reference/frontmatter/#where-evals-live) has the refusals:
+
+- **Membership comes from every declared collection**, whatever `--collection` or the positional
+  paths selected. A page named by path is still a member of whatever contains it.
+- **Only a manifest owning a key this tool reads is loaded.** Besides the three keys above, that is
+  `provenance`, `meta-provenance` and `last-reviewed`. A manifest owning a sibling tool's keys
+  alone costs a run nothing.
+- **`--no-config` means frontmatter alone.** With no config there are no collections, so there is
+  no manifest to read.
+
+`file:` may be a URL for the other three keys. For an eval key it is **exit 2**, because docevals
+writes those and a fetched file is not somewhere to write.
+
 ## `baseline`
 
 | Key | Type | Default |

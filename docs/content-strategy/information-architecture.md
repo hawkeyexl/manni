@@ -14,7 +14,7 @@ The `a11y/` section now carries journey pages of its own. It serves Maya (M7, th
 
 The `term/` section serves four journeys. Sara defines the terms (S6), Maya keeps the terms and the prose in step (M9), and Devin hands the termbase to localization (D8). Theo fixes the term check that turned his pull request red (T4). Its content set is below `a11y/`.
 
-The `docevals/` section arrived with a strategy of its own, six personas and twelve journeys. Three of those personas were already these people by name, Devin, Sara and Theo. The other three were Priya, Nate and Iris. They are Maya as a platform lead, as the only person writing the docs, and as the one handed a corpus she did not write. They were folded into her entry in `personas.md` rather than added, for the same reason a11y added no persona. The journeys became M10–M14, D9–D10, S7–S10 and T5. Its content set is below, after `term/`.
+The `docevals/` section arrived with a strategy of its own, six personas and twelve journeys. Three of those personas were already these people by name, Devin, Sara and Theo. The other three were Priya, Nate and Iris. They are Maya as a platform lead, as the only person writing the docs, and as the one handed a corpus she did not write. They were folded into her entry in `personas.md` rather than added, for the same reason a11y added no persona. The journeys became M10–M14, D9–D10, S7–S10 and T5. M15 was added later, when the eval keys gained a home outside the page. Its content set is below, after `term/`.
 
 ---
 
@@ -198,7 +198,7 @@ Overview — "What are you trying to do?" router + a 60-second proof
 │
 ├─ Get started        (Maya)          → M10
 ├─ Write evals        (Maya · Sara)   → M11, M12, S7
-├─ Adopt at scale     (Maya)          → M13, M14, S10
+├─ Adopt at scale     (Maya)          → M13, M14, M15, S10
 ├─ Run it in CI       (Devin)         → D9, D10
 ├─ Trust the judge    (Sara)          → S8, S9
 ├─ Fix a failing eval (Theo)          → T5   (highest traffic; no prerequisites)
@@ -216,7 +216,7 @@ Two constraints hold across the section. `fix/index.mdx` has no subject dependen
 | Overview (`docevals/index.mdx`) | All | ★ | Mirrors the sibling overviews' hero. What an eval and a grader are, the 60-second proof from a real `--deterministic-only` run, and a goal router into the seven sections. |
 | Get started (`docevals/get-started/index.mdx`) | M10 | ★ | Install, `init`, one assertion, one run, one real finding, one CI step. Minimum vocabulary: the reader reaches a finding without meeting "capability suite". |
 | How docevals works (`docevals/get-started/how-docevals-works.mdx`) | M10, M12 | ★ | The eval, grader and verdict model and the grader hierarchy. Sits after the quickstart on purpose. |
-| Write evals (`docevals/evals/index.mdx`) | M10, M11 | ★ | The frontmatter contract, with array shorthand and object form, `suite`, skipping, and inline and referenced evals. |
+| Write evals (`docevals/evals/index.mdx`) | M10, M11, M15 | ★ | The frontmatter contract, with array shorthand and object form, `suite`, skipping, and inline and referenced evals. |
 | Write good assertions (`docevals/evals/write-good-assertions.mdx`) | S7, M13, S9 | ★ | `assertion`, `evidence` and `examples` as one mechanism, and the two-reviewer test. The page that does most for Sara. |
 | Deterministic checks (`docevals/evals/deterministic-checks.mdx`) | M12, S10, M10 | ★ | `command` and `tool:*` graders, wrapping existing linters, and the generate path for a plain-language command eval. |
 | Named evals and suites (`docevals/evals/named-evals-and-suites.mdx`) | M11 | | Named evals, suites, criteria, `target-pass-rate`, resolution order, and `list` as the dry run. |
@@ -226,6 +226,7 @@ Two constraints hold across the section. `fix/index.mdx` has no subject dependen
 | Adopt at scale (`docevals/adopt/index.mdx`) | M13, M14 | ★ | `fill`, `--dry-run` before write, and proposals cached before the gate, so re-gating is free. |
 | Retrofit a legacy corpus (`docevals/adopt/retrofit-a-legacy-corpus.mdx`) | M14 | | The baseline ratchet. Scope first, `baseline:`, `--write-baseline`, read `removed`, the per-rule-per-file limit. The highest-consequence page in the adopt set. |
 | Promote to deterministic (`docevals/adopt/promote-to-deterministic.mdx`) | S10, M13, M14 | | `promote` reports by default; `--write` is a deliberate act. |
+| Move an annotated corpus into a manifest (`docevals/adopt/move-evals-to-a-manifest.mdx`) | M15 | | `manni meta relocate` lifts the eval keys out of every page into one collection manifest. The run before and the run after, side by side, plus where the writers go afterwards and the three refusals. |
 | Review generated scripts (`docevals/adopt/review-generated-scripts.mdx`) | S10 | | Generated scripts are version-controlled source, and reviewing them is why they are files. |
 | Run it in CI (`docevals/ci/index.mdx`) | D9, M10 | ★ | The GitHub Actions recipe, `-f github`, `paths:` on the trigger, and the cache step. A third-party action in any recipe is pinned to a full SHA, which Devin checks. |
 | Exit codes and annotations (`docevals/ci/exit-codes-and-annotations.mdx`) | D9, S9, M14 | ★ | `0`/`1`/`2` and who each routes to, annotations, `--fail-on-review` as a policy fork, the baseline in CI. |
@@ -295,7 +296,7 @@ Reference pages must never contradict the source code. Before writing any Refere
 | `term` journey pages (overview, get started, set up, move and hand off, CI, fix) | `src/term/commands/` for behaviour, and `src/term/core/writers/` for what each render holds. `src/term/core/vale.ts` and `src/term/core/writers/vale.ts` for the Vale seam and the style. `src/term/reporters/` for the exact emitted strings, with sample output captured from the built binary |
 | `docevals` CLI reference (`docevals/reference/cli.mdx`) | `src/docevals/cli.ts`, guarded by `scripts/check-cli-reference.mjs` |
 | `docevals` configuration reference (`docevals/reference/configuration.mdx`) | `src/docevals/core/config-schema.json`, `src/docevals/core/config.ts`, `src/shared/collections.ts`, `src/shared/providers.ts` |
-| `docevals` frontmatter reference (`docevals/reference/frontmatter.mdx`) | `src/docevals/schema.ts`, `src/docevals/core/resolve.ts` |
+| `docevals` frontmatter reference (`docevals/reference/frontmatter.mdx`) | `src/docevals/schema.ts`, `src/docevals/core/resolve.ts`, `src/docevals/core/external.ts`, `src/docevals/core/write-location.ts` |
 | `docevals` graders reference (`docevals/reference/graders.mdx`) | `src/docevals/graders/registry.ts`, `src/docevals/graders/options.ts`, each grader under `src/docevals/graders/` |
 | `docevals` output and exit codes (`docevals/reference/output-and-exit-codes.mdx`) | `src/docevals/reporters/`, `src/shared/run.ts`, `src/shared/severity.ts` |
 | `docevals` files and state (`docevals/reference/files-and-state.mdx`) | `src/docevals/judge/cache.ts`, `src/docevals/fill/cache.ts`, `src/docevals/core/reviews.ts`, `src/docevals/core/baseline.ts`, `src/docevals/graders/scriptgen.ts` |

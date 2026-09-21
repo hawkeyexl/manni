@@ -132,6 +132,16 @@ The claim this journey carries is that docevals orchestrates and does not reimpl
 
 ---
 
+### M15 · Keep evals out of the delivered page
+
+**Outcome.** Maya's pages carry prose and a title, not the list of what CI checks about them. Every eval lives in one manifest her collection declares, and the run reports exactly what it reported before the move.
+
+**Steps.** She runs `manni meta relocate --dry-run` over the corpus, with `--fields` naming the eval keys, and reads which manifest would be created. She runs it for real, which strips the keys from the pages, writes the manifest and declares it on the collection. She commits the three changes together. She re-runs `manni docevals run` and compares it with the run she recorded first, because relocation changes where a value is stored and never what it means. From then on `fill`, `generate` and `promote --write` splice her page's entry in the manifest and leave every other entry and comment alone. A page that keeps a copy of an owned key is an error rather than a merge. A manifest docevals cannot write to is refused before the run starts.
+
+**What success looks like.** A reader fetching the markdown sees prose. The verdicts, the failing page and the suite rates are identical either side of the move.
+
+---
+
 ## Devin, Platform / CI Engineer
 
 ### D1 · Add the gate to our CI platform

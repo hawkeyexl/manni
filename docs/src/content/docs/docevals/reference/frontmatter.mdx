@@ -8,9 +8,9 @@ Eval declarations live in page frontmatter under three keys, validated against
 proposes for per-page quality assertions. manni docevals validates against that draft itself,
 bundled into the CLI, and implements the graders behind it. Which machines wrote the page and
 proposed its evals is recorded in two keys from
-[`manni:ai-context:1.0.0-proposal.2`](/manni/meta/proposals/ai-context/), described
-[below](#provenance-and-meta-provenance). Verified against those drafts and
-`src/docevals/core/resolve.ts`.
+[`manni:ai-context:1.0.0-proposal.3`](/manni/meta/proposals/ai-context/), described
+[below](#provenance-and-meta-provenance). Verified against those drafts,
+`src/docevals/core/resolve.ts` and `src/docevals/core/external.ts`.
 
 ## The three page keys
 
@@ -56,6 +56,76 @@ eval-skip: false
 evals:
   - use: no-future-promises
 ---
+```
+
+## Where evals live
+
+The draft marks all three keys `x-manni-location: external`. The mark says they serve maintainers
+and CI rather than whoever fetches the page, so their home is the collection's
+[external-metadata manifest](/manni/meta/set-up/external-metadata/). A page keeps them until a
+manifest claims them, and [`manni meta relocate`](/manni/meta/schemas/field-location/) is the move.
+
+A collection names the keys its manifest owns:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [evals, eval-suite, eval-skip]
+```
+
+```yaml title="site.metadata.yaml"
+docs/install.md:
+  eval-suite: reference
+  evals:
+    - use: fresh-enough
+```
+
+**The owning manifest wins.** Every command reads a page's metadata as its frontmatter plus the keys
+its manifests own. The resolved plan is therefore the same before and after the move. Membership comes from
+every collection the config declares, whatever `--collection` or the positional paths selected.
+`--no-config`, a config with no collections, and a page in no collection each mean frontmatter alone.
+
+Two other vocabularies mark keys this tool reads. `provenance` and `meta-provenance` are
+`external` in ai-context's draft, and `last-reviewed`, the freshness grader's default field, is
+`external` in stewardship's. A manifest may hold those without holding the eval keys.
+
+Writers follow the same rule. `fill`, `generate` and `promote --write` put each key where its
+location says, so the page and the manifest never both hold it. See
+[Move an annotated corpus into a manifest](/manni/docevals/adopt/move-evals-to-a-manifest/).
+
+### The refusals
+
+| When | Reported as | Exit |
+|---|---|---|
+| A page carries a key its manifest owns | page error | `1` |
+| A URL manifest owns `evals`, `eval-suite` or `eval-skip` | operational error | `2` |
+| Two of a page's collections both keep one of those keys in a manifest | operational error | `2` |
+
+Two declarations of what to check have no tiebreak, so the first is an error rather than a
+preference:
+
+```text
+error docs/install.md:4 "evals" is owned by manifest site.metadata.yaml (collection site); remove it from the document
+```
+
+The other two stop the run before any page is graded. docevals writes eval keys where manni meta
+only reads them, so a home it cannot write to is refused rather than worked around:
+
+```console
+$ manni docevals run
+manni: manni.config.yaml: collection site: evals cannot come from a URL manifest, because docevals writes them.
+$ echo $?
+2
+```
+
+```console
+$ manni docevals run
+manni: docs/install.md is in collections site and guides, and both keep evals in a manifest.
+$ echo $?
+2
 ```
 
 ## Entry forms
@@ -109,7 +179,7 @@ focus, it has a target.
 |---|---|
 | `body` (default) | The page after its frontmatter block, byte for byte. MDX imports and components stay in. |
 | `raw` | The file verbatim, frontmatter included. |
-| `frontmatter` | The parsed frontmatter alone, written back out as YAML. The fences and any comments are not included, so use `raw` for the literal text. |
+| `frontmatter` | The page's metadata alone, written back out as YAML. That is the frontmatter block plus every key a manifest supplies. The fences and any comments are not included, so use `raw` for the literal text. |
 | `{source: file, path: <rel>}` | A companion file, resolved against the page's directory. |
 
 ```yaml
@@ -120,6 +190,10 @@ evals:
     options:
       pattern: "^owner:"
 ```
+
+The two differ on a corpus that keeps its evals in a manifest. `frontmatter` is what the tool read,
+manifest values included, so a grader sees the same metadata wherever it lives. `raw` is the bytes on
+disk, so a key the manifest owns is absent from it.
 
 A target that cannot be read is an **error**, not a quiet fall back to the page body. A verdict
 about the wrong bytes is worse than no verdict. A companion path may not be absolute and may not
@@ -175,10 +249,13 @@ These are reported per page rather than thrown, so one bad page does not stop th
 | Unknown eval reference | error |
 | Duplicate eval id on one page | error |
 | Unrecognized `eval-*` page key, `eval-provenance` included | error |
+| A page key an owning manifest also holds | error |
 | String shorthand matching a config eval id | warning |
 | Inline ai eval with no `examples` | warning |
 
-Errors carry the source line, resolved through manni meta's JSON-Pointer line map.
+Errors carry the source line, resolved through manni meta's JSON-Pointer line map. A problem about a
+value a manifest supplied names that manifest and its line there, because the page has nothing at
+that pointer to fix.
 
 ## `provenance` and `meta-provenance`
 
@@ -223,6 +300,10 @@ every other entry, is kept. Without an entry for the model, it appends one. That
 `manni meta fill` does for `fields`, so a page has one entry per model whichever command proposed
 what. The field definitions themselves are the
 [ai-context draft's](/manni/meta/proposals/ai-context/).
+
+Both keys are marked `external` in that draft, so the entry goes wherever
+[its location puts it](#where-evals-live). A manifest that owns `meta-provenance` holds the entry,
+and the page then carries none.
 
 ## Validating the frontmatter itself
 

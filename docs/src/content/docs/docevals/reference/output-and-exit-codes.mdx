@@ -44,6 +44,25 @@ Neither passes in silence. Whenever no eval reaches a verdict, the report carrie
 the run graded nothing and established nothing about the corpus. A green exit code is never the
 only thing you have to go on.
 
+### A manifest the tool cannot write to is exit 2
+
+A collection may keep `evals`, `eval-suite` and `eval-skip` in its
+[external-metadata manifest](/manni/docevals/reference/frontmatter/#where-evals-live). Two
+declarations of that manifest leave a writer nowhere to write, so both stop the run before any page
+is read:
+
+| Refusal | stderr | Exit |
+|---|---|---|
+| A URL manifest owns an eval key | `manni: manni.config.yaml: collection site: evals cannot come from a URL manifest, because docevals writes them.` | `2` |
+| Two of a page's collections own one | `manni: docs/install.md is in collections site and guides, and both keep evals in a manifest.` | `2` |
+
+A page that carries a key its manifest owns is the third case, and it is exit `1`. That one is a
+page problem rather than a configuration error, because the fix is an edit to the page:
+
+```text
+error docs/install.md:4 "evals" is owned by manifest site.metadata.yaml (collection site); remove it from the document
+```
+
 ## Which formats each command accepts
 
 `-f/--format` is not one shared set. `run` has seven reporters; `list` and `fill` render only two.
@@ -68,6 +87,66 @@ $ echo $?
 
 That matters most in CI, where `--format json` is piped into a parser. Exit 2 stops the pipeline;
 silently falling back to the pretty report would hand `jq` ANSI colour codes and still exit 0.
+
+## The writers say where a value went
+
+`fill`, `generate` and `promote --write` put each key where its
+[location](/manni/docevals/reference/frontmatter/#where-evals-live) says, which is the page or a
+manifest. Each reports which, so a reviewer knows what to open.
+
+A `fill` result carries `wroteTo`: `"page"`, or the manifest's path as the run spells it. It is
+absent when nothing was written, and present under `--dry-run`, where it names the file the write
+would go to:
+
+```json
+{
+  "file": "docs/install.md",
+  "status": "filled",
+  "wroteTo": "site.metadata.yaml"
+}
+```
+
+The pretty report prints the same thing under the page's line, and prints nothing when the evals
+stayed on the page:
+
+```text
+filled   docs/install.md  +1 evals (states-the-problem 0.90)
+    evals → site.metadata.yaml
+```
+
+`metaProvenance` carries the destination of its own entry, since a manifest may own
+`meta-provenance` without owning the eval keys. `destination` is the manifest that holds the entry,
+and absent means the page:
+
+| Shape | Meaning |
+|---|---|
+| `{"written": true, "entry": …, "destination": "site.metadata.yaml"}` | The entry went into that manifest. |
+| `{"written": false, "skipReason": "schema-mismatch"}` | The page's `meta-provenance` is not a list. |
+| `{"written": false, "skipReason": "manifest-owned", "manifest": "…"}` | A URL manifest owns the key, and nothing fetched can be written. |
+| `{"written": false, "skipReason": "unwritable"}` | The owning manifest joins on a field this page does not carry. |
+
+A page a joined manifest has no entry for is refused rather than written somewhere else. `fill`
+reports it as an `error` result with no `wroteTo`, and the run exits `1`:
+
+```text
+docs/no-id.md carries no doc-id, which site.metadata.yaml joins on, so its evals has no entry there.
+```
+
+`generate` carries `refusals`, one per eval whose command reference had nowhere to go, each with its
+`file`, `evalName` and the sentence above. It is decided before the model is asked, so no script is
+written for a refused eval. A script nothing can reference helps nobody, and paying for one helps
+less. The refused target still counts, so the run exits `1` for generating fewer scripts than it had
+targets.
+
+Where no manifest owns the key, the page keeps it. On a terminal `fill` offers the relocation that
+would give it a manifest, once per collection. Off one it writes the page and says so once for the
+whole run:
+
+```text
+manni: wrote evals to 3 pages; the schema prefers external metadata. Run manni meta relocate to give it a manifest.
+```
+
+Under `--dry-run` the same line reads `would write` and nothing is offered.
 
 ## `--format pretty`
 
@@ -201,6 +280,31 @@ measured part of the suite, so the summary carries numbers but no verdict:
 a failing suite. An unfiltered run omits the key entirely, so `partial !== true` is the test for
 "this verdict is real". See
 [Selecting evals suspends suite enforcement](/manni/docevals/reference/cli/#selecting-evals-suspends-suite-enforcement).
+
+### `problems[]`
+
+Resolution problems, one entry per page problem, reported rather than thrown so one bad page does
+not stop the run. The pretty, markdown, github and html reporters all print them.
+
+| Field | Notes |
+|---|---|
+| `file` | The file to edit. Usually the page, and the **manifest** when a manifest supplied the value. |
+| `line` | 1-based, in `file`. Absent when the problem has no line. |
+| `level` | `error` or `warning`. An `error` drops the page from grading and makes the run exit `1`. |
+| `message` | What is wrong. |
+
+**Read `file` rather than assuming the page.** A corpus that keeps its eval keys in a
+[manifest](/manni/docevals/reference/frontmatter/#where-evals-live) has nothing at that pointer in
+the page. An annotation placed there points at the wrong line of the wrong file:
+
+```json
+{
+  "file": "site.metadata.yaml",
+  "line": 2,
+  "level": "error",
+  "message": "Unknown suite \"reference\" (not defined in manni.config.yaml)"
+}
+```
 
 ### `baseline`
 

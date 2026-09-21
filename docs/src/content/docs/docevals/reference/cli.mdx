@@ -40,6 +40,14 @@ Flags override config; they do not bypass it. An unset flag falls through to
 the resolved config value, so a config file and the CLI reach the same code
 paths.
 
+Two of those flags do less than they look like they do to a corpus whose eval
+keys live in an
+[external-metadata manifest](/manni/docevals/reference/frontmatter/#where-evals-live). `--collection`
+and positional paths narrow which pages are read, never which manifests supply
+their keys. A page named by path is still a member of whatever collection
+contains it. `--no-config` does remove them, since there are then no
+collections and so no manifests. A run under it reads frontmatter alone.
+
 Each command's table below lists every flag it accepts, the shared ones
 included. A table is the whole surface of its command.
 
@@ -297,7 +305,7 @@ name that matches nothing is **exit 2**. Reach for them to answer "what would
 ## `docevals generate`
 
 Writes a check script for every `command` eval that has a plain-language
-assertion but no `command`, then records the command in frontmatter. See
+assertion but no `command`, then records the command where the eval lives. See
 [Deterministic checks](/manni/docevals/evals/deterministic-checks/).
 
 ```sh
@@ -305,6 +313,10 @@ manni docevals generate [paths...] [options]
 ```
 
 Exits 1 if any target failed to generate.
+
+A page-defined eval whose owning manifest has no entry for the page has nowhere to hold the command.
+That eval is refused before the model is asked, and no script is written for it. Each refusal prints
+under the generated paths and counts against the exit code.
 
 ### Arguments
 
@@ -360,10 +372,33 @@ manni docevals fill [paths...] [options]
 Raw proposals are cached **before** the confidence gate, so re-running at a
 different `--confidence` spends no turns.
 
+### Where `fill` writes
+
+Each key goes where its
+[location](/manni/docevals/reference/frontmatter/#where-evals-live) puts it. A local manifest that
+owns `evals` takes them, spliced into the page's entry with every other byte of the file left alone.
+The result's `wroteTo` names it, `"page"` or the manifest's path, and the pretty report prints it
+under the page's line:
+
+```text
+filled   docs/install.md  +1 evals (states-the-problem 0.90)
+    evals → site.metadata.yaml
+```
+
+Where no manifest owns the key, the page keeps it. On a terminal `fill` offers the relocation that
+would give it one, asked once per collection before the first model request. Off a terminal, and on
+a declined offer, the evals go to the page and one line per collection says so.
+
+A manifest that joins on a field the page lacks has no entry to hold the value. That file is refused
+rather than written elsewhere. It reports as an `error` result with no `wroteTo`, the rest of the run
+is filled, and the exit code is `1`. See
+[The writers say where a value went](/manni/docevals/reference/output-and-exit-codes/#the-writers-say-where-a-value-went).
+
 ### What `fill` records
 
-The evals `fill` writes are recorded in the page's `meta-provenance`, in the
-same edit, merged into the entry for the run's model. See
+The evals `fill` writes are recorded in `meta-provenance`, in the same edit,
+merged into the entry for the run's model. That key follows its own location,
+so the entry lands on the page or in the manifest that owns it. See
 [`provenance` and `meta-provenance`](/manni/docevals/reference/frontmatter/#provenance-and-meta-provenance).
 The pretty report prints the entry under the page's line, with every id it now
 holds:
@@ -401,9 +436,12 @@ nothing was written:
 }
 ```
 
-An entry that was not written reads `{"written": false, "skipReason": "schema-mismatch"}`.
-`fill` never sends a page's frontmatter to the model, so neither record can be
-proposed.
+A written entry carries `destination` when a manifest holds it. An entry that
+was not written reads `{"written": false, "skipReason": …}`, with one of three
+reasons; the
+[report reference](/manni/docevals/reference/output-and-exit-codes/#the-writers-say-where-a-value-went)
+lists them. `fill` never sends a page's frontmatter to the model, so neither
+record can be proposed.
 
 ## `docevals promote`
 
@@ -414,6 +452,10 @@ checks. **Report-only by default**; `--write` applies the conversions. See
 ```sh
 manni docevals promote [paths...] [options]
 ```
+
+`--write` rewrites each eval where it lives, so a manifest that owns the page's evals is the file
+that changes. A promotable eval with nowhere to go carries an `error` saying why, `applied` stays
+false, and the pretty report prints the sentence under the proposal.
 
 ### Arguments
 
