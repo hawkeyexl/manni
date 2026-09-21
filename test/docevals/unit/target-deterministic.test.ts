@@ -19,6 +19,7 @@ import { runEvals } from "../../../src/docevals/core/engine.js";
 import { makeJudge } from "../../../src/docevals/judge/judge.js";
 import { resolvePage } from "../../../src/docevals/core/resolve.js";
 import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core/discover.js";
+import { readTarget } from "../../../src/docevals/core/target.js";
 import { parseDocevalsConfig } from "../helpers/config.js";
 import { resetWarnings } from "../../../src/shared/warn.js";
 
@@ -215,5 +216,32 @@ describe("the self-judgment warning", () => {
     await judgePage(undefined, "mock-model");
     const said = warn.mock.calls.map((c) => String(c[0])).join("\n");
     expect(said).not.toContain("meta-provenance");
+  });
+});
+
+/**
+ * A companion file that cannot be read names the reason, and the reason is
+ * the errno. `useUnknownInCatchVariables` is on, so the code is read only off
+ * an `Error`; anything else falls back to the words the message promises
+ * rather than to `undefined`.
+ */
+describe("an unreadable companion file", () => {
+  it("names the errno", () => {
+    const root = mkdtempSync(join(tmpdir(), "manni-docevals-target-"));
+    mkdirSync(join(root, "docs"), { recursive: true });
+    const content = "---\ntitle: x\n---\nBody.\n";
+    const page: PageFile = {
+      file: "docs/page.md",
+      absPath: join(root, "docs", "page.md"),
+      content,
+      body: stripFrontmatterBlock(content),
+      frontmatter: extractFrontmatter(content, "markdown"),
+    };
+    const plan = resolvePage(page, judgeConfig);
+    const read = readTarget({ source: "file", path: "gone.txt" }, plan);
+    expect(read).toEqual({
+      ok: false,
+      reason: 'target file "gone.txt" could not be read (ENOENT)',
+    });
   });
 });

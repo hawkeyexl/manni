@@ -105,12 +105,17 @@ export async function runRun(
   let resolving: Promise<InferenceProvider> | undefined;
   const provider = (): Promise<InferenceProvider> =>
     (resolving ??= makeProvider(config, judgeOptions));
-  if (!("judge" in engineOverrides) || !("generateScripts" in engineOverrides)) {
+  // Per key, not per pair: an override supplying `judge` but not
+  // `generateScripts` used to resolve a provider and build a judge that the
+  // spread below then threw away.
+  const wantsJudge = !("judge" in engineOverrides);
+  const wantsGeneration = !("generateScripts" in engineOverrides);
+  if (wantsJudge || wantsGeneration) {
     if (!options.deterministicOnly) {
       try {
         const resolved = await provider();
-        judge = makeJudge({ provider: resolved, root: cwd });
-        if (options.generate !== false) {
+        if (wantsJudge) judge = makeJudge({ provider: resolved, root: cwd });
+        if (wantsGeneration && options.generate !== false) {
           generateScripts = makeGenerateScripts({ provider: resolved, root: cwd });
         }
       } catch (e) {
@@ -126,7 +131,7 @@ export async function runRun(
         // warned about the provider it had just been told to skip.
         warn(`provider unavailable — ${e.message}. Running deterministic evals only.`);
       }
-    } else if (options.generate !== false) {
+    } else if (wantsGeneration && options.generate !== false) {
       // No judge, so the provider is wanted only if the corpus holds a command
       // eval with no command, which is not knowable here. It is resolved when
       // generation first needs it, so a deterministic run never detects a

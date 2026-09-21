@@ -11,6 +11,15 @@ import { PROMPT_VERSION } from "./prompt.js";
 
 export { sha256 };
 
+declare const judgeCacheBodyBrand: unique symbol;
+
+/**
+ * The output of `judgeCacheBody`, and the only thing `cacheKey` accepts as a
+ * body. A brand rather than a wrapper object: it costs nothing at runtime and
+ * the value is still an ordinary string everywhere else.
+ */
+export type JudgeCacheBody = string & { readonly [judgeCacheBodyBrand]: true };
+
 /**
  * A judge cache that refuses to persist an ensemble containing an errored run.
  *
@@ -77,9 +86,14 @@ export class VerdictCache extends JsonCache<JudgeRun[]> {
  * `scripts/check-docs-cache.mjs` passed the raw page body while the judge had
  * started prefixing the budget. A helper both call is the only version of this
  * that cannot drift.
+ *
+ * The return type is branded, and `cacheKey` takes only that brand, so a
+ * caller that hands over a raw page body no longer compiles. Reproducing the
+ * composition by hand used to be a silent cache miss; now it is a type error,
+ * which is the whole point of having one helper.
  */
-export function judgeCacheBody(chunkChars: number, text: string): string {
-  return `chunk${String(chunkChars)}\n${text}`;
+export function judgeCacheBody(chunkChars: number, text: string): JudgeCacheBody {
+  return `chunk${String(chunkChars)}\n${text}` as JudgeCacheBody;
 }
 
 export function cacheKey(
@@ -87,7 +101,7 @@ export function cacheKey(
   model: string,
   runs: number,
   temperature: number,
-  body: string,
+  body: JudgeCacheBody,
   ev: ResolvedEval,
 ): string {
   const evalFingerprint = JSON.stringify({

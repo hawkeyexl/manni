@@ -87,7 +87,14 @@ export function readTarget(
   try {
     return { ok: true, text: readFileSync(abs, "utf8"), label: `file ${t.path}` };
   } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code ?? "unknown error";
-    return { ok: false, reason: `target file "${t.path}" could not be read (${code})` };
+    // `useUnknownInCatchVariables` is on, so the cast has to be earned: a
+    // thrown value that is not an Error has no `code` to read, and asserting
+    // one would put `undefined` where the message promises a reason.
+    const code =
+      err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined;
+    return {
+      ok: false,
+      reason: `target file "${t.path}" could not be read (${code ?? "unknown error"})`,
+    };
   }
 }
