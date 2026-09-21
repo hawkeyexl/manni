@@ -4,13 +4,6 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
-# [2.9.0-cite-marker-ids.1](https://github.com/hawkeyexl/manni/compare/v2.8.5...v2.9.0-cite-marker-ids.1) (2026-09-21)
-
-
-### Features
-
-* **cite:** name several ids in one marker ([d742c54](https://github.com/hawkeyexl/manni/commit/d742c542b4ec44150cd0c5c61108ffbcb5918d16))
-
 ## [2.8.5](https://github.com/hawkeyexl/manni/compare/v2.8.4...v2.8.5) (2026-09-21)
 
 
