@@ -14,6 +14,7 @@ This page documents the precedence chain and the three kinds of schema reference
 
 ## The precedence chain
 
+{/* cite first-source-that-yields-a-schema-wins */}
 For every file, manni meta builds a **schema set** (the list of schemas that file will be validated against) by checking five sources in order. The **first source that yields a schema wins**, and the search stops there. Nothing lower in the list is consulted.
 
 <Steps>
@@ -59,6 +60,7 @@ meta:
         - ./schemas/api.schema.json
 ```
 
+{/* cite override-names-files-or-a-collection */}
 Each `overrides` entry pairs a `schemas` list with the files it governs. The
 files are named in **one** of two ways. A `files` glob, as above, names them by
 pattern. `collection: <name>` names the members of a declared
@@ -82,6 +84,7 @@ With the config above, a repo-wide default of `google:okf:0.1` (level 4) and an 
 
 ## The `$schema` key is reserved
 
+{/* cite strips-schema-before-the-validator */}
 When a document names its own schema with a `$schema` key, that key is a *directive to manni meta*, not part of the document's metadata. manni meta strips `$schema` out of the metadata before handing it to the validator.
 
 This matters for one specific case. A schema with `"additionalProperties": false` rejects any field it doesn't declare. Without special handling, a document carrying `$schema:` would fail against such a schema, because `$schema` isn't one of the schema's declared properties. Because manni meta removes `$schema` first, that never happens. You never need to add `$schema` to your schema's `properties`, and a self-describing document validates cleanly against even the strictest schema.
@@ -163,6 +166,7 @@ URL references are one way to govern a single schema across many repos: a centra
 
 ## Validating against more than one schema
 
+{/* cite every-schema-in-the-set-is-applied */}
 When a file's schema set contains more than one reference, manni meta validates the file against **every schema in the set**. It reports the union of all violations, each tagged with the schema that produced it. A file passes only if it satisfies all of them.
 
 A multi-schema set is what you get when you name several schemas at a single precedence level:
@@ -177,6 +181,7 @@ Because the file must satisfy *every* schema in the set, the strictest member go
 
 ## Dialects are detected automatically
 
+{/* cite dialect-read-from-the-schema-line */}
 JSON Schema has evolved through several versions, called *dialects* (draft-04, draft-06, draft-07, 2019-09, 2020-12). A schema written for one dialect can fail to compile under another. So manni meta reads each schema's **own `$schema` line** and selects the matching validation engine. That line is the URI at the top of the schema file. It points at the dialect's *meta-schema*, the schema that defines the dialect itself.
 
 manni meta supports these dialects:

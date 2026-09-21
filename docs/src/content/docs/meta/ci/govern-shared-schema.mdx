@@ -108,12 +108,14 @@ command with the same URL it already references:
 npx -y @hawkeyexl/manni meta schemas vendor https://schemas.example.com/house/2.1.json
 ```
 
+{/* cite vendor-replaces-the-url-entry */}
 The bare-URL entry is **replaced**, not appended to, so the URL survives as
 provenance (`source:`) and stops being a live dependency. The rest of the
 config, comments included, is untouched.
 
 ### What the hash pin buys, and what it costs
 
+{/* cite integrity-mismatch-stops-the-run */}
 `integrity` is recorded because vendoring means "I want these exact bytes". On
 every run the file's bytes are hashed and compared before the schema is parsed.
 A mismatch stops the run with exit 2 and no fallback:
@@ -211,12 +213,14 @@ npx -y @hawkeyexl/manni meta validate "docs/**/*.md" -s https://schemas.example.
 </TabItem>
 </Tabs>
 
+{/* cite the-precedence-chain */}
 Whichever source supplies it, the schema set for each file is resolved by the
 same precedence chain. That is `--schema` → file `$schema` → config `overrides`
 → config `schemas` → built-in default. Vendoring does not change that chain; it
 changes what one reference in it points at. For the full chain, see the [schema
 resolution reference](/manni/meta/reference/schema-resolution/).
 
+{/* cite fetch-timeout-and-single-retry */}
 Each fetch is bounded by a **10-second timeout**. It is retried **once** after
 roughly 500 ms on a network error or a `5xx`. A `4xx` is never retried, because
 it will not heal. The result is cached in memory for the rest of the run, so two
@@ -262,6 +266,7 @@ the published schema so its dialect is unambiguous to every consumer.
 Everything above governs where *your* canonical schema comes from. One more
 thing decides whether a repository is actually judged by it.
 
+{/* cite document-schema-sits-above-config */}
 A document's own `$schema` sits **above** config in the [precedence
 chain](/manni/meta/reference/schema-resolution/#precedence). That is the feature
 that lets a page carry its own contract. In a repo taking pull requests from
@@ -311,16 +316,19 @@ other document is validated exactly as before:
     schemaTrust.documentRefs is "local" …
 ```
 
+{/* cite refused-document-ref-is-a-failing-file */}
 It is a **failing file** and exit 1, rather than a stopped run. So with
 `--format github` the annotation appears on that line of the pull request. The
 contributor can act on it.
 
+{/* cite local-mode-allows-builtin-and-repo-file */}
 What `local` still allows is worth stating, because it is why turning it on is
 cheap. A built-in id (`$schema: google:okf:0.1`) and a schema file committed in
 the repository both keep working. Only a URL, and a path reaching outside the
 repository, are refused. And `-s/--schema` is untouched in every mode, so you
 can still check a candidate schema for one run.
 
+{/* cite document-refs-none-drops-the-key */}
 `documentRefs: none` goes one step further. The document's key is ignored
 entirely and the config decides for every file. One line on stderr names each
 file whose reference was dropped.

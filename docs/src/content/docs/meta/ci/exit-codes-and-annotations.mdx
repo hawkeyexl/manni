@@ -28,6 +28,7 @@ fix. A gate that treats every non-zero exit the same will still block bad
 metadata. Separating the two lets you tell "the docs are wrong" from "the check
 is broken."
 
+{/* cite unknown-flag-is-a-usage-error */}
 A mistyped flag or subcommand belongs to the second group. `manni meta validate
 --nope docs/` exits `2`, not `1`: nothing was validated, so the run produced no
 verdict about your documents at all.
@@ -49,6 +50,7 @@ sets](/manni/meta/reference/cli/#empty-input-sets).
 
 ## Output formats
 
+{/* cite validate-has-five-report-formats */}
 `manni meta validate` supports five output formats, selected with `-f` / `--format`.
 The default is `pretty`.
 
@@ -95,12 +97,14 @@ $ manni meta validate bad-timestamp.md
 1 file checked, 0 passed, 1 failed, 1 error
 ```
 
+{/* cite pretty-summary-line-shape */}
 Passing files show as `✓ <file>`. Add `-q` / `--quiet` to hide passing files and
 show only failures plus the summary. The summary line reports
 `<n> files checked, <n> passed, <n> failed, <n> errors`.
 
 ### json
 
+{/* cite json-top-level-is-summary-and-results */}
 A single JSON object printed to stdout, suitable for dashboards or further
 processing. The top level has a `summary` and a `results` array.
 
@@ -184,6 +188,7 @@ assuming every error carries them.
 
 ### github
 
+{/* cite github-clean-run-prints-nothing */}
 One [GitHub Actions workflow command](https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-error-message)
 per error. GitHub renders each line as an annotation pinned to the file and line
 in the pull request diff. There is no summary line and no per-file heading, only
@@ -229,6 +234,7 @@ carries no column even in a format that can supply one:
 ::error file=missing-type.md::[google:okf:0.1] (root) must have required property 'type'
 ```
 
+{/* cite workflow-command-message-escaping */}
 `<message>` is escaped as the workflow-command protocol requires: `%` becomes
 `%25`, a carriage return `%0D`, and a newline `%0A`. GitHub decodes them when it
 renders the annotation. Without it, a schema `pattern` containing `%` would
@@ -245,6 +251,7 @@ there; see [CI recipes](/manni/meta/ci/recipes/).
 
 #### github annotations from fill
 
+{/* cite fill-github-one-error-per-unfilled-required */}
 [`fill`](/manni/meta/reference/cli/#meta-fill) emits the same workflow command, for the
 work it could **not** do. That is one `::error` per property the schema lists as
 `required` that was not filled confidently. It is exactly the set that makes
@@ -277,6 +284,7 @@ file paths instead.
 
 ### sarif
 
+{/* cite sarif-log-is-version-2-1-0 */}
 A [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html)
 log on stdout, which GitHub code scanning, GitLab, and Azure DevOps ingest
 directly. Findings become tracked alerts with state across commits.
@@ -316,6 +324,7 @@ JUnit XML on stdout, which Jenkins, GitLab, CircleCI, and Azure render in their
 $ manni meta validate "docs/**/*.md" --format junit > manni-junit.xml
 ```
 
+{/* cite junit-one-testcase-per-file */}
 One `<testcase>` per **file** and one `<failure>` per violation, so the tab
 reads "2 tests, 1 failed" and matches the `2 files checked, 1 failed` summary.
 GitHub Actions has no native JUnit renderer; on GitHub prefer `github` for
@@ -324,6 +333,7 @@ that render it.
 
 ## Color and TTY behavior
 
+{/* cite machine-formats-are-never-colorized */}
 manni meta follows [clig.dev](https://clig.dev/) conventions. Primary output goes
 to stdout, diagnostics go to stderr, and color is emitted only when it is safe
 to do so. Color affects only the `pretty` format; `json`, `github`, `sarif`, and

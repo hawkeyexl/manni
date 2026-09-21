@@ -19,6 +19,7 @@ telling you.
 
 ## Decode the error line
 
+{/* cite pretty-is-the-default-format */}
 A failing file in `pretty` output (the default) looks like this:
 
 ```
@@ -62,6 +63,8 @@ a fix.
     (root)  must have required property 'type'  [google:okf:0.1]
 ```
 
+{/* cite absent-field-reported-at-root */}
+{/* cite absent-field-has-no-line */}
 The schema requires a field your frontmatter doesn't have. The field name is in
 the message: here, `type`. The location is `(root)` because the field is absent,
 so there's no line to point at.
@@ -128,11 +131,13 @@ The message names the format or constraint that failed.
     (root)  must have required property 'type'  [google:okf:0.1]
 ```
 
+{/* cite no-frontmatter-reads-as-empty-metadata */}
 A file with no frontmatter block reads as empty metadata, so it fails the same
 way a file missing a required field does. If you expected this file to have
 metadata, it's probably missing its opening `---` fence. Or the block isn't at
 the very top of the file.
 
+{/* cite frontmatter-fences-per-flavor */}
 **Fix.** Add a frontmatter block at the top of the file, between `---` fences
 (or `+++`/`;;;` for
 [TOML/JSON](/manni/meta/reference/formats/#frontmatter-flavors)):
@@ -161,6 +166,8 @@ the very top of the file.
     (root)  Invalid YAML frontmatter: <parser detail>  [(parse)]
 ```
 
+{/* cite parse-error-names-the-flavor */}
+{/* cite parse-schema-id-is-parse */}
 The frontmatter block exists but isn't valid, so manni meta can't read it. The
 message names the flavor: `Invalid YAML frontmatter`,
 `Invalid TOML frontmatter`, or `Invalid JSON frontmatter`. The schema in
@@ -196,6 +203,8 @@ flavor's fences and syntax.
     /provenance  provenance lines 16-18 changed since claude-fable-5 wrote them — run manni meta derive  (line 16)  [derived:stale]
 ```
 
+{/* cite provenance-entry-pins-range-with-hash */}
+{/* cite changed-pin-message */}
 The repository records which lines of each page a machine wrote, in a
 [`provenance`](/manni/meta/set-up/machine-authorship/) list. Each entry pins a
 range with a hash of its text. Your change edited lines an agent was credited
@@ -207,6 +216,8 @@ more messages come from the same record:
     /provenance  provenance is unset for lines 26; blame says Claude Opus 5 (ecb9b0a) — run manni meta derive  (line 26)  [derived:stale]
 ```
 
+{/* cite stale-says-blame-names-another-machine */}
+{/* cite unset-lines-blame-credits-a-machine */}
 The first says git names a different machine for the range than the record
 does. The second says a commit credited a machine for lines the record does
 not cover yet.
@@ -224,6 +235,9 @@ docs/limits.md
 1 file, 1 changed, 1 range written
 ```
 
+{/* cite derive-rereads-git-blame */}
+{/* cite moved-text-is-never-a-finding */}
+{/* cite human-rewritten-lines-drop-out */}
 `derive` reads git blame again. Lines the agent's commit still owns keep the
 agent's name, and the lines you rewrote drop out of the record. Do not edit
 the `provenance` entries by hand. The hash has to match the text, and `derive`
@@ -232,6 +246,8 @@ added above it, is never a finding.
 
 ### Schema not found
 
+{/* cite operational-error-one-stderr-line-prefixed */}
+{/* cite unknown-builtin-schema-message */}
 Sometimes manni meta stops before validating any file and prints a single line to
 **stderr**, prefixed with `manni:`:
 
@@ -248,6 +264,7 @@ or:
 manni: Schema file not found: "./schemas/my.schema.json".
 ```
 
+{/* cite schema-not-found-exits-2 */}
 Your document is not the problem here. The configuration is. manni meta couldn't
 load the schema it was told to use, so it can't validate anything. This exits
 with code `2` (an operational error), not `1`.
@@ -295,6 +312,7 @@ before CI does.
 
 ## Let manni meta draft the fix
 
+{/* cite fill-resolves-same-schema */}
 Sometimes the failure is a *missing* field rather than a malformed one, and
 several pages fail the same way. Then
 [`manni meta fill`](/manni/meta/reference/cli/#meta-fill) can propose the values for you.
@@ -327,6 +345,7 @@ manni meta fill docs/intro.md && manni meta validate docs/intro.md
 before you commit; treat a proposed `description` as a first draft.
 </Aside>
 
+{/* cite fill-detects-provider */}
 `fill` picks an LLM provider by detecting one, so it runs with whatever
 credentials you have. With none at all, it falls back to a local model it
 downloads on first use. The report's first line names what it used. On a machine
@@ -334,12 +353,16 @@ with no API key, pass `--provider`, or see the [`fill`
 reference](/manni/meta/reference/cli/#meta-fill) before the first run. Then the download
 is a choice rather than a surprise.
 
+{/* cite local-flag-keeps-inference-on-your-hardware */}
 You are usually fixing someone else's repo. So it is worth knowing that `fill`
 is the one manni meta command that sends the page off your machine. [Run `fill`
 under a data-egress policy](/manni/meta/set-up/fill-providers/) spells out what
 each call transmits, and what the cache keeps. `--local` is the flag that keeps
 inference on your own hardware.
 
+{/* cite fill-skips-below-threshold */}
+{/* cite fill-records-meta-provenance */}
+{/* cite fill-leaves-valid-fields-alone */}
 Anything below the confidence threshold is skipped and named, so you still get a
 short list of what needs you. The `meta-provenance` line records which fields
 the model wrote, in the page itself. A reviewer deletes that entry once the
