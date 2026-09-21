@@ -181,7 +181,9 @@ export function renderJson(run: LintRun): string {
  * The level is the severity, not a constant `error`. The family scale was
  * chosen to be GitHub's for exactly this: `::warning` and `::notice` render
  * inline like `::error` but do not fail the check, which is the severity
- * invariant in GitHub's terms. Every structural finding is an `error` today.
+ * invariant in GitHub's terms, and it is load-bearing rather than theoretical:
+ * `unsupported_content_kind` is a `warning`, so it annotates the file without
+ * failing the job.
  *
  * Line breaks are escaped rather than collapsed to spaces, as this once did.
  * `%0A` is the format's own answer and GitHub renders it as a multi-line

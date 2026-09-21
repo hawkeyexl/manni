@@ -267,11 +267,15 @@ export interface DocumentParser {
  * How much a finding weighs, on the one scale every manni tool speaks
  * (`src/shared/severity.ts`): `notice | warning | error`.
  *
- * Every structural finding is an `error`: a template either describes a
- * document or it does not. The scale is the family's and not this tool's
- * private pair, because a flag or config key two domains both have carries the
- * same name *and* the same values. Re-exported so `lint.Severity` names the
- * same type a caller already has.
+ * Almost every structural finding is an `error`, since a template either
+ * describes a document or it does not. `unsupported_content_kind` is the
+ * exception and is a `warning`: the rule never ran, so the page may still be
+ * fine, and a warning never moves the exit code.
+ *
+ * The scale is the family's and not this tool's private pair, because a flag
+ * or config key two domains both have carries the same name *and* the same
+ * values. Re-exported so `lint.Severity` names the same type a caller already
+ * has.
  */
 export type { Severity };
 
