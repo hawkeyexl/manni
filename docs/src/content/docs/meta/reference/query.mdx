@@ -775,8 +775,9 @@ manni meta query --param author="O'Brien" \
   or underscore. Anything else is refused, because a name the scanner cannot see
   could never be bound.
 - Parameters work anywhere a value goes, in reads, `--check` gates, and
-  `UPDATE`s. Anonymous `?` placeholders are not supported from the CLI, because
-  flag order is not a contract to rely on.
+  `UPDATE`s. `--param` binds by name, so an anonymous `?` placeholder has no
+  spelling that reaches it. The engine binds NULL, the statement matches
+  nothing, and a `--check` gate over it passes. Name every parameter.
 
 {/* cite param-string-is-the-default */}
 Strings are the default because metadata is mostly strings, and the data columns

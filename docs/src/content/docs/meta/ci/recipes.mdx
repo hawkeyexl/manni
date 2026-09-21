@@ -248,9 +248,9 @@ SARIF recipe. The run worth reporting is the one that failed.
 
 ## pre-commit
 
-A pre-commit hook catches metadata errors before they reach CI. manni meta
-publishes two [pre-commit](https://pre-commit.com/) hooks, so the whole
-configuration is a few lines:
+A pre-commit hook catches metadata errors before they reach CI. manni publishes
+three [pre-commit](https://pre-commit.com/) hooks. Two of them cover metadata,
+so the whole configuration is a few lines:
 
 ```yaml title=".pre-commit-config.yaml"
 repos:
@@ -269,6 +269,10 @@ including [`provenance`](/manni/meta/set-up/machine-authorship/). With
 it, so the edit and its record land in one commit. Leave the line out when the
 config manages no fields. `derive` has nothing to do then, and says so with
 exit 2.
+
+{/* cite cite-hook-checks-staged-pages */}
+The third hook is `manni-cite`. It checks the staged pages' citations against
+their sources.
 
 When `manni-meta-derive` changes a file, pre-commit stops the commit once, as
 it does for any formatter. Re-stage the files and commit again. The second

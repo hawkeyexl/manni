@@ -1,21 +1,21 @@
 ---
 title: OKF
-description: What OKF is, the built-in default schema manni meta validates with when nothing else is configured.
+description: What OKF is, and how its v0.1 schema anchors the set manni meta validates with when nothing else is configured.
 type: term
 id: okf
 label: OKF
 alt-labels: [Open Knowledge Format]
 related-terms: [schema]
-abstract: The format of manni meta's built-in default schema.
+abstract: The format of the schema anchoring manni meta's default set.
 definition: >-
-  The Open Knowledge Format, whose v0.1 schema ships with manni meta as the
-  built-in default.
+  The Open Knowledge Format, whose v0.1 schema ships with manni meta and
+  anchors its built-in default set.
 ---
 
 <p>{frontmatter.definition}</p>
 
 The schema's id is `google:okf:0.1`. OKF requires only `type` and treats every
 other field (`title`, `description`, `resource`, `tags`, `timestamp`) as
-recommended, tolerating unknown keys. It's what validates your files when
-nothing else is configured. See
+recommended, tolerating unknown keys. When nothing else is configured, it
+validates your files alongside `passo-uno:seven-action:1.0`. See
 [the built-in OKF schema](/manni/meta/reference/okf-schema/).
