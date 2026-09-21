@@ -633,9 +633,9 @@ pinned text moved elsewhere is left for a run that names it.
 
 {/* cite accept-skips-blank-claim */}
 `update --accept` re-pins the unit at the claim's first line. That is the
-paragraph there, the fenced block there, or the table rows there. A line whose
-first non-blank character is `|` is a table row, so a table indented inside a
-list item counts.
+paragraph there, the fenced block there, the lines inside a fenced block
+there, or the table rows there. A line whose first non-blank character is `|`
+is a table row, so a table indented inside a list item counts.
 
 A paragraph that gained a sentence gained it as part of the same statement, so
 a claim over a paragraph grows with it. A table row is a statement of its own.
@@ -643,15 +643,22 @@ A claim keeps the number of rows it was minted over. One recorded line re-pins
 one row, and five re-pin five. When the table no longer reaches that far, the
 claim is skipped rather than guessed at.
 
+Lines inside a fenced block work the way table rows do. A claim minted over
+three of them re-pins three, at the line it starts on, and never widens to the
+block around them. A claim on the fence's opening line still re-pins the whole
+block. When the claim's lines reach the closing fence, or run past it, the
+claim is skipped.
+
 It skips a claim it cannot re-pin, and names the reason beside the finding:
 
 | The claim's first line | Message |
 |---|---|
 | Is blank | `Not re-pinned: the line is blank.` |
-| Sits inside a fenced block | `Not re-pinned: the line sits inside a fenced block.` |
+| Holds lines that reach out of the fenced block | `Not re-pinned: the claim's lines are not all inside one fenced block.` |
 | Starts no paragraph | `Not re-pinned: the line does not start a paragraph.` |
 | Is outside the page body | `Not re-pinned: the line is outside the page body.` |
 | Opens fewer rows than the claim covers | `Not re-pinned: the table no longer holds every row the claim covers.` |
+| Opens no fenced block, under `quote: true` | `Not re-pinned: quote: true, and the line no longer opens a fenced block.` |
 | Opens a unit over 5,000 lines | `Not re-pinned: the paragraph spans 6000 lines, more than 5000.` |
 | Holds a cite marker | `Not re-pinned: that line now holds a cite marker, not claim text.` |
 | Opens nothing but table rules | `Not re-pinned: that line is a table rule, not claim text.` |
