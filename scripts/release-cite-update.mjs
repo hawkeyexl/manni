@@ -107,7 +107,6 @@ export function verdict(status, timedOut = false) {
   };
 }
 
-
 /**
  * The line this step leaves in the release log, taken from the command's own
  * report rather than counted again here.
