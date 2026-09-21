@@ -227,7 +227,13 @@ const DITA: XmlVocabulary = {
     "section",
     "example",
   ],
-  titles: ["title"],
+  // `<glossterm>` is how a `<glossentry>` titles itself. It never carries a
+  // `<title>`, so a vocabulary listing `title` alone reads every real glossary
+  // topic as untitled and refuses the whole file. DITA-OT's own docset has
+  // thirteen of them. `src/term/core/readers/dita.ts` has always read
+  // `<glossterm>` as the term, so the two halves of this package disagreed
+  // until the vendored corpus made it visible.
+  titles: ["title", "glossterm"],
   titleWrappers: [],
   transparent: [
     "dita",
@@ -247,7 +253,11 @@ const DITA: XmlVocabulary = {
   ],
   // `<cmd>` is the imperative line of a `<step>`; treating it as a paragraph is
   // what makes a DITA `<steps>` item shaped like a Markdown list item.
-  paragraphs: ["p", "shortdesc", "cmd", "info"],
+  //
+  // `<glossdef>` is the definition, and it holds prose either directly or in
+  // `<p>`s. A paragraph rather than a wrapper, because a wrapper would drop the
+  // direct-text spelling, which is the common one.
+  paragraphs: ["p", "shortdesc", "cmd", "info", "glossdef"],
   code: ["codeblock", "pre"],
   codeLangAttributes: ["outputclass"],
   unorderedLists: ["ul", "sl", "steps-unordered"],

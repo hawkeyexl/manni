@@ -6,6 +6,7 @@
  * tests.
  */
 import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -763,5 +764,28 @@ describe("xml parser: tgdp:how-to:1.6", () => {
       "Rotate the key@2",
       "See also@2",
     ]);
+  });
+});
+
+describe("xml parser: glossary topics", () => {
+  /**
+   * A `<glossentry>` titles itself with `<glossterm>`, never `<title>`. It was
+   * in `sections` from the start and `glossterm` was in no bucket, so every
+   * real glossary topic parsed to nothing and reported "no titled section was
+   * found". The only DITA fixture until now was a hand-written `<topic>`
+   * carrying a `<title>`, which is why it never showed. DITA-OT's own docset
+   * has thirteen of these, and all thirteen failed.
+   */
+  it("titles a glossentry by its glossterm", () => {
+    const file = join(here, "..", "fixtures", "dita", "glossentry.dita");
+    const tree = xmlParser.parse(readFileSync(file, "utf8"), file);
+    expect(outline(tree.sections)).toEqual(["option@1"]);
+  });
+
+  it("reads a glossdef as the definition's prose", () => {
+    const file = join(here, "..", "fixtures", "dita", "glossentry.dita");
+    const tree = xmlParser.parse(readFileSync(file, "utf8"), file);
+    const entry = section(tree.sections, "option");
+    expect(entry.children.map((n) => n.kind)).toEqual(["paragraph"]);
   });
 });
