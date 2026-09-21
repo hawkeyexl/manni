@@ -915,11 +915,16 @@ function mergeRules(parent: Rule, child: Rule): Rule {
   // which it cannot. Leaving the child's raw array in the spread and then
   // overwriting it worked, but it read as though the spread were the whole
   // answer.
+  const sections = mergeRuleLists(parent.sections, child.sections);
   const { sections: _parentSections, ...parentRest } = parent;
   const { sections: _childSections, ...childRest } = child;
   const merged: Rule = { ...parentRest, ...childRest };
-  const sections = mergeRuleLists(parent.sections, child.sections);
-  if (sections) merged.sections = sections;
+  // `!== undefined` rather than truthiness. The two are equivalent here, since
+  // `mergeRuleLists` returns `Rule[] | undefined` and an empty array is truthy
+  // in any case - but a rule may legitimately carry `sections: []`, meaning it
+  // allows none, and a reader should not have to know that `[]` survives a
+  // truthiness test to be sure that case is kept.
+  if (sections !== undefined) merged.sections = sections;
   return merged;
 }
 
