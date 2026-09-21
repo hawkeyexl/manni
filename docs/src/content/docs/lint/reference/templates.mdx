@@ -372,21 +372,14 @@ deliberately by naming the element:
 A parser declares the content kinds it can emit. `manni lint tools` prints the
 matrix from your own installation, one `kinds:` line per format.
 
-| Block key | Markdown | MDX | HTML | AsciiDoc | reStructuredText | XML |
-|---|---|---|---|---|---|---|
-| `paragraphs` | yes | yes | yes | yes | yes | yes |
-| `codeBlocks` | yes | yes | yes | yes | yes | yes |
-| `lists` | yes | yes | yes | yes | yes | yes |
-| `tables` | yes | yes | yes | yes | yes | yes |
-| `admonitions` | yes | yes | yes | yes | yes | yes |
-| `images` | yes | yes | yes | yes | yes | yes |
-| `blockquotes` | yes | yes | yes | yes | yes | yes |
-| `definitionLists` | no | no | yes | yes | yes | yes |
-| `elements` | no | yes | no | no | no | no |
+Only two keys are not universal, so the table says which those are rather than
+repeating "yes" fifty-four times.
 
-`elements` is MDX's alone, because plain Markdown has no JSX and reads
-`<Steps>` as raw HTML. `definitionLists` is absent from both Markdown flavours,
-which have no definition list in the spec.
+| Block key | Reported by |
+|---|---|
+| `paragraphs`, `codeBlocks`, `lists`, `tables`, `admonitions`, `images`, `blockquotes` | Every format. |
+| `definitionLists` | HTML, AsciiDoc, reStructuredText and XML. Neither Markdown flavour has a definition list in the spec. |
+| `elements` | MDX alone. Plain Markdown has no JSX and reads `<Steps>` as raw HTML. |
 
 The file extensions behind those columns:
 
