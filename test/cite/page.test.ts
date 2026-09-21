@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import {
   MARKER_JSON,
+  MAX_IDS_PER_MARKER,
   MAX_MARKERS_PER_PAGE,
   bodyLineOf,
   readPage,
@@ -72,7 +73,7 @@ describe("readPage: formats", () => {
     expect(page.format).toBe("mdx");
     expect(page.findings).toEqual([]);
     expect(page.statements).toMatchObject([
-      { line: 14, payload: { kind: "ref", id: "retries" }, anchorLine: 15 },
+      { line: 14, payload: { kind: "ref", ids: ["retries"] }, anchorLine: 15 },
     ]);
     expect(page.citations[0]?.marker?.line).toBe(14);
   });
@@ -97,7 +98,7 @@ describe("readPage: formats", () => {
     // entry that is nowhere: the page's own end of the pair is missing.
     expect(page.findings).toMatchObject([{ rule: "marker-orphan", line: 5, id: "fetch-timeout" }]);
     expect(page.statements).toMatchObject([
-      { line: 5, payload: { kind: "ref", id: "fetch-timeout" }, anchorLine: 6 },
+      { line: 5, payload: { kind: "ref", ids: ["fetch-timeout"] }, anchorLine: 6 },
     ]);
   });
 
@@ -321,7 +322,7 @@ describe("readPage: markers", () => {
     const page = fixture("marker.md");
     expect(page.findings).toEqual([]);
     expect(page.statements).toMatchObject([
-      { line: 18, payload: { kind: "ref", id: "retries" }, raw: "cite retries", anchorLine: 19 },
+      { line: 18, payload: { kind: "ref", ids: ["retries"] }, raw: "cite retries", anchorLine: 19 },
     ]);
     expect(page.citations[0]?.marker).toBe(page.statements[0]);
   });
@@ -391,7 +392,7 @@ describe("readPage: markers", () => {
   it("reports a payload that is not an id, and an empty one, with the reason", () => {
     const page = readPage("p.md", "<!-- cite Fetch Timeout -->\nx\n\n<!-- cite -->\ny\n");
     expect(rules(page.findings)).toEqual(["marker-invalid", "marker-invalid"]);
-    expect(page.findings[0]?.message).toBe("invalid marker: payload is not an id");
+    expect(page.findings[0]?.message).toBe('invalid marker: "Fetch" is not an id');
     expect(page.findings[1]?.message).toBe("invalid marker: empty payload");
   });
 
@@ -507,5 +508,109 @@ describe("validateEntry", () => {
       "/claim must have required property 'integrity'",
     );
     expect(validateEntry({ source, id: "Fetch Timeout" })).toMatch(/^\/id must match pattern/);
+  });
+});
+
+/**
+ * Proposal 0056: one marker may name several ids, and every one of them
+ * anchors the text the marker anchors. A marker naming one id is what 0044
+ * shipped, so every page written before this grammar reads the same way.
+ */
+describe("readPage: a marker naming several ids", () => {
+  /** Three entries with a claim pin and no claim lines, so a marker anchors them. */
+  const three = (body: string): string =>
+    `---\ntitle: Limits\ncitations:\n` +
+    ["fetch-timeout", "retries", "backoff"]
+      .map(
+        (id) =>
+          `  - id: ${id}\n    claim:\n      integrity: ${CLAIM_PIN}\n    source:\n      file: src/limits.ts\n      integrity: ${PIN}\n`,
+      )
+      .join("") +
+    `---\n# Limits\n\n${body}`;
+
+  it("resolves every id to its entry, all anchored by the one marker", () => {
+    const page = readPage(
+      "p.md",
+      three("<!-- cite fetch-timeout retries backoff -->\nThe fetch timeout is 10 seconds.\n"),
+    );
+    expect(page.findings).toEqual([]);
+    expect(page.statements[0]?.payload).toEqual({
+      kind: "ref",
+      ids: ["fetch-timeout", "retries", "backoff"],
+    });
+    // One marker, one anchor line, three citations that share it.
+    expect(page.citations.map((c) => c.marker?.line)).toEqual([25, 25, 25]);
+    expect(page.statements[0]?.anchorLine).toBe(26);
+  });
+
+  it("raises one marker-orphan per id with no entry, and checks the rest", () => {
+    const page = readPage(
+      "p.md",
+      three("<!-- cite fetch-timeout retires backof -->\nThe fetch timeout is 10 seconds.\n"),
+    );
+    expect(rules(page.findings)).toEqual(["marker-orphan", "marker-orphan"]);
+    expect(page.findings.map((f) => f.message)).toEqual([
+      'no entry has id "retires"',
+      'no entry has id "backof"',
+    ]);
+    // The word that was spelled right still anchors its entry.
+    expect(page.citations[0]?.marker?.line).toBe(25);
+  });
+
+  it("reports one marker-invalid for a marker with two bad words", () => {
+    const page = readPage("p.md", three("<!-- cite Retries Backoff -->\nThe claim.\n"));
+    expect(rules(page.findings)).toEqual(["marker-invalid"]);
+    expect(page.findings[0]?.message).toBe('invalid marker: "Retries" is not an id');
+  });
+
+  it("keeps marker-repeated for an id two markers both name", () => {
+    const page = readPage(
+      "p.md",
+      three(
+        "<!-- cite fetch-timeout retries -->\n<!-- cite retries backoff -->\nThe fetch timeout is 10 seconds.\n",
+      ),
+    );
+    expect(rules(page.findings)).toEqual(["marker-repeated"]);
+    expect(page.findings[0]?.message).toBe(
+      "retries is named by markers at lines 25 and 26; the first anchors it.",
+    );
+    // The first marker anchors it, and the rest of both lists resolve.
+    expect(page.citations.map((c) => c.marker?.line)).toEqual([25, 25, 26]);
+  });
+
+  it("refuses a quote id beside a plain one, because that would be two spans", () => {
+    const content =
+      `---\ntitle: Limits\ncitations:\n` +
+      `  - id: quoted-limits\n    quote: true\n    source:\n      file: src/limits.ts\n      integrity: ${PIN}\n` +
+      `  - id: fetch-timeout\n    claim:\n      integrity: ${CLAIM_PIN}\n    source:\n      file: src/limits.ts\n      integrity: ${PIN}\n` +
+      `---\n# Limits\n\n<!-- cite quoted-limits fetch-timeout -->\nThe fetch timeout is 10 seconds.\n`;
+    const page = readPage("p.md", content);
+    expect(rules(page.findings)).toEqual(["anchor-invalid"]);
+    expect(page.findings[0]?.message).toBe(
+      "quoted-limits: a quote entry shares a marker with a non-quote entry. Give the quote its own marker.",
+    );
+    expect(page.findings[0]?.line).toBe(18);
+  });
+
+  it("leaves a list of quote ids alone: every one anchors the same block", () => {
+    const quote = (id: string): string =>
+      `  - id: ${id}\n    quote: true\n    source:\n      file: src/limits.ts\n      integrity: ${PIN}\n`;
+    const fence = String.fromCharCode(96, 96, 96);
+    const content =
+      `---\ntitle: Limits\ncitations:\n${quote("one")}${quote("two")}---\n# Limits\n\n` +
+      `<!-- cite one two -->\n${fence}ts\nexport const FETCH_TIMEOUT_MS = 10_000;\n${fence}\n`;
+    const page = readPage("p.md", content);
+    expect(page.findings).toEqual([]);
+    expect(page.citations.map((c) => c.marker?.line)).toEqual([17, 17]);
+  });
+
+  it("refuses more than 25 ids on one marker, and reads no id from it", () => {
+    const ids = Array.from({ length: 26 }, (_v, n) => `id-${String(n)}`).join(" ");
+    const page = readPage("p.md", three(`<!-- cite ${ids} -->\nThe claim.\n`));
+    expect(rules(page.findings)).toEqual(["marker-invalid"]);
+    expect(page.findings[0]?.message).toBe(
+      "invalid marker: more than 25 ids in one marker (26); write a second marker",
+    );
+    expect(MAX_IDS_PER_MARKER).toBe(25);
   });
 });

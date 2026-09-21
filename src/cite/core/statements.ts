@@ -1,15 +1,20 @@
 /**
- * Markers: `cite <id>` inside the format's comment syntax.
+ * Markers: `cite <id> [<id>…]` inside the format's comment syntax.
  *
- * | Format        | Forms                                                        |
- * |---------------|--------------------------------------------------------------|
- * | markdown, mdx | `<!-- cite … -->`, `{/* cite … *\/}`, `[comment]: # (cite …)` |
- * | html, xml     | `<!-- cite … -->`                                            |
- * | asciidoc      | `// (cite …)`                                                |
- * | rst           | `.. (cite …)`                                                |
+ * | Format        | Forms                                                                              |
+ * |---------------|------------------------------------------------------------------------------------|
+ * | markdown, mdx | `<!-- cite a b -->`, `{/* cite a b *\/}`, `[comment]: # (cite a b)`                 |
+ * | html, xml     | `<!-- cite a b -->`                                                                |
+ * | asciidoc      | `// (cite a b)`                                                                    |
+ * | rst           | `.. (cite a b)`                                                                    |
  *
- * A marker carries an id and nothing else (`cite true` names id `true`). A
- * payload starting with `{` was the inline entry of proposal 0044's first
+ * A marker carries one or more ids, separated by spaces, and nothing else
+ * (`cite true` names id `true`). Every id in the list anchors the text the
+ * marker anchors, so a paragraph resting on four sources carries one comment
+ * rather than four (proposal 0056). An id cannot hold `(`, `)`, `{`, `}`, `<`,
+ * `>` or a leading `-`, so no list can close a parenthesised comment early.
+ *
+ * A word starting with `{` was the inline entry of proposal 0044's first
  * draft; it is `marker-invalid` now, because an entry lives in frontmatter or
  * a manifest and a source is never written into the body. The scanner uses
  * `indexOf` for the delimiters, never a regex over the whole page, and is
@@ -114,12 +119,56 @@ function nextLineStart(content: string, offset: number): number {
   return lineEnd(content, offset) + 1;
 }
 
+/**
+ * A marker holds at most 25 ids. Past that it is `marker-invalid`, on the
+ * same grounds as the 500 markers a page may hold: an unbounded list is an
+ * unbounded allocation from a file the tool did not write. The cap counts
+ * ids rather than characters, because a character cap moves with how long
+ * the ids happen to be. Proposal 0056 is the record.
+ */
+export const MAX_IDS_PER_MARKER = 25;
+
+/**
+ * The payload, as one or more ids separated by spaces. The checks run in a
+ * stated order and the first defect is the finding, so one marker raises one
+ * `marker-invalid` however many of its words are wrong.
+ *
+ * A run of spaces separates as one, which is what a soft-wrapped editor and a
+ * shell both do. A comma is never a separator: `cite a,b` is one token, that
+ * token is not an id, and the message quotes it back (proposal 0034's one
+ * separator per list).
+ */
 function payloadOf(payload: string): InlineStatement["payload"] {
   if (payload === "") return { kind: "bad", reason: "empty payload" };
-  // An entry lives in frontmatter or a manifest; the body carries a name.
-  if (payload.startsWith("{")) return { kind: "bad", reason: "a JSON payload", json: true };
-  if (ID.test(payload)) return { kind: "ref", id: payload };
-  return { kind: "bad", reason: "payload is not an id" };
+  // A marker is one line: `isMarkerLine` tests one line, so half a wrapped
+  // marker would land inside the pin of the text below it.
+  if (/[\r\n]/.test(payload)) {
+    return { kind: "bad", reason: "a marker is one line; write two markers" };
+  }
+  const words = payload.split(" ").filter((word) => word !== "");
+  // An entry lives in frontmatter or a manifest; the body carries names. This
+  // runs before the id test so the more actionable message fires.
+  if (words.some((word) => word.startsWith("{"))) {
+    return { kind: "bad", reason: "a JSON payload", json: true };
+  }
+  if (words.length > MAX_IDS_PER_MARKER) {
+    return {
+      kind: "bad",
+      reason: `more than ${String(MAX_IDS_PER_MARKER)} ids in one marker (${String(words.length)}); write a second marker`,
+    };
+  }
+  const bad = words.find((word) => !ID.test(word));
+  if (bad !== undefined) return { kind: "bad", reason: `"${bad}" is not an id` };
+  const seen = new Set<string>();
+  for (const word of words) {
+    // One id named twice inside one marker has no second anchor and no winner
+    // to pick, so it is a typo in one line rather than `marker-repeated`.
+    if (seen.has(word)) {
+      return { kind: "bad", reason: `"${word}" is named twice in one marker` };
+    }
+    seen.add(word);
+  }
+  return { kind: "ref", ids: words };
 }
 
 /** Whether the text between a form's delimiters is a cite statement. */
@@ -441,12 +490,39 @@ function writtenForm(format: string): StatementForm {
 }
 
 /** Render a marker in the format's first form, e.g. `<!-- cite fetch-timeout -->`. */
-export function formatStatement(format: string, payload: { kind: "ref"; id: string }): string {
+export function formatStatement(
+  format: string,
+  payload: { kind: "ref"; ids: readonly string[] },
+): string {
   const form = writtenForm(format);
   // `[comment]: # (`, `// (` and `.. (` hug their parentheses; the comment
   // forms take a space inside each delimiter.
   const pad = form.open.endsWith("(") ? "" : " ";
-  return `${form.open}${pad}cite ${payload.id}${pad}${form.close}`;
+  return `${form.open}${pad}cite ${payload.ids.join(" ")}${pad}${form.close}`;
+}
+
+/**
+ * `content` with the marker's payload replaced by `ids`, in the marker's own
+ * form: an id joined into a list, or one dropped out of it.
+ *
+ * The marker is rewritten where it stands rather than rendered afresh, so a
+ * page that spells its markers in a form `formatStatement` would not choose
+ * keeps that form, and its indentation and inner spacing are untouched. The
+ * edit never changes the line count, so no claim below it moves.
+ */
+export function respellStatement(
+  content: string,
+  statement: InlineStatement,
+  ids: readonly string[],
+): string {
+  const text = content.slice(statement.start, statement.end);
+  // No open delimiter carries `cite`, so the first occurrence of the trimmed
+  // inner text is the payload itself.
+  const at = text.indexOf(statement.raw);
+  if (at === -1) return content;
+  const respelled = `cite ${ids.join(" ")}`;
+  const marker = text.slice(0, at) + respelled + text.slice(at + statement.raw.length);
+  return content.slice(0, statement.start) + marker + content.slice(statement.end);
 }
 
 /**

@@ -146,6 +146,55 @@ describe("runRemove: an entry in the page's frontmatter", () => {
     expect(await findings("pages/marker.md")).toEqual([]);
   });
 
+  /** Two entries under one marker, and a claim-lines entry below them. */
+  const shared = (name: string): string =>
+    write(name, [
+      "---",
+      "title: Limits",
+      "citations:",
+      "  - id: retries",
+      "    claim:",
+      "      integrity: sha256-3049e93e72873542aac2c1c4778fa655e70656f03c08f202444062f404a3315d",
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      "      integrity: sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3",
+      "  - id: backoff",
+      "    claim:",
+      "      integrity: sha256-3049e93e72873542aac2c1c4778fa655e70656f03c08f202444062f404a3315d",
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      "      integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f",
+      "---",
+      "# Limits",
+      "",
+      "<!-- cite retries backoff -->",
+      "Retries default to 3.",
+    ]);
+
+  it("drops one id out of a marker and leaves the line where it was", async () => {
+    const label = shared("shared-marker.md");
+    expect(await findings(label)).toEqual([]);
+    const run = await remove({ inputs: [label], only: ["retries"] });
+    expect(run.removed).toBe(1);
+    expect(run.pages[0]?.removed[0]?.markerLines).toEqual([21]);
+    const after = onDisk(label);
+    expect(after).toContain("<!-- cite backoff -->\nRetries default to 3.");
+    expect(after).not.toContain("retries");
+    expect(await findings(label)).toEqual([]);
+  });
+
+  it("drops the whole line when the last id goes out of the marker", async () => {
+    const label = shared("shared-last.md");
+    const run = await remove({ inputs: [label], only: ["retries", "backoff"] });
+    expect(run.removed).toBe(2);
+    const after = onDisk(label);
+    expect(after).not.toContain("cite");
+    expect(after).toContain("# Limits\n\nRetries default to 3.\n");
+    expect(await findings(label)).toEqual([]);
+  });
+
   it("removes a bare pin by its pointer, since it has no id to name", async () => {
     workspace("whole-file.md");
     const run = await remove({ inputs: ["pages/whole-file.md"], only: ["/citations/0"] });
@@ -503,4 +552,40 @@ describe("remove reporters", () => {
       markerLines: [18],
     });
   });
+});
+
+/**
+ * Proposal 0056 widened the marker payload to a list. The corpus already
+ * holds thousands of one-id markers written under 0044, and none of them may
+ * change meaning, move, or be rewritten into the new form. This is the bar
+ * the proposal calls its acceptance test.
+ */
+describe("a marker written under proposal 0044", () => {
+  it("still checks clean, byte for byte as the page holds it", async () => {
+    workspace("marker.md");
+    const before = onDisk("pages/marker.md");
+    expect(await findings("pages/marker.md")).toEqual([]);
+    expect(before).toContain("<!-- cite retries -->");
+    // A check writes nothing, so the one-id spelling is still on the page.
+    expect(onDisk("pages/marker.md")).toBe(before);
+  });
+
+  it("still goes out whole when its entry is removed, with the claim below it moving up", async () => {
+    workspace("remove-shift.md");
+    const before = onDisk("pages/remove-shift.md").split("\n");
+    expect(before.filter((line) => line.includes("cite retries"))).toEqual([
+      "<!-- cite retries -->",
+    ]);
+    const run = await remove({ inputs: ["pages/remove-shift.md"], only: ["retries"] });
+    expect(run.removed).toBe(1);
+    const after = onDisk("pages/remove-shift.md").split("\n");
+    // One line fewer in the body, and the surviving claim moved up with it.
+    // Seven lines of entry, and the marker line.
+    expect(after.length).toBe(before.length - 8);
+    expect(after).not.toContain("<!-- cite retries -->");
+    expect(onDisk("pages/remove-shift.md")).toContain("      lines: 5\n");
+    expect(await findings("pages/remove-shift.md")).toEqual([]);
+  });
+
+
 });

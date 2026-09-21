@@ -4,9 +4,11 @@
  * The inverse of `add`, and it undoes all of what `add` did. The entry goes
  * out of the page's frontmatter, or out of the manifest that owns the page's
  * citations, whichever `add` would have written to. Every marker naming it
- * goes out of the body. The claims below each removed marker line move up
- * with the text they pin, which is the inverse of the shift `add --marker`
- * performs and the same rule (`shiftedEntries`).
+ * goes out of the body: the id goes out of the marker list, and the whole
+ * line goes when that id was the last one (proposal 0056). The claims below
+ * each removed marker line move up with the text they pin, which is the
+ * inverse of the shift `add --marker` performs and the same rule
+ * (`shiftedEntries`). A marker that only loses a word moves nothing.
  *
  * `--only` is required, one entry per occurrence, and nothing is written
  * until every one of them has been found: a run either removes what it was
@@ -22,12 +24,13 @@ import { STDIN_LABEL } from "../../meta/internal.js";
 import { ManifestSet } from "../core/manifest.js";
 import { citationInputs, pickExtractor, readPage } from "../core/page.js";
 import { shiftedEntries, withClaimLines } from "../core/shift.js";
-import { isMarkerLine } from "../core/statements.js";
+import { isMarkerLine, respellStatement } from "../core/statements.js";
 import { splitLines } from "../core/hash.js";
 import { removeFrontmatterCitations, removeLine, spliceEntryField, unifiedDiff } from "../core/write.js";
 import { CiteError } from "../errors.js";
 import type {
   CitationInput,
+  InlineStatement,
   ManifestChange,
   Removal,
   RemoveOptions,
@@ -122,13 +125,20 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
       }
       return [];
     };
-    /** The markers naming an id, as file lines. */
-    const markersFor = (id: string | undefined): number[] =>
+    /** The markers naming an id. */
+    const markersFor = (id: string | undefined): InlineStatement[] =>
       id === undefined
         ? []
-        : page.statements
-            .filter((s) => s.payload.kind === "ref" && s.payload.id === id)
-            .map((s) => s.line);
+        : page.statements.filter(
+            (s) => s.payload.kind === "ref" && s.payload.ids.includes(id),
+          );
+    /** Per marker line, the ids this run takes out of its list. */
+    const dropped = new Map<number, { statement: InlineStatement; ids: Set<string> }>();
+    const drop = (statement: InlineStatement, id: string): void => {
+      const held = dropped.get(statement.line) ?? { statement, ids: new Set<string>() };
+      held.ids.add(id);
+      dropped.set(statement.line, held);
+    };
 
     const removed: Removal[] = [];
     const indices = new Set<number>();
@@ -140,12 +150,13 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
         const id = idOf(input?.entry);
         const markers = markersFor(id);
         indices.add(index);
-        markerLines.push(...markers);
+        markerLines.push(...markers.map((s) => s.line));
+        if (id !== undefined) for (const statement of markers) drop(statement, id);
         removed.push({
           ...(id === undefined ? {} : { id }),
           index,
           ...(input === undefined ? {} : { origin: input.origin }),
-          markerLines: markers,
+          markerLines: markers.map((s) => s.line),
         });
         matched.add(value);
       }
@@ -153,8 +164,9 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
       // An id no entry carries, but a marker names: the marker alone.
       const markers = markersFor(value);
       if (markers.length === 0) continue;
-      markerLines.push(...markers);
-      removed.push({ id: value, markerLines: markers });
+      markerLines.push(...markers.map((s) => s.line));
+      for (const statement of markers) drop(statement, value);
+      removed.push({ id: value, markerLines: markers.map((s) => s.line) });
       matched.add(value);
     }
     const nothing: RemovePage = { file: label, removed: [], diff: "", written: false };
@@ -166,16 +178,31 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
     }
 
     // A marker sharing its line with text anchors that text, so the line is
-    // not the tool's to delete.
-    const ordered = [...new Set(markerLines)].sort((a, b) => a - b);
-    for (const line of ordered) {
+    // not the tool's to delete. The refusal is a property of the line rather
+    // than of the payload, so it holds however many ids the marker names.
+    const touched = [...new Set(markerLines)].sort((a, b) => a - b);
+    for (const line of touched) {
       if (!isMarkerLine(lines[line - 1] ?? "", format)) {
         const id = page.statements.find((s) => s.line === line)?.payload;
-        const named = id?.kind === "ref" ? ` ${id.id}` : "";
+        const named = id?.kind === "ref" ? ` ${id.ids.join(" ")}` : "";
         throw new CiteError(
           `the marker${named} at ${label}:${String(line)} shares its line with text; remove it by hand.`,
         );
       }
+    }
+    // A marker that keeps an id keeps its line: the word goes out of the list
+    // and nothing below it moves. Only a marker that loses its last id is a
+    // line to delete (proposal 0056).
+    const kept = new Map<number, string[]>();
+    const ordered: number[] = [];
+    for (const line of touched) {
+      const held = dropped.get(line);
+      const ids =
+        held === undefined || held.statement.payload.kind !== "ref"
+          ? []
+          : held.statement.payload.ids.filter((id) => !held.ids.has(id));
+      if (ids.length === 0) ordered.push(line);
+      else kept.set(line, ids);
     }
 
     // What stays, moved up by the marker lines going out above it.
@@ -195,7 +222,12 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
     for (const { index, lines: moved } of shifted.frontmatter) {
       after = spliceEntryField(after, format, index, ["claim", "lines"], moved);
     }
-    // Bottom up, so every line above each one keeps its number.
+    // Bottom up, so every line above each one keeps its number. The respell
+    // of a marker that survives changes no line count, so it can go first.
+    for (const [line, ids] of kept) {
+      const held = dropped.get(line);
+      if (held !== undefined) after = respellStatement(after, held.statement, ids);
+    }
     for (const line of [...ordered].sort((a, b) => b - a)) after = removeLine(after, line);
     if (owner === undefined) {
       after = removeFrontmatterCitations(after, format, indices, label);

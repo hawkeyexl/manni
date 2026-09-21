@@ -321,11 +321,15 @@ describe("cite add, writing the manifest", () => {
     ]);
   });
 
-  it("reports the lines a third stacked marker and its claim hold, with the page's body unmoved", async () => {
+  it("joins one marker for three citations, with the page's body unmoved", async () => {
     const cwd = copyFixture();
     const CLAIM = "The fetch timeout is 10 seconds.";
     const lineOf = (text: string): number =>
       read(cwd, "pages/limits.md").split("\n").indexOf(text) + 1;
+    // The entries go to the manifest, so the page grows by the one marker
+    // line the first add writes and by nothing after that.
+    const started = lineOf(CLAIM);
+    const seen: string[] = [];
     for (const id of ["first", "second", "third"]) {
       const at = lineOf(CLAIM);
       const result = await runAdd({
@@ -339,10 +343,14 @@ describe("cite add, writing the manifest", () => {
         gitClient: noGit(),
         env: {},
       });
+      seen.push(id);
       const lines = read(cwd, "pages/limits.md").split("\n");
-      expect(lines[(result.markerLine ?? 0) - 1]).toBe(`<!-- cite ${id} -->`);
+      expect(lines[(result.markerLine ?? 0) - 1]).toBe(`<!-- cite ${seen.join(" ")} -->`);
       expect(result.claimLines).toEqual({ start: lineOf(CLAIM), end: lineOf(CLAIM) });
+      expect(result.markerJoined).toBe(id === "first" ? undefined : true);
     }
+    // One line for the marker, and the claim never moved again.
+    expect(lineOf(CLAIM)).toBe(started + 1);
   });
 
   it("writes a join-keyed manifest under the page's own value of the field", async () => {

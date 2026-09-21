@@ -25,8 +25,10 @@ import {
   offsetOfLine,
   paragraphAfter,
   parseStatements,
+  respellStatement,
   statementForms,
 } from "../../src/cite/core/statements.js";
+import { MAX_IDS_PER_MARKER } from "../../src/cite/core/page.js";
 import { CiteError } from "../../src/cite/errors.js";
 import { readPage as parsePage } from "../../src/cite/core/page.js";
 import type { InlineStatement } from "../../src/cite/types.js";
@@ -80,7 +82,7 @@ describe("parseStatements", () => {
     if (!st) return;
     expect(st.line).toBe(5);
     expect(st.anchorLine).toBe(6);
-    expect(st.payload).toEqual({ kind: "ref", id: "retries" });
+    expect(st.payload).toEqual({ kind: "ref", ids: ["retries"] });
     expect(st.raw).toBe("cite retries");
     expect(body.slice(st.start, st.end)).toBe("<!-- cite retries -->");
   });
@@ -100,7 +102,7 @@ describe("parseStatements", () => {
   it("`cite true` names the id `true`", () => {
     expect(parseStatements("<!-- cite true -->\nx\n", "markdown")[0]?.payload).toEqual({
       kind: "ref",
-      id: "true",
+      ids: ["true"],
     });
   });
 
@@ -124,24 +126,24 @@ describe("parseStatements", () => {
   it("parses the mdx expression form", () => {
     expect(parseStatements("{/* cite fetch-timeout */}\nx\n", "mdx")[0]?.payload).toEqual({
       kind: "ref",
-      id: "fetch-timeout",
+      ids: ["fetch-timeout"],
     });
   });
 
   it("parses the markdown link-reference form", () => {
     expect(
       parseStatements("[comment]: # (cite fetch-timeout)\nx\n", "markdown")[0]?.payload,
-    ).toEqual({ kind: "ref", id: "fetch-timeout" });
+    ).toEqual({ kind: "ref", ids: ["fetch-timeout"] });
   });
 
   it("parses the asciidoc and rst forms", () => {
     expect(parseStatements("// (cite fetch-timeout)\nx\n", "asciidoc")[0]?.payload).toEqual({
       kind: "ref",
-      id: "fetch-timeout",
+      ids: ["fetch-timeout"],
     });
     expect(parseStatements(".. (cite fetch-timeout)\nx\n", "rst")[0]?.payload).toEqual({
       kind: "ref",
-      id: "fetch-timeout",
+      ids: ["fetch-timeout"],
     });
   });
 
@@ -153,7 +155,7 @@ describe("parseStatements", () => {
     expect(st).toMatchObject({
       line: 2,
       anchorLine: 3,
-      payload: { kind: "ref", id: "fetch-timeout" },
+      payload: { kind: "ref", ids: ["fetch-timeout"] },
       raw: "cite fetch-timeout",
     });
   });
@@ -209,22 +211,24 @@ describe("parseStatements", () => {
       kind: "bad",
       reason: "empty payload",
     });
+    // A list has several words and only one of them is wrong, so the message
+    // names the word that failed, leftmost first (proposal 0056).
     expect(parseStatements("<!-- cite Fetch Timeout -->\nx\n", "markdown")[0]?.payload).toEqual({
       kind: "bad",
-      reason: "payload is not an id",
+      reason: '"Fetch" is not an id',
     });
     expect(parseStatements("<!-- cite -Leading -->\nx\n", "markdown")[0]?.payload).toEqual({
       kind: "bad",
-      reason: "payload is not an id",
+      reason: '"-Leading" is not an id',
     });
   });
 
   it("returns statements in document order across forms", () => {
     const body = "[comment]: # (cite b)\nx\n\n<!-- cite a -->\ny\n\n{/* cite c */}\nz\n";
     expect(parseStatements(body, "markdown").map((s) => s.payload)).toEqual([
-      { kind: "ref", id: "b" },
-      { kind: "ref", id: "a" },
-      { kind: "ref", id: "c" },
+      { kind: "ref", ids: ["b"] },
+      { kind: "ref", ids: ["a"] },
+      { kind: "ref", ids: ["c"] },
     ]);
   });
 
@@ -240,7 +244,7 @@ describe("parseStatements", () => {
     const st = parseStatements(body, "markdown")[0];
     expect(st?.line).toBe(1);
     expect(st?.anchorLine).toBe(4);
-    expect(st?.payload).toEqual({ kind: "ref", id: "fetch-timeout" });
+    expect(st?.payload).toEqual({ kind: "ref", ids: ["fetch-timeout"] });
   });
 
   it("finds nothing for a format with no forms", () => {
@@ -248,10 +252,106 @@ describe("parseStatements", () => {
   });
 });
 
+/**
+ * Proposal 0056: a marker's payload is one or more ids, separated by spaces.
+ * A payload of one id is what 0044 shipped, byte for byte and meaning for
+ * meaning, which is what every page written before this grammar relies on.
+ */
+describe("parseStatements reads a list of ids", () => {
+  const payloadOf = (body: string, format = "markdown"): unknown =>
+    parseStatements(body, format)[0]?.payload;
+
+  it("reads several ids from one marker, in the order written", () => {
+    expect(payloadOf("<!-- cite fetch-timeout retries backoff -->\nx\n")).toEqual({
+      kind: "ref",
+      ids: ["fetch-timeout", "retries", "backoff"],
+    });
+  });
+
+  it("reads a list in every parenthesised form, which no id can close early", () => {
+    expect(payloadOf("[comment]: # (cite fetch-timeout retries)\nx\n")).toEqual({
+      kind: "ref",
+      ids: ["fetch-timeout", "retries"],
+    });
+    expect(payloadOf("// (cite fetch-timeout retries)\nx\n", "asciidoc")).toEqual({
+      kind: "ref",
+      ids: ["fetch-timeout", "retries"],
+    });
+    expect(payloadOf(".. (cite fetch-timeout retries)\nx\n", "rst")).toEqual({
+      kind: "ref",
+      ids: ["fetch-timeout", "retries"],
+    });
+    expect(payloadOf("{/* cite fetch-timeout retries */}\nx\n", "mdx")).toEqual({
+      kind: "ref",
+      ids: ["fetch-timeout", "retries"],
+    });
+  });
+
+  it("separates on a run of spaces as one, as an editor and a shell both do", () => {
+    expect(payloadOf("<!-- cite   fetch-timeout    retries -->\nx\n")).toEqual({
+      kind: "ref",
+      ids: ["fetch-timeout", "retries"],
+    });
+  });
+
+  it("anchors the same text for every id in the list", () => {
+    const body = "<!-- cite fetch-timeout retries -->\nThe claim.\n";
+    const st = parseStatements(body, "markdown")[0];
+    expect(st?.line).toBe(1);
+    expect(st?.anchorLine).toBe(2);
+  });
+
+  it("is a comma that is not a separator: the token is one word, and not an id", () => {
+    expect(payloadOf("<!-- cite fetch-timeout,retries -->\nx\n")).toEqual({
+      kind: "bad",
+      reason: '"fetch-timeout,retries" is not an id',
+    });
+  });
+
+  it("refuses a line break in the payload: a marker is one line", () => {
+    expect(payloadOf("<!-- cite fetch-timeout\n  retries -->\nx\n")).toEqual({
+      kind: "bad",
+      reason: "a marker is one line; write two markers",
+    });
+  });
+
+  it("refuses more than 25 ids, with the count", () => {
+    const ids = Array.from({ length: 31 }, (_v, n) => `id-${String(n)}`).join(" ");
+    expect(payloadOf(`<!-- cite ${ids} -->\nx\n`)).toEqual({
+      kind: "bad",
+      reason: "more than 25 ids in one marker (31); write a second marker",
+    });
+    const cap = Array.from({ length: 25 }, (_v, n) => `id-${String(n)}`);
+    expect(payloadOf(`<!-- cite ${cap.join(" ")} -->\nx\n`)).toEqual({ kind: "ref", ids: cap });
+    expect(MAX_IDS_PER_MARKER).toBe(25);
+  });
+
+  it("refuses an id named twice in one marker, naming the leftmost repeat", () => {
+    expect(payloadOf("<!-- cite retries backoff retries -->\nx\n")).toEqual({
+      kind: "bad",
+      reason: '"retries" is named twice in one marker',
+    });
+  });
+
+  it("names the leftmost word that is not an id", () => {
+    expect(payloadOf("<!-- cite retries Backoff Jitter -->\nx\n")).toEqual({
+      kind: "bad",
+      reason: '"Backoff" is not an id',
+    });
+  });
+
+  it("reads a word opening with a brace as a misplaced entry, wherever it sits", () => {
+    expect(payloadOf('<!-- cite retries {"a":1} -->\nx\n')).toMatchObject({
+      kind: "bad",
+      json: true,
+    });
+  });
+});
+
 describe("parseStatements does not read code", () => {
   const ids = (body: string, format: string): string[] =>
     parseStatements(body, format).map((s) =>
-      s.payload.kind === "ref" ? s.payload.id : s.payload.kind,
+      s.payload.kind === "ref" ? s.payload.ids.join(" ") : s.payload.kind,
     );
 
   it("ignores a marker inside a fenced block, backtick or tilde", () => {
@@ -283,7 +383,7 @@ describe("parseStatements does not read code", () => {
       "```md\n<!-- cite fenced -->\n```\n\n<!-- cite real -->\nThe claim.\n\n```\n<!-- cite fenced-again -->\n```\n";
     const [st, ...rest] = parseStatements(body, "markdown");
     expect(rest).toEqual([]);
-    expect(st?.payload).toEqual({ kind: "ref", id: "real" });
+    expect(st?.payload).toEqual({ kind: "ref", ids: ["real"] });
     expect(st?.line).toBe(5);
     expect(st?.anchorLine).toBe(6);
   });
@@ -511,7 +611,7 @@ describe("anchoredLines", () => {
 
 describe("formatStatement", () => {
   it("renders a marker in each format's first form", () => {
-    const ref = { kind: "ref", id: "fetch-timeout" } as const;
+    const ref = { kind: "ref", ids: ["fetch-timeout"] } as const;
     expect(formatStatement("markdown", ref)).toBe("<!-- cite fetch-timeout -->");
     expect(formatStatement("mdx", ref)).toBe("{/* cite fetch-timeout */}");
     expect(formatStatement("html", ref)).toBe("<!-- cite fetch-timeout -->");
@@ -522,18 +622,60 @@ describe("formatStatement", () => {
 
   it("round-trips through the scanner in every format", () => {
     for (const format of ["markdown", "mdx", "html", "asciidoc", "rst"]) {
-      const text = formatStatement(format, { kind: "ref", id: "fetch-timeout" });
+      const text = formatStatement(format, { kind: "ref", ids: ["fetch-timeout"] });
       expect(parseStatements(`${text}\nThe claim.\n`, format)[0]?.payload).toEqual({
         kind: "ref",
-        id: "fetch-timeout",
+        ids: ["fetch-timeout"],
       });
     }
   });
 
+  it("writes several ids, one space between words", () => {
+    const ref = { kind: "ref", ids: ["fetch-timeout", "retries"] } as const;
+    expect(formatStatement("markdown", ref)).toBe("<!-- cite fetch-timeout retries -->");
+    expect(formatStatement("mdx", ref)).toBe("{/* cite fetch-timeout retries */}");
+    expect(formatStatement("asciidoc", ref)).toBe("// (cite fetch-timeout retries)");
+    expect(parseStatements(`${formatStatement("mdx", ref)}\nThe claim.\n`, "mdx")[0]?.payload).toEqual(
+      { kind: "ref", ids: ["fetch-timeout", "retries"] },
+    );
+  });
+
   it("refuses a format with no marker syntax", () => {
-    expect(() => formatStatement("nope", { kind: "ref", id: "x" })).toThrow(CiteError);
-    expect(() => formatStatement("nope", { kind: "ref", id: "x" })).toThrow(
+    expect(() => formatStatement("nope", { kind: "ref", ids: ["x"] })).toThrow(CiteError);
+    expect(() => formatStatement("nope", { kind: "ref", ids: ["x"] })).toThrow(
       'No marker syntax for format "nope".',
+    );
+  });
+});
+
+describe("respellStatement", () => {
+  const only = (content: string, format: string): InlineStatement => {
+    const [st] = parseStatements(content, format);
+    if (st === undefined) throw new Error("no statement");
+    return st;
+  };
+
+  it("appends an id, keeping the marker's own form and spacing", () => {
+    const content = "{/* cite fetch-timeout retries */}\nThe claim.\n";
+    const st = only(content, "mdx");
+    expect(respellStatement(content, st, ["fetch-timeout", "retries", "backoff"])).toBe(
+      "{/* cite fetch-timeout retries backoff */}\nThe claim.\n",
+    );
+  });
+
+  it("keeps a form the writer would not have chosen, and the indentation", () => {
+    const content = "   <!-- cite retries -->\nThe claim.\n";
+    const st = only(content, "mdx");
+    expect(respellStatement(content, st, ["retries", "backoff"])).toBe(
+      "   <!-- cite retries backoff -->\nThe claim.\n",
+    );
+  });
+
+  it("drops an id, leaving the rest of the list where it was", () => {
+    const content = "[comment]: # (cite a b c)\nThe claim.\n";
+    const st = only(content, "markdown");
+    expect(respellStatement(content, st, ["a", "c"])).toBe(
+      "[comment]: # (cite a c)\nThe claim.\n",
     );
   });
 });
