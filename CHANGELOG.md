@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.8.5](https://github.com/hawkeyexl/manni/compare/v2.8.4...v2.8.5) (2026-09-21)
+
+
+### Bug Fixes
+
+* **cite:** advance a pin's commit when its source moves ([#107](https://github.com/hawkeyexl/manni/issues/107)) ([ab01f4d](https://github.com/hawkeyexl/manni/commit/ab01f4db5441f7c3187d5b7d7e7195cd7bf688a7)), closes [#106](https://github.com/hawkeyexl/manni/issues/106)
+
 ## [2.8.4](https://github.com/hawkeyexl/manni/compare/v2.8.3...v2.8.4) (2026-09-21)
 
 
