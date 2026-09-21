@@ -12,6 +12,7 @@ both.
 
 ## The rule
 
+{/* cite element-parent-is-the-namespace */}
 A value held in an element is keyed **`<immediate parent>.<element name>`**. The
 containing element is the namespace.
 
@@ -22,6 +23,7 @@ containing element is the namespace.
 <head><title>Docs</title></head>                    →  head.title
 ```
 
+{/* cite element-flat-keys-do-not-move */}
 **Existing flat keys do not move.** Root attributes, `<meta>` tags,
 `<othermeta>` entries and HTML's `<title>` keep the names they have always had.
 A document can carry the same fact in two places, and **both are validated**.
@@ -50,6 +52,7 @@ manni meta already printed exactly this split. Its error paths are JSON Pointer:
 | DITA topic | `<prolog>` and its nested containers | `prolog.*`, `critdates.*`, `metadata.*`, `prodinfo.*` |
 | DITA map | `<topicmeta>` and its nested containers | `topicmeta.*`, `critdates.*`, … |
 
+{/* cite element-no-hardcoded-ignore-list */}
 Two exclusions keep the key set honest, and both are why the convention can work
 without a hardcoded ignore list:
 
@@ -59,6 +62,7 @@ without a hardcoded ignore list:
 - **Whitespace-only text is indentation, not content.** Every container in an
   indented file holds a newline and some spaces.
 
+{/* cite element-html-skips-script-and-style */}
 HTML additionally skips `<script>` and `<style>`: both are text-bearing and
 neither is metadata. Void elements such as `<meta>`, `<link>` and `<base>` hold
 their value in an attribute, and are not lifted by convention. `<link>` repeats,
@@ -67,6 +71,7 @@ and collapsing a canonical URL together with three stylesheets would discard the
 
 ### Lists, and why generic XML always uses one
 
+{/* cite element-plain-xml-commits-to-a-list */}
 Plain XML states no cardinality, so manni meta cannot know whether a second `<tag>`
 is coming. A type that changed with document content could not be written
 against, so the convention commits to a list:
@@ -75,6 +80,7 @@ against, so the convention commits to a list:
 "article.title": { "type": "array", "items": { "type": "string" }, "maxItems": 1 }
 ```
 
+{/* cite element-maxitems-1-says-exactly-one */}
 `maxItems: 1` is how a schema says "there should be exactly one", which is a
 check that was not expressible before.
 
@@ -98,6 +104,7 @@ exists for plain XML. That is why the list is the honest default, and why a
 schema written against it has to say so.
 </Aside>
 
+{/* cite element-content-model-decides-cardinality */}
 Where a content model *does* state the cardinality, the key follows it.
 `head.title` is a scalar because HTML permits one `<title>`;
 [DITA's keys](/manni/meta/reference/dita-schema/) are typed element by element
@@ -123,6 +130,7 @@ one you declared.
 "article.byline": { "type": "array", "items": { "type": "string" }, "maxItems": 1 }
 ```
 
+{/* cite element-every-occurrence-survives */}
 The first form fails on **every** document, including one with exactly one
 `<byline>`. Nothing warns you, because it is valid JSON Schema and simply never
 matches.
@@ -136,6 +144,7 @@ manni meta get article.byline docs/api.xml -f json
 
 ## `elements:` reaches what the convention does not
 
+{/* cite element-convention-stops-at-the-root-children */}
 The convention stops short on purpose. Naming a path is how a repo says "this
 one, specifically".
 
@@ -150,11 +159,13 @@ meta:
         - spec/revision          # → spec.revision
 ```
 
+{/* cite element-path-is-a-subset-of-the-child-axis */}
 A path is **slash-separated and absolute from the document root**. It is a
 deliberate subset of XPath's child axis, so predicates and axes are not coming.
 `@attr` selects an attribute instead of the element's text, which is the only
 way to reach a void element.
 
+{/* cite element-key-is-derived-never-spelled */}
 The key is still derived by the rule and is never spelled in config. Two ways to
 name one key is the ambiguity this design removes.
 
@@ -177,6 +188,7 @@ Four behaviours worth knowing:
 
 ## What a write does
 
+{/* cite element-fill-writes-where-it-read */}
 `fill` writes element metadata back **where it was read from**. That is not a
 nicety. If a value were written anywhere else, the field would stay invalid. The
 next run would propose it again, and CI would never go green.
@@ -225,6 +237,7 @@ have been.
 
 ## Addressing a lifted key from `get`
 
+{/* cite element-pointer-and-dot-notation-both-work */}
 Both spellings work:
 
 ```bash
@@ -232,5 +245,6 @@ manni meta get article.title docs/api.xml
 manni meta get /article.title docs/api.xml
 ```
 
+{/* cite element-dot-notation-falls-back-to-the-literal-key */}
 Dot-notation tries nested traversal first, which is right for a frontmatter
 object like `author.name`. It falls back to the literal key when that misses.
