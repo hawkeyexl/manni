@@ -9,7 +9,7 @@
  * throwaway repository.
  */
 import { afterEach, describe, expect, it } from "vitest";
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -943,6 +943,57 @@ describe("runUpdate: the source end", () => {
       "      lines: 4",
     ]);
     expect(after).toContain("      commit-sha: 0123456789abcdef0123456789abcdef01234567\n");
+  });
+
+  // The re-mint's other refusal. Everything `mintCitation` can refuse on this
+  // path was already read once by the check: the same source index, the same
+  // key, and a range the move search just located inside the file. A recorded
+  // range wider than the cap never reaches the classifier, because `readPage`
+  // refuses it as `entry-invalid`, and a moved range is exactly as wide as the
+  // recorded one. So the one cause left is the source changing on disk between
+  // the check's read and the re-mint's, inside one run. A git client that
+  // truncates the file when the classifier asks it for history puts the run in
+  // that state, and nothing else about the run is pretended.
+  it("says why a moved source was left alone when the re-mint cannot read its new range", async () => {
+    workspace();
+    const root = realpathSync(cwd);
+    mkdirSync(join(root, "src"));
+    const file = join(root, "src", "thing.ts");
+    writeFileSync(file, source("moved.ts"), "utf8");
+    const label = write("vanishing.md", [
+      "---",
+      "citations:",
+      "  - id: fetch-timeout",
+      "    source:",
+      "      file: src/thing.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "      commit-sha: 0123456789abcdef0123456789abcdef01234567",
+      "---",
+      "Body.",
+    ]);
+    const before = onDisk(label);
+    const shrinking = {
+      ...noGit(),
+      available: () => Promise.resolve(true),
+      head: () => Promise.resolve("fedcba9876543210fedcba9876543210fedcba98"),
+      lsFiles: () => Promise.resolve(["src/thing.ts"]),
+      showFile: () => {
+        writeFileSync(file, "// gone", "utf8");
+        return Promise.resolve({ missing: "commit" as const });
+      },
+    };
+    const run = await update({ inputs: [label], cwd: root, root, gitClient: shrinking });
+    expect(run).toMatchObject({ rewritten: 0, skipped: 1, exitCode: 0 });
+    expect(run.pages[0]?.skipped.map((f) => [f.id, f.rule])).toEqual([
+      ["fetch-timeout", "source-moved"],
+    ]);
+    // The skip says why, rather than leaving a finding `update` was asked to
+    // fix and no account of why it did not.
+    expect(run.pages[0]?.skipped[0]?.message).toContain(
+      "Not rewritten: src/thing.ts has 1 lines; line 4 is out of range.",
+    );
+    expect(onDisk(label)).toBe(before);
   });
 
   it("--accept re-mints a changed source, recording no commit where the entry records none", async () => {
