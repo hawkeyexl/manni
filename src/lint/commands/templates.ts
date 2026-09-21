@@ -238,9 +238,12 @@ export async function runTemplatesInfer(
   // Every refusal happens before the write, and the `--out` guard happens
   // before the read - the ordering `meta schemas infer` established. The path
   // is echoed as it was typed, because that is the string the reader will edit.
-  const absOut = opts.out === undefined ? undefined : resolve(cwd, opts.out);
-  if (absOut !== undefined && opts.force !== true && existsSync(absOut)) {
-    throw new LintError(`${opts.out ?? ""} exists. Pass --force to overwrite it.`);
+  let absOut: string | undefined;
+  if (opts.out !== undefined) {
+    absOut = resolve(cwd, opts.out);
+    if (opts.force !== true && existsSync(absOut)) {
+      throw new LintError(`${opts.out} exists. Pass --force to overwrite it.`);
+    }
   }
 
   let content: string;

@@ -290,7 +290,7 @@ function alignLevel(
       // members it did, the same information `missingRows` gives a group with
       // nothing at all.
       const takenMembers = new Set(taken.map((m) => m.rule));
-      for (const member of root.repeat ?? []) {
+      for (const member of root.repeat) {
         if (takenMembers.has(member)) continue;
         rows.push({ depth: depth + 1, text: `${pad(ruleLabel(member))}${ARROW} (missing)` });
       }
