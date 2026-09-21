@@ -1,0 +1,19 @@
+Suggested LinkedIn caption for docevals-demo. This is a suggestion only.
+Posting is a human action, and the author posts it or does not.
+
+One line:
+
+Docs pages make claims. With manni docevals they carry the checks too: an eval in the page's frontmatter, graded in CI, exit code 1 when the page drifts.
+
+Longer:
+
+A documentation page states things that were true when someone wrote it. The install line names a package. The tutorial names a flag. Both go stale, and no test says so.
+
+manni docevals puts the check on the page. An eval lives in the frontmatter: a regex, a freshness window, a command to run, or an LLM judge for what a pattern cannot express. Run it in CI, and a page that drifts fails the build.
+
+The demo renames a package and watches one page catch it. The run uses --deterministic-only, so there are no model calls and the same bytes come back every time.
+
+npm i -D @hawkeyexl/manni
+manni docevals run
+
+#docsascode #technicalwriting #devtools #CI
