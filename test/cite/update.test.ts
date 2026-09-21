@@ -20,7 +20,7 @@ import { hashLines, hashRange } from "../../src/cite/core/hash.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { UpdateOptions, UpdateRun } from "../../src/cite/types.js";
-import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
+import { commitAll, git, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "fixtures", "cite");
@@ -1179,6 +1179,95 @@ describe("runUpdate: both ends, and what is left", () => {
     afterEach(() => {
       removeTempRepo(repo);
       repo = undefined;
+    });
+
+    // A pin names lines, an integrity and the commit they were read at. A
+    // re-anchor that rewrites the lines and leaves the commit behind breaks
+    // that triple: the entry then names a range its own commit cannot hold.
+    it("advances commit-sha when a source moves, so the new range holds at the commit it names", async () => {
+      repo = makeTempRepo({ files: { "src/limits.ts": source("limits.ts") } });
+      const first = commitAll(repo, "add limits");
+      // Six lines land above the cited one, pushing it past the end of the
+      // file as `first` recorded it.
+      const header = ["1", "2", "3", "4", "5", "6"].map((n) => `// header ${n}\n`).join("");
+      writeFileSync(join(repo, "src", "limits.ts"), header + source("limits.ts"), "utf8");
+      const second = commitAll(repo, "add a file header");
+      mkdirSync(join(repo, "docs"));
+      const page = join(repo, "docs", "limits.md");
+      writeFileSync(
+        page,
+        [
+          "---",
+          "citations:",
+          "  - id: pinned",
+          "    source:",
+          "      file: src/limits.ts",
+          "      lines: 2",
+          `      integrity: ${PIN_L2}`,
+          `      commit-sha: ${first} # minted by hand`,
+          "  - id: loose",
+          "    source:",
+          "      file: src/limits.ts",
+          "      lines: 2",
+          `      integrity: ${PIN_L2}`,
+          "---",
+          "Body.",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      const run = await runUpdate({
+        cwd: repo,
+        inputs: ["docs/limits.md"],
+        noConfig: true,
+        env: {},
+      });
+      expect(run).toMatchObject({ rewritten: 2, skipped: 0, exitCode: 0 });
+      const after = readFileSync(page, "utf8");
+      expect(after.match(/^ {6}lines: 8$/gm)).toHaveLength(2);
+      // The comment on the line survives the splice, and the entry that
+      // recorded no commit still records none.
+      expect(after).toContain(`      commit-sha: ${second} # minted by hand`);
+      expect(after.match(/commit-sha/g)).toHaveLength(1);
+      // The invariant: at the commit the entry names, the lines it names hash
+      // to the integrity it records. The old commit could not hold line 8.
+      expect(hashRange(git(repo, ["show", `${second}:src/limits.ts`]), { start: 8, end: 8 })).toBe(
+        PIN_L2,
+      );
+      const before = git(repo, ["show", `${first}:src/limits.ts`]);
+      expect(() => hashRange(before, { start: 8, end: 8 })).toThrow(CiteError);
+    });
+
+    it("leaves a source that did not move alone, its commit-sha included", async () => {
+      repo = makeTempRepo({ files: { "src/limits.ts": source("limits.ts") } });
+      const first = commitAll(repo, "add limits");
+      writeFileSync(join(repo, "src", "other.ts"), "// unrelated", "utf8");
+      const second = commitAll(repo, "add an unrelated file");
+      expect(second).not.toBe(first);
+      mkdirSync(join(repo, "docs"));
+      const page = join(repo, "docs", "limits.md");
+      const content = [
+        "---",
+        "citations:",
+        "  - id: pinned",
+        "    source:",
+        "      file: src/limits.ts",
+        "      lines: 2",
+        `      integrity: ${PIN_L2}`,
+        `      commit-sha: ${first}`,
+        "---",
+        "Body.",
+        "",
+      ].join("\n");
+      writeFileSync(page, content, "utf8");
+      const run = await runUpdate({
+        cwd: repo,
+        inputs: ["docs/limits.md"],
+        noConfig: true,
+        env: {},
+      });
+      expect(run).toMatchObject({ rewritten: 0, skipped: 0, exitCode: 0 });
+      expect(readFileSync(page, "utf8")).toBe(content);
     });
 
     it("re-mints at HEAD, writing a commit-sha only where the entry records one", async () => {

@@ -544,8 +544,8 @@ rule, because a quote is fences and content by design.
 {/* cite update-encrypted-stays */}
 {/* cite update-needs-sources */}
 Rewrite moved citations in place; with `--accept`, re-mint changed ones.
-`update` works on **both ends**. A moved source end has its `source.lines`
-spliced, and a moved claim end its `claim.lines`. A reanchored claim end is
+`update` works on **both ends**. A moved source end is re-minted over the
+range it moved to, and a moved claim end has its `claim.lines` spliced. A reanchored claim end is
 re-pinned, and its lines are rewritten where it has lines, both without
 `--accept`. The splice is textual, so
 the rest of the frontmatter, its comments and quoting included, is untouched.
@@ -592,7 +592,7 @@ working tree so the rewrite is easy to review.
 
 | End and status | Without `--accept` | With `--accept` |
 |---|---|---|
-| `source-moved` | `source.lines` rewritten to the new range. | The same. |
+| `source-moved` | Re-minted over the new range: `source.lines` rewritten to it, and `source.commit-sha` set to `HEAD` where the entry already has one. | The same. |
 | `source-changed`, `source-never-true` | Skipped, and reported. | `source.integrity` re-minted, and `source.commit-sha` set to `HEAD` where the entry already has one. |
 | `source-moved-ambiguous` | Skipped. The tool will not guess which copy. Widen the range and re-add. | The same. |
 | `source-missing` | Skipped. A path that is gone cannot be rewritten. `add` is the remedy. | The same. |
