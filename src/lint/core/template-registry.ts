@@ -855,6 +855,9 @@ export async function loadTemplate(
   const [only] = Object.values(templates);
   if (names.length === 1 && only !== undefined) return only;
   if (names.length === 0) throw new LintError(`${base} defines no templates.`);
+  // Past both branches above, `names.length` is at least two, so `names[0]` is
+  // there and the example fragment is never empty. The `?? ""` is
+  // `noUncheckedIndexedAccess` paperwork rather than a case to look for.
   throw new LintError(
     `${base} defines ${names.length} templates; name one with a "#" fragment ` +
       `(e.g. "${base}#${names[0] ?? ""}"). Available: ${names.join(", ")}.`,
@@ -907,7 +910,14 @@ function mergeRuleLists(
 }
 
 function mergeRules(parent: Rule, child: Rule): Rule {
-  const merged: Rule = { ...parent, ...child };
+  // `sections` is dropped from both spreads and merged on its own. Every other
+  // key replaces outright, which is what a spread does; sections merge by `id`,
+  // which it cannot. Leaving the child's raw array in the spread and then
+  // overwriting it worked, but it read as though the spread were the whole
+  // answer.
+  const { sections: _parentSections, ...parentRest } = parent;
+  const { sections: _childSections, ...childRest } = child;
+  const merged: Rule = { ...parentRest, ...childRest };
   const sections = mergeRuleLists(parent.sections, child.sections);
   if (sections) merged.sections = sections;
   return merged;

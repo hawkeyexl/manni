@@ -32,7 +32,7 @@
  * printed exactly as before. Wiring `commands/lint.ts` to attach them is
  * outside this chunk's files (`src/lint/commands/lint.ts` is not among them).
  */
-import type { DocumentTree, SectionNode } from "../types.js";
+import { LintError, type DocumentTree, type SectionNode } from "../types.js";
 import { matchSections, type Match } from "../core/match.js";
 import { occurrenceRange, type Rule, type Template } from "../core/template.js";
 
@@ -324,7 +324,12 @@ function alignLevel(
         // `ruleIndex` is built from this exact `rules` array above, so every
         // rule reached here (it came from filtering `rules` itself) has an
         // entry; this is unreachable.
-        throw new Error("alignLevel: rule missing from its own index");
+        //
+        // `LintError` rather than `Error` even so. Everything this tool throws
+        // is caught by the bin runner and exits 2, an operational error; a bare
+        // `Error` would escape that and exit 1, which means "the documents have
+        // findings". An internal fault must never be reported as a lint result.
+        throw new LintError("alignLevel: rule missing from its own index");
       }
       return { index, rows: missingRows(depth, rule) };
     });
