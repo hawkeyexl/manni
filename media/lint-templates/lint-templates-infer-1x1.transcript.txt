@@ -1,0 +1,111 @@
+manni lint templates infer, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 43.8 s. Every terminal line is real output of cat, sed and of
+`node dist/cli.js lint ...` (typed as manni) run inside media/scratch-lint/, a git repository
+staged from test/lint/fixtures/formats/how-to.md by media/lint-templates/capture/capture.sh.
+Its manni.config.yaml (lint.templates: [templates.yaml]) is staged and not shown; the
+"Using manni.config.yaml (.)" line each command prints is manni reporting that it found it.
+
+[0:00-0:06] Title: A page with no template (1 / 5)
+$ cat docs/rotate-key.md
+---
+type: how-to
+---
+
+# Rotate an API key
+
+## Overview
+
+Rotating a key replaces the old secret without interrupting live traffic.
+
+## Before you start
+
+You need an account with the `admin` role.
+
+## Rotate the key
+
+Issue the replacement, then retire the old one.
+
+```bash
+widget keys rotate --id abc123
+```
+
+## See also
+
+Read about key scopes and expiry.
+Highlighted rows: lines containing "## Overview", "## Before you start", "## Rotate the key", "## See also"
+Caption: This page is already the shape you want. Nothing in the repo describes that shape.
+
+[0:06-0:15] Title: Writing one by hand (2 / 5)
+$ cat templates.yaml
+templates:
+  how-to:
+    types: [how-to]
+    sections:
+      - id: overview
+        heading: Overview
+$ manni lint structure docs/rotate-key.md
+Using manni.config.yaml (.)
+✗ docs/rotate-key.md   ("✗" in red)
+    11:1  manni:lint/structure/unexpected-section  Before you start: Unexpected section "Before you start". Add a trailing rule with min: 0 to allow sections the template does not describe.   (line:column dim, rule id cyan)
+    15:1  manni:lint/structure/unexpected-section  Rotate the key: Unexpected section "Rotate the key". Add a trailing rule with min: 0 to allow sections the template does not describe.   (line:column dim, rule id cyan)
+    23:1  manni:lint/structure/unexpected-section  See also: Unexpected section "See also". Add a trailing rule with min: 0 to allow sections the template does not describe.   (line:column dim, rule id cyan)
+
+1 file checked, 0 passed, 1 failed, 0 skipped   (red)
+Highlighted rows: lines containing "unexpected-section"
+Caption: A half-written template makes every real section unexpected. Three findings, exit 1.
+
+[0:15-0:22] Title: Infer it from the page (3 / 5)
+$ manni lint templates infer docs/rotate-key.md
+Using manni.config.yaml (.)
+templates:
+  how-to:
+    heading: Rotate an API key
+    sections:
+      - heading: Overview
+        contains:
+          paragraphs:
+            min: 1
+      - heading: Before you start
+        contains:
+          paragraphs:
+            min: 1
+      - heading: Rotate the key
+        contains:
+          paragraphs:
+            min: 1
+          codeBlocks:
+            min: 1
+            language: bash
+      - heading: See also
+        contains:
+          paragraphs:
+            min: 1
+Highlighted rows: lines containing "- heading: ", "codeBlocks:"
+Caption: manni lint templates infer reads the page and writes the template that describes it.
+
+[0:22-0:33] Title: Save it, and it passes (4 / 5)
+$ manni lint templates infer docs/rotate-key.md -o templates.yaml --force
+Using manni.config.yaml (.)
+Wrote template "how-to" to templates.yaml
+$ manni lint structure docs/rotate-key.md
+Using manni.config.yaml (.)
+✓ docs/rotate-key.md   ("✓" in green)
+
+1 file checked, 1 passed, 0 failed, 0 skipped   (green)
+Highlighted rows: lines containing "Wrote template", "1 passed, 0 failed"
+Caption: Save it over the stub, and the same lint command passes.
+
+[0:33-0:44] Title: Break the page (5 / 5)
+$ sed -i '/^## See also/,$d' docs/rotate-key.md
+$ manni lint structure docs/rotate-key.md
+Using manni.config.yaml (.)
+✗ docs/rotate-key.md   ("✗" in red)
+    23:1  manni:lint/structure/missing-section  Rotate an API key: Missing section "See also"   (line:column dim, rule id cyan)
+
+1 file checked, 0 passed, 1 failed, 0 skipped   (red)
+$ echo $?
+1
+Highlighted rows: lines containing "missing-section", "0 passed, 1 failed"
+Caption: Delete the required See also section: one finding, anchored at line 23, exit 1.
+

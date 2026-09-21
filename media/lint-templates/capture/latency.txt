@@ -1,0 +1,9 @@
+lint-wall 1 774ms
+infer-stdout 0 731ms
+infer-write 0 734ms
+lint-pass 0 771ms
+broken page == test/lint/fixtures/formats/how-to-broken.md (trailing blank lines aside)
+lint-broken 1 762ms
+timing1 lint 804ms infer-stdout 744ms infer-write 779ms
+timing2 lint 792ms infer-stdout 787ms infer-write 768ms
+timing3 lint 815ms infer-stdout 774ms infer-write 804ms
