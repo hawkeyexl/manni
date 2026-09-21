@@ -186,11 +186,15 @@ class Pruner {
    * A list rule with its `items` pruned.
    *
    * `items` has no capability of its own to check. A parser that reports a
-   * list reports its items: `ListNode.items` is not optional, and `listItem`
-   * is not one of the kinds a parser declares - `ContentKind` does not carry
-   * it, though `ListItemNode.kind` and proposal 0053 both say it. So the
-   * `lists` gap covers the whole rule, and only what the items *hold* can go
-   * unchecked.
+   * list reports its items, since `ListNode.items` is not optional, and
+   * `listItem` is not one of the `BLOCK_KINDS` a block rule can target. So
+   * the `lists` gap covers the whole rule, and only what the items *hold* can
+   * go unchecked.
+   *
+   * `listItem` is a `ContentKind` and parsers do declare it. That is a fact
+   * about the node model rather than about this pruner: a template names
+   * `lists`, and reaches an item only through `items`, so there is no rule
+   * whose capability would be `listItem` on its own.
    */
   private lists(rule: ListsRule): ListsRule {
     const items = rule.items;
