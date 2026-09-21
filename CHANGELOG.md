@@ -4,6 +4,18 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.8.4](https://github.com/hawkeyexl/manni/compare/v2.8.3...v2.8.4) (2026-09-21)
+
+
+### Bug Fixes
+
+* **cite:** re-pin a claim that lives inside a fenced block ([#106](https://github.com/hawkeyexl/manni/issues/106)) ([7a6eb28](https://github.com/hawkeyexl/manni/commit/7a6eb280efa865bbed56a3b498f4361c1fc35dfe)), closes [#96](https://github.com/hawkeyexl/manni/issues/96)
+
+
+### Performance Improvements
+
+* **meta:** parse each manifest once per run ([#101](https://github.com/hawkeyexl/manni/issues/101)) ([5c95119](https://github.com/hawkeyexl/manni/commit/5c95119bcc24b2bda95a4cfb16d7e9761a9bae3c)), closes [#98](https://github.com/hawkeyexl/manni/issues/98) [#98](https://github.com/hawkeyexl/manni/issues/98)
+
 ## [2.8.3](https://github.com/hawkeyexl/manni/compare/v2.8.2...v2.8.3) (2026-09-21)
 
 
