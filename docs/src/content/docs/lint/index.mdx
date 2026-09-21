@@ -52,7 +52,8 @@ that gates the pull request.
 | `manni lint check [paths...]` | Every configured job |
 | `manni lint structure [paths...]` | Document structure against doctype templates |
 | `manni lint templates` | The templates that could route a page, and the doctypes each serves |
-| `manni lint tools` | Each job, the tool that performs it, and what it reads |
+| `manni lint templates infer <page>` | A first template, written from a page that already has the shape you want |
+| `manni lint tools` | Each job, the tool that performs it, what it reads, and which content kinds each format reports |
 
 A **job** is what is being checked. The **tool** that answers it is an
 implementation you can swap. `structure` is the job, and this package's own
@@ -67,7 +68,8 @@ the verbs, because a domain with one verb still spells the verb.
 
 A template describes the shape a doctype promises. That is which sections a page
 of that kind has, in what order, and what has to be inside each one. Inside can
-mean paragraphs, lists, code blocks, or an exact heading.
+mean paragraphs, code blocks, lists, tables, admonitions, images, block quotes,
+definition lists, or a named component.
 
 Seven ship, derived from [The Good Docs
 Project](https://thegooddocsproject.dev/) at `v1.6.0`, covering `how-to`,
@@ -77,8 +79,9 @@ frontmatter, the same key `manni meta` already validates. A repository that
 declares doctypes gets structure checking with no per-page change at all.
 
 Your own templates are one config entry away, and they outrank the built-ins
-for the doctypes they claim. The [templates
-reference](/manni/lint/reference/templates/) has the format.
+for the doctypes they claim. `manni lint templates infer` writes the first one
+from a page you already have, and
+[Write a template](/manni/lint/set-up/write-a-template/) takes it from there.
 
 ## Deterministic, by design
 
@@ -118,10 +121,12 @@ manni lint check
 
 ## Coming from `doc-structure-lint`?
 
-This is that package, folded into the manni bin. Same engine, same templates,
-same rules; a family surface around them. The command is `manni lint check`,
-the config moves under `lint:` in `manni.config.yaml`, and `paths:` / `exclude:`
-become a collection. The
+This is that package, folded into the manni bin and given a family surface. The
+command is `manni lint check`, the config moves under `lint:` in
+`manni.config.yaml`, and `paths:` / `exclude:` become a collection. The template
+format is a grammar now rather than a map of section rules. A template written
+against the old package is refused, with the new spelling of each key.
+The
 [migration table](/manni/lint/reference/configuration/#coming-from-doc-structure-lint)
 has every change.
 
@@ -130,6 +135,11 @@ has every change.
     title="Get started"
     href="/manni/lint/get-started/"
     description="Lint one how-to page, read the finding, fix it, and see the run go green. Then let the config supply the paths."
+  />
+  <LinkCard
+    title="Write a template"
+    href="/manni/lint/set-up/write-a-template/"
+    description="From one page you are happy with to a doctype shape the whole repository is held to. Infer it, loosen it, route it."
   />
   <LinkCard
     title="Gate structure in CI"
@@ -154,6 +164,6 @@ has every change.
   <LinkCard
     title="Templates reference"
     href="/manni/lint/reference/templates/"
-    description="The template file format, the built-in TGDP set, template refs, $template, and types: routing."
+    description="The template grammar, every rule and block key, the kind matrix, how sections are matched, and types: routing."
   />
 </CardGrid>

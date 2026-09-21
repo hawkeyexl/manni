@@ -22,12 +22,16 @@
  *  - `transparent` are structural wrappers with no meaning of their own -
  *                 DITA's `<body>`, `<taskbody>`, `<context>`. The walk passes
  *                 straight through them at the same level.
- *  - `paragraphs` / `code` / `unorderedLists` / `orderedLists` / `listItems`
- *                 are the format-neutral content kinds of `types.ts`.
+ *  - `paragraphs` / `code` / `unorderedLists` / `orderedLists` / `listItems` /
+ *                 `tables` / `admonitions` / `images` / `blockquotes` /
+ *                 `definitionLists` are the format-neutral content kinds of
+ *                 `types.ts`. The last five are optional buckets: a vocabulary
+ *                 that leaves one out never emits that kind, same as leaving
+ *                 an entry out of `kinds`.
  *  - everything else is **skipped, with its subtree**, exactly as the Markdown
- *    parser skips a blockquote. A DITA `<note>` is not a paragraph, and its
- *    inner `<p>` must not be counted as one, or `paragraphs: {max: 3}` fails
- *    documents a reader would say satisfy it.
+ *    parser skips a blockquote. A DITA `<related-links>` is not a paragraph,
+ *    and its contents must not be counted as one, or `paragraphs: {max: 3}`
+ *    fails documents a reader would say satisfy it.
  *
  * That last rule is why `transparent` has to exist as its own bucket: without
  * it, skipping the unmapped `<body>` would skip the whole topic.
@@ -43,6 +47,10 @@
  *       paragraphs: ["text"], code: ["sample"], codeLangAttributes: ["lang"],
  *       unorderedLists: ["bullets"], orderedLists: ["steps"],
  *       listItems: ["item"] }
+ *
+ * Tables, admonitions, images, blockquotes and definition lists are five more
+ * buckets, all optional - a schema that never names one simply never emits
+ * that kind. See each field's own doc comment below for the shape it expects.
  *
  * Nothing else changes: the walk, the levels, the positions, and the fold are
  * vocabulary-independent. This is deliberately not wired to `manni.config.yaml`
@@ -83,12 +91,19 @@ import { DOMParser } from "@xmldom/xmldom";
 import type { Element as XmlElement, Node as XmlNode } from "@xmldom/xmldom";
 import { extractorForExtension } from "../../meta/index.js";
 import type {
+  AdmonitionNode,
   ContentNode,
+  DefinitionItemNode,
+  DefinitionListNode,
   DocumentParser,
   DocumentTree,
+  ImageNode,
   ListItemNode,
   Point,
   Position,
+  TableCellNode,
+  TableNode,
+  TableRowNode,
 } from "../types.js";
 import { LintError } from "../types.js";
 import { errorMessage } from "../../shared/errors.js";
@@ -131,6 +146,55 @@ export interface XmlVocabulary {
   orderedLists: readonly string[];
   /** Elements that are one item of a list. */
   listItems: readonly string[];
+
+  /** Elements that are a table, CALS-shaped or simple. */
+  tables?: readonly string[];
+  /** Elements whose direct children are cells: a header row or a body row. */
+  tableRows?: readonly string[];
+  /** Elements that are one cell of a row. */
+  tableCells?: readonly string[];
+  /** Wrapper elements whose descendant rows are all header rows (CALS `<thead>`). */
+  tableHeaderWrappers?: readonly string[];
+  /** Row elements that are inherently a header row on their own (DITA `<sthead>`). */
+  tableHeaderRows?: readonly string[];
+
+  /** Elements that may be an admonition. */
+  admonitions?: readonly string[];
+  /**
+   * Attribute naming the admonition's variant (DITA's `<note>` `@type`). When
+   * absent, an admonition element's own lowercased name is its variant -
+   * DocBook's five admonition elements are themselves named `note`, `tip`,
+   * `important`, `caution` and `warning`. Either way, a name outside the six
+   * `AdmonitionNode` knows produces an admonition with no `variant` set,
+   * rather than an invented equivalence - DITA's `restriction` and `fastpath`
+   * are real `@type` values this model does not have a word for.
+   */
+  admonitionVariantAttribute?: string;
+
+  /** Elements that are an image, standing alone or wrapping one. */
+  images?: readonly string[];
+  /**
+   * Element carrying the image's own url attribute - itself, for a
+   * self-contained image (DITA's `<image href>`), or a descendant found by
+   * name (DocBook's `<imagedata fileref>` inside a `<mediaobject>`).
+   */
+  imageDataElements?: readonly string[];
+  /** Attribute on an `imageDataElements` match that carries the url. */
+  imageUrlAttribute?: string;
+  /** Direct child of an `imageDataElements` match carrying the alt text. */
+  imageAltElements?: readonly string[];
+
+  /** Elements that are a block quote. */
+  blockquotes?: readonly string[];
+
+  /** Elements that are a definition list. */
+  definitionLists?: readonly string[];
+  /** Elements that are one entry, pairing a term with a definition. */
+  definitionItems?: readonly string[];
+  /** Elements that carry an entry's term(s); more than one join with ", ". */
+  definitionTerms?: readonly string[];
+  /** Elements that carry an entry's definition body. */
+  definitionBodies?: readonly string[];
 }
 
 /**
@@ -140,9 +204,14 @@ export interface XmlVocabulary {
  *
  * `<prereq>`, `<context>`, `<result>` and friends are transparent rather than
  * sections: they are untitled parts of a task body that render as continuous
- * prose, so their paragraphs belong to the task. `<note>`, `<lq>`, `<table>`,
- * `<related-links>` and `<prolog>` are in no bucket at all, so they and their
- * contents are skipped - the blockquote rule.
+ * prose, so their paragraphs belong to the task. `<related-links>` and
+ * `<prolog>` are in no bucket at all, so they and their contents are skipped -
+ * the blockquote rule.
+ *
+ * A CALS `<table>` and an OASIS `<simpletable>` share one row/cell reading:
+ * `<row>`/`<entry>` for the former, `<strow>`/`<stentry>` for the latter. A row
+ * inside `<thead>` is a header row (the CALS shape); `<sthead>` is a header row
+ * on its own, holding `<stentry>` cells directly rather than wrapping a row.
  */
 const DITA: XmlVocabulary = {
   name: "dita",
@@ -184,6 +253,27 @@ const DITA: XmlVocabulary = {
   unorderedLists: ["ul", "sl", "steps-unordered"],
   orderedLists: ["ol", "steps", "substeps"],
   listItems: ["li", "sli", "step", "substep"],
+
+  tables: ["table", "simpletable"],
+  tableRows: ["row", "strow", "sthead"],
+  tableCells: ["entry", "stentry"],
+  tableHeaderWrappers: ["thead"],
+  tableHeaderRows: ["sthead"],
+
+  admonitions: ["note"],
+  admonitionVariantAttribute: "type",
+
+  images: ["image", "fig"],
+  imageDataElements: ["image"],
+  imageUrlAttribute: "href",
+  imageAltElements: ["alt"],
+
+  blockquotes: ["lq"],
+
+  definitionLists: ["dl"],
+  definitionItems: ["dlentry"],
+  definitionTerms: ["dt"],
+  definitionBodies: ["dd"],
 };
 
 /**
@@ -235,6 +325,30 @@ const DOCBOOK: XmlVocabulary = {
   unorderedLists: ["itemizedlist", "simplelist"],
   orderedLists: ["orderedlist", "procedure"],
   listItems: ["listitem", "member", "step"],
+
+  tables: ["table", "informaltable"],
+  tableRows: ["row"],
+  tableCells: ["entry"],
+  tableHeaderWrappers: ["thead"],
+  tableHeaderRows: [],
+
+  // No `admonitionVariantAttribute`: DocBook's five admonition elements are
+  // themselves named `note`/`warning`/`caution`/`tip`/`important`.
+  admonitions: ["note", "warning", "caution", "tip", "important"],
+
+  images: ["mediaobject", "figure"],
+  imageDataElements: ["imagedata"],
+  imageUrlAttribute: "fileref",
+  imageAltElements: [],
+
+  blockquotes: ["blockquote"],
+
+  definitionLists: ["variablelist"],
+  definitionItems: ["varlistentry"],
+  definitionTerms: ["term"],
+  // DocBook reuses `<listitem>` for a variable list's own body, distinct from
+  // the `listItems` bucket above which reads it inside `<itemizedlist>`.
+  definitionBodies: ["listitem"],
 };
 
 /**
@@ -255,11 +369,25 @@ interface Compiled {
   unordered: Set<string>;
   ordered: Set<string>;
   items: Set<string>;
+  tables: Set<string>;
+  tableRows: Set<string>;
+  tableCells: Set<string>;
+  tableHeaderWrappers: Set<string>;
+  tableHeaderRows: Set<string>;
+  admonitions: Set<string>;
+  images: Set<string>;
+  imageDataElements: Set<string>;
+  imageAltElements: Set<string>;
+  blockquotes: Set<string>;
+  definitionLists: Set<string>;
+  definitionItems: Set<string>;
+  definitionTerms: Set<string>;
+  definitionBodies: Set<string>;
   /** Every name the vocabulary claims, for scoring. */
   known: Set<string>;
 }
 
-const lower = (names: readonly string[]): Set<string> =>
+const lower = (names: readonly string[] = []): Set<string> =>
   new Set(names.map((n) => n.toLowerCase()));
 
 function compile(vocab: XmlVocabulary): Compiled {
@@ -274,6 +402,20 @@ function compile(vocab: XmlVocabulary): Compiled {
     unordered: lower(vocab.unorderedLists),
     ordered: lower(vocab.orderedLists),
     items: lower(vocab.listItems),
+    tables: lower(vocab.tables),
+    tableRows: lower(vocab.tableRows),
+    tableCells: lower(vocab.tableCells),
+    tableHeaderWrappers: lower(vocab.tableHeaderWrappers),
+    tableHeaderRows: lower(vocab.tableHeaderRows),
+    admonitions: lower(vocab.admonitions),
+    images: lower(vocab.images),
+    imageDataElements: lower(vocab.imageDataElements),
+    imageAltElements: lower(vocab.imageAltElements),
+    blockquotes: lower(vocab.blockquotes),
+    definitionLists: lower(vocab.definitionLists),
+    definitionItems: lower(vocab.definitionItems),
+    definitionTerms: lower(vocab.definitionTerms),
+    definitionBodies: lower(vocab.definitionBodies),
     known: new Set(),
   };
   for (const set of [
@@ -286,6 +428,20 @@ function compile(vocab: XmlVocabulary): Compiled {
     c.unordered,
     c.ordered,
     c.items,
+    c.tables,
+    c.tableRows,
+    c.tableCells,
+    c.tableHeaderWrappers,
+    c.tableHeaderRows,
+    c.admonitions,
+    c.images,
+    c.imageDataElements,
+    c.imageAltElements,
+    c.blockquotes,
+    c.definitionLists,
+    c.definitionItems,
+    c.definitionTerms,
+    c.definitionBodies,
   ]) {
     for (const name of set) c.known.add(name);
   }
@@ -307,6 +463,24 @@ function* elementChildren(el: XmlNode): Generator<XmlElement> {
   }
 }
 
+/** First direct child matching one of `names`, or null. */
+function findDirectChild(el: XmlElement, names: Set<string>): XmlElement | null {
+  for (const child of elementChildren(el)) {
+    if (names.has(localName(child))) return child;
+  }
+  return null;
+}
+
+/** First descendant matching one of `names`, in document order, or null. */
+function findDescendant(el: XmlElement, names: Set<string>): XmlElement | null {
+  for (const child of elementChildren(el)) {
+    if (names.has(localName(child))) return child;
+    const nested = findDescendant(child, names);
+    if (nested) return nested;
+  }
+  return null;
+}
+
 /** Collapse XML's indentation whitespace into the single spaces a reader sees. */
 function flatten(text: string | null): string {
   return (text ?? "").replace(/\s+/g, " ").trim();
@@ -320,6 +494,21 @@ function flatten(text: string | null): string {
  */
 function codeText(text: string | null): string {
   return (text ?? "").replace(/^[^\S\n]*\n/, "").replace(/\n[^\S\n]*$/, "");
+}
+
+/** The six variants `AdmonitionNode` knows. A name outside this set names no variant. */
+type Variant = Exclude<AdmonitionNode["variant"], undefined>;
+const ADMONITION_VARIANTS = new Set<Variant>([
+  "note",
+  "tip",
+  "important",
+  "caution",
+  "warning",
+  "danger",
+]);
+
+function isAdmonitionVariant(name: string): name is Variant {
+  return (ADMONITION_VARIANTS as ReadonlySet<string>).has(name);
 }
 
 /** Weights for `chooseVocabulary`, in the order they are meant to dominate. */
@@ -581,39 +770,199 @@ class Flattener {
             kind: "listItem",
             position: this.span(item),
             text: flatten(item.textContent),
-            children: this.itemChildren(item),
+            children: this.blockContent(item),
           })),
       };
     }
 
+    if (this.c.tables.has(name)) return this.tableNode(el, position);
+
+    if (this.c.admonitions.has(name)) {
+      const variant = this.admonitionVariantOf(el, name);
+      return {
+        kind: "admonition",
+        position,
+        text: flatten(el.textContent),
+        // A `@type`/name outside the six variants `AdmonitionNode` knows
+        // leaves `variant` unset, rather than inventing an equivalence.
+        ...(variant ? { variant } : {}),
+        children: this.blockContent(el),
+      };
+    }
+
+    if (this.c.images.has(name)) return this.imageNode(el, position);
+
+    if (this.c.blockquotes.has(name)) {
+      return {
+        kind: "blockquote",
+        position,
+        text: flatten(el.textContent),
+        children: this.blockContent(el),
+      };
+    }
+
+    if (this.c.definitionLists.has(name)) return this.definitionListNode(el, position);
+
     return null;
   }
 
+  /** A table's rows, from any of its CALS wrappers (`tgroup`, `tbody`, `thead`). */
+  private tableNode(el: XmlElement, position: Position): TableNode {
+    return {
+      kind: "table",
+      position,
+      text: flatten(el.textContent),
+      children: this.tableRowsOf(el, false),
+    };
+  }
+
   /**
-   * Content directly inside a list item, so item-level paragraph/code/list
-   * rules can run. Transparent wrappers are walked through here too; anything
-   * else unmapped is skipped, subtree included.
+   * Rows found anywhere under `el`, recursing through every wrapper - `tgroup`,
+   * `tbody`, `thead` and the like - regardless of whether it is known
+   * elsewhere. A table's internal grouping elements carry no content of their
+   * own; only the rows and cells inside them do.
+   *
+   * `inheritedHeader` tracks whether an enclosing `tableHeaderWrappers` element
+   * (CALS's `<thead>`) has been entered; `tableHeaderRows` (DITA's `<sthead>`)
+   * marks a row as a header on its own, without a wrapper.
    */
+  private tableRowsOf(el: XmlElement, inheritedHeader: boolean): TableRowNode[] {
+    const rows: TableRowNode[] = [];
+    for (const child of elementChildren(el)) {
+      const name = localName(child);
+      if (this.c.tableRows.has(name)) {
+        rows.push(this.tableRow(child, inheritedHeader || this.c.tableHeaderRows.has(name)));
+        continue;
+      }
+      rows.push(
+        ...this.tableRowsOf(child, inheritedHeader || this.c.tableHeaderWrappers.has(name)),
+      );
+    }
+    return rows;
+  }
+
+  private tableRow(el: XmlElement, header: boolean): TableRowNode {
+    const cells: TableCellNode[] = [];
+    for (const child of elementChildren(el)) {
+      if (!this.c.tableCells.has(localName(child))) continue;
+      cells.push({
+        kind: "tableCell",
+        position: this.span(child),
+        text: flatten(child.textContent),
+        children: this.blockContent(child),
+      });
+    }
+    return {
+      kind: "tableRow",
+      position: this.span(el),
+      text: flatten(el.textContent),
+      header,
+      children: cells,
+    };
+  }
+
   /**
-   * One list item's content, with the item's own prose kept as a paragraph.
+   * An admonition's variant: the value of `admonitionVariantAttribute` when the
+   * vocabulary names one (DITA's `<note type>`, defaulting to `note` when the
+   * attribute is absent - DITA's own default), or the element's own lowercased
+   * name otherwise (DocBook's `<warning>`, `<tip>`, and so on). Undefined when
+   * neither names one of the six variants `AdmonitionNode` knows.
+   */
+  private admonitionVariantOf(el: XmlElement, name: string): Variant | undefined {
+    const attr = this.c.vocab.admonitionVariantAttribute;
+    const raw = (attr ? el.getAttribute(attr) : "") || name;
+    const variant = raw.toLowerCase();
+    return isAdmonitionVariant(variant) ? variant : undefined;
+  }
+
+  /**
+   * An image, standing alone or wrapping one. `imageDataElements` names the
+   * element carrying the url - `el` itself for a self-contained image (DITA's
+   * `<image href>`), or a descendant found by name otherwise (DocBook's
+   * `<imagedata fileref>` inside a `<mediaobject>`/`<figure>`). The caption
+   * reuses `titleOf`, the same lookup a section uses for its heading - DITA's
+   * `<fig><title>` and DocBook's `<figure><title>` are both a direct `<title>`
+   * child.
+   */
+  private imageNode(el: XmlElement, position: Position): ImageNode {
+    const name = localName(el);
+    const dataEl = this.c.imageDataElements.has(name)
+      ? el
+      : findDescendant(el, this.c.imageDataElements);
+    const attr = this.c.vocab.imageUrlAttribute;
+    const url = (dataEl && attr ? dataEl.getAttribute(attr) : "") || "";
+    const altEl = dataEl ? findDirectChild(dataEl, this.c.imageAltElements) : null;
+    const title = this.titleOf(el);
+    return {
+      kind: "image",
+      position,
+      text: flatten(el.textContent),
+      url,
+      alt: altEl ? flatten(altEl.textContent) : "",
+      ...(title ? { title: flatten(title.textContent) } : {}),
+    };
+  }
+
+  private definitionListNode(el: XmlElement, position: Position): DefinitionListNode {
+    const children: DefinitionItemNode[] = [];
+    for (const child of elementChildren(el)) {
+      if (this.c.definitionItems.has(localName(child))) {
+        children.push(this.definitionItem(child));
+      }
+    }
+    return {
+      kind: "definitionList",
+      position,
+      text: flatten(el.textContent),
+      children,
+    };
+  }
+
+  /** One entry, pairing its term(s) - joined with ", " when more than one - with its definition body. */
+  private definitionItem(el: XmlElement): DefinitionItemNode {
+    const terms: string[] = [];
+    let body: XmlElement | null = null;
+    for (const child of elementChildren(el)) {
+      const name = localName(child);
+      if (this.c.definitionTerms.has(name)) {
+        terms.push(flatten(child.textContent));
+      } else if (body === null && this.c.definitionBodies.has(name)) {
+        body = child;
+      }
+    }
+    return {
+      kind: "definitionItem",
+      position: this.span(el),
+      text: flatten(el.textContent),
+      term: terms.join(", "),
+      definition: body ? this.blockContent(body) : [],
+    };
+  }
+
+  /**
+   * One container's content, with its own loose prose kept as a paragraph.
+   * Shared by list items, table cells, admonitions, block quotes, and a
+   * definition's body - anywhere the content model asks for a container's
+   * `children` rather than a single block.
    *
    * mdast puts a list item's principal text in a `paragraph` child regardless
    * of markup, and `lists: {items: {paragraphs: {min: 1}}}` has to count the
    * same thing in every format. So the loose text is gathered into one, in the
-   * position it occupies among the item's blocks.
+   * position it occupies among the container's blocks.
    *
-   * Gathering it rather than checking whether the item has any children is what
-   * makes the two cases agree. `<li>bare text</li>` was already reconciled;
-   * `<li>Parent<ul>…</ul></li>` was not, because the nested list is a child, so
-   * the item looked accounted for and `Parent` became prose nothing counted -
-   * while its Markdown, HTML, AsciiDoc, and reST twins all counted one. This is
-   * the same fix `html.ts` carries, and the two should stay in step.
+   * Gathering it rather than checking whether the container has any children is
+   * what makes the two cases agree. `<li>bare text</li>` was already
+   * reconciled; `<li>Parent<ul>…</ul></li>` was not, because the nested list is
+   * a child, so the item looked accounted for and `Parent` became prose
+   * nothing counted - while its Markdown, HTML, AsciiDoc, and reST twins all
+   * counted one. This is the same fix `html.ts` carries, and the two should
+   * stay in step.
    *
    * Unmapped elements contribute their text rather than being skipped, which is
-   * what the old whole-item `textContent` did: inside an item they are inline
-   * markup - DITA's `<b>`, `<xref>` - not structure worth dropping.
+   * what the old whole-item `textContent` did: inside a container they are
+   * inline markup - DITA's `<b>`, `<xref>` - not structure worth dropping.
    */
-  private itemChildren(item: XmlElement): ContentNode[] {
+  private blockContent(container: XmlElement): ContentNode[] {
     const out: ContentNode[] = [];
     let text = "";
 
@@ -621,10 +970,10 @@ class Flattener {
       const value = flatten(text);
       text = "";
       if (value.length === 0) return;
-      out.push({ kind: "paragraph", position: this.span(item), text: value });
+      out.push({ kind: "paragraph", position: this.span(container), text: value });
     };
 
-    for (let child = item.firstChild; child; child = child.nextSibling) {
+    for (let child = container.firstChild; child; child = child.nextSibling) {
       if (child.nodeType !== ELEMENT_NODE) {
         text += child.nodeValue ?? "";
         continue;
@@ -852,7 +1201,20 @@ export function parseXml(
 export const xmlParser: DocumentParser = {
   name: "xml",
   label: "XML",
-  kinds: ["paragraph", "codeBlock", "list"],
+  kinds: [
+    "paragraph",
+    "codeBlock",
+    "list",
+    "listItem",
+    "table",
+    "tableRow",
+    "tableCell",
+    "admonition",
+    "image",
+    "blockquote",
+    "definitionList",
+    "definitionItem",
+  ],
   /**
    * `.dita` as well as `.xml`, because that is what a DITA topic is actually
    * called on disk and docmeta registers it too — a docset whose topics this

@@ -184,13 +184,23 @@ manni lint structure docs/ --explain
     · frontmatter-template no $template in frontmatter
     · config-override      no overrides configured
     → type                 tgdp:how-to:1.6  type: how-to -> builtin template
+    alignment
+      (page)                 ← "Rotate an API key"
+        overview             ← "Overview"
+        before-you-start     ← "Before you start"
+        task                 ← "Rotate the key"
+        see-also             ← "See also"
 
 1 file, 1 routed, 0 unrouted
 ```
 
-Five rungs are tried in order; `·` is a rung that did not decide and `→` is the
+Five rungs are tried in order. `·` is a rung that did not decide and `→` is the
 one that did. Here the page's own `type: how-to` picked the built-in template,
 which is the ordinary case.
+
+Under the rungs is the alignment, which is the pairing the matcher chose. Each
+row is one template rule and the section it took. Read it when a finding
+surprises you.
 
 <Aside type="caution" title="`--explain` always exits 0">
   It answers a question about configuration. Its exit code says whether it
@@ -247,8 +257,20 @@ lint:
 ```
 
 A template in that file declaring `types: [how-to]` replaces the built-in
-how-to shape for the whole repository, and no page changes. The
-[templates reference](/manni/lint/reference/templates/) has the format.
+how-to shape for the whole repository, and no page changes. You do not have to
+write one from scratch. `manni lint templates infer` writes a first template
+from a page that already has the shape you want:
+
+```sh
+manni lint templates infer docs/rotate-key.md --out ./templates.yaml
+```
+
+```
+Wrote template "how-to" to ./templates.yaml
+```
+
+[Write a template](/manni/lint/set-up/write-a-template/) takes it from there,
+and the [templates reference](/manni/lint/reference/templates/) has every key.
 
 ## Next steps
 
@@ -267,9 +289,9 @@ config. To make it a standing guarantee, run the check on every push.
     description="Every rule id, what it means, and what to change on the page."
   />
   <LinkCard
-    title="Templates reference"
-    href="/manni/lint/reference/templates/"
-    description="Write your own doctype shape, extend a built-in, and route it with types:."
+    title="Write a template"
+    href="/manni/lint/set-up/write-a-template/"
+    description="Infer your own doctype shape from a page you already have, loosen it, and route it."
   />
   <LinkCard
     title="CLI reference"

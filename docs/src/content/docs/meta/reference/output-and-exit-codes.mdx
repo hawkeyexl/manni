@@ -411,7 +411,7 @@ GitHub annotations, ESLint, Vale and pa11y all use exactly these three words.
 | `manni meta validate` | `error` and `warning` | Every finding is an error except `location:external` and `location:page`, the warnings for a value stored on the side its schema's `x-manni-location` does not prefer. The reporters carry `notice` for sibling tools. |
 | `manni cite check` | all three | Per rule. Each rule has a default, and [`cite.severity.<rule>`](/manni/cite/reference/configuration/#severity) moves any of them, or sets it to `off`. |
 | `manni a11y check` | all three | Mapped from axe's `impact` when a page is read. Its [`--severity`](/manni/a11y/reference/cli/) flag then drops everything below a floor. |
-| `manni lint check` | `error` only | Every structural finding is an error, and there is no severity map. [Exit `1`](/manni/lint/reference/cli/#exit-codes) is defined on severity rather than on "any finding". |
+| `manni lint check` | `error` and `warning` | Every structural finding is an error except `unsupported-content-kind`, the warning for a rule the file's format cannot answer. There is no severity map. [Exit `1`](/manni/lint/reference/cli/#exit-codes) is defined on severity rather than on "any finding", so that warning never fails a run. |
 | `manni key rotate` | none | It has no findings model. A value either re-encrypts or is skipped, and a skip exits `1`. |
 
 So a repository that runs only `manni meta validate` sees errors, and warnings

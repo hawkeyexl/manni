@@ -156,6 +156,16 @@ export interface LintFileResult extends FileResult {
   reason?: string;
   /** How the template was chosen. Present when `--explain` asked for it. */
   resolution?: Resolution;
+  /**
+   * What the alignment block is rendered from. Present when `--explain` asked
+   * for it, and only for a file that routed to a template.
+   *
+   * Nested rather than flat, because `FileResult.template` is already taken by
+   * the template's *ref* - the string a reader sees on the routing line. A
+   * loaded `Template` beside it under the same name would be two things called
+   * one thing, and the reporter would read whichever it got.
+   */
+  alignment?: { tree: DocumentTree; template: Template };
 }
 
 export interface LintRun {
@@ -449,6 +459,9 @@ async function lintOne(
       success: true,
       findings: [],
       template: resolution.ref,
+      // The tree and the loaded template, for the alignment block. Both are
+      // already in hand here, and neither survives this function otherwise.
+      alignment: { tree, template },
     });
   }
 

@@ -1,0 +1,471 @@
+---
+title: Write a template
+description: "Turn a page that already has the shape you want into a doctype template: infer it, loosen what one page cannot show, assert the content that defines the doctype, then route it."
+---
+
+import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Your team agreed what a how-to has to contain. This page turns that agreement
+into one reviewable file, so every page of that doctype is held to it.
+
+You will start from a page that already has the shape you want and infer a
+first template from it. Then you will loosen the parts one page cannot show,
+assert the content the doctype is actually defined by, and route it. Each step
+runs a real command.
+
+## Before you start
+
+- **manni installed.** `manni lint --help` should print the verb list. If you
+  did not install globally, prefix every command below with
+  `npx @hawkeyexl/manni`.
+- **One page you are happy with.** Not the average page. The one you would send
+  someone as the example.
+- **Somewhere to put the file.** `./templates.yaml` at the repository root is
+  the convention, beside `manni.config.yaml`.
+
+<Aside type="caution" title="Strict by default, so read this first">
+Every rule is exactly one occurrence, and a section no rule describes is a
+finding. Point a hand-written template at a page it does not fully describe.
+The first run is then a screen of `unexpected_section` lines, one per section
+you have not written a rule for yet.
+
+That is the format working, and there are two escapes. Start from
+`manni lint templates infer`, which describes the whole page. Or end your rule
+list with a trailing rule that has `min: 0` and no heading, which absorbs
+anything you have not named. The message says so itself:
+
+```
+Unexpected section "Benchmarks". Add a trailing rule with min: 0 to allow sections the template does not describe.
+```
+</Aside>
+
+## Start from a page you already have
+
+Here is the exemplar. It is the same how-to the
+[get-started page](/manni/lint/get-started/) lints:
+
+````md title="docs/rotate-key.md"
+---
+type: how-to
+---
+
+# Rotate an API key
+
+## Overview
+
+Rotating a key replaces the old secret without interrupting live traffic.
+
+## Before you start
+
+You need an account with the `admin` role.
+
+## Rotate the key
+
+Issue the replacement, then retire the old one.
+
+```bash
+widget keys rotate --id abc123
+```
+
+## See also
+
+Read about key scopes and expiry.
+````
+
+<Steps>
+
+1. **Infer a template from it.**
+
+   ```sh
+   manni lint templates infer docs/rotate-key.md
+   ```
+
+   ```yaml
+   templates:
+     how-to:
+       heading: Rotate an API key
+       sections:
+         - heading: Overview
+           contains:
+             paragraphs:
+               min: 1
+         - heading: Before you start
+           contains:
+             paragraphs:
+               min: 1
+         - heading: Rotate the key
+           contains:
+             paragraphs:
+               min: 1
+             codeBlocks:
+               min: 1
+               language: bash
+         - heading: See also
+           contains:
+             paragraphs:
+               min: 1
+   ```
+
+   The template is named `how-to` because that is the page's own `type:`.
+   Pass `--name <name>` to call it something else.
+
+2. **Write it to a file.**
+
+   ```sh
+   manni lint templates infer docs/rotate-key.md --out ./templates.yaml
+   ```
+
+   ```
+   Wrote template "how-to" to ./templates.yaml
+   ```
+
+   The confirmation goes to stderr, so stdout stays empty. An existing path is
+   refused unless you pass `--force`.
+
+3. **Check that it holds.**
+
+   ```sh
+   manni lint structure docs/rotate-key.md -t ./templates.yaml#how-to
+   ```
+
+   ```
+   ✓ docs/rotate-key.md
+
+   1 file checked, 1 passed, 0 failed, 0 skipped
+   ```
+
+   An inferred template always lints its own source clean. That is the
+   contract, and it is why the next step exists.
+
+</Steps>
+
+## Loosen what one page cannot show
+
+One page cannot show what varies, so nothing optional and nothing repeating is
+invented. Every heading is the exact text this page used, every rule is exactly
+one occurrence, and no pattern is guessed. Generalising is your judgement, and
+these are the four moves.
+
+### A title that is never the same twice
+
+The page's own `heading` is the title of one document. Drop the key to accept
+any title:
+
+```yaml title="templates.yaml" del={3}
+templates:
+  how-to:
+    heading: Rotate an API key
+    sections:
+```
+
+### A closer with several spellings
+
+Real corpora rarely use one word for the last section. A list of headings
+matches any one of them:
+
+```yaml title="templates.yaml"
+- id: see-also
+  heading:
+    - See also
+    - Further reading
+    - Next steps
+  max: 1
+```
+
+Where the wording varies but the form does not, use a pattern instead. Anchor
+on the part that is stable:
+
+```yaml
+heading:
+  pattern: '^[Ss]ymptoms?\b'
+```
+
+<Aside type="caution" title="A heading's text is flattened">
+`` ## `manni lint check` `` reaches a template as `manni lint check`. The
+backticks are gone, because every parser renders a heading to plain text before
+a rule sees it. So a pattern written against the markup matches nothing:
+
+```yaml
+# Never matches anything.
+heading:
+  pattern: '^`manni .*`$'
+```
+
+Match the text itself:
+
+```yaml
+heading:
+  pattern: '^manni\b'
+```
+
+Bold, italics and links in a heading behave the same way.
+</Aside>
+
+### A section only some pages carry
+
+`min: 0` makes a rule optional. `max: 1` says it may appear once at most, and
+leaving `max` off means no limit:
+
+```yaml title="templates.yaml"
+- id: before-you-start
+  heading: Before you start
+  min: 0
+  max: 1
+```
+
+Add the trailing wildcard while you are here. It is one rule, and it turns
+every future section nobody anticipated from a failure into a non-event:
+
+```yaml title="templates.yaml"
+- min: 0
+```
+
+### A pair that repeats
+
+Some doctypes are a unit repeated. A troubleshooting page is symptoms, each
+with a cause and the solution to that cause. `repeat:` groups sibling rules
+into one repeated unit, and the group's own `min` and `max` count the units:
+
+```yaml title="templates.yaml"
+- id: cause-or-solution
+  repeat:
+    - id: cause
+      heading:
+        pattern: '^[Cc]auses?\b'
+      max: 1
+    - id: solution
+      heading:
+        pattern: '^([Ss]olutions?|[Ww]orkarounds?)\b'
+      min: 0
+      max: 1
+```
+
+A group has no heading of its own. Put the heading on the first rule inside it.
+When a whole unit is absent you get one `missing-group` finding rather than one
+per member.
+
+## Assert what the doctype is defined by
+
+A doctype is often defined by its content rather than its headings. A reference
+page is its table. A how-to step is its command. Say so, and the assertion is
+checked on every page.
+
+### A table with named columns
+
+```yaml title="templates.yaml"
+- id: fields
+  heading: Fields
+  max: 1
+  contains:
+    tables:
+      min: 1
+      columns: [Field, Type, Description, Default]
+```
+
+A table whose header cells differ reports `tables-columns` and names both the
+expected and the actual header.
+
+### A code block in each step
+
+`contains:` asks what is there. `sequence:` asks what is there **and in what
+order**, one entry per run of one kind. A step is prose and then a command,
+never the other way round:
+
+```yaml title="templates.yaml"
+- id: steps
+  repeat:
+    - id: step
+      heading:
+        pattern: '^Step \d+:'
+      sequence:
+        - paragraphs:
+            min: 1
+        - codeBlocks:
+            min: 1
+            language: bash
+```
+
+A rule carries `sequence` or `contains`, never both. The
+[templates reference](/manni/lint/reference/templates/#block-rules) lists every
+block key and what each one adds.
+
+<Aside type="note" title="Some of your assertions may never run">
+A parser reports only the content kinds its format has. A `definitionLists`
+rule cannot run against Markdown, and an `elements` rule cannot run against
+anything but MDX. Such a rule is removed before matching and reported once, as
+a warning that names it:
+
+```
+1:1  warning  manni:lint/structure/unsupported-content-kind  The markdown parser does not report definition lists, so the "glossary" rule in template "reference" is not checked for this file.
+```
+
+A warning never changes the exit code, so a docset of mixed formats stays
+green. Run `manni lint tools` to see which kinds each format reports.
+</Aside>
+
+## Route it
+
+A `-t` flag on every command is not a doctype policy. Declare the file once and
+the routing happens by itself.
+
+### By the page's `type:`
+
+Give the template a `types:` list, and every page declaring one of those
+doctypes is held to it:
+
+```yaml title="templates.yaml"
+templates:
+  how-to:
+    types: [how-to]
+    sections:
+      # ...
+```
+
+```yaml title="manni.config.yaml"
+lint:
+  templates:
+    - ./templates.yaml
+```
+
+Your template now outranks the built-in `tgdp:how-to:1.6` for the whole
+repository. No page is edited, and no flag is passed.
+
+### By path, where the corpus has no doctype
+
+Plenty of docsets carry no `type:` frontmatter at all. Route by glob instead,
+and leave `types:` off the template so it does not claim a doctype nothing uses:
+
+```yaml title="manni.config.yaml"
+lint:
+  templates:
+    - ./templates.yaml
+  overrides:
+    - files: "docs/**/reference/*.mdx"
+      template: ./templates.yaml#cli-reference
+```
+
+An override outranks a page's own `type:`, because it is repository policy.
+`examples/lint/manni-docs.yaml` is a worked example of a corpus routed this
+way.
+
+### Build on a built-in instead of replacing it
+
+Where a built-in is right in all but one place, inherit it. The merge is by
+rule `id`, so everything you do not mention is kept:
+
+```yaml title="templates.yaml"
+templates:
+  house-how-to:
+    types: [how-to]
+    extends: tgdp:how-to:1.6
+    sections:
+      - id: see-also
+        min: 0
+```
+
+## Check the whole corpus
+
+<Steps>
+
+1. **Confirm the template is loaded and claims what you think.**
+
+   ```sh
+   manni lint templates
+   ```
+
+   ```
+   Templates:
+     tgdp:how-to:1.6  —  How-to guide (The Good Docs Project)  types: how-to  [builtin]
+     ...
+     how-to  types: how-to  [./templates.yaml]
+   ```
+
+   The entry from your file is listed last, which is also the order routing
+   applies them in. A later entry claiming the same doctype is the one that
+   wins.
+
+2. **Run it over everything.**
+
+   ```sh
+   manni lint structure docs/
+   ```
+
+   Read any finding against what you meant to assert. A rule firing on a page
+   everyone agrees is correct means the template is wrong, not the page.
+
+3. **Read the pairing when a finding surprises you.**
+
+   ```sh
+   manni lint structure docs/rotate-key.md --explain
+   ```
+
+   ```
+   ▸ docs/rotate-key.md
+       · cli                  --template not given
+       · frontmatter-template no $template in frontmatter
+       · config-override      no overrides configured
+       → type                 tgdp:how-to:1.6  type: how-to -> builtin template
+       alignment
+         (page)                 ← "Rotate an API key"
+           overview             ← "Overview"
+           before-you-start     ← "Before you start"
+           task                 ← "Rotate the key"
+           see-also             ← "See also"
+
+   1 file, 1 routed, 0 unrouted
+   ```
+
+   The top half says which lever chose the template. The alignment says which
+   rule took which section. `← (missing)` is a rule that took nothing,
+   `(unexpected)` is a section no rule took, and `(coerced)` is a rule pushed
+   onto a section whose heading it rejects.
+
+</Steps>
+
+## How the matcher decides
+
+The linter lines your rules up against the page's sections and picks the
+pairing with the fewest problems. Two facts about "fewest" change how you
+write a template.
+
+**A named rule beats a wildcard.** Where both could take a section, the rule
+that names its heading gets it. So a trailing wildcard never steals a section a
+real rule wanted.
+
+**A required rule would rather be wrong than absent.** Pushing a required rule
+onto the wrong section costs less than reporting it missing and the section
+unexpected. That is what turns one bad heading into one finding instead of two.
+It also means a required rule can adopt an unrelated section. When that
+happens, `min: 0` is the fix. An optional rule loses nothing by standing aside,
+so it never adopts anything.
+
+The full cost table and the three tie-breaks are in the
+[templates reference](/manni/lint/reference/templates/#how-sections-are-matched).
+
+## Next steps
+
+The doctype's shape is now one file your team can review in a pull request. Put
+it behind a gate so drift is caught on the way in.
+
+<CardGrid>
+  <LinkCard
+    title="Gate structure in CI"
+    href="/manni/lint/ci/"
+    description="A workflow with PR annotations, the 0/1/2 exit-code contract, SARIF upload and JUnit output."
+  />
+  <LinkCard
+    title="Templates reference"
+    href="/manni/lint/reference/templates/"
+    description="Every rule key, every block key, the kind matrix, and the matching rules."
+  />
+  <LinkCard
+    title="Configuration reference"
+    href="/manni/lint/reference/configuration/"
+    description="Every lint: key, and the five-rung chain a template ref goes through."
+  />
+  <LinkCard
+    title="Fix a failing check"
+    href="/manni/lint/fix/"
+    description="Every rule id, what it means, and what to change on the page."
+  />
+</CardGrid>

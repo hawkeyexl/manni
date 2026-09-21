@@ -3,10 +3,12 @@
  *
  * Asciidoctor already hands back a nested block tree, so the work here is the
  * same as `mdast.ts`'s: flatten it into ordered `Fragment`s and let `sectionize`
- * rebuild the nesting. Contexts outside `section`/`paragraph`/`listing`/
- * `literal`/`ulist`/`olist` are skipped rather than mapped to a nearest
- * neighbour, for the reason the Markdown parser skips blockquotes and tables -
- * an admonition is not a paragraph, and counting one as such would make
+ * rebuild the nesting. `table`, `admonition`, `image`, `quote` and `dlist`
+ * contexts map onto the shared content model (proposal 0053); a context that
+ * still has no kind there - `sidebar`, a thematic break, `verse`, `example`,
+ * and so on - is skipped whole rather than mapped to a nearest neighbour, for
+ * the reason the Markdown parser skips a construct it does not model: a
+ * sidebar is not a paragraph, and counting one as such would make
  * `paragraphs: {max: 3}` fail a document a reader would say satisfies it.
  *
  * Two things about Asciidoctor shape this file:
@@ -29,12 +31,16 @@
 import asciidoctor from "@asciidoctor/core";
 import { extractFrontmatter, extractorForExtension } from "../../meta/index.js";
 import type {
+  AdmonitionNode,
   ContentNode,
+  DefinitionItemNode,
   DocumentParser,
   DocumentTree,
   ListItemNode,
   Point,
   Position,
+  TableCellNode,
+  TableRowNode,
 } from "../types.js";
 import { LintError } from "../types.js";
 import { errorMessage } from "../../shared/errors.js";
@@ -81,6 +87,7 @@ interface AdocNode {
   getContent?(): string;
   getAttribute?(name: string): unknown;
   getItems?(): unknown[];
+  getRows?(): AdocRows;
 }
 
 /** A list item. Its principal text is not among its blocks. */
@@ -88,6 +95,19 @@ interface AdocItem {
   getLineNumber?(): number | undefined;
   getText(): string;
   getBlocks(): unknown[];
+}
+
+/** A table cell, from either a head, body or foot row. */
+interface AdocCell {
+  getLineNumber?(): number | undefined;
+  getText(): string;
+}
+
+/** `Table#getRows()`'s own shape: the three row groups, each an array of cell rows. */
+interface AdocRows {
+  getHead(): AdocCell[][];
+  getBody(): AdocCell[][];
+  getFoot(): AdocCell[][];
 }
 
 interface AdocDocument extends AdocNode {
@@ -234,7 +254,17 @@ type Draft =
   | { kind: "heading"; line: number; level: number; title: string }
   | { kind: "paragraph"; line: number; text: string }
   | { kind: "codeBlock"; line: number; text: string; language?: string }
-  | { kind: "list"; line: number; ordered: boolean; items: DraftItem[] };
+  | { kind: "list"; line: number; ordered: boolean; items: DraftItem[] }
+  | { kind: "table"; line: number; rows: DraftRow[] }
+  | {
+      kind: "admonition";
+      line: number;
+      variant: AdmonitionNode["variant"];
+      children: Draft[];
+    }
+  | { kind: "image"; line: number; url: string; alt: string; title?: string }
+  | { kind: "blockquote"; line: number; children: Draft[] }
+  | { kind: "definitionList"; line: number; items: DraftDefinitionItem[] };
 
 /** Every draft but a heading, which is the only kind that is not content. */
 type ContentDraft = Exclude<Draft, { kind: "heading" }>;
@@ -242,6 +272,23 @@ type ContentDraft = Exclude<Draft, { kind: "heading" }>;
 interface DraftItem {
   line: number;
   text: string;
+  children: Draft[];
+}
+
+interface DraftCell {
+  line: number;
+  text: string;
+}
+
+interface DraftRow {
+  line: number;
+  header: boolean;
+  cells: DraftCell[];
+}
+
+interface DraftDefinitionItem {
+  line: number;
+  term: string;
   children: Draft[];
 }
 
@@ -276,6 +323,130 @@ function draftList(node: AdocNode, ordered: boolean): Draft {
   return { kind: "list", line: lineOf(node), ordered, items };
 }
 
+/**
+ * A block's own children, recursively drafted - the same walk `collect` does
+ * at document level, reused for a container whose content is content in its
+ * own right (an admonition, a blockquote) rather than a section's directly.
+ */
+function draftChildren(node: AdocNode): Draft[] {
+  const children: Draft[] = [];
+  collect(childrenOf(node), children);
+  return children;
+}
+
+/**
+ * AsciiDoc's own admonition vocabulary is closed - `NOTE`, `TIP`, `IMPORTANT`,
+ * `CAUTION`, `WARNING`, and nothing else; there is no `DANGER`. So unlike a
+ * format with free-form admonition naming, every real admonition here maps
+ * cleanly onto the shared vocabulary, and only a node whose `name` attribute
+ * is missing or unrecognised - which real AsciiDoc input cannot produce -
+ * fails to.
+ */
+const ADMONITION_VARIANTS = new Set<string>([
+  "note",
+  "tip",
+  "important",
+  "caution",
+  "warning",
+]);
+
+function admonitionVariant(node: AdocNode): AdmonitionNode["variant"] | null {
+  const name = stringAttribute(node, "name")?.toLowerCase();
+  return name && ADMONITION_VARIANTS.has(name)
+    ? (name as AdmonitionNode["variant"])
+    : null;
+}
+
+/**
+ * An admonition's content, whichever of the two forms it took.
+ *
+ * A compound admonition (`[TIP]\n====\n...\n====`) has real blocks, and
+ * `getContent()` on it returns their *rendered* concatenation - using both
+ * would double the content. A simple one (`NOTE: text`) has no blocks at all;
+ * its only content is `getContent()`, exactly as a paragraph's is.
+ */
+function draftAdmonition(node: AdocNode, variant: AdmonitionNode["variant"]): Draft {
+  const children = draftChildren(node);
+  if (children.length === 0) {
+    const text = flattenInline(node.getContent?.());
+    if (text.length > 0) children.push({ kind: "paragraph", line: lineOf(node), text });
+  }
+  return { kind: "admonition", line: lineOf(node), variant, children };
+}
+
+/** A quote block's content, by the same two-form rule as an admonition's. */
+function draftBlockquote(node: AdocNode): Draft {
+  const children = draftChildren(node);
+  if (children.length === 0) {
+    const text = flattenInline(node.getContent?.());
+    if (text.length > 0) children.push({ kind: "paragraph", line: lineOf(node), text });
+  }
+  return { kind: "blockquote", line: lineOf(node), children };
+}
+
+function draftTable(node: AdocNode): Draft {
+  const rows = node.getRows?.();
+  const toRow = (header: boolean) => (cells: AdocCell[]): DraftRow => ({
+    line: cells[0]?.getLineNumber?.() ?? lineOf(node),
+    header,
+    cells: cells.map((cell) => ({
+      line: cell.getLineNumber?.() ?? lineOf(node),
+      text: flattenInline(cell.getText()),
+    })),
+  });
+  return {
+    kind: "table",
+    line: lineOf(node),
+    rows: [
+      ...(rows?.getHead().map(toRow(true)) ?? []),
+      ...(rows?.getBody().map(toRow(false)) ?? []),
+      ...(rows?.getFoot().map(toRow(false)) ?? []),
+    ],
+  };
+}
+
+/**
+ * A description list's items.
+ *
+ * `getItems()` does not hand back `ListItem`s for a `dlist` the way it does
+ * for a `ulist`/`olist`; each entry is a `[terms, description]` tuple, and a
+ * missing description arrives as AsciiDoctor's own `nil`, which is a real
+ * object in the JS bridge rather than `null` or `undefined` - `asItem` rejects
+ * it the same way it rejects anything else with no `getText`.
+ */
+function draftDefinitionList(node: AdocNode): Draft {
+  const items: DraftDefinitionItem[] = [];
+
+  for (const entry of node.getItems?.() ?? []) {
+    if (!Array.isArray(entry)) continue;
+    const [rawTerms, rawDesc] = entry as [unknown, unknown];
+    const terms = (Array.isArray(rawTerms) ? rawTerms : [])
+      .map(asItem)
+      .filter((t): t is AdocItem => t !== null);
+    const first = terms[0];
+    if (!first) continue;
+
+    const children: Draft[] = [];
+    const desc = asItem(rawDesc);
+    if (desc) {
+      const text = flattenInline(desc.getText());
+      if (text.length > 0) children.push({ kind: "paragraph", line: lineOf(desc), text });
+      collect(
+        desc.getBlocks().map(asNode).filter((n): n is AdocNode => n !== null),
+        children,
+      );
+    }
+
+    items.push({
+      line: lineOf(first),
+      term: terms.map((t) => flattenInline(t.getText())).join(", "),
+      children,
+    });
+  }
+
+  return { kind: "definitionList", line: lineOf(node), items };
+}
+
 /** One block, or null when the content model has no kind for it. */
 function draftOf(node: AdocNode): Draft | null {
   switch (node.getContext()) {
@@ -301,9 +472,32 @@ function draftOf(node: AdocNode): Draft | null {
       return draftList(node, false);
     case "olist":
       return draftList(node, true);
+    case "table":
+      return draftTable(node);
+    case "admonition": {
+      const variant = admonitionVariant(node);
+      return variant ? draftAdmonition(node, variant) : null;
+    }
+    case "image": {
+      const url = stringAttribute(node, "target");
+      if (!url) return null;
+      const title = flattenInline(node.getTitle?.());
+      return {
+        kind: "image",
+        line: lineOf(node),
+        url,
+        alt: stringAttribute(node, "alt") ?? "",
+        ...(title.length > 0 ? { title } : {}),
+      };
+    }
+    case "quote":
+      return draftBlockquote(node);
+    case "dlist":
+      return draftDefinitionList(node);
     default:
-      // Admonitions, tables, sidebars, images, description lists, quotes.
-      // Skipped whole: their children are not the section's content either.
+      // Sidebars, thematic breaks, verses, and the rest the content model
+      // does not name. Skipped whole: their children are not the section's
+      // content either.
       return null;
   }
 }
@@ -416,6 +610,58 @@ function placeItems(items: DraftItem[], end: Point, index: LineIndex): ListItemN
   });
 }
 
+/**
+ * A table cell's own span: its starting line only.
+ *
+ * Asciidoctor reports a line per cell, but several cells on one row commonly
+ * share a single source line, so there is no line-based boundary between
+ * them the way there is between rows or list items. A cell spans just the
+ * line it starts on, the way a heading spans its own title line.
+ */
+function placeCells(cells: DraftCell[], index: LineIndex): TableCellNode[] {
+  return cells.map((cell) => ({
+    kind: "tableCell",
+    position: { start: index.start(cell.line), end: index.endOfLine(cell.line) },
+    text: cell.text,
+    children: [],
+  }));
+}
+
+function placeRows(rows: DraftRow[], end: Point, index: LineIndex): TableRowNode[] {
+  return rows.map((row, i) => {
+    const next = rows[i + 1];
+    const boundary = next ? index.start(next.line) : end;
+    const cells = placeCells(row.cells, index);
+    return {
+      kind: "tableRow",
+      position: { start: index.start(row.line), end: boundary },
+      text: cells.map((cell) => cell.text).join(" | "),
+      header: row.header,
+      children: cells,
+    };
+  });
+}
+
+function placeDefinitionItems(
+  items: DraftDefinitionItem[],
+  end: Point,
+  index: LineIndex,
+): DefinitionItemNode[] {
+  return items.map((item, i) => {
+    const next = items[i + 1];
+    const boundary = next ? index.start(next.line) : end;
+    const definition = placeContent(item.children, boundary, index);
+    const definitionText = definition.map((node) => node.text).join(" ");
+    return {
+      kind: "definitionItem",
+      position: { start: index.start(item.line), end: boundary },
+      text: definitionText.length > 0 ? `${item.term}: ${definitionText}` : item.term,
+      term: item.term,
+      definition,
+    };
+  });
+}
+
 function contentNode(
   draft: ContentDraft,
   position: Position,
@@ -442,6 +688,56 @@ function contentNode(
         ordered: draft.ordered,
         items: placeItems(draft.items, position.end, index),
       };
+    case "table": {
+      const rows = placeRows(draft.rows, position.end, index);
+      return {
+        kind: "table",
+        position,
+        text: rows.map((row) => row.text).join("\n"),
+        children: rows,
+      };
+    }
+    case "admonition": {
+      const children = placeContent(draft.children, position.end, index);
+      return {
+        kind: "admonition",
+        position,
+        text: children.map((node) => node.text).join("\n\n"),
+        variant: draft.variant,
+        children,
+      };
+    }
+    case "image":
+      return {
+        kind: "image",
+        position,
+        text: draft.alt,
+        url: draft.url,
+        alt: draft.alt,
+        ...(draft.title ? { title: draft.title } : {}),
+      };
+    case "blockquote": {
+      const children = placeContent(draft.children, position.end, index);
+      return {
+        kind: "blockquote",
+        position,
+        text: children.map((node) => node.text).join("\n\n"),
+        children,
+      };
+    }
+    case "definitionList": {
+      const children = placeDefinitionItems(draft.items, position.end, index);
+      return {
+        kind: "definitionList",
+        position,
+        // `item.text`, which is `"term: definition"`, not `item.term`. A
+        // node's `text` is its flattened rendering, so dropping the definition
+        // bodies here would make a pattern rule find a word in every format
+        // except this one.
+        text: children.map((item) => item.text).join("\n"),
+        children,
+      };
+    }
   }
 }
 
@@ -581,7 +877,20 @@ function parse(content: string, filePath: string): DocumentTree {
 export const asciidocParser: DocumentParser = {
   name: "asciidoc",
   label: "AsciiDoc",
-  kinds: ["paragraph", "codeBlock", "list"],
+  kinds: [
+    "paragraph",
+    "codeBlock",
+    "list",
+    "listItem",
+    "table",
+    "tableRow",
+    "tableCell",
+    "admonition",
+    "image",
+    "blockquote",
+    "definitionList",
+    "definitionItem",
+  ],
   extensions: [".adoc", ".asciidoc"],
   parse,
 };

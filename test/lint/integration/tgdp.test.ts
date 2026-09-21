@@ -67,19 +67,13 @@ describe.each(manifest.templates)("$id", (entry) => {
       (f) => `${f.position.start.line}: [${f.type}] ${f.message}`,
     );
 
-    if (entry.id === "tgdp:reference:1.6") {
-      // The reference doctype is table-heavy, and every parser this tool
-      // ships still reports only paragraph, codeBlock and list (proposal
-      // 0053) - so the "structured entry" rule's `tables: { min: 1 }` is
-      // pruned before matching and reported as a warning instead of
-      // silently passing, or failing a page for a shape no format here can
-      // see. The template stays green; the warning says why the rule did
-      // not run.
-      expect(rendered).toEqual([
-        '1: [unsupported_content_kind] The markdown parser does not report tables, so the "tables" rule in template "unnamed" is not checked for this file.',
-      ]);
-      return;
-    }
+    // `tgdp:reference:1.6` used to be the exception here. The reference
+    // doctype is table-heavy, and while the markdown parser reported only
+    // paragraph, codeBlock and list, its `tables: { min: 1 }` rule was pruned
+    // before matching and reported as a warning saying the rule had not run.
+    // The parser reports GFM tables now, so the rule runs, upstream's own
+    // table satisfies it, and the page is clean for the reason a reader would
+    // expect rather than because nothing looked.
     expect(rendered).toEqual([]);
   });
 

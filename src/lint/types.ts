@@ -55,6 +55,7 @@ export type ContentKind =
   | "paragraph"
   | "codeBlock"
   | "list"
+  | "listItem"
   | "table"
   | "tableRow"
   | "tableCell"
@@ -114,10 +115,20 @@ export interface TableNode extends ContentNodeBase {
   children: TableRowNode[];
 }
 
-/** `note`/`tip`/`important`/`caution`/`warning`/`danger` - an admonition's own flavor. */
+/**
+ * A callout, and the flavor the source gave it.
+ *
+ * `variant` is optional because not every format names one this vocabulary
+ * has. reStructuredText has `hint`, `attention`, `error` and a generic
+ * `admonition` directive, and a bare HTML `<aside>` says nothing at all. Those
+ * produce an admonition with no variant rather than an invented equivalence:
+ * mapping `hint` onto `tip` would make `variant: tip` pass on a page that
+ * never said tip. A `variant:` rule reports such a node as a mismatch, and a
+ * plain count rule still counts it.
+ */
 export interface AdmonitionNode extends ContentNodeBase {
   kind: "admonition";
-  variant: "note" | "tip" | "important" | "caution" | "warning" | "danger";
+  variant?: "note" | "tip" | "important" | "caution" | "warning" | "danger";
   children: ContentNode[];
 }
 
@@ -256,11 +267,15 @@ export interface DocumentParser {
  * How much a finding weighs, on the one scale every manni tool speaks
  * (`src/shared/severity.ts`): `notice | warning | error`.
  *
- * Every structural finding is an `error`: a template either describes a
- * document or it does not. The scale is the family's and not this tool's
- * private pair, because a flag or config key two domains both have carries the
- * same name *and* the same values. Re-exported so `lint.Severity` names the
- * same type a caller already has.
+ * Almost every structural finding is an `error`, since a template either
+ * describes a document or it does not. `unsupported_content_kind` is the
+ * exception and is a `warning`: the rule never ran, so the page may still be
+ * fine, and a warning never moves the exit code.
+ *
+ * The scale is the family's and not this tool's private pair, because a flag
+ * or config key two domains both have carries the same name *and* the same
+ * values. Re-exported so `lint.Severity` names the same type a caller already
+ * has.
  */
 export type { Severity };
 
