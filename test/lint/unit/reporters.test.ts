@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   render,
+  renderExplain,
   renderGithub,
   renderJson,
   renderJunit,
@@ -13,8 +14,10 @@ import {
   escapeWorkflowCommandMessage,
   escapeWorkflowCommandProperty,
 } from "../../../src/shared/github.js";
-import type { LintRun } from "../../../src/lint/commands/lint.js";
+import type { LintRun, LintFileResult } from "../../../src/lint/commands/lint.js";
 import { LintError, type Finding } from "../../../src/lint/types.js";
+import { markdownParser } from "../../../src/lint/parsers/markdown.js";
+import type { ExplainSource } from "../../../src/lint/reporters/alignment.js";
 
 const ESC = String.fromCharCode(27);
 
@@ -545,6 +548,190 @@ describe("toValidationResults", () => {
   it("calls a file with no findings ok", () => {
     const [result] = toValidationResults(runOf());
     expect(result?.ok).toBe(true);
+  });
+});
+
+/**
+ * `--explain`'s alignment block. `explain.test.ts` pins what
+ * `explainAlignment` itself renders; this covers the seam `renderExplain`
+ * reads it through - a result carrying `tree` and `template` (structurally,
+ * `ExplainSource`) gets a block, and one without them, which is every result
+ * `commands/lint.ts` produces today, renders exactly as before.
+ */
+describe("renderExplain's alignment block", () => {
+  function explainRun(result: Partial<LintFileResult> & { file: string }): LintRun {
+    return {
+      results: [
+        {
+          success: true,
+          findings: [],
+          template: "how-to",
+          ...result,
+        },
+      ],
+      summary: { checked: 1, passed: 1, failed: 0, skipped: 0 },
+    };
+  }
+
+  it("prints nothing extra for a result with no tree/template attached", () => {
+    const out = renderExplain(
+      explainRun({
+        file: "a.md",
+        resolution: { ref: "how-to", stage: "type", steps: [] },
+      }),
+      { color: false },
+    );
+    expect(out).not.toContain("alignment");
+  });
+
+  it("prints the alignment block for a result carrying an ExplainSource", () => {
+    const tree = markdownParser.parse(
+      "# How to do it\n\n## Before you start\n\nText.\n",
+      "a.md",
+    );
+    const source: ExplainSource = {
+      tree,
+      template: {
+        sections: [{ id: "before-you-start", heading: "Before you start", max: 1 }],
+      },
+    };
+    const result: LintFileResult = {
+      file: "a.md",
+      success: true,
+      findings: [],
+      // The ref, which is what the routing line shows. The loaded template
+      // rides under `alignment`, so the two cannot be confused for each other.
+      template: "how-to",
+      resolution: { ref: "how-to", stage: "type", steps: [] },
+      alignment: source,
+    };
+    const out = renderExplain({ results: [result], summary: { checked: 1, passed: 1, failed: 0, skipped: 0 } }, { color: false });
+    expect(out).toContain("alignment");
+    expect(out).toContain("(page)");
+    expect(out).toContain("before-you-start");
+    expect(out).toContain('"Before you start"');
+  });
+
+  it("never prints an alignment block for an unrouted file, even carrying a tree", () => {
+    const tree = markdownParser.parse("# Untyped\n", "a.md");
+    const result: LintFileResult = {
+      file: "a.md",
+      success: false,
+      findings: [],
+      template: null,
+      skipped: "no-template",
+      resolution: { ref: null, stage: null, cause: "no-type", steps: [] },
+      alignment: { tree, template: { sections: [] } },
+    };
+    const out = renderExplain(
+      { results: [result], summary: { checked: 0, passed: 0, failed: 0, skipped: 1 } },
+      { color: false },
+    );
+    expect(out).not.toContain("alignment");
+  });
+});
+
+/**
+ * Every finding type a rule can emit must be reportable: a SARIF rule
+ * descriptor GitHub code scanning can file an alert under, and a sensible
+ * GitHub annotation level. Both already fall out generically - `sarif.ts`'s
+ * `buildRules` derives one descriptor per distinct `finding.type` it meets,
+ * and `renderGithub`/`renderSarif` both read `finding.severity` directly
+ * rather than through a per-type table - so this is a pin against silent
+ * drift (a new rule module that forgets `severity: "error"`, or a future kind
+ * of finding that is not `"error"` and needs the same care
+ * `unsupported_content_kind` already gets) rather than a fix for a gap found
+ * here. One table beats one assertion per finding type: `src/lint/types.ts`
+ * carries no union to check against (`Finding.type` is `string`), so this
+ * table *is* the inventory - built by reading every `type:` a rule module,
+ * `core/match.ts`, `core/validator.ts` and `commands/lint.ts` construct.
+ */
+describe("every finding type is reportable", () => {
+  // [type, severity]. `unsupported_content_kind` is the one non-error;
+  // everything else is `severity: "error"` at its call site today.
+  const FINDING_TYPES: [string, Finding["severity"]][] = [
+    ["missing_section", "error"],
+    ["missing_group", "error"],
+    ["unexpected_section", "error"],
+    ["unsupported_content_kind", "warning"],
+    ["heading_error", "error"],
+    ["paragraphs_count_error", "error"],
+    ["paragraphs_pattern_error", "error"],
+    ["code_blocks_count_error", "error"],
+    ["code_blocks_language_error", "error"],
+    ["lists_count_error", "error"],
+    ["lists_ordered_error", "error"],
+    ["lists_items_count_error", "error"],
+    ["tables_count_error", "error"],
+    ["tables_columns_error", "error"],
+    ["admonitions_count_error", "error"],
+    ["admonitions_variant_error", "error"],
+    ["images_count_error", "error"],
+    ["blockquotes_count_error", "error"],
+    ["definition_lists_count_error", "error"],
+    ["elements_count_error", "error"],
+    ["elements_attribute_error", "error"],
+    ["content_order_error", "error"],
+    ["parse_error", "error"],
+    ["unknown_type", "error"],
+    ["template_error", "error"],
+  ];
+
+  function runOf(): LintRun {
+    return {
+      results: [
+        {
+          file: "a.md",
+          success: false,
+          template: "how-to",
+          findings: FINDING_TYPES.map(([type, severity]) =>
+            finding({ type, severity, heading: null, message: `${type} message` }),
+          ),
+        },
+      ],
+      summary: { checked: 1, passed: 0, failed: 1, skipped: 0 },
+    };
+  }
+
+  it("gets a SARIF rule descriptor at the right level, for every type", () => {
+    const log = JSON.parse(renderSarif(runOf())) as {
+      runs: {
+        tool: { driver: { rules: { id: string; defaultConfiguration?: { level: string } }[] } };
+        results: { ruleId: string; level: string }[];
+      }[];
+    };
+    const [run0] = log.runs;
+    const descriptorIds = new Set(run0?.tool.driver.rules.map((r) => r.id));
+    for (const [type, severity] of FINDING_TYPES) {
+      const ruleId = `manni:lint/structure/${type.replace(/_error$/, "").replace(/_/g, "-")}`;
+      expect(descriptorIds.has(ruleId), `descriptor for ${type}`).toBe(true);
+      const result = run0?.results.find((r) => r.ruleId === ruleId);
+      expect(result, `result for ${type}`).toBeDefined();
+      expect(result?.level).toBe(severity === "warning" ? "warning" : "error");
+    }
+  });
+
+  it("emits a GitHub annotation at the right level, for every type", () => {
+    const out = renderGithub(runOf());
+    const lines = out.split("\n");
+    for (const [type, severity] of FINDING_TYPES) {
+      const ruleId = `manni:lint/structure/${type.replace(/_error$/, "").replace(/_/g, "-")}`;
+      const line = lines.find((l) => l.includes(`title=${escapeWorkflowCommandProperty(ruleId)}`));
+      expect(line, `annotation for ${type}`).toBeDefined();
+      expect(line?.startsWith(`::${severity} `), `${type} level`).toBe(true);
+    }
+  });
+
+  // The one finding type that is not `error` must never turn a testcase red -
+  // `renderJunit`/`toValidationResults` already filter on severity, so this
+  // is the same pin as the two reporters above, for the format whose only two
+  // verdicts are "testcase" and "testcase with a failure".
+  it("never counts unsupported_content_kind as a JUnit failure", () => {
+    const [result] = toValidationResults(runOf());
+    const warningOnly = result?.errors.filter((e) => e.severity === "warning") ?? [];
+    expect(warningOnly).toHaveLength(1);
+    const xml = renderJunit(runOf());
+    expect(xml).not.toContain("unsupported-content-kind");
   });
 });
 

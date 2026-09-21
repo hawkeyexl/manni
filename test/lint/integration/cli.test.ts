@@ -369,6 +369,85 @@ describe("manni lint (built bin)", () => {
       expect(help.stdout).toContain("--templates <path>");
       expect(help.stdout).not.toContain("--templates <path...>");
     });
+
+    // `infer` is the escape from a format that is strict by default: proposal
+    // 0054's stress test 5 says the two ship together. The round trip is
+    // covered in `test/lint/unit/infer.test.ts`; what is only real after a
+    // build is the grammar - a third level under the `templates` noun, and a
+    // `templates` verb that still lists.
+    describe("infer", () => {
+      it("writes a template to stdout", () => {
+        const r = run(["templates", "infer", HOW_TO, "--no-config"]);
+        expect(r.status).toBe(0);
+        expect(r.stdout).toContain("templates:");
+        expect(r.stdout).toContain("heading:");
+      });
+
+      it("takes exactly one page", () => {
+        const help = run(["templates", "infer", "--help"]);
+        expect(help.status).toBe(0);
+        expect(help.stdout).toMatch(/^Usage: manni lint templates infer /m);
+        expect(help.stdout).toContain("<page>");
+        expect(help.stdout).not.toContain("<page...>");
+
+        const two = run(["templates", "infer", HOW_TO, BROKEN, "--no-config"]);
+        expect(two.status).toBe(2);
+        expect(two.stderr).toContain("too many arguments");
+      });
+
+      it("is a usage error with no page at all", () => {
+        const r = run(["templates", "infer", "--no-config"]);
+        expect(r.status).toBe(2);
+        expect(r.stderr).toContain("missing required argument 'page'");
+      });
+
+      it("reads stdin only with --as", () => {
+        const piped = run(["templates", "infer", "-", "--as", "markdown", "--no-config"], {
+          input: "# Title\n\nProse.\n",
+        });
+        expect(piped.status).toBe(0);
+        expect(piped.stdout).toContain("heading: Title");
+
+        const bare = run(["templates", "infer", "-", "--no-config"], {
+          input: "# Title\n",
+        });
+        expect(bare.status).toBe(2);
+        expect(bare.stderr).toContain(
+          "manni: Reading from stdin (-) requires --as <format> to choose a parser.",
+        );
+      });
+
+      it("refuses a format it could not load back", () => {
+        const r = run(["templates", "infer", HOW_TO, "-f", "xml", "--no-config"]);
+        expect(r.status).toBe(2);
+        expect(r.stderr).toContain('manni: Unknown --format "xml". Use yaml or json.');
+      });
+
+      it("will not overwrite --out without --force", () => {
+        const dir = makeTempRepo({ files: { "page.md": DOC }, init: false });
+        temp = dir;
+        const out = "./templates.yaml";
+        const first = run(["templates", "infer", "page.md", "-o", out, "--no-config"], {
+          cwd: dir,
+        });
+        expect(first.status).toBe(0);
+        expect(existsSync(join(dir, "templates.yaml"))).toBe(true);
+
+        const again = run(["templates", "infer", "page.md", "-o", out, "--no-config"], {
+          cwd: dir,
+        });
+        expect(again.status).toBe(2);
+        expect(again.stderr).toContain(
+          `manni: ${out} exists. Pass --force to overwrite it.`,
+        );
+
+        const forced = run(
+          ["templates", "infer", "page.md", "-o", out, "--force", "--no-config"],
+          { cwd: dir },
+        );
+        expect(forced.status).toBe(0);
+      });
+    });
   });
 });
 

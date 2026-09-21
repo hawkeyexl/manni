@@ -409,10 +409,18 @@ describe("0009 · the published copies under docs/public", () => {
   });
 
   it("publishes nothing that src/meta/schemas does not have", () => {
+    // Scoped to the namespaces `src/meta/schemas` itself declares, because
+    // `docs/public/schemas/` is no longer meta's alone: `manni lint` publishes
+    // its template schema at `lint/template/2.json`, and a second domain will
+    // follow. Walking every directory here would make this test fail whenever
+    // a sibling tool published anything, which is a fact about this test
+    // rather than about meta's schemas. lint's own copy is checked against
+    // `schemas/lint/template.json` in `test/lint/unit/published-schema.test.ts`.
     const base = join(root, "docs", "public", "schemas");
+    const owned = new Set(sourceFiles().map((key) => key.split("/")[0]));
     const found: string[] = [];
     for (const dir of readdirSync(base, { withFileTypes: true })) {
-      if (!dir.isDirectory()) continue;
+      if (!dir.isDirectory() || !owned.has(dir.name)) continue;
       for (const file of readdirSync(join(base, dir.name))) {
         found.push(`${dir.name}/${file}`);
       }

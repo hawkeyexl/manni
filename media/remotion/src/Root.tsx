@@ -8,6 +8,7 @@ import { beats as provenanceBeats, totalFrames as provenanceTotalFrames, TYPING_
 import { beats as collectionsBeats, totalFrames as collectionsTotalFrames } from "./collections/beats";
 import { beats as locationBeats, totalFrames as locationTotalFrames, TYPING_MS as locationTypingMs } from "./location/beats";
 import { beats as termBeats, totalFrames as termTotalFrames, TYPING_MS as termTypingMs } from "./term/beats";
+import { beats as lintBeats, totalFrames as lintTotalFrames, TYPING_MS as lintTypingMs } from "./lint/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -26,6 +27,14 @@ const DemoLocation: React.FC = () => <DemoView beats={locationBeats} fontPx={28}
 
 /** term-vale-1x1: 21 px / 82 columns, derived in media/term-vale-1x1.script.md (media/capture-term/cols.mjs). */
 const DemoTerm: React.FC = () => <DemoView beats={termBeats} fontPx={21} linePx={32} cols={82} typingMs={termTypingMs} ligatures={false} />;
+
+/**
+ * lint-templates-infer-1x1: 22 px / 78 columns, derived in
+ * media/lint-templates-infer-1x1.script.md
+ * (media/capture-lint/cols.mjs).
+ * Ligatures off: the page's `---` frontmatter fences would draw as one rule.
+ */
+const DemoLint: React.FC = () => <DemoView beats={lintBeats} fontPx={22} linePx={31} cols={78} typingMs={lintTypingMs} ligatures={false} />;
 
 export const Root: React.FC = () => (
   <>
@@ -84,6 +93,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={termTotalFrames}
+    />
+    <Composition
+      id="LintDemo"
+      component={DemoLint}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={lintTotalFrames}
     />
   </>
 );
