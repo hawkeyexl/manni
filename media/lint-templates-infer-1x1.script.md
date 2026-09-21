@@ -34,7 +34,7 @@ the cyan are 28 degrees of hue apart and never read as the same thing.
 
 ## Where the files are
 
-This video's own files live together under `media/lint-templates/`. That
+This video's own files live together under `media/`. That
 includes this script, the transcript, the captions, the thumbnail, the GIF,
 and the suggested post. It also includes `capture/`, which holds the capture
 script and every captured byte. The earlier videos keep the same files flat in
@@ -46,7 +46,7 @@ fonts. This video adds `src/lint/beats.ts`, `src/lint/captures.json`, the
 `LintDemo` composition in `src/Root.tsx`, and three scripts under
 `scripts/`. Copying the project per video would fork the replay engine.
 
-`media/lint-templates/lint-templates-infer-1x1.mp4` is not committed:
+`media/lint-templates-infer-1x1.mp4` is not committed:
 `.gitignore` covers `media/**/*.mp4`.
 
 ## How it was made, and what is staged
@@ -66,7 +66,7 @@ Everything printed in the terminal is a real run of `cat`, `sed`, or
   `media/capture/tty.cjs`, which makes stdout and stderr report as a terminal.
   The pretty reporter then colours its output as it would for a person.
 - **One script builds the repository and takes every capture:**
-  `media/lint-templates/capture/capture.sh`. It is the record of the staging.
+  `media/capture-lint/capture.sh`. It is the record of the staging.
 - **`media/scratch-lint/` is the demo repository.** It has its own `git init`,
   with one commit by a pinned author and date. `media/scratch-*` is gitignored
   in manni, and discovery honours `.gitignore`. Nothing was committed to manni.
@@ -97,7 +97,7 @@ Everything printed in the terminal is a real run of `cat`, `sed`, or
 
 ## Derived font size
 
-`media/lint-templates/capture/cols.mjs` runs the replay's own space-only wrap
+`media/capture-lint/cols.mjs` runs the replay's own space-only wrap
 over every real line from 30 px down. The longest real line is 189 characters,
 the first `unexpected-section` finding. The longest token plus indent is 43,
 `manni:lint/structure/unexpected-section` at its four-space indent, so no size
@@ -208,7 +208,7 @@ Using manni.config.yaml (.)
 - Typing 35 ms per character (spec: 35-70 ms). The cursor is a solid block and
   does not blink.
 - Output appears after the command's real measured latency, from the capture
-  run plus three timing runs (`media/lint-templates/capture/latency.txt`).
+  run plus three timing runs (`media/capture-lint/latency.txt`).
   `lint structure` took 742-815 ms, `templates infer` to stdout 702-787 ms, and
   `templates infer -o` 714-804 ms. The replay uses 0.78, 0.75 and 0.76 s, and
   1-2 frames for `cat`, `sed` and `echo`. Nothing is sped up, so the 1.3x
@@ -245,8 +245,8 @@ echo $?
 npm ci && npm run build
 
 # 1. Demo repository and every capture (from anywhere)
-bash media/lint-templates/capture/capture.sh
-node media/lint-templates/capture/cols.mjs 22      # the font-size table
+bash media/capture-lint/capture.sh
+node media/capture-lint/cols.mjs 22      # the font-size table
 
 # 2. Render and package (from media/remotion, after npm ci there)
 node scripts/captures-lint.mjs
@@ -255,16 +255,16 @@ npx tsc src/lint/beats.ts --outDir scripts/out-lint --module commonjs --target e
 cp src/lint/captures.json scripts/out-lint/lint/
 npx remotion render src/index.ts LintDemo out/lint/render.mp4
 npx remotion still src/index.ts LintDemo \
-  ../lint-templates/lint-templates-infer-1x1.thumb.png --frame=660
+  ../lint-templates-infer-1x1.thumb.png --frame=660
 node scripts/vtt-lint.cjs && node scripts/transcript-lint.cjs
 cd .. && ffmpeg -i remotion/out/lint/render.mp4 -f lavfi -i anullsrc=r=48000:cl=stereo \
   -shortest -c:v copy -c:a aac -b:a 128k -movflags +faststart \
-  lint-templates/lint-templates-infer-1x1.mp4
-ffmpeg -i lint-templates/lint-templates-infer-1x1.mp4 \
+  lint-templates-infer-1x1.mp4
+ffmpeg -i lint-templates-infer-1x1.mp4 \
   -vf "fps=12,scale=540:540:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle" \
-  lint-templates/lint-templates-infer-1x1.gif
+  lint-templates-infer-1x1.gif
 ```
 
 The suggested LinkedIn post is
-`media/lint-templates/lint-templates-infer-1x1.post.txt`. Posting is the
+`media/lint-templates-infer-1x1.post.txt`. Posting is the
 author's call.

@@ -30,8 +30,8 @@ const DemoTerm: React.FC = () => <DemoView beats={termBeats} fontPx={21} linePx=
 
 /**
  * lint-templates-infer-1x1: 22 px / 78 columns, derived in
- * media/lint-templates/lint-templates-infer-1x1.script.md
- * (media/lint-templates/capture/cols.mjs).
+ * media/lint-templates-infer-1x1.script.md
+ * (media/capture-lint/cols.mjs).
  * Ligatures off: the page's `---` frontmatter fences would draw as one rule.
  */
 const DemoLint: React.FC = () => <DemoView beats={lintBeats} fontPx={22} linePx={31} cols={78} typingMs={lintTypingMs} ligatures={false} />;

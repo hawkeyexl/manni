@@ -17,6 +17,6 @@ b.beats.forEach((beat, i) => {
   out += `${i + 1}\n${ts(t)} --> ${ts(t + d)}\n${beat.title}: ${beat.caption}\n\n`;
   t += d;
 });
-fs.writeFileSync("../lint-templates/lint-templates-infer-1x1.vtt", out);
+fs.writeFileSync("../lint-templates-infer-1x1.vtt", out);
 console.log(out);
 console.log(`total ${(b.totalFrames / fps).toFixed(2)}s (${b.totalFrames} frames)`);

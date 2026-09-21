@@ -1,4 +1,4 @@
-// Turn the real captures in media/lint-templates/capture/ into JSON the composition imports.
+// Turn the real captures in media/capture-lint/ into JSON the composition imports.
 // Nothing here edits output: bytes in, bytes out (CRLF normalised to LF only).
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";

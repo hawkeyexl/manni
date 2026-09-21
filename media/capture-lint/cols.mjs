@@ -2,7 +2,7 @@
 // real line either fits or wraps at a space, never inside a token, within the frame.
 // The wrap below is the replay's own (src/Demo.tsx wrapLine): trailing spaces count,
 // and a continuation row carries the line's indent.
-// Run from anywhere: node media/lint-templates/capture/cols.mjs [px]
+// Run from anywhere: node media/capture-lint/cols.mjs [px]
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";

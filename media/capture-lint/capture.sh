@@ -2,7 +2,7 @@
 # lint-templates-infer-1x1: build the demo repository and capture every real
 # byte the video replays. Run from anywhere after `npm run build` at the repo
 # root:
-#   bash media/lint-templates/capture/capture.sh
+#   bash media/capture-lint/capture.sh
 #
 # The page is test/lint/fixtures/formats/how-to.md, copied under the name the
 # video types. Beat 5 deletes its `## See also` section in place, and the
@@ -12,7 +12,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."      # media/
 ROOT="$(cd .. && pwd)"
-C="$(pwd)/lint-templates/capture"
+C="$(pwd)/capture-lint"
 S=scratch-lint
 rm -rf "$S" && mkdir -p "$S/docs"
 

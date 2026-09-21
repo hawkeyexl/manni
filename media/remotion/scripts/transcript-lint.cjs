@@ -12,7 +12,7 @@ let out =
   `manni lint templates infer, demo video transcript (silent video; text describes what is on screen)\n\n` +
   `Frame: 1080x1080, 30 fps, ${total} s. Every terminal line is real output of cat, sed and of\n` +
   `\`node dist/cli.js lint ...\` (typed as manni) run inside media/scratch-lint/, a git repository\n` +
-  `staged from test/lint/fixtures/formats/how-to.md by media/lint-templates/capture/capture.sh.\n` +
+  `staged from test/lint/fixtures/formats/how-to.md by media/capture-lint/capture.sh.\n` +
   `Its manni.config.yaml (lint.templates: [templates.yaml]) is staged and not shown; the\n` +
   `"Using manni.config.yaml (.)" line each command prints is manni reporting that it found it.\n\n`;
 let t = 0;
@@ -41,5 +41,5 @@ b.beats.forEach((beat, i) => {
   out += `Caption: ${beat.caption}\n\n`;
   t += d;
 });
-fs.writeFileSync("../lint-templates/lint-templates-infer-1x1.transcript.txt", out);
+fs.writeFileSync("../lint-templates-infer-1x1.transcript.txt", out);
 console.log(out);

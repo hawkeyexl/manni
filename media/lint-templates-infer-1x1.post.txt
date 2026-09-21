@@ -12,9 +12,9 @@ section" before it gives you anything useful. So you go and write the template
 by hand, from nothing, for every doctype you own.
 
 `manni lint templates infer` starts you somewhere else. Point it at one page
-that already has the shape you want, and it writes the template that describes
-that page: the headings, in order, and the content each section actually
-carries. Save it, and the same lint command that produced the wall now passes.
+that already has the shape you want. It writes the template that describes that
+page, with the headings in order and the content each section actually carries.
+Save it, and the same lint command that produced the wall now passes.
 
 It is a first draft, and it says so. One page cannot show what varies, so every
 rule it writes is exactly one occurrence. Loosening a heading, marking a
