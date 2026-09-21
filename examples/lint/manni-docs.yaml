@@ -1,0 +1,111 @@
+# manni lint's own docs site (docs/src/content/docs/), worked in the v2
+# template grammar (proposal 0054) over the shared content model (0053).
+#
+# The site carries no `type:` frontmatter, so in a real `manni.config.yaml`
+# these templates are reached through `lint.overrides` globs keyed on the
+# path under `docs/src/content/docs/`, not through `types:`. None of the
+# templates here declare `types:` for that reason - it would claim a doctype
+# nothing routes by.
+info:
+  title: manni lint's own docs (worked example)
+
+templates:
+  # The fallback: asserts only that the page has a body. `extends` merges by
+  # rule id (proposal 0054), so a child that sets its own `contains` would
+  # simply replace this one - `get-started` below never does, so it inherits
+  # the paragraph floor unchanged and adds its own `sections:`.
+  page:
+    description: >-
+      Fallback for any page this file does not name a shape for: a page is a
+      body, at minimum.
+    contains:
+      paragraphs:
+        min: 1
+
+  # A get-started page opens with an intro paragraph (inherited from `page`
+  # through `extends`), states what to do before starting, covers the setup
+  # itself in however many sections that takes, and closes with a pointer
+  # onward. Two spellings of the closer are in real use on the site, so the
+  # heading is a one-of rather than an exact string.
+  get-started:
+    extends: manni-docs.yaml#page
+    sections:
+      - id: before-you-start
+        heading: Before you start
+        max: 1
+      - id: middle
+        description: >-
+          Whatever the setup itself takes - a slot, matched positionally, so
+          it claims however many sections come between the two named ones.
+        min: 0
+      - id: closer
+        heading:
+          - Next steps
+          - Where to go next
+        max: 1
+
+  # A CLI reference is a `Global options` table followed by one section per
+  # command, each keyed by its own backticked name (a slot with a pattern
+  # rather than a literal, since the command name is the one thing that
+  # varies) and carrying its own optional `Arguments` and `Options` tables.
+  cli-reference:
+    sections:
+      - id: global-options
+        heading: Global options
+        max: 1
+        contains:
+          tables:
+            min: 1
+            columns: [Option, Description]
+      - id: command
+        description: >-
+          One command's own section, repeated: an unbounded `max` on an
+          anchored rule claims every consecutive heading that matches, which
+          is what lets the site add a command without touching this file. The
+          heading is written with backticks in the source
+          (`` `manni lint check` ``), but a heading's flattened text has no
+          markup left in it (proposal 0053), so the pattern matches the
+          command name's own shape - it starts with the binary's name -
+          rather than the backticks that wrote it.
+        heading:
+          pattern: '^manni\b'
+        min: 0
+        sections:
+          - id: arguments
+            heading: Arguments
+            min: 0
+            max: 1
+            contains:
+              tables:
+                min: 1
+                columns: [Argument, Description]
+          - id: options
+            heading: Options
+            min: 0
+            max: 1
+            contains:
+              tables:
+                min: 1
+                columns: [Option, Description]
+
+  # An overview page is Starlight MDX: an `Aside` note up front, however much
+  # prose the page needs, and a `CardGrid` of `Card`/`LinkCard` elements
+  # pointing further into the section. `elements` is the one kind Markdown
+  # cannot report (proposal 0053), so this template only makes sense linted
+  # against an `.mdx` file.
+  overview:
+    sequence:
+      - elements:
+          tag: Aside
+          attributes:
+            type: note
+          max: 1
+      - paragraphs:
+          min: 1
+      - elements:
+          tag: CardGrid
+          max: 1
+          contains:
+            elements:
+              tag: [Card, LinkCard]
+              min: 1
