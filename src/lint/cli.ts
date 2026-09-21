@@ -45,8 +45,9 @@ import {
 } from "../meta/index.js";
 import { LintError } from "./types.js";
 import { runLint } from "./commands/lint.js";
-import { runTemplates } from "./commands/templates.js";
+import { runTemplates, runTemplatesInfer } from "./commands/templates.js";
 import { runTools } from "./commands/tools.js";
+import { INFER_FORMATS, isInferFormat, type InferFormat } from "./core/infer.js";
 import { LINT_JOBS, TOOLS_BY_JOB, loadConfig, rebaseConfig } from "./core/config.js";
 import {
   render,
@@ -93,6 +94,16 @@ interface TemplatesCommandOptions {
   templates: string[];
   config?: string | boolean;
   format: string;
+}
+
+/** What commander parses for `templates infer`. */
+interface TemplatesInferCliOptions {
+  as?: string;
+  name?: string;
+  config?: string | boolean;
+  format: string;
+  out?: string;
+  force?: boolean;
 }
 
 /** What commander parses for `tools`. */
@@ -151,6 +162,20 @@ function listFormat(value: unknown): ListFormat {
 }
 
 /**
+ * `templates infer -f`: the format a *template file* is written in, which is
+ * not the set a report is rendered in. A template is YAML or JSON because those
+ * are the two the loader reads back, and `pretty` would name a third thing the
+ * tool cannot then load.
+ */
+function inferFormat(value: unknown): InferFormat {
+  const format = String(value);
+  if (!isInferFormat(format)) {
+    throw new LintError(`Unknown --format "${format}". Use yaml or json.`);
+  }
+  return format;
+}
+
+/**
  * `--tool <name>`: which tool performs a job. Refused by name rather than
  * ignored, because falling through to manni's engine would lint with something
  * other than what was asked for and say nothing.
@@ -163,9 +188,50 @@ function assertTool(job: "structure", value: string | undefined): void {
   );
 }
 
+/**
+ * `-c/--config` and `--no-config`, in one place.
+ *
+ * Every verb here takes them, and they had been written out three times. A flag
+ * two commands both have carries the same name *and* the same description, so
+ * the declaration is shared rather than copied - which is what kept the fourth
+ * copy, on `templates infer`, from spelling either of them slightly differently.
+ */
+function withConfigOptions(command: Command): Command {
+  return command
+    .option("-c, --config <path>", "path to a manni config file")
+    .option("--no-config", "ignore any discovered config file");
+}
+
+/**
+ * The value of a flag a command and its parent both declare.
+ *
+ * Commander keeps parsing a parent's options past a subcommand name unless
+ * `enablePositionalOptions()` is on, so `templates infer page.md -f json` sets
+ * `format` on `templates` and leaves `infer` holding its own default. Both
+ * commands declare `-f`, `-c` and `--no-config`, because "commands must have
+ * parallel behaviors" and `infer` must list them in its own `--help`.
+ *
+ * Turning positional options on would fix it and move every other flag in this
+ * program with it: `manni lint structure docs/ --no-color` is a root option
+ * written after its command, and there are three more like it. So the lookup
+ * changes instead. The nearest command actually *given* the flag wins, and the
+ * subcommand's own default is the fallback - which is the reading a person
+ * typing the line already has.
+ */
+function optionValue(command: Command, key: string): unknown {
+  for (
+    let cmd: Command | null = command;
+    cmd !== null;
+    cmd = cmd.parent ?? null
+  ) {
+    if (cmd.getOptionValueSource(key) === "cli") return cmd.getOptionValue(key);
+  }
+  return command.getOptionValue(key);
+}
+
 /** The options every job verb takes, in one place so the two cannot drift. */
 function withInputOptions(command: Command): Command {
-  return command
+  command
     .argument(
       "[paths...]",
       "files, directories, or globs to lint (use - for stdin)",
@@ -183,9 +249,8 @@ function withInputOptions(command: Command): Command {
       "-f, --format <format>",
       `output: ${REPORT_FORMATS.join(" | ")}`,
       "pretty",
-    )
-    .option("-c, --config <path>", "path to a manni config file")
-    .option("--no-config", "ignore any discovered config file")
+    );
+  return withConfigOptions(command)
     .option("--allow-empty", "treat zero matched files as success")
     .option("--no-gitignore", "lint files .gitignore covers");
 }
@@ -366,7 +431,7 @@ export function buildProgram(): Command {
       },
     );
 
-  program
+  const templates = program
     .command("templates")
     .description("List the templates that can be applied, and the types they serve")
     .option(
@@ -374,9 +439,8 @@ export function buildProgram(): Command {
       "also list the templates in this file; repeatable",
       collect,
       [],
-    )
-    .option("-c, --config <path>", "path to a manni config file")
-    .option("--no-config", "ignore any discovered config file")
+    );
+  withConfigOptions(templates)
     .option("-f, --format <format>", "output: pretty | json", "pretty")
     .action(async (options: TemplatesCommandOptions, command: Command) => {
       try {
@@ -399,11 +463,92 @@ export function buildProgram(): Command {
       }
     });
 
-  program
-    .command("tools")
-    .description("List the lint jobs, the tool that performs each, and what it reads")
-    .option("-c, --config <path>", "path to a manni config file")
-    .option("--no-config", "ignore any discovered config file")
+  const inferCommand = templates
+    .command("infer")
+    .description("Write a first template from a page that already has the shape you want")
+    .argument("<page>", "one file to infer from (use - for stdin)")
+    .option("--as <format>", "force an input format (e.g. markdown, mdx)")
+    .option(
+      "--name <name>",
+      "name for the template; defaults to the page's `type`, else its filename",
+    )
+    .option("-f, --format <format>", `output: ${INFER_FORMATS.join(" | ")}`, "yaml")
+    .option("-o, --out <path>", "write the template here instead of to stdout")
+    .option("--force", "overwrite the --out path");
+  withConfigOptions(inferCommand)
+    .addHelpText(
+      "after",
+      [
+        "",
+        "Examples:",
+        "  manni lint templates infer docs/guides/install.md",
+        "  manni lint templates infer docs/guides/install.md --name how-to",
+        "  manni lint templates infer page.mdx -f json",
+        "  manni lint templates infer page.md -o ./templates.yaml",
+        "  manni lint templates infer page.md -o ./templates.yaml --force",
+        "  cat page.md | manni lint templates infer - --as markdown",
+        "",
+        "One page, and every rule it writes is exactly one occurrence: a single",
+        "page cannot show what varies. Loosening a heading into a list or a",
+        "pattern, setting `min: 0`, and adding a trailing rule with no heading",
+        "for the sections that may follow are your edits to make.",
+      ].join("\n"),
+    )
+    .action(
+      async (
+        page: string,
+        options: TemplatesInferCliOptions,
+        command: Command,
+      ) => {
+        try {
+          // `-f`, `-c` and `--no-config` are read through `optionValue`: the
+          // parent `templates` declares all three, and commander hands it any
+          // of them typed after `infer`.
+          const format = inferFormat(optionValue(command, "format"));
+          const { configPath, noConfig } = configOption(
+            optionValue(command, "config"),
+          );
+          const stdinContent =
+            page === STDIN_TOKEN ? await readStdin() : undefined;
+          const result = await runTemplatesInfer({
+            page,
+            format,
+            ...(options.as === undefined ? {} : { as: options.as }),
+            ...(options.name === undefined ? {} : { name: options.name }),
+            ...(options.out === undefined ? {} : { out: options.out }),
+            ...(options.force === undefined ? {} : { force: options.force }),
+            ...(configPath === undefined ? {} : { configPath }),
+            ...(noConfig === undefined ? {} : { noConfig }),
+            ...(stdinContent === undefined ? {} : { stdinContent }),
+            // The template is the primary output, so with no --out it owns
+            // stdout and the config line goes to stderr beside it. With --out
+            // stdout is free, and the line still belongs on stderr: a reader
+            // piping nothing is not a reason to move a diagnostic.
+            onConfigLoaded: reportConfig(false, process.cwd()),
+          });
+
+          if (result.written === undefined) {
+            process.stdout.write(result.text);
+            return;
+          }
+          // Said on stderr, so `-o` leaves stdout empty for a shell that is
+          // watching it, and the template file is the whole output.
+          process.stderr.write(
+            `Wrote template "${result.name}" to ${result.written}\n`,
+          );
+        } catch (err) {
+          fail(err);
+        }
+      },
+    );
+
+  withConfigOptions(
+    program
+      .command("tools")
+      .description(
+        "List the lint jobs, the tool that performs each, and what it reads",
+      ),
+  )
     .option("-f, --format <format>", "output: pretty | json", "pretty")
     .action(async (options: ToolsCommandOptions, command: Command) => {
       try {
