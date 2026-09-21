@@ -407,15 +407,76 @@ describe("runUpdate: the claim end", () => {
     expect(onDisk(label)).toBe(before);
   });
 
-  it("says a changed claim now sits inside a fenced block", async () => {
+  it("re-pins a changed claim over the lines it held inside a fenced block", async () => {
     workspace();
     const label = write("fenced.md", [
       "---",
       "citations:",
       "  - id: buried",
       "    claim:",
-      "      lines: 4",
-      `      integrity: ${hashLines("A sentence nobody kept.")}`,
+      "      lines: 5",
+      `      integrity: ${hashLines("const b = 1;")}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "---",
+      "Before.",
+      "",
+      "```ts",
+      "const a = 1;",
+      "const b = 2;",
+      "```",
+    ]);
+    const run = await update({ inputs: [label], accept: true });
+    // The claim was minted over one line inside the block, so the re-pin
+    // covers that line and not the block around it.
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.at, r.text, r.to])).toEqual([
+      ["buried", 16, "const b = 2;", hashLines("const b = 2;")],
+    ]);
+    expect(onDisk(label)).toContain("      lines: 5\n");
+    expect(await ends(label)).toEqual([["current", "current"]]);
+  });
+
+  it("says a changed claim's lines run out of the fenced block they start in", async () => {
+    workspace();
+    const label = write("crossing.md", [
+      "---",
+      "citations:",
+      "  - id: spilling",
+      "    claim:",
+      "      lines: 4-6",
+      `      integrity: ${hashLines("const a = 0;\n```\nAfter.")}`,
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "---",
+      "Before.",
+      "",
+      "```ts",
+      "const a = 1;",
+      "```",
+      "After.",
+    ]);
+    const before = onDisk(label);
+    const run = await update({ inputs: [label], accept: true });
+    expect(run.pages[0]?.skipped.map((f) => f.rule)).toEqual(["claim-changed"]);
+    expect(run.pages[0]?.skipped[0]?.message).toContain(
+      "Not re-pinned: the claim's lines are not all inside one fenced block.",
+    );
+    expect(onDisk(label)).toBe(before);
+  });
+
+  it("re-pins a changed claim on a fence's opening line over the whole block", async () => {
+    workspace();
+    const label = write("whole-block.md", [
+      "---",
+      "citations:",
+      "  - id: opener",
+      "    claim:",
+      "      lines: 3-5",
+      `      integrity: ${hashLines("```ts\nconst a = 0;\n```")}`,
       "    source:",
       "      file: src/limits.ts",
       "      lines: 2",
@@ -427,13 +488,12 @@ describe("runUpdate: the claim end", () => {
       "const a = 1;",
       "```",
     ]);
-    const before = onDisk(label);
     const run = await update({ inputs: [label], accept: true });
-    expect(run.pages[0]?.skipped.map((f) => f.rule)).toEqual(["claim-changed"]);
-    expect(run.pages[0]?.skipped[0]?.message).toContain(
-      "Not re-pinned: the line sits inside a fenced block.",
-    );
-    expect(onDisk(label)).toBe(before);
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.at, r.text, r.to])).toEqual([
+      ["opener", 14, "```ts const a = 1; ```", hashLines("```ts\nconst a = 1;\n```")],
+    ]);
+    expect(onDisk(label)).toContain("      lines: 3-5\n");
+    expect(await ends(label)).toEqual([["current", "current"]]);
   });
 
   it("says a changed claim's line no longer starts a paragraph", async () => {

@@ -156,11 +156,12 @@ interface Declined {
 
 /**
  * Why `--accept` re-pinned nothing at the claim's line, said plainly. Each
- * reason is a different problem: a blank line lost the sentence, a fenced line
- * moved it into code, a line that starts no paragraph is a heading underline
- * or an unclosed fence, a line outside the body is a range the page no longer
- * reaches, a short table lost rows the claim was minted over, and a marker or
- * a table rule is a line that holds no claim text at all.
+ * reason is a different problem: a blank line lost the sentence, a claim that
+ * runs out of its fenced block covers a fence rather than code, a line that
+ * starts no paragraph is a heading underline or an unclosed fence, a line
+ * outside the body is a range the page no longer reaches, a short table lost
+ * rows the claim was minted over, and a marker or a table rule is a line that
+ * holds no claim text at all.
  */
 function sayNoUnit(reason: NoUnit): string {
   switch (reason) {
@@ -168,8 +169,8 @@ function sayNoUnit(reason: NoUnit): string {
       return "the line is outside the page body";
     case "blank":
       return "the line is blank";
-    case "fenced":
-      return "the line sits inside a fenced block";
+    case "fence-crossed":
+      return "the claim's lines are not all inside one fenced block";
     case "marker":
       return "that line now holds a cite marker, not claim text";
     case "not-a-paragraph":
@@ -179,6 +180,11 @@ function sayNoUnit(reason: NoUnit): string {
     case "table-rule":
       return "that line is a table rule, not claim text";
   }
+}
+
+/** A unit named in a refusal. `fenced-lines` is a span of code, not a block. */
+function unitNoun(kind: ClaimUnit["kind"]): string {
+  return kind === "fenced-lines" ? "fenced text" : kind;
 }
 
 /** The rule a plan settles, so its finding is not also reported as skipped. */
@@ -857,7 +863,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       if (unit !== undefined && wide !== undefined) {
         declined.set(result.origin.index, {
           rule: "claim-changed",
-          why: `Not re-pinned: the ${unit.kind} ${wide}.`,
+          why: `Not re-pinned: the ${unitNoun(unit.kind)} ${wide}.`,
         });
       } else if (unit === undefined) {
         const why = at === undefined ? undefined : noUnitAt(page, at, lines, held, named);
@@ -867,7 +873,16 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
             why: `Not re-pinned: ${sayNoUnit(why)}.`,
           });
         }
-      } else if (pin !== undefined && (!wantsBlock || unit.kind === "block")) {
+      } else if (wantsBlock && unit.kind !== "block") {
+        // A `quote: true` entry's claim lines are a whole fenced block, fences
+        // included; `check` reads anything else as `anchor-invalid`. So a
+        // quote whose first line drifted into prose, or into the middle of a
+        // block, is left for a fresh `cite add` and says so.
+        declined.set(result.origin.index, {
+          rule: "claim-changed",
+          why: "Not re-pinned: quote: true, and the line no longer opens a fenced block.",
+        });
+      } else if (pin !== undefined) {
         // Where else the same text sits. A pin cannot tell two copies apart,
         // so re-pinning over one of them writes a claim that is
         // `moved-ambiguous` the moment anything above it shifts. `add` refuses
