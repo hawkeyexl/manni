@@ -88,6 +88,14 @@ const setEnginesNode = (range: string): void => {
   );
 };
 
+/** Rewrites the temp copy's package.json with `version` set to `version`. */
+const setVersion = (version: string): void => {
+  writeFileSync(
+    join(root, "package.json"),
+    JSON.stringify({ name: "versions-fixture", version, engines: { node: ">=24" } }),
+  );
+};
+
 const original = (rel: string): string => {
   const text = originals.get(rel);
   if (text === undefined) throw new Error(`no original for ${rel}`);
@@ -119,6 +127,29 @@ describe("docs:check-versions", () => {
   it("writes nothing", () => {
     run(checkScript, root);
     for (const [rel, text] of originals) expect(read(rel), rel).toBe(text);
+  });
+
+  // `.releaserc.json` makes `feat/**` a prerelease channel, so the first
+  // release from such a branch commits `2.9.0-cite-marker-ids.1` into
+  // package.json. The sync refuses to write a prerelease into the docs, which
+  // left this check demanding a rewrite that nothing would ever make: every
+  // feat branch went permanently red through no fault of its author.
+  it("skips the comparison when package.json is a prerelease, and writes nothing", () => {
+    setVersion("2.9.0-cite-marker-ids.1");
+    const { stdout, stderr, status } = run(checkScript, root);
+    expect(status).toBe(0);
+    expect(stderr).toBe("");
+    expect(lines(stdout)).toEqual([
+      "versions: skipped, package.json is the prerelease 2.9.0-cite-marker-ids.1; the release syncs pins to stable versions only",
+    ]);
+    for (const [rel, text] of originals) expect(read(rel), rel).toBe(text);
+  });
+
+  it("still reports stale pins once the version is stable again", () => {
+    setVersion("2.0.1");
+    const { stderr, status } = run(checkScript, root);
+    expect(status).toBe(1);
+    expect(lines(stderr)).toContain("versions: 15 pins checked, 12 stale");
   });
 
   it("uses the highest major any workflow uses for an action", () => {
