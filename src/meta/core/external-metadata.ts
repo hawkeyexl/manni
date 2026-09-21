@@ -117,13 +117,26 @@ export interface ExternalMetadataEntry {
 type Values = Map<string, ExternalMetadataValue>;
 
 /**
+ * The same mapping as `Values`, as a cached parse hands it out. A caller that
+ * holds one may read it and may copy it, and cannot write into the parse the
+ * next command will be given.
+ */
+type ReadonlyValues = ReadonlyMap<string, ExternalMetadataValue>;
+
+/**
  * One manifest's parse, on its own: the values it supplies, indexed the way
  * its join indexes them, and the entries it declares. Isolated rather than
  * merged in place, because the same result is handed to the next command that
  * reads the same file.
+ *
+ * Readonly to the bottom of the maps, not just at the top. An outer
+ * `ReadonlyMap` of mutable inner ones stops an add and a remove on the key set
+ * and stops nothing else: anything holding an inner map could `set` a value
+ * straight into the parse the next command is given. The copy-in below is
+ * careful today, and the type is what keeps the change after it careful.
  */
 interface ParsedManifest {
-  readonly values: ReadonlyMap<string, Values>;
+  readonly values: ReadonlyMap<string, ReadonlyValues>;
   readonly entries: readonly ExternalMetadataEntry[];
 }
 
@@ -234,6 +247,15 @@ function reportedPath(abs: string, base: string): string {
   return rel === "" ? "." : posix(rel);
 }
 
+/**
+ * One value or entry of a cached parse, spelled the way this run reports its
+ * manifest. Answers the original when the spelling already matches, which is
+ * every run that parsed the manifest itself.
+ */
+function reported<T extends { file: string }>(of: T, file: string): T {
+  return of.file === file ? of : { ...of, file };
+}
+
 /** The join an external-metadata config asks for: `path` unless it names a field. */
 export function externalMetadataJoin(
   manifest: Pick<ExternalMetadataConfig, "join">,
@@ -298,10 +320,17 @@ export async function loadExternalMetadata(
         // The keys are sorted because they reach the variant as an array, and
         // two declarations that own the same keys in a different order parse
         // to the same thing.
+        //
+        // `label` is deliberately not part of this. It is the manifest as this
+        // run reports it, which is a function of the run's base rather than of
+        // the bytes, so two runs over one corpus from two directories parse
+        // identically and differ only in a string each value carries. Keying
+        // on it would miss the cache for exactly the runs that share a
+        // process, which is what a test suite is. The copy-in below writes
+        // this run's spelling onto every value and entry instead.
         JSON.stringify([
           collection,
           join,
-          label,
           opts.configDir,
           [...manifest.keys].sort(),
         ]),
@@ -335,12 +364,16 @@ export async function loadExternalMetadata(
     // Copied in rather than handed over. The parse is shared with whatever
     // command reads this manifest next, so nothing downstream may hold a
     // reference into it.
+    //
+    // The copy is also where `file` is set, because the parse may have been
+    // made by a run with another base and carries that run's spelling. The
+    // walk happens either way, so rewriting costs one object per value.
     for (const [indexKey, values] of parsed.values) {
-      const already = target.get(indexKey);
-      if (already) for (const [key, value] of values) already.set(key, value);
-      else target.set(indexKey, new Map(values));
+      const into = target.get(indexKey) ?? new Map<string, ExternalMetadataValue>();
+      for (const [key, value] of values) into.set(key, reported(value, file));
+      target.set(indexKey, into);
     }
-    entries.push(...parsed.entries);
+    for (const entry of parsed.entries) entries.push(reported(entry, file));
   }
   return { owners, byPath, byField, entries };
 }

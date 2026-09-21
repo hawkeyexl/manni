@@ -116,10 +116,10 @@ export class ManifestCache<T> {
     this.slots.delete(path);
   }
 
-  /** The cached parse of `path` under `variant`, or `parse()`'s result. */
-  async parse(path: string, variant: string, parse: () => Promise<T>): Promise<T> {
+  /** The cached parse of `path` under `variant`, or `compute()`'s result. */
+  async parse(path: string, variant: string, compute: () => Promise<T>): Promise<T> {
     const before = await signature(path);
-    if (before === null) return parse();
+    if (before === null) return compute();
 
     const slot = this.slots.get(path);
     if (slot !== undefined && same(slot.sig, before)) {
@@ -127,9 +127,9 @@ export class ManifestCache<T> {
       if (hit !== undefined) return hit;
     }
 
-    const parsed = await parse();
+    const parsed = await compute();
 
-    // The file is stat'ed again, because `parse()` read it and the read is
+    // The file is stat'ed again, because `compute()` read it and the read is
     // not atomic with the stat that preceded it. A file that changed while it
     // was being read is not cached under either signature.
     const after = await signature(path);

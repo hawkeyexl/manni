@@ -22,7 +22,9 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runValidate } from "../src/meta/commands/validate.js";
+import { loadExternalMetadata } from "../src/meta/core/external-metadata.js";
 import { writeFileAtomic } from "../src/meta/core/write-file.js";
+import type { CollectionConfig } from "../src/shared/collections.js";
 
 /** Every path `node:fs/promises` was asked to read, in order. */
 const { reads } = vi.hoisted(() => ({ reads: [] as string[] }));
@@ -112,5 +114,75 @@ describe("the parsed-manifest cache", () => {
     expect(errors).toHaveLength(1);
     expect(errors[0]?.instancePath).toBe("/owner");
     expect(manifestReads()).toBe(2);
+  });
+});
+
+/**
+ * The manifest as a run reports it is a function of that run's base, not of
+ * the manifest's bytes, so it is not part of what decides a parse and is not
+ * in the variant key. Two runs over one corpus from two directories therefore
+ * share one parse — which is what a test suite is, and where the cost was
+ * measured — and each has to report its own spelling of the same file.
+ *
+ * The risk that buys is a finding naming the wrong path, so it is pinned here
+ * rather than argued about: the second load must hit the cache (one read for
+ * two loads) and must still say `../meta.yaml` where the first says
+ * `meta.yaml`.
+ */
+describe("a manifest loaded from two bases", () => {
+  const collections = (): CollectionConfig[] => [
+    {
+      name: "site",
+      paths: ["docs/**/*.md"],
+      exclude: [],
+      externalMetadata: [{ file: "./meta.yaml", keys: ["owner"] }],
+    },
+  ];
+
+  it("reports each run's own path off one shared parse", async () => {
+    const fromRoot = await loadExternalMetadata(collections(), {
+      configDir: root,
+      base: root,
+    });
+    expect(manifestReads()).toBe(1);
+
+    // The same corpus, reported from a directory below it: every label of
+    // that run, the manifest's included, climbs out of `docs/`.
+    const fromDocs = await loadExternalMetadata(collections(), {
+      configDir: root,
+      base: join(root, "docs"),
+    });
+    // One read for two loads: the second is the cache hit this test is about.
+    expect(manifestReads()).toBe(1);
+
+    expect(fromRoot?.entries.map((e) => e.file)).toEqual(["meta.yaml"]);
+    expect(fromDocs?.entries.map((e) => e.file)).toEqual(["../meta.yaml"]);
+
+    const doc = join(root, "docs", "one.md");
+    expect(fromRoot?.byPath.get(doc)?.get("owner")?.file).toBe("meta.yaml");
+    expect(fromDocs?.byPath.get(doc)?.get("owner")?.file).toBe("../meta.yaml");
+    expect(fromRoot?.owners.get("owner")?.[0]?.file).toBe("meta.yaml");
+    expect(fromDocs?.owners.get("owner")?.[0]?.file).toBe("../meta.yaml");
+
+    // The values themselves are the manifest's, not the other run's.
+    expect(fromDocs?.byPath.get(doc)?.get("owner")?.value).toBe("alpha");
+  });
+
+  it("leaves the shared parse alone when one run rewrites its paths", async () => {
+    const first = await loadExternalMetadata(collections(), {
+      configDir: root,
+      base: join(root, "docs"),
+    });
+    expect(first?.entries[0]?.file).toBe("../meta.yaml");
+
+    const second = await loadExternalMetadata(collections(), {
+      configDir: root,
+      base: root,
+    });
+    expect(manifestReads()).toBe(1);
+    // The first run's rewrite must not have been written into the parse the
+    // second one is handed.
+    expect(second?.entries[0]?.file).toBe("meta.yaml");
+    expect(first?.entries[0]?.file).toBe("../meta.yaml");
   });
 });
