@@ -1232,23 +1232,25 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   assertNoOrphanJoins(prepared, hits);
 
   // One write per manifest, after every page that touches it is settled.
-  const changedManifests = manifests.changed();
+  const write = opts.dryRun !== true;
   const rewrittenManifests: ManifestChange[] = [];
-  for (const changed of changedManifests) {
-    const write = opts.dryRun !== true;
-    if (write) {
-      try {
-        await writeFileAtomic(changed.path, changed.text);
-      } catch (error) {
-        throw await writes.restore(changed.file, error);
-      }
+  const record = (changed: { file: string; diff: string }): void => {
+    rewrittenManifests.push({ file: changed.file, diff: changed.diff, written: write });
+  };
+  if (write) {
+    await manifests.commit({
       // A manifest joins the run's written files the moment it lands, so a
       // later manifest's failure puts this one back with the pages. Without
       // it the tree would keep pins no page content matches.
-      writes.record(changed.path, changed.file, changed.before);
-    }
-    rewrittenManifests.push({ file: changed.file, diff: changed.diff, written: write });
-  }
+      after: (changed) => {
+        writes.record(changed.path, changed.file, changed.before);
+        record(changed);
+      },
+      onError: async (changed, error) => {
+        throw await writes.restore(changed.file, error);
+      },
+    });
+  } else for (const changed of manifests.changed()) record(changed);
   // A re-mint records HEAD when git has one. Where git is not there the entry
   // is re-pinned without a commit, and the run says so once.
   const reminted = pages.some((page) =>

@@ -439,6 +439,8 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // but for a marker.
   const manifests = new ManifestSet();
   let placed: AddResult["manifest"];
+  /** Which item of the entry's `citations` this run added, for the line report. */
+  let index = 0;
   if (owner !== undefined) {
     if (sidecar?.entry === undefined) {
       throw new CiteError(
@@ -450,7 +452,8 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
       return moved === undefined ? input.entry : withClaimLines(input.entry, moved);
     });
     const list = [...existing, entryObject(citation)];
-    const at = await manifests.write(owner, sidecar.entry, list, list.length - 1);
+    index = list.length - 1;
+    const at = await manifests.write(owner, sidecar.entry, list, index);
     const [changed] = manifests.changed();
     placed = {
       file: at.file,
@@ -487,8 +490,19 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // marker went into the body; there is then nothing to write.
   result.written = path !== undefined && opts.dryRun !== true && after !== content;
   if (result.written && path !== undefined) await writeFileAtomic(path, after);
+  // The entry goes in under compare-and-swap, so what lands may be a replay
+  // onto a manifest another command wrote while this one was running. The
+  // report names the bytes and the line that actually landed, not the ones
+  // this run spliced from.
   if (result.manifest !== undefined && opts.dryRun !== true) {
-    for (const changed of manifests.changed()) await writeFileAtomic(changed.path, changed.text);
+    const [settled] = await manifests.commit();
+    if (owner !== undefined && sidecar?.entry !== undefined) {
+      result.manifest.line = manifests.lineOf(owner, sidecar.entry, index) ?? result.manifest.line;
+    }
+    if (settled !== undefined) {
+      result.manifest.content = settled.text;
+      result.manifest.diff = settled.diff;
+    }
     result.manifest.written = true;
   }
   // The claim's text repeats, so a later move of it could not be told apart
