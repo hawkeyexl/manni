@@ -643,7 +643,7 @@ manifest's comments. A corpus check still sees every key the manifest supplies.
 So "every guide has a ticket in the open state" is a
 [SQL rule](/manni/meta/ci/query-gates/) like any other.
 
-Three writes are still refused. `query` refuses each before any file is
+Five writes are still refused. `query` refuses each before any file is
 written (exit 2):
 
 - **A URL manifest.** It is fetched, so nothing can be written to it:
@@ -654,6 +654,10 @@ written (exit 2):
   section shows.
 - **`ALTER TABLE … RENAME COLUMN` of an owned key**, because the manifest's
   `keys:` would need renaming too.
+- **An owned key on a field-joined page that has no join value.** There is no
+  entry to write it into until the join field is set.
+- **A `_path` move that takes a named page out of its manifest's collection.**
+  A path-joined entry moves with the page, and only inside the collection.
 
 ### Moving keys in or out
 

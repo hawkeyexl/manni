@@ -9,7 +9,7 @@
  * throwaway repository.
  */
 import { afterEach, describe, expect, it } from "vitest";
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,7 +20,7 @@ import { hashLines, hashRange } from "../../src/cite/core/hash.js";
 import { encryptSourcePath } from "../../src/cite/core/sources.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { UpdateOptions, UpdateRun } from "../../src/cite/types.js";
-import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
+import { commitAll, git, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "fixtures", "cite");
@@ -903,6 +903,99 @@ describe("runUpdate: the source end", () => {
     expect(await ends("pages/moved.md")).toEqual([["current", "current"]]);
   });
 
+  // The point of the re-mint is that an entry's lines, pin and commit agree.
+  // Where no commit can be recorded, writing the lines alone would break that
+  // agreement in a new way, so the whole entry is left as it stands.
+  it("leaves a moved source whole when git cannot supply the commit its lines would need", async () => {
+    const label = write("moved-commit.md", [
+      "---",
+      "citations:",
+      "  - id: pinned",
+      "    source:",
+      "      file: src/moved.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "      commit-sha: 0123456789abcdef0123456789abcdef01234567",
+      "  - id: loose",
+      "    source:",
+      "      file: src/moved.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "---",
+      "Body.",
+    ]);
+    const before = onDisk(label);
+    const run = await update({ inputs: [label] });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 1, exitCode: 0 });
+    // The entry that records no commit has nothing to keep in step, so it
+    // moves as it always did.
+    expect(run.pages[0]?.rewritten.map((r) => [r.id, r.to])).toEqual([["loose", "src/moved.ts:4"]]);
+    expect(run.pages[0]?.skipped.map((f) => [f.id, f.rule, f.severity])).toEqual([
+      ["pinned", "source-moved", "warning"],
+    ]);
+    expect(run.pages[0]?.skipped[0]?.message).toContain(
+      "Not rewritten: git is not available here, so the entry's commit-sha cannot advance with its lines.",
+    );
+    // The only line that changed is the other entry's. The pinned entry keeps
+    // its lines, its pin and its commit, all three still agreeing.
+    const after = onDisk(label);
+    expect(after.split("\n").filter((line, i) => line !== before.split("\n")[i])).toEqual([
+      "      lines: 4",
+    ]);
+    expect(after).toContain("      commit-sha: 0123456789abcdef0123456789abcdef01234567\n");
+  });
+
+  // The re-mint's other refusal. Everything `mintCitation` can refuse on this
+  // path was already read once by the check: the same source index, the same
+  // key, and a range the move search just located inside the file. A recorded
+  // range wider than the cap never reaches the classifier, because `readPage`
+  // refuses it as `entry-invalid`, and a moved range is exactly as wide as the
+  // recorded one. So the one cause left is the source changing on disk between
+  // the check's read and the re-mint's, inside one run. A git client that
+  // truncates the file when the classifier asks it for history puts the run in
+  // that state, and nothing else about the run is pretended.
+  it("says why a moved source was left alone when the re-mint cannot read its new range", async () => {
+    workspace();
+    const root = realpathSync(cwd);
+    mkdirSync(join(root, "src"));
+    const file = join(root, "src", "thing.ts");
+    writeFileSync(file, source("moved.ts"), "utf8");
+    const label = write("vanishing.md", [
+      "---",
+      "citations:",
+      "  - id: fetch-timeout",
+      "    source:",
+      "      file: src/thing.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      "      commit-sha: 0123456789abcdef0123456789abcdef01234567",
+      "---",
+      "Body.",
+    ]);
+    const before = onDisk(label);
+    const shrinking = {
+      ...noGit(),
+      available: () => Promise.resolve(true),
+      head: () => Promise.resolve("fedcba9876543210fedcba9876543210fedcba98"),
+      lsFiles: () => Promise.resolve(["src/thing.ts"]),
+      showFile: () => {
+        writeFileSync(file, "// gone", "utf8");
+        return Promise.resolve({ missing: "commit" as const });
+      },
+    };
+    const run = await update({ inputs: [label], cwd: root, root, gitClient: shrinking });
+    expect(run).toMatchObject({ rewritten: 0, skipped: 1, exitCode: 0 });
+    expect(run.pages[0]?.skipped.map((f) => [f.id, f.rule])).toEqual([
+      ["fetch-timeout", "source-moved"],
+    ]);
+    // The skip says why, rather than leaving a finding `update` was asked to
+    // fix and no account of why it did not.
+    expect(run.pages[0]?.skipped[0]?.message).toContain(
+      "Not rewritten: src/thing.ts has 1 lines; line 4 is out of range.",
+    );
+    expect(onDisk(label)).toBe(before);
+  });
+
   it("--accept re-mints a changed source, recording no commit where the entry records none", async () => {
     workspace("source-changed.md");
     const before = onDisk("pages/source-changed.md");
@@ -1239,6 +1332,95 @@ describe("runUpdate: both ends, and what is left", () => {
     afterEach(() => {
       removeTempRepo(repo);
       repo = undefined;
+    });
+
+    // A pin names lines, an integrity and the commit they were read at. A
+    // re-anchor that rewrites the lines and leaves the commit behind breaks
+    // that triple: the entry then names a range its own commit cannot hold.
+    it("advances commit-sha when a source moves, so the new range holds at the commit it names", async () => {
+      repo = makeTempRepo({ files: { "src/limits.ts": source("limits.ts") } });
+      const first = commitAll(repo, "add limits");
+      // Six lines land above the cited one, pushing it past the end of the
+      // file as `first` recorded it.
+      const header = ["1", "2", "3", "4", "5", "6"].map((n) => `// header ${n}\n`).join("");
+      writeFileSync(join(repo, "src", "limits.ts"), header + source("limits.ts"), "utf8");
+      const second = commitAll(repo, "add a file header");
+      mkdirSync(join(repo, "docs"));
+      const page = join(repo, "docs", "limits.md");
+      writeFileSync(
+        page,
+        [
+          "---",
+          "citations:",
+          "  - id: pinned",
+          "    source:",
+          "      file: src/limits.ts",
+          "      lines: 2",
+          `      integrity: ${PIN_L2}`,
+          `      commit-sha: ${first} # minted by hand`,
+          "  - id: loose",
+          "    source:",
+          "      file: src/limits.ts",
+          "      lines: 2",
+          `      integrity: ${PIN_L2}`,
+          "---",
+          "Body.",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      const run = await runUpdate({
+        cwd: repo,
+        inputs: ["docs/limits.md"],
+        noConfig: true,
+        env: {},
+      });
+      expect(run).toMatchObject({ rewritten: 2, skipped: 0, exitCode: 0 });
+      const after = readFileSync(page, "utf8");
+      expect(after.match(/^ {6}lines: 8$/gm)).toHaveLength(2);
+      // The comment on the line survives the splice, and the entry that
+      // recorded no commit still records none.
+      expect(after).toContain(`      commit-sha: ${second} # minted by hand`);
+      expect(after.match(/commit-sha/g)).toHaveLength(1);
+      // The invariant: at the commit the entry names, the lines it names hash
+      // to the integrity it records. The old commit could not hold line 8.
+      expect(hashRange(git(repo, ["show", `${second}:src/limits.ts`]), { start: 8, end: 8 })).toBe(
+        PIN_L2,
+      );
+      const before = git(repo, ["show", `${first}:src/limits.ts`]);
+      expect(() => hashRange(before, { start: 8, end: 8 })).toThrow(CiteError);
+    });
+
+    it("leaves a source that did not move alone, its commit-sha included", async () => {
+      repo = makeTempRepo({ files: { "src/limits.ts": source("limits.ts") } });
+      const first = commitAll(repo, "add limits");
+      writeFileSync(join(repo, "src", "other.ts"), "// unrelated", "utf8");
+      const second = commitAll(repo, "add an unrelated file");
+      expect(second).not.toBe(first);
+      mkdirSync(join(repo, "docs"));
+      const page = join(repo, "docs", "limits.md");
+      const content = [
+        "---",
+        "citations:",
+        "  - id: pinned",
+        "    source:",
+        "      file: src/limits.ts",
+        "      lines: 2",
+        `      integrity: ${PIN_L2}`,
+        `      commit-sha: ${first}`,
+        "---",
+        "Body.",
+        "",
+      ].join("\n");
+      writeFileSync(page, content, "utf8");
+      const run = await runUpdate({
+        cwd: repo,
+        inputs: ["docs/limits.md"],
+        noConfig: true,
+        env: {},
+      });
+      expect(run).toMatchObject({ rewritten: 0, skipped: 0, exitCode: 0 });
+      expect(readFileSync(page, "utf8")).toBe(content);
     });
 
     it("re-mints at HEAD, writing a commit-sha only where the entry records one", async () => {
