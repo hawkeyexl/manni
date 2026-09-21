@@ -38,9 +38,9 @@
       "additionalProperties": false,
       "properties": {
         "tool": {
-          "description": "Which tool performs the job. The one value is `manni`, manni's own template-structure engine. `--tool <name>` on the command line names the same thing.",
+          "description": "Which tool performs the job. `manni` is manni's own template-structure engine; `dita-ot` is DITA Open Toolkit, which validates a DITA map and the topics it reaches and is located through the top-level `tools.dita-ot.home`. `--tool <name>` on the command line names the same thing.",
           "type": "string",
-          "enum": ["manni"]
+          "enum": ["manni", "dita-ot"]
         }
       }
     },

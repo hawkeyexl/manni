@@ -122,7 +122,7 @@ describe("manni lint (built bin)", () => {
 
       const wrong = run(["structure", HOW_TO, "--tool", "vale"]);
       expect(wrong.status).toBe(2);
-      expect(wrong.stderr).toContain('Unknown --tool "vale" for structure. Use manni.');
+      expect(wrong.stderr).toContain('Unknown --tool "vale" for structure. Use manni, dita-ot.');
     });
 
     // One separator per list: `--templates` takes one path per occurrence,
@@ -335,7 +335,7 @@ describe("manni lint (built bin)", () => {
     it("refuses a structure tool nothing implements", () => {
       const r = run(["check", HOW_TO, "-c", "test/lint/fixtures/config/unknown-tool.yaml"]);
       expect(r.status).toBe(2);
-      expect(r.stderr).toContain("lint.structure.tool must be one of: manni.");
+      expect(r.stderr).toContain("lint.structure.tool must be one of: manni, dita-ot.");
     });
 
     it("is skipped entirely under --no-config", () => {

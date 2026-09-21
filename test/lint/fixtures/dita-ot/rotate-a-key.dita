@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE task PUBLIC "-//OASIS//DTD DITA Task//EN" "task.dtd">
+<!-- Every reference here resolves. The defect fixtures copy this and break one. -->
+<task id="rotate-a-key">
+  <title>Rotate an API key</title>
+  <shortdesc>Replace a live secret without interrupting traffic.</shortdesc>
+  <taskbody>
+    <context>
+      <note conref="warnings.dita#warnings/rotate"/>
+    </context>
+    <steps>
+      <step><cmd>Create a replacement key.</cmd></step>
+      <step><cmd>Update every caller to send the new key.</cmd></step>
+      <step><cmd>Revoke the old key.</cmd></step>
+    </steps>
+  </taskbody>
+</task>

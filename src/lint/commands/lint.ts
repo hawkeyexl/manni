@@ -9,7 +9,7 @@
  * one invocation lint a whole tree of mixed doctypes.
  */
 import { readFile } from "node:fs/promises";
-import { extname, resolve } from "node:path";
+import { extname, relative, resolve } from "node:path";
 import { errorMessage, ToolError } from "../../shared/errors.js";
 import {
   LintError,
@@ -43,6 +43,17 @@ import {
 } from "../core/resolve-template.js";
 import { validateDocument } from "../core/validator.js";
 import {
+  resolveStructureTool,
+  structureTools,
+  type StructureToolDescriptor,
+} from "../tools/index.js";
+import {
+  ditaOt,
+  runDitaOtValidate,
+  type DitaOtMessage,
+} from "../tools/dita-ot.js";
+import { ditaOtHome } from "../../shared/tools.js";
+import {
   assertNonEmpty,
   gitignoreOptions,
   resolveTargetSet,
@@ -62,6 +73,11 @@ export interface LintOptions {
   inputs: string[];
   /** `--collection <name>`, repeatable: the collections this run covers. */
   collection?: string[];
+  /**
+   * `--tool`: which tool performs the structure job. Overrides the config's
+   * own `lint.structure.tool`, and defaults to manni's engine.
+   */
+  tool?: string;
   /** `--template`: a built-in id, a path, or a name inside `templates`. */
   template?: string;
   /**
@@ -102,6 +118,14 @@ export interface LintOptions {
   onConfigLoaded?: (info: { path: string; dir: string }) => void;
   /** Told what the run had to say beside its findings. */
   onNotice?: (message: string) => void;
+  /**
+   * The DITA-OT seam, injected by tests, as `term lint` injects Vale's.
+   *
+   * There is no JVM and no DITA-OT on a CI runner of ours, so the only way to
+   * exercise this branch end to end is to hand it the process boundary. The
+   * shipped default is the real one.
+   */
+  runDitaOt?: typeof runDitaOtValidate;
 }
 
 /** Extensions that make a bare `--template` value a filename, not a name. */
@@ -134,6 +158,85 @@ async function asLintError<T>(run: () => T | Promise<T>): Promise<T> {
 function templateFiles(value: string | string[] | undefined): string[] {
   if (value == null) return [];
   return Array.isArray(value) ? value : [value];
+}
+
+/**
+ * The options a tool can own, in the order the guard reports them, each paired
+ * with how to tell that the caller passed it.
+ *
+ * `--templates` reads `opts` alone. A `templates:` key in the config describes
+ * the repo rather than the invocation, so a repo that has written one must not
+ * be refused the moment it points a different tool at the same tree.
+ */
+const TOOL_OPTIONS: {
+  spelling: string;
+  given: (opts: LintOptions) => boolean;
+}[] = [
+  { spelling: "--template", given: (o) => o.template !== undefined },
+  {
+    spelling: "--templates",
+    given: (o) => templateFiles(o.templates).length > 0,
+  },
+  { spelling: "--explain", given: (o) => o.explain === true },
+  { spelling: "--as", given: (o) => o.as !== undefined },
+];
+
+/**
+ * The options some other registered tool owns and this one does not, each with
+ * the tool that does own it.
+ *
+ * Derived rather than written out per tool, because a hand-written chain is a
+ * list the next tool has to remember to join - and the failure mode of
+ * forgetting is a silently ignored option, which is a run that reports success
+ * having done something other than what was asked.
+ */
+function foreignOptions(
+  tool: StructureToolDescriptor,
+): Map<string, StructureToolDescriptor> {
+  const foreign = new Map<string, StructureToolDescriptor>();
+  for (const other of structureTools()) {
+    // By identity, not by name: the registry holds one descriptor per name, so
+    // the tool this run resolved *is* its entry, and comparing the names is a
+    // tautology to the compiler while `LintTool` carries one of them.
+    if (other === tool) continue;
+    for (const spelling of other.ownedOptions) {
+      if (tool.ownedOptions.includes(spelling)) continue;
+      if (!foreign.has(spelling)) foreign.set(spelling, other);
+    }
+  }
+  return foreign;
+}
+
+/**
+ * Refuse an option that belongs to a tool this run is not performing the job
+ * with. One message, naming the first offending option.
+ *
+ * Ignoring it instead would be the quietest kind of wrong answer: the flag
+ * reads as applied, the run exits 0, and nothing says the template, the format
+ * override or the explanation was dropped on the floor.
+ */
+function assertOptionsOwned(
+  opts: LintOptions,
+  tool: StructureToolDescriptor,
+  usingStdin: boolean,
+): void {
+  const foreign = foreignOptions(tool);
+  if (foreign.size === 0) return;
+
+  for (const { spelling, given } of TOOL_OPTIONS) {
+    const owner = foreign.get(spelling);
+    if (owner === undefined || !given(opts)) continue;
+    throw new LintError(
+      `${spelling} is an option of the ${owner.name} tool; ` +
+        `the structure job's tool is ${tool.name}.`,
+    );
+  }
+
+  // Stdin last, and in its own words: "option" is the wrong noun for a pipe,
+  // and the advice a reader needs is what to pass instead.
+  if (usingStdin && foreign.has(STDIN_TOKEN)) {
+    throw new LintError(`${tool.name} cannot read stdin. Name files or a map.`);
+  }
 }
 
 export interface LintSummary {
@@ -495,48 +598,32 @@ async function lintOne(
   });
 }
 
-export async function runLint(opts: LintOptions): Promise<LintRun> {
-  // Which config governs the run, and what it covers: positional paths, or
-  // the `collections:` the family file declares. One base per run, so a
-  // collection's globs resolve beside the config that wrote them.
-  const run = await resolveLintRun({
-    cwd: opts.cwd ?? process.cwd(),
-    configPath: opts.configPath,
-    noConfig: opts.noConfig,
-    inputs: opts.inputs,
-    collection: opts.collection,
-    onConfigLoaded: opts.onConfigLoaded,
-  });
-  const config: LintConfig = run.config;
-  const cwd = run.base;
+/** Everything manni's branch needs, settled once by the shared prefix. */
+interface ManniRun {
+  opts: LintOptions;
+  config: LintConfig;
+  /** The directory the resolved files are relative to. */
+  cwd: string;
+  /** The files the shared target resolution produced. */
+  files: string[];
+  /** The parser `--as` forced, when it did. */
+  forcedParser?: DocumentParser;
+  /** Whether `-` rode among the inputs. */
+  usingStdin: boolean;
+}
 
-  if (run.inputs.length === 0) {
-    throw new LintError(
-      "No files to check. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
-    );
-  }
-
-  // Resolve `--as` before anything is read: a typo should fail immediately,
-  // not after walking a tree of files it was going to mis-parse anyway.
-  //
-  // A name no parser answers to is unknown, whatever it is meant to name: the
-  // formats `manni lint tools` lists are exactly the ones `--as` accepts.
-  const forcedParser = opts.as != null ? parserByName(opts.as) : undefined;
-  if (opts.as != null && !forcedParser) {
-    throw new LintError(
-      `Unknown format "${opts.as}". Run "manni lint tools" to see the formats manni lint reads.`,
-    );
-  }
-
-  // Before the targets are resolved, as cite does: a mistyped path beside `-`
-  // was reported as "File not found", which names the wrong mistake when the
-  // run could not have read stdin either way.
-  const usingStdin = run.inputs.includes(STDIN_TOKEN);
-  if (usingStdin && !forcedParser) {
-    throw new LintError(
-      "Reading from stdin (-) requires --as <format> to choose a parser.",
-    );
-  }
+/**
+ * Lint with manni's own engine.
+ *
+ * Everything below this line is manni's and nobody else's: the template files,
+ * the doctype index, the parser registry, and the guard that fires when a run
+ * checks nothing. The loading in particular has to sit here rather than in the
+ * shared prefix, because it is file I/O a tool that reads no templates must
+ * not be made to pay - and a missing `templates:` entry is then the loader's
+ * error under manni and nothing at all under anybody else.
+ */
+async function lintWithManni(run: ManniRun): Promise<LintFileResult[]> {
+  const { opts, config, cwd, files, forcedParser, usingStdin } = run;
 
   // The doctype -> template map. Built-ins go in first and user templates
   // overwrite them, so overriding `how-to` for a repo is one file with
@@ -578,62 +665,16 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
   };
 
   // `--template` applies to every file, so a ref that will not load is bad
-  // usage, not a property of any page. Resolved up front so it exits 2 with one
-  // message, rather than becoming an identical `template_error` finding on all
-  // 200 pages and exiting 1 - which reads to CI as "the docs are wrong".
+  // usage, not a property of any page. Resolved before a single page is linted
+  // so it exits 2 with one message, rather than becoming an identical
+  // `template_error` finding on all 200 pages and exiting 1 - which reads to
+  // CI as "the docs are wrong".
   if (ctx.cliTemplate != null) await getTemplate(ctx.cliTemplate);
-
-  const fileInputs = run.inputs.filter((input) => input !== STDIN_TOKEN);
-  // Lint's own registry is the default, not the walker's. Left undefined, the
-  // family walker falls back to the *metadata* tool's extractor extensions,
-  // which sweep in every format that tool reads - `.xml` among them, where
-  // `supportedExtensions()` honours `walkExtensions` and deliberately walks
-  // `.dita` and not `.xml`, so an ordinary `pom.xml` cannot fail a clean tree.
-  // Resolved here rather than at the walk, so `assertNonEmpty` names the same
-  // set it filtered with.
-  const exts = opts.exts ?? forcedParser?.extensions ?? supportedExtensions();
-  const allowEmpty = opts.allowEmpty ?? config.allowEmpty;
-  // A collection's `exclude:` shapes the collection, so it applies when the
-  // inputs came from the collections and never to a path the operator typed.
-  // `--exclude` filters either way; the union is deduplicated.
-  const exclude = [
-    ...new Set([
-      ...(opts.exclude ?? []),
-      ...(run.fromCollections ? run.collections.flatMap((c) => c.exclude) : []),
-    ]),
-  ];
-  const { files, gitignoreSkipped } = await asLintError(() =>
-    resolveTargetSet({
-      inputs: fileInputs,
-      exts,
-      exclude,
-      cwd,
-      allowEmpty,
-      ...gitignoreOptions({
-        flag: opts.respectGitignore,
-        onNotice: opts.onNotice,
-      }),
-    }),
-  );
-  // Resolving zero files is an operational error, not a pass: with no files
-  // there is no verdict, and exit 0 would read as a clean bill of health.
-  await asLintError(() => {
-    assertNonEmpty({
-      files,
-      inputs: fileInputs,
-      usingStdin,
-      allowEmpty,
-      exclude,
-      exts,
-      gitignoreSkipped,
-      action: "linted",
-    });
-  });
 
   const results: LintFileResult[] = [];
 
-  // `forcedParser` is set whenever `usingStdin` is - the guard above refused
-  // the run otherwise - but only the guard knows that, so the pair is tested
+  // `forcedParser` is set whenever `usingStdin` is - the shared prefix refused
+  // the run otherwise - but only that guard knows it, so the pair is tested
   // rather than asserted.
   if (usingStdin && forcedParser) {
     results.push(
@@ -682,54 +723,357 @@ export async function runLint(opts: LintOptions): Promise<LintRun> {
     results.push(await lintOne(file, content, parser, ctx));
   }
 
+  return results;
+}
+
+/** Everything the DITA-OT branch needs, and nothing else. */
+interface DitaOtRun {
+  /** The directory the resolved files are relative to. */
+  cwd: string;
+  /** The files the shared target resolution produced, as it spelled them. */
+  files: string[];
+  /** `tools.dita-ot.home`, resolved; undefined means the `dita` on PATH. */
+  home?: string;
+  onNotice?: (message: string) => void;
+  /** The seam. The shipped default starts the real launcher. */
+  validate: typeof runDitaOtValidate;
+}
+
+/** One DITA-OT message as a finding. */
+function ditaOtFinding(message: DitaOtMessage): Finding {
+  // The code is the finding's `type`, so `ruleId` yields
+  // `manni:lint/structure/DOTX010E` and the JSON reporter publishes the code
+  // DITA-OT's own message reference is indexed by.
+  const point =
+    message.line === undefined
+      ? null
+      : {
+          line: message.line,
+          // The log calls the column `row`; see `readMessage` in the seam.
+          column: message.column ?? 1,
+          // DITA-OT reports no byte offset, and nothing downstream needs one.
+          offset: 0,
+        };
+  return {
+    type: message.code,
+    heading: null,
+    message: message.message,
+    position: point === null ? origin() : { start: point, end: point },
+    severity: message.severity,
+  };
+}
+
+/**
+ * Lint with DITA Open Toolkit.
+ *
+ * One invocation per target, and the log is the verdict. A map's log speaks
+ * about the topics it reached, so the findings are grouped by the file each
+ * message named rather than by the file the run was pointed at - which is how
+ * one map target produces a result per topic.
+ */
+async function lintWithDitaOt(run: DitaOtRun): Promise<LintFileResult[]> {
+  const { cwd, files, onNotice } = run;
+
+  /**
+   * Only the formats this tool says it reads are handed to it.
+   *
+   * `manni lint tools` prints that list, and the rule the registry documents
+   * is that a listed format is one that is read. Passing anything else on and
+   * reporting whatever came back meant a `notes.md` named on the command line
+   * came out as a clean pass, because DITA-OT shrugged and logged nothing to
+   * disagree with. The manni branch skips a format no parser claims; this is
+   * the same answer for the same reason.
+   */
+  const readable = ditaOt.formats().flatMap((format) => format.extensions);
+  const reads = new Set(readable.map((ext) => ext.toLowerCase()));
+  const targets: string[] = [];
+  const unreadable: LintFileResult[] = [];
+  for (const file of files) {
+    if (reads.has(extname(file).toLowerCase())) targets.push(file);
+    else {
+      unreadable.push(
+        skip(
+          file,
+          `dita-ot does not read "${extname(file) || file}". It reads ${readable.join(", ")}.`,
+        ),
+      );
+    }
+  }
+
+  // The label the run resolved is what the report says, whatever spelling the
+  // absolute path comes back with.
+  const labels = new Map(targets.map((file) => [resolve(cwd, file), file]));
+  const labelOf = (absolute: string): string => {
+    const known = labels.get(absolute);
+    if (known !== undefined) return known;
+    const near = relative(cwd, absolute).replace(/\\/g, "/");
+    return near === "" ? absolute : near;
+  };
+
+  for (const file of targets) {
+    // Checked, not skipped: a topic on its own is validated, it just resolves
+    // fewer references than the same topic reached through its map. Calling it
+    // a skip would say nothing was checked, which is false.
+    if (extname(file).toLowerCase() !== ".ditamap") {
+      onNotice?.(
+        `checked ${file} without a map; references outside it are not resolved.`,
+      );
+    }
+  }
+
+  // Nothing this tool can read is not a run: starting a JVM per target for an
+  // empty list would be work with no answer at the end of it.
+  if (targets.length === 0) return unreadable;
+
+  const results = await run.validate({
+    targets: targets.map((file) => resolve(cwd, file)),
+    cwd,
+    ...(run.home === undefined ? {} : { home: run.home }),
+  });
+
+  // Seeded with the targets, so a target DITA-OT had nothing to say about is a
+  // result that passed rather than a file missing from the report.
+  const byFile = new Map<string, Finding[]>(targets.map((file) => [file, []]));
+  const findingsFor = (file: string): Finding[] => {
+    let list = byFile.get(file);
+    if (list === undefined) {
+      list = [];
+      byFile.set(file, list);
+    }
+    return list;
+  };
+
+  for (const { target, messages } of results) {
+    const invoked = labelOf(target);
+    for (const message of messages) {
+      // A message with no location belongs to the target the run was invoked
+      // on, at a zero-width origin: DITA-OT's semantic messages routinely
+      // carry no file, and discarding them would drop real errors.
+      const file =
+        message.file === undefined
+          ? invoked
+          : labelOf(resolve(cwd, message.file));
+      findingsFor(file).push(ditaOtFinding(message));
+    }
+  }
+
+  return [
+    ...unreadable,
+    ...[...byFile].map(([file, findings]) => ({
+      file,
+      // The family's rule, as manni's branch applies it: `ok` is "no
+      // error-severity finding", so a warning-only file stays green.
+      success: !findings.some(isErrorSeverity),
+      findings,
+      template: null,
+    })),
+  ];
+}
+
+/**
+ * A run that found files and checked none of them is the worst thing this tool
+ * can do quietly: it exits 0 and reads as a clean bill of health for a docset
+ * nothing looked at. A repo that adopts manni lint in CI before backfilling
+ * `type:` keys would get a permanently green job.
+ *
+ * This replaces a guard that tested `typeIndex.size === 0` before any file was
+ * read. That could never fire - the index is always seeded with the built-ins
+ * - so it protected nothing. Counting the outcome does.
+ *
+ * `--explain` is exempt: showing why nothing routed is exactly its job.
+ */
+function assertSomethingWasChecked(
+  results: LintFileResult[],
+  explain: boolean,
+  tool: StructureToolDescriptor,
+): void {
+  const skipped = results.filter((r) => r.skipped != null).length;
+  const checked = results.length - skipped;
+  if (explain || checked > 0 || skipped === 0) return;
+
+  // The advice has to follow the cause. The guard fires on any skip, but it
+  // used to describe routing only - so a run over files no parser claims was
+  // told to add a `type:` key, which changes nothing about an extension the
+  // tool cannot read. Advice the reader cannot act on is only half a guard.
+  const unrouted = results.filter((r) => r.skipped === "no-template").length;
+  const unsupported = results.filter(
+    (r) => r.skipped === "unsupported-format",
+  ).length;
+  const unreadable = results.filter((r) => r.skipped === "unreadable").length;
+  const advice = [
+    unrouted > 0
+      ? `${unrouted} had no template: give a page a "type:" that a template ` +
+        `serves, pass -t/--template <ref>, or set "lint.template" as a default.`
+      : null,
+    unsupported > 0
+      ? // `--as` belongs to manni's engine, so offering it to someone running
+        // another tool is advice that answers with a usage error. The formats
+        // line is true for every tool, because every tool declares one.
+        `${unsupported} ${unsupported === 1 ? "is" : "are"} in a format ` +
+        `${tool.name} does not read: ` +
+        (tool.ownedOptions.includes("--as")
+          ? `pass --as <format> to force one, or target files in a format `
+          : `target files in a format `) +
+        `"manni lint tools" lists.`
+      : null,
+    unreadable > 0
+      ? `${unreadable} could not be read: check the permissions on those ` +
+        `paths, or drop them from the run with --exclude <glob>.`
+      : null,
+  ]
+    .filter((line): line is string => line !== null)
+    .join(" ");
+
+  throw new LintError(
+    `Nothing was checked: all ${skipped} file(s) were skipped. ${advice} ` +
+      `Run "manni lint structure <paths> --explain" to see how each file resolved.`,
+  );
+}
+
+export async function runLint(opts: LintOptions): Promise<LintRun> {
+  // Which config governs the run, and what it covers: positional paths, or
+  // the `collections:` the family file declares. One base per run, so a
+  // collection's globs resolve beside the config that wrote them.
+  const run = await resolveLintRun({
+    cwd: opts.cwd ?? process.cwd(),
+    configPath: opts.configPath,
+    noConfig: opts.noConfig,
+    inputs: opts.inputs,
+    collection: opts.collection,
+    onConfigLoaded: opts.onConfigLoaded,
+  });
+  const config: LintConfig = run.config;
+  const cwd = run.base;
+
+  if (run.inputs.length === 0) {
+    throw new LintError(
+      "No files to check. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.",
+    );
+  }
+
+  // Which tool performs the structure job: `--tool` first, then the config's
+  // `lint.structure.tool`, then manni's own engine. Settled before anything is
+  // read, because it decides what "anything" even is - the extensions a walk
+  // collects, and which of the options below the run may carry at all.
+  const tool = resolveStructureTool(
+    opts.tool ?? config.structure?.tool ?? "manni",
+  );
+
+  const usingStdin = run.inputs.includes(STDIN_TOKEN);
+  assertOptionsOwned(opts, tool, usingStdin);
+
+  // Resolve `--as` before anything is read: a typo should fail immediately,
+  // not after walking a tree of files it was going to mis-parse anyway.
+  //
+  // A name no parser answers to is unknown, whatever it is meant to name: the
+  // formats `manni lint tools` lists are exactly the ones `--as` accepts.
+  const forcedParser = opts.as != null ? parserByName(opts.as) : undefined;
+  if (opts.as != null && !forcedParser) {
+    throw new LintError(
+      `Unknown format "${opts.as}". Run "manni lint tools" to see the formats manni lint reads.`,
+    );
+  }
+
+  // Before the targets are resolved, as cite does: a mistyped path beside `-`
+  // was reported as "File not found", which names the wrong mistake when the
+  // run could not have read stdin either way.
+  if (usingStdin && !forcedParser) {
+    throw new LintError(
+      "Reading from stdin (-) requires --as <format> to choose a parser.",
+    );
+  }
+
+  const fileInputs = run.inputs.filter((input) => input !== STDIN_TOKEN);
+  // The resolved tool's own walk set is the default, not the walker's. Left
+  // undefined, the family walker falls back to the *metadata* tool's extractor
+  // extensions, which sweep in every format that tool reads - `.xml` among
+  // them, where manni lint's registry honours `walkExtensions` and
+  // deliberately walks `.dita` and not `.xml`, so an ordinary `pom.xml` cannot
+  // fail a clean tree. Read off the descriptor rather than off that registry
+  // directly, so a tool with input formats of its own walks for those.
+  // Resolved here rather than at the walk, so `assertNonEmpty` names the same
+  // set it filtered with.
+  const exts = opts.exts ?? forcedParser?.extensions ?? tool.walkExtensions();
+  const allowEmpty = opts.allowEmpty ?? config.allowEmpty;
+  // A collection's `exclude:` shapes the collection, so it applies when the
+  // inputs came from the collections and never to a path the operator typed.
+  // `--exclude` filters either way; the union is deduplicated.
+  const exclude = [
+    ...new Set([
+      ...(opts.exclude ?? []),
+      ...(run.fromCollections ? run.collections.flatMap((c) => c.exclude) : []),
+    ]),
+  ];
+  const { files, gitignoreSkipped } = await asLintError(() =>
+    resolveTargetSet({
+      inputs: fileInputs,
+      exts,
+      exclude,
+      cwd,
+      allowEmpty,
+      ...gitignoreOptions({
+        flag: opts.respectGitignore,
+        onNotice: opts.onNotice,
+      }),
+    }),
+  );
+  // Resolving zero files is an operational error, not a pass: with no files
+  // there is no verdict, and exit 0 would read as a clean bill of health.
+  await asLintError(() => {
+    assertNonEmpty({
+      files,
+      inputs: fileInputs,
+      usingStdin,
+      allowEmpty,
+      exclude,
+      exts,
+      gitignoreSkipped,
+      action: "linted",
+    });
+  });
+
+  // The branch per tool. Reaching the refusal is an internal fault rather than
+  // user error - every name the registry does not carry was refused by
+  // `resolveStructureTool` above - and it is a `LintError` for that reason: a
+  // bare `Error` escapes the bin runner and exits 1, the code that means "the
+  // documents have findings".
+  const name: string = tool.name;
+  let results: LintFileResult[];
+  if (name === "manni") {
+    results = await lintWithManni({
+      opts,
+      config,
+      cwd,
+      files,
+      forcedParser,
+      usingStdin,
+    });
+  } else if (name === "dita-ot") {
+    // `tools:` is the family's key, not the `lint:` section's, so the home is
+    // resolved against the directory of the config that declared it.
+    const home = ditaOtHome(run.tools, run.configDir ?? cwd);
+    results = await lintWithDitaOt({
+      cwd,
+      files,
+      ...(home === undefined ? {} : { home }),
+      ...(opts.onNotice === undefined ? {} : { onNotice: opts.onNotice }),
+      validate: opts.runDitaOt ?? runDitaOtValidate,
+    });
+  } else {
+    throw new LintError(`No implementation is registered for the ${name} tool.`);
+  }
+
+  // Every tool, not just manni's. A run that resolved files and checked none
+  // of them exits 0 and reads as a clean bill of health, which is the worst
+  // thing this command can do quietly. It sat inside the manni branch until
+  // `dita-ot` started skipping the formats it does not read, at which point
+  // `manni lint structure notes.md` reported "0 files checked, 1 skipped" and
+  // exited 0. One call here is one the next tool cannot forget to make.
+  assertSomethingWasChecked(results, opts.explain === true, tool);
+
   const skipped = results.filter((r) => r.skipped != null).length;
   const failed = results.filter((r) => r.skipped == null && !r.success).length;
   const checked = results.length - skipped;
-
-  // A run that found files and checked none of them is the worst thing this
-  // tool can do quietly: it exits 0 and reads as a clean bill of health for a
-  // docset nothing looked at. A repo that adopts manni lint in CI before
-  // backfilling `type:` keys would get a permanently green job.
-  //
-  // This replaces a guard that tested `typeIndex.size === 0` before any file
-  // was read. That could never fire - the index is always seeded with the
-  // built-ins - so it protected nothing. Counting the outcome does.
-  //
-  // `--explain` is exempt: showing why nothing routed is exactly its job.
-  if (!ctx.explain && checked === 0 && skipped > 0) {
-    // The advice has to follow the cause. The guard fires on any skip, but it
-    // used to describe routing only - so a run over files no parser claims was
-    // told to add a `type:` key, which changes nothing about an extension the
-    // tool cannot read. Advice the reader cannot act on is only half a guard.
-    const unrouted = results.filter((r) => r.skipped === "no-template").length;
-    const unsupported = results.filter(
-      (r) => r.skipped === "unsupported-format",
-    ).length;
-    const unreadable = results.filter(
-      (r) => r.skipped === "unreadable",
-    ).length;
-    const advice = [
-      unrouted > 0
-        ? `${unrouted} had no template: give a page a "type:" that a template ` +
-          `serves, pass -t/--template <ref>, or set "lint.template" as a default.`
-        : null,
-      unsupported > 0
-        ? `${unsupported} had no parser for their format: pass --as <format> to ` +
-          `force one, or target files in a format "manni lint tools" lists.`
-        : null,
-      unreadable > 0
-        ? `${unreadable} could not be read: check the permissions on those ` +
-          `paths, or drop them from the run with --exclude <glob>.`
-        : null,
-    ]
-      .filter((line): line is string => line !== null)
-      .join(" ");
-
-    throw new LintError(
-      `Nothing was checked: all ${skipped} file(s) were skipped. ${advice} ` +
-        `Run "manni lint structure <paths> --explain" to see how each file resolved.`,
-    );
-  }
 
   return {
     results,

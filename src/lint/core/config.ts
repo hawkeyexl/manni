@@ -49,6 +49,7 @@ import {
 } from "../../shared/config-file.js";
 import { LintError } from "../types.js";
 import { errorMessage } from "../../shared/errors.js";
+import type { ToolsConfig } from "../../shared/tools.js";
 import type { TemplateOverride } from "./resolve-template.js";
 import { refRelativeTo } from "./template-registry.js";
 
@@ -87,8 +88,11 @@ export interface LintJobConfig {
   tool?: LintTool;
 }
 
-/** The tools that can perform a lint job: manni's own engine. */
-export const LINT_TOOLS = ["manni"] as const;
+/**
+ * The tools that can perform a lint job: manni's own engine, and DITA Open
+ * Toolkit for a DITA docset.
+ */
+export const LINT_TOOLS = ["manni", "dita-ot"] as const;
 export type LintTool = (typeof LINT_TOOLS)[number];
 
 /** The jobs `lint check` runs: `structure`. */
@@ -97,7 +101,7 @@ export type LintJob = (typeof LINT_JOBS)[number];
 
 /** The tools each job accepts, in the order its message lists them. */
 export const TOOLS_BY_JOB: Readonly<Record<LintJob, readonly LintTool[]>> = {
-  structure: ["manni"],
+  structure: ["manni", "dita-ot"],
 };
 
 export function isLintTool(value: string): value is LintTool {
@@ -470,6 +474,13 @@ export interface ResolvedLintRun {
   collections: CollectionConfig[];
   /** Whether `inputs` came from the collections rather than the command line. */
   fromCollections: boolean;
+  /**
+   * The document's top-level `tools:`, an outside tool's settings (proposal
+   * 0052). `{}` with no config. It is not part of the `lint:` section and is
+   * not rebased here: a path in it is resolved against `configDir` by the run
+   * that needs it, through the helpers in `src/shared/tools.ts`.
+   */
+  tools: ToolsConfig;
   configDir?: string;
   configPath?: string;
   configSource?: string;
@@ -538,6 +549,7 @@ export async function resolveLintRun(
     base,
     collections,
     fromCollections,
+    tools: file?.tools ?? {},
     ...(file === null
       ? {}
       : { configDir: file.dir, configPath: file.path, configSource: file.source }),

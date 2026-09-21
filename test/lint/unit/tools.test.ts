@@ -8,7 +8,9 @@
  * `tableCell`, or `definitionItem`.
  */
 import { describe, expect, it } from "vitest";
+import pkg from "../../../package.json" with { type: "json" };
 import { runTools, BUILT_IN_DEFAULTS } from "../../../src/lint/commands/tools.js";
+import { listFormats } from "../../../src/lint/parsers/index.js";
 import { BLOCK_KIND_NODE } from "../../../src/lint/core/template.js";
 import { defined } from "../helpers.js";
 
@@ -25,6 +27,23 @@ describe("runTools", () => {
       config: BUILT_IN_DEFAULTS,
     });
     expect(typeof entry?.version).toBe("string");
+  });
+
+  // Characterization, written before the row's `available` and `version` were
+  // moved off a hard-coded literal and onto the tool descriptor's `probe`.
+  // manni's engine ships in this package, so both answers must be the same
+  // ones the literals gave.
+  it("reports manni at this package's version, from its probe", async () => {
+    const [entry] = await runTools({ noConfig: true });
+    expect(entry?.available).toBe(true);
+    expect(entry?.version).toBe(pkg.version);
+  });
+
+  it("lists the formats the resolved tool reads", async () => {
+    const [entry] = await runTools({ noConfig: true });
+    expect(entry?.formats.map((f) => f.name)).toEqual(
+      listFormats().map((f) => f.name),
+    );
   });
 
   it("lists every registered format, markdown included", async () => {

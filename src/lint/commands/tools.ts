@@ -13,10 +13,9 @@
  *
  * Returns data; `src/lint/reporters/index.ts` renders it.
  */
-import pkg from "../../../package.json" with { type: "json" };
-import { listFormats } from "../parsers/index.js";
 import type { ContentKind } from "../types.js";
 import { BLOCK_KIND_NODE } from "../core/template.js";
+import { resolveStructureTool } from "../tools/index.js";
 import {
   LINT_JOBS,
   resolveLintRun,
@@ -53,10 +52,17 @@ export interface ToolInfo {
   tool: LintTool;
   /** Whether the config declares this job, or anything the job's tool reads. */
   configured: boolean;
-  /** Whether the tool can run here. manni's own engine ships in the package. */
+  /** Whether the tool can run here, as its own probe reported it. */
   available: boolean;
-  /** The tool's version: this package's, for manni. */
-  version: string;
+  /**
+   * The version the probe reported, or null when it reported none.
+   *
+   * Null rather than a placeholder string, because this is the shape
+   * `-f json` emits: a consumer can test for an absent version, where a dash
+   * would be a value it has to know to recognize. The pretty reporter renders
+   * the dash.
+   */
+  version: string | null;
   /** Where the tool read its settings: the config file, or the defaults. */
   config: string;
   /** The input formats the tool reads. */
@@ -96,27 +102,43 @@ export async function runTools(opts: ToolsOptions = {}): Promise<ToolInfo[]> {
   // The same resolution every other command does, so a config this command
   // cannot read is the same exit 2 with the same message, rather than a row
   // saying "built-in defaults" over a file that is really there and broken.
+  const cwd = opts.cwd ?? process.cwd();
   const run = await resolveLintRun({
-    cwd: opts.cwd ?? process.cwd(),
+    cwd,
     configPath: opts.configPath,
     noConfig: opts.noConfig,
     inputs: [],
   });
 
-  const formats = listFormats().map((format) => ({
-    ...format,
-    kinds: format.kinds.filter((kind) => REPORTABLE_KINDS.has(kind)),
-  }));
-
-  return LINT_JOBS.map((job) => ({
-    job,
-    tool: run.config[job]?.tool ?? "manni",
-    configured: isConfigured(job, run.config),
-    // manni's engine is this package, so it is available wherever the CLI is.
-    // A tool that shells out to something else answers this by looking.
-    available: true,
-    version: pkg.version,
-    config: run.configSource ?? BUILT_IN_DEFAULTS,
-    formats,
-  }));
+  return await Promise.all(
+    LINT_JOBS.map(async (job) => {
+      const tool: LintTool = run.config[job]?.tool ?? "manni";
+      // The row is the tool's own answer about itself. It used to be two
+      // literals that happened to be right while manni was the only tool:
+      // "available" was hard-coded true, and the version was this package's
+      // whatever performed the job.
+      const descriptor = resolveStructureTool(tool);
+      // The family's `tools:` travels with the probe: a tool outside the
+      // package is found where its own `tools.<tool>` says it is, so probing
+      // without it would report "not available" over the very installation the
+      // run would go on to use.
+      const probed = await descriptor.probe({
+        cwd,
+        tools: run.tools,
+        ...(run.configDir === undefined ? {} : { configDir: run.configDir }),
+      });
+      return {
+        job,
+        tool,
+        configured: isConfigured(job, run.config),
+        available: probed.available,
+        version: probed.version,
+        config: run.configSource ?? BUILT_IN_DEFAULTS,
+        formats: descriptor.formats().map((format) => ({
+          ...format,
+          kinds: format.kinds.filter((kind) => REPORTABLE_KINDS.has(kind)),
+        })),
+      };
+    }),
+  );
 }

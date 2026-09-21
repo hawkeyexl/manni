@@ -143,8 +143,14 @@ describe("parseConfig", () => {
         parseConfig("lint:\n  structure:\n    tool: vale\n", "manni.config.yaml"),
       );
       expect(message).toBe(
-        "manni.config.yaml: lint.structure.tool must be one of: manni.",
+        "manni.config.yaml: lint.structure.tool must be one of: manni, dita-ot.",
       );
+    });
+
+    it("takes every tool the registry carries", () => {
+      expect(parseConfig("lint:\n  structure:\n    tool: dita-ot\n", "x")).toEqual({
+        structure: { tool: "dita-ot" },
+      });
     });
 
     it("rejects an unknown key under it, naming the ones it takes", async () => {

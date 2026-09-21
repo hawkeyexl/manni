@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE map PUBLIC "-//OASIS//DTD DITA Map//EN" "map.dtd">
+<map>
+  <title>Key management</title>
+  <mapref href="keys.ditamap" processing-role="resource-only"/>
+  <topicref href="dead-xref.dita"/>
+</map>

@@ -221,7 +221,7 @@ describe("family config discovery", () => {
   it("a bad tools: is an error in the tool's own class", async () => {
     const root = await tree({ "manni.config.yaml": "tools:\n  prettier: {}\n" });
     await expect(findConfigFile(root, META)).rejects.toThrow(
-      'tools has unknown key "prettier". Supported keys: vale.',
+      'tools has unknown key "prettier". Supported keys: vale, dita-ot.',
     );
   });
 
