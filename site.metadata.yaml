@@ -8206,7 +8206,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-8d3b4c9b0dda52b09b751673bb83b0fbb531dfbf67303ba2c72b1c71f44e7b14
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 265-267
+        lines: 309-311
         integrity: sha256-55e40b5ece9b5bcb3bdd7db7bd7e794020e74c28c0090585286392b7d038d0fa
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: one-manifest-owns-a-key
