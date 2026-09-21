@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.8.3](https://github.com/hawkeyexl/manni/compare/v2.8.2...v2.8.3) (2026-09-21)
+
+
+### Bug Fixes
+
+* **meta:** stop concurrent writes losing filled and derived metadata ([#103](https://github.com/hawkeyexl/manni/issues/103)) ([6ca9252](https://github.com/hawkeyexl/manni/commit/6ca9252ebfd59d8879579a1599d4d3a5d00125c3)), closes [#98](https://github.com/hawkeyexl/manni/issues/98)
+
 ## [2.8.2](https://github.com/hawkeyexl/manni/compare/v2.8.1...v2.8.2) (2026-09-21)
 
 
