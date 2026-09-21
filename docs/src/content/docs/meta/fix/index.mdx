@@ -31,14 +31,15 @@ The first line is the file that failed. Each indented line below it is one
 problem, in this shape:
 
 ```
-<field>  <message>  (line N)  [schema-id]
+<field>  <severity> <message>  (line N)  [schema-id]
 ```
 
 | Part | What it tells you |
 | --- | --- |
 | `<field>` | Which field is wrong. It's a [JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901) such as `/timestamp`, or a bare key name. `(root)` means the document as a whole, most often a *required field is missing entirely*. |
+| `<severity>` | `warning ` or `notice ` when the finding is one of those. An error carries no word, so the message follows the field directly. |
 | `<message>` | What's wrong, e.g. `must have required property 'type'` or `must match format "date-time"`. |
-| `(line N)` | The source line of the offending field, when manni meta can locate it. A missing required field has no line, so this part is absent. |
+| `(line N)` | The source line of the offending field, when manni meta can locate it. A missing required field has no line, so this part is absent. A value an [external-metadata manifest](/manni/meta/set-up/external-metadata/) supplied reads `(file:line)` instead, naming the manifest. |
 | `[schema-id]` | The schema that flagged it, e.g. `google:okf:0.1`. Useful when more than one schema applies. |
 
 <Aside type="note" title="Machine-readable output">
@@ -251,8 +252,11 @@ Sometimes manni meta stops before validating any file and prints a single line t
 **stderr**, prefixed with `manni:`:
 
 ```
-manni: Unknown built-in schema "google:okf:0.2". Available: google:okf:0.1.
+manni: Unknown built-in schema "google:okf:0.2". Available: google:okf:0.1, diataxis:diataxis:1.0, passo-uno:seven-action:1.0, …
 ```
+
+The `Available:` list names every [built-in id](/manni/meta/schemas/), so the
+real line is much longer than this.
 
 or:
 

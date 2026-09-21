@@ -85,7 +85,7 @@ A developer on your team set `OPENAI_API_KEY` months ago for an unrelated side p
 manni meta fill docs/internal/
 ```
 
-Every page under `docs/internal/`, including paths, metadata and full text, goes to OpenAI. Nobody chose that. Detection chose it, from an environment variable that had nothing to do with manni meta, and the run succeeds so nothing draws attention to it. `fill` does report the provider and model it used, in both output formats. But that is a line in the summary of a command that otherwise worked.
+Every page under `docs/internal/`, including paths, metadata and full text, goes to OpenAI. Nobody chose that. Detection chose it, from an environment variable that had nothing to do with manni meta, and the run succeeds so nothing draws attention to it. `fill` does report the provider and model it used, in its `pretty` and `json` output. But that is a line in the summary of a command that otherwise worked.
 
 The fix is to stop leaving the choice to the environment. Pin the provider explicitly:
 

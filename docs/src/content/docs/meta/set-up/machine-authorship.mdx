@@ -82,7 +82,7 @@ pin notices when those ranges change.
    ```yaml title=".pre-commit-config.yaml"
    repos:
      - repo: https://github.com/hawkeyexl/manni
-       rev: v2.8.3
+       rev: v2.8.5
        hooks:
          - id: manni-meta-derive
          - id: manni-meta
@@ -309,9 +309,10 @@ changed pin, or evidence that names a different machine, is a finding.
 
 The record on a public page tells every reader which lines a model wrote. To
 keep it private, let an [external-metadata
-manifest](/manni/meta/set-up/external-metadata/) own `provenance`. This is the
-one managed field a manifest may own, because nobody curates a pin by hand.
-`derive` writes the entries into the manifest instead of the page.
+manifest](/manni/meta/set-up/external-metadata/) own `provenance`. A local
+manifest may own any managed field, and `provenance` is the one most worth
+moving, because nobody curates a pin by hand. `derive` writes the entries into
+the manifest instead of the page.
 
 ```yaml title="manni.config.yaml"
 collections:

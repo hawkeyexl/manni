@@ -335,11 +335,12 @@ quoting and the rest of the frontmatter stay as they were. The next check is
 `current` at `lib/limits.ts:4`.
 
 <Aside type="note" title="Move, then change">
-  `update` rewrites the range and keeps the entry's `commit-sha`. If the line
-  later changes as well, the check finds the pinned bytes at their old line
-  in that commit. So it reports `changed since <commit>`, and the fix is the
-  one above. `source-never-true` is kept for a pin that matches nowhere in
-  the file at its commit, such as one typed by hand.
+  `update` rewrites the range and advances the entry's `commit-sha`, so the
+  entry names a commit its new range holds at. If the line later changes as
+  well, the check reads history from there and reports `changed since
+  <commit>`, and the fix is the one above. `source-never-true` is kept for a
+  pin that matches nowhere in the file at its commit, such as one typed by
+  hand.
   [Fix a failing check](/manni/cite/fix/#source-never-true) has the details.
 </Aside>
 

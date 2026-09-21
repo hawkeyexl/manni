@@ -98,7 +98,8 @@ The page still says something true, so this is a **warning** and the exit
 code stays `0`.
 
 {/* cite update-rewrites-source-lines */}
-**Fix.** `update` rewrites `source.lines` in place and changes nothing else:
+**Fix.** `update` re-mints the entry over the new range. It rewrites
+`source.lines` and the entry's `commit-sha` in place, and changes nothing else:
 
 ```sh
 manni cite update docs/limits.md
