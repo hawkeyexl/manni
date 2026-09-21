@@ -12,8 +12,9 @@
  * different one.
  */
 import { writeFile, rename, rm, stat, chmod } from "node:fs/promises";
-import { dirname, join, basename } from "node:path";
+import { dirname, join, basename, resolve } from "node:path";
 import { programName } from "../../shared/program-name.js";
+import { invalidateManifestCache } from "./manifest-cache.js";
 
 /** Windows returns these when an editor or scanner holds the target open. */
 const LOCKED = new Set(["EPERM", "EBUSY", "EACCES"]);
@@ -92,5 +93,13 @@ export async function writeFileAtomic(
     }
   } finally {
     await rm(tmp, { force: true });
+    // Every manifest write in the family lands here — `cite add`, `cite
+    // update`, `cite remove`, `meta fill`, `meta derive`, `meta relocate`,
+    // `meta query` — so this is the one place a parse another command cached
+    // has to be dropped. Two writes inside one clock tick can leave `mtimeMs`
+    // and size unchanged, so the cache cannot be left to notice on its own.
+    // It runs whether or not the write succeeded: forgetting a parse that is
+    // still current costs one re-read.
+    invalidateManifestCache(resolve(path));
   }
 }

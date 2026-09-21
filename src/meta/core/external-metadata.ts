@@ -47,6 +47,7 @@ import type {
 } from "../../shared/collections.js";
 import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
 import { classifyRef } from "./schema-registry.js";
+import { ManifestCache } from "./manifest-cache.js";
 import { fetchExternalMetadata } from "./external-metadata-fetch.js";
 import { STDIN_LABEL } from "./load-files.js";
 import { escapePointerSegment, positionForFactory } from "../extractors/pointer.js";
@@ -114,6 +115,25 @@ export interface ExternalMetadataEntry {
 }
 
 type Values = Map<string, ExternalMetadataValue>;
+
+/**
+ * One manifest's parse, on its own: the values it supplies, indexed the way
+ * its join indexes them, and the entries it declares. Isolated rather than
+ * merged in place, because the same result is handed to the next command that
+ * reads the same file.
+ */
+interface ParsedManifest {
+  readonly values: ReadonlyMap<string, Values>;
+  readonly entries: readonly ExternalMetadataEntry[];
+}
+
+/**
+ * Every manifest this process has parsed, by path, `mtimeMs` and size. A
+ * manifest is data a whole run is judged against, so a stale parse would be a
+ * wrong verdict rather than a slow one; `manifest-cache.ts` says what keeps it
+ * fresh, and why a stat alone is not enough.
+ */
+const parsedManifests = new ManifestCache<ParsedManifest>();
 
 /** Every manifest of a run, loaded once and consulted per document. */
 export interface ExternalMetadataIndex {
@@ -251,29 +271,47 @@ export async function loadExternalMetadata(
     // file label. Either way the manifest's *keys* resolve from the config
     // directory, so a remote manifest names documents the same way a local
     // one does.
-    let text: string;
+    const join = externalMetadataJoin(manifest);
+    let parsed: ParsedManifest;
     let file: string;
     if (classifyRef(manifest.file).kind === "url") {
       file = manifest.file;
-      text = await fetchExternalMetadata(manifest.file, {
+      const text = await fetchExternalMetadata(manifest.file, {
         ...(manifest.tokenEnv !== undefined ? { tokenEnv: manifest.tokenEnv } : {}),
         ...(opts.offline !== undefined ? { offline: opts.offline } : {}),
         ...(opts.timeoutMs !== undefined ? { timeoutMs: opts.timeoutMs } : {}),
         ...(opts.env !== undefined ? { env: opts.env } : {}),
       });
+      parsed = parseManifest(manifest, collection, text, file, opts.configDir, join);
     } else {
       const abs = isAbsolute(manifest.file)
         ? manifest.file
         : resolve(opts.configDir, manifest.file);
-      file = reportedPath(abs, opts.base);
-      text = await readManifest(abs, file);
+      const label = reportedPath(abs, opts.base);
+      file = label;
+      // One parse per file, per declaration. A manifest unchanged since
+      // another command in this process read it is not read again; a written
+      // one was dropped by `writeFileAtomic`, and one edited from outside by
+      // its `mtimeMs` and size.
+      parsed = await parsedManifests.parse(
+        abs,
+        JSON.stringify([collection, join, label, opts.configDir, manifest.keys]),
+        async () =>
+          parseManifest(
+            manifest,
+            collection,
+            await readManifest(abs, label),
+            label,
+            opts.configDir,
+            join,
+          ),
+      );
     }
     for (const key of manifest.keys) {
       const list = owners.get(key);
       if (list) list.push({ collection, file });
       else owners.set(key, [{ collection, file }]);
     }
-    const join = externalMetadataJoin(manifest);
     let target: Map<string, Values>;
     if (join === PATH_JOIN) {
       target = byPath;
@@ -285,16 +323,15 @@ export async function loadExternalMetadata(
         byField.set(join, target);
       }
     }
-    parseManifest(
-      manifest,
-      collection,
-      text,
-      file,
-      opts.configDir,
-      join,
-      target,
-      entries,
-    );
+    // Copied in rather than handed over. The parse is shared with whatever
+    // command reads this manifest next, so nothing downstream may hold a
+    // reference into it.
+    for (const [indexKey, values] of parsed.values) {
+      const already = target.get(indexKey);
+      if (already) for (const [key, value] of values) already.set(key, value);
+      else target.set(indexKey, new Map(values));
+    }
+    entries.push(...parsed.entries);
   }
   return { owners, byPath, byField, entries };
 }
@@ -317,9 +354,9 @@ function parseManifest(
   file: string,
   configDir: string,
   join: string,
-  target: Map<string, Values>,
-  entries: ExternalMetadataEntry[],
-): void {
+): ParsedManifest {
+  const target = new Map<string, Values>();
+  const entries: ExternalMetadataEntry[] = [];
   const lc = new LineCounter();
   // `uniqueKeys: false`, so a document named twice reaches the dedicated
   // check below and is reported by name and line, rather than as a generic
@@ -333,7 +370,8 @@ function parseManifest(
   }
   const root = doc.contents;
   // An empty manifest is a mapping with no entries: legal, and merges nothing.
-  if (root === null || (isScalar(root) && root.value === null)) return;
+  if (root === null || (isScalar(root) && root.value === null))
+    return { values: target, entries };
   if (!isMap(root)) {
     throw new DocmetaError(
       `Manifest ${file}: the manifest must be a mapping from document ${join === PATH_JOIN ? "path" : `"${join}"`} to owned keys.`,
@@ -406,6 +444,7 @@ function parseManifest(
       ...(entryLine === undefined ? {} : { line: entryLine }),
     });
   }
+  return { values: target, entries };
 }
 
 /**
