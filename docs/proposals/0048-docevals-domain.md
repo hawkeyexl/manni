@@ -1,14 +1,16 @@
 # 0048: the `docevals` domain: evals join the family
 
 - **Status:** Proposed
-- **Serves:** Devin · D9, D10 · Sara · S7–S10 · Maya · M10–M14 · Theo · T5
+- **Serves:** Devin · D9, D10 · Sara · S7–S10 · Maya · M10–M15 · Theo · T5
 - **Depends on:** [0033](0033-manni-monorepo.md), the umbrella this domain
   mounts on and the import recipe it follows. [0034](0034-command-grammar.md),
   the grammar: spelled verbs, no default subcommand, one separator per list.
   [0041](0041-collections.md), which names docevals as the next reader of
   `collections:`. [0046](0046-provenance-pins.md), the records the
   self-preference check reads and `fill` writes. [0023](0023-metadata-vocabularies.md),
-  whose evals draft is the page vocabulary
+  whose evals draft is the page vocabulary. [0037](0037-sidecar-metadata.md)
+  and [0047](0047-field-location.md), which say where each of those keys lives
+  and who moves it
 - **Relates to:** [0035](0035-a11y-domain.md) and
   [0044](0044-citations-and-drift.md), the two domains folded in before this
   one, whose choices this one copies. [0045](0045-family-encryption-key.md),
@@ -289,9 +291,11 @@ with served copies under the site and two package exports. It validated pages
 against 1.1.0 with the severity enum patched in memory. Those copies had
 drifted from the draft twice, in the severity scale and in `eval-provenance`.
 
-Pages now validate against `manni:evals:1.0.0-proposal.3`, imported from
+Pages now validate against `manni:evals:1.0.0-proposal.4`, imported from
 `docs/proposals/0023/schemas/evals/` and bundled by tsup, so `dist` reads
-nothing under `docs/` (dd18733). The copies, their exports and
+nothing under `docs/` (dd18733, d5b47ed). That draft marks all three page keys
+`x-manni-location: external`, so the Ajv instance compiles with
+`strict: false`, as `src/cite/core/page.ts` does. Section 9 follows the mark. The copies, their exports and
 `frontmatterSchemaPath` are gone. `docevals.frontmatterSchema` is the draft
 object, and `FRONTMATTER_SCHEMA_ID` is its id.
 
@@ -338,7 +342,9 @@ Each is said once on stderr through `warn()`. The result's
 problem carries the same sentence, so it reaches every reporter.
 
 `fill` writes one `meta-provenance` entry per model, in the same edit as the
-evals, with the ids under `evals` and each one's `confidence` (6b51b11). It
+evals, with the ids under `evals` and each one's `confidence` (6b51b11). Both
+keys are `external` in ai-context's proposal.3, so the entry goes where section
+9 puts it. The report names the manifest when one holds it. It
 merges by `generated-by` through `mergeMetaProvenance`, lifted into
 `src/meta/core/meta-provenance.ts` so both fill commands use one merge
 (683d908). A second run, or a `meta fill` by the same model, extends one
@@ -383,6 +389,60 @@ decision that touches a shared concept would have no obvious home. This
 series already records decisions for three domains and the family layer.
 `src/docevals/CLAUDE.md` says so in place of its ADR-per-behavior-change rule,
 and the log's README carries a closing note.
+
+### 9. Eval keys live where their location says, for reads and writes alike
+
+The evals draft's proposal.4 marks `evals`, `eval-suite` and `eval-skip`
+`x-manni-location: external`. ai-context's proposal.3 marks `provenance` and
+`meta-provenance`, and stewardship's marks `last-reviewed`, the freshness
+grader's default field. A corpus that took `manni meta relocate` up on those
+marks keeps the values in a collection's external-metadata manifest. A tool
+reading frontmatter alone reported every such page as declaring nothing
+(d5b47ed, a0fcffe).
+
+Reading is meta's merge, not a second loader.
+`src/docevals/core/external.ts` calls `loadExternalMetadata` and
+`mergeExternalMetadata`, once per run and behind the shared parse cache, and
+hands each page back with the merged values as its `frontmatter`. Resolution,
+the freshness grader, the self-preference check and `target: frontmatter`
+therefore read them without knowing a manifest exists. `target: raw` stays the
+file verbatim, because it is the bytes on disk. Only manifests owning a key
+this tool reads are loaded, as `cite` scopes its own load to `citations`.
+
+Writing follows the rule `manni meta fill` follows (0047). A local manifest
+owning the key takes the value. It is spliced into the page's entry with every
+other byte of the file left alone. A manifest joining on a field the page lacks
+has no entry to hold it. The write is then refused for that file, in meta's own
+sentence. Where nothing owns the key the page keeps it, with P1 offered on a
+terminal and the W1 or W2 line off one. `fill`, `generate` and
+`promote --write` all route through it, so the page and the manifest never
+both hold a key.
+
+Membership is decided by **every declared collection**, whatever `--collection`
+or the positional paths selected. A page named by path is still a member of
+whatever contains it, and its evals are still in that collection's manifest.
+`--no-config` leaves no collections, so the page's evals are its frontmatter's.
+
+Three refusals, two of them this domain's own, because docevals *writes* eval
+keys where meta only reads them:
+
+| When | Reported as | Exit |
+|---|---|---|
+| A page carries a key its manifest owns | page problem, meta's `external:owned` sentence | 1 |
+| A URL manifest owns an eval key | `DocevalsError` | 2 |
+| Two of a page's collections own one | `DocevalsError` | 2 |
+
+Both exit-2 cases are refusals rather than tiebreaks, for the reason 0020
+gives: there is no right answer to pick. The `location:external` warning for an
+eval key left in a page stays `meta validate`'s; this domain adds none.
+
+Reports say where a value went. A `fill` result carries `wroteTo`, `page` or
+the manifest path, and its `meta-provenance` record carries `destination`.
+`generate` carries `refusals`, one per eval whose command reference had nowhere
+to go. `promote` carries `error` on a promotable eval with nowhere to write it,
+which used to be dropped without a word. A problem about a value a manifest
+supplied names that manifest and its line, which every reporter already prints.
+Exit codes are unchanged by any of it.
 
 ## Known limits
 
@@ -463,6 +523,9 @@ the config says.
   dogfood over the section through `docs/manni.docevals.yaml`
   (`npm run docs:check-docevals`).
 - `package.json` records `node-llama-cpp` as an optional peer dependency.
+- A corpus may keep its eval keys in a collection's manifest, so the content
+  set gains M15 and the page that serves it,
+  `docevals/adopt/move-evals-to-a-manifest.mdx`.
 - Nothing here was released, so no rename is breaking for anyone: `info`,
   `human`, the kebab section keys, `docevals.files`, `docevals.providers`,
   `MOOSE_DOCEVALS_FILE`, the schema copies and `eval-provenance` existed only
