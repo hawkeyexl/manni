@@ -348,12 +348,14 @@ strings `"2"` or `"true"`, whichever flavor the value came from. Author your
 schemas to expect the coerced types.
 </Aside>
 
+{/* cite formats-toml-native-dates-are-rewritten-before-validating */}
 TOML's native date-time type is the one value a fenced block still rewrites. An
 unquoted `published = 2024-01-15T10:00:00Z` parses as a date, and manni meta
 writes it back to its ISO spelling before validating. A field typed
 `{"type": "string", "format": "date-time"}` therefore accepts it, exactly as it
 accepts the quoted form.
 
+{/* cite formats-iso-spelling-always-carries-milliseconds */}
 The two spellings are not byte-identical, though. The ISO spelling always
 carries milliseconds, so the unquoted value above is validated as
 `2024-01-15T10:00:00.000Z`. `format: date-time` does not notice. `enum`,

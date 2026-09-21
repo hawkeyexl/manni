@@ -24457,9 +24457,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-6db4d5d084e63d6301555a29399627c768a89ea90219446ce59f29e70f534908
       source:
         file: CHANGELOG.md
-        lines: 643-646
+        lines: 650-653
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: 166fb2086894a49a54b50dc7282ff64013065481
+        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2
     - id: collection-flag-refuses-positional-paths
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
@@ -25249,9 +25249,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-b434cb91645fc3c84066f41be4d26f16a21838ce807764daf2b443931b3738bd
       source:
         file: CHANGELOG.md
-        lines: 643-646
+        lines: 650-653
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: 166fb2086894a49a54b50dc7282ff64013065481
+        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2
     - id: collection-exclude-removes-from-paths
       claim:
         lines: 137
@@ -29354,7 +29354,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-absent-recommended-field-passes
       claim:
-        lines: 56-58
+        lines: 57-59
         integrity: sha256-832f7edff58acb44a7310ea6a3057bf03541adf3ca1421f462fa63c7e22fc278
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -29363,7 +29363,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-field-meanings
       claim:
-        lines: 45-53
+        lines: 46-54
         integrity: sha256-83d8cab9fb6cb0f3c27b5f30c87e293cde5ff0e253ccfbe2e427d45cbc27549c
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -29372,7 +29372,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-timestamp-is-a-date-time-string
       claim:
-        lines: 43
+        lines: 44
         integrity: sha256-daba2c5e8f4d8eafcc7322b1c6cd13a33d7012f3939218ca2929cf77ca620c97
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -29381,7 +29381,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-tags-is-an-array-of-string
       claim:
-        lines: 42
+        lines: 43
         integrity: sha256-ecd21ce551414dd30cefa2126be8c11a4131bf85e8034c6963d2f4150aad9648
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -29390,7 +29390,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-resource-is-a-uri-string
       claim:
-        lines: 41
+        lines: 42
         integrity: sha256-d1247ea3b3e7e4d65ee9f56478b4a20169a90604b063dd44408ebc60eabcddb6
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -29399,7 +29399,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-description-is-a-string
       claim:
-        lines: 40
+        lines: 41
         integrity: sha256-ad1efec0da7f4f2910232a143a778320ab1cb0593fa6408913e128aaa3b33617
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -29408,7 +29408,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-title-is-a-string
       claim:
-        lines: 39
+        lines: 40
         integrity: sha256-9d5110a8ba7084b1ecca76927f4c10cfefa92fd54623d8369737775fec48ee84
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -29417,7 +29417,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-type-is-a-string-with-minlength-1
       claim:
-        lines: 38
+        lines: 39
         integrity: sha256-89244857f6476ed95f3f2cb27a20806db23f612c982bc4f110dd30737895f8af
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -29442,7 +29442,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-ref-kind-is-builtin
       claim:
-        lines: 20
+        lines: 21
         integrity: sha256-532bd9663597e021387396a0d71bc4ba7d4d902e8235e18167ce466f6bd8fbfa
       source:
         file: src/meta/core/schema-registry.ts
@@ -29451,7 +29451,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-allows-additional-properties
       claim:
-        lines: 19
+        lines: 20
         integrity: sha256-e2e966752eb94cb730537df05021e9f7d97550c0cd20ef0effa9ab5597839566
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -29460,7 +29460,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-dialect-is-draft-2020-12
       claim:
-        lines: 18
+        lines: 19
         integrity: sha256-7f3c20ca8da2f79b6a59121a4c14d31173abfcd94150593301f3040c94e1ce26
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -29469,7 +29469,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-schema-title
       claim:
-        lines: 17
+        lines: 18
         integrity: sha256-f58b555e9812c7fe53b7b92ccd1bf86f4fceea1286682cd2586d61d815bb8e55
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -29478,13 +29478,21 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-schema-id
       claim:
-        lines: 16
+        lines: 17
         integrity: sha256-c5b1e87a3ea99e5c5b3d035dc9db1e9301f5ac2e5e44d8d7437b68336fef1e8b
       source:
         file: src/meta/schemas/okf/0.1.json
         lines: 3
         integrity: sha256-15a66abbe208e58aef6deb04a0fa8f006ee31422fbf16135c83b7c29ebfcea84
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: okf-anchors-the-default-set
+      claim:
+        integrity: sha256-c2d452465554fceb04ee3bc7ab7b204f8625dcb04f441dd0b112bb91eb99e92e
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 25-35
+        integrity: sha256-cdf674ddd56e8c1c891cc633bae6ce4d8a34606bd8d54a74f93f6e42ac01aed3
+        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2
 docs/src/content/docs/meta/reference/dita-schema.mdx:
   citations:
     - id: dita-model-check-excludes-attribute-types
@@ -29842,7 +29850,7 @@ docs/src/content/docs/meta/reference/action.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: action-major-tag-moves-on-each-release
       claim:
-        integrity: sha256-b116b03ec461bd25f978d0bc8632f8de1f66cad61e5880312be43e319fa33084
+        integrity: sha256-726be321098128186bebf255d95de424fc5b53feef1d18e93018e2cda29391c3
       source:
         file: .github/workflows/release.yml
         lines: 272-277
@@ -30422,6 +30430,22 @@ docs/src/content/docs/meta/reference/formats.mdx:
         lines: 30-45
         integrity: sha256-b4bdc547976708044bcfba10b35c19ecf2b394ca7c960ae6446e0f93dab002fc
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-iso-spelling-always-carries-milliseconds
+      claim:
+        integrity: sha256-7df1057b45f4c0eb8a0754ec8ce4225c7b03f4231aa0d96134b48e116d9087ff
+      source:
+        file: src/meta/extractors/date-value.ts
+        lines: 11-27
+        integrity: sha256-30e837a35684c794230c742129c2736426a7585238833e2e3bc2daf355d1b30a
+        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2
+    - id: formats-toml-native-dates-are-rewritten-before-validating
+      claim:
+        integrity: sha256-1bf7eca59957b5719e276eb70bd9bccfca31fdacbea5f84b67addf33c4e95dae
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 289-300
+        integrity: sha256-f356fdc3c6d312f9348ea0b39fa8b492daef5ae87e4c35a4a649a8e28bc51247
+        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2
 docs/src/content/docs/meta/reference/element-metadata.mdx:
   citations:
     - id: element-dot-notation-falls-back-to-the-literal-key
@@ -31570,7 +31594,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-diataxis-and-tgdp-pick-one
       claim:
-        lines: 212
+        lines: 213
         integrity: sha256-1ba2d075f3e912b6192d591d510fddaf33df40432f26a83b212807a04a27e777
       source:
         file: src/meta/schemas/diataxis/1.0.json
@@ -31579,7 +31603,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-tgdp-composes-with-seven-action
       claim:
-        lines: 211
+        lines: 212
         integrity: sha256-026bfdc402cf0ee845a3eefe34dbc7d137c292b5b60ad2f1a0557a4eeac3d244
       source:
         file: src/meta/schemas/tgdp/1.0.json
@@ -31588,7 +31612,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-diataxis-composes-with-seven-action
       claim:
-        lines: 210
+        lines: 211
         integrity: sha256-68084ee2a2d290145f2c5593e26abc6c297cea3df85841f010d3521ce0a09bf2
       source:
         file: src/meta/schemas/diataxis/1.0.json
@@ -31605,7 +31629,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-config-schemas-replace-the-default-set
       claim:
-        lines: 189-190
+        lines: 190-191
         integrity: sha256-14c14eed80f9cdfa29aa4aa76e1930e96bbddc47658b4c778b16289f9c77c3d2
       source:
         file: src/meta/core/resolve-schema.ts
@@ -31614,7 +31638,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-a-foreign-action-value-fails
       claim:
-        lines: 182-183
+        lines: 183-184
         integrity: sha256-e6b29afabc5d2f1b8711e5edaf0aca27ccddecc3595c171f3ebb5c53cb06ac28
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -31639,7 +31663,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-troubleshoot
       claim:
-        lines: 160
+        lines: 161
         integrity: sha256-b88716757944342309e06abb67c8744883e0dd9b16dfb9610da7c5487d2630ba
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -31648,7 +31672,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-develop
       claim:
-        lines: 159
+        lines: 160
         integrity: sha256-7c479ac281dfd6817e909b39c3fb291b286e14215fb3fedfcb753c6899fdfefc
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -31657,7 +31681,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-remember
       claim:
-        lines: 158
+        lines: 159
         integrity: sha256-7bc8e59d31262ce9174f81bd91897626d74a4145c96ad9bddd10579a15d6e400
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -31666,7 +31690,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-practice
       claim:
-        lines: 157
+        lines: 158
         integrity: sha256-0bd1b32063e473a631ac2b9d42b5adcdfd549b6d0d7988cf560c4319375d17be
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -31675,7 +31699,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-explore
       claim:
-        lines: 156
+        lines: 157
         integrity: sha256-281b3d0401bb6ac77f45556e6483360dc0664b6543ae259c6add1f911c278dec
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -31684,7 +31708,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-understand
       claim:
-        lines: 155
+        lines: 156
         integrity: sha256-dc8774dc41edb4308dd8779a1c0a63c89bc15fab2f3232da14eeb36e6763b7e8
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -31693,7 +31717,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-action-appraise
       claim:
-        lines: 154
+        lines: 155
         integrity: sha256-94c4a1ea86552d8ed60aefbd2ded4016de68cf4d0db9abb1d653457eb4ac294d
       source:
         file: src/meta/schemas/seven-action/1.0.json
@@ -31710,7 +31734,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-requiring-type-is-mannis-choice
       claim:
-        lines: 135-143
+        lines: 136-144
         integrity: sha256-fcf19b0241f77dcf307061bcdc423a6dcdfb28bc6a9fb43a8926382842b67e1a
       source:
         file: src/meta/schemas/tgdp/1.0.json
@@ -31727,7 +31751,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-tgdp-values-by-pack
       claim:
-        lines: 117-119
+        lines: 118-120
         integrity: sha256-4d49645b6d5907ad196f0b13ecaed9e53accd51efa95fc1bad19ff449affd693
       source:
         file: src/meta/schemas/tgdp/1.0.json
@@ -31760,7 +31784,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-diataxis-four-forms
       claim:
-        lines: 82-85
+        lines: 83-86
         integrity: sha256-c7965ad03d78f749c06dcf09664a098fce99532ecf9378400e484c070cddf84f
       source:
         file: src/meta/schemas/diataxis/1.0.json
@@ -31777,7 +31801,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-schema-order-does-not-matter
       claim:
-        lines: 68-72
+        lines: 69-73
         integrity: sha256-8b14d8b84f3e0254a5e59d6e381abc6b840eaa20ae28c71ed7bc84bbb0ebde21
       source:
         file: src/meta/core/validator.ts
@@ -31786,7 +31810,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: taxonomy-turning-one-on-reports-every-untyped-page
       claim:
-        lines: 63-66
+        lines: 64-67
         integrity: sha256-685c9bd9c7f6d174fd219834a7d9cd32a058cad6363d80875f67696b84ed34c2
       source:
         file: src/meta/schemas/diataxis/1.0.json
@@ -31868,6 +31892,14 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         lines: 10-13
         integrity: sha256-64e6cc196f1ba72e91ae312bfca0ee8b25dcdd4015c7c31e88c4d1994c94a32a
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-every-other-schema-is-in-the-registry
+      claim:
+        integrity: sha256-471635a8e2c9f1804c42625b985438a9a7c1d347703ccd35e628bf38b69e5e5d
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 55-79
+        integrity: sha256-4a7520e7298eed2f70a07a84e70a8e084937cd3c74ec6e94b7accd516e659d94
+        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2
 docs/src/content/docs/meta/reference/metadata-vocabularies.mdx:
   citations:
     - id: vocab-pixels-typed-for-both-channels
@@ -34167,7 +34199,7 @@ docs/src/content/docs/meta/reference/built-in-schemas.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: registry-both-published-bases-resolve
       claim:
-        integrity: sha256-0ec4b81a22f64b61655dae3cb30d1afbe99584565380c3a18b5a8c22ae1b3ca6
+        integrity: sha256-d830b2180315d4e8522775188cad68973c617e690ef51841bd82756d8b5c058e
       source:
         file: src/meta/core/schema-registry.ts
         lines: 141-151
@@ -34403,6 +34435,15 @@ docs/src/content/docs/meta/reference/built-in-schemas.mdx:
         lines: 3-9
         integrity: sha256-6717eec4a9b1141a6571ee35bbd2382228da7c84810185b41a8adac4b7ec19b5
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: registry-row-dita
+      claim:
+        lines: 32
+        integrity: sha256-7cfd58e88277db027734cb2bab801b94cdeaa60556dd4dae4e2b84b4edde9ec1
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 24-146
+        integrity: sha256-ae84ed8b2692546d34bc5d5baffb4d733a3787ecabc5db10d29b9be500845225
+        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2
 docs/src/content/docs/meta/reference/api.mdx:
   citations:
     - id: api-sibling-tools-are-namespaces
