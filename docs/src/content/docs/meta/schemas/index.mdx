@@ -131,7 +131,7 @@ By default, JSON Schema lets a document carry fields your schema never mentions.
 - **`"additionalProperties": false`**: every key must be declared in `"properties"`. An unexpected key is a failure. Use this to catch typos like `titel:` or to keep frontmatter tightly governed.
 
 <Aside type="caution" title="Strict schemas and the $schema directive">
-Setting `"additionalProperties": false`? A document's own `$schema:` key won't trip it, because manni meta strips `$schema` before validating, so you never need to add it to your schema's `properties`. See [The `$schema` key is reserved](/manni/meta/schemas/resolution/#the-schema-key-is-reserved) for the full mechanism.
+Setting `"additionalProperties": false`? A document's own `$schema:` key won't trip it. Before validating, manni meta strips `$schema`, so you never need to declare it in `properties`. See [The `$schema` key is reserved](/manni/meta/schemas/resolution/#the-schema-key-is-reserved) for the full mechanism.
 </Aside>
 
 ## The built-in OKF schema, a fuller example

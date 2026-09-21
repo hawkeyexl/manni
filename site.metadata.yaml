@@ -16704,7 +16704,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: summary-errors-total
       claim:
-        lines: 131
+        lines: 134
         integrity: sha256-d22c8a9368acdffcc63703e0573c7237392ee0273cc962117fabcaa15a284299
       source:
         file: src/meta/commands/validate.ts
@@ -16713,7 +16713,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: summary-failed-is-files-with-errors
       claim:
-        lines: 130
+        lines: 133
         integrity: sha256-f8625c6402b96c857a37ca80f2e9dfd31049c6f8a6a793979758002996df5682
       source:
         file: src/meta/commands/validate.ts
@@ -16722,7 +16722,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: summary-files-is-resolved-count
       claim:
-        lines: 128
+        lines: 131
         integrity: sha256-f49b1c3b26c1892324eb807d699467ba2b1932227ef03d4df53fac6d84ef6eca
       source:
         file: src/meta/commands/validate.ts
@@ -16739,7 +16739,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: body-never-inspected
       claim:
-        lines: 113-114
+        lines: 116-117
         integrity: sha256-f9de5160c76d144d93d5da1c20da3da277410b9bb67c7f765c09247bc5eaa112
       source:
         file: src/meta/commands/validate.ts
@@ -16765,12 +16765,20 @@ docs/src/content/docs/meta/get-started/index.mdx:
     - id: okf-requires-type-field
       claim:
         lines: 53
-        integrity: sha256-67799a6454a73d28678585e5c27d15da2debdd4b67805f3b53619501b2e02936
+        integrity: sha256-4902f79935bbfa741d96229bb0159a827a6d3caee2833051ed8be1a4eff821ea
       source:
         file: src/meta/schemas/okf/0.1.json
         lines: 7
         integrity: sha256-0e2f5437eb92e030b655c86a57a2dd15bb2acd051cc9be386ce3f58619f6000b
         commit-sha: 9dc7b50da705029382efce3e62061b920e8e728d
+    - id: seven-action-constrains-action
+      claim:
+        integrity: sha256-2bb715ae24bec1a31ed8bea74ef8a35e8c704d239314b93d6dbcd37f7f117283
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 5-19
+        integrity: sha256-218e482a04fc6e74592c45d13df23a36904566325e131ad5d20631f05beb04ba
+        commit-sha: 4f40394e1be328a7bce1a85a7c77d65c7d42d89e
 docs/src/content/docs/meta/fix/index.mdx:
   citations:
     - id: exit-2-operational-error
@@ -17041,8 +17049,8 @@ docs/src/content/docs/meta/fix/index.mdx:
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: line-part-present-only-when-located
       claim:
-        lines: 37
-        integrity: sha256-0a45112075265940b5ac827c463f153d4784e9861524982f594a6310679f8ebb
+        lines: 38
+        integrity: sha256-29bbb6ce1189a7274dd4628ad0915a128430600b1fcd8e44557b59d144139e19
       source:
         file: src/meta/reporters/index.ts
         lines: 254-259
@@ -22547,7 +22555,7 @@ docs/src/content/docs/meta/reference/cli.mdx:
     - id: derive-cli-not-on-path-message
       claim:
         lines: 1037
-        integrity: sha256-31d00f8e92e12c0698fca7ffe2fa8df6b71c5214f26d2de57dd759ab2f83b56c
+        integrity: sha256-ac573f59f8d2ddfcf81c8437c227acb0dee2615acc49cf04b3851b228b103b73
       source:
         file: src/meta/core/derive/reviews.ts
         lines: 187-192
@@ -28325,13 +28333,21 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
     - id: hook-needs-node-24
       claim:
-        lines: 297-298
+        lines: 301-302
         integrity: sha256-7586e9ec2cbcc07983fac21ddfb24918a8b187dc1fd1297d476a9100ca3e83cd
       source:
         file: package.json
         lines: 34-36
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
         commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: cite-hook-checks-staged-pages
+      claim:
+        integrity: sha256-a0542930798b64c6850202ea0ea7e170a89469a24a7ecb8bd3c00d4e93aa98f4
+      source:
+        file: .pre-commit-hooks.yaml
+        lines: 57-62
+        integrity: sha256-4b50062244217ee8e33835618a67c13fe6c7636841aa1d283edb879bd674f333
+        commit-sha: 4f40394e1be328a7bce1a85a7c77d65c7d42d89e
 docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
   citations:
     - id: document-refs-none-drops-the-key
@@ -28673,7 +28689,7 @@ docs/src/content/docs/meta/schemas/index.mdx:
     - id: schema-key-stripped-before-validating
       claim:
         lines: 127
-        integrity: sha256-7aaa6a09863158900a9a9faf18960670ff77cd08c89a84224aa536986666d7ee
+        integrity: sha256-ba7bfec345f3e42d7f5a289645ec9c70fb5d7cd10900c721e28767a71631eda0
       source:
         file: src/meta/core/validator.ts
         lines: 625-627
