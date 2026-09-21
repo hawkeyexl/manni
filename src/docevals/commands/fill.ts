@@ -19,7 +19,18 @@ import {
 } from "../core/discover.js";
 import { withExternalMetadata } from "../core/external.js";
 import { resolvePages, type ResolvedPagePlan } from "../core/resolve.js";
-import { appendPageEvals, type NewEvalEntry } from "../core/frontmatter-edit.js";
+import {
+  appendPageEvals,
+  entryObject,
+  type NewEvalEntry,
+} from "../core/frontmatter-edit.js";
+import {
+  EVALS_KEY,
+  EvalWriter,
+  META_PROVENANCE_KEY,
+  manifestEvalList,
+  type WriteHome,
+} from "../core/write-location.js";
 import {
   parseFormat,
   SUMMARY_FORMATS,
@@ -41,10 +52,13 @@ import {
 } from "../fill/prompt.js";
 import { looksLikeOverflow, splitBody } from "../core/split.js";
 import { errorMessage } from "../../shared/errors.js";
-import { mergeMetaProvenance } from "../../meta/internal.js";
-
-/** The key `fill` records the evals it wrote in (proposal 0046). */
-const META_PROVENANCE_KEY = "meta-provenance";
+import { warn } from "../../shared/warn.js";
+import type { Confirm } from "../../shared/prompt.js";
+import {
+  mergeMetaProvenance,
+  type ExternalWrite,
+  type RelocateResult,
+} from "../../meta/internal.js";
 
 export interface FillOptions extends DocumentInputOptions {
   cwd?: string;
@@ -63,6 +77,17 @@ export interface FillOptions extends DocumentInputOptions {
   local?: boolean;
   /** Test seam: bypasses provider construction entirely. */
   providerInstance?: InferenceProvider;
+  /**
+   * P1 (proposal 0047): asked once per collection when evals would land on a
+   * page whose schema prefers them in external metadata. The CLI passes
+   * `terminalConfirm()`, so off a terminal there is no question and the
+   * warning is the only output.
+   */
+  confirm?: Confirm;
+  /** A stderr diagnostic; the caller adds the `manni docevals: ` prefix. */
+  onNotice?: (message: string) => void;
+  /** What an accepted relocation moved, for the caller to report. */
+  onRelocated?: (result: RelocateResult) => void;
 }
 
 export type FillStatus =
@@ -98,14 +123,24 @@ export interface EvalsMetaProvenanceEntry {
 
 /**
  * What became of this page's `meta-provenance` entry. Never a failure. The
- * shape is `manni meta fill`'s; of its three reasons for not writing, only
- * `schema-mismatch` can happen here, because docevals writes no manifest and
- * fills YAML frontmatter only.
+ * shape is `manni meta fill`'s, and so are its reasons: the key follows its
+ * own location (proposal 0047), so a local manifest holds the entry, a URL
+ * manifest cannot be written, and a manifest joining on a field the page
+ * lacks has no entry to hold it.
  */
 export type EvalsMetaProvenanceReport =
-  | { written: true; entry: EvalsMetaProvenanceEntry }
+  | {
+      written: true;
+      entry: EvalsMetaProvenanceEntry;
+      /** The manifest the entry went into, when one owns `meta-provenance`. */
+      destination?: string;
+    }
   /** The page's `meta-provenance` is not a list, so there is nothing to merge into. */
-  | { written: false; skipReason: "schema-mismatch" };
+  | { written: false; skipReason: "schema-mismatch" }
+  /** A URL manifest owns the key, and nothing fetched can be written. */
+  | { written: false; skipReason: "manifest-owned"; manifest: string }
+  /** The owning manifest joins on a field this page does not carry. */
+  | { written: false; skipReason: "unwritable" };
 
 export interface FillPageResult {
   file: string;
@@ -120,6 +155,11 @@ export interface FillPageResult {
   duplicates: string[];
   cached: boolean;
   error?: string;
+  /**
+   * Where the evals went (proposal 0047): `"page"`, or the manifest that owns
+   * them, as the run reports its path. Absent when nothing was written.
+   */
+  wroteTo?: string;
   /**
    * The `meta-provenance` entry recording the evals this run wrote. Absent
    * when none was written; reported, not written, under `--dry-run`.
@@ -158,17 +198,54 @@ export async function runFill(
   options: FillOptions = {},
 ): Promise<FillReport> {
   const cwd = options.cwd ?? process.cwd();
-  const config = loadRunConfig(runConfigOptions(paths, options), cwd);
+  let config = loadRunConfig(runConfigOptions(paths, options), cwd);
   const flags = { provider: options.provider, model: options.model, local: options.local };
   // Checked up front, and regardless of an injected provider: it costs nothing,
   // and a typo must fail on a run where no page needs a model too.
   assertProviderSelection(selectProvider(config, flags));
-  const pages = await withExternalMetadata(
-    discoverPages(config, documentSet(paths, options, "fill"), cwd),
-    config,
-    cwd,
-  );
-  const plans = resolvePages(pages, config);
+  const load = async (): Promise<ResolvedPagePlan[]> =>
+    resolvePages(
+      await withExternalMetadata(
+        discoverPages(config, documentSet(paths, options, "fill"), cwd),
+        config,
+        cwd,
+      ),
+      config,
+    );
+  let plans = await load();
+
+  // Proposal 0047: where each page's evals go. Built before the first model
+  // request, so P1 is asked — and an accepted relocation applied — while
+  // nothing has been proposed yet, exactly as `manni meta fill` asks it
+  // between preparing a file and inferring for it.
+  const writerFor = (): EvalWriter => EvalWriter.for(config, cwd, paths);
+  let writer = writerFor();
+  if (options.confirm !== undefined && options.dryRun !== true) {
+    const flagged: ExternalWrite[] = [];
+    for (const plan of plans) {
+      if (plan.skip || plan.problems.some((p) => p.level === "error")) continue;
+      const home = await writer.homeFor(
+        plan.page.file,
+        plan.page.frontmatter.data,
+        EVALS_KEY,
+      );
+      if (home.kind === "page" && home.prefersExternal) {
+        flagged.push({ label: plan.page.file, key: EVALS_KEY, home: home.proposed });
+      }
+    }
+    const applied = await writer.offer(flagged, {
+      confirm: options.confirm,
+      ...(options.onNotice === undefined ? {} : { onNotice: options.onNotice }),
+      ...(options.onRelocated === undefined ? {} : { onRelocated: options.onRelocated }),
+    });
+    if (applied) {
+      // The config now declares a manifest, the pages no longer carry what it
+      // owns, and this writer's context predates both.
+      config = loadRunConfig(runConfigOptions(paths, options), cwd);
+      plans = await load();
+      writer = writerFor();
+    }
+  }
 
   const threshold = options.confidence ?? config.fill.confidenceThreshold;
   const maxTurns = options.maxTurns ?? config.fill.maxTurns;
@@ -200,6 +277,10 @@ export async function runFill(
   for (const plan of plans) {
     results.push(await fillOne(plan));
   }
+
+  // W1 and W2 (0047): evals that landed on a page whose schema prefers them in
+  // external metadata. One line per collection, not per page.
+  for (const line of writer.warnings(options.dryRun === true)) warn(line);
 
   return {
     results,
@@ -391,26 +472,89 @@ export async function runFill(
       cached,
     };
     if (written.length === 0) return result;
+
+    // Proposal 0047: where each key goes, settled before a byte is written.
+    const label = plan.page.file;
+    const data = plan.page.frontmatter.data;
+    let evalsHome: WriteHome;
+    let metaHome: WriteHome;
+    try {
+      evalsHome = await writer.homeFor(label, data, EVALS_KEY);
+      metaHome = await writer.homeFor(label, data, META_PROVENANCE_KEY);
+    } catch (e) {
+      return { ...result, status: "error", error: errorMessage(e), written: [] };
+    }
+    if (evalsHome.kind === "url") throw writer.urlRefusal(evalsHome, EVALS_KEY);
+    if (evalsHome.kind === "no-entry") {
+      // The manifest owns the evals and has no entry for this page, so there
+      // is nowhere to put them. Writing the page instead would put the key in
+      // both places, which is the collision the routing exists to prevent.
+      return { ...result, status: "error", error: evalsHome.message, written: [] };
+    }
+
     // The evals this run proposed, recorded in the same write. A record that
     // cannot be merged is reported rather than failing the page: a side
-    // record that could block filling would be worse than none.
-    const merged = mergeMetaProvenance(
-      plan.page.frontmatter.data[META_PROVENANCE_KEY],
-      identity.model,
-      "evals",
-      written.map((p) => ({ name: p.id, confidence: p.confidence })),
-    );
-    const metaProvenance: EvalsMetaProvenanceReport = merged
-      ? { written: true, entry: { ...merged.entry, evals: merged.names } }
-      : { written: false, skipReason: "schema-mismatch" };
+    // record that could block filling would be worse than none, and neither
+    // is `meta-provenance`'s own location a reason to fail a fill.
+    const merged =
+      metaHome.kind === "url" || metaHome.kind === "no-entry"
+        ? undefined
+        : mergeMetaProvenance(
+            data[META_PROVENANCE_KEY],
+            identity.model,
+            "evals",
+            written.map((p) => ({ name: p.id, confidence: p.confidence })),
+          );
+    const metaManifest = metaHome.kind === "manifest" ? metaHome : undefined;
+    let metaProvenance: EvalsMetaProvenanceReport;
+    if (metaHome.kind === "url") {
+      metaProvenance = { written: false, skipReason: "manifest-owned", manifest: metaHome.file };
+    } else if (metaHome.kind === "no-entry") {
+      metaProvenance = { written: false, skipReason: "unwritable" };
+    } else if (merged === undefined) {
+      metaProvenance = { written: false, skipReason: "schema-mismatch" };
+    } else if (metaManifest !== undefined) {
+      metaProvenance = {
+        written: true,
+        entry: { ...merged.entry, evals: merged.names },
+        destination: metaManifest.file,
+      };
+    } else {
+      metaProvenance = { written: true, entry: { ...merged.entry, evals: merged.names } };
+    }
+
+    const manifest = evalsHome.kind === "manifest" ? evalsHome : undefined;
+    const pageEntries = manifest === undefined ? written.map(toEntry) : [];
+    const pageMeta =
+      metaProvenance.written && metaManifest === undefined ? merged?.list : undefined;
     try {
-      const updated = appendPageEvals(
-        plan.page.content,
-        plan.page.file,
-        written.map(toEntry),
-        merged?.list,
-      );
-      if (!options.dryRun) writeFileSync(plan.page.absPath, updated);
+      // The page first, as `meta fill` writes it, so a refused manifest leaves
+      // no entry pointing at a page that was never changed.
+      if (pageEntries.length > 0 || pageMeta !== undefined) {
+        const updated = appendPageEvals(
+          plan.page.content,
+          label,
+          pageEntries,
+          pageMeta,
+        );
+        if (!options.dryRun && updated !== plan.page.content) {
+          writeFileSync(plan.page.absPath, updated);
+        }
+      }
+      if (!options.dryRun && manifest !== undefined) {
+        const held = manifestEvalList(
+          await writer.readManifest(manifest, EVALS_KEY),
+          manifest.file,
+          manifest.entry,
+        );
+        await writer.writeManifest(manifest, EVALS_KEY, [
+          ...held,
+          ...written.map((p) => entryObject(toEntry(p))),
+        ]);
+      }
+      if (!options.dryRun && metaManifest !== undefined && merged !== undefined) {
+        await writer.writeManifest(metaManifest, META_PROVENANCE_KEY, merged.list);
+      }
     } catch (e) {
       return {
         ...result,
@@ -419,7 +563,15 @@ export async function runFill(
         written: [],
       };
     }
-    return { ...result, status: options.dryRun ? "proposed" : "filled", metaProvenance };
+    if (evalsHome.kind === "page" && evalsHome.prefersExternal) {
+      writer.stayedOnPage(label, EVALS_KEY, evalsHome.proposed);
+    }
+    return {
+      ...result,
+      status: options.dryRun ? "proposed" : "filled",
+      wroteTo: manifest === undefined ? "page" : manifest.file,
+      metaProvenance,
+    };
   }
 }
 
@@ -469,14 +621,29 @@ export function renderFill(
         lines.push(`${pc.red(label)} ${r.file}: ${r.error ?? "unknown error"}`);
         break;
     }
+    // Where the evals went, when it was not the page (proposal 0047).
+    if (r.wroteTo !== undefined && r.wroteTo !== "page") {
+      lines.push(`    ${pc.cyan("evals")} → ${r.wroteTo}`);
+    }
     const record = r.metaProvenance;
     if (record?.written === true) {
+      const destination = record.destination === undefined ? "" : ` → ${record.destination}`;
       lines.push(
-        `    ${pc.cyan("meta-provenance")}  ${record.entry["generated-by"]}: ${record.entry.evals.join(", ")}`,
+        `    ${pc.cyan("meta-provenance")}  ${record.entry["generated-by"]}: ${record.entry.evals.join(", ")}${destination}`,
       );
     } else if (record?.skipReason === "schema-mismatch") {
       lines.push(
         pc.dim("    meta-provenance not written: this page's schemas do not allow it"),
+      );
+    } else if (record?.skipReason === "manifest-owned") {
+      lines.push(
+        pc.dim(
+          `    meta-provenance not written: owned by manifest ${record.manifest}, which is fetched and cannot be written`,
+        ),
+      );
+    } else if (record?.skipReason === "unwritable") {
+      lines.push(
+        pc.dim("    meta-provenance not written: its manifest has no entry for this page"),
       );
     }
     if (r.belowThreshold.length > 0) {

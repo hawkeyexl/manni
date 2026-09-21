@@ -21,6 +21,7 @@ import {
 import { sha256 } from "../judge/cache.js";
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import type { GraderTarget } from "../graders/types.js";
+import type { GenerationRefusal } from "../core/engine.js";
 
 export interface GenerateOptions extends DocumentInputOptions {
   provider?: string;
@@ -35,6 +36,13 @@ export interface GenerateOptions extends DocumentInputOptions {
 export interface GenerateRun {
   generatedPaths: string[];
   targets: number;
+  /**
+   * Evals whose command reference had nowhere to go (proposal 0047): the
+   * manifest that owns the page's evals joins on a field the page lacks. Each
+   * counts against `targets`, so the run reports a partial generation, and the
+   * sentence says which page and why.
+   */
+  refusals: GenerationRefusal[];
 }
 
 export async function runGenerate(
@@ -83,11 +91,11 @@ export async function runGenerate(
   }
   // Nothing to generate: return before a provider is built, so a corpus with
   // no outstanding scripts needs no API key to be told so.
-  if (targets.length === 0) return { generatedPaths: [], targets: 0 };
+  if (targets.length === 0) return { generatedPaths: [], targets: 0, refusals: [] };
 
   const provider: InferenceProvider =
     options.providerInstance ?? (await makeProvider(config, flags));
   const generate = makeGenerateScripts({ provider, root: cwd });
-  const { generatedPaths } = await generate(targets, config, {});
-  return { generatedPaths, targets: targets.length };
+  const { generatedPaths, refusals } = await generate(targets, config, {});
+  return { generatedPaths, targets: targets.length, refusals: refusals ?? [] };
 }

@@ -65,7 +65,13 @@ describe("manni docevals fill records meta-provenance", () => {
     });
 
     const r = manni(["fill", `docs/${page}`, "--provider", "mock", "--dry-run", "-f", "json"], dir);
-    expect(r.stderr).toBe("");
+    // W1 (proposal 0047): this workspace declares no manifest, and the evals
+    // draft prefers these keys in one. Nothing else reaches stderr, and stdout
+    // stays the report.
+    expect(r.stderr).toBe(
+      "manni: would write evals to 1 page; the schema prefers external " +
+        "metadata. Run manni meta relocate to give it a manifest.\n",
+    );
     expect(r.status).toBe(0);
     const report = JSON.parse(r.stdout) as { results: Record<string, unknown>[] };
     expect(report.results[0]?.status).toBe("proposed");

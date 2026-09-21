@@ -20,6 +20,12 @@ import {
   updateConfigEval,
   updatePageEval,
 } from "../core/frontmatter-edit.js";
+import {
+  EVALS_KEY,
+  EvalWriter,
+  manifestEvalList,
+  updateManifestEval,
+} from "../core/write-location.js";
 import { sha256 } from "../judge/cache.js";
 import {
   assertProviderSelection,
@@ -84,6 +90,12 @@ export interface PromoteProposal {
   rationale: string;
   scriptPath?: string;
   applied: boolean;
+  /**
+   * Why a promotable eval could not be rewritten (proposal 0047): the
+   * manifest that owns this page's evals joins on a field the page lacks, so
+   * there is no entry to hold the promoted eval. `applied` stays false.
+   */
+  error?: string;
 }
 
 async function assess(
@@ -145,6 +157,10 @@ export async function runPromote(
 
   const proposals: PromoteProposal[] = [];
   const seenConfigEvals = new Set<string>();
+  // Proposal 0047: a promoted eval is rewritten where it lives. Built on
+  // first use, like the provider.
+  let writer: EvalWriter | undefined;
+  const getWriter = (): EvalWriter => (writer ??= EvalWriter.for(config, cwd, paths));
 
   for (const plan of plans) {
     if (plan.skip || plan.problems.some((p) => p.level === "error")) continue;
@@ -184,7 +200,38 @@ export async function runPromote(
           // (renamed by ADR 01009).
           "generated-assertion-hash": sha256(ev.assertion),
         };
-        if (
+        // Where the eval lives decides where the rewrite goes. The page's own
+        // text is only consulted for a page-owned eval: a page whose evals a
+        // manifest owns carries none of them, so `hasEditableEval` is false
+        // there and the promotion used to be dropped without a word.
+        const home =
+          ev.source === "page"
+            ? await getWriter().homeFor(
+                plan.page.file,
+                plan.page.frontmatter.data,
+                EVALS_KEY,
+              )
+            : undefined;
+        if (home?.kind === "url") {
+          throw getWriter().urlRefusal(home, EVALS_KEY);
+        }
+        if (home?.kind === "no-entry") {
+          proposal.error = home.message;
+        } else if (home?.kind === "manifest") {
+          const at = getWriter();
+          const list = manifestEvalList(
+            await at.readManifest(home, EVALS_KEY),
+            home.file,
+            home.entry,
+          );
+          const next = updateManifestEval(list, ev.name, updates);
+          if (next === undefined) {
+            proposal.error = `${home.file}: eval "${ev.name}" not found in the entry for ${home.entry}`;
+          } else {
+            await at.writeManifest(home, EVALS_KEY, next);
+            proposal.applied = true;
+          }
+        } else if (
           ev.source === "page" &&
           hasEditableEval(plan.page.content, ev.name)
         ) {

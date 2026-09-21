@@ -101,6 +101,7 @@ describe("runGenerate", () => {
     await expect(runGenerate([], { cwd: root })).resolves.toEqual({
       generatedPaths: [],
       targets: 0,
+      refusals: [],
     });
   });
 
@@ -119,7 +120,7 @@ describe("runGenerate", () => {
       providerInstance: scriptgen(),
     });
 
-    expect(run).toEqual({ generatedPaths: [SCRIPT_REL], targets: 1 });
+    expect(run).toEqual({ generatedPaths: [SCRIPT_REL], targets: 1, refusals: [] });
     expect(existsSync(join(root, SCRIPT_REL))).toBe(true);
     // The hash write-back is what keeps the next run from regenerating it.
     expect(readFileSync(pagePath(root), "utf8")).toContain(sha256(ASSERTION));
@@ -140,7 +141,7 @@ describe("runGenerate", () => {
 
     await expect(
       runGenerate([], { cwd: root, providerInstance: provider }),
-    ).resolves.toEqual({ generatedPaths: [], targets: 0 });
+    ).resolves.toEqual({ generatedPaths: [], targets: 0, refusals: [] });
     expect(provider.requests).toHaveLength(0);
   });
 
@@ -162,7 +163,7 @@ describe("runGenerate", () => {
       providerInstance: scriptgen(),
     });
 
-    expect(run).toEqual({ generatedPaths: [SCRIPT_REL], targets: 1 });
+    expect(run).toEqual({ generatedPaths: [SCRIPT_REL], targets: 1, refusals: [] });
     const after = readFileSync(pagePath(root), "utf8");
     expect(after).toContain(sha256(ASSERTION));
     expect(after).not.toContain(sha256(OLD_ASSERTION));
@@ -182,7 +183,7 @@ describe("runGenerate", () => {
 
     await expect(
       runGenerate([], { cwd: root, providerInstance: provider }),
-    ).resolves.toEqual({ generatedPaths: [], targets: 0 });
+    ).resolves.toEqual({ generatedPaths: [], targets: 0, refusals: [] });
     expect(provider.requests).toHaveLength(0);
   });
 
@@ -204,7 +205,7 @@ describe("runGenerate", () => {
 
     await expect(
       runGenerate([], { cwd: root, providerInstance: provider }),
-    ).resolves.toEqual({ generatedPaths: [], targets: 0 });
+    ).resolves.toEqual({ generatedPaths: [], targets: 0, refusals: [] });
     expect(provider.requests).toHaveLength(0);
   });
 
@@ -223,7 +224,7 @@ describe("runGenerate", () => {
 
     await expect(
       runGenerate([], { cwd: root, providerInstance: provider }),
-    ).resolves.toEqual({ generatedPaths: [], targets: 0 });
+    ).resolves.toEqual({ generatedPaths: [], targets: 0, refusals: [] });
     expect(provider.requests).toHaveLength(0);
   });
 
@@ -239,7 +240,7 @@ describe("runGenerate", () => {
 
     await expect(
       runGenerate([], { cwd: root, providerInstance: provider }),
-    ).resolves.toEqual({ generatedPaths: [], targets: 0 });
+    ).resolves.toEqual({ generatedPaths: [], targets: 0, refusals: [] });
     expect(provider.requests).toHaveLength(0);
   });
 });

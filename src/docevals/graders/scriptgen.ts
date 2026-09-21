@@ -9,8 +9,19 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
 import type { DocevalsConfig } from "../core/config.js";
-import type { GenerateFn, JudgeOptions } from "../core/engine.js";
+import type {
+  GenerateFn,
+  GenerationRefusal,
+  JudgeOptions,
+} from "../core/engine.js";
 import { updateConfigEval, updatePageEval } from "../core/frontmatter-edit.js";
+import {
+  EVALS_KEY,
+  EvalWriter,
+  manifestEvalList,
+  updateManifestEval,
+  type WriteHome,
+} from "../core/write-location.js";
 import { sha256 } from "../judge/cache.js";
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import type { GraderTarget } from "./types.js";
@@ -134,14 +145,39 @@ export function makeGenerateScripts(deps: ScriptgenDeps): GenerateFn {
     _options: JudgeOptions,
   ) => {
     const generatedPaths: string[] = [];
+    const refusals: GenerationRefusal[] = [];
     // Config-sourced evals generate once even when used by many pages.
     const doneConfigEvals = new Set<string>();
     let provider: InferenceProvider | undefined;
+    // Proposal 0047: the command reference goes where the eval lives. Built
+    // once per generation pass, and only when a page-sourced eval needs it.
+    let writer: EvalWriter | undefined;
+    const getWriter = (): EvalWriter => (writer ??= EvalWriter.for(config, deps.root, []));
 
     for (const target of targets) {
       const ev = target.eval;
       if (!ev.assertion) continue; // Nothing to generate from.
       if (ev.source === "config" && doneConfigEvals.has(ev.name)) continue;
+
+      // Where the reference will be persisted, decided before the model is
+      // asked: a page whose manifest has no entry for it can hold no command,
+      // and paying for a script that cannot be referenced helps nobody.
+      const page = target.plan.page;
+      let home: WriteHome | undefined;
+      if (ev.source === "page") {
+        home = await getWriter().homeFor(
+          page.file,
+          page.frontmatter.data,
+          EVALS_KEY,
+        );
+        if (home.kind === "url") {
+          throw getWriter().urlRefusal(home, EVALS_KEY);
+        }
+        if (home.kind === "no-entry") {
+          refusals.push({ file: page.file, evalName: ev.name, message: home.message });
+          continue;
+        }
+      }
 
       if (provider === undefined) {
         try {
@@ -151,7 +187,7 @@ export function makeGenerateScripts(deps: ScriptgenDeps): GenerateFn {
           // No provider for any target: say why once, and let the engine
           // report each eval it could not generate for.
           if (!(e instanceof DocevalsError)) throw e;
-          return { generatedPaths, unavailable: e.message };
+          return { generatedPaths, refusals, unavailable: e.message };
         }
       }
 
@@ -193,11 +229,27 @@ export function makeGenerateScripts(deps: ScriptgenDeps): GenerateFn {
         command: location.command,
         "generated-assertion-hash": sha256(ev.assertion),
       };
-      if (ev.source === "page") {
-        const abs = target.plan.page.absPath;
+      if (ev.source === "page" && home?.kind === "manifest") {
+        // The evals live in the manifest, so the command reference does too:
+        // the one entry is rewritten and no other byte of the file changes.
+        const at = getWriter();
+        const list = manifestEvalList(
+          await at.readManifest(home, EVALS_KEY),
+          home.file,
+          home.entry,
+        );
+        const next = updateManifestEval(list, ev.name, updates);
+        if (next === undefined) {
+          throw new DocevalsError(
+            `${home.file}: eval "${ev.name}" not found in the entry for ${home.entry}`,
+          );
+        }
+        await at.writeManifest(home, EVALS_KEY, next);
+      } else if (ev.source === "page") {
+        const abs = page.absPath;
         const updated = updatePageEval(
           readFileSync(abs, "utf8"),
-          target.plan.page.file,
+          page.file,
           ev.name,
           updates,
         );
@@ -231,6 +283,6 @@ export function makeGenerateScripts(deps: ScriptgenDeps): GenerateFn {
         target.eval.generatedAssertionHash = updates["generated-assertion-hash"];
       }
     }
-    return { generatedPaths };
+    return { generatedPaths, refusals };
   };
 }

@@ -171,8 +171,12 @@ export interface NewEvalEntry {
   severity?: string;
 }
 
-/** Ordered plain object for a new inline eval, with undefined fields dropped. */
-function entryObject(entry: NewEvalEntry): Record<string, unknown> {
+/**
+ * Ordered plain object for a new inline eval, with undefined fields dropped.
+ * Exported because an eval whose location puts it in a manifest is written as
+ * this same object, spliced into the page's entry rather than appended here.
+ */
+export function entryObject(entry: NewEvalEntry): Record<string, unknown> {
   const obj: Record<string, unknown> = { id: entry.id, assertion: entry.assertion };
   if (entry.type !== undefined) obj.type = entry.type;
   if (entry.grader !== undefined) obj.grader = entry.grader;
@@ -231,7 +235,9 @@ export function appendPageEvals(
 
   if (format === undefined) {
     // No frontmatter: synthesize a block above the untouched body.
-    const doc = new Document({ evals: entries.map(entryObject) });
+    const doc = new Document(
+      entries.length === 0 ? {} : { evals: entries.map(entryObject) },
+    );
     if (metaProvenance) doc.set(META_PROVENANCE_KEY, doc.createNode(metaProvenance));
     let block = doc.toString();
     if (eol === "\r\n") block = block.replace(/(?<!\r)\n/g, "\r\n");
@@ -244,6 +250,17 @@ export function appendPageEvals(
     throw new DocevalsError(
       `${path}: cannot edit frontmatter — ${doc.errors[0]?.message ?? "parse error"}`,
     );
+  }
+
+  // Nothing to append: the evals of this page went to the manifest that owns
+  // them, and only `meta-provenance` is left for the page. Creating an empty
+  // `evals:` here would put the key in both places, which is exactly the
+  // collision routing the write exists to avoid.
+  if (entries.length === 0) {
+    if (metaProvenance) doc.set(META_PROVENANCE_KEY, doc.createNode(metaProvenance));
+    let onlyEntry = doc.toString();
+    if (blockEol === "\r\n") onlyEntry = onlyEntry.replace(/(?<!\r)\n/g, "\r\n");
+    return open + onlyEntry + suffix;
   }
 
   let seq = evalSeq(doc);

@@ -5,6 +5,8 @@
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
 import { fail } from "../shared/run.js";
+import { notice } from "../shared/warn.js";
+import { terminalConfirm } from "../shared/prompt.js";
 import { collect, configOption } from "../shared/cli-options.js";
 import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import type { DocumentInputOptions } from "./core/discover.js";
@@ -333,6 +335,8 @@ export function buildProgram(): Command {
             `Generated ${result.generatedPaths.length}/${result.targets} check script(s):`,
           );
           for (const p of result.generatedPaths) console.log(`  ${p}`);
+          // Evals whose command reference had nowhere to go (proposal 0047).
+          for (const r of result.refusals) console.log(pc.red(`  ${r.message}`));
           if (result.generatedPaths.length < result.targets) {
             process.exitCode = 1;
           }
@@ -395,6 +399,17 @@ export function buildProgram(): Command {
           provider: opts.provider as string | undefined,
           model: opts.model as string | undefined,
           local: opts.local as boolean | undefined,
+          // P1 (proposal 0047): offered only on a terminal, where there is
+          // someone to answer. Off one the evals go to the page and the W1
+          // line says so.
+          confirm: terminalConfirm(),
+          onNotice: notice,
+          onRelocated: (result) => {
+            const manifests = result.manifests.map((m) => m.file).join(", ");
+            notice(
+              `moved ${String(result.summary.moved)} value(s) into ${manifests}.`,
+            );
+          },
         });
         // As in `run`: parseFormatArg validated this at parse time, and the cast
         // only re-narrows from the `unknown` the Record-typed options bag erases
@@ -452,6 +467,8 @@ export function buildProgram(): Command {
             const script = p.scriptPath ? pc.dim(` -> ${p.scriptPath}`) : "";
             console.log(`${tag} ${p.evalName} (${p.source}, ${p.file})${script}`);
             console.log(pc.dim(`  ${p.rationale}`));
+            // Promotable, and nowhere to write it (proposal 0047).
+            if (p.error !== undefined) console.log(pc.red(`  ${p.error}`));
           }
           if (!opts.write && proposals.some((p) => p.promotable)) {
             console.log(pc.cyan("\nRe-run with --write to apply promotions."));

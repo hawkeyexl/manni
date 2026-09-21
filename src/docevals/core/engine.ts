@@ -89,6 +89,13 @@ export type JudgeFn = (
 const GENERATION_UNAVAILABLE =
   "no command and script generation unavailable (configure a provider or run `manni docevals generate`)";
 
+/** One eval generation could not persist a command for, and why. */
+export interface GenerationRefusal {
+  file: string;
+  evalName: string;
+  message: string;
+}
+
 export type GenerateFn = (
   targets: GraderTarget[],
   config: DocevalsConfig,
@@ -97,6 +104,13 @@ export type GenerateFn = (
   generatedPaths: string[];
   /** Why no provider could be had, when generation needed one and got none. */
   unavailable?: string;
+  /**
+   * Evals whose command reference had nowhere to go (proposal 0047): the
+   * manifest that owns the page's evals joins on a field the page lacks. The
+   * engine reports each as an errored result in the writer's own sentence,
+   * rather than as a generation that failed.
+   */
+  refusals?: GenerationRefusal[];
 }>;
 
 export interface RunOptions {
@@ -928,9 +942,23 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
         judgeOptions,
       );
       generatedPaths.push(...gen.generatedPaths);
+      const refusedBy = new Map<string, string>(
+        (gen.refusals ?? []).map((r) => [resultKey(r.file, r.evalName), r.message]),
+      );
       // Re-read the targets' evals: generateScripts mutates eval.command in place.
       for (const t of generationTargets) {
-        if (!t.eval.command && gen.unavailable !== undefined) {
+        const refused = refusedBy.get(resultKey(t.plan.page.file, t.eval.name));
+        if (!t.eval.command && refused !== undefined) {
+          results.push({
+            evalName: t.eval.name,
+            type: t.eval.type,
+            grader: t.eval.grader,
+            file: t.plan.page.file,
+            outcome: "error",
+            skipReason: refused,
+            durationMs: 0,
+          });
+        } else if (!t.eval.command && gen.unavailable !== undefined) {
           results.push({
             evalName: t.eval.name,
             type: t.eval.type,

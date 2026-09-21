@@ -72,6 +72,21 @@ export type {
   SpliceManifestOptions,
   SplicedManifest,
 } from "./core/external-metadata-write.js";
+// Proposal 0047's write rule, which `manni docevals` follows for the keys it
+// writes: a key a local manifest owns is written there, and a key its schema
+// prefers in external metadata that no manifest owns is offered a home (P1)
+// or warned about (W1, W2). `keyHome` answers where one key of one page
+// lives, and a sibling builds the `RelocationContext` both it and the offer
+// read from the config that sibling has already loaded.
+export { keyHome } from "./core/relocation.js";
+export type {
+  KeyHome,
+  ProposedHome,
+  RelocateResult,
+  RelocationContext,
+} from "./core/relocation.js";
+export { externalWriteWarnings, offerExternalHomes } from "./core/location-writes.js";
+export type { ExternalWrite } from "./core/location-writes.js";
 // `manni key rotate` re-encrypts the values a manifest supplies as well as
 // the ones a page carries. `reencryptMetadata` reads a page; this is the same
 // rule over metadata that is already parsed, and it skips `citations` too.

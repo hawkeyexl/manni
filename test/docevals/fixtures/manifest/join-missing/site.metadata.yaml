@@ -1,0 +1,5 @@
+install-page:
+  evals:
+    - id: mentions-prerequisites
+      assertion: The page lists prerequisites before the install steps.
+      grader: command
