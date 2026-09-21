@@ -30,7 +30,7 @@ manni meta validates the **presence and format** of your frontmatter against [JS
    npx @hawkeyexl/manni meta validate docs/
    ```
 
-   manni meta walks `docs/`, finds every supported file, and validates each one against the built-in [`google:okf:0.1`](/manni/meta/schemas/) schema, which requires a `type` field. You will see a pass/fail line per file and a summary. A nonzero exit code means at least one file failed.
+   manni meta walks `docs/`, finds every supported file, and validates each one against two built-in schemas. [`google:okf:0.1`](/manni/meta/schemas/) requires a `type` field. `passo-uno:seven-action:1.0` constrains `action` and requires nothing. You will see a pass/fail line per file and a summary. A nonzero exit code means at least one file failed.
 
    <Aside type="tip">
    To check a single file instead, pass its path: `npx @hawkeyexl/manni meta validate docs/intro.md`. Explicit file arguments are always validated, regardless of extension filters.

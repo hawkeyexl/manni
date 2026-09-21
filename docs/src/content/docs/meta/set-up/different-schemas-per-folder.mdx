@@ -12,7 +12,7 @@ This guide assumes you already have a working config. If not, start with [Create
 
 ## Two ways to name the subset
 
-An `overrides` entry always carries a `schemas` list. It says which files that list governs in exactly one of two ways:
+An `overrides` entry carries a `schemas` list, an [`elements`](/manni/meta/reference/configuration/#elements) list, or both. An entry with neither is a config error. It says which files it governs in exactly one of two ways:
 
 - **`collection: <name>`** points at a set declared in the top-level [`collections:`](/manni/meta/reference/configuration/#collections) list. Reach for this when the area is a real document set the whole repo recognises. The API reference, the blog, and the author pages are examples. The globs live in one place, and every manni tool sees the same set. `manni meta query` exposes it as a view of the same name.
 - **`files: <glob>`** takes a glob, or a list of them. Reach for this when the subset exists only to change schema choice. That might be one directory that needs an extra check, or a naming convention that cuts across collections.
@@ -161,10 +161,10 @@ So an override governs a file only when no `--schema` flag is set and the file h
 
 ## Verify your overrides
 
-After editing your config, confirm each area resolves to the schema set you expect. Run manni meta and read the per-file output, which reports the schemas applied to each file.
+After editing your config, confirm each area resolves to the schema set you expect. The pretty output prints a mark and a path per file, so ask for `json`, which carries a `schemas` list on every result.
 
 ```bash
-npx @hawkeyexl/manni meta validate
+npx @hawkeyexl/manni meta validate --format json
 ```
 
 If a file matches the wrong override, check the order of your `overrides` entries; remember that the first matching entry wins. To read one area on its own, narrow the run to its collection:

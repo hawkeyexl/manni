@@ -51,9 +51,10 @@ If that prints `v24` or higher, you're ready.
 2. **Validate a file.**
 
    Point manni meta at any Markdown file. With no schema configured, it validates
-   the file's YAML frontmatter against the built-in [OKF
-   schema](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md).
-   That schema requires a `type` field, and recommends a handful of others.
+   the file's YAML frontmatter against two built-in schemas. The [OKF
+   schema](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+   requires a `type` field, and recommends a handful of others. The Seven-Action
+   schema constrains `action` to seven reader actions, and requires nothing.
 
    ```sh
    manni meta validate path/to/your-doc.md
@@ -86,8 +87,9 @@ manni meta prints a green check and a summary:
 1 file checked, 1 passed, 0 failed, 0 errors
 ```
 
-The `✓` marks each file that passed. manni meta exits with code `0`, which CI reads
-as success.
+The `✓` marks each file that passed with nothing to report. A file that passed
+carrying only warnings or notices is marked `⚠`, and its findings are listed
+below it. manni meta exits with code `0`, which CI reads as success.
 
 ## Read a failing result
 
@@ -124,9 +126,13 @@ N files checked, M passed, K failed, E errors
 | Field | Meaning |
 | --- | --- |
 | `N files checked` | How many files manni meta resolved and validated. |
-| `M passed` | Files with no errors. |
+| `M passed` | Files with no errors. A file carrying only warnings or notices passes. |
 | `K failed` | Files with at least one error. |
 | `E errors` | Total errors across all files. A single file can contribute several. |
+
+Three more counts join the line when they are not zero. They are
+`W warnings`, `X notices`, and `G skipped by .gitignore`, in that order. A
+clean run in a clean repo has none of them, so the line stays as it is above.
 
 A run is green only when `K failed` is `0`. The exit code follows: `0` when
 nothing failed, `1` when one or more files failed validation. (A third code,

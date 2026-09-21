@@ -68,7 +68,7 @@ A developer on your team set `OPENAI_API_KEY` months ago for an unrelated side p
 manni meta fill docs/internal/
 ```
 
-Every page under `docs/internal/`, including paths, metadata and full text, goes to OpenAI. Nobody chose that. Detection chose it, from an environment variable that had nothing to do with manni meta, and the run succeeds so nothing draws attention to it. `fill` does report the provider and model it used, in both output formats. But that is a line in the summary of a command that otherwise worked.
+Every page under `docs/internal/`, including paths, metadata and full text, goes to OpenAI. Nobody chose that. Detection chose it, from an environment variable that had nothing to do with manni meta, and the run succeeds so nothing draws attention to it. `fill` does report the provider and model it used, in its `pretty` and `json` output. But that is a line in the summary of a command that otherwise worked.
 
 The fix is to stop leaving the choice to the environment. Pin the provider explicitly:
 
@@ -98,7 +98,7 @@ manni meta fill docs/internal/ --local
 
 If the environment holds an `OPENAI_API_KEY`, `--local` overrides it rather than following it. If no local model is available, the run fails with exit 2 instead of quietly falling back to something hosted. The refusal is the point.
 
-`--local` also refuses **`claude-cli`**, and that is the part to internalize. The rest of the CLI treats `claude-cli` as the local-ish option: no API key, no per-token bill, just a binary on your `PATH`. But the binary is what runs locally; the inference does not. It is the one provider where "local" is true of the process and false of the thing your policy is about. `--local` means `llama-cpp`, and nothing else.
+`--local` also refuses **`claude-cli`**, and that is the part to internalize. The rest of the CLI treats `claude-cli` as the local-ish option: no API key, no per-token bill, just a binary on your `PATH`. But the binary is what runs locally; the inference does not. It is the one provider where "local" is true of the process and false of the thing your policy is about. `--local` means `llama-cpp`, or the `mock` provider that exists for testing.
 
 <Aside type="caution" title="Two flags, two boundaries">
 `--offline` means *never fetch a remote schema*. It says nothing about inference. `--local` means *never send document content off this machine*. It says nothing about schema fetching. Neither implies the other, so pass both when you want the run to touch no network service at all:
