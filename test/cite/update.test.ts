@@ -2308,6 +2308,39 @@ describe.skipIf(!gitAvailable())("update follows a moved source", () => {
     });
   });
 
+  // A whole-file pin deliberately covers a file. Gaining a `source.lines` it
+  // never had is a silent change of what the citation says, which is the class
+  // of bug the span search exists to close rather than to open.
+  it("--accept leaves a whole-file pin whole, with no lines it never had", async () => {
+    repo = makeTempRepo({ files: { "src/limits.ts": source("limits.ts") } });
+    const first = commitAll(repo, "add limits");
+    // Only line 2 changes, so the file's first and last line each still sit
+    // exactly once: everything the span search needs to offer a range.
+    writeFileSync(join(repo, "src", "limits.ts"), source("changed.ts"), "utf8");
+    const second = commitAll(repo, "raise the timeout");
+    const page = pageWith(repo, [
+      "  - id: whole",
+      "    source:",
+      "      file: src/limits.ts",
+      `      integrity: ${hashRange(source("limits.ts"))}`,
+      `      commit-sha: ${first}`,
+    ]);
+
+    const run = await runUpdate({
+      cwd: repo,
+      inputs: ["docs/limits.md"],
+      accept: true,
+      noConfig: true,
+      env: {},
+    });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
+    const after = readFileSync(page, "utf8");
+    expect(after).not.toContain("lines:");
+    expect(after).toContain(`      integrity: ${hashRange(source("changed.ts"))}`);
+    expect(after).toContain(`      commit-sha: ${second}`);
+    expect(run.pages[0]?.rewritten[0]?.toLines).toBeUndefined();
+  });
+
   it("--accept with no span re-mints at the recorded range, as before", async () => {
     repo = makeTempRepo({ files: { "src/limits.ts": source("limits.ts") } });
     const first = commitAll(repo, "add limits");

@@ -3259,9 +3259,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-9055fd61ec88b6da68589469c0332bf4954d9af905a595d38f2a2921bdbbf01e
       source:
         file: src/cite/core/classify.ts
-        lines: 339-342
+        lines: 344-347
         integrity: sha256-a909c9a31155f4140101bedad6d76b632625f5cfe2100c940d5b2b5a991034ac
-        commit-sha: f8b910c35c13ed40992cfd02cf545a2cdb1c9aa5
+        commit-sha: 389093c36dc1e7a4e71ed7cfe119086bad843ca7
     - id: show-diff-from-commit
       claim:
         integrity: sha256-9055fd61ec88b6da68589469c0332bf4954d9af905a595d38f2a2921bdbbf01e
@@ -3275,9 +3275,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-9055fd61ec88b6da68589469c0332bf4954d9af905a595d38f2a2921bdbbf01e
       source:
         file: src/cite/core/classify.ts
-        lines: 343-344
+        lines: 348-349
         integrity: sha256-e3548519f38f33970cf4e73eedce393ba2d649ae41eaa05b0784c7a91653a9cd
-        commit-sha: f8b910c35c13ed40992cfd02cf545a2cdb1c9aa5
+        commit-sha: 389093c36dc1e7a4e71ed7cfe119086bad843ca7
     - id: shallow-clone-notice
       claim:
         lines: 104
@@ -3301,9 +3301,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-6cd781084d1cb253d0a0ba2b8903c211d687211658c2ed920049c084917fe13b
       source:
         file: src/cite/core/classify.ts
-        lines: 343-344
+        lines: 348-349
         integrity: sha256-e3548519f38f33970cf4e73eedce393ba2d649ae41eaa05b0784c7a91653a9cd
-        commit-sha: f8b910c35c13ed40992cfd02cf545a2cdb1c9aa5
+        commit-sha: 389093c36dc1e7a4e71ed7cfe119086bad843ca7
     - id: shallow-still-error
       claim:
         integrity: sha256-6cd781084d1cb253d0a0ba2b8903c211d687211658c2ed920049c084917fe13b
@@ -4759,9 +4759,9 @@ docs/src/content/docs/cite/get-started/index.mdx:
         integrity: sha256-54dd893bdcf79c20e74460ebc0c96e3c15aad7b451bd990a50102598c30b9703
       source:
         file: src/cite/core/classify.ts
-        lines: 339-342
+        lines: 344-347
         integrity: sha256-a909c9a31155f4140101bedad6d76b632625f5cfe2100c940d5b2b5a991034ac
-        commit-sha: f8b910c35c13ed40992cfd02cf545a2cdb1c9aa5
+        commit-sha: 389093c36dc1e7a4e71ed7cfe119086bad843ca7
     - id: claim-classified-same-way
       claim:
         integrity: sha256-b33b192a1ae089a9c643206714996b39c8fe27f80ebdb8904c787e54489bcf69
@@ -6562,14 +6562,6 @@ docs/src/content/docs/cite/reference/citations.mdx:
         lines: 97-123
         integrity: sha256-ae940337f9ed4e2ecaabf2c220cf13ca78a0379b8994e53960776654caec749c
         commit-sha: c5467c6d37d343fd22844c41d50a2f9da063dc24
-    - id: follow-across-files
-      claim:
-        integrity: sha256-6a479fd4967b065548425660b4b82bce581019fa5dd9aecf4c92d915a5cebab0
-      source:
-        file: src/cite/core/classify.ts
-        lines: 307-326
-        integrity: sha256-b19768aa6f042ee0df9a2860a1f17a6673ae08ba5096453595943c64a5899cc5
-        commit-sha: f8b910c35c13ed40992cfd02cf545a2cdb1c9aa5
     - id: follow-candidate-list
       claim:
         integrity: sha256-6a479fd4967b065548425660b4b82bce581019fa5dd9aecf4c92d915a5cebab0
@@ -6586,6 +6578,14 @@ docs/src/content/docs/cite/reference/citations.mdx:
         lines: 190-201
         integrity: sha256-4c2f44d4ad8d612d557f63c1f1055d1e09a5ef1ed3d84b593ea1eed23d7fe5b1
         commit-sha: f8b910c35c13ed40992cfd02cf545a2cdb1c9aa5
+    - id: follow-across-files
+      claim:
+        integrity: sha256-6a479fd4967b065548425660b4b82bce581019fa5dd9aecf4c92d915a5cebab0
+      source:
+        file: src/cite/core/classify.ts
+        lines: 307-332
+        integrity: sha256-b8ab206c8e19d0b483e65c7f813a04a7202d8f05bba268e5e219c387b773f446
+        commit-sha: 389093c36dc1e7a4e71ed7cfe119086bad843ca7
 docs/src/content/docs/cite/reference/cli.mdx:
   citations:
     - id: check
@@ -24481,9 +24481,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-6db4d5d084e63d6301555a29399627c768a89ea90219446ce59f29e70f534908
       source:
         file: CHANGELOG.md
-        lines: 657-660
+        lines: 650-653
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: 4dc9a7926d213732c2b6d475ba5a7e6f1502a5ef
+        commit-sha: 389093c36dc1e7a4e71ed7cfe119086bad843ca7
     - id: collection-flag-refuses-positional-paths
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
@@ -25273,9 +25273,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-b434cb91645fc3c84066f41be4d26f16a21838ce807764daf2b443931b3738bd
       source:
         file: CHANGELOG.md
-        lines: 657-660
+        lines: 650-653
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: 4dc9a7926d213732c2b6d475ba5a7e6f1502a5ef
+        commit-sha: 389093c36dc1e7a4e71ed7cfe119086bad843ca7
     - id: collection-exclude-removes-from-paths
       claim:
         lines: 137

@@ -175,6 +175,19 @@ describe.skipIf(!gitAvailable())("a source that moved to another file", () => {
     expect(unknown.status).toBe("missing");
   });
 
+  it("drops the missing reason once the pin turns up at another path", async () => {
+    // The old path was gone, so `readSource` recorded why. The verdict is no
+    // longer `missing`, so the reason has no business travelling with it.
+    repo = makeTempRepo({ files: { "src/limits.ts": LIMITS } });
+    const first = commitAll(repo, "add limits");
+    move(repo, "src/limits.ts", "src/core/limits.ts");
+    commitAll(repo, "move limits into core");
+
+    const result = await classify(repo, entry("src/limits.ts", 2, PIN_L2, first));
+    expect(result.status).toBe("moved");
+    expect(result.missingReason).toBeUndefined();
+  });
+
   it("writes an encrypted source's new path encrypted, and names it nowhere else", async () => {
     repo = makeTempRepo({ files: { "src/limits.ts": LIMITS } });
     const first = commitAll(repo, "add limits");
@@ -240,6 +253,20 @@ describe.skipIf(!gitAvailable())("a range that grew", () => {
 
     const result = await classify(repo, entry("src/limits.ts", "5-7", PIN_FN, first));
     expect(result.status).toBe("never-true");
+    expect(result.newLines).toBeUndefined();
+  });
+
+  it("offers no span to a whole-file pin, which has no range to grow", async () => {
+    // `historyOf` hands back the whole file as the original, and its first and
+    // last line each sit once in the file as it stands. A span there would be
+    // a range the citation never had.
+    repo = makeTempRepo({ files: { "src/limits.ts": LIMITS } });
+    const first = commitAll(repo, "add limits");
+    writeFile(repo, "src/limits.ts", source("changed.ts"));
+    commitAll(repo, "raise the timeout");
+
+    const result = await classify(repo, entry("src/limits.ts", undefined, PIN_FILE, first));
+    expect(result.status).toBe("changed");
     expect(result.newLines).toBeUndefined();
   });
 

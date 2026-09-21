@@ -532,9 +532,9 @@ rest of the file follows, under a 64 MiB hashing budget. Past the budget the
 entry is `source-changed` with `truncatedSearch` set, and the run says so
 once. A range longer than 5,000 lines, at either end, is `entry-invalid`.
 
-{/* cite follow-across-files */}
 {/* cite follow-candidate-list */}
 {/* cite follow-span-search */}
+{/* cite follow-across-files */}
 A pin that holds nowhere in its own file is looked for in the files that
 changed since its commit. The candidate list is `git diff --name-only
 <commit> HEAD`, so it covers committed changes only, and every path the

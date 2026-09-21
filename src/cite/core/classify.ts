@@ -316,6 +316,11 @@ export async function classifyCitation(
     const width = range.start === undefined ? undefined : original.length - 1;
     const spell = (hit: CrossFileHit): string =>
       width === undefined ? spellAt(hit.path) : spellAt(hit.path, hit.start, hit.start + width);
+    // This is the one place a source whose path would not read settles as
+    // something other than `missing`. A reason was recorded because the old
+    // path was gone; the verdict is no longer `missing`, so it does not
+    // travel with it.
+    if (across.hits.length > 0) delete result.missingReason;
     const [only] = across.hits;
     if (across.hits.length === 1 && only !== undefined) {
       result.status = "moved";
@@ -350,7 +355,13 @@ export async function classifyCitation(
     // Where the old first and last line sit now. The content between them did
     // change, so the status stands; what the span buys is a diff and an
     // `--accept` over the lines the sentence rests on.
-    const span = spanOf(lines, original);
+    //
+    // A whole-file pin is left out for the reason it never moves inside its
+    // own file: it has no range, so it has nothing to grow. Its `original` is
+    // the whole file as it was, whose first and last line usually do still sit
+    // once each, so without this guard it would gain a `source.lines` it never
+    // had and `--accept` would quietly narrow the citation to a range.
+    const span = range.start === undefined ? undefined : spanOf(lines, original);
     if (span !== undefined) result.newLines = String(lineSpec(span));
   }
   return result;
