@@ -929,9 +929,14 @@ function mergeRules(parent: Rule, child: Rule): Rule {
 }
 
 function mergeTemplates(parent: Template, child: Template): Template {
-  const merged: Template = { ...parent, ...child };
+  // Shaped like `mergeRules` above, and for the same reasons: merge first,
+  // drop `sections` from both spreads, and test for `undefined` rather than
+  // truthiness.
   const sections = mergeRuleLists(parent.sections, child.sections);
-  if (sections) merged.sections = sections;
+  const { sections: _parentSections, ...parentRest } = parent;
+  const { sections: _childSections, ...childRest } = child;
+  const merged: Template = { ...parentRest, ...childRest };
+  if (sections !== undefined) merged.sections = sections;
   // The chain is resolved; leaving `extends` on would invite resolving twice.
   delete merged.extends;
   return merged;
