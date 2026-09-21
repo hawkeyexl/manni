@@ -4,13 +4,6 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
-# [2.9.0-cite-follow-moved-sources.1](https://github.com/hawkeyexl/manni/compare/v2.8.5...v2.9.0-cite-follow-moved-sources.1) (2026-09-21)
-
-
-### Features
-
-* **cite:** follow a source across files and inside a changed range ([396964a](https://github.com/hawkeyexl/manni/commit/396964a963b686c48779e2bb73545e3c126b3db9))
-
 ## [2.8.5](https://github.com/hawkeyexl/manni/compare/v2.8.4...v2.8.5) (2026-09-21)
 
 
