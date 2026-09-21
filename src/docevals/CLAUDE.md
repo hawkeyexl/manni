@@ -315,8 +315,9 @@ and Node touch.
   exists, and `target: raw` stays the file verbatim. Never grow a second
   loader. Membership is decided by **every declared collection**, not by the
   ones `--collection` or the positional paths selected. Two refusals are
-  docevals' own because docevals *writes* eval keys: a URL manifest owning one
-  is exit 2, and so is a page whose collections both keep one in a manifest.
+  docevals' own, because docevals *writes* eval keys where meta reads them. A
+  URL manifest owning one is exit 2. So is a page whose collections both keep
+  one in a manifest.
   A page carrying a key its manifest owns is an error-level page problem, in
   meta's `external:owned` sentence. The `location:external` warning for an
   eval key left in a page stays `meta validate`'s; docevals adds none.
