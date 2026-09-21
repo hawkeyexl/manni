@@ -12,8 +12,9 @@
  * different one.
  */
 import { writeFile, rename, rm, stat, chmod } from "node:fs/promises";
-import { dirname, join, basename } from "node:path";
+import { dirname, join, basename, resolve } from "node:path";
 import { programName } from "../../shared/program-name.js";
+import { invalidateManifestCache } from "./manifest-cache.js";
 
 /** Windows returns these when an editor or scanner holds the target open. */
 const LOCKED = new Set(["EPERM", "EBUSY", "EACCES"]);
@@ -37,6 +38,15 @@ const wait = (ms: number): Promise<void> =>
  * refusing to write at all would be worse than a non-atomic write.
  */
 export async function writeFileAtomic(
+  /**
+   * Absolute, or relative to the process's current directory. The manifest
+   * cache is keyed on absolute paths, and the invalidation in the `finally`
+   * below resolves `path` against that same implicit directory — so a caller
+   * that resolved its own path against some other base would invalidate a key
+   * no cache holds, and the stale parse would survive the write. That miss is
+   * silent, which is why the requirement is stated here rather than left to be
+   * discovered.
+   */
   path: string,
   /**
    * A `Uint8Array` writes byte-for-byte. `schemas vendor` needs that: the
@@ -92,5 +102,13 @@ export async function writeFileAtomic(
     }
   } finally {
     await rm(tmp, { force: true });
+    // Every manifest write in the family lands here — `cite add`, `cite
+    // update`, `cite remove`, `meta fill`, `meta derive`, `meta relocate`,
+    // `meta query` — so this is the one place a parse another command cached
+    // has to be dropped. Two writes inside one clock tick can leave `mtimeMs`
+    // and size unchanged, so the cache cannot be left to notice on its own.
+    // It runs whether or not the write succeeded: forgetting a parse that is
+    // still current costs one re-read.
+    invalidateManifestCache(resolve(path));
   }
 }

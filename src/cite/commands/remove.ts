@@ -254,10 +254,11 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
     item.page.written = write;
   }
   const rewritten: ManifestChange[] = [];
-  for (const changed of manifests.changed()) {
-    if (write) await writeFileAtomic(changed.path, changed.text);
+  const record = (changed: { file: string; diff: string }): void => {
     rewritten.push({ file: changed.file, diff: changed.diff, written: write });
-  }
+  };
+  if (write) await manifests.commit({ after: record });
+  else for (const changed of manifests.changed()) record(changed);
 
   const pages = planned.map((item) => item.page);
   return {
