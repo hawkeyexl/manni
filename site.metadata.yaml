@@ -24457,9 +24457,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-6db4d5d084e63d6301555a29399627c768a89ea90219446ce59f29e70f534908
       source:
         file: CHANGELOG.md
-        lines: 643-646
+        lines: 650-653
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: 166fb2086894a49a54b50dc7282ff64013065481
+        commit-sha: 563e102b14ce64e1f17674b0e89c1f562e253f84
     - id: collection-flag-refuses-positional-paths
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
@@ -25249,9 +25249,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-b434cb91645fc3c84066f41be4d26f16a21838ce807764daf2b443931b3738bd
       source:
         file: CHANGELOG.md
-        lines: 643-646
+        lines: 650-653
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: 166fb2086894a49a54b50dc7282ff64013065481
+        commit-sha: 563e102b14ce64e1f17674b0e89c1f562e253f84
     - id: collection-exclude-removes-from-paths
       claim:
         lines: 137
@@ -29448,7 +29448,7 @@ docs/src/content/docs/meta/reference/glossary/okf.mdx:
   citations:
     - id: okf-requires-only-type
       claim:
-        integrity: sha256-582130c58e638ea398d6e4fca94c5694d749e70e5675673b6441543a8071ed61
+        integrity: sha256-64d5e00210db32b878d9628c2e63bf665c3bdb0254469d6d08083852fb8c8c17
       source:
         file: src/meta/schemas/okf/0.1.json
         lines: 3-38
