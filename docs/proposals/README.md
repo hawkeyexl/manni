@@ -75,6 +75,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0059](0059-a11y-crawl-exclusions.md) | Keeping the a11y crawl out of part of a site: `--exclude <glob>` repeatable, an `a11y.exclude:` key, globs matched against the URL path, and `summary.excluded` | Devin · D1, D3 | Proposed |
 | [0060](0060-content-model.md) | One content model for the family. It names the block kinds a page is made of, for `manni lint` and Doc Detective alike. It also gives the method for naming the next one | all (the body of a page) | Proposed |
 | [0061](0061-lint-template-grammar.md) | The lint template format is an ordered list of rules rather than a map. It gains one occurrence vocabulary, heading alternation and repeating groups. A matcher aligns sections to rules by cost | Sara · S7 / Maya · M10 / Theo · T5 | Proposed |
+| [0062](0062-dita-ot-answers-structure.md) | DITA Open Toolkit becomes a second tool for the structure job, not a new verb. It catches what lives between files: conref, keyref, xref and image targets. The parser also gains a `.ditamap` vocabulary | Maya · M10 / Devin · D9 / Theo · T5 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 

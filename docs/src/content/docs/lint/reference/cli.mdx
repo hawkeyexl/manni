@@ -133,7 +133,7 @@ the job itself.
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `--allow-empty` | n/a | off | Treat zero matched files as success. Mirrors config `allowEmpty:`. |
 | `--no-gitignore` | n/a | off | Lint files `.gitignore` covers. |
-| `--tool` | `<name>` | `manni` | Which tool performs the job. `manni` is the only value; anything else is an error naming the known set (exit 2). Mirrors config `structure.tool:`. |
+| `--tool` | `<name>` | `manni` | Which tool performs the job: `manni` or `dita-ot`. Anything else is an error naming the known set (exit 2). `manni` is this package's own engine; `dita-ot` is DITA Open Toolkit, which you install yourself. Mirrors config `structure.tool:`. |
 | `-t, --template` | `<ref>` | | Apply one [template ref](/manni/lint/reference/templates/#template-refs) to every file, overriding type routing. The first rung of the [resolution chain](/manni/lint/reference/configuration/#how-a-template-is-chosen). |
 | `--templates` | `<path>` | | Template file to route by. Its templates' `types:` outrank the built-ins. Repeatable, one path per occurrence, never comma-separated. Mirrors config `templates:`. |
 | `--explain` | n/a | off | Print how each file's template was chosen and lint nothing. [Always exits 0](#explain), unrouted pages included. |
@@ -262,12 +262,12 @@ Jobs:
   structure  tool: manni 2.4.0  [configured, available]
     config: manni.config.yaml
     formats:
-      markdown  Markdown (.md, .markdown)  kinds: paragraph, codeBlock, list, listItem, table, tableRow, tableCell, admonition, image, blockquote
-      mdx  MDX (.mdx)  kinds: paragraph, codeBlock, list, listItem, table, tableRow, tableCell, admonition, image, blockquote, element
-      html  HTML (.html, .htm)  kinds: paragraph, codeBlock, list, listItem, table, tableRow, tableCell, admonition, image, blockquote, definitionList, definitionItem
-      asciidoc  AsciiDoc (.adoc, .asciidoc)  kinds: paragraph, codeBlock, list, listItem, table, tableRow, tableCell, admonition, image, blockquote, definitionList, definitionItem
-      rst  reStructuredText (.rst)  kinds: paragraph, codeBlock, list, listItem, table, tableRow, tableCell, admonition, image, blockquote, definitionList, definitionItem
-      xml  XML (.xml, .dita)  kinds: paragraph, codeBlock, list, listItem, table, tableRow, tableCell, admonition, image, blockquote, definitionList, definitionItem
+      markdown  Markdown (.md, .markdown)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote
+      mdx  MDX (.mdx)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, element
+      html  HTML (.html, .htm)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
+      asciidoc  AsciiDoc (.adoc, .asciidoc)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
+      rst  reStructuredText (.rst)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
+      xml  XML (.xml, .dita, .ditamap)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
 ```
 
 `[configured]` means the repository's config declares the job, and `[not
@@ -664,7 +664,7 @@ manni lint structure docs/ -f yaml
 # manni: Unknown --format "yaml". Use pretty, json, github, sarif, or junit.
 
 manni lint structure docs/ --tool vale
-# manni: Unknown --tool "vale" for structure. Use manni.
+# manni: Unknown --tool "vale" for structure. Use manni, dita-ot.
 
 manni lint structure docs/ -t nope:x:1
 # manni: Unknown built-in template "nope:x:1". Available: tgdp:how-to:1.6, tgdp:tutorial:1.6, tgdp:reference:1.6, tgdp:concept:1.6, tgdp:troubleshooting:1.6, tgdp:release-notes:1.6, tgdp:readme:1.6.
@@ -679,7 +679,7 @@ manni lint templates infer page.md -f pretty
 # manni: Unknown --format "pretty". Use yaml or json.
 
 manni lint templates infer notes.txt
-# manni: no parser is registered for ".txt". Supported extensions: .md, .markdown, .mdx, .html, .htm, .adoc, .asciidoc, .rst, .dita. Use --as to override.
+# manni: no parser is registered for ".txt". Supported extensions: .md, .markdown, .mdx, .html, .htm, .adoc, .asciidoc, .rst, .dita, .ditamap. Use --as to override.
 
 cat page.md | manni lint templates infer -
 # manni: Reading from stdin (-) requires --as <format> to choose a parser.

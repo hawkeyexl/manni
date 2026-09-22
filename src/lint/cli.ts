@@ -48,7 +48,13 @@ import { runLint } from "./commands/lint.js";
 import { runTemplates, runTemplatesInfer } from "./commands/templates.js";
 import { runTools } from "./commands/tools.js";
 import { INFER_FORMATS, isInferFormat, type InferFormat } from "./core/infer.js";
-import { LINT_JOBS, TOOLS_BY_JOB, loadConfig, rebaseConfig } from "./core/config.js";
+import {
+  LINT_JOBS,
+  TOOLS_BY_JOB,
+  loadConfig,
+  rebaseConfig,
+} from "./core/config.js";
+import { resolveStructureTool } from "./tools/index.js";
 import {
   render,
   renderTemplates,
@@ -176,16 +182,18 @@ function inferFormat(value: unknown): InferFormat {
 }
 
 /**
- * `--tool <name>`: which tool performs a job. Refused by name rather than
- * ignored, because falling through to manni's engine would lint with something
- * other than what was asked for and say nothing.
+ * `--tool <name>`: which tool performs the structure job. Refused by name
+ * rather than ignored, because falling through to manni's engine would lint
+ * with something other than what was asked for and say nothing.
+ *
+ * The refusal is the registry's, not a second copy of it here. `runLint`
+ * refuses the same name with the same sentence for a caller that never touches
+ * commander; this one fires first, so a bad `--tool` is reported before the
+ * run asks what it was pointed at.
  */
-function assertTool(job: "structure", value: string | undefined): void {
-  const tools = TOOLS_BY_JOB[job];
-  if (value === undefined || (tools as readonly string[]).includes(value)) return;
-  throw new LintError(
-    `Unknown --tool "${value}" for ${job}. Use ${tools.join(", ")}.`,
-  );
+function assertStructureTool(value: string | undefined): void {
+  if (value === undefined) return;
+  resolveStructureTool(value);
 }
 
 /**
@@ -319,6 +327,7 @@ export function buildProgram(): Command {
 
     const run = await runLint({
       ...inputOptions(paths, options),
+      ...(tool?.tool === undefined ? {} : { tool: tool.tool }),
       ...(tool?.template === undefined ? {} : { template: tool.template }),
       ...(tool && tool.templates.length > 0 ? { templates: tool.templates } : {}),
       ...(explain ? { explain: true } : {}),
@@ -390,7 +399,10 @@ export function buildProgram(): Command {
   );
   structure
     .optionsGroup(TOOL_OPTIONS_GROUP)
-    .option("--tool <name>", "tool that performs the job: manni")
+    .option(
+      "--tool <name>",
+      `tool that performs the job: ${TOOLS_BY_JOB.structure.join(", ")}`,
+    )
     .option(
       "-t, --template <ref>",
       "apply this template to every file, overriding type routing",
@@ -423,7 +435,7 @@ export function buildProgram(): Command {
     .action(
       async (paths: string[], options: StructureCliOptions, command: Command) => {
         try {
-          assertTool("structure", options.tool);
+          assertStructureTool(options.tool);
           await lint(paths, options, command, { tool: options });
         } catch (err) {
           fail(err);

@@ -1,0 +1,194 @@
+---
+title: Choose a structure tool
+description: "Two tools answer the structure job. manni's own engine holds a page to a doctype template. DITA Open Toolkit catches what breaks between files, such as a conref or a keyref."
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+`manni lint structure` names a **job**, not a tool. Two tools can answer it, and
+which one runs is one line of config. The command you type never changes.
+
+## Which one you want
+
+`manni` is the default, ships in the package, and needs no config. DITA-OT you
+install yourself, and it needs Java 17 or newer.
+
+| Capability | `manni` | `dita-ot` |
+|---|---|---|
+| Holds a page to a doctype template | yes | no |
+| Resolves conref, keyref, xref and image targets | no | yes |
+| Reports a line and a column | yes | for some findings |
+| Reads | Markdown, MDX, HTML, AsciiDoc, reStructuredText, XML, DITA | DITA |
+
+Pick `dita-ot` when your docset is DITA and the failures you care about live
+between files. A conref points into another topic. A keyref resolves through a
+map. Neither can be checked by reading one file, so `manni`'s engine cannot see
+either of them.
+
+<Aside type="note">
+You cannot run both at once. One tool answers a job, so a repository holding
+both Markdown and DITA gets one answer for the whole run. Files the chosen tool
+does not read are skipped, and the run says how many.
+</Aside>
+
+## Switching to DITA Open Toolkit
+
+Install DITA-OT first. The `dita` command has to be on your `PATH`, or you have
+to say where it lives.
+
+```yaml title="manni.config.yaml"
+lint:
+  structure:
+    tool: dita-ot
+```
+
+If it is not on your `PATH`:
+
+```yaml title="manni.config.yaml"
+lint:
+  structure:
+    tool: dita-ot
+
+tools:
+  dita-ot:
+    home: /opt/dita-ot
+```
+
+`tools:` is the family's home for an outside tool's settings, beside
+`collections:`. It is not under `lint:`, because a tool is not one domain's.
+
+Check what will run:
+
+```bash
+manni lint tools
+```
+
+```
+Jobs:
+  structure  tool: dita-ot 4.4.1  [configured, available]
+    config: manni.config.yaml
+    formats:
+      dita  DITA (.ditamap, .dita, .xml)
+```
+
+`unavailable` beside a dash instead of a version means manni could not start it.
+That is what this command is for.
+
+## Running it
+
+```bash
+manni lint structure docs/
+```
+
+A directory walk collects `.ditamap` and not every topic, because DITA-OT checks
+one input per run and each run starts a JVM. A map is the right unit anyway,
+since the references being checked resolve through it.
+
+```
+✓ broken-conref.ditamap
+✗ broken-conref.dita
+    10:59  manni:lint/structure/DOTX010E  Unable to find the @conref target
+           '11d1696a09a6a166a9cb088cb3218acb49f81150.dita#warnings/no-such-note'.
+
+2 files checked, 1 passed, 1 failed, 0 skipped
+```
+
+You point at a map and findings come back against the topics inside it. That is
+why one target can fail files you did not name.
+
+Findings keep DITA-OT's own message ids, because that is what its documentation
+calls them and what you will search for. The wording is DITA-OT's too. A conref
+target therefore reads as the hashed name of its working copy, not the name you
+wrote.
+
+Not every finding knows a line. DITA-OT reports a resource it could not load
+without one, and manni puts that against the map it was pointed at:
+
+```
+✗ dead-xref.ditamap
+    1:1    manni:lint/structure/DOTX008E  The resource 'file:/docs/retiring-a-key.dita'
+           cannot be loaded.
+✗ dead-xref.dita
+    10:56  manni:lint/structure/DOTX031E  The '...dita' resource is not available to
+           resolve link information.
+
+2 files checked, 0 passed, 2 failed, 0 skipped
+```
+
+## Severity
+
+An undefined key reference is a `notice`. It annotates and does not fail the
+run:
+
+```
+⚠ undefined-key.dita
+    10:50  manni:lint/structure/DOTJ047I  notice Unable to find key definition for
+           key reference 'revoking' in root scope.
+
+2 files checked, 2 passed, 0 failed, 0 skipped, 1 notice
+```
+
+DITA-OT's own levels decide this. `FATAL` and `ERROR` are errors, `WARN` is a
+warning, and `INFO` is a notice. Exit 1 needs an error, so a docset with only
+notices stays green.
+
+Name a topic directly and it is checked on its own:
+
+```bash
+manni lint structure docs/tasks/rotate-key.dita
+```
+
+The run then says `checked docs/tasks/rotate-key.dita without a map; references
+outside it are not resolved.` Fewer references resolve, so fewer findings are
+possible.
+
+## What each tool's options are
+
+An option belongs to a tool. Passing one that belongs to the other is a usage
+error rather than something quietly ignored.
+
+`-t/--template`, `--templates`, `--explain`, `--as` and reading from `-` all
+belong to `manni`.
+
+```bash
+manni lint structure --tool dita-ot -t how-to docs/
+```
+
+```
+manni lint: --template is an option of the manni tool; the structure job's tool is dita-ot.
+```
+
+## When a run cannot answer
+
+Three things stop a run rather than failing a document. Each exits 2, because a
+run that checked nothing must not read as a clean docset.
+
+**DITA-OT is not there.**
+
+```
+manni lint: dita is not on PATH. Install DITA Open Toolkit to lint structure, or set tools.dita-ot.home.
+```
+
+**DITA-OT could not process a file.** It reports plenty of problems and still
+exits 0, so its exit code alone is not trusted. An exit that none of its own
+errors account for is different. Something went wrong that it did not write
+down, and a map that is not well-formed is the usual cause.
+
+```
+manni lint: DITA Open Toolkit failed on docs/root.ditamap: exit code 1. Run it directly on that file to see why.
+```
+
+**Nothing was in a format it reads.** A file of another format is skipped by
+name rather than handed over:
+
+```
+- notes.md  skipped: dita-ot does not read ".md". It reads .ditamap, .dita, .xml.
+```
+
+A run skips some files and checks others without complaint. A run that skips
+*every* file has no verdict to give, and says so:
+
+```
+manni lint: Nothing was checked: all 1 file(s) were skipped. 1 is in a format
+dita-ot does not read: target files in a format "manni lint tools" lists.
+```

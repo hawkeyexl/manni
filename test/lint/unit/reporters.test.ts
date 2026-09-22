@@ -6,9 +6,11 @@ import {
   renderJson,
   renderJunit,
   renderPretty,
+  renderTools,
   toValidationResults,
   type ReportFormat,
 } from "../../../src/lint/reporters/index.js";
+import type { ToolInfo } from "../../../src/lint/commands/tools.js";
 import { renderSarif } from "../../../src/lint/reporters/sarif.js";
 import {
   escapeWorkflowCommandMessage,
@@ -256,6 +258,66 @@ describe("pretty reporter", () => {
   // whose only finding is a warning (e.g. `unsupported_content_kind`) still
   // passes, but it is not silent about it either - unlike the old behaviour,
   // where the findings loop was never reached for a `success: true` result.
+  /**
+   * A `notice` is not a warning, and the summary must not call it one. Until
+   * `dita-ot` joined the structure job every structure finding was an `error`
+   * or the occasional `warning`, so counting "everything that is not an error"
+   * as a warning was indistinguishable from counting warnings. DITA-OT reports
+   * an undefined key reference (`DOTJ047I`) at `notice`, which made the two
+   * different for the first time.
+   */
+  describe("a file whose only finding is a notice", () => {
+    const noticeRun: LintRun = {
+      results: [
+        {
+          file: "topic.dita",
+          success: true,
+          findings: [
+            finding({
+              type: "DOTJ047I",
+              heading: null,
+              message: "Unable to find key definition for key reference 'revoking' in root scope.",
+              severity: "notice",
+            }),
+          ],
+          template: "how-to",
+        },
+      ],
+      summary: { checked: 1, passed: 1, failed: 0, skipped: 0 },
+    };
+
+    it("names it a notice on the summary line, not a warning", () => {
+      const out = renderPretty(noticeRun, { color: false });
+      expect(out).toContain("1 file checked, 1 passed, 0 failed, 0 skipped, 1 notice");
+      expect(out).not.toContain("1 warning");
+    });
+
+    it("counts warnings and notices apart when a run has both", () => {
+      const both: LintRun = {
+        results: [
+          ...noticeRun.results,
+          {
+            file: "page.md",
+            success: true,
+            findings: [
+              finding({
+                type: "unsupported_content_kind",
+                heading: null,
+                message: "The markdown parser does not report tables.",
+                severity: "warning",
+              }),
+            ],
+            template: "how-to",
+          },
+        ],
+        summary: { checked: 2, passed: 2, failed: 0, skipped: 0 },
+      };
+      expect(renderPretty(both, { color: false })).toContain(
+        "2 files checked, 2 passed, 0 failed, 0 skipped, 1 warning, 1 notice",
+      );
+    });
+  });
+
   describe("a passing file with only a warning", () => {
     const warningRun: LintRun = {
       results: [
@@ -785,5 +847,96 @@ describe("render", () => {
     const unknown = "toml" as ReportFormat;
     expect(() => render(run, unknown)).toThrow(LintError);
     expect(() => render(run, unknown)).toThrow(/toml/);
+  });
+});
+
+/**
+ * `manni lint tools`' version column.
+ *
+ * A tool that is not here has no version to report. The row still prints -
+ * "unavailable" beside a blank is the answer someone ran this command to get -
+ * so the cell carries a dash rather than the word `null` or an empty gap that
+ * reads as a rendering bug.
+ */
+describe("renderTools", () => {
+  const entry: ToolInfo = {
+    job: "structure",
+    tool: "manni",
+    configured: false,
+    available: true,
+    version: "1.2.3",
+    config: "built-in defaults",
+    formats: [],
+  };
+
+  it("prints the version the probe reported", () => {
+    expect(renderTools([entry], "pretty")).toContain("1.2.3");
+  });
+
+  it("prints a dash for a tool that reported no version", () => {
+    const text = renderTools(
+      [{ ...entry, available: false, version: null }],
+      "pretty",
+    );
+    expect(text).toContain("—");
+    expect(text).toContain("unavailable");
+    expect(text).not.toContain("null");
+  });
+
+  /**
+   * An outside tool answers the job without parsing into the content model, so
+   * it reports no kinds. A bare `kinds:` label with nothing after it reads as a
+   * rendering fault rather than as "this tool has none to report".
+   */
+  it("leaves the kinds label out for a tool that reports none", () => {
+    const text = renderTools(
+      [
+        {
+          ...entry,
+          tool: "dita-ot",
+          formats: [
+            {
+              name: "dita",
+              label: "DITA",
+              extensions: [".ditamap", ".dita", ".xml"],
+              kinds: [],
+            },
+          ],
+        },
+      ],
+      "pretty",
+    );
+    expect(text).toContain("dita  DITA (.ditamap, .dita, .xml)");
+    expect(text).not.toContain("kinds:");
+  });
+
+  it("still prints the kinds a tool does report", () => {
+    const text = renderTools(
+      [
+        {
+          ...entry,
+          formats: [
+            {
+              name: "markdown",
+              label: "Markdown",
+              extensions: [".md"],
+              kinds: ["paragraph", "list"],
+            },
+          ],
+        },
+      ],
+      "pretty",
+    );
+    expect(text).toContain("kinds: paragraph, list");
+  });
+
+  it("carries the absent version as null under json", () => {
+    const text = renderTools(
+      [{ ...entry, available: false, version: null }],
+      "json",
+    );
+    expect(JSON.parse(text)).toEqual([
+      { ...entry, available: false, version: null },
+    ]);
   });
 });

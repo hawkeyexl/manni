@@ -82,6 +82,7 @@ export function renderPretty(run: LintRun, opts: ReportOptions = {}): string {
   const c = palette(opts.color ?? false);
   const lines: string[] = [];
   let warnings = 0;
+  let notices = 0;
 
   for (const result of run.results) {
     // A skip is reported, never silently dropped: an unreadable format that
@@ -104,7 +105,13 @@ export function renderPretty(run: LintRun, opts: ReportOptions = {}): string {
     const mark = result.success ? c.yellow("⚠") : c.red("✗");
     lines.push(`${mark} ${result.file}`);
     for (const finding of result.findings) {
-      if (finding.severity !== "error") warnings++;
+      // Counted apart, because they are not the same thing to a reader. Every
+      // structure finding used to be an `error` or the occasional `warning`,
+      // so "not an error" and "a warning" were the same set. DITA-OT reports an
+      // undefined key reference at `notice`, and calling that a warning on the
+      // summary line overstates it.
+      if (finding.severity === "warning") warnings++;
+      else if (finding.severity === "notice") notices++;
       // The namespaced id rather than the bare `type`: it is what SARIF,
       // JUnit and the GitHub annotation file the finding under, so the string
       // a reader copies out of the terminal is the one they can search for.
@@ -119,7 +126,8 @@ export function renderPretty(run: LintRun, opts: ReportOptions = {}): string {
   // Named only when there are any, as meta and cite do: every run against a
   // format that reports every content kind has none.
   const warningsText = warnings > 0 ? `, ${plural(warnings, "warning")}` : "";
-  const summary = `${plural(checked, "file")} checked, ${passed} passed, ${failed} failed, ${skipped} skipped${warningsText}`;
+  const noticesText = notices > 0 ? `, ${plural(notices, "notice")}` : "";
+  const summary = `${plural(checked, "file")} checked, ${passed} passed, ${failed} failed, ${skipped} skipped${warningsText}${noticesText}`;
   if (lines.length > 0) lines.push("");
   lines.push(failed > 0 ? c.red(summary) : c.green(summary));
   return lines.join("\n");
@@ -352,12 +360,19 @@ export function renderTemplates(
   return lines.join("\n");
 }
 
-/** One input format as `markdown  Markdown (.md, .markdown)  kinds: paragraph, codeBlock, list`. */
+/**
+ * One input format as `markdown  Markdown (.md, .markdown)  kinds: paragraph,
+ * codeBlock, list`.
+ *
+ * The kinds are left out entirely when there are none, rather than printed as
+ * an empty list. A tool outside the package answers the job without parsing
+ * into the content model, so it has no kinds to report, and a bare `kinds:`
+ * label reads as a rendering fault rather than as the answer.
+ */
 function formatLine(c: Colors, entry: FormatInfo): string {
-  return (
-    `      ${c.cyan(entry.name)}  ${entry.label} (${entry.extensions.join(", ")})` +
-    `  ${c.dim(`kinds: ${entry.kinds.join(", ")}`)}`
-  );
+  const head = `      ${c.cyan(entry.name)}  ${entry.label} (${entry.extensions.join(", ")})`;
+  if (entry.kinds.length === 0) return head;
+  return `${head}  ${c.dim(`kinds: ${entry.kinds.join(", ")}`)}`;
 }
 
 /**
@@ -379,8 +394,14 @@ export function renderTools(
       entry.configured ? "configured" : "not configured",
       entry.available ? "available" : "unavailable",
     ].join(", ");
+    // A tool that is not here has no version to report, and the row still
+    // prints: "unavailable" beside a blank cell reads as a rendering fault
+    // rather than as the answer. The dash is a cell standing in for a missing
+    // value, which is why it is an em dash in a house style that bans them in
+    // prose.
+    const version = entry.version ?? "—";
     lines.push(
-      `  ${c.cyan(entry.job)}  tool: ${c.bold(entry.tool)} ${entry.version}  [${state}]`,
+      `  ${c.cyan(entry.job)}  tool: ${c.bold(entry.tool)} ${version}  [${state}]`,
     );
     lines.push(`    config: ${c.dim(entry.config)}`);
     lines.push(`    ${c.dim("formats:")}`);
