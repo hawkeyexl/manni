@@ -3,15 +3,23 @@
  * it under the rule (the keyed pin when the source is encrypted), record HEAD
  * unless told not to. Refuses (CiteError) a source the index does not hold, an
  * encrypted source the key cannot open, a range wider than
- * `MAX_RANGE_LINES`, or a range past EOF. No refusal names
- * the path an encrypted source holds.
+ * `MAX_RANGE_LINES`, a range past EOF, or a commit that does not contain the
+ * lines it would be recorded against. No refusal names the path an encrypted
+ * source holds.
  *
  * The claim end is minted by the caller, over the page lines it was given,
  * and passed in whole.
  */
 import { ENCRYPTION_KEY_ENV } from "../../shared/encryption-key.js";
 import { CiteError } from "../errors.js";
-import type { Citation, CitationSource, MintOptions, MissingReason } from "../types.js";
+import type {
+  Citation,
+  CitationSource,
+  MintOptions,
+  MissingReason,
+  SourceRange,
+} from "../types.js";
+import { historyOf } from "./classify.js";
 import { hashLines, sliceLines, splitLines } from "./hash.js";
 import { parseSrc, rangeLines, tooWide } from "./range.js";
 import { buildSourceIndex, encryptSourcePath, readSource } from "./sources.js";
@@ -32,6 +40,39 @@ async function commitFor(opts: MintOptions): Promise<string | undefined> {
   const client = opts.gitClient;
   if (client === undefined || !(await client.available())) return undefined;
   return (await client.head()) ?? undefined;
+}
+
+/**
+ * Refuse a commit that does not contain the lines it would be recorded
+ * against. The range is read from the working tree, so an uncommitted edit
+ * would otherwise be dated to a commit that never held it. Such a pin reads as
+ * `current` forever, because `classifyCitation` returns at the working-tree
+ * match without consulting the commit, and then accuses the source of
+ * `source-never-true` the first time it changes.
+ *
+ * `historyOf` is the same question `check` asks, so the answers agree. It
+ * accepts the lines sitting elsewhere in the file at that commit, which is what
+ * `update` leaves behind when it follows a move and keeps `commit`.
+ *
+ * A commit git cannot read is recorded unverified. A shallow clone must
+ * degrade to "history unavailable" rather than refuse (`git.ts`).
+ */
+async function assertCommitHolds(
+  opts: MintOptions,
+  commit: string,
+  path: string,
+  range: SourceRange,
+  pin: string,
+  key: string | undefined,
+): Promise<void> {
+  const client = opts.gitClient;
+  if (client === undefined || !(await client.available())) return;
+  const history = await historyOf(client, commit, path, range, pin, key, undefined);
+  if (history.kind !== "never-true") return;
+  // Named as the caller spelled it: an encrypted source stays a ciphertext.
+  throw new CiteError(
+    `${opts.src} is not committed: ${commit.slice(0, 7)} does not contain those lines. Commit the source, or use --no-commit-sha.`,
+  );
 }
 
 /**
@@ -87,8 +128,12 @@ export async function mintCitation(opts: MintOptions): Promise<Citation> {
     pinKey !== undefined && !range.encrypted ? encryptSourcePath(read.resolvedPath, pinKey) : range.path;
   const lines = rangeLines(range);
   const commitSha = await commitFor(opts);
+  const integrity = hashLines(joined, pinKey);
+  if (commitSha !== undefined) {
+    await assertCommitHolds(opts, commitSha, read.resolvedPath, range, integrity, pinKey);
+  }
 
-  const source: CitationSource = { file, integrity: hashLines(joined, pinKey) };
+  const source: CitationSource = { file, integrity };
   // Field order is the order a reader scans a source in: which file, which
   // lines, what they hashed to, and when that was taken.
   const ordered: CitationSource = {
