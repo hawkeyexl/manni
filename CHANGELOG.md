@@ -4,13 +4,6 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
-# [2.9.0-cite-follow-moved-sources.2](https://github.com/hawkeyexl/manni/compare/v2.9.0-cite-follow-moved-sources.1...v2.9.0-cite-follow-moved-sources.2) (2026-09-22)
-
-
-### Bug Fixes
-
-* **cite:** keep a whole-file pin whole, and drop a stale missing reason ([a8f8117](https://github.com/hawkeyexl/manni/commit/a8f8117c63a44e983f2c38a62a97284df390e16d)), closes [#111](https://github.com/hawkeyexl/manni/issues/111)
-
 ## [2.8.5](https://github.com/hawkeyexl/manni/compare/v2.8.4...v2.8.5) (2026-09-21)
 
 
