@@ -12,14 +12,24 @@ interface Call {
   cwd?: string;
 }
 
-function stub(result: { code: number | null; stdout?: string; stderr?: string }): {
+function stub(result: {
+  code: number | null;
+  signal?: string | null;
+  stdout?: string;
+  stderr?: string;
+}): {
   spawn: ValeSpawn;
   calls: Call[];
 } {
   const calls: Call[] = [];
   const spawn: ValeSpawn = (args, opts) => {
     calls.push({ args, cwd: opts.cwd });
-    return Promise.resolve({ code: result.code, stdout: result.stdout ?? "", stderr: result.stderr ?? "" });
+    return Promise.resolve({
+      code: result.code,
+      signal: result.signal ?? null,
+      stdout: result.stdout ?? "",
+      stderr: result.stderr ?? "",
+    });
   };
   return { spawn, calls };
 }
@@ -167,5 +177,46 @@ describe("valeLsConfig", () => {
   it("says Vale is not on PATH, and how to do without it, when the binary is missing", async () => {
     const err = await termError(valeLsConfig({ cwd: "/work" }, missing));
     expect(err.message).toBe("vale is not on PATH. Install Vale, or pass -o <styles directory>.");
+  });
+});
+
+/**
+ * A run a signal ended, which Vale itself never gets to describe.
+ *
+ * Node reports the exit code as `null` for a signal kill, so the seam has to
+ * recognise that shape and say what ended the run. "exit code null" names
+ * nothing a reader can act on, and the signal is the only account there is:
+ * a killed Vale writes no message of its own.
+ */
+describe("a run a signal ended", () => {
+  it("names the signal rather than reporting a null exit code", async () => {
+    const { spawn } = stub({ code: null, signal: "SIGKILL" });
+    const err = await termError(runValeJson(["a.md"], {}, spawn));
+    expect(err.message).toContain("killed by SIGKILL");
+    expect(err.message).not.toContain("null");
+  });
+
+  it("prefers what Vale said to the signal that ended it", async () => {
+    // Vale got far enough to explain itself, so its own words are the better
+    // message even though the run was then killed.
+    const { spawn } = stub({
+      code: null,
+      signal: "SIGTERM",
+      stderr: '{"Text":"config file not found"}',
+    });
+    const err = await termError(runValeJson(["a.md"], {}, spawn));
+    expect(err.message).toContain("config file not found");
+    expect(err.message).not.toContain("SIGTERM");
+  });
+
+  it("still reads ls-config's no-config case out of a killed run", async () => {
+    // The `NO_CONFIG` test runs on `failureText`, so the signal wording must
+    // not displace stderr that Vale did manage to write.
+    const { spawn } = stub({
+      code: null,
+      signal: "SIGKILL",
+      stderr: "no config file found",
+    });
+    await expect(valeLsConfig({ cwd: "." }, spawn)).resolves.toBeNull();
   });
 });
