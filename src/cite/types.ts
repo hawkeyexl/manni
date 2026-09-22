@@ -408,13 +408,33 @@ export interface MintOptions {
   sourceIndex?: SourceIndex;
 }
 
+/**
+ * One replacement against a fixed text: the bytes `[start, end)` become
+ * `text`. A writer that has a position from a parse hands back an edit rather
+ * than a rewritten page, so several of them can be collected against that one
+ * parse and applied together (`applyEdits`). Nothing is then read out of a
+ * text that has already been written to.
+ */
+export interface TextEdit {
+  start: number;
+  end: number;
+  text: string;
+}
+
 /** One marker found in a page body: `cite <id>` in the format's comment syntax. */
 export interface InlineStatement {
   /** File line of the marker. */
   line: number;
   /** File line of the anchored text: the rest of the marker's line, else the paragraph or block that follows. */
   anchorLine?: number;
-  payload: { kind: "ref"; id: string } | { kind: "bad"; reason: string; json?: boolean };
+  /**
+   * The ids the marker names, in the order written, or why the marker is not
+   * read. A payload of one id is what proposal 0044 shipped; 0056 widened it
+   * to a space-separated list, and every id in the list anchors the same text.
+   */
+  payload:
+    | { kind: "ref"; ids: [string, ...string[]] }
+    | { kind: "bad"; reason: string; json?: boolean };
   /** The marker text between the delimiters, trimmed. */
   raw: string;
   /** Character offsets of the whole marker in the file, for rewriting. */
@@ -566,8 +586,13 @@ export interface AddResult {
   manifest?: ManifestWrite;
   /** File lines of the claim after the write: the claim lines, or the text the marker anchors. */
   claimLines?: PageLines;
-  /** File line of the marker written above the claim, under `marker`. */
+  /** File line of the marker that names the entry, under `marker`. */
   markerLine?: number;
+  /**
+   * Whether the id joined the list of a marker already there, rather than
+   * getting a marker line of its own. A join moves no line on the page.
+   */
+  markerJoined?: boolean;
   /**
    * The first pinned source line, as the file holds it, so a mis-typed range
    * is visible at write time. Absent for a whole file, which has no first

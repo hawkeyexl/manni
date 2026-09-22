@@ -457,7 +457,7 @@ describe("runAdd", () => {
       onDisk(label).split("\n").indexOf(text) + 1;
     const both = { ends: ["current/current", "current/current"], findings: [] };
 
-    it("stacks a second marker below the first, and both anchor the paragraph", async () => {
+    it("joins the second id into the marker already there, on one line", async () => {
       const label = twoParagraphs("stacked.md");
       const first = await add({
         page: label,
@@ -467,7 +467,7 @@ describe("runAdd", () => {
         id: "first",
       });
       const at = lineOf(label, WRAPPED);
-      await add({
+      const second = await add({
         page: label,
         src: "src/limits.ts:3",
         pageLines: { start: at, end: at },
@@ -475,16 +475,75 @@ describe("runAdd", () => {
         id: "second",
       });
       const text = lineOf(label, WRAPPED);
-      expect(onDisk(label).split("\n").slice(text - 3, text)).toEqual([
-        "<!-- cite first -->",
-        "<!-- cite second -->",
+      expect(onDisk(label).split("\n").slice(text - 2, text)).toEqual([
+        "<!-- cite first second -->",
         WRAPPED,
       ]);
+      expect(second.markerJoined).toBe(true);
+      expect(second.markerLine).toBe(text - 1);
       expect(first.citation.claim).toEqual({ integrity: WRAPPED_PIN });
       expect(await recheck(label)).toEqual(both);
     });
 
-    it("stacks mdx markers the same way", async () => {
+    it("adds no line to the body, so the paragraph keeps its place in it", async () => {
+      const label = twoParagraphs("stable.md");
+      await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        marker: true,
+        id: "first",
+      });
+      // Body lines, counted from the heading, so the frontmatter the entry
+      // grows is out of the picture. Only a marker line would move these.
+      const bodyOf = (): string[] => {
+        const lines = onDisk(label).split("\n");
+        return lines.slice(lines.indexOf("# Limits"));
+      };
+      const before = bodyOf();
+      for (const id of ["second", "third"]) {
+        const at = lineOf(label, WRAPPED);
+        await add({
+          page: label,
+          src: "src/limits.ts:3",
+          pageLines: { start: at, end: at },
+          marker: true,
+          id,
+        });
+        expect(bodyOf().length).toBe(before.length);
+      }
+      expect(onDisk(label)).toContain(`<!-- cite first second third -->\n${WRAPPED}`);
+      expect(await recheck(label)).toEqual({
+        ends: ["current/current", "current/current", "current/current"],
+        findings: [],
+      });
+    });
+
+    it("leaves a one-id marker on another paragraph exactly as it was", async () => {
+      const label = twoParagraphs("elsewhere.md");
+      await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        marker: true,
+        id: "first",
+      });
+      const at = lineOf(label, "Retries default to 3.");
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:3",
+        pageLines: { start: at, end: at },
+        marker: true,
+        id: "second",
+      });
+      // The other paragraph gets its own marker; the first is untouched.
+      expect(result.markerJoined).toBeUndefined();
+      expect(onDisk(label)).toContain(`<!-- cite first -->\n${WRAPPED}`);
+      expect(onDisk(label)).toContain("<!-- cite second -->\nRetries default to 3.");
+      expect(await recheck(label)).toEqual(both);
+    });
+
+    it("joins an mdx marker the same way", async () => {
       const label = write("stacked.mdx", ["---", "title: t", "---", "", "# Limits", "", CLAIM]);
       await add({
         page: label,
@@ -501,11 +560,11 @@ describe("runAdd", () => {
         marker: true,
         id: "second",
       });
-      expect(onDisk(label)).toContain(`{/* cite first */}\n{/* cite second */}\n${CLAIM}`);
+      expect(onDisk(label)).toContain(`{/* cite first second */}\n${CLAIM}`);
       expect(await recheck(label)).toEqual(both);
     });
 
-    it("stacks markers above a quoted block", async () => {
+    it("joins a marker above a quoted block, where every id is a quote", async () => {
       const label = fenced("stacked-quote.md", ["# Limits", ""], [LINE_2], ["", "After."]);
       const first = await add({
         page: label,
@@ -523,29 +582,120 @@ describe("runAdd", () => {
         marker: true,
         id: "second",
       });
-      expect(onDisk(label)).toContain(`<!-- cite first -->\n<!-- cite second -->\n${OPEN}`);
+      expect(onDisk(label)).toContain(`<!-- cite first second -->\n${OPEN}`);
       expect(await recheck(label)).toEqual(both);
     });
 
-    it("reports the lines the third stacked marker and its claim hold after the write", async () => {
+    it("reports the join, and the claim lines that did not move", async () => {
       const label = twoParagraphs("three.md");
-      for (const id of ["first", "second", "third"]) {
-        const at = lineOf(label, "not configurable.");
+      const at = lineOf(label, "not configurable.");
+      const first = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: at, end: at },
+        marker: true,
+        id: "first",
+      });
+      const text = lineOf(label, WRAPPED);
+      expect(addMessage(first)).toBe(
+        `${label}: added first to frontmatter; marker at line ${String(text - 1)}, claim pinned at lines ${String(text)}-${String(text + 1)} (sha256-93f59d1e…; source src/limits.ts:2 "${LINE_2}", sha256-78af1d33…, no commit)`,
+      );
+      for (const id of ["second", "third"]) {
+        const line = lineOf(label, "not configurable.");
         const result = await add({
           page: label,
           src: "src/limits.ts:2",
-          pageLines: { start: at, end: at },
+          pageLines: { start: line, end: line },
           marker: true,
           id,
         });
-        const lines = onDisk(label).split("\n");
-        const text = lineOf(label, WRAPPED);
-        expect(lines[(result.markerLine ?? 0) - 1]).toBe(`<!-- cite ${id} -->`);
-        expect(result.claimLines).toEqual({ start: text, end: text + 1 });
+        const now = lineOf(label, WRAPPED);
+        expect(result.markerJoined).toBe(true);
+        expect(result.claimLines).toEqual({ start: now, end: now + 1 });
         expect(addMessage(result)).toBe(
-          `${label}: added ${id} to frontmatter; marker at line ${String(text - 1)}, claim pinned at lines ${String(text)}-${String(text + 1)} (sha256-93f59d1e…; source src/limits.ts:2 "${LINE_2}", sha256-78af1d33…, no commit)`,
+          `${label}: added ${id} to frontmatter; joined the marker at line ${String(now - 1)}, claim pinned at lines ${String(now)}-${String(now + 1)} (sha256-93f59d1e…; source src/limits.ts:2 "${LINE_2}", sha256-78af1d33…, no commit)`,
         );
       }
+      expect(onDisk(label)).toContain(`<!-- cite first second third -->\n${WRAPPED}`);
+    });
+
+    it("writes a new line rather than joining a marker whose delimiters span lines", async () => {
+      // A marker can open on one line and close on another, and it parses.
+      // Joining it would fold it onto one line, which changes the line count
+      // and moves every claim below it, so `add` leaves it alone.
+      const label = write("wrapped.md", [
+        "---",
+        "title: Limits",
+        "---",
+        "# Limits",
+        "",
+        "<!-- cite",
+        "  first",
+        "-->",
+        "The fetch timeout is 10 seconds.",
+      ]);
+      const at = lineOf(label, "The fetch timeout is 10 seconds.");
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: at, end: at },
+        marker: true,
+        id: "second",
+      });
+      expect(result.markerJoined).toBeUndefined();
+      const after = onDisk(label);
+      // The wrapped marker is left exactly as it was, still spanning its
+      // three lines, and the new id got a marker of its own.
+      expect(after).toContain("<!-- cite\n  first\n-->");
+      expect(after).toContain("<!-- cite second -->");
+      expect(after).not.toContain("cite first second");
+    });
+
+    it("writes a new marker line when the nearest one already holds 25 ids", async () => {
+      const label = twoParagraphs("full.md");
+      const held = Array.from({ length: 25 }, (_v, n) => `id-${String(n)}`);
+      // The marker is put there by hand: minting 25 entries would say nothing
+      // about the case, which is the line budget rather than the entries.
+      const before = onDisk(label).split("\n");
+      before.splice(5, 0, `<!-- cite ${held.join(" ")} -->`);
+      writeFileSync(join(cwd, label), before.join("\n"));
+      const at = lineOf(label, WRAPPED);
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: at, end: at },
+        marker: true,
+        id: "twenty-sixth",
+      });
+      expect(result.markerJoined).toBeUndefined();
+      const after = onDisk(label).split("\n");
+      const text = lineOf(label, WRAPPED);
+      expect(after[text - 2]).toBe("<!-- cite twenty-sixth -->");
+      expect(after[text - 3]).toBe(`<!-- cite ${held.join(" ")} -->`);
+      expect(addMessage(result)).toContain(`; marker at line ${String(text - 1)},`);
+    });
+
+    it("refuses a marker line, because a marker there would change its pin", async () => {
+      const label = twoParagraphs("on-marker.md");
+      await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: 6, end: 6 },
+        marker: true,
+        id: "first",
+      });
+      const at = lineOf(label, WRAPPED) - 1;
+      expect(
+        await refusal(
+          add({
+            page: label,
+            src: "src/limits.ts:3",
+            pageLines: { start: at, end: at },
+            marker: true,
+            id: "second",
+          }),
+        ),
+      ).toBe(`${label}:${String(at)} is a marker line. A marker there would change its pin.`);
     });
 
     it("puts the marker above the paragraph when the lines start inside it", async () => {
@@ -772,15 +922,14 @@ describe("runAdd", () => {
       expect(await recheck(label)).toEqual(CURRENT);
     });
 
-    it("stacks a second marker under an indented one, at the same indentation", async () => {
+    it("joins an indented marker, keeping its indentation", async () => {
       const label = page("stacked-steps.mdx", steps("<Steps>", "</Steps>"));
       await mark(label, STEP, "first");
       const lines = await mark(label, STEP, "second");
       const at = lines.indexOf(STEP);
-      expect(lines.slice(at - 3, at + 1)).toEqual([
+      expect(lines.slice(at - 2, at + 1)).toEqual([
         "",
-        "   {/* cite first */}",
-        "   {/* cite second */}",
+        "   {/* cite first second */}",
         STEP,
       ]);
       expect(await recheck(label)).toEqual({

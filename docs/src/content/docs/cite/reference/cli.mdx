@@ -432,7 +432,7 @@ manni cite add <page>[:L|:L1-L2] <src> [options]
 | Option | Argument | Default | Description |
 |---|---|---|---|
 | `--id` | `<id>` | n/a | A kebab-case name for the entry, unique within the page. What a marker names, and what `update --only` and every finding are reported under. Required with `--marker`; optional otherwise, including on a bare pin. An id the page already uses is refused. |
-| `--marker` | n/a | off | Write a `cite <id>` marker instead of storing claim lines, and pin the text it anchors. The marker goes directly above the paragraph or fenced block that holds the page lines, below any markers already there. It takes the indentation of the first line of that paragraph or block, so a marker in a list item stays in the item. In markdown and MDX, above a list item that follows another, it is indented to the item's text, which keeps the list whole. In asciidoc it stays at column 0, where a comment must start. The lines must all sit in that one paragraph or block, of at most 5,000 lines. A heading, a section title, an adornment and a lone tag are each a block of their own. Above a line that follows one, the marker goes below it. Entries whose claim lines sit below the marker have them moved down in the same write. The marker travels with its sentence. Needs the page lines and `--id`. |
+| `--marker` | n/a | off | Write a `cite <id>` marker instead of storing claim lines, and pin the text it anchors. When a marker already anchors that text, the id joins its list instead, and no line is written. The marker joined is the nearest one. That is the marker on the text's own line when there is one, else the last marker line above it. The id goes last, so nothing another citation wrote is reordered. A join adds no line, so no claim below it moves. When the nearest marker already holds 25 ids, a new marker line is written instead. A written marker goes directly above the paragraph or fenced block that holds the page lines, below any markers already there. It takes the indentation of the first line of that paragraph or block, so a marker in a list item stays in the item. In markdown and MDX, above a list item that follows another, it is indented to the item's text, which keeps the list whole. In asciidoc it stays at column 0, where a comment must start. The lines must all sit in that one paragraph or block, of at most 5,000 lines. A heading, a section title, an adornment and a lone tag are each a block of their own. Above a line that follows one, the marker goes below it. Entries whose claim lines sit below a written marker have them moved down in the same write. The marker travels with its sentence. Needs the page lines and `--id`. |
 | `--quote` | n/a | off | The page lines are a fenced block, fences included, that reproduces the cited lines. The block is pinned whole, and its contents are compared with the source, so a quoted snippet that drifts is `quote-drift` even while the pin holds. Needs the page lines, and a format with a fence the tool can locate: `markdown`, `mdx` or `asciidoc`. |
 | `--encrypt` | n/a | off | Write `source.file` encrypted, with an `hmac-sha256-` pin, so the page carries neither the path nor a verifier for the line. An available encryption key, a top-level `encryptionKey:` or `MANNI_ENCRYPTION_KEY`, encrypts every `add` without the flag. With no key, on a terminal, `add` offers to generate one and write it to `manni.config.yaml`. Off a terminal, or on a no, it refuses (exit 2) and writes nothing. |
 | `--no-commit-sha` | n/a | on | Do not record `HEAD` as the entry's `commit-sha`. Without it, a later check can still say the lines changed, but not since when, nor whether the pin was ever true. It cannot follow the source into another file either, nor name the span a changed range now covers. Off a git checkout no commit is recorded either way. |
@@ -474,6 +474,7 @@ page does not stop it.
 manni cite add docs/limits.md lib/limits.ts                        # a bare pin over the whole file
 manni cite add docs/limits.md:9 lib/limits.ts:2 --id fetch-timeout
 manni cite add docs/limits.md:30 lib/limits.ts:8-12 --id timeouts --marker
+manni cite add docs/limits.md:30 lib/limits.ts:9 --id backoff --marker    # joins the marker there
 manni cite add docs/limits.md:14-18 lib/limits.ts:1-3 --quote      # the block that reproduces it
 manni cite add docs/limits.md:9 lib/limits.ts:2 --dry-run          # preview the diff
 MANNI_ENCRYPTION_KEY=$KEY manni cite add docs/limits.md:9 lib/limits.ts:2 --root ../code
@@ -489,8 +490,12 @@ pinned source line is quoted beside the source:
 docs/limits.md: added fetch-timeout to frontmatter (claim at line 9, sha256-c41f09aa…; source lib/limits.ts:2 "export const FETCH_TIMEOUT_MS = 10_000;", sha256-78af1d33…, 3f9c2a1)
 docs/limits.md: added a bare pin to frontmatter (source lib/limits.ts, sha256-aebba92f…, 3f9c2a1)
 docs/limits.md: added timeouts to frontmatter; marker at line 30, claim pinned at lines 31-34 (sha256-c41f09aa…; source lib/limits.ts:8-12 "export const TIMEOUTS = {", sha256-78af1d33…, 3f9c2a1)
+docs/limits.md: added backoff to frontmatter; joined the marker at line 30, claim pinned at lines 31-34 (sha256-c41f09aa…; source lib/limits.ts:9 "const BACKOFF = 2;", sha256-78af1d33…, 3f9c2a1)
 docs/limits.md: added an entry to frontmatter (claim lines 14-18, a block that reproduces lib/limits.ts:1-3)
 ```
+
+The line says `joined the marker` when the id went into a marker already
+there, and `marker` when a marker line was written.
 
 The quoted line is what the range caught, so a mis-typed range shows up at
 write time. Its whitespace is collapsed and it is cut to sixty characters. A
@@ -526,6 +531,7 @@ manni: --marker needs --id: the marker names the entry.
 manni: docs/limits.md:30-40 runs past the paragraph at lines 31-34. A marker anchors one paragraph.
 manni: docs/limits.md:31 is in a paragraph at lines 31-5032 that spans 5002 lines, more than 5000. A marker anchors the whole paragraph.
 manni: docs/limits.md:31 is inside the claim of fetch-timeout (lines 28-34). A marker there would change its pin.
+manni: docs/limits.md:30 is a marker line. A marker there would change its pin.
 manni: --quote needs the block's lines: docs/limits.md:L1-L2.
 manni: docs/limits.md:9 is not a fenced block, so it cannot be a quote.
 manni: The block at docs/limits.md:14-18 does not reproduce lib/limits.ts:4-6.
@@ -785,10 +791,11 @@ anchors it.
 Remove the citations you name, markers and all. The entry goes out of the
 page's frontmatter, or out of the
 [sidecar manifest](/manni/cite/reference/citations/#the-sidecar) that owns the
-page's citations, wherever `add` put it. Every marker naming it goes out of
-the body, and the claims below each removed marker line move up with the text
-they pin. That is the inverse of the shift `add --marker` performs, and it
-happens in the same write, so a removal leaves no finding of its own behind.
+page's citations, wherever `add` put it. The id goes out of every marker
+naming it, and a marker that loses its last id loses its whole line. The
+claims below each deleted marker line move up with the text they pin. That is
+the inverse of the shift `add --marker` performs, and it happens in the same
+write, so a removal leaves no finding of its own behind.
 
 `--only` is required. `remove` never takes every citation off a page.
 
@@ -829,8 +836,8 @@ removal is easy to review.
 | What | What happens to it |
 |---|---|
 | The entry | Removed from the page's frontmatter, or from the manifest that owns the page's citations. An empty list takes the `citations` key with it, so no page keeps a key with nothing under it. |
-| Its markers | Every marker line naming the id is deleted, the whole line. |
-| The claims below | Their `claim.lines` move up one line per removed marker above them, in the same write. |
+| Its markers | The id goes out of the list of every marker naming it. A marker that named nothing else is deleted, the whole line. A marker that keeps an id keeps its line. |
+| The claims below | Their `claim.lines` move up one line per deleted marker above them, in the same write. A marker that only lost a word moves nothing. |
 | Every other entry | Untouched, comments and quoting included: the entries that stay are re-emitted as they were written. |
 | An id with a marker and no entry | The marker alone is removed, which is how a [`marker-orphan`](/manni/cite/fix/#marker-orphan) is cleared. |
 | A broken entry | Removed like any other. `remove` reads the entries as they are written, so an entry the schema refuses is still reachable by its id or its pointer. |
@@ -848,7 +855,7 @@ that has one. Prefer an id where the entries have one.
 
 | Code | Meaning |
 |---|---|
-| `0` | Everything you named was removed, or previewed under `--dry-run`. The report names each removal and the markers that went with it. |
+| `0` | Everything you named was removed, or previewed under `--dry-run`. The report names each removal and the markers the id came out of. |
 | `2` | A refusal. No `--only`, or an id and a pointer that name nothing, or a pointer past the last entry of a page. Or a marker sharing its line with text, or a marker line inside another entry's claim. Plus everything `check` exits 2 for, including no inputs and no config, and a missing `-c` file. Nothing is written. |
 
 There is no exit `1`. Like `add`, `remove` either does what you named or it

@@ -1,6 +1,6 @@
 # 0056: several ids per marker
 
-- **Status:** Proposed
+- **Status:** Implemented (#112)
 - **Serves:** Three journeys, all downstream of one page edit.
   - Maya · M5, "Pin a claim and catch it going stale". A paragraph that
     supports four claims carries one comment instead of four.
