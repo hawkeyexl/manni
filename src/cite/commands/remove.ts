@@ -217,6 +217,15 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
       label,
     });
 
+    // The page is rewritten under one contract, and both halves of it have
+    // been got wrong once. A writer that works from a position recorded
+    // against the page as it was read -- a statement's byte offsets, a marker
+    // line -- must run before any writer that changes the byte count above
+    // it, and must run bottom up so it does not move its own remaining work.
+    // A writer that re-derives its position from the text it is handed, as
+    // `spliceEntryField` does by re-extracting, is safe in any order and goes
+    // last. Getting either wrong is silent: the edit lands nowhere and the
+    // page keeps a marker naming an id that no entry has.
     let after = content;
     // The respells first, and the order is load-bearing. A statement carries
     // byte offsets into the page as it was read, while splicing a claim line
@@ -225,9 +234,17 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
     // respell silently leaves the id in the marker. A respell changes no line
     // count and no byte above the frontmatter, so running it first is safe in
     // the direction the splice is not.
-    for (const [line, ids] of kept) {
+    // Bottom up, for the same reason `removeLine` runs that way below: a
+    // respell shortens its marker, so every byte after it moves, and the
+    // statements below still carry offsets into the page as it was read.
+    // Ascending order leaves the second respell slicing the wrong span,
+    // where it finds no payload and quietly does nothing.
+    for (const line of [...kept.keys()].sort((a, b) => b - a)) {
       const held = dropped.get(line);
-      if (held !== undefined) after = respellStatement(after, held.statement, ids);
+      const ids = kept.get(line);
+      if (held !== undefined && ids !== undefined) {
+        after = respellStatement(after, held.statement, ids);
+      }
     }
     // Then the claim lines, while the entries still stand where the page's
     // own pointers say. Splicing a scalar never changes the line count, and

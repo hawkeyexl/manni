@@ -635,3 +635,37 @@ describe("runRemove: a respell beside a claim line that loses a digit", () => {
     expect(after).not.toContain("<!-- cite gone -->");
   });
 });
+
+/**
+ * Respells move bytes for each other, not just for the frontmatter. Two
+ * multi-id markers on one page, one id going out of each, is an ordinary run
+ * once a marker can carry several ids.
+ */
+describe("runRemove: two markers respelled in one run", () => {
+  /** The pins of the two paragraphs the markers anchor. */
+  const ONE = "sha256-dbcba560ab93aa79c7e358a69848177ed0b52365f631c40ca4db070a2e319e96";
+  const TWO = "sha256-c4cd87302526ffb3a74853f71352abdbdb03d4acedaf716bbd3b6ec0b6ebc580";
+  const entry = (id: string, pin: string): string =>
+    `  - id: ${id}\n    claim:\n      integrity: ${pin}\n    source:\n      file: src/limits.ts\n      lines: 3\n      integrity: sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3\n`;
+
+  it("respells the lower marker too, which the upper one had moved", async () => {
+    const label = writeRaw(
+      "two-markers.md",
+      `---\ntitle: Limits\ncitations:\n` +
+        entry("fetch-timeout", ONE) +
+        entry("retries", ONE) +
+        entry("backoff-window", TWO) +
+        entry("jitter", TWO) +
+        `---\n# Limits\n\n<!-- cite fetch-timeout retries -->\nParagraph one.\n\n<!-- cite backoff-window jitter -->\nParagraph two.\n`,
+    );
+    const run = await remove({ inputs: [label], only: ["fetch-timeout", "backoff-window"] });
+    expect(run.removed).toBe(2);
+    const after = onDisk(label);
+    // The upper marker loses fourteen bytes, which is more slack than the
+    // delimiters give, so the lower one is nowhere near its recorded offsets.
+    expect(after).toContain("<!-- cite retries -->\nParagraph one.");
+    expect(after).toContain("<!-- cite jitter -->\nParagraph two.");
+    expect(after).not.toContain("backoff-window");
+    expect(await findings(label)).toEqual([]);
+  });
+});
