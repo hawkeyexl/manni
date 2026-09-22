@@ -511,8 +511,16 @@ export function formatStatement(
  *
  * The marker is rewritten where it stands rather than rendered afresh, so a
  * page that spells its markers in a form `formatStatement` would not choose
- * keeps that form, and its indentation and inner spacing are untouched. The
- * edit never changes the line count, so no claim below it moves.
+ * keeps that form, and its indentation and inner spacing are untouched.
+ *
+ * Two things the caller owes. `content` must be the page the statement's
+ * offsets were read from, or a rewrite of it that has changed no byte before
+ * the marker; the payload is found by slicing at those offsets. And the
+ * marker must open and close on one line, since a payload spanning lines is
+ * folded onto one here, which changes the line count and moves every claim
+ * below it. Both callers hold to this: `remove` respells before it splices
+ * anything, and refuses a marker line it cannot read whole, and `add` joins
+ * only a marker with no line break in it.
  */
 export function respellStatement(
   content: string,

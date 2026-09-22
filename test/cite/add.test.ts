@@ -619,6 +619,38 @@ describe("runAdd", () => {
       expect(onDisk(label)).toContain(`<!-- cite first second third -->\n${WRAPPED}`);
     });
 
+    it("writes a new line rather than joining a marker whose delimiters span lines", async () => {
+      // A marker can open on one line and close on another, and it parses.
+      // Joining it would fold it onto one line, which changes the line count
+      // and moves every claim below it, so `add` leaves it alone.
+      const label = write("wrapped.md", [
+        "---",
+        "title: Limits",
+        "---",
+        "# Limits",
+        "",
+        "<!-- cite",
+        "  first",
+        "-->",
+        "The fetch timeout is 10 seconds.",
+      ]);
+      const at = lineOf(label, "The fetch timeout is 10 seconds.");
+      const result = await add({
+        page: label,
+        src: "src/limits.ts:2",
+        pageLines: { start: at, end: at },
+        marker: true,
+        id: "second",
+      });
+      expect(result.markerJoined).toBeUndefined();
+      const after = onDisk(label);
+      // The wrapped marker is left exactly as it was, still spanning its
+      // three lines, and the new id got a marker of its own.
+      expect(after).toContain("<!-- cite\n  first\n-->");
+      expect(after).toContain("<!-- cite second -->");
+      expect(after).not.toContain("cite first second");
+    });
+
     it("writes a new marker line when the nearest one already holds 25 ids", async () => {
       const label = twoParagraphs("full.md");
       const held = Array.from({ length: 25 }, (_v, n) => `id-${String(n)}`);

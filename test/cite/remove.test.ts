@@ -589,3 +589,49 @@ describe("a marker written under proposal 0044", () => {
 
 
 });
+
+/**
+ * The respell reads offsets recorded against the page as it was read, so it
+ * has to run before any edit that changes the byte count above it. A claim
+ * line crossing a digit boundary is that edit: `lines: 10` becomes `lines: 9`
+ * and the body moves one byte up.
+ */
+describe("runRemove: a respell beside a claim line that loses a digit", () => {
+  const entry = (id: string): string =>
+    `  - id: ${id}\n    claim:\n      integrity: sha256-3049e93e72873542aac2c1c4778fa655e70656f03c08f202444062f404a3315d\n    source:\n      file: src/limits.ts\n      lines: 3\n      integrity: sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3\n`;
+
+  /** An entry pinning body line 10, which becomes 9 and loses a byte. */
+  const shifty = (id: string): string =>
+    `  - id: ${id}\n    claim:\n      lines: 10\n      integrity: sha256-3049e93e72873542aac2c1c4778fa655e70656f03c08f202444062f404a3315d\n    source:\n      file: src/limits.ts\n      lines: 3\n      integrity: sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3\n`;
+
+  /**
+   * `gone` takes a marker line out above six entries pinning body line 10,
+   * each of which becomes 9. Six bytes leave the frontmatter, which is more
+   * slack than `<!-- ` gives, so a respell reading the old offsets misses the
+   * payload entirely. `alsogone` leaves the two-id marker below, which is
+   * respelled rather than deleted.
+   */
+  const page = (name: string): string =>
+    writeRaw(
+      name,
+      `---\ntitle: Limits\ncitations:\n` +
+        entry("gone") +
+        entry("keep") +
+        entry("alsogone") +
+        ["one", "two", "three", "four", "five", "six"].map((n) => shifty(`shifty-${n}`)).join("") +
+        `---\n# Limits\n\n<!-- cite gone -->\nParagraph one.\n\n<!-- cite keep alsogone -->\nParagraph two.\n\n\nShifty claim.\n`,
+    );
+
+  it("drops the id out of the marker even though the frontmatter shrank a byte", async () => {
+    const label = page("digit-boundary.md");
+    const run = await remove({ inputs: [label], only: ["gone", "alsogone"] });
+    expect(run.removed).toBe(2);
+    const after = onDisk(label);
+    // Six claim lines each lost a digit, which is what moves the body offsets.
+    expect(after.split("      lines: 9\n").length - 1).toBe(6);
+    // And the marker really was respelled, rather than silently left alone.
+    expect(after).toContain("<!-- cite keep -->\n");
+    expect(after).not.toContain("alsogone");
+    expect(after).not.toContain("<!-- cite gone -->");
+  });
+});

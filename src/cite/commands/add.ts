@@ -371,10 +371,15 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     // citation gets a marker line of its own. Refusing would leave no way to
     // cite the paragraph short of editing the line by hand. A marker the
     // scanner could not read is left alone for the same reason.
+    //
+    // So is one whose delimiters sit on different lines. That parses, but
+    // respelling it folds it onto one line, and the claims below it would
+    // then all be one line out while this path shifts nothing.
     const held =
       nearest !== undefined &&
       nearest.payload.kind === "ref" &&
-      nearest.payload.ids.length < MAX_IDS_PER_MARKER
+      nearest.payload.ids.length < MAX_IDS_PER_MARKER &&
+      !/[\r\n]/.test(nearest.raw)
         ? nearest.payload.ids
         : undefined;
     /** Where the marker ends in `body`, so what follows it can be anchored. */

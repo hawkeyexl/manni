@@ -218,18 +218,24 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
     });
 
     let after = content;
-    // The claim lines first, while the entries still stand where the page's
+    // The respells first, and the order is load-bearing. A statement carries
+    // byte offsets into the page as it was read, while splicing a claim line
+    // can change the byte count above it: `lines: 10` becomes `lines: 9`.
+    // Enough of those and the offsets no longer find the payload, and the
+    // respell silently leaves the id in the marker. A respell changes no line
+    // count and no byte above the frontmatter, so running it first is safe in
+    // the direction the splice is not.
+    for (const [line, ids] of kept) {
+      const held = dropped.get(line);
+      if (held !== undefined) after = respellStatement(after, held.statement, ids);
+    }
+    // Then the claim lines, while the entries still stand where the page's
     // own pointers say. Splicing a scalar never changes the line count, and
     // the markers are in the body, so neither edit moves the other.
     for (const { index, lines: moved } of shifted.frontmatter) {
       after = spliceEntryField(after, format, index, ["claim", "lines"], moved);
     }
-    // Bottom up, so every line above each one keeps its number. The respell
-    // of a marker that survives changes no line count, so it can go first.
-    for (const [line, ids] of kept) {
-      const held = dropped.get(line);
-      if (held !== undefined) after = respellStatement(after, held.statement, ids);
-    }
+    // Bottom up, so every line above each one keeps its number.
     for (const line of [...ordered].sort((a, b) => b - a)) after = removeLine(after, line);
     if (owner === undefined) {
       after = removeFrontmatterCitations(after, format, indices, label);
