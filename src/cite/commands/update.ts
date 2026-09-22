@@ -43,7 +43,7 @@ import { claimWords, sharesSentence, wordShare } from "../core/history.js";
 import { mintCitation } from "../core/mint.js";
 import { ManifestSet } from "../core/manifest.js";
 import { readPage } from "../core/page.js";
-import { lineSpec, parseLines, spellLines, tooWide } from "../core/range.js";
+import { formatSrc, lineSpec, parseLines, parseSrc, spellLines, tooWide } from "../core/range.js";
 import {
   applyMarkerMoves,
   misplacedMarkers,
@@ -89,9 +89,20 @@ type Plan =
   | {
       kind: "source-moved";
       result: CitationResult;
-      lines: LineSpec;
+      /** The new `source.lines`; absent for a whole-file pin, which has none. */
+      lines?: LineSpec;
+      /**
+       * The new `source.file`, when the pin followed its text into another
+       * file. The entry's own `commit-sha` is then left alone: the pin was
+       * minted at that commit and still holds, so HEAD would record a mint
+       * that never happened (proposal 0055).
+       */
+      file?: string;
+      /** The pin the entry carries afterwards. */
+      pin: string;
+      /** The commit to advance to, for a move inside the entry's own file. */
+      commitSha?: string;
       to: string;
-      minted: Citation;
     }
   | {
       kind: "claim-accepted";
@@ -107,7 +118,18 @@ type Plan =
       /** The marker's line on the page this run leaves, where one anchors. */
       markerLine?: number;
     }
-  | { kind: "source-accepted"; result: CitationResult; minted: Citation }
+  /**
+   * A changed source, re-pinned at HEAD. Where the in-range search found the
+   * old first and last line, the re-mint covers the span they bracket rather
+   * than the recorded range, and `source.lines` follows it (proposal 0055).
+   */
+  | {
+      kind: "source-accepted";
+      result: CitationResult;
+      minted: Citation;
+      /** The span accepted, when it is not the range the entry records. */
+      span?: { lines: LineSpec; from: string; to: string };
+    }
   | { kind: "marker-moved"; result: CitationResult; from: number; to: number }
   | {
       kind: "claim-reanchored";
@@ -248,19 +270,18 @@ function apply(content: string, format: string, plan: Plan): string {
     case "marker-moved":
       return content;
     case "source-moved": {
-      let out = spliceEntryField(content, format, index, ["source", "lines"], plan.lines);
-      out = spliceEntryField(
-        out,
-        format,
-        index,
-        ["source", "integrity"],
-        plan.minted.source.integrity,
-      );
-      const commit = plan.minted.source["commit-sha"];
+      let out = content;
+      if (plan.file !== undefined) {
+        out = spliceEntryField(out, format, index, ["source", "file"], plan.file);
+      }
+      if (plan.lines !== undefined) {
+        out = spliceEntryField(out, format, index, ["source", "lines"], plan.lines);
+      }
+      out = spliceEntryField(out, format, index, ["source", "integrity"], plan.pin);
       // As on a re-mint: HEAD is written only where the entry already records
       // a commit, because the splice replaces a scalar and never adds a key.
-      if (commit !== undefined) {
-        out = spliceEntryField(out, format, index, ["source", "commit-sha"], commit);
+      if (plan.commitSha !== undefined) {
+        out = spliceEntryField(out, format, index, ["source", "commit-sha"], plan.commitSha);
       }
       return out;
     }
@@ -272,8 +293,12 @@ function apply(content: string, format: string, plan: Plan): string {
       return out;
     }
     case "source-accepted": {
-      let out = spliceEntryField(
-        content,
+      let out = content;
+      if (plan.span !== undefined) {
+        out = spliceEntryField(out, format, index, ["source", "lines"], plan.span.lines);
+      }
+      out = spliceEntryField(
+        out,
         format,
         index,
         ["source", "integrity"],
@@ -334,10 +359,10 @@ function applyToEntry(entry: unknown, plan: Plan): boolean {
     case "source-moved": {
       const source = end("source");
       if (source === undefined) return false;
-      source.lines = plan.lines;
-      source.integrity = plan.minted.source.integrity;
-      const commit = plan.minted.source["commit-sha"];
-      if (commit !== undefined) source["commit-sha"] = commit;
+      if (plan.file !== undefined) source.file = plan.file;
+      if (plan.lines !== undefined) source.lines = plan.lines;
+      source.integrity = plan.pin;
+      if (plan.commitSha !== undefined) source["commit-sha"] = plan.commitSha;
       return true;
     }
     case "claim-accepted": {
@@ -350,6 +375,7 @@ function applyToEntry(entry: unknown, plan: Plan): boolean {
     case "source-accepted": {
       const source = end("source");
       if (source === undefined) return false;
+      if (plan.span !== undefined) source.lines = plan.span.lines;
       source.integrity = plan.minted.source.integrity;
       const commit = plan.minted.source["commit-sha"];
       // As on a page: a re-mint records a commit only where the entry
@@ -502,6 +528,12 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         toPin: plan.minted.source.integrity,
         src: source.src,
       };
+      // A re-mint over the span the old first and last line now bracket names
+      // both ranges, so the acceptance says which lines it accepted.
+      if (plan.span !== undefined) {
+        out.fromLines = plan.span.from;
+        out.toLines = plan.span.to;
+      }
       const commit = plan.minted.source["commit-sha"];
       if (commit !== undefined) out.commitSha = commit;
       return out;
@@ -859,40 +891,66 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
         out.push(plan);
       }
     }
-    if (result.source.status === "moved" && result.source.newLines !== undefined) {
-      const at = parseLines(result.source.newLines);
+    if (result.source.status === "moved" && result.source.newSrc !== undefined) {
       const to = result.source.newSrc;
       const recorded = result.citation.source["commit-sha"];
-      if (at !== undefined && to !== undefined) {
+      const at = result.source.newLines === undefined ? undefined : parseLines(result.source.newLines);
+      // The path the pin followed its text to, when that is another file. The
+      // entry's own `commit-sha` then stands: the pin was minted there and
+      // still holds, so HEAD would record a mint that never happened.
+      const went = parseSrc(to).path;
+      const crossFile = went !== result.citation.source.file;
+      if (at !== undefined || result.citation.source.lines === undefined) {
         try {
-          // Re-minted over the range it moved to, not just re-pointed at it.
-          // A pin whose `lines` were rewritten under an older `commit-sha`
-          // names a range that commit may not even reach, and the next
-          // command to ask for history reads it as a claim that never held.
-          const minted = await mintCitation({
-            root: run.root,
-            src: to,
-            ...(run.key === undefined ? {} : { key: run.key }),
-            ...(recorded === undefined ? { commitSha: false as const } : {}),
-            gitClient: git,
-            ...(pageOptions.sourceIndex === undefined
-              ? {}
-              : { sourceIndex: pageOptions.sourceIndex }),
-          });
-          // An entry that records a commit needs one to advance to. Without
-          // git there is none, and writing the new lines alone would leave the
-          // entry naming a range its own commit cannot hold, which is the
-          // state this re-mint exists to prevent. So nothing is written: a
-          // whole stale entry is one a later run repairs, and a half-written
-          // one is not. An entry that records no commit has nothing to keep in
-          // step, and is rewritten as before.
-          if (recorded !== undefined && minted.source["commit-sha"] === undefined) {
-            declined.set(result.origin.index, {
-              rule: "source-moved",
-              why: "Not rewritten: git is not available here, so the entry's commit-sha cannot advance with its lines.",
+          if (crossFile) {
+            // Nothing to re-mint: the window hashed to the pin the entry
+            // already carries, so only the stale halves of the record move.
+            out.push({
+              kind: "source-moved",
+              result,
+              to,
+              file: went,
+              pin: result.citation.source.integrity,
+              ...(at === undefined ? {} : { lines: lineSpec(at) }),
             });
-          } else {
-            out.push({ kind: "source-moved", result, lines: lineSpec(at), to, minted });
+          } else if (at !== undefined) {
+            // Re-minted over the range it moved to, not just re-pointed at it.
+            // A pin whose `lines` were rewritten under an older `commit-sha`
+            // names a range that commit may not even reach, and the next
+            // command to ask for history reads it as a claim that never held.
+            const minted = await mintCitation({
+              root: run.root,
+              src: to,
+              ...(run.key === undefined ? {} : { key: run.key }),
+              ...(recorded === undefined ? { commitSha: false as const } : {}),
+              gitClient: git,
+              ...(pageOptions.sourceIndex === undefined
+                ? {}
+                : { sourceIndex: pageOptions.sourceIndex }),
+            });
+            const commit = minted.source["commit-sha"];
+            // An entry that records a commit needs one to advance to. Without
+            // git there is none, and writing the new lines alone would leave the
+            // entry naming a range its own commit cannot hold, which is the
+            // state this re-mint exists to prevent. So nothing is written: a
+            // whole stale entry is one a later run repairs, and a half-written
+            // one is not. An entry that records no commit has nothing to keep in
+            // step, and is rewritten as before.
+            if (recorded !== undefined && commit === undefined) {
+              declined.set(result.origin.index, {
+                rule: "source-moved",
+                why: "Not rewritten: git is not available here, so the entry's commit-sha cannot advance with its lines.",
+              });
+            } else {
+              out.push({
+                kind: "source-moved",
+                result,
+                lines: lineSpec(at),
+                to,
+                pin: minted.source.integrity,
+                ...(commit === undefined ? {} : { commitSha: commit }),
+              });
+            }
           }
         } catch (error) {
           // A range the re-mint cannot read leaves its finding reported, as a
@@ -1011,13 +1069,23 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
       }
     }
     if (result.source.status === "changed" || result.source.status === "never-true") {
+      // Where the in-range search found the old first and last line. Accepting
+      // the recorded range instead would hash a span the sentence never rested
+      // on: an insertion inside a cited range pushes its end out of it.
+      const stored = parseSrc(result.source.src);
+      const span =
+        result.source.newLines === undefined ? undefined : parseLines(result.source.newLines);
+      const at =
+        span === undefined || (span.start === stored.start && span.end === stored.end)
+          ? undefined
+          : { ...stored, start: span.start, end: span.end };
       try {
         // The source as the entry spells it: an encrypted one stays encrypted,
         // under the key it decrypted with, and mint keys the pin accordingly.
         // HEAD is recorded only where the entry already records a commit.
         const minted = await mintCitation({
           root: run.root,
-          src: result.source.src,
+          src: at === undefined ? result.source.src : formatSrc(at),
           ...(run.key === undefined ? {} : { key: run.key }),
           ...(result.citation.source["commit-sha"] === undefined
             ? { commitSha: false as const }
@@ -1027,7 +1095,20 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
             ? {}
             : { sourceIndex: pageOptions.sourceIndex }),
         });
-        out.push({ kind: "source-accepted", result, minted });
+        out.push({
+          kind: "source-accepted",
+          result,
+          minted,
+          ...(at === undefined || span === undefined
+            ? {}
+            : {
+                span: {
+                  lines: lineSpec(span),
+                  from: spellLines({ start: stored.start ?? 1, end: stored.end ?? stored.start ?? 1 }),
+                  to: spellLines(span),
+                },
+              }),
+        });
       } catch (error) {
         // A range the file no longer reaches cannot be re-minted; its finding stays reported.
         if (!(error instanceof CiteError)) throw error;

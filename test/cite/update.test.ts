@@ -2195,3 +2195,177 @@ describe("runUpdate: a write that fails halfway", () => {
     }
   });
 });
+
+/**
+ * Proposal 0055: `update` follows a source to its new file, and accepts a
+ * changed source at the span the old first and last lines now cover.
+ */
+describe.skipIf(!gitAvailable())("update follows a moved source", () => {
+  let repo: string | undefined;
+  afterEach(() => {
+    removeTempRepo(repo);
+    repo = undefined;
+  });
+
+  /** A page with one entry, written into `docs/limits.md` of the repo. */
+  function pageWith(dir: string, lines: string[]): string {
+    const page = join(dir, "docs", "limits.md");
+    mkdirSync(join(dir, "docs"), { recursive: true });
+    writeFileSync(page, ["---", "citations:", ...lines, "---", "Body.", ""].join("\n"), "utf8");
+    return page;
+  }
+
+  it("rewrites source.file beside source.lines, and leaves commit-sha alone", async () => {
+    repo = makeTempRepo({ files: { "src/limits.ts": source("limits.ts") } });
+    const first = commitAll(repo, "add limits");
+    mkdirSync(join(repo, "src", "core"), { recursive: true });
+    git(repo, ["mv", "src/limits.ts", "src/core/limits.ts"]);
+    commitAll(repo, "move limits into core");
+    const page = pageWith(repo, [
+      "  - id: pinned",
+      "    source:",
+      "      file: src/limits.ts # the old home",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      `      commit-sha: ${first}`,
+    ]);
+
+    const run = await runUpdate({ cwd: repo, inputs: ["docs/limits.md"], noConfig: true, env: {} });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
+    const after = readFileSync(page, "utf8");
+    expect(after).toContain("      file: src/core/limits.ts # the old home");
+    expect(after).toContain("      lines: 2");
+    // The pin was minted at that commit and still holds, so nothing advances.
+    expect(after).toContain(`      commit-sha: ${first}`);
+    expect(run.pages[0]?.rewritten[0]).toMatchObject({
+      end: "source",
+      reason: "moved",
+      from: "src/limits.ts:2",
+      to: "src/core/limits.ts:2",
+    });
+  });
+
+  it("rewrites a whole-file pin's path, which has no lines to touch", async () => {
+    repo = makeTempRepo({ files: { "src/limits.ts": source("limits.ts") } });
+    const first = commitAll(repo, "add limits");
+    mkdirSync(join(repo, "src", "core"), { recursive: true });
+    git(repo, ["mv", "src/limits.ts", "src/core/limits.ts"]);
+    commitAll(repo, "move limits into core");
+    const page = pageWith(repo, [
+      "  - id: pinned",
+      "    source:",
+      "      file: src/limits.ts",
+      `      integrity: ${hashRange(source("limits.ts"))}`,
+      `      commit-sha: ${first}`,
+    ]);
+
+    const run = await runUpdate({ cwd: repo, inputs: ["docs/limits.md"], noConfig: true, env: {} });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
+    const after = readFileSync(page, "utf8");
+    expect(after).toContain("      file: src/core/limits.ts");
+    expect(after).not.toContain("lines:");
+  });
+
+  // The case this repository hit for real: comment lines inside a cited range
+  // pushed its closing brace down, so the stored end landed mid-function. A
+  // straight `--accept` would have re-pinned the truncated span.
+  it("--accept re-mints at the grown span, not the stale range", async () => {
+    repo = makeTempRepo({ files: { "src/limits.ts": source("limits.ts") } });
+    const first = commitAll(repo, "add limits");
+    writeFileSync(join(repo, "src", "limits.ts"), source("grown-range.ts"), "utf8");
+    const second = commitAll(repo, "explain why the limits travel together");
+    const PIN_FN = hashRange(source("limits.ts"), { start: 5, end: 7 });
+    const page = pageWith(repo, [
+      "  - id: pinned",
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 5-7",
+      `      integrity: ${PIN_FN}`,
+      `      commit-sha: ${first}`,
+    ]);
+
+    const run = await runUpdate({
+      cwd: repo,
+      inputs: ["docs/limits.md"],
+      accept: true,
+      noConfig: true,
+      env: {},
+    });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
+    const after = readFileSync(page, "utf8");
+    expect(after).toContain("      lines: 5-9");
+    const grown = hashRange(source("grown-range.ts"), { start: 5, end: 9 });
+    const truncated = hashRange(source("grown-range.ts"), { start: 5, end: 7 });
+    expect(after).toContain(`      integrity: ${grown}`);
+    expect(after).not.toContain(truncated);
+    expect(after).toContain(`      commit-sha: ${second}`);
+    expect(run.pages[0]?.rewritten[0]).toMatchObject({
+      end: "source",
+      reason: "accepted",
+      status: "changed",
+      fromLines: "5-7",
+      toLines: "5-9",
+    });
+  });
+
+  // A whole-file pin deliberately covers a file. Gaining a `source.lines` it
+  // never had is a silent change of what the citation says, which is the class
+  // of bug the span search exists to close rather than to open.
+  it("--accept leaves a whole-file pin whole, with no lines it never had", async () => {
+    repo = makeTempRepo({ files: { "src/limits.ts": source("limits.ts") } });
+    const first = commitAll(repo, "add limits");
+    // Only line 2 changes, so the file's first and last line each still sit
+    // exactly once: everything the span search needs to offer a range.
+    writeFileSync(join(repo, "src", "limits.ts"), source("changed.ts"), "utf8");
+    const second = commitAll(repo, "raise the timeout");
+    const page = pageWith(repo, [
+      "  - id: whole",
+      "    source:",
+      "      file: src/limits.ts",
+      `      integrity: ${hashRange(source("limits.ts"))}`,
+      `      commit-sha: ${first}`,
+    ]);
+
+    const run = await runUpdate({
+      cwd: repo,
+      inputs: ["docs/limits.md"],
+      accept: true,
+      noConfig: true,
+      env: {},
+    });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
+    const after = readFileSync(page, "utf8");
+    expect(after).not.toContain("lines:");
+    expect(after).toContain(`      integrity: ${hashRange(source("changed.ts"))}`);
+    expect(after).toContain(`      commit-sha: ${second}`);
+    expect(run.pages[0]?.rewritten[0]?.toLines).toBeUndefined();
+  });
+
+  it("--accept with no span re-mints at the recorded range, as before", async () => {
+    repo = makeTempRepo({ files: { "src/limits.ts": source("limits.ts") } });
+    const first = commitAll(repo, "add limits");
+    writeFileSync(join(repo, "src", "limits.ts"), source("changed.ts"), "utf8");
+    commitAll(repo, "raise the timeout");
+    const page = pageWith(repo, [
+      "  - id: pinned",
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      `      integrity: ${PIN_L2}`,
+      `      commit-sha: ${first}`,
+    ]);
+
+    const run = await runUpdate({
+      cwd: repo,
+      inputs: ["docs/limits.md"],
+      accept: true,
+      noConfig: true,
+      env: {},
+    });
+    expect(run).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
+    const after = readFileSync(page, "utf8");
+    expect(after).toContain("      lines: 2");
+    expect(after).toContain(`      integrity: ${CHANGED_L2}`);
+    expect(run.pages[0]?.rewritten[0]?.toLines).toBeUndefined();
+  });
+});

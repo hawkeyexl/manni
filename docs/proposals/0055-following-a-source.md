@@ -1,6 +1,6 @@
 # 0055: following a source across files, and inside a changed range
 
-- **Status:** Proposed
+- **Status:** Implemented
 - **Serves:** Three journeys, all of them citation journeys.
   - Maya · M5, "Pin a claim and catch it going stale". A pure code move
     currently reads as drift in her prose, and she re-adds the citation by
