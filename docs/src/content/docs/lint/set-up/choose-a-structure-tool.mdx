@@ -10,16 +10,15 @@ which one runs is one line of config. The command you type never changes.
 
 ## Which one you want
 
-| | `manni` | `dita-ot` |
+`manni` is the default, ships in the package, and needs no config. DITA-OT you
+install yourself, and it needs Java 17 or newer.
+
+| Capability | `manni` | `dita-ot` |
 |---|---|---|
-| Ships with the package | yes | no, install it |
-| Needs Java | no | yes, 17 or newer |
 | Holds a page to a doctype template | yes | no |
 | Resolves conref, keyref, xref and image targets | no | yes |
-| Reads | Markdown, MDX, HTML, AsciiDoc, reStructuredText, XML, DITA | DITA |
 | Reports a line and a column | yes | for some findings |
-
-`manni` is the default and needs no config.
+| Reads | Markdown, MDX, HTML, AsciiDoc, reStructuredText, XML, DITA | DITA |
 
 Pick `dita-ot` when your docset is DITA and the failures you care about live
 between files. A conref points into another topic. A keyref resolves through a
