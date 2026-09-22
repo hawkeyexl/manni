@@ -4,11 +4,15 @@
  * scalar textually at `lineFor("/citations/N/source/lines")` and the like, so
  * nothing else in the block is touched. Markers are inserted by offset with
  * the page's own EOL. Files are written with `writeFileAtomic`.
+ *
+ * A rewrite of the body goes through `applyEdits`: the caller collects every
+ * span it means to replace against one parse and hands them over together, so
+ * no position is ever read out of text that has already been written to.
  */
 import { DocmetaError, locateFrontmatter, type MetadataExtractor } from "../../meta/index.js";
 import { extractorByName } from "../../meta/internal.js";
 import { CiteError } from "../errors.js";
-import type { Citation, LineSpec } from "../types.js";
+import type { Citation, LineSpec, TextEdit } from "../types.js";
 import { splitLines } from "./hash.js";
 import { detectEol, lineAt, offsetOfLine } from "./statements.js";
 
@@ -111,20 +115,76 @@ export function removeFrontmatterCitations(
   }
 }
 
+/**
+ * `content` with every edit applied in one pass. Each edit's `start` and `end`
+ * index `content` as it was handed in, never the text an earlier edit
+ * produced, and that is the whole point: a caller collects its edits from one
+ * parse and applies them together, so no position outlives the text it was
+ * read from and the order they were collected in cannot matter.
+ *
+ * Edits may not overlap. Two writers reaching for the same bytes is a bug in
+ * the caller rather than something to resolve here, so it throws instead of
+ * picking a winner. `lineRemovals` is what keeps two neighbouring lines from
+ * being that bug.
+ */
+export function applyEdits(content: string, edits: readonly TextEdit[]): string {
+  const sorted = [...edits].sort((a, b) => a.start - b.start);
+  let out = "";
+  let at = 0;
+  for (const edit of sorted) {
+    if (edit.end < edit.start) {
+      throw new Error(`cite: backwards edit [${String(edit.start)}, ${String(edit.end)})`);
+    }
+    if (edit.start < at) {
+      throw new Error(`cite: overlapping edits at ${String(edit.start)}`);
+    }
+    out += content.slice(at, edit.start) + edit.text;
+    at = edit.end;
+  }
+  return out + content.slice(at);
+}
+
+/**
+ * The edits that take 1-based `lines` out of `content`, their terminators
+ * included: one edit per run of consecutive lines, so two neighbours never
+ * reach for the same break. Order and repeats in `lines` do not matter.
+ */
+export function lineRemovals(content: string, lines: readonly number[]): TextEdit[] {
+  const sorted = [...new Set(lines)].sort((a, b) => a - b);
+  const out: TextEdit[] = [];
+  let run: { first: number; last: number } | undefined;
+  for (const line of sorted) {
+    if (run !== undefined && line === run.last + 1) run.last = line;
+    else {
+      if (run !== undefined) out.push(runRemoval(content, run.first, run.last));
+      run = { first: line, last: line };
+    }
+  }
+  if (run !== undefined) out.push(runRemoval(content, run.first, run.last));
+  return out;
+}
+
+/** The span covering 1-based lines `first`..`last` and their terminator. */
+function runRemoval(content: string, first: number, last: number): TextEdit {
+  let start = offsetOfLine(content, first);
+  // `offsetOfLine` answers the length when asked past the end, so a run whose
+  // span reaches it on a page with no final newline is the tail of the file.
+  // It has no terminator below it to take, so it takes the one above: on CRLF
+  // that break is two bytes, and stopping at the LF would leave the CR behind
+  // as the tail of a line that is gone. `spliceEntryField` pulls back over a
+  // CR for the same reason.
+  const end = offsetOfLine(content, last + 1);
+  if (end === content.length && !content.endsWith("\n") && start > 0) {
+    let above = content.lastIndexOf("\n", start - 1);
+    if (above > 0 && content.charAt(above - 1) === "\r") above--;
+    start = above === -1 ? 0 : above;
+  }
+  return { start, end, text: "" };
+}
+
 /** Delete the whole of 1-based `line`, its terminator included. */
 export function removeLine(content: string, line: number): string {
-  const start = offsetOfLine(content, line);
-  const nl = content.indexOf("\n", start);
-  // The last line of a page with no final newline takes the break above it.
-  // On CRLF that break is two bytes, and stopping at the LF would leave the
-  // CR behind as the tail of a line that is gone; `spliceEntryField` pulls
-  // back over a CR for the same reason.
-  if (nl === -1) {
-    let above = start > 0 ? content.lastIndexOf("\n", start - 1) : -1;
-    if (above > 0 && content.charAt(above - 1) === "\r") above--;
-    return content.slice(0, above === -1 ? 0 : above);
-  }
-  return content.slice(0, start) + content.slice(nl + 1);
+  return applyEdits(content, lineRemovals(content, [line]));
 }
 
 /**

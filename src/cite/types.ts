@@ -408,6 +408,19 @@ export interface MintOptions {
   sourceIndex?: SourceIndex;
 }
 
+/**
+ * One replacement against a fixed text: the bytes `[start, end)` become
+ * `text`. A writer that has a position from a parse hands back an edit rather
+ * than a rewritten page, so several of them can be collected against that one
+ * parse and applied together (`applyEdits`). Nothing is then read out of a
+ * text that has already been written to.
+ */
+export interface TextEdit {
+  start: number;
+  end: number;
+  text: string;
+}
+
 /** One marker found in a page body: `cite <id>` in the format's comment syntax. */
 export interface InlineStatement {
   /** File line of the marker. */

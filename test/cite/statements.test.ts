@@ -25,6 +25,7 @@ import {
   offsetOfLine,
   paragraphAfter,
   parseStatements,
+  respellEdit,
   respellStatement,
   statementForms,
 } from "../../src/cite/core/statements.js";
@@ -689,6 +690,28 @@ describe("respellStatement", () => {
     expect(respellStatement(content, st, ["a", "c"])).toBe(
       "[comment]: # (cite a c)\nThe claim.\n",
     );
+  });
+});
+
+describe("respellEdit", () => {
+  const only = (content: string, format: string): InlineStatement => {
+    const [st] = parseStatements(content, format);
+    if (st === undefined) throw new Error("no statement");
+    return st;
+  };
+
+  it("names the payload's own span, so a caller can collect several at once", () => {
+    const content = "<!-- cite a b -->\nThe claim.\n";
+    const st = only(content, "markdown");
+    expect(respellEdit(content, st, ["b"])).toEqual({ start: 5, end: 13, text: "cite b" });
+  });
+
+  it("is undefined for text the statement was not parsed from", () => {
+    const content = "<!-- cite a b -->\nThe claim.\n";
+    const st = only(content, "markdown");
+    // Twenty bytes pushed in above the marker: the recorded span no longer
+    // holds the payload, which is the silent no-op `remove` used to ship.
+    expect(respellEdit(`${"x".repeat(20)}\n${content}`, st, ["b"])).toBeUndefined();
   });
 });
 

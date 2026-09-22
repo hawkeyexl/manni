@@ -24,9 +24,15 @@ import { STDIN_LABEL } from "../../meta/internal.js";
 import { ManifestSet } from "../core/manifest.js";
 import { citationInputs, pickExtractor, readPage } from "../core/page.js";
 import { shiftedEntries, withClaimLines } from "../core/shift.js";
-import { isMarkerLine, respellStatement } from "../core/statements.js";
+import { isMarkerLine, respellEdit } from "../core/statements.js";
 import { splitLines } from "../core/hash.js";
-import { removeFrontmatterCitations, removeLine, spliceEntryField, unifiedDiff } from "../core/write.js";
+import {
+  applyEdits,
+  lineRemovals,
+  removeFrontmatterCitations,
+  spliceEntryField,
+  unifiedDiff,
+} from "../core/write.js";
 import { CiteError } from "../errors.js";
 import type {
   CitationInput,
@@ -36,6 +42,7 @@ import type {
   RemoveOptions,
   RemovePage,
   RemoveRun,
+  TextEdit,
 } from "../types.js";
 import { assertNoOrphanJoins, assertNoOrphans, joinHits, prepareRun, readTarget } from "./check.js";
 
@@ -217,43 +224,49 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
       label,
     });
 
-    // The page is rewritten under one contract, and both halves of it have
-    // been got wrong once. A writer that works from a position recorded
-    // against the page as it was read -- a statement's byte offsets, a marker
-    // line -- must run before any writer that changes the byte count above
-    // it, and must run bottom up so it does not move its own remaining work.
-    // A writer that re-derives its position from the text it is handed, as
-    // `spliceEntryField` does by re-extracting, is safe in any order and goes
-    // last. Getting either wrong is silent: the edit lands nowhere and the
-    // page keeps a marker naming an id that no entry has.
-    let after = content;
-    // The respells first, and the order is load-bearing. A statement carries
-    // byte offsets into the page as it was read, while splicing a claim line
-    // can change the byte count above it: `lines: 10` becomes `lines: 9`.
-    // Enough of those and the offsets no longer find the payload, and the
-    // respell silently leaves the id in the marker. A respell changes no line
-    // count and no byte above the frontmatter, so running it first is safe in
-    // the direction the splice is not.
-    // Bottom up, for the same reason `removeLine` runs that way below: a
-    // respell shortens its marker, so every byte after it moves, and the
-    // statements below still carry offsets into the page as it was read.
-    // Ascending order leaves the second respell slicing the wrong span,
-    // where it finds no payload and quietly does nothing.
-    for (const line of [...kept.keys()].sort((a, b) => b - a)) {
+    // One parse, one pass.
+    //
+    // Every position the body rewrite reads -- a statement's byte offsets, a
+    // marker's line number -- is read against `content`, the page as it was
+    // parsed, and the edits are collected as spans and applied together. So no
+    // offset is used after the text it indexes has changed, and no writer has
+    // to run before or after another to be correct. The ordering contract this
+    // carried is gone rather than satisfied: it was got wrong three times, in
+    // three review rounds, and each time silently -- the edit lands nowhere,
+    // the entry leaves the frontmatter, and the marker still names the id
+    // until some later `cite check` reports a `marker-orphan` with nothing to
+    // explain it.
+    const edits: TextEdit[] = [];
+    for (const [line, ids] of kept) {
       const held = dropped.get(line);
-      const ids = kept.get(line);
-      if (held !== undefined && ids !== undefined) {
-        after = respellStatement(after, held.statement, ids);
+      if (held === undefined) continue;
+      const edit = respellEdit(content, held.statement, ids);
+      // `content` is the text the statement was parsed from, so the payload is
+      // where the statement says it is. A miss would mean the parse and the
+      // page disagree, which is worth stopping for rather than writing a page
+      // whose marker still names an id no entry has.
+      if (edit === undefined) {
+        throw new CiteError(
+          `manni cannot read the marker at ${label}:${String(line)} to rewrite it; remove it by hand.`,
+        );
       }
+      edits.push(edit);
     }
-    // Then the claim lines, while the entries still stand where the page's
-    // own pointers say. Splicing a scalar never changes the line count, and
-    // the markers are in the body, so neither edit moves the other.
+    // The marker lines that lost their last id, taken out with their
+    // terminators. Neighbours merge into one span, so no two of them reach for
+    // the same break.
+    edits.push(...lineRemovals(content, ordered));
+    let after = applyEdits(content, edits);
+    // Then the frontmatter. Both of its writers re-derive their own position
+    // from the text they are handed -- `spliceEntryField` by re-extracting,
+    // `removeFrontmatterCitations` by re-reading the list -- so neither reads
+    // anything out of the parse above and neither cares what the body pass
+    // did. The splice still runs before the removal, but for a different
+    // reason: its `index` counts the entries the page has now, and the removal
+    // is what renumbers them.
     for (const { index, lines: moved } of shifted.frontmatter) {
       after = spliceEntryField(after, format, index, ["claim", "lines"], moved);
     }
-    // Bottom up, so every line above each one keeps its number.
-    for (const line of [...ordered].sort((a, b) => b - a)) after = removeLine(after, line);
     if (owner === undefined) {
       after = removeFrontmatterCitations(after, format, indices, label);
     } else {

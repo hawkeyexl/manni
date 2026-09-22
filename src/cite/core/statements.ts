@@ -28,7 +28,7 @@
  * `formatStatement` writes: the html comment for markdown, the jsx comment
  * for mdx, which rejects an html comment.
  */
-import type { InlineStatement } from "../types.js";
+import type { InlineStatement, TextEdit } from "../types.js";
 import { codeEndAt, codeRegions } from "../../shared/code-regions.js";
 import { CiteError } from "../errors.js";
 
@@ -506,35 +506,55 @@ export function formatStatement(
 }
 
 /**
- * `content` with the marker's payload replaced by `ids`, in the marker's own
- * form: an id joined into a list, or one dropped out of it.
+ * The one edit that replaces a marker's payload with `ids`, as a span of
+ * `content` and the text to put in it. The marker keeps its own form rather
+ * than being rendered afresh, so a page that spells its markers in a form
+ * `formatStatement` would not choose keeps that form, along with its
+ * indentation and inner spacing.
  *
- * The marker is rewritten where it stands rather than rendered afresh, so a
- * page that spells its markers in a form `formatStatement` would not choose
- * keeps that form, and its indentation and inner spacing are untouched.
+ * Returned as an edit rather than applied, so a caller with several of them
+ * can collect them all against one parse and apply them together. That is how
+ * `remove` rewrites a page: nothing it reads a position from has been written
+ * to yet.
  *
- * Two things the caller owes. `content` must be the page the statement's
- * offsets were read from, or a rewrite of it that has changed no byte before
- * the marker; the payload is found by slicing at those offsets. And the
- * marker must open and close on one line, since a payload spanning lines is
- * folded onto one here, which changes the line count and moves every claim
- * below it. Both callers hold to this: `remove` respells before it splices
- * anything, and refuses a marker line it cannot read whole, and `add` joins
- * only a marker with no line break in it.
+ * `content` must be the text the statement was parsed from; the payload is
+ * found inside the span the statement recorded, and the answer is undefined
+ * when it is not there. The marker must also open and close on one line, since
+ * a payload spanning lines would be folded onto one here, changing the line
+ * count and moving every claim below it. Both callers hold to that: `remove`
+ * refuses a marker line it cannot read whole, and `add` joins only a marker
+ * with no line break in it.
+ */
+export function respellEdit(
+  content: string,
+  statement: InlineStatement,
+  ids: readonly [string, ...string[]],
+): TextEdit | undefined {
+  const text = content.slice(statement.start, statement.end);
+  // No open delimiter carries `cite`, so the first occurrence of the trimmed
+  // inner text is the payload itself.
+  const at = text.indexOf(statement.raw);
+  if (at === -1) return undefined;
+  return {
+    start: statement.start + at,
+    end: statement.start + at + statement.raw.length,
+    text: `cite ${ids.join(" ")}`,
+  };
+}
+
+/**
+ * `content` with the marker's payload replaced by `ids`. The one-edit form of
+ * `respellEdit`, for a caller rewriting a single marker; `content` unchanged
+ * when the payload is not where the statement says.
  */
 export function respellStatement(
   content: string,
   statement: InlineStatement,
   ids: readonly [string, ...string[]],
 ): string {
-  const text = content.slice(statement.start, statement.end);
-  // No open delimiter carries `cite`, so the first occurrence of the trimmed
-  // inner text is the payload itself.
-  const at = text.indexOf(statement.raw);
-  if (at === -1) return content;
-  const respelled = `cite ${ids.join(" ")}`;
-  const marker = text.slice(0, at) + respelled + text.slice(at + statement.raw.length);
-  return content.slice(0, statement.start) + marker + content.slice(statement.end);
+  const edit = respellEdit(content, statement, ids);
+  if (edit === undefined) return content;
+  return content.slice(0, edit.start) + edit.text + content.slice(edit.end);
 }
 
 /**

@@ -27,6 +27,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { runCheck } from "../../src/cite/commands/check.js";
+import { hashRange } from "../../src/cite/core/hash.js";
 import { runRemove } from "../../src/cite/commands/remove.js";
 import { noGit } from "../../src/cite/core/git.js";
 import { CiteError } from "../../src/cite/errors.js";
@@ -666,6 +667,149 @@ describe("runRemove: two markers respelled in one run", () => {
     expect(after).toContain("<!-- cite retries -->\nParagraph one.");
     expect(after).toContain("<!-- cite jitter -->\nParagraph two.");
     expect(after).not.toContain("backoff-window");
+    expect(await findings(label)).toEqual([]);
+  });
+});
+
+
+/**
+ * The class, not the three instances it was found as.
+ *
+ * Every writer `remove` runs reads a position against the page as it was
+ * parsed: a respell reads the marker's byte offsets, a line deletion reads its
+ * line number, and a claim-line splice changes the byte count above both. Each
+ * case below arranges those writers differently on one page and asserts the
+ * body byte for byte. A position read after the text it indexes has moved
+ * shows up here as a marker still naming a removed id, as a marker cut short
+ * of its delimiter, or as a line taken out from under the wrong place.
+ */
+describe("runRemove: positions survive every other writer", () => {
+  const ONE = "Paragraph one.";
+  const TWO = "Paragraph two.";
+  const entry = (id: string, claim: string): string =>
+    `  - id: ${id}\n    claim:\n      integrity: ${hashRange(claim)}\n    source:\n      file: src/limits.ts\n      lines: 3\n      integrity: sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3\n`;
+
+  interface Case {
+    name: string;
+    /** Each entry as its id and the text its marker anchors. */
+    entries: [string, string][];
+    body: string;
+    only: string[];
+    after: string;
+  }
+  const cases: Case[] = [
+    {
+      name: "a respell above a deleted line",
+      entries: [
+        ["alpha", ONE],
+        ["beta", ONE],
+        ["gamma", TWO],
+      ],
+      body: `# Limits\n\n<!-- cite alpha beta -->\n${ONE}\n\n<!-- cite gamma -->\n${TWO}\n`,
+      only: ["alpha", "gamma"],
+      after: `# Limits\n\n<!-- cite beta -->\n${ONE}\n\n${TWO}\n`,
+    },
+    {
+      name: "a deleted line above a respell",
+      entries: [
+        ["alpha", ONE],
+        ["beta", TWO],
+        ["gamma", TWO],
+      ],
+      body: `# Limits\n\n<!-- cite alpha -->\n${ONE}\n\n<!-- cite beta gamma -->\n${TWO}\n`,
+      only: ["alpha", "beta"],
+      after: `# Limits\n\n${ONE}\n\n<!-- cite gamma -->\n${TWO}\n`,
+    },
+    {
+      // The upper marker loses twenty bytes, more slack than `<!-- ` and
+      // ` -->` give, so the lower statement's recorded span no longer holds
+      // its payload at all.
+      name: "two respells, the upper one moving the lower marker",
+      entries: [
+        ["fetch-timeout-alpha", ONE],
+        ["beta", ONE],
+        ["backoff-window-gamma", TWO],
+        ["delta", TWO],
+      ],
+      body: `# Limits\n\n<!-- cite fetch-timeout-alpha beta -->\n${ONE}\n\n<!-- cite backoff-window-gamma delta -->\n${TWO}\n`,
+      only: ["fetch-timeout-alpha", "backoff-window-gamma"],
+      after: `# Limits\n\n<!-- cite beta -->\n${ONE}\n\n<!-- cite delta -->\n${TWO}\n`,
+    },
+    {
+      name: "two deleted lines, the lower one first in the list",
+      entries: [
+        ["alpha", ONE],
+        ["beta", TWO],
+      ],
+      body: `# Limits\n\n<!-- cite alpha -->\n${ONE}\n\n<!-- cite beta -->\n${TWO}\n`,
+      only: ["beta", "alpha"],
+      after: `# Limits\n\n${ONE}\n\n${TWO}\n`,
+    },
+  ];
+
+  for (const { name, entries, body, only, after } of cases) {
+    it(name, async () => {
+      const label = writeRaw(
+        `${name.replace(/[^a-z]+/g, "-")}.md`,
+        `---\ntitle: Limits\ncitations:\n${entries.map(([id, claim]) => entry(id, claim)).join("")}---\n${body}`,
+      );
+      const run = await remove({ inputs: [label], only });
+      expect(run.removed).toBe(only.length);
+      const written = onDisk(label);
+      expect(written.slice(written.indexOf("# Limits"))).toBe(after);
+      for (const id of only) expect(written).not.toContain(id);
+      expect(await findings(label)).toEqual([]);
+    });
+  }
+
+  /**
+   * Two marker lines side by side at the end of a page with no final newline.
+   * Each takes the break above it, so the two spans meet, and a writer that
+   * cuts them one at a time from recorded positions cuts the same break twice.
+   */
+  it("takes two adjacent last lines out together, with no final newline", async () => {
+    const label = writeRaw(
+      "adjacent-tail.md",
+      `---\ntitle: Limits\ncitations:\n${entry("alpha", ONE)}${entry("beta", ONE)}---\n# Limits\n\n${ONE}\n\n<!-- cite alpha -->\n<!-- cite beta -->`,
+    );
+    const run = await remove({ inputs: [label], only: ["alpha", "beta"] });
+    expect(run.removed).toBe(2);
+    const written = onDisk(label);
+    expect(written.slice(written.indexOf("# Limits"))).toBe(`# Limits\n\n${ONE}\n`);
+  });
+
+  /**
+   * The conjunction neither instance covered on its own: a marker line goes
+   * out, which shortens six claim lines below it across a digit boundary, and
+   * two markers further down are respelled in the same run. Six bytes is more
+   * slack than `<!-- ` gives, so an offset read after the splice finds no
+   * payload at all, and the lower respell has the upper one's shortening on
+   * top of that.
+   */
+  it("respells two markers while the frontmatter loses six bytes", async () => {
+    const SHIFTY = "Shifty claim.";
+    const shifty = (id: string): string =>
+      `  - id: ${id}\n    claim:\n      lines: 10\n      integrity: ${hashRange(SHIFTY)}\n    source:\n      file: src/limits.ts\n      lines: 3\n      integrity: sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3\n`;
+    const label = writeRaw(
+      "shrink-and-respell.md",
+      `---\ntitle: Limits\ncitations:\n` +
+        entry("dropped", ONE) +
+        entry("gone", TWO) +
+        entry("keep", TWO) +
+        entry("alsogone", SHIFTY) +
+        entry("stays", SHIFTY) +
+        ["one", "two", "three", "four", "five", "six"].map((n) => shifty(`shifty-${n}`)).join("") +
+        `---\n# Limits\n\n<!-- cite dropped -->\n${ONE}\n\n<!-- cite gone keep -->\n${TWO}\n\n<!-- cite alsogone stays -->\n${SHIFTY}\n`,
+    );
+    const run = await remove({ inputs: [label], only: ["dropped", "gone", "alsogone"] });
+    expect(run.removed).toBe(3);
+    const written = onDisk(label);
+    // Six claim lines each lost a digit: that is what moves the body offsets.
+    expect(written.split("      lines: 9\n").length - 1).toBe(6);
+    expect(written.slice(written.indexOf("# Limits"))).toBe(
+      `# Limits\n\n${ONE}\n\n<!-- cite keep -->\n${TWO}\n\n<!-- cite stays -->\n${SHIFTY}\n`,
+    );
+    expect(written).not.toContain("gone");
     expect(await findings(label)).toEqual([]);
   });
 });

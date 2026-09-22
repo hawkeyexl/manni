@@ -4723,9 +4723,9 @@ docs/src/content/docs/cite/get-started/index.mdx:
         integrity: sha256-e5103845bc868a34ea7697ff8150c1e8b6540f224123833f0079098f5d5d91c7
       source:
         file: src/cite/core/write.ts
-        lines: 250-258
+        lines: 310-318
         integrity: sha256-14a10eaae60d57741ae439e2ac97e1f11b3927f6d76c61600731e0b65a3564c7
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 9d7143d0ac012c37927acd85caac84397b2c4f45
     - id: move-advances-commit-sha
       claim:
         lines: 334-340
@@ -5660,9 +5660,9 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-4577c0d289c8ac03be66962572ffc9a0ea10c4d0f97684f20ea67a13d3313d7e
       source:
         file: src/cite/core/statements.ts
-        lines: 756-764
+        lines: 776-784
         integrity: sha256-3aa3422f3a5b8c6a604feb4838bf9f24fcaf17f89406b20d36780f8a0b83541a
-        commit-sha: 2874e1b7b02e6bd50e7417c83dbbdd7a4e97a278
+        commit-sha: 9d7143d0ac012c37927acd85caac84397b2c4f45
     - id: anchor-marker-never-moves
       claim:
         lines: 332-334
@@ -7324,9 +7324,9 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-d07faadf876928d14367fb248dd11e004b5aee73c4003fd29f01f99a63ce62f6
       source:
         file: src/cite/types.ts
-        lines: 515-559
+        lines: 528-572
         integrity: sha256-142328dddac18b1932cb78535fdce6a9a32157c88c5b46b585aa5708fb3e165b
-        commit-sha: 2874e1b7b02e6bd50e7417c83dbbdd7a4e97a278
+        commit-sha: 9d7143d0ac012c37927acd85caac84397b2c4f45
     - id: json-page-fields
       claim:
         integrity: sha256-3d12300291cb75284d4a2fd8615b4e0fd2cd4453a843632316e9b15b30dfd509
@@ -7457,9 +7457,9 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-8b46d83b2224e8650751bc3e98d6c4f7d9fc191d4e769b0a8e4d9cd399e6b226
       source:
         file: src/cite/core/statements.ts
-        lines: 719-736
+        lines: 739-756
         integrity: sha256-4a8dc25c55e1b2f8271a953e51f3de3eabc1e75f89300717e216537350bda41a
-        commit-sha: 2874e1b7b02e6bd50e7417c83dbbdd7a4e97a278
+        commit-sha: 9d7143d0ac012c37927acd85caac84397b2c4f45
     - id: update-report-summary
       claim:
         lines: 769-772
