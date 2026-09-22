@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [2.10.0](https://github.com/hawkeyexl/manni/compare/v2.9.0...v2.10.0) (2026-09-22)
+
+
+### Features
+
+* **cite:** let one marker carry several ids ([#112](https://github.com/hawkeyexl/manni/issues/112)) ([e1b98dd](https://github.com/hawkeyexl/manni/commit/e1b98dd36721566d90d1fb76cbe08cc90e3af7f3)), closes [#111](https://github.com/hawkeyexl/manni/issues/111) [#111](https://github.com/hawkeyexl/manni/issues/111)
+
 # [2.9.0](https://github.com/hawkeyexl/manni/compare/v2.8.5...v2.9.0) (2026-09-22)
 
 
