@@ -24,9 +24,13 @@ function stub(result: {
   const calls: Call[] = [];
   const spawn: ValeSpawn = (args, opts) => {
     calls.push({ args, cwd: opts.cwd });
+    // `signal` is omitted rather than nulled when the test does not name one,
+    // because that is the shape `spawnVale` actually produces: it sets the
+    // property only on the signal path. A stub that always writes `null` would
+    // let a regression handling `null` but not an absent key pass unnoticed.
     return Promise.resolve({
       code: result.code,
-      signal: result.signal ?? null,
+      ...(result.signal === undefined ? {} : { signal: result.signal }),
       stdout: result.stdout ?? "",
       stderr: result.stderr ?? "",
     });
