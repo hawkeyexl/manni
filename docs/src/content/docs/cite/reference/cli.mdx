@@ -225,7 +225,9 @@ The diff, the commit subjects and the page text are in no machine format.
 `null`. `claim.lines` is the entry's body lines and `fileLines` is where they
 are now, and `claim` itself is `null` for a bare pin. A moved end adds
 `newLines`, a moved source end `newSrc` too, and an ambiguous one
-`candidates`. A citation a marker anchors adds a `marker` object. It carries
+`candidates`. A moved source that changed file names the new path in
+`newSrc`, encrypted where the entry's own source is. A changed source end
+adds `newLines` when the in-range search found its span. A citation a marker anchors adds a `marker` object. It carries
 the marker's `line`. When the marker sits inside a paragraph it also carries
 a `misplaced` object, with the paragraph's `unit` and the `to` line the
 marker takes:
@@ -433,7 +435,7 @@ manni cite add <page>[:L|:L1-L2] <src> [options]
 | `--marker` | n/a | off | Write a `cite <id>` marker instead of storing claim lines, and pin the text it anchors. When a marker already anchors that text, the id joins its list instead, and no line is written. The marker joined is the nearest one. That is the marker on the text's own line when there is one, else the last marker line above it. The id goes last, so nothing another citation wrote is reordered. A join adds no line, so no claim below it moves. When the nearest marker already holds 25 ids, a new marker line is written instead. A written marker goes directly above the paragraph or fenced block that holds the page lines, below any markers already there. It takes the indentation of the first line of that paragraph or block, so a marker in a list item stays in the item. In markdown and MDX, above a list item that follows another, it is indented to the item's text, which keeps the list whole. In asciidoc it stays at column 0, where a comment must start. The lines must all sit in that one paragraph or block, of at most 5,000 lines. A heading, a section title, an adornment and a lone tag are each a block of their own. Above a line that follows one, the marker goes below it. Entries whose claim lines sit below a written marker have them moved down in the same write. The marker travels with its sentence. Needs the page lines and `--id`. |
 | `--quote` | n/a | off | The page lines are a fenced block, fences included, that reproduces the cited lines. The block is pinned whole, and its contents are compared with the source, so a quoted snippet that drifts is `quote-drift` even while the pin holds. Needs the page lines, and a format with a fence the tool can locate: `markdown`, `mdx` or `asciidoc`. |
 | `--encrypt` | n/a | off | Write `source.file` encrypted, with an `hmac-sha256-` pin, so the page carries neither the path nor a verifier for the line. An available encryption key, a top-level `encryptionKey:` or `MANNI_ENCRYPTION_KEY`, encrypts every `add` without the flag. With no key, on a terminal, `add` offers to generate one and write it to `manni.config.yaml`. Off a terminal, or on a no, it refuses (exit 2) and writes nothing. |
-| `--no-commit-sha` | n/a | on | Do not record `HEAD` as the entry's `commit-sha`. Without it, a later check can still say the lines changed, but not since when, nor whether the pin was ever true. Off a git checkout no commit is recorded either way. |
+| `--no-commit-sha` | n/a | on | Do not record `HEAD` as the entry's `commit-sha`. Without it, a later check can still say the lines changed, but not since when, nor whether the pin was ever true. It cannot follow the source into another file either, nor name the span a changed range now covers. Off a git checkout no commit is recorded either way. |
 | `--dry-run` | n/a | off | Print the unified diff of the page and write nothing. The report line goes to stderr. |
 | `--as` | `<format>` | n/a | Force the page's [format](/manni/meta/reference/formats/). Required with `-`. |
 | `--root` | `<dir>` | n/a | The directory `<src>` resolves from, exactly as on [`check`](#where-sources-resolve-from). |
@@ -551,7 +553,8 @@ rule, because a quote is fences and content by design.
 {/* cite update-needs-sources */}
 Rewrite moved citations in place; with `--accept`, re-mint changed ones.
 `update` works on **both ends**. A moved source end is re-minted over the
-range it moved to, and a moved claim end has its `claim.lines` spliced. A reanchored claim end is
+range it moved to, and its `source.file` follows the pin into another file.
+A moved claim end has its `claim.lines` spliced. A reanchored claim end is
 re-pinned, and its lines are rewritten where it has lines, both without
 `--accept`. The splice is textual, so
 the rest of the frontmatter, its comments and quoting included, is untouched.
@@ -598,8 +601,9 @@ working tree so the rewrite is easy to review.
 
 | End and status | Without `--accept` | With `--accept` |
 |---|---|---|
-| `source-moved` | Re-minted over the new range: `source.lines` rewritten to it, and `source.commit-sha` set to `HEAD` where the entry already has one. Where the entry records a commit and git cannot give one, nothing is written and the finding says so. | The same. |
-| `source-changed`, `source-never-true` | Skipped, and reported. | `source.integrity` re-minted, and `source.commit-sha` set to `HEAD` where the entry already has one. |
+| `source-moved`, same file | Re-minted over the new range: `source.lines` rewritten to it, and `source.commit-sha` set to `HEAD` where the entry already has one. Where the entry records a commit and git cannot give one, nothing is written and the finding says so. | The same. |
+| `source-moved`, new file | `source.file` and `source.lines` rewritten, and a whole-file pin has only its `file`. `source.commit-sha` is left alone, because the pin was minted at that commit and still holds. | The same. |
+| `source-changed`, `source-never-true` | Skipped, and reported. | `source.integrity` re-minted, and `source.commit-sha` set to `HEAD` where the entry already has one. Where the finding named a span, the re-mint covers that span and `source.lines` is rewritten to it. |
 | `source-moved-ambiguous` | Skipped. The tool will not guess which copy. Widen the range and re-add. | The same. |
 | `source-missing` | Skipped. A path that is gone cannot be rewritten. `add` is the remedy. | The same. |
 | `claim-moved` | `claim.lines` rewritten to the new body lines. | The same. |
@@ -749,8 +753,9 @@ The report names each rewrite, the end it was on, and the reason:
 
 ```
 docs/limits.md: retries claim line 14 -> 16 (moved)
-docs/limits.md: fetch-timeout source lib/limits.ts:2 -> lib/limits.ts:4 (moved)
+docs/limits.md: fetch-timeout source lib/limits.ts:2 -> lib/config/limits.ts:4 (moved)
 docs/limits.md: page-size source lib/limits.ts:5 re-pinned at 9b1e04c (changed; sha256-11aa… -> sha256-22bb…)
+docs/limits.md: retry-cap source lib/limits.ts:20-32 -> lib/limits.ts:20-35 re-pinned at 9b1e04c (changed; sha256-33cc… -> sha256-44dd…)
 docs/limits.md: fetch-timeout claim at line 9 re-pinned (changed; now "The fetch timeout is 30 seconds.")
 docs/limits.md: timeouts claim at marker line 30 re-pinned (changed; now "Timeouts are per request.")
 docs/limits.md: host-scope marker line 44 -> 41 (misplaced)

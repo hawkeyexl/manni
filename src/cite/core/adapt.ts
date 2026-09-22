@@ -30,7 +30,7 @@ import type {
 import { claimLine } from "./claims.js";
 import { parseSrc } from "./range.js";
 import { RULE_ID_PREFIX, ruleId } from "./severity.js";
-import { listOf } from "./spell.js";
+import { listOf, shortSrc } from "./spell.js";
 
 /** The seven characters a person reads a commit by. */
 function short(commit: string): string {
@@ -77,19 +77,24 @@ export function messageFor(source: SourceEnd): string {
     case "skipped":
       return "skipped";
     case "moved":
-      return `moved -> ${source.newSrc ?? "?"}`;
+      // An encrypted source's new path is a ciphertext, abbreviated as the
+      // entry's own is: `--reveal` stays the only way to read either.
+      return `moved -> ${shortSrc(source.newSrc ?? "?")}`;
     case "moved-ambiguous": {
       const candidates = source.candidates ?? [];
-      return `moved, ${plural(candidates.length, "candidate")} (${candidates.join(", ")}); widen the range`;
+      return `moved, ${plural(candidates.length, "candidate")} (${candidates.map(shortSrc).join(", ")}); widen the range`;
     }
     case "changed": {
-      if (source.commitSha === undefined) return "changed";
+      // Where the old first and last line sit now, when the in-range search
+      // found each exactly once: the span `update --accept` re-mints at.
+      const span = source.newLines === undefined ? "" : `; now at lines ${source.newLines}`;
+      if (source.commitSha === undefined) return `changed${span}`;
       const at = short(source.commitSha);
       if (source.historyAvailable === false) {
         return `changed (history unavailable: commit ${at} not found; fetch-depth: 0)`;
       }
-      if (source.commitsSince === undefined) return `changed since ${at}`;
-      return `changed since ${at}, ${plural(source.commitsSince.length, "commit")}`;
+      if (source.commitsSince === undefined) return `changed since ${at}${span}`;
+      return `changed since ${at}, ${plural(source.commitsSince.length, "commit")}${span}`;
     }
     case "never-true":
       return source.commitSha === undefined

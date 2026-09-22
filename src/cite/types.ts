@@ -200,11 +200,24 @@ export interface SourceEnd {
    * pretty reporter under `--reveal`; never serialized to a machine format.
    */
   resolvedPath?: string;
+  /**
+   * The path a moved encrypted source's `newSrc` decrypts to. Printed only by
+   * the pretty reporter under `--reveal`; never serialized to a machine format.
+   */
+  resolvedNewPath?: string;
   /** For `missing`: why the source could not be read. Composes the message, which never names a path. */
   missingReason?: MissingReason;
-  /** For `moved`: the new file lines. */
+  /**
+   * For `moved`: the new file lines. For `changed`: the span the pinned
+   * range's old first and last lines now cover, when each sits exactly once
+   * and in order (proposal 0055).
+   */
   newLines?: string;
-  /** For `moved`: the new `src`, spelled as the entry spells sources. */
+  /**
+   * For `moved`: the new `src`, spelled as the entry spells sources. It names
+   * another file when the pin followed its text across one, and carries the
+   * new path encrypted for an encrypted source.
+   */
   newSrc?: string;
   /** For `moved-ambiguous`: every candidate `src`. */
   candidates?: string[];
@@ -218,6 +231,12 @@ export interface SourceEnd {
   diff?: string;
   /** The move search hit its byte budget before covering the file. */
   truncatedSearch?: boolean;
+  /**
+   * The truncation happened across the files a commit touched rather than
+   * inside one file, which is the other half of the notice a run raises. Never
+   * serialized: `truncatedSearch` stays the one boolean the output carries.
+   */
+  truncatedAcross?: boolean;
 }
 
 /** One classified citation: both ends, and how it is anchored. */
@@ -301,6 +320,12 @@ export interface GitClient {
   showFile(commit: string, path: string): Promise<ShownFile>;
   subjectsSince(commit: string, path: string): Promise<string[]>;
   diffSince(commit: string, path: string): Promise<string>;
+  /**
+   * Paths whose content differs between `commit` and `HEAD`: committed
+   * changes only. The candidate list a pin is followed across (proposal
+   * 0055). A client without it follows no source out of its own file.
+   */
+  changedSince?(commit: string): Promise<string[]>;
   /**
    * The commits that touched `path`, newest first, at most `cap` of them. A
    * client without it reads no claim history, so a claim that no longer holds

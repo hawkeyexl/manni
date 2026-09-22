@@ -213,10 +213,13 @@ printed.
 
 {/* cite source-missing-not-in-index */}
 {/* cite source-missing-git-ls-files */}
-No tracked file exists at that path under the root. A renamed file is
-`missing`, deliberately: a pin names a path, and following renames through
-history would be a guess. Where git is available, sources resolve through
-`git ls-files`, so a file that exists but is not committed is `missing` too.
+No tracked file exists at that path under the root, and no file a commit
+touched holds the pin. A file that simply moved is `source-moved`, and one
+`manni cite update` repairs it. Four cases are left here. A file that is gone.
+One renamed and edited in the same commit. An untracked destination. And a
+checkout too shallow to read the pin's commit. Where git is available, sources
+resolve through `git ls-files`. So a file that exists but is not committed is
+`missing` too.
 
 **Fix.** Remove the entry and add it again against the new path:
 

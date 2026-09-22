@@ -546,11 +546,11 @@ named in `severity:`, which takes the sixteen rule names below.
 
 | Rule | Meaning | Message | Default |
 |---|---|---|---|
-| <span id="source-moved">`source-moved`</span> | The pin does not hold at its range, and exactly one window of the same length elsewhere in the file hashes to it. `update` rewrites `source.lines` and advances `source.commit-sha`. A whole-file citation never moves. | `moved -> lib/limits.ts:4` | `warning` |
-| <span id="source-moved-ambiguous">`source-moved-ambiguous`</span> | Two or more windows hash to the pin; the tool will not guess which. Widen the range. | `moved, 2 candidates (lib/limits.ts:4, lib/limits.ts:11); widen the range` | `error` |
-| <span id="source-changed">`source-changed`</span> | No window hashes to the pin. With a commit and history: since when, and how many commits touched the path. With a commit git cannot show: `history unavailable`, plus one run notice about `fetch-depth: 0`. Where git is not available, a bare `changed`, plus one run notice. | `changed since 3f9c2a1, 2 commits` | `error` |
-| <span id="source-never-true">`source-never-true`</span> | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit. | `never true: the pin does not match at 3f9c2a1` | `error` |
-| <span id="source-missing">`source-missing`</span> | The path is not a tracked file under the root (without git, not a file under it), or an encrypted source cannot be decrypted. A rename is `missing`; `add` is the remedy. | `missing`, and for an encrypted source one of `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)` | `error` |
+| <span id="source-moved">`source-moved`</span> | The pin does not hold at its range, and exactly one window of the same length hashes to it. That window sits elsewhere in the file, or in another file a commit touched. `update` rewrites `source.lines`, and `source.file` too where the pin changed file. A whole-file citation never moves inside its file, and does follow a rename. | `moved -> lib/config/limits.ts:4` | `warning` |
+| <span id="source-moved-ambiguous">`source-moved-ambiguous`</span> | Two or more windows hash to the pin, in one file or across several; the tool will not guess which. Widen the range. | `moved, 2 candidates (lib/config/limits.ts:4, vendor/limits.ts:4); widen the range` | `error` |
+| <span id="source-changed">`source-changed`</span> | No window hashes to the pin. With a commit and history: since when, and how many commits touched the path. The message names the span the old first and last line now cover, when each sits exactly once and in order. With a commit git cannot show: `history unavailable`, plus one run notice about `fetch-depth: 0`. Where git is not available, a bare `changed`, plus one run notice. | `changed since 3f9c2a1, 2 commits; now at lines 200-215` | `error` |
+| <span id="source-never-true">`source-never-true`</span> | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit. No span is offered, because the pinned lines had no home at that commit. | `never true: the pin does not match at 3f9c2a1` | `error` |
+| <span id="source-missing">`source-missing`</span> | The path is not a tracked file under the root (without git, not a file under it), or an encrypted source cannot be decrypted. It is reached only once no file a commit touched holds the pin. | `missing`, and for an encrypted source one of `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)` | `error` |
 
 {/* cite move-search-order move-search-first-line move-window-2000 move-search-band move-budget-64mib move-budget-truncated range-limit-either-end */}
 The move search runs whenever the pin does not hold, and history decides only
@@ -561,6 +561,18 @@ window of 2,000 lines either side of the pinned range comes first. Then the
 rest of the file follows, under a 64 MiB hashing budget. Past the budget the
 entry is `source-changed` with `truncatedSearch` set, and the run says so
 once. A range longer than 5,000 lines, at either end, is `entry-invalid`.
+
+{/* cite follow-candidate-list */}
+{/* cite follow-span-search */}
+{/* cite follow-across-files */}
+A pin that holds nowhere in its own file is looked for in the files that
+changed since its commit. The candidate list is `git diff --name-only
+<commit> HEAD`, so it covers committed changes only, and every path the
+tracked-file index does not hold is dropped. One hit is `source-moved` with
+the new path in it, and several are `source-moved-ambiguous`. The 64 MiB
+budget is one counter per citation, spent by every search that settles it.
+Both searches need the original text, so an entry with no `commit-sha`, and a
+commit git cannot show, are classified as they always were.
 
 ### Claim-end rules
 

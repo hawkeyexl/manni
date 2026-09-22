@@ -346,9 +346,18 @@ export async function checkCitations(
       `commit ${unavailable.source.commitSha.slice(0, 7)} not found in history; use fetch-depth: 0 to enable never-true and diffs`,
     );
   }
-  if (results.some((r) => r.source.truncatedSearch === true)) {
+  // Two forms, because "the file" is the wrong noun for a scan across the
+  // files a commit touched. A run raises each at most once, and both when it
+  // hit both.
+  const budget = String(MOVE_BUDGET_BYTES / (1024 * 1024));
+  if (results.some((r) => r.source.truncatedSearch === true && r.source.truncatedAcross !== true)) {
     notices.push(
-      `a move search hit its ${String(MOVE_BUDGET_BYTES / (1024 * 1024))} MiB budget before covering the file; a citation may read changed rather than moved`,
+      `a move search hit its ${budget} MiB budget before covering the file; a citation may read changed rather than moved`,
+    );
+  }
+  if (results.some((r) => r.source.truncatedAcross === true)) {
+    notices.push(
+      `a move search hit its ${budget} MiB budget before covering the files changed since the pin's commit; a citation may read changed or missing rather than moved`,
     );
   }
 

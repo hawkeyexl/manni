@@ -8,6 +8,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { claimMessageFor, findingsFor, messageFor, toValidationResult } from "../../src/cite/core/adapt.js";
+import { shortSrc } from "../../src/cite/core/spell.js";
 import { DEFAULT_SEVERITY, resolveSeverity } from "../../src/cite/core/severity.js";
 import type {
   CitationFinding,
@@ -124,7 +125,9 @@ describe("messageFor", () => {
       commitsSince: ["touch private/SECRET.ts"],
       diff: "--- private/SECRET.ts",
     });
-    expect(messageFor(moved)).toBe(`moved -> ${TOKEN}:4`);
+    // The new path is a ciphertext too, abbreviated as the entry's own is.
+    expect(messageFor(moved)).toBe(`moved -> ${shortSrc(`${TOKEN}:4`)}`);
+    expect(messageFor(moved)).not.toContain("SECRET");
     const changed: SourceEnd = { ...moved, status: "changed", commitSha: COMMIT, historyAvailable: true };
     expect(messageFor(changed)).not.toContain("SECRET");
   });
