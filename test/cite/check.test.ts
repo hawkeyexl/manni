@@ -23,6 +23,7 @@ import { hashLines, hashRange, splitLines } from "../../src/cite/core/hash.js";
 import { readPage } from "../../src/cite/core/page.js";
 import { parseSrc } from "../../src/cite/core/range.js";
 import { decryptSourcePath, encryptSourcePath } from "../../src/cite/core/sources.js";
+import { shortSrc } from "../../src/cite/core/spell.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { CheckOptions, CheckRun, GitClient } from "../../src/cite/types.js";
 import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
@@ -818,7 +819,7 @@ describe("output never says more than the page did", () => {
       [null, "current"],
     ]);
     expect(run.pages[0]?.citations[0]?.source.newSrc).toBe(`${token}:4`);
-    expect(messages(run)).toEqual([`moved -> ${token}:4`]);
+    expect(messages(run)).toEqual([`moved -> ${shortSrc(`${token}:4`)}`]);
     // The resolved path is carried for `--reveal` and nowhere else.
     expect(run.pages[0]?.citations.map((c) => c.source.resolvedPath)).toEqual([
       "src/moved.ts",
