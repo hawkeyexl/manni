@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.10.1](https://github.com/hawkeyexl/manni/compare/v2.10.0...v2.10.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* **term:** reach the signal branch when Vale is killed ([#115](https://github.com/hawkeyexl/manni/issues/115)) ([c5616b4](https://github.com/hawkeyexl/manni/commit/c5616b418980ae745f864dc5aadd54a028d390f3)), closes [#114](https://github.com/hawkeyexl/manni/issues/114)
+
 # [2.10.0](https://github.com/hawkeyexl/manni/compare/v2.9.0...v2.10.0) (2026-09-22)
 
 
