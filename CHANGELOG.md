@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.10.2](https://github.com/hawkeyexl/manni/compare/v2.10.1...v2.10.2) (2026-09-22)
+
+
+### Bug Fixes
+
+* **cite:** a commit-sha that supports its own pin ([#116](https://github.com/hawkeyexl/manni/issues/116)) ([f649886](https://github.com/hawkeyexl/manni/commit/f649886e0dcb0bf422859d78210719ea53aaa295))
+
 ## [2.10.1](https://github.com/hawkeyexl/manni/compare/v2.10.0...v2.10.1) (2026-09-22)
 
 
