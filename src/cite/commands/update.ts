@@ -37,13 +37,22 @@ import {
   type ClaimUnit,
   type NoUnit,
 } from "../core/claims.js";
+import { historyOf } from "../core/classify.js";
 import { GIT_UNAVAILABLE_COMMIT } from "../core/git.js";
 import { splitLines } from "../core/hash.js";
 import { claimWords, sharesSentence, wordShare } from "../core/history.js";
 import { mintCitation } from "../core/mint.js";
 import { ManifestSet } from "../core/manifest.js";
 import { readPage } from "../core/page.js";
-import { formatSrc, lineSpec, parseLines, parseSrc, spellLines, tooWide } from "../core/range.js";
+import {
+  formatSrc,
+  lineSpec,
+  parseLines,
+  parseSrc,
+  sourceRange,
+  spellLines,
+  tooWide,
+} from "../core/range.js";
 import {
   applyMarkerMoves,
   misplacedMarkers,
@@ -129,6 +138,18 @@ type Plan =
       minted: Citation;
       /** The span accepted, when it is not the range the entry records. */
       span?: { lines: LineSpec; from: string; to: string };
+    }
+  /**
+   * The source holds, but the commit it is recorded against does not contain
+   * the pinned lines. Only `commit-sha` moves; the pin itself is untouched.
+   */
+  | {
+      kind: "source-recommitted";
+      result: CitationResult;
+      /** The commit the entry records now, and cannot support. */
+      from: string;
+      /** HEAD, which was checked to contain the lines before this was planned. */
+      commitSha: string;
     }
   | { kind: "marker-moved"; result: CitationResult; from: number; to: number }
   | {
@@ -243,8 +264,11 @@ function settles(plan: Plan): string {
     // refusal prints, so it is not also reported as skipped.
     case "claim-replaced":
       return "claim-changed";
-    // A shifted entry was `current`, so it had no finding to settle.
+    // A shifted entry was `current`, so it had no finding to settle. A
+    // re-committed one was `current` too: `check` never reported it, which is
+    // why the repair is asked for rather than offered.
     case "claim-shifted":
+    case "source-recommitted":
       return "";
   }
 }
@@ -285,6 +309,8 @@ function apply(content: string, format: string, plan: Plan): string {
       }
       return out;
     }
+    case "source-recommitted":
+      return spliceEntryField(content, format, index, ["source", "commit-sha"], plan.commitSha);
     case "claim-accepted": {
       let out = spliceEntryField(content, format, index, ["claim", "integrity"], plan.pin);
       if (plan.lines !== undefined) {
@@ -363,6 +389,12 @@ function applyToEntry(entry: unknown, plan: Plan): boolean {
       if (plan.lines !== undefined) source.lines = plan.lines;
       source.integrity = plan.pin;
       if (plan.commitSha !== undefined) source["commit-sha"] = plan.commitSha;
+      return true;
+    }
+    case "source-recommitted": {
+      const source = end("source");
+      if (source === undefined) return false;
+      source["commit-sha"] = plan.commitSha;
       return true;
     }
     case "claim-accepted": {
@@ -484,6 +516,19 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         status: "moved",
         from: source.src,
         to: plan.to,
+      };
+    case "source-recommitted":
+      return {
+        ...base,
+        end: "source",
+        reason: "recommitted",
+        // The source itself held. Only its date was wrong.
+        status: "current",
+        from: plan.from,
+        to: plan.commitSha,
+        fromCommit: plan.from,
+        toCommit: plan.commitSha,
+        src: source.src,
       };
     case "claim-accepted": {
       const was = citation.claim?.integrity ?? "";
@@ -816,6 +861,46 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   const writes = new WrittenFiles();
   const only = opts.only !== undefined && opts.only.length > 0 ? new Set(opts.only) : undefined;
   const accept = opts.accept === true;
+  const recommit = opts.recommit === true;
+  if (recommit && !(await git.available())) {
+    throw new CiteError(
+      "--recommit needs git to verify recorded commits, and git is not available here.",
+    );
+  }
+
+  /**
+   * The commit to record for an entry whose recorded one does not contain its
+   * pinned lines, or `undefined` to leave the entry alone.
+   *
+   * Two questions, both asked through `historyOf`, which is what `check` uses,
+   * so the answers agree. First, does the recorded commit contain the lines?
+   * It counts as containing them wherever in the file they sit, because
+   * `update` follows a move and keeps `commit`, so line drift inside one
+   * commit is the tool working rather than damage. Only a pin found nowhere
+   * there is unsupported. Second, does HEAD contain them? The entry is
+   * `current`, so the working tree does, but an uncommitted edit means HEAD
+   * may not, and there is then no commit worth recording.
+   *
+   * A commit git cannot read answers neither question, so the entry is left as
+   * it is. A shallow clone must degrade rather than rewrite.
+   */
+  const recommitFor = async (result: CitationResult): Promise<string | undefined> => {
+    const recorded = result.citation.source["commit-sha"];
+    const path = result.source.resolvedPath;
+    if (recorded === undefined || path === undefined) return undefined;
+    const range = sourceRange(result.citation.source);
+    const pin = result.citation.source.integrity;
+    const key = range.encrypted ? run.key : undefined;
+    const was = await historyOf(git, recorded, path, range, pin, key, undefined);
+    if (was.kind !== "never-true") return undefined;
+    const head = await git.head();
+    if (head === null || head === recorded) return undefined;
+    // `original` means HEAD holds the pinned bytes, at the recorded lines or
+    // anywhere else in the file. That is the same reading as question one, so
+    // the two answers are comparable.
+    const now = await historyOf(git, head, path, range, pin, key, undefined);
+    return now.kind === "original" ? head : undefined;
+  };
 
   /** What this citation needs, in the order the repairs are worth trying. */
   const plansFor = async (
@@ -962,6 +1047,19 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
             why: `Not rewritten: ${error.message}`,
           });
         }
+      }
+    }
+    // Asked for, not offered: the entry is `current`, so `check` reported
+    // nothing to repair here.
+    if (recommit && result.source.status === "current") {
+      const to = await recommitFor(result);
+      if (to !== undefined) {
+        out.push({
+          kind: "source-recommitted",
+          result,
+          from: result.citation.source["commit-sha"] ?? "",
+          commitSha: to,
+        });
       }
     }
     if (!accept) return out;
