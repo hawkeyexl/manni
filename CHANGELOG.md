@@ -4,18 +4,6 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
-# [2.9.0-cite-marker-ids.3](https://github.com/hawkeyexl/manni/compare/v2.9.0-cite-marker-ids.2...v2.9.0-cite-marker-ids.3) (2026-09-22)
-
-
-### Bug Fixes
-
-* **cite:** respell a marker before anything moves the bytes under it ([eb15cad](https://github.com/hawkeyexl/manni/commit/eb15cadce6cb0ca7fc3158070cb706f76e585f5b))
-
-
-### Reverts
-
-* Revert "chore(release): 2.9.0-cite-marker-ids.2" ([478adbb](https://github.com/hawkeyexl/manni/commit/478adbbb4f358359df298f85d5634853d6c173af))
-
 ## [2.8.5](https://github.com/hawkeyexl/manni/compare/v2.8.4...v2.8.5) (2026-09-21)
 
 
