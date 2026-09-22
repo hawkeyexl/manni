@@ -27,6 +27,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { runCheck } from "../../src/cite/commands/check.js";
+import { hashRange } from "../../src/cite/core/hash.js";
 import { runRemove } from "../../src/cite/commands/remove.js";
 import { noGit } from "../../src/cite/core/git.js";
 import { CiteError } from "../../src/cite/errors.js";
@@ -144,6 +145,55 @@ describe("runRemove: an entry in the page's frontmatter", () => {
     expect(after).not.toContain("<!-- cite retries -->");
     expect(after).toContain("Retries default to 3. Really.");
     expect(await findings("pages/marker.md")).toEqual([]);
+  });
+
+  /** Two entries under one marker, and a claim-lines entry below them. */
+  const shared = (name: string): string =>
+    write(name, [
+      "---",
+      "title: Limits",
+      "citations:",
+      "  - id: retries",
+      "    claim:",
+      "      integrity: sha256-3049e93e72873542aac2c1c4778fa655e70656f03c08f202444062f404a3315d",
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 3",
+      "      integrity: sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3",
+      "  - id: backoff",
+      "    claim:",
+      "      integrity: sha256-3049e93e72873542aac2c1c4778fa655e70656f03c08f202444062f404a3315d",
+      "    source:",
+      "      file: src/limits.ts",
+      "      lines: 2",
+      "      integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f",
+      "---",
+      "# Limits",
+      "",
+      "<!-- cite retries backoff -->",
+      "Retries default to 3.",
+    ]);
+
+  it("drops one id out of a marker and leaves the line where it was", async () => {
+    const label = shared("shared-marker.md");
+    expect(await findings(label)).toEqual([]);
+    const run = await remove({ inputs: [label], only: ["retries"] });
+    expect(run.removed).toBe(1);
+    expect(run.pages[0]?.removed[0]?.markerLines).toEqual([21]);
+    const after = onDisk(label);
+    expect(after).toContain("<!-- cite backoff -->\nRetries default to 3.");
+    expect(after).not.toContain("retries");
+    expect(await findings(label)).toEqual([]);
+  });
+
+  it("drops the whole line when the last id goes out of the marker", async () => {
+    const label = shared("shared-last.md");
+    const run = await remove({ inputs: [label], only: ["retries", "backoff"] });
+    expect(run.removed).toBe(2);
+    const after = onDisk(label);
+    expect(after).not.toContain("cite");
+    expect(after).toContain("# Limits\n\nRetries default to 3.\n");
+    expect(await findings(label)).toEqual([]);
   });
 
   it("removes a bare pin by its pointer, since it has no id to name", async () => {
@@ -502,5 +552,264 @@ describe("remove reporters", () => {
       origin: { kind: "frontmatter", file: "pages/marker.md", line: 4 },
       markerLines: [18],
     });
+  });
+});
+
+/**
+ * Proposal 0056 widened the marker payload to a list. The corpus already
+ * holds thousands of one-id markers written under 0044, and none of them may
+ * change meaning, move, or be rewritten into the new form. This is the bar
+ * the proposal calls its acceptance test.
+ */
+describe("a marker written under proposal 0044", () => {
+  it("still checks clean, byte for byte as the page holds it", async () => {
+    workspace("marker.md");
+    const before = onDisk("pages/marker.md");
+    expect(await findings("pages/marker.md")).toEqual([]);
+    expect(before).toContain("<!-- cite retries -->");
+    // A check writes nothing, so the one-id spelling is still on the page.
+    expect(onDisk("pages/marker.md")).toBe(before);
+  });
+
+  it("still goes out whole when its entry is removed, with the claim below it moving up", async () => {
+    workspace("remove-shift.md");
+    const before = onDisk("pages/remove-shift.md").split("\n");
+    expect(before.filter((line) => line.includes("cite retries"))).toEqual([
+      "<!-- cite retries -->",
+    ]);
+    const run = await remove({ inputs: ["pages/remove-shift.md"], only: ["retries"] });
+    expect(run.removed).toBe(1);
+    const after = onDisk("pages/remove-shift.md").split("\n");
+    // One line fewer in the body, and the surviving claim moved up with it.
+    // Seven lines of entry, and the marker line.
+    expect(after.length).toBe(before.length - 8);
+    expect(after).not.toContain("<!-- cite retries -->");
+    expect(onDisk("pages/remove-shift.md")).toContain("      lines: 5\n");
+    expect(await findings("pages/remove-shift.md")).toEqual([]);
+  });
+
+
+});
+
+/**
+ * The respell reads offsets recorded against the page as it was read, so it
+ * has to run before any edit that changes the byte count above it. A claim
+ * line crossing a digit boundary is that edit: `lines: 10` becomes `lines: 9`
+ * and the body moves one byte up.
+ */
+describe("runRemove: a respell beside a claim line that loses a digit", () => {
+  const entry = (id: string): string =>
+    `  - id: ${id}\n    claim:\n      integrity: sha256-3049e93e72873542aac2c1c4778fa655e70656f03c08f202444062f404a3315d\n    source:\n      file: src/limits.ts\n      lines: 3\n      integrity: sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3\n`;
+
+  /** An entry pinning body line 10, which becomes 9 and loses a byte. */
+  const shifty = (id: string): string =>
+    `  - id: ${id}\n    claim:\n      lines: 10\n      integrity: sha256-3049e93e72873542aac2c1c4778fa655e70656f03c08f202444062f404a3315d\n    source:\n      file: src/limits.ts\n      lines: 3\n      integrity: sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3\n`;
+
+  /**
+   * `gone` takes a marker line out above six entries pinning body line 10,
+   * each of which becomes 9. Six bytes leave the frontmatter, which is more
+   * slack than `<!-- ` gives, so a respell reading the old offsets misses the
+   * payload entirely. `alsogone` leaves the two-id marker below, which is
+   * respelled rather than deleted.
+   */
+  const page = (name: string): string =>
+    writeRaw(
+      name,
+      `---\ntitle: Limits\ncitations:\n` +
+        entry("gone") +
+        entry("keep") +
+        entry("alsogone") +
+        ["one", "two", "three", "four", "five", "six"].map((n) => shifty(`shifty-${n}`)).join("") +
+        `---\n# Limits\n\n<!-- cite gone -->\nParagraph one.\n\n<!-- cite keep alsogone -->\nParagraph two.\n\n\nShifty claim.\n`,
+    );
+
+  it("drops the id out of the marker even though the frontmatter shrank a byte", async () => {
+    const label = page("digit-boundary.md");
+    const run = await remove({ inputs: [label], only: ["gone", "alsogone"] });
+    expect(run.removed).toBe(2);
+    const after = onDisk(label);
+    // Six claim lines each lost a digit, which is what moves the body offsets.
+    expect(after.split("      lines: 9\n").length - 1).toBe(6);
+    // And the marker really was respelled, rather than silently left alone.
+    expect(after).toContain("<!-- cite keep -->\n");
+    expect(after).not.toContain("alsogone");
+    expect(after).not.toContain("<!-- cite gone -->");
+  });
+});
+
+/**
+ * Respells move bytes for each other, not just for the frontmatter. Two
+ * multi-id markers on one page, one id going out of each, is an ordinary run
+ * once a marker can carry several ids.
+ */
+describe("runRemove: two markers respelled in one run", () => {
+  /** The pins of the two paragraphs the markers anchor. */
+  const ONE = "sha256-dbcba560ab93aa79c7e358a69848177ed0b52365f631c40ca4db070a2e319e96";
+  const TWO = "sha256-c4cd87302526ffb3a74853f71352abdbdb03d4acedaf716bbd3b6ec0b6ebc580";
+  const entry = (id: string, pin: string): string =>
+    `  - id: ${id}\n    claim:\n      integrity: ${pin}\n    source:\n      file: src/limits.ts\n      lines: 3\n      integrity: sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3\n`;
+
+  it("respells the lower marker too, which the upper one had moved", async () => {
+    const label = writeRaw(
+      "two-markers.md",
+      `---\ntitle: Limits\ncitations:\n` +
+        entry("fetch-timeout", ONE) +
+        entry("retries", ONE) +
+        entry("backoff-window", TWO) +
+        entry("jitter", TWO) +
+        `---\n# Limits\n\n<!-- cite fetch-timeout retries -->\nParagraph one.\n\n<!-- cite backoff-window jitter -->\nParagraph two.\n`,
+    );
+    const run = await remove({ inputs: [label], only: ["fetch-timeout", "backoff-window"] });
+    expect(run.removed).toBe(2);
+    const after = onDisk(label);
+    // The upper marker loses fourteen bytes, which is more slack than the
+    // delimiters give, so the lower one is nowhere near its recorded offsets.
+    expect(after).toContain("<!-- cite retries -->\nParagraph one.");
+    expect(after).toContain("<!-- cite jitter -->\nParagraph two.");
+    expect(after).not.toContain("backoff-window");
+    expect(await findings(label)).toEqual([]);
+  });
+});
+
+
+/**
+ * The class, not the three instances it was found as.
+ *
+ * Every writer `remove` runs reads a position against the page as it was
+ * parsed: a respell reads the marker's byte offsets, a line deletion reads its
+ * line number, and a claim-line splice changes the byte count above both. Each
+ * case below arranges those writers differently on one page and asserts the
+ * body byte for byte. A position read after the text it indexes has moved
+ * shows up here as a marker still naming a removed id, as a marker cut short
+ * of its delimiter, or as a line taken out from under the wrong place.
+ */
+describe("runRemove: positions survive every other writer", () => {
+  const ONE = "Paragraph one.";
+  const TWO = "Paragraph two.";
+  const entry = (id: string, claim: string): string =>
+    `  - id: ${id}\n    claim:\n      integrity: ${hashRange(claim)}\n    source:\n      file: src/limits.ts\n      lines: 3\n      integrity: sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3\n`;
+
+  interface Case {
+    name: string;
+    /** Each entry as its id and the text its marker anchors. */
+    entries: [string, string][];
+    body: string;
+    only: string[];
+    after: string;
+  }
+  const cases: Case[] = [
+    {
+      name: "a respell above a deleted line",
+      entries: [
+        ["alpha", ONE],
+        ["beta", ONE],
+        ["gamma", TWO],
+      ],
+      body: `# Limits\n\n<!-- cite alpha beta -->\n${ONE}\n\n<!-- cite gamma -->\n${TWO}\n`,
+      only: ["alpha", "gamma"],
+      after: `# Limits\n\n<!-- cite beta -->\n${ONE}\n\n${TWO}\n`,
+    },
+    {
+      name: "a deleted line above a respell",
+      entries: [
+        ["alpha", ONE],
+        ["beta", TWO],
+        ["gamma", TWO],
+      ],
+      body: `# Limits\n\n<!-- cite alpha -->\n${ONE}\n\n<!-- cite beta gamma -->\n${TWO}\n`,
+      only: ["alpha", "beta"],
+      after: `# Limits\n\n${ONE}\n\n<!-- cite gamma -->\n${TWO}\n`,
+    },
+    {
+      // The upper marker loses twenty bytes, more slack than `<!-- ` and
+      // ` -->` give, so the lower statement's recorded span no longer holds
+      // its payload at all.
+      name: "two respells, the upper one moving the lower marker",
+      entries: [
+        ["fetch-timeout-alpha", ONE],
+        ["beta", ONE],
+        ["backoff-window-gamma", TWO],
+        ["delta", TWO],
+      ],
+      body: `# Limits\n\n<!-- cite fetch-timeout-alpha beta -->\n${ONE}\n\n<!-- cite backoff-window-gamma delta -->\n${TWO}\n`,
+      only: ["fetch-timeout-alpha", "backoff-window-gamma"],
+      after: `# Limits\n\n<!-- cite beta -->\n${ONE}\n\n<!-- cite delta -->\n${TWO}\n`,
+    },
+    {
+      name: "two deleted lines, the lower one first in the list",
+      entries: [
+        ["alpha", ONE],
+        ["beta", TWO],
+      ],
+      body: `# Limits\n\n<!-- cite alpha -->\n${ONE}\n\n<!-- cite beta -->\n${TWO}\n`,
+      only: ["beta", "alpha"],
+      after: `# Limits\n\n${ONE}\n\n${TWO}\n`,
+    },
+  ];
+
+  for (const { name, entries, body, only, after } of cases) {
+    it(name, async () => {
+      const label = writeRaw(
+        `${name.replace(/[^a-z]+/g, "-")}.md`,
+        `---\ntitle: Limits\ncitations:\n${entries.map(([id, claim]) => entry(id, claim)).join("")}---\n${body}`,
+      );
+      const run = await remove({ inputs: [label], only });
+      expect(run.removed).toBe(only.length);
+      const written = onDisk(label);
+      expect(written.slice(written.indexOf("# Limits"))).toBe(after);
+      for (const id of only) expect(written).not.toContain(id);
+      expect(await findings(label)).toEqual([]);
+    });
+  }
+
+  /**
+   * Two marker lines side by side at the end of a page with no final newline.
+   * Each takes the break above it, so the two spans meet, and a writer that
+   * cuts them one at a time from recorded positions cuts the same break twice.
+   */
+  it("takes two adjacent last lines out together, with no final newline", async () => {
+    const label = writeRaw(
+      "adjacent-tail.md",
+      `---\ntitle: Limits\ncitations:\n${entry("alpha", ONE)}${entry("beta", ONE)}---\n# Limits\n\n${ONE}\n\n<!-- cite alpha -->\n<!-- cite beta -->`,
+    );
+    const run = await remove({ inputs: [label], only: ["alpha", "beta"] });
+    expect(run.removed).toBe(2);
+    const written = onDisk(label);
+    expect(written.slice(written.indexOf("# Limits"))).toBe(`# Limits\n\n${ONE}\n`);
+  });
+
+  /**
+   * The conjunction neither instance covered on its own: a marker line goes
+   * out, which shortens six claim lines below it across a digit boundary, and
+   * two markers further down are respelled in the same run. Six bytes is more
+   * slack than `<!-- ` gives, so an offset read after the splice finds no
+   * payload at all, and the lower respell has the upper one's shortening on
+   * top of that.
+   */
+  it("respells two markers while the frontmatter loses six bytes", async () => {
+    const SHIFTY = "Shifty claim.";
+    const shifty = (id: string): string =>
+      `  - id: ${id}\n    claim:\n      lines: 10\n      integrity: ${hashRange(SHIFTY)}\n    source:\n      file: src/limits.ts\n      lines: 3\n      integrity: sha256-e9f5bdf94a12c610b54573d2b66347592887805e59c69b64803a8c0d30edaea3\n`;
+    const label = writeRaw(
+      "shrink-and-respell.md",
+      `---\ntitle: Limits\ncitations:\n` +
+        entry("dropped", ONE) +
+        entry("gone", TWO) +
+        entry("keep", TWO) +
+        entry("alsogone", SHIFTY) +
+        entry("stays", SHIFTY) +
+        ["one", "two", "three", "four", "five", "six"].map((n) => shifty(`shifty-${n}`)).join("") +
+        `---\n# Limits\n\n<!-- cite dropped -->\n${ONE}\n\n<!-- cite gone keep -->\n${TWO}\n\n<!-- cite alsogone stays -->\n${SHIFTY}\n`,
+    );
+    const run = await remove({ inputs: [label], only: ["dropped", "gone", "alsogone"] });
+    expect(run.removed).toBe(3);
+    const written = onDisk(label);
+    // Six claim lines each lost a digit: that is what moves the body offsets.
+    expect(written.split("      lines: 9\n").length - 1).toBe(6);
+    expect(written.slice(written.indexOf("# Limits"))).toBe(
+      `# Limits\n\n${ONE}\n\n<!-- cite keep -->\n${TWO}\n\n<!-- cite stays -->\n${SHIFTY}\n`,
+    );
+    expect(written).not.toContain("gone");
+    expect(await findings(label)).toEqual([]);
   });
 });

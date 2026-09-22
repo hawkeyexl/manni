@@ -4,8 +4,10 @@
  * Entries come from the frontmatter (via meta's extractor for the format), or
  * from `CheckPageOptions.citations` when a manifest owns them; either way each
  * one is validated against the bundled draft schema and carries where it sits.
- * Markers are `cite <id>` comments in the body, resolved to the entries they
- * name, so each citation knows what anchors it.
+ * Markers are `cite <id> [<id>…]` comments in the body, resolved to the
+ * entries they name, so each citation knows what anchors it. Every id one
+ * marker names anchors the same text, so every claim under it pins the same
+ * bytes and holds the same hash (proposal 0056).
  *
  * The findings made here are the ones that need no source: `entry-invalid`,
  * `marker-invalid`, `marker-orphan`, `marker-repeated` and `anchor-invalid`.
@@ -37,6 +39,8 @@ import { isKeyedPin } from "./hash.js";
 import { parseLines, spellSource, tooWide } from "./range.js";
 import { DEFAULT_SEVERITY, ruleId } from "./severity.js";
 import { lineAt, parseStatements } from "./statements.js";
+
+export { MAX_IDS_PER_MARKER } from "./statements.js";
 
 export const MAX_MARKERS_PER_PAGE = 500;
 
@@ -390,34 +394,66 @@ export function readPage(
       );
       continue;
     }
-    const target = byId.get(payload.id);
-    if (target === undefined) {
-      findings.push(
-        finding("marker-orphan", `no entry has id "${payload.id}"`, {
-          line: statement.line,
-          id: payload.id,
-        }),
-      );
-      continue;
+    // Each named id reports on its own: an orphan is a well-formed id with a
+    // missing entry, so each one is its own subject and its own fix. A
+    // malformed marker is one line and one fix, and was handled above.
+    // The entries this marker actually anchors. An id the marker repeats is
+    // reported and left to the marker that won it, so it never lands here.
+    const anchored: PageCitation[] = [];
+    for (const id of payload.ids) {
+      const target = byId.get(id);
+      if (target === undefined) {
+        findings.push(
+          finding("marker-orphan", `no entry has id "${id}"`, {
+            line: statement.line,
+            id,
+          }),
+        );
+        continue;
+      }
+      const first = markedAt.get(target);
+      if (first !== undefined) {
+        findings.push(
+          finding(
+            "marker-repeated",
+            `${id} is named by markers at lines ${String(first)} and ${String(statement.line)}; the first anchors it.`,
+            {
+              line: statement.line,
+              id,
+              index: target.origin.index,
+              src: spellSource(target.citation.source),
+            },
+          ),
+        );
+        continue;
+      }
+      markedAt.set(target, statement.line);
+      target.marker = statement;
+      anchored.push(target);
     }
-    const first = markedAt.get(target);
-    if (first !== undefined) {
+    // A quote entry anchors the next fenced block and a plain one anchors the
+    // paragraph, so a list that mixes them would mean two spans on one line,
+    // and the page would not say which id got which.
+    const quoted = anchored.find((entry) => entry.citation.quote === true);
+    const plain = anchored.find((entry) => entry.citation.quote !== true);
+    if (quoted !== undefined && plain !== undefined) {
+      const mixed: FindingExtra = {
+        line: statement.line,
+        index: quoted.origin.index,
+        src: spellSource(quoted.citation.source),
+      };
+      if (quoted.citation.id !== undefined) mixed.id = quoted.citation.id;
       findings.push(
         finding(
-          "marker-repeated",
-          `${payload.id} is named by markers at lines ${String(first)} and ${String(statement.line)}; the first anchors it.`,
-          {
-            line: statement.line,
-            id: payload.id,
-            index: target.origin.index,
-            src: spellSource(target.citation.source),
-          },
+          "anchor-invalid",
+          named(
+            quoted.citation.id,
+            "a quote entry shares a marker with a non-quote entry. Give the quote its own marker.",
+          ),
+          mixed,
         ),
       );
-      continue;
     }
-    markedAt.set(target, statement.line);
-    target.marker = statement;
   }
 
   // Anchors: exactly one way in, and a quote needs one of them.

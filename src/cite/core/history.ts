@@ -240,7 +240,7 @@ function readThen(input: ClaimHistoryInput, text: string): ThenPage | undefined 
   const id = input.entry.citation.id;
   if (id === undefined) return undefined;
   const marker = then.statements.find(
-    (statement) => statement.payload.kind === "ref" && statement.payload.id === id,
+    (statement) => statement.payload.kind === "ref" && statement.payload.ids.includes(id),
   );
   // A marker absent at a commit is looked for no further back: the entry was
   // a claim-lines entry then, or it did not exist.

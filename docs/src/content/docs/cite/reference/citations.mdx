@@ -246,25 +246,44 @@ because it is one.
 
 ## Markers
 
-A marker is one comment in the body, naming an entry by id, written in the
-format's own comment syntax. It is the second way to anchor a claim, and the
-easier one to keep true, because it travels with its text.
+A marker is one comment in the body, naming one or more entries by id, written
+in the format's own comment syntax. It is the second way to anchor a claim, and
+the easier one to keep true, because it travels with its text.
 
 | Format | Forms |
 |---|---|
-| markdown, mdx | `<!-- cite ID -->`, `{/* cite ID */}`, `[comment]: # (cite ID)` |
-| html, xml | `<!-- cite ID -->` |
-| asciidoc | `// (cite ID)` |
-| rst | `.. (cite ID)` |
+| markdown, mdx | `<!-- cite ID ID -->`, `{/* cite ID ID */}`, `[comment]: # (cite ID ID)` |
+| html, xml | `<!-- cite ID ID -->` |
+| asciidoc | `// (cite ID ID)` |
+| rst | `.. (cite ID ID)` |
 
 {/* cite marker-payload-id */}
-The payload is an id and nothing else. `cite true` names the id `true`. A
-payload that is not an id is `marker-invalid`, and a JSON payload hears what
-replaced it:
+The payload is one or more ids and nothing else. `cite true` names the id
+`true`. **The separator is a space, and only a space.** A run of spaces
+separates as one. A comma is never a separator, so `cite a,b` is one token,
+that token is not an id, and the message quotes it back.
 
-```
-A marker names an entry by id. Write the entry in frontmatter or the sidecar.
-```
+Every id one marker names anchors the same text. A paragraph resting on four
+sources therefore carries one comment rather than four. An id cannot hold a
+bracket, a brace or an angle bracket, so no list can close a parenthesised
+comment early.
+
+A marker holds at most 25 ids. A marker is also one line, so a payload broken
+across two lines is `marker-invalid`. Six defects are checked in order, and the
+first one found is the finding:
+
+| The payload | The message |
+|---|---|
+| is empty | `invalid marker: empty payload` |
+| holds a line break | `invalid marker: a marker is one line; write two markers` |
+| holds a word opening with `{` | `A marker names an entry by id. Write the entry in frontmatter or the sidecar.` |
+| holds more than 25 ids | `invalid marker: more than 25 ids in one marker (31); write a second marker` |
+| holds a word that is not an id | `invalid marker: "fetch-timeout,retries" is not an id` |
+| names one id twice | `invalid marker: "retries" is named twice in one marker` |
+
+One marker raises one `marker-invalid`, so a marker with two bad words is
+reported once. An id with no entry is different: that is `marker-orphan`, one
+per id, and the other ids on the line still check.
 
 {/* cite marker-json-removed */}
 Earlier drafts let a marker carry a whole entry as JSON. That is removed. An
@@ -282,7 +301,7 @@ markers per page; past that, the rest are not read and the page carries one
 `marker-invalid` saying so.
 
 ```md title="A marker in markdown"
-<!-- cite fetch-timeout -->
+<!-- cite fetch-timeout retries -->
 The fetch timeout is 10 seconds, and it is
 not configurable.
 ```
@@ -306,8 +325,14 @@ itself accepts everywhere, so it is the safer choice on a page that renders.
 ### Where a marker goes
 
 A marker belongs **above** the paragraph or block it anchors, on a line of its
-own. `cite add --marker` writes it there. Markers stacked above one paragraph
-all anchor that paragraph, and no marker line is ever part of a pin.
+own. `cite add --marker` writes it there, or appends its id to the marker
+already nearest the text. Markers stacked above one paragraph all anchor that
+paragraph, and no marker line is ever part of a pin. So joining an id into a
+marker changes no claim hash anywhere on the page.
+
+When the nearest marker already holds 25 ids, `cite add --marker` writes a
+second marker line instead of joining. Two markers over one paragraph are
+legal, and each anchors it.
 
 A marker line **inside** a paragraph is `marker-misplaced`. Deleting it would
 join the lines above and below into one paragraph, which is what the renderer
@@ -354,7 +379,7 @@ An entry has exactly one anchor, and that is the line a finding reports.
 | Anchor | How it works |
 |---|---|
 | Claim lines | `claim.lines` names the body lines, and `claim.integrity` pins them. The pinned text is searched for when it is not where it was, so the claim can be `claim-moved` or `claim-changed`. |
-| A marker | The entry has an `id`, a marker in the body names it, and `claim.lines` is absent. The marker anchors the rest of its own line when that carries text, else the paragraph after it. Markers stacked above one paragraph all anchor that paragraph. A line holding only a marker is never part of a pin. The marker travels with its text, so the claim reads `claim-moved` only when the pin holds over a span the marker no longer anchors. |
+| A marker | The entry has an `id`, a marker in the body names it, and `claim.lines` is absent. The marker anchors the rest of its own line when that carries text, else the paragraph after it. Every id one marker names anchors that same text, so their claim hashes are all equal. Markers stacked above one paragraph all anchor that paragraph. A line holding only a marker is never part of a pin. The marker travels with its text, so the claim reads `claim-moved` only when the pin holds over a span the marker no longer anchors. |
 | Neither | A bare pin, checked source-side only. A finding on it reports the entry's own line. |
 
 Neither anchor always wins. A marker travels with its text, but it is a line
@@ -378,6 +403,17 @@ fetch-timeout has claim lines and a marker. Keep one.
 
 `cite add --marker` writes both halves, the marker and the claim pin. A
 hand-written marker over an entry with no `claim` is legal.
+
+A quote entry and a plain entry cannot share a marker. A quote anchors the
+next fenced block and a plain entry anchors the paragraph, so one line would
+mean two spans. That mix is `anchor-invalid`:
+
+```
+quoted-limits: a quote entry shares a marker with a non-quote entry. Give the quote its own marker.
+```
+
+A marker whose ids are all quotes is legal, and so is one whose ids are all
+plain.
 
 ### Quotes
 
@@ -516,13 +552,7 @@ named in `severity:`, which takes the sixteen rule names below.
 | <span id="source-never-true">`source-never-true`</span> | No window of the range's length anywhere in the file at the recorded commit hashes to the pin, or the path was absent there. Asserted only when git can show that commit. No span is offered, because the pinned lines had no home at that commit. | `never true: the pin does not match at 3f9c2a1` | `error` |
 | <span id="source-missing">`source-missing`</span> | The path is not a tracked file under the root (without git, not a file under it), or an encrypted source cannot be decrypted. It is reached only once no file a commit touched holds the pin. | `missing`, and for an encrypted source one of `missing (no encryption key is available to decrypt it)`, `missing (does not decrypt under the current key)` or `missing (no tracked file matches; wrong --root?)` | `error` |
 
-{/* cite move-search-order */}
-{/* cite move-search-first-line */}
-{/* cite move-window-2000 */}
-{/* cite move-search-band */}
-{/* cite move-budget-64mib */}
-{/* cite move-budget-truncated */}
-{/* cite range-limit-either-end */}
+{/* cite move-search-order move-search-first-line move-window-2000 move-search-band move-budget-64mib move-budget-truncated range-limit-either-end */}
 The move search runs whenever the pin does not hold, and history decides only
 what a non-match is called. With the original text (git could show the
 commit), candidates are the lines where the first line matches. Each
@@ -646,10 +676,10 @@ carries each message and the bypass.
 | Rule | Meaning | Default |
 |---|---|---|
 | <span id="marker-orphan">`marker-orphan`</span> | A marker names an id no entry has. | `error` |
-| <span id="marker-invalid">`marker-invalid`</span> | A malformed marker, including a JSON payload, or more than 500 markers on a page. | `error` |
+| <span id="marker-invalid">`marker-invalid`</span> | A malformed marker. An empty payload, a line break, a brace, more than 25 ids, a word that is not an id, or a repeated id. Also more than 500 markers on a page. | `error` |
 | <span id="marker-repeated">`marker-repeated`</span> | Two markers name one id; the first anchors it. | `warning` |
 | <span id="marker-misplaced">`marker-misplaced`</span> | A marker line sits inside a paragraph, between two lines of text. It splits the paragraph for the renderer and for the tool. `update` moves it to where `cite add --marker` writes markers. | `warning` |
-| <span id="anchor-invalid">`anchor-invalid`</span> | The anchor cannot work. Three cases reach it. Claim lines and a marker together, `quote` with no claim and no marker, and a quote whose claim lines are no longer fenced. | `error` |
+| <span id="anchor-invalid">`anchor-invalid`</span> | The anchor cannot work. Four cases reach it. Claim lines and a marker together, or `quote` with no claim and no marker. A quote whose claim lines are no longer fenced. A quote entry sharing a marker with a plain one. | `error` |
 | <span id="entry-invalid">`entry-invalid`</span> | A schema failure, a range that ends before it starts or runs longer than 5,000 lines, or a duplicate id. Also a pin prefix that does not match `file`, a reserved `citation-*` page key, and a page `citations:` a manifest owns. | `error` |
 | <span id="quote-drift">`quote-drift`</span> | The quoted block no longer reproduces the source, or no fenced block follows the marker. | `error` |
 
