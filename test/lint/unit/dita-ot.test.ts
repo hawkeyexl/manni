@@ -508,6 +508,79 @@ describe("running DITA-OT", () => {
     );
   });
 
+  /**
+   * A killed run, which Node reports with the exit code as **null** and a
+   * signal name beside it. "exit code null" is not a sentence anyone can act
+   * on, and a signal is the one ending that reliably leaves no message behind,
+   * so the signal is what the failure says.
+   */
+  it("names the signal that killed a run, rather than a null exit code", async () => {
+    const target = join(dir, "a.ditamap");
+    const { spawn } = stub(() => ({
+      code: null,
+      signal: "SIGKILL",
+      stdout: "",
+      stderr: "",
+    }));
+    const run = runDitaOtValidate({
+      targets: [target],
+      cwd: dir,
+      home: await fakeHome(),
+      spawn,
+    });
+    await expect(run).rejects.toBeInstanceOf(LintError);
+    await expect(run).rejects.toThrow(
+      `DITA Open Toolkit failed on ${target}: killed by SIGKILL. ` +
+        `Run it directly on that file to see why.`,
+    );
+  });
+
+  // A run cut short may have written real findings before it died, and the
+  // verdict is the log rather than the exit code. So a killed run whose log
+  // accounts for the ending reports those findings instead of throwing.
+  it("reports the findings a killed run had already written", async () => {
+    const text = await log("broken-conref");
+    const { spawn } = stub((call) =>
+      writeFile(valueOf(call.args, "--logfile"), text).then(() => ({
+        code: null,
+        signal: "SIGTERM",
+        stdout: "",
+        stderr: "",
+      })),
+    );
+    const results = await runDitaOtValidate({
+      targets: [join(dir, "a.ditamap")],
+      cwd: dir,
+      home: await fakeHome(),
+      spawn,
+    });
+    expect(at(results, 0).messages.map((m) => [m.code, m.severity])).toEqual([
+      ["DOTX010E", "error"],
+    ]);
+  });
+
+  // The launcher's own words first. A signal is the fallback for the ending
+  // that leaves none, not a replacement for the ones that do.
+  it("prefers what the launcher said to the signal that ended it", async () => {
+    const target = join(dir, "a.ditamap");
+    const { spawn } = stub(() => ({
+      code: null,
+      signal: "SIGKILL",
+      stdout: "",
+      stderr: "  Java not found  ",
+    }));
+    const run = runDitaOtValidate({
+      targets: [target],
+      cwd: dir,
+      home: await fakeHome(),
+      spawn,
+    });
+    await expect(run).rejects.toThrow(
+      `DITA Open Toolkit failed on ${target}: Java not found. ` +
+        `Run it directly on that file to see why.`,
+    );
+  });
+
   it("is clean when the log is missing and the exit code is zero", async () => {
     const { spawn } = stub(() => ok());
     const results = await runDitaOtValidate({

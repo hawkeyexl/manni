@@ -802,7 +802,27 @@ async function lintWithDitaOt(run: DitaOtRun): Promise<LintFileResult[]> {
 
   // The label the run resolved is what the report says, whatever spelling the
   // absolute path comes back with.
-  const labels = new Map(targets.map((file) => [resolve(cwd, file), file]));
+  /**
+   * One entry per absolute path, first spelling wins.
+   *
+   * **Defensive, not a fix for anything reachable today.** `resolveTargetSet`
+   * normalizes every input to a cwd-relative posix path and holds them in a
+   * `Set`, so two spellings of one file cannot arrive here. Review raised the
+   * collision as a hazard and it is a real one in isolation: built naively the
+   * later label replaces the earlier, `byFile` keeps both, and findings reach
+   * only the survivor while the other reports as a clean pass.
+   *
+   * Kept because this function starts a JVM per target, so being correct on
+   * its own terms rather than on its caller's is worth eight lines. Do not
+   * write a test that claims to prove the collision: it cannot be reached
+   * from `runLint`, and a test that passes either way proves nothing.
+   */
+  const labels = new Map<string, string>();
+  for (const file of targets) {
+    const absolute = resolve(cwd, file);
+    if (!labels.has(absolute)) labels.set(absolute, file);
+  }
+  const unique = [...labels.values()];
   const labelOf = (absolute: string): string => {
     const known = labels.get(absolute);
     if (known !== undefined) return known;
@@ -810,7 +830,7 @@ async function lintWithDitaOt(run: DitaOtRun): Promise<LintFileResult[]> {
     return near === "" ? absolute : near;
   };
 
-  for (const file of targets) {
+  for (const file of unique) {
     // Checked, not skipped: a topic on its own is validated, it just resolves
     // fewer references than the same topic reached through its map. Calling it
     // a skip would say nothing was checked, which is false.
@@ -823,17 +843,17 @@ async function lintWithDitaOt(run: DitaOtRun): Promise<LintFileResult[]> {
 
   // Nothing this tool can read is not a run: starting a JVM per target for an
   // empty list would be work with no answer at the end of it.
-  if (targets.length === 0) return unreadable;
+  if (unique.length === 0) return unreadable;
 
   const results = await run.validate({
-    targets: targets.map((file) => resolve(cwd, file)),
+    targets: [...labels.keys()],
     cwd,
     ...(run.home === undefined ? {} : { home: run.home }),
   });
 
   // Seeded with the targets, so a target DITA-OT had nothing to say about is a
   // result that passed rather than a file missing from the report.
-  const byFile = new Map<string, Finding[]>(targets.map((file) => [file, []]));
+  const byFile = new Map<string, Finding[]>(unique.map((file) => [file, []]));
   const findingsFor = (file: string): Finding[] => {
     let list = byFile.get(file);
     if (list === undefined) {

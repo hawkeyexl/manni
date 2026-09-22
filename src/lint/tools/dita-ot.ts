@@ -33,6 +33,11 @@ import type { StructureToolDescriptor, ToolProbe, ToolProbeContext } from "./ind
 /** What the launcher did. `code` is null when a signal ended it. */
 export interface DitaOtProcessResult {
   code: number | null;
+  /**
+   * The signal that ended it, when one did, and `code` is then null. Optional
+   * because absent means what it says: the run was not killed.
+   */
+  signal?: string | null;
   stdout: string;
   stderr: string;
 }
@@ -147,8 +152,12 @@ export const spawnDitaOt: DitaOtSpawn = (launcher, args, opts) =>
           settle({ code: error.code, stdout, stderr });
           return;
         }
-        if (error.code === undefined && error.signal) {
-          settle({ code: null, stdout, stderr });
+        // Killed by a signal. Node reports the exit code as **null** here, not
+        // as undefined, so testing for undefined never matched and a killed
+        // run rejected as though the launcher had failed to start. The log is
+        // still read: a run cut short may have written findings before it died.
+        if (error.code == null && typeof error.signal === "string") {
+          settle({ code: null, signal: error.signal, stdout, stderr });
           return;
         }
         // A start failure (ENOENT) or an output over the buffer.
@@ -344,7 +353,11 @@ export interface DitaOtRunOptions {
 /** The message a failure to run reports, which is the launcher's own. */
 function failureText(result: DitaOtProcessResult): string {
   const stderr = result.stderr.trim();
-  return stderr === "" ? `exit code ${String(result.code)}` : stderr;
+  if (stderr !== "") return stderr;
+  // "exit code null" says nothing a reader can act on, and a signal is the one
+  // ending that reliably leaves no message behind.
+  if (result.signal != null) return `killed by ${result.signal}`;
+  return `exit code ${String(result.code)}`;
 }
 
 async function readLog(path: string): Promise<DitaOtMessage[] | null> {

@@ -307,6 +307,39 @@ describe("linting with DITA Open Toolkit", () => {
     });
   }
 
+  /**
+   * A validate that records the target set it was handed and answers with one
+   * error against each target. The recording is the point: how many
+   * invocations a set of paths becomes is a fact about the caller, and running
+   * the real `runDitaOtValidate` over a stub spawn would hide it behind a
+   * scratch directory.
+   */
+  function recordingDitaOt(): {
+    validate: NonNullable<LintOptions["runDitaOt"]>;
+    calls: string[][];
+  } {
+    const calls: string[][] = [];
+    const validate: NonNullable<LintOptions["runDitaOt"]> = (opts) => {
+      calls.push([...opts.targets]);
+      return Promise.resolve(
+        opts.targets.map((target) => ({
+          target,
+          messages: [
+            {
+              code: "DOTX010E",
+              severity: "error" as const,
+              message: "Could not retrieve the conref target.",
+              file: target,
+              line: 11,
+              column: 7,
+            },
+          ],
+        })),
+      );
+    };
+    return { validate, calls };
+  }
+
   it("reports a target with no findings as a pass", async () => {
     await file("docs.ditamap", "<map/>\n");
     const run = await runLint({
@@ -451,6 +484,62 @@ describe("linting with DITA Open Toolkit", () => {
       runDitaOt: ditaOt([]),
     });
     expect(notices).toEqual([]);
+  });
+
+  /**
+   * Two spellings of one map are one map, end to end.
+   *
+   * The answer has to be one invocation and one result. Two results would be
+   * worse than wasteful: only one of them can receive the findings, so the
+   * other reports the same file as a clean pass.
+   *
+   * Where that is settled is worth knowing. `resolveTargetSet` already
+   * normalizes every input to one cwd-relative posix path and keeps them in a
+   * set, so the spellings collapse before the dita-ot branch sees them, and
+   * `lintWithDitaOt`'s own deduplication is a second belt on the same
+   * trousers. This pins the guarantee rather than either mechanism, so it
+   * holds whichever of the two is doing the work.
+   */
+  it("checks a map named twice under two spellings once", async () => {
+    const map = await file("docs.ditamap", "<map/>\n");
+    const { validate, calls } = recordingDitaOt();
+    const run = await runLint({
+      inputs: [map, `./${basename(map)}`],
+      cwd: dir,
+      noConfig: true,
+      tool: "dita-ot",
+      runDitaOt: validate,
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(at(calls, 0)).toHaveLength(1);
+    // One entry, and it is the failing one. Before the dedupe the second
+    // spelling seeded a result of its own that no finding ever reached.
+    expect(run.results).toHaveLength(1);
+    expect(at(run.results, 0).success).toBe(false);
+    expect(run.summary).toMatchObject({ checked: 1, passed: 0, failed: 1 });
+  });
+
+  // The other half of the same rule: collapsing is by path, so two maps that
+  // are genuinely two maps are still both handed over.
+  it("checks two different maps as two targets", async () => {
+    const first = await file("first.ditamap", "<map/>\n");
+    const second = await file("second.ditamap", "<map/>\n");
+    const { validate, calls } = recordingDitaOt();
+    const run = await runLint({
+      inputs: [first, second],
+      cwd: dir,
+      noConfig: true,
+      tool: "dita-ot",
+      runDitaOt: validate,
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(at(calls, 0)).toHaveLength(2);
+    expect(run.results.map((r) => r.file).sort()).toEqual([
+      "first.ditamap",
+      "second.ditamap",
+    ]);
   });
 
   // The walk set is the descriptor's, so a directory collects maps alone.
