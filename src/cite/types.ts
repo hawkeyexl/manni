@@ -609,6 +609,11 @@ export interface UpdateOptions extends Omit<CheckOptions, "baseline" | "writeBas
   accept?: boolean;
   only?: string[];
   dryRun?: boolean;
+  /**
+   * Re-record `commit-sha` where the recorded commit does not contain the
+   * pinned lines. Rewrites that one field and nothing else.
+   */
+  recommit?: boolean;
 }
 
 /**
@@ -630,7 +635,7 @@ export interface UpdateRewrite {
    * and the words held while the anchor moved (0053). `status` is what tells
    * those apart. `replaced` is a claim `--accept` refused to re-pin.
    */
-  reason: "moved" | "accepted" | "re-anchored" | "shifted" | "replaced";
+  reason: "moved" | "accepted" | "re-anchored" | "shifted" | "replaced" | "recommitted";
   /**
    * The status that was repaired. `replaced` is a claim whose line held
    * wholly other text, accepted because `--only` named it.
@@ -649,6 +654,9 @@ export interface UpdateRewrite {
   /** An accepted or re-anchored end: its pin, before and after. */
   fromPin?: string;
   toPin?: string;
+  /** A re-committed source: the commit it recorded, and the one it records now. */
+  fromCommit?: string;
+  toCommit?: string;
   /** A re-anchored claim: the span that held, in file lines. */
   lines?: string;
   /** A re-anchored claim: the span now pinned, in file lines. */

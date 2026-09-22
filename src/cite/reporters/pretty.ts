@@ -489,6 +489,13 @@ export function rewriteLine(rewrite: UpdateRewrite): string {
   if (rewrite.end === "marker") {
     return `marker line ${rewrite.from} -> ${rewrite.to} (misplaced)`;
   }
+  // The pin held; only its date was wrong. The row names both commits, so the
+  // log says what the entry claimed before it was corrected.
+  if (rewrite.reason === "recommitted") {
+    const from = shortCommit(rewrite.fromCommit ?? "");
+    const to = shortCommit(rewrite.toCommit ?? "");
+    return `source ${shortSrc(rewrite.src ?? "")} commit ${from} -> ${to} (did not contain the pinned lines)`;
+  }
   if (rewrite.reason === "shifted") {
     return `claim ${word} ${rewrite.from} -> ${rewrite.to} (shifted by a marker)`;
   }
