@@ -178,6 +178,23 @@ describe.skipIf(!gitAvailable())("cite update --recommit", () => {
     expect(readFileSync(page, "utf8")).toContain(`commit-sha: ${first}`);
   });
 
+  it("repairs only the entry --only names", async () => {
+    const { first, second, pin } = repoWithUnsupportedCommit();
+    // Both spans cover the rewritten line 2, so neither holds at `first`.
+    const page = writePage(repo, [
+      { lines: 2, integrity: pin, commit: first },
+      { lines: "1-3", integrity: hashRange(readFileSync(join(repo, "src", "limits.ts"), "utf8"), { start: 1, end: 3 }), commit: first },
+    ]);
+
+    const run = await update(repo, { only: ["pin-1"] });
+
+    expect(run).toMatchObject({ rewritten: 1, exitCode: 0 });
+    const after = readFileSync(page, "utf8");
+    // The named entry moved on; the other kept the commit it could not support.
+    expect(after).toContain(`commit-sha: ${second}`);
+    expect(after).toContain(`commit-sha: ${first}`);
+  });
+
   it("refuses without git, since nothing can be verified", async () => {
     repo = makeTempRepo({ files: { "src/limits.ts": LIMITS } });
     commitAll(repo, "add limits");

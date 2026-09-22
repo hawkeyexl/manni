@@ -895,6 +895,9 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     if (was.kind !== "never-true") return undefined;
     const head = await git.head();
     if (head === null || head === recorded) return undefined;
+    // `original` means HEAD holds the pinned bytes, at the recorded lines or
+    // anywhere else in the file. That is the same reading as question one, so
+    // the two answers are comparable.
     const now = await historyOf(git, head, path, range, pin, key, undefined);
     return now.kind === "original" ? head : undefined;
   };
