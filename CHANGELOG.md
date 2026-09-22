@@ -4,6 +4,19 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [2.10.0-cite-marker-ids.1](https://github.com/hawkeyexl/manni/compare/v2.9.0...v2.10.0-cite-marker-ids.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* **cite:** report a marker mix only where the marker anchored both ends ([f93568c](https://github.com/hawkeyexl/manni/commit/f93568c6b8b3d1b88a1785ee0abdfb928c59c3b9))
+* **cite:** respell a marker before anything moves the bytes under it ([eb15cad](https://github.com/hawkeyexl/manni/commit/eb15cadce6cb0ca7fc3158070cb706f76e585f5b))
+
+
+### Features
+
+* **cite:** name several ids in one marker ([d742c54](https://github.com/hawkeyexl/manni/commit/d742c542b4ec44150cd0c5c61108ffbcb5918d16))
+
 # [2.9.0](https://github.com/hawkeyexl/manni/compare/v2.8.5...v2.9.0) (2026-09-22)
 
 
