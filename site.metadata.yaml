@@ -29824,7 +29824,7 @@ docs/src/content/docs/meta/reference/action.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: action-major-tag-moves-on-each-release
       claim:
-        integrity: sha256-726be321098128186bebf255d95de424fc5b53feef1d18e93018e2cda29391c3
+        integrity: sha256-6c2705620736a926cad27bb6b5eaa3e8106b9fbcab91c0fb41f0e6af1aa3af2b
       source:
         file: .github/workflows/release.yml
         lines: 272-277
