@@ -11904,9 +11904,9 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-8c1178f2ebfa2d3b86c9fcb940041b4781eacc3057b955076cd2562560387f13
       source:
         file: src/term/core/vale.ts
-        lines: 162
+        lines: 177
         integrity: sha256-113c628c540865488a4235a1bf16e7a9e9920822d6b3342ea72c80b449bf307c
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 1b24bdec37ae54ce6a25aa78d3ceb362fd4a47bc
     - id: exit-two-bad-config-key
       claim:
         lines: 22
@@ -12633,9 +12633,9 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-49f5c3e2caed088b1b658d2bb8accfbb052014144d095c36553022500a9a9cb7
       source:
         file: src/term/core/vale.ts
-        lines: 162
+        lines: 177
         integrity: sha256-113c628c540865488a4235a1bf16e7a9e9920822d6b3342ea72c80b449bf307c
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 1b24bdec37ae54ce6a25aa78d3ceb362fd4a47bc
     - id: exit-two-bad-config-key
       claim:
         lines: 389
@@ -13549,9 +13549,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-1135f452eb2e76d9ffff534abdb63d9747e9167228f4894273d715f42ddc4279
       source:
         file: src/term/core/vale.ts
-        lines: 162-165
+        lines: 177-180
         integrity: sha256-dd349caa0b952d0b881e8e8addc96081e664ec42aee3841e8960bd52f8085ef9
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 1b24bdec37ae54ce6a25aa78d3ceb362fd4a47bc
     - id: write-only-differing-files
       claim:
         integrity: sha256-20c3b6aadefba2c15ec95192bc533bacab7255e091ad470cea045b92c65e6e9a
@@ -13661,9 +13661,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-9c2d4c5b9368c6211ba2de0f5155b2c9632da1620cd18735a96beff045529226
       source:
         file: src/term/core/vale.ts
-        lines: 205-212
+        lines: 220-227
         integrity: sha256-a4e32e606ba76ab14437074f918eb275fb381fe40e2fa26f2933ad448ec6833c
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 1b24bdec37ae54ce6a25aa78d3ceb362fd4a47bc
     - id: write-render-summary
       claim:
         integrity: sha256-c83eaac1c4eadbb247aa2a79f8fdec9705965fb352d6d4201657340057e7990e
@@ -13907,9 +13907,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-3039aa62db5036dc94d843799328c705bb6d3a53d732730a7bf8f030cd7b3236
       source:
         file: src/term/core/vale.ts
-        lines: 190-195
+        lines: 205-210
         integrity: sha256-fbf78065c456393d6f905da23e4367a2ea15fcbce3e2b8ecb54d9cd1373aeeb2
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 1b24bdec37ae54ce6a25aa78d3ceb362fd4a47bc
     - id: err-write-vale-no-config
       claim:
         lines: 649
@@ -13952,9 +13952,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-7a8ec79614c2e7616dedbc045bae999f92b02b6a7109019cecd1fbabee3becac
       source:
         file: src/term/core/vale.ts
-        lines: 162
+        lines: 177
         integrity: sha256-113c628c540865488a4235a1bf16e7a9e9920822d6b3342ea72c80b449bf307c
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 1b24bdec37ae54ce6a25aa78d3ceb362fd4a47bc
     - id: manifests-read
       claim:
         lines: 50-52
@@ -15341,9 +15341,9 @@ docs/src/content/docs/term/set-up/index.mdx:
         integrity: sha256-e91a0583dc7ea721f478d2e8f626e6b30dae356826ae8da31a33e3ad0867b30e
       source:
         file: src/term/core/vale.ts
-        lines: 205-211
+        lines: 220-226
         integrity: sha256-aa66f6d61ccebfcc41b2ccc80132fadddad331175f37f2abff47df2a095b5d40
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 1b24bdec37ae54ce6a25aa78d3ceb362fd4a47bc
     - id: tools-top-level-key
       claim:
         lines: 33-35
@@ -15693,9 +15693,9 @@ docs/src/content/docs/term/set-up/index.mdx:
         integrity: sha256-e976180b0f599e944902b35a6a05ecd50c1e262078f647dd1a6c285d0f4888de
       source:
         file: src/term/core/vale.ts
-        lines: 53-58
+        lines: 58-63
         integrity: sha256-480607dfc6be439ee6ca7cd4691a173839fad792fabbb81759b7f6054ea87341
-        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+        commit-sha: 1b24bdec37ae54ce6a25aa78d3ceb362fd4a47bc
     - id: write-o-runs-without-vale
       claim:
         lines: 18-19
