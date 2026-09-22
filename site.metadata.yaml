@@ -24439,9 +24439,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-6db4d5d084e63d6301555a29399627c768a89ea90219446ce59f29e70f534908
       source:
         file: CHANGELOG.md
-        lines: 650-653
+        lines: 657-660
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: 6cfa800d1e4e15e34ccdab3e6abf02e49bf94fdd
+        commit-sha: 892e2a58b5c86f3c18e61f76ec5b9871632450bf
     - id: collection-flag-refuses-positional-paths
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
@@ -25223,9 +25223,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-b434cb91645fc3c84066f41be4d26f16a21838ce807764daf2b443931b3738bd
       source:
         file: CHANGELOG.md
-        lines: 650-653
+        lines: 657-660
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: 6cfa800d1e4e15e34ccdab3e6abf02e49bf94fdd
+        commit-sha: 892e2a58b5c86f3c18e61f76ec5b9871632450bf
     - id: collection-exclude-removes-from-paths
       claim:
         lines: 137
