@@ -107,7 +107,9 @@ the operator never named.
 The grammar, the reading rules, the stray and copied-manifest checks, the
 reporter and SARIF behaviour, and the baseline all stand as 0058 states them.
 No command gains an option. A `file` without the placeholder behaves exactly as
-before, and every test that existed before the change passes unedited.
+before. Every test that existed before still passes, and no assertion changed.
+The only edits to those tests add the `perPage` field that two hand-built
+manifests now need, and widen one import.
 
 ## Consequences
 
