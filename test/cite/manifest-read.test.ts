@@ -51,7 +51,7 @@ beforeEach(() => {
   mkdirSync(join(root, "pages"), { recursive: true });
   writeFileSync(path, ORIGINAL);
   utimesSync(path, WHEN, WHEN);
-  manifest = { collection: "site", path, file: "meta.yaml", join: "path" };
+  manifest = { collection: "site", path, file: "meta.yaml", join: "path", perPage: false };
   collections = [
     {
       name: "site",

@@ -74,6 +74,12 @@ export interface CitationManifest {
   file: string;
   /** `path`, or the page field the manifest joins on. */
   join: string;
+  /**
+   * The declared `file` holds `{page}` (proposal 0058), so each page has a
+   * manifest of its own, and one that does not exist yet reads as empty and
+   * is created by the first write.
+   */
+  perPage: boolean;
 }
 
 /** Where one page's citations are kept, and what the manifest already holds. */
@@ -185,6 +191,7 @@ export async function loadCitationSidecars(
         path,
         file: reportedPath(path, opts.base),
         join: externalMetadataJoin(manifest),
+        perPage: hasPagePlaceholder(manifest.file),
       });
       const pushed = manifests[manifests.length - 1];
       if (pushed !== undefined && hasPagePlaceholder(manifest.file)) patterns.set(pushed, manifest.file);

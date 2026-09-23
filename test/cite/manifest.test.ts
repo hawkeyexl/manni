@@ -25,7 +25,7 @@ beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), "cite-manifest-"));
   path = join(dir, "site.metadata.yaml");
   await writeFile(path, MANIFEST, "utf8");
-  owner = { collection: "docs", path, file: "site.metadata.yaml", join: "path" };
+  owner = { collection: "docs", path, file: "site.metadata.yaml", join: "path", perPage: false };
 });
 
 afterEach(async () => {
@@ -177,5 +177,53 @@ describe("ManifestSet.commit", () => {
     const text = await readFile(path, "utf8");
     expect(text).not.toContain("aaaaaa");
     expect(text).toContain("bbbbbb");
+  });
+});
+
+describe("ManifestSet: a per-page manifest that does not exist yet (proposal 0058)", () => {
+  let pagePath: string;
+  let pageOwner: CitationManifest;
+  beforeEach(() => {
+    pagePath = join(dir, "meta", "docs", "a.citations.yaml");
+    pageOwner = {
+      collection: "docs",
+      path: pagePath,
+      file: "meta/docs/a.citations.yaml",
+      join: "path",
+      perPage: true,
+    };
+  });
+
+  it("holds it as empty text, and creates it, with its directory, at commit", async () => {
+    const set = new ManifestSet();
+    const held = await set.hold(pageOwner);
+    expect(held.before).toBe("");
+    expect(held.absent).toBe(true);
+    await set.write(pageOwner, "docs/a.md", [citation("aaaaaa")], 0);
+    const [landed] = await set.commit();
+    expect(landed?.file).toBe("meta/docs/a.citations.yaml");
+    expect(await readFile(pagePath, "utf8")).toContain("aaaaaa");
+  });
+
+  it("keeps both entries when two runs create the same new manifest at once", async () => {
+    const first = new ManifestSet();
+    const second = new ManifestSet();
+    // Both hold the file before either has written it, so both hold it absent.
+    await first.write(pageOwner, "docs/a.md", [citation("aaaaaa")], 0);
+    await second.write(pageOwner, "docs/b.md", [citation("bbbbbb")], 0);
+
+    await first.commit();
+    await second.commit();
+
+    const text = await readFile(pagePath, "utf8");
+    expect(text).toContain("aaaaaa");
+    expect(text).toContain("bbbbbb");
+  });
+
+  it("still refuses a concrete manifest that is missing", async () => {
+    await rm(path);
+    await expect(new ManifestSet().hold(owner)).rejects.toThrow(
+      /^Manifest site\.metadata\.yaml could not be read: ENOENT/,
+    );
   });
 });

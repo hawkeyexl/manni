@@ -800,11 +800,11 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   /** A field written into a manifest, whose line the report names once the manifest is settled. */
   const lineRequests: { field: DerivedField; absPath: string; entry: string; join: string }[] = [];
   const holdManifest = async (
-    manifest: Pick<ProvenanceManifest, "absPath" | "file">,
+    manifest: Pick<ProvenanceManifest, "absPath" | "file" | "perPage">,
   ): Promise<MetaHeldManifest> => {
     const already = heldManifests.get(manifest.absPath);
     if (already !== undefined) return already;
-    const held = await holdManifestFile(manifest.absPath, manifest.file);
+    const held = await holdManifestFile(manifest.absPath, manifest.file, manifest.perPage);
     heldManifests.set(manifest.absPath, held);
     return held;
   };
@@ -935,7 +935,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       // on that key, so another command writing the key is no conflict.
       const stagedOps: { held: MetaHeldManifest; op: MetaManifestOp }[] = [];
       const stage = async (
-        manifest: Pick<ProvenanceManifest, "absPath" | "file">,
+        manifest: Pick<ProvenanceManifest, "absPath" | "file" | "perPage">,
         op: MetaManifestOp,
       ): Promise<boolean> => {
         const held = await holdManifest(manifest);

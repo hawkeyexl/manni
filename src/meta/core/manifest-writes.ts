@@ -16,6 +16,7 @@ import { DocmetaError } from "../types.js";
 import { errorMessage } from "../../shared/errors.js";
 import {
   heldManifest,
+  isMissing,
   rebaseable,
   rebaseline,
   settle,
@@ -58,15 +59,22 @@ export function applyManifestOp(text: string, op: MetaManifestOp): string {
   return manifestCodec.apply(text, op);
 }
 
-/** Read a manifest, ready to be spliced and later settled. */
+/**
+ * Read a manifest, ready to be spliced and later settled. A `perPage`
+ * manifest (proposal 0058) that does not exist yet is a page with nothing
+ * kept there: it is held as empty text marked absent, and the settle creates
+ * it. A missing concrete manifest is refused, as it always was.
+ */
 export async function holdManifestFile(
   path: string,
   file: string,
+  perPage = false,
 ): Promise<MetaHeldManifest> {
   let before: string;
   try {
     before = await readFile(path, "utf8");
   } catch (err) {
+    if (perPage && isMissing(err)) return heldManifest<MetaManifestOp>(path, file, "", true);
     throw new DocmetaError(`Manifest ${file} could not be read: ${errorMessage(err)}`);
   }
   return heldManifest<MetaManifestOp>(path, file, before);
@@ -99,7 +107,8 @@ export async function settleManifest(
   if (held.text === held.before) return false;
   await settle(held, {
     codec: manifestCodec,
-    write: io.write ?? writeFileAtomic,
+    // A per-page manifest (proposal 0058) may be the first file in its directory.
+    write: io.write ?? ((at: string, text: string) => writeFileAtomic(at, text, { createParents: true })),
     read: io.read ?? ((at: string): Promise<string> => readFile(at, "utf8")),
     toError: (message) => new DocmetaError(message),
   });

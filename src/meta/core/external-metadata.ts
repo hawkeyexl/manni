@@ -560,8 +560,12 @@ async function sameFile(a: string, b: string): Promise<boolean> {
   }
 }
 
-/** The refusal for a page a `{page}` entry would resolve above the config directory. */
-function outsideRefusal(
+/**
+ * The refusal for a page a `{page}` entry would resolve above the config
+ * directory. Exported for the writers that resolve a page's manifest
+ * themselves (`relocate`, `fill`, `derive`, `query`).
+ */
+export function outsideRefusal(
   manifest: ExternalMetadataConfig,
   collection: string,
   pageRel: string,

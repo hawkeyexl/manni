@@ -5,8 +5,9 @@
  * `test/fixtures/per-page/cite` declares `file: "{page}.citations.yaml"`, so
  * `docs/limits.md` keeps its citations in `docs/limits.citations.yaml` and
  * `docs/timeout.md` in `docs/timeout.citations.yaml`. `docs/uncited.md` has
- * no manifest at all. Every manifest here already exists: creating one is the
- * writer's business, tested with the writers.
+ * no manifest at all. The writers' own suites test creating a manifest; the
+ * one case here is the seam, `add` on `uncited.md` bringing its file into
+ * being through `forPage` and the writer together.
  *
  * `cite-stray` adds a manifest whose page is gone, which a full run refuses
  * and a one-page run never walks to. `cite-conflict` is two collections
@@ -136,6 +137,37 @@ describe("cite reads each page's own manifest", () => {
 });
 
 describe("cite writes each page's own manifest", () => {
+  // The seam between resolving a page's file and creating one. Neither half
+  // can prove it alone: `forPage` names the file, and the writer's absent
+  // state is what lets it come into being on the first citation.
+  it("add creates the manifest of a page that had none", async () => {
+    const cwd = copyOf();
+    expect(filesUnder(cwd)).not.toContain("docs/uncited.citations.yaml");
+    const result = await runAdd({
+      cwd,
+      page: "docs/uncited.md",
+      pageLines: { start: 6, end: 6 },
+      src: "src/limits.ts:2",
+      id: "first-citation",
+      commitSha: false,
+      gitClient: noGit(),
+      env: {},
+    });
+    expect(result.placed).toBe("manifest");
+    expect(result.manifest?.file).toBe("docs/uncited.citations.yaml");
+    const created = manifestOf(cwd, "docs/uncited.citations.yaml");
+    expect(Object.keys(created)).toEqual(["docs/uncited.md"]);
+    expect(created["docs/uncited.md"]?.citations).toHaveLength(1);
+    // The page itself stays prose: the citation went to the new file.
+    expect(read(cwd, "docs/uncited.md")).not.toContain("citations");
+    // And a full check reads it back from there, cleanly.
+    const run = await check(cwd);
+    expect(pageOf(run, "docs/uncited.md").citations[0]?.origin.file).toBe(
+      "docs/uncited.citations.yaml",
+    );
+    expect(run.summary.failed).toBe(0);
+  });
+
   it("add appends to the page's manifest, and to no other file", async () => {
     const cwd = copyOf();
     const timeout = read(cwd, "docs/timeout.citations.yaml");

@@ -31,6 +31,7 @@ import {
 } from "../../meta/internal.js";
 import {
   heldManifest,
+  isMissing,
   rebaseable,
   settle,
   type CommitIo as CasCommitIo,
@@ -78,13 +79,21 @@ export class ManifestSet {
     const already = this.held.get(manifest.path);
     if (already !== undefined) return already;
     let before: string;
+    let absent = false;
     try {
       before = await readFile(manifest.path, "utf8");
     } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error);
-      throw new CiteError(`Manifest ${manifest.file} could not be read: ${reason}`);
+      // A per-page manifest (proposal 0058) that does not exist yet is a page
+      // with nothing cited: held as empty text marked absent, and created by
+      // the commit. A missing concrete manifest is refused, as it always was.
+      if (!manifest.perPage || !isMissing(error)) {
+        const reason = error instanceof Error ? error.message : String(error);
+        throw new CiteError(`Manifest ${manifest.file} could not be read: ${reason}`);
+      }
+      before = "";
+      absent = true;
     }
-    const fresh = heldManifest<ManifestOp>(manifest.path, manifest.file, before);
+    const fresh = heldManifest<ManifestOp>(manifest.path, manifest.file, before, absent);
     this.held.set(manifest.path, fresh);
     return fresh;
   }
@@ -168,7 +177,9 @@ export class ManifestSet {
    * that may be seconds old.
    */
   async commit(io: CommitIo = {}): Promise<ManifestChange[]> {
-    const write = io.write ?? writeFileAtomic;
+    // A per-page manifest (proposal 0058) may be the first file in its directory.
+    const write =
+      io.write ?? ((at: string, text: string): Promise<void> => writeFileAtomic(at, text, { createParents: true }));
     const read = io.read ?? ((at: string): Promise<string> => readFile(at, "utf8"));
     const landed: ManifestChange[] = [];
     for (const held of this.held.values()) {

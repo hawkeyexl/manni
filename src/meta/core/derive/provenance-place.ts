@@ -12,21 +12,30 @@
  */
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import type { CollectionConfig } from "../../../shared/collections.js";
+import { hasPagePlaceholder, pageManifestPath } from "../../../shared/page-manifest.js";
 import { DocmetaError } from "../../types.js";
 import { memberOf } from "../collections.js";
-import { externalMetadataJoin, PATH_JOIN } from "../external-metadata.js";
+import { externalMetadataJoin, outsideRefusal, PATH_JOIN } from "../external-metadata.js";
 import { classifyRef } from "../schema-registry.js";
 import { PROVENANCE_FIELD, type ProvenanceManifestRef } from "./types.js";
 
 /** A manifest that owns `provenance` for one collection. */
 export interface ProvenanceManifest {
   collection: string;
-  /** The manifest file, absolute. */
+  /**
+   * The manifest file, absolute. For a `{page}` manifest (proposal 0058) as
+   * `provenanceManifests` lists it, the pattern resolved as a path; a place
+   * carries the page's own file.
+   */
   absPath: string;
-  /** The manifest as the run reports it: relative to the run's base, posix. */
+  /** The manifest as the run reports it: relative to the run's base, posix. The pattern as written, for a `{page}` manifest before placing. */
   file: string;
   /** `path`, or the page field the manifest joins on. */
   join: string;
+  /** `file:` holds `{page}`, so each page keeps its record in a manifest of its own. */
+  perPage: boolean;
+  /** `file:` as the config writes it, which a `{page}` manifest resolves per page. */
+  written: string;
 }
 
 /** One page's record in a manifest. */
@@ -55,12 +64,14 @@ export function provenanceManifests(
         );
       }
       const absPath = isAbsolute(manifest.file) ? manifest.file : resolve(configDir, manifest.file);
-      const rel = relative(base, absPath);
+      const perPage = hasPagePlaceholder(manifest.file);
       out.push({
         collection: collection.name,
         absPath,
-        file: rel === "" ? "." : toPosix(rel),
+        file: perPage ? manifest.file : reported(absPath, base),
         join: externalMetadataJoin(manifest),
+        perPage,
+        written: manifest.file,
       });
     }
   }
@@ -85,13 +96,14 @@ export function provenancePlace(
   if (manifests.length === 0) return undefined;
   const members = new Set(memberOf(collections, configDir, base, label));
   const owning = manifests.filter((m) => members.has(m.collection));
-  const [manifest, second] = owning;
-  if (manifest === undefined) return undefined;
+  const [declared, second] = owning;
+  if (declared === undefined) return undefined;
   if (second !== undefined) {
     throw new DocmetaError(
-      `${label} is in collections ${manifest.collection} and ${second.collection}, and both keep ${PROVENANCE_FIELD} in a manifest.`,
+      `${label} is in collections ${declared.collection} and ${second.collection}, and both keep ${PROVENANCE_FIELD} in a manifest.`,
     );
   }
+  const manifest = declared.perPage ? ownManifest(declared, label, collections, configDir, base) : declared;
   if (manifest.join === PATH_JOIN) {
     const entry = toPosix(relative(configDir, resolve(base, label)));
     return { manifest, absPath: manifest.absPath, entry, join: manifest.join };
@@ -103,6 +115,36 @@ export function provenancePlace(
     );
   }
   return { manifest, absPath: manifest.absPath, entry: String(value), join: manifest.join };
+}
+
+/**
+ * A `{page}` manifest (proposal 0058) as one page keeps its record: the
+ * page's own file. A page above the config directory cannot have one, which
+ * the loader refuses first whenever the run names the page.
+ */
+function ownManifest(
+  manifest: ProvenanceManifest,
+  label: string,
+  collections: readonly CollectionConfig[],
+  configDir: string,
+  base: string,
+): ProvenanceManifest {
+  const resolved = pageManifestPath(manifest.written, configDir, resolve(base, label));
+  if ("outside" in resolved) {
+    const declared = collections
+      .find((c) => c.name === manifest.collection)
+      ?.externalMetadata.find((m) => m.file === manifest.written);
+    throw new DocmetaError(
+      outsideRefusal(declared ?? { file: manifest.written, keys: [] }, manifest.collection, resolved.pageRel),
+    );
+  }
+  return { ...manifest, absPath: resolved.abs, file: reported(resolved.abs, base) };
+}
+
+/** How a run spells a manifest: relative to its base, posix. */
+function reported(abs: string, base: string): string {
+  const rel = relative(base, abs);
+  return rel === "" ? "." : toPosix(rel);
 }
 
 /**

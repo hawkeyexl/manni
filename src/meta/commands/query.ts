@@ -2998,7 +2998,13 @@ interface ManifestWrite {
   /** As the run reports it. */
   display: string;
   text: string;
-  expected: string;
+  /** The text phase one read, or null for a `{page}` manifest that did not exist (proposal 0058). */
+  expected: string | null;
+}
+
+/** A read that failed because nothing is there. */
+function isMissing(err: unknown): boolean {
+  return typeof err === "object" && err !== null && "code" in err && err.code === "ENOENT";
 }
 
 /**
@@ -3131,12 +3137,21 @@ async function planManifestEdits(
     let write = texts.get(home.absPath);
     if (write === undefined) {
       let text: string;
+      let expected: string | null;
       try {
         text = await readFile(home.absPath, "utf8");
+        expected = text;
       } catch (err) {
-        throw new DocmetaError(`Manifest ${home.file} could not be read: ${errorMessage(err)}`);
+        // A `{page}` manifest (proposal 0058) that does not exist yet reads
+        // as empty and is created. `expected: null` records the absence, so
+        // phase two refuses if the file appeared since.
+        if (!home.perPage || !isMissing(err)) {
+          throw new DocmetaError(`Manifest ${home.file} could not be read: ${errorMessage(err)}`);
+        }
+        text = "";
+        expected = null;
       }
-      write = { path: home.absPath, display: home.file, text, expected: text };
+      write = { path: home.absPath, display: home.file, text, expected };
       texts.set(home.absPath, write);
     }
     write.text = change(write.text);
@@ -3247,6 +3262,13 @@ async function planManifestEdits(
             `"${c.file}": manifest ${home.file} names it, which is fetched and cannot be written; rename the entry in that repository.`,
           );
         }
+        // A `{page}` manifest (proposal 0058) is named after the page's path,
+        // so the entry cannot follow the page into a file of the new name.
+        if (home.kind === "manifest" && home.perPage) {
+          throw new DocmetaError(
+            `${c.file} cannot move to ${c.renamed}, because its "${key}" lives in ${home.file}, a {page} manifest named after the page's path. Move the page and its manifest together, then rename the entry's key.`,
+          );
+        }
         if (home.kind !== "manifest" || home.join !== PATH_JOIN || home.entry === undefined) continue;
         const moved = await keyHome(loc, c.renamed, own, key);
         if (moved.kind !== "manifest" || moved.absPath !== home.absPath || moved.entry === undefined) {
@@ -3314,7 +3336,8 @@ async function planManifestEdits(
     }
     pageRoutes.set(c, ops);
   }
-  return [...texts.values()].filter((w) => w.text !== w.expected);
+  // A manifest that does not exist yet is written only when it gains text.
+  return [...texts.values()].filter((w) => w.text !== (w.expected ?? ""));
 }
 
 /** One key a statement writes to a page that its schema prefers in external metadata, with no manifest. */
@@ -3806,11 +3829,13 @@ async function applyChanges(
   }
   // The same re-check for every manifest the statement edits (0047).
   for (const m of manifestWrites) {
-    let now: string | undefined;
+    // Null for a file that is not there, which is what a `{page}` manifest
+    // phase one found missing expects (proposal 0058).
+    let now: string | null;
     try {
       now = await readFile(m.path, "utf8");
     } catch {
-      now = undefined;
+      now = null;
     }
     if (now !== m.expected) {
       throw new DocmetaError(
@@ -3826,6 +3851,10 @@ async function applyChanges(
   for (const r of pendingRenames) dirs.add(dirname(r.to));
   for (const p of pendingWrites) {
     if (p.ensureDir) dirs.add(dirname(p.path));
+  }
+  // A `{page}` manifest that did not exist may be the first file in its directory (0058).
+  for (const m of manifestWrites) {
+    if (m.expected === null) dirs.add(dirname(m.path));
   }
   for (const d of dirs) await mkdir(d, { recursive: true });
 
