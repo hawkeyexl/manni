@@ -497,6 +497,8 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       configDir: configDir ?? cwd,
       base,
       offline: opts.offline ?? config?.offline ?? false,
+      // A `{page}` manifest (0058) is read for exactly the pages this run fills.
+      pages: files.map((file) => resolve(base, file)),
     });
   /** The declared collections one label belongs to, for the merge. */
   const mergeMembersFor = (label: string): string[] =>

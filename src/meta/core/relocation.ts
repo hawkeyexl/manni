@@ -49,6 +49,7 @@ import {
 } from "../../shared/collections.js";
 import { FAMILY_CONFIG_NAMES, MOOSE_CONFIG_NAMES, type ConfigFile } from "../../shared/config-file.js";
 import { findGitRoot } from "../../shared/git-root.js";
+import { hasPagePlaceholder } from "../../shared/page-manifest.js";
 import { errorMessage } from "../../shared/errors.js";
 import { decryptValue, isEncryptedValue } from "../../shared/encryption.js";
 import { DocmetaError, type MetadataExtractor, type MetadataPatch } from "../types.js";
@@ -712,6 +713,37 @@ export interface RelocationPlan {
 }
 
 /**
+ * The pages a `{page}` manifest (proposal 0058) is read for: the run's own,
+ * and every member of a collection that declares one. A `keys:` change
+ * reaches every member page, so a narrowed run still has to know what each
+ * member's manifest holds. With no placeholder declared, nothing is walked.
+ */
+async function relocationPages(
+  ctx: RelocationContext,
+  request: RelocationRequest,
+): Promise<string[]> {
+  const pages = new Set(request.files.map((label) => resolve(ctx.base, label)));
+  const root = ctx.configDir ?? ctx.cwd;
+  for (const collection of ctx.declaredCollections) {
+    const perPage = collection.externalMetadata.some(
+      (m) => classifyRef(m.file).kind !== "url" && hasPagePlaceholder(m.file),
+    );
+    if (!perPage) continue;
+    const walked = await resolveTargetSet({
+      inputs: [...collection.paths],
+      cwd: root,
+      allowEmpty: true,
+      ...gitignoreOptions({
+        ...(ctx.respectGitignore !== undefined ? { flag: ctx.respectGitignore } : {}),
+        ...(ctx.config?.respectGitignore !== undefined ? { configured: ctx.config.respectGitignore } : {}),
+      }),
+    });
+    for (const file of walked.files) pages.add(resolve(root, file));
+  }
+  return [...pages];
+}
+
+/**
  * Plan every move for `request.files` and the member pages a `keys:` change
  * reaches, with every new file text computed and read back. Writes nothing.
  *
@@ -731,6 +763,7 @@ export async function planRelocation(
     configDir: ctx.configDir ?? ctx.cwd,
     base: ctx.base,
     offline: ctx.config?.offline ?? false,
+    pages: await relocationPages(ctx, request),
   });
   const trustRoot = schemaTrustRoot(ctx.cwd, ctx.configDir);
   const forced = ctx.as !== undefined ? extractorByName(ctx.as) : undefined;

@@ -224,7 +224,8 @@ export async function prepareRun(
   // The sidecar manifests, read once per run. Membership is every declared
   // collection's, whatever this run selected, so a page given by path still
   // finds the manifest that owns its citations.
-  const sidecars = await sidecarsFor(run);
+  // A `{page}` manifest (0058) is read for exactly the pages this run checks.
+  const sidecars = await sidecarsFor(run, { pages: files.map((file) => resolve(base, file)) });
   const setupFor = (label: string, content: string): PageSetup => {
     const page = sidecars?.forPage(label, content, forced?.name);
     if (page?.owner === undefined) return { options: pageOptions };

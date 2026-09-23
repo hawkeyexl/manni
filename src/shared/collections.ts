@@ -18,6 +18,12 @@
  */
 import picomatch from "picomatch";
 import { matchesFileGlob } from "./globs.js";
+import { posix, win32 } from "node:path";
+import {
+  PAGE_PLACEHOLDER,
+  hasPagePlaceholder,
+  normalizeManifestPattern,
+} from "./page-manifest.js";
 
 /** One external-metadata manifest (proposals 0037, 0038, 0039) joined to a collection. */
 export interface ExternalMetadataConfig {
@@ -46,6 +52,13 @@ const COLLECTION_KEYS = [
 ] as const;
 
 const EXTERNAL_METADATA_KEYS = ["file", "keys", "tokenEnv", "join"] as const;
+
+/**
+ * The join that names documents by path, and the default. The metadata tool
+ * spells it `PATH_JOIN` in `src/meta/core/external-metadata.ts`; the literal
+ * is repeated here for the same reason as `SCHEMA_KEY` below.
+ */
+const PATH_JOIN = "path";
 
 /**
  * The document-level schema key. The metadata tool spells it
@@ -260,6 +273,7 @@ function parseExternalMetadata(
   toError: (message: string) => Error,
 ): ExternalMetadataConfig[] {
   const owners = new Map<string, number>();
+  const patterns = new Map<string, number>();
   return raw.map((entry, i) => {
     const where = `${collectionWhere}.externalMetadata[${i}]`;
     if (!isMapping(entry)) {
@@ -269,6 +283,16 @@ function parseExternalMetadata(
     if (!isNonEmptyString(entry.file)) {
       throw toError(
         `${source}: ${where}.file must be a non-empty string naming the manifest, relative to the config file.`,
+      );
+    }
+    const placeholderProblem = pagePlaceholderProblem(entry.file);
+    if (placeholderProblem !== null) {
+      throw toError(`${source}: ${where}.file ${placeholderProblem}`);
+    }
+    const perPage = hasPagePlaceholder(entry.file);
+    if (perPage && (posix.isAbsolute(entry.file) || win32.isAbsolute(entry.file))) {
+      throw toError(
+        `${source}: ${where}.file uses ${PAGE_PLACEHOLDER} in an absolute path, so every manifest would sit outside the repository. Make it relative to the config file.`,
       );
     }
     if (
@@ -285,6 +309,11 @@ function parseExternalMetadata(
       const problem = externalMetadataUrlProblem(entry.file);
       if (problem !== null) {
         throw toError(`${source}: ${where}.file ${problem}.`);
+      }
+      if (perPage) {
+        throw toError(
+          `${source}: ${where}.file uses ${PAGE_PLACEHOLDER} in a URL. A placeholder names a file this run can write, and a URL is not one.`,
+        );
       }
     }
     if (entry.tokenEnv !== undefined) {
@@ -315,6 +344,14 @@ function parseExternalMetadata(
         );
       }
     }
+    // An explicit `join: path` is the default spelled out, and a per-page
+    // manifest is found by that path. A field would name the file by one
+    // thing and key its entry by another (0058 § 6).
+    if (perPage && typeof entry.join === "string" && entry.join !== PATH_JOIN) {
+      throw toError(
+        `${source}: ${where}.file uses ${PAGE_PLACEHOLDER}, and join is "${entry.join}". A per-page manifest is found by path, so it cannot be keyed by a field. Remove ${PAGE_PLACEHOLDER}, or remove join.`,
+      );
+    }
     const seen = new Set<string>();
     for (const key of keys) {
       if (key === SCHEMA_KEY) {
@@ -334,13 +371,71 @@ function parseExternalMetadata(
       }
       owners.set(key, i);
     }
-    return {
+    // Two spellings of one pattern are one manifest for every page (0058
+    // stress test 10), compared once, with no page known yet. Two concrete
+    // entries naming one file stay legal, as they were before placeholders.
+    if (perPage) {
+      const pattern = normalizeManifestPattern(entry.file);
+      const first = patterns.get(pattern);
+      if (first !== undefined) {
+        throw toError(
+          `${source}: ${where}.file resolves to the same manifest as externalMetadata[${String(first)}].file for every page. Give each entry its own file name.`,
+        );
+      }
+      patterns.set(pattern, i);
+    }
+    const parsed: ExternalMetadataConfig = {
       file: entry.file,
       keys,
       ...(typeof entry.tokenEnv === "string" ? { tokenEnv: entry.tokenEnv } : {}),
       ...(typeof entry.join === "string" ? { join: entry.join } : {}),
     };
+    origins.set(parsed, { source, where });
+    return parsed;
   });
+}
+
+/**
+ * The problem with `file`'s `{page}` placeholder grammar (0058 § 1), as the
+ * tail of a sentence that starts with the entry's path, or `null` when there
+ * is none. One token, spelled exactly, at most once; every other brace is
+ * refused rather than read as a literal.
+ */
+function pagePlaceholderProblem(file: string): string | null {
+  for (const match of file.matchAll(/\{[^{}]*\}/g)) {
+    if (match[0] !== PAGE_PLACEHOLDER) {
+      return `uses "${match[0]}", which is not a placeholder. The only placeholder is ${PAGE_PLACEHOLDER}.`;
+    }
+  }
+  const tokens = file.split(PAGE_PLACEHOLDER);
+  const stray = /[{}]/.exec(tokens.join(""));
+  if (stray !== null) {
+    return `contains "${stray[0]}" outside a ${PAGE_PLACEHOLDER} placeholder. Remove it, or write ${PAGE_PLACEHOLDER}.`;
+  }
+  if (tokens.length > 2) {
+    return `uses ${PAGE_PLACEHOLDER} twice. One manifest names one page.`;
+  }
+  return null;
+}
+
+/**
+ * Where a parsed `externalMetadata:` entry was declared: the config file as
+ * the parse was told to name it, and the entry's
+ * `collections[c].externalMetadata[i]` path. Kept beside the entry rather
+ * than on it, so the entry's shape, its equality, and anything that
+ * serializes it stay what they were. A copy made with a spread has no origin.
+ */
+const origins = new WeakMap<ExternalMetadataConfig, { source: string; where: string }>();
+
+/**
+ * The config file and path an entry was parsed from, for a refusal that is
+ * known only once a page is: a `{page}` manifest resolving above the config
+ * directory. `undefined` for an entry `parseCollections` did not build.
+ */
+export function externalMetadataOrigin(
+  entry: ExternalMetadataConfig,
+): { source: string; where: string } | undefined {
+  return origins.get(entry);
 }
 
 /**
@@ -403,6 +498,20 @@ export function isMember(
 ): boolean {
   if (relPath === STDIN) return false;
   if (relPath.startsWith("../")) return false;
+  return matchesCollectionPaths(collection, relPath);
+}
+
+/**
+ * Do the collection's `paths:` and `exclude:` claim this path, before the two
+ * guards `isMember` adds? Only a caller that has to *say* why a claimed path
+ * is not a member needs this: a page above the config directory that a
+ * `{page}` manifest would resolve outside the tree (proposal 0058). Everyone
+ * else wants `isMember`.
+ */
+export function matchesCollectionPaths(
+  collection: CollectionConfig,
+  relPath: string,
+): boolean {
   const matched = collection.paths.some((entry) => {
     const normalized = normalizeEntry(entry);
     if (normalized === "") return false;

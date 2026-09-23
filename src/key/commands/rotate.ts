@@ -307,6 +307,8 @@ async function planManifests(opts: {
   base: string;
   fromKey: string;
   toKey: string;
+  /** The run's pages, as absolute paths, which a `{page}` manifest (0058) is read for. */
+  pages: readonly string[];
 }): Promise<PlannedManifest[]> {
   const local = opts.collections
     .map((c) => ({
@@ -321,6 +323,7 @@ async function planManifests(opts: {
   const index = await loadExternalMetadata(local, {
     configDir: opts.configDir,
     base: opts.base,
+    pages: opts.pages,
   });
   if (index === null) return [];
 
@@ -483,6 +486,8 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
           configSource: file.source,
           key: current,
           toError: toKeyError,
+          // A `{page}` manifest (0058) is read for exactly the pages rotated.
+          pages: files.map((rel) => resolve(base, rel)),
         });
   const manifests = new ManifestSet();
 
@@ -560,6 +565,7 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
           base,
           fromKey,
           toKey,
+          pages: files.map((rel) => resolve(base, rel)),
         });
 
   const reencrypted =

@@ -447,6 +447,8 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     configDir: configDir ?? cwd,
     base,
     offline: opts.offline ?? config?.offline ?? false,
+    // A `{page}` manifest (0058) is read for exactly the pages this run reads.
+    pages: files.map((file) => resolve(base, file)),
   });
 
   // Proposal 0045. The run's key, resolved when first needed; the one prompt
@@ -3031,6 +3033,22 @@ function postChangeData(
 }
 
 /**
+ * The run's pages as absolute paths, for a `{page}` manifest (proposal 0058):
+ * every row the statement read, and every document a change names. A schema
+ * or config change names a file that is not a page, and stdin has no path.
+ */
+function runPages(
+  changes: readonly QueryChange[],
+  entries: readonly QueryEntry[],
+  base: string,
+): string[] {
+  const labels = new Set(entries.map((e) => e.label));
+  for (const c of changes) if (!("schema" in c) && !("config" in c)) labels.add(c.file);
+  labels.delete(STDIN_LABEL);
+  return [...labels].map((label) => resolve(base, label));
+}
+
+/**
  * Plan every manifest edit the statement makes (proposal 0047), in phase one:
  * each change to a key a local manifest owns is routed to the document's
  * entry, `pageRoutes` records what is left for the page, and `manifest` is set
@@ -3157,7 +3175,7 @@ async function planManifestEdits(
           ...col,
           externalMetadata: col.externalMetadata.filter((m) => classifyRef(m.file).kind !== "url"),
         })),
-      { configDir: ctx.configDir ?? ctx.cwd, base: ctx.base },
+      { configDir: ctx.configDir ?? ctx.cwd, base: ctx.base, pages: runPages(changes, entries, ctx.base) },
     );
     const index = await leftOut;
     if (index === null) return undefined;
@@ -3416,6 +3434,7 @@ async function offerRelocation(
         configDir: loc.configDir ?? ctx.cwd,
         base: ctx.base,
         offline: ctx.location.offline,
+        pages: runPages(changes, entries, ctx.base),
       });
       ctx.memberships = (label) => memberOf(loc.collections, loc.configDir ?? ctx.cwd, ctx.base, label);
       unhomed = await unhomedWrites(changes, entries, ctx);

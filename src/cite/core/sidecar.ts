@@ -120,6 +120,11 @@ export interface LoadSidecarOptions {
   base: string;
   /** The config file as the user would name it, for the URL refusal. */
   configSource: string;
+  /**
+   * The run's pages, as absolute paths. A `{page}` manifest (proposal 0058)
+   * is read for exactly these; without them it reads nothing.
+   */
+  pages?: readonly string[];
   /** The family encryption key, for a join field a page holds encrypted. */
   key?: string;
   /** The tool's error class; `CiteError` unless a sibling command says otherwise. */
@@ -179,6 +184,7 @@ export async function loadCitationSidecars(
   const index = await loadExternalMetadata(scoped, {
     configDir: opts.configDir,
     base: opts.base,
+    ...(opts.pages === undefined ? {} : { pages: opts.pages }),
   });
   if (index === null) return null;
   return sidecars(index, manifests, scoped, opts);
@@ -285,10 +291,16 @@ export function duplicateJoinRefusal(
  * citations manifest. `base` overrides the run's when a command labels its
  * pages from somewhere else — `add` takes one page from the command line and
  * labels it from the working directory, whatever the collections would.
+ * `pages` are the run's pages as absolute paths, which a `{page}` manifest
+ * (proposal 0058) is read for.
  */
 export function sidecarsFor(
   run: CiteRun,
-  over: { base?: string; toError?: (message: string) => Error } = {},
+  over: {
+    base?: string;
+    toError?: (message: string) => Error;
+    pages?: readonly string[];
+  } = {},
 ): Promise<CitationSidecars | null> {
   const declared = run.configFile?.collections ?? [];
   if (run.configDir === undefined || declared.length === 0) return Promise.resolve(null);
@@ -300,5 +312,6 @@ export function sidecarsFor(
     configSource: run.configSource ?? run.configPath ?? "the config",
     ...(run.key === undefined ? {} : { key: run.key }),
     ...(over.toError === undefined ? {} : { toError: over.toError }),
+    ...(over.pages === undefined ? {} : { pages: over.pages }),
   });
 }
