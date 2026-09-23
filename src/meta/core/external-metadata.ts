@@ -50,6 +50,7 @@ import {
 } from "../../shared/collections.js";
 import {
   PAGE_PLACEHOLDER,
+  findPageManifests,
   hasPagePlaceholder,
   pageManifestPath,
 } from "../../shared/page-manifest.js";
@@ -155,6 +156,27 @@ interface ParsedManifest {
  * fresh, and why a stat alone is not enough.
  */
 const parsedManifests = new ManifestCache<ParsedManifest>();
+
+/** One `{page}` entry of a loaded index: what a stray walk needs to find its files. */
+interface PerPageRule {
+  collection: CollectionConfig;
+  manifest: ExternalMetadataConfig;
+  configDir: string;
+}
+
+/**
+ * The `{page}` entries each index was loaded with (proposal 0058). Kept beside
+ * the index rather than on it, so `ExternalMetadataIndex` keeps the shape
+ * every caller already builds and reads, and `orphanEntries` keeps its
+ * signature while it learns to report a stray file.
+ */
+const perPageRules = new WeakMap<ExternalMetadataIndex, readonly PerPageRule[]>();
+
+/**
+ * The orphans `orphanEntries` found as stray files rather than as entries in
+ * a file a run read, so `orphanError` tells the author to remove the file.
+ */
+const strayEntries = new WeakSet<ExternalMetadataEntry>();
 
 /** Every manifest of a run, loaded once and consulted per document. */
 export interface ExternalMetadataIndex {
@@ -303,6 +325,7 @@ export async function loadExternalMetadata(
   const entries: ExternalMetadataEntry[] = [];
   /** Every `{page}` manifest resolved so far, and the page that resolved it. */
   const resolvedBy = new Map<string, string>();
+  const rules: PerPageRule[] = [];
 
   for (const { collection, manifest } of configured) {
     // The whole collection, because a `{page}` entry is read per member page.
@@ -315,6 +338,7 @@ export async function loadExternalMetadata(
       hasPagePlaceholder(manifest.file)
     ) {
       await loadPerPage(declared, manifest, opts, resolvedBy, { owners, byPath, byField, entries });
+      rules.push({ collection: declared, manifest, configDir: opts.configDir });
       continue;
     }
     // A URL manifest (0038) is reported as the URL itself, and fetched every
@@ -405,7 +429,9 @@ export async function loadExternalMetadata(
     }
     for (const entry of parsed.entries) entries.push(reported(entry, file));
   }
-  return { owners, byPath, byField, entries };
+  const index: ExternalMetadataIndex = { owners, byPath, byField, entries };
+  if (rules.length > 0) perPageRules.set(index, rules);
+  return index;
 }
 
 /** The index `loadExternalMetadata` is building, for a helper that adds to it. */
@@ -905,6 +931,14 @@ export function externalMetadataPointer(key: string): string {
  * the run is the config corpus (the same invariant corpus checks use): a
  * positional path means the operator chose to look at part of the corpus,
  * and an entry for the rest is expected, not orphaned.
+ *
+ * A `{page}` entry (proposal 0058) is never orphaned inside a file the run
+ * read, because each file is named after its page. Its orphan is a stray
+ * *file*, left behind by a `git mv` or a deletion, so on a run with no
+ * `collections` narrowing the pattern's glob is walked and every manifest of
+ * a page the run did not load is reported after the entries above. A
+ * `--collection` run skips the walk: another collection's pages, which it
+ * did not load, could share the pattern.
  */
 export function orphanEntries(
   index: ExternalMetadataIndex | null,
@@ -914,13 +948,54 @@ export function orphanEntries(
 ): ExternalMetadataEntry[] {
   if (!index) return [];
   const have = new Set(loaded.map((l) => resolve(base, l)));
-  return index.entries.filter(
+  const orphans = index.entries.filter(
     (e) =>
       inCollections(e, collections) &&
       e.join === PATH_JOIN &&
       e.abs !== undefined &&
       !have.has(e.abs),
   );
+  if (collections !== undefined) return orphans;
+  return [...orphans, ...strayManifests(perPageRules.get(index) ?? [], have, base)];
+}
+
+/**
+ * Manifests a `{page}` pattern names on disk for pages the run did not load
+ * (0058 § 5), one orphan per entry. A file some loaded page resolves to was
+ * read and checked by the loader, so it is not walked into again.
+ */
+function strayManifests(
+  rules: readonly PerPageRule[],
+  loaded: ReadonlySet<string>,
+  base: string,
+): ExternalMetadataEntry[] {
+  const strays: ExternalMetadataEntry[] = [];
+  for (const { collection, manifest, configDir } of rules) {
+    const read = new Set<string>();
+    for (const pageAbs of loaded) {
+      const resolved = pageManifestPath(manifest.file, configDir, pageAbs);
+      if (!("outside" in resolved)) read.add(resolved.abs);
+    }
+    const found = findPageManifests(manifest.file, configDir, (rel) => isMember(collection, rel));
+    for (const { abs, entries } of found) {
+      if (read.has(abs)) continue;
+      const file = reportedPath(abs, base);
+      for (const entry of entries) {
+        if (loaded.has(entry.pageAbs)) continue;
+        const stray: ExternalMetadataEntry = {
+          collection: collection.name,
+          join: PATH_JOIN,
+          abs: entry.pageAbs,
+          spelled: entry.spelled,
+          file,
+          ...(entry.line === undefined ? {} : { line: entry.line }),
+        };
+        strayEntries.add(stray);
+        strays.push(stray);
+      }
+    }
+  }
+  return strays;
 }
 
 /**
@@ -970,7 +1045,9 @@ export function orphanError(orphans: readonly ExternalMetadataEntry[]): DocmetaE
     first.join === PATH_JOIN
       ? `names "${first.spelled}", which this run did not load`
       : `names ${first.join} "${first.spelled}", which no loaded document carries`;
+  // A stray per-page file holds its one page's entry, so the file goes with it.
+  const remove = strayEntries.has(first) ? "the file" : "it";
   return new DocmetaError(
-    `Manifest ${where} ${what}${more}. Fix the entry, or remove it.`,
+    `Manifest ${where} ${what}${more}. Fix the entry, or remove ${remove}.`,
   );
 }

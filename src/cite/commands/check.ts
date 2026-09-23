@@ -34,12 +34,14 @@ import { DEFAULT_CITE_BASELINE_PATH, resolveCiteRun } from "../core/config.js";
 import { GIT_UNAVAILABLE_HISTORY, gitClient } from "../core/git.js";
 import {
   duplicateJoinRefusal,
+  ignoredManifestWarning,
   orphanRefusal,
   sidecarsFor,
   type CitationSidecars,
   type PageSidecar,
 } from "../core/sidecar.js";
 import { sourceIndexFor } from "../core/sources.js";
+import { warn } from "../../shared/warn.js";
 import { CiteError } from "../errors.js";
 import type {
   CheckOptions,
@@ -271,14 +273,21 @@ export async function prepareRun(
 }
 
 /**
- * The manifest entries a corpus run found nothing for. A run the CLI
- * narrowed checks nothing: it never claimed to cover the corpus.
+ * The manifest entries a corpus run found nothing for, and the stray
+ * `{page}` manifests (proposal 0058). A run the CLI narrowed checks nothing:
+ * it never claimed to cover the corpus.
+ *
+ * A whole run, not narrowed by `--collection` either, also warns once for a
+ * page's own manifest that `.gitignore` covers: CI checks out the page
+ * without it.
  */
-export function assertNoOrphans(prepared: PreparedRun): void {
+export async function assertNoOrphans(prepared: PreparedRun): Promise<void> {
   const { sidecars } = prepared;
   if (sidecars === null || prepared.scopedByFlags) return;
   const orphans = sidecars.orphans(prepared.files, prepared.covered);
   if (orphans.length > 0) throw orphanRefusal(orphans);
+  if (prepared.covered !== undefined) return;
+  for (const file of await sidecars.ignoredManifests(prepared.files)) warn(ignoredManifestWarning(file));
 }
 
 /** The same invariant, for field-joined entries no loaded page matched. */
@@ -315,7 +324,7 @@ export function sayNotices(
 export async function runCheck(opts: CheckOptions): Promise<CheckRun> {
   const prepared = await prepareRun(opts, "checked", "check");
   const { cwd, run, files, gitignoreSkipped, usingStdin, forced, pageOptions, git } = prepared;
-  assertNoOrphans(prepared);
+  await assertNoOrphans(prepared);
   const hits = joinHits();
 
   const pages: PageCitationReport[] = [];

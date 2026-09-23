@@ -28,7 +28,9 @@
  * `--no-config` never reaches here: with no config there are no collections,
  * so a page's citations are its frontmatter's.
  */
+import { existsSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
+import { gitIgnored } from "../../meta/internal.js";
 import {
   classifyRef,
   externalMetadataJoin,
@@ -46,6 +48,7 @@ import {
   type ExternalMetadataJoin,
   type ExtractedMetadata,
 } from "../../meta/index.js";
+import { hasPagePlaceholder, pageManifestPath } from "../../shared/page-manifest.js";
 import { CiteError } from "../errors.js";
 import type { CitationInput, CiteRun } from "../types.js";
 import { pickExtractor } from "./page.js";
@@ -109,6 +112,12 @@ export interface CitationSidecars {
     matched: ReadonlyMap<string, ReadonlySet<string>>,
     covered?: readonly string[],
   ): ExternalMetadataEntry[];
+  /**
+   * The `{page}` manifests (proposal 0058) of the loaded pages that exist and
+   * that `.gitignore` covers, as the run reports them. A checkout would have
+   * none of them, so CI would read those pages as citing nothing.
+   */
+  ignoredManifests(loaded: readonly string[]): Promise<string[]>;
 }
 
 export interface LoadSidecarOptions {
@@ -159,6 +168,7 @@ export async function loadCitationSidecars(
 ): Promise<CitationSidecars | null> {
   const toError = opts.toError ?? ((message: string): Error => new CiteError(message));
   const manifests: CitationManifest[] = [];
+  const patterns = new Map<CitationManifest, string>();
   const scoped: CollectionConfig[] = [];
   for (const collection of opts.collections) {
     const owning = collection.externalMetadata.filter(ownsCitations);
@@ -176,6 +186,8 @@ export async function loadCitationSidecars(
         file: reportedPath(path, opts.base),
         join: externalMetadataJoin(manifest),
       });
+      const pushed = manifests[manifests.length - 1];
+      if (pushed !== undefined && hasPagePlaceholder(manifest.file)) patterns.set(pushed, manifest.file);
     }
     scoped.push({ ...collection, externalMetadata: owning });
   }
@@ -187,17 +199,35 @@ export async function loadCitationSidecars(
     ...(opts.pages === undefined ? {} : { pages: opts.pages }),
   });
   if (index === null) return null;
-  return sidecars(index, manifests, scoped, opts);
+  return sidecars(index, manifests, patterns, scoped, opts);
 }
 
 function sidecars(
   index: ExternalMetadataIndex,
   manifests: readonly CitationManifest[],
+  patterns: ReadonlyMap<CitationManifest, string>,
   collections: readonly CollectionConfig[],
   opts: LoadSidecarOptions,
 ): CitationSidecars {
   const toError = opts.toError ?? ((message: string): Error => new CiteError(message));
   const { configDir, base } = opts;
+
+  /**
+   * The manifest a page's citations live in. A concrete `file` is the one
+   * manifest the collection declares. A `{page}` pattern (proposal 0058) is
+   * a rule, so the page's own file is resolved from its path, and reported
+   * relative to the run's base like every other manifest. Everything else
+   * about the owner carries through the spread.
+   */
+  const pageOwner = (owner: CitationManifest, label: string): CitationManifest | undefined => {
+    const pattern = patterns.get(owner);
+    if (pattern === undefined) return owner;
+    const resolved = pageManifestPath(pattern, configDir, resolve(base, label));
+    // A page above the config directory is a member of nothing, so this is
+    // not reached for one; the guard is for the type.
+    if ("outside" in resolved) return undefined;
+    return { ...owner, path: resolved.abs, file: reportedPath(resolved.abs, base) };
+  };
 
   const forPage = (label: string, content: string, format?: string): PageSidecar => {
     const members = memberOf(collections, configDir, base, label);
@@ -206,11 +236,13 @@ function sidecars(
     // The owning manifest is the page's, decided before anything is read:
     // two of them is a refusal even when only one has an entry today.
     const mine = manifests.filter((m) => members.includes(m.collection));
-    const [owner, second] = mine;
-    if (owner === undefined) return { joins: [] };
+    const [declared, second] = mine;
+    if (declared === undefined) return { joins: [] };
     if (second !== undefined) {
-      throw toError(twoManifestsRefusal(label, owner.collection, second.collection));
+      throw toError(twoManifestsRefusal(label, declared.collection, second.collection));
     }
+    const owner = pageOwner(declared, label);
+    if (owner === undefined) return { joins: [] };
 
     const extractor = pickExtractor(label, format);
     const extracted: ExtractedMetadata = extractor.extract(content, label);
@@ -253,6 +285,21 @@ function sidecars(
     return out;
   };
 
+  const ignoredManifests = async (loaded: readonly string[]): Promise<string[]> => {
+    const existing = new Set<string>();
+    for (const label of loaded) {
+      const members = memberOf(collections, configDir, base, label);
+      for (const declared of manifests) {
+        if (!patterns.has(declared) || !members.includes(declared.collection)) continue;
+        const owner = pageOwner(declared, label);
+        if (owner !== undefined && existsSync(owner.path)) existing.add(owner.file);
+      }
+    }
+    if (existing.size === 0) return [];
+    const { ignored } = await gitIgnored([...existing], base);
+    return [...existing].filter((file) => ignored.has(file));
+  };
+
   return {
     manifests,
     configDir,
@@ -260,7 +307,13 @@ function sidecars(
     forPage,
     orphans: (loaded, covered) => orphanEntries(index, loaded, base, covered),
     orphanJoins: (matched, covered) => orphanJoins(index, matched, covered),
+    ignoredManifests,
   };
+}
+
+/** `<manifest> is covered by .gitignore, so CI checks out a page with no citations.` */
+export function ignoredManifestWarning(file: string): string {
+  return `${file} is covered by .gitignore, so CI checks out a page with no citations.`;
 }
 
 /** The refusal a whole-corpus run raises for a manifest entry naming nothing. */

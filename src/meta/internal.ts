@@ -10,6 +10,9 @@
  * those paths closed to `src/<tool>/`, so this barrel is the one door, and a
  * change to anything behind it shows up as a change to this file.
  */
+// `manni cite` warns when a page's own manifest (proposal 0058) is one git
+// will not publish, and asks git the way the target walk does.
+export { gitIgnored } from "./core/gitignore.js";
 export {
   assertNonEmpty,
   gitignoreOptions,
