@@ -1,6 +1,6 @@
 # 0060: a manifest per page, as built
 
-- **Status:** Proposed
+- **Status:** Implemented (#117)
 - **Serves:** Two journeys.
   - Maya · M6, "Keep citations out of the page".
   - Devin · D5, "Gate citations in CI without blocking on prose".
