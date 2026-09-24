@@ -246,6 +246,8 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
     configDir: configDir ?? cwd,
     base,
     offline: opts.offline ?? config?.offline ?? false,
+    // A `{page}` manifest (0058) is read for exactly the pages this run reads.
+    pages: files.map((file) => resolve(base, file)),
   });
 
   // The derived channel (0040): the requested fields a source can state,

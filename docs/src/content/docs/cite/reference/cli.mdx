@@ -124,8 +124,9 @@ were edited reads `claim-changed`, and says since when.
 
 {/* cite pretty-row-columns */}
 `pretty` prints one line per file and one per citation beneath it. A citation
-row is its id, then the claim end, then the source end, then the manifest when
-one owns the entry. Both ends read in file lines, and the source is spelled
+row is its id, then the claim end, then the source end. On a page whose
+entries come from more than one place, a manifest row ends with the manifest
+and the entry's line. Both ends read in file lines, and the source is spelled
 exactly as the entry spelled it:
 
 ```
@@ -140,6 +141,17 @@ exactly as the entry spelled it:
     ✓                                                          lib/limits.ts current
 
 1 file checked, 0 passed, 1 failed, 6 findings (2 warnings) (3 notices)
+```
+
+{/* cite pretty-page-line-manifest */}
+When one manifest keeps every entry on a page, its path follows the page on
+the file's line, and no row repeats it:
+
+```
+✓ docs/limits.md   docs-citations.yaml
+    ✓ fetch-timeout   :6 current   lib/limits.ts:2 current
+
+1 file checked, 1 passed, 0 failed, 0 findings
 ```
 
 A marker's claim column says where the marker is. When the marker is
@@ -184,9 +196,8 @@ marker's line where a marker anchors the claim, and the claim's first file line
 otherwise. The order of the entries in the frontmatter or the manifest does not
 show. `json` keeps that order instead, and so do the findings.
 
-{/* cite pretty-file-marks */}
 {/* cite pretty-summary-notices */}
-{/* cite pretty-row-marks */}
+{/* cite pretty-row-marks pretty-file-marks */}
 `✓` is a citation with no finding, `↕` a warning, `ℹ` a notice and `✗` an
 error. `·` is a bare pin whose source was `skipped`, or a citation whose every
 finding the baseline forgave. A skipped source beside a claim end still reads

@@ -1,0 +1,14 @@
+# Two collections cover one page and both keep citations in a {page}
+# manifest. Ownership is a config fact, so the page is refused although
+# neither manifest exists (0058 stress test 4).
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+  - name: api
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.api.yaml"
+        keys: [citations]

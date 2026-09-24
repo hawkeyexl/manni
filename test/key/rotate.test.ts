@@ -8,7 +8,7 @@
  * so nothing depends on git answering. Every run passes its own `env`, so a
  * developer's `MANNI_ENCRYPTION_KEY` is never read.
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
@@ -765,6 +765,149 @@ describe("runKeyRotate: external-metadata manifests", () => {
 
     expect(result.manifests.map((m) => m.file)).toEqual(["private/site.yaml"]);
     expect(result.exitCode).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A manifest per page (proposal 0058, stress test 12). The entry is a rule,
+// not a file, so a rotation enumerates the files: each page's own, and on a
+// whole run every file the pattern's glob finds, a stray's included.
+// ---------------------------------------------------------------------------
+
+describe("runKeyRotate: a manifest per page", () => {
+  const PER_PAGE = [
+    "collections:",
+    "  - name: site",
+    '    paths: ["docs/**/*.md"]',
+    "    externalMetadata:",
+    '      - file: "{page}.private.yaml"',
+    "        keys: [team, citations]",
+    "",
+  ].join("\n");
+
+  const plain = (title: string): string => `---\ntitle: ${title}\n---\n\n${CLAIM}\n`;
+  const team = (page: string, value: string): string =>
+    `${page}:\n  team: ${encryptValue(value, OLD, "meta")}\n`;
+  /** A per-page manifest holding one citation whose source is encrypted under OLD. */
+  const cited = (page: string): string =>
+    [
+      `${page}:`,
+      "  citations:",
+      "    - id: fetch-timeout",
+      "      claim:",
+      "        lines: 2",
+      `        integrity: ${CLAIM_PIN}`,
+      "      source:",
+      `        file: ${encryptSourcePath("src/limits.ts", OLD)}`,
+      "        lines: 2",
+      `        integrity: ${hashRange(SOURCE, LINE_2, OLD)}`,
+      "",
+    ].join("\n");
+
+  function valueIn(manifest: string, page: string): string {
+    const doc = parse(read(manifest)) as Record<string, { team?: unknown }>;
+    const value = doc[page]?.team;
+    if (typeof value !== "string") throw new Error(`no team for ${page} in ${manifest}`);
+    return value;
+  }
+
+  it("re-encrypts every value in both pages' manifests, and names each file", async () => {
+    family({
+      collections: PER_PAGE,
+      extra: {
+        "docs/handbook.md": plain("Handbook"),
+        "docs/guide.md": plain("Guide"),
+        "docs/handbook.private.yaml": team("docs/handbook.md", "platform"),
+        "docs/guide.private.yaml": team("docs/guide.md", "billing"),
+      },
+    });
+
+    const result = await rotate({ to: NEW });
+
+    expect(result).toMatchObject({ skipped: 0, exitCode: 0 });
+    expect(decryptValue(valueIn("docs/handbook.private.yaml", "docs/handbook.md"), NEW, "meta")).toEqual({
+      ok: true,
+      value: "platform",
+    });
+    expect(decryptValue(valueIn("docs/guide.private.yaml", "docs/guide.md"), NEW, "meta")).toEqual({
+      ok: true,
+      value: "billing",
+    });
+    expect(result.manifests.map((m) => [m.file, m.rewritten.length, m.written]).sort()).toEqual([
+      ["docs/guide.private.yaml", 1, true],
+      ["docs/handbook.private.yaml", 1, true],
+    ]);
+    // No file is named after the pattern itself.
+    expect(existsSync(join(tree(), "{page}.private.yaml"))).toBe(false);
+    const lines = pretty(result);
+    expect(lines.some((l) => l.startsWith("docs/guide.private.yaml: docs/guide.md/team"))).toBe(true);
+    expect(lines.some((l) => l.startsWith("docs/handbook.private.yaml: docs/handbook.md/team"))).toBe(true);
+  });
+
+  it("re-encrypts the citations both pages' manifests hold, and their pins still hold", async () => {
+    family({
+      collections: PER_PAGE,
+      extra: {
+        "docs/handbook.md": plain("Handbook"),
+        "docs/guide.md": plain("Guide"),
+        "docs/handbook.private.yaml": cited("docs/handbook.md"),
+        "docs/guide.private.yaml": cited("docs/guide.md"),
+      },
+    });
+
+    const result = await rotate({ to: NEW });
+
+    expect(result).toMatchObject({ skipped: 0, exitCode: 0 });
+    for (const [manifest, page] of [
+      ["docs/handbook.private.yaml", "docs/handbook.md"],
+      ["docs/guide.private.yaml", "docs/guide.md"],
+    ] as const) {
+      const doc = parse(read(manifest)) as Record<string, { citations: { source: { file: string; integrity: string } }[] }>;
+      const source = doc[page]?.citations[0]?.source;
+      expect(source === undefined ? null : decryptValue(source.file, NEW, "cite-src").ok).toBe(true);
+      expect(source?.integrity).toBe(hashRange(SOURCE, LINE_2, NEW));
+    }
+    const check = await runCheck({ cwd: tree(), inputs: [], gitClient: noGit(), env: {} });
+    for (const page of ["docs/handbook.md", "docs/guide.md"]) {
+      expect(check.pages.find((p) => p.file === page)?.citations[0]?.source.status).toBe("current");
+    }
+  });
+
+  it("a whole run re-encrypts a manifest the glob finds whose page is gone", async () => {
+    family({
+      collections: PER_PAGE,
+      extra: {
+        "docs/handbook.md": plain("Handbook"),
+        "docs/handbook.private.yaml": team("docs/handbook.md", "platform"),
+        "docs/gone.private.yaml": team("docs/gone.md", "support"),
+      },
+    });
+
+    const result = await rotate({ to: NEW });
+
+    expect(result.exitCode).toBe(0);
+    expect(decryptValue(valueIn("docs/gone.private.yaml", "docs/gone.md"), NEW, "meta")).toEqual({
+      ok: true,
+      value: "support",
+    });
+  });
+
+  it("a run given one page re-encrypts that page's manifest and walks no other", async () => {
+    family({
+      collections: PER_PAGE,
+      extra: {
+        "docs/handbook.md": plain("Handbook"),
+        "docs/guide.md": plain("Guide"),
+        "docs/handbook.private.yaml": team("docs/handbook.md", "platform"),
+        "docs/guide.private.yaml": team("docs/guide.md", "billing"),
+      },
+    });
+    const guide = read("docs/guide.private.yaml");
+
+    const result = await rotate({ inputs: ["docs/handbook.md"], to: NEW });
+
+    expect(result.manifests.map((m) => m.file)).toEqual(["docs/handbook.private.yaml"]);
+    expect(read("docs/guide.private.yaml")).toBe(guide);
   });
 });
 

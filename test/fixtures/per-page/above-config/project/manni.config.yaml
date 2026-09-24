@@ -1,0 +1,9 @@
+# Proposal 0058: a page above the config directory would resolve {page} with
+# a leading ../, escaping the tree the placeholder promises.
+collections:
+  - name: site
+    paths:
+      - "../site/**/*.md"
+    externalMetadata:
+      - file: "./meta/{page}.citations.yaml"
+        keys: [owner]

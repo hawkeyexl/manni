@@ -335,7 +335,7 @@ the journey, with a worked path for each; this section is the contract.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `file` | `string` | yes | Manifest path, relative to the config file's directory, or an `https://` URL fetched at the start of every run. A manifest that cannot be read or fetched, or is not valid YAML, is an operational error (exit 2). See [Remote manifests](#remote-manifests). |
+| `file` | `string` | yes | Manifest path, relative to the config file's directory, or an `https://` URL fetched at the start of every run. A path may hold one `{page}` placeholder, which gives each page a manifest of its own; see [A manifest per page](#a-manifest-per-page). A manifest that cannot be read or fetched, or is not valid YAML, is an operational error (exit 2). A missing `{page}` manifest is the one exception, and reads as empty. See [Remote manifests](#remote-manifests). |
 | `keys` | `string[]` | yes | The top-level keys this manifest **owns**. Non-empty, no duplicates, disjoint across the collection's manifests, and never `$schema`. Each violation is a config error (exit 2) naming `collections[c].externalMetadata[i].keys`. |
 | `tokenEnv` | `string` | no | Name of an environment variable whose value is sent as a bearer token when `file` is a URL. Allowed only on a URL. On a path it is a config error (exit 2), because no request is made and the token would go nowhere. |
 | `join` | `string` | no | `path` (the default), or the top-level frontmatter field the manifest's keys are values of. Never `$schema`, and never a key the same entry owns. A rename cannot orphan a field-joined entry. See [Joining by a field](#joining-by-a-field). |
@@ -371,6 +371,13 @@ manni.config.yaml: collections[0].externalMetadata[0].keys may not include "$sch
 manni.config.yaml: collections[0].externalMetadata[1].keys claims "jira", which externalMetadata[0] already owns — a key has exactly one manifest in a collection.
 manni.config.yaml: collections[0].externalMetadata[0].join must be "path" or the name of a top-level frontmatter field.
 manni.config.yaml: collections[0].externalMetadata[0].join names "id", which the same entry owns — the value that selects an entry cannot come from the entry.
+manni.config.yaml: collections[0].externalMetadata[0].file uses "{collection}", which is not a placeholder. The only placeholder is {page}.
+manni.config.yaml: collections[0].externalMetadata[0].file contains "{" outside a {page} placeholder. Remove it, or write {page}.
+manni.config.yaml: collections[0].externalMetadata[0].file uses {page} twice. One manifest names one page.
+manni.config.yaml: collections[0].externalMetadata[0].file uses {page} in an absolute path, so every manifest would sit outside the repository. Make it relative to the config file.
+manni.config.yaml: collections[0].externalMetadata[0].file uses {page} in a URL. A placeholder names a file this run can write, and a URL is not one.
+manni.config.yaml: collections[0].externalMetadata[0].file uses {page}, and join is "id". A per-page manifest is found by path, so it cannot be keyed by a field. Remove {page}, or remove join.
+manni.config.yaml: collections[0].externalMetadata[1].file resolves to the same manifest as externalMetadata[0].file for every page. Give each entry its own file name.
 ```
 
 #### The manifest
@@ -408,7 +415,7 @@ entry's line. From `test/fixtures/external-metadata/`:
 | A document is named twice. | `Manifest bad-duplicate-path.yaml:5: "docs/auth.md" is named twice (first at line 1). Merge the two entries into one.` |
 | An entry sets a key outside `keys:`. | `Manifest bad-unowned-key.yaml:1: "docs/auth.md" sets "team", which this manifest does not own. Add it to the manifest's "keys", or remove it from the entry.` |
 | An entry sets `$schema`. | `Manifest bad-schema-key.yaml:1: "docs/auth.md" sets "$schema" — a manifest never chooses the schema a document is judged by; use "overrides" in the config.` |
-| The file is missing. | `Manifest nope.yaml could not be read: ENOENT: no such file or directory, …` |
+| The file is missing, and `file` holds no `{page}`. | `Manifest nope.yaml could not be read: ENOENT: no such file or directory, …` |
 
 {/* cite field-joined-manifest-says-its-own-noun */}
 A [field-joined](#joining-by-a-field) manifest reports the same shapes with its
@@ -420,6 +427,69 @@ only the line of the owned key. So a tool that finds a problem in the third
 citation of a page can report the line that citation sits on. `validate`'s own
 findings still sit on the owned key's line, because a schema judges the merged
 value as a whole.
+
+#### A manifest per page
+
+{/* cite page-placeholder-resolves */}
+`file` may hold one placeholder, `{page}`. For each page, it resolves to the
+page's path relative to the config file's directory, without its extension,
+with forward slashes. The entry then names one manifest per page:
+
+| `file` | The manifest for `docs/guides/auth.md` |
+|---|---|
+| `"{page}.meta.yaml"` | `docs/guides/auth.meta.yaml`, beside the page |
+| `"./meta/{page}.meta.yaml"` | `meta/docs/guides/auth.meta.yaml`, in a tree that mirrors the pages |
+| `./docs-meta.yaml` | `docs-meta.yaml`, one file for every page |
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"   # quoted, because a bare { opens a YAML mapping
+        keys: [source, jira]
+```
+
+{/* cite page-manifest-one-entry */}
+A per-page manifest has the shape of any other. It holds one entry, keyed by
+its own page's path:
+
+```yaml title="docs/guides/auth.meta.yaml"
+docs/guides/auth.md:
+  source: internal/auth-design.md
+  jira: PLAT-412
+```
+
+The sibling layout is the one to reach for. Two branches that edit two pages
+touch two manifests, so they merge without a conflict, and a reviewer finds a
+page's values beside it.
+
+{/* cite page-manifest-missing-reads-empty */}
+A per-page manifest that does not exist reads as empty, so a page with nothing
+kept there needs no file. One that exists and cannot be read is still an
+error. A `file` without `{page}` keeps its meaning, one manifest for the
+collection, and a missing one is an error.
+
+{/* cite page-manifest-created-on-write */}
+The first write that stores a value for a page creates its manifest, and the
+directory it sits in.
+
+{/* cite page-pattern-spellings-collide */}
+Two spellings of one pattern, such as `"{page}.yaml"` and `"./{page}.yaml"`,
+are one pattern, and two entries may not share it. A page may not resolve
+outside the config file's directory. The config refusals are in the list
+above. These are raised once the pages are known, each exit 2:
+
+| Problem | Message |
+|---|---|
+| A page the collection claims sits above the config file's directory. | `manni.config.yaml: collections[0].externalMetadata[0].file resolves outside manni.config.yaml's directory for "../site/install.md". A {page} manifest stays under the config file.` |
+| Two pages differ only in extension, so both resolve one manifest. | `docs/install.md and docs/install.mdx both resolve {page} to docs/install.citations.yaml. A {page} manifest names one page, so rename one of them.` |
+| A manifest names a page other than the one it resolved for. | `Manifest docs/index.citations.yaml:1 names "docs/other.md", but {page} resolved this file for "docs/index.md". A per-page manifest holds one entry, for its own page.` |
+| On a whole-collection run, a file the pattern matches names a page the run did not load. | `Manifest docs/old.citations.yaml:1 names "docs/old.md", which this run did not load. Fix the entry, or remove the file.` |
+
+The last is the [orphan check](#the-orphan-check) for a per-page manifest. A
+`git mv` that leaves a page's manifest behind is the usual cause, so move the
+two together.
 
 #### A manifest that owns citations
 

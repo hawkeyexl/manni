@@ -41,10 +41,21 @@ import {
   parseDocument,
   type Node,
 } from "yaml";
-import type {
-  CollectionConfig,
-  ExternalMetadataConfig,
+import {
+  externalMetadataOrigin,
+  isMember,
+  matchesCollectionPaths,
+  type CollectionConfig,
+  type ExternalMetadataConfig,
 } from "../../shared/collections.js";
+import {
+  PAGE_PLACEHOLDER,
+  findPageManifests,
+  hasPagePlaceholder,
+  pageManifestPath,
+  sameFile,
+} from "../../shared/page-manifest.js";
+import { isMissing } from "../../shared/manifest-cas.js";
 import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
 import { classifyRef } from "./schema-registry.js";
 import { ManifestCache } from "./manifest-cache.js";
@@ -148,6 +159,27 @@ interface ParsedManifest {
  */
 const parsedManifests = new ManifestCache<ParsedManifest>();
 
+/** One `{page}` entry of a loaded index: what a stray walk needs to find its files. */
+interface PerPageRule {
+  collection: CollectionConfig;
+  manifest: ExternalMetadataConfig;
+  configDir: string;
+}
+
+/**
+ * The `{page}` entries each index was loaded with (proposal 0058). Kept beside
+ * the index rather than on it, so `ExternalMetadataIndex` keeps the shape
+ * every caller already builds and reads, and `orphanEntries` keeps its
+ * signature while it learns to report a stray file.
+ */
+const perPageRules = new WeakMap<ExternalMetadataIndex, readonly PerPageRule[]>();
+
+/**
+ * The orphans `orphanEntries` found as stray files rather than as entries in
+ * a file a run read, so `orphanError` tells the author to remove the file.
+ */
+const strayEntries = new WeakSet<ExternalMetadataEntry>();
+
 /** Every manifest of a run, loaded once and consulted per document. */
 export interface ExternalMetadataIndex {
   /**
@@ -178,6 +210,14 @@ export interface LoadExternalMetadataOptions {
   timeoutMs?: number;
   /** For tests: the environment `tokenEnv` is read from. */
   env?: Record<string, string | undefined>;
+  /**
+   * The run's documents, as absolute paths (proposal 0058). An entry whose
+   * `file` holds `{page}` names one manifest per page, so it is read for
+   * exactly these pages, each that belongs to its collection, and for nothing
+   * else. Absent, such an entry reads no file. An entry without the
+   * placeholder ignores this and loads its one manifest as it always has.
+   */
+  pages?: readonly string[];
 }
 
 /** A place a merged value lives, for a finding that must name it. */
@@ -242,7 +282,7 @@ export interface MergedMetadata {
 const posix = (p: string): string => p.split(sep).join("/");
 
 /** How a run spells a manifest: relative to its base, like every file label. */
-function reportedPath(abs: string, base: string): string {
+export function reportedPath(abs: string, base: string): string {
   const rel = relative(base, abs);
   return rel === "" ? "." : posix(rel);
 }
@@ -285,8 +325,24 @@ export async function loadExternalMetadata(
   const byPath = new Map<string, Values>();
   const byField = new Map<string, Map<string, Values>>();
   const entries: ExternalMetadataEntry[] = [];
+  /** Every `{page}` manifest resolved so far, and the page that resolved it. */
+  const resolvedBy = new Map<string, string>();
+  const rules: PerPageRule[] = [];
 
   for (const { collection, manifest } of configured) {
+    // The whole collection, because a `{page}` entry is read per member page.
+    const declared = collections.find(
+      (c) => c.name === collection && c.externalMetadata.includes(manifest),
+    );
+    if (
+      declared !== undefined &&
+      classifyRef(manifest.file).kind !== "url" &&
+      hasPagePlaceholder(manifest.file)
+    ) {
+      await loadPerPage(declared, manifest, opts, resolvedBy, { owners, byPath, byField, entries });
+      rules.push({ collection: declared, manifest, configDir: opts.configDir });
+      continue;
+    }
     // A URL manifest (0038) is reported as the URL itself, and fetched every
     // run: it is data, and a stale copy would validate against the wrong
     // values. A path is reported relative to the run's base, like every
@@ -375,19 +431,171 @@ export async function loadExternalMetadata(
     }
     for (const entry of parsed.entries) entries.push(reported(entry, file));
   }
-  return { owners, byPath, byField, entries };
+  const index: ExternalMetadataIndex = { owners, byPath, byField, entries };
+  if (rules.length > 0) perPageRules.set(index, rules);
+  return index;
+}
+
+/** The index `loadExternalMetadata` is building, for a helper that adds to it. */
+interface IndexUnderConstruction {
+  owners: Map<string, { collection: string; file: string }[]>;
+  byPath: Map<string, Values>;
+  byField: Map<string, Map<string, Values>>;
+  entries: ExternalMetadataEntry[];
+}
+
+/**
+ * One `{page}` entry (proposal 0058): a rule rather than a file, so each of
+ * the run's pages that belongs to the collection resolves its own manifest,
+ * which is read, checked to be that page's, and indexed. A manifest that does
+ * not exist is a page with nothing kept there, and reads as empty.
+ *
+ * Ownership is still the config's fact, so the entry owns its keys whether or
+ * not any page resolved a file. The owner is recorded as the pattern as
+ * written, because there is no one file to name.
+ */
+async function loadPerPage(
+  declared: CollectionConfig,
+  manifest: ExternalMetadataConfig,
+  opts: LoadExternalMetadataOptions,
+  resolvedBy: Map<string, string>,
+  into: IndexUnderConstruction,
+): Promise<void> {
+  const collection = declared.name;
+  const join = externalMetadataJoin(manifest);
+  for (const key of manifest.keys) {
+    const list = into.owners.get(key);
+    if (list) list.push({ collection, file: manifest.file });
+    else into.owners.set(key, [{ collection, file: manifest.file }]);
+  }
+  const target = indexFor(join, into);
+
+  for (const pageAbs of opts.pages ?? []) {
+    const resolved = pageManifestPath(manifest.file, opts.configDir, pageAbs);
+    if ("outside" in resolved) {
+      // A page above the config directory is a member of nothing, so it is
+      // refused only when the collection's own paths claim it: the one case
+      // where the placeholder was asked to resolve it and cannot.
+      if (resolved.pageRel.startsWith("../") && matchesCollectionPaths(declared, resolved.pageRel)) {
+        throw new DocmetaError(outsideRefusal(manifest, collection, resolved.pageRel));
+      }
+      continue;
+    }
+    const rel = posix(relative(opts.configDir, pageAbs));
+    if (!isMember(declared, rel)) continue;
+
+    const earlier = resolvedBy.get(resolved.abs);
+    if (earlier !== undefined && earlier !== pageAbs) {
+      const [a, b] = [reportedPath(earlier, opts.base), reportedPath(pageAbs, opts.base)].sort();
+      throw new DocmetaError(
+        `${a ?? ""} and ${b ?? ""} both resolve ${PAGE_PLACEHOLDER} to ${reportedPath(resolved.abs, opts.base)}. A ${PAGE_PLACEHOLDER} manifest names one page, so rename one of them.`,
+      );
+    }
+    resolvedBy.set(resolved.abs, pageAbs);
+
+    const label = reportedPath(resolved.abs, opts.base);
+    // The same cache, and the same variant, a concrete manifest parses under.
+    // A missing file is never cached, because it cannot be stat'ed.
+    const parsed = await parsedManifests.parse(
+      resolved.abs,
+      JSON.stringify([collection, join, opts.configDir, [...manifest.keys].sort()]),
+      async () =>
+        parseManifest(
+          manifest,
+          collection,
+          await readPageManifest(resolved.abs, label),
+          label,
+          opts.configDir,
+          join,
+        ),
+    );
+
+    // Every entry must be this page's own. Compared as files rather than as
+    // text (0058 stress test 8): a spelling that differs only in case is one
+    // page on a case-insensitive filesystem and two elsewhere, which is the
+    // platform's call and not a string's.
+    const pageLabel = reportedPath(pageAbs, opts.base);
+    for (const entry of parsed.entries) {
+      if (entry.abs === undefined || sameFile(entry.abs, pageAbs)) continue;
+      const at = entry.line === undefined ? label : `${label}:${String(entry.line)}`;
+      throw new DocmetaError(
+        `Manifest ${at} names "${entry.spelled}", but ${PAGE_PLACEHOLDER} resolved this file for "${pageLabel}". A per-page manifest holds one entry, for its own page.`,
+      );
+    }
+
+    // Indexed under the page's own path, which the check above proved every
+    // path entry names, so a lookup by the run's spelling of the page finds it.
+    for (const [indexKey, values] of parsed.values) {
+      const key = join === PATH_JOIN ? pageAbs : indexKey;
+      const merged = target.get(key) ?? new Map<string, ExternalMetadataValue>();
+      for (const [owned, value] of values) merged.set(owned, reported(value, label));
+      target.set(key, merged);
+    }
+    for (const entry of parsed.entries) {
+      into.entries.push({
+        ...reported(entry, label),
+        ...(entry.abs === undefined ? {} : { abs: pageAbs }),
+      });
+    }
+  }
+}
+
+/** The index a manifest with this join is merged into. */
+function indexFor(join: string, into: IndexUnderConstruction): Map<string, Values> {
+  if (join === PATH_JOIN) return into.byPath;
+  const existing = into.byField.get(join);
+  if (existing) return existing;
+  const created = new Map<string, Values>();
+  into.byField.set(join, created);
+  return created;
+}
+
+/**
+ * The refusal for a page a `{page}` entry would resolve above the config
+ * directory. Exported for the writers that resolve a page's manifest
+ * themselves (`relocate`, `fill`, `derive`, `query`).
+ */
+export function outsideRefusal(
+  manifest: ExternalMetadataConfig,
+  collection: string,
+  pageRel: string,
+): string {
+  const tail = `for "${pageRel}". A ${PAGE_PLACEHOLDER} manifest stays under the config file.`;
+  const origin = externalMetadataOrigin(manifest);
+  if (origin === undefined) {
+    return `externalMetadata file "${manifest.file}" of collection ${collection} resolves outside the config file's directory ${tail}`;
+  }
+  return `${origin.source}: ${origin.where}.file resolves outside ${origin.source}'s directory ${tail}`;
+}
+
+/**
+ * A `{page}` manifest's text (0058 § 2): one that does not exist is a page
+ * with nothing kept there, and reads as empty. Every other failure keeps
+ * `readManifest`'s refusal, so a permission error is still reported.
+ */
+async function readPageManifest(abs: string, file: string): Promise<string> {
+  try {
+    return await readFile(abs, "utf8");
+  } catch (err) {
+    if (isMissing(err)) return "";
+    throw unreadable(file, err);
+  }
 }
 
 async function readManifest(abs: string, file: string): Promise<string> {
   try {
     return await readFile(abs, "utf8");
   } catch (err) {
-    const reason = err instanceof Error ? err.message : String(err);
-    throw new DocmetaError(
-      `Manifest ${file} could not be read: ${reason}`,
-    );
+    throw unreadable(file, err);
   }
 }
+
+/** The refusal every manifest shares when it cannot be read. */
+function unreadable(file: string, err: unknown): DocmetaError {
+  const reason = err instanceof Error ? err.message : String(err);
+  return new DocmetaError(`Manifest ${file} could not be read: ${reason}`);
+}
+
 
 function parseManifest(
   manifest: ExternalMetadataConfig,
@@ -713,6 +921,14 @@ export function externalMetadataPointer(key: string): string {
  * the run is the config corpus (the same invariant corpus checks use): a
  * positional path means the operator chose to look at part of the corpus,
  * and an entry for the rest is expected, not orphaned.
+ *
+ * A `{page}` entry (proposal 0058) is never orphaned inside a file the run
+ * read, because each file is named after its page. Its orphan is a stray
+ * *file*, left behind by a `git mv` or a deletion, so on a run with no
+ * `collections` narrowing the pattern's glob is walked and every manifest of
+ * a page the run did not load is reported after the entries above. A
+ * `--collection` run skips the walk: another collection's pages, which it
+ * did not load, could share the pattern.
  */
 export function orphanEntries(
   index: ExternalMetadataIndex | null,
@@ -722,13 +938,54 @@ export function orphanEntries(
 ): ExternalMetadataEntry[] {
   if (!index) return [];
   const have = new Set(loaded.map((l) => resolve(base, l)));
-  return index.entries.filter(
+  const orphans = index.entries.filter(
     (e) =>
       inCollections(e, collections) &&
       e.join === PATH_JOIN &&
       e.abs !== undefined &&
       !have.has(e.abs),
   );
+  if (collections !== undefined) return orphans;
+  return [...orphans, ...strayManifests(perPageRules.get(index) ?? [], have, base)];
+}
+
+/**
+ * Manifests a `{page}` pattern names on disk for pages the run did not load
+ * (0058 § 5), one orphan per entry. A file some loaded page resolves to was
+ * read and checked by the loader, so it is not walked into again.
+ */
+function strayManifests(
+  rules: readonly PerPageRule[],
+  loaded: ReadonlySet<string>,
+  base: string,
+): ExternalMetadataEntry[] {
+  const strays: ExternalMetadataEntry[] = [];
+  for (const { collection, manifest, configDir } of rules) {
+    const read = new Set<string>();
+    for (const pageAbs of loaded) {
+      const resolved = pageManifestPath(manifest.file, configDir, pageAbs);
+      if (!("outside" in resolved)) read.add(resolved.abs);
+    }
+    const found = findPageManifests(manifest.file, configDir, (rel) => isMember(collection, rel));
+    for (const { abs, entries } of found) {
+      if (read.has(abs)) continue;
+      const file = reportedPath(abs, base);
+      for (const entry of entries) {
+        if (loaded.has(entry.pageAbs)) continue;
+        const stray: ExternalMetadataEntry = {
+          collection: collection.name,
+          join: PATH_JOIN,
+          abs: entry.pageAbs,
+          spelled: entry.spelled,
+          file,
+          ...(entry.line === undefined ? {} : { line: entry.line }),
+        };
+        strayEntries.add(stray);
+        strays.push(stray);
+      }
+    }
+  }
+  return strays;
 }
 
 /**
@@ -778,7 +1035,9 @@ export function orphanError(orphans: readonly ExternalMetadataEntry[]): DocmetaE
     first.join === PATH_JOIN
       ? `names "${first.spelled}", which this run did not load`
       : `names ${first.join} "${first.spelled}", which no loaded document carries`;
+  // A stray per-page file holds its one page's entry, so the file goes with it.
+  const remove = strayEntries.has(first) ? "the file" : "it";
   return new DocmetaError(
-    `Manifest ${where} ${what}${more}. Fix the entry, or remove it.`,
+    `Manifest ${where} ${what}${more}. Fix the entry, or remove ${remove}.`,
   );
 }

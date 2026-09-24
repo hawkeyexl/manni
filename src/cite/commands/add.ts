@@ -197,7 +197,11 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // The manifests that own `citations`, if any collection declares one. The
   // page is labelled from the working directory here, so membership is
   // measured from there too.
-  const sidecars = await sidecarsFor(run, { base: cwd });
+  const sidecars = await sidecarsFor(run, {
+    base: cwd,
+    // A `{page}` manifest (0058) is read for the one page being cited.
+    ...(path === undefined ? {} : { pages: [path] }),
+  });
   const firstManifest = sidecars?.manifests[0];
   if (usingStdin && firstManifest !== undefined) {
     const keyedBy = firstManifest.join === "path" ? "path" : firstManifest.join;

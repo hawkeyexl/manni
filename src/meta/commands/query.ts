@@ -5,6 +5,7 @@
  * config `paths:` fallback) mirrors `get` so the two commands behave
  * identically. Proposal 0021 is the design record.
  */
+import { isMissing } from "../../shared/manifest-cas.js";
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
@@ -447,6 +448,8 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     configDir: configDir ?? cwd,
     base,
     offline: opts.offline ?? config?.offline ?? false,
+    // A `{page}` manifest (0058) is read for exactly the pages this run reads.
+    pages: files.map((file) => resolve(base, file)),
   });
 
   // Proposal 0045. The run's key, resolved when first needed; the one prompt
@@ -2996,8 +2999,10 @@ interface ManifestWrite {
   /** As the run reports it. */
   display: string;
   text: string;
-  expected: string;
+  /** The text phase one read, or null for a `{page}` manifest that did not exist (proposal 0058). */
+  expected: string | null;
 }
+
 
 /**
  * Each written file's metadata as the statement leaves it: the merged data,
@@ -3028,6 +3033,22 @@ function postChangeData(
     data[c.key] = c.to;
   }
   return out;
+}
+
+/**
+ * The run's pages as absolute paths, for a `{page}` manifest (proposal 0058):
+ * every row the statement read, and every document a change names. A schema
+ * or config change names a file that is not a page, and stdin has no path.
+ */
+function runPages(
+  changes: readonly QueryChange[],
+  entries: readonly QueryEntry[],
+  base: string,
+): string[] {
+  const labels = new Set(entries.map((e) => e.label));
+  for (const c of changes) if (!("schema" in c) && !("config" in c)) labels.add(c.file);
+  labels.delete(STDIN_LABEL);
+  return [...labels].map((label) => resolve(base, label));
 }
 
 /**
@@ -3113,12 +3134,21 @@ async function planManifestEdits(
     let write = texts.get(home.absPath);
     if (write === undefined) {
       let text: string;
+      let expected: string | null;
       try {
         text = await readFile(home.absPath, "utf8");
+        expected = text;
       } catch (err) {
-        throw new DocmetaError(`Manifest ${home.file} could not be read: ${errorMessage(err)}`);
+        // A `{page}` manifest (proposal 0058) that does not exist yet reads
+        // as empty and is created. `expected: null` records the absence, so
+        // phase two refuses if the file appeared since.
+        if (!home.perPage || !isMissing(err)) {
+          throw new DocmetaError(`Manifest ${home.file} could not be read: ${errorMessage(err)}`);
+        }
+        text = "";
+        expected = null;
       }
-      write = { path: home.absPath, display: home.file, text, expected: text };
+      write = { path: home.absPath, display: home.file, text, expected };
       texts.set(home.absPath, write);
     }
     write.text = change(write.text);
@@ -3157,7 +3187,7 @@ async function planManifestEdits(
           ...col,
           externalMetadata: col.externalMetadata.filter((m) => classifyRef(m.file).kind !== "url"),
         })),
-      { configDir: ctx.configDir ?? ctx.cwd, base: ctx.base },
+      { configDir: ctx.configDir ?? ctx.cwd, base: ctx.base, pages: runPages(changes, entries, ctx.base) },
     );
     const index = await leftOut;
     if (index === null) return undefined;
@@ -3229,6 +3259,13 @@ async function planManifestEdits(
             `"${c.file}": manifest ${home.file} names it, which is fetched and cannot be written; rename the entry in that repository.`,
           );
         }
+        // A `{page}` manifest (proposal 0058) is named after the page's path,
+        // so the entry cannot follow the page into a file of the new name.
+        if (home.kind === "manifest" && home.perPage) {
+          throw new DocmetaError(
+            `${c.file} cannot move to ${c.renamed}, because its "${key}" lives in ${home.file}, a {page} manifest named after the page's path. Move the page and its manifest together, then rename the entry's key.`,
+          );
+        }
         if (home.kind !== "manifest" || home.join !== PATH_JOIN || home.entry === undefined) continue;
         const moved = await keyHome(loc, c.renamed, own, key);
         if (moved.kind !== "manifest" || moved.absPath !== home.absPath || moved.entry === undefined) {
@@ -3296,7 +3333,8 @@ async function planManifestEdits(
     }
     pageRoutes.set(c, ops);
   }
-  return [...texts.values()].filter((w) => w.text !== w.expected);
+  // A manifest that does not exist yet is written only when it gains text.
+  return [...texts.values()].filter((w) => w.text !== (w.expected ?? ""));
 }
 
 /** One key a statement writes to a page that its schema prefers in external metadata, with no manifest. */
@@ -3416,6 +3454,7 @@ async function offerRelocation(
         configDir: loc.configDir ?? ctx.cwd,
         base: ctx.base,
         offline: ctx.location.offline,
+        pages: runPages(changes, entries, ctx.base),
       });
       ctx.memberships = (label) => memberOf(loc.collections, loc.configDir ?? ctx.cwd, ctx.base, label);
       unhomed = await unhomedWrites(changes, entries, ctx);
@@ -3787,11 +3826,13 @@ async function applyChanges(
   }
   // The same re-check for every manifest the statement edits (0047).
   for (const m of manifestWrites) {
-    let now: string | undefined;
+    // Null for a file that is not there, which is what a `{page}` manifest
+    // phase one found missing expects (proposal 0058).
+    let now: string | null;
     try {
       now = await readFile(m.path, "utf8");
     } catch {
-      now = undefined;
+      now = null;
     }
     if (now !== m.expected) {
       throw new DocmetaError(
@@ -3807,6 +3848,10 @@ async function applyChanges(
   for (const r of pendingRenames) dirs.add(dirname(r.to));
   for (const p of pendingWrites) {
     if (p.ensureDir) dirs.add(dirname(p.path));
+  }
+  // A `{page}` manifest that did not exist may be the first file in its directory (0058).
+  for (const m of manifestWrites) {
+    if (m.expected === null) dirs.add(dirname(m.path));
   }
   for (const d of dirs) await mkdir(d, { recursive: true });
 

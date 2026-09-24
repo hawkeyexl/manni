@@ -85,7 +85,7 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
     resolve: false,
   });
   const { run, files, usingStdin, forced } = prepared;
-  assertNoOrphans(prepared);
+  await assertNoOrphans(prepared);
   const hits = joinHits();
   const manifests = new ManifestSet();
   /** Every `--only` value that named something, anywhere in the run. */

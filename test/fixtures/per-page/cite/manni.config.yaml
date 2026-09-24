@@ -1,0 +1,11 @@
+# Proposal 0058 for cite: each page keeps its citations in a manifest of its
+# own, beside it. `uncited.md` has no manifest, and reads as citing nothing.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+cite:
+  # The sources sit beside the pages in this fixture.
+  root: .

@@ -1,0 +1,8 @@
+# Proposal 0058: an absolute prefix puts every per-page manifest outside the repository.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.{md,mdx}"
+    externalMetadata:
+      - file: "/srv/{page}.citations.yaml"
+        keys: [citations]
