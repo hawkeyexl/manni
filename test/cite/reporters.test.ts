@@ -1016,6 +1016,10 @@ describe("rewriteLine", () => {
     expect(recommitted("not-in-history")).toBe(
       "source src/x.ts:10-12 commit 61a9f7b -> 166b579 (not in this branch's history)",
     );
+    // A row with no reason is the containment case, all `--recommit` once knew.
+    expect(recommitted(undefined)).toBe(
+      "source src/x.ts:10-12 commit 61a9f7b -> 166b579 (did not contain the pinned lines)",
+    );
   });
 
   it("says a claim a marker's move shifted", () => {

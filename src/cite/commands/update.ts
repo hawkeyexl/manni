@@ -1556,8 +1556,12 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   const also: string[] = [];
   if (reminted && !(await git.available())) also.push(GIT_UNAVAILABLE_COMMIT);
   // A shallow clone ran only the containment test, and says so whatever it
-  // found, because what it could not check is the point.
-  if (recommit && git.shallow !== undefined && (await git.shallow())) also.push(SHALLOW_RECOMMIT);
+  // found, because what it could not check is the point. The guard is the
+  // one `outsideHistory` uses, so the notice fires exactly when that test
+  // would have run and could not.
+  if (recommit && git.shallow !== undefined && git.isAncestor !== undefined && (await git.shallow())) {
+    also.push(SHALLOW_RECOMMIT);
+  }
   sayNotices(reports, opts.onNotice, also);
 
   const rewritten = pages.reduce((n, page) => n + citationsIn(page.rewritten), 0);
