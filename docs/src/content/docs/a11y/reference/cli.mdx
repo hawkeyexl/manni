@@ -75,7 +75,7 @@ manni a11y check [urls...] [options]
 | `--no-max-pages` | n/a | off | Check every page found, ignoring a `maxPages:` in config. No cap is the default, so this is how a configured one is lifted for one run. `--max-pages` and `--no-max-pages` set the same option, so the one written later on the command line wins. |
 | `--exclude` | `<glob>` | | Glob matched against a URL's path; a match keeps that page out of the crawl. Repeatable, one glob per occurrence, never comma-separated. A pattern must start with `/`. A pattern that excludes a seed is an error, and it names every excluded seed under the source that pattern came from. Both exit 2. See [what a pattern matches](#what-a-pattern-matches). Replaces config `exclude:` rather than adding to it. |
 | `--tags` | `<list>` | | Comma-separated axe tags, given once; restrict axe to rules carrying any of them, for example `wcag2a,wcag2aa,wcag21aa,best-practice`. Whitespace around commas is trimmed and empty items are dropped. A second `--tags` replaces the first. Without it axe runs its default rule set. Overrides config `tags:`. |
-| `--severity` | `<level>` | `notice` | Minimum severity reported and counted, on the family scale: `notice`, `warning`, or `error`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. An unknown level is an error (exit 2). axe's four impact levels are folded onto these three when a page is read. Every finding keeps axe's own value as `impact`, and the [github format](#output-formats) has the table. Overrides config `severity:`. |
+| `--severity` | `<level>` | `notice` | Minimum severity reported and counted, on the family scale: `notice`, `warning`, or `error`. Violations below it are dropped before the [score](#the-score) and the exit code are decided. The floor is also the gate: whatever it keeps fails the run, so a page whose worst finding is a `warning` still exits `1`. See [exit codes](#exit-codes). An unknown level is an error (exit 2). axe's four impact levels are folded onto these three when a page is read. Every finding keeps axe's own value as `impact`, and the [github format](#output-formats) has the table. Overrides config `severity:`. |
 | `--timeout` | `<ms>` | `30000` | Per-page navigation timeout in milliseconds. Overrides config `timeout:`. |
 | `-q, --quiet` | n/a | off | In `pretty` output, hide pages with no remaining violations. Has no effect on `json` or `github`. |
 | `--progress` | n/a | `auto` | Report [progress](#progress) on stderr while the crawl runs. The default is on only when stderr is a terminal. Pass it to see each page in a CI log. |
@@ -381,7 +381,7 @@ And `summary`:
 | `skipped` | integer | Discovered but not checked because `--max-pages` was reached. `0` when no cap is set. |
 | `duplicates` | integer | Discovered, then dropped without loading because a redirect had already landed on the same page under another spelling. `checked + skipped + duplicates` equals `discovered`. |
 | `excluded` | integer | Distinct URLs an [exclusion pattern](#what-a-pattern-matches) kept out of the crawl, counted once each however many pages linked to them. It sits outside the identity above, because an excluded URL never entered the frontier. This is the authoritative total for a finished run, and it can exceed what the [progress](#progress) line reported. `0` when nothing was excluded. |
-| `failed` | integer | Pages with at least one remaining violation or an `error`. Drives exit `1`. |
+| `failed` | integer | Pages with at least one remaining violation, of any severity, or an `error`. Drives exit `1`. |
 | `violations` | integer | Remaining violations across all pages, counted per rule rather than per node. |
 | `bySeverity` | object | Violation counts keyed `notice`, `warning`, `error`. All three keys are always present. |
 | `sitemap` | string \| `null` | The sitemap URL that was found, or `null` when none was. Finding one is not the same as using one, which `sitemapPages` reports. |
@@ -451,6 +451,18 @@ finished run.
 | `0` | Every page loaded and none has a violation at or above the severity floor. |
 | `1` | At least one page has a remaining violation, or a crawled page failed to load. `summary.failed` is greater than zero. |
 | `2` | Usage or operational error. The causes are an unknown flag value, a non-`http(s)` URL, or no URLs and no config. They also include a seed that could not be loaded, or no browser found. Most print one line on stderr prefixed `manni: `. A missing or unknown subcommand prints the help or commander's own message instead. |
+
+Severity is read once, at the floor. Every violation the floor keeps fails its
+page, whatever its level, so a run whose worst finding is a `warning` or a
+`notice` still exits `1`. `manni meta validate` and `manni cite check` differ
+here, and fail on error-severity findings alone. Both let you move a finding
+onto the level you want. axe assigns a11y's severities, and no config moves
+one, so `--severity` is this domain's only lever over the gate. That is why it
+holds both jobs. The
+[family severity page](/manni/meta/reference/output-and-exit-codes/#severity-across-the-family)
+has the comparison, and
+[proposal 0064](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0064-severity-and-the-exit-code.md)
+the reasoning.
 
 ### Examples
 
