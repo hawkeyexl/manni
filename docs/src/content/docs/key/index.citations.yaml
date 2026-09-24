@@ -54,9 +54,9 @@ docs/src/content/docs/key/index.mdx:
         integrity: sha256-630d8ebf274a261ea085b39a7fc4df1635b0d66c163c31691cd705de4e68b761
       source:
         file: src/shared/encryption-key.ts
-        lines: 229-240
+        lines: 228-239
         integrity: sha256-e2820b422e0c5bc6a8aefba1ef4edc1cb3beb56b48222b093bf9f2ba88ae0103
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: set-row-generates-256-bits
       claim:
         lines: 64
@@ -143,9 +143,9 @@ docs/src/content/docs/key/index.mdx:
         integrity: sha256-0a3b271d9e75f7582d4157bf3a7c6d6ee6556cd12be549ac685090b8b415e520
       source:
         file: src/shared/encryption-key.ts
-        lines: 260-262
+        lines: 259-261
         integrity: sha256-24d7e5654c456855164c214ddf73c7e254c891845b755fd672eb809d6cc8b5c6
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: write-order-key-first
       claim:
         integrity: sha256-edee819facc090b259aff68c49ffc9cde876a19b6e63d2d2f7501c7cf909f81f
@@ -176,48 +176,48 @@ docs/src/content/docs/key/index.mdx:
         integrity: sha256-cfe9e252f024ec592f6ae7eceb5bb121ea1d55150495e026a0ae12a020e5e4de
       source:
         file: src/shared/encryption-key.ts
-        lines: 58-70
+        lines: 57-69
         integrity: sha256-af2bad28497a46d44e3fd25f32d68e5b73c21d6b7b14d63192ca1a7ff1ddaa1c
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: key-shape-config
       claim:
         lines: 140-142
         integrity: sha256-64c7c6e98b34c581ffb7e0b6b1f47d5024dda26d1308795df5cbcab63b6da352
       source:
         file: src/shared/config-file.ts
-        lines: 242-249
+        lines: 253-260
         integrity: sha256-638ee344aaa62fb7b43eeb937589be88dac17f49d213a48e5eb37fe46fee679a
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: key-shape-env
       claim:
         lines: 140-142
         integrity: sha256-64c7c6e98b34c581ffb7e0b6b1f47d5024dda26d1308795df5cbcab63b6da352
       source:
         file: src/shared/encryption-key.ts
-        lines: 60-65
+        lines: 59-64
         integrity: sha256-9b2b2f43f95570f2bca61377c00eb15134ecfd902b97e521fc7e12405e3b3899
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: key-shape-config-message
       claim:
         lines: 145
         integrity: sha256-1d7ca7f09d867b4969a1d2772ce2f5939a88b263ef07ef9ea4f1fb85b00bf9f6
       source:
         file: src/shared/config-file.ts
-        lines: 244-247
+        lines: 255-258
         integrity: sha256-4c64498f39288a7c9fb6e2e525da2101ac16dff316efd4c56ffbb2a0ecd99306
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: key-shape-env-message
       claim:
         lines: 146
         integrity: sha256-0966b6ae5fa4497570d2fb53aab9c91eb57c2921ade329dad9a07bd66f78a7e9
       source:
         file: src/shared/encryption-key.ts
-        lines: 60-65
+        lines: 59-64
         integrity: sha256-9b2b2f43f95570f2bca61377c00eb15134ecfd902b97e521fc7e12405e3b3899
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: key-expanded-not-stretched
       claim:
-        lines: 154-157
+        lines: 153-156
         integrity: sha256-2571f411e80fb63896359ec7b7ac71dd5b42a8b21b910bb92084dc2f67b9be2e
       source:
         file: src/shared/encryption.ts
@@ -226,7 +226,7 @@ docs/src/content/docs/key/index.mdx:
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: key-set-256-bits
       claim:
-        lines: 154-157
+        lines: 153-156
         integrity: sha256-2571f411e80fb63896359ec7b7ac71dd5b42a8b21b910bb92084dc2f67b9be2e
       source:
         file: src/shared/encryption.ts
@@ -251,7 +251,7 @@ docs/src/content/docs/key/index.mdx:
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: set-refuses-env-set
       claim:
-        lines: 185-187
+        lines: 184-186
         integrity: sha256-5e5b88e64938ad86303987511491675a5278690a20b30ca949750e7ee125c311
       source:
         file: src/key/commands/set.ts
@@ -284,7 +284,7 @@ docs/src/content/docs/key/index.mdx:
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: prompt-missing-notice
       claim:
-        lines: 208
+        lines: 207
         integrity: sha256-846bcaee7804a3abd4719fcb688a9963ed4faf0589dae9e264060b9602001886
       source:
         file: src/shared/prompt.ts
@@ -293,7 +293,7 @@ docs/src/content/docs/key/index.mdx:
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: prompt-question
       claim:
-        lines: 210
+        lines: 209
         integrity: sha256-3a9a17eeffbf1765db5fa8211534910150554feea8465e5573337d9a3e564680
       source:
         file: src/shared/prompt.ts
@@ -334,28 +334,19 @@ docs/src/content/docs/key/index.mdx:
         commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
     - id: key-only-file-is-config
       claim:
-        lines: 149-151
-        integrity: sha256-51af0ee94e1d9af3ed314bf3b4363da95d3078339969f4038d446f8adf9e4712
+        lines: 149-156
+        integrity: sha256-0bdd2ef929e8741481d465080f28b9aaa2af07eafba99686896acf4eeebb1305
       source:
         file: src/shared/config-file.ts
-        lines: 182-201
-        integrity: sha256-d24495f6682aa15acd4cd4c004d3dd8d74710e83aa39ad9478dce7c96805beb4
-        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
-    - id: key-moose-found-with-warning
-      claim:
-        lines: 151-153
-        integrity: sha256-a946ebfea33b8a147deaa44fc20671224d242ebe032bb075ac161d06a3fdb2ea
-      source:
-        file: src/shared/config-file.ts
-        lines: 286-317
-        integrity: sha256-7a42b96b60e821d1a26c29bf5b497dbf470220a7ee79843f6b7dc5ad6247788e
-        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+        lines: 187-212
+        integrity: sha256-0a8fc75efc94aa7bb472f6e0b571e0c247ef9f1d6aeafe5948d7c4e07899d8b1
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: key-set-exception
       claim:
         lines: 141-142
         integrity: sha256-2ddbbbe772521f5ae4a7ae0dc6f798a65214d0066eafe83d5ebc9954b911ff39
       source:
         file: src/shared/config-file.ts
-        lines: 266-280
+        lines: 292-306
         integrity: sha256-2c6970bb7b86e4eef02c6c906bdafdcfe1aff8931d4f0d78760320620c622f50
-        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12

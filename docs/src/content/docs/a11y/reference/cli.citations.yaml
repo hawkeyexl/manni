@@ -256,9 +256,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-0b48364247fc2a4bb4cf83d724cdc64c50970395942c867cc13e29ac523e4eb9
       source:
         file: src/shared/config-file.ts
-        lines: 365-370
-        integrity: sha256-1816dd98b0691d73786c95f517288aa3973783d047a8477eb22aef58444c27a8
-        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+        lines: 377-382
+        integrity: sha256-385abcd79702ff04016086391cb2c38ab007fef93c6fbbbe1f200eab26662f8a
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: no-config-same-option
       claim:
         lines: 81
@@ -1068,9 +1068,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-29d5bc17af955399250282a978488d3d9daa2c35b4904591cebebb63c6dd1525
       source:
         file: src/shared/config-file.ts
-        lines: 301-306
-        integrity: sha256-eb038b86591fa15fbb97c75d08e5cd8261b7e9312aaf54beb71aaf537d626847
-        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+        lines: 315-320
+        integrity: sha256-f4faec34c0d49f7cb56d6e9f798afd3f6d922a3d8fb41d6b52403e84f1ccab40
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: config-flag-wins
       claim:
         lines: 552-556
@@ -1192,9 +1192,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-16c1e9a638ab18413dc336067bc172a7ad26699335feed38fd55cb55b583a950
       source:
         file: src/shared/config-file.ts
-        lines: 193-201
-        integrity: sha256-441f60210b9652c5c6b4079a3ea115831cd07c924e44b806decec8703e8ca2b3
-        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+        lines: 203-212
+        integrity: sha256-90ad68f7f4ab347973183c055efa9413e9c71cf8a84301e9a0bfda90c4079d9b
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: crawl-scope-any-seed
       claim:
         lines: 128-129

@@ -37,9 +37,9 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         integrity: sha256-fecd0355b9b7433272aeb0bfbae1007c1c662a434f9324138e958cbd97fe335c
       source:
         file: src/meta/cli.ts
-        lines: 872
+        lines: 873
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: validate-judges-the-derived-stamp
       claim:
         integrity: sha256-3219f33ff597c89ce4d5ecf4eae156536902e01c392bc0b3198016462ff8b762

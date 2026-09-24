@@ -73,9 +73,9 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-d1796888f247a7701de11c91dc261657539c307ccb0ca48f8aa3c91a4bdc5165
       source:
         file: src/shared/config-file.ts
-        lines: 360-370
-        integrity: sha256-78a7d4e29509e12f666934ef8d7219d2ac642820acbd383f11a12746e20ff982
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        lines: 372-382
+        integrity: sha256-46cb043240625abdc51ffc28db713cdd71ff5a0002dbe580add90d3e89ef34ce
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: check-quiet-pretty-only
       claim:
         lines: 106

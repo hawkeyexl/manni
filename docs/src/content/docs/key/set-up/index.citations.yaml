@@ -6,42 +6,42 @@ docs/src/content/docs/key/set-up/index.mdx:
         integrity: sha256-53afbd821b492f879eb29ddece181d5bc5fcad3a4df34057cc6babae470dbf99
       source:
         file: src/shared/encryption-key.ts
-        lines: 68-69
+        lines: 67-68
         integrity: sha256-39b4ccfe378d94b5d23622e2eedf7a22152256f8f2c0aa50f5714c1ae5d78403
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: where-env-row
       claim:
         lines: 19
         integrity: sha256-7275547658600c0544a86827fca1aa874698196fa4741ac0a89dc0d4314438cf
       source:
         file: src/shared/encryption-key.ts
-        lines: 58-66
+        lines: 57-65
         integrity: sha256-c7f1062e79fe56e747620d13a1241a78aefe810fcd955e2f62f7b9a8d579c71b
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: env-wins-empty-unset
       claim:
         integrity: sha256-663a5919bdacd8198dfd4ad90301aa6836dff496a18d1ee2a9143b30d4a6bc91
       source:
         file: src/shared/encryption-key.ts
-        lines: 58-70
+        lines: 57-69
         integrity: sha256-af2bad28497a46d44e3fd25f32d68e5b73c21d6b7b14d63192ca1a7ff1ddaa1c
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: same-shape-config
       claim:
         integrity: sha256-04a663e577dd53ff62ef1a2ed01cbec77a7a81194c4501639ba457f88cafb11d
       source:
         file: src/shared/config-file.ts
-        lines: 242-249
+        lines: 253-260
         integrity: sha256-638ee344aaa62fb7b43eeb937589be88dac17f49d213a48e5eb37fe46fee679a
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: same-shape-env
       claim:
         integrity: sha256-04a663e577dd53ff62ef1a2ed01cbec77a7a81194c4501639ba457f88cafb11d
       source:
         file: src/shared/encryption-key.ts
-        lines: 60-65
+        lines: 59-64
         integrity: sha256-9b2b2f43f95570f2bca61377c00eb15134ecfd902b97e521fc7e12405e3b3899
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: set-generates-256-bits
       claim:
         integrity: sha256-04a663e577dd53ff62ef1a2ed01cbec77a7a81194c4501639ba457f88cafb11d
@@ -63,9 +63,9 @@ docs/src/content/docs/key/set-up/index.mdx:
         integrity: sha256-a4a3401452df4b7ed54c76d411b76502d481bd9ba2e9a1f902b6021420f81b1d
       source:
         file: src/shared/encryption-key.ts
-        lines: 229-240
+        lines: 228-239
         integrity: sha256-e2820b422e0c5bc6a8aefba1ef4edc1cb3beb56b48222b093bf9f2ba88ae0103
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: set-never-prints-key
       claim:
         integrity: sha256-a4a3401452df4b7ed54c76d411b76502d481bd9ba2e9a1f902b6021420f81b1d
@@ -80,9 +80,9 @@ docs/src/content/docs/key/set-up/index.mdx:
         integrity: sha256-d9abebdbbce59e2fd3f919ff1c1dc2f63869455b7ada0cb59a19bdf9910bfdd8
       source:
         file: src/shared/encryption-key.ts
-        lines: 260-262
+        lines: 259-261
         integrity: sha256-24d7e5654c456855164c214ddf73c7e254c891845b755fd672eb809d6cc8b5c6
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: warning-not-refusal
       claim:
         lines: 56-58
@@ -115,9 +115,9 @@ docs/src/content/docs/key/set-up/index.mdx:
         integrity: sha256-e86498ea05a783ee85d0ce72ccdf460d913645968e4f2c22f5094c2a85ebf14b
       source:
         file: src/shared/encryption-key.ts
-        lines: 153-155
+        lines: 152-154
         integrity: sha256-2ea9fb071290cb2533735f499cffb2698ad466901c28c38f80ed98254ca09ff4
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: set-refuses-env
       claim:
         lines: 107

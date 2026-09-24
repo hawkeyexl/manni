@@ -105,9 +105,9 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         integrity: sha256-145f4f58c93b8182e60f8b04e27de2a31b1590e799b772287f2243f09de1b2fc
       source:
         file: src/meta/commands/fill.ts
-        lines: 618-624
+        lines: 612-618
         integrity: sha256-c2dc89be0e81f96d389d7bcf9f11b2289d63bfdb73eaa79b74d1d9b8fd361f9a
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: reads-do-not-decrypt
       claim:
         integrity: sha256-01182f60c58cc3372d664f673964b422969595a876eb743a8bebd502cd67fd86

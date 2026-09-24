@@ -24,75 +24,75 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-07b926b3d1b0dd543af1b74c402cddae1a42c7b444e1c790298deb518a72670f
       source:
         file: src/meta/cli.ts
-        lines: 872
+        lines: 873
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: exit-0-when-none-failed
       claim:
         lines: 379
         integrity: sha256-e7bbf58b0b32d5100b6d2f2e7609a14ba25e57d27688ee56d0977e065da017fd
       source:
         file: src/meta/cli.ts
-        lines: 872
+        lines: 873
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: fill-skips-below-threshold
       claim:
         integrity: sha256-02de4565fd61c6b243042af6123122aea8b7f2b5fa751679cc4e1a13e155ad6e
       source:
         file: src/meta/commands/fill.ts
-        lines: 1943
+        lines: 1906
         integrity: sha256-d90e6ba6528f65834a1c207ba976df4b9219a73e0876996bc6738caaf8f34163
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: fill-records-meta-provenance
       claim:
         integrity: sha256-02de4565fd61c6b243042af6123122aea8b7f2b5fa751679cc4e1a13e155ad6e
       source:
         file: src/meta/commands/fill.ts
-        lines: 1188
+        lines: 1191
         integrity: sha256-c7afaaec915f3860d03e05649071f56117bc089690152e293cbd36e33c444b54
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: fill-leaves-valid-fields-alone
       claim:
         integrity: sha256-02de4565fd61c6b243042af6123122aea8b7f2b5fa751679cc4e1a13e155ad6e
       source:
         file: src/meta/commands/fill.ts
-        lines: 1595-1596
+        lines: 1558-1559
         integrity: sha256-d19e8e456bc7fa207f429c489335bc4b2b40ad51a6852aeaa3a6d7c998d39f5a
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: local-flag-keeps-inference-on-your-hardware
       claim:
-        integrity: sha256-79588d67a1ed7ac48645b56879c2f4b1a8b625e417d404146773c838fa51ef91
+        integrity: sha256-d5c6414a09e858b044f5e56d8e6641f84341e379afc1b14c82ce6452a1adbc85
       source:
-        file: src/meta/commands/fill.ts
-        lines: 2013-2019
-        integrity: sha256-cfbc669753e7cbc7d2ed0a3f5d0350496abc5cddbf8fbe6a51f55bbe6a0df130
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        file: src/shared/providers.ts
+        lines: 349-354
+        integrity: sha256-c217aeb40e682a408ca9410f00259855eac291fffa27b46eb892551f0bef1802
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: fill-detects-provider
       claim:
         integrity: sha256-b55d205b19b306a01bf64ab02a825f39e9bae2e3b0ed3aaee1baf6f3948446d8
       source:
-        file: src/meta/commands/fill.ts
-        lines: 154-160
-        integrity: sha256-65c2d5902371eb37c2ebbd7effff1a30c35e1aeaee32c0df39e32cb282dd015f
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        file: src/shared/providers.ts
+        lines: 26-33
+        integrity: sha256-d7604fdfd1500716f4a2e57b9afac1ae2da1d3bb161dc5c28297749afd9bfe57
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: fill-writes-in-place-dry-run-previews
       claim:
         lines: 340
         integrity: sha256-37a776f7a82948a4c835b81a8c50424d8819f30b62032088c7af2545e9a92de7
       source:
         file: src/meta/commands/fill.ts
-        lines: 1274-1276
+        lines: 1277-1279
         integrity: sha256-d65398a9b30daf6b05a7d09f20b19dc0e0b55b62a761fa005688aec8ff0b43f0
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: fill-resolves-same-schema
       claim:
         integrity: sha256-aa5438a52f14ceb083057a2be8f9ff67882371dbc4dbfcf79056bcff7883ea3e
       source:
         file: src/meta/commands/fill.ts
-        lines: 677-681
+        lines: 671-675
         integrity: sha256-5b676c23f7fc525d705d7320eaa4c1a669902aaf906cb70d9f37f5240fb7c6a2
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: bare-validate-reads-collections
       claim:
         lines: 304-305
@@ -298,6 +298,6 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-bcf94d8c1638f84635db4504c94a64bb4c39bbe603cc80397a62f3870f9949be
       source:
         file: src/meta/cli.ts
-        lines: 724-727
+        lines: 725-728
         integrity: sha256-f4ceae447f423a880bfc75bf0632b4dcdc41c384a805904368fe4c7bae68c9b6
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12

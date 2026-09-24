@@ -6,9 +6,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-1df6fe82622726ef405b596435a08f4d2aba5a51901a3b3ba1ea0ec47041fba6
       source:
         file: src/meta/cli.ts
-        lines: 872
+        lines: 873
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: github-format-emits-annotations
       claim:
         lines: 77
@@ -42,9 +42,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-4cc78a17fae5f102ba9736cca8bd7e268640bec880d1c0fa52b1cf3ebd27ffc5
       source:
         file: src/shared/config-file.ts
-        lines: 46-50
+        lines: 51-55
         integrity: sha256-6667b3b66a8f9f4789df5eb19546fa2f212465ab532996ae90ec45f8ed02eb71
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: meta-schemas-applied-from-config
       claim:
         lines: 63
@@ -122,9 +122,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-4819bfc7c24097c4d09d550b354d408dbb2ba9558251e4d34e3308d5b8004982
       source:
         file: src/shared/config-file.ts
-        lines: 182-183
-        integrity: sha256-52325a591829dcac75787b01983c1dcebc91e3466c12050b4feb3a67063d5757
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        lines: 187-193
+        integrity: sha256-3a9fd995ca9231f7feb826bd6fcfebf539c5d405f51ebc01c1b65ea6f2f06766
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: six-registered-extractors
       claim:
         lines: 15

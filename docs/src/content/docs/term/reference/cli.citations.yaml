@@ -93,9 +93,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-a65808e799a397f468a0864f0efd3d5ae66bd75d68fc1d65e753e1aa32e7d599
       source:
         file: src/shared/config-file.ts
-        lines: 364-369
-        integrity: sha256-b93ae321fa23960726267b00a4bec8ac74c755a7ff43a423ce6b3e446e85007d
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        lines: 376-381
+        integrity: sha256-04562d75920df499ea0e1800c86622461b2217e8ab7660f852e2e616f327a758
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: no-color-tty
       claim:
         lines: 102
@@ -610,9 +610,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-5c57e2422c2952ca7912c7fa007d59bdeb4f66458ef98b84bce68de08811d380
       source:
         file: src/shared/config-file.ts
-        lines: 368-370
+        lines: 380-382
         integrity: sha256-93f531b04c37b874a3558be21947d9f2f221e59c8e412fe7206542e70c4c46d8
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: err-unknown-check-format
       claim:
         lines: 637

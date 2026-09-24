@@ -5,25 +5,25 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-1f40d0d2a26f5ed5cb1a5b9e3eded9af7b21084b217a8756eb087b22f90c0e25
       source:
         file: src/meta/commands/fill.ts
-        lines: 1589-1591
+        lines: 1552-1554
         integrity: sha256-e2ad11ef937dd3b5993e7f8317ae793d739f4154dbf341b060a05e4c7d23f89d
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: provenance-keys-withheld-from-model
       claim:
         integrity: sha256-1f40d0d2a26f5ed5cb1a5b9e3eded9af7b21084b217a8756eb087b22f90c0e25
       source:
         file: src/meta/commands/fill.ts
-        lines: 911-918
+        lines: 905-912
         integrity: sha256-fc4e2c325570ef08944fcb7b52e8327ccf9055be1cad86f56bf8678fc9766e02
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: meta-provenance-skipped-on-schema-mismatch
       claim:
         integrity: sha256-1f40d0d2a26f5ed5cb1a5b9e3eded9af7b21084b217a8756eb087b22f90c0e25
       source:
         file: src/meta/commands/fill.ts
-        lines: 1169-1183
+        lines: 1168-1182
         integrity: sha256-b910b9c9d9f59301c9e0a6ff1a6c7a8415897a6691a64b9c84a1e72889b57f22
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: meta-provenance-schema-mismatch-note-text
       claim:
         integrity: sha256-1f40d0d2a26f5ed5cb1a5b9e3eded9af7b21084b217a8756eb087b22f90c0e25
@@ -44,10 +44,10 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
       claim:
         integrity: sha256-3826bac450bbfce383854d3bd3bb707d865fb5af83e1f433169edfead9900c7b
       source:
-        file: src/meta/commands/fill.ts
-        lines: 1424-1428
-        integrity: sha256-c0de2de5d9234ffa87ac58747c9bb9ebbe329bfed2c72aac43d2434ed9124cf4
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        file: src/meta/core/meta-provenance.ts
+        lines: 69-78
+        integrity: sha256-8d2868752f74c768a84427fe66b2d89bcbd16f6a2e159c0dd1e2881bca14519d
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: meta-provenance-fields-are-json-pointers
       claim:
         integrity: sha256-3826bac450bbfce383854d3bd3bb707d865fb5af83e1f433169edfead9900c7b
@@ -61,9 +61,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-98174703da84540c6793ae0b31bb8ffac616839aed2553872a2c32bf2c06dd9c
       source:
         file: src/meta/commands/fill.ts
-        lines: 142-143
+        lines: 148-149
         integrity: sha256-767547931864d72dac68816d93cdcbd7a82f26c9fecdd31403021bde96892010
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: unfenced-format-refuses-provenance-stamp
       claim:
         integrity: sha256-7039fb1532232cd20ca72b17f50d4499b0e7e596e3ec78392f9cf28affb9a202
@@ -77,9 +77,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-7039fb1532232cd20ca72b17f50d4499b0e7e596e3ec78392f9cf28affb9a202
       source:
         file: src/meta/cli.ts
-        lines: 1605-1606
+        lines: 1603-1604
         integrity: sha256-dcaeddb2c779f1f13b38700375d49f5ca9e5dbe781dac67ef7f3c2c42548d9c5
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: url-manifest-cannot-own-provenance
       claim:
         integrity: sha256-847eace2a8ba9d5ee66ef790ce1713c14bd6006d6f46065ab33a041d0956e99b
