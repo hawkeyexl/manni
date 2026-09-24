@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [2.12.0](https://github.com/hawkeyexl/manni/compare/v2.11.1...v2.12.0) (2026-09-24)
+
+
+### Features
+
+* **term:** the graph vocabulary (0063) ([#121](https://github.com/hawkeyexl/manni/issues/121)) ([6beca83](https://github.com/hawkeyexl/manni/commit/6beca83bdb036aa11f11830e7e908e75d9ffc012))
+
 ## [2.11.1](https://github.com/hawkeyexl/manni/compare/v2.11.0...v2.11.1) (2026-09-24)
 
 
