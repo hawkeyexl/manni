@@ -1,0 +1,396 @@
+docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
+  citations:
+    - id: docusaurus-toml-dates-fail-the-string-check
+      claim:
+        lines: 310-313
+        integrity: sha256-5677bfb8c7f1c890afe35baf148f2066f7cc59380e66024d4a62fd8a7a55d098
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 290-299
+        integrity: sha256-8dfe6038d743adc91c9f9ad1950a77de50a09cd5acc96d60fe98075ff22f911e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-version-segment-is-the-minor
+      claim:
+        integrity: sha256-643a682f0f54a185c8639481542f0455a6107a640136151f69a6769fda1d6257
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 3
+        integrity: sha256-393a72ce72e1528f0b60a38295e99fe42c8df342dc0d97b538299461a81a761e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-no-required-field-so-fill-exits-0
+      claim:
+        lines: 295-296
+        integrity: sha256-6d8c859c5707165f7d730abc8ffe6b1f415c1d0f5ae89459a9a363c9b37fe463
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 6-7
+        integrity: sha256-378a494cede2cb04abd922c993975f4aa57e36276ac431f5a17eaa105a538e74
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-first-matching-override-wins
+      claim:
+        integrity: sha256-c092029daccd4f4fd85924ed2cbb04e52f1b67f9a6c187c8fada066fc939647e
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 431-438
+        integrity: sha256-59c6d7f45e5f08e7454bbbfef4c99f642acecc72892011d890b2f6204c5ed0d4
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-each-schema-in-a-set-applies-in-full
+      claim:
+        lines: 220-225
+        integrity: sha256-8172fafffc6de7f79aa21fb094ec19b183be3bceccf52f81f00bde1efb7f6ec9
+      source:
+        file: src/meta/core/validator.ts
+        lines: 631-638
+        integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-misspelled-key-passes
+      claim:
+        lines: 194-197
+        integrity: sha256-472a59cb0ac54bf68fa52087572c655d94ac931b8ff844a32c0491512d77afab
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 7
+        integrity: sha256-e5bb2bd9a0114d2671ff2bd71d504687cfb37f90f05f136cf08e1e987d303d8d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-references-are-not-resolved
+      claim:
+        lines: 189-191
+        integrity: sha256-e4f88e32a9a470e9eef96b421fa4fb2134263d24c24ccece835836a9ad748ef4
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 9-13
+        integrity: sha256-263964e329cda3eef3eb1e6020e40180cb9dacb9a2079657b11fa8eb974e3163
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-unknown-keys-allowed
+      claim:
+        lines: 186-188
+        integrity: sha256-0023067e6a4503e2a79944a52da6a9df5a1db6a3590d66fdc697ae1f58415ad9
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 7
+        integrity: sha256-e5bb2bd9a0114d2671ff2bd71d504687cfb37f90f05f136cf08e1e987d303d8d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-toc-levels-checked-independently
+      claim:
+        lines: 182-185
+        integrity: sha256-bccee8a6218f9117f3bb8cf63c3869955959e77991eaf682bc33e332b0a58f42
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 53-64
+        integrity: sha256-7024ddeaabb1d3de06962dcc6f126676054b24d92568c0e07ed2e6de8ff6f881
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-tag-objects-need-both-halves
+      claim:
+        integrity: sha256-1030657c5606a91de825a33f86eddfa42e0c334ebbd66e776328cf4b2993ec05
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 100-113
+        integrity: sha256-46434326821324b9dd8502221a276e273022bd745f92b1695089d42bd037e4f5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-uri-reference-allows-a-root-path
+      claim:
+        integrity: sha256-7eb77bc222d648993c8376004f4f6a17c98e0e66a50c97de1fed740581206418
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 77-95
+        integrity: sha256-934a8a04a6a55468a5eaac5a78f9147f330a14aa07f927273bca1293b22b7df2
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-last-update-forbids-unknown-keys
+      claim:
+        integrity: sha256-db9ef6f89d492ede03d24cef21b62768bb6422b303ee04582461ba21b75922e8
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 122-137
+        integrity: sha256-4a593dbe2a1587985f1beb01e06dedce9c3f016d223567e14b103c3cc65d70a3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-draft-and-unlisted-are-exclusive
+      claim:
+        integrity: sha256-0245a415da6aeba6a42906d938113d99f6afdff7218f06893aa9391d0ba9053a
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 139-146
+        integrity: sha256-12f067b492ffa1c04531b252bf512cc429849c13c9ece010a15a3c9543de1d7e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-sidebar-position-is-a-number
+      claim:
+        integrity: sha256-7f71e443ff82cc2335f5db03d339e90277fe4b9624189437d5928731a27266f5
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 25-28
+        integrity: sha256-89311d5b1c4209d766e2ee6e0ae9222b6f02dccf6d744aea44c8079e41d39e5a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-pages-set-is-the-smallest
+      claim:
+        integrity: sha256-f135a5954d1610f2921c4a39a1b914c0f44519e8ed9abe8ad5cc35feb5993f71
+      source:
+        file: src/meta/schemas/docusaurus-pages/3.10.json
+        lines: 8-46
+        integrity: sha256-6f270d70c50b933c5343c8e6881e7b4706950106af318a9844acf6079bc958db
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-pages-field-table
+      claim:
+        lines: 124-132
+        integrity: sha256-25403ffba7bdbda8fcaf1331a3ce906ab31c090ee9a2c731ca9697b3b7bfcb6d
+      source:
+        file: src/meta/schemas/docusaurus-pages/3.10.json
+        lines: 8-55
+        integrity: sha256-f636b2b76964e4185b49ec366a9e7c04bdd7793c0620bcf01074c1788e78b90e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-last-update
+      claim:
+        lines: 117
+        integrity: sha256-f7caf87295285c7527528fccb7c1e7779b16e042a66e0351423eb666d2f017c8
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 105-120
+        integrity: sha256-4a593dbe2a1587985f1beb01e06dedce9c3f016d223567e14b103c3cc65d70a3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-toc-levels
+      claim:
+        lines: 115-116
+        integrity: sha256-5df92772c6dfbdab12d0cfca8e38f5e5e0396bcdfd9cf313978408f772bd477a
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 75-86
+        integrity: sha256-7024ddeaabb1d3de06962dcc6f126676054b24d92568c0e07ed2e6de8ff6f881
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-draft-and-unlisted
+      claim:
+        lines: 112-113
+        integrity: sha256-d0a4e0ab9d92d217f9d5525fc79482012c9f2d35799f625e43a4612e78525849
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 63-70
+        integrity: sha256-e845434a10f3fe37bb2d6d7bb27f6aefc0124edc537a60a95f010af0b660c6ed
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-tags
+      claim:
+        lines: 111
+        integrity: sha256-b845eba0627b0e05978606c4f4e2ff1c9bac4c73def18b353a8a6045cc43dd20
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 49-62
+        integrity: sha256-37cce282c7d01508c65248302ff205ffc746d081b993cc8a5327e92d18dc2d53
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-deprecated-author-fields
+      claim:
+        lines: 99-102
+        integrity: sha256-4828c2e8c598fa5675f9a3e6f61cc4120a131e58c4163fc20091d043b847e601
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 15-32
+        integrity: sha256-7a232be2417d1abe8f9099217047e1e7745961f1c807e95af4831537211d4a1c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-authors
+      claim:
+        lines: 98
+        integrity: sha256-4bea89f8c22892546126c79825bca5ce8d705a733e6033ebfb7ccbe74a3fe99a
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 129-148
+        integrity: sha256-a10129547e7f8afc63759d62301d97cf12fa6c4fe10da08c648092740a32151c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-other-fields
+      claim:
+        lines: 103-110
+        integrity: sha256-9b868b50e3adde46cc12a2f5bb848d2070ab45ba88bc3c38274df8578251b510
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 33-48
+        integrity: sha256-8ee9bd8e7e49f558e1222f96fb17e848ff3503caff6f2d2d643606e1d2548b1a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-docs-last-update
+      claim:
+        lines: 91
+        integrity: sha256-f7caf87295285c7527528fccb7c1e7779b16e042a66e0351423eb666d2f017c8
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 122-137
+        integrity: sha256-4a593dbe2a1587985f1beb01e06dedce9c3f016d223567e14b103c3cc65d70a3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-docs-draft-and-unlisted
+      claim:
+        lines: 89-90
+        integrity: sha256-d0a4e0ab9d92d217f9d5525fc79482012c9f2d35799f625e43a4612e78525849
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 114-121
+        integrity: sha256-9cec6cf76d4d6927931ef3feb9e989798dbe3a8f49e6ef3268db06338138dc79
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-docs-tags
+      claim:
+        lines: 88
+        integrity: sha256-b845eba0627b0e05978606c4f4e2ff1c9bac4c73def18b353a8a6045cc43dd20
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 100-113
+        integrity: sha256-46434326821324b9dd8502221a276e273022bd745f92b1695089d42bd037e4f5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-docs-image
+      claim:
+        lines: 87
+        integrity: sha256-dfb69085a86bf6f0d675b03199d8a3c8f8f089688fb9135e9d1faafafd375a9a
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 91-95
+        integrity: sha256-3f0bea5f1e06f59470bb7bbbd0531aab3c0a3cd5c31442f68ba0ec5c4f870b64
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-docs-custom-edit-url
+      claim:
+        lines: 85
+        integrity: sha256-c86df40e40a84a0382974c7c1d68b840a5a9821e9cacc20020052ae16c048f00
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 77-81
+        integrity: sha256-82a9021ff5d63bb92751ebcf1ce6c5366a7ff93eed5d5f17e9d089b03fab1c22
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-docs-toc-levels
+      claim:
+        lines: 82-83
+        integrity: sha256-5df92772c6dfbdab12d0cfca8e38f5e5e0396bcdfd9cf313978408f772bd477a
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 53-64
+        integrity: sha256-7024ddeaabb1d3de06962dcc6f126676054b24d92568c0e07ed2e6de8ff6f881
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-docs-sidebar-position
+      claim:
+        lines: 72
+        integrity: sha256-414e74add1d71311e6b12ca051226512e45915f6fcf754bb600cd5d6308277bd
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 25-28
+        integrity: sha256-89311d5b1c4209d766e2ee6e0ae9222b6f02dccf6d744aea44c8079e41d39e5a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-docs-identity-fields
+      claim:
+        lines: 67-71
+        integrity: sha256-3e20716d89492fcc8bdec5a2873f03d75f182ce2f153aa3dd0fc356b573ae65f
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 9-24
+        integrity: sha256-176c52e7ae81d3da1445fd5752b54209791b1ecda2779ce0cc0532845bc69b4e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-docs-sidebar-and-pagination-fields
+      claim:
+        lines: 73-81
+        integrity: sha256-aa8bed198b9d6a996ea0d78a832c4a3239fb8e4a2f1815f9c7ddf53148bd031a
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 29-52
+        integrity: sha256-f4471a61d31c559a0bd3e45d5af06564288aa2da4de742900ebfd9ef5a67a3fa
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-docs-parse-and-keywords-fields
+      claim:
+        lines: 84-86
+        integrity: sha256-2481ac4634ed3a8ad8f753a5a885dcbca90c523eb6e3515658929d76bed4da0e
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 73-90
+        integrity: sha256-0d0e8c620518b6994c2b78d0af728d76bbf88094f1b25e770a6ab4f0112c5c7d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-composes-except-with-okf
+      claim:
+        lines: 51-58
+        integrity: sha256-80798af32214b35546747b3f1c65a56b17788277afa639267f05370fc5f291fd
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 5
+        integrity: sha256-18479c373184f3715ec053d18a65308f291f1f635f655869d380039f371236eb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-no-field-is-required
+      claim:
+        integrity: sha256-cc0c942ae3d335134beea3e1ec5234ae3af7d1333178ef4359d9908490f4d6e5
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 6-7
+        integrity: sha256-378a494cede2cb04abd922c993975f4aa57e36276ac431f5a17eaa105a538e74
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-not-on-by-default
+      claim:
+        lines: 25
+        integrity: sha256-59eed64d69ad7c2760088e7ca3dae3b9411dfb7737bf2eb16d78c4750e01889a
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 32-35
+        integrity: sha256-af133f1e0fa21ca01b004a947824e1ce63d00d49af5bf112da6ffcda850b9a3c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-reference-kind-builtin
+      claim:
+        lines: 24
+        integrity: sha256-532bd9663597e021387396a0d71bc4ba7d4d902e8235e18167ce466f6bd8fbfa
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 285-296
+        integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-no-required-fields-row
+      claim:
+        lines: 23
+        integrity: sha256-ccf01e1a46132de9bc0580c228351f276a14b427368c2407d0bfdb525219c6fa
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 6-7
+        integrity: sha256-378a494cede2cb04abd922c993975f4aa57e36276ac431f5a17eaa105a538e74
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-additional-properties-allowed
+      claim:
+        lines: 22
+        integrity: sha256-e2e966752eb94cb730537df05021e9f7d97550c0cd20ef0effa9ab5597839566
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 7
+        integrity: sha256-e5bb2bd9a0114d2671ff2bd71d504687cfb37f90f05f136cf08e1e987d303d8d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-dialect-2020-12
+      claim:
+        lines: 21
+        integrity: sha256-7f3c20ca8da2f79b6a59121a4c14d31173abfcd94150593301f3040c94e1ce26
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 2
+        integrity: sha256-026667e866e9fe773f25256fc76031f56ad6d086583f96611acf36ada1305d64
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-json-links-are-published-urls
+      claim:
+        integrity: sha256-822a5f6a7468c48f585301860fa4765e6aad81a4c7645f525c13ab8d1f3b75b9
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 227-238
+        integrity: sha256-b609d7a86f241caa53f6c3ab9266149e6c0333c7496005e23ab3d94797659c1c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-row-pages
+      claim:
+        lines: 11
+        integrity: sha256-42e64b741854486b17fd3e78aa7330eb97e3ab015519e64a90590a134fe73cf5
+      source:
+        file: src/meta/schemas/docusaurus-pages/3.10.json
+        lines: 3-8
+        integrity: sha256-cb31a9a7cbcbab6b064dccb4e80d72b0880c0f52634404b37c82c67d56f12a35
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-row-blog
+      claim:
+        lines: 10
+        integrity: sha256-fad62c24b7ba5e3855182198a75101f5637d34c4cdb19d0f9b72db06d1f5479a
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 3-8
+        integrity: sha256-2b820c4c9c14ad6d6a081887e3fe5d98bd8fdb55fb1983d410619c31202bb9b4
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-row-docs
+      claim:
+        lines: 9
+        integrity: sha256-d930c278b8afbc6b66dac396165e3a9d442bd5a6247a15e661213b97c95b6ea6
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 3-8
+        integrity: sha256-488575eafb68fe24d70c952a383e82c9c1838c8dbfefe3635678d15b0a032226
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-docs-is-a-refused-collection-name
+      claim:
+        integrity: sha256-110e3266f3420e247e48f92ef8b4bb6921b6799aa2e4c472667f2ca0a8292bf1
+      source:
+        file: src/shared/collections.ts
+        lines: 172-177
+        integrity: sha256-3781873fbb89e2f45ba02bd09efd8d2d98791f7307e55cf16f19e000a57e83ed
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac

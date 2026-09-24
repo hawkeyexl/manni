@@ -1,0 +1,329 @@
+docs/src/content/docs/meta/reference/dita-schema.mdx:
+  citations:
+    - id: dita-model-check-excludes-attribute-types
+      claim:
+        lines: 141-144
+        integrity: sha256-c53a51011d31ac38b0046c970d0b1b4e6c19393ba9c3a3a399b922dfb7aff3b0
+      source:
+        file: test/dita-content-model.test.ts
+        lines: 23-25
+        integrity: sha256-c647db35a184036e6b6e12b52b7d4575640f3ae7fa02c04cdeb414a4bb1bf2a5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-models-transcribed-by-hand
+      claim:
+        lines: 137-139
+        integrity: sha256-266ec438266c5e10e50213ca3ffb66f76b47483460d99e4862c281b8a2a33256
+      source:
+        file: test/dita-content-model.test.ts
+        lines: 16-21
+        integrity: sha256-c74aa6d8083058454a5dfddf90ffcd3af7206f17ae830385862c8f73f07efc43
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-written-output-checked-against-content-models
+      claim:
+        lines: 132-135
+        integrity: sha256-8eb66822826afc14ef84ce356f12d18e2696fccfba20fbf6238ee2010a700c79
+      source:
+        file: test/dita-content-model.test.ts
+        lines: 9-14
+        integrity: sha256-258061aa73e0332bd9870bd10074fb45f69e5f6f90c5e1886800d46fe1f3e14f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-attribute-values-are-yaml-scalars
+      claim:
+        lines: 123-127
+        integrity: sha256-ee7ba56f6f5e8b0dab10d7789a7d13ad82cfeef7686023a2a756ea26b644fd92
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 13-17
+        integrity: sha256-31be5b4ed0a5e19201aece24512e19fe30c12bb0b73d313a30712c3c129db2b9
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-fill-refuses-to-create-a-vrm
+      claim:
+        lines: 117-119
+        integrity: sha256-6ece46f25d5a8351d7c009cd703996cbcf2fbfa00e847a91682fadb98b29815f
+      source:
+        file: src/meta/extractors/dita-write.ts
+        lines: 114-124
+        integrity: sha256-dc6b21e611d7e21e985b82817ec797294dfd573337811074a5ced4f3dde00c5f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-naming-rule-applies-one-level-down
+      claim:
+        lines: 111-115
+        integrity: sha256-bd8c28a2b86a88708f9d61f7261efa6ee4db2fe61022f6561c762b434eeab0b8
+      source:
+        file: src/meta/extractors/element-key.ts
+        lines: 5-15
+        integrity: sha256-28f9d32f3c88028dcd79e2dda2800727b87ede4da472b87e35ecfe326a11863e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-vrm-is-keyed-for-the-element
+      claim:
+        lines: 107-109
+        integrity: sha256-4b15ff4ff5c2bf392df493da6bfbdd9ee604ed86d0d1ef4576a3f5419c4f81b5
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 118-121
+        integrity: sha256-0d10a551b2235627c615f3b1ed93e1349ffc4a50a0c2d1a5df0f9602b0f1f938
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-fill-refuses-to-add-or-remove-a-repeated-element
+      claim:
+        lines: 102-104
+        integrity: sha256-0ba62f327a468ad04ad9092de5a4c19df5e749607489f1dd6a2c1e42e92246c5
+      source:
+        file: src/meta/extractors/element-write.ts
+        lines: 49-73
+        integrity: sha256-0004eac6ad9826731ab4d8e62bdc77f4d3db3c431a45b89c43abd19af13adc8b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-modelless-key-goes-to-othermeta
+      claim:
+        lines: 100-101
+        integrity: sha256-66e8803fb6ad1a8c2c8d1df50722d0fb6b607495159d44c8e4cf53843809adef
+      source:
+        file: src/meta/extractors/dita-write.ts
+        lines: 107-113
+        integrity: sha256-617abafc17366bbc7ef0f0a1f24e8177de7bcac169219284b473e9e1e4a15cf2
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-missing-element-created-in-model-order
+      claim:
+        lines: 97-99
+        integrity: sha256-0bdf8d34d38c8770beea329ef59639aa73ce7097ec18df122d2dbc90cbc564a7
+      source:
+        file: src/meta/extractors/dita-write.ts
+        lines: 179-202
+        integrity: sha256-7b31acb77d1949c360ebb8f52e42e8aebca58fd4b705dce7af45c3d3f91e9832
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-existing-element-has-its-value-replaced
+      claim:
+        lines: 94-96
+        integrity: sha256-c7d866b013d0f2970559bb65be6c509c1dc26d502a5991b20ddec3f460b4dbe3
+      source:
+        file: src/meta/extractors/dita-write.ts
+        lines: 99-106
+        integrity: sha256-28a44c86158433dd9b9df1e14a1d793721e191f21ccfe07287fd99ee01c5d8bf
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-othermeta-names-are-not-described-here
+      claim:
+        lines: 85-86
+        integrity: sha256-be3c9e8f881ae81da87ed465bea11da93814cd2bf06c31a53ef18365e14bcd4a
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 5
+        integrity: sha256-71c7aa542e60e7f200b5f41581c1b26022985275a490e2917e34352792a22c47
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-both-channels-validated-neither-wins
+      claim:
+        lines: 81-83
+        integrity: sha256-ea0cbb049e730c590bcb551b2f89a17046f0858c1c921c28ab36f00b61dec1e7
+      source:
+        file: src/meta/extractors/element-key.ts
+        lines: 12-15
+        integrity: sha256-dcb8dcd502e5beaf0162927fb9dd8133f9f8145a0ff31dde76115b0884a1b163
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-schema-requires-nothing
+      claim:
+        integrity: sha256-5e358d7a71a86a5fa1f830e35d2ac56957bf5100aa2bb0e8609b12793f67ad29
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 5-7
+        integrity: sha256-78b82105d750784a5bdb61e9dae0a1754a6c48506ac2e2a7fa1b8f850da87c58
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-dates-must-be-yyyy-mm-dd
+      claim:
+        integrity: sha256-daee25e47d25e894c467354da6b20bc53de94866f41379d6da94808eb8f31568
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 18-22
+        integrity: sha256-98bac06f6ae7912d7911c8046df8662fdb3f401c50d288a6681b723956c5ceb8
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-critdates-named-once-for-both
+      claim:
+        lines: 50-52
+        integrity: sha256-190c6094b7845f7ef4818f0aa0d96d8fd7f64bcd1f3914c8b95e9e048e5320b7
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 73-76
+        integrity: sha256-5d5613c7f9545e07a5a98fef1a20f7521c6e1c21a72b3eac3cbeaae2b4c59104
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-topicmeta-holds-them-as-direct-children
+      claim:
+        lines: 45-48
+        integrity: sha256-7d1a87e4770237aca2155e864676f4cc8ca007ad267a35294557d5b73b4f3852
+      source:
+        file: src/meta/extractors/dita.ts
+        lines: 202-208
+        integrity: sha256-10ad38b42868ac224b10de11af99b97ec512029b047f1ec9aef3c6f763dac898
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-vrm-version-release-modification
+      claim:
+        lines: 37
+        integrity: sha256-fee0795118ab5ceb2a15eff304a339e180246231c11d303edf5e1d6b5b6c653b
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 118-129
+        integrity: sha256-22e0abc84c2f83457719656d1c6df626e028566b42e9e375f2e707729056e4d7
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-prodinfo-choice-group
+      claim:
+        lines: 36
+        integrity: sha256-a9c3cb172fa11c96de285d55d3dfc031939f8c1a3ee25fabb228041fb3dd5e64
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 94-117
+        integrity: sha256-8bd106b19011ebfc3d945392947cf7e1c2e4f9ec4d267134ceff132b21cf962c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-prodinfo-prodname
+      claim:
+        lines: 35
+        integrity: sha256-9dbb6b70ece6f7f808689191bdfd05c66a033063aa1142e1cfa3f32401bbee4c
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 90-93
+        integrity: sha256-44c669c0b683cc5101ddec1fe0c726894652d3665a5a2976ecc622b8dbcab357
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-keywords-indexterm
+      claim:
+        lines: 34
+        integrity: sha256-b67bdf8dda5eea2685647f2b50ba3db89a6f89d3b31101c6f3aafdf6df15de4c
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 142-145
+        integrity: sha256-948599435c1c3865154056bc634403e33bf3f4cd9427fcd3f7ffcad289eb34a3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-keywords-keyword
+      claim:
+        lines: 33
+        integrity: sha256-967fdd37744ac962c655f54691a29947a6c693883cff9b28f24af86f383ff077
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 138-141
+        integrity: sha256-9e927fce45b98038313118c57470197996182652dd72094524941026427b6318
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-copyright-copyrholder
+      claim:
+        lines: 32
+        integrity: sha256-6e87d6d41406cf451ba0e81f3e1abaf89c7cf91435660d9678783f2a698a3698
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 134-137
+        integrity: sha256-0b2193bd23c219c07404fef70336dd5a966901d144b3538530e56442f66f190c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-copyright-copyryear
+      claim:
+        lines: 31
+        integrity: sha256-f2329a84b86125fd563a78d0ae57417c90dc0b0d2e450e8034a48920c144c21d
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 130-133
+        integrity: sha256-bbc48c9cbf36712c182484f9af00d2b0b1a4d3e95af4486a2a14b3e34aaaac27
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-metadata-category
+      claim:
+        lines: 30
+        integrity: sha256-44e1221dbdbe79f3d63e400de00f106fac1008f990f5dcd3f65b47c68c8605d1
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 86-89
+        integrity: sha256-bb2004dbcb008a2479cc3328bbcc330fe26b5099d79674550160a1b9cbfb12f1
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-metadata-audience
+      claim:
+        lines: 29
+        integrity: sha256-66941334f473e8ca1312fb1dbc40c2f48ab867c4abcd75ad5a5075404f126916
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 82-85
+        integrity: sha256-4f6f940e0e884b0321fce74c1c667725f2f0218af454a72f0e2dd7df274b677b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-critdates-revised
+      claim:
+        lines: 28
+        integrity: sha256-1e6890f3b2063bd1a494a38402e70413b6f36883fedf3ff7df42ab7ef8917405
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 77-81
+        integrity: sha256-7e01bb29de978574566d72c4a06c2e80fa7c8bee8f03b21ba5cc458c069814fd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-critdates-created
+      claim:
+        lines: 27
+        integrity: sha256-4c33256231ecccd7a6f0a058f2dfefdf9dfb0136a8509cbcac8a3883aa5fe363
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 73-76
+        integrity: sha256-5d5613c7f9545e07a5a98fef1a20f7521c6e1c21a72b3eac3cbeaae2b4c59104
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-prolog-resourceid
+      claim:
+        lines: 26
+        integrity: sha256-fba4d72a11a183680ba520d6e8ec0399a2e86a4a0bf5cd12d14cc6bcddf9c5c3
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 41-44
+        integrity: sha256-87d4ddf54fe2aa2e29049fd09a9254387fa8f927f1f23472a79e3fe14d2a373c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-prolog-permissions
+      claim:
+        lines: 25
+        integrity: sha256-de4ec65f26420a0af680d94975fcafb4b19d0938fadd67af169e63f63417f43a
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 37-40
+        integrity: sha256-f3c897e509886c9c7cda88c69603ebb200fcb690544d65e074711f74ff846896
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-prolog-publisher
+      claim:
+        lines: 24
+        integrity: sha256-aa5a144853abb7c0b8bfdf9e42e6f5867709fd9d73bb580a52476ba3f82ab48e
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 33-36
+        integrity: sha256-4f7ebc1f1b0830414cb637acfed0fcf2dc7eb41fd2a8843050c3afbfdfec6e38
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-prolog-source
+      claim:
+        lines: 23
+        integrity: sha256-3b41d5131fe8d75e7e2bc6923d7fba69998c2077eec6a43ad4188e180584f64e
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 29-32
+        integrity: sha256-5ae884c149d6e08633ac49cfedb507a763438c5827f0c0eba4ab4baad4637200
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-key-prolog-author
+      claim:
+        lines: 22
+        integrity: sha256-fee016909acd2fc516bebb9c8585cd6114a08bf3067e493bdf435b47e6f62810
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 25-28
+        integrity: sha256-7b351a2e352413f79751b8c1414f5bf76d7caf054ee5b1d74e37d0aad26711c3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-map-spells-five-keys-topicmeta
+      claim:
+        integrity: sha256-662463195b43ba19ca7df9c0d7c891ff16f9d86c165b589ee4106d029d4d2857
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 45-72
+        integrity: sha256-4296611d907473340ea765ade99cf6956f8be808e116cb19d494f1acd16f7cf4
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-cardinality-from-the-content-model
+      claim:
+        integrity: sha256-0df757900bdcfb9e2a09a7ab4d511fdaa01ed7a1ce207fab1e95554caa51f3d9
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 25-32
+        integrity: sha256-c6cd4e90bfcee3085886fa4c2711a81320856734d6fa10594a97d5489b71cb72
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-named-for-metadata-not-prolog
+      claim:
+        integrity: sha256-cc4ef5926cd3edb6756269d12eca549f618ad994833e15f64228090cd57cf296
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 5
+        integrity: sha256-71c7aa542e60e7f200b5f41581c1b26022985275a490e2917e34352792a22c47
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: dita-schema-id-and-title
+      claim:
+        integrity: sha256-a4d5eb39c08a249390c7cbbea17a9dbb38cadfa76718e66816441734a48cd670
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 3-4
+        integrity: sha256-0c4519b56f59d44baf60790fe0444601d9c95350d5f1eab67a47ee64978b898c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

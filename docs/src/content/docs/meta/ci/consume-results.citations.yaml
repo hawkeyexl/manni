@@ -1,0 +1,145 @@
+docs/src/content/docs/meta/ci/consume-results.mdx:
+  citations:
+    - id: manni-is-an-es-module
+      claim:
+        lines: 293-294
+        integrity: sha256-7d073224f4e34dab752e69bc6f9068d0a773282e98ddb3e9a627a2be3cd9d84b
+      source:
+        file: package.json
+        lines: 5
+        integrity: sha256-019d98dd6f90ca3a4cadf52fed52964248dde9a396ee6ef493b689b511409454
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: no-commonjs-require-entry
+      claim:
+        lines: 294
+        integrity: sha256-c0870bdf5287e2e6081d182f7b4701cb8e027cd6a0775571c4803b0ce7ca3470
+      source:
+        file: package.json
+        lines: 13-19
+        integrity: sha256-660219740412e4350475ebc57b631429e20f388b7b6c713731d3fc431d162500
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: collections-cannot-combine-with-inputs
+      claim:
+        lines: 265-267
+        integrity: sha256-b6fce5be90865cb419e8a611ddcb461aa6badeb4048a0233c660f36fcbe15583
+      source:
+        file: src/meta/core/config.ts
+        lines: 1672-1676
+        integrity: sha256-f6e52c1599511310259e1d366365c79a3563e4ca9a5ad654fb0566d26fb21369
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: empty-inputs-fall-back-to-collections
+      claim:
+        lines: 262-264
+        integrity: sha256-d58856eea2d47021e0e5623eb94c4c9be4962c678f4068a6b838f8298c943981
+      source:
+        file: src/meta/core/config.ts
+        lines: 1709-1717
+        integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: get-quiet-drops-all-unset-files
+      claim:
+        lines: 223-224
+        integrity: sha256-d3ac227998131854e26a4e7ab9a5e3dbdb2972655ef9d58316016f6b16596488
+      source:
+        file: src/meta/cli.ts
+        lines: 943-946
+        integrity: sha256-3bc74074c8952636df5c6f68b9d559a92e1dda00b46dfa186f5723f16364efa5
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: get-takes-pretty-and-json-only
+      claim:
+        lines: 217-218
+        integrity: sha256-8c64ec05ab7cee4c39c4835c4c6ecbf48d537dbe1d019bc67ccb41e567f4669f
+      source:
+        file: src/meta/cli.ts
+        lines: 930-934
+        integrity: sha256-b503ccf2d5faf492d3e8eb42a02c2193e9002da4890c9c8dde4774435125333c
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: get-unsupported-format-exits-2
+      claim:
+        lines: 221
+        integrity: sha256-79056c424982b4bf4902984fcea150da19d76356cdb633aab3affbfdaec0350c
+      source:
+        file: src/meta/cli.ts
+        lines: 1019-1024
+        integrity: sha256-ed88e062b2f25e5f5d7be02a925046a075dc66df7cf3d1e6243ba690642c9961
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: dot-notation-or-json-pointer
+      claim:
+        lines: 190-192
+        integrity: sha256-ffc258c2691109dc0b6503d92b9a6fd00e7ba6f6d602092374a282c805c647cb
+      source:
+        file: src/meta/commands/get.ts
+        lines: 504-517
+        integrity: sha256-3de206ba7b2d15623d6b478a91053a59fae6f997f965d443274221d9761769f6
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: get-json-file-present-values
+      claim:
+        lines: 173-176
+        integrity: sha256-07386cb057c62a0a4ab3e116dc94fc760856568bf8b8de298b248e077dbfef00
+      source:
+        file: src/meta/commands/get.ts
+        lines: 117-120
+        integrity: sha256-a6c55d99822a9da90fbf1e63657a67f42536e8e1cb0d71d28681ebc26cf6237d
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: pretty-prints-unset
+      claim:
+        lines: 183-184
+        integrity: sha256-e9ffb38342eaf4709607dd9cbc06bc9a00d1e726cc288391323b31f90cfb2f2c
+      source:
+        file: src/meta/reporters/get.ts
+        lines: 26-28
+        integrity: sha256-af3dee76ab19a1400a2f0d13fec1b2bd63baf2ccc8f54ae09f2425a1a40e3611
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: get-shares-validate-input-handling
+      claim:
+        lines: 140-143
+        integrity: sha256-3c2434351e0c235257b42b727932a3407933256153739c52ad3cf5d8f63e0212
+      source:
+        file: src/meta/cli.ts
+        lines: 935-940
+        integrity: sha256-74320011f15b4a953c0496f55ff3d7e3c02bfa5bf49c03a7c8cdcc5568d67630
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: json-output-is-never-colorized
+      claim:
+        lines: 102-103
+        integrity: sha256-5845250a0543c5432bcd1919aa526df744ac73b079a99286060f78c122173be2
+      source:
+        file: src/meta/reporters/index.ts
+        lines: 172-177
+        integrity: sha256-05cbb75c9fd3921b3c4972ff2daa946c929ec272f6b709b615695af24f067ba8
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: cores-throw-docmetaerror-for-exit-2
+      claim:
+        lines: 284-286
+        integrity: sha256-e095f87787c8d7b17267d1866bdf7f36fda39c6ec48666dc77db512d172b1a56
+      source:
+        file: src/shared/run.ts
+        lines: 24-37
+        integrity: sha256-731c8ac7d223ae66f23904fe28271963d5e352e3f70564e346d97a5d392d4cb5
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: own-errors-use-parse-and-schema-keywords
+      claim:
+        lines: 85-89
+        integrity: sha256-61aa20720c88cac2ac306ca5243aa56037089697f5029b627288c453d9171eb5
+      source:
+        file: src/meta/reporters/rule-id.ts
+        lines: 15-21
+        integrity: sha256-15ceddea821a05fe8c542359fe46022f18d341170f48b87d8ec7fc884cd179d7
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: col-omitted-for-required-violations
+      claim:
+        lines: 95-98
+        integrity: sha256-c72170848ec06cd4904cae2311f37dfcc36eba80bcac65ca8c4730777f014376
+      source:
+        file: src/meta/core/validator.ts
+        lines: 699-707
+        integrity: sha256-b520a312dafe5a0bbdb25b6de5df4ceffe64f816a6e9201ec180e2a901f3fb1e
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: validate-json-is-one-object
+      claim:
+        integrity: sha256-be3c85c762bffb7f91e0f85e254aae6faf360087e21c454e1dbf305a2150d292
+      source:
+        file: src/meta/reporters/index.ts
+        lines: 298-303
+        integrity: sha256-91d8aff33c562f4dadabe0cdb3da037c24ed0f14c5c99f4f9847db313925ed38
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa

@@ -1,0 +1,10 @@
+docs/src/content/docs/meta/reference/glossary/meta-schema-uri.mdx:
+  citations:
+    - id: meta-schema-uri-picks-the-validator
+      claim:
+        integrity: sha256-ebb862514b647990c4e9f8d88acdbd24ba24e14c0cf8ce1005b126f4bfa0143e
+      source:
+        file: src/meta/core/validator.ts
+        lines: 474
+        integrity: sha256-9acaebdbf14119a3153f5ec79f6676abc0c7c0957737e1e7dcb88cc4705f339c
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe

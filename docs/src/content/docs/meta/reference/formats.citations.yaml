@@ -1,0 +1,435 @@
+docs/src/content/docs/meta/reference/formats.mdx:
+  citations:
+    - id: formats-coerced-types-are-what-a-schema-sees
+      claim:
+        lines: 340-343
+        integrity: sha256-7e85cca69b2f8608c7364df3531ae4260274855520b8948325345d3c3ed2e8eb
+      source:
+        file: src/meta/extractors/xml.ts
+        lines: 6-12
+        integrity: sha256-fe572b6f64213079795dff36493e392747cb1207ab4fddf2009a4cc507c407eb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-quoting-decides-the-type
+      claim:
+        integrity: sha256-658beca0ce1952e176e3442c283916024dc0f4802a4bd948eb4efae15dc7cd81
+      source:
+        file: src/meta/extractors/html-write.ts
+        lines: 18-21
+        integrity: sha256-55f9699eab0c23292bc0ea8252ea61d1cf18ed0d1da9b2e70de0d2319c6038b9
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-fenced-blocks-keep-native-types
+      claim:
+        integrity: sha256-33ec3896a5d53ffd5c327c0ac055a0c69b9651276240546da1282ef2d8044116
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 10-16
+        integrity: sha256-891b74d129052d8503252e65374268ee4c7d65c339a03a4e88457beff11d764b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-empty-attribute-stays-the-empty-string
+      claim:
+        integrity: sha256-b3667d765d7d266c4919bd5673b32ff7e1cfeccc36b98b2941f7e074694831dd
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 75-85
+        integrity: sha256-56d7374be5493b47dd0ab3f0d3e1a4cea8ce73b3c743352901bb3f0c029060ed
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-coercion-table
+      claim:
+        lines: 320-322
+        integrity: sha256-42aff26e1e421ea565a92980bd5f99718a2be90478d4cc363aa76d0e609ef7bc
+      source:
+        file: src/meta/extractors/rst.ts
+        lines: 12-13
+        integrity: sha256-0877827b4790e0284fdf25604b98690b9d10f4ee07d96d54371e17629a2e771c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-native-paths-parse-as-yaml-scalars
+      claim:
+        integrity: sha256-badfc7f48462811d9d5798af173918418b164973562b559389304ce49f548f93
+      source:
+        file: src/meta/extractors/html.ts
+        lines: 4-9
+        integrity: sha256-d63835e430c1e5a6293d65590c86eaa92b81bafd371c7e36d2ccb5e60d61975d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-new-meta-goes-just-inside-head
+      claim:
+        integrity: sha256-7b7f1ebace76bab8904dac9bf868db8591a106396c1d077ad3fe06749392e14c
+      source:
+        file: src/meta/extractors/html-write.ts
+        lines: 199-212
+        integrity: sha256-67058d065ff0ce5d559d241f9d54b187476f0841241c340f5d0736686a6dcd05
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-html-parsing-never-throws
+      claim:
+        integrity: sha256-6fc781531a2e1fdd4af7705bb51fe68bbfd532e0ee945d4ceabbda23d80a9c20
+      source:
+        file: src/meta/extractors/html.ts
+        lines: 10-15
+        integrity: sha256-3f589de0ff1f359a903057bffe8efe6cd4f55469c8abd5b05a1a0f8f62006941
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-meta-title-outranks-the-title-element
+      claim:
+        lines: 288-291
+        integrity: sha256-20cd4171e08b6631d4ae62aa90c46c5bccf200a093205e762a7caeb8097825ff
+      source:
+        file: src/meta/extractors/html-write.ts
+        lines: 12-16
+        integrity: sha256-2d9039691c0297734b8b13645830aed0d17c32a8f1a64303d633f1b46a43ecba
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-nameless-meta-skipped-last-wins
+      claim:
+        lines: 285-287
+        integrity: sha256-fc6c7feecac6c04aeafd272982eb7a7085e0009a64647d3a475b09160411961f
+      source:
+        file: src/meta/extractors/html.ts
+        lines: 10-11
+        integrity: sha256-8d574b35d7afd72b22009a70d306109da6219939db934f17fe93d8e9dec379d5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-meta-name-or-property
+      claim:
+        lines: 283-284
+        integrity: sha256-13d82f00eccb49649eb45958df2000de01f29c678ebb20d56ce373cbd12d06a1
+      source:
+        file: src/meta/extractors/html-read.ts
+        lines: 221-224
+        integrity: sha256-a92e2c737679a8fc44c7a92ceb450df2810d532f848e307ed8cbf4685a63a02e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-first-title-wins-verbatim
+      claim:
+        lines: 281-282
+        integrity: sha256-a2257f3b2656b64904a096d5f6121a8f38a2b407176635271583978b3d1b0c18
+      source:
+        file: src/meta/extractors/html-read.ts
+        lines: 212-219
+        integrity: sha256-b1143db6b08ecffae2c7a74e29ba956ad6df1910970b386dc7c1bf5d5ebf5ef2
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-three-ways-a-file-counts-as-dita
+      claim:
+        integrity: sha256-c35aa4a012527cb4fcb74e6a31ef2036da7f4a642152091d50c0714c5a7b3fdf
+      source:
+        file: src/meta/extractors/dita.ts
+        lines: 59-68
+        integrity: sha256-dc8fd421e500fa5493ac7b60e7f5cd28ca3718dc34ccee2b56ea6661156cef20
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-dita-write-lands-where-the-read-was
+      claim:
+        integrity: sha256-1ed69d5e1fb0bde63eda9667de0b0aacf2a74c742a1d37ac79b3071bc5b065bd
+      source:
+        file: src/meta/extractors/dita-write.ts
+        lines: 13-17
+        integrity: sha256-fb8d5a30266cd89fa4dc166e6687bfbdc2cdf72c11c5b220f3c5995e5a81eda1
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-dita-fill-three-cases
+      claim:
+        integrity: sha256-ea97be664faa3434fb8bdc19e925cfca1bfee4cdc70cfa6461ba1bcec63bbe2a
+      source:
+        file: src/meta/extractors/dita-write.ts
+        lines: 19-26
+        integrity: sha256-bcf88f91a05e8c1bebdb02dfcd4454b7752db1c0940e7c168eb43b608e6798cd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-typed-prolog-elements-are-separate-keys
+      claim:
+        integrity: sha256-e0530b8c27d1987c806e5b567242085de888c71c1414fddeaeb5a74ebc9f4db6
+      source:
+        file: src/meta/extractors/dita.ts
+        lines: 215-227
+        integrity: sha256-185ced3609ae151b0476fa8b1b8246bff615f92e43150957d0a812fbd2105f47
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-othermeta-wins-over-a-root-attribute
+      claim:
+        integrity: sha256-b11967d1d4364e181bd5c49e73c73a213fb849e84fec88aefb0deec5a01f27d6
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 383-390
+        integrity: sha256-4d707201f820a9c67e679bbf364d655e00b364f24e062b8a8b05adfebbbc945c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-elements-are-read-too
+      claim:
+        integrity: sha256-1b0820e94b6aff7cb972ed7480cdb378cbfe86e01fbe7a5c808e26ac4245ebc4
+      source:
+        file: src/meta/extractors/element-key.ts
+        lines: 5-15
+        integrity: sha256-28f9d32f3c88028dcd79e2dda2800727b87ede4da472b87e35ecfe326a11863e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-unresolvable-entities-do-not-fail-the-file
+      claim:
+        integrity: sha256-0be6abf563c347d5e6a9fedb2ff4299d57c1290abd49d940e87a4a7112b5ff25
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 254-262
+        integrity: sha256-0f951776c330ada6aa774ad6b1b5049f494a2f6aac12a7e5ea1363f1e769071c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-dita-read-by-the-xml-extractor
+      claim:
+        integrity: sha256-82a6493db8a551738014108a6b9c7cfeba664af8a7b3843d17f351eb3625a0fd
+      source:
+        file: src/meta/extractors/xml.ts
+        lines: 24-32
+        integrity: sha256-e6c412a5b56e67c41680b84a783b04e62672137d732b6a8473252c9e6014768c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-malformed-xml-is-a-per-file-error
+      claim:
+        integrity: sha256-3dd55aa7e27939bf3e05ef44e7c0f2c714c9d43d575b85ab2d15ca1a2e65315e
+      source:
+        file: src/meta/extractors/xml.ts
+        lines: 6-15
+        integrity: sha256-630b10224ad96d59fd8ea6fdab5d9c7bde61dc08d86bfec6d438e999d7400893
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-xmlns-declarations-are-dropped
+      claim:
+        integrity: sha256-d2fd134012619e2ff1134bc461f80617f386e9b85ad0fd77212bbb26b7b93f1f
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 87-90
+        integrity: sha256-7d2807807a5006963f280535c1ff417e569c9476d1eb839c87a86d491ecbde64
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-rst-title-and-docinfo
+      claim:
+        lines: 181-185
+        integrity: sha256-156e7c630974c6a92af3fe35dd50a846be109c309b31be8acd6d0fb99cd79f32
+      source:
+        file: src/meta/extractors/rst.ts
+        lines: 99-103
+        integrity: sha256-a5e624003fb34f77582c1a9de4bcb4303c179c1d0c8b252bb9cab956e55a7631
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-rst-accepts-two-styles
+      claim:
+        integrity: sha256-89df90d504b9a02e1701574b91718f1ce66fa4a65103db063d5ec8b11dd06a1d
+      source:
+        file: src/meta/extractors/rst.ts
+        lines: 4-13
+        integrity: sha256-b746394aa974f782319f1b93756370fdc855ffd504a72893799389e8798752c1
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-asciidoc-header-rules
+      claim:
+        lines: 163-166
+        integrity: sha256-e96b5cf20a555c336f8182b3cec0b3e42fd394a7416be336d9923848c8c9bb1d
+      source:
+        file: src/meta/extractors/asciidoc.ts
+        lines: 57-82
+        integrity: sha256-344c4b71044d712f45073774682bb7ef0d1d15bc2ce2dd7c9c49ecfdc17980fb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-asciidoc-accepts-two-styles
+      claim:
+        integrity: sha256-d9a346184909b56c7a813463130323703c7a6a1bbbb0050f5a3f416c7e9dea36
+      source:
+        file: src/meta/extractors/asciidoc.ts
+        lines: 4-12
+        integrity: sha256-877513e77991417351aba2027603542685f10cf17e095f9a80f6a452243523df
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-mdx-reuses-markdown-frontmatter
+      claim:
+        integrity: sha256-6837b759ff38c01298ac3d05d13de615842e244de396d2dfbb0e1d4dcf067796
+      source:
+        file: src/meta/extractors/mdx.ts
+        lines: 1-15
+        integrity: sha256-23f935d11dec224198fce05281a9e50954397f2ed018bbcdf9b8db897be6f7c0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-toml-line-map-is-best-effort
+      claim:
+        integrity: sha256-a60d39dc9f3a10f4e0afd6b3bb8b0312d87c7328cc09a9704dede89d18219472
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 184-189
+        integrity: sha256-ade57372842724bf4a625c673667bac7a26569a8be6824ede8232f26755537d9
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-an-unterminated-fence-is-not-frontmatter
+      claim:
+        integrity: sha256-73c097541800bb00439e1cc62f88dc2089d518816a24a9061489b28320f661bc
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 74-79
+        integrity: sha256-be9441e794e965a3f8fb27e82a5d091e319b61476c6d478c859f4dedaa73c7ad
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-yaml-also-closes-on-dot-dot-dot
+      claim:
+        integrity: sha256-0d3a7b670b575cc9bc81a41a3dd51ed41e370cc295aee68ee9a7f2ddb795941d
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 34-38
+        integrity: sha256-7eb8cae0cf8dcf17fa5e1ebdb9314bb9eced39ad7913b953b7cbad4a23216ac4
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-flavor-json
+      claim:
+        lines: 95
+        integrity: sha256-81dd0d161837f1b77815e30b72d677a61ce1777ac17c4f19fed6d0e0631af579
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 37
+        integrity: sha256-2b391ddd9b884a82997db0dd734df491b5150e5a6aafcc2d78f8257bd2ff3047
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-flavor-toml
+      claim:
+        lines: 94
+        integrity: sha256-572198f7ab40d6c1c535b2af30871363aec640de89e74e83d6f852f8c21310d7
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 36
+        integrity: sha256-698f075c78ce6c99440a082c84d64bc6a3db92c21531baa83ae8ed0056692874
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-flavor-yaml
+      claim:
+        lines: 93
+        integrity: sha256-89014d15a30b681c5845339f44259e5ab37cbf6edb483f0b6831354f59e02aa5
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 35
+        integrity: sha256-643e90e182fbd9d3149e3065c16159a363d01ea8d7bbcd50ee319f6d1930144f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-three-interchangeable-flavors
+      claim:
+        integrity: sha256-fb3b94f5fa539d13257c8470f1397a9ef719c2e685e16c41883d4d9a9e666381
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 1-8
+        integrity: sha256-4676ab8fe192b58c8adf4cc3fa0711c3017f7d6cd31852835469252109bf3af4
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-as-name-and-case-insensitive-extensions
+      claim:
+        integrity: sha256-88a79aa13d6b5bf3315b75864e9a4d0090067221ebfbe9cddc73cf5da3007136
+      source:
+        file: src/meta/extractors/index.ts
+        lines: 23-28
+        integrity: sha256-0ebd0f7f955833be086da7ce2bf706f0e8f96f7f8bfe1575a43de5acaaef962e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-fill-writes-where-the-read-found-it
+      claim:
+        integrity: sha256-b5a7a23be173947d99476d75018f7e8bf10f35be84440495adb33951b6bd1763
+      source:
+        file: src/meta/extractors/html-read.ts
+        lines: 4-9
+        integrity: sha256-61c32abc4f9f5bd7953997f7596bd00df635bdfe818ea8700b07f463fca75786
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-schemas-reports-writability
+      claim:
+        integrity: sha256-381ef6990e2d114e65f9297a509806c3c00bdf16102966dd2632663d781867be
+      source:
+        file: src/meta/extractors/index.ts
+        lines: 47-59
+        integrity: sha256-d18f45627d3a50802d720a4770d2e8c3ad77f2878499608ceda088246799162f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-html-and-xml-are-spliced-not-reserialized
+      claim:
+        integrity: sha256-d87206e656af85d4f143bcda16f22f16010bf7990f471e7445fc3d6c4677ffe3
+      source:
+        file: src/meta/extractors/html-write.ts
+        lines: 1-10
+        integrity: sha256-cbf2d621936d70ae6085dd4c8475816ebdd4915deeec378410e9466fcd2f020e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-dita-metadata-belongs-in-prolog
+      claim:
+        integrity: sha256-64ff3efedc0a8a027bd3dfa5bbc7722a78b3a2045a887704fee7dfd361139002
+      source:
+        file: src/meta/extractors/dita-write.ts
+        lines: 4-11
+        integrity: sha256-027e1fc95913b508f3dd2d049d4ddb85161a7bb6ef56e5dc3c52e328b34e47cb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-xml-ranges-rebuilt-from-start-positions
+      claim:
+        integrity: sha256-4b2a6316c1f9640f345192e2d9c612d5001f5ff31b1071da16b36e30d84dfd50
+      source:
+        file: src/meta/extractors/xml-locate.ts
+        lines: 1-9
+        integrity: sha256-16ce8c4a53b9bbaeaea33d9c925f72d9d8584ab4e3e9da927a2ad0e9304e2f37
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-native-syntaxes-are-not-round-trippable
+      claim:
+        integrity: sha256-8dd16be4ea3d6b01a8ed2a8f3ac401b788dedba45b8635f14c6c937e57e60456
+      source:
+        file: src/meta/extractors/frontmatter-write.ts
+        lines: 121-129
+        integrity: sha256-951b45b46570d23afdda95f8e75f5f365e9710bb5dd9a741bf6e49f147d58584
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-fenced-frontmatter-round-trips
+      claim:
+        integrity: sha256-4c9886df65f78eba96fc02a59b22659a75ee7de5d6029b7abb6cdfb1ba6da81e
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 40-46
+        integrity: sha256-4e80eb954a600fd73da1ca5c0bba179a6ac9f794e9fe489647379571e9488ffa
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-writability-is-the-apply-method
+      claim:
+        integrity: sha256-872163f91e4a1d2e0ae3c6c30b7e9ae10a1bd3154519c12a7db642c32d433150
+      source:
+        file: src/meta/extractors/index.ts
+        lines: 56-58
+        integrity: sha256-6993d6be17fb4b24fe7bb3cd0668d064e31ca7be16ee0b22f907de116b2442b5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-row-html
+      claim:
+        lines: 19
+        integrity: sha256-f712dabce59b42936333de85aee30a18909e7ca8284b7342b1e9223f1c900754
+      source:
+        file: src/meta/extractors/html.ts
+        lines: 26-39
+        integrity: sha256-08d0d40944aa90634757577da5f15227352cdb407aecb7b800bcc35841adf668
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-row-xml
+      claim:
+        lines: 18
+        integrity: sha256-c8873dd440baee2f8e76c1c767481b6a2078b2dba4ee3563b713a23bfc655d32
+      source:
+        file: src/meta/extractors/xml.ts
+        lines: 24-32
+        integrity: sha256-e6c412a5b56e67c41680b84a783b04e62672137d732b6a8473252c9e6014768c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-row-rst
+      claim:
+        lines: 17
+        integrity: sha256-eb0a9a251f74272e1e962a31ae7aff6549c83b9e4b12ab033487c96300b5b01c
+      source:
+        file: src/meta/extractors/rst.ts
+        lines: 152-156
+        integrity: sha256-8a0e351460151c74be49538cb49d1e1dab13cfc84c928cd002f76e293f6e9be3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-row-asciidoc
+      claim:
+        lines: 16
+        integrity: sha256-5f470ad58fe98a136ff37701b44effc4e97fb21e7d2fcdc6b7647d7393ba07e6
+      source:
+        file: src/meta/extractors/asciidoc.ts
+        lines: 94-98
+        integrity: sha256-832c0001a1f011874802688c69a9497fa24234a08ddf46e4cba8607adf24dfff
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-row-mdx
+      claim:
+        lines: 15
+        integrity: sha256-22c51668a2205e48c960b9612b986c704106eebbd570cfb44007842d0c554c01
+      source:
+        file: src/meta/extractors/mdx.ts
+        lines: 10-16
+        integrity: sha256-7a98c8a28e7cc31a343387f8c6e88b6b91b9ee4dd6109478c4fea18a7172f384
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-row-markdown
+      claim:
+        lines: 14
+        integrity: sha256-6812b4da1db22340e57405d2ffa07870283b6fc52102100ecb35cf864ee32399
+      source:
+        file: src/meta/extractors/markdown.ts
+        lines: 10-16
+        integrity: sha256-e655a6aa3ef224a52b35163011ac6b73630090c7b27ce1b8fd565c017249b2ae
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-extractor-chosen-by-extension-or-as
+      claim:
+        integrity: sha256-db6af4a15b0799bbffe274d4bb2e1c5606ad55ef0e514895782a186a32150e89
+      source:
+        file: src/meta/extractors/index.ts
+        lines: 30-45
+        integrity: sha256-b4bdc547976708044bcfba10b35c19ecf2b394ca7c960ae6446e0f93dab002fc
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: formats-iso-spelling-always-carries-milliseconds
+      claim:
+        integrity: sha256-7df1057b45f4c0eb8a0754ec8ce4225c7b03f4231aa0d96134b48e116d9087ff
+      source:
+        file: src/meta/extractors/date-value.ts
+        lines: 11-27
+        integrity: sha256-30e837a35684c794230c742129c2736426a7585238833e2e3bc2daf355d1b30a
+        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2
+    - id: formats-toml-native-dates-are-rewritten-before-validating
+      claim:
+        integrity: sha256-1bf7eca59957b5719e276eb70bd9bccfca31fdacbea5f84b67addf33c4e95dae
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 289-300
+        integrity: sha256-f356fdc3c6d312f9348ea0b39fa8b492daef5ae87e4c35a4a649a8e28bc51247
+        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2

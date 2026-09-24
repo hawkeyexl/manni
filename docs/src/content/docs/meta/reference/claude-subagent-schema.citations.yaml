@@ -1,0 +1,325 @@
+docs/src/content/docs/meta/reference/claude-subagent-schema.mdx:
+  citations:
+    - id: subagent-first-matching-override-wins
+      claim:
+        integrity: sha256-9f02663d998793b9f746e824fe679668e0db50838747e32636587804d633c719
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 431-438
+        integrity: sha256-59c6d7f45e5f08e7454bbbfef4c99f642acecc72892011d890b2f6204c5ed0d4
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-effort-has-no-lower-bound
+      claim:
+        integrity: sha256-ef3e6a51afd5c08cd93c8f1ae09a48a0dbbcfe6a2fd0458fa4fc00932af3ce5d
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 57
+        integrity: sha256-b23a17cbf2fdd2a4a32ef610f030fda11dfec5e73522b8e8d131b6dce7d992e5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-maxturns-is-type-scoped
+      claim:
+        integrity: sha256-8633a0148e1f4ec7456b2a7dc193c62c2ed711b5daa378e9fab62faa139ff3a7
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 71-75
+        integrity: sha256-54841688e308ffe6c8dcb967025499a41319a65dac27fb3abf6b3cca2f10131f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-quoted-integer-effort
+      claim:
+        integrity: sha256-c030e72d38d26335748ef764b5f6ac8436ef457cd020bfe1dfedd04aec4d4333
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 57
+        integrity: sha256-b23a17cbf2fdd2a4a32ef610f030fda11dfec5e73522b8e8d131b6dce7d992e5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-two-fields-take-number-or-string
+      claim:
+        integrity: sha256-664402cdf1a5377fde361dc73ed9385bef928d8ac5c24a7a0559db4d83f266c6
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 54-57
+        integrity: sha256-ee28a63c382d5aeb1948eac83ab0bd81dcc0989c5f184db22afc226f8d088808
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-three-string-fields-need-a-non-space
+      claim:
+        integrity: sha256-8d92dcfd5325adc389ba45a752e1809b500dd40356fa85e0970e7e8cc07e7e77
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 103-119
+        integrity: sha256-5e75f7f53619b96d8a14cb79ca1ce453dfbcf31ec1516480f574cc8ff4853e30
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-hooks-and-mcpservers-shape-only
+      claim:
+        integrity: sha256-62bc1d07960dff794d9f987be632f93f4643462d082a917f67454fd29966f33a
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 86-88
+        integrity: sha256-07fb01d90b7a22691c81de3e7e8a3728281aa7dac5d2a4d48281cb6e53bf0f13
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-model-is-not-enumerated
+      claim:
+        integrity: sha256-a0b62e39f042c59ae97334358186a274f4b25fe97b08b8034dffd7783e2a6193
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 28-31
+        integrity: sha256-d6526e96336f689f685b401d0e84573d019de4364e0c54b4ff9b2d900135fd70
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-color-is-a-closed-set-of-eight
+      claim:
+        integrity: sha256-16f23fbea8c24e767089185a76c94ba5892176b881998e4dc8a6940216c82d73
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 41-52
+        integrity: sha256-30f7640d5113dcf603985f492132772b9057bd6201d3d72ec372fa43c5d97f7b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-five-enumerated-fields
+      claim:
+        integrity: sha256-63a8e494f2ea050d14b0dde595663d6c8bccd13c85c34d8bd16f971af76ad1ea
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 59-68
+        integrity: sha256-03641eed07c74da4cbb21394d85daa720f9819d7f258a403dd3192f8e88d6467
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-avoid-a-colon-in-a-name
+      claim:
+        integrity: sha256-b02c65929476306302686a236555471cfa2bc7bc82e9f2101a5100fdef6aa4cc
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 21
+        integrity: sha256-f2aeef55f6268b123d5dd3e81867319c0add01049fdc207c1fca19ef4ab9349a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-name-convention-is-not-enforced
+      claim:
+        integrity: sha256-32f82e9591eddf7fa88f2a80a3f7be7afbf72494c5596f0ed193818989412dbb
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 17-21
+        integrity: sha256-e61c53d59293711130ef3612223dc9bdddfc8b374ca183786cce3c910bc1b15b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-name-may-not-begin-with-a-hyphen
+      claim:
+        integrity: sha256-d57da9cfcaa70ad269759db32ad1429a124f5d4ad595662f3fd661f7d680ffed
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 20
+        integrity: sha256-59886ff77ffdec31de2e0325385aa9a04310bd64e7ae2eeb853da6a6ce3edca0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-background-takes-only-true-or-false
+      claim:
+        integrity: sha256-67143a89984bc9877b155c0bdfbb3bd6d7c9bb603835b1bdb039bab91bf6d6dc
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 94-97
+        integrity: sha256-3bf57ad6661b8e4f5a86851a109f9bce1f43e3e9bd8dec76dfa32239d2a06fab
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-plugin-agents-ignore-three-fields
+      claim:
+        integrity: sha256-d8ccb429bb981466a73335d9e8d50c1f1a97d57b3c0cf49d8898c0a44a5358ce
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 5
+        integrity: sha256-60fae18b5e65d2724d4e3a0a4b894ceb64d3a363f4806404b3a78d11c7d95d1a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-observermessage
+      claim:
+        lines: 68
+        integrity: sha256-d3471ca68ce65680ed26c2dd2f9e96598ff42759b8b1651178435fcd95a6533c
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 115-119
+        integrity: sha256-6f21af67ecac5f95068fbee9660d464c586aa47437d0d5a5ca8301574fb2325d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-observer
+      claim:
+        lines: 67
+        integrity: sha256-78d3adfc7a4894d7fb98473c66d534b69bf75ef7d03214bd74fc727515d16d29
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 109-113
+        integrity: sha256-24ce8b30173c7dae95274b3446149bfbbebecaa2c70f0e3e63650ee04f888c1a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-initialprompt
+      claim:
+        lines: 66
+        integrity: sha256-8a06d24af36eda1b0689486ddfa6e97798d671e3bfb45e4fd2c3ca6f2d2d002b
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 103-107
+        integrity: sha256-f6c6bf5cb6d858ede9d9a310f218d486aeb159e8c932bb95696f74c663b3349a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-isolation
+      claim:
+        lines: 65
+        integrity: sha256-cc84de28eb40829735cb1b8c9aade6000da3b27a5d6620698aaf0e4eb030ec5d
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 99-101
+        integrity: sha256-d3092be98a635766e626c278c568d3bde2a839b57940dbe59985e4f2ef223edf
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-background
+      claim:
+        lines: 64
+        integrity: sha256-f0ce336765e597bc9c36c1f1d22cafd982dd621764e374df6051fa252b42c210
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 94-97
+        integrity: sha256-3bf57ad6661b8e4f5a86851a109f9bce1f43e3e9bd8dec76dfa32239d2a06fab
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-memory
+      claim:
+        lines: 63
+        integrity: sha256-b17d89582642690ae6a7fcdf1b7e471d6f0924ed0075de028b84ff0ad1529566
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 90-92
+        integrity: sha256-d770fbe0052b447f6bc7b17bdc31159a98791b464686003f3b8dcd9f8b4be21a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-hooks
+      claim:
+        lines: 62
+        integrity: sha256-29e5310c20344a174eb388931324d3cd35b2829ec43678c3a48118589d0ba703
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 86-88
+        integrity: sha256-07fb01d90b7a22691c81de3e7e8a3728281aa7dac5d2a4d48281cb6e53bf0f13
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-mcpservers
+      claim:
+        lines: 61
+        integrity: sha256-8334cfb9ee771c01ef42ae540a0eca99ad542cc840dac30546867f1d3897f571
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 81-84
+        integrity: sha256-62f30ce9e63830c6a333a03d21b7037a101e6c25fe4bc32a59589f95a93cccad
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-skills
+      claim:
+        lines: 60
+        integrity: sha256-8532eb2f52119f04d7cb9642fd8555c98342ae70b267b8cb0f68382b2d2e59a2
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 77-79
+        integrity: sha256-bac72363a2474683de483b1192eb6223247f261986a3dc5be33519bf87d43d02
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-maxturns
+      claim:
+        lines: 59
+        integrity: sha256-79d5150fc9486e061040e6182925c55576880ebe01f9ec1d9b9f68526a4be5fb
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 71-75
+        integrity: sha256-54841688e308ffe6c8dcb967025499a41319a65dac27fb3abf6b3cca2f10131f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-permissionmode
+      claim:
+        lines: 58
+        integrity: sha256-a15d8c97c571ad985847802075dbc158d76328c0ee9f9feb6a0493c7a7559a11
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 59-69
+        integrity: sha256-918f4ac9ad544bbceb567ec37b22b69c7da2c251b58e9f7d58c19f1864093c2f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-effort
+      claim:
+        lines: 57
+        integrity: sha256-19917db97106cd66adaf537d243566c3d004bcaf852ee5da9a85ab7e1a43bfd8
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 54-57
+        integrity: sha256-ee28a63c382d5aeb1948eac83ab0bd81dcc0989c5f184db22afc226f8d088808
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-color
+      claim:
+        lines: 56
+        integrity: sha256-fc3ee3ee5fad1b8b0dfbd1c228d2d8b1748b93e4ca30b2ef5846159244de0445
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 41-52
+        integrity: sha256-30f7640d5113dcf603985f492132772b9057bd6201d3d72ec372fa43c5d97f7b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-disallowedtools
+      claim:
+        lines: 55
+        integrity: sha256-f0097643e05c47397c5266bbb615813d4466f8f92b37ea2bcbec99b0f6c74be9
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 37-39
+        integrity: sha256-44b7382f09cdeeaecebf110d3811e33a836164cbb76f34922d9bff416b35f442
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-tools
+      claim:
+        lines: 54
+        integrity: sha256-054b7543a33d51e02fb016968e71a7aa29446340d540a39ec730f5c6e2062985
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 33-35
+        integrity: sha256-10ff40b396321598baf7ecbab021c7d66a39a94bc304ed28a87ebe91375d0361
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-model
+      claim:
+        lines: 53
+        integrity: sha256-c1d9343ebd1364a92f66574634d004a849ed8616ba63ff5ea818052314f76bce
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 28-31
+        integrity: sha256-d6526e96336f689f685b401d0e84573d019de4364e0c54b4ff9b2d900135fd70
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-description
+      claim:
+        lines: 52
+        integrity: sha256-d49f3d7569ed96a6d4e6c1e4e41663073dffcefd653725e279251d223c0f11de
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 23-26
+        integrity: sha256-f03b47ad6368a2dbf280a82d1acd37aedb50835a7c2f4559f506643578a17d3d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-field-name
+      claim:
+        lines: 51
+        integrity: sha256-a507f12cefe05fb84d6798dde3773c82d56e4aafe631432609e37e084742b0aa
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 17-21
+        integrity: sha256-e61c53d59293711130ef3612223dc9bdddfc8b374ca183786cce3c910bc1b15b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-tool-grants-are-spelled-differently
+      claim:
+        lines: 39-44
+        integrity: sha256-41038acb65e770b38ce2cfb9c2ca66e79e783af7a59c3d2b2c392456b116c242
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 5
+        integrity: sha256-60fae18b5e65d2724d4e3a0a4b894ceb64d3a363f4806404b3a78d11c7d95d1a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-missing-description-is-refused
+      claim:
+        integrity: sha256-3425a682fc9a83772eba133838541bfa792b47ea692d17898ccddb38d330ab09
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 23-26
+        integrity: sha256-f03b47ad6368a2dbf280a82d1acd37aedb50835a7c2f4559f506643578a17d3d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-skill-schema-requires-nothing
+      claim:
+        integrity: sha256-60d5229314d63538d5d549b0ca47dd32ce3378617bb7b7e6e9e3cfa26902ea98
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 5-7
+        integrity: sha256-046d794a812df072a7f4b25095e3d53da32ecbfbbeff2ae48e03c2ca967e5f7b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-eighteen-fields-two-required
+      claim:
+        integrity: sha256-274112d03d76533934f8e64fdf4c05c40733f6bca3dcc9811e8b914f9520f659
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 5-8
+        integrity: sha256-3a39b749e62bbbfea5cffcf34ec3b6a964e17686e9689fbd00f93bace19fd864
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: subagent-schema-id-and-scope
+      claim:
+        integrity: sha256-6087223615070cd3a953cb691c65a0e1774e1aa9644afd977722a52cdbd0e8ac
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 3-5
+        integrity: sha256-df4ce291935ee55edc338062c346acd832b6533faa17e5c3b359e7471525f412
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

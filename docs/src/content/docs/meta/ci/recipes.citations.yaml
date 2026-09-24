@@ -1,0 +1,103 @@
+docs/src/content/docs/meta/ci/recipes.mdx:
+  citations:
+    - id: hook-files-pattern-covers-every-format
+      claim:
+        integrity: sha256-f78cce1fd8fe4251b3151c3293e76d9be529b95c33de75b3b9a9dc0818078d25
+      source:
+        file: .pre-commit-hooks.yaml
+        lines: 29
+        integrity: sha256-f74d9657e270288b5051d5c5f141abd1bec045b47a14accc36e64e82072dc2c4
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: hook-entry-runs-the-latest-cli
+      claim:
+        integrity: sha256-0e27eb9c9be3617eb464c72f3ca66164bef43e6766b3881506e99d9333b62cba
+      source:
+        file: .pre-commit-hooks.yaml
+        lines: 27
+        integrity: sha256-e4907b179c4046bb821ce4973c2e687c402ff1dbc6ae83d84bd7b95432620941
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: derive-hook-stamps-managed-fields
+      claim:
+        integrity: sha256-6d8726712e61b7c53920269af05c31900f213db1ef3d7426ef8d520457f01694
+      source:
+        file: .pre-commit-hooks.yaml
+        lines: 37-42
+        integrity: sha256-64bb05927342700c14e3ac71b973aebc558a072df28bd97c18d2826b96693cf1
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: junit-one-test-per-file
+      claim:
+        integrity: sha256-6f2863da42771090048d19388af3f1634b8f93c1e0250c7ef53a459c511cfffb
+      source:
+        file: src/meta/reporters/junit.ts
+        lines: 116-117
+        integrity: sha256-3a8e64040d3aed8a31fd02a30d8adb9db95dfff0dff326d774ff2439cffed180
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: recipes-exit-0-and-1
+      claim:
+        integrity: sha256-fecd0355b9b7433272aeb0bfbae1007c1c662a434f9324138e958cbd97fe335c
+      source:
+        file: src/meta/cli.ts
+        lines: 872
+        integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: validate-judges-the-derived-stamp
+      claim:
+        integrity: sha256-3219f33ff597c89ce4d5ecf4eae156536902e01c392bc0b3198016462ff8b762
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 988-998
+        integrity: sha256-705564be93671f57572066f8b5c65e89e68fc6228453bf1746a821f580d13aa1
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: recipes-operational-error-exits-2
+      claim:
+        lines: 11-12
+        integrity: sha256-260544cda490cb7a8a5090db6f469af01dde0a0cabf6ee9378fd14156911b2a1
+      source:
+        file: src/shared/run.ts
+        lines: 24-37
+        integrity: sha256-731c8ac7d223ae66f23904fe28271963d5e352e3f70564e346d97a5d392d4cb5
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: github-format-emits-workflow-commands
+      claim:
+        lines: 17
+        integrity: sha256-dd013d4ba2a723499cee6d883c35f02b58e50ab68483c1f208a29e70faac1e8b
+      source:
+        file: src/meta/reporters/index.ts
+        lines: 305-326
+        integrity: sha256-60cada7804b9986454e20a28822cd9a49d056cf07492243254e208ef0c2e67d8
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: manni-rebases-paths-onto-the-git-root
+      claim:
+        lines: 86-87
+        integrity: sha256-d282f4cbf8469be18a1a73ed4ebe064be9a07d6caee82ecc9931dade000f1fd9
+      source:
+        file: src/meta/reporters/sarif.ts
+        lines: 141-144
+        integrity: sha256-6679bb684dbe1ea06983c60d39b4ad0769236d43eb6368ade8022992682c2c51
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: no-git-root-warns-on-stderr
+      claim:
+        lines: 88-89
+        integrity: sha256-033b570bbbbd80687dd0bd6c5cfd3a499b18eb3d7d9f629f077297a04ac7c7de
+      source:
+        file: src/meta/reporters/sarif.ts
+        lines: 64-68
+        integrity: sha256-5885a7f1a18f3127f0428c6c12d0992d17b49a381685c0157a0be21f9d76fbd9
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: hook-needs-node-24
+      claim:
+        lines: 301-302
+        integrity: sha256-7586e9ec2cbcc07983fac21ddfb24918a8b187dc1fd1297d476a9100ca3e83cd
+      source:
+        file: package.json
+        lines: 34-36
+        integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: cite-hook-checks-staged-pages
+      claim:
+        integrity: sha256-a0542930798b64c6850202ea0ea7e170a89469a24a7ecb8bd3c00d4e93aa98f4
+      source:
+        file: .pre-commit-hooks.yaml
+        lines: 57-62
+        integrity: sha256-4b50062244217ee8e33835618a67c13fe6c7636841aa1d283edb879bd674f333
+        commit-sha: 4f40394e1be328a7bce1a85a7c77d65c7d42d89e

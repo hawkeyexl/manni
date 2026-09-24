@@ -1,0 +1,26 @@
+docs/src/content/docs/meta/reference/glossary/frontmatter.mdx:
+  citations:
+    - id: three-fence-flavors
+      claim:
+        integrity: sha256-a2d50b3a1767050b4396998299cf9489d66cf0f1b1b7c51e1553809f6807203c
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 34-38
+        integrity: sha256-7eb8cae0cf8dcf17fa5e1ebdb9314bb9eced39ad7913b953b7cbad4a23216ac4
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+    - id: fence-must-open-the-file
+      claim:
+        integrity: sha256-a2d50b3a1767050b4396998299cf9489d66cf0f1b1b7c51e1553809f6807203c
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 79-83
+        integrity: sha256-09dbcd785d080a11058b59e6d42a08778fd34d8bd14ef247966f5e7ef4af1605
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+    - id: adoc-and-rst-fall-back-to-a-native-header
+      claim:
+        integrity: sha256-a2d50b3a1767050b4396998299cf9489d66cf0f1b1b7c51e1553809f6807203c
+      source:
+        file: src/meta/types.ts
+        lines: 20-22
+        integrity: sha256-4226b5b636978c568b9ec0c32d21d480a1aab95aec50ab1d95446d1fe99cee92
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe

@@ -1,0 +1,384 @@
+docs/src/content/docs/meta/reference/agent-skills-schemas.mdx:
+  citations:
+    - id: skills-subagent-is-a-different-contract
+      claim:
+        integrity: sha256-526144bb9f5b29d56e4741ae98cf1f407d9070846c527f1488bbf70a1bab591a
+      source:
+        file: src/meta/schemas/claude-subagent/2.1.json
+        lines: 5-8
+        integrity: sha256-3a39b749e62bbbfea5cffcf34ec3b6a964e17686e9689fbd00f93bace19fd864
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-stacking-reports-claude-only-keys
+      claim:
+        integrity: sha256-1b2419868e193fd727e25731610e51f912be948dee321a1110669b26ecba3e0b
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 5
+        integrity: sha256-9b119abff34170901f532872b91539484a84be6636b6b05fd2bb90613cf2bfbe
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-each-failure-is-attributed
+      claim:
+        integrity: sha256-41b32ea8d07d8e95d2ce14d2c99665c6e7a8de9e63cafdf6eaab8b3d6efdb428
+      source:
+        file: src/meta/core/validator.ts
+        lines: 631-638
+        integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-flag-accepts-three-types
+      claim:
+        integrity: sha256-43a7b84f7374f4ce608ec9a9b151fbc8920adc4f8ab34a15186e16bcbf565352
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 9-15
+        integrity: sha256-be3d9ec0cdb9e08f50d6706aa7c29c62df98f586237fee14235b6457b4009062
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-six-boolean-spellings
+      claim:
+        integrity: sha256-529dda464689db5b04872d095c4805838f60c7e8e823279ff83f8e296856392f
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 10-12
+        integrity: sha256-be6cedf271d01cf779b95886c61dbe790e73307ea58ed89017b40bac019cced3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-name-is-unconstrained
+      claim:
+        integrity: sha256-f171f143eb4870e9dab3c9632d94e359d2e098175586af9668188bc199a545b2
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 23-27
+        integrity: sha256-1c4d7be4a8c38a6ccab36656c19e2ca63986190ecaf4f69db9c5f47acca187cb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-model-is-not-enumerated
+      claim:
+        integrity: sha256-58e9467300953b1b01c4f1d145d08f375127d0c1785db5d94ff9fb21a4c488c8
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 62-66
+        integrity: sha256-f87dfae401d7374d90a54381cf7b1195e1c3fea1551235932fc421812d0efe75
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-effort-context-and-shell-are-enumerated
+      claim:
+        integrity: sha256-f0cc377588ccd96efdbae97b27249a429a8a29131b75bfe777b47a1b72e42532
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 67-74
+        integrity: sha256-6842c9c4efe8041697e0f2a26d94c08ac4772428644db653f4fdbbbbea79c2a7
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-compatibility
+      claim:
+        lines: 112
+        integrity: sha256-fcbf5890ee5138d17e8bcdb6ed5c8bbab13b5767875b1d25a71c3d874a241a9c
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 105-110
+        integrity: sha256-27b3bcd9e561ad98336eedac6b3835e07c4750320c7f705638aec77db9843187
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-license
+      claim:
+        lines: 111
+        integrity: sha256-0f8cc0927043ce87173bfa2db7baa7cafa3f2e70adaf3416e7e2b740b2709700
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 100-104
+        integrity: sha256-70baef7b43fdf17a767df6e329df7437f3c37393525ee613a3bda7aa4d355efb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-metadata-is-free-form
+      claim:
+        lines: 110
+        integrity: sha256-12397be6868494f5277cacb9d8bb47414956e4530f4513d852712916bd6bfcbe
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 96-99
+        integrity: sha256-d917da9778cb41fcfd82264b707618bf848ccf55df43b72ecf1b84ba72cf0a19
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-shell
+      claim:
+        lines: 109
+        integrity: sha256-4353782d564a6434cae49195a672d92983c814f20e3c3a413da3be3bdb0f87b5
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 92-95
+        integrity: sha256-61359638e54908f7dbf52a3c8136a0e822515d2788a6ea3f63fa6a46f6f698e0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-paths
+      claim:
+        lines: 108
+        integrity: sha256-c77e6a565fcebe2331500b5e1b4a56638dedbb585bfc64cb8c95fa2393d84847
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 88-91
+        integrity: sha256-15219e5682b05b6dae43cebad21f439b572a74c9dad45c3c31ac09b14492d88a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-hooks
+      claim:
+        lines: 107
+        integrity: sha256-4bc80571b7cf0081fe4475d13b271f57c62f35c019ff9a6a7cc82307978f9e40
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 84-87
+        integrity: sha256-16d5bfec5b02024170fcd3ac90abdd252def61bfcd97479e094fc0de6a21a8bb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-background
+      claim:
+        lines: 106
+        integrity: sha256-d0164f3e100f1172f950ea915b539d980dfd6df17a3ec463766e10fcd7ac92fb
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 80-83
+        integrity: sha256-d04f984988f0aaa46cc255bf6bb95ecdb10ee9e9197fd95e9058393e043db985
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-agent
+      claim:
+        lines: 105
+        integrity: sha256-1203e63a7370e7852af1b7880ab6b9027f5980f2953670139e7d98cc566637b5
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 75-79
+        integrity: sha256-09bb923d7b44704913e552bb3899d62f95e3a93055a780d7f643f8b5f4c188ee
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-context
+      claim:
+        lines: 104
+        integrity: sha256-793516d066e22d1d573b369e6a58144a6251d98c884ab377e09005ad5cf6421a
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 71-74
+        integrity: sha256-3943b4a80ce6e826c6b12fe885c7f87ac3ba8a23eaf5b15b18edd40d77d8c118
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-effort
+      claim:
+        lines: 103
+        integrity: sha256-ac37acd802c458818de7cd536892bc8e7a439c12012b039995e17ef18593ac63
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 67-70
+        integrity: sha256-96eddae55bd95ae676c5b5c700404f3f4dc8dab2fcedfdd5ecc254a701c4365e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-model
+      claim:
+        lines: 102
+        integrity: sha256-5bfa0ee77ff741aa4a40d849847c1daae25984c92b0c76064195cbbca4b71fa8
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 62-66
+        integrity: sha256-f87dfae401d7374d90a54381cf7b1195e1c3fea1551235932fc421812d0efe75
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-disallowed-tools
+      claim:
+        lines: 101
+        integrity: sha256-35e4bb6ebdefb31f0256db65e903411b2f70905b97df7c95ffc78623ef7b674f
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 58-61
+        integrity: sha256-dc7a24130e9dac3551e546d08a8e7510a4954299e45cb11c14eaaa6518d20fd0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-allowed-tools
+      claim:
+        lines: 100
+        integrity: sha256-a24277fc48b6c600f02e25d1a7904e4a7959302ad904439561ee524eb38e24f9
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 54-57
+        integrity: sha256-b03ad9d0df2e2d95b55148c6e5b2c8c6dddb8d012e8f41e3299c2771b1dd6c2c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-user-invocable
+      claim:
+        lines: 99
+        integrity: sha256-f0c5731b205bcd0e26cd9f16984cce9ee387016a58b37ec9c937669187e3b4c8
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 50-53
+        integrity: sha256-54aea21ad6c7508af9ecc094903b404496580a010716d044150c81ddd4833cd6
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-disable-model-invocation
+      claim:
+        lines: 98
+        integrity: sha256-0510b04a574c17ea2f1c99c30bad2a65144a015467bf4390291c11822f396bbb
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 46-49
+        integrity: sha256-cf8a2f7d7f738be86189f3fed295107bd42c99a9bdb5b120025282a3ffa0cd83
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-arguments
+      claim:
+        lines: 97
+        integrity: sha256-08ee2ce685555ffeea2db07ea45389d321a2b0fb13b3f91f8bba163c0a288ff5
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 42-45
+        integrity: sha256-0fb53245a7225851ad428a99b4b9de1591f3f1e876a80bf1d8248668464ab5ff
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-argument-hint
+      claim:
+        lines: 96
+        integrity: sha256-c07eda5a45dd32111bb1b9966cde20d041668fc09cafd57179e8fe6cb8a3ff16
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 38-41
+        integrity: sha256-95eb8099e57a8894b12f5fa25d71b570b65a3d2146850877f292eada7bcb6852
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-when-to-use
+      claim:
+        lines: 95
+        integrity: sha256-5fa66883efd753bed36d7212e9492951a453fca8c2607faf8b08425765656577
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 33-37
+        integrity: sha256-e9cc630374ff2497c4d7ccd6aa349c71cf6908c1c268d079420bb6ea8ab662e6
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-description
+      claim:
+        lines: 94
+        integrity: sha256-cd788f31387dd17d3c50699323296ef0f51497f9677a3ef4b1dd6b9937e6a28a
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 28-32
+        integrity: sha256-609c47df9ddab91f0580357558e2445391007a935a53c3a0722d85aac2e70881
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-name
+      claim:
+        lines: 93
+        integrity: sha256-ec212959c9311856ceecfcd4a3376145ee365b1a4ecf710017af2f1171b9a091
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 23-27
+        integrity: sha256-1c4d7be4a8c38a6ccab36656c19e2ca63986190ecaf4f69db9c5f47acca187cb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-schema-requires-nothing
+      claim:
+        integrity: sha256-bef908980cc36d5f272ace413fcfc2b5dc4582669a3c5771b754221bf09ad032
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 5-7
+        integrity: sha256-046d794a812df072a7f4b25095e3d53da32ecbfbbeff2ae48e03c2ca967e5f7b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-name-must-match-the-directory
+      claim:
+        integrity: sha256-f22b9e43ce81f6fccbd8e06eed09b18461c459a4e6364e183dbd45d678f336d8
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 10-15
+        integrity: sha256-78f3da415248721f449347ba3f7c7c7d881a3eb757446335c6175baf2cd402ab
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-metadata-takes-strings-only
+      claim:
+        integrity: sha256-96fae2046a58a211c3eac59275516d01c9eedfebca88b21fd608c0b579c6f896
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 34-37
+        integrity: sha256-ecb0e5e9bafbfdfafc3c51b8a3e79835c010d4ddabe4c93a388daedfe76180d3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-allowed-tools
+      claim:
+        lines: 61
+        integrity: sha256-5bf20ad254df67f0185b0edd9c876d3afc9c8dc44cedb2afb9beb5ac7dade4d7
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 39-42
+        integrity: sha256-6039618c291d43c09e9eac2242da9ecea72c8ddc3f68c1937235c8a8d0802645
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-metadata
+      claim:
+        lines: 60
+        integrity: sha256-66544b6de3de0cf24270c868f0b906aad30fd34c3996e6f726bb0d1ecdfecd4b
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 34-37
+        integrity: sha256-ecb0e5e9bafbfdfafc3c51b8a3e79835c010d4ddabe4c93a388daedfe76180d3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-compatibility
+      claim:
+        lines: 59
+        integrity: sha256-19889dfa2cd2a0e0d735bf622c8876c9d2491df69803c6c4728852573debddb3
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 28-32
+        integrity: sha256-f56da9d306d43ac16e3d07f6bfea8fa923a961fe830ecbacb9afded767b08da2
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-license
+      claim:
+        lines: 58
+        integrity: sha256-aa3d121141e0d48e5be562d5d350ca0a9d7098613fba5c774f55a6d0761388e9
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 23-26
+        integrity: sha256-3a3843b2d533dc23e0bb045ea74c706984af741d1cdd91ba3085cee3178929bb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-description
+      claim:
+        lines: 57
+        integrity: sha256-c8fb6c6e71c77a76f0292d7a0eae5a8a505e95b1a61aa71537a7c61a8a14f2bb
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 17-21
+        integrity: sha256-9ddd76e9d09f33e915d2db8e243f3cdacc112ee406551c79d522528046ee7e77
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-name
+      claim:
+        lines: 56
+        integrity: sha256-0c5ad8d686baa181cad4609d40958bb2347d6a1e5fb953b49f279ba8b9e6846f
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 10-15
+        integrity: sha256-78f3da415248721f449347ba3f7c7c7d881a3eb757446335c6175baf2cd402ab
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-six-fields-two-required
+      claim:
+        lines: 52
+        integrity: sha256-d5a98beb01ec355a6e2caba9f99c36f1b487ff2ed0e36e64796485db250b5700
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 7-9
+        integrity: sha256-21fdcd0f3e8365d667f4f9429a4223f4b3fa0398a001eca9576015d03f8535bb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-schema-rejects-claude-only-keys
+      claim:
+        lines: 43-47
+        integrity: sha256-6ca84632f69ee63b5ca10ce671faa5df29d46a71a0738b723a567c9ddcb4ed6d
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 8
+        integrity: sha256-e1b6fd8541ba5542d4a83ba797ad19f93213527609df4f73e3ce1416f8991246
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-strictness-mirrors-the-upload
+      claim:
+        integrity: sha256-2a572d3dd444c79b4dde725099c68e2e1e44caa866fda05e41e0460294c5dedc
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 5
+        integrity: sha256-aa3a1adf720b85a5c4d11227a4c7c80a11817ab56798f8629630f5ff2106347d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-only-builtin-with-additionalproperties-false
+      claim:
+        integrity: sha256-dc038a269bef29153095fbb489f90d4c582b2e04081a4710fdc247d376ec8389
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 8
+        integrity: sha256-e1b6fd8541ba5542d4a83ba797ad19f93213527609df4f73e3ce1416f8991246
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-claude-schema-is-a-superset
+      claim:
+        integrity: sha256-5dd660b4d615a660951a6b348de9fe1ff00ddbe287bd2a19b9cb716cf9931508
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 5
+        integrity: sha256-9b119abff34170901f532872b91539484a84be6636b6b05fd2bb90613cf2bfbe
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-row-claude-skill
+      claim:
+        lines: 11
+        integrity: sha256-f77138aa96a9aeebe80a79eb2b7eb43f828e99a6a1c2de728afe4aa1f046e0a3
+      source:
+        file: src/meta/schemas/claude-skill/2.1.json
+        lines: 3-7
+        integrity: sha256-e24ac2bbede0fdfbe959b57f8910bdd1d5f20b6f944cefbee5f056c51a47da1d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-row-agent-skills
+      claim:
+        lines: 10
+        integrity: sha256-8179c6209d677e25ae295f1fbca607b13e33f15a6fb9b2402b7017146652cce6
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 3-8
+        integrity: sha256-130fcc995b2c85763e363f319fe4278754c834deb9f140067db8502c84337343
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
