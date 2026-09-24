@@ -190,9 +190,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-91ffc2448b18cf336da9132d52f1e3e7c2423b434e59a2d6d877e0612b56bdb9
       source:
         file: src/cite/core/git.ts
-        lines: 155-159
+        lines: 157-161
         integrity: sha256-36690ab158695464ff4735e9498d5418bf4a940fae8e91fd69449c430c7830a7
-        commit-sha: 695dd7952e282fc9ba003afbc4a7ac27a4bb1f77
+        commit-sha: 191512c092c8947582b58f70210c6113f3b795d4
     - id: history-notice-when-commit
       claim:
         integrity: sha256-dd2401e4f1ec44fdf81124fbc93860df854eca154e6d36dcbb0fc8a00852dbd2
@@ -588,9 +588,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-b106b076e141f208eef8d8bc229bb773f3b5a03316755de2a01b86779d286f84
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 43-53
+        lines: 44-54
         integrity: sha256-4b3e319b0382b747ad84dcf56977324657662ad8b86fe9e1498103a82d7d2b1c
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 191512c092c8947582b58f70210c6113f3b795d4
     - id: render-github-level
       claim:
         integrity: sha256-b106b076e141f208eef8d8bc229bb773f3b5a03316755de2a01b86779d286f84
