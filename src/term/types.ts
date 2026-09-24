@@ -251,7 +251,7 @@ export interface TermWriter {
 // ---------------------------------------------------------------------------
 // The set
 
-/** A page's claim that it is about a term: one value of `concepts:` or `kg.concepts`. */
+/** A page's claim that it is about a term: one value of `concepts:` or `graph.concepts`. */
 export interface TermReference {
   file: string;
   line?: number;
@@ -260,7 +260,7 @@ export interface TermReference {
 
 export interface TermSet {
   terms: Term[];
-  /** Every `concepts:` and `kg.concepts` value in every file the run loaded. */
+  /** Every `concepts:` and `graph.concepts` value in every file the run loaded. */
   references: TermReference[];
   /** Readers' notices, in load order. */
   notices: string[];

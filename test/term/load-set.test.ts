@@ -79,7 +79,7 @@ describe("loadTermSet", () => {
   it("offers each file to its format's readers and gathers every file's references", async () => {
     const root = await tree({
       "terms/pal.md": "---\ntype: term\nlabel: progressive lens\n---\n",
-      "guides/fitting.md": "---\ntitle: Fitting\nconcepts: [PAL, bifocal]\nkg:\n  concepts: lens\n---\n",
+      "guides/fitting.md": "---\ntitle: Fitting\nconcepts: [PAL, bifocal]\ngraph:\n  concepts: lens\n---\n",
     });
     const set = await loadTermSet({ run: runFor(root, ["terms", "guides"]), readers: [standIn] });
 
@@ -90,6 +90,16 @@ describe("loadTermSet", () => {
       { file: "guides/fitting.md", line: 3, label: "bifocal" },
       { file: "guides/fitting.md", line: 5, label: "lens" },
     ]);
+  });
+
+  it("reads graph.concepts only: a kg block contributes no reference (proposal 0063)", async () => {
+    const root = await tree({
+      "terms/lens.md": "---\ntype: term\nlabel: lens\n---\n",
+      "guides/fitting.md": "---\ntitle: Fitting\nkg:\n  concepts: [lens, bifocal]\n---\n",
+    });
+    const set = await loadTermSet({ run: runFor(root, ["terms", "guides"]), readers: [standIn] });
+    expect(set.terms.map((t) => t.record.label)).toEqual(["lens"]);
+    expect(set.references).toEqual([]);
   });
 
   it("reads stdin as the format --as names", async () => {
