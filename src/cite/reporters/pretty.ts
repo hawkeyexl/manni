@@ -511,7 +511,9 @@ export function rewriteLine(rewrite: UpdateRewrite): string {
   if (rewrite.reason === "recommitted") {
     const from = shortCommit(rewrite.fromCommit ?? "");
     const to = shortCommit(rewrite.toCommit ?? "");
-    return `source ${shortSrc(rewrite.src ?? "")} commit ${from} -> ${to} (did not contain the pinned lines)`;
+    const why =
+      rewrite.because === "not-in-history" ? "not in this branch's history" : "did not contain the pinned lines";
+    return `source ${shortSrc(rewrite.src ?? "")} commit ${from} -> ${to} (${why})`;
   }
   if (rewrite.reason === "shifted") {
     return `claim ${word} ${rewrite.from} -> ${rewrite.to} (shifted by a marker)`;
