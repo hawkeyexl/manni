@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [2.11.0](https://github.com/hawkeyexl/manni/compare/v2.10.2...v2.11.0) (2026-09-24)
+
+
+### Features
+
+* **meta:** a manifest per page ([#117](https://github.com/hawkeyexl/manni/issues/117)) ([44a071e](https://github.com/hawkeyexl/manni/commit/44a071e287c84efebd1833089263ddf77fb7d6b9))
+
 ## [2.10.2](https://github.com/hawkeyexl/manni/compare/v2.10.1...v2.10.2) (2026-09-22)
 
 
