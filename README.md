@@ -98,7 +98,7 @@ actually reads rather than hand-written:
 ```yaml
 repos:
   - repo: https://github.com/hawkeyexl/manni
-    rev: v2.10.2
+    rev: v2.11.0
     hooks:
       - id: manni-meta
 ```
