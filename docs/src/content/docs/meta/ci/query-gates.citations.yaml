@@ -1,0 +1,127 @@
+docs/src/content/docs/meta/ci/query-gates.mdx:
+  citations:
+    - id: attach-and-vacuum-refused-by-name
+      claim:
+        integrity: sha256-d191c2b8697af2a116648744473498232b6d68a236492770e72e9b43f57e3eab
+      source:
+        file: src/meta/commands/query.ts
+        lines: 956-961
+        integrity: sha256-008953e007387cdf2c64cf20c76c472e5754b495b296fd1460907b7a1693c5aa
+        commit-sha: c66b65fbaa3bfc2249911078b0d56aa1ca924d8e
+    - id: check-implies-the-dry-run
+      claim:
+        integrity: sha256-18bbad5a6fcc42cb6ee42c986fd10754dbead718de7915082b3689c1d8d30c32
+      source:
+        file: src/meta/cli.ts
+        lines: 1191-1193
+        integrity: sha256-5017de8e96cd665f24063fbbed610e454d1109ad35388a463d7ef3b6d6370682
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: csv-always-prints-a-header-row
+      claim:
+        integrity: sha256-c824b4a5c52c8ce6d86abf4cf9d49a7eb345f24cb9d8fe41098fc3a390384d7e
+      source:
+        file: src/meta/reporters/query.ts
+        lines: 99-102
+        integrity: sha256-ab273eff632e1523a5fea6822b11546ca903fb40de29efd59e21f22491fd0251
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: query-check-takes-findings-formats
+      claim:
+        integrity: sha256-9baa0fb7022e6b16e6034a716f62cad00d309f9920562316863dda1b2ba14c42
+      source:
+        file: src/meta/reporters/index.ts
+        lines: 145-149
+        integrity: sha256-88757bfcad177abffcd6fa42b2f2a1905c43db1b0252c10e92ffae8221ccd647
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: check-column-convention
+      claim:
+        integrity: sha256-62869850082bf84317fecdbbb8b97521500a2ba95fef5f8e41f0744383d0b2a4
+      source:
+        file: src/meta/core/checks.ts
+        lines: 85-95
+        integrity: sha256-174b6353d42b70e72fc4880c94b47a0d3b674be2eccf8bda14d246dfd9b830bd
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: unbound-parameter-is-refused
+      claim:
+        integrity: sha256-b3fb258ab7e08497ce053e85d6c24861b021e278be34bc3977efe7a7b50cf3e4
+      source:
+        file: src/meta/commands/query.ts
+        lines: 347-366
+        integrity: sha256-a298b020a0691bd8a5bc4764fa24d8609a5bf30559f7313cbe8c6a071a1f070f
+        commit-sha: c66b65fbaa3bfc2249911078b0d56aa1ca924d8e
+    - id: param-binds-a-named-parameter
+      claim:
+        integrity: sha256-b61e40c9c5426df8464672a1a5cd6039e1dd3d32db19973af284cfa049264573
+      source:
+        file: src/meta/commands/query.ts
+        lines: 609-616
+        integrity: sha256-02cdf4b4061da214a6f7698feb7542420955fc7ab919e6c76a8c6a50d6a9f3f4
+        commit-sha: c66b65fbaa3bfc2249911078b0d56aa1ca924d8e
+    - id: check-turns-rows-into-the-exit-code
+      claim:
+        integrity: sha256-18a84e638c22a86a215480ca9905dc64d0b8480138d90e0cb277985c70c7e379
+      source:
+        file: src/meta/cli.ts
+        lines: 1292-1293
+        integrity: sha256-83168629bc28324f5475a34ddbf6584bb44cce69696e366e6d8dc125dc2df12c
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: docs-table-system-columns
+      claim:
+        integrity: sha256-3459891f0a293b0be4641a956f69ced6c2c194945b58c4e59dd21ba77db985f9
+      source:
+        file: src/meta/core/projection.ts
+        lines: 20
+        integrity: sha256-78322f3b9ca99896f29299b9c63e576647a6149a4a1363e7a1a829e685d7d9b9
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: query-engine-is-node-sqlite
+      claim:
+        integrity: sha256-c621de2131e29ecbb2915215d501211dade754771fb11ebeefd109b967375b47
+      source:
+        file: src/meta/core/projection.ts
+        lines: 379-381
+        integrity: sha256-a55c9d4a65cf966c7cd5feaf67d576079160146b491cad6388324da1063e91e5
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: checks-run-only-on-the-config-corpus
+      claim:
+        lines: 185-189
+        integrity: sha256-d15cd492cec84bf5bcba049b7a04506a8c8b6db03d23c5ee5692d5f8d0beaf44
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 895-906
+        integrity: sha256-ecdb7f2b79f4cf95fbd52ff4b2b06deb9ab5d22218f6953b83e3af0726fd9bea
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: no-checks-opts-out
+      claim:
+        lines: 189
+        integrity: sha256-235b7dc3b370d6d0d8249ebeee5521260cab69e02ea2a858550ccf139ffea2ba
+      source:
+        file: src/meta/cli.ts
+        lines: 777-780
+        integrity: sha256-d707c59bf169d2c886acc5351c8779f1deb76d9e8eeb3f72113c91c16f696bad
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: collection-scope-names-the-collections
+      claim:
+        lines: 193-195
+        integrity: sha256-9af61fdc270905992ade84edfc12f5e2391507791f61cd46ea925f09b1dd7ce8
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 900-905
+        integrity: sha256-ef8f14f3064a97fd9d002f55074b1c0a615e99172873b34a1dea71f4859983d3
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: check-findings-ride-the-baseline
+      claim:
+        lines: 198-199
+        integrity: sha256-a44cada40a66f5117f8fa96f0210b3c03c23c8c83bab4c8704bedc6c7ae4ebe1
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 932-939
+        integrity: sha256-4367f248468a5dac9bf56d4650b0bb5d24ad2bd67c458000625b4e43335d3aa6
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: adhoc-check-findings-are-named-check-query
+      claim:
+        lines: 205
+        integrity: sha256-9baa0fb7022e6b16e6034a716f62cad00d309f9920562316863dda1b2ba14c42
+      source:
+        file: src/meta/core/checks.ts
+        lines: 60-70
+        integrity: sha256-f9047dcdabb35f84872c4b8750a36a937b26b22c3bb1cb96936598b2f4957363
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa

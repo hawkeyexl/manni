@@ -1,0 +1,950 @@
+docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
+  citations:
+    - id: reads-pages-manifests-structured
+      claim:
+        integrity: sha256-bd1d26e4c477d191f4b6dc7d6859dee49682baf700e0e09dc52306dfa251799d
+      source:
+        file: src/term/core/readers/structured.ts
+        lines: 12-20
+        integrity: sha256-4833c8888bad74f236de07d7b359a34a74cc28104a7ada70278727499ca48db4
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: reads-body-text-constructs
+      claim:
+        integrity: sha256-bd1d26e4c477d191f4b6dc7d6859dee49682baf700e0e09dc52306dfa251799d
+      source:
+        file: src/term/core/readers/text.ts
+        lines: 10-14
+        integrity: sha256-0daa5a5cf951143de0f2c49297dfd810935165ae59e8ef46a92b4856c573e24e
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-page
+      claim:
+        lines: 23
+        integrity: sha256-baae6aa3856a0753044d9714b26cb445cf5ac2e452470880ed5cb6011195bd48
+      source:
+        file: src/term/core/readers/page.ts
+        lines: 26-32
+        integrity: sha256-7ee372556f011b2f62947e765e13be005db43790bf6105d7a6211e679134dfe2
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-manifest
+      claim:
+        lines: 24
+        integrity: sha256-430d8e49f9b905b2bda42ed08a591dc3faf5beddb44aa1a22ac2ec0a5b23de2c
+      source:
+        file: src/term/core/readers/manifest.ts
+        lines: 75-82
+        integrity: sha256-f79265564f95f8b88bbe28325fdcb045e561ec6626d53c2c41de5b5f70c29343
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-dita-glossentry
+      claim:
+        lines: 25
+        integrity: sha256-8a9c88dcc125c8f8df57d87114a9085a07981a40a62a6f4c8cb9e69b51e7c2f0
+      source:
+        file: src/term/core/readers/dita.ts
+        lines: 39-82
+        integrity: sha256-44e915b728ba074d4807cef913e10ed7939e6da6b46c14a050939bff19947541
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-dita-glossentry-root
+      claim:
+        lines: 25
+        integrity: sha256-8a9c88dcc125c8f8df57d87114a9085a07981a40a62a6f4c8cb9e69b51e7c2f0
+      source:
+        file: src/term/core/readers/dita.ts
+        lines: 109-112
+        integrity: sha256-2a982f312b967edb9f34bcde782f1e188a5d56dbe9b599a1297127915af90029
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-dita-glossgroup
+      claim:
+        lines: 26
+        integrity: sha256-16abdf3861254155f6859fecaa942c24427d29f4a9962d0e558847d77f9c4669
+      source:
+        file: src/term/core/readers/dita.ts
+        lines: 115-119
+        integrity: sha256-2a0ea00aef2fcfb82141be937e4157aef41e3b002c1d35de7527a4513288d1c8
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-docbook-fields
+      claim:
+        lines: 27
+        integrity: sha256-d286f6edaffea8832d8827dadef76e0bd9fc2a315b647904055d8f880393f962
+      source:
+        file: src/term/core/readers/docbook.ts
+        lines: 61-80
+        integrity: sha256-7b08f4b2966b0142a44ad54126f7dc239f3c32881b6ae7864db00ee1a173d9ef
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-docbook-id
+      claim:
+        lines: 27
+        integrity: sha256-d286f6edaffea8832d8827dadef76e0bd9fc2a315b647904055d8f880393f962
+      source:
+        file: src/term/core/readers/docbook.ts
+        lines: 96
+        integrity: sha256-1b3274b1c10c897a800302f5357082433acc8248187c0b1d7c11c0bedd35e31e
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-html-dl-declares
+      claim:
+        lines: 28
+        integrity: sha256-10323dac360973ec362d031b42fe02c518f160baf6bf12ea491088b2ce31b68f
+      source:
+        file: src/term/core/readers/html.ts
+        lines: 103-104
+        integrity: sha256-99f4c3112128fcbf8d8b4397558d2e94a25aaeec6ba89157e7dcfb157e1a4d39
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-html-dl-fields
+      claim:
+        lines: 28
+        integrity: sha256-10323dac360973ec362d031b42fe02c518f160baf6bf12ea491088b2ce31b68f
+      source:
+        file: src/term/core/readers/html.ts
+        lines: 120-140
+        integrity: sha256-af9280f2bf693237346e00e80778c5747d41bb1cee42972721b462c533253c08
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-md-deflist-declares
+      claim:
+        lines: 30
+        integrity: sha256-5591d3af0628c6d383086a4b5924869eda70be74a9317b6c91cf2b45dd19600b
+      source:
+        file: src/term/core/readers/markdown-deflist.ts
+        lines: 52
+        integrity: sha256-f5fdaa3a2578b63e05580fd9f7291aaf94a2ecc03c091a08152adf3d53c89c1a
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-md-deflist-fields
+      claim:
+        lines: 30
+        integrity: sha256-5591d3af0628c6d383086a4b5924869eda70be74a9317b6c91cf2b45dd19600b
+      source:
+        file: src/term/core/readers/body.ts
+        lines: 106-119
+        integrity: sha256-b49cc3cd144641867471d46a926eec9d91b99c66d32ce4c8877b66896e140583
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-asciidoc
+      claim:
+        lines: 31
+        integrity: sha256-c46c88121fbbfb9695cf9a4e43ba490f4592609c796c3d141d65f5ed7cc2562a
+      source:
+        file: src/term/core/readers/asciidoc-glossary.ts
+        lines: 36
+        integrity: sha256-23dd7afb4997ec6d4f6d6b9540e7fc216d3e13591856760828ab27233be6ae21
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-rst
+      claim:
+        lines: 32
+        integrity: sha256-98a2aa3a061a6586faf686f9f658c3e68db4a1eaee7898958e0b1792d5b056a5
+      source:
+        file: src/term/core/readers/rst-glossary.ts
+        lines: 31
+        integrity: sha256-d86bbc6d2b26421fab90e7007192dff1a22352f3ea8022b0111b2aaf2d32d89e
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: several-terms-docbook
+      claim:
+        integrity: sha256-ccfab7059c611013f3cf7a13e99e4bb248c2146a40c8bc29904cb8825094274e
+      source:
+        file: src/term/core/readers/docbook.ts
+        lines: 67-72
+        integrity: sha256-d3aa12d934fae0f5dc928e74bffef8e09cc14dd02d9985b090626f6e90081665
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: several-terms-html-dl
+      claim:
+        integrity: sha256-ccfab7059c611013f3cf7a13e99e4bb248c2146a40c8bc29904cb8825094274e
+      source:
+        file: src/term/core/readers/html.ts
+        lines: 120-121
+        integrity: sha256-1aa6d9eca6be61182a84dc0c11fd4b378757d2866c6c32e1b1ce25ccd149697a
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: several-terms-body-lists
+      claim:
+        integrity: sha256-ccfab7059c611013f3cf7a13e99e4bb248c2146a40c8bc29904cb8825094274e
+      source:
+        file: src/term/core/readers/body.ts
+        lines: 106-112
+        integrity: sha256-458bda2991fc1c0e7e4d32927d3693727f66e91f194afa5179025cf524bbde55
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dita-glossterm-label
+      claim:
+        lines: 46
+        integrity: sha256-f79c42b7618530ac8f86e4a4fcbb6b7404dec1f5bde637c4bea101a212716033
+      source:
+        file: src/term/core/readers/dita.ts
+        lines: 48-52
+        integrity: sha256-faf445df842004162300b1c69f2b9dd668d2ff29a1d7d7bade11b63e80b621ca
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dita-glossdef-definition
+      claim:
+        lines: 47
+        integrity: sha256-72c83b68c32c0d36eef4403332f3e14f2b9805f07b906d55f2549ea84e9c7e43
+      source:
+        file: src/term/core/readers/dita.ts
+        lines: 53-57
+        integrity: sha256-13f062aef317b9e9c36600e8f980aa8ecf6e828a3f0226ed335e355d79aab60b
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dita-glosssynonym-alt
+      claim:
+        lines: 48
+        integrity: sha256-1551bd420d93c77a9bd9e4e77716321c102d63797c87df44cb9b03adce963feb
+      source:
+        file: src/term/core/readers/dita.ts
+        lines: 65-72
+        integrity: sha256-e15948fc7f36f5aa0c0cc84f7076f1ac280a09bd3f36c81da62935ff9683b5a8
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dita-glossacronym-alt
+      claim:
+        lines: 49
+        integrity: sha256-f92634a7a6279d04788fedf14250bb071805274d51cd8e104dfaa923322332ce
+      source:
+        file: src/term/core/readers/dita.ts
+        lines: 65-72
+        integrity: sha256-e15948fc7f36f5aa0c0cc84f7076f1ac280a09bd3f36c81da62935ff9683b5a8
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dita-glossusage-scope-note
+      claim:
+        lines: 50
+        integrity: sha256-cc0758875df64f6617fc0550fa324e6231d11aa3324af204bbddc0e013454de5
+      source:
+        file: src/term/core/readers/dita.ts
+        lines: 59-64
+        integrity: sha256-6f98afdd12be00fd8a1a335ab88b0ec9c75577f43955bb5f2b7b4d00b27de105
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dita-topic-id
+      claim:
+        lines: 51
+        integrity: sha256-2cdf783fdc630b31db581217360c538ef72d775ca3a8b70e27c715908bf40fcb
+      source:
+        file: src/term/core/readers/dita.ts
+        lines: 82
+        integrity: sha256-13d9d4eb5168da3e8f924aac04ba60a4aac04de20ced302ab8c0abab07d79c86
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: formats-lists-read-write
+      claim:
+        integrity: sha256-ad688312bae958168de451dc732e71b44e04cdca267d8f4bf593284460278e43
+      source:
+        file: src/term/commands/formats.ts
+        lines: 57-85
+        integrity: sha256-f0942e94b6eb18a865ad8b7b1b33fa7d3b9f8a8df0f10eef2eda1091b9985abd
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: list-output-shape
+      claim:
+        lines: 100-102
+        integrity: sha256-5b1b6acf582391ec4b96dcc3eab3420ff17d7289bad2405eeea9757431c44f70
+      source:
+        file: src/term/reporters/pretty.ts
+        lines: 58-65
+        integrity: sha256-a090f03052d54a56d5afd356088b393b63fc49c4962595d163c703afa48bbaa7
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: trailing-slash-directory
+      claim:
+        lines: 105-106
+        integrity: sha256-723cd715ea34f7427a229ced7af2aad1288e7f40bc6bbbfdd54019792968ffaf
+      source:
+        file: src/term/commands/write.ts
+        lines: 237-238
+        integrity: sha256-cfbc10642a235f8ec70bfece5f062f75b7c57ba689dd42e5908460c6fa65cbfc
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: page-file-named-after-id
+      claim:
+        lines: 105-106
+        integrity: sha256-723cd715ea34f7427a229ced7af2aad1288e7f40bc6bbbfdd54019792968ffaf
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 54-65
+        integrity: sha256-6247676a86b7137684c7773e0b036e74869f085fd9331d4e77f7ac3e99e938a9
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: wrote-one-file-each
+      claim:
+        lines: 113
+        integrity: sha256-2510efc140e51885d4441cc218b3d1396580e48153f0124bbfd955d6785727c6
+      source:
+        file: src/term/reporters/pretty.ts
+        lines: 255-257
+        integrity: sha256-f1a0f01e0bfb486b76b80c1382c9155af2fa0d2413c39df91b72a378d9b73925
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: page-holds-every-field
+      claim:
+        lines: 130-131
+        integrity: sha256-1290a384ce7dd1cabf1e00e5b7011c202c6e004b1f5ef0b4f2c29bcf23b4e449
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 137
+        integrity: sha256-12319eee4fb05be2b043d0e41369be922039e2fee0d7d88f82a44c58eb6d9b59
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: glossseealso-related-glosssee-see
+      claim:
+        lines: 130-131
+        integrity: sha256-1290a384ce7dd1cabf1e00e5b7011c202c6e004b1f5ef0b4f2c29bcf23b4e449
+      source:
+        file: src/term/core/readers/docbook.ts
+        lines: 73-80
+        integrity: sha256-84507ae57be1b97e4530f4e8a268f9f7283978e3ce5ea68b4769935beb7d804f
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: file-shape-one-file
+      claim:
+        integrity: sha256-0a32cf0ea85816faeff1de5111c0cc984b7161940108ccb63afeb6ac06fc7573
+      source:
+        file: src/term/commands/write.ts
+        lines: 237-238
+        integrity: sha256-cfbc10642a235f8ec70bfece5f062f75b7c57ba689dd42e5908460c6fa65cbfc
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dropped-report-line
+      claim:
+        integrity: sha256-0a32cf0ea85816faeff1de5111c0cc984b7161940108ccb63afeb6ac06fc7573
+      source:
+        file: src/term/reporters/pretty.ts
+        lines: 211-225
+        integrity: sha256-2f3120ff7d6267569977d1d36beb0e073b074841c4c21f484ecb36aca09ed889
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dropped-from-construct-name
+      claim:
+        lines: 171
+        integrity: sha256-250e66c8678abbb2fdac04657533ba5febbef6f266209069a0c70b7ce98ab6f5
+      source:
+        file: src/term/commands/write.ts
+        lines: 157-162
+        integrity: sha256-f2df9eadca48d428274f907b63d97d217ea8e813fffd83a3b9637394c0cd3d1b
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: deflist-holds-label-definition-alts
+      claim:
+        integrity: sha256-4619e1c87569a7a489bea49e116c3a6fe827c299ed5c9d8a3cf680999d98b6c4
+      source:
+        file: src/term/core/writers/entries.ts
+        lines: 14
+        integrity: sha256-8ec8699a746ef94ffc5bdeb44389c979560ebfe85c042d5c763e02f4dea16859
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: docbook-render-file-shape
+      claim:
+        lines: 171-192
+        integrity: sha256-22f3c6735924affd9089be095ca4c4779e76d78d15649776c7fd1bf4fa9410e5
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 234-249
+        integrity: sha256-367eb505b729f754c5cd3c8e956fb348fdc4a6e0a572f902b7775e2e1aeec06b
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: docbook-render-entry-shape
+      claim:
+        lines: 171-192
+        integrity: sha256-22f3c6735924affd9089be095ca4c4779e76d78d15649776c7fd1bf4fa9410e5
+      source:
+        file: src/term/core/writers/entries.ts
+        lines: 127-155
+        integrity: sha256-1d7fdf58d28fe52558bbca98b609ce47b7ccfdc20c9881869b5bff1f9ed4fe4c
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: wrote-count-excludes-skipped
+      claim:
+        lines: 208
+        integrity: sha256-9bd79fa645456c236675aa5d9763582826cb73c34823afa0012afd44f734d5b0
+      source:
+        file: src/term/reporters/pretty.ts
+        lines: 255-257
+        integrity: sha256-f1a0f01e0bfb486b76b80c1382c9155af2fa0d2413c39df91b72a378d9b73925
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: deflist-file-declares-term-set
+      claim:
+        lines: 214-215
+        integrity: sha256-85971e41f1543206ec0f2740b8a8195fe633bd972ab8e01d60bfce8fce679c8f
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 113-125
+        integrity: sha256-ecd0acd0a90c2e825fa29ff5283f14515c1180451f89cd6bc1f40a68817fd6fa
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dry-run-files-then-notes
+      claim:
+        integrity: sha256-39e55d00093f9087f34a68b710d4eae35c8318cf9a1e059bd655e573fec28fe6
+      source:
+        file: src/term/reporters/pretty.ts
+        lines: 248-251
+        integrity: sha256-93e4ae30fabffdc25a5d28231ea6643dabf213a1f9e0d4754638c0f3acde8d9b
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dry-run-writes-nothing
+      claim:
+        integrity: sha256-39e55d00093f9087f34a68b710d4eae35c8318cf9a1e059bd655e573fec28fe6
+      source:
+        file: src/term/commands/write.ts
+        lines: 250
+        integrity: sha256-b75f418aa405e27517c60e61d1e512b6646533c8d1bf6b1d4c092e55bb4ffadd
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dry-run-would-be-created
+      claim:
+        lines: 241
+        integrity: sha256-c3303c81cbc282339c5874e5a2bbfd261a8abf9e8b195e376710896943d3c1a3
+      source:
+        file: src/term/reporters/pretty.ts
+        lines: 170-179
+        integrity: sha256-4a46913a482241c5208c12db8e4c7d97048bce18ac2a671cd09593de1853404c
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: check-prints-only-files
+      claim:
+        integrity: sha256-9111425de3391d556ef02f85b0eadee4e2323961f6fa74a18f04bfa970807b47
+      source:
+        file: src/term/reporters/pretty.ts
+        lines: 245-247
+        integrity: sha256-91827aa4e7867fb2149b65eb178602d35c6cba063f7858a77b977c3437324fe2
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: check-exit-1-when-differs
+      claim:
+        integrity: sha256-9111425de3391d556ef02f85b0eadee4e2323961f6fa74a18f04bfa970807b47
+      source:
+        file: src/term/cli.ts
+        lines: 283
+        integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-text-constructs
+      claim:
+        lines: 256
+        integrity: sha256-2ee56b6bcf1e0a90112088000e0da71b176e312fa1b918ca570d911b9e88a2bf
+      source:
+        file: src/term/commands/formats.ts
+        lines: 33-36
+        integrity: sha256-5de9d9d715d8b8f4e0dc1ce03ae755c270e219f9214910a31c8705fcb1a609a0
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-text-holds
+      claim:
+        lines: 256
+        integrity: sha256-2ee56b6bcf1e0a90112088000e0da71b176e312fa1b918ca570d911b9e88a2bf
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 133-177
+        integrity: sha256-87233807d9a1414bae0db8338daed2cd08043f84bdd301105f85e23ded825977
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-html-page-meta
+      claim:
+        lines: 257
+        integrity: sha256-4595420d1e6a1ca38a606fa6003974c35712d45c3f6178853370ceb5560b6a9e
+      source:
+        file: src/term/core/writers/page.ts
+        lines: 60-75
+        integrity: sha256-52268a4be52c5e0fe83a5383d7301e5f45fe6d72d6b67c399628695023877ad3
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-html-dl
+      claim:
+        lines: 257
+        integrity: sha256-4595420d1e6a1ca38a606fa6003974c35712d45c3f6178853370ceb5560b6a9e
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 179-205
+        integrity: sha256-e5d8a9365e57c5b711ecfcf24ee19c5dd3f5e82dd339d32c1cce5d1e9f022d66
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-html-dl-id
+      claim:
+        lines: 257
+        integrity: sha256-4595420d1e6a1ca38a606fa6003974c35712d45c3f6178853370ceb5560b6a9e
+      source:
+        file: src/term/core/writers/entries.ts
+        lines: 87-94
+        integrity: sha256-72999561ab930ebccff41c9d0d505b486798cf5df25a3d0161021843eb4e98be
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-dita
+      claim:
+        lines: 258
+        integrity: sha256-69f007048d136d93940cdfa7ced8b76a31f920b7e8105466f39c45d3f44ee860
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 207-232
+        integrity: sha256-12991cddaae47f58dcb8fd49e822bb3a7d286e8895624665d3b76eb0de2b8657
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-docbook
+      claim:
+        lines: 259
+        integrity: sha256-1b3dbd3d5ab2d9a1c7bedf09cb8aa20aaeee0da11bb6ffd3966604be98248017
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 234-249
+        integrity: sha256-367eb505b729f754c5cd3c8e956fb348fdc4a6e0a572f902b7775e2e1aeec06b
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-tbx-holds
+      claim:
+        lines: 260
+        integrity: sha256-3668bfcaf61bd21e744eaf18c665d1ae40377ce5172b0b034de359a9cbcc8a76
+      source:
+        file: src/term/core/writers/tbx.ts
+        lines: 11
+        integrity: sha256-e6ccaeb247d0f99db9cc061204c584aab7ebca7d15f9a57029a8ce140a7d190d
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-tbx-file-only
+      claim:
+        lines: 260
+        integrity: sha256-3668bfcaf61bd21e744eaf18c665d1ae40377ce5172b0b034de359a9cbcc8a76
+      source:
+        file: src/term/core/writers/tbx.ts
+        lines: 47-51
+        integrity: sha256-e9949aaf469cac3252cd8904cf47d75ec0e406b4c3d807f697cd0490d3129704
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-skos-holds
+      claim:
+        lines: 261
+        integrity: sha256-b0735531861af68c4af35ff3b509507e733c8d862e43362272c1d5a9793f1412
+      source:
+        file: src/term/core/writers/skos.ts
+        lines: 13-22
+        integrity: sha256-8596fd4239224415792729019a90dece5c4ef7767ffb3e7c60325da043661c64
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-csv
+      claim:
+        lines: 262
+        integrity: sha256-e8a312af05b5b979d34dbd608b56e9fb644edd6a62db5eb86dc54fa1311b179b
+      source:
+        file: src/term/core/writers/csv.ts
+        lines: 46-51
+        integrity: sha256-bb49447c9b3ce6db535da31f2a4f4ae12db38aa9a0996a1c4fafa612e0610d49
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-json
+      claim:
+        lines: 263
+        integrity: sha256-4aa7d3b869c050cd9bdf4011e505867865933076417db2dc2554f275bc35dc6d
+      source:
+        file: src/term/core/writers/json.ts
+        lines: 10-15
+        integrity: sha256-ac3ed063e8b4fca17dbf688a4a02691f3b2f5fec771f1ab1cc7676b363dbc3c5
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-row-vale
+      claim:
+        lines: 264
+        integrity: sha256-cb2a9fa60336d187fade5648492067e11ba6089f321c89dabd18b703ca5bc451
+      source:
+        file: src/term/core/writers/vale.ts
+        lines: 176-182
+        integrity: sha256-b4a7d559732ef3ec9e382ea828f518755650ba5becbdb7b7862d9d56cd229cba
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: directory-target-refused
+      claim:
+        integrity: sha256-51ad9d576b150f5d05a82ceeb2f1d0bb32b3f84b2a060162dcf61d5dc433106e
+      source:
+        file: src/term/core/writers/render-util.ts
+        lines: 27-35
+        integrity: sha256-a4128c4195dbc3c76a5f652bb85651daf8b5431a990a65b9f43826ca3d8c0cd4
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: directory-target-message
+      claim:
+        lines: 270
+        integrity: sha256-4bf2b8012b20687ea45f742fb21c584f2815009f83f29e701d8036a9c6d2d3c3
+      source:
+        file: src/term/core/writers/render-util.ts
+        lines: 28-35
+        integrity: sha256-e33d525259eb4aa29eb4d2517624d0a5c244dfd44035ebc445e4f9d215d4776f
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: deflist-writes-line-break
+      claim:
+        integrity: sha256-ec650f436ff935061fbdb816cca5d332577340f0e656e8173349722e56cc1081
+      source:
+        file: src/term/core/writers/entries.ts
+        lines: 31-42
+        integrity: sha256-bb0c807aab1c9c2275c24fa16a779c4c967615b71faaa317039bdce22cf02047
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: deflist-reads-break-as-space
+      claim:
+        integrity: sha256-ec650f436ff935061fbdb816cca5d332577340f0e656e8173349722e56cc1081
+      source:
+        file: src/term/core/readers/body.ts
+        lines: 73-88
+        integrity: sha256-be1266b7c8ee74f89b8d9e1b3f72e49cda71bfcfa4de02b64bd030be57a0f8ed
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: list-constructs-read-break-as-space
+      claim:
+        integrity: sha256-3044f4faef404c49ee619cec6b45823869f3093cf90a368b4fa9cd62ca714ded
+      source:
+        file: src/term/core/readers/body.ts
+        lines: 73-88
+        integrity: sha256-be1266b7c8ee74f89b8d9e1b3f72e49cda71bfcfa4de02b64bd030be57a0f8ed
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: markup-lists-one-line-per-paragraph
+      claim:
+        integrity: sha256-3044f4faef404c49ee619cec6b45823869f3093cf90a368b4fa9cd62ca714ded
+      source:
+        file: src/term/core/writers/entries.ts
+        lines: 73-84
+        integrity: sha256-0e01a45a9a53f929b474db0523ed82502ce63460eef732e07029a68aaf7080f7
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: docbook-one-line-per-paragraph
+      claim:
+        integrity: sha256-3044f4faef404c49ee619cec6b45823869f3093cf90a368b4fa9cd62ca714ded
+      source:
+        file: src/term/core/writers/entries.ts
+        lines: 138-144
+        integrity: sha256-80cb404de98215b3e9288d8980895ffcd621e2068271c7839243dbe7acd020e9
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: tbx-definition-as-is
+      claim:
+        integrity: sha256-f2aa0e7843a21abdf7bdac5cec6f064524bdf9286967366a6e4993b19fa1676e
+      source:
+        file: src/term/core/writers/tbx.ts
+        lines: 34-36
+        integrity: sha256-86bd2e8f2343908490ca6ab96784cd58e40beee98faa0030f427cd2b29bec9d5
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: csv-definition-as-is
+      claim:
+        integrity: sha256-f2aa0e7843a21abdf7bdac5cec6f064524bdf9286967366a6e4993b19fa1676e
+      source:
+        file: src/term/core/writers/csv.ts
+        lines: 35-44
+        integrity: sha256-c10e7cfff96bb7c948a72e59f57df3fd40efa1668693dcd945ef04aa4d761a97
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: list-entry-id-is-label-slug
+      claim:
+        integrity: sha256-1970548dbb39e4876431b07f1d5a6382f062239ab70d4236d65ebe7dc6823801
+      source:
+        file: src/term/core/readers/body.ts
+        lines: 120-121
+        integrity: sha256-b4b9ad99c9911fb6b01923834fea2d64aedfecbb7a20eabb9896dcddee6e9cfd
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: id-not-a-dropped-field
+      claim:
+        integrity: sha256-0f74089a748bc94ca703da1c7c6f99ad980af507875989b14425c1b9f299080b
+      source:
+        file: src/term/core/writers/render-util.ts
+        lines: 16-25
+        integrity: sha256-89d151e388524f49a6ada0464410efe368384609d0cd5871c5d52015405a1373
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: page-file-named-after-id-changes
+      claim:
+        integrity: sha256-0f74089a748bc94ca703da1c7c6f99ad980af507875989b14425c1b9f299080b
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 64
+        integrity: sha256-7fd2b70d52d733d597ba8188dcd40f1a1ea4c47b89495d2f828114b95656479d
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: page-keeps-id
+      claim:
+        integrity: sha256-ef6b33650676d2740a2533ebeeba5c44cdd61e607a4fc6fa85317d5cac1b7e64
+      source:
+        file: src/term/core/writers/page.ts
+        lines: 18
+        integrity: sha256-c015776b528f774b3808133b1254358db7ff35a57e30394e557b821231d4ce4b
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: html-dl-reads-dt-id
+      claim:
+        integrity: sha256-ef6b33650676d2740a2533ebeeba5c44cdd61e607a4fc6fa85317d5cac1b7e64
+      source:
+        file: src/term/core/readers/html.ts
+        lines: 140
+        integrity: sha256-f5c786926d12b1e68600148e20193dd9ee44ac79d8a0f0a091f0b20e47e858c7
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: html-dl-writes-dt-id
+      claim:
+        integrity: sha256-ef6b33650676d2740a2533ebeeba5c44cdd61e607a4fc6fa85317d5cac1b7e64
+      source:
+        file: src/term/core/writers/entries.ts
+        lines: 90
+        integrity: sha256-99ff0a119bf7beda49fbf85607515eebbd669cc1a47ed7e7e9a3482a73802d8b
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dita-keeps-topic-id
+      claim:
+        integrity: sha256-ef6b33650676d2740a2533ebeeba5c44cdd61e607a4fc6fa85317d5cac1b7e64
+      source:
+        file: src/term/core/readers/dita.ts
+        lines: 82
+        integrity: sha256-13d9d4eb5168da3e8f924aac04ba60a4aac04de20ced302ab8c0abab07d79c86
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: docbook-keeps-xml-id
+      claim:
+        integrity: sha256-ef6b33650676d2740a2533ebeeba5c44cdd61e607a4fc6fa85317d5cac1b7e64
+      source:
+        file: src/term/core/readers/docbook.ts
+        lines: 96
+        integrity: sha256-1b3274b1c10c897a800302f5357082433acc8248187c0b1d7c11c0bedd35e31e
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: render-writes-only-record-fields-docbook
+      claim:
+        integrity: sha256-85f266843b69e0b1202d43bd2a5f620ed62fdc61b4c578ef5a0c258d0dccf134
+      source:
+        file: src/term/core/writers/entries.ts
+        lines: 132-155
+        integrity: sha256-a8024a1a64761e67fcd9532bcacb5f827437793a8d69719a415ecf9ec9493b19
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: unknown-markup-not-dropped-field
+      claim:
+        integrity: sha256-1ee9277db9e7460962d51cc6e888ac6ce475c5690788c2326e7a501bb4f86d06
+      source:
+        file: src/term/core/writers/render-util.ts
+        lines: 16-25
+        integrity: sha256-89d151e388524f49a6ada0464410efe368384609d0cd5871c5d52015405a1373
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dita-outputclass-not-written
+      claim:
+        integrity: sha256-1ee9277db9e7460962d51cc6e888ac6ce475c5690788c2326e7a501bb4f86d06
+      source:
+        file: src/term/core/writers/entries.ts
+        lines: 101-125
+        integrity: sha256-90cfbd00c16c54760a38b2ec4b2fdbb6054e3acce6d72de295e7ed0a6f37e389
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: docbook-bare-glossary-titled-glossary
+      claim:
+        integrity: sha256-1ee9277db9e7460962d51cc6e888ac6ce475c5690788c2326e7a501bb4f86d06
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 240-247
+        integrity: sha256-99ccb0f308b7bbba34b927bd30f5d2eae8e1b724d9eed04703bed65850390f10
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: tbx-label-kind-status
+      claim:
+        lines: 418
+        integrity: sha256-cf2e2ad3a61dfa678901e79f97e194bce6fa1c3bd43fbddf127e340b2d291fd1
+      source:
+        file: src/term/core/writers/tbx.ts
+        lines: 38-40
+        integrity: sha256-8d71bbd4599c8dbd8860eee9c1386561c8f8fdd9421e32a23e8947e158ebcd77
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: tbx-dropped-from-format-name
+      claim:
+        lines: 426
+        integrity: sha256-f1d863ed661f2a86cde4127488c609cfd822b121b2a802d689fafdb6870b8c20
+      source:
+        file: src/term/commands/write.ts
+        lines: 157-162
+        integrity: sha256-f2df9eadca48d428274f907b63d97d217ea8e813fffd83a3b9637394c0cd3d1b
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: tbx-term-entry-shape
+      claim:
+        lines: 433-449
+        integrity: sha256-125d93a2c19ece4def21ab698fadcb5441bb995ea264577f77441835544c8c7c
+      source:
+        file: src/term/core/writers/tbx.ts
+        lines: 30-44
+        integrity: sha256-5f2b93107bde89a4431fa0f0514d7283d4d655b6311d243d51a6087cd1b79f72
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: tbx-langset-language
+      claim:
+        lines: 454-455
+        integrity: sha256-a670b1305fe1c3b962ea26ec96289edd2ca4acd44df8a8019e6872d0fe43e2ed
+      source:
+        file: src/term/core/writers/tbx.ts
+        lines: 37
+        integrity: sha256-8c0455ae57f668077da66890348001a71230f18d3dfd2c194bfffd9dd9d5f07d
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: tbx-default-language-en
+      claim:
+        lines: 454-455
+        integrity: sha256-a670b1305fe1c3b962ea26ec96289edd2ca4acd44df8a8019e6872d0fe43e2ed
+      source:
+        file: src/term/core/writers/render-util.ts
+        lines: 13-14
+        integrity: sha256-0f5efee49fcbd317653d732e7f15dd880b8b8c73144c0ba5af0baddd57a8fd3b
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: csv-language-in-header
+      claim:
+        lines: 458-459
+        integrity: sha256-e4d55b1a2d2683768c48ed08871540a68629087a4f5e1536c2c22ddc7df485b8
+      source:
+        file: src/term/core/writers/csv.ts
+        lines: 59-63
+        integrity: sha256-674b08a0e08e0ccb90834569ece08f2a0233d92b6e596401b9d8aed4bfbe0fbe
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: csv-list-separator
+      claim:
+        lines: 458-459
+        integrity: sha256-e4d55b1a2d2683768c48ed08871540a68629087a4f5e1536c2c22ddc7df485b8
+      source:
+        file: src/term/core/writers/csv.ts
+        lines: 28-33
+        integrity: sha256-8fa23c95ad2a6e8085c36f79bd54d404e690d5ca4c38b2a201a90dcc991d6824
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: csv-output-shape
+      claim:
+        lines: 466-469
+        integrity: sha256-5bd2818f04a28cad4afe122f282aae32b6d12ae88b30910cbbc0cbde6d6fc9dd
+      source:
+        file: src/term/core/writers/csv.ts
+        lines: 59-75
+        integrity: sha256-aa49fe0ae65c179ac94abe77a229d3257a219b5a1271cfb92bcf64459e71b0c8
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: csv-six-columns-per-language
+      claim:
+        lines: 472-473
+        integrity: sha256-251d402525fb38d48d3a682f9edeb5c472f03810b6ed093a5e479f3823a2c427
+      source:
+        file: src/term/core/writers/csv.ts
+        lines: 10-18
+        integrity: sha256-97a499636d14d43b55d7cd3f21c6187c4d942f59b3f938158ff2b42497f75a69
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: csv-row-fills-own-language
+      claim:
+        lines: 472-473
+        integrity: sha256-251d402525fb38d48d3a682f9edeb5c472f03810b6ed093a5e479f3823a2c427
+      source:
+        file: src/term/core/writers/csv.ts
+        lines: 64-73
+        integrity: sha256-a043e1e09b24c8ab312704463470332ac07abb524b99ac561cf755906aa7806a
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: no-f-writes-in-place
+      claim:
+        integrity: sha256-463ba3602f9bc31fc8368e0013ea7024619911a6913c98a678516bd59ad9f94a
+      source:
+        file: src/term/commands/write.ts
+        lines: 197-199
+        integrity: sha256-90191f921e0d4623cbc4d96fb9e859cce0aa90534e905eed66e51b7681d77c58
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: in-place-reader-per-construct
+      claim:
+        integrity: sha256-463ba3602f9bc31fc8368e0013ea7024619911a6913c98a678516bd59ad9f94a
+      source:
+        file: src/term/commands/write.ts
+        lines: 334-342
+        integrity: sha256-b1ddc54f88893d1cf28e33feb6b632dff6b14f2c7a73607a7b4d6fd0feac7368
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: only-differing-entry-rewritten
+      claim:
+        integrity: sha256-463ba3602f9bc31fc8368e0013ea7024619911a6913c98a678516bd59ad9f94a
+      source:
+        file: src/term/core/readers/splice.ts
+        lines: 66
+        integrity: sha256-debb3a1eb7c68722c77cfeb57eae181f70cdedd7f555c94c90853fd945b264a6
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: unchanged-page-byte-identical
+      claim:
+        integrity: sha256-463ba3602f9bc31fc8368e0013ea7024619911a6913c98a678516bd59ad9f94a
+      source:
+        file: src/term/core/readers/page.ts
+        lines: 60
+        integrity: sha256-744e2befd0c369be25c62f74dcba5174ea9620de8d0bf13b826e2c1ed09f081f
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: body-construct-spliced
+      claim:
+        integrity: sha256-5398ab2c6f1254f34fe4a14538efefaf7af99de5573a479d05f1d037d503117d
+      source:
+        file: src/term/core/readers/splice.ts
+        lines: 71-75
+        integrity: sha256-e52b45ec4ad931eec26835dc3fc95f0206642ae5fafb4a1ead78a7acd85c4a85
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: page-rewritten-through-extractor
+      claim:
+        integrity: sha256-5398ab2c6f1254f34fe4a14538efefaf7af99de5573a479d05f1d037d503117d
+      source:
+        file: src/term/core/readers/page.ts
+        lines: 62-69
+        integrity: sha256-dd8f0bc6c1b52125c3a5b4f7aab77a052a25e42f87cee4eb009845c129214b51
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dfn-has-no-writer
+      claim:
+        integrity: sha256-5398ab2c6f1254f34fe4a14538efefaf7af99de5573a479d05f1d037d503117d
+      source:
+        file: src/term/core/readers/html.ts
+        lines: 222-227
+        integrity: sha256-c04dcc17f1a0945e4c30c2f80b074ba938ab8240f4ff08e7d8c1bcea9946d121
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dfn-in-place-refusal-message
+      claim:
+        lines: 500
+        integrity: sha256-392cd048f293e090418f39c36551fc0a2d561ace6df67f6435fcfa4a5dcbc034
+      source:
+        file: src/term/commands/write.ts
+        lines: 334-339
+        integrity: sha256-0da98303fff43e5734db86475a37f45bd04f6175cc03daeee03ecfa87258316b
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: nothing-to-write-line
+      claim:
+        lines: 489
+        integrity: sha256-bf51e0a01a20b07a78fcfba8d0adfa9c5e4739cd53bba13aef4065363a5f9253
+      source:
+        file: src/term/reporters/pretty.ts
+        lines: 252-253
+        integrity: sha256-503a2808e4f50944701b9399ef8c64cc8df674ca037467de54056ee414c669c5
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: construct-row-html-dfn
+      claim:
+        lines: 29
+        integrity: sha256-c755f0adc081c9db703d0223bbc883ea7988e4a00ae7bded62342d49a5121ce4
+      source:
+        file: src/term/core/readers/html.ts
+        lines: 187-208
+        integrity: sha256-c9f7db57379399cb132d4c83be8d26188ddbfca7251724e1dd6e72a5f790f046
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: redirect-left-out-of-lists
+      claim:
+        lines: 227-230
+        integrity: sha256-852d9412981c52c245f915b89c5b658ad024ec70f2b73fabc305389eaf04b4bf
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 43-49
+        integrity: sha256-f5fcccc762126128b12d039f062240c3d60b52947e4fbe5bf00d2bc891b87e4d
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: redirect-skipped-and-named
+      claim:
+        lines: 227-230
+        integrity: sha256-852d9412981c52c245f915b89c5b658ad024ec70f2b73fabc305389eaf04b4bf
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 85-90
+        integrity: sha256-6098580a91fc03537adc3d09a076380c8de96e181eb77ecbc971aad76c1b76b4
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: see-dropped-dita
+      claim:
+        lines: 230
+        integrity: sha256-3bab5fd089cb44036cee79d70aa8fdcd2103438387d3553060e0b86052a82241
+      source:
+        file: src/term/core/writers/entries.ts
+        lines: 16
+        integrity: sha256-710fe0a59db1e9598d46a2a9d967d3396f5ddce5122cf808749108bc6717699c
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: see-dropped-tbx
+      claim:
+        lines: 230
+        integrity: sha256-3bab5fd089cb44036cee79d70aa8fdcd2103438387d3553060e0b86052a82241
+      source:
+        file: src/term/core/writers/tbx.ts
+        lines: 11
+        integrity: sha256-e6ccaeb247d0f99db9cc061204c584aab7ebca7d15f9a57029a8ce140a7d190d
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: see-dropped-skos
+      claim:
+        lines: 230
+        integrity: sha256-3bab5fd089cb44036cee79d70aa8fdcd2103438387d3553060e0b86052a82241
+      source:
+        file: src/term/core/writers/skos.ts
+        lines: 13-22
+        integrity: sha256-8596fd4239224415792729019a90dece5c4ef7767ffb3e7c60325da043661c64
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: redirect-kept-docbook
+      claim:
+        lines: 230-231
+        integrity: sha256-4441b8679b31c29fe8fe3d6e3d4c9d35478378f7f663d213aa12772c46f377ed
+      source:
+        file: src/term/core/writers/entries.ts
+        lines: 18
+        integrity: sha256-f8eeab244dadda1df909345ad39bea3d64eab1bf6234945ed36f6201810134e8
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: redirect-kept-csv
+      claim:
+        lines: 230-231
+        integrity: sha256-4441b8679b31c29fe8fe3d6e3d4c9d35478378f7f663d213aa12772c46f377ed
+      source:
+        file: src/term/core/writers/csv.ts
+        lines: 49
+        integrity: sha256-1c8273f889d913393bf655c07e69184dac2e4d779296944341debad58f6c5f57
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: redirect-kept-json
+      claim:
+        lines: 230-231
+        integrity: sha256-4441b8679b31c29fe8fe3d6e3d4c9d35478378f7f663d213aa12772c46f377ed
+      source:
+        file: src/term/core/writers/json.ts
+        lines: 13
+        integrity: sha256-1c8273f889d913393bf655c07e69184dac2e4d779296944341debad58f6c5f57
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: redirect-kept-pages
+      claim:
+        lines: 230-231
+        integrity: sha256-4441b8679b31c29fe8fe3d6e3d4c9d35478378f7f663d213aa12772c46f377ed
+      source:
+        file: src/term/core/writers/documents.ts
+        lines: 137
+        integrity: sha256-12319eee4fb05be2b043d0e41369be922039e2fee0d7d88f82a44c58eb6d9b59
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: check-clean-up-to-date
+      claim:
+        integrity: sha256-9111425de3391d556ef02f85b0eadee4e2323961f6fa74a18f04bfa970807b47
+      source:
+        file: src/term/reporters/pretty.ts
+        lines: 240-242
+        integrity: sha256-51d52ae50285c965832b9a85bbe48f4ac702490287a568e31395e8b4033f1947
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: write-renders-documents-and-interchange
+      claim:
+        integrity: sha256-bd1d26e4c477d191f4b6dc7d6859dee49682baf700e0e09dc52306dfa251799d
+      source:
+        file: src/term/core/writers/index.ts
+        lines: 6
+        integrity: sha256-56678e47cfcab7ed8afc063dbadfc00ebfb38409258dc0978489c1d78ab85e52
+        commit-sha: a791fe62c7319f8bb95c3d6d0ad228de8a17b759
+    - id: skipped-report-line
+      claim:
+        lines: 210
+        integrity: sha256-18aa4a22fd929c53caa33078f2bd54a30bc8c24493746bcfdc1a1e5ebd258186
+      source:
+        file: src/term/reporters/pretty.ts
+        lines: 227-233
+        integrity: sha256-8a84022812754e632988d16366426755522a71cdd4d73d18fc088899374d5c1e
+        commit-sha: a791fe62c7319f8bb95c3d6d0ad228de8a17b759

@@ -22,6 +22,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { parse as parseYaml } from "yaml";
+import picomatch from "picomatch";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -141,10 +142,13 @@ describe("re-anchoring citations during the release", () => {
     expect(cite).toBeLessThan(git);
   });
 
-  it("commits the file the citations live in", () => {
-    // The pins are external metadata, not frontmatter: they sit in
-    // site.metadata.yaml, which the docs globs in `assets` do not reach.
-    // Without it there, the re-anchoring happens and is then thrown away.
-    expect(gitAssets()).toContain("site.metadata.yaml");
+  it("commits the files the citations live in", () => {
+    // The pins are external metadata, not frontmatter: each page keeps them
+    // in a manifest beside it (proposal 0058), which the docs' `*.md` and
+    // `*.mdx` globs do not reach. Without a glob that does, the re-anchoring
+    // happens and is then thrown away.
+    const committed = picomatch(gitAssets());
+    expect(committed("docs/src/content/docs/cite/index.citations.yaml")).toBe(true);
+    expect(committed("docs/src/content/docs/meta/reference/cli.citations.yaml")).toBe(true);
   });
 });

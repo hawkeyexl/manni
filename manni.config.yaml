@@ -47,7 +47,7 @@ collections:
     # reason a collection is declared once for every tool to read.
     url: http://127.0.0.1:4321/manni/
     externalMetadata:
-      - file: ./site.metadata.yaml
+      - file: "{page}.citations.yaml"
         keys: [citations]
 
 # Where Vale's configuration is, for the tools that run Vale. `manni term lint`

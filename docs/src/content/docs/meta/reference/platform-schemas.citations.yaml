@@ -1,0 +1,449 @@
+docs/src/content/docs/meta/reference/platform-schemas.mdx:
+  citations:
+    - id: platform-mkdocs-plugin-keys-are-not-material
+      claim:
+        lines: 397-398
+        integrity: sha256-cbe17a84563c0aee1f4e6bc3fb72813dc983d5f59e41bc4f387812f76ad5605e
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 5
+        integrity: sha256-9beea87a022616ce9e5aad74fe11ab5ecec72587edcb7c415b9e15e6dab58e11
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-pinned-to-9-7
+      claim:
+        lines: 369-375
+        integrity: sha256-01c2b4dd6f65c27e0e0b9b07433b7b02edd31857c36b7aab24addcc6c10cdb56
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 5
+        integrity: sha256-9beea87a022616ce9e5aad74fe11ab5ecec72587edcb7c415b9e15e6dab58e11
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-dates-are-strings
+      claim:
+        lines: 357-361
+        integrity: sha256-787b659789913c8c8a0ebe262ef76e25b1defadbe7f7f7e5ec34c7fee2047e31
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 90-103
+        integrity: sha256-8619ed665ef4836f224f028219f731e3d47568e0ea99ed60c3d4ba5fc4958470
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-date-mapping-needs-created
+      claim:
+        lines: 336-339
+        integrity: sha256-ec7a5a4a9d5f70034f78ee517bc80684e221ca3c69c177ac9644aa25328efb63
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 90-103
+        integrity: sha256-8619ed665ef4836f224f028219f731e3d47568e0ea99ed60c3d4ba5fc4958470
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-does-not-require-date
+      claim:
+        lines: 329-334
+        integrity: sha256-a06453964c98c38720f4db6e5c852a08c70cd68b90918ca7d32b1c196164aa86
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 6-7
+        integrity: sha256-378a494cede2cb04abd922c993975f4aa57e36276ac431f5a17eaa105a538e74
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-blog-typing
+      claim:
+        integrity: sha256-71f0566d02e9894f59580f21f7a4abd43d44e109257c7e8c97f58aaed218cb7f
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 112-128
+        integrity: sha256-ebba341a60d8800224fd9f1e14b477fce53c8b6d3b9e364b10b92a08d31583af
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-hide-values
+      claim:
+        integrity: sha256-0338487a586701134bf73e2703cca7ed40f64aa452458340618e58864a5c8b11
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 43-50
+        integrity: sha256-bab44648391e5bf7c830d21718ef4fd3aeee78a42012756f4107ab5364eceb52
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-post-fields
+      claim:
+        lines: 306-311
+        integrity: sha256-9fdf0aed6e143f0809c5b59b4a52044bb5bac1651e0061fadb1912e8f7eb171e
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 104-133
+        integrity: sha256-de0ae1fb3050adb88361991db6d4780a9cca76164508f9f78b9dc05ea3128c15
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-field-table
+      claim:
+        lines: 294-305
+        integrity: sha256-3b3b6caa45132548e0680a5e0b3959b5477ff032134858e93d98ee3e52a3e15b
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 15-90
+        integrity: sha256-f01fd6444c6f68235c29fb7be5e112675f6ded601788e2e9e613d4de7b5e6ee2
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-vitepress-covers-1-6
+      claim:
+        lines: 280-281
+        integrity: sha256-e170c618310b435c82a6a4789c0a603c9ac0df1994addc5e16837e751736d355
+      source:
+        file: src/meta/schemas/vitepress/1.6.json
+        lines: 3
+        integrity: sha256-a8518b3f92eb27a3d4c79aa3774d8a786c77859827de1879d8e83df7b60c55b5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-vitepress-sidebar-is-a-boolean
+      claim:
+        lines: 273-276
+        integrity: sha256-be4e407e76d20542a1d1f54e34b71f0a9cad7ce84c6cb6c50ea8b89100689d04
+      source:
+        file: src/meta/schemas/vitepress/1.6.json
+        lines: 55-58
+        integrity: sha256-9e3f017d3076e21863f322239964dc568072d3e5d07664cc705297eb7ed99167
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-vitepress-outline-takes-four-shapes
+      claim:
+        integrity: sha256-9966ab63d17a1ca0450b44013e172c9b6303bdd6641a0a75019fcd6250c76119
+      source:
+        file: src/meta/schemas/vitepress/1.6.json
+        lines: 65-75
+        integrity: sha256-bb12b3e00039fb42118c0f482ddfaa64d629fe77279ca21b24e3207c4b4311d1
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-vitepress-field-table
+      claim:
+        lines: 256-265
+        integrity: sha256-ea1c279646c64480fb7185661ca0425845367ade31b0b77c6cc7412ae000988e
+      source:
+        file: src/meta/schemas/vitepress/1.6.json
+        lines: 15-96
+        integrity: sha256-2b31ff5ca640a02e159229e98eccf8332558418c0762ea5e57daef485782825f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-vitepress-four-options-plus-theme-toggles
+      claim:
+        integrity: sha256-ee8a8b01971e02cb848ccefca9f8d6a5f6faf7de9703174c77beda4a7fd87465
+      source:
+        file: src/meta/schemas/vitepress/1.6.json
+        lines: 5-7
+        integrity: sha256-b4fdc015edd75742ec34d3c57997080018497c997b440c1e724bf626c72c9036
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-jekyll-theme-keys-are-unknown
+      claim:
+        lines: 242-245
+        integrity: sha256-327cef65abb1ed696b40815d8996031cd6606f0731dddbfab115cc6156d7ae8c
+      source:
+        file: src/meta/schemas/jekyll/4.4.json
+        lines: 5
+        integrity: sha256-34111548673d28dfe11f1784a9a32cc8a54b579c25bd07fdf610868223f74f55
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-jekyll-published-must-be-a-boolean
+      claim:
+        integrity: sha256-8d1feff2572d2f0478e94c4a202a796055e9269fd8c438179bcf27fb55994e11
+      source:
+        file: src/meta/schemas/jekyll/4.4.json
+        lines: 25-28
+        integrity: sha256-f33777dd6717a5468b67c6c7dbdad16f3c39127e9e3b356f2ab46cf6d934ab6c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-jekyll-field-table
+      claim:
+        lines: 231-235
+        integrity: sha256-d46dfde9c589ea8900f1fd016920645f5f90d2ad21946f7c5dbbce7da0760869
+      source:
+        file: src/meta/schemas/jekyll/4.4.json
+        lines: 17-46
+        integrity: sha256-2a3f4d386a947e523c92e850a860c29be86edc5ebe2a967bb3a7d721ffba48ee
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-jekyll-is-the-smallest-builtin
+      claim:
+        integrity: sha256-0d4a617b0432c9c817b290b06f8fbe3181f069cd3a586d4c77aab75c05b1a457
+      source:
+        file: src/meta/schemas/jekyll/4.4.json
+        lines: 5-7
+        integrity: sha256-62b337f36fa478e10c0d4e93cc3e16b66e7f18212bc28048c15015c0667e66dd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-hugo-toml-dates-normalized
+      claim:
+        lines: 217-220
+        integrity: sha256-fdb417107b7ba6869619d817d80ba4d75ca248c93a7d0a736a40807fdb8c3346
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 290-299
+        integrity: sha256-8dfe6038d743adc91c9f9ad1950a77de50a09cd5acc96d60fe98075ff22f911e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-hugo-dates-are-not-format-checked
+      claim:
+        lines: 212-215
+        integrity: sha256-b9e2afcf3b4708722e28f8877f7bcb36f066c7031b5dc1961721e7d69c20c846
+      source:
+        file: src/meta/schemas/hugo/0.165.json
+        lines: 9-13
+        integrity: sha256-5621050cd9cd6e5baeb37c999a8ee9d40420bee30cc6d07283b84aa2be9178e0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-hugo-weight-and-draft
+      claim:
+        integrity: sha256-9ae100dc690fdff4e375d574f28c76b48431f68445c5da8c87470a9bd1c40757
+      source:
+        file: src/meta/schemas/hugo/0.165.json
+        lines: 60-63
+        integrity: sha256-149db02b212a48063848bae2c2816eb649fc34420a6e95467546f1a524fe78d8
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-hugo-field-table
+      claim:
+        lines: 191-202
+        integrity: sha256-b69c7fe1158c38824e87281995f8ed0d163f2d889ec83ce139f6f272bbc96ef0
+      source:
+        file: src/meta/schemas/hugo/0.165.json
+        lines: 31-188
+        integrity: sha256-3eb63a9e480ad6551636b40d97287e7315b85e28a2ac346f4c3dc5d5af970388
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-hugo-defines-28-fields
+      claim:
+        integrity: sha256-b8427622d758ac9f37c1bd092cfe6dc095f0feefd50e74e5c0dd906ce0a1d289
+      source:
+        file: src/meta/schemas/hugo/0.165.json
+        lines: 5-7
+        integrity: sha256-728490d2e8800520949b9239a5abd24f1eac6e3e34b904fbd4830f53691d74ac
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-myst-vocabularies-not-transcribed
+      claim:
+        lines: 172-178
+        integrity: sha256-237fc1461b7e6b001b68033d6fc7625e6be0f80c3b01793f84c10f9f6a543431
+      source:
+        file: src/meta/schemas/myst/1.10.json
+        lines: 5
+        integrity: sha256-99c98af59b29f7da83dc9a22b57762eb91c47dec6e0413f6e5e95d4b5e480db0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-myst-project-keys-not-described
+      claim:
+        integrity: sha256-1ce412c8c41dd7f110db822863c0a46e96a9a356404268a8355ec9de4cf93e41
+      source:
+        file: src/meta/schemas/myst/1.10.json
+        lines: 5
+        integrity: sha256-99c98af59b29f7da83dc9a22b57762eb91c47dec6e0413f6e5e95d4b5e480db0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-myst-identity-and-publication-fields
+      claim:
+        integrity: sha256-28c246bc00189fa6346152b8875b27227cb880e5e6de884f95b69dceb24a7027
+      source:
+        file: src/meta/schemas/myst/1.10.json
+        lines: 96-137
+        integrity: sha256-44bdc10dc0a768cf8c0182d691f72023c973c38e7cb96dc7f37ba04f42ba2f84
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-myst-length-caps
+      claim:
+        lines: 155-156
+        integrity: sha256-04dd5ac56a7bd3a4be0422b60970f5672a9384b94f95167447e396d7e25de50d
+      source:
+        file: src/meta/schemas/myst/1.10.json
+        lines: 54-83
+        integrity: sha256-fe6d73bdc44b4d0502bbce0d02b5f4a6d0dcd7cc999174537d7b3e4e3e1f7eca
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-myst-caps-are-the-constraint
+      claim:
+        integrity: sha256-5f773241a2ac823d1520858cac61b3e623452dccc69b057c0bbfc3abb291c98e
+      source:
+        file: src/meta/schemas/myst/1.10.json
+        lines: 5-7
+        integrity: sha256-d4d7438a5f6647252314e03f3b30e540fc2646728bd7d55e47db49c6cb3e4f23
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-sphinx-nosearch-is-deprecated
+      claim:
+        lines: 140-143
+        integrity: sha256-17c11d4fb0ccb96a9aedc31b51c74aaa132b53901daafe2ebb228aaf0409046f
+      source:
+        file: src/meta/schemas/sphinx/9.1.json
+        lines: 25-29
+        integrity: sha256-97f27eaa4ba17637bd7cbda44494be8fe177ec4e6c60b8deed35b2a5d1face48
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-sphinx-docinfo-values-are-strings
+      claim:
+        integrity: sha256-ea7245e77f2f4951a2f44d9afa152f8c7a4607ff57342e843e6bd8ed57dffe1b
+      source:
+        file: src/meta/schemas/sphinx/9.1.json
+        lines: 5
+        integrity: sha256-9109353cd86d2885e10106da1d2f4d51b0e83cfddb3bb184c4247218a3da7f10
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-sphinx-field-table
+      claim:
+        lines: 128-132
+        integrity: sha256-6ba844bdb03a0027a1074b351a99bb0b15eb0519ef2d0ed4cd0a1a1f58efac93
+      source:
+        file: src/meta/schemas/sphinx/9.1.json
+        lines: 8-30
+        integrity: sha256-7cabcf3a04e0a3713e94cee130321edd17a3393dd75e451ec5b08e46632be3eb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-sphinx-requires-nothing
+      claim:
+        integrity: sha256-382be3e8108ec62c6c2195b54b7d8690dd32e4c9d275a5e8b9b09b53c7155548
+      source:
+        file: src/meta/schemas/sphinx/9.1.json
+        lines: 5-7
+        integrity: sha256-0d1a951e3197b770f6bef1b947f4d982aba3762941f45f010e7c1bc292f2f0ba
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-antora-custom-page-attributes-pass
+      claim:
+        integrity: sha256-9a602f3ed06d0792fc55b54ad006a0df5c8ba28245f5379f109b53ed3b4b4601
+      source:
+        file: src/meta/schemas/antora/3.1.json
+        lines: 5
+        integrity: sha256-8495265de937db9e8c9b670cfd7cb49a4e70b1ccb46de160c4eaf71efbd9ea1f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-antora-attribute-typing
+      claim:
+        lines: 108-113
+        integrity: sha256-0626209192d3afab0e664dcc79c6e3e6fda556775ca2a79f2eb2911fe5423212
+      source:
+        file: src/meta/schemas/antora/3.1.json
+        lines: 19-48
+        integrity: sha256-d07e4303fd225b059e1994c01e6f18005145c27a774c30e9676b5c1468aaf6b5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-antora-field-table
+      claim:
+        lines: 94-103
+        integrity: sha256-5d24dc3096e5a0ef0d4e91240a95d2c4650ea26a45fa8f16691bfc1fc5664396
+      source:
+        file: src/meta/schemas/antora/3.1.json
+        lines: 10-53
+        integrity: sha256-5d10687566dc08b88eda468e6a6a2419e4f2980e5d534e43ddc5740fb4ede97a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-antora-reads-the-document-header
+      claim:
+        integrity: sha256-7fe0388f01f0a5ade42bcca2b54564e2a367a4cd764a64e150705e0bbfcf5a8b
+      source:
+        file: src/meta/schemas/antora/3.1.json
+        lines: 5-7
+        integrity: sha256-2b559d0fcbf9179bdc03ea3f56da87337a48842333b6865408b5ea3a405bbf6f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-starlight-pin-moves-faster
+      claim:
+        lines: 77-82
+        integrity: sha256-848676a22a40a6594c3b1fd21254de47fbb82658c3f193618686854a026f873c
+      source:
+        file: src/meta/schemas/starlight/0.41.json
+        lines: 3
+        integrity: sha256-b0c2bdf0c9a8ea48946e049dc16148ad0aa6de21cbbe2d0966ffaa2a8118b2e0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-starlight-toc-uses-if-then
+      claim:
+        integrity: sha256-049c159867968abf48ce35ff06b25dbb70445013a5f304a5bd6be56629e3d284
+      source:
+        file: src/meta/schemas/starlight/0.41.json
+        lines: 70-81
+        integrity: sha256-1127bff5a7f0b62098a8c53821e09085f3570caf04e613973cb97d00dddf73a5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-starlight-field-table
+      claim:
+        lines: 55-68
+        integrity: sha256-ec03f8ae8bf4b877d9a26a84f95ed0c4fa4e371161e7fefe931610a77b990785
+      source:
+        file: src/meta/schemas/starlight/0.41.json
+        lines: 28-181
+        integrity: sha256-850ccba1f9aa4384f46bd3f52da1e8de809d656d8cbc697b0273ea25b5ff1b78
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-starlight-tolerates-unknown-keys
+      claim:
+        integrity: sha256-dad5ea10d7dbad94a17addd3b1c1d3eea205f8a875040e44da03ffd66ba7ba1c
+      source:
+        file: src/meta/schemas/starlight/0.41.json
+        lines: 5-8
+        integrity: sha256-77d2f70cd43f6787537ff59e2fd0a3d315903b05277e6f267b4748a550a2455e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-four-generators-require-nothing
+      claim:
+        integrity: sha256-cbdaa460730956d9026d1632f7baec8a62eef3fafcd7bf85aa03287fb44d455b
+      source:
+        file: src/meta/schemas/jekyll/4.4.json
+        lines: 5-7
+        integrity: sha256-62b337f36fa478e10c0d4e93cc3e16b66e7f18212bc28048c15015c0667e66dd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-starlight-and-antora-demand-title
+      claim:
+        integrity: sha256-9014110be920ef09850c57da8aa79860f12bbb9f70c10556a9e57cbccb8d28b2
+      source:
+        file: src/meta/schemas/starlight/0.41.json
+        lines: 5-7
+        integrity: sha256-182238e3f0334e38e7da14314563544a4d4be0527f098321844cba50a24f4074
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-require-what-the-generator-refuses-without
+      claim:
+        integrity: sha256-d48e66e16c5c915033d6c53d865869d2c941a0c1c28b0546da86e2a2f59e5fa1
+      source:
+        file: src/meta/schemas/antora/3.1.json
+        lines: 5-7
+        integrity: sha256-2b559d0fcbf9179bdc03ea3f56da87337a48842333b6865408b5ea3a405bbf6f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-row-mkdocs
+      claim:
+        lines: 19
+        integrity: sha256-8f10ca080f99e123bafa51a8067bf5a1b20d8e17a3ce1badac82f05957403691
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 3-7
+        integrity: sha256-d0b4a99508e6d16aefba9036191ddb06e1629ce0cfce6cb5a0d94712482daa6c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-row-vitepress
+      claim:
+        lines: 18
+        integrity: sha256-7e010cfd11f51cad4f203a9fa922d26f59b21ec51fff6212aa959ad0de90f29a
+      source:
+        file: src/meta/schemas/vitepress/1.6.json
+        lines: 3-7
+        integrity: sha256-a8c47d9326c1aa0bf313afb315c66708fcf4624f5d1f2f53409a17c017e6a2dc
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-row-jekyll
+      claim:
+        lines: 17
+        integrity: sha256-31345577939e989db25132a8a2b3f3fbc1002fe2245f05d30df8a8b8bd726209
+      source:
+        file: src/meta/schemas/jekyll/4.4.json
+        lines: 3-7
+        integrity: sha256-88e2d854ebe94d2fe180f48cedd14cbb6d126de616c9a31f938595a8e7836b99
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-row-hugo
+      claim:
+        lines: 16
+        integrity: sha256-1b18f75d74eebc0f13d4f0795168e8347a0cd40dce169186f002fb331108e913
+      source:
+        file: src/meta/schemas/hugo/0.165.json
+        lines: 3-7
+        integrity: sha256-fa82f926325c9346d0362f707ed9d983e2c8dfe25d4ee4a44188c1996c09ab85
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-row-myst
+      claim:
+        lines: 15
+        integrity: sha256-1122175173b98a669ccd0840f4c02deb90b4f87d71f37869011ce6515e60bed5
+      source:
+        file: src/meta/schemas/myst/1.10.json
+        lines: 3-7
+        integrity: sha256-8c380111ad3e0686199439000fe0cedcca2f78684cda9b17026643bf6125f5ae
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-row-sphinx
+      claim:
+        lines: 14
+        integrity: sha256-2c08948191990713a0c3903005ed005c5265b3c6b848508c8a9044ca3ad2ed2b
+      source:
+        file: src/meta/schemas/sphinx/9.1.json
+        lines: 3-7
+        integrity: sha256-be651d83489ac0920e78be67e1fb431bd6217be89007a7a15c21b38760322eab
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-row-antora
+      claim:
+        lines: 13
+        integrity: sha256-a983bef56d155c421b47686218fb8fee338e77eb2aa4f2e6b6c71f5a29c3fc55
+      source:
+        file: src/meta/schemas/antora/3.1.json
+        lines: 3-8
+        integrity: sha256-12b0d3f866498c4763e13bc794ba2d08aeafe01384da130d00abf01bb051d083
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-row-starlight
+      claim:
+        lines: 12
+        integrity: sha256-aadfce0817f8d7f64d2e17f58f4f631ee5d5ed52db26739045c2b1522ca6b371
+      source:
+        file: src/meta/schemas/starlight/0.41.json
+        lines: 3-8
+        integrity: sha256-8f66517c124d28c427cdcea83bfb0236685c5a1b3d0f0257956ea6d55aef96fe
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-covers-both
+      claim:
+        integrity: sha256-9b783180572f4f737328ebf88dd150abb6ecb3c7b4180848762219f1286d468c
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 3-7
+        integrity: sha256-d0b4a99508e6d16aefba9036191ddb06e1629ce0cfce6cb5a0d94712482daa6c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

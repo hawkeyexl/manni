@@ -31,7 +31,7 @@
       {
         "assets": [
           "CHANGELOG.md",
-          "site.metadata.yaml",
+          "docs/src/content/docs/**/*.citations.yaml",
           "package.json",
           "package-lock.json",
           "README.md",

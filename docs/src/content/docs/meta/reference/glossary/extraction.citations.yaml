@@ -1,0 +1,10 @@
+docs/src/content/docs/meta/reference/glossary/extraction.mdx:
+  citations:
+    - id: get-validates-nothing
+      claim:
+        integrity: sha256-28de3b08d7197f35210e5eb0fd99ef7f98b07b2e6818dac47b193d2b34e9de0b
+      source:
+        file: src/meta/commands/get.ts
+        lines: 87-89
+        integrity: sha256-4585970c1b5e7a62f988c5858647ae05b2974e0d23e2bf5cdb7306c4573e9734
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe

@@ -1,0 +1,20 @@
+docs/src/content/docs/meta/reference/glossary/override.mdx:
+  citations:
+    - id: config-overrides-match-by-glob
+      claim:
+        lines: 6-9
+        integrity: sha256-54b0a79d9d2ed68a9e7770ac6a92b66891f06b3f5d1a8155a183f31bb0c33c91
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 227-238
+        integrity: sha256-8076723b61abc464a9c0b625cd2c47b62a561da9389b74064519fa29efdd0796
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+    - id: schema-resolution-precedence-chain
+      claim:
+        lines: 10-14
+        integrity: sha256-16f0fc418f7585a803abf3f867c545e66da829c707a1bdad28a98d52f0f8eed4
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 411-447
+        integrity: sha256-7738f0118066aff89d7861519004dd3318d14ea1981b9445a59c4ce3fa03cd51
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe

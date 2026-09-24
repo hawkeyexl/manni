@@ -1,0 +1,182 @@
+docs/src/content/docs/meta/schemas/index.mdx:
+  citations:
+    - id: location-page-or-external
+      claim:
+        integrity: sha256-c3618d164f42c5e19a5909c443f0cc3d48b3df9c544f15f1599c9a7e08e8d086
+      source:
+        file: src/meta/core/location.ts
+        lines: 20-23
+        integrity: sha256-c1642c08050b354c72e4a3741072f31438caa22117a31f49c0addcd6f9d26b19
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: encrypted-value-checked-after-decrypt
+      claim:
+        integrity: sha256-ccd290e3285af31aaf4c6ede370fad81f50ab0e0b8b2365e35da41fee76a1bcc
+      source:
+        file: src/meta/core/encrypted.ts
+        lines: 262-273
+        integrity: sha256-5a1348b4af920a956d6de7715d4ea7157b7a0931abca5e56e306cc88cdb73f73
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: x-manni-encrypt-keyword
+      claim:
+        integrity: sha256-497083a037dc4e64c2aab2098d18febdf22bd1c4c4d9467248d66e5221177795
+      source:
+        file: src/meta/core/encrypted.ts
+        lines: 35
+        integrity: sha256-fff9080857b4819b8081506b3ba9927b48d0f65a2c1df08e7a225029857c06b7
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: relative-schema-path-resolves-from-cwd
+      claim:
+        lines: 258
+        integrity: sha256-546c0aaae16911ec5ea485d3e113abd28e488fd018c3337df2e9a3fba3a4ee89
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 1082-1086
+        integrity: sha256-58dcb64f18f7ddeb4a5175d21bb6cb92ee33e473384c5aaca08a9395140bea5e
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: the-three-reference-kinds
+      claim:
+        integrity: sha256-a4fd7bcc0a486a118551bbf7e3bbabc59aa43f8d0e60ef4a49045d1be70dec66
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 283-296
+        integrity: sha256-2f40a8e1715136cf70277d50252b4172f3fd9106e42a5fccd6914c78d0d6f32c
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: document-names-its-own-schema
+      claim:
+        integrity: sha256-2e9e70750388d767b7562acdee44aca8ea482909e69207e404a25dca04fc9d7b
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 415-429
+        integrity: sha256-f26405b820be639365b9174d79e17de8beda43a4c821ae7344dc686113182bd0
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: x-manni-location-keyword
+      claim:
+        integrity: sha256-6f3824dbf475407aa72146239f3a512a039e282999b13a2640f6577607d1ecb2
+      source:
+        file: src/meta/core/location.ts
+        lines: 20
+        integrity: sha256-0c1f1d8cf53795ffe7a3329979db8b28d39898327c31a028d11664a492b4e759
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: tgdp-demands-the-type-key
+      claim:
+        lines: 215
+        integrity: sha256-90b7e3743aa02904fbdf5108168679a9a2f59b1b0bac6dc867a71e383e1d2308
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 8
+        integrity: sha256-0e2f5437eb92e030b655c86a57a2dd15bb2acd051cc9be386ce3f58619f6000b
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: seven-action-constrains-action
+      claim:
+        lines: 211
+        integrity: sha256-e6e9778ba532b0064fafb106ce086aac3ed243fd80a8174609d15e0bba6166ea
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 8-21
+        integrity: sha256-ecd0e48ef3b4b3af9f40019b012db5458414c1494d41b4da7513f4bcc7d6c800
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: tgdp-25-template-slugs
+      claim:
+        lines: 210
+        integrity: sha256-b91f28dc42aa5721150acedd43372bde4868238b764414327e883777be28275f
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 8-41
+        integrity: sha256-2bf3a1a31a7c4c076a2cf565b5112d76c06ffa114ae0e434d3a8a939d2f427e4
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: diataxis-four-forms
+      claim:
+        lines: 209
+        integrity: sha256-effdc78108bbeda014b179ac1f826029ba64b544e741f742241155c48544b409
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 8-14
+        integrity: sha256-5f8ae4147488edaf31abc2dc7180b88b71685808e228e73bf521c1f0e4e4b52c
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: docusaurus-tags-allow-objects
+      claim:
+        lines: 205
+        integrity: sha256-e3ace9b4d9a57ba0a0ada049422efdb81dc7582637a24dd62d56d64e5cad7457
+      source:
+        file: src/meta/schemas/docusaurus-docs/3.10.json
+        lines: 100-113
+        integrity: sha256-46434326821324b9dd8502221a276e273022bd745f92b1695089d42bd037e4f5
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: manni-ships-23-builtin-schemas
+      claim:
+        integrity: sha256-04bc14a77f65ec20c4bd8d16abbf3eaf46d6cd848ecf573140142b39eb2315c5
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 55-79
+        integrity: sha256-4a7520e7298eed2f70a07a84e70a8e084937cd3c74ec6e94b7accd516e659d94
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: builtin-ids-are-bundled-not-registered
+      claim:
+        lines: 182
+        integrity: sha256-0461849baf1712aa8de09d0c838d054ea610b7128e0ff7d4ab6f28f4eb81237b
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 55-79
+        integrity: sha256-4a7520e7298eed2f70a07a84e70a8e084937cd3c74ec6e94b7accd516e659d94
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: okf-tolerates-unknown-keys
+      claim:
+        lines: 180
+        integrity: sha256-47523ea5fe63ea65c85096bceb53ac30139744ca71e778ddd65093d7945b830a
+      source:
+        file: src/meta/schemas/okf/0.1.json
+        lines: 8
+        integrity: sha256-e5bb2bd9a0114d2671ff2bd71d504687cfb37f90f05f136cf08e1e987d303d8d
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: okf-requires-only-type
+      claim:
+        lines: 179
+        integrity: sha256-da08ba619058a3921c8d3da832b35a71d5e38713a36b42643486b1de35776dad
+      source:
+        file: src/meta/schemas/okf/0.1.json
+        lines: 7
+        integrity: sha256-0e2f5437eb92e030b655c86a57a2dd15bb2acd051cc9be386ce3f58619f6000b
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: default-set-is-okf-and-seven-action
+      claim:
+        integrity: sha256-d06a3b2648332e672be4fefd629f04383d32cc05d061e5a650953e71e4dec57a
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 32-35
+        integrity: sha256-af133f1e0fa21ca01b004a947824e1ce63d00d49af5bf112da6ffcda850b9a3c
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: fixture-title-must-be-non-empty-string
+      claim:
+        lines: 32
+        integrity: sha256-c81475a489f697f3a34dce816517475b36e2944806b6470856e40c1d01d41dca
+      source:
+        file: test/fixtures/extra.schema.json
+        lines: 5-7
+        integrity: sha256-13712cf6c99afa57c059db5167e915ed270d0d8b4d01b390e1f83e65bc20f9fb
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: fixture-required-title
+      claim:
+        lines: 31
+        integrity: sha256-910c99bb91a280bafd13838fb8f6c4fe92487032959c88e5b3af05b0bfa521a0
+      source:
+        file: test/fixtures/extra.schema.json
+        lines: 4
+        integrity: sha256-2a0ca6062e6af74de78684fe504aaae85b57a00c35f29505448bef56e6bb20b1
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: formats-come-from-ajv-formats
+      claim:
+        integrity: sha256-9b88ec6e8b41adf66ea80f73374cb257ce6db27832a3a8b3b33b60a60cf948ab
+      source:
+        file: src/meta/core/validator.ts
+        lines: 89
+        integrity: sha256-13cad13b9da05a87f1d7e4ed101397327ec94367e2c9e0f6eba648bb4109934b
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: schema-key-stripped-before-validating
+      claim:
+        lines: 127
+        integrity: sha256-ba7bfec345f3e42d7f5a289645ec9c70fb5d7cd10900c721e28767a71631eda0
+      source:
+        file: src/meta/core/validator.ts
+        lines: 625-627
+        integrity: sha256-b8f39d6d21f30a400cabe25059d553fc2d70ec3f6633292881c053d55975c4ca
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa

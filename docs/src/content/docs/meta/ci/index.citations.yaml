@@ -1,0 +1,105 @@
+docs/src/content/docs/meta/ci/index.mdx:
+  citations:
+    - id: pretty-is-the-default-format
+      claim:
+        integrity: sha256-e6663922b43b9ace6fdbe658033838437af2531b7c75699f4346d9f15beceb18
+      source:
+        file: src/meta/cli.ts
+        lines: 724-728
+        integrity: sha256-d9459f031fc83234358aaa2e641df4733c5699d2b056031ac59e5f00f9384e98
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: scoped-run-skips-corpus-checks
+      claim:
+        integrity: sha256-0cd301c79f776f15eafb0ef08236fdf158c5107697a27f3a8cfc2b14fe1624c4
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 895-906
+        integrity: sha256-ecdb7f2b79f4cf95fbd52ff4b2b06deb9ab5d22218f6953b83e3af0726fd9bea
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: collection-flag-is-repeatable
+      claim:
+        integrity: sha256-2de948433473766b2903499c362d68fce2e45b42c7dc76650fb9f0e51302e824
+      source:
+        file: src/meta/cli.ts
+        lines: 729-734
+        integrity: sha256-74320011f15b4a953c0496f55ff3d7e3c02bfa5bf49c03a7c8cdcc5568d67630
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: no-paths-falls-back-to-collections
+      claim:
+        integrity: sha256-2dc6043a0612dda896bb5b2ce6c0fc0e61b42413aceadb872a995906684fa629
+      source:
+        file: src/meta/core/config.ts
+        lines: 1709-1717
+        integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: github-format-one-command-per-error
+      claim:
+        lines: 56-58
+        integrity: sha256-80f76a421af32d1af0bb336c11692536b9bbe66569075ac07deb33ffd5d9283f
+      source:
+        file: src/meta/reporters/index.ts
+        lines: 305-326
+        integrity: sha256-60cada7804b9986454e20a28822cd9a49d056cf07492243254e208ef0c2e67d8
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: validate-exits-1-on-failures
+      claim:
+        lines: 51-52
+        integrity: sha256-067fc1c4647fac356549702fc0a75310b4a5d318c99c074a51a0203f6c66850f
+      source:
+        file: src/meta/cli.ts
+        lines: 872
+        integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: operational-error-exits-2
+      claim:
+        lines: 52-53
+        integrity: sha256-6ae64be9b1576084dfe89dd105652f549f49efbda0e219c82c48b65e30d34b66
+      source:
+        file: src/shared/run.ts
+        lines: 24-37
+        integrity: sha256-731c8ac7d223ae66f23904fe28271963d5e352e3f70564e346d97a5d392d4cb5
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: runner-needs-node-24
+      claim:
+        integrity: sha256-306bc7345a1df9a142ef8cd5f3be6e8f584f5564a4ef5946d90f342eae23c685
+      source:
+        file: package.json
+        lines: 34-36
+        integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: action-inputs-lines-or-spaces
+      claim:
+        lines: 25-28
+        integrity: sha256-5bc8aaec8752c6de47b641591814302ddd637fb0124b0edba55bbf4b6a9e6ebd
+      source:
+        file: action.yml
+        lines: 113-138
+        integrity: sha256-a2cf8261e68fe6452568bca01f4dd6e93f95c99a671fe85d6d91d89a2f99830e
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: action-defaults-to-github-format
+      claim:
+        lines: 15-16
+        integrity: sha256-cb0f391f1a58a9cbda15be2021386b68b47d22f47e493f018c5c14d7ffa690dd
+      source:
+        file: action.yml
+        lines: 34-37
+        integrity: sha256-ba6ed77d91186f7d00fcef1804f78ac54951c3106e17ba6359b7924107193b8b
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: action-version-input-pins-the-cli
+      claim:
+        lines: 15-16
+        integrity: sha256-cb0f391f1a58a9cbda15be2021386b68b47d22f47e493f018c5c14d7ffa690dd
+      source:
+        file: action.yml
+        lines: 38-45
+        integrity: sha256-70342395edaf9a3798dad037bb99de851aa4bf4ad45087d98425a95ffb5f5c3e
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: action-sets-up-node
+      claim:
+        lines: 15-16
+        integrity: sha256-cb0f391f1a58a9cbda15be2021386b68b47d22f47e493f018c5c14d7ffa690dd
+      source:
+        file: action.yml
+        lines: 73-75
+        integrity: sha256-1fc76c9e5adf857cc49898c91b8d17d9862de35ff880576bc8bc784376bc0f28
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa

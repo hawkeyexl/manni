@@ -1,0 +1,10 @@
+docs/src/content/docs/meta/reference/glossary/validation.mdx:
+  citations:
+    - id: validation-begins-with-extraction
+      claim:
+        integrity: sha256-578ec2f62a07f5ca3f08f9a8fe386f689009c0e317fb48755ed9e4c4d315969a
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 2-4
+        integrity: sha256-97b0094f92f878c4a00cd4ee7ff1bd55cba7c72424b6dcf89c3fe8d0961ae9ce
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe

@@ -2,9 +2,9 @@
  * semantic-release plugin: re-anchor the docs' citations to the release.
  *
  * Runs in `prepare`, after `@semantic-release/changelog` has prepended the new
- * section and before `@semantic-release/git` commits. `site.metadata.yaml` is
- * in that plugin's `assets`, so the `chore(release): X.Y.Z` commit carries the
- * re-anchored pins.
+ * section and before `@semantic-release/git` commits. Each page's manifest,
+ * `<page>.citations.yaml` beside it, is in that plugin's `assets` by glob, so
+ * the `chore(release): X.Y.Z` commit carries the re-anchored pins.
  *
  * Two pages cite `CHANGELOG.md` for what changed in 1.0, and semantic-release
  * prepends to that file on every release. So every release moved both pins,
