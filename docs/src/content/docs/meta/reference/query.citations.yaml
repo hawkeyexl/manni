@@ -718,9 +718,9 @@ docs/src/content/docs/meta/reference/query.mdx:
         integrity: sha256-3bd4f8b292d0558d05b07be9efde8952f45228cbf7c552530e957ca50c162756
       source:
         file: src/meta/extractors/frontmatter-write.ts
-        lines: 138-147
+        lines: 159-168
         integrity: sha256-0a84a8902b0f6836dcfedce5743006556c4e4828aee7c439ea19f1e7883ae7b0
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 3b2ad42abf8907bce0257657154c856cc3d4a6bc
     - id: path-move-works-on-any-format
       claim:
         lines: 506

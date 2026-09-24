@@ -336,9 +336,9 @@ docs/src/content/docs/meta/reference/formats.mdx:
         integrity: sha256-8dd16be4ea3d6b01a8ed2a8f3ac401b788dedba45b8635f14c6c937e57e60456
       source:
         file: src/meta/extractors/frontmatter-write.ts
-        lines: 121-129
+        lines: 142-150
         integrity: sha256-951b45b46570d23afdda95f8e75f5f365e9710bb5dd9a741bf6e49f147d58584
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 3b2ad42abf8907bce0257657154c856cc3d4a6bc
     - id: formats-fenced-frontmatter-round-trips
       claim:
         integrity: sha256-4c9886df65f78eba96fc02a59b22659a75ee7de5d6029b7abb6cdfb1ba6da81e

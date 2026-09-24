@@ -137,8 +137,8 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
       source:
         file: src/meta/core/external-metadata-write.ts
         lines: 10-14
-        integrity: sha256-413cf03a523a6bfe80007eae79bcb8018d9083d025e9c08de52a26c5f7869f5b
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        integrity: sha256-a335f32b4158e54a232c3c20c810f3a7ab8a3161e743a54f31de78723ddd8277
+        commit-sha: 3b2ad42abf8907bce0257657154c856cc3d4a6bc
     - id: derive-writes-managed-field-into-manifest
       claim:
         integrity: sha256-756a1eb87c6a14d7fbd92fc09a0b513c213db34ea64626596c3884017ef52bec
