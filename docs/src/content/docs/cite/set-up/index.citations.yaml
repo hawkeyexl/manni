@@ -246,9 +246,9 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-a4a2695c74bb953742e111ec6517f844c239e8d1c64e95899339a87a6b68f339
       source:
         file: src/cite/commands/update.ts
-        lines: 853
+        lines: 857
         integrity: sha256-2de41f56e60cab0c52fae45f6aa797583353440e99a6b84f7dc1c5f35bdd13e5
-        commit-sha: bbcce988908943b7828e4f96e4a52b4fb87b8a36
+        commit-sha: 695dd7952e282fc9ba003afbc4a7ac27a4bb1f77
     - id: default-entry-in-frontmatter
       claim:
         integrity: sha256-8b133590d3d3304ede7ee0c9566716a6cb6bd1447daf8503dcd973de8e03e052

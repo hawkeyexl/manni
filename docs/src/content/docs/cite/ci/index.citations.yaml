@@ -262,9 +262,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-9055fd61ec88b6da68589469c0332bf4954d9af905a595d38f2a2921bdbbf01e
       source:
         file: src/cite/core/git.ts
-        lines: 138-143
+        lines: 152-157
         integrity: sha256-db38bd10e52500249159e5da0aec9cee99c64ce1cb3f9d47fae12c2e93b28ab1
-        commit-sha: f8b910c35c13ed40992cfd02cf545a2cdb1c9aa5
+        commit-sha: 695dd7952e282fc9ba003afbc4a7ac27a4bb1f77
     - id: shallow-clone-degrades
       claim:
         integrity: sha256-9055fd61ec88b6da68589469c0332bf4954d9af905a595d38f2a2921bdbbf01e
@@ -337,9 +337,9 @@ docs/src/content/docs/cite/ci/index.mdx:
         integrity: sha256-fe40c0025284199aa6563508418b1a528e6ed220537796b8c3fd4309d1579e70
       source:
         file: src/cite/core/git.ts
-        lines: 141-142
+        lines: 155-156
         integrity: sha256-6678e0368536531e163b31932db28fbc814981d4aa9aa46c38e7d9817d408322
-        commit-sha: f8b910c35c13ed40992cfd02cf545a2cdb1c9aa5
+        commit-sha: 695dd7952e282fc9ba003afbc4a7ac27a4bb1f77
     - id: no-git-notice-when-commit
       claim:
         integrity: sha256-e65fea832a3e2fe3a5a00d2f1b2aea62c897d1cf7020a071e2e822bbc0109392

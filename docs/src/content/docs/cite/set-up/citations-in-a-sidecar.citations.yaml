@@ -131,9 +131,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-7d71b96f86296b130361168ab9c1b767db29471688a6687c270e431713685c18
       source:
         file: src/cite/commands/update.ts
-        lines: 715-720
+        lines: 719-724
         integrity: sha256-e7c169217007c2d82bd2df48d345ebd4777a2792dba26ced5cd7b0715a6bde4b
-        commit-sha: bbcce988908943b7828e4f96e4a52b4fb87b8a36
+        commit-sha: 695dd7952e282fc9ba003afbc4a7ac27a4bb1f77
     - id: join-field-key
       claim:
         integrity: sha256-1f472d3fbeb438cba35b11f8eae962e80d4b011dab546cf12675616995715fc0
