@@ -177,18 +177,18 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-486364a5af89b169895c5be5d370d1c63cd10d3ae281f13f08b102beb887a482
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 189-200
+        lines: 190-201
         integrity: sha256-16a397b19266b59f14b0a5b24aedddd2ae177b948dd4142039774b326f97538c
-        commit-sha: 968d1ada4fa14a7ce44bf9513653dac28d4a2496
+        commit-sha: 191512c092c8947582b58f70210c6113f3b795d4
     - id: output-rule-test
       claim:
         lines: 155-159
         integrity: sha256-065cb2684ab3a1f3e15f7787da448df8ca0e58a21b26b9e4c8b0d869fbdffec1
       source:
         file: test/cite/reporters.test.ts
-        lines: 1146-1157
+        lines: 1173-1184
         integrity: sha256-213eb5372ea13e3ae640d32a91319f57b3a367d688f74f936dd24ed7bde89b77
-        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+        commit-sha: 804bb4dd8598593614619062e204fdb464519f04
     - id: root-any-directory
       claim:
         integrity: sha256-44cd17c76dea0af27557f70bd0e537154f7b06f6e34eff9792f9d49952933317
@@ -292,9 +292,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-911ede81723977ae3f40b8b17985a9407f4ed1e98738b92064200ce15d817dd8
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 189-200
+        lines: 190-201
         integrity: sha256-16a397b19266b59f14b0a5b24aedddd2ae177b948dd4142039774b326f97538c
-        commit-sha: 968d1ada4fa14a7ce44bf9513653dac28d4a2496
+        commit-sha: 191512c092c8947582b58f70210c6113f3b795d4
     - id: shallow-history-unavailable
       claim:
         integrity: sha256-d9210649377aebf84ba2c1e11f246bf5ea8d4fff752ec51b34dd29fb75de9388
@@ -360,9 +360,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-67d452a939980549a1c22e37457215ae7429de652262e830f489278cd0c48775
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 349-356
+        lines: 350-357
         integrity: sha256-262e6afb0d4c5ba60d3304d8b39325522959012c6666ee4c80561afe41f248a1
-        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+        commit-sha: 191512c092c8947582b58f70210c6113f3b795d4
     - id: no-key-reports-missing
       claim:
         lines: 267-268

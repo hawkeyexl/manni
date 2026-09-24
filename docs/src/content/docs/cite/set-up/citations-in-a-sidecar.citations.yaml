@@ -75,9 +75,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-aedea18510f10d1080db00ba5ae415da9a0984267c668089c72f0a64a1ec9e85
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 354-363
+        lines: 355-364
         integrity: sha256-8843326726d40fe6b5ae4860e2fdd5c8968aa3e30dda0ca809a8397aee77d131
-        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+        commit-sha: 191512c092c8947582b58f70210c6113f3b795d4
     - id: half-moved-entry-invalid
       claim:
         integrity: sha256-f90d3f4101561cdf11c4eb17ff96aaf0cb3acb931128d11021db5346d491d9a0
@@ -131,9 +131,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-7d71b96f86296b130361168ab9c1b767db29471688a6687c270e431713685c18
       source:
         file: src/cite/commands/update.ts
-        lines: 715-720
+        lines: 719-724
         integrity: sha256-e7c169217007c2d82bd2df48d345ebd4777a2792dba26ced5cd7b0715a6bde4b
-        commit-sha: bbcce988908943b7828e4f96e4a52b4fb87b8a36
+        commit-sha: 695dd7952e282fc9ba003afbc4a7ac27a4bb1f77
     - id: join-field-key
       claim:
         integrity: sha256-1f472d3fbeb438cba35b11f8eae962e80d4b011dab546cf12675616995715fc0
@@ -224,15 +224,15 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-a34eb068a9f71820c76b4a867b3a23ec8057c82cc134864d6940540a998fa90f
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 322-325
+        lines: 323-326
         integrity: sha256-3e038ad23a4ceb1ef5bf2e72f7bf2d32eba551128c0c9a7350e4efea907d5d4f
-        commit-sha: 7700380764eeb63daaa7485f16d42c206e463c87
+        commit-sha: 191512c092c8947582b58f70210c6113f3b795d4
     - id: manifest-column-empty-for-frontmatter
       claim:
         lines: 189-192
         integrity: sha256-d15710a4fb1699556d70903c8a1b04996d6215b897187249a989f0f8202bad79
       source:
         file: src/cite/reporters/pretty.ts
-        lines: 383-386
+        lines: 384-387
         integrity: sha256-be4f3b638888dabcbbd4bc74e30b118dbd22e55f905de5ce1294adc81ea3bfe8
-        commit-sha: 7700380764eeb63daaa7485f16d42c206e463c87
+        commit-sha: 191512c092c8947582b58f70210c6113f3b795d4

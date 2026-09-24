@@ -38,7 +38,7 @@ import {
   type NoUnit,
 } from "../core/claims.js";
 import { historyOf } from "../core/classify.js";
-import { GIT_UNAVAILABLE_COMMIT } from "../core/git.js";
+import { GIT_UNAVAILABLE_COMMIT, SHALLOW_RECOMMIT } from "../core/git.js";
 import { splitLines } from "../core/hash.js";
 import { claimWords, sharesSentence, wordShare } from "../core/history.js";
 import { mintCitation } from "../core/mint.js";
@@ -74,6 +74,7 @@ import type {
   PageCitationReport,
   PageCitations,
   PageLines,
+  RecommitReason,
   UpdateOptions,
   UpdatePage,
   UpdateRewrite,
@@ -141,7 +142,8 @@ type Plan =
     }
   /**
    * The source holds, but the commit it is recorded against does not contain
-   * the pinned lines. Only `commit-sha` moves; the pin itself is untouched.
+   * the pinned lines, or is not in the history of HEAD. Only `commit-sha`
+   * moves; the pin itself is untouched.
    */
   | {
       kind: "source-recommitted";
@@ -150,6 +152,7 @@ type Plan =
       from: string;
       /** HEAD, which was checked to contain the lines before this was planned. */
       commitSha: string;
+      because: RecommitReason;
     }
   | { kind: "marker-moved"; result: CitationResult; from: number; to: number }
   | {
@@ -524,6 +527,7 @@ function rewriteOf(plan: Plan): UpdateRewrite {
         reason: "recommitted",
         // The source itself held. Only its date was wrong.
         status: "current",
+        because: plan.because,
         from: plan.from,
         to: plan.commitSha,
         fromCommit: plan.from,
@@ -869,37 +873,63 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   }
 
   /**
-   * The commit to record for an entry whose recorded one does not contain its
-   * pinned lines, or `undefined` to leave the entry alone.
-   *
-   * Two questions, both asked through `historyOf`, which is what `check` uses,
-   * so the answers agree. First, does the recorded commit contain the lines?
-   * It counts as containing them wherever in the file they sit, because
-   * `update` follows a move and keeps `commit`, so line drift inside one
-   * commit is the tool working rather than damage. Only a pin found nowhere
-   * there is unsupported. Second, does HEAD contain them? The entry is
-   * `current`, so the working tree does, but an uncommitted edit means HEAD
-   * may not, and there is then no commit worth recording.
-   *
-   * A commit git cannot read answers neither question, so the entry is left as
-   * it is. A shallow clone must degrade rather than rewrite.
+   * Whether `commit` is outside the history of `head`. Only a client that can
+   * answer both questions, in a clone that is not shallow, says yes. A shallow
+   * clone lacks commits that are in the history, so it cannot tell them from
+   * a squash merge's orphans.
    */
-  const recommitFor = async (result: CitationResult): Promise<string | undefined> => {
+  const outsideHistory = async (commit: string, head: string): Promise<boolean> => {
+    if (git.shallow === undefined || git.isAncestor === undefined) return false;
+    if (await git.shallow()) return false;
+    return !(await git.isAncestor(commit, head));
+  };
+
+  /**
+   * The commit to record for an entry whose recorded one cannot stand, and
+   * why, or `undefined` to leave the entry alone.
+   *
+   * Three questions. First, is the recorded commit in the history of HEAD? A
+   * squash merge leaves a branch commit that main never took, and it may well
+   * hold the lines. Second, for a commit in the history, does it contain the
+   * lines? It counts as containing them wherever in the file they sit,
+   * because `update` follows a move and keeps `commit`, so line drift inside
+   * one commit is the tool working rather than damage. Only a pin found
+   * nowhere there is unsupported. Third, does HEAD contain them? The entry is
+   * `current`, so the working tree does, but an uncommitted edit means HEAD
+   * may not, and there is then no commit worth recording. The two questions
+   * about lines are asked through `historyOf`, which is what `check` uses, so
+   * the answers agree.
+   *
+   * In a full clone, a commit git cannot read fails the first question, so it
+   * is re-recorded. A shallow clone cannot ask the first question. There such
+   * a commit answers the second with neither yes nor no, and is left alone.
+   */
+  const recommitFor = async (
+    result: CitationResult,
+  ): Promise<{ commit: string; because: RecommitReason } | undefined> => {
     const recorded = result.citation.source["commit-sha"];
     const path = result.source.resolvedPath;
     if (recorded === undefined || path === undefined) return undefined;
+    const head = await git.head();
+    if (head === null || head === recorded) return undefined;
     const range = sourceRange(result.citation.source);
     const pin = result.citation.source.integrity;
     const key = range.encrypted ? run.key : undefined;
-    const was = await historyOf(git, recorded, path, range, pin, key, undefined);
-    if (was.kind !== "never-true") return undefined;
-    const head = await git.head();
-    if (head === null || head === recorded) return undefined;
+    // History first. It is one memoized `merge-base` per commit, where
+    // containment is one `git show` per commit and path. A commit outside the
+    // history is re-recorded whatever it holds, so its file is never read.
+    let because: RecommitReason;
+    if (await outsideHistory(recorded, head)) because = "not-in-history";
+    else {
+      const was = await historyOf(git, recorded, path, range, pin, key, undefined);
+      if (was.kind !== "never-true") return undefined;
+      because = "not-contained";
+    }
     // `original` means HEAD holds the pinned bytes, at the recorded lines or
     // anywhere else in the file. That is the same reading as question one, so
     // the two answers are comparable.
     const now = await historyOf(git, head, path, range, pin, key, undefined);
-    return now.kind === "original" ? head : undefined;
+    return now.kind === "original" ? { commit: head, because } : undefined;
   };
 
   /** What this citation needs, in the order the repairs are worth trying. */
@@ -1058,7 +1088,8 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
           kind: "source-recommitted",
           result,
           from: result.citation.source["commit-sha"] ?? "",
-          commitSha: to,
+          commitSha: to.commit,
+          because: to.because,
         });
       }
     }
@@ -1522,7 +1553,16 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
   const reminted = pages.some((page) =>
     page.rewritten.some((r) => r.reason === "accepted" && r.end === "source"),
   );
-  sayNotices(reports, opts.onNotice, reminted && !(await git.available()) ? [GIT_UNAVAILABLE_COMMIT] : []);
+  const also: string[] = [];
+  if (reminted && !(await git.available())) also.push(GIT_UNAVAILABLE_COMMIT);
+  // A shallow clone ran only the containment test, and says so whatever it
+  // found, because what it could not check is the point. The guard is the
+  // one `outsideHistory` uses, so the notice fires exactly when that test
+  // would have run and could not.
+  if (recommit && git.shallow !== undefined && git.isAncestor !== undefined && (await git.shallow())) {
+    also.push(SHALLOW_RECOMMIT);
+  }
+  sayNotices(reports, opts.onNotice, also);
 
   const rewritten = pages.reduce((n, page) => n + citationsIn(page.rewritten), 0);
   // A refused claim counts as skipped: `--accept` was asked for it and the

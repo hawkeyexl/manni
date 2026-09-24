@@ -15,15 +15,17 @@
  * commits, because only git can tell the two apart.
  */
 import { afterEach, describe, expect, it } from "vitest";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { runUpdate } from "../../src/cite/commands/update.js";
 import { hashRange } from "../../src/cite/core/hash.js";
-import { noGit } from "../../src/cite/core/git.js";
+import { SHALLOW_RECOMMIT, noGit } from "../../src/cite/core/git.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { UpdateOptions, UpdateRun } from "../../src/cite/types.js";
-import { commitAll, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
+import { commitAll, git, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SRC = join(here, "..", "fixtures", "cite", "src");
@@ -112,6 +114,7 @@ describe.skipIf(!gitAvailable())("cite update --recommit", () => {
       end: "source",
       reason: "recommitted",
       status: "current",
+      because: "not-contained",
       fromCommit: first,
       toCommit: second,
     });
@@ -136,16 +139,24 @@ describe.skipIf(!gitAvailable())("cite update --recommit", () => {
     expect(readFileSync(page, "utf8")).toContain(`commit-sha: ${first}`);
   });
 
-  it("leaves a commit git cannot read alone, so a shallow clone degrades", async () => {
+  // A full clone lacks only commits outside its history, so one git cannot
+  // read is re-recorded. A shallow clone cannot tell; see the suite below.
+  it("re-records a commit git cannot read, in a full clone", async () => {
     repo = makeTempRepo({ files: { "src/limits.ts": LIMITS } });
-    commitAll(repo, "add limits");
+    const head = commitAll(repo, "add limits");
     const absent = "dec0de".repeat(6) + "abcd";
     const page = writePage(repo, [{ lines: 2, integrity: PIN_L2, commit: absent }]);
 
     const run = await update(repo);
 
-    expect(run).toMatchObject({ rewritten: 0, exitCode: 0 });
-    expect(readFileSync(page, "utf8")).toContain(`commit-sha: ${absent}`);
+    expect(run).toMatchObject({ rewritten: 1, exitCode: 0 });
+    expect(run.pages[0]?.rewritten[0]).toMatchObject({
+      reason: "recommitted",
+      because: "not-in-history",
+      fromCommit: absent,
+      toCommit: head,
+    });
+    expect(readFileSync(page, "utf8")).toContain(`commit-sha: ${head}`);
   });
 
   it("adds no commit-sha to an entry that records none", async () => {
@@ -204,5 +215,149 @@ describe.skipIf(!gitAvailable())("cite update --recommit", () => {
       "--recommit needs git to verify recorded commits, and git is not available here.",
     );
     await expect(update(repo, { gitClient: noGit() })).rejects.toBeInstanceOf(CiteError);
+  });
+});
+
+/**
+ * A squash merge leaves the branch's own commit out of main. A pin minted on
+ * the branch records that commit, which still holds the lines, so the
+ * containment test above passes it. It is repaired because it is outside
+ * HEAD's history, and only where git can say so. A shallow clone cannot.
+ */
+describe.skipIf(!gitAvailable())("cite update --recommit, for a commit outside HEAD's history", () => {
+  const dirs: string[] = [];
+  afterEach(() => {
+    for (const dir of dirs.splice(0)) removeTempRepo(dir);
+  });
+
+
+  /**
+   * The trunk starts with a README. A side branch adds `src/limits.ts` as
+   * `onBranch`, and the trunk then commits `onTrunk` separately, which is what
+   * a squash merge leaves behind. HEAD is the trunk's commit.
+   */
+  function squashed(onBranch: string, onTrunk: string): { repo: string; side: string; head: string } {
+    const repo = makeTempRepo({ files: { "README.md": "# r\n" } });
+    dirs.push(repo);
+    commitAll(repo, "start");
+    const trunk = git(repo, ["rev-parse", "--abbrev-ref", "HEAD"]);
+    git(repo, ["checkout", "-q", "-b", "side"]);
+    mkdirSync(join(repo, "src"), { recursive: true });
+    writeFileSync(join(repo, "src", "limits.ts"), onBranch, "utf8");
+    const side = commitAll(repo, "on the branch");
+    git(repo, ["checkout", "-q", trunk]);
+    mkdirSync(join(repo, "src"), { recursive: true });
+    writeFileSync(join(repo, "src", "limits.ts"), onTrunk, "utf8");
+    const head = commitAll(repo, "squashed");
+    return { repo, side, head };
+  }
+
+  function updateIn(repo: string, notices: string[] = []): Promise<UpdateRun> {
+    return runUpdate({
+      cwd: repo,
+      inputs: ["docs/limits.md"],
+      noConfig: true,
+      env: {},
+      recommit: true,
+      onNotice: (notice) => notices.push(notice),
+    });
+  }
+
+  it("re-records a branch commit the trunk never took to HEAD, saying why", async () => {
+    const { repo, side, head } = squashed(LIMITS, LIMITS);
+    const page = writePage(repo, [{ lines: 2, integrity: PIN_L2, commit: side }]);
+
+    const run = await updateIn(repo);
+
+    expect(run).toMatchObject({ rewritten: 1, skipped: 0, exitCode: 0 });
+    expect(run.pages[0]?.rewritten[0]).toMatchObject({
+      end: "source",
+      reason: "recommitted",
+      status: "current",
+      because: "not-in-history",
+      fromCommit: side,
+      toCommit: head,
+    });
+    const after = readFileSync(page, "utf8");
+    expect(after).toContain(`commit-sha: ${head}`);
+    expect(after).toContain(`integrity: ${PIN_L2}`);
+  });
+
+  it("names the history when the commit is outside it and lacks the lines too", async () => {
+    // The branch kept the old timeout and the trunk raised it. The pin is the
+    // trunk's line, recorded against the branch commit, which fails both
+    // tests. History is asked first, because it costs no file read.
+    const edited = LIMITS.replace(TIMEOUT_LINE, "export const FETCH_TIMEOUT_MS = 30_000;");
+    const { repo, side, head } = squashed(LIMITS, edited);
+    const pin = hashRange(edited, { start: 2, end: 2 });
+    writePage(repo, [{ lines: 2, integrity: pin, commit: side }]);
+
+    const run = await updateIn(repo);
+
+    expect(run.pages[0]?.rewritten[0]).toMatchObject({
+      because: "not-in-history",
+      fromCommit: side,
+      toCommit: head,
+    });
+  });
+
+  it("leaves a pin at an ancestor of HEAD alone", async () => {
+    const { repo, head: ancestor } = squashed(LIMITS, LIMITS);
+    writeFileSync(join(repo, "README.md"), "# r, later\n", "utf8");
+    commitAll(repo, "later");
+    const page = writePage(repo, [{ lines: 2, integrity: PIN_L2, commit: ancestor }]);
+
+    const run = await updateIn(repo);
+
+    expect(run).toMatchObject({ rewritten: 0, exitCode: 0 });
+    expect(readFileSync(page, "utf8")).toContain(`commit-sha: ${ancestor}`);
+  });
+
+  it("leaves a pin alone when HEAD does not hold its lines", async () => {
+    // The branch raised the timeout and the trunk did not. The working tree
+    // carries the branch's line uncommitted, so the entry is current, and HEAD
+    // still cannot support it.
+    const edited = LIMITS.replace(TIMEOUT_LINE, "export const FETCH_TIMEOUT_MS = 30_000;");
+    const { repo, side } = squashed(edited, LIMITS);
+    writeFileSync(join(repo, "src", "limits.ts"), edited, "utf8");
+    const pin = hashRange(edited, { start: 2, end: 2 });
+    const page = writePage(repo, [{ lines: 2, integrity: pin, commit: side }]);
+
+    const run = await updateIn(repo);
+
+    expect(run).toMatchObject({ rewritten: 0, exitCode: 0 });
+    expect(readFileSync(page, "utf8")).toContain(`commit-sha: ${side}`);
+  });
+
+  it("leaves it alone in a shallow clone, and says why once", async () => {
+    const { repo, side } = squashed(LIMITS, LIMITS);
+    const holder = mkdtempSync(join(tmpdir(), "docmeta-shallow-"));
+    dirs.push(holder);
+    const clone = join(holder, "clone");
+    execFileSync("git", ["clone", "-q", "--depth", "1", pathToFileURL(repo).href, clone], {
+      stdio: "ignore",
+    });
+    // Two entries, so a notice said per entry would show.
+    const page = writePage(clone, [
+      { lines: 2, integrity: PIN_L2, commit: side },
+      { lines: 2, integrity: PIN_L2, commit: side },
+    ]);
+    const notices: string[] = [];
+
+    const run = await updateIn(clone, notices);
+
+    expect(run).toMatchObject({ rewritten: 0, exitCode: 0 });
+    expect(readFileSync(page, "utf8")).toContain(`commit-sha: ${side}`);
+    expect(notices.filter((notice) => notice === SHALLOW_RECOMMIT)).toHaveLength(1);
+  });
+
+  it("says nothing about shallowness in a full clone", async () => {
+    const { repo, side } = squashed(LIMITS, LIMITS);
+    writePage(repo, [{ lines: 2, integrity: PIN_L2, commit: side }]);
+    const notices: string[] = [];
+
+    await updateIn(repo, notices);
+
+    expect(notices).not.toContain(SHALLOW_RECOMMIT);
   });
 });
