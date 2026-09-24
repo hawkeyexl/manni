@@ -1,0 +1,8 @@
+meta:
+  schemas: [./external.schema.json]
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [owner]

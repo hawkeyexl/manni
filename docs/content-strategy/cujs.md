@@ -40,11 +40,11 @@ Maya's older pages predate the standard, so the fields her gate now requires are
 
 ### M6 · Keep citations out of the page
 
-**Outcome.** Maya's pages carry prose, not bookkeeping. Every citation lives in one manifest her collection declares, and the check reads it as though the entries sat on the page.
+**Outcome.** Maya's pages carry prose, not bookkeeping. Each page's citations live in a manifest of its own, beside it. The check reads it as though the entries sat on the page.
 
-**Steps.** She adds an `externalMetadata:` entry to the collection, with `keys: [citations]`, naming a file in the repository. She moves one page's `citations` block into that manifest, under the page's path. `manni cite check` finds it, because membership comes from every collection in the config, whatever the run selects. From then on `manni cite add` writes the manifest and leaves the page untouched, and `manni cite update` repairs the manifest in place, one value at a time. A finding about an entry names the manifest and the entry's own line. A finding about the sentence still names the page.
+**Steps.** She adds an `externalMetadata:` entry to the collection, with `keys: [citations]` and `file: "{page}.citations.yaml"`. She moves one page's `citations` block into the manifest beside that page, under the page's path. `manni cite check` finds it, because membership comes from every collection in the config, whatever the run selects. From then on `manni cite add` writes the manifest and leaves the page untouched, and `manni cite update` repairs the manifest in place, one value at a time. A finding about an entry names the manifest and the entry's own line. A finding about the sentence still names the page.
 
-**What success looks like.** A reviewer reading the page sees prose alone. A page that still carries its own `citations:` is reported, so the two channels cannot drift apart.
+**What success looks like.** A reviewer reading the page sees prose alone, and finds its pins in the file next to it. Two branches editing two pages touch two manifests and merge clean. A page that still carries its own `citations:` is reported, so the two channels cannot drift apart.
 
 ---
 

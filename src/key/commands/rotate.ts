@@ -82,6 +82,11 @@ import type { ConfigFile } from "../../shared/config-file.js";
 import { resolveEncryptionKey, writeEncryptionKey } from "../../shared/encryption-key.js";
 import { generateEncryptionKey, isValidEncryptionKey } from "../../shared/encryption.js";
 import { findGitRoot } from "../../shared/git-root.js";
+import {
+  findPageManifests,
+  hasPagePlaceholder,
+  pageManifestPath,
+} from "../../shared/page-manifest.js";
 import { readRotateConfig, toKeyError, unfinishedRotation } from "../core/config.js";
 import { KeyError } from "../errors.js";
 import type {
@@ -307,6 +312,10 @@ async function planManifests(opts: {
   base: string;
   fromKey: string;
   toKey: string;
+  /** The run's pages, as absolute paths, which a `{page}` manifest (0058) is read for. */
+  pages: readonly string[];
+  /** A run over the whole family: no paths and no `--collection`. */
+  whole: boolean;
 }): Promise<PlannedManifest[]> {
   const local = opts.collections
     .map((c) => ({
@@ -318,36 +327,75 @@ async function planManifests(opts: {
     .filter((c) => c.externalMetadata.length > 0);
   if (local.length === 0) return [];
 
+  // A `{page}` entry (proposal 0058) is one manifest per page, so its files
+  // are enumerated rather than named: each page of the run resolves its own,
+  // and a whole run adds every file the pattern's glob finds, so a manifest
+  // whose page is gone is re-encrypted too (0058 stress test 12). The pages
+  // those files name are handed to the loader like the run's own.
+  const pages = new Set(opts.pages);
+  if (opts.whole) {
+    for (const c of local) {
+      for (const m of c.externalMetadata) {
+        if (!hasPagePlaceholder(m.file)) continue;
+        for (const found of findPageManifests(m.file, opts.configDir, (rel) => isMember(c, rel))) {
+          for (const entry of found.entries) pages.add(entry.pageAbs);
+        }
+      }
+    }
+  }
+
   const index = await loadExternalMetadata(local, {
     configDir: opts.configDir,
     base: opts.base,
+    pages: [...pages],
   });
   if (index === null) return [];
 
   // One plan per manifest file, so a manifest two collections declare is read
   // once and spliced once. Its reported path and collection identify it the
-  // way `index.entries` does.
+  // way `index.entries` does. A plan is made when an entry first names its
+  // file, and only a plan with a value to report is kept.
   const plans = new Map<string, PlannedManifest>();
-  const located = new Map<string, string>();
+  const located = new Map<string, { abs: string; collection: string }>();
+  const locate = (collection: string, abs: string, join: string): void => {
+    located.set(`${collection}\u0000${reportedPath(abs, opts.base)}\u0000${join}`, { abs, collection });
+  };
   for (const c of local) {
     for (const m of c.externalMetadata) {
       const join = externalMetadataJoin(m);
-      const abs = isAbsolute(m.file) ? m.file : resolve(opts.configDir, m.file);
-      const file = reportedPath(abs, opts.base);
-      located.set(`${c.name}\u0000${file}\u0000${join}`, abs);
-      if (plans.has(abs)) continue;
-      plans.set(abs, {
-        manifest: { file, collection: c.name, rewritten: [], skipped: [], written: false },
-        path: abs,
-        text: await readFile(abs, "utf8"),
-        changed: false,
-      });
+      if (!hasPagePlaceholder(m.file)) {
+        locate(c.name, isAbsolute(m.file) ? m.file : resolve(opts.configDir, m.file), join);
+        continue;
+      }
+      for (const page of pages) {
+        const resolved = pageManifestPath(m.file, opts.configDir, page);
+        if (!("outside" in resolved)) locate(c.name, resolved.abs, join);
+      }
     }
   }
+  const planFor = async (key: string): Promise<PlannedManifest | undefined> => {
+    const where = located.get(key);
+    if (where === undefined) return undefined;
+    const known = plans.get(where.abs);
+    if (known !== undefined) return known;
+    const plan: PlannedManifest = {
+      manifest: {
+        file: reportedPath(where.abs, opts.base),
+        collection: where.collection,
+        rewritten: [],
+        skipped: [],
+        written: false,
+      },
+      path: where.abs,
+      text: await readFile(where.abs, "utf8"),
+      changed: false,
+    };
+    plans.set(where.abs, plan);
+    return plan;
+  };
 
   for (const entry of index.entries) {
-    const abs = located.get(`${entry.collection}\u0000${entry.file}\u0000${entry.join}`);
-    const plan = abs === undefined ? undefined : plans.get(abs);
+    const plan = await planFor(`${entry.collection}\u0000${entry.file}\u0000${entry.join}`);
     if (plan === undefined) continue;
     const data: Record<string, unknown> = {};
     for (const [key, supplied] of valuesOf(index, entry)) {
@@ -483,6 +531,8 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
           configSource: file.source,
           key: current,
           toError: toKeyError,
+          // A `{page}` manifest (0058) is read for exactly the pages rotated.
+          pages: files.map((rel) => resolve(base, rel)),
         });
   const manifests = new ManifestSet();
 
@@ -560,6 +610,8 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
           base,
           fromKey,
           toKey,
+          pages: files.map((rel) => resolve(base, rel)),
+          whole: !narrowed,
         });
 
   const reencrypted =

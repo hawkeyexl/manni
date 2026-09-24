@@ -1,0 +1,11 @@
+# A stray per-page manifest (proposal 0058 § 5): `docs/old.md` was moved or
+# deleted, and `docs/old.citations.yaml` stayed behind. A full run walks the
+# pattern's glob and refuses it; a run given a path walks nothing extra.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+cite:
+  root: .

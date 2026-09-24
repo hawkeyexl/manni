@@ -1,0 +1,9 @@
+# Proposal 0058: install.md and install.mdx both resolve {page} to
+# docs/install, so one manifest would name two pages.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.{md,mdx}"
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [owner]

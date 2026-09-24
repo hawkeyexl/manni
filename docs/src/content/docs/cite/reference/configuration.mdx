@@ -54,9 +54,21 @@ collections:
   - name: site
     paths: ["docs/**/*.{md,mdx}"]
     externalMetadata:
-      - file: docs-citations.yaml   # relative to the config file
+      - file: "{page}.citations.yaml"   # one manifest beside each page
         keys: [citations]
 ```
+
+{/* cite page-manifest-beside-page */}
+`{page}` is the page's path relative to the config file, without its
+extension. So `docs/limits.md` keeps its citations in
+`docs/limits.citations.yaml`. A page with no manifest yet cites nothing, and
+`add` creates the file on its first write. This is the recommended layout,
+because two branches that edit two pages then touch two files.
+[A manifest per page](/manni/meta/reference/configuration/#a-manifest-per-page)
+has the full rule and its refusals.
+
+A `file` without `{page}`, such as `docs-citations.yaml`, keeps every page's
+entries in one manifest for the collection instead.
 
 {/* cite manifest-membership-every-collection */}
 {/* cite no-config-frontmatter-only */}

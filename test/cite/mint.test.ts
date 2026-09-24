@@ -41,13 +41,28 @@ const CLAIM = {
   integrity: "sha256-921b21cccab21a4577f224ec4171aa56a3414bb3a5a4704ab8b6f314c46aa094",
 };
 
-function fakeGit(opts: { available?: boolean; head?: string | null; files?: string[] } = {}): GitClient {
+function fakeGit(
+  opts: {
+    available?: boolean;
+    head?: string | null;
+    files?: string[];
+    /** What the recorded commit held. Defaults to the working tree, so the commit supports the pin. */
+    show?: string | { missing: "commit" | "path" };
+  } = {},
+): GitClient {
   const unreachable = () => Promise.reject(new Error("not expected here"));
   return {
     available: () => Promise.resolve(opts.available ?? true),
     head: () => Promise.resolve(opts.head === undefined ? HEAD : opts.head),
     lsFiles: () => Promise.resolve(opts.files ?? ["src/limits.ts", "src/a.txt"]),
-    showFile: unreachable,
+    showFile: () =>
+      Promise.resolve(
+        opts.show === undefined
+          ? { text: ladder.SOURCE }
+          : typeof opts.show === "string"
+            ? { text: opts.show }
+            : opts.show,
+      ),
     subjectsSince: unreachable,
     diffSince: unreachable,
   };
@@ -282,5 +297,98 @@ describe("mintCitation", () => {
     await expect(
       mintCitation({ root: ROOT, src: "src/limits.ts:3-1", commitSha: false }),
     ).rejects.toThrow('Invalid range "src/limits.ts:3-1": end line 1 is before start line 3.');
+  });
+});
+
+/**
+ * A recorded commit has to contain the lines it is recorded against. Minting
+ * reads the range from the working tree, so a source with uncommitted edits
+ * would otherwise pin bytes that HEAD does not hold, and date them to HEAD.
+ * That pin reads as `current` forever, and accuses the source of
+ * `source-never-true` the first time it changes.
+ */
+describe("mintCitation, the commit supports the pin", () => {
+  /** The fixture with line 2 rewritten: the commit has no such line, anywhere. */
+  const WITHOUT_LINE_2 = ladder.SOURCE.replace(LINE_2, "export const FETCH_TIMEOUT_MS = 30_000;");
+  /** The fixture with a line prepended: line 2's text is there, at line 3. */
+  const SHIFTED = `// a header comment\n${ladder.SOURCE}`;
+
+  it("refuses when the recorded commit does not contain the pinned lines", async () => {
+    await expect(
+      mintCitation({
+        root: ROOT,
+        src: "src/limits.ts:2",
+        gitClient: fakeGit({ show: WITHOUT_LINE_2 }),
+      }),
+    ).rejects.toThrow(
+      "src/limits.ts:2 is not committed: 3f9c2a1 does not contain those lines. Commit the source, or use --no-commit-sha.",
+    );
+  });
+
+  it("refuses with a CiteError, so add exits 2 and accept leaves the finding reported", async () => {
+    await expect(
+      mintCitation({
+        root: ROOT,
+        src: "src/limits.ts:2",
+        gitClient: fakeGit({ show: WITHOUT_LINE_2 }),
+      }),
+    ).rejects.toBeInstanceOf(CiteError);
+  });
+
+  it("records the commit when the pinned lines sit elsewhere in the file there", async () => {
+    // `update` rewrites `src` for a move and keeps `commit`, so a pin whose
+    // bytes are present at other lines held at that commit. Not damage.
+    const c = await mintCitation({
+      root: ROOT,
+      src: "src/limits.ts:2",
+      gitClient: fakeGit({ show: SHIFTED }),
+    });
+    expect(c.source["commit-sha"]).toBe(HEAD);
+  });
+
+  it("records an unverifiable commit rather than refusing, for a shallow clone", async () => {
+    const c = await mintCitation({
+      root: ROOT,
+      src: "src/limits.ts:2",
+      gitClient: fakeGit({ show: { missing: "commit" } }),
+    });
+    expect(c.source["commit-sha"]).toBe(HEAD);
+  });
+
+  it("refuses an explicit commit-sha that does not contain the lines either", async () => {
+    await expect(
+      mintCitation({
+        root: ROOT,
+        src: "src/limits.ts:2",
+        commitSha: "abcdef1234567",
+        gitClient: fakeGit({ show: WITHOUT_LINE_2 }),
+      }),
+    ).rejects.toThrow(/^src\/limits\.ts:2 is not committed: abcdef1 /);
+  });
+
+  it("names an encrypted source as the caller spelled it, never its path", async () => {
+    const encrypted = ladder.SOURCE.replace(LINE_2, "export const FETCH_TIMEOUT_MS = 30_000;");
+    await expect(
+      mintCitation({
+        root: ROOT,
+        src: `${TOKEN}:2`,
+        key: KEY,
+        gitClient: fakeGit({ show: encrypted }),
+      }),
+    ).rejects.toThrow(`${TOKEN}:2 is not committed`);
+  });
+
+  it("reads no commit content under commitSha: false", async () => {
+    const strict: GitClient = {
+      ...fakeGit(),
+      showFile: () => Promise.reject(new Error("not expected here")),
+    };
+    const c = await mintCitation({
+      root: ROOT,
+      src: "src/limits.ts:2",
+      commitSha: false,
+      gitClient: strict,
+    });
+    expect(c.source["commit-sha"]).toBeUndefined();
   });
 });

@@ -1,0 +1,8 @@
+# Proposal 0058: a placeholder names a file this run can write, and a URL is not one.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.{md,mdx}"
+    externalMetadata:
+      - file: "https://example.test/{page}.citations.yaml"
+        keys: [citations]

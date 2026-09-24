@@ -11,7 +11,7 @@
  * only atomic within a filesystem, and the OS temp dir is frequently a
  * different one.
  */
-import { writeFile, rename, rm, stat, chmod } from "node:fs/promises";
+import { writeFile, rename, rm, stat, chmod, mkdir } from "node:fs/promises";
 import { dirname, join, basename, resolve } from "node:path";
 import { programName } from "../../shared/program-name.js";
 import { invalidateManifestCache } from "./manifest-cache.js";
@@ -56,6 +56,15 @@ export async function writeFileAtomic(
    * time anything checked it.
    */
   contents: string | Uint8Array,
+  /**
+   * `createParents` makes the target's directory, recursively, before the
+   * temp file that lives in it. A manifest writer asks for it: a mirrored
+   * per-page manifest (proposal 0058), `./meta/{page}.citations.yaml`, may be
+   * the first file in its directory. Every other writer leaves it off, so a
+   * missing directory stays the failure it always was (`--write-baseline`
+   * into a directory that is not there, say).
+   */
+  options: { createParents?: boolean } = {},
 ): Promise<void> {
   const tmp = join(
     dirname(path),
@@ -63,6 +72,8 @@ export async function writeFileAtomic(
   );
 
   try {
+    if (options.createParents === true) await mkdir(dirname(path), { recursive: true });
+
     // No encoding argument. Node ignores one when `contents` is a
     // `Uint8Array`, so passing `"utf8"` was harmless — but it reads as though a
     // decode happens, which is exactly what the byte-for-byte guarantee above

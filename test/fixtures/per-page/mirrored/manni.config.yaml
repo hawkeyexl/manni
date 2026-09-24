@@ -1,0 +1,8 @@
+# Proposal 0058: a manifest per page, in a tree mirrored under meta/.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: "./meta/{page}.citations.yaml"
+        keys: [owner]

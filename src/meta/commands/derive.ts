@@ -506,6 +506,8 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
 
     // ---- Provenance (0046): where each record lives, and what it says ------
     const provenanceRoot = configDir ?? cwd;
+    // A `{page}` manifest (0058) is read for exactly the pages this run derives.
+    const pages = files.map((label) => resolve(base, label));
     const manifests = wantsProvenance
       ? provenanceManifests(declaredCollections, provenanceRoot, base)
       : [];
@@ -521,7 +523,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     const provenanceIndex =
       manifests.length === 0
         ? null
-        : await loadExternalMetadata(provenanceCollections, { configDir: provenanceRoot, base });
+        : await loadExternalMetadata(provenanceCollections, { configDir: provenanceRoot, base, pages });
     const places = new Map<string, ProvenancePlace>();
     for (const doc of loaded.values()) {
       if (!wantsProvenance) break;
@@ -563,7 +565,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     const ownedIndex =
       ownedCollections.length === 0
         ? null
-        : await loadExternalMetadata(ownedCollections, { configDir: provenanceRoot, base });
+        : await loadExternalMetadata(ownedCollections, { configDir: provenanceRoot, base, pages });
 
     // ---- Derive ------------------------------------------------------------
     const derived = await deriveMetadata([...loaded.values()], {
@@ -798,11 +800,11 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   /** A field written into a manifest, whose line the report names once the manifest is settled. */
   const lineRequests: { field: DerivedField; absPath: string; entry: string; join: string }[] = [];
   const holdManifest = async (
-    manifest: Pick<ProvenanceManifest, "absPath" | "file">,
+    manifest: Pick<ProvenanceManifest, "absPath" | "file" | "perPage">,
   ): Promise<MetaHeldManifest> => {
     const already = heldManifests.get(manifest.absPath);
     if (already !== undefined) return already;
-    const held = await holdManifestFile(manifest.absPath, manifest.file);
+    const held = await holdManifestFile(manifest.absPath, manifest.file, manifest.perPage);
     heldManifests.set(manifest.absPath, held);
     return held;
   };
@@ -933,7 +935,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       // on that key, so another command writing the key is no conflict.
       const stagedOps: { held: MetaHeldManifest; op: MetaManifestOp }[] = [];
       const stage = async (
-        manifest: Pick<ProvenanceManifest, "absPath" | "file">,
+        manifest: Pick<ProvenanceManifest, "absPath" | "file" | "perPage">,
         op: MetaManifestOp,
       ): Promise<boolean> => {
         const held = await holdManifest(manifest);

@@ -1,0 +1,9 @@
+# Proposal 0058: a per-page manifest is found by path, so it cannot be keyed by a field.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.{md,mdx}"
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+        join: id

@@ -25,11 +25,13 @@ In the default `pretty` output, a page with a problem looks like this:
     ✗ fetch-timeout   :13 current   lib/limits.ts:2 changed since 9265563, 1 commit
 ```
 
-The first line is the page. Each indented line below it is one citation, and
-it carries **both ends**:
+The first line is the page. When one sidecar keeps every entry the page has,
+its path follows the page on that line.
+
+Each indented line below it is one citation, and it carries **both ends**:
 
 ```
-<mark> <id>   <claim end>   <source end>   <manifest>
+<mark> <id>   <claim end>   <source end>   [<manifest>]
 ```
 
 | Part | What it tells you |
@@ -38,7 +40,7 @@ it carries **both ends**:
 | `<id>` | The citation's `id`. An entry without one leaves the column empty, and the two ends identify it. |
 | `<claim end>` | The page lines the sentence occupies, and their status: `:13 current`, `:13 moved -> :15`, `:13 changed`. A marker-anchored claim reads `marker :13`, and `marker :13 -> :11` when the marker is misplaced. Empty for a bare pin. |
 | `<source end>` | The source as the entry spells it (`lib/limits.ts:2`, `lib/limits.ts:1-3`, a bare path for a whole file, or a ciphertext such as `~AQm4…:5`), then its status. |
-| `<manifest>` | The sidecar that owns the entry, and the entry's line in it. Empty when the entry lives in the page's frontmatter. |
+| `<manifest>` | Printed only when the page's entries come from more than one place, such as frontmatter and a sidecar. It names the sidecar that owns the entry, and the entry's line in it. Empty for a frontmatter entry. |
 
 {/* cite annotation-site */}
 In a pull request the same finding is an annotation, titled

@@ -87,6 +87,14 @@ export interface HeldManifest<Op extends ManifestOp> {
   ops: Op[];
   /** Each entry key this run rewrote, and what it held first. */
   bases: Map<string, KeyBase>;
+  /**
+   * The file did not exist when it was held, so `before` is empty text
+   * standing in for no file (proposal 0058). A distinct state from a file
+   * that exists and is empty: a commit that still finds nothing creates the
+   * file, and one that finds any bytes, empty ones included, rebases onto
+   * them, since another writer created it in between.
+   */
+  absent: boolean;
 }
 
 /** How many times a write re-reads and replays before it refuses. */
@@ -97,13 +105,18 @@ export function conflictRefusal(file: string): string {
   return `${file} changed under the command while it was being written. Nothing was written to it. Re-run the command.`;
 }
 
-/** A manifest read, ready to be spliced and later settled. */
+/**
+ * A manifest read, ready to be spliced and later settled. `absent` holds a
+ * file that does not exist yet, with `before` as the empty text it stands in
+ * for; only a per-page manifest (proposal 0058) is ever held that way.
+ */
 export function heldManifest<Op extends ManifestOp>(
   path: string,
   file: string,
   before: string,
+  absent = false,
 ): HeldManifest<Op> {
-  return { path, file, before, text: before, ops: [], bases: new Map() };
+  return { path, file, before, text: before, ops: [], bases: new Map(), absent };
 }
 
 /**
@@ -166,6 +179,7 @@ export function rebaseline<Op extends ManifestOp>(held: HeldManifest<Op>): void 
   held.before = held.text;
   held.ops = [];
   held.bases.clear();
+  held.absent = false;
 }
 
 /** What `settle` needs from the tool around it. */
@@ -198,10 +212,20 @@ export async function settle<Op extends ManifestOp>(
     try {
       current = await io.read(held.path);
     } catch (error) {
+      // Held absent and still missing: this run creates the file. A file that
+      // was present when it was held and is gone now is a refusal, as it
+      // always was, because something removed it on purpose.
+      if (held.absent && isMissing(error)) {
+        await io.write(held.path, held.text);
+        held.absent = false;
+        return;
+      }
       const reason = error instanceof Error ? error.message : String(error);
       throw io.toError(`Manifest ${held.file} could not be read: ${reason}`);
     }
-    if (current === held.before) {
+    // Bytes where the run held none are another writer's file, even empty
+    // ones, so they are rebased onto rather than written over.
+    if (!held.absent && current === held.before) {
       await io.write(held.path, held.text);
       return;
     }
@@ -213,8 +237,14 @@ export async function settle<Op extends ManifestOp>(
     if (replayed === undefined) throw io.toError(conflictRefusal(held.file));
     held.before = current;
     held.text = replayed;
+    held.absent = false;
   }
   throw io.toError(conflictRefusal(held.file));
+}
+
+/** A read that failed because nothing is there. */
+export function isMissing(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 }
 
 /** What a caller may substitute when it writes the manifests it held. */

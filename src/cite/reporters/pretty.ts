@@ -281,6 +281,19 @@ interface Row {
   under: string[];
 }
 
+/**
+ * The one manifest every citation of a page came from, or `undefined` when
+ * the page has none, or when its rows come from more than one place (a
+ * frontmatter entry among them counts as another place).
+ */
+function oneManifest(citations: readonly CitationResult[]): string | undefined {
+  const files = new Set(
+    citations.map((result) => (result.origin.kind === "manifest" ? result.origin.file : undefined)),
+  );
+  const [only, ...rest] = [...files];
+  return rest.length === 0 ? only : undefined;
+}
+
 function padTo(text: string, width: number, plain: number): string {
   // Colour codes are not width, so the visible length is passed in.
   return width <= plain ? text : text + " ".repeat(width - plain);
@@ -306,14 +319,18 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
     // "baselined" is a participle, not a noun: 1 baselined, 2 baselined.
     const forgiven =
       baselined.length > 0 ? c.dim(`  (${String(baselined.length)} baselined)`) : "";
+    // Every row names one manifest: a page's own under `{page}` (proposal
+    // 0058), or a shared one. Said once on the page's line, not on each row.
+    const manifest = oneManifest(page.citations);
+    const heading = manifest === undefined ? page.file : `${page.file}   ${c.dim(manifest)}`;
 
     if (reported.length === 0) {
       if (quiet) return;
-      lines.push(`${c.green("✓")} ${page.file}${forgiven}`);
+      lines.push(`${c.green("✓")} ${heading}${forgiven}`);
     } else {
       // The most severe finding marks the file. Only ✗ is a failure.
       const mark = errors > 0 ? c.red("✗") : warned ? c.yellow("⚠") : c.dim("ℹ");
-      lines.push(`${mark} ${page.file}${forgiven}`);
+      lines.push(`${mark} ${heading}${forgiven}`);
     }
 
     const isBaselined = new Set(baselined);
@@ -364,7 +381,7 @@ export function renderCheckPretty(run: CheckRun, opts: PrettyOptions): string {
         claim: claimColumn(result),
         source: `${sourceColumn(result, opts, c.dim)}${forgivenEnd}`,
         where:
-          result.origin.kind === "manifest"
+          result.origin.kind === "manifest" && manifest === undefined
             ? `${result.origin.file}${result.origin.line === undefined ? "" : `:${String(result.origin.line)}`}`
             : "",
         under,
@@ -488,6 +505,13 @@ export function rewriteLine(rewrite: UpdateRewrite): string {
   const status = rewrite.status === "never-true" ? "never true" : rewrite.status;
   if (rewrite.end === "marker") {
     return `marker line ${rewrite.from} -> ${rewrite.to} (misplaced)`;
+  }
+  // The pin held; only its date was wrong. The row names both commits, so the
+  // log says what the entry claimed before it was corrected.
+  if (rewrite.reason === "recommitted") {
+    const from = shortCommit(rewrite.fromCommit ?? "");
+    const to = shortCommit(rewrite.toCommit ?? "");
+    return `source ${shortSrc(rewrite.src ?? "")} commit ${from} -> ${to} (did not contain the pinned lines)`;
   }
   if (rewrite.reason === "shifted") {
     return `claim ${word} ${rewrite.from} -> ${rewrite.to} (shifted by a marker)`;

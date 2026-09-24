@@ -275,6 +275,47 @@ describe("renderCheckPretty: one citation, one row", () => {
     ]);
   });
 
+  it("names a page's one manifest once, on the page's line, when every row comes from it", () => {
+    // A shared manifest and a page's own collapse alike (proposal 0058 § 7).
+    const run = runOf([
+      page({
+        citations: [
+          citation({ origin: { kind: "manifest", file: "docs/limits.citations.yaml", index: 0, line: 4 } }),
+          citation({
+            citation: { id: "retries", source: { file: "lib/limits.ts", lines: 3, integrity: PIN } },
+            origin: { kind: "manifest", file: "docs/limits.citations.yaml", index: 1, line: 11 },
+            source: sourceEnd({ src: "lib/limits.ts:3" }),
+          }),
+        ],
+      }),
+    ]);
+    expect(renderCheckPretty(run, NO_COLOR).split("\n").slice(0, 3)).toEqual([
+      "✓ docs/limits.md   docs/limits.citations.yaml",
+      "    ✓ fetch-timeout   :12 current   lib/limits.ts:2 current",
+      "    ✓ retries         :12 current   lib/limits.ts:3 current",
+    ]);
+  });
+
+  it("keeps the per-row column when a page's rows come from two manifests", () => {
+    const run = runOf([
+      page({
+        citations: [
+          citation({ origin: { kind: "manifest", file: "a.yaml", index: 0, line: 4 } }),
+          citation({
+            citation: { id: "retries", source: { file: "lib/limits.ts", lines: 3, integrity: PIN } },
+            origin: { kind: "manifest", file: "b.yaml", index: 0, line: 2 },
+            source: sourceEnd({ src: "lib/limits.ts:3" }),
+          }),
+        ],
+      }),
+    ]);
+    expect(renderCheckPretty(run, NO_COLOR).split("\n").slice(0, 3)).toEqual([
+      "✓ docs/limits.md",
+      "    ✓ fetch-timeout   :12 current   lib/limits.ts:2 current   a.yaml:4",
+      "    ✓ retries         :12 current   lib/limits.ts:3 current   b.yaml:2",
+    ]);
+  });
+
   it("pads the columns to the widest row on the page", () => {
     const run = runOf([
       page({

@@ -32,6 +32,19 @@ describe("writeFileAtomic", () => {
     expect(await readFile(file, "utf8")).toBe("hello\n");
   });
 
+  it("creates the directories a new file sits in, when asked", async () => {
+    // A mirrored per-page manifest (proposal 0058), `./meta/{page}.citations.yaml`,
+    // is the first write whose directory may not exist yet.
+    const file = join(dir, "meta", "docs", "guide", "page.citations.yaml");
+    await writeFileAtomic(file, "docs/guide/page.md: {}\n", { createParents: true });
+    expect(await readFile(file, "utf8")).toBe("docs/guide/page.md: {}\n");
+    expect(await readdir(join(dir, "meta", "docs", "guide"))).toEqual(["page.citations.yaml"]);
+  });
+
+  it("leaves a missing directory a failure otherwise", async () => {
+    await expect(writeFileAtomic(join(dir, "absent", "page.md"), "x\n")).rejects.toThrow(/ENOENT/);
+  });
+
   it("leaves no temp files behind", async () => {
     const file = join(dir, "page.md");
     await writeFile(file, "old\n", "utf8");

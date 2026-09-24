@@ -1,0 +1,6 @@
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./meta/{page}.citations.yaml
+        keys: [citations]

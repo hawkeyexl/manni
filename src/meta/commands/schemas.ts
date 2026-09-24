@@ -781,12 +781,6 @@ export async function runInferSchema(
   // An encrypted join field is decrypted before matching (proposal 0045).
   const joinKey = lazyKey(configFile, undefined);
   const usingStdin = inputs.includes(STDIN_TOKEN);
-  // External metadata (0037): an inferred schema describes the merged corpus.
-  const externalMetadata = await loadExternalMetadata(collections, {
-    configDir: configDir ?? cwd,
-    base,
-    offline: opts.offline ?? config?.offline ?? false,
-  });
 
   if (inputs.length === 0) {
     throw new DocmetaError(
@@ -860,6 +854,16 @@ export async function runInferSchema(
     exts,
     gitignoreSkipped,
     action: "scanned",
+  });
+
+  // External metadata (0037): an inferred schema describes the merged corpus.
+  // Read once the pages are known, because a `{page}` manifest (0058) is read
+  // for exactly the pages this run scans.
+  const externalMetadata = await loadExternalMetadata(collections, {
+    configDir: configDir ?? cwd,
+    base,
+    offline: opts.offline ?? config?.offline ?? false,
+    pages: files.map((file) => resolve(base, file)),
   });
 
   const stats = new Map<string, KeyStats>();

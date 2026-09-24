@@ -29,6 +29,7 @@
  * manifest's parsed value are what move, so an encrypted value goes as its
  * ciphertext, verbatim.
  */
+import { isMissing } from "../../shared/manifest-cas.js";
 import { access, readFile, stat, unlink } from "node:fs/promises";
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import picomatch from "picomatch";
@@ -49,6 +50,7 @@ import {
 } from "../../shared/collections.js";
 import { FAMILY_CONFIG_NAMES, type ConfigFile } from "../../shared/config-file.js";
 import { findGitRoot } from "../../shared/git-root.js";
+import { hasPagePlaceholder, pageManifestPath } from "../../shared/page-manifest.js";
 import { errorMessage } from "../../shared/errors.js";
 import { decryptValue, isEncryptedValue } from "../../shared/encryption.js";
 import { DocmetaError, type MetadataExtractor, type MetadataPatch } from "../types.js";
@@ -60,6 +62,7 @@ import {
   externalMetadataJoin,
   loadExternalMetadata,
   mergeExternalMetadata,
+  outsideRefusal as perPageOutsideRefusal,
   type ExternalMetadataIndex,
   type ExternalMetadataValue,
 } from "./external-metadata.js";
@@ -251,10 +254,17 @@ interface ManifestRef {
   /** `file:` as the config writes it. */
   written: string;
   url: boolean;
+  /** Undefined for a URL, and for a `{page}` manifest, which names no one file. */
   absPath: string | undefined;
-  /** As the run reports it. */
+  /**
+   * As the run reports it. A `{page}` manifest (proposal 0058) names one file
+   * per page, so this is the pattern as written, and `Model.fileFor` answers
+   * the file one page's values live in.
+   */
   file: string;
   join: string;
+  /** `file:` holds `{page}`: each page keeps its values in a manifest of its own. */
+  perPage: boolean;
   created: boolean;
   keysBefore: string[];
   keysAdded: string[];
@@ -317,7 +327,9 @@ class Model {
     for (const c of this.collections) {
       c.externalMetadata.forEach((m, index) => {
         const url = classifyRef(m.file).kind === "url";
-        const absPath = url ? undefined : isAbsolute(m.file) ? m.file : resolve(configDir, m.file);
+        const perPage = !url && hasPagePlaceholder(m.file);
+        const absPath =
+          url || perPage ? undefined : isAbsolute(m.file) ? m.file : resolve(configDir, m.file);
         this.manifests.push({
           collection: c.name,
           index,
@@ -326,6 +338,7 @@ class Model {
           absPath,
           file: absPath === undefined ? m.file : reported(absPath, ctx.base),
           join: externalMetadataJoin(m),
+          perPage,
           created: false,
           keysBefore: [...m.keys],
           keysAdded: [],
@@ -347,6 +360,24 @@ class Model {
 
   manifestsOf(collection: string): ManifestRef[] {
     return this.manifests.filter((m) => m.collection === collection);
+  }
+
+  /**
+   * The one file `m` keeps a page's values in, and how the run reports it:
+   * the page's own for a `{page}` manifest (proposal 0058), the declared file
+   * for any other. `abs` is undefined only for a URL manifest.
+   */
+  fileFor(m: ManifestRef, pageAbs: string): { abs: string | undefined; file: string } {
+    if (!m.perPage) return { abs: m.absPath, file: m.file };
+    const resolved = pageManifestPath(m.written, this.configDir, pageAbs);
+    if ("outside" in resolved) {
+      // The loader refuses such a page first, whenever the run names it.
+      const declared = this.ctx.declaredCollections.find((c) => c.name === m.collection)?.externalMetadata[m.index];
+      throw new DocmetaError(
+        perPageOutsideRefusal(declared ?? { file: m.written, keys: [] }, m.collection, resolved.pageRel),
+      );
+    }
+    return { abs: resolved.abs, file: reported(resolved.abs, this.ctx.base) };
   }
 
   /** The manifest of one of `members` that owns `key`, in declaration order. */
@@ -441,6 +472,7 @@ class Model {
       absPath,
       file,
       join: PATH_JOIN,
+      perPage: false,
       created: true,
       keysBefore: [],
       keysAdded: [],
@@ -562,6 +594,12 @@ export type KeyHome =
       join: string;
       /** The page's entry: its path from the config directory, or its join value. Undefined when the page lacks the join field. */
       entry: string | undefined;
+      /**
+       * The manifest is the page's own, resolved from a `{page}` pattern
+       * (proposal 0058). It may not exist yet: a writer holds it as empty
+       * and creates it.
+       */
+      perPage: boolean;
     }
   | { kind: "url"; collection: string; file: string }
   | { kind: "unowned"; home: ProposedHome };
@@ -582,16 +620,19 @@ export async function keyHome(
   const model = new Model(ctx, plannedConfigDir(ctx));
   const owner = model.ownerOf(key, model.members(label));
   if (owner !== undefined) {
-    if (owner.url || owner.absPath === undefined) {
+    // A `{page}` manifest (proposal 0058) resolves to the page's own file.
+    const at = model.fileFor(owner, resolve(ctx.base, label));
+    if (owner.url || at.abs === undefined) {
       return { kind: "url", collection: owner.collection, file: owner.file };
     }
     return {
       kind: "manifest",
       collection: owner.collection,
-      file: owner.file,
-      absPath: owner.absPath,
+      file: at.file,
+      absPath: at.abs,
       join: owner.join,
       entry: entryFor(owner, label, data, model.configDir, ctx.base, lazyKey(ctx.configFile, ctx.env)),
+      perPage: owner.perPage,
     };
   }
   return { kind: "unowned", home: (await model.home(label, false)).proposed };
@@ -712,6 +753,37 @@ export interface RelocationPlan {
 }
 
 /**
+ * The pages a `{page}` manifest (proposal 0058) is read for: the run's own,
+ * and every member of a collection that declares one. A `keys:` change
+ * reaches every member page, so a narrowed run still has to know what each
+ * member's manifest holds. With no placeholder declared, nothing is walked.
+ */
+async function relocationPages(
+  ctx: RelocationContext,
+  request: RelocationRequest,
+): Promise<string[]> {
+  const pages = new Set(request.files.map((label) => resolve(ctx.base, label)));
+  const root = ctx.configDir ?? ctx.cwd;
+  for (const collection of ctx.declaredCollections) {
+    const perPage = collection.externalMetadata.some(
+      (m) => classifyRef(m.file).kind !== "url" && hasPagePlaceholder(m.file),
+    );
+    if (!perPage) continue;
+    const walked = await resolveTargetSet({
+      inputs: [...collection.paths],
+      cwd: root,
+      allowEmpty: true,
+      ...gitignoreOptions({
+        ...(ctx.respectGitignore !== undefined ? { flag: ctx.respectGitignore } : {}),
+        ...(ctx.config?.respectGitignore !== undefined ? { configured: ctx.config.respectGitignore } : {}),
+      }),
+    });
+    for (const file of walked.files) pages.add(resolve(root, file));
+  }
+  return [...pages];
+}
+
+/**
  * Plan every move for `request.files` and the member pages a `keys:` change
  * reaches, with every new file text computed and read back. Writes nothing.
  *
@@ -731,6 +803,7 @@ export async function planRelocation(
     configDir: ctx.configDir ?? ctx.cwd,
     base: ctx.base,
     offline: ctx.config?.offline ?? false,
+    pages: await relocationPages(ctx, request),
   });
   const trustRoot = schemaTrustRoot(ctx.cwd, ctx.configDir);
   const forced = ctx.as !== undefined ? extractorByName(ctx.as) : undefined;
@@ -800,7 +873,10 @@ export async function planRelocation(
       const entry = entryFor(m, page.label, page.own, configDir, ctx.base, encryptionKey);
       sv = entry === undefined ? undefined : index.byField.get(m.join)?.get(entry)?.get(key);
     }
-    return sv !== undefined && sv.collection === m.collection && sv.file === m.file ? sv : undefined;
+    // A `{page}` manifest's values carry the page's own file (proposal 0058).
+    return sv !== undefined && sv.collection === m.collection && sv.file === model.fileFor(m, page.absPath).file
+      ? sv
+      : undefined;
   };
 
   const stay = (
@@ -829,7 +905,7 @@ export async function planRelocation(
     }
     const held = supplied(m, page, key);
     if (held !== undefined && !deepEqual(held.value, page.own[key])) {
-      stay(page, key, "values-differ", `the page and ${m.file} hold different values`, { toward: m });
+      stay(page, key, "values-differ", `the page and ${held.file} hold different values`, { toward: m });
       return;
     }
     page.intents.set(key, { kind: "out", manifest: m, reason, drop: held !== undefined, entry });
@@ -845,7 +921,7 @@ export async function planRelocation(
     if (entry === undefined) return;
     if (Object.hasOwn(page.own, key)) {
       if (!deepEqual(held.value, page.own[key])) {
-        stay(page, key, "values-differ", `the page and ${m.file} hold different values`, { blocks: m });
+        stay(page, key, "values-differ", `the page and ${held.file} hold different values`, { blocks: m });
         return;
       }
       page.intents.set(key, { kind: "in", manifest: m, drop: true, entry, value: held.value });
@@ -1021,7 +1097,7 @@ export async function planRelocation(
             // for a path join; a field join needs the page's own value.
             const held =
               m.join !== PATH_JOIN ||
-              (!m.created && index?.byPath.get(page.absPath)?.get(key)?.file === m.file);
+              (!m.created && index?.byPath.get(page.absPath)?.get(key)?.file === model.fileFor(m, page.absPath).file);
             if (held && !page.intents.has(key)) stay(page, key, "unreadable", detail, { blocks: m });
           }
           continue;
@@ -1084,36 +1160,65 @@ export async function planRelocation(
   const writes: RelocationWrite[] = [];
   const lines = new Map<string, number>();
   for (const m of model.manifests) {
-    if (m.url || m.absPath === undefined) continue;
+    if (m.url) continue;
     const undeclared = model.finalKeys(m).length === 0 && !m.created;
-    const outs: { page: string; entry: string; key: string; value: unknown; drop: boolean }[] = [];
-    const ins: { entry: string; key: string }[] = [];
+    /**
+     * The edits, by the file they land in. One file for a concrete manifest;
+     * one per page for a `{page}` manifest (proposal 0058), so each page's
+     * values go to, and come from, the page's own file.
+     */
+    type Edits = {
+      file: string;
+      outs: { page: string; entry: string; key: string; value: unknown; drop: boolean }[];
+      ins: { entry: string; key: string }[];
+    };
+    const files = new Map<string, Edits>();
+    const group = (at: { abs: string | undefined; file: string }): Edits | undefined => {
+      /* c8 ignore next -- only a URL manifest has no path, and it was skipped. */
+      if (at.abs === undefined) return undefined;
+      const have = files.get(at.abs);
+      if (have !== undefined) return have;
+      const made: Edits = { file: at.file, outs: [], ins: [] };
+      files.set(at.abs, made);
+      return made;
+    };
+    // A created manifest is written even when nothing moves into it.
+    if (m.created) group({ abs: m.absPath, file: m.file });
     for (const page of orderedPages()) {
       for (const [key, intent] of orderedIntents(page)) {
-        if (intent.kind === "out" && intent.manifest === m) {
-          outs.push({ page: page.label, entry: intent.entry, key, value: page.own[key], drop: intent.drop });
-        } else if (intent.kind === "in" && intent.manifest === m) {
-          ins.push({ entry: intent.entry, key });
+        if ((intent.kind === "out" || intent.kind === "in") && intent.manifest === m) {
+          const into = group(model.fileFor(m, page.absPath));
+          if (intent.kind === "out") {
+            into?.outs.push({ page: page.label, entry: intent.entry, key, value: page.own[key], drop: intent.drop });
+          } else {
+            into?.ins.push({ entry: intent.entry, key });
+          }
         }
       }
     }
-    if (!undeclared) assertNoStrandedEntries(m, index, pages, configDir);
-    if (undeclared || (!m.created && outs.length === 0 && ins.length === 0)) continue;
-    let text = m.created ? "" : await readManifestText(m);
-    const before = text;
-    const where = { join: m.join, file: m.file };
-    for (const o of outs) {
-      if (!o.drop) text = spliceManifestValue(text, { ...where, entry: o.entry, key: o.key, value: o.value }).text;
-    }
-    for (const i of ins) text = removeManifestKey(text, { ...where, entry: i.entry, key: i.key }).text;
-    const found = keyLines(text, m.join);
-    for (const o of outs) {
-      const line = found.get(entryId(o.entry, m.join))?.get(o.key);
-      if (line !== undefined) lines.set(lineId(o.page, m.file, o.key), line);
-    }
-    if (m.created || text !== before) {
-      // A created manifest's path does not exist: planning refuses one that does (U6).
-      writes.push({ path: m.absPath, text, kind: "manifest", before: m.created ? null : before });
+    if (!undeclared) assertNoStrandedEntries(m, index, pages, configDir, (abs) => model.fileFor(m, abs).file);
+    if (undeclared) continue;
+    for (const [path, { file, outs, ins }] of files) {
+      if (!m.created && outs.length === 0 && ins.length === 0) continue;
+      // A created manifest's path does not exist: planning refuses one that
+      // does (U6). A `{page}` manifest that does not exist yet reads as empty
+      // and is created, `before: null`, like one.
+      const disk = m.created ? null : await readManifestText(path, file, m.perPage);
+      let text = disk ?? "";
+      const before = text;
+      const where = { join: m.join, file };
+      for (const o of outs) {
+        if (!o.drop) text = spliceManifestValue(text, { ...where, entry: o.entry, key: o.key, value: o.value }).text;
+      }
+      for (const i of ins) text = removeManifestKey(text, { ...where, entry: i.entry, key: i.key }).text;
+      const found = keyLines(text, m.join);
+      for (const o of outs) {
+        const line = found.get(entryId(o.entry, m.join))?.get(o.key);
+        if (line !== undefined) lines.set(lineId(o.page, file, o.key), line);
+      }
+      if (m.created || text !== before) {
+        writes.push({ path, text, kind: "manifest", before: disk });
+      }
     }
   }
 
@@ -1245,6 +1350,8 @@ function assertNoStrandedEntries(
   index: ExternalMetadataIndex | null,
   pages: ReadonlyMap<string, Page>,
   configDir: string,
+  /** The file `m` keeps one page's values in: the page's own for a `{page}` manifest. */
+  fileOf: (pageAbs: string) => string,
 ): void {
   if (index === null || m.keysRemoved.length === 0) return;
   for (const key of m.keysRemoved) {
@@ -1256,9 +1363,9 @@ function assertNoStrandedEntries(
     const stranded =
       m.join === PATH_JOIN
         ? [...index.byPath]
-            .filter(([, values]) => {
+            .filter(([abs, values]) => {
               const sv = values.get(key);
-              return sv !== undefined && sv.file === m.file && sv.collection === m.collection;
+              return sv !== undefined && sv.collection === m.collection && sv.file === fileOf(abs);
             })
             .map(([abs]) => toPosix(relative(configDir, abs)))
         : [...(index.byField.get(m.join) ?? new Map<string, ReadonlyMap<string, ExternalMetadataValue>>())]
@@ -1276,15 +1383,20 @@ function assertNoStrandedEntries(
   }
 }
 
-async function readManifestText(m: ManifestRef): Promise<string> {
-  /* c8 ignore next -- only local manifests are read. */
-  if (m.absPath === undefined) return "";
+/**
+ * A manifest's text, or null for a `{page}` manifest (proposal 0058) that
+ * does not exist yet: a page with nothing kept there. A missing concrete
+ * manifest is refused.
+ */
+async function readManifestText(path: string, file: string, perPage: boolean): Promise<string | null> {
   try {
-    return await readFile(m.absPath, "utf8");
+    return await readFile(path, "utf8");
   } catch (err) {
-    throw new DocmetaError(`Manifest ${m.file} could not be read: ${errorMessage(err)}`);
+    if (perPage && isMissing(err)) return null;
+    throw new DocmetaError(`Manifest ${file} could not be read: ${errorMessage(err)}`);
   }
 }
+
 
 const entryId = (entry: string, join: string): string =>
   join === PATH_JOIN ? toPosix(entry).replace(/^\.\//, "").replace(/\/+/g, "/") : entry;
@@ -1494,16 +1606,19 @@ function buildResult(input: {
     const moved: RelocateMove[] = [];
     const stayed: RelocateStay[] = [];
     const intents = orderedIntents(page);
+    // A `{page}` manifest (proposal 0058) is named by the page's own file.
+    const fileOf = (m: ManifestRef): string => model.fileFor(m, page.absPath).file;
     for (const [key, intent] of intents) {
-      if (intent.kind === "in") moved.push({ key, to: "page", from: intent.manifest.file, reason: "preferred" });
+      if (intent.kind === "in") moved.push({ key, to: "page", from: fileOf(intent.manifest), reason: "preferred" });
     }
     for (const [key, intent] of intents) {
       if (intent.kind !== "out") continue;
-      const line = dryRun ? undefined : lines.get(lineId(page.label, intent.manifest.file, key));
+      const manifest = fileOf(intent.manifest);
+      const line = dryRun ? undefined : lines.get(lineId(page.label, manifest, key));
       moved.push({
         key,
         to: "manifest",
-        manifest: intent.manifest.file,
+        manifest,
         ...(line !== undefined ? { line } : {}),
         reason: intent.reason,
       });
@@ -1581,7 +1696,9 @@ export async function applyRelocation(
   plan: RelocationPlan,
   io: RelocationIo = {},
 ): Promise<RelocateResult> {
-  const write = io.write ?? ((path: string, text: string) => writeFileAtomic(path, text));
+  // A per-page manifest (proposal 0058) may be the first file in its
+  // directory. A page and the config already have theirs.
+  const write = io.write ?? ((path: string, text: string) => writeFileAtomic(path, text, { createParents: true }));
   const remove = io.remove ?? ((path: string) => unlink(path));
   const label = (w: RelocationWrite): string =>
     w.kind === "config" ? configSource(w.path, ctx.cwd) : reported(w.path, ctx.base);

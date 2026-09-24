@@ -1,0 +1,4 @@
+docs/b.md:
+  citations:
+    - id: two
+      source: { file: src/b.ts }

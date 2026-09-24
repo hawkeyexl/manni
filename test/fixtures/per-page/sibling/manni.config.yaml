@@ -1,0 +1,9 @@
+# Proposal 0058: a manifest per page, beside the page. A page with no manifest
+# reads as empty, and a file outside the collection is never consulted.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [owner, jira]
