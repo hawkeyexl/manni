@@ -1,0 +1,15 @@
+---
+title: manni tracevals
+description: "Adherence evals for AI agent session traces. Did the session follow the skills and instructions it used?"
+tableOfContents: false
+hero:
+  tagline: You wrote the instructions. Did the agent follow them?
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="In development">
+`manni tracevals` is in development. It is not in the published package.
+</Aside>
+
+Give it a session that already happened. It looks up every skill, agent definition, slash command and project-rules file the session used. Then it evaluates whether the session followed them.
