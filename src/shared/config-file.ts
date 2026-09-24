@@ -9,18 +9,17 @@
  * This module only finds the file and hands a tool its slice. What the slice
  * may contain is the tool's business; it validates the value with its own
  * parser and its own error class, which is why `toError` is an option rather
- * than an import. Two top-level keys belong to the family rather than to a
- * tool, and are parsed here once for every tool: `collections:` (proposal
- * 0041) and `encryptionKey:` (proposal 0045).
+ * than an import. Four top-level keys belong to the family rather than to a
+ * tool, and are parsed here once for every tool. They are `collections:`
+ * (proposal 0041), `tools:` (proposal 0052) and `encryptionKey:` (proposal
+ * 0045). The fourth is `providers:`, the inference provider settings every
+ * tool that sends content to a model reads.
  *
- * Two older spellings are still read, each with a warning on discovery:
+ * One older spelling is still read, with a warning on discovery: each tool's
+ * pre-family file (`docmeta.config.yaml` for the metadata tool), whose whole
+ * document is the tool's section with no wrapper key.
  *
- * - `moose.config.yaml`, the family file under the pre-rename name. Same
- *   shape, so only the filename is wrong.
- * - each tool's pre-family file (`docmeta.config.yaml` for the metadata
- *   tool), whose whole document is the tool's section with no wrapper key.
- *
- * Within one directory the order is manni, moose, then the legacy names, and
+ * Within one directory the order is manni, then the legacy names, and
  * `.yaml` before `.yml`. A family file that exists but has neither a key for
  * this tool nor a family key is not this tool's config: discovery keeps
  * looking, first at the legacy names beside it (a repository mid-migration,
@@ -32,12 +31,18 @@
  * unwrapped when present, a document carrying a family key is a family file
  * with an empty section, and the whole document is taken otherwise, so a
  * `-c ./anything.yaml` needs no filename sniffing and no flag.
+ *
+ * The core is synchronous: some tools load config from synchronous library
+ * entry points, and one small file read is not worth an `await` through their
+ * public API. `findConfigFileSync` and `readConfigFileSync` expose it; the
+ * async spellings are wrappers over the same core for callers that await.
  */
-import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { parseCollections, type CollectionConfig } from "./collections.js";
 import { isValidEncryptionKey } from "./encryption.js";
+import { PROVIDERS_KEY, parseProviders, type ProvidersConfig } from "./providers.js";
 import { searchPath } from "./git-root.js";
 import { parseTools, type ToolsConfig } from "./tools.js";
 import { warn } from "./warn.js";
@@ -47,12 +52,6 @@ import { errorMessage } from "./errors.js";
 export const FAMILY_CONFIG_NAMES: readonly string[] = [
   "manni.config.yaml",
   "manni.config.yml",
-];
-
-/** The family filenames before the rename, still read with a warning. */
-export const MOOSE_CONFIG_NAMES: readonly string[] = [
-  "moose.config.yaml",
-  "moose.config.yml",
 ];
 
 /** The top-level key holding the family encryption key (proposal 0045). */
@@ -99,7 +98,7 @@ export interface ConfigFile {
   /** Whether `value` came from under `section:`. */
   wrapped: boolean;
   /** How the file was found. Explicit paths are never warned about. */
-  kind: "manni" | "moose" | "legacy" | "explicit";
+  kind: "manni" | "legacy" | "explicit";
   /**
    * The document's top-level `collections:` (proposal 0041), parsed once here
    * because every tool reads the same declaration. `[]` when the key is
@@ -126,6 +125,12 @@ export interface ConfigFile {
    * only by `manni key rotate`, which finishes it.
    */
   encryptionKeyPrevious?: string;
+  /**
+   * The document's top-level `providers:`, parsed here with a relative
+   * `llama-cpp.modelsDir` resolved against `dir`. Absent when the key is, and
+   * always absent for a `legacy` file, for the same reason as `collections`.
+   */
+  providers?: ProvidersConfig;
 }
 
 type ToError = (message: string) => Error;
@@ -136,14 +141,14 @@ interface Document {
   doc: Record<string, unknown> | null;
 }
 
-async function readDocument(
+function readDocument(
   path: string,
   source: string,
   toError: ToError,
-): Promise<Document | null> {
+): Document | null {
   let text: string;
   try {
-    text = await readFile(path, "utf8");
+    text = readFileSync(path, "utf8");
   } catch {
     return null;
   }
@@ -180,7 +185,12 @@ const COLLECTIONS_KEY = "collections";
 const TOOLS_KEY = "tools";
 
 /** The keys that belong to the family, not to any one tool. */
-const FAMILY_KEYS: readonly string[] = [COLLECTIONS_KEY, TOOLS_KEY, ENCRYPTION_KEY_FIELD];
+const FAMILY_KEYS: readonly string[] = [
+  COLLECTIONS_KEY,
+  TOOLS_KEY,
+  ENCRYPTION_KEY_FIELD,
+  PROVIDERS_KEY,
+];
 
 function slice(
   document: Document,
@@ -191,9 +201,10 @@ function slice(
     return { value: doc[opts.section] ?? null, wrapped: true };
   }
   // A family file carrying a family key and no section is still this tool's
-  // config: the documents are declared (0041), or the key is (0045), and the
-  // tool just has no options of its own. Handing back an empty section is
-  // what stops discovery walking past it. For the key that matters twice: a
+  // config: the documents are declared (0041), or the key is (0045), or the
+  // provider settings are, and the tool just has no options of its own.
+  // Handing back an empty section is what stops discovery walking past it.
+  // For the key that matters twice: a
   // file the key prompt created holds nothing else, and the next run must
   // find it.
   if (doc !== null && FAMILY_KEYS.some((key) => Object.hasOwn(doc, key))) {
@@ -264,6 +275,21 @@ function encryptionKeyOf(
 }
 
 /**
+ * The document's provider settings, as a spreadable field. Parsed with the
+ * tool's own `toError`, and a relative path in them resolves from `dir`.
+ */
+function providersOf(
+  document: Document,
+  source: string,
+  dir: string,
+  toError: ToError,
+): { providers?: ProvidersConfig } {
+  const { doc } = document;
+  if (doc === null || !Object.hasOwn(doc, PROVIDERS_KEY)) return {};
+  return { providers: parseProviders(doc[PROVIDERS_KEY], source, dir, toError) };
+}
+
+/**
  * The family keys as `manni key` reads them: only valid ones, and a malformed
  * one is no error, because replacing it is what the caller is for.
  */
@@ -283,55 +309,41 @@ function relativeSource(cwd: string, path: string): string {
   return relative(cwd, path).replace(/\\/g, "/");
 }
 
-function mooseWarning(name: string): string {
-  return `"${name}" is the pre-rename name of the family config file. Rename it to "${FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"}".`;
-}
-
-const FAMILY_FILES: readonly {
-  names: readonly string[];
-  kind: "manni" | "moose";
-}[] = [
-  { names: FAMILY_CONFIG_NAMES, kind: "manni" },
-  { names: MOOSE_CONFIG_NAMES, kind: "moose" },
-];
-
 /**
  * Discover the tool's config from `cwd` upward. `null` when nothing exists.
  */
-export async function findConfigFile(
+export function findConfigFileSync(
   cwd: string,
   opts: ConfigFileOptions,
-): Promise<ConfigFile | null> {
+): ConfigFile | null {
   const start = resolve(cwd);
   for (const dir of searchPath(start)) {
-    for (const { names, kind } of FAMILY_FILES) {
-      for (const name of names) {
-        const path = join(dir, name);
-        const source = relativeSource(start, path);
-        const document = await readDocument(path, source, opts.toError);
-        if (document === null) continue;
-        const found = slice(document, opts);
-        // A family file without this tool's key belongs to a sibling. Keep
-        // looking, rather than treating the file as an empty config.
-        if (found === null) continue;
-        if (kind === "moose") warn(mooseWarning(name));
-        return {
-          path,
-          dir,
-          source,
-          text: document.text,
-          kind,
-          collections: collectionsOf(document, source, opts.toError),
-          tools: toolsOf(document, source, opts.toError),
-          ...encryptionKeyOf(document, source, opts.toError),
-          ...found,
-        };
-      }
+    for (const name of FAMILY_CONFIG_NAMES) {
+      const path = join(dir, name);
+      const source = relativeSource(start, path);
+      const document = readDocument(path, source, opts.toError);
+      if (document === null) continue;
+      const found = slice(document, opts);
+      // A family file without this tool's key belongs to a sibling. Keep
+      // looking, rather than treating the file as an empty config.
+      if (found === null) continue;
+      return {
+        path,
+        dir,
+        source,
+        text: document.text,
+        kind: "manni",
+        collections: collectionsOf(document, source, opts.toError),
+        tools: toolsOf(document, source, opts.toError),
+        ...encryptionKeyOf(document, source, opts.toError),
+        ...providersOf(document, source, dir, opts.toError),
+        ...found,
+      };
     }
     for (const name of opts.legacyNames) {
       const path = join(dir, name);
       const source = relativeSource(start, path);
-      const document = await readDocument(path, source, opts.toError);
+      const document = readDocument(path, source, opts.toError);
       if (document === null) continue;
       warn(
         `"${name}" is a deprecated config file name. Move its keys under \`${opts.section}:\` in "${FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml"}", and its paths, exclude and sidecars keys to a top-level collections: list, where sidecars becomes externalMetadata.`,
@@ -357,14 +369,14 @@ export async function findConfigFile(
  * at a file that is not there is a mistake worth failing on, not a reason to
  * quietly run against something else.
  */
-export async function readConfigFile(
+export function readConfigFileSync(
   explicitPath: string,
   cwd: string,
   opts: ConfigFileOptions,
-): Promise<ConfigFile> {
+): ConfigFile {
   const path = resolve(cwd, explicitPath);
   // Report the spelling the user typed, not the resolved absolute path.
-  const document = await readDocument(path, explicitPath, opts.toError);
+  const document = readDocument(path, explicitPath, opts.toError);
   if (document === null) {
     throw opts.toError(`Config file not found: "${explicitPath}".`);
   }
@@ -383,8 +395,28 @@ export async function readConfigFile(
     // An unwrapped document carries no family key (else it would be wrapped),
     // so this only ever reads a family file's key.
     ...encryptionKeyOf(document, explicitPath, opts.toError),
+    ...providersOf(document, explicitPath, dirname(path), opts.toError),
     ...found,
   };
+}
+
+/** `findConfigFileSync`, for callers that await. */
+export function findConfigFile(
+  cwd: string,
+  opts: ConfigFileOptions,
+): Promise<ConfigFile | null> {
+  return Promise.resolve().then(() => findConfigFileSync(cwd, opts));
+}
+
+/** `readConfigFileSync`, for callers that await. */
+export function readConfigFile(
+  explicitPath: string,
+  cwd: string,
+  opts: ConfigFileOptions,
+): Promise<ConfigFile> {
+  return Promise.resolve().then(() =>
+    readConfigFileSync(explicitPath, cwd, opts),
+  );
 }
 
 /**
@@ -398,32 +430,36 @@ export async function readConfigFile(
  * malformed key is not an error here, unlike in `findConfigFile`, because
  * replacing it is what the caller is for.
  */
-export async function findFamilyConfigFile(
+export function findFamilyConfigFile(
   cwd: string,
   toError: ToError,
 ): Promise<ConfigFile | null> {
+  return Promise.resolve().then(() => findFamilyConfigFileSync(cwd, toError));
+}
+
+function findFamilyConfigFileSync(
+  cwd: string,
+  toError: ToError,
+): ConfigFile | null {
   const start = resolve(cwd);
   for (const dir of searchPath(start)) {
-    for (const { names, kind } of FAMILY_FILES) {
-      for (const name of names) {
-        const path = join(dir, name);
-        const source = relativeSource(start, path);
-        const document = await readDocument(path, source, toError);
-        if (document === null) continue;
-        if (kind === "moose") warn(mooseWarning(name));
-        return {
-          path,
-          dir,
-          source,
-          text: document.text,
-          value: null,
-          wrapped: true,
-          kind,
-          collections: collectionsOf(document, source, toError),
-          tools: toolsOf(document, source, toError),
-          ...tolerantKeysOf(document),
-        };
-      }
+    for (const name of FAMILY_CONFIG_NAMES) {
+      const path = join(dir, name);
+      const source = relativeSource(start, path);
+      const document = readDocument(path, source, toError);
+      if (document === null) continue;
+      return {
+        path,
+        dir,
+        source,
+        text: document.text,
+        value: null,
+        wrapped: true,
+        kind: "manni",
+        collections: collectionsOf(document, source, toError),
+        tools: toolsOf(document, source, toError),
+        ...tolerantKeysOf(document),
+      };
     }
   }
   return null;
@@ -434,25 +470,35 @@ export async function findFamilyConfigFile(
  * the family's key and so belongs to no one tool's section.
  *
  * The file is a family file when it is empty, carries a family key, or is
- * named as one (`manni.config.yaml`, `moose.config.yaml`): its top-level keys
+ * named as one (`manni.config.yaml`, `manni.config.yml`): its top-level keys
  * are then sections, whatever they are, and `value` is `null`. Anything else
  * is read whole as one tool's section (`wrapped: false`), which the key writer
  * refuses rather than turn into a family file under that tool's feet. Missing
  * is an error, as it is for `readConfigFile`. Keys are carried as
  * `findFamilyConfigFile` carries them.
  */
-export async function readFamilyConfigFile(
+export function readFamilyConfigFile(
   explicitPath: string,
   cwd: string,
   toError: ToError,
 ): Promise<ConfigFile> {
+  return Promise.resolve().then(() =>
+    readFamilyConfigFileSync(explicitPath, cwd, toError),
+  );
+}
+
+function readFamilyConfigFileSync(
+  explicitPath: string,
+  cwd: string,
+  toError: ToError,
+): ConfigFile {
   const path = resolve(cwd, explicitPath);
-  const document = await readDocument(path, explicitPath, toError);
+  const document = readDocument(path, explicitPath, toError);
   if (document === null) {
     throw toError(`Config file not found: "${explicitPath}".`);
   }
   const { doc } = document;
-  const named = [...FAMILY_CONFIG_NAMES, ...MOOSE_CONFIG_NAMES].includes(basename(path));
+  const named = FAMILY_CONFIG_NAMES.includes(basename(path));
   const family =
     doc === null || named || FAMILY_KEYS.some((key) => Object.hasOwn(doc, key));
   return {

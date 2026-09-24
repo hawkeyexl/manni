@@ -2,13 +2,13 @@ docs/src/content/docs/meta/reference/api.mdx:
   citations:
     - id: api-sibling-tools-are-namespaces
       claim:
-        lines: 441-442
-        integrity: sha256-237d8490d08014516b8fa17f0d42d5f99d0b7c5eb25b1aafbebc5d1f563e5769
+        lines: 441-443
+        integrity: sha256-e25ec1da603da1f4bc14bfffb6f8c3fcf1094e0323eb210ab7ce59849a950d18
       source:
         file: src/index.ts
-        lines: 3-9
-        integrity: sha256-f99642008f87bb210716a4f6d6860448568b0e1dee7d2b37da1d1655a9146bc3
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        lines: 3-10
+        integrity: sha256-12315f718c8db92640128c55ed3e16acd1f03a681388f04ea50d9f3a1a5617e8
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: api-namespace-cannot-collide
       claim:
         integrity: sha256-e0357514e8b03e0b6eab0dd59d0bae4d203d732c60be94c3715935295cea6eff

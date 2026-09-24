@@ -1,0 +1,20 @@
+# ai-context's machine attribution kept in the manifest (proposal 0046, and
+# its proposal.3 marking both keys external). The self-preference check has to
+# see them there, or a judge grades content its own model wrote.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [provenance, meta-provenance]
+
+docevals:
+  evals:
+    fresh-enough:
+      assertion: The page was reviewed this century.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 36500
+      severity: error

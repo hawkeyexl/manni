@@ -196,7 +196,10 @@ export interface FillOptions {
   model?: string;
   /** Use the on-disk proposal cache. Default true. */
   cache?: boolean;
-  /** Refuse a hosted provider: inference must run on this machine. */
+  /**
+   * Run inference on this machine with llama-cpp, over any configured
+   * provider. A `provider` other than llama-cpp or auto is refused.
+   */
   local?: boolean;
   /** Stop after this many inference calls. Counts calls, not files. */
   maxTurns?: number;

@@ -200,9 +200,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-14026b8d4677df264f3d40958ccd0ec693fc268ea2976d3018a0bd904fc603e0
       source:
         file: src/meta/cli.ts
-        lines: 1473-1476
+        lines: 1471-1474
         integrity: sha256-539ce55128f63ae1a4805e7523c91f029a967c52666af9289870c978edf03a27
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: output-stale-stamp-is-exit-1
       claim:
         integrity: sha256-f5b0936b6d55ddc6d4f6a2f3d9f367017e566ca01aae3c768216f20e5de8d15d

@@ -986,39 +986,55 @@ describe("cli fill", () => {
     }
   });
 
-  it("--local refuses a hosted provider, naming it", () => {
+  const CONTRADICTS = (provider: string): string =>
+    `docmeta: --local and --provider ${provider} contradict each other: --local runs ` +
+    "inference on this machine with llama-cpp. Drop one of them.\n";
+
+  it("--local with a hosted --provider is a contradiction, exit 2", () => {
     const r = run(["fill", "x.md", "--local", "--provider", "openai"]);
     expect(r.status).toBe(2);
-    expect(r.stderr).toMatch(/--local cannot use "openai"/);
-    expect(r.stderr).toMatch(/hosted/);
+    expect(r.stderr).toBe(CONTRADICTS("openai"));
   });
 
-  it("--local refuses claude-cli, whose inference is not local", () => {
-    // The case that matters: the binary runs here, the inference does not, and
-    // it sits third in the detection order — so it is exactly what --local
-    // would otherwise pick up while appearing to work.
+  it("--local with --provider claude-cli is a contradiction too", () => {
+    // The binary runs here, the inference does not: claude-cli never
+    // qualifies as local (proposal 0017).
     const r = run(["fill", "x.md", "--local", "--provider", "claude-cli"]);
     expect(r.status).toBe(2);
-    expect(r.stderr).toMatch(/--local cannot use "claude-cli"/);
-    expect(r.stderr).toMatch(/its inference does not/);
+    expect(r.stderr).toBe(CONTRADICTS("claude-cli"));
   });
 
-  it("--local ignores a stray key rather than detecting and then refusing", () => {
-    // With OPENAI_API_KEY set, plain `fill` auto-selects openai. Under --local
-    // detection must not run at all: announcing `auto-selected "openai"` and
-    // refusing on the next line reads as though the key had been used.
-    const r = run(["fill", "no-such-file.md", "--local"], undefined, {
-      OPENAI_API_KEY: "sk-fake",
-    });
-    expect(r.stderr).not.toMatch(/auto-selected "openai"/);
-    expect(r.stderr).not.toMatch(/--local cannot use/);
+  it("--local overrides a hosted fill.provider, saying so, and never detects", () => {
+    // Selection happens before the file walk, so the notice is said and the
+    // run then fails on the missing file: no provider is probed or built.
+    const dir = mkdtempSync(join(tmpdir(), "docmeta-cli-local-"));
+    writeFileSync(join(dir, "manni.config.yaml"), "meta:\n  fill:\n    provider: anthropic\n");
+    const r = run(["fill", "no-such-file.md", "--local"], undefined, { OPENAI_API_KEY: "sk-fake" }, dir);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain(
+      'docmeta: --local: using llama-cpp instead of "anthropic" from fill.provider.\n',
+    );
+    expect(r.stderr).not.toMatch(/auto-selected/);
+    expect(r.stderr).not.toMatch(/contradict/);
   });
 
-  it("--local accepts llama-cpp", () => {
-    // Not a network call: it fails on the missing file, having cleared the
-    // provider check, which is what this pins.
-    const r = run(["fill", "no-such-file.md", "--local", "--provider", "llama-cpp"]);
-    expect(r.stderr).not.toMatch(/--local cannot use/);
+  it("--local overrides the family's providers.provider, naming it", () => {
+    const dir = mkdtempSync(join(tmpdir(), "docmeta-cli-local-"));
+    writeFileSync(join(dir, "manni.config.yaml"), "providers:\n  provider: openai\n");
+    const r = run(["fill", "no-such-file.md", "--local"], undefined, undefined, dir);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain(
+      'docmeta: --local: using llama-cpp instead of "openai" from providers.provider.\n',
+    );
+  });
+
+  it("--local accepts --provider llama-cpp and --provider auto, quietly", () => {
+    for (const provider of ["llama-cpp", "auto"]) {
+      const r = run(["fill", "no-such-file.md", "--local", "--provider", provider]);
+      expect(r.stderr).not.toMatch(/contradict/);
+      expect(r.stderr).not.toMatch(/--local:/);
+      expect(r.stderr).not.toMatch(/auto-selected/);
+    }
   });
 
   it("exits 2 when given no paths and no config", () => {
@@ -1051,6 +1067,17 @@ describe("cli fill", () => {
     expect(r.status).toBe(2);
     expect(r.stderr).toContain("antropic");
     expect(r.stderr).toContain("auto");
+  });
+
+  it("lists every provider but the test double, and still accepts --provider mock", () => {
+    const refused = run(["fill", "test/fixtures/valid.md", "--provider", "antropic"]);
+    expect(refused.stderr).toContain(
+      'Unknown provider "antropic". Available: anthropic, openai, claude-cli, llama-cpp, auto.\n',
+    );
+    const help = run(["fill", "--help"]);
+    expect(help.stdout).not.toContain("mock");
+    const accepted = run(["fill", "test/fixtures/valid.md", "--provider", "mock", "--dry-run", "--no-cache"]);
+    expect(accepted.status).toBe(0);
   });
 
   it("exits 2 on --model without --provider", () => {

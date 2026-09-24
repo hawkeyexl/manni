@@ -42,9 +42,9 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-823cfca5fdedd2b0f9090796d7bbd743b26e94a8634169828fc5ac6faa107352
       source:
         file: src/shared/config-file.ts
-        lines: 324
-        integrity: sha256-2c17b6008820762b8b0f2428353c3d60bc936210850af60382bbd3f8d7bbe5b4
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        lines: 336
+        integrity: sha256-5aed0323077072cedc7b2f6a1a8ee916bec3a34cb9ea754541346f6c182f985f
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: collection-paths-config-relative
       claim:
         lines: 37
@@ -105,9 +105,9 @@ docs/src/content/docs/cite/set-up/index.mdx:
         integrity: sha256-22c6f5cb961cfcf5e4d8d2f85c0eb8481a311726a3d7907abffbae88da8fac9d
       source:
         file: src/shared/config-file.ts
-        lines: 193-201
-        integrity: sha256-441f60210b9652c5c6b4079a3ea115831cd07c924e44b806decec8703e8ca2b3
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        lines: 203-212
+        integrity: sha256-90ad68f7f4ab347973183c055efa9413e9c71cf8a84301e9a0bfda90c4079d9b
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: root-is-git-root-above-cwd
       claim:
         lines: 54-58

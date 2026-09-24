@@ -1,0 +1,24 @@
+# Proposal 0058: each page keeps its evals in a manifest of its own, beside
+# it. `uncovered.md` has no manifest, and reads as declaring nothing.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: "{page}.evals.yaml"
+        keys: [evals, eval-suite, eval-skip, last-reviewed]
+
+docevals:
+  evals:
+    fresh-enough:
+      assertion: The page was reviewed this century.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 36500
+      severity: error
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [fresh-enough]

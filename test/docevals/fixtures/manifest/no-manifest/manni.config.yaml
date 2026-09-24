@@ -1,0 +1,6 @@
+# No collection, and so no manifest anywhere. The evals draft still prefers
+# these keys in external metadata, so a write lands on the page and the run
+# says so once (W1, proposal 0047). Pages are named as a path.
+docevals:
+  fill:
+    confidenceThreshold: 0.5

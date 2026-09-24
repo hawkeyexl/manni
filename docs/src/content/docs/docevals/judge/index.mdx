@@ -1,0 +1,131 @@
+---
+title: Trust the judge
+description: What makes a verdict reproducible, how the ensemble reaches consensus, and where human review begins.
+---
+
+Sooner or later someone senior asks the real question: **why should a model be allowed to block our
+pipeline?**
+
+This section exists to answer it with mechanics and a number, not reassurance.
+
+## Reproducibility
+
+The sharpest form of the objection is "nondeterminism has no place in CI". Four things address it:
+
+- **Temperature 0.**
+- **Pinned models.** A named `docevals.provider` and `docevals.model` in a committed config, never a
+  floating alias. A model that changes under you is a verdict that changes under you. See
+  [Pin the model in a gate](/manni/docevals/judge/choose-a-provider/#pin-the-model-in-a-gate).
+- **Structured verdicts.** The judge returns JSON against a fixed schema, not prose someone parses.
+- **Content-addressed caching.** The same page and the same assertion return the same verdict without
+  another call.
+
+Same inputs, same answer.
+
+## The ensemble
+
+Each ai eval runs **N times independently** (`judge.ensembleRuns`, default 3). Each run is a
+separate request with **no shared context**, so they cannot reinforce one another. That is three
+independent opinions, not one opinion repeated.
+
+Consensus aggregates them. Two rules are deliberate and worth stating:
+
+- **A `partial` verdict counts as a fail.** Partial credit on a binary contract is a fail.
+- **An errored run counts against consensus.** A timeout or a provider error is not a free pass.
+
+Both asymmetries point the same way. Errors and ambiguity can push an eval toward human review, and
+can **never** produce a silent pass. That is the safety property a skeptic is probing for.
+
+## Confidence zones
+
+Consensus plus mean confidence decides the zone:
+
+| Zone | Condition | Outcome |
+|---|---|---|
+| auto-pass | passing consensus, mean confidence ≥ `judge.zones.autoPass` (default `0.8`) | `pass` |
+| auto-fail | failing consensus, mean confidence ≥ `judge.zones.autoFail` (default `0.8`) | `fail` |
+| human review | anything between | `needs-review` |
+
+This is the reframe that makes the design make sense: **the judge is not being asked to be right
+every time. It is being asked to know when it is unsure.**
+
+Seen that way, the human-review zone stops looking like an admission of failure. It starts looking
+like what makes a binary verdict acceptable at all. Handling that queue is
+[Human review](/manni/docevals/judge/human-review/).
+
+Tightening the thresholds sends more to people; loosening sends more to automation. Do not tune them
+by feel. [Calibrate](/manni/docevals/judge/calibrate/) tells you what the trade actually costs.
+
+## Binary verdicts, non-binary quality
+
+Every eval is pass or fail. The nuance lives in the **suite pass rate**, where a regression suite
+targets 1.0 and a capability suite targets about 0.7 instead. That makes "70% of our tutorials
+explain why before how" expressible, without any eval returning a mushy score. See
+[Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
+
+## When the judge looks wrong
+
+Nearly always, the assertion is. Before adjusting zones, ensemble size, or models, re-read the
+assertion against the two-reviewer test in
+[Write good assertions](/manni/docevals/evals/write-good-assertions/). An eval that keeps landing in
+review is telling you it is ambiguous.
+
+`calibrate` enforces this: below the agreement threshold it exits 1, and the correct response is to
+refine the assertions, not the grader.
+
+## Self-preference
+
+A model grading its own output favors it. So manni docevals checks each ai eval before it is judged.
+Is the judge's model among the machines the page records for what that eval grades? The
+model compared is the one that judges *this eval*, after its own `provider:` and `model:` and any
+`--model` flag, not the run's default.
+
+There are two ways the judge can be grading its own work. The first is **content**: it wrote what
+the eval reads. Which record answers that depends on the eval's
+[`target`](/manni/docevals/reference/frontmatter/#target-selects-which-bytes-are-graded):
+
+| `target` | Machines compared against |
+|---|---|
+| `body` (the default) | the `generated-by` of every `provenance` entry |
+| `frontmatter` | the `generated-by` of every `meta-provenance` entry that names `fields` |
+| `raw` | both |
+| `{source: file, path}` | none; a companion file carries its own record if it is a page |
+
+The check covers the whole body, because `target` has no form that names lines. The second is
+**criterion**. A `meta-provenance` entry for the judge's model lists this eval's id under `evals`,
+so the judge proposed the assertion it is grading. When both hold, content is reported.
+
+Each case warns on stderr, once per page and eval:
+
+```text
+manni: docs/limits.md: provenance names claude-fable-5 for the body this eval grades, and it is also the judge. Self-judging favors the author; give "limits-stated" a model: of its own.
+manni: docs/limits.md: meta-provenance names claude-fable-5 for the fields this eval grades, and it is also the judge. Self-judging favors the author; give "description-matches" a model: of its own.
+manni: docs/limits.md: meta-provenance says claude-fable-5 proposed "limits-stated", and it is also the judge. Self-judging favors the author; give "limits-stated" a model: of its own.
+```
+
+A `raw` eval whose match is only in `meta-provenance` gets the second sentence. The same sentence
+is a warning-level problem in every report format, and the result carries
+`selfPreference: {axis: "content" | "criterion", model}`.
+
+:::note[A warning, never a failure]
+Bias skews a verdict. It does not stop one forming, so the verdict stands, and the exit code is
+unchanged. The fix the sentence names is to give the eval a `model:` other than the page's
+author. For a criterion match, a person reviewing the eval and deleting its id from
+`meta-provenance` also clears it.
+:::
+
+## What runs where
+
+- `--deterministic-only` skips the judge entirely. No provider, no cost, and the right default for
+  forks and pre-commit hooks.
+- `--ai-only` runs only judged evals.
+- `--runs <n>` overrides the ensemble size for a run.
+- `--no-cache` forces fresh judging.
+
+## The pages here
+
+| Page | Answers |
+|---|---|
+| [Calibrate](/manni/docevals/judge/calibrate/) | "Is the judge actually agreeing with us?", with a number |
+| [Human review](/manni/docevals/judge/human-review/) | "Who clears the queue, and does it persist?" |
+| [Choose a provider](/manni/docevals/judge/choose-a-provider/) | "Can we run this without sending pages to a vendor?" |

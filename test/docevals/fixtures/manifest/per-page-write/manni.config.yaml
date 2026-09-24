@@ -1,0 +1,13 @@
+# Proposal 0058 on the write side: the page's own manifest lives under a
+# prefix, and neither the directory nor the file exists until a write.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: "evals/{page}.yaml"
+        keys: [evals, meta-provenance]
+
+docevals:
+  fill:
+    confidenceThreshold: 0.5

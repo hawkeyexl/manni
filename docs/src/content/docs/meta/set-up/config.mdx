@@ -34,11 +34,10 @@ manni meta finds your config in one of two ways:
 {/* cite collections-only-file-is-metas-config */}
 A file with `collections:` and no `meta:` is still the metadata tool's config. That is deliberate. One file describes the repository, so a repo that declares its documents has declared them for every tool. That holds whether or not it has tuned that tool yet.
 
-{/* cite moose-config-read-under-previous-name */}
 {/* cite deprecated-config-names-warn-on-stderr */}
 {/* cite docmeta-config-is-an-unwrapped-meta-section */}
 {/* cite legacy-file-carries-no-collections */}
-Two older file names are still read, each with a warning on stderr. `moose.config.yaml` is the family file under its previous name. `docmeta.config.yaml` holds the `meta:` section as its whole document, with no wrapper key. A legacy file has no top-level, so it cannot carry collections; rename it to `manni.config.yaml` and split its keys across the two halves. The [configuration reference](/manni/meta/reference/configuration/#discovery) has the full order.
+One older file name is still read, with a warning on stderr. `docmeta.config.yaml` holds the `meta:` section as its whole document, with no wrapper key. A legacy file has no top-level, so it cannot carry collections; rename it to `manni.config.yaml` and split its keys across the two halves. The [configuration reference](/manni/meta/reference/configuration/#discovery) has the full order.
 
 {/* cite using-config-line-names-the-file */}
 {/* cite no-config-skips-discovery */}

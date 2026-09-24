@@ -1,0 +1,607 @@
+---
+title: CLI reference
+description: Every manni docevals command, argument, and flag, with the exit code each produces.
+---
+
+{/* The command, argument, and option tables on this page are drift-checked
+    against src/docevals/cli.ts by scripts/check-cli-reference.mjs (npm run
+    docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
+    sync with the code; descriptions are free-form. */}
+
+Eight commands under one subcommand. Every flag below is verified against
+`src/docevals/cli.ts`, and the exit codes are exercised by the inline tests at
+the foot of this page.
+
+```sh
+manni docevals [command] [command options] [arguments]
+```
+
+## Common conventions
+
+The commands that read pages, `run`, `list`, `generate`, `fill`, and `promote`,
+take **positional paths**: files, directories, and globs, relative to the
+working directory. With none given, they read every
+[collection](/manni/meta/reference/configuration/#collections) the config
+declares, or the ones `--collection` names. A collection's `paths` resolve from
+the config file's directory, wherever the command runs. No paths and no
+collections is **exit 2**. `node_modules` and `.git` are never read.
+
+| Flag | Commands | Meaning |
+|---|---|---|
+| `-c, --config <path>` | all except `init` and `review` | Path to `manni.config.yaml`. Without it, manni docevals looks for that file from the working directory up to the repository root. It reads the file's `docevals:` key and its top-level `collections:` and `providers:` keys. With no file at all, built-in defaults apply and there are no named evals, suites, or collections. |
+| `--no-config` | `run`, `list`, `generate`, `fill`, `promote` | Ignore any discovered config file and run on built-in defaults. `-c` and `--no-config` set the same option, so the one written later wins. |
+| `--collection <name>` | same as above | Read only this configured collection. Repeatable, one name per occurrence, never comma-separated. Cannot be combined with positional paths, and needs a config file to select from. Each of those is **exit 2**, as is a name the config does not declare. |
+| `--exclude <glob>` | same as above | Glob to exclude. Repeatable. Applies to typed paths and collections alike. A collection's own `exclude:` applies only when the run reads that collection. |
+| `-f, --format <format>` | `list`, `run`, `fill` | Output format. `run` accepts `pretty`, `json`, `markdown`, `github`, `sarif`, `junit`, `html`; `list` and `fill` accept `pretty` and `json`. Anything else is a usage error: **exit 2**, allowed set in the message. That includes `run`'s `markdown` passed to `list`. See [Output and exit codes](/manni/docevals/reference/output-and-exit-codes/#which-formats-each-command-accepts). |
+| `--provider <name>` | `run`, `generate`, `fill`, `promote`, `calibrate` | `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. Overrides `docevals.provider`, the family's [`providers.provider`](/manni/meta/reference/configuration/#providers), and an eval's own `provider:`. `auto`, the default, detects a provider exactly as `manni meta fill` does. An unknown name is **exit 2**. |
+| `--model <model>` | same as above | The model within the provider. Overrides `docevals.model`, and an eval's own `model:`. It needs a named provider, from `--provider`, `docevals.provider` or `providers.provider`, because a model name does not say which provider owns it: a model under `auto` is **exit 2**. Unset, the provider's own default model is used. |
+
+Flags override config; they do not bypass it. An unset flag falls through to
+the resolved config value, so a config file and the CLI reach the same code
+paths.
+
+Two of those flags do less than they look like they do to a corpus whose eval
+keys live in an
+[external-metadata manifest](/manni/docevals/reference/frontmatter/#where-evals-live). `--collection`
+and positional paths narrow which pages are read, never which manifests supply
+their keys. A page named by path is still a member of whatever collection
+contains it. `--no-config` does remove them, since there are then no
+collections and so no manifests. A run under it reads frontmatter alone.
+
+Each command's table below lists every flag it accepts, the shared ones
+included. A table is the whole surface of its command.
+
+## Global options
+
+Global options are accepted before the subcommand.
+
+| Option | Description |
+|---|---|
+| `-V, --version` | Print the manni version and exit. |
+| `-h, --help` | Print help for the program or a subcommand. |
+
+## `docevals`
+
+The evals tool. Every command on this page lives under it. `docevals` accepts
+its own `-V, --version`, which reports the manni version, and `-h, --help`.
+
+```sh
+manni docevals [command] [command options] [arguments]
+```
+
+## `docevals run`
+
+Runs every resolved eval. Deterministic graders come first (cheapest first),
+then the AI judge, then human-review resolution.
+
+```sh
+manni docevals run [paths...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to evaluate, relative to the working directory. Optional; without them, the configured collections. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `-f, --format` | `<pretty\|json\|markdown\|github\|sarif\|junit\|html>` | `pretty` | Output format. An unknown value is a usage error (exit 2). |
+| `--deterministic-only` | n/a | off | Run only `command` and `tool:*` graders. AI-graded evals report as `skipped`. No provider needed. This is the offline path. |
+| `--ai-only` | n/a | off | Run only AI-judged evals; skip deterministic graders. |
+| `--allow-execution` | `<kind>` | n/a | Grant content-authored execution for this run: `frontmatter-commands` or `page-embedded-steps`. Repeat the flag to grant both. Adds to `execution.allow`. |
+| `--no-execution` | n/a | off | Clear every execution grant for this run, whatever the config says. |
+| `--no-generate` | n/a | off | Do not generate scripts for command evals that lack a `command`. |
+| `--no-cache` | n/a | off | Bypass the judge response cache. |
+| `--fail-on-review` | n/a | off | Exit 1 when any eval lands in the human-review zone. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Judge provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
+| `--model` | `<model>` | config `model`, else the provider's default | Judge model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `docevals.provider`, the family's `providers.provider` and an eval's own `provider:`. A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2). |
+| `--runs` | `<n>` | config `judge.ensembleRuns` | Ensemble runs per eval. Overrides the config default of 3, and an eval's own `runs`. |
+| `--chunk-chars` | `<n>` | config `judge.chunkChars` | Characters of page per judge call. A longer page is read in parts and judged once against the collected evidence. The config default is 12000. |
+| `--eval` | `<name>` | n/a | Run only this eval. Repeat the flag for more than one (`--eval a --eval b`). Names are **not** space-separated, because a variadic flag would swallow the following glob. **Suite targets are not evaluated while a filter is active**; see below. A name that matches nothing is a usage error: **exit 2**. |
+| `--suite` | `<name>` | n/a | Run only the evals that report under the named suite. Same suspension of suite targets. A suite the config does not define is **exit 2**, with the defined names in the message. |
+| `--since` | `<ref>` | n/a | Evaluate only the pages that differ between `<ref>` and `HEAD`. Corpus-wide graders still see every page. Suite targets are suspended **when the scope leaves pages out**. Nothing changed is **exit 0**, not an error; see below. |
+| `--max-turns` | `<n>` | config `judge.maxTurns` | Stop judging after this many uncached **ensemble runs**. One ai eval spends `judge.ensembleRuns` turns; a cached ensemble spends none. A run may make a second provider call when the first response fails schema validation. This is therefore a floor on API calls rather than an exact count. Unbounded by default. |
+| `--baseline` | `[path]` | n/a | Fail only on findings a recorded baseline does not already hold. With no path, the configured `baseline:`, then `.manni-docevals-baseline.json`. |
+| `--no-baseline` | n/a | off | Ignore the configured `baseline:` for this run, so the full backlog reports again. |
+| `--write-baseline` | `[path]` | n/a | Record this run's findings as the baseline. **With no path, the configured one**; see below. |
+
+### The findings baseline
+
+A baseline records today's findings so a run fails only on new ones. It covers
+**findings**, which means `command` and `tool:*` graders. It does not cover
+judged verdicts, an eval that errored, or a suite target. Full behavior in
+[Retrofit a legacy corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/#the-ratchet);
+the file itself in
+[Files and state](/manni/docevals/reference/files-and-state/#findings-baseline).
+
+**A bare `--write-baseline` records into the configured path, not the
+default.** Get that backwards and a repo pointing `baseline:` somewhere custom
+records into a file nothing reads. Every run still fails, an unreferenced file
+grows in the diff, and the ratchet does nothing while looking like it works.
+Recording with no `baseline:` set at all is reported as a warning naming the
+config file.
+
+A recording run applies the baseline it just wrote, so it exits `0` on
+findings. Recording a finding is declaring it accepted. A `--write-baseline`
+you have to wrap in `|| true` loses the exit code that matters on the next
+run. A suite below target or an errored eval still exits `1`.
+
+Every re-record reports the diff against the previous file:
+
+```console
+Baseline .manni-docevals-baseline.json: recorded 1 finding(s) (+0, -1).
+  1 previously recorded finding(s) are no longer in the baseline. If this run covered less of the
+  corpus than the last one, they have just been forgiven.
+```
+
+`removed` is the number to watch. It is the only thing in a CI log that makes
+an over-forgiving re-record visible. A baseline whose JSON, `version`, or
+fingerprints are malformed is **exit 2**, with the offending entry named.
+
+### Selecting evals suspends suite enforcement
+
+`--eval` and `--suite` narrow the run after resolution and before grading.
+Resolution still happens in full, so a bad `eval-*` key or an unknown grader
+on a page you filtered out still reports.
+
+A suite target is a claim about a body of checks. A run narrowed to one
+passing eval out of a suite of twelve would compute `1/1 = 100%`. That clears
+a target of `1.0` and exits `0` having checked almost nothing. So **while
+either flag is active, suite targets are reported but not enforced**. Each
+summary carries the numbers it measured and withholds the verdict:
+
+```console
+$ manni docevals run --deterministic-only --no-generate --eval readable
+...
+Suites
+  how-to: 2/2 passed — 100% vs target 100% partial — filtered run, target not evaluated
+  reference: 4/4 passed — 100% vs target 100% partial — filtered run, target not evaluated (1 skipped)
+```
+
+What still holds:
+
+- A `fail` or an `error` among the evals that ran exits **1**.
+- An `error`-level resolution problem exits **1**.
+- A filter matching no evals exits **2**. A green run over zero evals is never
+  the answer.
+- `--suite` filters, it does not redefine. It selects the evals that report
+  under the named suite, which a page takes from its `eval-suite` or
+  `defaults.suite`. `target-pass-rate` is untouched.
+
+This is why `--eval` is a local debugging flag and not a CI invocation. See
+[Exit codes and annotations](/manni/docevals/ci/exit-codes-and-annotations/#a-filtered-run-is-not-a-gate)
+and the `partial` field in
+[Output and exit codes](/manni/docevals/reference/output-and-exit-codes/#suites).
+
+### Scoping a run to what changed
+
+`--since <ref>` grades only the pages that differ between `<ref>` and `HEAD`,
+so a job on a pull request does not re-judge a corpus nobody touched.
+
+```console
+$ manni docevals run --since origin/main --format github
+```
+
+The comparison is `<ref>...HEAD`, with three dots, so the diff is against the
+merge base. That is what a pull request means by "changed": commits that
+landed on the base branch after yours forked are not your changes. It also
+means **uncommitted working-tree edits are not included**, which is right for
+CI and surprising locally. Edit a page, run `--since main`, and that page is
+not graded until the edit is committed.
+
+Two things the scope does **not** narrow:
+
+- **Corpus-wide graders.** `tool:differentiation` compares related pages
+  against each other, so its input set *is* its subject. Hand it one page and
+  it has nothing to compare against, reports no findings, and the eval records
+  a **pass**. Scoping it would delete the check rather than shrink it. Corpus
+  graders therefore keep the whole corpus. The visible consequence is that a
+  scoped run can report a finding on a page you did not touch. The message
+  names the other page.
+- **Resolution.** Every page is still read and resolved. A bad `eval-*` key or
+  an unknown grader on a page outside the scope still reports, and still exits
+  `1`.
+
+Three things it does change:
+
+- **Nothing changed is exit `0`**, the opposite of an `--eval` that matches
+  nothing. A branch that touched only source is a correct answer, not a typo.
+  The run says so rather than going quiet:
+
+  ```console
+  No pages changed since origin/main — nothing was evaluated.
+  ```
+
+- **Suite targets are reported but not enforced *when the scope left pages
+  out***. A run that measured a sample of the corpus withholds the verdict,
+  exactly as under `--eval`. The condition is coverage actually lost, not the
+  flag's presence. A pull request that touched every page in the corpus is a
+  full run, and its suite targets are enforced normally. Deriving it from the
+  flag would have turned the aggregate gate off permanently for anyone who
+  adopted `--since` in CI. That is what ADR 01040 intends it for.
+- **`--write-baseline` is refused**: **exit 2**, before git is even run. A
+  re-record rebuilds the file from this run's findings, so recording from a
+  scoped run would forgive every finding the scope excluded. Reading a
+  baseline is unaffected, and pages outside the scope are not reported as no
+  longer occurring.
+
+In GitHub Actions, `actions/checkout` clones with `fetch-depth: 1`, so
+`origin/main` is usually not present locally and `--since origin/main` is
+**exit 2** with a message naming the ref. Fetch the full history:
+
+```yaml
+- uses: actions/checkout@v7
+  with:
+    fetch-depth: 0
+```
+
+`--since` has no config key, for the same reason `--eval` and `--suite` have
+none. It selects work for one invocation rather than setting policy, and the
+ref you compare against belongs to the job, not to the repository. `list`
+takes no `--since`.
+
+`--since` and the [judge cache](/manni/docevals/ci/cost-and-caching/) are
+complements. `--since` avoids dispatching work on a page that did not change.
+The cache avoids paying twice for a page that did change but whose prompt did
+not.
+
+## `docevals list`
+
+Shows the resolved eval plan per page and runs nothing. This is the dry run
+for [named evals and suites](/manni/docevals/evals/named-evals-and-suites/).
+Use it when a page's frontmatter, a referenced eval, and a suite could each
+contribute the same name.
+
+```sh
+manni docevals list [paths...] [options]
+```
+
+```console
+$ manni docevals list test/docevals/fixtures/pages/docs/actions/goTo.mdx
+test/docevals/fixtures/pages/docs/actions/goTo.mdx (suite: reference)
+  - no-future-promises [ai, regression, config]
+  - fresh-enough [tool:freshness, regression, config]
+  - readable [tool:reading-level, regression, config]
+  - frontmatter-valid [tool:docmeta, regression, config]
+  - names-an-action [tool:regex, regression, config]
+  - ships-a-schema [tool:file-exists, regression, config]
+
+1 pages, 6 evals resolved
+```
+
+Each line is `name [grader, type, source]`, where source is `config` or
+`page`.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to list, relative to the working directory. Optional; without them, the configured collections. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `run`'s wider set is rejected here rather than falling back to `pretty` (exit 2). |
+| `--eval` | `<name>` | n/a | Show only this eval. Repeatable, like the `run` flag. |
+| `--suite` | `<name>` | n/a | Show only the evals that report under the named suite. |
+
+These are the same two filters `run` takes, and they fail the same way: a
+name that matches nothing is **exit 2**. Reach for them to answer "what would
+`--eval X` actually have run" without spending a grading pass.
+
+## `docevals generate`
+
+Writes a check script for every `command` eval that has a plain-language
+assertion but no `command`, then records the command where the eval lives. See
+[Deterministic checks](/manni/docevals/evals/deterministic-checks/).
+
+```sh
+manni docevals generate [paths...] [options]
+```
+
+Exits 1 if any target failed to generate.
+
+A page-defined eval whose owning manifest has no entry for the page has nowhere to hold the command.
+That eval is refused before the model is asked, and no script is written for it. Each refusal prints
+under the generated paths and counts against the exit code.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to read, relative to the working directory. Optional; without them, the configured collections. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Provider that writes the scripts: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
+| `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `docevals.provider`, the family's `providers.provider` and an eval's own `provider:`. A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2). |
+
+## `docevals fill`
+
+Proposes evals for each page from its content, gated on a self-reported
+confidence.
+
+```sh
+manni docevals fill [paths...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to fill, relative to the working directory. Optional; without them, the configured collections. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. An unknown value is rejected before any work is done (exit 2). |
+| `--dry-run` | n/a | off | Report proposals without writing frontmatter. Run this first. You see every proposal, and how many inference calls the pass made, before anything touches the repo. |
+| `--confidence` | `<n>` | config `fill.confidenceThreshold` | Minimum confidence to write, 0 to 1. The config default is `0.7`. Values above 1 are a usage error. |
+| `--max-turns` | `<n>` | config `fill.maxTurns` | Stop after this many uncached inference calls, exactly one per page filled. Unbounded by default. |
+| `--no-cache` | n/a | off | Bypass the proposal cache. |
+| `--chunk-chars` | `<n>` | config `fill.chunkChars` | Characters of page per fill call. A longer page is proposed in parts. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
+| `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `docevals.provider`, the family's `providers.provider` and an eval's own `provider:`. A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2). |
+
+Raw proposals are cached **before** the confidence gate, so re-running at a
+different `--confidence` spends no turns.
+
+### Where `fill` writes
+
+Each key goes where its
+[location](/manni/docevals/reference/frontmatter/#where-evals-live) puts it. A local manifest that
+owns `evals` takes them, spliced into the page's entry with every other byte of the file left alone.
+The result's `wroteTo` names it, `"page"` or the manifest's path, and the pretty report prints it
+under the page's line:
+
+```text
+filled   docs/install.md  +1 evals (states-the-problem 0.90)
+    evals → site.metadata.yaml
+```
+
+Where no manifest owns the key, the page keeps it. On a terminal `fill` offers the relocation that
+would give it one, asked once per collection before the first model request. Off a terminal, and on
+a declined offer, the evals go to the page and one line per collection says so.
+
+A manifest that joins on a field the page lacks has no entry to hold the value. That file is refused
+rather than written elsewhere. It reports as an `error` result with no `wroteTo`, the rest of the run
+is filled, and the exit code is `1`. See
+[The writers say where a value went](/manni/docevals/reference/output-and-exit-codes/#the-writers-say-where-a-value-went).
+
+### What `fill` records
+
+The evals `fill` writes are recorded in `meta-provenance`, in the same edit,
+merged into the entry for the run's model. That key follows its own location,
+so the entry lands on the page or in the manifest that owns it. See
+[`provenance` and `meta-provenance`](/manni/docevals/reference/frontmatter/#provenance-and-meta-provenance).
+The pretty report prints the entry under the page's line, with every id it now
+holds:
+
+```text
+filled   docs/limits.md  +1 evals (links-resolve 0.80)
+    meta-provenance  claude-fable-5: retry-named, links-resolve
+```
+
+A page whose `meta-provenance` is not a list still gets its evals, and the
+entry is not written:
+
+```text
+filled   docs/limits.md  +1 evals (links-resolve 0.80)
+    meta-provenance not written: this page's schemas do not allow it
+```
+
+With `-f json`, each result carries `metaProvenance` in `manni meta fill`'s
+shape. It is reported under `--dry-run` too, and absent on a page where
+nothing was written:
+
+```json
+{
+  "file": "docs/limits.md",
+  "status": "proposed",
+  "metaProvenance": {
+    "written": true,
+    "entry": {
+      "generated-by": "claude-fable-5",
+      "fields": ["/description"],
+      "evals": ["retry-named", "links-resolve"],
+      "confidence": { "/description": 0.9, "retry-named": 0.75, "links-resolve": 0.8 }
+    }
+  }
+}
+```
+
+A written entry carries `destination` when a manifest holds it. An entry that
+was not written reads `{"written": false, "skipReason": …}`, with one of three
+reasons; the
+[report reference](/manni/docevals/reference/output-and-exit-codes/#the-writers-say-where-a-value-went)
+lists them. `fill` never sends a page's frontmatter to the model, so neither
+record can be proposed.
+
+## `docevals promote`
+
+Reviews ai-graded evals and reports which are expressible as deterministic
+checks. **Report-only by default**; `--write` applies the conversions. See
+[Promote to deterministic](/manni/docevals/adopt/promote-to-deterministic/).
+
+```sh
+manni docevals promote [paths...] [options]
+```
+
+`--write` rewrites each eval where it lives, so a manifest that owns the page's evals is the file
+that changes. A promotable eval with nowhere to go carries an `error` saying why, `applied` stays
+false, and the pretty report prints the sentence under the proposal.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to read, relative to the working directory. Optional; without them, the configured collections. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--no-config` | n/a | off | Ignore any discovered config file. See [Common conventions](#common-conventions). |
+| `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
+| `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `--write` | n/a | off | Apply promotions. It writes the scripts and rewrites the evals. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
+| `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `docevals.provider`, the family's `providers.provider` and an eval's own `provider:`. A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2). |
+
+## `docevals calibrate`
+
+Measures judge agreement against a human-verified golden set.
+
+```sh
+manni docevals calibrate [options]
+```
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. See [Common conventions](#common-conventions). |
+| `--golden` | `<dir>` | `.manni/docevals/golden` | Golden set directory. |
+| `--seed` | n/a | off | Write golden candidates from recorded reviews into `<golden>/from-reviews.yaml`, then exit. Judges nothing and constructs no provider, so it runs with no API key. Idempotent on `(file, eval)`: re-running updates rather than duplicates, and never un-reviews a confirmed case. Every new case lands `reviewed: false`. |
+| `--provider` | `<name>` | config `provider`, else `auto` | Provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. |
+| `--model` | `<model>` | config `model`, else the provider's default | Model. Needs a named provider. |
+| `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `docevals.provider`, the family's `providers.provider` and an eval's own `provider:`. A `--provider` other than `llama-cpp` or `auto` is a usage error (exit 2). |
+| `--runs` | `<n>` | config `judge.ensembleRuns` | Ensemble runs per case. |
+| `--max-turns` | `<n>` | config `judge.maxTurns` | Stop judging after this many uncached **ensemble runs**, the same unit as `run`, since calibration goes through the same judge. One case spends `judge.ensembleRuns` turns. Run-wide, not per case: every case is judged in one batched call. A cached case spends none. |
+| `--no-cache` | n/a | off | Bypass the judge response cache. |
+
+Exits 1 when agreement is below the threshold. Unreviewed and stale cases are
+judged and **counted** toward that rate, flagged `[unreviewed]` / `[stale]`
+per case with a summary line naming the counts. See
+[Calibrate](/manni/docevals/judge/calibrate/).
+
+## `docevals init`
+
+Writes a starter `manni.config.yaml` in the working directory, with the
+settings under a `docevals:` key. Takes no options.
+
+```sh
+manni docevals init
+```
+
+## `docevals review`
+
+With no arguments, lists the evals awaiting a human verdict. With all three,
+records one.
+
+```sh
+manni docevals review [file] [eval] [verdict] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[file]` | Page path. |
+| `[eval]` | Eval name. |
+| `[verdict]` | `pass` or `fail`. |
+
+Supplying a file without an eval and verdict is a usage error. See
+[Human review](/manni/docevals/judge/human-review/).
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--reviewer` | `<name>` | n/a | Reviewer recorded with the verdict. |
+| `--note` | `<text>` | n/a | Optional note. |
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Everything passed. |
+| `1` | Findings, errors, or a suite below its target pass rate. The author's problem. |
+| `2` | Operational or usage error, such as bad config, a missing provider, or a malformed flag. Not the author's problem. |
+
+Full detail in
+[Output and exit codes](/manni/docevals/reference/output-and-exit-codes/).
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml),
+    against the committed fixture corpus and the repository's own manni.config.yaml.
+    Config: .doc-detective.json. */}
+
+{/* step {"description":"The CLI lists all eight commands.","runShell":{"command":"manni docevals --help","exitCodes":[0],"stdio":"/list[\\s\\S]*run[\\s\\S]*generate[\\s\\S]*fill[\\s\\S]*promote[\\s\\S]*calibrate[\\s\\S]*init[\\s\\S]*review/"}} */}
+
+{/* step {"description":"calibrate exposes --seed and --max-turns.","runShell":{"command":"manni docevals calibrate --help","exitCodes":[0],"stdio":"/--seed[\\s\\S]*--max-turns/"}} */}
+
+{/* step {"description":"run exposes the three baseline flags.","runShell":{"command":"manni docevals run --help","exitCodes":[0],"stdio":"/--baseline[\\s\\S]*--no-baseline[\\s\\S]*--write-baseline/"}} */}
+
+{/* step {"description":"--seed with nothing recorded names the command that records one, and exits 0 without a provider.","runShell":{"command":"manni docevals calibrate --seed","exitCodes":[0],"stdio":"No recorded reviews to seed from"}} */}
+
+{/* step {"description":"An unknown --provider is a usage error before anything runs (exit 2).","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --provider gemini","exitCodes":[2],"stdio":"Unknown provider \"gemini\""}} */}
+
+{/* step {"description":"A model under auto names no provider to own it (exit 2).","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --provider auto --model some-model","exitCodes":[2],"stdio":"docevals.provider"}} */}
+
+{/* step {"description":"`list` prints the resolved plan with grader, type, and source, and runs nothing.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/goTo.mdx","exitCodes":[0],"stdio":", regression, config]"}} */}
+
+{/* step {"description":"Exit 0 when every eval passes.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}
+
+{/* step {"description":"Exit 1 when an eval fails.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1]}} */}
+
+{/* step {"description":"Exit 2 for an operational error, distinct from a finding.","runShell":{"command":"manni docevals run -c does-not-exist.yaml","exitCodes":[2]}} */}
+
+{/* step {"description":"--confidence above 1 is a usage error.","runShell":{"command":"manni docevals fill --confidence 5 --dry-run","exitCodes":[2]}} */}
+
+{/* step {"description":"An unknown --format is a usage error on run, and the message names the allowed set.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --format xml","exitCodes":[2],"stdio":"/must be one of pretty \\| json \\| markdown \\| github/"}} */}
+
+{/* step {"description":"list rejects an unknown --format the same way, with its own narrower set.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/find.mdx --format xml","exitCodes":[2],"stdio":"/must be one of pretty \\| json/"}} */}
+
+{/* step {"description":"list rejects a format that is valid only for run, rather than falling back to pretty.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/find.mdx --format markdown","exitCodes":[2]}} */}
+
+{/* step {"description":"fill rejects an unknown --format before doing any work.","runShell":{"command":"manni docevals fill --dry-run --format xml","exitCodes":[2]}} */}
+
+{/* step {"description":"A filtered run reports its suites as partial instead of passing their targets.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --eval readable","exitCodes":[0],"stdio":"filtered run, target not evaluated"}} */}
+
+{/* step {"description":"An --eval name that matches nothing is a usage error, not a green run over zero evals.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --eval no-such-eval","exitCodes":[2],"stdio":"matched no evals"}} */}
+
+{/* step {"description":"An undefined --suite is a usage error, and the message names the suites that are defined.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --suite no-such-suite","exitCodes":[2],"stdio":"is not a defined suite"}} */}
+
+{/* step {"description":"list takes the same filters and rejects an unmatched name the same way.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages --eval no-such-eval","exitCodes":[2]}} */}
+
+{/* step {"description":"run exposes --since.","runShell":{"command":"manni docevals run --help","exitCodes":[0],"stdio":"--since <ref>"}} */}
+
+{/* step {"description":"Nothing changed since HEAD, so the run exits 0 and says nothing was evaluated, not a usage error.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --since HEAD","exitCodes":[0],"stdio":"nothing was evaluated"}} */}
+
+{/* step {"description":"A ref git cannot resolve is exit 2, and the message names the shallow clone that causes it in CI.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --since no/such/ref","exitCodes":[2],"stdio":"shallow clone"}} */}
+
+{/* step {"description":"--since cannot be combined with --write-baseline: the re-record would forgive every finding the scope excluded.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --since HEAD --write-baseline","exitCodes":[2],"stdio":"cannot be combined"}} */}
+
+{/* step {"description":"--collection cannot be combined with positional paths.","runShell":{"command":"manni docevals list --collection site test/docevals/fixtures/pages","exitCodes":[2],"stdio":"cannot be combined with paths"}} */}
+
+{/* step {"description":"A collection the config does not declare is exit 2, and the message names the declared ones.","runShell":{"command":"manni docevals list --collection no-such-collection","exitCodes":[2],"stdio":"no collection named \"no-such-collection\""}} */}
+
+{/* step {"description":"list takes no --since.","runShell":{"command":"manni docevals list --since HEAD","exitCodes":[2],"stdio":"unknown option"}} */}

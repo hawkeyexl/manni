@@ -1,6 +1,6 @@
 ---
 title: Configuration reference
-description: "Every manni.config.yaml key: the top-level collections list every tool reads, and the meta section's schemas, overrides, checks and schemaTrust, with types, defaults, discovery rules, and how config merges with CLI flags."
+description: "Every manni.config.yaml key: the top-level collections list and providers map every tool reads, and the meta section's schemas, overrides, checks and schemaTrust, with types, defaults, discovery rules, and how config merges with CLI flags."
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -12,7 +12,8 @@ for every tool in the family to read. [`meta:`](#keys) holds what is the
 metadata validator's own business. That is the default [schema
 set](/manni/meta/reference/schema-resolution/), per-collection and per-glob
 overrides, cross-file checks, and the trust settings. With both in place CI can
-run a bare `manni meta validate`.
+run a bare `manni meta validate`. [`providers:`](#providers), also at the top,
+says which model provider every tool that sends content to a model uses.
 
 {/* cite config-is-optional */}
 The config is optional. Every key has a default, and manni meta runs without a
@@ -1198,6 +1199,131 @@ cannot match the entries, and refuses with exit 2:
 externalMetadata join field "owner" is encrypted on these pages, and no encryption key is available to match them.
 ```
 
+## Providers
+
+`providers:` holds the inference settings that `manni meta fill` and
+`manni docevals` both read. It sits at the top level beside `collections:`, so
+one declaration serves every tool that sends content to a model. It names the
+provider and model to fall back on, and how to reach each provider.
+
+```yaml title="manni.config.yaml"
+providers:
+  provider: openai
+  model: <model-id>
+  openai:
+    baseUrl: https://llm-gateway.internal.example.com/v1
+    apiKeyEnv: GATEWAY_API_KEY
+  llama-cpp:
+    modelsDir: .models
+    thoughtTokens: 0
+collections:
+  - name: site
+    paths: ["docs/**/*.{md,mdx}"]
+```
+
+| Key | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `providers.provider` | `string` | no | `auto` | The provider a tool uses when nothing more specific names one. One of `auto`, `anthropic`, `openai`, `claude-cli` or `llama-cpp`, where `auto` [detects one](/manni/meta/reference/cli/#meta-fill). An unknown name is an error (exit 2). |
+| `providers.model` | `string` | no | the provider's default | The model within `providers.provider`, which must then name a provider other than `auto` (exit 2). The model goes only to that provider. |
+| `providers.anthropic.apiKeyEnv` | `string` | no | `ANTHROPIC_API_KEY` | The environment variable that holds the Anthropic key. |
+| `providers.openai.baseUrl` | `string` | no | `https://api.openai.com/v1` | Any OpenAI-compatible endpoint, such as Ollama, vLLM or an internal gateway. |
+| `providers.openai.apiKeyEnv` | `string` | no | `OPENAI_API_KEY` | The environment variable that holds the key for that endpoint. |
+| `providers.claude-cli.command` | `string` | no | `claude` | The Claude CLI executable to run. |
+| `providers.llama-cpp.modelsDir` | `string` | no | `~/.hawkeyexl-inference/models` | Where the local model's weights live. A relative path resolves from the config file's directory. With the key unset, `INFERENCE_MODELS_DIR` in the environment replaces the default. |
+| `providers.llama-cpp.thoughtTokens` | `integer` | no | `0` | Tokens the local model may spend thinking before its JSON answer, as a whole number of 0 or more. |
+
+Every section is optional, and a section need carry only the keys you change.
+An unknown key at any level is an error (exit 2) that lists the keys the
+section takes.
+
+### Which provider runs
+
+A tool takes its provider from the first of these that names one:
+
+1. `--local`, which always means `llama-cpp`. See [Local inference](#local-inference).
+2. The `--provider` flag.
+3. An `ai` eval's own `provider:` key, in `manni docevals` only.
+4. The tool's own key, which is `meta.fill.provider` or `docevals.provider`.
+5. The family's `providers.provider` key.
+6. Detection, as `auto`.
+
+- **A model stays with its provider.** Each level's model goes only to the
+  provider that same level names. Say `providers:` names `anthropic` and a
+  model, and `--provider openai` wins. The run then takes OpenAI's default
+  model, never the Anthropic one. A tool key with a model and no provider lends
+  the model to the provider in force. `--model` applies to whichever provider
+  wins.
+- **Connection settings always come from `providers:`.** The endpoint, the key
+  variable, the command and the local settings are read from the winning
+  provider's section here, whichever level chose it. A tool's own section
+  carries none.
+- **Detection reads them too.** Under `auto`, a configured `openai.baseUrl`,
+  `claude-cli.command` and `llama-cpp` section all reach detection. A
+  `baseUrl` alone is enough for detection to count `openai` as usable.
+- **The map counts for discovery.** A `manni.config.yaml` carrying only
+  `providers:` is still each tool's config, and stops the
+  [search](#discovery).
+- **Refusals are exit 2**, and each names the file:
+
+```
+manni.config.yaml: Unknown provider "gemini". Available: anthropic, openai, claude-cli, llama-cpp, auto.
+manni.config.yaml: "providers.model" was given without a provider: a model name does not say which provider owns it. Set providers.provider to one of anthropic, openai, claude-cli, llama-cpp, or drop the model to take the detected provider's default.
+manni.config.yaml: "providers.openai" has unknown key "model". Supported keys: baseUrl, apiKeyEnv.
+```
+
+A `providers:` key under `docevals:` is refused by name, with a pointer to this
+section:
+
+```
+manni.config.yaml: "providers" is no longer a docevals key. Provider settings are declared once for every tool, under a top-level providers: map. See https://hawkeyexl.github.io/manni/meta/reference/configuration/#providers
+```
+
+### Limits under `auto`
+
+Two settings do not steer detection. The inference library decides what
+detection reads, and manni passes these through unchanged.
+
+1. **A custom `apiKeyEnv` is not read under `auto`.** Detection looks only for
+   `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`, and the provider it finds reads
+   that same variable. To use a key held under another name, name the provider
+   in config or on the command line.
+2. **The weights directory does not decide detection.** Detection counts
+   `llama-cpp` as usable when the `node-llama-cpp` runtime can start, whether
+   or not weights sit in `modelsDir`. Once chosen, the local model reads and
+   downloads its weights there.
+
+### Local inference
+
+`--local` runs inference on this machine with `llama-cpp`, whatever a config or
+a page asks for. It is on `manni meta fill` and on docevals `run`, `generate`,
+`fill`, `promote` and `calibrate`, with one meaning in both tools.
+
+- **It overrides rather than refuses.** A provider named at any level is set
+  aside, and each replaced choice is said once on stderr:
+
+  ```
+  manni: --local: using llama-cpp instead of "anthropic" from fill.provider.
+  manni: --local: using llama-cpp instead of "claude-cli" from providers.provider.
+  ```
+
+- **A contradicting `--provider` is a usage error.** Beside `--local`, the flag
+  may name `llama-cpp` or `auto`. Any other name exits 2:
+
+  ```
+  manni: --local and --provider openai contradict each other: --local runs inference on this machine with llama-cpp. Drop one of them.
+  ```
+
+- **`claude-cli` never qualifies.** Its binary runs on this machine, and its
+  inference does not.
+- **A configured model applies only from a level that named `llama-cpp`.** A
+  `--model` flag always applies.
+- **Detection never runs**, so no key in the environment can redirect the run.
+
+What `--local` means for a data-egress review is on [Run fill under a
+data-egress policy](/manni/meta/set-up/fill-providers/#keeping-content-on-this-machine).
+Choosing a provider for judged evals is on [Choose a
+provider](/manni/docevals/judge/choose-a-provider/).
+
 ## Tools
 
 {/* cite tools-is-a-top-level-namespace-per-tool */}
@@ -1520,8 +1646,8 @@ command. Every key is optional, and every one is overridden by its CLI flag.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `provider` | `string` | `auto` | Inference provider: `auto`, `anthropic`, `openai`, `claude-cli`, `llama-cpp`, or `mock`. `auto` [detects one](/manni/meta/reference/cli/#meta-fill). An unknown name is an error (exit 2). |
-| `model` | `string` | provider default | Model override. Requires `provider` to be set to something other than `auto`, since a model name does not say which provider owns it (exit 2). |
+| `provider` | `string` | `providers.provider`, else `auto` | Inference provider: `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. It overrides the family's [`providers.provider`](#providers) for `fill`. `auto` [detects one](/manni/meta/reference/cli/#meta-fill). An unknown name is an error (exit 2). |
+| `model` | `string` | provider default | Model override, which replaces `providers.model` for `fill`. It needs a provider other than `auto`, from `provider`, `--provider` or `providers.provider`. A model name does not say which provider owns it (exit 2). |
 | `confidenceThreshold` | `number` | `0.7` | Minimum self-reported confidence, from 0 to 1, needed to write a value. |
 | `maxTurns` | `number` | none | Stop after this many inference calls. Counts **calls, not files**: a long document is split across several. |
 | `chunkChars` | `number` | `12000` | Characters of document sent per call. The whole file is always sent; this decides how many calls that takes. |
@@ -1538,9 +1664,15 @@ meta:
     maxTurns: 200
 ```
 
-Pinning `provider` is worth doing in CI. Left on `auto`, a runner that loses its
-API key silently falls through to a local model and downloads gigabytes rather
-than failing the build.
+Connection settings are not `fill` keys. An OpenAI-compatible `baseUrl`, a
+key's environment variable or a weights directory goes in
+[`providers:`](#providers), where `manni docevals` reads it too. A model named
+here goes only to the provider named here, as [Which provider
+runs](#which-provider-runs) explains.
+
+Pinning `provider` is worth doing in CI, here or in `providers.provider`. Left
+on `auto`, a runner that loses its API key silently falls through to a local
+model and downloads gigabytes rather than failing the build.
 
 ### `elements`
 
@@ -2251,15 +2383,12 @@ for these files, in order:
 
 1. `manni.config.yaml`, then `manni.config.yml`, read at their `meta:` key.
    A family file counts as the metadata tool's config when it carries `meta:`,
-   `collections:`, [`tools:`](#tools) or [`encryptionKey:`](#encryption-key).
-   One with a family key and no `meta:` still describes this repository. It
-   stops the search and hands the tool an empty section plus the family keys.
-   A family file with none of the four belongs to a sibling tool and is
-   skipped, so the search continues.
-2. `moose.config.yaml`, then `moose.config.yml`: the family file under its
-   pre-rename name. Same shape, read the same way, with a warning on stderr to
-   rename it.
-3. `docmeta.config.yaml`, then `docmeta.config.yml`: the metadata tool's own
+   `collections:`, [`tools:`](#tools), [`encryptionKey:`](#encryption-key) or
+   [`providers:`](#providers). One with a family key and no `meta:` still
+   describes this repository. It stops the search and hands the tool an empty
+   section plus the family keys. A family file with none of the five belongs
+   to a sibling tool and is skipped, so the search continues.
+2. `docmeta.config.yaml`, then `docmeta.config.yml`: the metadata tool's own
    file from before the family file. Its **whole document** is the `meta:`
    section, with no wrapper key, so it can carry no `collections:` at all. A
    legacy file that still says `paths:` is refused with the same
@@ -2305,7 +2434,7 @@ defaults.
 When you pass `-c/--config <path>` explicitly, no search happens at all and that
 file must exist; a missing config file is an error (exit 2). The file is read by
 the same rule whatever it is named. If it has a `meta:`, `collections:`,
-`tools:` or `encryptionKey:` key it is read as a family file. If it has none of them, the
+`tools:`, `encryptionKey:` or `providers:` key it is read as a family file. If it has none of them, the
 whole document is the `meta:` section. So `-c ./anything.yaml` works for
 both shapes without a flag, and an explicit path is never warned about.
 
@@ -2375,7 +2504,7 @@ corresponding config value; others merge with it.
 | Schemas | `-s/--schema` | `schemas` / `overrides` | CLI `--schema` **overrides** both `schemas` and `overrides` for every file. See [precedence](/manni/meta/reference/schema-resolution/#precedence). |
 | Config discovery | `--no-config` | n/a | `--no-config` skips discovery entirely, so no config value applies. It sets the same option as `-c/--config`, so if you pass both, whichever comes later on the command line wins. |
 | Empty input sets | `--allow-empty` | `allowEmpty` | The flag **overrides** the config key, and only in the permissive direction: passing it turns the check off. Omitting it falls back to config, then to off. |
-| Fill settings | `--confidence`, `--provider`, `--model`, `--max-turns`, `--chunk-chars`, `--concurrency` | `fill.*` | Each flag **overrides** its matching `fill` key. An unset flag falls back to config, then to the built-in default. |
+| Fill settings | `--confidence`, `--provider`, `--model`, `--max-turns`, `--chunk-chars`, `--concurrency` | `fill.*` | Each flag **overrides** its matching `fill` key. An unset flag falls back to config, then to the built-in default. An unset `--provider` or `--model` falls back to `fill.provider` or `fill.model`, then to [`providers:`](#providers), then to `auto`. |
 | Offline | `--offline` | `offline` | The flag **overrides** the config key, and only in the restrictive direction: passing it turns fetching off. Omitting it falls back to config, then to off. |
 
 <Aside type="caution" title="--schema is all-or-nothing">

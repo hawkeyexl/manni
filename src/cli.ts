@@ -13,6 +13,7 @@ import { Command } from "commander";
 import pkg from "../package.json" with { type: "json" };
 import { buildProgram as buildA11y } from "./a11y/cli.js";
 import { buildProgram as buildCite } from "./cite/cli.js";
+import { buildProgram as buildDocevals } from "./docevals/cli.js";
 import { buildProgram as buildKey } from "./key/cli.js";
 import { buildProgram as buildMeta } from "./meta/cli.js";
 import { buildProgram as buildTerm } from "./term/index.js";
@@ -66,6 +67,13 @@ export function buildProgram(): Command {
       .name("cite")
       .description(
         "Track citations from doc claims to source lines and check them for drift",
+      ),
+  );
+  program.addCommand(
+    buildDocevals()
+      .name("docevals")
+      .description(
+        "Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter",
       ),
   );
   program.addCommand(

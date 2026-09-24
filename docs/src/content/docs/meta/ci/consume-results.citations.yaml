@@ -42,16 +42,16 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-d3ac227998131854e26a4e7ab9a5e3dbdb2972655ef9d58316016f6b16596488
       source:
         file: src/meta/cli.ts
-        lines: 943-946
+        lines: 944-947
         integrity: sha256-3bc74074c8952636df5c6f68b9d559a92e1dda00b46dfa186f5723f16364efa5
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: get-takes-pretty-and-json-only
       claim:
         lines: 217-218
         integrity: sha256-8c64ec05ab7cee4c39c4835c4c6ecbf48d537dbe1d019bc67ccb41e567f4669f
       source:
         file: src/meta/cli.ts
-        lines: 930-934
+        lines: 931-935
         integrity: sha256-b503ccf2d5faf492d3e8eb42a02c2193e9002da4890c9c8dde4774435125333c
         commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
     - id: get-unsupported-format-exits-2
@@ -60,9 +60,9 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-79056c424982b4bf4902984fcea150da19d76356cdb633aab3affbfdaec0350c
       source:
         file: src/meta/cli.ts
-        lines: 1019-1024
+        lines: 1020-1025
         integrity: sha256-ed88e062b2f25e5f5d7be02a925046a075dc66df7cf3d1e6243ba690642c9961
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: dot-notation-or-json-pointer
       claim:
         lines: 190-192
@@ -96,7 +96,7 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-3c2434351e0c235257b42b727932a3407933256153739c52ad3cf5d8f63e0212
       source:
         file: src/meta/cli.ts
-        lines: 935-940
+        lines: 936-941
         integrity: sha256-74320011f15b4a953c0496f55ff3d7e3c02bfa5bf49c03a7c8cdcc5568d67630
         commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
     - id: json-output-is-never-colorized

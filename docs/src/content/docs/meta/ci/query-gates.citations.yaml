@@ -13,9 +13,9 @@ docs/src/content/docs/meta/ci/query-gates.mdx:
         integrity: sha256-18bbad5a6fcc42cb6ee42c986fd10754dbead718de7915082b3689c1d8d30c32
       source:
         file: src/meta/cli.ts
-        lines: 1191-1193
+        lines: 1192-1194
         integrity: sha256-5017de8e96cd665f24063fbbed610e454d1109ad35388a463d7ef3b6d6370682
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: csv-always-prints-a-header-row
       claim:
         integrity: sha256-c824b4a5c52c8ce6d86abf4cf9d49a7eb345f24cb9d8fe41098fc3a390384d7e
@@ -61,9 +61,9 @@ docs/src/content/docs/meta/ci/query-gates.mdx:
         integrity: sha256-18a84e638c22a86a215480ca9905dc64d0b8480138d90e0cb277985c70c7e379
       source:
         file: src/meta/cli.ts
-        lines: 1292-1293
+        lines: 1293-1294
         integrity: sha256-83168629bc28324f5475a34ddbf6584bb44cce69696e366e6d8dc125dc2df12c
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: docs-table-system-columns
       claim:
         integrity: sha256-3459891f0a293b0be4641a956f69ced6c2c194945b58c4e59dd21ba77db985f9
@@ -95,9 +95,9 @@ docs/src/content/docs/meta/ci/query-gates.mdx:
         integrity: sha256-235b7dc3b370d6d0d8249ebeee5521260cab69e02ea2a858550ccf139ffea2ba
       source:
         file: src/meta/cli.ts
-        lines: 777-780
+        lines: 778-781
         integrity: sha256-d707c59bf169d2c886acc5351c8779f1deb76d9e8eeb3f72113c91c16f696bad
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: collection-scope-names-the-collections
       claim:
         lines: 193-195

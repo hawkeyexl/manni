@@ -209,9 +209,9 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-6ccc93168843be9795247e5e670768dc2c228ea4f76c2cab59c0dee7d6ddf7a7
       source:
         file: src/shared/encryption-key.ts
-        lines: 59-70
+        lines: 58-69
         integrity: sha256-f0c0f277d421de81a8fa5f9abf08d3a12f63ee5c29e07814e34f93d4f3384207
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: deterministic-aes-gcm
       claim:
         integrity: sha256-d0f05f8de509a66cb220192c2796f488959ebf0e15f97b3e79b746933a71095c
@@ -1073,9 +1073,9 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-dffbb72e1db19447b8db88ec0c540042420e8ee5fc0a59250ee2e2c28f87740f
       source:
         file: src/shared/encryption-key.ts
-        lines: 59-70
+        lines: 58-69
         integrity: sha256-f0c0f277d421de81a8fa5f9abf08d3a12f63ee5c29e07814e34f93d4f3384207
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: term-salt-refused
       claim:
         lines: 726

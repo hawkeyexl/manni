@@ -1,0 +1,261 @@
+/**
+ * `manni docevals promote` — the grader hierarchy in tool form: review ai-graded
+ * evals, ask the LLM which are expressible as deterministic checks, and (with
+ * --write) rewrite them as command-graded evals backed by generated scripts.
+ * Never runs automatically as part of `manni docevals run`.
+ */
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, relative } from "node:path";
+import { loadRunConfig } from "../core/config.js";
+import {
+  discoverPages,
+  documentSet,
+  runConfigOptions,
+  type DocumentInputOptions,
+} from "../core/discover.js";
+import { withExternalMetadata } from "../core/external.js";
+import { resolvePages } from "../core/resolve.js";
+import {
+  hasEditableEval,
+  updateConfigEval,
+  updatePageEval,
+} from "../core/frontmatter-edit.js";
+import {
+  EVALS_KEY,
+  EvalWriter,
+  manifestEvalList,
+  updateManifestEval,
+} from "../core/write-location.js";
+import { sha256 } from "../judge/cache.js";
+import {
+  assertProviderSelection,
+  makeProvider,
+  selectProvider,
+} from "../judge/provider.js";
+import type { InferenceProvider } from "@hawkeyexl/inference";
+import {
+  SCRIPTGEN_SYSTEM_PROMPT,
+  buildScriptgenUser,
+  scriptLocationFor,
+} from "../graders/scriptgen.js";
+import type { GraderTarget } from "../graders/types.js";
+import { errorMessage } from "../../shared/errors.js";
+
+const PROMOTE_SCHEMA = {
+  type: "object",
+  required: ["promotable", "rationale"],
+  properties: {
+    promotable: {
+      type: "boolean",
+      description:
+        "True only when the assertion can be fully checked by a deterministic script with no semantic judgment.",
+    },
+    rationale: { type: "string" },
+    code: {
+      type: "string",
+      description: "The check script source, required when promotable is true.",
+    },
+  },
+  additionalProperties: false,
+} as const;
+
+const PROMOTE_SYSTEM = [
+  "You review documentation eval assertions and decide whether each can be",
+  "verified by a deterministic script instead of LLM judgment. Promote only",
+  "assertions that are fully checkable with string/regex/structural logic —",
+  "anything requiring semantic interpretation stays with the LLM judge.",
+  "",
+  SCRIPTGEN_SYSTEM_PROMPT,
+  "",
+  'Respond with JSON: { "promotable": bool, "rationale": "...", "code": "..." }',
+  "(omit code when not promotable).",
+].join("\n");
+
+export interface PromoteOptions extends DocumentInputOptions {
+  write?: boolean;
+  provider?: string;
+  model?: string;
+  /** Run inference on this machine, with llama-cpp, over any configured or eval-level provider. */
+  local?: boolean;
+  cwd?: string;
+  /** Injectable provider for tests and programmatic use. */
+  providerInstance?: InferenceProvider;
+}
+
+export interface PromoteProposal {
+  file: string;
+  evalName: string;
+  source: "page" | "config";
+  promotable: boolean;
+  rationale: string;
+  scriptPath?: string;
+  applied: boolean;
+  /**
+   * Why a promotable eval could not be rewritten (proposal 0047): the
+   * manifest that owns this page's evals joins on a field the page lacks, so
+   * there is no entry to hold the promoted eval. `applied` stays false.
+   */
+  error?: string;
+}
+
+async function assess(
+  provider: InferenceProvider,
+  target: GraderTarget,
+): Promise<{ promotable: boolean; rationale: string; code?: string }> {
+  try {
+    const response = await provider.completeJSON({
+      system: PROMOTE_SYSTEM,
+      user: buildScriptgenUser(
+        target.eval.assertion ?? "",
+        target.eval.name,
+        target.plan.page.file,
+        target.plan.page.body,
+      ),
+      schema: PROMOTE_SCHEMA,
+      temperature: 0,
+    });
+    const json = response.json as {
+      promotable?: unknown;
+      rationale?: unknown;
+      code?: unknown;
+    };
+    return {
+      promotable: json.promotable === true,
+      rationale: typeof json.rationale === "string" ? json.rationale : "",
+      code: typeof json.code === "string" ? json.code : undefined,
+    };
+  } catch (e) {
+    return {
+      promotable: false,
+      rationale: `assessment failed: ${errorMessage(e)}`,
+    };
+  }
+}
+
+export async function runPromote(
+  paths: string[],
+  options: PromoteOptions = {},
+): Promise<PromoteProposal[]> {
+  const cwd = options.cwd ?? process.cwd();
+  const config = loadRunConfig(runConfigOptions(paths, options), cwd);
+  const flags = { provider: options.provider, model: options.model, local: options.local };
+  // Checked before discovery, and even when nothing is ai-graded.
+  assertProviderSelection(selectProvider(config, flags));
+  const pages = await withExternalMetadata(
+    discoverPages(config, documentSet(paths, options, "read"), cwd),
+    config,
+    cwd,
+  );
+  const plans = resolvePages(pages, config);
+
+  // Built on first use, not up front. A corpus with no ai-graded evals has
+  // nothing to assess, and demanding an API key to be told so is the same
+  // needless gate `fill` already avoids by resolving identity lazily.
+  let provider: InferenceProvider | undefined = options.providerInstance;
+  const getProvider = async (): Promise<InferenceProvider> =>
+    (provider ??= await makeProvider(config, flags));
+
+  const proposals: PromoteProposal[] = [];
+  const seenConfigEvals = new Set<string>();
+  // Proposal 0047: a promoted eval is rewritten where it lives. Built on
+  // first use, like the provider.
+  let writer: EvalWriter | undefined;
+  const getWriter = (): EvalWriter => (writer ??= EvalWriter.for(config, cwd, paths));
+
+  for (const plan of plans) {
+    if (plan.skip || plan.problems.some((p) => p.level === "error")) continue;
+    for (const ev of plan.evals) {
+      if (ev.skip || ev.grader !== "ai" || !ev.assertion) continue;
+      if (ev.source === "config") {
+        if (seenConfigEvals.has(ev.name)) continue;
+        seenConfigEvals.add(ev.name);
+      }
+
+      const target: GraderTarget = { plan, eval: ev };
+      const assessment = await assess(await getProvider(), target);
+      const proposal: PromoteProposal = {
+        file: plan.page.file,
+        evalName: ev.name,
+        source: ev.source,
+        promotable: assessment.promotable,
+        rationale: assessment.rationale,
+        applied: false,
+      };
+
+      if (assessment.promotable && assessment.code && options.write) {
+        const location = scriptLocationFor(target, config, cwd);
+        mkdirSync(dirname(location.scriptAbsPath), { recursive: true });
+        writeFileSync(location.scriptAbsPath, assessment.code);
+        proposal.scriptPath = relative(cwd, location.scriptAbsPath).replace(
+          /\\/g,
+          "/",
+        );
+        const updates = {
+          grader: "command",
+          command: location.command,
+          // The kebab key `applyUpdates` actually reads. This was the
+          // pre-1.0 `generated: { assertionHash }` wrapper, which the update
+          // type does not consume, so promoted evals were written with no
+          // hash and never went stale when their assertion changed
+          // (renamed by ADR 01009).
+          "generated-assertion-hash": sha256(ev.assertion),
+        };
+        // Where the eval lives decides where the rewrite goes. The page's own
+        // text is only consulted for a page-owned eval: a page whose evals a
+        // manifest owns carries none of them, so `hasEditableEval` is false
+        // there and the promotion used to be dropped without a word.
+        const home =
+          ev.source === "page"
+            ? await getWriter().homeFor(
+                plan.page.file,
+                plan.page.frontmatter.data,
+                EVALS_KEY,
+              )
+            : undefined;
+        if (home?.kind === "url") {
+          throw getWriter().urlRefusal(home, EVALS_KEY);
+        }
+        if (home?.kind === "no-entry") {
+          proposal.error = home.message;
+        } else if (home?.kind === "manifest") {
+          const at = getWriter();
+          const list = manifestEvalList(
+            await at.readManifest(home, EVALS_KEY),
+            home.file,
+            home.entry,
+          );
+          const next = updateManifestEval(list, ev.name, updates);
+          if (next === undefined) {
+            proposal.error = `${home.file}: eval "${ev.name}" not found in the entry for ${home.entry}`;
+          } else {
+            await at.writeManifest(home, EVALS_KEY, next);
+            proposal.applied = true;
+          }
+        } else if (
+          ev.source === "page" &&
+          hasEditableEval(plan.page.content, ev.name)
+        ) {
+          const updated = updatePageEval(
+            readFileSync(plan.page.absPath, "utf8"),
+            plan.page.file,
+            ev.name,
+            updates,
+          );
+          writeFileSync(plan.page.absPath, updated);
+          proposal.applied = true;
+        } else if (ev.source === "config") {
+          const updated = updateConfigEval(
+            readFileSync(config.configPath, "utf8"),
+            config.configPath,
+            ev.name,
+            updates,
+          );
+          writeFileSync(config.configPath, updated);
+          proposal.applied = true;
+        }
+      }
+      proposals.push(proposal);
+    }
+  }
+  return proposals;
+}

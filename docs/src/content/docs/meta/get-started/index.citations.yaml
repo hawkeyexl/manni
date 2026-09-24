@@ -13,9 +13,9 @@ docs/src/content/docs/meta/get-started/index.mdx:
         integrity: sha256-369507c6dc33f81889b07da8b4d09a206daee4c6e5c97ba18ae13c81b7981e89
       source:
         file: src/meta/cli.ts
-        lines: 872
+        lines: 873
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: summary-third-code-operational
       claim:
         integrity: sha256-369507c6dc33f81889b07da8b4d09a206daee4c6e5c97ba18ae13c81b7981e89

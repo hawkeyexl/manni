@@ -1,6 +1,6 @@
 ---
 title: manni
-description: One command line for documentation that is meant to be checked. Today it validates document metadata against JSON Schema and checks that cited source lines still say what the page says; more tools join it as subcommands.
+description: One command line for documentation that is meant to be checked. Today it validates document metadata against JSON Schema, checks that cited source lines still say what the page says, and runs evals over documentation pages; more tools join it as subcommands.
 tableOfContents: false
 hero:
   tagline: One command line for documentation that is meant to be checked.
@@ -27,6 +27,7 @@ the package once and every tool is there.
 ```sh
 npm install -D @hawkeyexl/manni
 npx @hawkeyexl/manni meta validate docs/
+npx @hawkeyexl/manni docevals run docs/ --deterministic-only
 ```
 
 ## The tools
@@ -48,6 +49,11 @@ npx @hawkeyexl/manni meta validate docs/
     description="Pin a sentence to the source lines it rests on, and find out when those lines move or change. From git alone, no model, no network."
   />
   <LinkCard
+    title="docevals"
+    href="/manni/docevals/"
+    description="Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter. Code first, an AI judge second, a human last."
+  />
+  <LinkCard
     title="key"
     href="/manni/key/"
     description="Set and rotate the family encryption key, so a required field or a private source path is on the page without being readable there."
@@ -60,14 +66,15 @@ npx @hawkeyexl/manni meta validate docs/
 </CardGrid>
 
 `meta` checks what a page says about itself; `cite` checks that what a page
-says about the code is still true. `key` sets and rotates the one encryption
-key both of them encrypt values with. `term` checks that the terms a page
+says about the code is still true. `docevals` checks that a page still meets
+the quality bar its team wrote down. `key` sets and rotates the one encryption
+key `meta` and `cite` encrypt values with. `term` checks that the terms a page
 names are defined, and carries those terms into Vale and translation. More tools are folded in as they become
 ready to ship. Until one lands, its subcommand does not exist, and
 `manni --help` lists exactly what does.
 
-`cite`, `key` and `term` are in beta. Their commands, config keys and output
-can change in any release, without notice.
+`cite`, `docevals`, `key` and `term` are in beta. Their commands, config keys
+and output can change in any release, without notice.
 
 ## Coming from docmeta?
 

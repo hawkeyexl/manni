@@ -114,4 +114,6 @@ review semantics. Its `fields` become JSON Pointers, so `/kg/label` reaches
 into a block. It also takes over the kg block's `provenance` and the eval
 vocabularies' `eval-provenance`. The draft drops the page-level
 `generated-by`, since `provenance` names the machines per range.
-`manni meta fill` already writes `meta-provenance` for the fields it fills.
+`manni meta fill` already writes `meta-provenance` for the fields it fills, and
+`manni docevals fill` for the evals it proposes. `manni docevals` reads both
+records for its [self-preference warning](/manni/docevals/judge/#self-preference).

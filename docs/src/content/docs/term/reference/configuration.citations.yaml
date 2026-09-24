@@ -53,9 +53,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-4d6eb134cf839bfef2b869e0ea3ec3e503f29d4ec06dc74d8c7d2ef30c5e9090
       source:
         file: src/shared/config-file.ts
-        lines: 193-202
-        integrity: sha256-42c04753293f4396a1b87f41146321087b7d39e9f62c0621645ea6b74f360651
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        lines: 203-213
+        integrity: sha256-b85ee825aa8136eca84c6f8a7d48bf5258d5f7af450790346f095c81c7153966
+        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
     - id: lint-runs-vale
       claim:
         integrity: sha256-9c5cab61e3f16882afd2267e1200f1bd9637a91a3c7fb08d64925d17f8e48a07

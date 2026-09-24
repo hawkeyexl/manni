@@ -5,7 +5,7 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-40844c025e4365454ef1ddb05fb7cca87b0dc77e0b7aad113da385bbe971d9d5
       source:
         file: src/meta/cli.ts
-        lines: 729-734
+        lines: 730-735
         integrity: sha256-74320011f15b4a953c0496f55ff3d7e3c02bfa5bf49c03a7c8cdcc5568d67630
         commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
     - id: override-applies-only-below-cli-and-document-refs

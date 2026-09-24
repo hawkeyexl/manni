@@ -1,0 +1,670 @@
+/**
+ * `manni docevals fill` — ask an LLM provider to propose frontmatter evals for each
+ * page, gate the proposals on self-reported confidence, and append the
+ * survivors to the page's frontmatter. Proposals are ai-graded only and
+ * deduplicated against the page's resolved plan; existing evals are never
+ * touched. See ADR 01001.
+ */
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import pc from "picocolors";
+import type { Severity } from "../types.js";
+import { loadRunConfig } from "../core/config.js";
+import {
+  discoverPages,
+  documentSet,
+  leadingFrontmatterFormat,
+  runConfigOptions,
+  type DocumentInputOptions,
+} from "../core/discover.js";
+import { withExternalMetadata } from "../core/external.js";
+import { resolvePages, type ResolvedPagePlan } from "../core/resolve.js";
+import {
+  appendPageEvals,
+  entryObject,
+  type NewEvalEntry,
+} from "../core/frontmatter-edit.js";
+import {
+  EVALS_KEY,
+  EvalWriter,
+  META_PROVENANCE_KEY,
+  manifestEvalList,
+  type WriteHome,
+} from "../core/write-location.js";
+import {
+  parseFormat,
+  SUMMARY_FORMATS,
+  type SummaryFormat,
+} from "../reporters/format.js";
+import {
+  assertProviderSelection,
+  constructProvider,
+  resolveProviderIdentity,
+  selectProvider,
+} from "../judge/provider.js";
+import type { InferenceProvider } from "@hawkeyexl/inference";
+import { FillCache, fillCacheKey } from "../fill/cache.js";
+import {
+  FILL_SYSTEM_PROMPT,
+  buildFillUser,
+  isValidProposal,
+  PROPOSAL_SCHEMA,
+} from "../fill/prompt.js";
+import { looksLikeOverflow, splitBody } from "../core/split.js";
+import { errorMessage } from "../../shared/errors.js";
+import { warn } from "../../shared/warn.js";
+import type { Confirm } from "../../shared/prompt.js";
+import {
+  mergeMetaProvenance,
+  type ExternalWrite,
+  type RelocateResult,
+} from "../../meta/internal.js";
+
+export interface FillOptions extends DocumentInputOptions {
+  cwd?: string;
+  /** Characters of page per inference call; longer pages are split. */
+  chunkChars?: number;
+  /** Report proposals without writing frontmatter. */
+  dryRun?: boolean;
+  /** Minimum confidence to write; overrides config `fill.confidenceThreshold`. */
+  confidence?: number;
+  /** Stop after this many inference calls; overrides config `fill.maxTurns`. */
+  maxTurns?: number;
+  noCache?: boolean;
+  provider?: string;
+  model?: string;
+  /** Run inference on this machine, with llama-cpp, over any configured or eval-level provider. */
+  local?: boolean;
+  /** Test seam: bypasses provider construction entirely. */
+  providerInstance?: InferenceProvider;
+  /**
+   * P1 (proposal 0047): asked once per collection when evals would land on a
+   * page whose schema prefers them in external metadata. The CLI passes
+   * `terminalConfirm()`, so off a terminal there is no question and the
+   * warning is the only output.
+   */
+  confirm?: Confirm;
+  /** A stderr diagnostic; the caller adds the `manni docevals: ` prefix. */
+  onNotice?: (message: string) => void;
+  /** What an accepted relocation moved, for the caller to report. */
+  onRelocated?: (result: RelocateResult) => void;
+}
+
+export type FillStatus =
+  | "filled"
+  | "proposed"
+  | "nothing-proposed"
+  | "skipped"
+  | "skipped-budget"
+  | "error";
+
+export interface ProposedEval {
+  id: string;
+  assertion: string;
+  confidence: number;
+  examples: { pass: string; fail: string };
+  type?: "capability" | "regression";
+  evidence?: string;
+  severity?: Severity;
+  rationale?: string;
+}
+
+/**
+ * One `meta-provenance` entry after `fill` merged into it: the model, the ids
+ * of the evals it proposed, and the confidence each was written at. An entry
+ * `fill` merged into keeps whatever else it held, `fields` included.
+ */
+export interface EvalsMetaProvenanceEntry {
+  "generated-by": string;
+  evals: string[];
+  confidence: Record<string, number>;
+  [other: string]: unknown;
+}
+
+/**
+ * What became of this page's `meta-provenance` entry. Never a failure. The
+ * shape is `manni meta fill`'s, and so are its reasons: the key follows its
+ * own location (proposal 0047), so a local manifest holds the entry, a URL
+ * manifest cannot be written, and a manifest joining on a field the page
+ * lacks has no entry to hold it.
+ */
+export type EvalsMetaProvenanceReport =
+  | {
+      written: true;
+      entry: EvalsMetaProvenanceEntry;
+      /** The manifest the entry went into, when one owns `meta-provenance`. */
+      destination?: string;
+    }
+  /** The page's `meta-provenance` is not a list, so there is nothing to merge into. */
+  | { written: false; skipReason: "schema-mismatch" }
+  /** A URL manifest owns the key, and nothing fetched can be written. */
+  | { written: false; skipReason: "manifest-owned"; manifest: string }
+  /** The owning manifest joins on a field this page does not carry. */
+  | { written: false; skipReason: "unwritable" };
+
+export interface FillPageResult {
+  file: string;
+  status: FillStatus;
+  /** Appended (or, in a dry run, would-append) proposals. */
+  written: ProposedEval[];
+  /** Proposals below the confidence threshold — reported, never written. */
+  belowThreshold: ProposedEval[];
+  /** Fresh proposals dropped for exceeding `fill.maxEvalsPerPage`. */
+  capped: ProposedEval[];
+  /** Proposed ids that already exist in the page's resolved plan. */
+  duplicates: string[];
+  cached: boolean;
+  error?: string;
+  /**
+   * Where the evals went (proposal 0047): `"page"`, or the manifest that owns
+   * them, as the run reports its path. Absent when nothing was written.
+   */
+  wroteTo?: string;
+  /**
+   * The `meta-provenance` entry recording the evals this run wrote. Absent
+   * when none was written; reported, not written, under `--dry-run`.
+   */
+  metaProvenance?: EvalsMetaProvenanceReport;
+}
+
+export interface FillReport {
+  results: FillPageResult[];
+  threshold: number;
+  /** Inference calls actually made. One per proposed page; a cache hit is none. */
+  turns: number;
+  exitCode: 0 | 1;
+}
+
+/**
+ * Proposals become inline evals with explicit grader/type. Confidence is no
+ * longer report-only — it is written to `meta-provenance` alongside the model
+ * that proposed it, so the page itself records what a machine wrote and how
+ * sure it was, and a reviewer retires the entry when they have checked it.
+ */
+function toEntry(p: ProposedEval): NewEvalEntry {
+  return {
+    id: p.id,
+    assertion: p.assertion,
+    type: p.type ?? "regression",
+    grader: "ai",
+    evidence: p.evidence,
+    examples: p.examples,
+    severity: p.severity,
+  };
+}
+
+export async function runFill(
+  paths: string[],
+  options: FillOptions = {},
+): Promise<FillReport> {
+  const cwd = options.cwd ?? process.cwd();
+  let config = loadRunConfig(runConfigOptions(paths, options), cwd);
+  const flags = { provider: options.provider, model: options.model, local: options.local };
+  // Checked up front, and regardless of an injected provider: it costs nothing,
+  // and a typo must fail on a run where no page needs a model too.
+  assertProviderSelection(selectProvider(config, flags));
+  const load = async (): Promise<ResolvedPagePlan[]> =>
+    resolvePages(
+      await withExternalMetadata(
+        discoverPages(config, documentSet(paths, options, "fill"), cwd),
+        config,
+        cwd,
+      ),
+      config,
+    );
+  let plans = await load();
+
+  // Proposal 0047: where each page's evals go. Built before the first model
+  // request, so P1 is asked — and an accepted relocation applied — while
+  // nothing has been proposed yet, exactly as `manni meta fill` asks it
+  // between preparing a file and inferring for it.
+  const writerFor = (): EvalWriter => EvalWriter.for(config, cwd, paths);
+  let writer = writerFor();
+  if (options.confirm !== undefined && options.dryRun !== true) {
+    const flagged: ExternalWrite[] = [];
+    for (const plan of plans) {
+      if (plan.skip || plan.problems.some((p) => p.level === "error")) continue;
+      const home = await writer.homeFor(
+        plan.page.file,
+        plan.page.frontmatter.data,
+        EVALS_KEY,
+      );
+      if (home.kind === "page" && home.prefersExternal) {
+        flagged.push({ label: plan.page.file, key: EVALS_KEY, home: home.proposed });
+      }
+    }
+    const applied = await writer.offer(flagged, {
+      confirm: options.confirm,
+      ...(options.onNotice === undefined ? {} : { onNotice: options.onNotice }),
+      ...(options.onRelocated === undefined ? {} : { onRelocated: options.onRelocated }),
+    });
+    if (applied) {
+      // The config now declares a manifest, the pages no longer carry what it
+      // owns, and this writer's context predates both.
+      config = loadRunConfig(runConfigOptions(paths, options), cwd);
+      plans = await load();
+      writer = writerFor();
+    }
+  }
+
+  const threshold = options.confidence ?? config.fill.confidenceThreshold;
+  const maxTurns = options.maxTurns ?? config.fill.maxTurns;
+  const temperature = config.fill.temperature;
+  const maxEvals = config.fill.maxEvalsPerPage;
+  const chunkChars = options.chunkChars ?? config.fill.chunkChars;
+  const cache = new FillCache(
+    resolve(cwd, config.fill.cacheDir),
+    !options.noCache,
+  );
+
+  // Identity is resolved without constructing the provider, so a fully cached
+  // run needs no API key, and on first use, so an all-skipped run never detects
+  // a provider under `auto`. Resolved once, and shared by every page.
+  const injected = options.providerInstance;
+  let resolving: ReturnType<typeof resolveProviderIdentity> | undefined;
+  const resolveOnce = (): ReturnType<typeof resolveProviderIdentity> =>
+    (resolving ??= resolveProviderIdentity(config, flags));
+  const getIdentity = async (): Promise<{ provider: string; model: string }> =>
+    injected
+      ? { provider: injected.provider(), model: injected.modelName() }
+      : resolveOnce();
+  let provider = injected;
+  const getProvider = async (): Promise<InferenceProvider> =>
+    (provider ??= constructProvider(config, await resolveOnce()));
+  let turns = 0;
+  const results: FillPageResult[] = [];
+
+  for (const plan of plans) {
+    results.push(await fillOne(plan));
+  }
+
+  // W1 and W2 (0047): evals that landed on a page whose schema prefers them in
+  // external metadata. One line per collection, not per page.
+  for (const line of writer.warnings(options.dryRun === true)) warn(line);
+
+  return {
+    results,
+    threshold,
+    turns,
+    exitCode: results.some((r) => r.status === "error") ? 1 : 0,
+  };
+
+  async function fillOne(plan: ResolvedPagePlan): Promise<FillPageResult> {
+    const base: FillPageResult = {
+      file: plan.page.file,
+      status: "nothing-proposed",
+      written: [],
+      belowThreshold: [],
+      capped: [],
+      duplicates: [],
+      cached: false,
+    };
+    if (plan.skip) return { ...base, status: "skipped" };
+    const problem = plan.problems.find((p) => p.level === "error");
+    if (problem) return { ...base, status: "error", error: problem.message };
+    // Reject non-YAML frontmatter before spending an LLM call: it can't be
+    // appended to (appendPageEvals would otherwise refuse) and there is
+    // nothing to fill.
+    const format = leadingFrontmatterFormat(plan.page.content);
+    if (format === "toml" || format === "json") {
+      return {
+        ...base,
+        status: "error",
+        error: `only YAML frontmatter can be filled (found ${format} frontmatter)`,
+      };
+    }
+
+    const existing = plan.evals.map((e) => ({
+      id: e.name,
+      assertion: e.assertion,
+    }));
+    const existingNames = existing.map((e) => e.id).sort();
+    // The RESOLVED model, so a provider default that changes changes the key.
+    const identity = await getIdentity();
+    // Keyed on the budget the proposals were actually produced at, not the
+    // one the run asked for. Halve-and-retry means those differ: the split
+    // boundaries move, so the parts differ, so the proposals differ. Storing
+    // a halved-budget result under the full-budget key lets a later run that
+    // did *not* overflow replay proposals from a split it never performed.
+    const keyFor = (budget: number): string =>
+      fillCacheKey(
+        identity.provider,
+        identity.model,
+        temperature,
+        maxEvals,
+        plan.page.body,
+        existingNames,
+        budget,
+      );
+    // Deliberately no fallback lookup at the halved budget. Serving a halved
+    // result to a run that asked for the full one is the collision itself,
+    // just spread over two keys — and a page that overflows does so
+    // deterministically for the same provider and body, so the retry path
+    // finds its own entry from the second run onward.
+    const key = keyFor(chunkChars);
+    let raw = cache.get(key);
+    const cached = raw !== undefined;
+    if (!raw) {
+      // Claimed before the call, not tallied after it (ADR 01019). A cache
+      // hit never reaches here, so replaying a cached corpus spends no turns.
+      if (maxTurns !== null && turns >= maxTurns) {
+        return { ...base, status: "skipped-budget" };
+      }
+      // A page longer than the budget is proposed against in parts rather
+      // than truncated. Each part is its own call; the results merge by eval
+      // id, keeping the highest confidence — the metadata tool's `mergeProposals`.
+      let budget = chunkChars;
+      // This page's own parts. `turns` is the run-wide budget counter and
+      // includes every earlier page, so reporting it as "N of M parts" names
+      // a number that has nothing to do with this page.
+      let partsRead = 0;
+      let merged: Map<string, ProposedEval> | undefined;
+      let failure: string | undefined;
+      for (let attempt = 0; attempt < 2 && merged === undefined; attempt++) {
+        const chunks = splitBody(plan.page.body, budget);
+        const collected = new Map<string, ProposedEval>();
+        let overflowed = false;
+        let outOfTurns = false;
+        partsRead = 0;
+        for (const [i, chunk] of chunks.entries()) {
+          if (maxTurns !== null && turns >= maxTurns) {
+            outOfTurns = true;
+            break;
+          }
+          turns += 1;
+          partsRead += 1;
+          let response;
+          try {
+            response = await (await getProvider()).completeJSON({
+              system: FILL_SYSTEM_PROMPT,
+              user: buildFillUser(
+                plan.page.file,
+                chunk,
+                existing,
+                maxEvals,
+                chunks.length > 1 ? { index: i, total: chunks.length } : undefined,
+              ),
+              schema: PROPOSAL_SCHEMA,
+              temperature,
+            });
+          } catch (e) {
+            const message = errorMessage(e);
+            failure = message;
+            if (looksLikeOverflow(message)) overflowed = true;
+            break;
+          }
+          if (!isValidProposal(response.json)) {
+            failure = "provider returned a proposal that does not match the schema";
+            break;
+          }
+          for (const proposal of (response.json as { evals: ProposedEval[] }).evals) {
+            const held = collected.get(proposal.id);
+            if (held === undefined || proposal.confidence > held.confidence) {
+              collected.set(proposal.id, proposal);
+            }
+          }
+          if (i === chunks.length - 1) merged = collected;
+        }
+        if (outOfTurns) {
+          // Never a silent partial: a page read in part proposed from part of
+          // itself, and saying so is the difference between "nothing to add"
+          // and "we stopped early".
+          return {
+            ...base,
+            status: "skipped-budget",
+            ...(chunks.length > 1
+              ? {
+                  error:
+                    `--max-turns reached after ${String(partsRead)} of ` +
+                    `${String(chunks.length)} part(s) of this page`,
+                }
+              : {}),
+          };
+        }
+        if (merged === undefined && overflowed && attempt === 0) {
+          budget = Math.max(1, Math.floor(budget / 2));
+          continue;
+        }
+        if (merged === undefined) break;
+      }
+      if (merged === undefined) {
+        return {
+          ...base,
+          status: "error",
+          error: failure ?? "the provider returned no proposal",
+        };
+      }
+      raw = { evals: [...merged.values()] };
+      cache.set(keyFor(budget), raw);
+    }
+
+    // Drop duplicates (against the resolved plan and within the batch) before
+    // applying the per-page cap, so duplicate names never crowd out fresh
+    // proposals.
+    const seen = new Set(existingNames);
+    const duplicates: string[] = [];
+    const fresh: ProposedEval[] = [];
+    for (const p of raw.evals as ProposedEval[]) {
+      if (seen.has(p.id)) {
+        duplicates.push(p.id);
+        continue;
+      }
+      seen.add(p.id);
+      fresh.push(p);
+    }
+    // Proposals beyond the per-page cap are reported as `capped` rather than
+    // silently dropped — they may be high-confidence, so folding them into
+    // belowThreshold would misreport why they weren't written.
+    const capped = fresh.slice(maxEvals);
+    const belowThreshold: ProposedEval[] = [];
+    const written: ProposedEval[] = [];
+    for (const p of fresh.slice(0, maxEvals)) {
+      if (p.confidence >= threshold) written.push(p);
+      else belowThreshold.push(p);
+    }
+
+    const result = {
+      ...base,
+      written,
+      belowThreshold,
+      capped,
+      duplicates,
+      cached,
+    };
+    if (written.length === 0) return result;
+
+    // Proposal 0047: where each key goes, settled before a byte is written.
+    const label = plan.page.file;
+    const data = plan.page.frontmatter.data;
+    let evalsHome: WriteHome;
+    let metaHome: WriteHome;
+    try {
+      evalsHome = await writer.homeFor(label, data, EVALS_KEY);
+      metaHome = await writer.homeFor(label, data, META_PROVENANCE_KEY);
+    } catch (e) {
+      return { ...result, status: "error", error: errorMessage(e), written: [] };
+    }
+    if (evalsHome.kind === "url") throw writer.urlRefusal(evalsHome, EVALS_KEY);
+    if (evalsHome.kind === "no-entry") {
+      // The manifest owns the evals and has no entry for this page, so there
+      // is nowhere to put them. Writing the page instead would put the key in
+      // both places, which is the collision the routing exists to prevent.
+      return { ...result, status: "error", error: evalsHome.message, written: [] };
+    }
+
+    // The evals this run proposed, recorded in the same write. A record that
+    // cannot be merged is reported rather than failing the page: a side
+    // record that could block filling would be worse than none, and neither
+    // is `meta-provenance`'s own location a reason to fail a fill.
+    const merged =
+      metaHome.kind === "url" || metaHome.kind === "no-entry"
+        ? undefined
+        : mergeMetaProvenance(
+            data[META_PROVENANCE_KEY],
+            identity.model,
+            "evals",
+            written.map((p) => ({ name: p.id, confidence: p.confidence })),
+          );
+    const metaManifest = metaHome.kind === "manifest" ? metaHome : undefined;
+    let metaProvenance: EvalsMetaProvenanceReport;
+    if (metaHome.kind === "url") {
+      metaProvenance = { written: false, skipReason: "manifest-owned", manifest: metaHome.file };
+    } else if (metaHome.kind === "no-entry") {
+      metaProvenance = { written: false, skipReason: "unwritable" };
+    } else if (merged === undefined) {
+      metaProvenance = { written: false, skipReason: "schema-mismatch" };
+    } else if (metaManifest !== undefined) {
+      metaProvenance = {
+        written: true,
+        entry: { ...merged.entry, evals: merged.names },
+        destination: metaManifest.file,
+      };
+    } else {
+      metaProvenance = { written: true, entry: { ...merged.entry, evals: merged.names } };
+    }
+
+    const manifest = evalsHome.kind === "manifest" ? evalsHome : undefined;
+    const pageEntries = manifest === undefined ? written.map(toEntry) : [];
+    const pageMeta =
+      metaProvenance.written && metaManifest === undefined ? merged?.list : undefined;
+    try {
+      // The page first, as `meta fill` writes it, so a refused manifest leaves
+      // no entry pointing at a page that was never changed.
+      if (pageEntries.length > 0 || pageMeta !== undefined) {
+        const updated = appendPageEvals(
+          plan.page.content,
+          label,
+          pageEntries,
+          pageMeta,
+        );
+        if (!options.dryRun && updated !== plan.page.content) {
+          writeFileSync(plan.page.absPath, updated);
+        }
+      }
+      if (!options.dryRun && manifest !== undefined) {
+        const held = manifestEvalList(
+          await writer.readManifest(manifest, EVALS_KEY),
+          manifest.file,
+          manifest.entry,
+        );
+        await writer.writeManifest(manifest, EVALS_KEY, [
+          ...held,
+          ...written.map((p) => entryObject(toEntry(p))),
+        ]);
+      }
+      if (!options.dryRun && metaManifest !== undefined && merged !== undefined) {
+        await writer.writeManifest(metaManifest, META_PROVENANCE_KEY, merged.list);
+      }
+    } catch (e) {
+      return {
+        ...result,
+        status: "error",
+        error: errorMessage(e),
+        written: [],
+      };
+    }
+    if (evalsHome.kind === "page" && evalsHome.prefersExternal) {
+      writer.stayedOnPage(label, EVALS_KEY, evalsHome.proposed);
+    }
+    return {
+      ...result,
+      status: options.dryRun ? "proposed" : "filled",
+      wroteTo: manifest === undefined ? "page" : manifest.file,
+      metaProvenance,
+    };
+  }
+}
+
+const STATUS_LABELS: Record<FillStatus, string> = {
+  filled: "filled",
+  proposed: "proposed",
+  "nothing-proposed": "no-op",
+  skipped: "skipped",
+  "skipped-budget": "skipped",
+  error: "error",
+};
+
+export function renderFill(
+  report: FillReport,
+  format: SummaryFormat,
+): string {
+  // See renderList — same reasoning, same public exposure via src/index.ts.
+  parseFormat(format, SUMMARY_FORMATS, "format");
+  if (format === "json") return JSON.stringify(report, null, 2);
+  const lines: string[] = [];
+  const names = (evals: ProposedEval[]) =>
+    evals.map((p) => `${p.id} ${p.confidence.toFixed(2)}`).join(", ");
+  for (const r of report.results) {
+    const label = STATUS_LABELS[r.status].padEnd(8);
+    const cachedTag = r.cached ? " [cached]" : "";
+    switch (r.status) {
+      case "filled":
+        lines.push(
+          `${pc.green(label)} ${r.file}  +${r.written.length} evals (${names(r.written)})${cachedTag}`,
+        );
+        break;
+      case "proposed":
+        lines.push(
+          `${pc.cyan(label)} ${r.file}  +${r.written.length} evals (${names(r.written)})${cachedTag} — dry run, not written`,
+        );
+        break;
+      case "nothing-proposed":
+        lines.push(`${pc.dim(label)} ${r.file}  (nothing new proposed)${cachedTag}`);
+        break;
+      case "skipped":
+        lines.push(`${pc.dim(label)} ${r.file}  (evals.skip)`);
+        break;
+      case "skipped-budget":
+        lines.push(`${pc.yellow(label)} ${r.file}  (turn budget exhausted)`);
+        break;
+      case "error":
+        lines.push(`${pc.red(label)} ${r.file}: ${r.error ?? "unknown error"}`);
+        break;
+    }
+    // Where the evals went, when it was not the page (proposal 0047).
+    if (r.wroteTo !== undefined && r.wroteTo !== "page") {
+      lines.push(`    ${pc.cyan("evals")} → ${r.wroteTo}`);
+    }
+    const record = r.metaProvenance;
+    if (record?.written === true) {
+      const destination = record.destination === undefined ? "" : ` → ${record.destination}`;
+      lines.push(
+        `    ${pc.cyan("meta-provenance")}  ${record.entry["generated-by"]}: ${record.entry.evals.join(", ")}${destination}`,
+      );
+    } else if (record?.skipReason === "schema-mismatch") {
+      lines.push(
+        pc.dim("    meta-provenance not written: this page's schemas do not allow it"),
+      );
+    } else if (record?.skipReason === "manifest-owned") {
+      lines.push(
+        pc.dim(
+          `    meta-provenance not written: owned by manifest ${record.manifest}, which is fetched and cannot be written`,
+        ),
+      );
+    } else if (record?.skipReason === "unwritable") {
+      lines.push(
+        pc.dim("    meta-provenance not written: its manifest has no entry for this page"),
+      );
+    }
+    if (r.belowThreshold.length > 0) {
+      lines.push(
+        pc.dim(
+          `         below ${report.threshold}: ${names(r.belowThreshold)}`,
+        ),
+      );
+    }
+    if (r.capped.length > 0) {
+      lines.push(
+        pc.dim(`         over per-page cap: ${names(r.capped)}`),
+      );
+    }
+    if (r.duplicates.length > 0) {
+      lines.push(pc.dim(`         duplicates: ${r.duplicates.join(", ")}`));
+    }
+  }
+  lines.push("");
+  lines.push(
+    `Threshold: ${report.threshold} · inference calls: ${report.turns}`,
+  );
+  return lines.join("\n");
+}

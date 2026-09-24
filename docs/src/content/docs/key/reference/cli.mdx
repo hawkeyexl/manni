@@ -59,13 +59,11 @@ manni key [options] <command> [command options] [arguments]
 {/* cite set-other-keys-survive */}
 {/* cite set-generates-64-hex */}
 {/* cite set-report-names-file */}
-{/* cite set-discovers-moose */}
 Write `encryptionKey:` at the top level of a manni config file. The file is the
 one `-c` names, else the nearest `manni.config.yaml`, whatever sections it
 carries. When there is none, `manni.config.yaml` is created at the git root, or
 in the working directory outside git. An existing file is edited in place, and
-every other key in it survives. Discovery also finds `moose.config.yaml`, the
-file's name before the rename, and warns to rename it. With no `[value]`, 64
+every other key in it survives. With no `[value]`, 64
 random hex characters are generated. The key is never printed. The report
 names the file it went to, and nothing else.
 
@@ -73,8 +71,8 @@ names the file it went to, and nothing else.
 {/* cite set-c-family-file */}
 {/* cite set-c-single-tool-refused */}
 A file `-c` names must exist. It is read as a family file when it is named
-`manni.config.yaml` or `moose.config.yaml`, carries a top-level
-`encryptionKey:`, `collections:` or `tools:`, or is empty. Any other file,
+`manni.config.yaml`, carries a top-level
+`encryptionKey:`, `collections:`, `tools:` or `providers:`, or is empty. Any other file,
 such as a `docmeta.config.yaml`, is one tool's whole section. `set` refuses it, because a top-level key would turn its whole
 document into a family file.
 

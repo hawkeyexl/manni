@@ -170,21 +170,17 @@ is not a secret, so `eror` is quoted back as the typo it is.
 
 {/* cite discovery-filenames */}
 {/* cite discovery-git-boundary */}
-{/* cite discovery-moose-names */}
-{/* cite discovery-moose-warning */}
 The tool looks in the working directory and each ancestor, stopping at the
 nearest `.git` boundary. With no `.git` above the working directory, it looks
 in the working directory only. In each directory it tries
-`manni.config.yaml`, then `manni.config.yml`. Then it tries
-`moose.config.yaml` and `moose.config.yml`, the family file's pre-rename
-names. It reads them the same way, with a warning on stderr to rename the file.
+`manni.config.yaml`, then `manni.config.yml`.
 
 {/* cite discovery-sibling-file-skipped */}
 {/* cite discovery-family-keys-count */}
 The first file found wins; ancestor files are never merged. A family file
-counts when it carries `cite:`, `collections:`, `tools:` or `encryptionKey:`.
-One with none of these belongs to a sibling tool, and discovery keeps looking
-up the tree. The tool has no config file of its own from before the family
+counts when it carries `cite:`, `collections:`, `tools:`, `encryptionKey:` or
+`providers:`. One with none of these belongs to a sibling tool, and discovery
+keeps looking up the tree. The tool has no config file of its own from before the family
 file.
 
 {/* cite explicit-config-must-exist */}

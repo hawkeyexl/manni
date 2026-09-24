@@ -1,0 +1,15 @@
+# A field-joined manifest (proposal 0039) whose entries are keyed on the page's
+# own `doc-id`. `docs/no-id.md` carries none, so the manifest has no entry to
+# hold its evals and every writer refuses that page.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [evals]
+        join: doc-id
+
+docevals:
+  fill:
+    confidenceThreshold: 0.5

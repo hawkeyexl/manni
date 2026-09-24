@@ -8,11 +8,13 @@ The site is organized by user intent, not by document type. Each top-level secti
 
 ## Domains
 
-manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Five domains ship today, so the site has five top-level sections: `meta/`, `cite/`, `key/`, `a11y/` and `term/`. The same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
+manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Six domains ship today, so the site has six top-level sections: `meta/`, `cite/`, `key/`, `a11y/`, `term/` and `docevals/`. The same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
 
 The `a11y/` section now carries journey pages of its own. It serves Maya (M7, the first local crawl), Devin (D7, the CI gate) and Theo (T3, fixing one violation). Those are the three who already own the same work in `meta/` and `cite/`. Proposal 0035 recorded that a11y had no persona, and no fifth persona was invented to close the gap. The `a11y/` content set is below, beside `cite/` and `key/`.
 
 The `term/` section serves four journeys. Sara defines the terms (S6), Maya keeps the terms and the prose in step (M9), and Devin hands the termbase to localization (D8). Theo fixes the term check that turned his pull request red (T4). Its content set is below `a11y/`.
+
+The `docevals/` section arrived with a strategy of its own, six personas and twelve journeys. Three of those personas were already these people by name, Devin, Sara and Theo. The other three were Priya, Nate and Iris. They are Maya as a platform lead, as the only person writing the docs, and as the one handed a corpus she did not write. They were folded into her entry in `personas.md` rather than added, for the same reason a11y added no persona. The journeys became M10–M14, D9–D10, S7–S10 and T5. M15 was added later, when the eval keys gained a home outside the page. Its content set is below, after `term/`.
 
 ---
 
@@ -121,7 +123,7 @@ The tree above is the `meta` group. The nav gains a `cite` group beside it, a si
 | Built-in schemas (registry) | S1, M1 | ★ | The hub for everything manni meta ships. One table of all twenty-three ids, with what each constrains, what it requires, and which two are on by default. Then the editorial-vs-platform distinction, and the three ways to turn one on. The OKF, taxonomy, Docusaurus, platform, vocabulary, DITA, Agent Skills, and Claude Code subagent pages are its detail pages. Source of truth: `src/meta/core/schema-registry.ts`, `src/meta/core/resolve-schema.ts`. |
 | CLI reference | All | ★ | `validate`/`get`/`query`/`fill`/`schemas`; every flag. The `query` section is the flag surface only. The command's contract lives on its own page below, so the two cannot drift. Source of truth: `src/meta/cli.ts`, guarded by `npm run docs:check-cli`. |
 | `query` command reference | D4, D3, M2, S3 | | The lookup page for the largest module in the repo. Covers the `docs` table (system and data columns, value encoding, `lineFor`/`explicit_null`), and each declared collection as a read-only view, which may overlap another. Covers the vocabulary split, where DML edits the files and DDL edits the schema. Covers the DDL type bridge (formats as column types, `CHECK IN` as `enum`), which schema an `ALTER` edits, and every refusal it raises. Then `-s` as the DDL target, write-by-default with `--dry-run` as the preview, and rows as findings. Then bound parameters, the six output formats, the `--db` export, and the exit-code contract. Doc-detective steps run the whole surface over `test/fixtures/query/`, `collections/`, and `ddl-bridge/`. Source of truth: `src/meta/commands/query.ts`, `src/meta/core/{projection,collections,checks}.ts`, `src/meta/reporters/query.ts`. |
-| Configuration reference | M1, D1 | ★ | Full `manni.config.yaml` keys, types, defaults, CLI-merge precedence. Source of truth: `src/meta/core/config.ts`, `src/shared/config-file.ts`. |
+| Configuration reference | M1, D1 | ★ | Full `manni.config.yaml` keys, types, defaults, CLI-merge precedence. The family keys every tool reads live here too: `collections:`, `encryptionKey:` and `providers:`, with provider precedence and `--local`. Source of truth: `src/meta/core/config.ts`, `src/shared/config-file.ts`, `src/shared/providers.ts`. |
 | Schema resolution reference | S2, D2 | ★ | Precedence chain + ref kinds + dialects. Source of truth: `src/meta/core/resolve-schema.ts`, `src/meta/core/schema-registry.ts`, `src/meta/core/validator.ts`. |
 | Supported formats reference | All | ★ | Extractor/extension/metadata-model table: Markdown, MDX, AsciiDoc, RST, XML, HTML. Source of truth: `src/meta/extractors/`. |
 | Output formats & exit codes | D1, D3, D5, D7 | ★ | `pretty`/`json`/`github` shapes; `NO_COLOR`/TTY behavior. Also carries the `## Severity across the family` section, the one shared concept with no other home. That covers the three levels, which tool emits which, how each renders per format, and how a domain maps its own scale onto them. The a11y and cite configuration pages link here rather than restating it. Source of truth: `src/meta/reporters/index.ts`, `src/shared/severity.ts`. |
@@ -187,6 +189,66 @@ The fifth domain's content set, under `docs/src/content/docs/term/`. It serves f
 | Terminology fields (`term/reference/terminology.mdx`) | S6, D8 | ★ | The ten fields with types and SKOS mappings, and `type: term` and `type: term-set`. The kind of label as status, and the `see` redirect. Then how an entry gets its id, and validating a page against the draft schema. |
 | Check rules (`term/reference/rules.mdx`) | S6, M9 | ★ | The ten rules with default severity and meaning, one real run breaking each, and what fixes each. |
 
+### `docevals/` (evals for documentation pages)
+
+The sixth domain's content set, under `docs/src/content/docs/docevals/`, imported from moose-docevals with the tool. Its tree is wider than the siblings' because its journeys are. The principle is the same, with sections by job and a flat reference shelf the journeys deep-link into. The nav gains a `docevals` group after `cite`, with an Overview link and seven groups autogenerated from the matching directories:
+
+```
+Overview — "What are you trying to do?" router + a 60-second proof
+│
+├─ Get started        (Maya)          → M10
+├─ Write evals        (Maya · Sara)   → M11, M12, S7
+├─ Adopt at scale     (Maya)          → M13, M14, M15, S10
+├─ Run it in CI       (Devin)         → D9, D10
+├─ Trust the judge    (Sara)          → S8, S9
+├─ Fix a failing eval (Theo)          → T5   (highest traffic; no prerequisites)
+└─ Reference          (lookup shelf)
+```
+
+Three placements are deliberate. `adopt/` is apart from `get-started/`, because proposing evals for a corpus is a different journey from a first gate. Burying `fill` in a tutorial loses the reader who needed it most. `judge/` is a section rather than reference, because "can I trust a model to gate my build?" blocks adoption for every persona. `fix/` is shallow and top-level, because its reader arrives from an annotation and never sees the rest of the tree.
+
+Two constraints hold across the section. `fix/index.mdx` has no subject dependencies. Pages that present a command carry inline Doc Detective steps, which the docs-as-tests workflow runs. `npm run docs:check-docevals` runs the section's own `docs-page` suite over every page, deterministically, from `docs/manni.docevals.yaml`. Nothing on a page may print a dollar figure, because the tool counts inference calls and reports none.
+
+★ follows the rule above. The imported strategy's P0 pages carry it, and its P1 and P2 pages do not.
+
+| Page | CUJ | ★ | Notes |
+|---|---|---|---|
+| Overview (`docevals/index.mdx`) | All | ★ | Mirrors the sibling overviews' hero. What an eval and a grader are, the 60-second proof from a real `--deterministic-only` run, and a goal router into the seven sections. |
+| Get started (`docevals/get-started/index.mdx`) | M10 | ★ | Install, `init`, one assertion, one run, one real finding, one CI step. Minimum vocabulary: the reader reaches a finding without meeting "capability suite". |
+| How docevals works (`docevals/get-started/how-docevals-works.mdx`) | M10, M12 | ★ | The eval, grader and verdict model and the grader hierarchy. Sits after the quickstart on purpose. |
+| Write evals (`docevals/evals/index.mdx`) | M10, M11, M15 | ★ | The frontmatter contract, with array shorthand and object form, `suite`, skipping, and inline and referenced evals. |
+| Write good assertions (`docevals/evals/write-good-assertions.mdx`) | S7, M13, S9 | ★ | `assertion`, `evidence` and `examples` as one mechanism, and the two-reviewer test. The page that does most for Sara. |
+| Deterministic checks (`docevals/evals/deterministic-checks.mdx`) | M12, S10, M10 | ★ | `command` and `tool:*` graders, wrapping existing linters, and the generate path for a plain-language command eval. |
+| Named evals and suites (`docevals/evals/named-evals-and-suites.mdx`) | M11 | | Named evals, suites, criteria, `target-pass-rate`, resolution order, and `list` as the dry run. |
+| Test your commands (`docevals/evals/test-your-commands.mdx`) | M12 | | The inline Doc Detective convention, and the `page-embedded-steps` grant it needs. |
+| Regression vs capability (`docevals/evals/regression-vs-capability.mdx`) | S7, M11, M14 | | Why `regression` is the default, and how suite targets carry the nuance a binary verdict seems to lose. |
+| Severity and findings (`docevals/evals/severity-and-findings.mdx`) | M12, M14 | | `error` fails, `warning` and `notice` report. `severity-map`, and severity inversion kept for findings nobody will gate on. |
+| Adopt at scale (`docevals/adopt/index.mdx`) | M13, M14 | ★ | `fill`, `--dry-run` before write, and proposals cached before the gate, so re-gating is free. |
+| Retrofit a legacy corpus (`docevals/adopt/retrofit-a-legacy-corpus.mdx`) | M14 | | The baseline ratchet. Scope first, `baseline:`, `--write-baseline`, read `removed`, the per-rule-per-file limit. The highest-consequence page in the adopt set. |
+| Promote to deterministic (`docevals/adopt/promote-to-deterministic.mdx`) | S10, M13, M14 | | `promote` reports by default; `--write` is a deliberate act. |
+| Move an annotated corpus into a manifest (`docevals/adopt/move-evals-to-a-manifest.mdx`) | M15 | | `manni meta relocate` lifts the eval keys out of every page into one collection manifest. The run before and the run after, side by side, plus where the writers go afterwards and the three refusals. |
+| Review generated scripts (`docevals/adopt/review-generated-scripts.mdx`) | S10 | | Generated scripts are version-controlled source, and reviewing them is why they are files. |
+| Run it in CI (`docevals/ci/index.mdx`) | D9, M10 | ★ | The GitHub Actions recipe, `-f github`, `paths:` on the trigger, and the cache step. A third-party action in any recipe is pinned to a full SHA, which Devin checks. |
+| Exit codes and annotations (`docevals/ci/exit-codes-and-annotations.mdx`) | D9, S9, M14 | ★ | `0`/`1`/`2` and who each routes to, annotations, `--fail-on-review` as a policy fork, the baseline in CI. |
+| Untrusted pull requests (`docevals/ci/untrusted-pull-requests.mdx`) | D10 | ★ | The highest-consequence page in the section. Two execution paths, two grants, and why neither is a fork defense. The same-repo job gate and the fork job. |
+| CI recipes (`docevals/ci/recipes.mdx`) | D9 | | GitLab CI, Jenkins, pre-commit. |
+| Caching and turn budgets (`docevals/ci/cost-and-caching.mdx`) | D10, D9, M13, S10 | | `judge.maxTurns` and `fill.maxTurns` in turns, which skip rather than abort. Content-addressed caching, what invalidates an entry, and the CI cache key. No dollar figure. |
+| Consume results (`docevals/ci/consume-results.mdx`) | D9 | | `-f json`, `-f html`, and the `docevals` namespace of the TypeScript API. |
+| Trust the judge (`docevals/judge/index.mdx`) | S8, S7, S9 | ★ | Reproducibility, the ensemble, consensus (`partial` counts as fail, an errored run counts against), and the confidence zones. |
+| Calibrate (`docevals/judge/calibrate.mdx`) | S8 | | The golden set, `--seed`, agreement, the 70% floor and why the fix is the assertions, `judge.falsePositiveAlert`. |
+| Human review (`docevals/judge/human-review.mdx`) | S9 | | `review` with and without arguments, persistence, expiry on page change, a repeat offender as a diagnosis. |
+| Choose a provider (`docevals/judge/choose-a-provider.mdx`) | S8, D9 | | `provider` and `model`, the family's top-level `providers:` connection settings, detection, and the four providers, including a self-hosted endpoint and `claude-cli` with no key. `--local` as the CI recipe for pages that must not leave the runner. The security-review answer. |
+| Fix a failing eval (`docevals/fix/index.mdx`) | T5, M14 | ★ | The triage table on the first screen. No subject dependencies. |
+| FAQ (`docevals/fix/faq.mdx`) | T5 | | The failures that are not the contributor's to fix, and the recurring questions. |
+| Reference (`docevals/reference/index.mdx`) | Navigation | ★ | The shelf index. |
+| CLI reference (`docevals/reference/cli.mdx`) | All | ★ | Every command and flag, including `--collection`. Guarded by `npm run docs:check-cli`. Source of truth: `src/docevals/cli.ts`. |
+| Configuration reference (`docevals/reference/configuration.mdx`) | M11, D10, M14 | ★ | Every `docevals:` key with type and default, in camelCase, including `provider`, `model`, `execution.allow` and the turn budgets. How `collections:` supplies the pages, and a pointer to the family's `providers:` map on meta's configuration page. |
+| Frontmatter reference (`docevals/reference/frontmatter.mdx`) | M11, S7, S10 | ★ | Every eval field and the resolution order. |
+| Graders reference (`docevals/reference/graders.mdx`) | M12 | ★ | Every kind in the registry with its options. States that `options.command` is a partial override for `tool:doc-detective`. |
+| Output and exit codes (`docevals/reference/output-and-exit-codes.mdx`) | M10, D9 | ★ | The seven formats and the exit codes. |
+| Files and state (`docevals/reference/files-and-state.mdx`) | S9, M14 | | The `.manni/docevals/` layout: caches, reviews, the golden set, generated scripts, and the baseline file. |
+| Glossary (`docevals/reference/glossary.mdx`) | Vocabulary | | eval, grader, assertion, evidence, suite, criterion, ensemble, consensus, confidence zone, calibration, regression and capability. |
+
 ### Supporting / project
 
 | Page | CUJ | ★ | Notes |
@@ -232,6 +294,14 @@ Reference pages must never contradict the source code. Before writing any Refere
 | `term` configuration and rules references | `src/term/core/config.ts` for the `term:` keys and refusals, `src/term/core/severity.ts` and `src/term/core/check.ts` for the rules and their messages, `src/shared/tools.ts` for `tools:` |
 | `term` terminology reference | `docs/proposals/0023/schemas/terminology/1.0.0-proposal.1.json`, `src/term/types.ts`, `src/term/core/id.ts`, `src/term/core/readers/` |
 | `term` journey pages (overview, get started, set up, move and hand off, CI, fix) | `src/term/commands/` for behaviour, and `src/term/core/writers/` for what each render holds. `src/term/core/vale.ts` and `src/term/core/writers/vale.ts` for the Vale seam and the style. `src/term/reporters/` for the exact emitted strings, with sample output captured from the built binary |
+| `docevals` CLI reference (`docevals/reference/cli.mdx`) | `src/docevals/cli.ts`, guarded by `scripts/check-cli-reference.mjs` |
+| `docevals` configuration reference (`docevals/reference/configuration.mdx`) | `src/docevals/core/config-schema.json`, `src/docevals/core/config.ts`, `src/shared/collections.ts`, `src/shared/providers.ts` |
+| `docevals` frontmatter reference (`docevals/reference/frontmatter.mdx`) | `src/docevals/schema.ts`, `src/docevals/core/resolve.ts`, `src/docevals/core/external.ts`, `src/docevals/core/write-location.ts` |
+| `docevals` graders reference (`docevals/reference/graders.mdx`) | `src/docevals/graders/registry.ts`, `src/docevals/graders/options.ts`, each grader under `src/docevals/graders/` |
+| `docevals` output and exit codes (`docevals/reference/output-and-exit-codes.mdx`) | `src/docevals/reporters/`, `src/shared/run.ts`, `src/shared/severity.ts` |
+| `docevals` files and state (`docevals/reference/files-and-state.mdx`) | `src/docevals/judge/cache.ts`, `src/docevals/fill/cache.ts`, `src/docevals/core/reviews.ts`, `src/docevals/core/baseline.ts`, `src/docevals/graders/scriptgen.ts` |
+| `docevals` judge pages (trust the judge, calibrate, choose a provider) | `src/docevals/judge/judge.ts`, `src/docevals/judge/verdict-schema.json`, `src/docevals/judge/provider.ts`, `src/docevals/commands/calibrate.ts` |
+| `docevals` journey pages | `src/docevals/commands/` for behaviour, `test/docevals/` for the exact emitted strings; sample output captured from the built binary over `test/docevals/fixtures/pages/` |
 | `a11y` journey pages (get started, CI, fix) | `src/a11y/commands/check.ts` for behaviour, `src/a11y/core/{crawl,seeds,sitemap,url}.ts` for the crawl, `src/a11y/core/analyzer.ts` for the browser seam. `src/a11y/reporters/{pretty,github,json}.ts` for the exact emitted strings, captured from a real run, because no Doc Detective step can crawl here |
 
 ---

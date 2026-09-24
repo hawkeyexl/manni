@@ -164,9 +164,8 @@ collections:
 
 - **A file that holds only a key is still a config file.** Discovery stops at
   the first `manni.config.yaml` that carries the running tool's section,
-  `collections:`, `tools:` or `encryptionKey:`. A `moose.config.yaml`, the
-  file's name before the rename, is found the same way, with a warning to
-  rename it. The next run finds a file the key prompt created.
+  `collections:`, `tools:`, `encryptionKey:` or `providers:`. The next run
+  finds a file the key prompt created.
 - **Strength is yours to provide.** The configured value is used as key
   material as it is. It is expanded, not stretched, so a value picked by hand is
   only as strong as it is random. `manni key set` generates 256 random bits, and

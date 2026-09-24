@@ -28,6 +28,7 @@ import { loadSchema } from "../src/meta/core/schema-registry.js";
 import { compileWithFormats } from "../src/meta/core/validator.js";
 import { runValidate } from "../src/meta/commands/validate.js";
 import { DocmetaError } from "../src/meta/types.js";
+import { startSchemaServer } from "./helpers/schema-server.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name: string): string =>
@@ -1461,6 +1462,167 @@ describe("provider selection", () => {
     await expect(
       runFill({ ...base, cwd: dir, inputs: [], dryRun: true }),
     ).rejects.toThrow(/antropic/);
+  });
+});
+
+describe("provider selection from the family's providers:", () => {
+  /**
+   * No provider is injected: the point is which identity the run resolves.
+   * Every named provider resolves with no key and no network, and `missing.md`
+   * with `allowEmpty` keeps file handling out of it.
+   */
+  async function identity(
+    config: string,
+    over: Partial<FillOptions> = {},
+  ): Promise<{ provider: string; model: string }> {
+    await writeFile(join(dir, "manni.config.yaml"), config, "utf8");
+    const run = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: ["missing.md"],
+      allowEmpty: true,
+      dryRun: true,
+      ...over,
+    });
+    return { provider: run.provider, model: run.model };
+  }
+
+  it("falls back to providers.provider and its model", async () => {
+    await expect(
+      identity("providers:\n  provider: openai\n  model: family-model\n"),
+    ).resolves.toEqual({ provider: "openai", model: "family-model" });
+  });
+
+  it("takes the named provider's default when providers: names no model", async () => {
+    await expect(identity("providers:\n  provider: openai\n")).resolves.toEqual({
+      provider: "openai",
+      model: DEFAULT_MODELS.openai,
+    });
+  });
+
+  it("lets meta.fill.provider beat providers.provider, without the family's model", async () => {
+    await expect(
+      identity(
+        "providers:\n  provider: openai\n  model: family-model\nmeta:\n  fill:\n    provider: anthropic\n",
+      ),
+    ).resolves.toEqual({ provider: "anthropic", model: DEFAULT_MODELS.anthropic });
+  });
+
+  it("gives meta.fill.model to the family's provider when fill names none", async () => {
+    await expect(
+      identity(
+        "providers:\n  provider: openai\n  model: family-model\nmeta:\n  fill:\n    model: fill-model\n",
+      ),
+    ).resolves.toEqual({ provider: "openai", model: "fill-model" });
+  });
+
+  it("lets --provider beat both, carrying a model only from a level naming the same provider", async () => {
+    const config = "providers:\n  provider: openai\n  model: family-model\n";
+    await expect(identity(config, { provider: "anthropic" })).resolves.toEqual({
+      provider: "anthropic",
+      model: DEFAULT_MODELS.anthropic,
+    });
+    await expect(identity(config, { provider: "openai" })).resolves.toEqual({
+      provider: "openai",
+      model: "family-model",
+    });
+    await expect(identity(config, { model: "flag-model" })).resolves.toEqual({
+      provider: "openai",
+      model: "flag-model",
+    });
+  });
+
+  describe("under --local", () => {
+    // A concrete llama-cpp model: the default is a selector, and resolving a
+    // selector probes this machine's GPU memory.
+    const LOCAL_MODEL = "granite-4.1-3b-q2";
+
+    it("runs llama-cpp over a hosted meta.fill.provider, saying so once", async () => {
+      const notices: string[] = [];
+      await expect(
+        identity("meta:\n  fill:\n    provider: anthropic\n    model: claude-x\n", {
+          local: true,
+          model: LOCAL_MODEL,
+          onNotice: (m) => notices.push(m),
+        }),
+      ).resolves.toEqual({ provider: "llama-cpp", model: LOCAL_MODEL });
+      expect(notices).toEqual([
+        '--local: using llama-cpp instead of "anthropic" from fill.provider.',
+      ]);
+    });
+
+    it("runs llama-cpp over providers.provider, naming it", async () => {
+      const notices: string[] = [];
+      await expect(
+        identity("providers:\n  provider: claude-cli\n", {
+          local: true,
+          model: LOCAL_MODEL,
+          onNotice: (m) => notices.push(m),
+        }),
+      ).resolves.toEqual({ provider: "llama-cpp", model: LOCAL_MODEL });
+      expect(notices).toEqual([
+        '--local: using llama-cpp instead of "claude-cli" from providers.provider.',
+      ]);
+    });
+
+    it("keeps a configured model only from a level that named llama-cpp", async () => {
+      const notices: string[] = [];
+      await expect(
+        identity(
+          `providers:\n  provider: openai\n  model: gpt-x\nmeta:\n  fill:\n    provider: llama-cpp\n    model: ${LOCAL_MODEL}\n`,
+          { local: true, onNotice: (m) => notices.push(m) },
+        ),
+      ).resolves.toEqual({ provider: "llama-cpp", model: LOCAL_MODEL });
+      expect(notices).toEqual([]);
+    });
+
+    it("refuses --provider naming a hosted provider as a contradiction", async () => {
+      await writeFile(join(dir, "manni.config.yaml"), "{}\n", "utf8");
+      await expect(
+        runFill({ ...base, cwd: dir, inputs: ["missing.md"], allowEmpty: true, local: true, provider: "claude-cli" }),
+      ).rejects.toThrow(
+        "--local and --provider claude-cli contradict each other: --local runs inference on this machine with llama-cpp. Drop one of them.",
+      );
+    });
+  });
+
+  it("hands detection the configured connection settings", async () => {
+    // No key for either hosted provider: only a configured baseUrl makes
+    // openai usable, so `openai` can only come from detection seeing it.
+    const saved = { ...process.env };
+    try {
+      process.env["ANTHROPIC_API_KEY"] = "";
+      process.env["OPENAI_API_KEY"] = "";
+      await expect(
+        identity("providers:\n  openai:\n    baseUrl: http://127.0.0.1:1/v1\n"),
+      ).resolves.toEqual({ provider: "openai", model: DEFAULT_MODELS.openai });
+    } finally {
+      process.env = saved;
+    }
+  });
+
+  it("constructs the provider with its connection settings", async () => {
+    const server = await startSchemaServer({
+      "/v1/chat/completions": { status: 400, json: { error: { message: "stub endpoint" } } },
+    });
+    const saved = { ...process.env };
+    try {
+      process.env["MANNI_TEST_OPENAI_KEY"] = "sk-from-custom-env";
+      const file = await stage("no-block.md");
+      await writeFile(
+        join(dir, "manni.config.yaml"),
+        `providers:\n  provider: openai\n  openai:\n    baseUrl: ${server.url}/v1\n    apiKeyEnv: MANNI_TEST_OPENAI_KEY\n`,
+        "utf8",
+      );
+      const run = await runFill({ ...base, cwd: dir, inputs: [file], fields: ["title"], dryRun: true });
+      expect(run.results[0]?.error).toMatch(/stub endpoint/);
+      const [request] = server.requests();
+      expect(request?.path).toBe("/v1/chat/completions");
+      expect(request?.headers.authorization).toBe("Bearer sk-from-custom-env");
+    } finally {
+      process.env = saved;
+      await server.close();
+    }
   });
 });
 
