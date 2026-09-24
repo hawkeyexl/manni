@@ -53,8 +53,11 @@ export default defineConfig({
   //
   // Proposal 0041 renamed the sidecar vocabulary to external metadata. Release
   // notes and pull requests link to the old URL, so it must not 404.
+  // Proposal 0063 renamed the kg vocabulary's review page to graph, for the
+  // same reason.
   redirects: {
     "/meta/set-up/sidecar-metadata": "/manni/meta/set-up/external-metadata",
+    "/meta/proposals/kg": "/manni/meta/proposals/graph",
   },
   integrations: [
     starlight({

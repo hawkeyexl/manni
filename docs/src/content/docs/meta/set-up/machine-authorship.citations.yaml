@@ -42,7 +42,7 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
     - id: meta-provenance-pointer-added-on-rewrite-only
       claim:
-        integrity: sha256-3826bac450bbfce383854d3bd3bb707d865fb5af83e1f433169edfead9900c7b
+        integrity: sha256-95da7a8b17ea203b6d306692609b29d99a9295b694fb9d98b9d186fd6191a544
       source:
         file: src/meta/commands/fill.ts
         lines: 1424-1428
@@ -50,7 +50,7 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
     - id: meta-provenance-fields-are-json-pointers
       claim:
-        integrity: sha256-3826bac450bbfce383854d3bd3bb707d865fb5af83e1f433169edfead9900c7b
+        integrity: sha256-95da7a8b17ea203b6d306692609b29d99a9295b694fb9d98b9d186fd6191a544
       source:
         file: src/meta/commands/fill-types.ts
         lines: 72-84
