@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.11.1](https://github.com/hawkeyexl/manni/compare/v2.11.0...v2.11.1) (2026-09-24)
+
+
+### Bug Fixes
+
+* **meta:** a page write changes only the keys it writes ([#120](https://github.com/hawkeyexl/manni/issues/120)) ([61af7d5](https://github.com/hawkeyexl/manni/commit/61af7d5c22359f6848e997d052b9cbf5854b3afe))
+
 # [2.11.0](https://github.com/hawkeyexl/manni/compare/v2.10.2...v2.11.0) (2026-09-24)
 
 
