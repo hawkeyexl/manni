@@ -1,0 +1,10 @@
+# Proposal 0058 stress test 10: two spellings of one pattern are one manifest for every page.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.{md,mdx}"
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+      - file: "./{page}.citations.yaml"
+        keys: [owner]

@@ -497,6 +497,8 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       configDir: configDir ?? cwd,
       base,
       offline: opts.offline ?? config?.offline ?? false,
+      // A `{page}` manifest (0058) is read for exactly the pages this run fills.
+      pages: files.map((file) => resolve(base, file)),
     });
   /** The declared collections one label belongs to, for the merge. */
   const mergeMembersFor = (label: string): string[] =>
@@ -569,10 +571,10 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       return `${label} could not be restored: ${errorMessage(err)}. Restore it from version control.`;
     }
   };
-  const holdManifest = (home: { absPath: string; file: string }): Promise<Holding> => {
+  const holdManifest = (home: { absPath: string; file: string; perPage: boolean }): Promise<Holding> => {
     let held = holding.get(home.absPath);
     if (held === undefined) {
-      held = holdManifestFile(home.absPath, home.file).then((m) => {
+      held = holdManifestFile(home.absPath, home.file, home.perPage).then((m) => {
         const h: Holding = { held: m, saving: Promise.resolve() };
         heldManifests.set(home.absPath, h);
         return h;

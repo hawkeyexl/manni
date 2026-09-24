@@ -13,6 +13,7 @@ which JSON Schema dialects are supported.
 
 ## Precedence
 
+{/* cite resolution-first-non-empty-level-wins */}
 manni meta checks these sources, in order, for the schema set of a file.
 The **first** one that yields a non-empty set is the one it uses.
 
@@ -24,6 +25,7 @@ The **first** one that yields a non-empty set is the one it uses.
 | 4 | Config `schemas` | All files not matched above. |
 | 5 | Built-in default set: `google:okf:0.1` + `passo-uno:seven-action:1.0` | Every file, when nothing else applies. |
 
+{/* cite resolution-duplicates-are-removed */}
 Once a level produces a set, lower levels are not consulted for that file.
 Within a resolved set, duplicate references are removed.
 
@@ -35,6 +37,7 @@ in the configuration reference](/manni/meta/reference/configuration/#how-config-
 
 ### The `$schema` key in a file
 
+{/* cite resolution-file-schema-may-be-a-string-or-a-list */}
 A file can name its own schema with a `$schema` key in its metadata. The value
 may be a single reference or a list of references:
 
@@ -54,6 +57,7 @@ type: concept
 ---
 ```
 
+{/* cite resolution-schema-key-is-stripped-before-validation */}
 `$schema` is a manni meta directive, not part of the document's metadata. It is
 **reserved and stripped** before validation, so a schema with
 `additionalProperties: false` will not flag it. A `$schema` value that is
@@ -61,6 +65,7 @@ neither a string nor a list of strings is an error for that file.
 
 ### What a document may reference, and how a repo narrows it
 
+{/* cite resolution-a-document-may-name-all-three-kinds */}
 By default a document's `$schema` may name any of the [three
 kinds](#reference-kinds): a built-in id, a local file, or a URL. That is the
 feature: a page carries its own contract, and level 2 of the chain is above
@@ -71,6 +76,7 @@ In a repository whose pull requests come from outside, that is a way to opt out
 of the standard. A document naming a permissive URL passes, while the documents
 playing by the config's rules fail.
 
+{/* cite resolution-schematrust-narrows-level-2-only */}
 [`schemaTrust`](/manni/meta/reference/configuration/#schema-trust) is how a repo
 narrows level 2. It changes nothing else in the chain:
 
@@ -89,12 +95,14 @@ Two things hold in **every** mode, including the default:
   `overrides[].schemas`, and `-s/--schema` resolve exactly as they always have,
   in every mode, including to a path outside the repository.
 
+{/* cite resolution-a-refused-document-ref-fails-that-file */}
 A refused reference fails **that file** (exit 1) with the reason as its error.
 The rest of the run is validated normally, and the annotation lands on the
 document that carried the reference.
 
 ## Reference kinds
 
+{/* cite resolution-three-reference-kinds */}
 A schema reference, wherever it comes from (CLI, `$schema`, or config), is
 classified into one of three kinds by its shape:
 
@@ -113,12 +121,14 @@ How a reference is classified:
   `google:okf:0.1`.
 - Everything else is a **file**.
 
+{/* cite resolution-windows-paths-and-json-are-not-builtins */}
 This deliberately classifies a Windows path (`C:\...`), a URL, and any `.json`
 reference as non-builtin. A typo'd built-in id is then reported as an unknown
 built-in rather than silently treated as a missing file.
 
 ### File references
 
+{/* cite resolution-a-file-ref-resolves-from-whatever-named-it */}
 A relative **file** reference resolves against the directory of whatever named
 it. That is the directory the person who wrote it was looking at:
 
@@ -128,6 +138,7 @@ it. That is the directory the person who wrote it was looking at:
 | A document's own `$schema` | The current working directory |
 | `-s/--schema` on the command line | The current working directory |
 
+{/* cite resolution-config-refs-rebase-to-the-config-dir */}
 So `schemas: ["./house.schema.json"]` in a config at the repo root means the
 file next to that config. That holds whether you run manni meta from the repo root,
 from `docs/`, or with `-c ../manni.config.yaml`. See [config
@@ -139,12 +150,14 @@ schemas are reported by their absolute path. It is then unambiguous which file a
 run actually loaded.
 </Aside>
 
+{/* cite resolution-document-path-must-stay-in-the-repo */}
 A file reference a **document** supplied has one extra rule: it must resolve
 inside the repository. `$schema: ../../../../etc/passwd` is refused rather than
 read, in every `schemaTrust` mode. A file reference from a config or from
 `--schema` has no such limit. See [what a document may
 reference](#what-a-document-may-reference-and-how-a-repo-narrows-it).
 
+{/* cite resolution-local-json-error-does-not-quote-the-file */}
 If a local schema file is not valid JSON, manni meta reports the reference and the
 line and column where parsing failed. It does **not** quote the file's contents
 back, because that message travels into `json` and `sarif` reports that are
@@ -164,6 +177,7 @@ meta:
       integrity: sha256-9f8e7d6c…
 ```
 
+{/* cite resolution-pinned-ref-resolves-like-any-file-ref */}
 **A pinned reference resolves exactly like any other file reference.** `ref` is
 the whole of what resolution sees. It is classified, rebased, deduplicated, and
 reported identically to the bare string `./schema/2.1.json`. It is also the
@@ -171,6 +185,7 @@ string that appears in reports, in `json` output, and in [baseline
 fingerprints](/manni/meta/reference/cli/#baselines). `source` and `integrity` are
 carried alongside and consulted only when the file is read.
 
+{/* cite resolution-bytes-hashed-before-parsing */}
 Reading it adds one step. Before the JSON is parsed, the file's **bytes** are
 hashed and compared against `integrity`. A match resolves normally; a mismatch
 is an operational error (exit 2) that stops the run:
@@ -184,6 +199,7 @@ The file's contents have changed since it was vendored. Re-download it with
 the recorded integrity if the change was intended.
 ```
 
+{/* cite resolution-integrity-mismatch-has-no-fallback */}
 There is deliberately **no fallback**. Loading the file anyway, or re-fetching
 `source` instead, would mean the run continues against a contract nobody
 approved. That is the failure the pin exists to make visible.
@@ -197,6 +213,7 @@ what actually happened:
 | The file is **missing** | `Schema file not found: "…". It was vendored from <source>; commit the file, or re-download it…`. Usually a copy that was never committed. |
 | The pin is on a **built-in or URL** ref | Rejected when the config is parsed, because neither can be verified, so a pin there would be decorative. |
 
+{/* cite resolution-pin-attests-to-the-upstream-bytes */}
 The hash is taken over the raw bytes, and `schemas vendor` writes exactly what
 the server sent. So the pin also attests to the upstream file, and
 re-downloading the URL and hashing it reproduces the same value.
@@ -213,6 +230,7 @@ schema/*.json -text
 
 ### URL references
 
+{/* cite resolution-ten-second-fetch-timeout */}
 A `url` reference is fetched with a default **10-second timeout**. Within a
 single run, fetched schemas are **cached per URL**, so the same URL is only
 retrieved once even when many files reference it. That holds when many files are
@@ -220,6 +238,7 @@ processed concurrently, which shares the one in-flight request rather than
 opening one per file. A timeout, a non-2xx HTTP status, or a response that is
 not valid JSON is an error (exit 2).
 
+{/* cite resolution-one-retry-after-500ms */}
 A failed request is retried **once**, after roughly 500 ms, and only for the
 failures that can plausibly heal. Those are a network-level error (DNS, refused
 connection, reset socket) or a `5xx`. A `4xx` is not retried, because a 404 will
@@ -229,6 +248,7 @@ per URL for no new information.
 
 #### The cross-run cache
 
+{/* cite resolution-fetched-schemas-are-cached-on-disk */}
 A schema fetched successfully is written to a **disk cache** and served from
 there on later runs. An edit-validate loop against a remote contract does not
 re-fetch it every time.
@@ -240,6 +260,7 @@ re-fetch it every time.
 | Freshness | The file's **mtime**, against `schemaCache.ttlHours` (default 24). |
 | Turning it off | [`schemaCache.ttlHours: 0`](/manni/meta/reference/configuration/#schema-cache). |
 
+{/* cite resolution-cache-location-follows-the-config */}
 Running from a subdirectory shares one cache with running from the repo root,
 because the location follows the config rather than where you are standing.
 
@@ -277,6 +298,7 @@ history rather than a request that has to succeed.
 
 #### Offline
 
+{/* cite resolution-offline-flag-and-config */}
 `--offline` (or [`offline: true`](/manni/meta/reference/configuration/#offline))
 makes a run touch the network not at all:
 
@@ -287,6 +309,7 @@ makes a run touch the network not at all:
   the URL.
 - Built-in ids and local `.json` files resolve exactly as they always do.
 
+{/* cite resolution-offline-needs-a-primed-cache */}
 Priming the cache is one ordinary run. Fetch once online, and every later run
 can be `--offline`. With `schemaCache.ttlHours: 0` there is no cache to read, so
 `--offline` fails on any `url` reference.
@@ -302,6 +325,7 @@ built-in is something you chose deliberately and can read:
 | The body must be a JSON **object** carrying at least one standard JSON Schema keyword. Any of the validation or applicator vocabularies from draft-04 through 2020-12 counts. That includes `$ref`, `$defs`, `type`, `properties`, `required`, `allOf`/`anyOf`/`oneOf`/`not`, `if`/`then`/`else`, `additionalProperties`, `patternProperties`, `propertyNames`, `items`/`prefixItems`/`contains`, `enum`, `const`, `format`, and the numeric, string and array constraints. | An object with none of them constrains nothing, so **every document passes it**. |
 | The body must be at most **5 MB**. | `res.json()` would otherwise read an unbounded body into memory. The timeout catches a slow response but not a fast, enormous one. |
 
+{/* cite resolution-error-envelope-served-with-200 */}
 The first check exists because of a specific, silent failure. An API gateway, a
 proxy, or a misconfigured bucket commonly answers a bad path with `200 OK` and a
 JSON *error envelope*:
@@ -316,11 +340,13 @@ It is a gate that reports success because it has stopped working. With it, the
 run stops with an exit-2 error naming the URL and quoting what the server
 actually sent.
 
+{/* cite resolution-not-meta-schema-validation */}
 This is intentionally **not** meta-schema validation. Four [dialects](#dialects)
 are compiled, and how strict a schema is remains its author's business. A sparse
 but genuine schema such as `{"type": "object"}` is accepted. The check targets
 one failure, which is a non-schema served as one.
 
+{/* cite resolution-keyword-list-is-generous */}
 The keyword list is deliberately generous, because the two ways this check can
 be wrong are not equally costly. Letting an unusual payload through means it
 either fails to compile or behaves as the permissive schema it literally is.
@@ -337,12 +363,14 @@ A no-op schema is still expressible as a local file or in `$schema`-bearing
 form.
 </Aside>
 
+{/* cite resolution-size-cap-counts-received-bytes */}
 The size cap counts the bytes actually received. `content-length` is advisory.
 It is absent on a chunked response and can simply be wrong, so it is never
 trusted on its own.
 
 ## Dialects
 
+{/* cite resolution-dialect-detected-from-meta-schema-uri */}
 Every schema declares its dialect through its own `$schema` meta-schema URI. The
 dialect is auto-detected from that URI, and the schema is compiled with the
 matching validator. Schemas of different dialects can coexist in one run.
@@ -355,6 +383,7 @@ matching validator. Schemas of different dialects can coexist in one run.
 | Draft-06 | `draft-06` / `draft/6` | Shares the draft-07 validator. |
 | Draft-04 | `draft-04` / `draft/4` | |
 
+{/* cite resolution-unknown-dialect-falls-back-to-2020 */}
 A schema with a missing or unrecognized `$schema` meta-schema URI falls back to
 Draft 2020-12. Compilation is non-strict, so lax metadata still compiles. A
 schema that fails to compile is an error (exit 2).
@@ -368,6 +397,7 @@ meta-schema URI) selects the dialect, as described here. A **document's**
 
 ## Validating against the whole set
 
+{/* cite resolution-every-schema-in-the-set-runs */}
 When a file's resolved set contains more than one schema, the metadata is
 validated against **every** schema in the set. The report is the union of all
 violations. A file passes only when it satisfies all schemas in its set. Each
@@ -375,6 +405,7 @@ reported error is tagged with the schema that produced it.
 
 ## Encrypted values
 
+{/* cite resolution-encrypt-keyword-meaning */}
 `x-manni-encrypt: true` on a property says the page must hold that property's
 value encrypted. `false`, or no keyword at all, is an ordinary property.
 
@@ -388,6 +419,7 @@ value encrypted. `false`, or no keyword at all, is an ordinary property.
 }
 ```
 
+{/* cite resolution-ciphertext-shape */}
 A page then carries a ciphertext, `~` and at least 82 base64url characters:
 
 ```yaml
@@ -423,6 +455,7 @@ What `manni meta validate` does with a marked property:
 | Encrypted, the key is available, and it does not decrypt | Finding `encrypted:unreadable/encrypted`: `/owner does not decrypt under the current key: encrypted under another key, or edited by hand.` | 1 |
 | Encrypted, and no key is available | Findings at or under that pointer are dropped, and the run warns once on stderr. | unaffected |
 
+{/* cite resolution-unverified-values-warning */}
 The key is the family's
 [`encryptionKey:`](/manni/meta/reference/configuration/#encryption-key), or
 `MANNI_ENCRYPTION_KEY`. With neither, the run says how many values it could not
@@ -440,12 +473,14 @@ Two consequences of that last row:
   not record the dropped findings. They return as new on the next run that has
   the key.
 
+{/* cite resolution-validation-reads-a-decrypted-copy */}
 Validation reads a copy of the metadata with every readable value decrypted.
 The page itself is never changed. A finding inside an encrypted value is filed
 at the value's own pointer, so it never names a key of an encrypted object.
 
 ## Field location
 
+{/* cite resolution-location-keyword-values */}
 `x-manni-location` on a property says where the property's value is kept.
 `"page"` keeps it in the document's own metadata: frontmatter, HTML `<meta>`,
 a DITA `<prolog>`. That is the value meant to reach delivered output, and the
@@ -488,15 +523,18 @@ steward.schema.json: "$schema" cannot be stored in external metadata.
 steward.schema.json: "x-manni-location" says both "page" and "external" for "owner".
 ```
 
+{/* cite resolution-schema-cannot-be-external */}
 The second is a mark of `external` on `$schema`, which a manifest may not
 hold. The third is one schema marking a key both ways on paths every document
 takes. Those paths are the schema's own `properties`, its `allOf` entries, and
 a local `$ref` reached from them. A remote `$ref` is not followed.
 
+{/* cite resolution-branch-marks-are-not-an-error */}
 Marks that differ across `anyOf`, `oneOf`, `if`/`then`/`else` or `not`
 branches are not an error. When the validator evaluates both, that schema has
 no preference for the key. An earlier schema's mark still applies.
 
+{/* cite resolution-location-findings-are-warnings */}
 What `manni meta validate` does with a marked property. Both findings are
 warnings, so neither moves the exit code:
 
@@ -510,6 +548,7 @@ warnings, so neither moves the exit code:
 | A manifest supplies a key its schema prefers `page` | Finding `location:page/location` at the manifest line: `"title" is stored in manifest docs-meta.yaml; steward.schema.json prefers the page. Run manni meta relocate.` |
 | The key sits where its mark says, or carries no mark | Nothing. |
 
+{/* cite resolution-writers-follow-the-manifest */}
 The writers follow the manifest rather than the mark. A key a local manifest
 owns is written there by `derive`, `fill` and `query`, even when its schema
 prefers the page. A key its schema prefers `external` and no manifest owns is

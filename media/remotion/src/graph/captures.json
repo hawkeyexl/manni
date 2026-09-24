@@ -1,0 +1,14 @@
+{
+  "b1 cat term": "---\ntype: term\nid: progressive-lens\nlabel: progressive lens\ndefinition: Lenses that correct presbyopia without a visible line.\n---\n",
+  "b1 cat guide": "---\ntitle: Fitting lenses\ngraph:\n  concepts: [progressive lens]\n---\n# Fitting lenses\n",
+  "b1 term check": "\u001b[32m✓\u001b[39m 1 term, 1 reference, no findings\n",
+  "b2 cat guide": "---\ntitle: Fitting lenses\nkg:\n  concepts: [progressive lens]\n---\n# Fitting lenses\n",
+  "b2 term check": "\u001b[1mdocs/terms/progressive-lens.md:1\u001b[22m\n  \u001b[36mnotice\u001b[39m manni:term/unused-term          no page's concepts: names this term\n\n1 notice in 1 term\n",
+  "b3 cat guide": "---\ntitle: Fitting lenses\ngraph:\n  concept: [progressive lens]\n---\n# Fitting lenses\n",
+  "b3 validate": "Using manni.config.yaml (.)\n\u001b[31m✗\u001b[39m docs/fitting.md\n    \u001b[36m/graph\u001b[39m  must NOT have additional property 'concept'\u001b[2m  (line 3)\u001b[22m  \u001b[2m[graph-1.0.0-proposal.1.json]\u001b[22m\n\n\u001b[31m1 file checked, 0 passed, 1 failed, 1 error\u001b[39m\n",
+  "exits": {
+    "b1": "0",
+    "b2": "0",
+    "b3": "1"
+  }
+}

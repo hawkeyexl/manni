@@ -1,0 +1,8 @@
+# Proposal 0058: {page} may appear once.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.{md,mdx}"
+    externalMetadata:
+      - file: "{page}/{page}.citations.yaml"
+        keys: [citations]

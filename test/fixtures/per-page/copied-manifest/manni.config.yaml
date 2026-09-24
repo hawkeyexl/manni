@@ -1,0 +1,9 @@
+# Proposal 0058: a per-page manifest holding an entry for another page, as a
+# copied file or a git mv of the page alone leaves it.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [owner]

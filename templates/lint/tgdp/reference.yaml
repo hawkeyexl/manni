@@ -37,7 +37,7 @@ templates:
           both unconstrained placeholders: the matcher cannot tell "the
           description" from "the first entry", so requiring both would
           mandate two H2s where the doctype only asks that entries exist.
-          The node model can name a table directly (proposal 0060), so this
+          The node model can name a table directly (proposal 0065), so this
           asks for one. Every parser reports tables now, so the rule runs and
           upstream's own table satisfies it. Against a format that cannot
           report them the rule is pruned and reported as an

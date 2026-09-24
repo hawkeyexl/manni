@@ -1,0 +1,10 @@
+# Proposal 0058: a per-page manifest that exists but cannot be read keeps the
+# refusal. Here the path is a directory, which reads as EISDIR on every
+# platform, where a permission error cannot be committed to git.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [owner]

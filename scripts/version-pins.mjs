@@ -40,6 +40,34 @@ export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url
 /** A setup problem: the sources of truth are missing, so nothing can be judged. */
 export class VersionsSetupError extends Error {}
 
+/**
+ * Whether a version is a prerelease, meaning it carries a semver prerelease
+ * tag: `2.9.0-next.1`, `2.9.0-cite-marker-ids.1`.
+ *
+ * Both the release plugin and `scripts/check-versions.mjs` stand down on one,
+ * and they read the answer here so they cannot disagree about it. The plugin
+ * refuses to write a prerelease into the docs, because it would point every
+ * reader at a version `latest` does not serve; the check therefore cannot
+ * demand that it has. When the two disagreed, every `feat/**` branch went red
+ * after its first prerelease.
+ */
+export const isPrerelease = (version) =>
+  typeof version === "string" && version.includes("-");
+
+/**
+ * package.json's own `version` under `root`, or undefined when there is none
+ * to read. A caller that needs the failure reported runs on to `loadSources`,
+ * which raises the VersionsSetupError for it.
+ */
+export function declaredVersion(root) {
+  try {
+    const pkg = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8"));
+    return typeof pkg.version === "string" ? pkg.version : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 const posix = (p) => p.split(path.sep).join("/");
 
 // ---------------------------------------------------------------------------

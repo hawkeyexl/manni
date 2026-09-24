@@ -1,15 +1,20 @@
 /**
- * Markers: `cite <id>` inside the format's comment syntax.
+ * Markers: `cite <id> [<id>…]` inside the format's comment syntax.
  *
- * | Format        | Forms                                                        |
- * |---------------|--------------------------------------------------------------|
- * | markdown, mdx | `<!-- cite … -->`, `{/* cite … *\/}`, `[comment]: # (cite …)` |
- * | html, xml     | `<!-- cite … -->`                                            |
- * | asciidoc      | `// (cite …)`                                                |
- * | rst           | `.. (cite …)`                                                |
+ * | Format        | Forms                                                                              |
+ * |---------------|------------------------------------------------------------------------------------|
+ * | markdown, mdx | `<!-- cite a b -->`, `{/* cite a b *\/}`, `[comment]: # (cite a b)`                 |
+ * | html, xml     | `<!-- cite a b -->`                                                                |
+ * | asciidoc      | `// (cite a b)`                                                                    |
+ * | rst           | `.. (cite a b)`                                                                    |
  *
- * A marker carries an id and nothing else (`cite true` names id `true`). A
- * payload starting with `{` was the inline entry of proposal 0044's first
+ * A marker carries one or more ids, separated by spaces, and nothing else
+ * (`cite true` names id `true`). Every id in the list anchors the text the
+ * marker anchors, so a paragraph resting on four sources carries one comment
+ * rather than four (proposal 0056). An id cannot hold `(`, `)`, `{`, `}`, `<`,
+ * `>` or a leading `-`, so no list can close a parenthesised comment early.
+ *
+ * A word starting with `{` was the inline entry of proposal 0044's first
  * draft; it is `marker-invalid` now, because an entry lives in frontmatter or
  * a manifest and a source is never written into the body. The scanner uses
  * `indexOf` for the delimiters, never a regex over the whole page, and is
@@ -23,7 +28,7 @@
  * `formatStatement` writes: the html comment for markdown, the jsx comment
  * for mdx, which rejects an html comment.
  */
-import type { InlineStatement } from "../types.js";
+import type { InlineStatement, TextEdit } from "../types.js";
 import { codeEndAt, codeRegions } from "../../shared/code-regions.js";
 import { CiteError } from "../errors.js";
 
@@ -114,12 +119,60 @@ function nextLineStart(content: string, offset: number): number {
   return lineEnd(content, offset) + 1;
 }
 
+/**
+ * A marker holds at most 25 ids. Past that it is `marker-invalid`, on the
+ * same grounds as the 500 markers a page may hold: an unbounded list is an
+ * unbounded allocation from a file the tool did not write. The cap counts
+ * ids rather than characters, because a character cap moves with how long
+ * the ids happen to be. Proposal 0056 is the record.
+ */
+export const MAX_IDS_PER_MARKER = 25;
+
+/**
+ * The payload, as one or more ids separated by spaces. The checks run in a
+ * stated order and the first defect is the finding, so one marker raises one
+ * `marker-invalid` however many of its words are wrong.
+ *
+ * A run of spaces separates as one, which is what a soft-wrapped editor and a
+ * shell both do. A comma is never a separator: `cite a,b` is one token, that
+ * token is not an id, and the message quotes it back (proposal 0034's one
+ * separator per list).
+ */
 function payloadOf(payload: string): InlineStatement["payload"] {
   if (payload === "") return { kind: "bad", reason: "empty payload" };
-  // An entry lives in frontmatter or a manifest; the body carries a name.
-  if (payload.startsWith("{")) return { kind: "bad", reason: "a JSON payload", json: true };
-  if (ID.test(payload)) return { kind: "ref", id: payload };
-  return { kind: "bad", reason: "payload is not an id" };
+  // A marker is one line: `isMarkerLine` tests one line, so half a wrapped
+  // marker would land inside the pin of the text below it.
+  if (/[\r\n]/.test(payload)) {
+    return { kind: "bad", reason: "a marker is one line; write two markers" };
+  }
+  // Destructured rather than cast: a `ref` carries at least one id, and the
+  // head is what proves it to the compiler.
+  const [head, ...rest] = payload.split(" ").filter((word) => word !== "");
+  if (head === undefined) return { kind: "bad", reason: "empty payload" };
+  const words: [string, ...string[]] = [head, ...rest];
+  // An entry lives in frontmatter or a manifest; the body carries names. This
+  // runs before the id test so the more actionable message fires.
+  if (words.some((word) => word.startsWith("{"))) {
+    return { kind: "bad", reason: "a JSON payload", json: true };
+  }
+  if (words.length > MAX_IDS_PER_MARKER) {
+    return {
+      kind: "bad",
+      reason: `more than ${String(MAX_IDS_PER_MARKER)} ids in one marker (${String(words.length)}); write a second marker`,
+    };
+  }
+  const bad = words.find((word) => !ID.test(word));
+  if (bad !== undefined) return { kind: "bad", reason: `"${bad}" is not an id` };
+  const seen = new Set<string>();
+  for (const word of words) {
+    // One id named twice inside one marker has no second anchor and no winner
+    // to pick, so it is a typo in one line rather than `marker-repeated`.
+    if (seen.has(word)) {
+      return { kind: "bad", reason: `"${word}" is named twice in one marker` };
+    }
+    seen.add(word);
+  }
+  return { kind: "ref", ids: words };
 }
 
 /** Whether the text between a form's delimiters is a cite statement. */
@@ -441,12 +494,67 @@ function writtenForm(format: string): StatementForm {
 }
 
 /** Render a marker in the format's first form, e.g. `<!-- cite fetch-timeout -->`. */
-export function formatStatement(format: string, payload: { kind: "ref"; id: string }): string {
+export function formatStatement(
+  format: string,
+  payload: { kind: "ref"; ids: readonly [string, ...string[]] },
+): string {
   const form = writtenForm(format);
   // `[comment]: # (`, `// (` and `.. (` hug their parentheses; the comment
   // forms take a space inside each delimiter.
   const pad = form.open.endsWith("(") ? "" : " ";
-  return `${form.open}${pad}cite ${payload.id}${pad}${form.close}`;
+  return `${form.open}${pad}cite ${payload.ids.join(" ")}${pad}${form.close}`;
+}
+
+/**
+ * The one edit that replaces a marker's payload with `ids`, as a span of
+ * `content` and the text to put in it. The marker keeps its own form rather
+ * than being rendered afresh, so a page that spells its markers in a form
+ * `formatStatement` would not choose keeps that form, along with its
+ * indentation and inner spacing.
+ *
+ * Returned as an edit rather than applied, so a caller with several of them
+ * can collect them all against one parse and apply them together. That is how
+ * `remove` rewrites a page: nothing it reads a position from has been written
+ * to yet.
+ *
+ * `content` must be the text the statement was parsed from; the payload is
+ * found inside the span the statement recorded, and the answer is undefined
+ * when it is not there. The marker must also open and close on one line, since
+ * a payload spanning lines would be folded onto one here, changing the line
+ * count and moving every claim below it. Both callers hold to that: `remove`
+ * refuses a marker line it cannot read whole, and `add` joins only a marker
+ * with no line break in it.
+ */
+export function respellEdit(
+  content: string,
+  statement: InlineStatement,
+  ids: readonly [string, ...string[]],
+): TextEdit | undefined {
+  const text = content.slice(statement.start, statement.end);
+  // No open delimiter carries `cite`, so the first occurrence of the trimmed
+  // inner text is the payload itself.
+  const at = text.indexOf(statement.raw);
+  if (at === -1) return undefined;
+  return {
+    start: statement.start + at,
+    end: statement.start + at + statement.raw.length,
+    text: `cite ${ids.join(" ")}`,
+  };
+}
+
+/**
+ * `content` with the marker's payload replaced by `ids`. The one-edit form of
+ * `respellEdit`, for a caller rewriting a single marker; `content` unchanged
+ * when the payload is not where the statement says.
+ */
+export function respellStatement(
+  content: string,
+  statement: InlineStatement,
+  ids: readonly [string, ...string[]],
+): string {
+  const edit = respellEdit(content, statement, ids);
+  if (edit === undefined) return content;
+  return content.slice(0, edit.start) + edit.text + content.slice(edit.end);
 }
 
 /**
@@ -481,6 +589,25 @@ export function fenceSpanAt(
   return { start: line, end: lineAt(text, block.end) };
 }
 
+/**
+ * The fenced block `line` sits inside rather than opens, as the lines it
+ * spans, fences included. Undefined when the line opens a block, sits in no
+ * block, or the format has no fence. The closing fence counts as inside, so a
+ * caller that wants a content line asks whether its span ends before the
+ * block does.
+ */
+export function fenceAround(
+  text: string,
+  bodyOffset: number,
+  line: number,
+  format: string,
+): { start: number; end: number } | undefined {
+  const block = fencedBlocks(text, bodyOffset, format).find(
+    (b) => line > b.line && line <= lineAt(text, b.end),
+  );
+  return block === undefined ? undefined : { start: block.line, end: lineAt(text, block.end) };
+}
+
 /** Whether `line` sits inside a fenced block rather than opening one. */
 export function insideFence(
   text: string,
@@ -488,9 +615,7 @@ export function insideFence(
   line: number,
   format: string,
 ): boolean {
-  return fencedBlocks(text, bodyOffset, format).some(
-    (block) => line > block.line && line <= lineAt(text, block.end),
-  );
+  return fenceAround(text, bodyOffset, line, format) !== undefined;
 }
 
 /**

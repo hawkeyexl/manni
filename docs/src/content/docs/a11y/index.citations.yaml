@@ -1,0 +1,611 @@
+docs/src/content/docs/a11y/index.mdx:
+  citations:
+    - id: exit-1-on-violation
+      claim:
+        integrity: sha256-71e77ffbb291ea00010d9e095bb22cfea4ff85888e77befeeebf08b945d82639
+      source:
+        file: src/a11y/cli.ts
+        lines: 359
+        integrity: sha256-6723f5ed126275d756e401e73cbf27f5215b4f934f4af3336be07a8f51c18afa
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: exit-1-failed-count
+      claim:
+        integrity: sha256-71e77ffbb291ea00010d9e095bb22cfea4ff85888e77befeeebf08b945d82639
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 156-158
+        integrity: sha256-3e5185e43d2b3809d75f11bf3499e2e98cabfec96067d3285b1f8967af44c7de
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: same-host-scope
+      claim:
+        integrity: sha256-08c8a98372a010f543c7c5d991dfd59a27ffb7ba99312ff958498ed7dafffee1
+      source:
+        file: src/a11y/core/url.ts
+        lines: 45-62
+        integrity: sha256-f4a26132d72c466bce1d85c81388b9f2b69169e88a51c92b7f3f417daa7cbe81
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: no-bundled-browser
+      claim:
+        integrity: sha256-7b437abc5ea414de66d516444d749f5302f0e6331b49b18263480b9b7db6a8a7
+      source:
+        file: src/a11y/core/analyzer.ts
+        lines: 54-59
+        integrity: sha256-f0f0280bafb9e1ee87ca0cea6dd86da13814f5669c49be6712b26f59e84715dd
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: violation-shape
+      claim:
+        integrity: sha256-71e77ffbb291ea00010d9e095bb22cfea4ff85888e77befeeebf08b945d82639
+      source:
+        file: src/a11y/core/analyzer.ts
+        lines: 200-219
+        integrity: sha256-91a28b83a02adb7c7c1910c3cdc7bbc98e09106d867f212be1d489be4fc5325b
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: every-seed-host-in-scope
+      claim:
+        integrity: sha256-08c8a98372a010f543c7c5d991dfd59a27ffb7ba99312ff958498ed7dafffee1
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 107
+        integrity: sha256-9cb9a2a43e6ce74e87c24fa167aaa0db6c3a7e927eb0fd16cda42d8087a6ab47
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: links-from-rendered-dom
+      claim:
+        lines: 46-51
+        integrity: sha256-d2aec7e4ac6538ce635cbae476762d85c06f632c73a9b2e27685150695fe4ff0
+      source:
+        file: src/a11y/core/analyzer.ts
+        lines: 135-137
+        integrity: sha256-dca600d0da37f1c44091fc2b884a478f087e95652a4e5f6d753235252cb7f1dc
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: links-same-host-only
+      claim:
+        lines: 46-51
+        integrity: sha256-d2aec7e4ac6538ce635cbae476762d85c06f632c73a9b2e27685150695fe4ff0
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 160
+        integrity: sha256-49bfcd2caf112e0e75f4574d7c872745f7ed18cce309f623e60cf67b1c8cba57
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: links-skip-non-pages
+      claim:
+        lines: 47-51
+        integrity: sha256-66314b67a0a1b0aa3cada51c86446f4152e29458e804a7a9b1ecd842b755000f
+      source:
+        file: src/a11y/core/url.ts
+        lines: 64-75
+        integrity: sha256-9e388b63ef923a4e536053c8aa55b7c537350fa5b838ac79cecede74810463e9
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: no-crawl-no-sitemap
+      claim:
+        integrity: sha256-e6d6d49f56d41ce9e6f0d28708d3a7096fb1e4d7fa059adba9a9fa0a98c791bd
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 109
+        integrity: sha256-c17b99cd9f9f8b00384df2b85cf8a24fcc1f466ac95155b0157c6db6386a4c6f
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: no-crawl-no-links
+      claim:
+        integrity: sha256-e6d6d49f56d41ce9e6f0d28708d3a7096fb1e4d7fa059adba9a9fa0a98c791bd
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 132-133
+        integrity: sha256-d13a114682b09aba27c9651f0026dbb8504dde5627d9c143aedb0f90430507e6
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: max-pages-skipped
+      claim:
+        integrity: sha256-e6d6d49f56d41ce9e6f0d28708d3a7096fb1e4d7fa059adba9a9fa0a98c791bd
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 170
+        integrity: sha256-94a75e3ebf32553536eaf0a962097e2940359d76ac4299889b7b000b61ac6cc4
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: max-pages-cap
+      claim:
+        integrity: sha256-e6d6d49f56d41ce9e6f0d28708d3a7096fb1e4d7fa059adba9a9fa0a98c791bd
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 143-144
+        integrity: sha256-5a35497a6282c5ae49d0a2ad012a257249dc1f6286c78a13fcbc2e3698a38756
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: no-cap-default
+      claim:
+        integrity: sha256-e6d6d49f56d41ce9e6f0d28708d3a7096fb1e4d7fa059adba9a9fa0a98c791bd
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 51-61
+        integrity: sha256-1e4a6786abfaa2ccd82cdea71b5760bfc53ebd8512d9de37d039e15c596d91c9
+        commit-sha: 43837e26fb78b459684ff696c38d0d47fa248190
+    - id: redirect-counts-checked
+      claim:
+        integrity: sha256-e6d6d49f56d41ce9e6f0d28708d3a7096fb1e4d7fa059adba9a9fa0a98c791bd
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 120-130
+        integrity: sha256-5c6077a9b276b6a3a5a2b907405f52d76652d56093e11eba10301cb2d74420cc
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: checked-once-dedupe
+      claim:
+        integrity: sha256-e6d6d49f56d41ce9e6f0d28708d3a7096fb1e4d7fa059adba9a9fa0a98c791bd
+      source:
+        file: src/a11y/core/url.ts
+        lines: 23-37
+        integrity: sha256-f49441ea6da449da3cd26de484bbdf37469921d4dfe6e26be0d84e499e18b2a3
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: one-at-a-time
+      claim:
+        integrity: sha256-e6d6d49f56d41ce9e6f0d28708d3a7096fb1e4d7fa059adba9a9fa0a98c791bd
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 144-157
+        integrity: sha256-d0e23910225ce5a12ee193a039db488490f72dd36f3aadf1fd5406357592d25a
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-before-browser
+      claim:
+        lines: 44-45
+        integrity: sha256-2782b28bb0952dae8b453a8bf1c372de79b4d9da5f37099bf8e7b7184103e44d
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 107-114
+        integrity: sha256-425bd65d40f7dbdfb58001ee42b7f9cc1f5e93e12d8338de9523e3a464fc5ccd
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: crawled-page-fails-run
+      claim:
+        integrity: sha256-b7683260c9e9f7b28aa72b9916426312ec30b6157a739dc5e60eed7341933ff8
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 156-158
+        integrity: sha256-3e5185e43d2b3809d75f11bf3499e2e98cabfec96067d3285b1f8967af44c7de
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: crawled-page-error-continues
+      claim:
+        integrity: sha256-b7683260c9e9f7b28aa72b9916426312ec30b6157a739dc5e60eed7341933ff8
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 163-166
+        integrity: sha256-926b035f7d62d613da4bc27c57476805d61c25a55883140d14fffdddd1f10c12
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: seed-load-exit-2-code
+      claim:
+        integrity: sha256-b7683260c9e9f7b28aa72b9916426312ec30b6157a739dc5e60eed7341933ff8
+      source:
+        file: src/shared/run.ts
+        lines: 16-24
+        integrity: sha256-2dc80f036c8289917750865e5f41eaa1325bed58f646b03adaef0992c59a98f3
+        commit-sha: 43837e26fb78b459684ff696c38d0d47fa248190
+    - id: seed-load-rethrows
+      claim:
+        integrity: sha256-b7683260c9e9f7b28aa72b9916426312ec30b6157a739dc5e60eed7341933ff8
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 163
+        integrity: sha256-9f37bc30b986f38227742069a861e5c853f83bfa91d7c1d4ba8ac60ea67c249d
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-no-crawl-skips
+      claim:
+        integrity: sha256-add9219d2dae6336f729eee97bf1f8e633adb48178cf49c20f285cb374550347
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 109
+        integrity: sha256-c17b99cd9f9f8b00384df2b85cf8a24fcc1f466ac95155b0157c6db6386a4c6f
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-first-seed
+      claim:
+        integrity: sha256-add9219d2dae6336f729eee97bf1f8e633adb48178cf49c20f285cb374550347
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 107-112
+        integrity: sha256-61568f39cacd70551084e832b77793e564d8bb594c74b1b661939e82bd2b9a36
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-first-valid-wins
+      claim:
+        integrity: sha256-6f3c8763b10f24be74e1fee9ffdcba594f3b5f543a1b3541fd0719cc2f04b2e4
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 81-87
+        integrity: sha256-546229878961b3dd6b2aa35a7aea87cccce04b216def5d86679d03c05821acb8
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-fetch-timeout
+      claim:
+        integrity: sha256-6f3c8763b10f24be74e1fee9ffdcba594f3b5f543a1b3541fd0719cc2f04b2e4
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 33-37
+        integrity: sha256-973640f6b1ce2c7e55ceef7259c6f4da961c6d8caa63c54e09a2c450529ed606
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: robots-sitemap-lines
+      claim:
+        lines: 95
+        integrity: sha256-e6eff742049f6b9da24e8294e93e00ffc98fa3c5210ac8c77330028e881fb731
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 188-200
+        integrity: sha256-fa6278b8f0090c12f3e23d942da2ec3708ddcea7077904f6c8e3df263d8f53b4
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-walk-files
+      claim:
+        lines: 96-98
+        integrity: sha256-a541d66d27f8978e62d61117ec3adea7271dd5420be5ab9a8f447c3186452f19
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 39-44
+        integrity: sha256-29c06bd62e3abaa81be8fdb6ca7b67b4e91cb9a604d9ebd3cc6e8faeaa399a9f
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-walk-order
+      claim:
+        lines: 96-98
+        integrity: sha256-a541d66d27f8978e62d61117ec3adea7271dd5420be5ab9a8f447c3186452f19
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 159-186
+        integrity: sha256-36680d46e858c4a7bde08cdb57b8ae07038e28c9ddcca95f57aa107e8729612e
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-non-xml-skipped
+      claim:
+        integrity: sha256-3f2011654eb674cb606771a4d29bc51de5e074128ae9cabf349e1791fa8a2163
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 81-83
+        integrity: sha256-8797d452db7c79fdb8277962d4d226748529db5d2fdbd936c6d6440f14ce647b
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-walk-example
+      claim:
+        integrity: sha256-3f2011654eb674cb606771a4d29bc51de5e074128ae9cabf349e1791fa8a2163
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 172-175
+        integrity: sha256-9e73dd149a796b1aeb79694c53f9b7eefe3f338362d793e20771a326c9899c41
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-summary-field
+      claim:
+        integrity: sha256-9d7d43f30ee6a24abd038874a24b15b60a9284b7e1444758cb603901ad1c744e
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 127-131
+        integrity: sha256-f64cbf4bbaa9956eaf78ba0dd72d3c73eca65034456d5265659fdd90fb96a11e
+        commit-sha: b41d6cc6ca394647c4eabdceaf93525fdcc5b238
+    - id: sitemap-header-line
+      claim:
+        integrity: sha256-9d7d43f30ee6a24abd038874a24b15b60a9284b7e1444758cb603901ad1c744e
+      source:
+        file: src/a11y/reporters/pretty.ts
+        lines: 70-75
+        integrity: sha256-77791016044e071caf93f3d3a9c0c857611d695b5c62b9d62e90959abb68b567
+        commit-sha: b41d6cc6ca394647c4eabdceaf93525fdcc5b238
+    - id: links-on-top-of-sitemap
+      claim:
+        integrity: sha256-9d7d43f30ee6a24abd038874a24b15b60a9284b7e1444758cb603901ad1c744e
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 160
+        integrity: sha256-49bfcd2caf112e0e75f4574d7c872745f7ed18cce309f623e60cf67b1c8cba57
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-joins-after-seeds
+      claim:
+        integrity: sha256-9d7d43f30ee6a24abd038874a24b15b60a9284b7e1444758cb603901ad1c744e
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 132-133
+        integrity: sha256-d13a114682b09aba27c9651f0026dbb8504dde5627d9c143aedb0f90430507e6
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-dedupe-seeds
+      claim:
+        integrity: sha256-9d7d43f30ee6a24abd038874a24b15b60a9284b7e1444758cb603901ad1c744e
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 81-92
+        integrity: sha256-25b8f548f8ff068d9e7c1b0d28c08f28c22478495ab2835550de73cc471fcdd9
+        commit-sha: 43837e26fb78b459684ff696c38d0d47fa248190
+    - id: sitemap-loc-filter
+      claim:
+        integrity: sha256-9d7d43f30ee6a24abd038874a24b15b60a9284b7e1444758cb603901ad1c744e
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 219-230
+        integrity: sha256-442ebe27d120aa1c2c9b10ba2bb361a1b616d318d011bc467de2ed4f0dc41be3
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-index-limits
+      claim:
+        integrity: sha256-9d7d43f30ee6a24abd038874a24b15b60a9284b7e1444758cb603901ad1c744e
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 29-32
+        integrity: sha256-99d1702ab95c91bcac694346b43fcb2d51c00bfb2edc67d6190c09a90319b93f
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-index-recursion
+      claim:
+        integrity: sha256-9d7d43f30ee6a24abd038874a24b15b60a9284b7e1444758cb603901ad1c744e
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 143-157
+        integrity: sha256-b9da98d1329cf7264dc3735050a40dcc06f1125cf3f2f45f2e11d5e4ba6fe1bc
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: no-sitemap-header
+      claim:
+        integrity: sha256-67d01b36e98070559601dbb74b9f5da64f10cb7553a5ee88e9abe5bb208d2e08
+      source:
+        file: src/a11y/reporters/pretty.ts
+        lines: 79
+        integrity: sha256-63ebe12168776c8134eea9ded7845a015a77d55c4d3fac1c843b87581e4ea19a
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: no-sitemap-breadth-first
+      claim:
+        integrity: sha256-67d01b36e98070559601dbb74b9f5da64f10cb7553a5ee88e9abe5bb208d2e08
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 144
+        integrity: sha256-ed3c7ae20488e3dc9b27d65e8aa3a46f7d3ec45f65bc5ce526713d9de0948189
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: no-sitemap-not-an-error
+      claim:
+        integrity: sha256-67d01b36e98070559601dbb74b9f5da64f10cb7553a5ee88e9abe5bb208d2e08
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 208-217
+        integrity: sha256-410c85f22ac94550f5a66f32bfcbc0ea26fe2141ad56ed2ea72884dd09976c8b
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: gzip-not-decompressed
+      claim:
+        integrity: sha256-317101f5f2be02632c69db51c219bd755714a601da073ec948b394672a2a554c
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 67-69
+        integrity: sha256-cc6ef61847dfff44eaf5252f0cf76344582465a826f885489b7e486cc798c459
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: robots-disallow-ignored
+      claim:
+        integrity: sha256-317101f5f2be02632c69db51c219bd755714a601da073ec948b394672a2a554c
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 192-199
+        integrity: sha256-1c17c42c0a6d153a9b0aba5cddaf803297af59a16c7d645ed0cd72aa9f71d47e
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: score-formula
+      claim:
+        lines: 154
+        integrity: sha256-0ef880d74b1376171969a4dab162bf11ccf609f5b282a1a1767225d5826a6bed
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 141-142
+        integrity: sha256-ed3bfa5ec056b37ee8066e37f50435641caf3554c8c334ff4cc681890c3bfee2
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: score-after-severity-floor
+      claim:
+        integrity: sha256-11a83fb5ec84a845cca489d102e61d576358e6369d6b493a07b35deb77b7053f
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 140
+        integrity: sha256-19d8f24c909396876868e02a66cd1bfb70a0be72249fa42f459d95ecd43bf4c3
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: score-share-of-passes
+      claim:
+        integrity: sha256-11a83fb5ec84a845cca489d102e61d576358e6369d6b493a07b35deb77b7053f
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 141-142
+        integrity: sha256-ed3bfa5ec056b37ee8066e37f50435641caf3554c8c334ff4cc681890c3bfee2
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: no-score-unloaded-or-empty
+      claim:
+        integrity: sha256-80baa1e337d70721534bd0429919554f79c3de4b79e91fed535f7855251be8c5
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 139-142
+        integrity: sha256-29c1698f758512ba090e89d074ccdc8613d29827aedaa2368171bba88c50b878
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: score-97-still-fails
+      claim:
+        integrity: sha256-80baa1e337d70721534bd0429919554f79c3de4b79e91fed535f7855251be8c5
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 156-158
+        integrity: sha256-3e5185e43d2b3809d75f11bf3499e2e98cabfec96067d3285b1f8967af44c7de
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: score-unweighted
+      claim:
+        integrity: sha256-80baa1e337d70721534bd0429919554f79c3de4b79e91fed535f7855251be8c5
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 141-142
+        integrity: sha256-ed3bfa5ec056b37ee8066e37f50435641caf3554c8c334ff4cc681890c3bfee2
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: incomplete-not-failures
+      claim:
+        integrity: sha256-0cbc158fe737831c0a9345852b0a3471435eb6771f231374450cf1cf1648041f
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 156-158
+        integrity: sha256-3e5185e43d2b3809d75f11bf3499e2e98cabfec96067d3285b1f8967af44c7de
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: incomplete-counted
+      claim:
+        integrity: sha256-0cbc158fe737831c0a9345852b0a3471435eb6771f231374450cf1cf1648041f
+      source:
+        file: src/a11y/core/analyzer.ts
+        lines: 151
+        integrity: sha256-4b92f726f1d61da2762ae162caa2989ac531a7f0cd2ae7f9c5a5510b263578db
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: impact-kept
+      claim:
+        integrity: sha256-abaeb2cebb9e1fdb5fc2da074c77f3a70d2a4993a2cbf38c4d9d6edc55c58bd6
+      source:
+        file: src/a11y/core/analyzer.ts
+        lines: 194-198
+        integrity: sha256-244461c5abf339ef2f52d97e4dc38e414580c9a7d5af709d700677da2bec231b
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: impact-to-severity-map
+      claim:
+        integrity: sha256-abaeb2cebb9e1fdb5fc2da074c77f3a70d2a4993a2cbf38c4d9d6edc55c58bd6
+      source:
+        file: src/a11y/core/analyzer.ts
+        lines: 183-193
+        integrity: sha256-4bc7e15af6d93390f938ce8170dbc0095412d5b35d3aae1d1c4ca7bb5b4fdefe
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: severity-family-values
+      claim:
+        integrity: sha256-abaeb2cebb9e1fdb5fc2da074c77f3a70d2a4993a2cbf38c4d9d6edc55c58bd6
+      source:
+        file: src/shared/severity.ts
+        lines: 15
+        integrity: sha256-d7f4ea836c6080f265fab7093daf191af249f3e75b996c5cc4a0d7bcd82c5d36
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: severity-floor-filter
+      claim:
+        integrity: sha256-abaeb2cebb9e1fdb5fc2da074c77f3a70d2a4993a2cbf38c4d9d6edc55c58bd6
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 138-142
+        integrity: sha256-30e2ee7a755c0558da729349b48f216c838788e63832b00ca96ecfefee5cd0db
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: severity-floor-compare
+      claim:
+        integrity: sha256-abaeb2cebb9e1fdb5fc2da074c77f3a70d2a4993a2cbf38c4d9d6edc55c58bd6
+      source:
+        file: src/shared/severity.ts
+        lines: 25-28
+        integrity: sha256-142d0859d2d70d43ed093392564b6b0440ca68ce44510d0131dcff071095094e
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: tags-restrict-rules
+      claim:
+        integrity: sha256-abaeb2cebb9e1fdb5fc2da074c77f3a70d2a4993a2cbf38c4d9d6edc55c58bd6
+      source:
+        file: src/a11y/core/analyzer.ts
+        lines: 139
+        integrity: sha256-e620698c668aee28c4c1f47d27607923be492946fe1e001fc1c4c8b76964d583
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: config-timeout-positive
+      claim:
+        lines: 190
+        integrity: sha256-c9ba8e0810cca09b3660c5810532c274f616e085d430650a0b3a603e11ddefc8
+      source:
+        file: src/a11y/core/config.ts
+        lines: 108-110
+        integrity: sha256-12f2e1394d3aadef38fb96d6f4f0448572c3cdfcffb00139e561493b4ba0c2ad
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: config-severity-values
+      claim:
+        lines: 189
+        integrity: sha256-fbe40ca66ffe6e1cf64a54ec486dee7a1239d9a70620dbabe43a9abc5acefd6f
+      source:
+        file: src/a11y/core/config.ts
+        lines: 176-182
+        integrity: sha256-6fefd9d88d0c2177fbeff2c8e4e70b8c635e3ebeff88c472f300804671b46c5e
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: config-tags-strings
+      claim:
+        lines: 188
+        integrity: sha256-d697ed03d2b439c4ccb0cca4eddcf5581fdf9ea06e42efff5a0cdae27b64b712
+      source:
+        file: src/a11y/core/config.ts
+        lines: 106
+        integrity: sha256-0c5bbab0d3da5a3f51f89271fbd5512999ebc680cb44ef287c49616418525e2c
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: config-max-pages-no-cap
+      claim:
+        lines: 187
+        integrity: sha256-cdc0756af18260118b2f75278c0fa7effb215ec2585e3c6712c56a8416c25a0d
+      source:
+        file: src/a11y/cli.ts
+        lines: 284-285
+        integrity: sha256-9610c35fd394038b93a4e731325748a2728483d7c051fb4d4f8b3e9a127caf94
+        commit-sha: 2fd115c2ad5bdf97689c4fa73f2f41d6beed2f49
+    - id: config-max-pages-positive
+      claim:
+        lines: 187
+        integrity: sha256-cdc0756af18260118b2f75278c0fa7effb215ec2585e3c6712c56a8416c25a0d
+      source:
+        file: src/a11y/core/config.ts
+        lines: 169-174
+        integrity: sha256-5313dcb20b98a56c2e7a2e3709bab45a721e64b894bd53ce1a74f56a5acfa4fd
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: config-crawl-default
+      claim:
+        lines: 186
+        integrity: sha256-ac5e5f3203fcd22c1e766e597110f1d9f76f6ac1c100f74021ce65f9521e9a48
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 66-68
+        integrity: sha256-aa580f9e9597dd8af825742b65fbf4373de7df774ab98ff757af258f07e2bdbc
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: config-urls-fallback
+      claim:
+        lines: 185
+        integrity: sha256-057d810c92fd152f038d1bf2890bfca7c6195de2838c0a061925ca86706cc407
+      source:
+        file: src/a11y/core/seeds.ts
+        lines: 102-105
+        integrity: sha256-250e3bb70774a8a77d78f58a5e76230592ba756b3051e58e6d465150767d9bb6
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: flag-over-config-over-default
+      claim:
+        integrity: sha256-bc70ec349eca7209bdba950e6fbc04fae4db1503d8803c85a9bc0af793f122c7
+      source:
+        file: src/a11y/cli.ts
+        lines: 290-294
+        integrity: sha256-4456e61080723ec2b86ad0d14839702ea67b8d5a9bfd14ba473c29021bdd82a5
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: flag-over-config-resolution
+      claim:
+        integrity: sha256-bc70ec349eca7209bdba950e6fbc04fae4db1503d8803c85a9bc0af793f122c7
+      source:
+        file: src/a11y/cli.ts
+        lines: 283-291
+        integrity: sha256-758f6c8440d02ad03be4a93aafc2aa1bde1b233e0f8ce68ed88280e79203eb87
+        commit-sha: 2fd115c2ad5bdf97689c4fa73f2f41d6beed2f49
+    - id: config-keys-optional
+      claim:
+        integrity: sha256-bc70ec349eca7209bdba950e6fbc04fae4db1503d8803c85a9bc0af793f122c7
+      source:
+        file: src/a11y/core/config.ts
+        lines: 97-108
+        integrity: sha256-24b600fc039ce7acc0faedb9857acdf99e97dd3725ca12afa3428039b2163872
+        commit-sha: 43837e26fb78b459684ff696c38d0d47fa248190
+    - id: a11y-config-section
+      claim:
+        integrity: sha256-bc70ec349eca7209bdba950e6fbc04fae4db1503d8803c85a9bc0af793f122c7
+      source:
+        file: src/a11y/core/config.ts
+        lines: 46
+        integrity: sha256-4cc4536e6b2c79d733ddb4c85215feac17d2788a384bb437b9d5f595d8c65825
+        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+    - id: sitemap-urls-first-seed-host
+      claim:
+        integrity: sha256-08c8a98372a010f543c7c5d991dfd59a27ffb7ba99312ff958498ed7dafffee1
+      source:
+        file: src/a11y/core/sitemap.ts
+        lines: 224
+        integrity: sha256-063f8ec9f50df0467101d61f1a2ac643c7bf28cdc34725b2c85c85628e348db7
+        commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+    - id: sitemap-read-from-first-seed
+      claim:
+        integrity: sha256-08c8a98372a010f543c7c5d991dfd59a27ffb7ba99312ff958498ed7dafffee1
+      source:
+        file: src/a11y/commands/check.ts
+        lines: 108-110
+        integrity: sha256-16ab3dacf17ff8217ed2df8c1830674436e3616b531e5f8efc10ffc50a8082c7
+        commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+    - id: link-fragment-dropped
+      claim:
+        lines: 50-51
+        integrity: sha256-8a2a9f8b53b782d8690981098566a72f47e02344a3226fba79edf6c6a6d5e29f
+      source:
+        file: src/a11y/core/url.ts
+        lines: 16-21
+        integrity: sha256-d2186fbe0fdbe3d959633c2828b2d9c334263edd108ce1eca36d7990ec88a653
+        commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+    - id: anchor-page-already-queued
+      claim:
+        lines: 51
+        integrity: sha256-324fd12e725cb7ea92d1b5bc5278e388d502c5b5680e005989c3cd54159055af
+      source:
+        file: src/a11y/core/crawl.ts
+        lines: 81-91
+        integrity: sha256-0ef24a1078ff790ee43ad44d6539315f8b0e4a8de8710a68944f728501a119a1
+        commit-sha: 43837e26fb78b459684ff696c38d0d47fa248190
+    - id: incomplete-json-only
+      claim:
+        integrity: sha256-0cbc158fe737831c0a9345852b0a3471435eb6771f231374450cf1cf1648041f
+      source:
+        file: src/a11y/reporters/json.ts
+        lines: 7-9
+        integrity: sha256-48ebcf5ac9c1feba26bea501d71cba010b582960a191bf491154b38fcbd71e50
+        commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124

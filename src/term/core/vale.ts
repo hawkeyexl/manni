@@ -35,6 +35,11 @@ export interface ValeResolvedConfig {
 export interface ValeProcessResult {
   /** Vale's exit code; `null` when a signal ended it. */
   code: number | null;
+  /**
+   * The signal that ended it, when one did, and `code` is then null. Optional
+   * because absent means what it says: the run was not killed.
+   */
+  signal?: string | null;
   stdout: string;
   stderr: string;
 }
@@ -65,8 +70,13 @@ export const spawnVale: ValeSpawn = (args, opts) =>
           settle({ code: error.code, stdout, stderr });
           return;
         }
-        if (error.code === undefined && error.signal) {
-          settle({ code: null, stdout, stderr });
+        // Killed by a signal. Node reports the exit code as **null** here,
+        // not as undefined, so testing for undefined never matched: a killed
+        // run fell through to `reject` and surfaced as though Vale could not
+        // start. Settling instead keeps whatever Vale managed to write, which
+        // is the part a reader can act on.
+        if (error.code == null && typeof error.signal === "string") {
+          settle({ code: null, signal: error.signal, stdout, stderr });
           return;
         }
         // A start failure (ENOENT) or an output over the buffer.
@@ -111,7 +121,12 @@ function failureText(result: ValeProcessResult): string {
   } catch {
     // Not JSON: the stderr is the message.
   }
-  return stderr === "" ? `exit code ${String(result.code)}` : stderr;
+  if (stderr !== "") return stderr;
+  // Vale said nothing, so the ending is the only account there is. A signal
+  // leaves no message behind, and "exit code null" names nothing a reader can
+  // act on.
+  if (result.signal != null) return `killed by ${result.signal}`;
+  return `exit code ${String(result.code)}`;
 }
 
 function parseJson(stdout: string, what: string): unknown {

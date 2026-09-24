@@ -369,7 +369,7 @@ unaffected.
 | `-q, --quiet` | n/a | off | In `pretty` output, hide files where **every** requested field is unset. A file with any value present still prints, `(unset)` included, because quiet hides files and never values. Has no effect on `json`. |
 | `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). See [empty input sets](#empty-input-sets). |
 | `--no-gitignore` | n/a | on | Read files `.gitignore` covers as well. Filtering is on by default; see [default ignores](#default-ignores). Overrides config `respectGitignore:`. |
-| `--offline` | n/a | off | Accepted for parity with `validate` and `fill`. It has no effect here: `get` prints extracted values and never loads a schema, so it makes no network requests to suppress. |
+| `--offline` | n/a | off | Never fetch an [external-metadata manifest](/manni/meta/set-up/external-metadata/) that lives at a URL. One is refused instead, with `Manifest <url> is remote and the run is offline. Vendor it to a path, or drop --offline.` `get` loads no schema, so schema fetching is not affected. Overrides config `offline:`. |
 
 ### Output
 
@@ -572,8 +572,9 @@ database](/manni/meta/reference/query/#exporting-the-database).
 
 ### Writing back
 
-An `UPDATE` against `docs` edits the corpus, through the same
-comment-preserving, self-verifying writer `fill` uses:
+An `UPDATE` against `docs` edits the corpus through the same self-verifying
+writer `fill` uses, which leaves every key it does not write exactly as it
+was:
 
 ```sh
 # Preview: the per-file diff, nothing touched
@@ -994,9 +995,9 @@ from what the document carries. Lists compare as sets, so a reordered
 `authors` is not a change. A field whose evidence is missing is left alone
 and reported as unknown. That covers a page with no approval yet, a file not
 yet committed, and a path outside any repository. The document is edited
-through the same comment-preserving writer `fill` uses, so a format `fill`
-cannot write is reported as a per-file error here too. The rules for each
-field are in [the derivable
+through the same writer `fill` uses, so a format `fill` cannot write is
+reported as a per-file error here too. That writer leaves every key it does
+not write exactly as it was. The rules for each field are in [the derivable
 fields](/manni/meta/reference/configuration/#the-derivable-fields).
 
 {/* cite provenance-not-fenced-is-a-per-file-error */}
@@ -1038,8 +1039,8 @@ current, which is the false green the comparison exists to end.
 
 | Situation | Message |
 |---|---|
-| The checkout is shallow, as `actions/checkout` leaves it by default. | `git source unavailable: this checkout is shallow; use actions/checkout with fetch-depth: 0, or --sources codeowners,github,gitlab` |
-| `gh` or `glab` is not on `PATH`. | `github source unavailable: gh is not on PATH (origin is github.com); install gh and run gh auth login, or drop reviewed-by from --fields` |
+| The checkout is shallow, as `actions/checkout` leaves it by default. | `git source unavailable: this checkout is shallow; use actions/checkout with fetch-depth: 0 (/repo); narrow --sources or --fields` |
+| `gh` or `glab` is not on `PATH`. | `github source unavailable: gh is not on PATH (origin is github.com); install gh and run gh auth login; narrow --sources or --fields` |
 | `--sources` names only the one of `github` and `gitlab` the origin remote does not match. | `the origin remote is github.com, which is GitHub; add github to sources, or drop reviewed-by and last-reviewed from the managed fields` |
 | There is no origin remote. | `no origin remote to tell GitHub from GitLab` |
 | The origin host names neither platform, and `sources` does not list exactly one of the two. | `the origin remote is git.example.com, which names neither GitHub nor GitLab; list exactly one of github, gitlab in derive.sources to say which it is` |
@@ -1171,10 +1172,8 @@ root, else the working directory. Config edits keep comments and key order.
 {/* cite keys-change-moves-every-page-in-the-collection */}
 {/* cite keys-change-count-is-reported */}
 {/* cite a-path-addition-moves-every-owned-key */}
-{/* cite a-key-leaving-keys-stays-on-the-page */}
 {/* cite a-join-field-never-moves */}
-{/* cite the-agreeing-copy-is-dropped */}
-{/* cite relocate-rolls-back-a-failed-write */}
+{/* cite relocate-rolls-back-a-failed-write a-key-leaving-keys-stays-on-the-page the-agreeing-copy-is-dropped */}
 A change to a manifest's `keys:` moves that key for **every** page in the
 collection, including pages outside the paths you named. The output says how
 many. A path appended to `paths:` moves every key the manifest owns out of the
@@ -1422,9 +1421,9 @@ Two more rules keep the draft honest:
   `number` in 4 gets `"type": "string"`. The four are named in the report as the
   data errors they are. A union would encode the typo as the contract.
 - **`enum` only when the values are a vocabulary.** At most 20 distinct values,
-  **and** at most 5% of the files scanned. Both conditions: a 30-file repo where
-  every `title` is unique passes a ratio test alone and would produce a 30-value
-  `enum` for prose.
+  **and** at most 5% of the files that carry the key. Both conditions: a 10-file
+  repo with 7 hand-written `type` values clears the count on its own, and the
+  ratio is what refuses it.
 
 {/* cite infer-out-refuses-to-overwrite */}
 {/* cite infer-out-refuses-an-ignored-path */}

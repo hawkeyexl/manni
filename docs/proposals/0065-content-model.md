@@ -1,4 +1,4 @@
-# 0060: One content model for the family, and for Doc Detective
+# 0065: One content model for the family, and for Doc Detective
 
 - **Status:** Proposed
 - **Serves:** No journey of its own. It is the vocabulary three other proposals

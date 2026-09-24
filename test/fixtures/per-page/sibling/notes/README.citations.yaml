@@ -1,0 +1,4 @@
+# Not a member of the collection, so this file is never read. Were it read,
+# its entry for another page would be refused.
+docs/cited.md:
+  owner: someone-else

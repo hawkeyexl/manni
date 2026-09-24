@@ -50,11 +50,14 @@ import { ManifestSet } from "../core/manifest.js";
 import { sidecarsFor, type PageSidecar } from "../core/sidecar.js";
 import {
   ANY_FENCE,
+  MAX_IDS_PER_MARKER,
   anchoredLines,
   fenceSpanAt,
   formatStatement,
+  isMarkerLine,
   markerIndent,
   offsetOfLine,
+  respellStatement,
   unitHolding,
 } from "../core/statements.js";
 import {
@@ -194,7 +197,11 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // The manifests that own `citations`, if any collection declares one. The
   // page is labelled from the working directory here, so membership is
   // measured from there too.
-  const sidecars = await sidecarsFor(run, { base: cwd });
+  const sidecars = await sidecarsFor(run, {
+    base: cwd,
+    // A `{page}` manifest (0058) is read for the one page being cited.
+    ...(path === undefined ? {} : { pages: [path] }),
+  });
   const firstManifest = sidecars?.manifests[0];
   if (usingStdin && firstManifest !== undefined) {
     const keyedBy = firstManifest.join === "path" ? "path" : firstManifest.join;
@@ -243,8 +250,11 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     throw new CiteError(`${label} already has an entry ${opts.id}.`);
   }
   if (marker && opts.id !== undefined) {
+    // Joining an id a marker already names would write it twice into one
+    // list, which is `marker-invalid`. The entry check above catches the
+    // ordinary case; this one is left by a marker whose entry went away.
     const already = page.statements.find(
-      (s) => s.payload.kind === "ref" && s.payload.id === opts.id,
+      (s) => s.payload.kind === "ref" && s.payload.ids.includes(opts.id ?? ""),
     );
     if (already !== undefined) {
       throw new CiteError(
@@ -316,6 +326,8 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   // with the marker, and the frontmatter append shifts them once at the end.
   let body = content;
   let markerAt: number | undefined;
+  /** Whether the id joined a marker already there, rather than getting a line. */
+  let markerJoined = false;
   let claimSpan: PageLines | undefined;
   let claim: CitationClaim | undefined;
   // Where else the claim's text sits, for the notice at the end of the run.
@@ -326,6 +338,14 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     // The marker goes above the paragraph or block holding the lines, below
     // any markers already stacked there, at its indentation, and the lines
     // must stay inside it.
+    // A marker line is never part of a pin, so a marker written there would
+    // change what the line below it pins. The refusal is keyed to the line
+    // rather than to what the marker names.
+    if (isMarkerLine(lines[pageLines.start - 1] ?? "", format)) {
+      throw new CiteError(
+        `${label}:${String(pageLines.start)} is a marker line. A marker there would change its pin.`,
+      );
+    }
     const holding = unitHolding(content, pageLines.start, format, {
       offset: page.bodyOffset,
       line: page.bodyLine,
@@ -345,20 +365,53 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
         `${at} is in a ${holding.kind} at ${spellAt(holding)} that ${unitWide}. A marker anchors the whole ${holding.kind}.`,
       );
     }
-    shifted = shiftedEntries({
-      citations: page.citations,
-      at: [holding.start],
-      delta: 1,
-      bodyLine: page.bodyLine,
-      label,
-    });
-    const statement =
-      markerIndent(content, holding.start, format, page.bodyLine) +
-      formatStatement(format, { kind: "ref", id: opts.id ?? "" });
-    const insertAt = offsetOfLine(content, holding.start);
-    body = insertStatementBefore(content, insertAt, statement);
-    markerAt = holding.start;
-    const unit = anchoredLines(body, insertAt + statement.length, format, quote);
+    // The marker nearest the anchored text: the one on the text own line when
+    // there is one, else the last marker line above it. A reader associates
+    // the nearest comment with the prose, and appending there needs no other
+    // line to move (proposal 0056).
+    const above = page.statements.filter((s) => s.anchorLine === holding.start);
+    const nearest = above[above.length - 1];
+    // A marker already holding the cap takes no more, so the twenty-sixth
+    // citation gets a marker line of its own. Refusing would leave no way to
+    // cite the paragraph short of editing the line by hand. A marker the
+    // scanner could not read is left alone for the same reason.
+    //
+    // So is one whose delimiters sit on different lines. That parses, but
+    // respelling it folds it onto one line, and the claims below it would
+    // then all be one line out while this path shifts nothing.
+    const held =
+      nearest !== undefined &&
+      nearest.payload.kind === "ref" &&
+      nearest.payload.ids.length < MAX_IDS_PER_MARKER &&
+      !/[\r\n]/.test(nearest.raw)
+        ? nearest.payload.ids
+        : undefined;
+    /** Where the marker ends in `body`, so what follows it can be anchored. */
+    let after: number;
+    if (nearest !== undefined && held !== undefined) {
+      body = respellStatement(content, nearest, [...held, opts.id ?? ""]);
+      // Joining changes one line in place, so nothing below it moves and no
+      // claim on the page is re-spelled.
+      after = nearest.end + (body.length - content.length);
+      markerAt = nearest.line;
+      markerJoined = true;
+    } else {
+      shifted = shiftedEntries({
+        citations: page.citations,
+        at: [holding.start],
+        delta: 1,
+        bodyLine: page.bodyLine,
+        label,
+      });
+      const statement =
+        markerIndent(content, holding.start, format, page.bodyLine) +
+        formatStatement(format, { kind: "ref", ids: [opts.id ?? ""] });
+      const insertAt = offsetOfLine(content, holding.start);
+      body = insertStatementBefore(content, insertAt, statement);
+      after = insertAt + statement.length;
+      markerAt = holding.start;
+    }
+    const unit = anchoredLines(body, after, format, quote);
     const pin = unit === undefined ? undefined : pinOfLines(splitLines(body), unit);
     if (unit === undefined || pin === undefined) {
       throw new CiteError(`${at} has no paragraph or block for a marker to anchor.`);
@@ -482,6 +535,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
     ...(placed === undefined ? {} : { manifest: placed }),
   };
   if (markerAt !== undefined) result.markerLine = markerAt + shift;
+  if (markerJoined) result.markerJoined = true;
   if (claimSpan !== undefined) {
     result.claimLines = { start: claimSpan.start + shift, end: claimSpan.end + shift };
   }

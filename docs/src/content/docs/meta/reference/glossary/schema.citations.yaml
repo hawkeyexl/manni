@@ -1,0 +1,10 @@
+docs/src/content/docs/meta/reference/glossary/schema.mdx:
+  citations:
+    - id: schema-comes-from-a-builtin-a-file-or-a-url
+      claim:
+        integrity: sha256-6ed8163b63269109343f41d0ef905cce905c2227e3ce7deb686aa9f954b8a7db
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 285-296
+        integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe

@@ -12,13 +12,38 @@
  * workflow: it goes red here, and the message names the command that fixes it
  * in that same PR. The rules live in `scripts/version-pins.mjs`.
  *
+ * A prerelease version stands the check down, on the same rule the release
+ * plugin skips on (`isPrerelease`, shared from `version-pins.mjs`). A
+ * `feat/**` branch publishes to a prerelease channel, so its `chore(release):`
+ * commit leaves `2.9.0-cite-marker-ids.1` in package.json while the docs still
+ * pin the stable version. The plugin refuses to rewrite them, so this cannot
+ * ask that it has. Before that, every feat branch was permanently red here
+ * from its first prerelease on, through no fault of its author.
+ *
  * Usage:
  *   node scripts/check-versions.mjs [root]
- * Exit 0 = all current, 1 = a pin is stale, 2 = setup error.
+ * Exit 0 = all current (or skipped), 1 = a pin is stale, 2 = setup error.
  */
-import { REPO_ROOT, VersionsSetupError, plural, scanVersions } from "./version-pins.mjs";
+import {
+  REPO_ROOT,
+  VersionsSetupError,
+  declaredVersion,
+  isPrerelease,
+  plural,
+  scanVersions,
+} from "./version-pins.mjs";
 
 const root = process.argv[2] ?? REPO_ROOT;
+
+// Said out loud rather than exited on quietly: a green log has to show that the
+// check stood down, and which version made it.
+const version = declaredVersion(root);
+if (isPrerelease(version)) {
+  console.log(
+    `versions: skipped, package.json is the prerelease ${version}; the release syncs pins to stable versions only`,
+  );
+  process.exit(0);
+}
 
 let scanned;
 try {

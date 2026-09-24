@@ -4,9 +4,11 @@
  * The inverse of `add`, and it undoes all of what `add` did. The entry goes
  * out of the page's frontmatter, or out of the manifest that owns the page's
  * citations, whichever `add` would have written to. Every marker naming it
- * goes out of the body. The claims below each removed marker line move up
- * with the text they pin, which is the inverse of the shift `add --marker`
- * performs and the same rule (`shiftedEntries`).
+ * goes out of the body: the id goes out of the marker list, and the whole
+ * line goes when that id was the last one (proposal 0056). The claims below
+ * each removed marker line move up with the text they pin, which is the
+ * inverse of the shift `add --marker` performs and the same rule
+ * (`shiftedEntries`). A marker that only loses a word moves nothing.
  *
  * `--only` is required, one entry per occurrence, and nothing is written
  * until every one of them has been found: a run either removes what it was
@@ -22,17 +24,25 @@ import { STDIN_LABEL } from "../../meta/internal.js";
 import { ManifestSet } from "../core/manifest.js";
 import { citationInputs, pickExtractor, readPage } from "../core/page.js";
 import { shiftedEntries, withClaimLines } from "../core/shift.js";
-import { isMarkerLine } from "../core/statements.js";
+import { isMarkerLine, respellEdit } from "../core/statements.js";
 import { splitLines } from "../core/hash.js";
-import { removeFrontmatterCitations, removeLine, spliceEntryField, unifiedDiff } from "../core/write.js";
+import {
+  applyEdits,
+  lineRemovals,
+  removeFrontmatterCitations,
+  spliceEntryField,
+  unifiedDiff,
+} from "../core/write.js";
 import { CiteError } from "../errors.js";
 import type {
   CitationInput,
+  InlineStatement,
   ManifestChange,
   Removal,
   RemoveOptions,
   RemovePage,
   RemoveRun,
+  TextEdit,
 } from "../types.js";
 import { assertNoOrphanJoins, assertNoOrphans, joinHits, prepareRun, readTarget } from "./check.js";
 
@@ -75,7 +85,7 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
     resolve: false,
   });
   const { run, files, usingStdin, forced } = prepared;
-  assertNoOrphans(prepared);
+  await assertNoOrphans(prepared);
   const hits = joinHits();
   const manifests = new ManifestSet();
   /** Every `--only` value that named something, anywhere in the run. */
@@ -122,13 +132,20 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
       }
       return [];
     };
-    /** The markers naming an id, as file lines. */
-    const markersFor = (id: string | undefined): number[] =>
+    /** The markers naming an id. */
+    const markersFor = (id: string | undefined): InlineStatement[] =>
       id === undefined
         ? []
-        : page.statements
-            .filter((s) => s.payload.kind === "ref" && s.payload.id === id)
-            .map((s) => s.line);
+        : page.statements.filter(
+            (s) => s.payload.kind === "ref" && s.payload.ids.includes(id),
+          );
+    /** Per marker line, the ids this run takes out of its list. */
+    const dropped = new Map<number, { statement: InlineStatement; ids: Set<string> }>();
+    const drop = (statement: InlineStatement, id: string): void => {
+      const held = dropped.get(statement.line) ?? { statement, ids: new Set<string>() };
+      held.ids.add(id);
+      dropped.set(statement.line, held);
+    };
 
     const removed: Removal[] = [];
     const indices = new Set<number>();
@@ -140,12 +157,13 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
         const id = idOf(input?.entry);
         const markers = markersFor(id);
         indices.add(index);
-        markerLines.push(...markers);
+        markerLines.push(...markers.map((s) => s.line));
+        if (id !== undefined) for (const statement of markers) drop(statement, id);
         removed.push({
           ...(id === undefined ? {} : { id }),
           index,
           ...(input === undefined ? {} : { origin: input.origin }),
-          markerLines: markers,
+          markerLines: markers.map((s) => s.line),
         });
         matched.add(value);
       }
@@ -153,8 +171,9 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
       // An id no entry carries, but a marker names: the marker alone.
       const markers = markersFor(value);
       if (markers.length === 0) continue;
-      markerLines.push(...markers);
-      removed.push({ id: value, markerLines: markers });
+      markerLines.push(...markers.map((s) => s.line));
+      for (const statement of markers) drop(statement, value);
+      removed.push({ id: value, markerLines: markers.map((s) => s.line) });
       matched.add(value);
     }
     const nothing: RemovePage = { file: label, removed: [], diff: "", written: false };
@@ -166,16 +185,33 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
     }
 
     // A marker sharing its line with text anchors that text, so the line is
-    // not the tool's to delete.
-    const ordered = [...new Set(markerLines)].sort((a, b) => a - b);
-    for (const line of ordered) {
+    // not the tool's to delete. The refusal is a property of the line rather
+    // than of the payload, so it holds however many ids the marker names.
+    const touched = [...new Set(markerLines)].sort((a, b) => a - b);
+    for (const line of touched) {
       if (!isMarkerLine(lines[line - 1] ?? "", format)) {
         const id = page.statements.find((s) => s.line === line)?.payload;
-        const named = id?.kind === "ref" ? ` ${id.id}` : "";
+        const named = id?.kind === "ref" ? ` ${id.ids.join(" ")}` : "";
         throw new CiteError(
           `the marker${named} at ${label}:${String(line)} shares its line with text; remove it by hand.`,
         );
       }
+    }
+    // A marker that keeps an id keeps its line: the word goes out of the list
+    // and nothing below it moves. Only a marker that loses its last id is a
+    // line to delete (proposal 0056).
+    const kept = new Map<number, [string, ...string[]]>();
+    const ordered: number[] = [];
+    for (const line of touched) {
+      const held = dropped.get(line);
+      // Destructured rather than cast: a marker that keeps nothing is a line
+      // to delete, and the head is what tells the two apart.
+      const [head, ...rest] =
+        held === undefined || held.statement.payload.kind !== "ref"
+          ? []
+          : held.statement.payload.ids.filter((id) => !held.ids.has(id));
+      if (head === undefined) ordered.push(line);
+      else kept.set(line, [head, ...rest]);
     }
 
     // What stays, moved up by the marker lines going out above it.
@@ -188,15 +224,49 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
       label,
     });
 
-    let after = content;
-    // The claim lines first, while the entries still stand where the page's
-    // own pointers say. Splicing a scalar never changes the line count, and
-    // the markers are in the body, so neither edit moves the other.
+    // One parse, one pass.
+    //
+    // Every position the body rewrite reads -- a statement's byte offsets, a
+    // marker's line number -- is read against `content`, the page as it was
+    // parsed, and the edits are collected as spans and applied together. So no
+    // offset is used after the text it indexes has changed, and no writer has
+    // to run before or after another to be correct. The ordering contract this
+    // carried is gone rather than satisfied: it was got wrong three times, in
+    // three review rounds, and each time silently -- the edit lands nowhere,
+    // the entry leaves the frontmatter, and the marker still names the id
+    // until some later `cite check` reports a `marker-orphan` with nothing to
+    // explain it.
+    const edits: TextEdit[] = [];
+    for (const [line, ids] of kept) {
+      const held = dropped.get(line);
+      if (held === undefined) continue;
+      const edit = respellEdit(content, held.statement, ids);
+      // `content` is the text the statement was parsed from, so the payload is
+      // where the statement says it is. A miss would mean the parse and the
+      // page disagree, which is worth stopping for rather than writing a page
+      // whose marker still names an id no entry has.
+      if (edit === undefined) {
+        throw new CiteError(
+          `manni cannot read the marker at ${label}:${String(line)} to rewrite it; remove it by hand.`,
+        );
+      }
+      edits.push(edit);
+    }
+    // The marker lines that lost their last id, taken out with their
+    // terminators. Neighbours merge into one span, so no two of them reach for
+    // the same break.
+    edits.push(...lineRemovals(content, ordered));
+    let after = applyEdits(content, edits);
+    // Then the frontmatter. Both of its writers re-derive their own position
+    // from the text they are handed -- `spliceEntryField` by re-extracting,
+    // `removeFrontmatterCitations` by re-reading the list -- so neither reads
+    // anything out of the parse above and neither cares what the body pass
+    // did. The splice still runs before the removal, but for a different
+    // reason: its `index` counts the entries the page has now, and the removal
+    // is what renumbers them.
     for (const { index, lines: moved } of shifted.frontmatter) {
       after = spliceEntryField(after, format, index, ["claim", "lines"], moved);
     }
-    // Bottom up, so every line above each one keeps its number.
-    for (const line of [...ordered].sort((a, b) => b - a)) after = removeLine(after, line);
     if (owner === undefined) {
       after = removeFrontmatterCitations(after, format, indices, label);
     } else {

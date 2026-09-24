@@ -29,7 +29,7 @@ A `provenance` entry has `generated-by`, `lines` (one body line, or a range
 such as `"12-30"`), and `integrity` (`sha256-` and 64 hex digits over those
 lines), all required. A `meta-provenance` entry requires `generated-by`. Its
 `fields` are JSON Pointers to the values it proposed, such as `/intent` or
-`/kg/label`. Its `evals` are the ids of the evals it proposed. Its
+`/graph/label`. Its `evals` are the ids of the evals it proposed. Its
 `confidence` is a number from 0 to 1 per pointer or eval id. It needs at least one of `fields`
 or `evals`.
 
@@ -70,7 +70,7 @@ sample-questions:
   entry is the review trail for machine-filled metadata. A human deletes the
   entry once its fields are reviewed, so a surviving entry means machine
   metadata nobody has checked. The same key serves the
-  [kg](/manni/meta/proposals/kg/) block and both
+  [graph](/manni/meta/proposals/graph/) block and both
   [eval](/manni/meta/proposals/evals/) vocabularies. So the whole family has one
   answer to "which of this metadata did a machine write, and has anyone
   checked?"
@@ -99,7 +99,7 @@ One question. Is `risks` the right name for a field that carries
 assurances (`read-only`) alongside cautions?
 
 Placement is settled. `provenance` and `meta-provenance` were candidates for
-[core](/manni/meta/proposals/core/), since the eval bias check and the kg
+[core](/manni/meta/proposals/core/), since the eval bias check and the graph
 harvest read them. They stay here.
 
 Proposal 0046 changes both production records, in draft
@@ -110,8 +110,8 @@ hash that pins those lines.
 and `validate` reports a pin whose text has changed. Both commands do that
 today, while the drafts stay under review. The per-model field
 attribution that `1.0.0-proposal.1` called `provenance` is renamed `meta-provenance`, with the same
-review semantics. Its `fields` become JSON Pointers, so `/kg/label` reaches
-into a block. It also takes over the kg block's `provenance` and the eval
+review semantics. Its `fields` become JSON Pointers, so `/graph/label` reaches
+into a block. It also takes over `kg.provenance` from the kg drafts and the eval
 vocabularies' `eval-provenance`. The draft drops the page-level
 `generated-by`, since `provenance` names the machines per range.
 `manni meta fill` already writes `meta-provenance` for the fields it fills.

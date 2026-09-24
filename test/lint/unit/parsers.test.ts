@@ -436,7 +436,7 @@ describe("mdx parser", () => {
       return at(children, 0, "the element") as ElementNode;
     };
 
-    // Proposal 0060, stress test 4: a section holding one <Steps> holds one
+    // Proposal 0065, stress test 4: a section holding one <Steps> holds one
     // block. Counting through the wrapper would fail `paragraphs: {max: 3}` on
     // a page a reader would say satisfies it.
     it("owns its children rather than spilling them into the section", () => {

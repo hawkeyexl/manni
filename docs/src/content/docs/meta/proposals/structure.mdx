@@ -85,24 +85,25 @@ related-pages: [operator-architecture]
   can prefix its labels (`deploy:kubernetes`) or overlay its own schema.
   This is a headline open question for the review.
 - **The negative exists at both levels.** `not-applicable-to` was added in
-  review round 5 for parallelism. The `kg` block's `applies-to` had a page-level
-  counterpart, and its `not-applicable-to` did not. So the only way to say "not
-  the FIPS build" was to open a `kg` block for one field. Checking that the two
+  review round 5 for parallelism. The block was named `kg` then, and is `graph`
+  now. Its `applies-to` had a page-level counterpart, and its `not-applicable-to`
+  did not. So the only way to say "not the FIPS build" was to open a `kg` block
+  for one field. Checking that the two
   lists do not overlap is a graph-layer (SHACL) check at both levels. JSON
   Schema cannot compare two sibling lists. So a page naming the same label on
   both sides passes here, and the contradiction surfaces at graph build. A test
   asserts that this passes, the same way one asserts that an overdue review
   passes.
-- **Three fields are fallbacks for the `kg` block.** `applies-to`,
+- **Three fields are fallbacks for the `graph` block.** `applies-to`,
   `not-applicable-to`, and `concepts` share names and shapes with their
-  counterparts inside the [kg vocabulary](/manni/meta/proposals/kg/)'s block. The
-  rule is that the deeper declaration wins. When the `kg` block sets a fact, its
+  counterparts inside the [graph vocabulary](/manni/meta/proposals/graph/)'s block. The
+  rule is that the deeper declaration wins. When the `graph` block sets a fact, its
   value is used. When the block is silent, the page-level field feeds the graph.
   Both sides accept identical values by construction, using the same non-empty,
   duplicate-free list shape. So a promoted page-level value can never produce a
-  document the `kg` block would reject.
+  document the `graph` block would reject.
 - **`related-pages` says what it points at.** The suffix exists because
-  `kg.related-concepts` relates concepts. Each name now names its target.
+  `graph.related-concepts` relates concepts. Each name now names its target.
 
 ## What reviewers should poke at
 

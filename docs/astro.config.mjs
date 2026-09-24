@@ -41,6 +41,13 @@ const focusableCodeBlocks = {
  */
 const BETA = { text: "Beta", variant: "default" };
 
+/**
+ * The badge an in-development domain's group carries: one whose tool is still
+ * on its `tool/<name>` branch and not in the published package. `tip` is
+ * purple: off the colours BETA's comment reserves, and distinct from BETA.
+ */
+const IN_DEV = { text: "In Dev", variant: "tip" };
+
 export default defineConfig({
   site: "https://hawkeyexl.github.io",
   base: "/manni",
@@ -53,8 +60,11 @@ export default defineConfig({
   //
   // Proposal 0041 renamed the sidecar vocabulary to external metadata. Release
   // notes and pull requests link to the old URL, so it must not 404.
+  // Proposal 0063 renamed the kg vocabulary's review page to graph, for the
+  // same reason.
   redirects: {
     "/meta/set-up/sidecar-metadata": "/manni/meta/set-up/external-metadata",
+    "/meta/proposals/kg": "/manni/meta/proposals/graph",
   },
   integrations: [
     starlight({
@@ -69,56 +79,11 @@ export default defineConfig({
       // One top-level group per tool. `meta` is the metadata tool and `a11y`
       // the accessibility tool; the others arrive with their subcommands, each
       // as a sibling group over its own directory under src/content/docs/.
+      // Groups are in alphabetical order by label.
       //
       // Every group starts collapsed, so the landing page shows one line per
       // tool. Starlight still opens whichever groups contain the current page.
       sidebar: [
-        {
-          label: "meta",
-          collapsed: true,
-          items: [
-            { label: "Overview", link: "/meta/" },
-            {
-              label: "Get started",
-              collapsed: true,
-              items: [{ autogenerate: { directory: "meta/get-started" } }],
-            },
-            {
-              label: "Set up validation",
-              collapsed: true,
-              items: [{ autogenerate: { directory: "meta/set-up" } }],
-            },
-            {
-              label: "Run it in CI",
-              collapsed: true,
-              items: [{ autogenerate: { directory: "meta/ci" } }],
-            },
-            {
-              label: "Define & evolve schemas",
-              collapsed: true,
-              items: [{ autogenerate: { directory: "meta/schemas" } }],
-            },
-            {
-              label: "Fix a failing check",
-              collapsed: true,
-              items: [{ autogenerate: { directory: "meta/fix" } }],
-            },
-            {
-              label: "Reference",
-              collapsed: true,
-              items: [{ autogenerate: { directory: "meta/reference" } }],
-            },
-            // Published proposals under community review. Distinct from
-            // docs/proposals/ (the internal, unpublished ADR log): a page
-            // appears here only while it is actively soliciting outside
-            // feedback, and links back to the full internal record.
-            {
-              label: "Proposals",
-              collapsed: true,
-              items: [{ autogenerate: { directory: "meta/proposals" } }],
-            },
-          ],
-        },
         {
           label: "a11y",
           collapsed: true,
@@ -182,6 +147,22 @@ export default defineConfig({
             },
           ],
         },
+        // Each IN_DEV group (docevals, graph, tracevals) is a tool still
+        // on its `tool/<name>` branch, so main carries only an overview page.
+        // The branch brings the rest of the section, and the badge, when it
+        // merges.
+        {
+          label: "docevals",
+          collapsed: true,
+          badge: IN_DEV,
+          items: [{ label: "Overview", link: "/docevals/" }],
+        },
+        {
+          label: "graph",
+          collapsed: true,
+          badge: IN_DEV,
+          items: [{ label: "Overview", link: "/graph/" }],
+        },
         // `key` manages a family resource rather than documents: the one
         // encryption key every tool encrypts values with (proposal 0045). Two
         // verbs, so the same two-page shape as `a11y`.
@@ -244,6 +225,52 @@ export default defineConfig({
             },
           ],
         },
+        {
+          label: "meta",
+          collapsed: true,
+          items: [
+            { label: "Overview", link: "/meta/" },
+            {
+              label: "Get started",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "meta/get-started" } }],
+            },
+            {
+              label: "Set up validation",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "meta/set-up" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "meta/ci" } }],
+            },
+            {
+              label: "Define & evolve schemas",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "meta/schemas" } }],
+            },
+            {
+              label: "Fix a failing check",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "meta/fix" } }],
+            },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "meta/reference" } }],
+            },
+            // Published proposals under community review. Distinct from
+            // docs/proposals/ (the internal, unpublished ADR log): a page
+            // appears here only while it is actively soliciting outside
+            // feedback, and links back to the full internal record.
+            {
+              label: "Proposals",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "meta/proposals" } }],
+            },
+          ],
+        },
         // `term` is the terminology tool (proposal 0052). Same shape as
         // `cite`. Its vocabulary lives on meta's proposals hub.
         {
@@ -278,6 +305,12 @@ export default defineConfig({
               items: [{ autogenerate: { directory: "term/reference" } }],
             },
           ],
+        },
+        {
+          label: "tracevals",
+          collapsed: true,
+          badge: IN_DEV,
+          items: [{ label: "Overview", link: "/tracevals/" }],
         },
       ],
     }),

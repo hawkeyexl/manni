@@ -1,0 +1,1292 @@
+docs/src/content/docs/key/reference/cli.mdx:
+  citations:
+    - id: intro-env-wins
+      claim:
+        integrity: sha256-a70e889cda21ab0b00dc9a7df0747500b7a5d786ada6bb743b7428f141d9393f
+      source:
+        file: src/shared/encryption-key.ts
+        lines: 58-70
+        integrity: sha256-af2bad28497a46d44e3fd25f32d68e5b73c21d6b7b14d63192ca1a7ff1ddaa1c
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: intro-bare-key-exit-2
+      claim:
+        integrity: sha256-a70e889cda21ab0b00dc9a7df0747500b7a5d786ada6bb743b7428f141d9393f
+      source:
+        file: src/shared/run.ts
+        lines: 89
+        integrity: sha256-5934f41ee032373fdf97335450085486690d8ee1f81822c4a380c24fceed9726
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: intro-never-prints-key
+      claim:
+        integrity: sha256-a70e889cda21ab0b00dc9a7df0747500b7a5d786ada6bb743b7428f141d9393f
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 26-31
+        integrity: sha256-cc09b5b5f0c6d5515acefe729c3c71cfd0b23cf5b6336002b19badadda1d1520
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: key-no-subcommand-exit-2
+      claim:
+        integrity: sha256-b20452b0b0f2eeaef9df5dec28753a8b8d18b64fa526b30944a53cd5c629aa8a
+      source:
+        file: src/shared/run.ts
+        lines: 89
+        integrity: sha256-5934f41ee032373fdf97335450085486690d8ee1f81822c4a380c24fceed9726
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: no-color-option
+      claim:
+        lines: 48
+        integrity: sha256-80ec7dd6383c2865c30914d11a64177c2d795bf49c9c75eb0c04451687f9e3a4
+      source:
+        file: src/key/cli.ts
+        lines: 79-81
+        integrity: sha256-8a17043697050c56c6e4effcbe00b3fa5764656d244eb04adb039052450eeab3
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: no-color-rotate-pretty-only
+      claim:
+        lines: 48
+        integrity: sha256-80ec7dd6383c2865c30914d11a64177c2d795bf49c9c75eb0c04451687f9e3a4
+      source:
+        file: src/key/cli.ts
+        lines: 174-176
+        integrity: sha256-12ed672d63b931969284959754a3f498e1d55c400e47a8cf36ca53b729a0ceac
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-target-file
+      claim:
+        integrity: sha256-8b22404d25a312fcc5d19e64c984cfb502b209ce9bdab7e7e448b15962894b18
+      source:
+        file: src/key/core/config.ts
+        lines: 43-51
+        integrity: sha256-73b20f06ec6b585beabebb02da121b6e55f27304eaf67ec5325d6e115d9eba11
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-created-at-git-root
+      claim:
+        integrity: sha256-8b22404d25a312fcc5d19e64c984cfb502b209ce9bdab7e7e448b15962894b18
+      source:
+        file: src/shared/encryption-key.ts
+        lines: 120-129
+        integrity: sha256-fb6ad6dfb1edc8b20976104a138495709e264997618cb2e5e4945e35634c59cc
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-edits-in-place
+      claim:
+        integrity: sha256-8b22404d25a312fcc5d19e64c984cfb502b209ce9bdab7e7e448b15962894b18
+      source:
+        file: src/shared/encryption-key.ts
+        lines: 153-158
+        integrity: sha256-8b1868d9c370fa5f1900950f7521daeff52409fed396de6c598a36681c9563e5
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-other-keys-survive
+      claim:
+        integrity: sha256-8b22404d25a312fcc5d19e64c984cfb502b209ce9bdab7e7e448b15962894b18
+      source:
+        file: src/shared/encryption-key.ts
+        lines: 178-193
+        integrity: sha256-0e306f806c5aa6287f3999ba1f41fc67772754da651dfa9656450c29adbb732f
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-generates-64-hex
+      claim:
+        integrity: sha256-8b22404d25a312fcc5d19e64c984cfb502b209ce9bdab7e7e448b15962894b18
+      source:
+        file: src/shared/encryption.ts
+        lines: 58-60
+        integrity: sha256-fbcde933e4d8055ae0903f9a02fc040dbc77ca9fa333392aa786af3f37064a2b
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-report-names-file
+      claim:
+        integrity: sha256-8b22404d25a312fcc5d19e64c984cfb502b209ce9bdab7e7e448b15962894b18
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 26-31
+        integrity: sha256-cc09b5b5f0c6d5515acefe729c3c71cfd0b23cf5b6336002b19badadda1d1520
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-c-must-exist
+      claim:
+        integrity: sha256-713ea8f82ae238f2102271fbe3589408b2f1ef528ee84f177f5479bfb00bbcba
+      source:
+        file: src/shared/config-file.ts
+        lines: 449-453
+        integrity: sha256-2ec1ad80db42ed997e1058c70a9720a2a4776e21edcf66d3d778c539b257c4a0
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-c-family-file
+      claim:
+        integrity: sha256-713ea8f82ae238f2102271fbe3589408b2f1ef528ee84f177f5479bfb00bbcba
+      source:
+        file: src/shared/config-file.ts
+        lines: 454-457
+        integrity: sha256-1be2093c36310a6ef098db285e2b7ba9336ad35a814837794334ac2fca75d770
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-c-single-tool-refused
+      claim:
+        integrity: sha256-713ea8f82ae238f2102271fbe3589408b2f1ef528ee84f177f5479bfb00bbcba
+      source:
+        file: src/shared/encryption-key.ts
+        lines: 99-107
+        integrity: sha256-7c62398a0b0cf7295936a43b19339fa09f536a977ed75d53c2fee7a5fb4db642
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-git-warning-before-write
+      claim:
+        integrity: sha256-6e2ade60c32b1d034bbc488a132cb4bfb08f70ab9de2e41f6113803089967d5a
+      source:
+        file: src/key/commands/set.ts
+        lines: 73-80
+        integrity: sha256-d3bc01966bf60e4b885f44ed114d470d7830d89d1a6e540fafd2b1c30801f1c4
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-value-arg-shape
+      claim:
+        lines: 91
+        integrity: sha256-0fe046c6e849add718dffba2289d1b43a516970552a77f21384d98a665eae89e
+      source:
+        file: src/key/commands/set.ts
+        lines: 55-57
+        integrity: sha256-f2fad464bec94408c429f08a19df0c3c599f7aba0be5b7d11eb0015fda6dc393
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-value-arg-default
+      claim:
+        lines: 91
+        integrity: sha256-0fe046c6e849add718dffba2289d1b43a516970552a77f21384d98a665eae89e
+      source:
+        file: src/key/commands/set.ts
+        lines: 70-71
+        integrity: sha256-2e31ffd4aad34c5b5e3be89fbcc62595a6bceefa1d9a94bba2e488d5143c125a
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-config-option
+      claim:
+        lines: 97
+        integrity: sha256-46548b953cac66cc1f1c0de285a42e430d32987043d76dd75b3a2f6ab4b0f53a
+      source:
+        file: src/key/cli.ts
+        lines: 87-90
+        integrity: sha256-894760807976e3c94ecb7aa30b7d943ecace32ffb68b3b85d48ef94f74c47503
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-dry-run-option
+      claim:
+        lines: 98
+        integrity: sha256-d77ea226f3f77b4a68811c0182044a59038e50b487cb603eaecc57cd6537f024
+      source:
+        file: src/key/commands/set.ts
+        lines: 72-80
+        integrity: sha256-29d9e6c38d0ecaae41f9f66f0b9f1e112bc090d790c8a0b4cbec53eeaaac9f61
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-refusals
+      claim:
+        integrity: sha256-d7276fa85c25222901c59ade472e22295c4ad16c4bd5d9df35cf82f13dc9efa7
+      source:
+        file: src/key/commands/set.ts
+        lines: 55-68
+        integrity: sha256-347e441026ea536b24de9855564c339115d78be74e969f384b631a01ff0c1ded
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-refuses-beside-legacy
+      claim:
+        integrity: sha256-d7276fa85c25222901c59ade472e22295c4ad16c4bd5d9df35cf82f13dc9efa7
+      source:
+        file: src/key/commands/set.ts
+        lines: 36-50
+        integrity: sha256-4699648d6e663d5731426bd3d97c57c79bfe8b6e843b60a945eaa72dd46ba111
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: legacy-config-names
+      claim:
+        integrity: sha256-d7276fa85c25222901c59ade472e22295c4ad16c4bd5d9df35cf82f13dc9efa7
+      source:
+        file: src/meta/core/config.ts
+        lines: 456-459
+        integrity: sha256-2c48e1fac5e85ebd797cef1db8d849c82cf87f357977541d86122864d2eb19e5
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: rotate-finds-by-ciphertext
+      claim:
+        integrity: sha256-98ed81bcf95153b8cf0fe66d98a210953e78858b8afd406faabca420ee06c1ac
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 91-116
+        integrity: sha256-62d1528fa82ff4a7d4f3ff6d5b0ce7e67ad85e20ab858eae858c20a213fa46f3
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: rotate-reencrypts-current-key
+      claim:
+        integrity: sha256-98ed81bcf95153b8cf0fe66d98a210953e78858b8afd406faabca420ee06c1ac
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 139-151
+        integrity: sha256-5d85abf2d84f57b777161c9ebef7f0a3d893faefd9ed14b76432fb6c861d50c6
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: rotate-citation-source-and-pin
+      claim:
+        integrity: sha256-98ed81bcf95153b8cf0fe66d98a210953e78858b8afd406faabca420ee06c1ac
+      source:
+        file: src/cite/core/reencrypt.ts
+        lines: 127-135
+        integrity: sha256-e1c84b2beb159447b45100cef28073208caecdde0ae1799e2e8ffeeffd34014a
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: rotate-citation-manifest-per-page
+      claim:
+        integrity: sha256-98ed81bcf95153b8cf0fe66d98a210953e78858b8afd406faabca420ee06c1ac
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 226-228
+        integrity: sha256-c452e4f98ee4bc92df13ab339e2c26d837f88cef5f00644b050f7cb0805b5081
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-external-manifests
+      claim:
+        integrity: sha256-98ed81bcf95153b8cf0fe66d98a210953e78858b8afd406faabca420ee06c1ac
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 594-608
+        integrity: sha256-923c152460b644b06e5f7f88037ac2cac784ddfa2072a49c9e23153fdacdac4b
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-all-or-nothing
+      claim:
+        integrity: sha256-98ed81bcf95153b8cf0fe66d98a210953e78858b8afd406faabca420ee06c1ac
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 625-629
+        integrity: sha256-31ec4c098ad2f4947315ebf3909d0a2b3b28edaebcf334b0a63495569ee1d7c7
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-key-before-pages
+      claim:
+        integrity: sha256-add8ab906996d2a608231d8c5407329d4014343d9fbc2675723097ce07686852
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 633-638
+        integrity: sha256-5e9d429885c50bf125fcb5ec3ed862f7337ace9eeaef13d5642ad77027a9488f
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-old-key-removed-last
+      claim:
+        integrity: sha256-add8ab906996d2a608231d8c5407329d4014343d9fbc2675723097ce07686852
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 653-656
+        integrity: sha256-455c5aff5cd9c663beaf84c64579238a170b8adf6381637591e9ed9b4a41c0ad
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-rerun-finishes
+      claim:
+        integrity: sha256-add8ab906996d2a608231d8c5407329d4014343d9fbc2675723097ce07686852
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 461-464
+        integrity: sha256-accf02ad8c23c08934cae27790209f275f5f91a35f9f07806d4eb28c00dc50e7
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: narrowed-is-paths-or-collection
+      claim:
+        integrity: sha256-6e188c65549a2a8bbca655314a18fe6ecb19a76a9293726c7122a11701e30741
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 446
+        integrity: sha256-203fa1545b15b5fcb9a7fe7950caf90c7e9452755b8a36ab63a15312bfc03c21
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: narrowed-requires-to
+      claim:
+        integrity: sha256-6e188c65549a2a8bbca655314a18fe6ecb19a76a9293726c7122a11701e30741
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 459
+        integrity: sha256-caf59d284448935f34a87e294a9112d57c6a3007913ceb78802b56bb5598334e
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: narrowed-never-writes-key
+      claim:
+        integrity: sha256-6e188c65549a2a8bbca655314a18fe6ecb19a76a9293726c7122a11701e30741
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 633
+        integrity: sha256-8eb964e678ff9bd5a342290f58155c6c9554de139e12eb7d519bc1b3a111090f
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: aside-reads-cited-lines
+      claim:
+        lines: 155
+        integrity: sha256-9285563acf43f4d3d5fbe94ebf3cb52fe4ba85a6e1af87611cc86073dc3124d7
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 565-571
+        integrity: sha256-adab4614085390dfc7bedc31f82d701dbc326a20138b16d1cdf6b00b2bd57b13
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-paths-arg
+      claim:
+        lines: 163
+        integrity: sha256-dbeec715c19a55558ac7180d3efbf03255637e6a06f6a1faee07a32f56f6bd49
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 466-469
+        integrity: sha256-9a062ba869e1a142e950a7e0d117f14ab89fca10449d8a8f00d941195b35c8ec
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-to-shape
+      claim:
+        lines: 169
+        integrity: sha256-9627b7b57ceca52594d74652b8bbf54deef21bd2eed49e289fbdf904d1bb0619
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 433
+        integrity: sha256-53c45a0a5da56328ec9c0a12423ab03e6f858d1ba58cb5e73146568723fcb74f
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-to-required-and-default
+      claim:
+        lines: 169
+        integrity: sha256-9627b7b57ceca52594d74652b8bbf54deef21bd2eed49e289fbdf904d1bb0619
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 451-464
+        integrity: sha256-90f3b2571bc19ed575d069465acfba5c5eb181859ea099db42ae09b3a47ade57
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-collection-option
+      claim:
+        lines: 170
+        integrity: sha256-35d3bdd274c6afcf33c6fc685ba62de066116cc6460bb772ee4d3d160ed05e79
+      source:
+        file: src/key/cli.ts
+        lines: 125
+        integrity: sha256-869269cca97c7ad3816f791c46b4c4916f051901c2334d1125d74d3b502a8738
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: rotate-collection-narrows
+      claim:
+        lines: 170
+        integrity: sha256-35d3bdd274c6afcf33c6fc685ba62de066116cc6460bb772ee4d3d160ed05e79
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 446
+        integrity: sha256-203fa1545b15b5fcb9a7fe7950caf90c7e9452755b8a36ab63a15312bfc03c21
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-ext-comma-list
+      claim:
+        lines: 171
+        integrity: sha256-9fae03f62afc89443d14d8cd67b022a448956b20552442c597561e3f54cac5fd
+      source:
+        file: src/key/cli.ts
+        lines: 159
+        integrity: sha256-f5daf869d0223a8d6302343458e11d5af7ac939d2816e81cc2ffeb7694d30fe3
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: rotate-exclude-repeatable
+      claim:
+        lines: 172
+        integrity: sha256-768f31d668bbdcf9f576401485453db54951aa6be4e52db8e79fc34990d9facd
+      source:
+        file: src/key/cli.ts
+        lines: 127
+        integrity: sha256-322dd30e4515bcfac300cfc4973260a660aa6ff29955850d82aea0c0c555181c
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: rotate-as-option
+      claim:
+        lines: 173
+        integrity: sha256-33625eab483ab27410880006e3bf029b713b670b718800a22a265979bcd81692
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 475-481
+        integrity: sha256-5a1478b4c431981ca0607ab370f0cc4e16ee3c9c5496120b218cf29c7b647df7
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-config-read
+      claim:
+        lines: 174
+        integrity: sha256-a25fef6ff3d62302a840f61c6ae09c7e3a2de923432d3e2a72d91f8e28e89d60
+      source:
+        file: src/key/core/config.ts
+        lines: 33-41
+        integrity: sha256-d455e782f413644ec3a2065d1f501fe0727a9c3ec0190ff896c5a7c3a30f11d4
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: rotate-config-written
+      claim:
+        lines: 174
+        integrity: sha256-a25fef6ff3d62302a840f61c6ae09c7e3a2de923432d3e2a72d91f8e28e89d60
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 633-638
+        integrity: sha256-5e9d429885c50bf125fcb5ec3ed862f7337ace9eeaef13d5642ad77027a9488f
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-allow-empty
+      claim:
+        lines: 175
+        integrity: sha256-e82c30506d4ae344145024fce284919d93fa959f5d5f9bfa65f56040b9306456
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 497-506
+        integrity: sha256-f66db911f9243497741bbd385cd1ebb7257382af4238d2dffbc61b711fd822b9
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-no-gitignore
+      claim:
+        lines: 176
+        integrity: sha256-58f0662d4f3bd984db1f19cc2724eba6d20ff5d07a6aa701d30c3b0c7fbb2823
+      source:
+        file: src/key/cli.ts
+        lines: 165
+        integrity: sha256-88e8363d71b80694672d4ee12aff51635db29307a0c4e737a62d4e056e1fc6ee
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: rotate-root-option
+      claim:
+        lines: 177
+        integrity: sha256-ff628bc5aba7c561021f12fa57bbe89860532540fb1768b8851fa420e9d63cc3
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 130-146
+        integrity: sha256-96ae637d6e920d7849e199a08f061c8264c0d62df0e89de5223571be14be2b1e
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-dry-run-option
+      claim:
+        lines: 178
+        integrity: sha256-756cb1bcce72eef7eca63b8ac65eb384b82649b3943ec857131a6e27da3c122a
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 630-631
+        integrity: sha256-bcde61a1bf001a470f7569e44ea19e1ff28b44bec54041432d77e0b1775fd8d3
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: rotate-format-option
+      claim:
+        lines: 179
+        integrity: sha256-8325d6b5873d8a9f2f96d7f648735acfcfa8c7f8a7dc0d623cc4ba9f136415a5
+      source:
+        file: src/key/cli.ts
+        lines: 151-154
+        integrity: sha256-c3ba3d8b1ff8fff1cba20fd8a6e0c715881bb6803c5d8e24eb1dceaaed28379f
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: rotate-no-no-config
+      claim:
+        integrity: sha256-01d43386f3ed70cdb7f289f1df026fcd3db2620bffeec784f1eb905c574e9d20
+      source:
+        file: src/key/cli.ts
+        lines: 121-137
+        integrity: sha256-18ace9a8b009886129c2d892d5490e29ebb26efda9000095fbd66c99d7ccd5e0
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: rotate-refuses-stdin
+      claim:
+        integrity: sha256-01d43386f3ed70cdb7f289f1df026fcd3db2620bffeec784f1eb905c574e9d20
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 434
+        integrity: sha256-dd24e2d8cb0fc8f33dae1e687203c631d82ad9f46c08f4d412f2ccf2205a37ef
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: exit-0-set
+      claim:
+        lines: 191
+        integrity: sha256-bc605ebeb42f4f26f06c1ef1ba39b2d5e5626606a97eae7ae09b77a46cd0912c
+      source:
+        file: src/key/cli.ts
+        lines: 110-111
+        integrity: sha256-e17338edca77af8e84b173b4294eca5fd1507b276c12ff693fe4b49872225948
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: exit-0-rotate
+      claim:
+        lines: 191
+        integrity: sha256-bc605ebeb42f4f26f06c1ef1ba39b2d5e5626606a97eae7ae09b77a46cd0912c
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 677
+        integrity: sha256-c2a15612a4779c17c232a85a2711e6fe5cc3727a1f3af5d5f0471f4212b3ccbe
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: exit-1-nothing-written
+      claim:
+        lines: 192
+        integrity: sha256-48e1609272afb99f504e3ce4cee9652ea5e92d3e7b997195b875ad342f7c746a
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 625-629
+        integrity: sha256-31ec4c098ad2f4947315ebf3909d0a2b3b28edaebcf334b0a63495569ee1d7c7
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: exit-1-rotate
+      claim:
+        lines: 192
+        integrity: sha256-48e1609272afb99f504e3ce4cee9652ea5e92d3e7b997195b875ad342f7c746a
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 677
+        integrity: sha256-c2a15612a4779c17c232a85a2711e6fe5cc3727a1f3af5d5f0471f4212b3ccbe
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: exit-2-fail
+      claim:
+        lines: 193
+        integrity: sha256-d50bb569b8dd80e8b64f4b3452b961261e55b3b52400dc5be32d49d5698476a2
+      source:
+        file: src/shared/run.ts
+        lines: 16-24
+        integrity: sha256-2dc80f036c8289917750865e5f41eaa1325bed58f646b03adaef0992c59a98f3
+        commit-sha: 43837e26fb78b459684ff696c38d0d47fa248190
+    - id: by-ciphertext-walk
+      claim:
+        integrity: sha256-507cfc1348d7316adcf513efd54a058e6881c77d9872175dc2d09fb196a8f9c5
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 91-116
+        integrity: sha256-62d1528fa82ff4a7d4f3ff6d5b0ce7e67ad85e20ab858eae858c20a213fa46f3
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: by-ciphertext-shape
+      claim:
+        integrity: sha256-507cfc1348d7316adcf513efd54a058e6881c77d9872175dc2d09fb196a8f9c5
+      source:
+        file: src/shared/encryption.ts
+        lines: 43-44
+        integrity: sha256-8a618a4696a6afdcef7401722e17337330b5daa44d6c6b3b208fb48ffa9c79e1
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: by-ciphertext-decrypts
+      claim:
+        integrity: sha256-507cfc1348d7316adcf513efd54a058e6881c77d9872175dc2d09fb196a8f9c5
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 139-151
+        integrity: sha256-5d85abf2d84f57b777161c9ebef7f0a3d893faefd9ed14b76432fb6c861d50c6
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: by-ciphertext-citation-pin
+      claim:
+        integrity: sha256-507cfc1348d7316adcf513efd54a058e6881c77d9872175dc2d09fb196a8f9c5
+      source:
+        file: src/cite/core/reencrypt.ts
+        lines: 127-135
+        integrity: sha256-e1c84b2beb159447b45100cef28073208caecdde0ae1799e2e8ffeeffd34014a
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: by-ciphertext-citation-manifest
+      claim:
+        integrity: sha256-507cfc1348d7316adcf513efd54a058e6881c77d9872175dc2d09fb196a8f9c5
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 518-531
+        integrity: sha256-62c07898252ed2fe21d917f2d4938dcc65562dcae5f4c093924b885b625a00ce
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: auth-tag-decides
+      claim:
+        integrity: sha256-69126110e5c77b49cdd7452e95938d6e348af8cd169d3bbf076c126c8b4e4de5
+      source:
+        file: src/shared/encryption.ts
+        lines: 205-211
+        integrity: sha256-aa27623411c8db1522cb788187472e2f2e03ee3151cba037f0a5423f6541262e
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: no-schema-resolved
+      claim:
+        integrity: sha256-69126110e5c77b49cdd7452e95938d6e348af8cd169d3bbf076c126c8b4e4de5
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 131-138
+        integrity: sha256-34503610ce4467a7281cebc0e91bf0fdca84c67a027772eb486fab3ac9737f4a
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: manifests-with-pages
+      claim:
+        integrity: sha256-f123f0e44a6aeb1f11a09d5792b81bc6d741988ff0d5539a618cfd184aebdb04
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 594-608
+        integrity: sha256-923c152460b644b06e5f7f88037ac2cac784ddfa2072a49c9e23153fdacdac4b
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: manifest-same-rule
+      claim:
+        integrity: sha256-7b037270e9a1c894be0dbf7a564dfe689bb7c8aa0a47b5febb9355ff8b286b7e
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 400-406
+        integrity: sha256-65993e822cd77e929e202757cf4d92116d0fef473aaff2394fe47a61ac7bb3df
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: manifest-any-depth
+      claim:
+        integrity: sha256-7b037270e9a1c894be0dbf7a564dfe689bb7c8aa0a47b5febb9355ff8b286b7e
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 94-110
+        integrity: sha256-3eae0e0f7fec3579f5897f72afc7bb2fe3f330060547beae0c3469275d6924b7
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: manifest-splice-keeps-bytes
+      claim:
+        integrity: sha256-7b037270e9a1c894be0dbf7a564dfe689bb7c8aa0a47b5febb9355ff8b286b7e
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 413-421
+        integrity: sha256-fea887d01f4b84c037ebd90d4e2418b2cd6eac86f5d41f5c138fada6cb57be3b
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: url-manifest-never-loaded
+      claim:
+        lines: 237-238
+        integrity: sha256-d70bd22fdf8d10a3d0e8e407646348d8bb97f22a8a3dee2c75fc764fc9a77e0c
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 320-327
+        integrity: sha256-5fe22f76f34b238749e96a2cae87de863af92ca814f2419f7957501e6e1ca903
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: citations-key-left-alone
+      claim:
+        lines: 240-243
+        integrity: sha256-c5d97bd689bb655792a242ef26c6b77623123f362447b96bb476352c5412291d
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 111-113
+        integrity: sha256-dd766e7c4465bd43a4fa7b3f63ed8a7df5d3780390bee99b95e928c3fbe53f24
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: narrowed-manifest-collections
+      claim:
+        integrity: sha256-14716106ee7f786d558349c09c0a25085144173359c9063ead0781244e3db3f0
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 259-273
+        integrity: sha256-47ced07ceb9855c083ba7931f5b0c378eeac22bcd1660ccf08f5b5e8f6419a46
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: skip-under-neither-key
+      claim:
+        integrity: sha256-6fb096e6c5f3cbe7945b929c46f375dc46dbc852b31f6a05c5d69959e1c8bc04
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 153-154
+        integrity: sha256-8c7b2263678446a9aabfd05913b2636c59f7643adb3d337d6d77c1a4f4aec193
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: single-skip-nothing-written
+      claim:
+        integrity: sha256-6fb096e6c5f3cbe7945b929c46f375dc46dbc852b31f6a05c5d69959e1c8bc04
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 625-629
+        integrity: sha256-31ec4c098ad2f4947315ebf3909d0a2b3b28edaebcf334b0a63495569ee1d7c7
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: single-skip-exit-1
+      claim:
+        integrity: sha256-6fb096e6c5f3cbe7945b929c46f375dc46dbc852b31f6a05c5d69959e1c8bc04
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 677
+        integrity: sha256-c2a15612a4779c17c232a85a2711e6fe5cc3727a1f3af5d5f0471f4212b3ccbe
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: order-whole-config-run
+      claim:
+        integrity: sha256-17feae84d23d08157eaea2ba067869eff65b7b07fddad0dfa7118aa58273e9f2
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 633
+        integrity: sha256-8eb964e678ff9bd5a342290f58155c6c9554de139e12eb7d519bc1b3a111090f
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: order-step-1
+      claim:
+        lines: 267-268
+        integrity: sha256-a85448aea34400c2365d2730e8470c541600684d84651b42cea390aeaa338b2e
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 634-638
+        integrity: sha256-08f04024f85d468c7d2ba56c5add067869de4fcbe5fb5b827e07faa00da7c404
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: order-step-2
+      claim:
+        lines: 269
+        integrity: sha256-f2270ef24afa148cff7ca740005961a42fdd908f3df33a86c95f8d8ddf590356
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 639-652
+        integrity: sha256-164ed6a3061b0eadee95679f54b5b874f47de026f25093a36129ca17aed4637d
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: order-step-3
+      claim:
+        lines: 270
+        integrity: sha256-7c328357621445ec6ad4b6ff7f321a4f80a2dff37b1759cccb72f3d805070a9d
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 653-656
+        integrity: sha256-455c5aff5cd9c663beaf84c64579238a170b8adf6381637591e9ed9b4a41c0ad
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: order-step-1-one-write
+      claim:
+        lines: 267-268
+        integrity: sha256-a85448aea34400c2365d2730e8470c541600684d84651b42cea390aeaa338b2e
+      source:
+        file: src/shared/encryption-key.ts
+        lines: 153-157
+        integrity: sha256-f1bfb8527620757ae8e59cb6811c8895bf8247e6a2f6470c46c5e97fb2265bfe
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: interrupted-both-keys
+      claim:
+        integrity: sha256-222fa31928b4ec6d2d393db08d5caddb9b1996d5e83d83966f018ad506614ef7
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 636-638
+        integrity: sha256-be482a7a958674ecddddb371b734e76212366da5c09406a1281f73488751c643
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: interrupted-finish-direction
+      claim:
+        integrity: sha256-f06df890b9f57fd8def04761cc02a3f9a30682b6f8b64b336c272e161b185c26
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 461-464
+        integrity: sha256-accf02ad8c23c08934cae27790209f275f5f91a35f9f07806d4eb28c00dc50e7
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: interrupted-done-values
+      claim:
+        integrity: sha256-f06df890b9f57fd8def04761cc02a3f9a30682b6f8b64b336c272e161b185c26
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 153
+        integrity: sha256-68533679d99182acbb8de199633686ba30a24f5f2be470eae0e95e262122d6b9
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: interrupted-removes-previous
+      claim:
+        integrity: sha256-f06df890b9f57fd8def04761cc02a3f9a30682b6f8b64b336c272e161b185c26
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 653-656
+        integrity: sha256-455c5aff5cd9c663beaf84c64579238a170b8adf6381637591e9ed9b4a41c0ad
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: interrupted-report-before-counts
+      claim:
+        integrity: sha256-f06df890b9f57fd8def04761cc02a3f9a30682b6f8b64b336c272e161b185c26
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 102-110
+        integrity: sha256-14cc793b5d7b9b46daa53ad4b83a00f47ac3d9a43be914eef731482cef963adc
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: interrupted-finished-line
+      claim:
+        lines: 304
+        integrity: sha256-38a2864901788dac87705ffa2a1648b1bee2a9a2983269d2a398e3a72dae281e
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 102-104
+        integrity: sha256-cf2d7c38443eb51aabf6952a07dafa62d95990a5513ed2279d8b588948bb54aa
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: unfinished-unreadable-rule
+      claim:
+        integrity: sha256-68e7683e7344e6f161ee9e41407fa7090e5998eb77427bea48956db41bb6f248
+      source:
+        file: src/meta/reporters/rule-id.ts
+        lines: 46
+        integrity: sha256-0b004cca0aab8c88f37b87c48dc0f0ace4c9e4ddf4750ce981a5c07b4d9d907e
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: unfinished-refuses-other-to
+      claim:
+        integrity: sha256-68e7683e7344e6f161ee9e41407fa7090e5998eb77427bea48956db41bb6f248
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 451-457
+        integrity: sha256-8f410756a35366454d0bcc711c152053666f3c9a9a33ea5a2cc639bdfd0ef233
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: unfinished-refuses-set
+      claim:
+        integrity: sha256-68e7683e7344e6f161ee9e41407fa7090e5998eb77427bea48956db41bb6f248
+      source:
+        file: src/key/commands/set.ts
+        lines: 63-65
+        integrity: sha256-8382f11773a83a7e64058b9edb44c44a588a0b83a263c127668eeb85a0f17f00
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: running-again-done
+      claim:
+        integrity: sha256-09288a2faf849c748182cfd02b48722213ac2c21973aaffd36dcea5be56f0fed
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 153
+        integrity: sha256-68533679d99182acbb8de199633686ba30a24f5f2be470eae0e95e262122d6b9
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: running-again-done-cite
+      claim:
+        integrity: sha256-09288a2faf849c748182cfd02b48722213ac2c21973aaffd36dcea5be56f0fed
+      source:
+        file: src/cite/core/reencrypt.ts
+        lines: 120-126
+        integrity: sha256-85834782ed09bf809510f763de83d6bc0e4808b059c01ecf7acb2efc6ef86447
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: narrowed-section-requires-to
+      claim:
+        integrity: sha256-e51470294b174ff2d96c948568b8d73629fd1f8a12d3a3568414c1de5b1a5f2f
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 459
+        integrity: sha256-caf59d284448935f34a87e294a9112d57c6a3007913ceb78802b56bb5598334e
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: narrowed-section-no-key
+      claim:
+        integrity: sha256-e51470294b174ff2d96c948568b8d73629fd1f8a12d3a3568414c1de5b1a5f2f
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 633
+        integrity: sha256-8eb964e678ff9bd5a342290f58155c6c9554de139e12eb7d519bc1b3a111090f
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: area-runs-compose
+      claim:
+        integrity: sha256-23d8cebeab9c5483bf0cc044ad94db45a1e9067dd94a90961e32006dc183e494
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 153
+        integrity: sha256-68533679d99182acbb8de199633686ba30a24f5f2be470eae0e95e262122d6b9
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: env-requires-to
+      claim:
+        integrity: sha256-9230b62a28384a757deade2ece448ce29a577e8ec5950d61522ba1fde8983a6a
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 458
+        integrity: sha256-d5e1fc9f01fa9e06e6b5e3685957b987ba7770881d8333f822983a13cccd6dd5
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: env-config-untouched
+      claim:
+        integrity: sha256-9230b62a28384a757deade2ece448ce29a577e8ec5950d61522ba1fde8983a6a
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 633-638
+        integrity: sha256-5e9d429885c50bf125fcb5ec3ed862f7337ace9eeaef13d5642ad77027a9488f
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: env-last-line
+      claim:
+        integrity: sha256-9230b62a28384a757deade2ece448ce29a577e8ec5950d61522ba1fde8983a6a
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 20-21
+        integrity: sha256-287c54c5fab9f37ac00adb89309f1b778be6a3e7c2e27ffbecc48b678c76752a
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: env-old-secret-unreadable
+      claim:
+        integrity: sha256-9230b62a28384a757deade2ece448ce29a577e8ec5950d61522ba1fde8983a6a
+      source:
+        file: src/meta/reporters/rule-id.ts
+        lines: 46
+        integrity: sha256-0b004cca0aab8c88f37b87c48dc0f0ace4c9e4ddf4750ce981a5c07b4d9d907e
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dry-run-section-writes-nothing
+      claim:
+        integrity: sha256-29f818a42f13472efd6e7b65d94dde6e5894c79fda4da630bdc70676d3d30adb
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 630-631
+        integrity: sha256-bcde61a1bf001a470f7569e44ea19e1ff28b44bec54041432d77e0b1775fd8d3
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: dry-run-section-last-line
+      claim:
+        integrity: sha256-29f818a42f13472efd6e7b65d94dde6e5894c79fda4da630bdc70676d3d30adb
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 67-68
+        integrity: sha256-00e324753ffc95203eb555b6dc45ae04df31478ccd258f69f2672980014e2897
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: dry-run-skip-exits-1
+      claim:
+        integrity: sha256-29f818a42f13472efd6e7b65d94dde6e5894c79fda4da630bdc70676d3d30adb
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 626-631
+        integrity: sha256-9e929cf1542b44b0a60e4a3fbb1339922b18995574c45244130d807ea3e95d34
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: baseline-notice-when-wrote
+      claim:
+        integrity: sha256-27d517867540ccad0b8b3aca390cd08046f254fafc72a0aafe8d387ab520e25e
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 662-666
+        integrity: sha256-97b7fc7a6c20d7e375906506ecde8b5587f6577f9f35297c5314711f6f686052
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: baseline-notice-exists
+      claim:
+        integrity: sha256-27d517867540ccad0b8b3aca390cd08046f254fafc72a0aafe8d387ab520e25e
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 676
+        integrity: sha256-5c4c3623839fc4c29f900862e0aeebd5026e1caaf63be7b384c3a880d262670e
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: baseline-file-default
+      claim:
+        integrity: sha256-34dea1ae0ed01dcc39526d476848094036695d64236b08d97f363f913dec938c
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 663-666
+        integrity: sha256-dfffe82ac861fbb16230eabe8615ffe6df1e43e08d86a6168a945c8613792760
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: baseline-json-stderr
+      claim:
+        integrity: sha256-34dea1ae0ed01dcc39526d476848094036695d64236b08d97f363f913dec938c
+      source:
+        file: src/key/cli.ts
+        lines: 170-173
+        integrity: sha256-a08980469ef4e0df00fa903c725539c53b94a1f5de1c0dc185adef210473754d
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: refusal-one-line-prefix
+      claim:
+        integrity: sha256-de5237a9c2679dd7b0337e2ecf9d47882e96fe95a3d3bcb3030d98e5b81e8b09
+      source:
+        file: src/shared/run.ts
+        lines: 16-24
+        integrity: sha256-2dc80f036c8289917750865e5f41eaa1325bed58f646b03adaef0992c59a98f3
+        commit-sha: 43837e26fb78b459684ff696c38d0d47fa248190
+    - id: refusals-skip-exit-1
+      claim:
+        integrity: sha256-de5237a9c2679dd7b0337e2ecf9d47882e96fe95a3d3bcb3030d98e5b81e8b09
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 677
+        integrity: sha256-c2a15612a4779c17c232a85a2711e6fe5cc3727a1f3af5d5f0471f4212b3ccbe
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: baseline-notice-text
+      claim:
+        lines: 387
+        integrity: sha256-87a06376084f72c9c2009fb906b209a2033ac44a93c1154fc8be9e1c40e727ef
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 14-16
+        integrity: sha256-ae7052c543a2ff43e231aedd66cceddcd90ef1d27d15a0e5f0e20807fb276879
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: refusal-bare-key
+      claim:
+        lines: 405
+        integrity: sha256-92fa01a18037f2f3343eab7372e82e31ada38222d7c246b1d26699d798d21cf4
+      source:
+        file: src/shared/run.ts
+        lines: 89
+        integrity: sha256-5934f41ee032373fdf97335450085486690d8ee1f81822c4a380c24fceed9726
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: refusal-already-configured
+      claim:
+        lines: 409
+        integrity: sha256-11d719fd2a45b9e088fb865506f9db7560965c51ed800071b5267ca89287ae74
+      source:
+        file: src/key/commands/set.ts
+        lines: 31-32
+        integrity: sha256-62a45ec97d062e85b3c564bbdb3048720f0c0c6b3a12e3a18fe107c8d89beeca
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: refusal-bad-value
+      claim:
+        lines: 413
+        integrity: sha256-fb978f28cf3833ee7db0b4ff4e0602e0e86a5b21b076a4ae6e6fdf45ca1a2013
+      source:
+        file: src/key/commands/set.ts
+        lines: 27-28
+        integrity: sha256-09f51c713efa26180f3a64e9b585d45cd6695475b6b15830a5de8e7c69b8447b
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: refusal-env-set
+      claim:
+        lines: 417
+        integrity: sha256-e957c420ab88e09656d8b994237fd764077cd475db2e831274e511d860064fbc
+      source:
+        file: src/key/commands/set.ts
+        lines: 29
+        integrity: sha256-7ad2caff58025a15b0b0eea2932c5d24b53bc87d0f26b9bba7c5c4aaf40e0e54
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: refusal-beside-legacy
+      claim:
+        lines: 421
+        integrity: sha256-41109914c5bfda6383275ade54fafd0dd0d62f774b1d785cc20ef6e4d8fc9a32
+      source:
+        file: src/key/commands/set.ts
+        lines: 45-47
+        integrity: sha256-d67444fc3b0128ebf686cca3e7628a69b6419db18a018673ac31f3eb9729fd48
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: refusal-no-key
+      claim:
+        lines: 429
+        integrity: sha256-b41cae906f2d4cbc5f1263c44b95f6479d4b1130c6186a6a3c363608770150e9
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 108-109
+        integrity: sha256-599a401053717f92c7ca599bf6ba334a10a730cab799c6cd6876b5fa91bd3a9c
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: refusal-env-needs-to
+      claim:
+        lines: 433
+        integrity: sha256-bbb98586a76efe2cc8bd461760f7c54ff985635bc5bea5d866b6457aabb134ee
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 110-111
+        integrity: sha256-d3474ac7fb33080c0f6b00365cb6b5d15cbd2b9ac14ecc79c5855392f444a953
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: refusal-narrowed-needs-to
+      claim:
+        lines: 437
+        integrity: sha256-3792bd34823dd782dcbb559500027a2a7aad9f03c36867ff945304e7cc625173
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 112
+        integrity: sha256-e17668fb97a510aa4eda78cbd1152a0e908490367706d3535ef8e6638abfa39d
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: refusal-bad-to
+      claim:
+        lines: 445
+        integrity: sha256-7c5578c8031c486900f565f0d295019561535945695f046dc43699daaf5c0245
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 102
+        integrity: sha256-c106f2124ed56ecd7984dda4f229eba3c6a97439e36cfa4d325ae81eb406fefd
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: refusal-no-stdin
+      claim:
+        lines: 449
+        integrity: sha256-204617a120402342196095daa897aab48ebbc5002f44337f87890cd52ddb43fb
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 103-104
+        integrity: sha256-9141d693e71a9088cb45e09b0f3e1ba2eb68ed110d8b7c372e7566a54e87ce4b
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: refusal-skipped-row
+      claim:
+        lines: 453
+        integrity: sha256-db86bbb3e1ba0f88ce602e9f2d52c96bf7255503fb5e3a968114b40e14adb6ed
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 84-86
+        integrity: sha256-3af922d29348dff6b8c573952b06774593ad9156c9b949653b59bc0813ff8dba
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: refusal-skipped-message
+      claim:
+        lines: 453
+        integrity: sha256-db86bbb3e1ba0f88ce602e9f2d52c96bf7255503fb5e3a968114b40e14adb6ed
+      source:
+        file: src/meta/core/reencrypt.ts
+        lines: 50
+        integrity: sha256-703cdad2446f4a592540bc0334ac37bdd0ed36dfd414de76341d31660ebdbdda
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: refusal-skipped-counts
+      claim:
+        lines: 454
+        integrity: sha256-1ed0665b55c9e2e14946f489b1649922970e6ceaa0aee5eaf7334fbbfbfdaee7
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 105-110
+        integrity: sha256-f7a5759fdd269f08ee36b07ac93dc6a061168650ae4785b0fc1260a13f37c4f2
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: refusal-skipped-closing
+      claim:
+        lines: 455
+        integrity: sha256-4963dc48866beb21acdd4a4429d2ac62b6c3840a1035c675bc58353b6da946a9
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 63-66
+        integrity: sha256-68bd8976fd8821c07e43ed4f3ba688036853374f877218c7eda24a42e57e7d49
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: refusal-bad-format
+      claim:
+        lines: 459
+        integrity: sha256-1f2f0c8af645e43c8560956dab666ff564ce940ae0e356f1f5ab8ba48fa53b00
+      source:
+        file: src/key/cli.ts
+        lines: 151-154
+        integrity: sha256-c3ba3d8b1ff8fff1cba20fd8a6e0c715881bb6803c5d8e24eb1dceaaed28379f
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: set-refuses-configured-key
+      claim:
+        integrity: sha256-71e163a029b0981f387d1e1f1f204856831ff86663cff6e1192623b21579dc7d
+      source:
+        file: src/key/commands/set.ts
+        lines: 66-68
+        integrity: sha256-0a4abd2489def4c7dbb99cf5f86067fa918426dbfb2a5c39fc07495206d324f4
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: bad-config-key-message
+      claim:
+        lines: 474
+        integrity: sha256-99a0bde0ba8989863d020d0555f4b9620fcb6ebd107d556978150f48ce71f823
+      source:
+        file: src/shared/config-file.ts
+        lines: 244-247
+        integrity: sha256-4c64498f39288a7c9fb6e2e525da2101ac16dff316efd4c56ffbb2a0ecd99306
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: bad-previous-key-message
+      claim:
+        lines: 475
+        integrity: sha256-6788298a5ab2f8444041b8d1e94bf6990200ed220e4055a7d90fff59926743ef
+      source:
+        file: src/shared/config-file.ts
+        lines: 256-259
+        integrity: sha256-ef09dc35609b94448828b6cd41634aad3d4c98192e8ec072a4f3acfeaf682629
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: bad-env-key-message
+      claim:
+        lines: 476
+        integrity: sha256-f5ac741636ba458ef25a8cbc36a8ca05293675ffb85546cc88ba7151bbceaf6b
+      source:
+        file: src/shared/encryption-key.ts
+        lines: 60-65
+        integrity: sha256-9b2b2f43f95570f2bca61377c00eb15134ecfd902b97e521fc7e12405e3b3899
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: example-git-warning
+      claim:
+        lines: 494
+        integrity: sha256-8c8038aa429d5112a9b6f233cc191399155e015d0b9e1b0727590d020dad9f1c
+      source:
+        file: src/shared/encryption-key.ts
+        lines: 260-262
+        integrity: sha256-24d7e5654c456855164c214ddf73c7e254c891845b755fd672eb809d6cc8b5c6
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: example-set-written
+      claim:
+        lines: 495
+        integrity: sha256-1e651af2805c31c731b529412948f9e716218fc8329ce0a4af423f1678b7507a
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 26-31
+        integrity: sha256-cc09b5b5f0c6d5515acefe729c3c71cfd0b23cf5b6336002b19badadda1d1520
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: example-manifest-row
+      claim:
+        lines: 501
+        integrity: sha256-cede1467fed21886ced2c3d9d5a58805442d354401681a6e9ee8093258bdbc45
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 90-95
+        integrity: sha256-fbfb0e2e2453998830636f375e42fd691ae6e7039239867f2a621fb1f8dca8bb
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: example-counts-files
+      claim:
+        lines: 502
+        integrity: sha256-172a437ce423ccfe1c585450f0faa095137fac20116020989581744c22b00277
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 105-110
+        integrity: sha256-f7a5759fdd269f08ee36b07ac93dc6a061168650ae4785b0fc1260a13f37c4f2
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: example-json-shape
+      claim:
+        lines: 553
+        integrity: sha256-3d1c16646136d2a5d3e34b4fd02942c7cc05dd97085a5dec480f1e21a9a5825d
+      source:
+        file: src/key/reporters/json.ts
+        lines: 5-18
+        integrity: sha256-291254a327a899f807bd6ef8741e9322c4587d52237554260e4ac35a40ce762e
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: example-json-keywritten
+      claim:
+        lines: 553
+        integrity: sha256-3d1c16646136d2a5d3e34b4fd02942c7cc05dd97085a5dec480f1e21a9a5825d
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 673
+        integrity: sha256-2511501e1442448b8aa51c84e052e4ca2be7b5e0da9e6a4c3f8bb9a650369409
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: pretty-short-ciphertext
+      claim:
+        integrity: sha256-f95b1e910d37ef33a793a4496cce2055e0a6588c5cc1705b5c375b6d948b9610
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 33-39
+        integrity: sha256-223027d08853488f8f588a764f984abaaa1a146e04b50632cda7f07378985114
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: json-full-ciphertext
+      claim:
+        integrity: sha256-f95b1e910d37ef33a793a4496cce2055e0a6588c5cc1705b5c375b6d948b9610
+      source:
+        file: src/key/reporters/json.ts
+        lines: 5-18
+        integrity: sha256-291254a327a899f807bd6ef8741e9322c4587d52237554260e4ac35a40ce762e
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: row-names
+      claim:
+        integrity: sha256-f95b1e910d37ef33a793a4496cce2055e0a6588c5cc1705b5c375b6d948b9610
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 43-48
+        integrity: sha256-278fd7310182e92d7bc1363440d53ff1039760a962b6a05db16d750c63b434eb
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: json-citation-row-fields
+      claim:
+        integrity: sha256-f95b1e910d37ef33a793a4496cce2055e0a6588c5cc1705b5c375b6d948b9610
+      source:
+        file: src/key/types.ts
+        lines: 94-118
+        integrity: sha256-8f575fca47523acdd36979cab2a7bdc21a166290206229991f2e6d0d9f5b3a66
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: manifest-entry-pointer-name
+      claim:
+        integrity: sha256-7205d2a8aa4242ee78a4b7348f494ca73502cfa420bccaee4ba868e9e60caa06
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 88-95
+        integrity: sha256-edc7ee10c13ea4d533dcf8d35bcb861c6fb58404f69194ed21e2b8f3a092fd6a
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: manifest-entry-pointer-fields
+      claim:
+        integrity: sha256-7205d2a8aa4242ee78a4b7348f494ca73502cfa420bccaee4ba868e9e60caa06
+      source:
+        file: src/key/types.ts
+        lines: 136-143
+        integrity: sha256-1bf3142b56df8bbc0d08de7f00e7c7836610c6dc9b9f57ea434125f15d9be81c
+        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+    - id: manifests-no-url
+      claim:
+        integrity: sha256-7205d2a8aa4242ee78a4b7348f494ca73502cfa420bccaee4ba868e9e60caa06
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 320-327
+        integrity: sha256-5fe22f76f34b238749e96a2cae87de863af92ca814f2419f7957501e6e1ca903
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: unfinished-message
+      claim:
+        lines: 318-320
+        integrity: sha256-ee244c1446c3589578943d09ffbf34374d0d272b7b5f25527fefe71ab9aecc8b
+      source:
+        file: src/key/core/config.ts
+        lines: 53-55
+        integrity: sha256-bcb62149d5f1a040c2443ad86b4dcd0161a56f860ff7f2f8df4516ef027cded0
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: narrowed-closing-line
+      claim:
+        lines: 339-341
+        integrity: sha256-d870a7fa7076a5eaff39ebeb20e20cce5fc7747088df8d5a81e7ce447a4334b0
+      source:
+        file: src/key/reporters/pretty.ts
+        lines: 18-19
+        integrity: sha256-da3240ff1a2f431203ad5333b58e81d43737fc1d05f95c1b45242e60afb1b745
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: refusal-unfinished-set
+      claim:
+        lines: 424-425
+        integrity: sha256-06d1e6c6ca6eff0b0967b4ee2a4eab94d9df8c213ad8939fa9f5ef6f9fcd3468
+      source:
+        file: src/key/core/config.ts
+        lines: 53-55
+        integrity: sha256-bcb62149d5f1a040c2443ad86b4dcd0161a56f860ff7f2f8df4516ef027cded0
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: refusal-unfinished-rotate
+      claim:
+        lines: 440-441
+        integrity: sha256-a5d41235044912263d94a15151b74bbaf36a549bec952cde093a1a0e98e99e4d
+      source:
+        file: src/key/core/config.ts
+        lines: 53-55
+        integrity: sha256-bcb62149d5f1a040c2443ad86b4dcd0161a56f860ff7f2f8df4516ef027cded0
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: set-discovers-moose
+      claim:
+        integrity: sha256-8b22404d25a312fcc5d19e64c984cfb502b209ce9bdab7e7e448b15962894b18
+      source:
+        file: src/shared/config-file.ts
+        lines: 405-413
+        integrity: sha256-a51dc51aa58ce5ede74099e1f9b0fad247ce2b4a77cb9be434a41876ac7cde0e
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: set-writes-over-malformed
+      claim:
+        integrity: sha256-71e163a029b0981f387d1e1f1f204856831ff86663cff6e1192623b21579dc7d
+      source:
+        file: src/shared/config-file.ts
+        lines: 266-280
+        integrity: sha256-2c6970bb7b86e4eef02c6c906bdafdcfe1aff8931d4f0d78760320620c622f50
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: set-refuses-env-key
+      claim:
+        integrity: sha256-71e163a029b0981f387d1e1f1f204856831ff86663cff6e1192623b21579dc7d
+      source:
+        file: src/key/commands/set.ts
+        lines: 58-60
+        integrity: sha256-8e9333bd6f352ebfad682a0765795ceb2f9a5b94cf17cdd4660aa412e3863442
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: json-citation-row-index
+      claim:
+        integrity: sha256-f95b1e910d37ef33a793a4496cce2055e0a6588c5cc1705b5c375b6d948b9610
+      source:
+        file: src/cite/core/reencrypt.ts
+        lines: 46-52
+        integrity: sha256-cea69a5021bbabe13da70892bcafefc37c7e967f1b4d27dae5e005941f4eb9ab
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: manifests-rewritten-or-skipped
+      claim:
+        integrity: sha256-7205d2a8aa4242ee78a4b7348f494ca73502cfa420bccaee4ba868e9e60caa06
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 425-427
+        integrity: sha256-3710ca9471bd39f058920f99b37044908a50cd678c454af0694544de260f9827
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: order-generated-key-first
+      claim:
+        integrity: sha256-dd7a4f702d3ee735b503169f7bfa68489afec4725b9f39a4fb89fb6ab66722a7
+      source:
+        file: src/key/commands/rotate.ts
+        lines: 633-651
+        integrity: sha256-3689f114bb539cfde969f9d07501bdea5734923cfffed461deabbbdacf96dfce
+        commit-sha: 0ae28bff00e8ec252076237f13461f0cc90937a2
+    - id: previous-set-refuses-valid
+      claim:
+        lines: 290
+        integrity: sha256-73cd3198a1c8b4533955e0b7a260af5c4b2ea4694c0e2f5cf4648170db6f9a06
+      source:
+        file: src/key/commands/set.ts
+        lines: 63-65
+        integrity: sha256-8382f11773a83a7e64058b9edb44c44a588a0b83a263c127668eeb85a0f17f00
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: previous-set-ignores-malformed
+      claim:
+        lines: 290
+        integrity: sha256-73cd3198a1c8b4533955e0b7a260af5c4b2ea4694c0e2f5cf4648170db6f9a06
+      source:
+        file: src/shared/config-file.ts
+        lines: 266-280
+        integrity: sha256-2c6970bb7b86e4eef02c6c906bdafdcfe1aff8931d4f0d78760320620c622f50
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4
+    - id: previous-loader-refuses-malformed
+      claim:
+        lines: 290
+        integrity: sha256-73cd3198a1c8b4533955e0b7a260af5c4b2ea4694c0e2f5cf4648170db6f9a06
+      source:
+        file: src/shared/config-file.ts
+        lines: 251-262
+        integrity: sha256-36914dff735de36acd458b8690b7fe4b6bbfbe2bb86eae8d35ba8340a65d85b7
+        commit-sha: cd780d3447452302476f8c77873f6d543c9ee5f4

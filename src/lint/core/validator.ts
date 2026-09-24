@@ -20,7 +20,7 @@
  * `pageSection` for which section that makes the subject.
  *
  * **A rule the format cannot answer is said out loud.** A parser declares the
- * content kinds it emits (proposal 0060), and a rule about a kind absent from
+ * content kinds it emits (proposal 0065), and a rule about a kind absent from
  * that list is dropped and reported as a `warning` rather than silently passing
  * - or, worse, failing a document for holding none of something its format
  * cannot express.
@@ -450,7 +450,7 @@ export function validateDocument(
   // Every tree the CLI builds carries a registered parser's own name, so this
   // is only reachable through the exported API, with a tree somebody else
   // parsed. Such a format has promised nothing, so no content rule can be said
-  // to have run against it, and the alternative is the one 0060 rules out:
+  // to have run against it, and the alternative is the one 0065 rules out:
   // applying every rule to a format that may answer none of them, which makes
   // a green run mean two different things.
   const kinds = options.kinds ?? parserByName(tree.format)?.kinds ?? [];

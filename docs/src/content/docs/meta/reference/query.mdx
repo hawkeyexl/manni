@@ -439,7 +439,7 @@ Constraints on a DML statement:
   | `DELETE FROM docs WHERE …` | Strips the block and removes the document's entry. |
   | `ALTER TABLE docs DROP COLUMN k` | Also removes `k` from each document's entry. `keys:` is unchanged. |
 
-  An encrypted column writes its ciphertext into the manifest. Six writes
+  An encrypted column writes its ciphertext into the manifest. Seven writes
   still refuse, before any file is written:
 
   - A key a URL manifest owns: `"owner" is owned by manifest
@@ -470,6 +470,13 @@ Constraints on a DML statement:
     strip the join value it matches: `"docs/x.md": manifest b-meta.yaml of
     collection b names it, which --collection leaves out; include it or
     rename the entry first.` A `DELETE` ends `remove the entry first.`
+  - A `_path` move of a page whose values live in a
+    [manifest per page](/manni/meta/reference/configuration/#a-manifest-per-page).
+    That manifest is named after the page's path, so the move would leave
+    them behind: `docs/a.mdx cannot move to docs/b.mdx, because its
+    "citations" lives in docs/a.citations.yaml, a {page} manifest named
+    after the page's path. Move the page and its manifest together, then
+    rename the entry's key.` A page with nothing in its manifest moves.
 - **A key its schema prefers in external metadata**, marked
   `x-manni-location: external`, with no manifest to hold it, is offered one.
   On a terminal the statement asks once per collection whether to run
@@ -775,8 +782,9 @@ manni meta query --param author="O'Brien" \
   or underscore. Anything else is refused, because a name the scanner cannot see
   could never be bound.
 - Parameters work anywhere a value goes, in reads, `--check` gates, and
-  `UPDATE`s. Anonymous `?` placeholders are not supported from the CLI, because
-  flag order is not a contract to rely on.
+  `UPDATE`s. `--param` binds by name, so an anonymous `?` placeholder has no
+  spelling that reaches it. The engine binds NULL, the statement matches
+  nothing, and a `--check` gate over it passes. Name every parameter.
 
 {/* cite param-string-is-the-default */}
 Strings are the default because metadata is mostly strings, and the data columns

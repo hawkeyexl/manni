@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/glossary/extractor.mdx:
+  citations:
+    - id: one-extractor-per-format
+      claim:
+        integrity: sha256-e7b3984def61178de35f79220219be3a2157c117bf72f20b0e319627a531dd4a
+      source:
+        file: src/meta/extractors/index.ts
+        lines: 14-21
+        integrity: sha256-f994b01563bf4f2b68ce83079179e9ca6093ad5980da0aba5b7b0a427364ce94
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+    - id: stdin-requires-as
+      claim:
+        integrity: sha256-e7b3984def61178de35f79220219be3a2157c117bf72f20b0e319627a531dd4a
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 833-839
+        integrity: sha256-44e86a3fe7883247b6eeead3acfa91a22068727226a40bacc9bdc7f1e993b059
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac

@@ -1,0 +1,8 @@
+# Proposal 0058: a token other than {page} is refused by name.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.{md,mdx}"
+    externalMetadata:
+      - file: "{collection}.citations.yaml"
+        keys: [citations]

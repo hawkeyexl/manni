@@ -1,0 +1,103 @@
+docs/src/content/docs/meta/get-started/index.mdx:
+  citations:
+    - id: node-24-or-newer
+      claim:
+        integrity: sha256-406e5875f4673b04cb939611bfaf8879c1ed1178c555a79559352e6e8e01ce64
+      source:
+        file: package.json
+        lines: 35
+        integrity: sha256-3f1eeebc0910c73dfab1013efd6c1309935f09b9ec2dc222b904e3c2432b4064
+        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+    - id: summary-green-follows-exit-code
+      claim:
+        integrity: sha256-369507c6dc33f81889b07da8b4d09a206daee4c6e5c97ba18ae13c81b7981e89
+      source:
+        file: src/meta/cli.ts
+        lines: 872
+        integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
+        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+    - id: summary-third-code-operational
+      claim:
+        integrity: sha256-369507c6dc33f81889b07da8b4d09a206daee4c6e5c97ba18ae13c81b7981e89
+      source:
+        file: src/shared/run.ts
+        lines: 37
+        integrity: sha256-00eb987513a32d7b015aa178d4ac500aa30df4b9037eb870acfcb85f659ba78a
+        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+    - id: summary-errors-total
+      claim:
+        lines: 134
+        integrity: sha256-d22c8a9368acdffcc63703e0573c7237392ee0273cc962117fabcaa15a284299
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 1024
+        integrity: sha256-5a747f3719f7b94468316a11359c5c20bec812149e4567499530387997f30763
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: summary-failed-is-files-with-errors
+      claim:
+        lines: 133
+        integrity: sha256-f8625c6402b96c857a37ca80f2e9dfd31049c6f8a6a793979758002996df5682
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 1015
+        integrity: sha256-11e63cff120ee33b4c6ab5973adecba3549f1192bc0c720863f506d6ad9e6777
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: summary-files-is-resolved-count
+      claim:
+        lines: 131
+        integrity: sha256-f49b1c3b26c1892324eb807d699467ba2b1932227ef03d4df53fac6d84ef6eca
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 1021
+        integrity: sha256-d57f0feffc745c09869811b0410b200aed12376a25fb3320e3f7b42090eeec14
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: summary-line-shape
+      claim:
+        integrity: sha256-82cf14992026f2dda2307208f8892645ab134077755f316a669bdcb85fc8d045
+      source:
+        file: src/meta/reporters/index.ts
+        lines: 289
+        integrity: sha256-484ab502761ab6f10654499678c217774f5ff4856ba6ceaba9a07a8f22a96d49
+        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+    - id: body-never-inspected
+      claim:
+        lines: 116-117
+        integrity: sha256-f9de5160c76d144d93d5da1c20da3da277410b9bb67c7f765c09247bc5eaa112
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 775-776
+        integrity: sha256-3ef67f71b6dd6d13aa8db8c7e567afcb9df863c1d137c5597d3a9fd7de40c6fa
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: error-line-parts
+      claim:
+        integrity: sha256-cf6f5ea2062c78d9deb2fbb4fb72a66993427ff0b87ff0e64efb2a369bf4c70d
+      source:
+        file: src/meta/reporters/index.ts
+        lines: 263-267
+        integrity: sha256-eb895ec4689f56368fe1f44400daf0910c2e57dee536b369d0bbc192635b2403
+        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+    - id: root-means-whole-document
+      claim:
+        integrity: sha256-cf6f5ea2062c78d9deb2fbb4fb72a66993427ff0b87ff0e64efb2a369bf4c70d
+      source:
+        file: src/meta/reporters/rule-id.ts
+        lines: 107-109
+        integrity: sha256-1ac11dc29366290380c0320ec5ab0cc59ecf543c36e339e9af43c6bbbf198b6a
+        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+    - id: okf-requires-type-field
+      claim:
+        lines: 53
+        integrity: sha256-4902f79935bbfa741d96229bb0159a827a6d3caee2833051ed8be1a4eff821ea
+      source:
+        file: src/meta/schemas/okf/0.1.json
+        lines: 7
+        integrity: sha256-0e2f5437eb92e030b655c86a57a2dd15bb2acd051cc9be386ce3f58619f6000b
+        commit-sha: 9dc7b50da705029382efce3e62061b920e8e728d
+    - id: seven-action-constrains-action
+      claim:
+        integrity: sha256-2bb715ae24bec1a31ed8bea74ef8a35e8c704d239314b93d6dbcd37f7f117283
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 5-19
+        integrity: sha256-218e482a04fc6e74592c45d13df23a36904566325e131ad5d20631f05beb04ba
+        commit-sha: 4f40394e1be328a7bce1a85a7c77d65c7d42d89e

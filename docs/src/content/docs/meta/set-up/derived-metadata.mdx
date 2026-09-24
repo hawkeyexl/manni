@@ -242,8 +242,11 @@ in the config reads it, and `verified-against` becomes a managed field like
 the six above.
 
 ```yaml title="manni.config.yaml"
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+
 meta:
-  paths: ["docs/**/*.md"]
   derive:
     fields: [last-updated, verified-against]
     commands:

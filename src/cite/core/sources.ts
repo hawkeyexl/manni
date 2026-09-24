@@ -123,6 +123,23 @@ export type ReadSourceResult =
   | { kind: "missing"; reason: MissingReason };
 
 /**
+ * The path a range names, whether or not the file is there. An encrypted
+ * source is decrypted under `key` first: with no key that is `no-key`, under
+ * another key `undecryptable`. Whether the path is tracked and readable is a
+ * separate question, which `readSource` asks next; a path that is gone still
+ * has history, and that is what a move search reads.
+ */
+export function resolveSourcePath(
+  range: SourceRange,
+  key?: string,
+): { path: string } | { reason: Extract<MissingReason, "no-key" | "undecryptable"> } {
+  if (!range.encrypted) return { path: range.path };
+  if (key === undefined) return { reason: "no-key" };
+  const path = decryptSourcePath(range.path, key);
+  return path === undefined ? { reason: "undecryptable" } : { path };
+}
+
+/**
  * Read the file a range names. An encrypted source is decrypted under `key`
  * first: with no key it is `no-key`, under another key `undecryptable`. Never
  * reads a path the index does not hold.
@@ -133,20 +150,25 @@ export async function readSource(
   range: SourceRange,
   key?: string,
 ): Promise<ReadSourceResult> {
-  let resolvedPath: string;
-  if (range.encrypted) {
-    if (key === undefined) return { kind: "missing", reason: "no-key" };
-    const path = decryptSourcePath(range.path, key);
-    if (path === undefined) return { kind: "missing", reason: "undecryptable" };
-    resolvedPath = path;
-  } else {
-    resolvedPath = range.path;
-  }
+  const resolved = resolveSourcePath(range, key);
+  if ("reason" in resolved) return { kind: "missing", reason: resolved.reason };
+  const resolvedPath = resolved.path;
   if (!index.has(resolvedPath)) return { kind: "missing", reason: "untracked" };
+  const text = await readTracked(root, resolvedPath);
+  return text === undefined
+    ? { kind: "missing", reason: "unreadable" }
+    : { kind: "ok", resolvedPath, text };
+}
+
+/**
+ * One tracked file's bytes, or undefined when it cannot be read: a permission
+ * error, or a path the diff named that is no longer on disk. A move search
+ * skips such a candidate rather than failing the run over it.
+ */
+export async function readTracked(root: string, path: string): Promise<string | undefined> {
   try {
-    const text = await readFile(join(root, resolvedPath), "utf8");
-    return { kind: "ok", resolvedPath, text };
+    return await readFile(join(root, path), "utf8");
   } catch {
-    return { kind: "missing", reason: "unreadable" };
+    return undefined;
   }
 }

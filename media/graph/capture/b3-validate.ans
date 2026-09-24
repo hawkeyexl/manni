@@ -1,0 +1,5 @@
+Using manni.config.yaml (.)
+[31m✗[39m docs/fitting.md
+    [36m/graph[39m  must NOT have additional property 'concept'[2m  (line 3)[22m  [2m[graph-1.0.0-proposal.1.json][22m
+
+[31m1 file checked, 0 passed, 1 failed, 1 error[39m

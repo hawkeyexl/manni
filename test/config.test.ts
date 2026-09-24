@@ -823,10 +823,10 @@ describe("the repository's own manni.config.yaml", () => {
         name: "site",
         paths: ["docs/src/content/docs/**/*.{md,mdx}"],
         exclude: [],
-        // The docs' citations live in this manifest rather than in page
-        // frontmatter: the house schema marks `citations` as
-        // `x-manni-location: external`, and `manni meta relocate` moved them.
-        externalMetadata: [{ file: "./site.metadata.yaml", keys: ["citations"] }],
+        // The docs' citations live in a manifest beside each page (0058)
+        // rather than in page frontmatter: the house schema marks `citations`
+        // as `x-manni-location: external`, and `manni meta relocate` moved them.
+        externalMetadata: [{ file: "{page}.citations.yaml", keys: ["citations"] }],
         // Where the site is published, so `manni a11y check` needs no `urls:`
         // of its own (0041 rule 12). The local preview, not the deployed site.
         url: "http://127.0.0.1:4321/manni/",

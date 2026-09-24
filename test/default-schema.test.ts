@@ -26,7 +26,7 @@
  *    attributed to exactly one intent.
  *
  * 3. **Companion namespaces are not claimed.** `evals` (docmeta:evals:1.0.0-proposal.2),
- *    `kg` (docmeta:kg:1.0.0-proposal.1) and `metadata` (docmeta:artifact-evals:1.0.0-proposal.2) are
+ *    `graph` (manni:graph:1.0.0-proposal.1) and `metadata` (docmeta:artifact-evals:1.0.0-proposal.2) are
  *    common vocabularies validated by their own schemas and implemented by
  *    their own tools; claiming them here — even loosely — would put them on
  *    `docmeta fill`'s menu, and each has its own fill loop.
@@ -71,7 +71,7 @@ const VERSIONS: Record<string, string> = {
   structure: "1.0.0-proposal.2",
   "ai-context": "1.0.0-proposal.3",
   evals: "1.0.0-proposal.4",
-  kg: "1.0.0-proposal.3",
+  graph: "1.0.0-proposal.1",
   "artifact-evals": "1.0.0-proposal.4",
 };
 const ref = (family: string): string =>
@@ -87,7 +87,7 @@ const HOUSE = [
   ref("structure"),
   ref("ai-context"),
 ];
-const SIBLINGS = [ref("evals"), ref("kg"), ref("artifact-evals")];
+const SIBLINGS = [ref("evals"), ref("graph"), ref("artifact-evals")];
 
 /**
  * Every date the family carries, all three on stewardship and all three
@@ -597,7 +597,7 @@ describe("the six house vocabularies", () => {
 
   it("records machine-proposed metadata in meta-provenance, by pointer and eval id", async () => {
     const ok = await checkStdin(
-      "title: T\ndescription: D\nmeta-provenance:\n  - generated-by: claude-fable-5\n    fields: [/intent, /kg/label]\n    evals: [install-verified]\n    confidence:\n      /intent: 0.9\n      install-verified: 0.7",
+      "title: T\ndescription: D\nmeta-provenance:\n  - generated-by: claude-fable-5\n    fields: [/intent, /graph/label]\n    evals: [install-verified]\n    confidence:\n      /intent: 0.9\n      install-verified: 0.7",
     );
     expect(ok.errors).toEqual([]);
     expect(ok.ok).toBe(true);
@@ -661,7 +661,7 @@ describe("the six house vocabularies", () => {
   });
 
   it("carves an exception out of applies-to, and leaves disjointness to the graph", async () => {
-    // The page-level twin of `kg.not-applicable-to`, added so the negative
+    // The page-level twin of `graph.not-applicable-to`, added so the negative
     // exists at both altitudes rather than only the deeper one.
     const carveOut = await checkStdin(
       "title: T\ndescription: D\napplies-to: [operator-1.4]\nnot-applicable-to: [operator-1.4-fips]",
@@ -693,7 +693,7 @@ describe("the six house vocabularies", () => {
   });
 
   it("rejects empty and duplicated lists — a list that says nothing is not a declaration", async () => {
-    // minItems + uniqueItems on the one-or-list shape, matching kg's
+    // minItems + uniqueItems on the one-or-list shape, matching graph's
     // labelList exactly, so the harvest fallback and the deeper twin accept
     // identical values. `owner: []` must not satisfy an ownership gate.
     const emptyOwner = await checkStdin("title: T\ndescription: D\nowner: []");
@@ -754,7 +754,7 @@ describe("the six house vocabularies", () => {
   });
 
   it("leaves the companion namespaces alone, and they validate under their own drafts", async () => {
-    // `evals`, `kg` and `metadata.evals` are unclaimed by the house schemas;
+    // `evals`, `graph` and `metadata.evals` are unclaimed by the house schemas;
     // stacked with the companion drafts themselves, the fixture's blocks are
     // checked by their owners — proving the fixture speaks the current
     // shapes, not the superseded 0.1/0.2/0.8 ones.
@@ -770,7 +770,7 @@ describe("the six house vocabularies", () => {
       const schema = (await loadSchema(ref)) as {
         properties: Record<string, unknown>;
       };
-      for (const reserved of ["evals", "kg", "metadata"]) {
+      for (const reserved of ["evals", "graph", "metadata"]) {
         expect(schema.properties, `${ref} claims ${reserved}`).not.toHaveProperty(
           reserved,
         );
@@ -857,7 +857,7 @@ describe.skip("the default set (flips on registration)", () => {
     idFor("structure"),
     idFor("ai-context"),
     idFor("evals"),
-    idFor("kg"),
+    idFor("graph"),
     idFor("artifact-evals"),
   ];
 
@@ -888,7 +888,7 @@ describe.skip("the default set (flips on registration)", () => {
   });
 
   it("validates the companion namespaces on a bare run", async () => {
-    // With evals, kg, and artifact-evals in the default set, a bare run
+    // With evals, graph, and artifact-evals in the default set, a bare run
     // validates these namespaces rather than passing them through; this
     // fixture carries valid shapes and must stay green.
     const r = await check("companion-namespaces.md", []);

@@ -87,6 +87,21 @@ describe("fill: a field a local manifest owns", () => {
     expect(renderFill("pretty", run, { color: false })).toContain("    /owner  platform  0.90  → site-meta.yaml");
   });
 
+  it("creates the page's own manifest when the file names {page} (proposal 0058)", async () => {
+    const dir = copy("fill-owned");
+    writeFileSync(
+      join(dir, "manni.config.yaml"),
+      read(dir, "manni.config.yaml").replace("file: ./site-meta.yaml", 'file: "./meta/{page}.yaml"'),
+    );
+    const run = await runFill({ ...base, cwd: dir, inputs: ["docs/install.md"], inferenceProvider: owners(["platform"]) });
+    expect(run.results[0]?.error).toBeUndefined();
+    expect(run.results[0]?.fields).toEqual([
+      expect.objectContaining({ field: "/owner", value: "platform", written: true, destination: "meta/docs/install.yaml" }),
+    ]);
+    expect(parseYaml(read(dir, "meta/docs/install.yaml"))).toEqual({ "docs/install.md": { owner: "platform" } });
+    expect(pageData(dir, "docs/install.md")).not.toHaveProperty("owner");
+  });
+
   it("writes nothing under --dry-run, and still names the manifest", async () => {
     const dir = copy("fill-owned");
     const before = read(dir, "site-meta.yaml");

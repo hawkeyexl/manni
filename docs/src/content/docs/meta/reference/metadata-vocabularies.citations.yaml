@@ -1,0 +1,558 @@
+docs/src/content/docs/meta/reference/metadata-vocabularies.mdx:
+  citations:
+    - id: vocab-pixels-typed-for-both-channels
+      claim:
+        lines: 225-228
+        integrity: sha256-b51042c096ba5621a1e904fe302a4b8d89ec2916fc543c0f419d995748e6f367
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 26-30
+        integrity: sha256-5f95b5a8dc87cda5c1a8c092cce279236a0ee23c33ce41583d39d76ad17e7712
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-player-card-required-set
+      claim:
+        lines: 218-221
+        integrity: sha256-8566c201b2180193cd831f6bfb05a2917068f93b137ea825e30bb34bf326ab9d
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 106-119
+        integrity: sha256-163e2b76a17b4cd4c6093c9a370061ef6956064b707b5f0f14465a02c18d8b46
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-image-must-be-https
+      claim:
+        integrity: sha256-4fa272ca3061b06a78bc29caee0a67708b00e38b7918e9aeb8bb06bb0cc73d3c
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 20-25
+        integrity: sha256-36d7ba9d8633a4e26b410086ffbf2048dd6c62d53a2ea9c431abaaeabb37ddc8
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-card-has-no-fallback
+      claim:
+        integrity: sha256-e8e19be1b88492a6491fb93a8698cd53d68a09c4019ea760f5f209f0c2e08da3
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 34-38
+        integrity: sha256-a27b60c3934d97496a3095201b0a80cac1b464ac03688c607d573bc6e630c7bd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-other-card-tags-fall-back-to-og
+      claim:
+        integrity: sha256-db438cccc2451bcc95166aea55ce77528b47f1434ff423adeedbc13fa975f4c7
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 5
+        integrity: sha256-6c108f21ca68561642b7fa04c8c992babb015dff18ea7cc3b4fc7a6c11f4590e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-app-fields
+      claim:
+        lines: 197
+        integrity: sha256-d7d962f3a6731be36a860401bb36790ad136ca8fffadb1cfeceddd44d992fbeb
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 91-104
+        integrity: sha256-31148c2135c8bbfb666b58b3c0ac517adb1665c8588f32538f1038722253c1c4
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-player-dimensions
+      claim:
+        lines: 196
+        integrity: sha256-11aedd6a799b1f590e1bfcd9a1dd8cf36d610e4075c9a923a0671afef90c22b5
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 79-86
+        integrity: sha256-d646e70fca4e3f47b586a5328051b56f46fffc58d5a74a955f3adcc634112149
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-player
+      claim:
+        lines: 195
+        integrity: sha256-712a7446a54adeb23a51a276e909c4e557bfda723d07af3867ea379387119fb8
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 75-78
+        integrity: sha256-d9bea2ff28f4b4a553d0ec837eebde505241b1785d9e9eeaa16224123748410f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-image-alt
+      claim:
+        lines: 194
+        integrity: sha256-181f5ebcd0dad8ae75c6067a12c29b691d9d71488d8e752c16c0d22f8745df1a
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 70-74
+        integrity: sha256-c321f6d80b5fc6127e07b3c45168b27f13fe6d1cc3008e39f28e9325d9e743df
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-image
+      claim:
+        lines: 193
+        integrity: sha256-861ad4382230af8a608b1a2d60bf4773d53e3716ec8eb922bec4eab972282c04
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 66-69
+        integrity: sha256-097e01516482535f55af40afdfa0ae0cdd2f34d7f8e781905741ff2fd0c9c499
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-description
+      claim:
+        lines: 192
+        integrity: sha256-a95a8546a8d333f4ce57002bd320140c4b2b21d30a3fa844f05ff600a99f8dc1
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 61-65
+        integrity: sha256-38a13e660636c1f6eedae69be123820528a27774a5c95649d04b7bf26edf1aeb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-title
+      claim:
+        lines: 191
+        integrity: sha256-54dde2066fa7d54bb1797f3cf0ace92f258f6a926f45ca89de635e9a42151fad
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 55-60
+        integrity: sha256-f59493aba9a9a9dfba7b071ea031561892fe22e5e9ec6d64b5668d4210e09286
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-account-ids
+      claim:
+        lines: 190
+        integrity: sha256-995d24d0664edda2e0c18da04f224f8bbc3d37998ea0b915d267d6a4ec5b6ef8
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 15-18
+        integrity: sha256-bd8f1d686859253f47ec620300b4670fb59dbe6f199a6269402e9efa4697d8fc
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-handles
+      claim:
+        lines: 189
+        integrity: sha256-3efde0febfc94358d525b26deaca805d28be4906d69053de443fce863e12b033
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 10-14
+        integrity: sha256-97161e9983124527d80b1ac98e2c97da28af1726ed5f6666dbae57d7ed7dafae
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-card-enum
+      claim:
+        lines: 188
+        integrity: sha256-ecb6fdd55968f6bfc866ec7195596b60a9a26392d15a9586e6886071cb4586c3
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 34-38
+        integrity: sha256-a27b60c3934d97496a3095201b0a80cac1b464ac03688c607d573bc6e630c7bd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-x-cards-is-the-ogp-companion
+      claim:
+        integrity: sha256-978cba84c172049b0e2d6a13098a48d61717e353087d03be906cdc5ea38e6c88
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 3-5
+        integrity: sha256-3a1a3e5dab15064d97225f29a2103fa4920ace92362c948357a3507be0712fe1
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-topic-is-not-enumerated
+      claim:
+        lines: 161-167
+        integrity: sha256-8bab14a7595842329ea47a922caa4e613d1257571599ec60524bdb05d4828a30
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 44-47
+        integrity: sha256-06599213ff6ec1e94a1548baea2dfced3ef1c532082c88bd236c33a60c3f722f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-author-rejects-an-email
+      claim:
+        lines: 158-159
+        integrity: sha256-26941e34d5fb85cf0152ff5a55af250b3e649488c6d5c78a70f6b59d838710df
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 33-37
+        integrity: sha256-2dd893fe7af5cfcd03834acb5348361811a961305e74b4fb5d69290f101729c0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-description-has-a-floor
+      claim:
+        lines: 154-157
+        integrity: sha256-6bbf48844a73954d23347fab6dea86d5938725147aef184557f83169a9073f98
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 22-26
+        integrity: sha256-ce2e9bd016f0973c7d9597046077452797607d4ffd6b22b962259dc5381f0c34
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-date-is-mm-dd-yyyy
+      claim:
+        lines: 151-153
+        integrity: sha256-bdabea00becc9ea58f554efd2bd2de6cf3ad7688021e5bd801fd6ac77f669ca8
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 39-42
+        integrity: sha256-0e0ff017e67f297f130d40bd6774b2df4a2957ed94e3f8a5d2c8313222a1b8ba
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-zone-pivot-groups
+      claim:
+        lines: 147
+        integrity: sha256-e5161df1124ed24969728a5c30dbba916afa160a97f377e31fb33d2652d1a56d
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 85-88
+        integrity: sha256-1e79f68124b79d434dc303a023bf059bdfa0d0dbcdf3800984bdcda0ff37c3a8
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-prod-and-technology
+      claim:
+        lines: 146
+        integrity: sha256-cf5182495e9fa66ebb86f04fcf638cc11a1ea9bbff48a023236ba969e2d203e8
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 73-80
+        integrity: sha256-9b492d3ba283db8dad3ad542caeb61b0b3dbe8a8ef61e941233c3b354a5cdfb1
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-reviewer
+      claim:
+        lines: 145
+        integrity: sha256-4ee5d86a2056ac88e5f49bb53aed0b654d3e49568e8d87395f6f869d80b49c61
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 65-67
+        integrity: sha256-6f6e4214c877f1f1acd94e6c08f8bc6f5f604aa631da493c7bf7feb01e7ce270
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-list-valued-fields
+      claim:
+        lines: 144
+        integrity: sha256-92d30e8eeeddb25e881c640a173823d921c11b759dae796c7fedd4422465fdd0
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 57-63
+        integrity: sha256-ab06c6cc0178b6455b3be3fa043b6bb2a04483a5503ceba9f036c68bebaefb03
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-service-and-subservice
+      claim:
+        lines: 143
+        integrity: sha256-90e23fa93327bad354103e914cff6651a5b8b8facbb5a8328f0c051408011ef3
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 49-55
+        integrity: sha256-21672b562dd428df5700ae2b1676bb2ae7c135ca68ad42d63a5ad304b7fcfe6c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-topic
+      claim:
+        lines: 142
+        integrity: sha256-0d2738d3cd06eb82b0070b4435495c9eac6ac45366a9fc18d828562006e89e84
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 44-47
+        integrity: sha256-06599213ff6ec1e94a1548baea2dfced3ef1c532082c88bd236c33a60c3f722f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-date
+      claim:
+        lines: 141
+        integrity: sha256-08c26f72daa4f562132c91692d780375506df954aeb748dea7849684dd6e7740
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 39-42
+        integrity: sha256-0e0ff017e67f297f130d40bd6774b2df4a2957ed94e3f8a5d2c8313222a1b8ba
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-author-alias
+      claim:
+        lines: 140
+        integrity: sha256-98b3a299109b635692f38b0d34c22ca74cbebd4b58e7498d2a541accabcd15d9
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 33-37
+        integrity: sha256-2dd893fe7af5cfcd03834acb5348361811a961305e74b4fb5d69290f101729c0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-author-github-id
+      claim:
+        lines: 139
+        integrity: sha256-f0aa250d4f17d141bf7156f0b94fd11bda8bf074c3f858eb082bf17774870315
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 28-31
+        integrity: sha256-6b00a636fb5378657e1835ec159116bcd585d77f835f01c358b0290e9d661d7d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-description
+      claim:
+        lines: 138
+        integrity: sha256-2dd4f43f3a1080102aa362dfea4d28007be55c93ff6ceed330bf9102f9df9293
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 22-26
+        integrity: sha256-ce2e9bd016f0973c7d9597046077452797607d4ffd6b22b962259dc5381f0c34
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-title
+      claim:
+        lines: 137
+        integrity: sha256-8a39903a55f902a3cb23354bfac09301327bcde87a8a4d4a8f11d6126873973e
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 17-20
+        integrity: sha256-e9e12299d406cc95b9e147c196c9cca3256b3510d499a369e027bcba2d6a1b8e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-learn-requires-five-attributes
+      claim:
+        integrity: sha256-23ec08e0fc3d2a36cdc5e5c848df512ce9f5e28ba26e9a9121e56b4a51ce6fb4
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 5-7
+        integrity: sha256-e7caab838c5ec2b1b7d8b0b7b73154cb582a59cc1cf03b6ea520cb2a6a99f04f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-dcmi-names-are-unprefixed
+      claim:
+        lines: 122-125
+        integrity: sha256-9dadef676abc48dba91ab3d7eae79088e3cd4c512027b050558b7c611f3f2670
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 5
+        integrity: sha256-3948fc6e8c348ca3969ecd8a7e4da9f35d76f35131f596ddb98d7429bce7c365
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-dcmi-type-is-not-enumerated
+      claim:
+        lines: 112-118
+        integrity: sha256-8118bf23b6950359c616dc7c94ddceac14ecea3e58c37148de633947c1a82e8b
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 50-53
+        integrity: sha256-f9b56e094185f33735657e51dd290de5727d78ab10c5fe71def1aa3b9af57243
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-dcmi-date-is-w3cdtf
+      claim:
+        integrity: sha256-81cad2ed92398e36fa550c60e4fb236636ffbb849b02bbc393ae3b94e22bf1fe
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 13-18
+        integrity: sha256-5e9442778b5940689853a58a4432a1f37fae351760027c602633a44291439624
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-dcmi-requires-nothing
+      claim:
+        integrity: sha256-4dd50eb05ce3db0da8a38e9f9056a9b207f04064c93988b8d78fec1c5ab502ae
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 6-12
+        integrity: sha256-4f9a1da0606e19442f6034add959748ef5854451d43cc0254c282b61134cb834
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-dcmi-fifteen-elements
+      claim:
+        lines: 89-91
+        integrity: sha256-d17c46a0342c92441b7d2881fd471917d405100dfcaed72d6778c5afa68dcf7f
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 19-81
+        integrity: sha256-b6c47c5b3f2fc76fe26b4f2777bbc0c45fdc45ad3a0f2febe5c5eff8d25940fe
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-dcmi-recommendation-2020
+      claim:
+        integrity: sha256-0769ff536ed5972fc9113522c9367698a422819cecebc39724ff9c24965f9fc7
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 3-5
+        integrity: sha256-ca15e87245f35499732379ff975fd026558b7cd4b980c303fbbe5079735c9d90
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-repeated-meta-tags-collapse
+      claim:
+        lines: 75-78
+        integrity: sha256-74266e5c7f97b353a362a00ab994912d2b915b446becd4e1eaefb4fef8eb121d
+      source:
+        file: src/meta/extractors/html.ts
+        lines: 10-11
+        integrity: sha256-8d574b35d7afd72b22009a70d306109da6219939db934f17fe93d8e9dec379d5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-og-locale-rejects-en-us
+      claim:
+        lines: 68-71
+        integrity: sha256-43249a5627eecd2daa25edfdd59b1cf9422e8ca5ee836a4da8e5e8991221c02a
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 59-63
+        integrity: sha256-2628c19aebd420c4f197a990c375f6a759f7165e0c1cc1f921488447ab71bec3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-article-tag
+      claim:
+        lines: 65
+        integrity: sha256-d50477eb36063e4a3e46a8491b34df26c976d965d446f80d93a36ff4b036ab09
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 100-103
+        integrity: sha256-cc31f7659a39763fcc49435ac73c48fed7e47d804e58671e7d8905292014a529
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-article-section
+      claim:
+        lines: 64
+        integrity: sha256-719ce50ba44a90eae110ab6bab988c07bb1e6d3144694bb1bbf0c214a4fbd587
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 96-99
+        integrity: sha256-912830f8c0b8ffd9d17a38e14f1625ad652b2aa4d95e6cc8c4e8ed7bdb1aded2
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-article-author
+      claim:
+        lines: 63
+        integrity: sha256-f1e8dfa983807e8dea7fda82c2f50ef8ba597adae8ef5c8b96b7407f5e41ac68
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 92-95
+        integrity: sha256-0d742a2f8ebeea9304d86c43d412a7ed3a7024f27541c98f8fd3a0b6910c1c32
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-article-expiration-time
+      claim:
+        lines: 62
+        integrity: sha256-530f18b8ab7df038e540979d132d607fdac58488031cb69ab87e2368856e9f4d
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 88-91
+        integrity: sha256-d84ed919caec1ae7956d89fd32db072042fbdd7f03c821d4de758450a1566ee6
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-article-modified-time
+      claim:
+        lines: 61
+        integrity: sha256-092cd57d6467745d73ba0b66016fe010073e938bc36de9fecccab4661d11e290
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 84-87
+        integrity: sha256-2dec40daa73298e562f3501e026a4d0a8ee49239695f0c6dbefbd5813155fa54
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-article-published-time
+      claim:
+        lines: 60
+        integrity: sha256-01a11c963d8c7e6c99644160af92d3862734d2bc7c26efc02ef64f6231ba4eb0
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 80-83
+        integrity: sha256-56639655585d8059ae330d1184a42cd062effee3de4d2dd0c18390b8eace6814
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-og-audio-and-video
+      claim:
+        lines: 59
+        integrity: sha256-be1c9b513d0a2022735b53bd063e81b4a61c93e1e046f4d66b52e4c5e1f89c7f
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 72-79
+        integrity: sha256-701d84896e07eaaafd61a3820e23764801a1b78dbdca492fc4a79991db3a1637
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-og-locale-alternate
+      claim:
+        lines: 58
+        integrity: sha256-4f4c7e72954978ad60e02f0fdf4ff24a0e5a06551775fe662e8ac91d90fef1f5
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 64-71
+        integrity: sha256-f2fc0f467fba59023e3639ce57159603b8a0e0d6cde9df6672ef61283dc6f4bb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-og-locale
+      claim:
+        lines: 57
+        integrity: sha256-1cad0ad68bdcb8eac61b1af674c1b6fffb338c58ad8aaa850813baf5cea1ce9f
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 59-63
+        integrity: sha256-2628c19aebd420c4f197a990c375f6a759f7165e0c1cc1f921488447ab71bec3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-og-determiner
+      claim:
+        lines: 56
+        integrity: sha256-d9b3dbee47ab3378ca3d33026547c99ea6e519042120722ed1d4616b4767d0fc
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 54-58
+        integrity: sha256-f6c299fb68d517b9a540d583e6072056b1234c85b5f840a934107243b11e5ffc
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-og-site-name
+      claim:
+        lines: 55
+        integrity: sha256-cda3a7d8eaf11894d99162082ca01ca174f24af01818da4ec379d0e4c71337ec
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 50-53
+        integrity: sha256-9b39eef36994061421110b111272e262606c51e1c7e9d9a106b8e081f043cfbd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-og-description
+      claim:
+        lines: 54
+        integrity: sha256-84be02b12312560b3591df54f19edd14b8e50f855b28d6e4e7a07da22436ec1b
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 46-49
+        integrity: sha256-7dce4bd391adb73992f95083f1e24bb85f9d211041d026b63a82ebcf2505aecf
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-og-image
+      claim:
+        lines: 53
+        integrity: sha256-9923842c7a17c83ef42eeba12c0c2fb70e11a1ef0ab94c31b2478d31178ef489
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 42-45
+        integrity: sha256-4562cd866ef5bffc87cf03022fa910ef59c5c0634eabd5000330e8f6009f83d1
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-og-url
+      claim:
+        lines: 52
+        integrity: sha256-7093b6c85fde64880da399ebb982303249d2ce77a1213a337a20e70b2b167543
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 38-41
+        integrity: sha256-3420e23bc563ef91277d2e4091b60993aad1db357c6d0fe5bdb170f52cf979dc
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-og-type
+      claim:
+        lines: 51
+        integrity: sha256-e1184317766f8e68f59fcc33b18d9a65a031398e65a75858aa5d9e7f0f3558e1
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 33-37
+        integrity: sha256-e32b280981b46479dde74610f0df13e3f6a0c8e9865b7a94115bbe7768662d0a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-og-title
+      claim:
+        lines: 50
+        integrity: sha256-1afd5120b89cb5c36421be04c205b57fc57f4e9a6d9dbde4f021a515a535a94e
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 28-32
+        integrity: sha256-01e32afdeea13e4e711019029fa217146e8c45620911eee53090636155d81e70
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-og-keys-in-front-matter
+      claim:
+        integrity: sha256-5400e7358966016bc6b993da5e25b4e1acc2539e0309743c5d20f6b63598f3ca
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 5
+        integrity: sha256-455fa69c7c1f7d5807e9741c86b71a7eb8d7c1f88aa0786d14320fcd0d3d61fb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-property-read-alongside-name
+      claim:
+        integrity: sha256-19d0e2b09ba6645fe33448cbec71b326009001e28690ca537cfa8e6ea41e76c4
+      source:
+        file: src/meta/extractors/html-read.ts
+        lines: 221-224
+        integrity: sha256-a92e2c737679a8fc44c7a92ceb450df2810d532f848e307ed8cbf4685a63a02e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ogp-requires-four-properties
+      claim:
+        integrity: sha256-f97581469d03c6b965b995e9f0319e4d5d51cbbe371a29fb082673d88dbc39b7
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 3-7
+        integrity: sha256-a82690a9e0dee796f320a06537d7183750388e5dfd860cf0b69c0342752fd327
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-row-x-cards
+      claim:
+        lines: 15
+        integrity: sha256-8930d9590cd0a990ebe4fb30b3e216c80251a601b553eedc227d813904e3c09e
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 7
+        integrity: sha256-0f10ed95718520ed35562386dd8fa0e557894ce3e92e8549238a4e3bd31422b8
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-row-microsoft-learn
+      claim:
+        lines: 14
+        integrity: sha256-57a13f4775b362a91e20049fb763fcd1589bb7dd86cd0ba25f548435c2059498
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 7
+        integrity: sha256-8f608d338e007504cdfe2316e12270d107baedc81e770bc940dbe96f2a56e0e3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-row-dcmi
+      claim:
+        lines: 13
+        integrity: sha256-8995913b7cc0f1bfef6c5c0c42738762d13913a29c36756cc47594df3cfb5673
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 6-7
+        integrity: sha256-378a494cede2cb04abd922c993975f4aa57e36276ac431f5a17eaa105a538e74
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-row-ogp
+      claim:
+        lines: 12
+        integrity: sha256-218ee65a5ca3cadc4ef48039ddefcd934ba429944f6aaa76a6859d4ce7785502
+      source:
+        file: src/meta/schemas/ogp/1.0.json
+        lines: 7
+        integrity: sha256-906f942a566ac7e3106a251f28bcb638b9ddd6ae4e3202d09a8844f0208d8711
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

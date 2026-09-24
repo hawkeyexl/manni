@@ -82,7 +82,7 @@ pin notices when those ranges change.
    ```yaml title=".pre-commit-config.yaml"
    repos:
      - repo: https://github.com/hawkeyexl/manni
-       rev: v2.8.3
+       rev: v2.11.1
        hooks:
          - id: manni-meta-derive
          - id: manni-meta
@@ -309,9 +309,10 @@ changed pin, or evidence that names a different machine, is a finding.
 
 The record on a public page tells every reader which lines a model wrote. To
 keep it private, let an [external-metadata
-manifest](/manni/meta/set-up/external-metadata/) own `provenance`. This is the
-one managed field a manifest may own, because nobody curates a pin by hand.
-`derive` writes the entries into the manifest instead of the page.
+manifest](/manni/meta/set-up/external-metadata/) own `provenance`. A local
+manifest may own any managed field, and `provenance` is the one most worth
+moving, because nobody curates a pin by hand. `derive` writes the entries into
+the manifest instead of the page.
 
 ```yaml title="manni.config.yaml"
 collections:
@@ -352,8 +353,7 @@ manifest's copy at that commit is the evidence from then on. When every range
 of a page loses its evidence, `derive` removes `provenance` from the entry, as
 it does on a page. An entry left with no keys goes too.
 
-{/* cite url-manifest-cannot-own-provenance */}
-{/* cite page-record-lives-in-one-manifest */}
+{/* cite url-manifest-cannot-own-provenance page-record-lives-in-one-manifest */}
 The manifest must be a file in the repository, never a URL, because `derive`
 writes to it. Each page's record has to live in one manifest.
 
@@ -403,7 +403,7 @@ meta-provenance:
 
 {/* cite meta-provenance-pointer-added-on-rewrite-only */}
 {/* cite meta-provenance-fields-are-json-pointers */}
-Each field is a JSON Pointer, so `/kg/label` reaches inside a block. Once you
+Each field is a JSON Pointer, so `/graph/label` reaches inside a block. Once you
 have reviewed the values, delete the entry. A surviving entry means machine
 metadata nobody has checked yet. `fill` adds a pointer back only when it writes
 that field again.

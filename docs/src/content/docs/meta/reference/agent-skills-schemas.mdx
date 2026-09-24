@@ -14,6 +14,7 @@ and there are two of them.
 | `agentskills:skill:1.0` | the [Agent Skills](https://agentskills.io) open standard | `name`, `description` | **rejected** |
 | `anthropic:claude-skill:2.1` | what Claude Code 2.1 accepts | nothing | tolerated |
 
+{/* cite skills-claude-schema-is-a-superset */}
 They are a pair, not alternatives. The second is a superset of the first, and
 the gap between them is a real failure you can hit:
 
@@ -24,6 +25,7 @@ manni meta validate skills-to-publish/**/SKILL.md -s agentskills:skill:1.0
 
 ## Why one of them is strict
 
+{/* cite skills-only-builtin-with-additionalproperties-false */}
 `agentskills:skill:1.0` is the only built-in that sets
 `additionalProperties: false`. Every other schema manni meta ships tolerates keys it
 does not know, because the tools they model do.
@@ -37,6 +39,7 @@ Unexpected key(s) in SKILL.md frontmatter: argument-hint. Allowed properties are
 allowed-tools, compatibility, description, license, metadata, name
 ```
 
+{/* cite skills-strictness-mirrors-the-upload */}
 A permissive schema would report that file as clean. So the strictness is not an
 editorial opinion. It is the same rule the upload enforces, moved earlier.
 
@@ -63,6 +66,7 @@ The whole standard. Six fields, two required.
 
 Two rules deserve a note.
 
+{/* cite skills-metadata-takes-strings-only */}
 **`metadata` takes strings, and only strings.** The standard's own example
 quotes the value, as in `version: "1.0"`. Unquoted, YAML reads that as a float,
 and the map is defined as string to string:
@@ -73,6 +77,7 @@ metadata:
   version: 1.0        # fails: must be string
 ```
 
+{/* cite skills-name-must-match-the-directory */}
 **`name` also has to match the directory.** The standard requires the `name`
 field to equal the name of the folder that holds the `SKILL.md` file. That is a
 fact about the path rather than about the front matter, so no metadata check can
@@ -81,6 +86,7 @@ match is on you.
 
 ## `anthropic:claude-skill:2.1`
 
+{/* cite skills-claude-schema-requires-nothing */}
 Everything above, plus the fourteen fields Claude Code adds. It requires
 nothing, because Claude Code marks every field optional. A `SKILL.md` with no
 front matter at all still loads, and takes its description from the first
@@ -111,6 +117,7 @@ paragraph of the body.
 
 ### Three fields are enumerated, and one deliberately is not
 
+{/* cite skills-effort-context-and-shell-are-enumerated */}
 `effort`, `context` and `shell` have closed, published value sets, so a typo in
 one is an error:
 
@@ -119,12 +126,14 @@ one is an error:
     /effort  must be equal to one of the allowed values  (line 4)  [anthropic:claude-skill:2.1]
 ```
 
+{/* cite skills-model-is-not-enumerated */}
 `model` is not enumerated. Its accepted values move with the product, and an
 organisation's `availableModels` allowlist narrows them further. A list written
 here would reject skills that work. This is the same rule the [vocabulary
 schemas](/manni/meta/reference/metadata-vocabularies/) follow for `ms.topic`: a set
 assembled from examples fails correct documents.
 
+{/* cite skills-claude-name-is-unconstrained */}
 `name` is not constrained either, and that one is the division of labour between
 the two schemas. `name: Fancy Review` is a legal Claude Code display label and an
 illegal Agent Skills name. Validating against the spec schema is how you find
@@ -132,6 +141,7 @@ out.
 
 ### Booleans have six spellings, and YAML only understands two
 
+{/* cite skills-six-boolean-spellings */}
 Claude Code accepts `yes`, `no`, `on`, `off`, `1` and `0` in any letter case, as
 well as `true` and `false`. A YAML 1.2 parser, which is what reads your front
 matter, resolves only `true` and `false` to booleans. Everything else arrives as
@@ -143,6 +153,7 @@ background: 0                   # the integer 0
 user-invocable: TRUE            # the boolean true
 ```
 
+{/* cite skills-flag-accepts-three-types */}
 All three work in Claude Code, so the schema accepts all three types rather than
 `boolean` alone. A `pattern` constrains only the string form, a `0`–`1` range
 constrains only the integer one, and booleans are left as they are. A word that is
@@ -155,6 +166,7 @@ not one of the spellings still fails:
 
 ## Validate both at once
 
+{/* cite skills-each-failure-is-attributed */}
 Nothing stops you stacking them, and for a skill that has to work locally *and*
 publish, that is the right run. Each failure is attributed to the schema that
 raised it:
@@ -165,12 +177,14 @@ manni meta validate skills/**/SKILL.md \
   -s agentskills:skill:1.0
 ```
 
+{/* cite skills-stacking-reports-claude-only-keys */}
 The two agree on every field they share, so a spec-conformant `SKILL.md` passes
 both. What the pair reports is the Claude Code-only keys, which is the list of
 things to remove before you package.
 
 ## The other file in `.claude/`
 
+{/* cite skills-subagent-is-a-different-contract */}
 A subagent definition is a different contract, not a third skill schema. It
 lives under `.claude/agents/`, and it *requires* `name` and `description`. It
 spells its tool grants `tools` and `disallowedTools` rather than `allowed-tools`

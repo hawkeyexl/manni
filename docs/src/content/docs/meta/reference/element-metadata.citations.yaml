@@ -1,0 +1,321 @@
+docs/src/content/docs/meta/reference/element-metadata.mdx:
+  citations:
+    - id: element-dot-notation-falls-back-to-the-literal-key
+      claim:
+        integrity: sha256-291ce93da80cc0dbf7e135aff60d977a7933a3b35252e3f5110f45b7ec56aad5
+      source:
+        file: src/meta/commands/get.ts
+        lines: 496-502
+        integrity: sha256-495ffdf01f73b7275bfcc4fcf36a79c97478f992ed666a0dc962fa3fbd8edb63
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: element-pointer-and-dot-notation-both-work
+      claim:
+        integrity: sha256-4a50876d9419354c5c40b89c85df1a13373722cb9b04e69b650eaf654e69ede3
+      source:
+        file: src/meta/commands/get.ts
+        lines: 486-494
+        integrity: sha256-80a40363a4c3211debea1d799d96c7d19655f448f3c3d1d38f16f30733aa1ab7
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: element-collision-guard-is-narrow
+      claim:
+        lines: 229-231
+        integrity: sha256-4b73e35f4bfe3a0ae87212bdd07fa211b909c5cd76c7b4a8d363b63ced4b407e
+      source:
+        file: src/meta/extractors/xml-write.ts
+        lines: 216-217
+        integrity: sha256-7bcfe15fe73f33589b58b1f5b0321b73d298b0818ca162ef03934f18a34f438e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-dotted-key-refused-as-a-root-attribute
+      claim:
+        lines: 224-227
+        integrity: sha256-5ca6164b81d5d44b12fbd5d033baaa351392032fae195ecd042afeae155e2076
+      source:
+        file: src/meta/extractors/xml-write.ts
+        lines: 219-225
+        integrity: sha256-77578f04836777276a87a83f6d1ab6215c5ab76814c50705a4834b128be3243a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-value-count-must-match-element-count
+      claim:
+        lines: 214-218
+        integrity: sha256-bce6324767c7c2ecfb8de7888910f8c3b2bc7388704e091df6461ef810eb858d
+      source:
+        file: src/meta/extractors/element-write.ts
+        lines: 49-73
+        integrity: sha256-0004eac6ad9826731ab4d8e62bdc77f4d3db3c431a45b89c43abd19af13adc8b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-no-element-falls-back-to-the-format-channel
+      claim:
+        lines: 207-209
+        integrity: sha256-ce6d79e1b1eab9ac1d87aadf1def4f11598a4c5595595cd885e754dd920b57d8
+      source:
+        file: src/meta/extractors/xml-write.ts
+        lines: 112-136
+        integrity: sha256-a8593b26b62e14f4b499c65fd6608e74b61391c71b24ac93c22422acd0787589
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-creation-is-dita-only
+      claim:
+        lines: 202-205
+        integrity: sha256-8abe84c15c944e74447726b96388a08fa5fd65f9c683b07e6b1a48f42b3a4f0d
+      source:
+        file: src/meta/extractors/dita-write.ts
+        lines: 179-202
+        integrity: sha256-7b31acb77d1949c360ebb8f52e42e8aebca58fd4b705dce7af45c3d3f91e9832
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-updating-cannot-change-validity
+      claim:
+        lines: 195-197
+        integrity: sha256-9a94fbc919f5346d78d6b4e64a31a39d8d26e62a68788a081301434cacebc254
+      source:
+        file: src/meta/extractors/dita-write.ts
+        lines: 24-26
+        integrity: sha256-68570e673389fcc6170996e7c669ae56e37412703f8134f803c415304edf8e01
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-fill-writes-where-it-read
+      claim:
+        integrity: sha256-5aafb5ba52a1354ba3bc2db353bbe05c8d7c437bf8faaa5aa3eb1f96dcc991ed
+      source:
+        file: src/meta/extractors/html-write.ts
+        lines: 12-16
+        integrity: sha256-2d9039691c0297734b8b13645830aed0d17c32a8f1a64303d633f1b46a43ecba
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-paths-validated-when-config-loads
+      claim:
+        lines: 181-183
+        integrity: sha256-371b5fdd4812bda198c8a2e0886c149db842390a7dd369f77d6849a246b15584
+      source:
+        file: src/meta/core/config.ts
+        lines: 152-158
+        integrity: sha256-6f6c6ca2da2e0586ecbbe09b93f9bb9a18342ddffd5ec62ed37a1dc1b0df4fcf
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-a-named-path-lifts-an-empty-element
+      claim:
+        lines: 179-180
+        integrity: sha256-2598d4f7428fdf3e269241455189762b20036ea6d70f939e1f3fd52baac61a98
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 109-113
+        integrity: sha256-9656f89024fd79d5a156d2fb16c1b48a38fd3938e501eb181c622636629d084e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-paths-accumulate-across-overrides
+      claim:
+        lines: 175-178
+        integrity: sha256-0906bdafb81c589b13fa06552831ee384642d65ed88f3ac78c9b588c86af4d39
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 454-462
+        integrity: sha256-83a34b6970a5db3985735ca2d0c158b31b9654dca2f5fc46f9eea9c221f00ec9
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-config-extends-the-convention
+      claim:
+        lines: 170-174
+        integrity: sha256-0447d42b596a5de48eda431c4a650937dc0a2c095a1b5c847fe1f1605af52ae5
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 398-403
+        integrity: sha256-6dd5e2a18d51390cdca0273cf72777ff0048c5d982aa6ceaa39e2bb8244427fb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-key-is-derived-never-spelled
+      claim:
+        integrity: sha256-a0b77f94aae095b14a30667a1388605e131a31ad36c19cb6f60e97de1dd2b58e
+      source:
+        file: src/meta/extractors/element-key.ts
+        lines: 66-74
+        integrity: sha256-abb8012989fdd432b37b4dbedc3028879c38d8a4e38b8f4d2fce5ab499049845
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-path-is-a-subset-of-the-child-axis
+      claim:
+        integrity: sha256-b205cb9e716c1fa256e9b83af39f9f0ae9cb0427eaa8fb6c412af9aeb43b4664
+      source:
+        file: src/meta/extractors/element-key.ts
+        lines: 92-107
+        integrity: sha256-128bad4661f545db606c05f652a5b29eaedbd14c825c937730d5fee3253a8b31
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-convention-stops-at-the-root-children
+      claim:
+        integrity: sha256-df232bf36273c34d162b68a712617a48a8268f4315ec3102d90f9279020f3b19
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 317-322
+        integrity: sha256-471503c5e887be984910f568f79c9a4f752b66b4efe61f92452b16ec06d17193
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-every-occurrence-survives
+      claim:
+        integrity: sha256-742557522076099f182d7d710e42035ec946e6993a9c8f81246b1d7cc28a371b
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 199-213
+        integrity: sha256-95507a27698f61830736f71b5f99a8d211925c0cba9fc24ea74c77cb9770af52
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-config-path-key-is-always-a-list
+      claim:
+        lines: 121
+        integrity: sha256-388daed1ca8488f4b5bafb2765c49e0918f95fcaf2d430a75eb189457ea89733
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 405-411
+        integrity: sha256-634907b68109b91c12442c2d96cf629bea023097468b657c50f3d39c79fa8dbd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-dita-key-type-is-per-key
+      claim:
+        lines: 120
+        integrity: sha256-e21e0d7dc3a3a8ce9b6d1db3843a0c1cc96f762ce40d22116940cb3c5ecc3060
+      source:
+        file: src/meta/extractors/dita.ts
+        lines: 218-221
+        integrity: sha256-961edb810b6118afeb5107d131e7e5bc3ec097029be690113443c9ae958eaf0b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-html-head-title-is-a-scalar
+      claim:
+        lines: 119
+        integrity: sha256-c247d051b878e49a38bd97f040fd372dceab6e38b959af76b6facb269260c0cc
+      source:
+        file: src/meta/extractors/html-read.ts
+        lines: 260-265
+        integrity: sha256-1e48a8b5ff1d4a6c9c69aa65b34bbbc2d32ecbb1725e434ff27ac01840a0122d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-generic-xml-key-is-always-a-list
+      claim:
+        lines: 118
+        integrity: sha256-cb8440991c2c84a20de8b5f8947b6df7cd2eee29f4ef1ebd18812676bf2961bd
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 332-335
+        integrity: sha256-70ae6c55d80bb172ad97b54c68342764d1fe2e14cf9e3164be4f0959523dc7ef
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-content-model-decides-cardinality
+      claim:
+        integrity: sha256-3dbd8e4699591c5473541799571f937baa9ce6897afb594a5eeaf92cee95e6e2
+      source:
+        file: src/meta/extractors/html-read.ts
+        lines: 74-81
+        integrity: sha256-fd56ca41312c6f748ae7d469ade9214068914c7459c8e9f1110c78a71b204c4e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-dita-and-html-escape-the-list-default
+      claim:
+        lines: 97-100
+        integrity: sha256-8ef72e8b96780cd18ee257f27198572a27a906c4e33c3a53919fb1e38aafaf96
+      source:
+        file: src/meta/schemas/dita/1.3.json
+        lines: 25-32
+        integrity: sha256-c6cd4e90bfcee3085886fa4c2711a81320856734d6fa10594a97d5489b71cb72
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-a-string-typed-plain-xml-key-always-fails
+      claim:
+        lines: 92-95
+        integrity: sha256-c72bbb88c969fff8e79c6480f4e859c53034f3abce2d9f70f7f4f3ffdda47b19
+      source:
+        file: src/meta/extractors/html-read.ts
+        lines: 260-263
+        integrity: sha256-a3861a459746aad32d8ad195d67502c1726be238cc8958c9b3b506c18d560a92
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-maxitems-1-says-exactly-one
+      claim:
+        integrity: sha256-61741b0e5e7d69d8a4c4ac4a5e013e1fdc5f529dab3813ec60d54ff12af5c0fc
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 323-335
+        integrity: sha256-1813f1ded1b001fa9d06dfee7c26fc8af945a5d6b52ced274ba8bba06dfe5e31
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-plain-xml-commits-to-a-list
+      claim:
+        integrity: sha256-2bc14624acffaa345a97fe8fec47eb11550ad7fc5e87b144d87cbc668b039c0d
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 332-335
+        integrity: sha256-70ae6c55d80bb172ad97b54c68342764d1fe2e14cf9e3164be4f0959523dc7ef
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-html-skips-script-and-style
+      claim:
+        integrity: sha256-3c207b7dee52556243ed0ff3ac57bbc8cd196c55175b97f084d19116e99e36c4
+      source:
+        file: src/meta/extractors/html-read.ts
+        lines: 65-72
+        integrity: sha256-7b62a35a392a300349f5b5ad16ec2619b12169787c61b780ecbcb930231a9de3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-two-exclusions
+      claim:
+        lines: 55-59
+        integrity: sha256-3ac7e4b8294e990402ad9b40fe72223130c57bf1f8cd0d3c9c537071130beb3e
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 99-104
+        integrity: sha256-ec3d1a444cabb90992881b15cc5cbe0f0dbb1b3fe51a484c9f31137f3c9302e0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-no-hardcoded-ignore-list
+      claim:
+        integrity: sha256-6d7f309e2f1101010d5859185dcfbe6863d1ce3b9b9c7597f278d71f894bdda8
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 92-97
+        integrity: sha256-308a7317c8e6d104b2c31beffd7a044d66310ca32b36ff041e1da845a5e24566
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-region-dita-map
+      claim:
+        lines: 49
+        integrity: sha256-d3ec0a069a85bcd10d0955773c1fa76973b4bc87ae8e8a25ff142988dc19f3c1
+      source:
+        file: src/meta/extractors/dita.ts
+        lines: 225-233
+        integrity: sha256-b2fc1764e6cfa7e82045edca2c2bb3ea7678ec4d44bb113e2197ee8b8adfe2db
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-region-dita-topic
+      claim:
+        lines: 48
+        integrity: sha256-19ea8fa12443cc8bcfa67a84ef398a15784be6148b3d466afaf525e5bfcc117f
+      source:
+        file: src/meta/extractors/dita.ts
+        lines: 215-224
+        integrity: sha256-89db14dd1b12ee7e238dc481d4ff424809ae1304f346230e3355784ebcb9cfed
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-region-html-head
+      claim:
+        lines: 47
+        integrity: sha256-0b0b22f4c548ec17f3c615d8c26f933245ada8cdedffebd2efc157a4c0e14d3a
+      source:
+        file: src/meta/extractors/html-read.ts
+        lines: 101-109
+        integrity: sha256-c410da37d39ff5e4144ec71a2d1b6b4f3de10b0362f51bc198679017721e3868
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-region-generic-xml
+      claim:
+        lines: 46
+        integrity: sha256-9cb615d8e4a79dda3a7ddd829b99bad03230abf2157f951795052530851422d9
+      source:
+        file: src/meta/extractors/xml-read.ts
+        lines: 186-195
+        integrity: sha256-755175c9a6ccba65a5a27f19ef37efd0e6f023c5d3cefacc5b8310a7f5d4906f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-json-pointer-already-prints-this-split
+      claim:
+        lines: 37-39
+        integrity: sha256-266e4eb9c77c3438239b467abcdf78017350d52944ab1a400af76a1c915999fb
+      source:
+        file: src/meta/extractors/element-key.ts
+        lines: 25-27
+        integrity: sha256-465d88fd055204164dada7ff7660fb11886987a9ba1358b6cc756e97d70dda31
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-dot-in-keys-slash-in-paths
+      claim:
+        lines: 30-35
+        integrity: sha256-4d66bc160116016f74345322fa8ca44ee415935d01feb16cf73e6f10503e35b5
+      source:
+        file: src/meta/extractors/element-key.ts
+        lines: 17-23
+        integrity: sha256-43ebeedd99d8d9531d3955918cb130a6885e8938e746d7f885ba815d29fc4ef5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-flat-keys-do-not-move
+      claim:
+        integrity: sha256-b1c5a9ad23b0a1ade210769ff27d920df18933ea82abc27abd87d956b0a83241
+      source:
+        file: src/meta/extractors/element-key.ts
+        lines: 12-15
+        integrity: sha256-dcb8dcd502e5beaf0162927fb9dd8133f9f8145a0ff31dde76115b0884a1b163
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: element-parent-is-the-namespace
+      claim:
+        integrity: sha256-f9cd4116b04d1e4442c4f75161cd9dd692f7c4ac2a7e877cfb4f5a487e37bef2
+      source:
+        file: src/meta/extractors/element-key.ts
+        lines: 5-10
+        integrity: sha256-54cbc04057fb3aae4d9e561a927d9b9059dd7dc51c93d802795172d2cf2f9d4a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

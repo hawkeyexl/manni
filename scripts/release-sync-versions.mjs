@@ -12,19 +12,27 @@
  *
  * A prerelease is skipped. A `next` or `feat/**` build publishes to a channel,
  * and rewriting the stable docs to `2.1.0-next.1` would point every reader at
- * a version `latest` does not serve.
+ * a version `latest` does not serve. `docs:check-versions` stands down on the
+ * same rule, read from the same `isPrerelease` so the two cannot disagree
+ * about which versions it covers.
  *
  * semantic-release resolves a plugin given as a path against the working
  * directory and imports it. With no default export it uses the named exports,
  * so this exports `prepare` and nothing else a lifecycle step would call.
  */
-import { REPO_ROOT, VersionsSetupError, plural, syncVersions } from "./version-pins.mjs";
+import {
+  REPO_ROOT,
+  VersionsSetupError,
+  isPrerelease,
+  plural,
+  syncVersions,
+} from "./version-pins.mjs";
 
 export async function prepare(_pluginConfig, context) {
   const { nextRelease, logger } = context;
   const { version } = nextRelease;
 
-  if (version.includes("-") || nextRelease.channel) {
+  if (isPrerelease(version) || nextRelease.channel) {
     logger.log(`Skipped version sync for prerelease ${version}`);
     return;
   }

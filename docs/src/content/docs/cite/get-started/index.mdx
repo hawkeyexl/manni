@@ -176,8 +176,11 @@ into the entry.
 Each citation gets one line under its page, with both ends on it:
 
 ```
-<mark> <id>   <claim end>   <source end>   <manifest>
+<mark> <id>   <claim end>   <source end>   [<manifest>]
 ```
+
+When one [sidecar](/manni/cite/reference/citations/#the-sidecar) keeps every
+entry the page has, its path follows the page on the page's own line.
 
 | Part | What it tells you |
 | --- | --- |
@@ -185,7 +188,7 @@ Each citation gets one line under its page, with both ends on it:
 | `<id>` | The entry's `id`. An entry without one leaves the column empty; the two ends say which entry it is. |
 | `<claim end>` | The page lines and their status, as in `:16-17 current` or `:9 moved -> :11`. A marker-anchored claim reads `marker :30 current`, and `marker :30 -> :28 current` when the marker is misplaced. Empty for a bare pin. |
 | `<source end>` | The source as the entry spelled it, then its status: `lib/limits.ts:2 current`, `~AQm4…:5 changed since 3f9c2a1, 1 commit`. |
-| `<manifest>` | Where the entry is kept, when a [sidecar](/manni/cite/reference/citations/#the-sidecar) owns it, as in `docs-citations.yaml:6`. Empty for a frontmatter entry. |
+| `<manifest>` | Where the entry is kept, as in `docs-citations.yaml:6`, when the page's entries come from more than one place. Empty for a frontmatter entry. |
 
 {/* cite summary-counts */}
 {/* cite summary-green */}
@@ -335,11 +338,12 @@ quoting and the rest of the frontmatter stay as they were. The next check is
 `current` at `lib/limits.ts:4`.
 
 <Aside type="note" title="Move, then change">
-  `update` rewrites the range and keeps the entry's `commit-sha`. If the line
-  later changes as well, the check finds the pinned bytes at their old line
-  in that commit. So it reports `changed since <commit>`, and the fix is the
-  one above. `source-never-true` is kept for a pin that matches nowhere in
-  the file at its commit, such as one typed by hand.
+  `update` rewrites the range and advances the entry's `commit-sha`, so the
+  entry names a commit its new range holds at. If the line later changes as
+  well, the check reads history from there and reports `changed since
+  <commit>`, and the fix is the one above. `source-never-true` is kept for a
+  pin that matches nowhere in the file at its commit, such as one typed by
+  hand.
   [Fix a failing check](/manni/cite/fix/#source-never-true) has the details.
 </Aside>
 
@@ -397,8 +401,9 @@ docs/limits.md: fetch-timeout claim at line 18 re-pinned (changed; now "The fetc
 
 {/* cite accept-prints-claim-text */}
 {/* cite accept-unit-at-first-line */}
-`--accept` re-pins over the paragraph, fenced block or table rows now at the
-claim's first line, and prints it. So the log says exactly what was accepted.
+`--accept` re-pins over the paragraph, fenced block, fenced lines or table
+rows now at the claim's first line, and prints it. So the log says exactly
+what was accepted.
 A sentence that was reworded **and** moved has left that line. `--accept` then
 re-pins whatever now starts there, so read the printed text. If it is not
 the sentence, `cite add` the sentence again.
@@ -453,8 +458,9 @@ conflict on it. [Choose an anchor](/manni/cite/set-up/#choose-an-anchor)
 weighs that against claim lines.
 
 {/* cite marker-carries-id-only */}
-The marker carries an id and nothing else. Every format has its own comment
-syntax, and the [citations
+The marker carries one or more ids, separated by spaces, and nothing else. So
+a paragraph resting on four sources takes one comment rather than four. Every
+format has its own comment syntax, and the [citations
 reference](/manni/cite/reference/citations/#markers) lists them all:
 
 | Format | Form |

@@ -6,6 +6,7 @@ concepts: [frontmatter, extractor]
 
 import { Aside } from '@astrojs/starlight/components';
 
+{/* cite formats-extractor-chosen-by-extension-or-as */}
 manni meta reads metadata from a document using a per-format **extractor**. The
 extractor is chosen from the file extension, or forced with
 [`--as <format>`](/manni/meta/reference/cli/#shared-input-model). Every extractor below
@@ -24,13 +25,16 @@ counts toward directory and glob walks.
 
 ### Why writing is conditional
 
+{/* cite formats-writability-is-the-apply-method */}
 Writing metadata back is a harder problem than reading it. `fill` will only write
 a format it can round-trip without disturbing the rest of the document.
 
+{/* cite formats-fenced-frontmatter-round-trips */}
 Fenced frontmatter round-trips cleanly. Only the characters between the fences
 are replaced. The body, the fence style, and (for YAML) comments and quoting
 survive untouched.
 
+{/* cite formats-native-syntaxes-are-not-round-trippable */}
 The native syntaxes do not. AsciiDoc attributes and reStructuredText docinfo
 fields are read through a YAML scalar parse that loses the original spelling. An
 rst `title` is *synthesized* from the section heading rather than stored as a
@@ -40,16 +44,19 @@ block to those files. A bare `---` is a transition in reStructuredText and an
 open-block delimiter in AsciiDoc. Inventing one would change how the page
 renders.
 
+{/* cite formats-xml-ranges-rebuilt-from-start-positions */}
 HTML and XML are both written the same way, by replacing one character range and
 leaving every other byte alone. For HTML the parser hands those ranges over
 directly. For XML it does not. The parser reports only where each attribute
 *starts*, as a line and column, so manni meta rebuilds the range from that
 position.
 
+{/* cite formats-dita-metadata-belongs-in-prolog */}
 DITA is written differently from plain XML, and not for a mechanical reason. Its
 metadata belongs in a `<prolog>` element, so adding it to the root element would
 produce a topic that its DTD rejects. The prolog is written instead.
 
+{/* cite formats-html-and-xml-are-spliced-not-reserialized */}
 `fill` writes HTML and XML the same way it writes fenced frontmatter, by
 replacing one range and leaving every other byte alone. Entity spelling,
 attribute quoting, void elements and the doctype all survive. For XML that
@@ -59,11 +66,13 @@ re-serializing would turn `&nbsp;` into `&amp;nbsp;`, and splicing cannot. A new
 A new XML attribute is added to the root element's start tag. A page with no
 `<head>` of its own is refused rather than guessed at.
 
+{/* cite formats-schemas-reports-writability */}
 Run `manni meta schemas` to see the current writability of each format. A file
 manni meta cannot write is reported as a per-file error, and the rest of the run
 continues. Examples are an `.rst` with no fenced block, or an HTML page with no
 `<head>`.
 
+{/* cite formats-fill-writes-where-the-read-found-it */}
 Some formats keep metadata in more than one place. HTML can carry a `title` in
 both `<title>` and a `<meta name="title">`. `fill` writes back to whichever one
 manni meta read the value from. That matters because `fill` also corrects values
@@ -71,11 +80,13 @@ that are present but *invalid*. Writing the correction anywhere else would leave
 the wrong value in the tag the page actually uses. The report would still call
 the file fixed.
 
+{/* cite formats-as-name-and-case-insensitive-extensions */}
 The `--as` name is the extractor name in the first column. The extension match
 is case-insensitive.
 
 ## Frontmatter flavors
 
+{/* cite formats-three-interchangeable-flavors */}
 Wherever manni meta reads frontmatter, it accepts three interchangeable flavors.
 That covers Markdown, MDX, and the fenced-block path of AsciiDoc and
 reStructuredText. [Vale](https://docs.vale.sh/formats/front-matter) uses the
@@ -88,9 +99,11 @@ or `--as` name is needed:
 | TOML | `+++` … `+++` | TOML |
 | JSON | `;;;` … `;;;` | a JSON object |
 
+{/* cite formats-yaml-also-closes-on-dot-dot-dot */}
 YAML additionally accepts the conventional `...` document-end marker as a closing
 fence; TOML and JSON close on a repeat of their own opening fence.
 
+{/* cite formats-an-unterminated-fence-is-not-frontmatter */}
 All three are fenced blocks at the very top of the file. The opening fence sits
 on its own line, the content beneath, and a matching closing fence below that. A
 fence that never closes is **not** treated as frontmatter. For AsciiDoc and rst
@@ -100,6 +113,7 @@ malformed block, whether invalid YAML, TOML, or JSON, is a per-file parse
 failure with exit code `1`. The rest of the run continues. See [Output & exit
 codes](/manni/meta/reference/output-and-exit-codes/).
 
+{/* cite formats-toml-line-map-is-best-effort */}
 Error annotations point at the offending field's own source line. For TOML this
 is best-effort. Bare and simply-quoted top-level keys (`key = …`, `"key" = …`)
 map to their line. Dotted keys, keys nested under a `[table]`, and quoted keys
@@ -109,6 +123,7 @@ containing escape sequences fall back to the block's opening fence line.
 
 ### Markdown and MDX
 
+{/* cite formats-mdx-reuses-markdown-frontmatter */}
 Both read a leading fenced frontmatter block in any of the three
 [flavors](#frontmatter-flavors). MDX uses the same logic as Markdown;
 `export const meta = {…}` is not read. A file with no frontmatter reports its
@@ -144,6 +159,7 @@ tags = ["setup", "onboarding"]
 
 ### AsciiDoc
 
+{/* cite formats-asciidoc-accepts-two-styles */}
 AsciiDoc accepts two metadata styles. If the file opens with a complete fenced
 frontmatter block (YAML, TOML, or JSON), that block is used. Otherwise manni meta
 reads the native document header: the lines from the top of the file down to
@@ -162,6 +178,7 @@ the first blank line:
 
 ### reStructuredText
 
+{/* cite formats-rst-accepts-two-styles */}
 reStructuredText also accepts two styles. A complete leading fenced frontmatter
 block (YAML, TOML, or JSON) is used when present (as some MyST setups produce
 it). Otherwise manni meta reads the native page metadata:
@@ -182,6 +199,7 @@ Getting started
 
 ### XML
 
+{/* cite formats-xmlns-declarations-are-dropped */}
 XML metadata comes from the **attributes of the root element**. Namespace
 declarations (`xmlns` and `xmlns:*`) are dropped as transport noise.
 
@@ -189,11 +207,13 @@ declarations (`xmlns` and `xmlns:*`) are dropped as transport noise.
 <document type="concept" version="2" />
 ```
 
+{/* cite formats-malformed-xml-is-a-per-file-error */}
 This yields `type: "concept"` and `version: 2`. Malformed XML is reported as a
 per-file parse error. An entity manni meta cannot resolve is not malformed XML. No
 external DTD is ever fetched. A reference such as `&nbsp;` is left as written,
 and the file is still read.
 
+{/* cite formats-dita-read-by-the-xml-extractor */}
 DITA topics (`.dita`) and maps (`.ditamap`) are read by the same extractor, so
 their root-element attributes are the metadata:
 
@@ -201,10 +221,12 @@ their root-element attributes are the metadata:
 <concept id="metadata-overview" type="concept" xml:lang="en-us">
 ```
 
+{/* cite formats-unresolvable-entities-do-not-fail-the-file */}
 This yields `id`, `type`, and `xml:lang`; the `DOCTYPE` declaration is skipped.
 The DTD-declared entities common in DITA content (`&nbsp;`, `&mdash;`) do not
 fail the file. See above.
 
+{/* cite formats-elements-are-read-too */}
 Elements are read too, not just attributes. The root's direct text-bearing
 children become `<root>.<child>` keys, so `<article><byline>` is
 `article.byline`. An [`elements:` path](/manni/meta/reference/element-metadata/)
@@ -223,16 +245,19 @@ manni meta reads that too:
 </prolog>
 ```
 
+{/* cite formats-othermeta-wins-over-a-root-attribute */}
 A map uses `<topicmeta>` in place of `<prolog><metadata>`. Where a key appears
 both as a root attribute and as an `<othermeta>`, the `<othermeta>` wins. It is
 the explicit metadata channel, while root attributes are largely structural.
 
+{/* cite formats-typed-prolog-elements-are-separate-keys */}
 manni meta also reads the *typed* prolog elements `<author>`, `<critdates>`,
 `<audience>` and `<permissions>`, as `prolog.author`, `critdates.created` and so
 on. Those and the `<othermeta>` keys are separate keys, so a topic carrying the
 same fact in both channels has both validated. The [DITA
 schema](/manni/meta/reference/dita-schema/) describes them.
 
+{/* cite formats-dita-fill-three-cases */}
 `fill` writes DITA into that same channel. A key already present keeps its
 place. A root attribute is corrected as a root attribute, and an `<othermeta>`
 as an `<othermeta>`. Only a key that appears in neither is added, as a new
@@ -240,6 +265,7 @@ as an `<othermeta>`. Only a key that appears in neither is added, as a new
 A new `<prolog>` is placed where the content model requires: after the title,
 `titlealts`, `shortdesc` and `abstract`, and before the body.
 
+{/* cite formats-dita-write-lands-where-the-read-was */}
 Keeping an existing key in its own tag is what makes the write safe. `fill`
 corrects values that are present but *invalid*, not only missing ones. Adding an
 `<othermeta>` beside a stale root attribute would leave a stale value in place.
@@ -247,6 +273,7 @@ That is the value a DITA processor actually reads, and the report would still
 call the file fixed. It is also why the write cannot break DTD validity:
 updating an attribute that is already there cannot make it un-declared.
 
+{/* cite formats-three-ways-a-file-counts-as-dita */}
 A file counts as DITA in three cases. Its `DOCTYPE` names a DITA DTD. Its root
 element carries a DITA `class` or `DITAArchVersion` attribute. Or a `.dita` /
 `.ditamap` extension is paired with a DITA root element name. A root element
@@ -274,9 +301,11 @@ HTML metadata comes from the document head:
 <meta name="draft" content="false">
 ```
 
+{/* cite formats-html-parsing-never-throws */}
 HTML parsing recovers from malformed markup, so extraction does not throw a
 parse error.
 
+{/* cite formats-new-meta-goes-just-inside-head */}
 `fill` can write HTML. An existing tag has only its value replaced, so the
 surrounding quoting and spelling are preserved. A key with no tag yet gets a new
 `<meta>` just inside `<head>`, indented to match its neighbours. A document
@@ -285,6 +314,7 @@ instance, is refused. There is no head to write into.
 
 ## Type coercion
 
+{/* cite formats-native-paths-parse-as-yaml-scalars */}
 Each value on the **native** metadata paths is parsed as a YAML scalar. Those
 paths are the AsciiDoc header, the reStructuredText docinfo field list, XML
 attributes, and HTML `<meta>`/`<title>`. This means string-looking inputs are
@@ -296,14 +326,17 @@ coerced to their natural types:
 | `true` | `true` | boolean |
 | `[a, b]` | `["a", "b"]` | array |
 
+{/* cite formats-empty-attribute-stays-the-empty-string */}
 An explicitly empty value (`title=""` in XML, `content=""` in HTML) stays the
 empty string rather than becoming `null`.
 
+{/* cite formats-fenced-blocks-keep-native-types */}
 **Fenced frontmatter** carries its own native types instead, with no per-value
 scalar re-parsing is applied. YAML types come from normal YAML rules, and TOML
 and JSON from their own type systems. So `version = 2` and `"version": 2` are
 both the number `2`, and a TOML/JSON array is a list.
 
+{/* cite formats-quoting-decides-the-type */}
 Because the value's type is decided by how it's written, quoting is a real
 authoring choice in every flavor. A quoted `"2"`, or YAML `version: "2"`, is the
 **string** `"2"`. It will *not* satisfy a schema field typed `integer`.
@@ -315,12 +348,16 @@ strings `"2"` or `"true"`, whichever flavor the value came from. Author your
 schemas to expect the coerced types.
 </Aside>
 
-<Aside type="caution" title="TOML dates are not strings">
-TOML has a **native** date-time type: an *unquoted*
-`published = 2024-01-15T10:00:00Z` parses as a date value, not a string. JSON
-Schema's `format: date-time` only constrains `type: string`. A field typed
-`{"type": "string", "format": "date-time"}` **fails** on a TOML native date,
-with `must be string`. The same value written as a quoted string in JSON, YAML,
-or TOML passes. If your schema expects a string date, quote it in TOML:
-`published = "2024-01-15T10:00:00Z"`.
-</Aside>
+{/* cite formats-toml-native-dates-are-rewritten-before-validating */}
+TOML's native date-time type is the one value a fenced block still rewrites. An
+unquoted `published = 2024-01-15T10:00:00Z` parses as a date, and manni meta
+writes it back to its ISO spelling before validating. A field typed
+`{"type": "string", "format": "date-time"}` therefore accepts it, exactly as it
+accepts the quoted form.
+
+{/* cite formats-iso-spelling-always-carries-milliseconds */}
+The two spellings are not byte-identical, though. The ISO spelling always
+carries milliseconds, so the unquoted value above is validated as
+`2024-01-15T10:00:00.000Z`. `format: date-time` does not notice. `enum`,
+`const` and `pattern` do, so quote the value when the exact text is what your
+schema matches.

@@ -160,6 +160,7 @@ interface UpdateCliOptions extends InputCliOptions {
   /** `--no-check-sources`: declared so the refusal names the flag rather than commander rejecting it. */
   checkSources: boolean;
   accept?: boolean;
+  recommit?: boolean;
   /** `--only <id>`, repeatable; commander's default value is `[]`. */
   only: string[];
   dryRun?: boolean;
@@ -209,7 +210,8 @@ export function addMessage(result: AddResult): string {
   if (result.markerLine !== undefined) {
     const at =
       claimLines === undefined ? "" : `, claim pinned at ${spellAt(claimLines)}`;
-    const marked = `${head}; marker at line ${String(result.markerLine)}${at}`;
+    const wrote = result.markerJoined === true ? "joined the marker at line" : "marker at line";
+    const marked = `${head}; ${wrote} ${String(result.markerLine)}${at}`;
     if (claim === undefined) return marked;
     if (citation.quote === true) return `${marked} (a block that reproduces ${src})`;
     return `${marked} (${shortPin(claim.integrity)}; source ${pin})`;
@@ -485,6 +487,10 @@ export function buildProgram(): Command {
     .option("--no-check-sources", "refused: update needs the sources")
     .option("--root <dir>", "directory src: paths resolve from (as check)")
     .option("--accept", "re-mint changed and never-true entries at HEAD; prints old and new pins")
+    .option(
+      "--recommit",
+      "re-record commit-sha where the recorded commit does not contain the pinned lines",
+    )
     .option("--only <id>", "limit to entries with this id; repeatable", collect, [])
     .option("--dry-run", "print the diffs; write nothing")
     .option(
@@ -500,6 +506,7 @@ export function buildProgram(): Command {
         "  manni cite update docs/                          # rewrite moved entries",
         "  manni cite update --accept --only fetch-timeout docs/limits.md",
         "  manni cite update --dry-run docs/               # see the diffs first",
+        "  manni cite update --recommit docs/               # repair unsupported commit-sha",
       ].join("\n"),
     )
     .action(async (paths: string[], options: UpdateCliOptions, command: Command) => {
@@ -538,6 +545,7 @@ export function buildProgram(): Command {
           onNotice: notice,
           root: options.root,
           accept: options.accept ? true : undefined,
+          recommit: options.recommit ? true : undefined,
           only: options.only.length > 0 ? options.only : undefined,
           dryRun,
         });

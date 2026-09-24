@@ -1,5 +1,5 @@
 # manni lint's own docs site (docs/src/content/docs/), worked in the v2
-# template grammar (proposal 0061) over the shared content model (0060).
+# template grammar (proposal 0061) over the shared content model (0065).
 #
 # The site carries no `type:` frontmatter, so in a real `manni.config.yaml`
 # these templates are reached through `lint.overrides` globs keyed on the
@@ -64,7 +64,7 @@ templates:
           is what lets the site add a command without touching this file. The
           heading is written with backticks in the source
           (`` `manni lint check` ``), but a heading's flattened text has no
-          markup left in it (proposal 0060), so the pattern matches the
+          markup left in it (proposal 0065), so the pattern matches the
           command name's own shape - it starts with the binary's name -
           rather than the backticks that wrote it.
         heading:
@@ -91,7 +91,7 @@ templates:
   # An overview page is Starlight MDX: an `Aside` note up front, however much
   # prose the page needs, and a `CardGrid` of `Card`/`LinkCard` elements
   # pointing further into the section. `elements` is the one kind Markdown
-  # cannot report (proposal 0060), so this template only makes sense linted
+  # cannot report (proposal 0065), so this template only makes sense linted
   # against an `.mdx` file.
   overview:
     sequence:

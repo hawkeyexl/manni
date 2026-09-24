@@ -4,6 +4,67 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.11.1](https://github.com/hawkeyexl/manni/compare/v2.11.0...v2.11.1) (2026-09-24)
+
+
+### Bug Fixes
+
+* **meta:** a page write changes only the keys it writes ([#120](https://github.com/hawkeyexl/manni/issues/120)) ([61af7d5](https://github.com/hawkeyexl/manni/commit/61af7d5c22359f6848e997d052b9cbf5854b3afe))
+
+# [2.11.0](https://github.com/hawkeyexl/manni/compare/v2.10.2...v2.11.0) (2026-09-24)
+
+
+### Features
+
+* **meta:** a manifest per page ([#117](https://github.com/hawkeyexl/manni/issues/117)) ([44a071e](https://github.com/hawkeyexl/manni/commit/44a071e287c84efebd1833089263ddf77fb7d6b9))
+
+## [2.10.2](https://github.com/hawkeyexl/manni/compare/v2.10.1...v2.10.2) (2026-09-22)
+
+
+### Bug Fixes
+
+* **cite:** a commit-sha that supports its own pin ([#116](https://github.com/hawkeyexl/manni/issues/116)) ([f649886](https://github.com/hawkeyexl/manni/commit/f649886e0dcb0bf422859d78210719ea53aaa295))
+
+## [2.10.1](https://github.com/hawkeyexl/manni/compare/v2.10.0...v2.10.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* **term:** reach the signal branch when Vale is killed ([#115](https://github.com/hawkeyexl/manni/issues/115)) ([c5616b4](https://github.com/hawkeyexl/manni/commit/c5616b418980ae745f864dc5aadd54a028d390f3)), closes [#114](https://github.com/hawkeyexl/manni/issues/114)
+
+# [2.10.0](https://github.com/hawkeyexl/manni/compare/v2.9.0...v2.10.0) (2026-09-22)
+
+
+### Features
+
+* **cite:** let one marker carry several ids ([#112](https://github.com/hawkeyexl/manni/issues/112)) ([e1b98dd](https://github.com/hawkeyexl/manni/commit/e1b98dd36721566d90d1fb76cbe08cc90e3af7f3)), closes [#111](https://github.com/hawkeyexl/manni/issues/111) [#111](https://github.com/hawkeyexl/manni/issues/111)
+
+# [2.9.0](https://github.com/hawkeyexl/manni/compare/v2.8.5...v2.9.0) (2026-09-22)
+
+
+### Features
+
+* **cite:** follow a source across files, and re-mint a range that grew ([#111](https://github.com/hawkeyexl/manni/issues/111)) ([892e2a5](https://github.com/hawkeyexl/manni/commit/892e2a58b5c86f3c18e61f76ec5b9871632450bf))
+
+## [2.8.5](https://github.com/hawkeyexl/manni/compare/v2.8.4...v2.8.5) (2026-09-21)
+
+
+### Bug Fixes
+
+* **cite:** advance a pin's commit when its source moves ([#107](https://github.com/hawkeyexl/manni/issues/107)) ([ab01f4d](https://github.com/hawkeyexl/manni/commit/ab01f4db5441f7c3187d5b7d7e7195cd7bf688a7)), closes [#106](https://github.com/hawkeyexl/manni/issues/106)
+
+## [2.8.4](https://github.com/hawkeyexl/manni/compare/v2.8.3...v2.8.4) (2026-09-21)
+
+
+### Bug Fixes
+
+* **cite:** re-pin a claim that lives inside a fenced block ([#106](https://github.com/hawkeyexl/manni/issues/106)) ([7a6eb28](https://github.com/hawkeyexl/manni/commit/7a6eb280efa865bbed56a3b498f4361c1fc35dfe)), closes [#96](https://github.com/hawkeyexl/manni/issues/96)
+
+
+### Performance Improvements
+
+* **meta:** parse each manifest once per run ([#101](https://github.com/hawkeyexl/manni/issues/101)) ([5c95119](https://github.com/hawkeyexl/manni/commit/5c95119bcc24b2bda95a4cfb16d7e9761a9bae3c)), closes [#98](https://github.com/hawkeyexl/manni/issues/98) [#98](https://github.com/hawkeyexl/manni/issues/98)
+
 ## [2.8.3](https://github.com/hawkeyexl/manni/compare/v2.8.2...v2.8.3) (2026-09-21)
 
 

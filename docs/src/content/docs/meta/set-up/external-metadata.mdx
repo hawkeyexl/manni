@@ -180,8 +180,7 @@ that key may be set. The message names the collection whose manifest owns it.
 All three are exit 1, and `--format github` annotates the manifest line for
 the first and the page line for the other two.
 
-{/* cite orphan-path-entry-message-text */}
-{/* cite orphan-path-entry-checked-on-corpus-run */}
+{/* cite orphan-path-entry-checked-on-corpus-run orphan-path-entry-message-text */}
 A renamed page whose entry was not updated is different. On a run that reads the
 whole corpus it is exit 2. An entry naming a page the run did not load is a
 named input that is not there. The same fixture directory carries a second
@@ -546,8 +545,7 @@ publish. From `test/fixtures/external-metadata-join/`:
     /id  2 documents carry id "shared"; docs-meta.yaml cannot tell them apart (docs/dup-a.md)  (line 3)  [external:duplicate]
 ```
 
-{/* cite orphan-join-entry-checked-after-all-pages */}
-{/* cite orphan-join-message-text */}
+{/* cite orphan-join-entry-checked-after-all-pages orphan-join-message-text */}
 An entry whose id no page carries is still exit 2 on a whole-corpus run,
 checked once every page has been read:
 
@@ -643,7 +641,7 @@ manifest's comments. A corpus check still sees every key the manifest supplies.
 So "every guide has a ticket in the open state" is a
 [SQL rule](/manni/meta/ci/query-gates/) like any other.
 
-Three writes are still refused. `query` refuses each before any file is
+Five writes are still refused. `query` refuses each before any file is
 written (exit 2):
 
 - **A URL manifest.** It is fetched, so nothing can be written to it:
@@ -654,6 +652,10 @@ written (exit 2):
   section shows.
 - **`ALTER TABLE … RENAME COLUMN` of an owned key**, because the manifest's
   `keys:` would need renaming too.
+- **An owned key on a field-joined page that has no join value.** There is no
+  entry to write it into until the join field is set.
+- **A `_path` move that takes a named page out of its manifest's collection.**
+  A path-joined entry moves with the page, and only inside the collection.
 
 ### Moving keys in or out
 

@@ -1,6 +1,6 @@
 # 0047: a field's preferred location, `x-manni-location`, and `manni meta relocate`
 
-- **Status:** Implemented (#37)
+- **Status:** Implemented (#37); superseded in part by 0063
 - **Serves:** Two journeys.
   - Sara · S1, "Define our metadata standard as a schema". Her standard says
     which fields a page carries into delivered output and which it keeps

@@ -12,7 +12,10 @@ import { dirname } from "node:path";
 import {
   appendFrontmatterCitation,
   entryObject,
+  applyEdits,
   insertStatementBefore,
+  lineRemovals,
+  removeLine,
   spliceEntryField,
   unifiedDiff,
 } from "../../src/cite/core/write.js";
@@ -468,5 +471,73 @@ describe("unifiedDiff", () => {
         "",
       ].join("\n"),
     );
+  });
+});
+
+/**
+ * The one pass every body rewrite goes through. `applyEdits` is what lets a
+ * caller read all its positions from one parse: the spans index the text it
+ * was handed, so the order they were collected in cannot change the answer,
+ * and two writers reaching for the same bytes is a refusal rather than a
+ * silently mangled page.
+ */
+describe("applyEdits", () => {
+  const content = "alpha beta gamma";
+  const edits = [
+    { start: 0, end: 5, text: "one" },
+    { start: 11, end: 16, text: "three" },
+  ];
+
+  it("applies every edit against the text it was handed, in either order", () => {
+    expect(applyEdits(content, edits)).toBe("one beta three");
+    expect(applyEdits(content, [...edits].reverse())).toBe("one beta three");
+  });
+
+  it("leaves the text alone when there is nothing to do", () => {
+    expect(applyEdits(content, [])).toBe(content);
+  });
+
+  it("takes an insertion, which is an empty span", () => {
+    expect(applyEdits(content, [{ start: 6, end: 6, text: "the " }])).toBe("alpha the beta gamma");
+  });
+
+  it("refuses two edits reaching for the same bytes", () => {
+    expect(() =>
+      applyEdits(content, [
+        { start: 0, end: 6, text: "x" },
+        { start: 5, end: 10, text: "y" },
+      ]),
+    ).toThrow("overlapping edits");
+  });
+});
+
+describe("lineRemovals", () => {
+  it("merges neighbours into one span, so neither takes the other's break", () => {
+    const content = "one\ntwo\nthree\nfour\n";
+    expect(lineRemovals(content, [3, 2])).toEqual([{ start: 4, end: 14, text: "" }]);
+    expect(applyEdits(content, lineRemovals(content, [2, 3]))).toBe("one\nfour\n");
+  });
+
+  it("keeps separate runs separate", () => {
+    const content = "one\ntwo\nthree\nfour\n";
+    expect(lineRemovals(content, [1, 3])).toHaveLength(2);
+    expect(applyEdits(content, lineRemovals(content, [1, 3]))).toBe("two\nfour\n");
+  });
+
+  it("takes the break above a run that ends a page with no final newline", () => {
+    const content = "one\ntwo\nthree";
+    expect(applyEdits(content, lineRemovals(content, [2, 3]))).toBe("one");
+    expect(applyEdits(content, lineRemovals(content, [3]))).toBe("one\ntwo");
+  });
+
+  it("takes a CRLF break whole", () => {
+    const content = "one\r\ntwo\r\nthree";
+    expect(applyEdits(content, lineRemovals(content, [3]))).toBe("one\r\ntwo");
+    expect(applyEdits(content, lineRemovals(content, [2]))).toBe("one\r\nthree");
+  });
+
+  it("empties a page whose every line goes", () => {
+    expect(applyEdits("only", lineRemovals("only", [1]))).toBe("");
+    expect(removeLine("only", 1)).toBe("");
   });
 });

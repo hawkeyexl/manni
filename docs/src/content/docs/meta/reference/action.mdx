@@ -5,6 +5,7 @@ description: Every input and output of the hawkeyexl/manni GitHub Action, with d
 
 import { Aside } from '@astrojs/starlight/components';
 
+{/* cite action-is-a-composite-around-the-npm-package */}
 The packaged Action runs the same npm package the CLI does. It sets up Node,
 fetches `manni meta`, and shells out to `manni meta validate`. Nothing it does is
 unavailable from the CLI. It exists so the invocation lives in one place,
@@ -19,6 +20,7 @@ instead of being copy-pasted into every repository that wants it.
 
 ## Inputs
 
+{/* cite action-every-input-is-optional */}
 Every input is optional. An input left unset contributes nothing to the command
 line, and it does not become an empty flag.
 
@@ -56,6 +58,7 @@ workflow warning if it sees a quote character in a single-line value.
 
 ### Globs reach manni meta unexpanded
 
+{/* cite action-globs-are-not-shell-expanded */}
 A `paths` value like `docs/**/*.md` is passed through as that string. The Action
 disables shell globbing deliberately. manni meta applies its own extension
 filtering and [gitignore rules](/manni/meta/reference/cli/#shared-input-model).
@@ -65,6 +68,7 @@ the working directory.
 
 ### Selecting a collection
 
+{/* cite action-args-is-the-escape-hatch */}
 There is no `collection` input. `--collection` reaches the Action through `args`,
 the documented escape hatch for every flag the inputs above do not name:
 
@@ -74,6 +78,7 @@ the documented escape hatch for every flag the inputs above do not name:
     args: --collection guides
 ```
 
+{/* cite action-collection-repeats-rather-than-splitting */}
 The flag repeats rather than splitting on commas, so two collections are two
 occurrences on the same line:
 
@@ -83,6 +88,7 @@ occurrences on the same line:
     args: --collection guides --collection blog
 ```
 
+{/* cite action-collection-cannot-be-combined-with-paths */}
 Leave `paths` unset when you do this. `--collection` selects from the config, so
 it cannot be combined with positional paths. A workflow that sets both fails the
 step with exit 2. The message is
@@ -96,6 +102,7 @@ With neither, the run covers every declared collection, which is what the
 |---|---|
 | `exit-code` | manni meta's exit code. `0` clean, `1` validation failures, `2` operational or usage error. |
 
+{/* cite action-exit-code-needs-continue-on-error */}
 `exit-code` is only observable with `continue-on-error: true`. Without it a
 non-zero code has already failed the step, so there is nothing left to read:
 
@@ -119,18 +126,22 @@ Action itself.
 
 ## Versioning
 
+{/* cite action-major-tag-moves-on-each-release */}
 `@vN` is a moving tag. On each stable release, the release job moves it to the
-newest release of that major. Pin a full tag such as
-`uses: hawkeyexl/manni@v2.8.3` instead when you want an immutable Action. That
-is the usual trade between getting fixes automatically and knowing exactly what
-runs.
+newest release of that major.
 
+Pin a full tag such as `uses: hawkeyexl/manni@v2.11.1` instead when you want an
+immutable Action. That is the usual trade between getting fixes automatically
+and knowing exactly what runs.
+
+{/* cite action-version-input-picks-the-cli */}
 The Action tag chooses the Action's code. The `version` input chooses the CLI
 it runs, and defaults to `latest`, the newest published CLI. Set `version` to a
 major such as `2`, or to an exact version, when you want a reproducible CLI.
 
 ## The equivalent by hand
 
+{/* cite action-hand-written-form-still-supported */}
 The Action replaces this, which remains supported and is what
 [`examples/manni.yml`](https://github.com/hawkeyexl/manni/blob/main/examples/manni.yml)
 shows:
@@ -143,6 +154,7 @@ shows:
 - run: npx -y @hawkeyexl/manni meta validate "docs/**/*.md" --format github
 ```
 
+{/* cite action-wraps-node-setup-and-the-cli-call */}
 Use the hand-written form on a runner that cannot use a composite action, or
 when you need to control the Node setup yourself. Everything else moves inside
 the Action, including the CLI version it fetches, the `--format github` default,

@@ -11,7 +11,8 @@
  * parsed once for its node ranges, and exactly one range of the original text
  * is replaced. So everything outside that range survives by construction
  * rather than by careful re-emission: comments, key order, quoting, blank
- * lines, and the line endings. Three edits are possible:
+ * lines, and the line endings. The primitives live in `yaml-splice.ts`,
+ * which the frontmatter writer shares. Three edits are possible:
  *
  *  - **Replace.** The key is present in the entry. Its value's text is
  *    replaced by the new value as block YAML at the key's indentation.
@@ -33,9 +34,7 @@ import {
   LineCounter,
   isMap,
   isNode,
-  isPair,
   isScalar,
-  isSeq,
   parseDocument,
   stringify,
   type Document,
@@ -46,6 +45,24 @@ import { DocmetaError } from "../types.js";
 import { deepEqual } from "../extractors/patch-util.js";
 import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
 import { PATH_JOIN } from "./external-metadata.js";
+import {
+  blockLines,
+  colOf,
+  colonEnd,
+  contentEnd,
+  detectEol,
+  detectStyle,
+  emptySource,
+  insertKey,
+  keyLines,
+  keyString,
+  lineEnd,
+  rangeOf,
+  replaceBlockValue,
+  replaceFlowValue,
+  type Edit,
+  type Style,
+} from "./yaml-splice.js";
 
 export interface SpliceManifestOptions {
   /**
@@ -71,24 +88,6 @@ export interface SplicedManifest {
   /** 1-based line where the written value now starts. */
   line: number;
 }
-
-/** How the manifest lays itself out, so a new value matches its neighbours. */
-interface Style {
-  /** Spaces per nesting level. */
-  step: number;
-  /** Whether a list under a key is indented past it (`key:\n  - a`). */
-  indentSeq: boolean;
-  eol: string;
-}
-
-/** One replacement of the original text. */
-interface Edit {
-  start: number;
-  end: number;
-  insert: string;
-}
-
-type Range = [number, number, number];
 
 /**
  * Rewrite `options.key` of `options.entry` in the manifest `text` to
@@ -330,10 +329,7 @@ export function removeManifestKey(
       `${where}: "${spelled}" writes a key in a form this writer does not edit. Write it as "${key}: …".`,
     );
   }
-  let start = text.lastIndexOf("\n", from[0] - 1) + 1;
-  let end = lineEnd(text, to);
-  if (text.startsWith(eol, end)) end += eol.length;
-  else if (start >= eol.length) start -= eol.length; // the last line, with no break after it
+  let { start, end } = keyLines(text, from[0], to, eol);
   if (whole) {
     // The blank line that spaced the entry from the one before goes with it;
     // for a first entry, the one after it does.
@@ -488,25 +484,6 @@ function appendEntry(
   };
 }
 
-/** A key the entry does not have, after the entry's last line. */
-function insertKey(
-  text: string,
-  entryMap: YAMLMap,
-  key: string,
-  value: unknown,
-  style: Style,
-): Edit | undefined {
-  const firstKey = rangeOf(entryMap.items[0]?.key);
-  const end = contentEnd(text, entryMap);
-  if (!firstKey || end === undefined) return undefined;
-  const pos = lineEnd(text, end);
-  return {
-    start: pos,
-    end: pos,
-    insert: style.eol + blockLines({ [key]: value }, colOf(text, firstKey[0]), style),
-  };
-}
-
 /** `docs/a.md: {}`: the empty flow mapping becomes a block one holding the key. */
 function fillEmptyEntry(
   text: string,
@@ -521,45 +498,6 @@ function fillEmptyEntry(
   if (start === undefined || !keyRange || end === undefined) return undefined;
   const col = colOf(text, keyRange[0]) + style.step;
   return { start, end, insert: style.eol + blockLines({ [key]: value }, col, style) };
-}
-
-/**
- * A present key in a block mapping: everything from its `:` to the end of its
- * value is the new value. A comment on the key's own line is kept, and the
- * value then starts on the next line.
- */
-function replaceBlockValue(text: string, pair: Pair, value: unknown, style: Style): Edit | undefined {
-  const colon = colonEnd(text, pair);
-  const keyRange = rangeOf(pair.key);
-  if (colon === undefined || !keyRange) return undefined;
-  const keyCol = colOf(text, keyRange[0]);
-  let start = colon;
-  let ownLine = false;
-  let i = colon;
-  while (text.charAt(i) === " " || text.charAt(i) === "\t") i++;
-  if (text.charAt(i) === "#") {
-    start = lineEnd(text, i);
-    ownLine = true;
-  }
-  const old = pair.value;
-  const oldEnd =
-    isScalar(old) && old.value === null && emptySource(text, old)
-      ? start
-      : (contentEnd(text, old) ?? start);
-  const end = Math.max(start, oldEnd);
-  let insert = afterColon(value, keyCol, style);
-  if (ownLine && !insert.startsWith(style.eol)) {
-    insert = style.eol + " ".repeat(keyCol + style.step) + insert.trimStart();
-  }
-  return { start, end, insert };
-}
-
-/** A present key in a flow mapping: the value, and only the value, in flow style. */
-function replaceFlowValue(text: string, pair: Pair, value: unknown): Edit | undefined {
-  const r = rangeOf(pair.value);
-  if (!r || emptySource(text, pair.value)) return undefined;
-  const end = contentEnd(text, pair.value) ?? r[1];
-  return { start: r[0], end, insert: flowText(value) };
 }
 
 /**
@@ -604,153 +542,6 @@ function readBack(
   const r = rangeOf(kv?.value) ?? rangeOf(kv?.key);
   if (!r) throw fail("The written value could not be found again.");
   return lc.linePos(r[0]).line;
-}
-
-// ---------------------------------------------------------------------------
-// Serialization. `stringify` lays the value out; the splice only indents it.
-// `lineWidth: 0` disables folding, so a long value stays on its line.
-// ---------------------------------------------------------------------------
-
-/** `{ key: value }` as block lines at column `col`, joined with the manifest's line ending. */
-function blockLines(pair: Record<string, unknown>, col: number, style: Style): string {
-  const s = stringify(pair, { lineWidth: 0, indent: style.step, indentSeq: style.indentSeq });
-  return indentLines(s.replace(/\n$/, "").split("\n"), col, 0).join(style.eol);
-}
-
-/**
- * The text that follows `key:` for `value`, for a key at column `col`: ` x`
- * for a scalar or an empty collection, or a line break and the block for a
- * mapping or a list with members.
- */
-function afterColon(value: unknown, col: number, style: Style): string {
-  const s = stringify({ k: value }, { lineWidth: 0, indent: style.step, indentSeq: style.indentSeq });
-  const lines = s.replace(/\n$/, "").slice("k:".length).split("\n");
-  return indentLines(lines, col, 1).join(style.eol);
-}
-
-/** Every non-empty line from index `from` on, shifted right by `col` spaces. */
-function indentLines(lines: string[], col: number, from: number): string[] {
-  const pad = " ".repeat(col);
-  return lines.map((l, i) => (i < from || l === "" ? l : pad + l));
-}
-
-/** `value` on one line, in flow style: JSON when YAML's flow form would wrap. */
-function flowText(value: unknown): string {
-  const s = stringify(value, { lineWidth: 0, collectionStyle: "flow" }).replace(/\n$/, "");
-  return s.includes("\n") ? JSON.stringify(value) : s;
-}
-
-// ---------------------------------------------------------------------------
-// Positions.
-// ---------------------------------------------------------------------------
-
-/** The manifest's line ending, from its first line break; LF when it has none. */
-function detectEol(text: string): string {
-  const i = text.indexOf("\n");
-  return i > 0 && text.charAt(i - 1) === "\r" ? "\r\n" : "\n";
-}
-
-/** The indentation step and list style the manifest already uses. */
-function detectStyle(text: string, root: YAMLMap, eol: string): Style {
-  let step = 2;
-  for (const pair of root.items) {
-    const v = pair.value;
-    const entryKey = rangeOf(pair.key);
-    const ownedKey = isMap(v) && v.flow !== true ? rangeOf(v.items[0]?.key) : undefined;
-    if (entryKey && ownedKey) {
-      const d = colOf(text, ownedKey[0]) - colOf(text, entryKey[0]);
-      if (d > 0) {
-        step = d;
-        break;
-      }
-    }
-  }
-  return { step, indentSeq: seqIndented(text, root) ?? true, eol };
-}
-
-/** Whether the first block list under a key is indented past it; undefined when there is none. */
-function seqIndented(text: string, node: unknown): boolean | undefined {
-  if (isMap(node)) {
-    for (const pair of node.items) {
-      const v = pair.value;
-      if (isSeq(v) && v.flow !== true && v.items.length > 0) {
-        const k = rangeOf(pair.key);
-        const s = rangeOf(v);
-        if (k && s) return colOf(text, s[0]) > colOf(text, k[0]);
-      }
-      const inner = seqIndented(text, v);
-      if (inner !== undefined) return inner;
-    }
-  } else if (isSeq(node)) {
-    for (const item of node.items) {
-      const inner = seqIndented(text, item);
-      if (inner !== undefined) return inner;
-    }
-  }
-  return undefined;
-}
-
-/**
- * Where a node's own text ends: the last character of its last scalar or
- * flow collection. A block collection's range runs on through the line break
- * and any comments after its last item, which belong to what follows.
- */
-function contentEnd(text: string, node: unknown): number | undefined {
-  if (isMap(node) && node.flow !== true) {
-    const last = node.items.at(-1);
-    if (last) return contentEnd(text, last.value) ?? contentEnd(text, last.key);
-  } else if (isSeq(node) && node.flow !== true) {
-    const last: unknown = node.items.at(-1);
-    if (last !== undefined) {
-      return isPair(last)
-        ? (contentEnd(text, last.value) ?? contentEnd(text, last.key))
-        : contentEnd(text, last);
-    }
-  }
-  const r = rangeOf(node);
-  if (!r) return undefined;
-  let end = r[1];
-  while (end > r[0] && /\s/.test(text.charAt(end - 1))) end--;
-  return end;
-}
-
-/** Just past the `:` that follows a pair's key; undefined for an explicit `? key`. */
-function colonEnd(text: string, pair: Pair): number | undefined {
-  const r = rangeOf(pair.key);
-  if (!r) return undefined;
-  let i = r[1];
-  while (text.charAt(i) === " " || text.charAt(i) === "\t") i++;
-  return text.charAt(i) === ":" ? i + 1 : undefined;
-}
-
-/** The offset of the line break ending the line `i` is on, or the end of the text. */
-function lineEnd(text: string, i: number): number {
-  const j = text.indexOf("\n", i);
-  if (j < 0) return text.length;
-  return j > 0 && text.charAt(j - 1) === "\r" ? j - 1 : j;
-}
-
-/** 0-based column of `offset`, not counting a byte-order mark. */
-function colOf(text: string, offset: number): number {
-  if (offset === 0) return 0;
-  let start = text.lastIndexOf("\n", offset - 1) + 1;
-  if (start === 0 && text.startsWith("﻿")) start = 1;
-  return offset - start;
-}
-
-function rangeOf(node: unknown): Range | undefined {
-  return isNode(node) ? (node.range ?? undefined) : undefined;
-}
-
-/** A node with no text of its own: `key:` with nothing after it. */
-function emptySource(text: string, node: unknown): boolean {
-  const r = rangeOf(node);
-  return !r || text.slice(r[0], r[1]).trim() === "";
-}
-
-/** A mapping key as the loader compares it. */
-function keyString(key: unknown): string {
-  return isScalar(key) ? String(key.value) : String(key);
 }
 
 function isRecord(x: unknown): x is Record<string, unknown> {

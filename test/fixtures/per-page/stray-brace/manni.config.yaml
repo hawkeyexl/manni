@@ -1,0 +1,8 @@
+# Proposal 0058: a brace outside a {page} token is refused, never silently literal.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.{md,mdx}"
+    externalMetadata:
+      - file: "a{b.citations.yaml"
+        keys: [citations]

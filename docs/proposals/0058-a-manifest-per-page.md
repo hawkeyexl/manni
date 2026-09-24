@@ -1,6 +1,6 @@
 # 0058: a manifest per page
 
-- **Status:** Proposed
+- **Status:** Superseded by [0060](0060-a-manifest-per-page-as-built.md)
 - **Serves:** Two journeys.
   - Maya · M6, "Keep citations out of the page". Her pages carry prose. Today
     the bookkeeping they lost is a single file every page shares.

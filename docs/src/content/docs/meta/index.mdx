@@ -59,9 +59,10 @@ which line, and which schema flagged it:
 ```
 
 That's the whole loop: run it, read the result, fix the field, run it again.
-With no schema configured, manni meta validates against its built-in
-[OKF schema](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md),
-which requires only `type`.
+With no schema configured, manni meta validates against two built-in schemas.
+The [OKF schema](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+requires only `type`. The Seven-Action schema constrains `action` to seven
+reader actions, and requires nothing.
 
 ## What do you want to do?
 

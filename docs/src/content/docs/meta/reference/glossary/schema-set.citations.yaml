@@ -1,0 +1,10 @@
+docs/src/content/docs/meta/reference/glossary/schema-set.mdx:
+  citations:
+    - id: every-schema-in-the-set-must-pass
+      claim:
+        integrity: sha256-8ea0348204a5d51c74d7e993c5437f556826c530bc53bad188d41c7e1909d8eb
+      source:
+        file: src/meta/core/validator.ts
+        lines: 630-638
+        integrity: sha256-d41a107a55ebb946ec671441f23894ac22321e7e1a3d62f9282db44195c9f5ba
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe

@@ -200,11 +200,24 @@ export interface SourceEnd {
    * pretty reporter under `--reveal`; never serialized to a machine format.
    */
   resolvedPath?: string;
+  /**
+   * The path a moved encrypted source's `newSrc` decrypts to. Printed only by
+   * the pretty reporter under `--reveal`; never serialized to a machine format.
+   */
+  resolvedNewPath?: string;
   /** For `missing`: why the source could not be read. Composes the message, which never names a path. */
   missingReason?: MissingReason;
-  /** For `moved`: the new file lines. */
+  /**
+   * For `moved`: the new file lines. For `changed`: the span the pinned
+   * range's old first and last lines now cover, when each sits exactly once
+   * and in order (proposal 0055).
+   */
   newLines?: string;
-  /** For `moved`: the new `src`, spelled as the entry spells sources. */
+  /**
+   * For `moved`: the new `src`, spelled as the entry spells sources. It names
+   * another file when the pin followed its text across one, and carries the
+   * new path encrypted for an encrypted source.
+   */
   newSrc?: string;
   /** For `moved-ambiguous`: every candidate `src`. */
   candidates?: string[];
@@ -218,6 +231,12 @@ export interface SourceEnd {
   diff?: string;
   /** The move search hit its byte budget before covering the file. */
   truncatedSearch?: boolean;
+  /**
+   * The truncation happened across the files a commit touched rather than
+   * inside one file, which is the other half of the notice a run raises. Never
+   * serialized: `truncatedSearch` stays the one boolean the output carries.
+   */
+  truncatedAcross?: boolean;
 }
 
 /** One classified citation: both ends, and how it is anchored. */
@@ -302,6 +321,12 @@ export interface GitClient {
   subjectsSince(commit: string, path: string): Promise<string[]>;
   diffSince(commit: string, path: string): Promise<string>;
   /**
+   * Paths whose content differs between `commit` and `HEAD`: committed
+   * changes only. The candidate list a pin is followed across (proposal
+   * 0055). A client without it follows no source out of its own file.
+   */
+  changedSince?(commit: string): Promise<string[]>;
+  /**
    * The commits that touched `path`, newest first, at most `cap` of them. A
    * client without it reads no claim history, so a claim that no longer holds
    * is `changed` with no baseline.
@@ -383,13 +408,33 @@ export interface MintOptions {
   sourceIndex?: SourceIndex;
 }
 
+/**
+ * One replacement against a fixed text: the bytes `[start, end)` become
+ * `text`. A writer that has a position from a parse hands back an edit rather
+ * than a rewritten page, so several of them can be collected against that one
+ * parse and applied together (`applyEdits`). Nothing is then read out of a
+ * text that has already been written to.
+ */
+export interface TextEdit {
+  start: number;
+  end: number;
+  text: string;
+}
+
 /** One marker found in a page body: `cite <id>` in the format's comment syntax. */
 export interface InlineStatement {
   /** File line of the marker. */
   line: number;
   /** File line of the anchored text: the rest of the marker's line, else the paragraph or block that follows. */
   anchorLine?: number;
-  payload: { kind: "ref"; id: string } | { kind: "bad"; reason: string; json?: boolean };
+  /**
+   * The ids the marker names, in the order written, or why the marker is not
+   * read. A payload of one id is what proposal 0044 shipped; 0056 widened it
+   * to a space-separated list, and every id in the list anchors the same text.
+   */
+  payload:
+    | { kind: "ref"; ids: [string, ...string[]] }
+    | { kind: "bad"; reason: string; json?: boolean };
   /** The marker text between the delimiters, trimmed. */
   raw: string;
   /** Character offsets of the whole marker in the file, for rewriting. */
@@ -541,8 +586,13 @@ export interface AddResult {
   manifest?: ManifestWrite;
   /** File lines of the claim after the write: the claim lines, or the text the marker anchors. */
   claimLines?: PageLines;
-  /** File line of the marker written above the claim, under `marker`. */
+  /** File line of the marker that names the entry, under `marker`. */
   markerLine?: number;
+  /**
+   * Whether the id joined the list of a marker already there, rather than
+   * getting a marker line of its own. A join moves no line on the page.
+   */
+  markerJoined?: boolean;
   /**
    * The first pinned source line, as the file holds it, so a mis-typed range
    * is visible at write time. Absent for a whole file, which has no first
@@ -559,6 +609,11 @@ export interface UpdateOptions extends Omit<CheckOptions, "baseline" | "writeBas
   accept?: boolean;
   only?: string[];
   dryRun?: boolean;
+  /**
+   * Re-record `commit-sha` where the recorded commit does not contain the
+   * pinned lines. Rewrites that one field and nothing else.
+   */
+  recommit?: boolean;
 }
 
 /**
@@ -580,7 +635,7 @@ export interface UpdateRewrite {
    * and the words held while the anchor moved (0053). `status` is what tells
    * those apart. `replaced` is a claim `--accept` refused to re-pin.
    */
-  reason: "moved" | "accepted" | "re-anchored" | "shifted" | "replaced";
+  reason: "moved" | "accepted" | "re-anchored" | "shifted" | "replaced" | "recommitted";
   /**
    * The status that was repaired. `replaced` is a claim whose line held
    * wholly other text, accepted because `--only` named it.
@@ -599,6 +654,9 @@ export interface UpdateRewrite {
   /** An accepted or re-anchored end: its pin, before and after. */
   fromPin?: string;
   toPin?: string;
+  /** A re-committed source: the commit it recorded, and the one it records now. */
+  fromCommit?: string;
+  toCommit?: string;
   /** A re-anchored claim: the span that held, in file lines. */
   lines?: string;
   /** A re-anchored claim: the span now pinned, in file lines. */
