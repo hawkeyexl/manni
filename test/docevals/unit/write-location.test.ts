@@ -11,6 +11,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { loadConfig } from "../../../src/docevals/core/config.js";
 import {
   EvalWriter,
@@ -201,5 +203,36 @@ describe("a manifest's eval list", () => {
       { use: "shared", grader: "command" },
     ]);
     expect(updateManifestEval([{ id: "other" }], "shared", { grader: "command" })).toBeUndefined();
+  });
+});
+
+describe("a manifest per page", () => {
+  it("names the page's own manifest, and marks it per-page", async () => {
+    const home = await homeIn("per-page-write", "docs/install.md", { title: "Install" });
+    expect(home.kind).toBe("manifest");
+    if (home.kind !== "manifest") return;
+    expect(home.file).toBe("evals/docs/install.yaml");
+    expect(home.entry).toBe("docs/install.md");
+    expect(home.join).toBe("path");
+    expect(home.perPage).toBe(true);
+  });
+
+  it("reads a manifest that does not exist yet as holding nothing", async () => {
+    const home = await homeIn("per-page-write", "docs/install.md", { title: "Install" });
+    if (home.kind !== "manifest") throw new Error("expected a manifest home");
+    expect(await writerFor("per-page-write").readManifest(home, EVALS_KEY)).toBeUndefined();
+  });
+
+  it("creates the page's own manifest, directory and all, on the first write", async () => {
+    const cwd = mkdtempSync(resolve(tmpdir(), "docevals-per-page-"));
+    cpSync(dir("per-page-write"), cwd, { recursive: true });
+    const writer = EvalWriter.for(loadConfig(undefined, cwd), cwd, []);
+    const home = await writer.homeFor("docs/install.md", { title: "Install" }, EVALS_KEY);
+    if (home.kind !== "manifest") throw new Error("expected a manifest home");
+    await writer.writeManifest(home, EVALS_KEY, [{ id: "mentions-prerequisites" }]);
+    expect(readFileSync(resolve(cwd, "evals/docs/install.yaml"), "utf8")).toContain(
+      "mentions-prerequisites",
+    );
+    rmSync(cwd, { recursive: true, force: true });
   });
 });

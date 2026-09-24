@@ -329,8 +329,15 @@ export async function runCalibrate(
   const results: CalibrationCaseResult[] = [];
   const targets: GraderTarget[] = [];
   const targetIndex: number[] = [];
-  // One load for the whole golden set, not one per case.
-  const external = await loadExternalReader(config, cwd);
+  // One load for the whole golden set, not one per case. The pages are named
+  // so a collection that keeps its evals in one manifest per page (proposal
+  // 0058) has a file to read; a case naming a page that is not there is
+  // reported below rather than loaded.
+  const external = await loadExternalReader(
+    config,
+    cwd,
+    cases.map((c) => resolve(cwd, c.file)).filter((p) => existsSync(p)),
+  );
 
   for (const goldenCase of cases) {
     const absPath = resolve(cwd, goldenCase.file);

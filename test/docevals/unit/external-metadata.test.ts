@@ -174,3 +174,55 @@ describe("refusals", () => {
     );
   });
 });
+
+describe("a manifest per page", () => {
+  it("resolves the suite and the evals the page's own manifest supplies", async () => {
+    const plan = planFor(await plansOf("per-page"), "docs/install.md");
+    expect(plan.problems).toEqual([]);
+    expect(plan.suite).toBe("reference");
+    expect(plan.evals.map((e) => e.name)).toEqual(["fresh-enough"]);
+  });
+
+  it("hands the freshness grader the date that manifest holds", async () => {
+    const cwd = dir("per-page");
+    const config = loadConfig(undefined, cwd);
+    const plan = planFor(await plansOf("per-page"), "docs/install.md");
+    const ev = plan.evals.find((e) => e.name === "fresh-enough");
+    if (!ev) throw new Error("fresh-enough did not resolve");
+    const findings = await freshnessGrader.grade({
+      targets: [{ plan, eval: ev }],
+      config,
+      root: cwd,
+      exec: () => {
+        throw new Error("the freshness grader shells out to nothing");
+      },
+    });
+    expect(findings).toEqual([]);
+  });
+
+  it("points a problem at the page's own manifest", async () => {
+    const cwd = dir("per-page");
+    const config = loadConfig(undefined, cwd);
+    const pages = await withExternalMetadata(
+      discoverPages(config, { paths: [] }, cwd),
+      config,
+      cwd,
+    );
+    const plan = planFor(resolvePages(pages, { ...config, suites: {} }), "docs/install.md");
+    expect(plan.problems).toEqual([
+      {
+        message: expect.stringContaining('Unknown suite "reference"') as string,
+        level: "error",
+        file: "docs/install.evals.yaml",
+        line: 2,
+      },
+    ]);
+  });
+
+  it("reads a page with no manifest of its own as declaring nothing", async () => {
+    const plan = planFor(await plansOf("per-page"), "docs/uncovered.md");
+    expect(plan.problems).toEqual([]);
+    expect(plan.suite).toBeNull();
+    expect(plan.evals).toEqual([]);
+  });
+});

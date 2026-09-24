@@ -46,6 +46,7 @@ import {
   type RelocateResult,
   type RelocationContext,
 } from "../../meta/internal.js";
+import { isMissing } from "../../shared/manifest-cas.js";
 import type { Confirm } from "../../shared/prompt.js";
 import { errorMessage } from "../../shared/errors.js";
 import { DocevalsError } from "../types.js";
@@ -89,6 +90,12 @@ export type WriteHome =
       /** `path`, or the page field the manifest joins on. */
       join: string;
       entry: string;
+      /**
+       * The manifest is the page's own, resolved from a `{page}` pattern
+       * (proposal 0058). It may not exist yet: the first write creates it,
+       * and a read of it before then holds nothing.
+       */
+      perPage: boolean;
     }
   /** A manifest joins on a field this page does not carry. */
   | { kind: "no-entry"; message: string }
@@ -189,6 +196,7 @@ export class EvalWriter {
         absPath: home.absPath,
         join: home.join,
         entry: home.entry,
+        perPage: home.perPage,
       };
     }
     return { kind: "page", prefersExternal: prefersExternal(key), proposed: home.home };
@@ -226,10 +234,10 @@ export class EvalWriter {
 
   /** The value the manifest holds for this page's entry, or `undefined`. */
   async readManifest(
-    home: { absPath: string; entry: string; join: string },
+    home: { absPath: string; entry: string; join: string; perPage: boolean },
     key: string,
   ): Promise<unknown> {
-    return readManifestValue(await this.text(home.absPath), {
+    return readManifestValue(await this.text(home.absPath, home.perPage), {
       entry: home.entry,
       key,
       join: home.join,
@@ -238,11 +246,11 @@ export class EvalWriter {
 
   /** Write `value` into this page's entry, changing no other byte of the file. */
   async writeManifest(
-    home: { absPath: string; entry: string; join: string; file: string },
+    home: { absPath: string; entry: string; join: string; file: string; perPage: boolean },
     key: string,
     value: unknown,
   ): Promise<void> {
-    const text = await this.text(home.absPath);
+    const text = await this.text(home.absPath, home.perPage);
     let spliced: string;
     try {
       spliced = spliceManifestValue(text, {
@@ -256,13 +264,23 @@ export class EvalWriter {
       // meta's refusal, in this tool's error class, exactly as cite reports it.
       throw new DocevalsError(errorMessage(e));
     }
-    if (spliced !== text) await writeFileAtomic(home.absPath, spliced);
+    // A per-page manifest may be the first file in its directory.
+    if (spliced !== text) {
+      await writeFileAtomic(home.absPath, spliced, { createParents: true });
+    }
   }
 
-  private async text(absPath: string): Promise<string> {
+  /**
+   * The manifest's bytes. A per-page manifest that is not on disk yet is a
+   * page with nothing recorded, held as empty text and created by the write,
+   * exactly as `manni meta fill` holds one. A missing concrete manifest is
+   * refused, as it always was.
+   */
+  private async text(absPath: string, perPage: boolean): Promise<string> {
     try {
       return await readFile(absPath, "utf8");
     } catch (e) {
+      if (perPage && isMissing(e)) return "";
       throw new DocevalsError(
         `${resolve(absPath)} could not be read: ${errorMessage(e)}`,
       );

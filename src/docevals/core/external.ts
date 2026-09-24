@@ -121,10 +121,15 @@ export interface ExternalMetadataReader {
  * every corpus that keeps its metadata in its pages, and costs nothing.
  *
  * The URL refusal is decided from the config alone, before a byte is fetched.
+ *
+ * `pages` are the run's documents as absolute paths. A collection that keeps
+ * its evals in one manifest per page (proposal 0058) has one file to read per
+ * page, and meta reads those only for the pages it is given.
  */
 export async function loadExternalReader(
   config: DocevalsConfig,
   base: string,
+  pages?: readonly string[],
 ): Promise<ExternalMetadataReader | null> {
   const collections: CollectionConfig[] = [];
   const source = config.configSource ?? config.configPath;
@@ -149,6 +154,11 @@ export async function loadExternalReader(
   const index = await loadExternalMetadata(collections, {
     configDir: config.configDir,
     base,
+    // A `{page}` entry names one manifest per page (proposal 0058), so it
+    // reads a file only for the pages it is handed. Without them it reads
+    // nothing, and every value the corpus keeps beside its pages goes missing
+    // while the ownership that hides the page's own copy stays.
+    ...(pages === undefined ? {} : { pages }),
   });
   if (index === null) return null;
   return reader(index, collections, config.configDir, base);
@@ -229,7 +239,11 @@ export async function withExternalMetadata(
   config: DocevalsConfig,
   base: string,
 ): Promise<PageFile[]> {
-  const merge = await loadExternalReader(config, base);
+  const merge = await loadExternalReader(
+    config,
+    base,
+    pages.map((p) => p.absPath),
+  );
   if (merge === null) return pages;
   return pages.map((p) => merge.forPage(p));
 }
