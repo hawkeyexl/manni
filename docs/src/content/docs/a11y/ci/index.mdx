@@ -280,9 +280,11 @@ over the default. The full table of keys, types and defaults is in the
 <Aside type="tip" title="Choosing the floor">
 `severity: error` is the usual first gate. It counts axe's `critical` and
 `serious` findings and drops the rest before the score and the exit code are
-decided. Treat it as a ratchet: lower it to `warning`, then to `notice`, as
-each level reaches zero and stays there. Raising it back to get a build green
-buys the same silence as deleting the job.
+decided. Lower the floor once the errors are at zero and staying there.
+
+It is a ratchet. Lower it to `warning`, and then to `notice`, as each level
+reaches zero and stays there. Raising it back to get a build green buys the
+same silence as deleting the job.
 </Aside>
 
 <CardGrid>
