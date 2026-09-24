@@ -208,12 +208,12 @@ export default defineConfig({
               items: [{ autogenerate: { directory: "docevals/reference" } }],
             },
           ],
+        },
         {
           label: "graph",
           collapsed: true,
           badge: IN_DEV,
           items: [{ label: "Overview", link: "/graph/" }],
-        },
         },
         // `key` manages a family resource rather than documents: the one
         // encryption key every tool encrypts values with (proposal 0045). Two
