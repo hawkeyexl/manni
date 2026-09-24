@@ -711,9 +711,9 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-d07faadf876928d14367fb248dd11e004b5aee73c4003fd29f01f99a63ce62f6
       source:
         file: src/cite/commands/update.ts
-        lines: 1571-1577
+        lines: 1575-1581
         integrity: sha256-ba107cef3d795f61f77df56b796f71bec2200195b7664400e79272956d7e007e
-        commit-sha: 695dd7952e282fc9ba003afbc4a7ac27a4bb1f77
+        commit-sha: 804bb4dd8598593614619062e204fdb464519f04
     - id: update-json-fields
       claim:
         lines: 567-568

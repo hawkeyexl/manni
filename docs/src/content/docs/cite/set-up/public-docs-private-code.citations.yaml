@@ -186,9 +186,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-065cb2684ab3a1f3e15f7787da448df8ca0e58a21b26b9e4c8b0d869fbdffec1
       source:
         file: test/cite/reporters.test.ts
-        lines: 1169-1180
+        lines: 1173-1184
         integrity: sha256-213eb5372ea13e3ae640d32a91319f57b3a367d688f74f936dd24ed7bde89b77
-        commit-sha: 695dd7952e282fc9ba003afbc4a7ac27a4bb1f77
+        commit-sha: 804bb4dd8598593614619062e204fdb464519f04
     - id: root-any-directory
       claim:
         integrity: sha256-44cd17c76dea0af27557f70bd0e537154f7b06f6e34eff9792f9d49952933317

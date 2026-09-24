@@ -1047,9 +1047,9 @@ docs/src/content/docs/cite/reference/citations.mdx:
         integrity: sha256-e73c69c2500eb4a8f23e73fdcf8a1c0d1cd537a9befa1022479868e45a65efcd
       source:
         file: test/cite/reporters.test.ts
-        lines: 1169-1180
+        lines: 1173-1184
         integrity: sha256-213eb5372ea13e3ae640d32a91319f57b3a367d688f74f936dd24ed7bde89b77
-        commit-sha: 695dd7952e282fc9ba003afbc4a7ac27a4bb1f77
+        commit-sha: 804bb4dd8598593614619062e204fdb464519f04
     - id: output-rule-sentinel-fielderror
       claim:
         integrity: sha256-e73c69c2500eb4a8f23e73fdcf8a1c0d1cd537a9befa1022479868e45a65efcd
