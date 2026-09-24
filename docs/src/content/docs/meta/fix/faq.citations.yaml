@@ -30,9 +30,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-4ad98f541fbbf16ce90e957bd9e2a0c5a770d704b5d89943ffc60c99702920ed
       source:
         file: src/meta/core/load-files.ts
-        lines: 133
+        lines: 234
         integrity: sha256-062dfc0e8704a9f5cfab261efdea54ca2e9e82c088fa4257187e47da6a73fc6c
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: exclude-is-repeatable
       claim:
         integrity: sha256-4ad98f541fbbf16ce90e957bd9e2a0c5a770d704b5d89943ffc60c99702920ed
@@ -46,9 +46,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-4af1d71090ee4c80c0e4486e655f7d9860a17af1c1e0250d37d2ab7bc47864dd
       source:
         file: src/meta/core/load-files.ts
-        lines: 15
+        lines: 16
         integrity: sha256-84752dfdaf912a4e2ffe61f21e2984820d5364e5329ac0d8f36bd8290e6971e4
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: validation-sees-only-metadata
       claim:
         integrity: sha256-782ab4ac1013665270894cbe4ffa9c05abf1359dd60ca63574ce6a6afb9ffdc6
@@ -99,26 +99,26 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-e47e06fea24a0166666e42eb15dc76ff5161ebb9efc105750af1a9cbea73ce39
       source:
         file: src/meta/core/load-files.ts
-        lines: 166-169
+        lines: 269-272
         integrity: sha256-4599d601ad8068f93a532f63eb18d8e223706720fc069d02d27c2a17f0a63699
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: ext-filters-glob-walk-results
       claim:
         lines: 100
         integrity: sha256-1df8d2cdfec8275bdef23caa9e4af4cdbe728cb51333c56a770089e46c305805
       source:
         file: src/meta/core/load-files.ts
-        lines: 178
-        integrity: sha256-0e3744f73b07626cf24061dcb33a5b216cd3ffd1fcf8cf07d9e50b53f53fc84f
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        lines: 275-277
+        integrity: sha256-e7be5c7abce25fb3997d5d337ebd2ad01d26883f6671994695d7366de9357d60
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: ext-keeps-only-listed-extensions
       claim:
         integrity: sha256-9aad5ceb3060601aca4cdcdc349a155c4f7b1e673604550a4b7c2bedcca3dd02
       source:
         file: src/meta/core/load-files.ts
-        lines: 139-140
+        lines: 242-243
         integrity: sha256-c24837967e61283e2c58e578df51bfd7cabbdd6c0b9528dedad3cdb850451b4c
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: ext-list-is-comma-separated
       claim:
         integrity: sha256-9aad5ceb3060601aca4cdcdc349a155c4f7b1e673604550a4b7c2bedcca3dd02
@@ -148,9 +148,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-f5e69cb7591833d7fc747a3ee8e4085cb05fd2156bf7c00dde83a4c8e6ab82a8
       source:
         file: src/meta/core/load-files.ts
-        lines: 17
+        lines: 18
         integrity: sha256-207aa4b9243aa69cc6c8226702671ec6a33e4c2060706368ecf79aae007f4c25
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: get-extracts-without-validating
       claim:
         integrity: sha256-0347e3aff508e2a1d1aaa2b6dbd5276cdc03c1944e1b261a1a7ce1daae94caf1

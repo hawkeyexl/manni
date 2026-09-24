@@ -113,9 +113,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-5d0dfdd93d01bc7800995b96fbb2822969811c4c147195e13d208a798f790316
       source:
         file: src/meta/core/load-files.ts
-        lines: 257-285
+        lines: 362-390
         integrity: sha256-011d13a49a42154a8e693b2708344e590f729c468c2b2d2699fab187a98aaeed
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: validate-is-the-default-subcommand
       claim:
         lines: 33-34
@@ -131,9 +131,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-606848da54163ce72e1aa9615f1b8a8468f7a7c10b7e75bdd372c5c0c4feedd2
       source:
         file: src/meta/core/load-files.ts
-        lines: 257-285
+        lines: 362-390
         integrity: sha256-011d13a49a42154a8e693b2708344e590f729c468c2b2d2699fab187a98aaeed
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: allow-empty-treats-zero-as-success
       claim:
         lines: 42-43
