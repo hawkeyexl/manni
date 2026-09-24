@@ -677,6 +677,18 @@ describe("the probe", () => {
     });
   });
 
+  // `lint tools` probes every tool into one table, so a launcher that exists
+  // but cannot be started (EACCES, EPERM) is a row saying so, not a throw.
+  it("reports a launcher that cannot start rather than throwing", async () => {
+    const { spawn } = stub((): never => {
+      throw Object.assign(new Error("spawn dita EACCES"), { code: "EACCES" });
+    });
+    await expect(probeDitaOt({ cwd: dir }, spawn)).resolves.toEqual({
+      available: false,
+      version: null,
+    });
+  });
+
   it("asks the launcher for its version", async () => {
     const { spawn, calls } = stub(() =>
       ok({ stdout: "DITA-OT version 4.4.1\n" }),

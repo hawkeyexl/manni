@@ -480,10 +480,11 @@ export async function runDitaOtValidate(
 /**
  * Whether DITA-OT can run here, and at what version.
  *
- * Never throws for an absent tool: reporting what is missing is
- * `manni lint tools`' job, and a probe that threw would take the whole table
- * down with it. A non-zero exit counts as unavailable, because on Windows a
- * missing `dita.bat` is cmd.exe's exit code rather than an `ENOENT`.
+ * Never throws: reporting what cannot run is `manni lint tools`' job, and a
+ * probe that threw would take the whole table down with it. So a launcher
+ * that fails to start for any reason (`ENOENT`, but also `EACCES` or `EPERM`)
+ * is unavailable. A non-zero exit counts as unavailable too, because on
+ * Windows a missing `dita.bat` is cmd.exe's exit code rather than an `ENOENT`.
  */
 export async function probeDitaOt(
   ctx: ToolProbeContext,
@@ -501,9 +502,8 @@ export async function probeDitaOt(
   let result: DitaOtProcessResult;
   try {
     result = await spawn(launcher, ["--version"], { cwd: ctx.cwd });
-  } catch (err) {
-    if (isEnoent(err)) return { available: false, version: null };
-    throw err;
+  } catch {
+    return { available: false, version: null };
   }
   if (result.code !== 0) return { available: false, version: null };
   return {

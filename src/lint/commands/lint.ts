@@ -787,11 +787,11 @@ async function lintWithDitaOt(run: DitaOtRun): Promise<LintFileResult[]> {
   const readable = ditaOt.formats().flatMap((format) => format.extensions);
   const reads = new Set(readable.map((ext) => ext.toLowerCase()));
   const targets: string[] = [];
-  const unreadable: LintFileResult[] = [];
+  const unsupported: LintFileResult[] = [];
   for (const file of files) {
     if (reads.has(extname(file).toLowerCase())) targets.push(file);
     else {
-      unreadable.push(
+      unsupported.push(
         skip(
           file,
           `dita-ot does not read "${extname(file) || file}". It reads ${readable.join(", ")}.`,
@@ -843,7 +843,7 @@ async function lintWithDitaOt(run: DitaOtRun): Promise<LintFileResult[]> {
 
   // Nothing this tool can read is not a run: starting a JVM per target for an
   // empty list would be work with no answer at the end of it.
-  if (unique.length === 0) return unreadable;
+  if (unique.length === 0) return unsupported;
 
   const results = await run.validate({
     targets: [...labels.keys()],
@@ -883,7 +883,7 @@ async function lintWithDitaOt(run: DitaOtRun): Promise<LintFileResult[]> {
   }
 
   return [
-    ...unreadable,
+    ...unsupported,
     ...[...byFile].map(([file, findings]) => ({
       file,
       // The family's rule, as manni's branch applies it: `ok` is "no
