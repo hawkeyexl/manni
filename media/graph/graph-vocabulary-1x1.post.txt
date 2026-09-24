@@ -1,0 +1,11 @@
+A page's knowledge-graph block used to be called kg:, after the tool that first read it. Beside evals: and metadata:, it read like one tool's private setting. It is a shared vocabulary.
+
+So it is now graph:. The draft that defines it is manni:graph:1.0.0-proposal.1.
+
+manni term reads graph.concepts as a reference to a term. The guide names progressive lens there, and manni term check resolves it with exit 0.
+
+With the old spelling, kg:, the block counts for nothing. The term shows up as unused. That is a notice, so the check still exits 0, but you can see the reference is gone.
+
+The block is closed, too. Misspell concepts inside graph: and manni meta validate against the draft fails with exit 1.
+
+#docsascode #technicalwriting #knowledgegraph #devtools
