@@ -101,9 +101,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-1a4a97071c2b901d6a4c4ab5d54c8e3356b2c281c47cfcf869202f66a5f52018
       source:
         file: src/meta/core/external-metadata-write.ts
-        lines: 251-254
+        lines: 250-253
         integrity: sha256-7b300c9ede5df601c64be7e6859ffd527ecb23c85c795b7db7e8e1f05546fabc
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: 3b2ad42abf8907bce0257657154c856cc3d4a6bc
     - id: uncovered-machine-lines-are-unset-findings
       claim:
         integrity: sha256-459415f5021ce86e61219d87e41d98e9c1390e57f74c1028415317cd447ea643

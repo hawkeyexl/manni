@@ -151,6 +151,76 @@ describe("applyFrontmatter — YAML", () => {
   });
 });
 
+describe("applyFrontmatter — YAML keys the write does not touch", () => {
+  // Each case compares the whole document, so a write that reformats any key
+  // it was not asked to write fails here, not only one that loses a value.
+  it("leaves an unrelated flow list byte for byte", () => {
+    const content = "---\ntitle: T\ntags: [a, b]\n---\n\nBody.\n";
+    const out = applyFrontmatter(content, { title: "New" });
+    expect(out).toBe("---\ntitle: New\ntags: [a, b]\n---\n\nBody.\n");
+  });
+
+  it("leaves an unrelated multi-line plain value on its lines", () => {
+    const content =
+      "---\ndescription: a long line\n  that continues here\ntitle: T\n---\n\nBody.\n";
+    const out = applyFrontmatter(content, { title: "New" });
+    expect(out).toBe(
+      "---\ndescription: a long line\n  that continues here\ntitle: New\n---\n\nBody.\n",
+    );
+  });
+
+  it("leaves comments and blank lines as they were", () => {
+    const content =
+      "---\n#owner: docs\ntitle: T\n\n\n# section\ntype: concept   # why\n---\n\nBody.\n";
+    const out = applyFrontmatter(content, { title: "New" });
+    expect(out).toBe(
+      "---\n#owner: docs\ntitle: New\n\n\n# section\ntype: concept   # why\n---\n\nBody.\n",
+    );
+  });
+
+  it("leaves a CRLF block CRLF, and its other keys byte for byte", () => {
+    const content = "---\r\ntitle: T\r\ntags: [a, b]\r\n---\r\n\r\nBody.\r\n";
+    const out = applyFrontmatter(content, { title: "New", type: "concept" });
+    expect(out).toBe(
+      "---\r\ntitle: New\r\ntags: [a, b]\r\ntype: concept\r\n---\r\n\r\nBody.\r\n",
+    );
+  });
+
+  it("keeps key order around a replaced, an added and a deleted key", () => {
+    const content =
+      "---\na: [1, 2]\nb: [x]\nc:\n  - one\n  - two\nd: 3\n---\n\nBody.\n";
+    const out = applyFrontmatter(
+      content,
+      { b: ["y"], e: 5 },
+      { deletions: ["c"] },
+    );
+    expect(out).toBe("---\na: [1, 2]\nb: [y]\nd: 3\ne: 5\n---\n\nBody.\n");
+  });
+
+  it("adds a key under a block that holds only comments, with no blank line between", () => {
+    // Whatever line break the comment block ends in, the key follows it
+    // directly: a blank line there would be an edit nobody made.
+    for (const block of ["# a note", "# a note\n"]) {
+      const out = applyFrontmatter(`---\n${block}\n---\n\nBody.\n`, { title: "T" });
+      expect(out).not.toMatch(/# a note\n\n/);
+      expect(out).toContain("# a note\ntitle: T");
+    }
+  });
+
+  // A key written in explicit form has no single line to splice, so the whole
+  // block is re-emitted, as every write did before. The padded flow list below
+  // is that re-emit's own layout, which is how this proves the fallback fired
+  // rather than a splice.
+  it("falls back to re-emitting the block for a key written as `? key`", () => {
+    const content = "---\n? title\n: Old\ntags: [a]\n---\n\nBody.\n";
+    const out = applyFrontmatter(content, { title: "New" });
+    const { data } = extractFrontmatter(out, "yaml");
+    expect(data).toEqual({ title: "New", tags: ["a"] });
+    expect(out).toContain("tags: [ a ]");
+    expect(tail(out, "---")).toBe(tail(content, "---"));
+  });
+});
+
 describe("applyFrontmatter — TOML", () => {
   const content = fx("toml-comments.md");
 

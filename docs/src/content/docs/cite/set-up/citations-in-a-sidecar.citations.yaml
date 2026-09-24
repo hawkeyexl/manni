@@ -99,9 +99,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-8762e8641470d3e0d63a81ee1850e31d1569acad2e1b2f01a0193f9b79cdf0c0
       source:
         file: src/meta/core/external-metadata-write.ts
-        lines: 209-215
+        lines: 208-214
         integrity: sha256-7b6542d00cf5c48edd680bec8280e7952dcc9e584f950f7e0e16a3c5ef3d2995
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: 3b2ad42abf8907bce0257657154c856cc3d4a6bc
     - id: manifest-writers-rotate
       claim:
         integrity: sha256-8762e8641470d3e0d63a81ee1850e31d1569acad2e1b2f01a0193f9b79cdf0c0
