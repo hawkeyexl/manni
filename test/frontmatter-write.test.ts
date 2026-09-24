@@ -196,6 +196,29 @@ describe("applyFrontmatter — YAML keys the write does not touch", () => {
     );
     expect(out).toBe("---\na: [1, 2]\nb: [y]\nd: 3\ne: 5\n---\n\nBody.\n");
   });
+
+  it("adds a key under a block that holds only comments, with no blank line between", () => {
+    // Whatever line break the comment block ends in, the key follows it
+    // directly: a blank line there would be an edit nobody made.
+    for (const block of ["# a note", "# a note\n"]) {
+      const out = applyFrontmatter(`---\n${block}\n---\n\nBody.\n`, { title: "T" });
+      expect(out).not.toMatch(/# a note\n\n/);
+      expect(out).toContain("# a note\ntitle: T");
+    }
+  });
+
+  // A key written in explicit form has no single line to splice, so the whole
+  // block is re-emitted, as every write did before. The padded flow list below
+  // is that re-emit's own layout, which is how this proves the fallback fired
+  // rather than a splice.
+  it("falls back to re-emitting the block for a key written as `? key`", () => {
+    const content = "---\n? title\n: Old\ntags: [a]\n---\n\nBody.\n";
+    const out = applyFrontmatter(content, { title: "New" });
+    const { data } = extractFrontmatter(out, "yaml");
+    expect(data).toEqual({ title: "New", tags: ["a"] });
+    expect(out).toContain("tags: [ a ]");
+    expect(tail(out, "---")).toBe(tail(content, "---"));
+  });
 });
 
 describe("applyFrontmatter — TOML", () => {

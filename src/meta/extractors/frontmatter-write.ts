@@ -231,7 +231,8 @@ function mergeYaml(
   patch: MetadataPatch,
   deletions: readonly string[] = [],
 ): string {
-  const root = parseYamlBlock(inner).contents;
+  const parsed = parseYamlBlock(inner);
+  const root = parsed.contents;
   if (root != null && !isMap(root)) {
     throw new DocmetaError(
       "Cannot rewrite front matter: the root must be a mapping.",
@@ -244,8 +245,12 @@ function mergeYaml(
   }
 
   let text = inner;
+  // The first key reads the parse above; each later one re-parses the text the
+  // previous splice left, so every range it uses is current.
+  let first: Document | undefined = parsed;
   for (const [key, value] of Object.entries(patch)) {
-    const next = spliceYamlKey(text, key, value);
+    const next = spliceYamlKey(text, key, value, first);
+    first = undefined;
     // `undefined` is a shape the splice does not edit, such as a key written
     // as an explicit `? key`. The whole block is then re-emitted instead.
     if (next === undefined) return reemitYaml(inner, patch, deletions);
@@ -275,13 +280,20 @@ function rootPair(root: YAMLMap, key: string): Pair | undefined {
 }
 
 /** `text` with `key` set to `value`; `undefined` for a shape the splice does not edit. */
-function spliceYamlKey(text: string, key: string, value: unknown): string | undefined {
-  const root = parseYamlBlock(text).contents;
+function spliceYamlKey(
+  text: string,
+  key: string,
+  value: unknown,
+  parsed: Document = parseYamlBlock(text),
+): string | undefined {
+  const root = parsed.contents;
   const eol = detectEol(text);
   if (root == null) {
     // An empty block, or one that holds only comments: the key goes last.
     const lines = blockLines({ [key]: value }, 0, { step: 2, indentSeq: true, eol });
-    return text === "" ? lines : text + eol + lines;
+    if (text === "") return lines;
+    // A block that already ends in a line break needs none added before the key.
+    return text.endsWith("\n") ? text + lines : text + eol + lines;
   }
   if (!isMap(root) || root.flow === true) return undefined;
   const style = detectStyle(text, root, eol);
@@ -294,6 +306,8 @@ function spliceYamlKey(text: string, key: string, value: unknown): string | unde
     const isCollectionValue = value !== null && typeof value === "object";
     if (isCollectionValue && isCollection(old) && old.flow === true) {
       // A flow list stays a flow list, padded only if the page padded it.
+      // The first two characters say which: `[ ` is padded, `[a` is not, and
+      // an empty `[]` is not, which is right, since `[  ]` would be odd.
       const r = rangeOf(old);
       const padded = r !== undefined && /^[[{][ \t]/.test(text.slice(r[0], r[0] + 2));
       edit = replaceFlowValue(text, pair, value, padded);
