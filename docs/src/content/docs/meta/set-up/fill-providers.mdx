@@ -137,13 +137,13 @@ manni meta fill docs/internal/ --local
 ```
 
 {/* cite local-overrides-auto-detection-to-llama-cpp */}
-{/* cite provider-resolution-failure-is-exit-2 */}
 It overrides every other choice. Detection never runs, so an `OPENAI_API_KEY` in the environment cannot redirect the run. A hosted provider in `meta.fill.provider` or `providers.provider` is set aside, and `fill` says so once on stderr:
 
 ```
 manni: --local: using llama-cpp instead of "anthropic" from fill.provider.
 ```
 
+{/* cite provider-resolution-failure-is-exit-2 */}
 So a committed config can pin a hosted provider for everyday runs. A job that must keep content in the building adds `--local` and changes nothing else. If no local model can run, the run fails rather than falling back to something hosted.
 
 A `--provider` that names anything but `llama-cpp` or `auto` contradicts the flag, and the run stops before it reads a file:
