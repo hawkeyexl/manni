@@ -75,7 +75,7 @@ definition: >-
 
 ## Design decisions
 
-- **Flat at the root, not inside `kg`.** The `kg` block is the family's one
+- **Flat at the root, not inside `graph`.** The `graph` block is the family's one
   exception to flat keys. A second exception would make it a pattern. A
   record that exists only inside another tool's envelope would also make that
   tool a dependency of writing a definition.
@@ -98,14 +98,17 @@ definition: >-
   term page and diverge on a manifest entry or a definition-list entry, which
   have no page.
 
-## The `kg` harvest
+## The `graph` harvest
 
-Proposal 0052 pairs this vocabulary with `manni:kg:1.0.0-proposal.4`, which
-adds `kg.definition` and `kg.abstract`. On a page with no `kg` block, the
-graph would harvest the root fields as the fallback of their `kg` twins.
+Proposal 0052 paired this vocabulary with `manni:kg:1.0.0-proposal.4`, which
+added `kg.definition` and `kg.abstract`. Proposal 0063 renamed that draft to
+[`manni:graph:1.0.0-proposal.1`](/manni/meta/proposals/graph/), and its block
+to `graph`. On a page with no `graph` block, the graph would harvest the root
+fields as the fallback of their `graph` twins. This draft's own description
+still calls them kg twins, because a published draft does not change.
 `label`, `alt-labels`, `broader`, `narrower`, `definition` and `abstract` map
-by name, and `related-terms` maps to `kg.related-concepts`. A page that opens
-a `kg` block keeps kg's behaviour exactly. The concept's IRI would be minted
+by name, and `related-terms` maps to `graph.related-concepts`. A page that
+opens a `graph` block keeps the block's behaviour exactly. The concept's IRI would be minted
 from `id` where the page has one.
 
 ## What reviewers should poke at

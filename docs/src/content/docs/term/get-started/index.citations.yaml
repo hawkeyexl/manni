@@ -111,8 +111,8 @@ docs/src/content/docs/term/get-started/index.mdx:
       source:
         file: src/term/core/load-set.ts
         lines: 69-83
-        integrity: sha256-b4939e1538ce85bd4cf8a5cc0939b2173de611855270578752fa4b18f3d14e95
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        integrity: sha256-32080ba8e0d35f30669ec8482e348bc2b3486842703eb41bac7e4b4fe3293c8f
+        commit-sha: 966fa8405357f7288429ae6bf0443131ad0f7bef
     - id: concepts-values-are-preferred-labels
       claim:
         integrity: sha256-dc14b6d115e9770778e6bf4095cda8ff912ba6a59b92ac8788e70599086f7f5f

@@ -75,9 +75,9 @@ function referencesOf(input: TermInput): TermReference[] {
     }
   };
   add(input.metadata["concepts"], "/concepts");
-  const kg = input.metadata["kg"];
-  if (typeof kg === "object" && kg !== null && !Array.isArray(kg)) {
-    add((kg as Record<string, unknown>)["concepts"], "/kg/concepts");
+  const graph = input.metadata["graph"];
+  if (typeof graph === "object" && graph !== null && !Array.isArray(graph)) {
+    add((graph as Record<string, unknown>)["concepts"], "/graph/concepts");
   }
   return references;
 }

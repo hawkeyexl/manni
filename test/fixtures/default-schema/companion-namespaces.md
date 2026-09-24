@@ -1,12 +1,12 @@
 ---
 title: A page carrying every companion vocabulary's namespace
-description: The evals, kg, and metadata blocks belong to companion vocabularies — the house ids never claim them.
+description: The evals, graph, and metadata blocks belong to companion vocabularies, and the house ids never claim them.
 type: how-to
 eval-suite: docs-page
 evals:
   - id: install-command-present
     assertion: The page shows the current install command.
-kg:
+graph:
   label: Installation
   type: task
 metadata:

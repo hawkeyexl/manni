@@ -175,7 +175,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: concepts-preferred-labels-only
       claim:
-        integrity: sha256-6dd3afbfa32d0db63e39fb7ee79db31d58ba21235f85f0902295fa2e648f11db
+        integrity: sha256-77cedfecf864bf43a2b56beccc95666c9a9e3f9f828a312152d2bbbb7b46103a
       source:
         file: src/term/core/check.ts
         lines: 65-68
@@ -183,7 +183,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: undefined-term-names-synonym
       claim:
-        integrity: sha256-6dd3afbfa32d0db63e39fb7ee79db31d58ba21235f85f0902295fa2e648f11db
+        integrity: sha256-77cedfecf864bf43a2b56beccc95666c9a9e3f9f828a312152d2bbbb7b46103a
       source:
         file: src/term/core/check.ts
         lines: 69-73
@@ -191,20 +191,20 @@ docs/src/content/docs/term/reference/rules.mdx:
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
     - id: undefined-term-concepts-line
       claim:
-        integrity: sha256-6dd3afbfa32d0db63e39fb7ee79db31d58ba21235f85f0902295fa2e648f11db
+        integrity: sha256-77cedfecf864bf43a2b56beccc95666c9a9e3f9f828a312152d2bbbb7b46103a
       source:
         file: src/term/core/load-set.ts
         lines: 69-77
         integrity: sha256-6159c63bce5a85bda69650fd1cd4aab974a857d12f4cf566bebc30c172efe7b0
         commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
-    - id: kg-concepts-resolved
+    - id: graph-concepts-resolved
       claim:
-        integrity: sha256-6dd3afbfa32d0db63e39fb7ee79db31d58ba21235f85f0902295fa2e648f11db
+        integrity: sha256-77cedfecf864bf43a2b56beccc95666c9a9e3f9f828a312152d2bbbb7b46103a
       source:
         file: src/term/core/load-set.ts
         lines: 78-81
-        integrity: sha256-fbe1f46e0fda688894d1699d4e264fae0d63bbdfb634656d292356ee3d0f0e99
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        integrity: sha256-51348b8b38bf794fcabd534397c466c5f3f3495e1bdcf5372aff23b92528be71
+        commit-sha: 966fa8405357f7288429ae6bf0443131ad0f7bef
     - id: duplicate-id-every-entry
       claim:
         integrity: sha256-470aa6d7fb47654c24e305d3d4d0bfa11f0285ed5bc1a2e37e0d64a41005a0e8

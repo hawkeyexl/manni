@@ -29,7 +29,7 @@ requires anything.
 | `title` | string, non-empty | **yes** | `page` | A single non-empty string. An array is rejected |
 | `description` | string, non-empty | **yes** | `page` | One full sentence. It becomes the search snippet and is the first thing retrieval reads |
 | `id` | string, non-empty | no | `page` | A stable identifier that does not change when the file moves. `related-pages`, `prerequisites`, and `replaced-by` point at it |
-| `type` | string, non-empty | no | `page` | What kind of content this is. Taxonomy schemas (Diátaxis, TGDP) narrow it; `kg.type` holds the same fact in iiRDS terms |
+| `type` | string, non-empty | no | `page` | What kind of content this is. Taxonomy schemas (Diátaxis, TGDP) narrow it; `graph.type` holds the same fact in iiRDS terms |
 | `keywords` | string or list of non-empty strings | no | `page` | Search words. A comma-separated string is the AsciiDoc form Antora reads |
 | `language` | string, non-empty | no | `page` | The natural language the text is written in, as one BCP 47 tag, region and script subtags included (`pt-BR`, `zh-Hant-TW`). Recommended, not enforced. The same fact `lang` and `dc:language` carry |
 | `locale` | string, non-empty | no | `page` | The international preferences the content follows: how its dates, numbers, currency, calendar and sorted lists are written. One Unicode locale identifier (`en-IN`, `th-TH-u-ca-buddhist`), recommended, not enforced. Set only where it differs from what `language` implies |

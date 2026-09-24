@@ -54,12 +54,12 @@ docs/src/content/docs/term/reference/cli.mdx:
     - id: every-file-contributes-references
       claim:
         lines: 66-67
-        integrity: sha256-5bd475add993b03ebd015e0d2229c0ac6417b253395007939520bd1962c71992
+        integrity: sha256-d1e371ef282f4d1d442ce70966678df45eb01e7f456681d33d4a4e2e43ce1e26
       source:
         file: src/term/core/load-set.ts
         lines: 69-83
-        integrity: sha256-b4939e1538ce85bd4cf8a5cc0939b2173de611855270578752fa4b18f3d14e95
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        integrity: sha256-32080ba8e0d35f30669ec8482e348bc2b3486842703eb41bac7e4b4fe3293c8f
+        commit-sha: 966fa8405357f7288429ae6bf0443131ad0f7bef
     - id: no-terms-exit-2
       claim:
         lines: 68-69
