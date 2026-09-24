@@ -380,6 +380,12 @@ const PREDECESSOR =
  * Undo the prose moves the rename made, and nothing else: the added sentence,
  * the block's name, its pointers, and the history sentence that names kg's
  * proposal.1 by id so it cannot read as this draft's own proposal.1.
+ *
+ * These are deliberate, one per edit the rename made to a description, and
+ * each is spelled narrowly enough that it cannot reach a field name. That is
+ * the point. A broad `graph` → `kg` replace would also rewrite a key or a
+ * value, and the deep-equality check below would then pass on a draft that
+ * had drifted. Keep one replacement per rename move rather than simplifying.
  */
 function asKgProse(text: string): string {
   return text

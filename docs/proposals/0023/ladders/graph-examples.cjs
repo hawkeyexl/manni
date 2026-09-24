@@ -2,10 +2,12 @@
 // without registering anything. Run from the repo root:
 //   node docs/proposals/0023/ladders/graph-examples.cjs
 //
-// Ported case for case from kg-examples.cjs, which pins manni:kg:1.0.0-proposal.1.
-// This draft is kg's proposal.4 with the block renamed (proposal 0063), so the
-// cases that exercised proposal.1's in-block `provenance` now fail on the closed
-// block instead: page-level `meta-provenance` carries that attribution.
+// Ported from kg-examples.cjs, which pins manni:kg:1.0.0-proposal.1, and then
+// extended. This draft is kg's proposal.4 with the block renamed (proposal
+// 0063), so the cases that exercised proposal.1's in-block `provenance` now
+// fail on the closed block instead: page-level `meta-provenance` carries that
+// attribution. Cases 10 and 11 and negatives N13 to N15 are new. They cover
+// `definition` and `abstract`, which proposal.4 added and proposal.1 never had.
 const fs = require("fs");
 const { createRequire } = require("module");
 const req = createRequire(process.cwd() + "/");
