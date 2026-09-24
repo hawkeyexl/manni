@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [2.12.1](https://github.com/hawkeyexl/manni/compare/v2.12.0...v2.12.1) (2026-09-24)
+
+
+### Bug Fixes
+
+* **cite:** re-record pins whose commit main never took ([#122](https://github.com/hawkeyexl/manni/issues/122)) ([e104d88](https://github.com/hawkeyexl/manni/commit/e104d8893a42fb936959cae6314e775b8f5a88d7)), closes [#120](https://github.com/hawkeyexl/manni/issues/120)
+
 # [2.12.0](https://github.com/hawkeyexl/manni/compare/v2.11.1...v2.12.0) (2026-09-24)
 
 

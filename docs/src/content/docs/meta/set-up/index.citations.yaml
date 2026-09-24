@@ -8,7 +8,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/cli.ts
         lines: 872
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: github-format-emits-annotations
       claim:
         lines: 77
@@ -17,7 +17,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/reporters/index.ts
         lines: 321-322
         integrity: sha256-d0c47a5d3c1214c717b3ba54048196f79caf3b9915d9d5df6246ebd13a6def4e
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: no-paths-no-config-exits-2
       claim:
         lines: 72
@@ -26,7 +26,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/shared/run.ts
         lines: 34-37
         integrity: sha256-dfb73e357414a8e011dcc57b2dbfb65905a4b750d73caf37777cf39e0edad42b
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: no-files-message-names-paths-or-collections
       claim:
         lines: 72
@@ -35,7 +35,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 293-297
         integrity: sha256-73d56d153f0de0ed6e64cb6ade7318f324b35250a12838d444586b957050d6c4
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: config-discovered-as-manni-config-yaml
       claim:
         lines: 63
@@ -44,7 +44,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/shared/config-file.ts
         lines: 46-50
         integrity: sha256-6667b3b66a8f9f4789df5eb19546fa2f212465ab532996ae90ec45f8ed02eb71
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: meta-schemas-applied-from-config
       claim:
         lines: 63
@@ -53,7 +53,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 440-445
         integrity: sha256-f99695009a18c93f3a981a816787516b269084b614eacfcd864e8a143c5727a9
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: bare-validate-reads-every-collection
       claim:
         lines: 53
@@ -62,7 +62,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/config.ts
         lines: 1709-1717
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: every-file-satisfies-every-schema
       claim:
         lines: 53
@@ -71,7 +71,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/validator.ts
         lines: 631-638
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: explicit-file-bypasses-ext-filter
       claim:
         lines: 32
@@ -80,7 +80,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/load-files.ts
         lines: 166-169
         integrity: sha256-4599d601ad8068f93a532f63eb18d8e223706720fc069d02d27c2a17f0a63699
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: node-24-floor
       claim:
         lines: 14
@@ -89,7 +89,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: package.json
         lines: 34-36
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: okf-requires-type
       claim:
         lines: 9
@@ -98,7 +98,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/schemas/okf/0.1.json
         lines: 7
         integrity: sha256-0e2f5437eb92e030b655c86a57a2dd15bb2acd051cc9be386ce3f58619f6000b
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: timestamp-must-be-date-time
       claim:
         lines: 9
@@ -107,7 +107,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/schemas/okf/0.1.json
         lines: 33-37
         integrity: sha256-30703890e606f296ef36c155042169a9b71ab86c3034c083ef1943641f4cc3b9
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: resource-must-be-uri
       claim:
         lines: 9
@@ -116,7 +116,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/schemas/okf/0.1.json
         lines: 23-27
         integrity: sha256-21478cb800432b039b033e90404eb05994906c25c46b30b115890d9468f07407
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: collections-is-a-family-level-key
       claim:
         integrity: sha256-4819bfc7c24097c4d09d550b354d408dbb2ba9558251e4d34e3308d5b8004982
@@ -124,7 +124,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/shared/config-file.ts
         lines: 182-183
         integrity: sha256-52325a591829dcac75787b01983c1dcebc91e3466c12050b4feb3a67063d5757
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: six-registered-extractors
       claim:
         lines: 15
@@ -133,4 +133,4 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/extractors/index.ts
         lines: 14-21
         integrity: sha256-f994b01563bf4f2b68ce83079179e9ca6093ad5980da0aba5b7b0a427364ce94
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7

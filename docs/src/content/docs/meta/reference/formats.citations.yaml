@@ -338,7 +338,7 @@ docs/src/content/docs/meta/reference/formats.mdx:
         file: src/meta/extractors/frontmatter-write.ts
         lines: 142-150
         integrity: sha256-951b45b46570d23afdda95f8e75f5f365e9710bb5dd9a741bf6e49f147d58584
-        commit-sha: 3b2ad42abf8907bce0257657154c856cc3d4a6bc
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: formats-fenced-frontmatter-round-trips
       claim:
         integrity: sha256-4c9886df65f78eba96fc02a59b22659a75ee7de5d6029b7abb6cdfb1ba6da81e
@@ -424,7 +424,7 @@ docs/src/content/docs/meta/reference/formats.mdx:
         file: src/meta/extractors/date-value.ts
         lines: 11-27
         integrity: sha256-30e837a35684c794230c742129c2736426a7585238833e2e3bc2daf355d1b30a
-        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: formats-toml-native-dates-are-rewritten-before-validating
       claim:
         integrity: sha256-1bf7eca59957b5719e276eb70bd9bccfca31fdacbea5f84b67addf33c4e95dae
@@ -432,4 +432,4 @@ docs/src/content/docs/meta/reference/formats.mdx:
         file: src/meta/extractors/frontmatter.ts
         lines: 289-300
         integrity: sha256-f356fdc3c6d312f9348ea0b39fa8b492daef5ae87e4c35a4a649a8e28bc51247
-        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
