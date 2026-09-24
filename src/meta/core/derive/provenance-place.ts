@@ -15,7 +15,7 @@ import type { CollectionConfig } from "../../../shared/collections.js";
 import { hasPagePlaceholder, pageManifestPath } from "../../../shared/page-manifest.js";
 import { DocmetaError } from "../../types.js";
 import { memberOf } from "../collections.js";
-import { externalMetadataJoin, outsideRefusal, PATH_JOIN } from "../external-metadata.js";
+import { externalMetadataJoin, outsideRefusal, PATH_JOIN, reportedPath } from "../external-metadata.js";
 import { classifyRef } from "../schema-registry.js";
 import { PROVENANCE_FIELD, type ProvenanceManifestRef } from "./types.js";
 
@@ -68,7 +68,7 @@ export function provenanceManifests(
       out.push({
         collection: collection.name,
         absPath,
-        file: perPage ? manifest.file : reported(absPath, base),
+        file: perPage ? manifest.file : reportedPath(absPath, base),
         join: externalMetadataJoin(manifest),
         perPage,
         written: manifest.file,
@@ -138,13 +138,7 @@ function ownManifest(
       outsideRefusal(declared ?? { file: manifest.written, keys: [] }, manifest.collection, resolved.pageRel),
     );
   }
-  return { ...manifest, absPath: resolved.abs, file: reported(resolved.abs, base) };
-}
-
-/** How a run spells a manifest: relative to its base, posix. */
-function reported(abs: string, base: string): string {
-  const rel = relative(base, abs);
-  return rel === "" ? "." : toPosix(rel);
+  return { ...manifest, absPath: resolved.abs, file: reportedPath(resolved.abs, base) };
 }
 
 /**

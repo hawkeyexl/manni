@@ -29,6 +29,7 @@
  * manifest's parsed value are what move, so an encrypted value goes as its
  * ciphertext, verbatim.
  */
+import { isMissing } from "../../shared/manifest-cas.js";
 import { access, readFile, stat, unlink } from "node:fs/promises";
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import picomatch from "picomatch";
@@ -1396,10 +1397,6 @@ async function readManifestText(path: string, file: string, perPage: boolean): P
   }
 }
 
-/** A read that failed because nothing is there. */
-function isMissing(err: unknown): boolean {
-  return typeof err === "object" && err !== null && "code" in err && err.code === "ENOENT";
-}
 
 const entryId = (entry: string, join: string): string =>
   join === PATH_JOIN ? toPosix(entry).replace(/^\.\//, "").replace(/\/+/g, "/") : entry;

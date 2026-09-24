@@ -30,7 +30,7 @@
  *    entry; what can is two pages sharing one value, which is a finding on
  *    both.
  */
-import { readFile, realpath } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import {
   LineCounter,
@@ -53,7 +53,9 @@ import {
   findPageManifests,
   hasPagePlaceholder,
   pageManifestPath,
+  sameFile,
 } from "../../shared/page-manifest.js";
+import { isMissing } from "../../shared/manifest-cas.js";
 import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
 import { classifyRef } from "./schema-registry.js";
 import { ManifestCache } from "./manifest-cache.js";
@@ -280,7 +282,7 @@ export interface MergedMetadata {
 const posix = (p: string): string => p.split(sep).join("/");
 
 /** How a run spells a manifest: relative to its base, like every file label. */
-function reportedPath(abs: string, base: string): string {
+export function reportedPath(abs: string, base: string): string {
   const rel = relative(base, abs);
   return rel === "" ? "." : posix(rel);
 }
@@ -514,7 +516,7 @@ async function loadPerPage(
     // platform's call and not a string's.
     const pageLabel = reportedPath(pageAbs, opts.base);
     for (const entry of parsed.entries) {
-      if (entry.abs === undefined || (await sameFile(entry.abs, pageAbs))) continue;
+      if (entry.abs === undefined || sameFile(entry.abs, pageAbs)) continue;
       const at = entry.line === undefined ? label : `${label}:${String(entry.line)}`;
       throw new DocmetaError(
         `Manifest ${at} names "${entry.spelled}", but ${PAGE_PLACEHOLDER} resolved this file for "${pageLabel}". A per-page manifest holds one entry, for its own page.`,
@@ -546,18 +548,6 @@ function indexFor(join: string, into: IndexUnderConstruction): Map<string, Value
   const created = new Map<string, Values>();
   into.byField.set(join, created);
   return created;
-}
-
-/** Are these two paths one file, as the filesystem resolves them? */
-async function sameFile(a: string, b: string): Promise<boolean> {
-  if (a === b) return true;
-  try {
-    const [ra, rb] = await Promise.all([realpath(a), realpath(b)]);
-    return ra === rb;
-  } catch {
-    // A path that does not resolve names no file, so it is not this page.
-    return false;
-  }
 }
 
 /**
@@ -606,10 +596,6 @@ function unreadable(file: string, err: unknown): DocmetaError {
   return new DocmetaError(`Manifest ${file} could not be read: ${reason}`);
 }
 
-/** A read that failed because nothing is there. */
-function isMissing(err: unknown): boolean {
-  return typeof err === "object" && err !== null && "code" in err && err.code === "ENOENT";
-}
 
 function parseManifest(
   manifest: ExternalMetadataConfig,

@@ -75,11 +75,12 @@ export interface CitationManifest {
   /** `path`, or the page field the manifest joins on. */
   join: string;
   /**
-   * The declared `file` holds `{page}` (proposal 0058), so each page has a
-   * manifest of its own, and one that does not exist yet reads as empty and
-   * is created by the first write.
+   * The `{page}` pattern as the config writes it (proposal 0058), present
+   * only when each page has a manifest of its own. The page's file is
+   * resolved from it, and one that does not exist yet reads as empty and is
+   * created by the first write.
    */
-  perPage: boolean;
+  pattern?: string;
 }
 
 /** Where one page's citations are kept, and what the manifest already holds. */
@@ -174,7 +175,6 @@ export async function loadCitationSidecars(
 ): Promise<CitationSidecars | null> {
   const toError = opts.toError ?? ((message: string): Error => new CiteError(message));
   const manifests: CitationManifest[] = [];
-  const patterns = new Map<CitationManifest, string>();
   const scoped: CollectionConfig[] = [];
   for (const collection of opts.collections) {
     const owning = collection.externalMetadata.filter(ownsCitations);
@@ -191,10 +191,8 @@ export async function loadCitationSidecars(
         path,
         file: reportedPath(path, opts.base),
         join: externalMetadataJoin(manifest),
-        perPage: hasPagePlaceholder(manifest.file),
+        ...(hasPagePlaceholder(manifest.file) ? { pattern: manifest.file } : {}),
       });
-      const pushed = manifests[manifests.length - 1];
-      if (pushed !== undefined && hasPagePlaceholder(manifest.file)) patterns.set(pushed, manifest.file);
     }
     scoped.push({ ...collection, externalMetadata: owning });
   }
@@ -206,13 +204,12 @@ export async function loadCitationSidecars(
     ...(opts.pages === undefined ? {} : { pages: opts.pages }),
   });
   if (index === null) return null;
-  return sidecars(index, manifests, patterns, scoped, opts);
+  return sidecars(index, manifests, scoped, opts);
 }
 
 function sidecars(
   index: ExternalMetadataIndex,
   manifests: readonly CitationManifest[],
-  patterns: ReadonlyMap<CitationManifest, string>,
   collections: readonly CollectionConfig[],
   opts: LoadSidecarOptions,
 ): CitationSidecars {
@@ -227,9 +224,8 @@ function sidecars(
    * about the owner carries through the spread.
    */
   const pageOwner = (owner: CitationManifest, label: string): CitationManifest | undefined => {
-    const pattern = patterns.get(owner);
-    if (pattern === undefined) return owner;
-    const resolved = pageManifestPath(pattern, configDir, resolve(base, label));
+    if (owner.pattern === undefined) return owner;
+    const resolved = pageManifestPath(owner.pattern, configDir, resolve(base, label));
     // A page above the config directory is a member of nothing, so this is
     // not reached for one; the guard is for the type.
     if ("outside" in resolved) return undefined;
@@ -297,7 +293,7 @@ function sidecars(
     for (const label of loaded) {
       const members = memberOf(collections, configDir, base, label);
       for (const declared of manifests) {
-        if (!patterns.has(declared) || !members.includes(declared.collection)) continue;
+        if (declared.pattern === undefined || !members.includes(declared.collection)) continue;
         const owner = pageOwner(declared, label);
         if (owner !== undefined && existsSync(owner.path)) existing.add(owner.file);
       }

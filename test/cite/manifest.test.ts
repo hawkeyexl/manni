@@ -25,7 +25,7 @@ beforeEach(async () => {
   dir = await mkdtemp(join(tmpdir(), "cite-manifest-"));
   path = join(dir, "site.metadata.yaml");
   await writeFile(path, MANIFEST, "utf8");
-  owner = { collection: "docs", path, file: "site.metadata.yaml", join: "path", perPage: false };
+  owner = { collection: "docs", path, file: "site.metadata.yaml", join: "path" };
 });
 
 afterEach(async () => {
@@ -190,7 +190,7 @@ describe("ManifestSet: a per-page manifest that does not exist yet (proposal 005
       path: pagePath,
       file: "meta/docs/a.citations.yaml",
       join: "path",
-      perPage: true,
+      pattern: "./meta/{page}.citations.yaml",
     };
   });
 

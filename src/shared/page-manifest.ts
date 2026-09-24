@@ -74,16 +74,25 @@ export function pageManifestPath(
 /**
  * 0058 § 5: the glob every manifest of a pattern matches. The normalized
  * pattern is split at `{page}` and `**` + `/*` inserted, keeping the prefix
- * and the suffix, which are the config author's own literal text. No page
- * path reaches it, so nothing in it needs escaping.
+ * and the suffix. No page path reaches it, but the prefix and suffix are the
+ * config author's own literal text, and a directory name may hold glob
+ * syntax: read raw, `meta (v2)/` is an extglob group that matches nothing. So
+ * both are escaped, and only the inserted `**` + `/*` is live.
  * `"{page}.citations.yaml"` gives `**` + `/*.citations.yaml`, and
  * `"./meta/{page}.citations.yaml"` gives `meta/**` + `/*.citations.yaml`.
  */
 export function strayManifestGlob(file: string): string {
   const normalized = normalizeManifestPattern(file);
   const at = normalized.indexOf(PAGE_PLACEHOLDER);
-  if (at < 0) return normalized;
-  return `${normalized.slice(0, at)}**/*${normalized.slice(at + PAGE_PLACEHOLDER.length)}`;
+  if (at < 0) return literal(normalized);
+  const prefix = literal(normalized.slice(0, at));
+  const suffix = literal(normalized.slice(at + PAGE_PLACEHOLDER.length));
+  return `${prefix}**/*${suffix}`;
+}
+
+/** Text a glob matches exactly. fast-glob refuses to escape an empty string. */
+function literal(text: string): string {
+  return text === "" ? "" : fg.escapePath(text);
 }
 
 /** One entry of a per-page manifest found on disk, naming the page it is for. */
@@ -183,7 +192,7 @@ function ownEntries(
  * not as text (0058 stress test 8), so a case-only difference is one file on
  * a case-insensitive filesystem and two elsewhere.
  */
-function sameFile(a: string, b: string): boolean {
+export function sameFile(a: string, b: string): boolean {
   if (a === b) return true;
   try {
     return realpathSync(a) === realpathSync(b);

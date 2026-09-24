@@ -86,7 +86,7 @@ export class ManifestSet {
       // A per-page manifest (proposal 0058) that does not exist yet is a page
       // with nothing cited: held as empty text marked absent, and created by
       // the commit. A missing concrete manifest is refused, as it always was.
-      if (!manifest.perPage || !isMissing(error)) {
+      if (manifest.pattern === undefined || !isMissing(error)) {
         const reason = error instanceof Error ? error.message : String(error);
         throw new CiteError(`Manifest ${manifest.file} could not be read: ${reason}`);
       }

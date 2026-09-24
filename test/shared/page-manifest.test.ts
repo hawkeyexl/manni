@@ -6,9 +6,12 @@
  * Everything here is string and path arithmetic. No file is read.
  */
 import { describe, expect, it } from "vitest";
-import { resolve } from "node:path";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import {
   PAGE_PLACEHOLDER,
+  findPageManifests,
   hasPagePlaceholder,
   normalizeManifestPattern,
   pageManifestPath,
@@ -113,5 +116,20 @@ describe("strayManifestGlob", () => {
     expect(strayManifestGlob("{page}.citations.yaml")).toBe("**/*.citations.yaml");
     expect(strayManifestGlob("./meta/{page}.citations.yaml")).toBe("meta/**/*.citations.yaml");
     expect(strayManifestGlob(".\\meta\\{page}.citations.yaml")).toBe("meta/**/*.citations.yaml");
+  });
+
+  // The prefix and suffix are the config author's literal text, and a
+  // directory name may hold glob syntax. Read raw, `(v2)` is an extglob group
+  // and `meta (v2)/**` matches nothing, so a stray there would go unreported.
+  it("matches a prefix holding glob syntax literally", () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-page-glob-"));
+    try {
+      mkdirSync(join(dir, "meta (v2)", "docs"), { recursive: true });
+      writeFileSync(join(dir, "meta (v2)", "docs", "a.citations.yaml"), "docs/a.md:\n  citations: []\n");
+      const found = findPageManifests("./meta (v2)/{page}.citations.yaml", dir, () => true);
+      expect(found.map((f) => f.entries.map((e) => e.spelled))).toEqual([["docs/a.md"]]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

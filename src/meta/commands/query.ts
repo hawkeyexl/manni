@@ -5,6 +5,7 @@
  * config `paths:` fallback) mirrors `get` so the two commands behave
  * identically. Proposal 0021 is the design record.
  */
+import { isMissing } from "../../shared/manifest-cas.js";
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, open, readFile, rename, rm } from "node:fs/promises";
@@ -3002,10 +3003,6 @@ interface ManifestWrite {
   expected: string | null;
 }
 
-/** A read that failed because nothing is there. */
-function isMissing(err: unknown): boolean {
-  return typeof err === "object" && err !== null && "code" in err && err.code === "ENOENT";
-}
 
 /**
  * Each written file's metadata as the statement leaves it: the merged data,
