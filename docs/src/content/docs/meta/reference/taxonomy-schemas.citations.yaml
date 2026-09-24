@@ -1,0 +1,342 @@
+docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
+  citations:
+    - id: taxonomy-drop-required-for-vocabulary-only
+      claim:
+        integrity: sha256-8ab378c9a9ae3775cd92f99c0da09117325d22ce24dd66ffe9ab64bd7393b20f
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 6-8
+        integrity: sha256-326234aa375a4b9b5d7fa807003025aaefcaacb3d02770dd3ad764d320eef91a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-enums-carry-no-aliases
+      claim:
+        integrity: sha256-8c4d0e4d079f9d681a930980f9ec4273952cd26d8298173b2b437636a596538c
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 10-13
+        integrity: sha256-375eef8b05139eb13e3e487b88897e2e78d4fc7f45dcde4ca22e4e35415a83b5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-crosswalk-is-not-enforced
+      claim:
+        integrity: sha256-2cd024d8b57c9efa3e257da2e9045b9f8a896a6e5567ee801f1a76441d19c164
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 8-21
+        integrity: sha256-ecd0e48ef3b4b3af9f40019b012db5458414c1494d41b4da7513f4bcc7d6c800
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-stacking-type-schemas-narrows-to-the-intersection
+      claim:
+        integrity: sha256-c985c794149b35b130b75d888a0acef1f9d2ce645f0c83821d5ae25d053d51e7
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 5
+        integrity: sha256-c7a62da24b33856d762d5613856965ad337ffd3a4c405d183a75be167c3c0e75
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-diataxis-and-tgdp-pick-one
+      claim:
+        lines: 213
+        integrity: sha256-1ba2d075f3e912b6192d591d510fddaf33df40432f26a83b212807a04a27e777
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 12
+        integrity: sha256-eff2b6bdff2fdd5a026f8c2eb33cbdabbaa528810996e7a0eec651fa5c49cc7d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-tgdp-composes-with-seven-action
+      claim:
+        lines: 212
+        integrity: sha256-026bfdc402cf0ee845a3eefe34dbc7d137c292b5b60ad2f1a0557a4eeac3d244
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 5
+        integrity: sha256-c7a62da24b33856d762d5613856965ad337ffd3a4c405d183a75be167c3c0e75
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-diataxis-composes-with-seven-action
+      claim:
+        lines: 211
+        integrity: sha256-68084ee2a2d290145f2c5593e26abc6c297cea3df85841f010d3521ce0a09bf2
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 5
+        integrity: sha256-ac5c10f7840521f53886ae2928bddb21bda33a13d5b4124f7608c1ccd48d25e8
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-seven-action-claims-a-different-key
+      claim:
+        integrity: sha256-a33d5bc6b489624c082d8d76b9b658c61a185838d69721e4e4398d6ee1a9d615
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 5
+        integrity: sha256-d57005bbef6394895ec7c4aa969c5f4cb7dadc3051b9e46b79392087271d2976
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-config-schemas-replace-the-default-set
+      claim:
+        lines: 190-191
+        integrity: sha256-14c14eed80f9cdfa29aa4aa76e1930e96bbddc47658b4c778b16289f9c77c3d2
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 440-445
+        integrity: sha256-f99695009a18c93f3a981a816787516b269084b614eacfcd864e8a143c5727a9
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-a-foreign-action-value-fails
+      claim:
+        lines: 183-184
+        integrity: sha256-e6b29afabc5d2f1b8711e5edaf0aca27ccddecc3595c171f3ebb5c53cb06ac28
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 20
+        integrity: sha256-85889e262c17d0cb12d796d1b6adc40c288aee427c995f92e7a427736e3fcecc
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-seven-action-is-in-the-default-set
+      claim:
+        integrity: sha256-fbd106631ed408aa4a86d8ba88f7c6527172a29718afe8ba5882b4c0160944a6
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 25-35
+        integrity: sha256-cdf674ddd56e8c1c891cc633bae6ce4d8a34606bd8d54a74f93f6e42ac01aed3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-only-the-enum-values-validate
+      claim:
+        integrity: sha256-d913699491c1be6f76b61428ba514185997dea8fa7c31ce39bc7011af4591347
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 11-19
+        integrity: sha256-7968edcb21dac87803c3e61365910c23cb24e0318c94ec3039285a89787dcfdd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-troubleshoot
+      claim:
+        lines: 161
+        integrity: sha256-b88716757944342309e06abb67c8744883e0dd9b16dfb9610da7c5487d2630ba
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 18
+        integrity: sha256-1eb870738323c5120fe253691f1e8ab0bdc78cee2e4fcbf03132f869aa9b5cf9
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-develop
+      claim:
+        lines: 160
+        integrity: sha256-7c479ac281dfd6817e909b39c3fb291b286e14215fb3fedfcb753c6899fdfefc
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 17
+        integrity: sha256-b88e0d3a9af7f1474fd0b26082fc53ecd6e15672992fbaa62c54275d243ee07b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-remember
+      claim:
+        lines: 159
+        integrity: sha256-7bc8e59d31262ce9174f81bd91897626d74a4145c96ad9bddd10579a15d6e400
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 16
+        integrity: sha256-6297417667a930c49507c43a23ad12ff3d78fbd4c7d7f46deffb4f82a72b81cf
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-practice
+      claim:
+        lines: 158
+        integrity: sha256-0bd1b32063e473a631ac2b9d42b5adcdfd549b6d0d7988cf560c4319375d17be
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 15
+        integrity: sha256-e9ea3f92d0488a82bd65d707e35882c87de83bb19057054ba27a9dfe96a317c9
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-explore
+      claim:
+        lines: 157
+        integrity: sha256-281b3d0401bb6ac77f45556e6483360dc0664b6543ae259c6add1f911c278dec
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 14
+        integrity: sha256-d294a9bd2f7d1de741c519962f66d275997f19844e6b817e7ab7d4132c468fc5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-understand
+      claim:
+        lines: 156
+        integrity: sha256-dc8774dc41edb4308dd8779a1c0a63c89bc15fab2f3232da14eeb36e6763b7e8
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 13
+        integrity: sha256-1f5326851e115fe26b517f88090cc974886fc1fb160e8d5bcfa899354d1df59c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-appraise
+      claim:
+        lines: 155
+        integrity: sha256-94c4a1ea86552d8ed60aefbd2ded4016de68cf4d0db9abb1d653457eb4ac294d
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 12
+        integrity: sha256-07a41da4dc350533297fceb18c9888ec80d5323bdaf81690ea35ee867f5fe945
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-seven-action-upstream-version
+      claim:
+        integrity: sha256-a1b5f00d05f666bf49a68fab65d7581f54683f06a2efa2dcd4b99bf3edbafb9c
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 3-5
+        integrity: sha256-0288114c773b7c83cd15131f6bc5d891d03e49044ccb2f8894f7f68dc748afb2
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-requiring-type-is-mannis-choice
+      claim:
+        lines: 136-144
+        integrity: sha256-fcf19b0241f77dcf307061bcdc423a6dcdfb28bc6a9fb43a8926382842b67e1a
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 5
+        integrity: sha256-c7a62da24b33856d762d5613856965ad337ffd3a4c405d183a75be167c3c0e75
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-tgdp-is-not-in-the-default-set
+      claim:
+        integrity: sha256-6a725850f62e1947fb2c435c7559a3776e94511bfa16e8e188a289c75eae2b29
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 32-35
+        integrity: sha256-af133f1e0fa21ca01b004a947824e1ce63d00d49af5bf112da6ffcda850b9a3c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-tgdp-values-by-pack
+      claim:
+        lines: 118-120
+        integrity: sha256-4d49645b6d5907ad196f0b13ecaed9e53accd51efa95fc1bad19ff449affd693
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 12-39
+        integrity: sha256-f10f6bca20a40a6ff1297af4a4aed8662b35cce5fd773c0b6863155be8deea90
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-all-25-slugs-validate
+      claim:
+        integrity: sha256-016bbd132e10966e39ce540d9e73076b6e4f4c946b0cf7dfe2990a0094a297da
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 12-38
+        integrity: sha256-fba7a1ce762f04503f14881b533f64e01a0986e11bf722dff3645245d87fff5f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-tgdp-requires-and-constrains-type
+      claim:
+        integrity: sha256-f7ac3c77ea2774a514b3c40256f77ed6f371426da300087a935de96cf2ca7664
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 8-38
+        integrity: sha256-d133d550f15ea9dc5b2cc0b67f8fa46d73609f2272fb88d20d627423d75c61a8
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-diataxis-is-not-in-the-default-set
+      claim:
+        integrity: sha256-e106e9e77a5193038dc625927888c306a90c8dae2661856468d11c0a396d7d58
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 25-31
+        integrity: sha256-e422d6fee4c027743e2ef6b44e94c3be5ee5aa4745ebfce5ad32dcc5950e202a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-diataxis-four-forms
+      claim:
+        lines: 83-86
+        integrity: sha256-c7965ad03d78f749c06dcf09664a098fce99532ecf9378400e484c070cddf84f
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 12-13
+        integrity: sha256-1175148898279c096d485707094e5fd08c65975f82f548472da002a2d4275f58
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-diataxis-requires-and-constrains-type
+      claim:
+        integrity: sha256-850d50f342f367163a19e8ebbd1f3996adce5b76657739a221f195351d7190d3
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 8-13
+        integrity: sha256-eb032decab002a44515845a44957313bdd14e12d9f4c077a7a92c0dfbaefbbe4
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-schema-order-does-not-matter
+      claim:
+        lines: 69-73
+        integrity: sha256-8b14d8b84f3e0254a5e59d6e381abc6b840eaa20ae28c71ed7bc84bbb0ebde21
+      source:
+        file: src/meta/core/validator.ts
+        lines: 631-638
+        integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-turning-one-on-reports-every-untyped-page
+      claim:
+        lines: 64-67
+        integrity: sha256-685c9bd9c7f6d174fd219834a7d9cd32a058cad6363d80875f67696b84ed34c2
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 8
+        integrity: sha256-0e2f5437eb92e030b655c86a57a2dd15bb2acd051cc9be386ce3f58619f6000b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-seven-action-checks-only-if-present
+      claim:
+        integrity: sha256-89f557b6942f3c0f72d35cd631d135a57b3e84442715a6107018bee180b2909c
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 5
+        integrity: sha256-d57005bbef6394895ec7c4aa969c5f4cb7dadc3051b9e46b79392087271d2976
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-pair-with-okf-for-the-other-fields
+      claim:
+        integrity: sha256-2174fbf5f968d2e00674f161f306bb6e95f0d160f1d336500e70400b3c366c60
+      source:
+        file: src/meta/schemas/okf/0.1.json
+        lines: 7
+        integrity: sha256-0e2f5437eb92e030b655c86a57a2dd15bb2acd051cc9be386ce3f58619f6000b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-both-type-schemas-require-the-key
+      claim:
+        integrity: sha256-df5bdfd889ec1a70f205dc56bbddb6f5a06de86e8ca1b212f4d06f4e344c5127
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 8
+        integrity: sha256-0e2f5437eb92e030b655c86a57a2dd15bb2acd051cc9be386ce3f58619f6000b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-published-url-and-id-are-interchangeable
+      claim:
+        integrity: sha256-9f955be7971e9e72d10f56c851c5961b62a913251a9b30aa74ea851cd2fcfe91
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 227-238
+        integrity: sha256-b609d7a86f241caa53f6c3ab9266149e6c0333c7496005e23ab3d94797659c1c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-all-three-are-draft-2020-12
+      claim:
+        integrity: sha256-60affe9aa8ec9b7042306c95db31d5d2aec7e975e4799c3f9d358cc890b2edfc
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 2-7
+        integrity: sha256-31f325b373ec3d628722ea79c6bfe37dd4669233f44696a298ab728b0d27f0ba
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-row-seven-action
+      claim:
+        lines: 15
+        integrity: sha256-5c8fb3d55b00e8c06d58e1639f11103dd1a2e702c8eb4668c6ab6cf057084308
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 3-7
+        integrity: sha256-596728f2c5eeb0576f67ed5cd68a8172a76d9c0d4470c156a1146fe11622a5d5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-row-tgdp
+      claim:
+        lines: 14
+        integrity: sha256-87bc7fa8886f249c305f815378d411d00f8e3ffd1fe97041e807f8ad9413bb81
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 3-8
+        integrity: sha256-254e98db48df3426fd90c23ecdd0a98fa747b2b986498ad71f512b8349df4c53
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-row-diataxis
+      claim:
+        lines: 13
+        integrity: sha256-06b1d18c077666de3adf36ea37c36f6d7cb44d8ce26e7b55ecbbd0f68e958412
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 3-8
+        integrity: sha256-5eb539b006f315ca6415ccb29e9fae8bc50548e46561bd29268532f92dd260dd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-okf-accepts-any-non-empty-type
+      claim:
+        integrity: sha256-d7cba13715719fceebc6685b223f71c8257db02631e78eba92d2efa54b30087a
+      source:
+        file: src/meta/schemas/okf/0.1.json
+        lines: 10-13
+        integrity: sha256-64e6cc196f1ba72e91ae312bfca0ee8b25dcdd4015c7c31e88c4d1994c94a32a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-every-other-schema-is-in-the-registry
+      claim:
+        integrity: sha256-471635a8e2c9f1804c42625b985438a9a7c1d347703ccd35e628bf38b69e5e5d
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 55-79
+        integrity: sha256-4a7520e7298eed2f70a07a84e70a8e084937cd3c74ec6e94b7accd516e659d94
+        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2

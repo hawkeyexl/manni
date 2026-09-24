@@ -1,0 +1,10 @@
+docs/src/content/docs/meta/reference/glossary/metadata.mdx:
+  citations:
+    - id: metadata-is-generic-key-values
+      claim:
+        integrity: sha256-e4edd5ed4ad59f744b96569ec76ea041986b94a4af2a41fd2e8566d3827e3470
+      source:
+        file: src/meta/types.ts
+        lines: 13-15
+        integrity: sha256-76905ce6b10feab2f2ff2527d56155784085f30965cf10fc0c3e85e9b6e54b63
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe

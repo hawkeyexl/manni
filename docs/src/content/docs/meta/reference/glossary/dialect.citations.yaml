@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/glossary/dialect.mdx:
+  citations:
+    - id: dialect-detected-from-meta-schema-uri
+      claim:
+        integrity: sha256-8567a38181b531825d20399f923605cdbb5c043dda262d3953ce80ad4cdf1900
+      source:
+        file: src/meta/core/validator.ts
+        lines: 62-76
+        integrity: sha256-27d7ea2baae75ac8a017379e30f20e6cea6b54d7e0a8caf82a071b7c39ce17aa
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+    - id: dialects-coexist-in-one-run
+      claim:
+        integrity: sha256-8567a38181b531825d20399f923605cdbb5c043dda262d3953ce80ad4cdf1900
+      source:
+        file: src/meta/core/validator.ts
+        lines: 430-437
+        integrity: sha256-3fbb775b9f9d28976877161a768de14616e37fe7c51ba0554574c99210e29fd9
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe

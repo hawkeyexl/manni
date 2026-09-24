@@ -1,0 +1,10 @@
+docs/src/content/docs/meta/reference/glossary/json-pointer.mdx:
+  citations:
+    - id: empty-pointer-shown-as-root
+      claim:
+        integrity: sha256-7cd8cfd25521df00c13108ca6c961d223affe0e0ea0c14c653e2b92e80fe7e6a
+      source:
+        file: src/meta/reporters/rule-id.ts
+        lines: 106-109
+        integrity: sha256-632e8e76aec0a197144d24cc6f68bbabe312b82190d6cef055a3d89a1543340f
+        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe

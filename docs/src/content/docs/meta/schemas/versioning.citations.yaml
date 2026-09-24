@@ -1,0 +1,129 @@
+docs/src/content/docs/meta/schemas/versioning.mdx:
+  citations:
+    - id: each-schema-compiles-in-its-own-engine
+      claim:
+        integrity: sha256-aebb45edf05ef7d5c2afc1b596c07b5fbf467cf7b918b23d10d61deda41cc969
+      source:
+        file: src/meta/core/validator.ts
+        lines: 78-88
+        integrity: sha256-9d8dd9c571d6d99db7c3e86afe8fdc279640d54119f13657c2da02d32814e07e
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: versioning-fallback-is-2020-12
+      claim:
+        lines: 160
+        integrity: sha256-bbaec317f6fe4493a07b74b2ccd3ba40d45aeda26b2c878e95d64dc3f1258de3
+      source:
+        file: src/meta/core/validator.ts
+        lines: 75
+        integrity: sha256-d096c5187486339f1e2903f8f60b0e6dcb812ec6070fe8873b106ab8a50e009b
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: versioning-draft-07-detection
+      claim:
+        lines: 156
+        integrity: sha256-c1eaadb09cfa30463bfbc9e38df7a2153fef0dbc93936a97e12c2c28edff86db
+      source:
+        file: src/meta/core/validator.ts
+        lines: 66-73
+        integrity: sha256-ccb8e086950c887110b3f00fc65e57ceac8aad6f9b49a93a9c898eb122c4341a
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: versioning-draft-06-shares-draft-07
+      claim:
+        lines: 157
+        integrity: sha256-af8b3e9d2180f4f6e5ac6af868a03a37ded779e6ada89f19ca3036cfd3d08c2f
+      source:
+        file: src/meta/core/validator.ts
+        lines: 65-72
+        integrity: sha256-72208f8217cca317b0b10b17779cd823b3266a2f26f3b07fba6ac8480917acb0
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: versioning-draft-04-detection
+      claim:
+        lines: 158
+        integrity: sha256-4d8e0d25588974c9b6de0e7203250d8f9e63058471c2fcf76a7faa7cc424a9d0
+      source:
+        file: src/meta/core/validator.ts
+        lines: 74
+        integrity: sha256-fa3a26896eab9748710b786a6e798e7175c73ac2348a33747179599b4e01e6aa
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: versioning-2019-09-detection
+      claim:
+        lines: 155
+        integrity: sha256-a625df9eac4b05322525085d8cb604b2f2aa3aa7982380715f60a2b6cdb4629f
+      source:
+        file: src/meta/core/validator.ts
+        lines: 64
+        integrity: sha256-14178ee0c1c3cbf438f2247f5daf55d1b34e4fb88e2236a3c29d8c72d62a082f
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: versioning-dialect-read-from-schema-line
+      claim:
+        integrity: sha256-fc3cb503f2caa54f847f735799bab1faf0cec952c1f8dbf5d8c99d175683df5f
+      source:
+        file: src/meta/core/validator.ts
+        lines: 62-75
+        integrity: sha256-4a07fce96950db2a207d9610517140bf0949c7772beda9cc4329f1ebd37783c4
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: default-rejected-by-the-mapped-format
+      claim:
+        integrity: sha256-2aab9dd250b24d486ec98a0fee299a6c822d8d6ce54afc42f5058b7a3bfdd0bf
+      source:
+        file: src/meta/commands/query.ts
+        lines: 1721-1729
+        integrity: sha256-c97fce02ffcf99dbfe3aecb6a9dc4601db8ba40984cae02bcfcc9c8219ed1d65
+        commit-sha: c66b65fbaa3bfc2249911078b0d56aa1ca924d8e
+    - id: dash-s-names-the-schema-ddl-evolves
+      claim:
+        lines: 124
+        integrity: sha256-90ff8ecb405dfb3da3099ecdf390108beb756e3e43d72499e8a559a81eec8e7d
+      source:
+        file: src/meta/commands/query.ts
+        lines: 1093-1101
+        integrity: sha256-64bd175749d20be50623600aec873966e3b12bdcd225e2e0d9d19b06665c47af
+        commit-sha: c66b65fbaa3bfc2249911078b0d56aa1ca924d8e
+    - id: builtin-id-carries-its-version
+      claim:
+        integrity: sha256-8d4b7b7cfd020313de01f1ed856cbc929ad665e5c342a0186293651320621f29
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 283
+        integrity: sha256-f5e3a939a781ffcfd02b1e0b1fc055d28d3a1ed1a39efbe53a978870587c0b1d
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: builtin-forks-to-a-local-copy
+      claim:
+        integrity: sha256-7888cd94054ec3a216d12730105adcf31bd6554656a19299f1d93869a7938395
+      source:
+        file: src/meta/commands/query.ts
+        lines: 1796-1801
+        integrity: sha256-33a4a493d745b9c29bba10592722f9cc1e871e391b163d5cba085040480546e4
+        commit-sha: c66b65fbaa3bfc2249911078b0d56aa1ca924d8e
+    - id: declared-type-maps-to-a-format
+      claim:
+        integrity: sha256-fc3e4ac9d34653c700bf688200690da862b04e203a0f9f8006144bc4a390067b
+      source:
+        file: src/meta/commands/query.ts
+        lines: 1460-1469
+        integrity: sha256-6750c5da321ca3bb6d81c75995e9ec719a6324aa14bec517398da951777864e0
+        commit-sha: c66b65fbaa3bfc2249911078b0d56aa1ca924d8e
+    - id: builtin-versions-are-decided-by-manni
+      claim:
+        integrity: sha256-a411f26526e82221c19b6812a11d0e064fa4cdc98f9e3afe8e35814a5895ad66
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 55-79
+        integrity: sha256-4a7520e7298eed2f70a07a84e70a8e084937cd3c74ec6e94b7accd516e659d94
+        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+    - id: alter-adds-the-key-and-backfills
+      claim:
+        lines: 124
+        integrity: sha256-90ff8ecb405dfb3da3099ecdf390108beb756e3e43d72499e8a559a81eec8e7d
+      source:
+        file: src/meta/commands/query.ts
+        lines: 1301-1305
+        integrity: sha256-cb17e1c1e2ad5923a214481c54d4318be3a8e8699cae8afeb813c30ac9e3514e
+        commit-sha: c66b65fbaa3bfc2249911078b0d56aa1ca924d8e
+    - id: alter-table-edits-the-resolved-schema
+      claim:
+        integrity: sha256-d26aa74760d981fb311e7bc2b8c01448d77478e8d8ca6a5fbc356f15b66a6494
+      source:
+        file: src/meta/commands/query.ts
+        lines: 1143-1148
+        integrity: sha256-0f2900ed7ae33d44db2239cec51553abf93c31d2e4bba566cb68175b2edecb25
+        commit-sha: c66b65fbaa3bfc2249911078b0d56aa1ca924d8e

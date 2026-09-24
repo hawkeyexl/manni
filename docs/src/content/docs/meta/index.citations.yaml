@@ -1,0 +1,61 @@
+docs/src/content/docs/meta/index.mdx:
+  citations:
+    - id: body-below-frontmatter-never-read
+      claim:
+        lines: 97-98
+        integrity: sha256-51deef4abb34be45aea7bddc2af2800a193cdc7ce9380a757913e5717f68ae9f
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 775-776
+        integrity: sha256-3ef67f71b6dd6d13aa8db8c7e567afcb9df863c1d137c5597d3a9fd7de40c6fa
+        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+    - id: formats-enforced-by-ajv-formats
+      claim:
+        lines: 92-93
+        integrity: sha256-a468756f18d56ccaf94e1a02532414aec245950d691be3767ebf9aab297e4ad8
+      source:
+        file: src/meta/core/validator.ts
+        lines: 89
+        integrity: sha256-13cad13b9da05a87f1d7e4ed101397327ec94367e2c9e0f6eba648bb4109934b
+        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+    - id: required-fields-checked-against-metadata-object
+      claim:
+        lines: 92
+        integrity: sha256-af4f5a31f389ce65cdf3dad01011d038d8fa8b69671d410d8c16078f4db54bda
+      source:
+        file: src/meta/core/validator.ts
+        lines: 632-633
+        integrity: sha256-b41d2247f4df563b4638532286fcaf90f3105ab234b56e24619fd7f598d68e59
+        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+    - id: twenty-three-built-in-schemas
+      claim:
+        integrity: sha256-d86b270bafba4035900da70c74c586d6930388aa18c07106982d9abf6af6af8b
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 55-78
+        integrity: sha256-dd4d1ff69aba4375d1fa91a4f485dd5a682556f8412e7076b4fd273429383bb7
+        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+    - id: error-line-names-field-line-and-schema
+      claim:
+        integrity: sha256-6e24a2751ad70c15d7e6a0c643456d631350f32d19020526786cb196d44968af
+      source:
+        file: src/meta/reporters/index.ts
+        lines: 263-267
+        integrity: sha256-eb895ec4689f56368fe1f44400daf0910c2e57dee536b369d0bbc192635b2403
+        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+    - id: failure-fails-the-build
+      claim:
+        integrity: sha256-5641af1fab3e0ee0ecc5b8ff5a64e87af036426aa1f4a4a06ff340e640e4b38c
+      source:
+        file: src/meta/cli.ts
+        lines: 872
+        integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
+        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+    - id: default-run-requires-type
+      claim:
+        integrity: sha256-5641af1fab3e0ee0ecc5b8ff5a64e87af036426aa1f4a4a06ff340e640e4b38c
+      source:
+        file: src/meta/schemas/okf/0.1.json
+        lines: 7
+        integrity: sha256-0e2f5437eb92e030b655c86a57a2dd15bb2acd051cc9be386ce3f58619f6000b
+        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
