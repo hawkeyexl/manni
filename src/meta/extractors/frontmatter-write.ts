@@ -8,10 +8,11 @@
  *
  * Per flavor the merge differs, because the fidelity hazards differ:
  *
- *  - YAML re-emits the block through the `yaml` Document API, which preserves
- *    comments, key order, and scalar styles. Setting a *raw JS scalar* (not a
- *    Node) is deliberate: `YAMLMap.add` then mutates the existing node's value
- *    in place, keeping its comments and quoting.
+ *  - YAML splices the root mapping's text with the primitives the manifest
+ *    writer uses (`../core/yaml-splice.ts`). A replaced key's value is
+ *    rewritten in place, a new key goes after the last one, and a deleted
+ *    key's lines go. Every key the write does not name keeps its bytes, so a
+ *    flow list is not padded and a multi-line value is not joined.
  *  - TOML splices one key's line span at a time. Re-emitting the block through
  *    `smol-toml` would delete every comment and silently rewrite untouched
  *    values (`2026-06-25T10:00:00Z` becomes `2026-06-25T10:00:00.000Z`), which
@@ -23,7 +24,15 @@
  * expected data before anything is returned, so a serializer bug becomes a
  * refusal rather than a damaged document.
  */
-import { parseDocument, isMap, isCollection } from "yaml";
+import {
+  parseDocument,
+  isMap,
+  isCollection,
+  isScalar,
+  type Document,
+  type Pair,
+  type YAMLMap,
+} from "yaml";
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
 import {
   DocmetaError,
@@ -38,6 +47,18 @@ import {
 } from "./frontmatter.js";
 import { dropUndefined, deepEqual } from "./patch-util.js";
 import { detectJsonIndent } from "../core/json-text.js";
+import {
+  blockLines,
+  detectEol,
+  detectStyle,
+  insertKey,
+  keyString,
+  rangeOf,
+  removeKey,
+  replaceBlockValue,
+  replaceFlowValue,
+  type Edit,
+} from "../core/yaml-splice.js";
 
 const FENCE: Record<FrontmatterFlavor, string> = {
   yaml: "---",
@@ -200,23 +221,125 @@ function mergeBlock(
   }
 }
 
+/**
+ * Write the patch into a YAML block by splicing the root mapping's text, one
+ * key at a time. Each edit re-parses the text it follows, so every range it
+ * uses is current. A key the patch does not name keeps its bytes.
+ */
 function mergeYaml(
   inner: string,
   patch: MetadataPatch,
   deletions: readonly string[] = [],
 ): string {
-  const doc = parseDocument(inner);
+  const root = parseYamlBlock(inner).contents;
+  if (root != null && !isMap(root)) {
+    throw new DocmetaError(
+      "Cannot rewrite front matter: the root must be a mapping.",
+    );
+  }
+  // A flow mapping at the root (`{ title: T }`) has no lines to add a key to
+  // or cut one from, so it is re-emitted whole, as it always was.
+  if (isMap(root) && root.flow === true) {
+    return reemitYaml(inner, patch, deletions);
+  }
+
+  let text = inner;
+  for (const [key, value] of Object.entries(patch)) {
+    const next = spliceYamlKey(text, key, value);
+    // `undefined` is a shape the splice does not edit, such as a key written
+    // as an explicit `? key`. The whole block is then re-emitted instead.
+    if (next === undefined) return reemitYaml(inner, patch, deletions);
+    text = next;
+  }
+  for (const key of deletions) {
+    const next = removeYamlKey(text, key);
+    if (next === undefined) return reemitYaml(inner, patch, deletions);
+    text = next;
+  }
+  return text;
+}
+
+function parseYamlBlock(text: string): Document {
+  const doc = parseDocument(text);
   if (doc.errors.length > 0) {
     throw new DocmetaError(
       `Cannot rewrite invalid YAML front matter: ${doc.errors[0]?.message ?? "parse error"}`,
     );
   }
-  if (doc.contents != null && !isMap(doc.contents)) {
-    throw new DocmetaError(
-      "Cannot rewrite front matter: the root must be a mapping.",
-    );
-  }
+  return doc;
+}
 
+/** The root pair for `key`, or `undefined` when the block has none. */
+function rootPair(root: YAMLMap, key: string): Pair | undefined {
+  return root.items.find((p) => keyString(p.key) === key);
+}
+
+/** `text` with `key` set to `value`; `undefined` for a shape the splice does not edit. */
+function spliceYamlKey(text: string, key: string, value: unknown): string | undefined {
+  const root = parseYamlBlock(text).contents;
+  const eol = detectEol(text);
+  if (root == null) {
+    // An empty block, or one that holds only comments: the key goes last.
+    const lines = blockLines({ [key]: value }, 0, { step: 2, indentSeq: true, eol });
+    return text === "" ? lines : text + eol + lines;
+  }
+  if (!isMap(root) || root.flow === true) return undefined;
+  const style = detectStyle(text, root, eol);
+  const pair = rootPair(root, key);
+  let edit: Edit | undefined;
+  if (pair === undefined) {
+    edit = insertKey(text, root, key, value, style);
+  } else {
+    const old = pair.value;
+    const isCollectionValue = value !== null && typeof value === "object";
+    if (isCollectionValue && isCollection(old) && old.flow === true) {
+      // A flow list stays a flow list, padded only if the page padded it.
+      const r = rangeOf(old);
+      const padded = r !== undefined && /^[[{][ \t]/.test(text.slice(r[0], r[0] + 2));
+      edit = replaceFlowValue(text, pair, value, padded);
+    } else if (!isCollectionValue && isScalar(old)) {
+      // The old node's style, tag and number format carry over, so a quoted
+      // scalar stays quoted. The stringifier still re-quotes when the old
+      // style would read back as another type.
+      const node = old.clone();
+      /* c8 ignore next -- defensive: a Scalar clones to a Scalar. */
+      if (!isScalar(node)) return undefined;
+      node.value = value;
+      node.comment = undefined;
+      node.commentBefore = undefined;
+      node.spaceBefore = undefined;
+      edit = replaceBlockValue(text, pair, node, style);
+    } else {
+      edit = replaceBlockValue(text, pair, value, style);
+    }
+  }
+  if (edit === undefined) return undefined;
+  return text.slice(0, edit.start) + edit.insert + text.slice(edit.end);
+}
+
+/** `text` without `key`; `undefined` for a shape the splice does not edit. */
+function removeYamlKey(text: string, key: string): string | undefined {
+  const root = parseYamlBlock(text).contents;
+  if (!isMap(root)) return text;
+  if (root.flow === true) return undefined;
+  const pair = rootPair(root, key);
+  if (pair === undefined) return text;
+  const edit = removeKey(text, pair, detectEol(text));
+  if (edit === undefined) return undefined;
+  return text.slice(0, edit.start) + text.slice(edit.end);
+}
+
+/**
+ * The whole block re-emitted through the `yaml` Document API. It keeps
+ * comments, key order and scalar styles, but it lays out every key again.
+ * Only the shapes the splice does not edit come here.
+ */
+function reemitYaml(
+  inner: string,
+  patch: MetadataPatch,
+  deletions: readonly string[],
+): string {
+  const doc = parseYamlBlock(inner);
   for (const [key, value] of Object.entries(patch)) {
     if (value !== null && typeof value === "object") {
       // Collections must be rebuilt, but carry the previous flow/block style so

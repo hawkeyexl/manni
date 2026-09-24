@@ -197,8 +197,8 @@ describe("relocate: both directions in one run (rung 4, R3)", () => {
       collections: [{ externalMetadata: [{ file: "./docs-meta.yaml", keys: ["owner"] }] }],
     });
     expect(read(dir, "docs/install.md")).toBe("---\ntitle: Install\n---\n# Install\n");
-    // The frontmatter writer's own layout: it pads a flow list it re-emits.
-    expect(read(dir, "docs/faq.md")).toBe("---\ntags: [ help ]\ntitle: FAQ\n---\n# FAQ\n");
+    // The page's own spelling: the writer leaves a key it does not write as it was.
+    expect(read(dir, "docs/faq.md")).toBe("---\ntags: [help]\ntitle: FAQ\n---\n# FAQ\n");
   });
 
   it("undeclares a manifest whose keys empty, and leaves the file on disk (R3)", async () => {

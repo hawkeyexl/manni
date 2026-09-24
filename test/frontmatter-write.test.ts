@@ -151,6 +151,53 @@ describe("applyFrontmatter — YAML", () => {
   });
 });
 
+describe("applyFrontmatter — YAML keys the write does not touch", () => {
+  // Each case compares the whole document, so a write that reformats any key
+  // it was not asked to write fails here, not only one that loses a value.
+  it("leaves an unrelated flow list byte for byte", () => {
+    const content = "---\ntitle: T\ntags: [a, b]\n---\n\nBody.\n";
+    const out = applyFrontmatter(content, { title: "New" });
+    expect(out).toBe("---\ntitle: New\ntags: [a, b]\n---\n\nBody.\n");
+  });
+
+  it("leaves an unrelated multi-line plain value on its lines", () => {
+    const content =
+      "---\ndescription: a long line\n  that continues here\ntitle: T\n---\n\nBody.\n";
+    const out = applyFrontmatter(content, { title: "New" });
+    expect(out).toBe(
+      "---\ndescription: a long line\n  that continues here\ntitle: New\n---\n\nBody.\n",
+    );
+  });
+
+  it("leaves comments and blank lines as they were", () => {
+    const content =
+      "---\n#owner: docs\ntitle: T\n\n\n# section\ntype: concept   # why\n---\n\nBody.\n";
+    const out = applyFrontmatter(content, { title: "New" });
+    expect(out).toBe(
+      "---\n#owner: docs\ntitle: New\n\n\n# section\ntype: concept   # why\n---\n\nBody.\n",
+    );
+  });
+
+  it("leaves a CRLF block CRLF, and its other keys byte for byte", () => {
+    const content = "---\r\ntitle: T\r\ntags: [a, b]\r\n---\r\n\r\nBody.\r\n";
+    const out = applyFrontmatter(content, { title: "New", type: "concept" });
+    expect(out).toBe(
+      "---\r\ntitle: New\r\ntags: [a, b]\r\ntype: concept\r\n---\r\n\r\nBody.\r\n",
+    );
+  });
+
+  it("keeps key order around a replaced, an added and a deleted key", () => {
+    const content =
+      "---\na: [1, 2]\nb: [x]\nc:\n  - one\n  - two\nd: 3\n---\n\nBody.\n";
+    const out = applyFrontmatter(
+      content,
+      { b: ["y"], e: 5 },
+      { deletions: ["c"] },
+    );
+    expect(out).toBe("---\na: [1, 2]\nb: [y]\nd: 3\ne: 5\n---\n\nBody.\n");
+  });
+});
+
 describe("applyFrontmatter — TOML", () => {
   const content = fx("toml-comments.md");
 

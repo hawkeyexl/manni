@@ -572,8 +572,9 @@ database](/manni/meta/reference/query/#exporting-the-database).
 
 ### Writing back
 
-An `UPDATE` against `docs` edits the corpus, through the same
-comment-preserving, self-verifying writer `fill` uses:
+An `UPDATE` against `docs` edits the corpus through the same self-verifying
+writer `fill` uses, which leaves every key it does not write exactly as it
+was:
 
 ```sh
 # Preview: the per-file diff, nothing touched
@@ -994,9 +995,9 @@ from what the document carries. Lists compare as sets, so a reordered
 `authors` is not a change. A field whose evidence is missing is left alone
 and reported as unknown. That covers a page with no approval yet, a file not
 yet committed, and a path outside any repository. The document is edited
-through the same comment-preserving writer `fill` uses, so a format `fill`
-cannot write is reported as a per-file error here too. The rules for each
-field are in [the derivable
+through the same writer `fill` uses, so a format `fill` cannot write is
+reported as a per-file error here too. That writer leaves every key it does
+not write exactly as it was. The rules for each field are in [the derivable
 fields](/manni/meta/reference/configuration/#the-derivable-fields).
 
 {/* cite provenance-not-fenced-is-a-per-file-error */}
