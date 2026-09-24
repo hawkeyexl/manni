@@ -93,9 +93,11 @@ export function gitClient(root: string): GitClient {
 
     shallow,
 
-    // `merge-base --is-ancestor` exits 0 for yes and 1 for no. It exits 1 for
-    // a commit it does not have too, which is also no: a commit git lacks is
-    // not in any history it holds. Anything else is git itself failing.
+    // `merge-base --is-ancestor` exits 0 for yes and 1 for no. For a commit
+    // it does not have it exits 128, `Not a valid commit name`, which reads
+    // as git failing. So `hasCommit` answers first, and is required rather
+    // than an optimization: a commit git lacks is in no history it holds,
+    // which is a no, and exactly the pin a deleted branch leaves behind.
     isAncestor: (commit, of) =>
       once(`ancestor\0${commit}\0${of}`, async () => {
         if (!(await hasCommit(commit))) return false;

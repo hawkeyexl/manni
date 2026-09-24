@@ -19,6 +19,7 @@ import type {
   CitationFinding,
   CitationResult,
   PageCitationReport,
+  RecommitReason,
   Removal,
   RemoveRun,
   UpdateRewrite,
@@ -499,6 +500,21 @@ export function refusalLine(rewrite: UpdateRewrite): string {
   return `${where} that line now holds different text than the claim at ${at}. Re-add it with cite add.`;
 }
 
+/**
+ * Why a pin was re-committed, as its row says it. Exhaustive, so a new reason
+ * is a type error here rather than a row that quietly reads as the old one. No
+ * reason at all is the containment case, which is all `--recommit` once knew.
+ */
+function recommitWhy(because: RecommitReason | undefined): string {
+  switch (because) {
+    case "not-in-history":
+      return "not in this branch's history";
+    case "not-contained":
+    case undefined:
+      return "did not contain the pinned lines";
+  }
+}
+
 /** What one rewritten end says it did. */
 export function rewriteLine(rewrite: UpdateRewrite): string {
   const word = rewrite.from.includes("-") ? "lines" : "line";
@@ -511,9 +527,7 @@ export function rewriteLine(rewrite: UpdateRewrite): string {
   if (rewrite.reason === "recommitted") {
     const from = shortCommit(rewrite.fromCommit ?? "");
     const to = shortCommit(rewrite.toCommit ?? "");
-    const why =
-      rewrite.because === "not-in-history" ? "not in this branch's history" : "did not contain the pinned lines";
-    return `source ${shortSrc(rewrite.src ?? "")} commit ${from} -> ${to} (${why})`;
+    return `source ${shortSrc(rewrite.src ?? "")} commit ${from} -> ${to} (${recommitWhy(rewrite.because)})`;
   }
   if (rewrite.reason === "shifted") {
     return `claim ${word} ${rewrite.from} -> ${rewrite.to} (shifted by a marker)`;

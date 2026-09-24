@@ -22,7 +22,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { runUpdate } from "../../src/cite/commands/update.js";
 import { hashRange } from "../../src/cite/core/hash.js";
-import { noGit } from "../../src/cite/core/git.js";
+import { SHALLOW_RECOMMIT, noGit } from "../../src/cite/core/git.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { UpdateOptions, UpdateRun } from "../../src/cite/types.js";
 import { commitAll, git, gitAvailable, makeTempRepo, removeTempRepo } from "../helpers/temp-repo.js";
@@ -230,8 +230,6 @@ describe.skipIf(!gitAvailable())("cite update --recommit, for a commit outside H
     for (const dir of dirs.splice(0)) removeTempRepo(dir);
   });
 
-  const SHALLOW =
-    "this clone is shallow, so --recommit re-recorded only commits that do not contain their lines. Fetch full history to check the rest.";
 
   /**
    * The trunk starts with a README. A side branch adds `src/limits.ts` as
@@ -350,7 +348,7 @@ describe.skipIf(!gitAvailable())("cite update --recommit, for a commit outside H
 
     expect(run).toMatchObject({ rewritten: 0, exitCode: 0 });
     expect(readFileSync(page, "utf8")).toContain(`commit-sha: ${side}`);
-    expect(notices.filter((notice) => notice === SHALLOW)).toHaveLength(1);
+    expect(notices.filter((notice) => notice === SHALLOW_RECOMMIT)).toHaveLength(1);
   });
 
   it("says nothing about shallowness in a full clone", async () => {
@@ -360,6 +358,6 @@ describe.skipIf(!gitAvailable())("cite update --recommit, for a commit outside H
 
     await updateIn(repo, notices);
 
-    expect(notices).not.toContain(SHALLOW);
+    expect(notices).not.toContain(SHALLOW_RECOMMIT);
   });
 });
