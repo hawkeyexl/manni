@@ -7,6 +7,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
   FILE_PATTERN,
   SRC_PATTERN,
@@ -23,11 +25,10 @@ import { CiteError } from "../../src/cite/errors.js";
 import type { SourceRange } from "../../src/cite/types.js";
 
 const require = createRequire(import.meta.url);
-const schema = require("../../src/cite/schema/citations.json") as {
+const schema = require("../../src/meta/schemas/citations/1.0.0.json") as {
   $id: string;
   $defs: { fileRef: { pattern: string } };
 };
-const draft = require("../../docs/proposals/0044/schemas/citations/1.0.0-proposal.4.json") as unknown;
 
 /** Ciphertext-shaped: `~` and 84 base64url characters. The grammar checks shape, not keys. */
 const TOKEN = "~" + "AQx7Vb2_Kp-9Qm".repeat(6);
@@ -37,10 +38,11 @@ const SHORTEST = TOKEN.slice(0, 83);
 /** The schema's pattern as the engine compiles it; a JSON string cannot escape `/`. */
 const SCHEMA_FILE_PATTERN = new RegExp(schema.$defs.fileRef.pattern);
 
-describe("the bundled schema", () => {
-  it("is the proposal.4 draft, byte for byte", () => {
-    expect(schema).toEqual(draft);
-    expect(schema.$id).toBe("manni:citations:1.0.0-proposal.4");
+describe("the schema cite validates entries against", () => {
+  it("is the manni:citations:1.0.0 built-in, with no copy of its own", () => {
+    expect(schema.$id).toBe("manni:citations:1.0.0");
+    const copy = fileURLToPath(new URL("../../src/cite/schema/citations.json", import.meta.url));
+    expect(existsSync(copy)).toBe(false);
   });
 });
 

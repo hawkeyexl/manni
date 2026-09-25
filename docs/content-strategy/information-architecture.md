@@ -224,7 +224,7 @@ Reference pages must never contradict the source code. Before writing any Refere
 | Built-in DITA schema | `src/meta/schemas/dita/1.3.json`, `src/meta/extractors/dita.ts` (`DITA_LIFTS`, `DITA_CONTENT_MODEL`) |
 | `cite` CLI reference (`cite/reference/cli.mdx`) | `src/cite/cli.ts`, guarded by `scripts/check-cli-reference.mjs` |
 | `cite` configuration reference (`cite/reference/configuration.mdx`) | `src/cite/core/config.ts` |
-| Citations reference (`cite/reference/citations.mdx`) | `src/cite/schema/citations.json` and `docs/proposals/0044/schemas/citations/1.0.0-proposal.4.json` (the entry shape, the file grammar, the hashing rule), `src/cite/core/statements.ts` (the marker forms and anchors), `src/cite/core/sidecar.ts` (the manifest channel) |
+| Citations reference (`cite/reference/citations.mdx`) | `src/meta/schemas/citations/1.0.0.json`, the `manni:citations:1.0.0` built-in (the entry shape, the file grammar, the hashing rule), `src/cite/core/statements.ts` (the marker forms and anchors), `src/cite/core/sidecar.ts` (the manifest channel) |
 | `key` CLI reference (`key/reference/cli.mdx`) | `src/key/cli.ts`, guarded by `scripts/check-cli-reference.mjs` |
 | `key` overview (`key/index.mdx`) | `src/shared/encryption-key.ts` (where the key lives, the environment rule, the git warning), `src/shared/encryption.ts` (the ciphertext shape), `src/shared/prompt.ts` (the write prompt), `src/key/` (the two verbs) |
 | `key` journey pages (set up, CI) | `src/key/commands/set.ts` and `src/key/commands/rotate.ts` for behaviour, `src/key/core/config.ts` for where the key is written, `src/meta/core/reencrypt.ts` and `src/cite/core/reencrypt.ts` for what rotation rewrites, `src/key/reporters/pretty.ts` for the exact emitted strings |

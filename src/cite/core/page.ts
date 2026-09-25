@@ -15,7 +15,7 @@
 import { extname } from "node:path";
 import * as Ajv2020Ns from "ajv/dist/2020.js";
 import type { ValidateFunction } from "ajv/dist/2020.js";
-import citationsSchema from "../schema/citations.json" with { type: "json" };
+import citationsSchema from "../../meta/schemas/citations/1.0.0.json" with { type: "json" };
 import {
   extractorForExtension,
   locateFrontmatter,

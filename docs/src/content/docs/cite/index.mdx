@@ -153,9 +153,10 @@ the file grammar, the hashing rule, markers and the sidecar manifest.
 {/* cite own-config-key */}
 {/* cite one-config-file */}
 {/* cite bundles-citations-schema */}
-Citations are written in the `manni:citations` vocabulary, and manni cite
-bundles it. manni meta ships it as the built-in `manni:citations:1.0.0`, in
-its default set. So `manni meta validate` checks that an entry is well-formed;
+Citations are written in the `manni:citations` vocabulary. It is the built-in
+`manni:citations:1.0.0`, one schema that manni cite checks entries against
+and manni meta keeps in its default set. So `manni meta validate` checks that
+an entry is well-formed;
 only `manni cite check` can say whether it still holds. Both
 tools ship in one package and read one `manni.config.yaml`, under their own
 keys.
