@@ -1,6 +1,7 @@
 ---
 type: guide
 title: Hi
+description: A page that satisfies the built-in default set.
 ---
 
 # Hi

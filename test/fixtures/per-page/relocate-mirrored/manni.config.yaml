@@ -1,3 +1,5 @@
+meta:
+  schemas: [./plain.schema.json]
 collections:
   - name: site
     paths: ["docs/**/*.md"]

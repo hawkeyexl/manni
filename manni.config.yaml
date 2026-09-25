@@ -76,6 +76,20 @@ meta:
         # `text`. Before it existed, every Starlight key on every page went
         # unchecked.
         - astro:starlight:0.41
+        # The manni vocabularies, the same eleven the default set appends.
+        # Named here because this override replaces the default set for the
+        # docs, and every page of the site is held to them.
+        - manni:core:1.0.0
+        - manni:stewardship:1.0.0
+        - manni:audience:1.0.0
+        - manni:lifecycle:1.0.0
+        - manni:structure:1.0.0
+        - manni:ai-context:1.0.0
+        - manni:evals:1.0.0
+        - manni:artifact-evals:1.0.0
+        - manni:graph:1.0.0
+        - manni:terminology:1.0.0
+        - manni:citations:1.0.0
 
 # The accessibility tool reads `a11y:` and nothing else. Same narrowness as
 # above, for the same reason: this file is ambient for every run beneath the

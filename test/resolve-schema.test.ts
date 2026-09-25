@@ -64,7 +64,12 @@ describe("resolveSchemaSet", () => {
 
   it("falls back to the built-in default set", () => {
     const set = resolveSchemaSet({ filePath: "x.md" });
-    expect(set).toEqual(["google:okf:0.1", "passo-uno:seven-action:1.0"]);
+    expect(set).toEqual([...DEFAULT_SCHEMAS]);
+    expect(set.slice(0, 3)).toEqual([
+      "google:okf:0.1",
+      "passo-uno:seven-action:1.0",
+      "manni:core:1.0.0",
+    ]);
   });
 
   it("hands back a fresh array a caller can mutate safely", () => {
@@ -73,8 +78,7 @@ describe("resolveSchemaSet", () => {
     const set = resolveSchemaSet({ filePath: "x.md" });
     set.push("mutated:by:caller");
     expect(resolveSchemaSet({ filePath: "y.md" })).toEqual([
-      "google:okf:0.1",
-      "passo-uno:seven-action:1.0",
+      ...DEFAULT_SCHEMAS,
     ]);
   });
 

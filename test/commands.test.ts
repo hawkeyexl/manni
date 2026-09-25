@@ -78,10 +78,16 @@ describe("runValidate", () => {
       .filter((r) => !r.ok)
       .map((r) => r.file.split("/").pop())
       .sort();
+    // The four without a `description` fail manni:core:1.0.0, the one member
+    // of the default set that requires a key of every page. They are shared
+    // fixtures whose other tests are about what they do carry.
     expect(failed).toEqual([
+      "action-smoke-clean.md",
       "bad-timestamp.md",
       "missing-type.md",
       "no-frontmatter.md",
+      "valid-json.md",
+      "valid-toml.md",
     ]);
     expect(summary.failed).toBe(failed.length);
   });
@@ -133,6 +139,8 @@ describe("runValidate", () => {
   it("handles mdx via the markdown frontmatter logic", async () => {
     const { results } = await runValidate({
       inputs: ["test/fixtures/sample.mdx"],
+      // OKF alone: the fixture is shared, and this test is about extraction.
+      cliSchemas: ["google:okf:0.1"],
       cwd: root,
     });
     expect(results[0]?.ok).toBe(true);
@@ -143,7 +151,7 @@ describe("runValidate", () => {
     const { results } = await runValidate({
       inputs: ["-"],
       as: "markdown",
-      stdinContent: "---\ntype: note\n---\n# Hi\n",
+      stdinContent: "---\ntype: note\ntitle: Hi\ndescription: A note.\n---\n# Hi\n",
       cwd: root,
     });
     expect(results[0]?.file).toBe("<stdin>");

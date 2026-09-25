@@ -25,6 +25,7 @@ import {
 } from "../src/meta/commands/fill.js";
 import { buildEnvelopeSchema } from "../src/meta/commands/fill-prompt.js";
 import { loadSchema } from "../src/meta/core/schema-registry.js";
+import { DEFAULT_SCHEMAS } from "../src/meta/core/resolve-schema.js";
 import { compileWithFormats } from "../src/meta/core/validator.js";
 import { runValidate } from "../src/meta/commands/validate.js";
 import { DocmetaError } from "../src/meta/types.js";
@@ -632,10 +633,7 @@ describe("runFill — mechanical checks precede confidence", () => {
     expect(provider.requests).toHaveLength(0);
     // Schema resolution already succeeded, so the result must say so — "never
     // resolved" and "resolved, then writing refused" need different follow-up.
-    expect(results[0]?.schemas).toEqual([
-      "google:okf:0.1",
-      "passo-uno:seven-action:1.0",
-    ]);
+    expect(results[0]?.schemas).toEqual([...DEFAULT_SCHEMAS]);
   });
 
   it("writes HTML metadata into <head> and leaves the rest byte-identical", async () => {
@@ -804,8 +802,10 @@ describe("runFill — writing", () => {
   });
 
   it("makes no inference call when nothing needs filling", async () => {
-    // "Complete" is relative to the resolved schema set, which by default is
-    // OKF *and* Seven-Action — hence `action` alongside the OKF fields.
+    // "Complete" is relative to the resolved schema set. This one is OKF and
+    // Seven-Action, named explicitly: the default set also carries the manni
+    // family, whose many optional keys would make "complete" a page no test
+    // wants to spell out.
     await writeFile(
       join(dir, "complete.md"),
       "---\ntype: concept\naction: understand\ntitle: T\ndescription: D\nresource: https://e.com/x\ntags: [a]\ntimestamp: 2026-06-25T10:00:00Z\n---\n\n# T\n",
@@ -816,6 +816,7 @@ describe("runFill — writing", () => {
       ...base,
       cwd: dir,
       inputs: ["complete.md"],
+      cliSchemas: ["google:okf:0.1", "passo-uno:seven-action:1.0"],
       inferenceProvider: provider,
     });
     expect(provider.requests).toHaveLength(0);

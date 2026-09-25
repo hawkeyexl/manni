@@ -178,6 +178,17 @@ describe("docmeta CLI (built bin)", () => {
       "anthropic:claude-skill:2.1",
       "mkdocs:material:9.7",
       "anthropic:claude-subagent:2.1",
+      "manni:core:1.0.0",
+      "manni:stewardship:1.0.0",
+      "manni:audience:1.0.0",
+      "manni:lifecycle:1.0.0",
+      "manni:structure:1.0.0",
+      "manni:ai-context:1.0.0",
+      "manni:evals:1.0.0",
+      "manni:artifact-evals:1.0.0",
+      "manni:graph:1.0.0",
+      "manni:terminology:1.0.0",
+      "manni:citations:1.0.0",
     ]);
   });
 
@@ -223,7 +234,10 @@ describe("docmeta CLI (built bin)", () => {
   });
 
   it("validates piped stdin with --as", () => {
-    const r = run(["validate", "-", "--as", "markdown"], "---\ntype: note\n---\n");
+    const r = run(
+      ["validate", "-", "--as", "markdown"],
+      "---\ntype: note\ntitle: Hi\ndescription: A note.\n---\n",
+    );
     expect(r.status).toBe(0);
   });
 
@@ -958,7 +972,10 @@ describe("cli empty and unmatched inputs", () => {
   });
 
   it("keeps stdin working: one input, zero files, still a verdict", () => {
-    const r = run(["validate", "-", "--as", "markdown"], "---\ntype: note\n---\n");
+    const r = run(
+      ["validate", "-", "--as", "markdown"],
+      "---\ntype: note\ntitle: Hi\ndescription: A note.\n---\n",
+    );
     expect(r.status).toBe(0);
   });
 });
@@ -1219,7 +1236,9 @@ describe("config discovery walks up (0004)", () => {
     properties: { type: { type: "string" }, owner: { type: "string" } },
   });
   // Satisfies the built-in default set; violates the configured one.
-  const PAGE = "---\ntype: guide\ntitle: Hi\n---\n\n# Hi\n";
+  // Satisfies the built-in default set, and fails the sandbox's strict
+  // schema, which requires `owner`.
+  const PAGE = "---\ntype: guide\ntitle: Hi\ndescription: A guide.\n---\n\n# Hi\n";
 
   function write(rel: string, content: string): void {
     const p = join(sandbox, rel);

@@ -1,15 +1,14 @@
 /**
  * Behavior of the six house vocabularies — the intent-scoped split of the
- * docmeta frontmatter vocabulary proposed in docs/proposals/0023 — plus the
- * default-set behavior the nine family ids are intended to join.
+ * manni frontmatter vocabulary that proposal 0023 designed — plus the
+ * default-set behavior of the eleven built-in family ids.
  *
- * The drafts are deliberately unregistered while proposal 0023 is under
- * community review, so every case here validates through **file refs** into
- * docs/proposals/0023/schemas — which is exactly what `runValidate` does with
- * a `./x.json` schema entry, so the semantics under test are the shipped
- * pipeline's, not a harness approximation. The one block that genuinely needs
- * registration (default-set membership) is `describe.skip`ped at the bottom;
- * the registration PR swaps the file refs for built-in ids and flips it on.
+ * Every case validates through the **built-in ids** (`manni:core:1.0.0` and
+ * its siblings), which is exactly what `runValidate` does with an `-s` ref,
+ * so the semantics under test are the shipped pipeline's, not a harness
+ * approximation. The review drafts stay under docs/proposals as the record of
+ * how each family got here, and one block below proves every built-in is its
+ * latest draft with only the interface text changed.
  *
  * Design rules pinned here rather than in prose:
  *
@@ -22,14 +21,14 @@
  *    whose floor accepts "" teaches the habit it exists to prevent.
  *
  * 2. **The house ids are disjoint.** No property name is claimed by two
- *    docmeta house schemas, so a page stacking all six gets every error
+ *    manni house schemas, so a page stacking all six gets every error
  *    attributed to exactly one intent.
  *
- * 3. **Companion namespaces are not claimed.** `evals` (docmeta:evals:1.0.0-proposal.2),
- *    `graph` (manni:graph:1.0.0-proposal.1) and `metadata` (docmeta:artifact-evals:1.0.0-proposal.2) are
- *    common vocabularies validated by their own schemas and implemented by
- *    their own tools; claiming them here — even loosely — would put them on
- *    `docmeta fill`'s menu, and each has its own fill loop.
+ * 3. **Companion namespaces are not claimed.** `evals` (manni:evals:1.0.0),
+ *    `graph` (manni:graph:1.0.0) and `metadata` (manni:artifact-evals:1.0.0)
+ *    are common vocabularies validated by their own schemas and implemented
+ *    by their own tools; claiming them here — even loosely — would put them
+ *    on `manni meta fill`'s menu, and each has its own fill loop.
  */
 import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "node:url";
@@ -42,52 +41,45 @@ import { loadSchema } from "../src/meta/core/schema-registry.js";
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 
-const DRAFTS = "./docs/proposals/0023/schemas";
 /**
- * The drafts carry a semver **prerelease** version, not build metadata: the
- * hyphen is what makes `1.0.0-proposal.1` sort *below* the `1.0.0` these
- * register as, and what keeps a `manni:core:1` range from ever resolving to
- * a draft. Spelled `+proposal.1` it would compare equal to the release, which
- * is the opposite of what a review draft wants.
+ * The draft each built-in was promoted from. The drafts carry a semver
+ * **prerelease** version, not build metadata: the hyphen is what makes
+ * `1.0.0-proposal.1` sort *below* the `1.0.0` each registers as, and what
+ * keeps a `manni:core:1` range from ever resolving to a draft.
  *
- * Revisions are **per family**, not per set. proposal.2 of `evals`,
- * `artifact-evals` and `core` carries scoring, targeting and versioning fields
- * the other six had no part in, core's proposal.3 adds `locale`, and
- * stewardship's proposal.2 adds the editorial dates and widens the two anchor
- * fields; bumping the rest alongside would announce a revision none of them
- * made and leave pairs of byte-identical files to explain. `ref()` keeps the
- * mapping in one table, so a family's next bump is still a one-line edit.
- * Proposal 0047's `x-manni-location` mark is a change every family made, so
- * each one took a revision for it. ai-context's proposal.2 (0046) replaced
- * the page-level `generated-by` with `provenance` line pins and moved field
- * attribution to `meta-provenance`, and proposal.3 is that plus the mark.
+ * Revisions were **per family**, not per set, so each family's last draft
+ * carries its own revision number. This table is the record of which one
+ * became `1.0.0`.
  */
-const DRAFT_V = "1.0.0-proposal.1";
-const VERSIONS: Record<string, string> = {
-  core: "1.0.0-proposal.4",
-  stewardship: "1.0.0-proposal.3",
-  audience: "1.0.0-proposal.2",
-  lifecycle: "1.0.0-proposal.2",
-  structure: "1.0.0-proposal.2",
-  "ai-context": "1.0.0-proposal.3",
-  evals: "1.0.0-proposal.4",
-  graph: "1.0.0-proposal.1",
-  "artifact-evals": "1.0.0-proposal.4",
+const DRAFT_OF: Record<string, string> = {
+  core: "docs/proposals/0023/schemas/core/1.0.0-proposal.4.json",
+  stewardship: "docs/proposals/0023/schemas/stewardship/1.0.0-proposal.3.json",
+  audience: "docs/proposals/0023/schemas/audience/1.0.0-proposal.2.json",
+  lifecycle: "docs/proposals/0023/schemas/lifecycle/1.0.0-proposal.2.json",
+  structure: "docs/proposals/0023/schemas/structure/1.0.0-proposal.2.json",
+  "ai-context": "docs/proposals/0023/schemas/ai-context/1.0.0-proposal.3.json",
+  evals: "docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json",
+  "artifact-evals":
+    "docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json",
+  graph: "docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json",
+  terminology: "docs/proposals/0023/schemas/terminology/1.0.0-proposal.1.json",
+  citations: "docs/proposals/0044/schemas/citations/1.0.0-proposal.4.json",
 };
-const ref = (family: string): string =>
-  `${DRAFTS}/${family}/${VERSIONS[family] ?? DRAFT_V}.json`;
 
-const CORE = ref("core");
-const STEWARDSHIP = ref("stewardship");
+/** The built-in id for a family. */
+const id = (family: string): string => `manni:${family}:1.0.0`;
+
+const CORE = id("core");
+const STEWARDSHIP = id("stewardship");
 const HOUSE = [
   CORE,
   STEWARDSHIP,
-  ref("audience"),
-  ref("lifecycle"),
-  ref("structure"),
-  ref("ai-context"),
+  id("audience"),
+  id("lifecycle"),
+  id("structure"),
+  id("ai-context"),
 ];
-const SIBLINGS = [ref("evals"), ref("graph"), ref("artifact-evals")];
+const SIBLINGS = [id("evals"), id("graph"), id("artifact-evals")];
 
 /**
  * Every date the family carries, all three on stewardship and all three
@@ -136,8 +128,8 @@ const FIELDS: Record<string, string[]> = {
   "ai-context": ["meta-provenance", "provenance", "risks", "sample-questions"],
 };
 
-/** The schema's short name, from its draft path. */
-const nameOf = (ref: string): string => ref.split("/").at(-2) ?? ref;
+/** The family name, from its built-in id. */
+const nameOf = (ref: string): string => ref.split(":")[1] ?? ref;
 
 /**
  * The result without validate's `location:external` and `location:page`
@@ -212,8 +204,8 @@ describe("the six house vocabularies", () => {
     // human-readable string behind, so a draft could answer to
     // `manni:core:...` while calling itself a "docmeta core page vocabulary"
     // in the same breath, and point at sibling ids that no longer resolve.
-    // Pinned over the whole directory rather than the nine ids the rest of
-    // this suite loads: the superseded revisions are what anyone comparing
+    // Pinned over the whole directory rather than the eleven drafts the
+    // built-ins came from: the superseded revisions are what anyone comparing
     // two versions reads, and they carried the same stale strings.
     const dir = join(root, "docs/proposals/0023/schemas");
     const files: string[] = [];
@@ -284,7 +276,7 @@ describe("the six house vocabularies", () => {
   it("rejects a lifecycle outside the four-stage ladder, attributed to lifecycle", async () => {
     const r = await check("bad-lifecycle.md");
     expect(r.ok).toBe(false);
-    expect(r.errors[0]?.schema).toBe(ref("lifecycle"));
+    expect(r.errors[0]?.schema).toBe(id("lifecycle"));
     expect(r.errors[0]?.instancePath).toBe("/lifecycle");
   });
 
@@ -753,9 +745,9 @@ describe("the six house vocabularies", () => {
     expect(bad.ok).toBe(false);
   });
 
-  it("leaves the companion namespaces alone, and they validate under their own drafts", async () => {
+  it("leaves the companion namespaces alone, and they validate under their own schemas", async () => {
     // `evals`, `graph` and `metadata.evals` are unclaimed by the house schemas;
-    // stacked with the companion drafts themselves, the fixture's blocks are
+    // stacked with the companion schemas themselves, the fixture's blocks are
     // checked by their owners — proving the fixture speaks the current
     // shapes, not the superseded 0.1/0.2/0.8 ones.
     const houseOnly = await check("companion-namespaces.md");
@@ -834,32 +826,59 @@ describe("the composability law on claimed keys", () => {
 });
 
 /**
- * Default-set membership is the one thing file refs cannot test: it needs
- * the nine family ids registered and appended to `DEFAULT_SCHEMAS`. Skipped
- * until the registration PR that follows the 0023 review; that PR flips this
- * to `describe` and replaces the draft paths above with built-in ids. The
- * expectations inside are written against that future state on purpose.
+ * Every built-in is its latest draft with only the interface text changed:
+ * the `$id`, the root `title`, and `description` strings. Validation is the
+ * part a reviewer approved, so it is compared structurally rather than
+ * trusted to a careful copy.
  */
-describe.skip("the default set (flips on registration)", () => {
-  // Derived from the same table `ref()` reads, not repeated as literals. This
-  // block is skipped until the registration PR flips it, so a stale version
-  // here fails nothing in CI and is found only when that PR runs it — which
-  // is exactly when a "no compiled schema" error is most confusing. Four
-  // families have moved past proposal.1 since these strings were written.
-  const idFor = (family: string): string =>
-    `manni:${family}:${VERSIONS[family] ?? DRAFT_V}`;
-  const CORE_ID = idFor("core");
-  const FAMILY_IDS = [
-    CORE_ID,
-    idFor("stewardship"),
-    idFor("audience"),
-    idFor("lifecycle"),
-    idFor("structure"),
-    idFor("ai-context"),
-    idFor("evals"),
-    idFor("graph"),
-    idFor("artifact-evals"),
-  ];
+describe("the eleven built-ins, against their drafts", () => {
+  /** A deep copy without the root `$id`/`title` and any string `description`. */
+  function stripInterfaceText(node: unknown, atRoot = true): unknown {
+    if (Array.isArray(node)) return node.map((n) => stripInterfaceText(n, false));
+    if (node === null || typeof node !== "object") return node;
+    const out: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(node)) {
+      if (key === "description" && typeof value === "string") continue;
+      if (atRoot && (key === "$id" || key === "title")) continue;
+      out[key] = stripInterfaceText(value, false);
+    }
+    return out;
+  }
+
+  /** Every string `description` in a schema, with its JSON Pointer. */
+  function descriptions(node: unknown, at = ""): [string, string][] {
+    if (Array.isArray(node))
+      return node.flatMap((n, i) => descriptions(n, `${at}/${String(i)}`));
+    if (node === null || typeof node !== "object") return [];
+    return Object.entries(node).flatMap(([key, value]) =>
+      key === "description" && typeof value === "string"
+        ? [[at, value] as [string, string]]
+        : descriptions(value, `${at}/${key}`),
+    );
+  }
+
+  for (const [family, draft] of Object.entries(DRAFT_OF)) {
+    it(`${id(family)} validates exactly as ${draft.split("/").at(-1) ?? draft}`, async () => {
+      const builtin = await loadSchema(id(family));
+      const source = JSON.parse(await readFile(join(root, draft), "utf8")) as unknown;
+      expect(stripInterfaceText(builtin)).toEqual(stripInterfaceText(source));
+      expect(builtin.$id).toBe(id(family));
+      expect(builtin.title).toMatch(/^manni /);
+      expect(builtin.title).not.toMatch(/proposal/);
+    });
+
+    it(`${id(family)} describes the present, and names graph rather than kg`, async () => {
+      const builtin = await loadSchema(id(family));
+      for (const [at, text] of descriptions(builtin)) {
+        expect(text, `${family}${at}`).not.toMatch(/proposal\.\d|\bproposal \d|earlier drafts|\bkg\b|\bwill\b|planned|under review/i);
+      }
+    });
+  }
+});
+
+describe("the default set", () => {
+  const CORE_ID = CORE;
+  const FAMILY_IDS = Object.keys(DRAFT_OF).map(id);
 
   it("appends the whole family after the two existing members", async () => {
     const { DEFAULT_SCHEMAS } = await import("../src/meta/core/resolve-schema.js");

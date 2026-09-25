@@ -23,15 +23,39 @@ import { DocmetaError } from "../types.js";
 import { matchesFileGlob } from "../../shared/globs.js";
 
 /**
- * Applied when nothing else resolves. Seven-Action is safe to include here
- * because it constrains `action` — a key documents don't otherwise carry — and
- * does not require it, so adding it fails nothing that passed before.
- * Diataxis is deliberately absent: it both requires and constrains `type`, so
- * defaulting it would fail every repo not already on Diataxis.
+ * Applied when nothing else resolves.
+ *
+ * OKF and Seven-Action come first, in the order they joined. Seven-Action
+ * constrains `action`, a key documents don't otherwise carry, and does not
+ * require it.
+ *
+ * The manni family follows, one id per vocabulary. `manni:core:1.0.0` is the
+ * one member that requires a key of every page: a non-empty `title` and
+ * `description`. Every other family constrains only the keys it names and
+ * leaves the root open, so a page that omits those keys passes it, and a page
+ * that uses them is checked against one shape everywhere. Their conditional
+ * rules fire only on values a page chose to write, such as `lifecycle:
+ * deprecated` owing a successor or a removal date, and `type: term` owing a
+ * `label`.
+ *
+ * Diataxis is deliberately absent: it both requires and constrains `type` to
+ * its own four values, so defaulting it would fail every repo not already on
+ * Diataxis.
  */
 export const DEFAULT_SCHEMAS: readonly string[] = Object.freeze([
   "google:okf:0.1",
   "passo-uno:seven-action:1.0",
+  "manni:core:1.0.0",
+  "manni:stewardship:1.0.0",
+  "manni:audience:1.0.0",
+  "manni:lifecycle:1.0.0",
+  "manni:structure:1.0.0",
+  "manni:ai-context:1.0.0",
+  "manni:evals:1.0.0",
+  "manni:artifact-evals:1.0.0",
+  "manni:graph:1.0.0",
+  "manni:terminology:1.0.0",
+  "manni:citations:1.0.0",
 ]);
 export const FILE_SCHEMA_KEY = "$schema";
 

@@ -310,8 +310,12 @@ describe("composing the two", () => {
 });
 
 describe("the default schema set", () => {
-  it("is OKF plus Seven-Action", () => {
-    expect([...DEFAULT_SCHEMAS]).toEqual(["google:okf:0.1", SEVEN_ACTION]);
+  it("opens with OKF and Seven-Action, then the manni family", () => {
+    // The family's own membership and order are pinned in
+    // default-schema.test.ts; this only holds the two original members first.
+    expect(DEFAULT_SCHEMAS.slice(0, 2)).toEqual(["google:okf:0.1", SEVEN_ACTION]);
+    expect(DEFAULT_SCHEMAS.slice(2).every((id) => id.startsWith("manni:"))).toBe(true);
+    expect(DEFAULT_SCHEMAS).toHaveLength(13);
   });
 
   it("still passes an existing document that carries no action", async () => {
@@ -323,7 +327,7 @@ describe("the default schema set", () => {
       noConfig: true,
     });
     expect(results[0]?.ok).toBe(true);
-    expect(results[0]?.schemas).toEqual(["google:okf:0.1", SEVEN_ACTION]);
+    expect(results[0]?.schemas).toEqual([...DEFAULT_SCHEMAS]);
   });
 
   it("fails an out-of-vocabulary action with no flags at all", async () => {
