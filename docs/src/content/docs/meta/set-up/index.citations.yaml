@@ -51,9 +51,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-4cc78a17fae5f102ba9736cca8bd7e268640bec880d1c0fa52b1cf3ebd27ffc5
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 440-445
+        lines: 464-469
         integrity: sha256-f99695009a18c93f3a981a816787516b269084b614eacfcd864e8a143c5727a9
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: bare-validate-reads-every-collection
       claim:
         lines: 53

@@ -5,9 +5,9 @@ docs/src/content/docs/meta/reference/claude-subagent-schema.mdx:
         integrity: sha256-9f02663d998793b9f746e824fe679668e0db50838747e32636587804d633c719
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 431-438
+        lines: 455-462
         integrity: sha256-59c6d7f45e5f08e7454bbbfef4c99f642acecc72892011d890b2f6204c5ed0d4
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: subagent-effort-has-no-lower-bound
       claim:
         integrity: sha256-ef3e6a51afd5c08cd93c8f1ae09a48a0dbbcfe6a2fd0458fa4fc00932af3ce5d

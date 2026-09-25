@@ -6,24 +6,24 @@ docs/src/content/docs/meta/reference/glossary/schema-reference.mdx:
         integrity: sha256-4fdf9a200a2d6e2e53686ea5536c3b4ec7f4c1d52f1a3c2ace6a086609b2017b
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 283-294
+        lines: 316-327
         integrity: sha256-f6f552aeb3b36a82b2d1c396cc63aad2d99e80c5253297bb4fae1b121dacb774
-        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: file-ref-is-a-json-path-or-has-a-separator
       claim:
         lines: 10-11
         integrity: sha256-5b87af9ae2e54cba975fdb8c5637e793fe595fb7c83d6500592a7a40b1d314d3
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 287-295
+        lines: 320-328
         integrity: sha256-71f45aea7479f2840d20a86fa20b44613ef4b6ddac39da458c1ab581cacd57b2
-        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: url-ref-is-http-or-https
       claim:
         lines: 12
         integrity: sha256-d80c1b1f332c9251ad297d5fd4ae8b117b0b8768f1cc40232fcf5fcd48da3193
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 286
+        lines: 319
         integrity: sha256-73916bbbc37290e31b41fcefb00183d8f66b200197926e0860d5a1138e8b6204
-        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67

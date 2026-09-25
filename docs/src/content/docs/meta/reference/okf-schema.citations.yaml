@@ -10,8 +10,8 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-absent-recommended-field-passes
       claim:
-        lines: 57-59
-        integrity: sha256-832f7edff58acb44a7310ea6a3057bf03541adf3ca1421f462fa63c7e22fc278
+        lines: 59-61
+        integrity: sha256-bbad2cb5a9a0431acfa0d7d68cbe5d3050bc3175aaf7e0513cff31488dffeb2b
       source:
         file: src/meta/schemas/okf/0.1.json
         lines: 6-37
@@ -19,7 +19,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-field-meanings
       claim:
-        lines: 46-54
+        lines: 48-56
         integrity: sha256-83d8cab9fb6cb0f3c27b5f30c87e293cde5ff0e253ccfbe2e427d45cbc27549c
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -28,7 +28,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-timestamp-is-a-date-time-string
       claim:
-        lines: 44
+        lines: 46
         integrity: sha256-daba2c5e8f4d8eafcc7322b1c6cd13a33d7012f3939218ca2929cf77ca620c97
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -37,7 +37,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-tags-is-an-array-of-string
       claim:
-        lines: 43
+        lines: 45
         integrity: sha256-ecd21ce551414dd30cefa2126be8c11a4131bf85e8034c6963d2f4150aad9648
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -46,7 +46,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-resource-is-a-uri-string
       claim:
-        lines: 42
+        lines: 44
         integrity: sha256-d1247ea3b3e7e4d65ee9f56478b4a20169a90604b063dd44408ebc60eabcddb6
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -55,7 +55,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-description-is-a-string
       claim:
-        lines: 41
+        lines: 43
         integrity: sha256-ad1efec0da7f4f2910232a143a778320ab1cb0593fa6408913e128aaa3b33617
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -64,7 +64,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-title-is-a-string
       claim:
-        lines: 40
+        lines: 42
         integrity: sha256-9d5110a8ba7084b1ecca76927f4c10cfefa92fd54623d8369737775fec48ee84
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -73,7 +73,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-type-is-a-string-with-minlength-1
       claim:
-        lines: 39
+        lines: 41
         integrity: sha256-89244857f6476ed95f3f2cb27a20806db23f612c982bc4f110dd30737895f8af
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -93,21 +93,21 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         integrity: sha256-ec8608b0916fea78f86ecd3ef534e1245a47365d0d6c83d96950239d00d1cf36
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 227-238
+        lines: 260-271
         integrity: sha256-b609d7a86f241caa53f6c3ab9266149e6c0333c7496005e23ab3d94797659c1c
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: okf-ref-kind-is-builtin
       claim:
-        lines: 21
+        lines: 23
         integrity: sha256-532bd9663597e021387396a0d71bc4ba7d4d902e8235e18167ce466f6bd8fbfa
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 285-296
+        lines: 318-329
         integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: okf-allows-additional-properties
       claim:
-        lines: 20
+        lines: 22
         integrity: sha256-e2e966752eb94cb730537df05021e9f7d97550c0cd20ef0effa9ab5597839566
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -116,7 +116,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-dialect-is-draft-2020-12
       claim:
-        lines: 19
+        lines: 21
         integrity: sha256-7f3c20ca8da2f79b6a59121a4c14d31173abfcd94150593301f3040c94e1ce26
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -125,7 +125,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-schema-title
       claim:
-        lines: 18
+        lines: 20
         integrity: sha256-f58b555e9812c7fe53b7b92ccd1bf86f4fceea1286682cd2586d61d815bb8e55
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -134,7 +134,7 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-schema-id
       claim:
-        lines: 17
+        lines: 19
         integrity: sha256-c5b1e87a3ea99e5c5b3d035dc9db1e9301f5ac2e5e44d8d7437b68336fef1e8b
       source:
         file: src/meta/schemas/okf/0.1.json
@@ -143,9 +143,9 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: okf-anchors-the-default-set
       claim:
-        integrity: sha256-c2d452465554fceb04ee3bc7ab7b204f8625dcb04f441dd0b112bb91eb99e92e
+        integrity: sha256-64a176444ee0327aa881c065e70496b430ab90724916fb42c6ca9339319f4c84
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 25-35
-        integrity: sha256-cdf674ddd56e8c1c891cc633bae6ce4d8a34606bd8d54a74f93f6e42ac01aed3
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 32-59
+        integrity: sha256-58c5d05935270d4414c637cee886e207986a7904f1387f3cf8db70d4e48bf87b
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67

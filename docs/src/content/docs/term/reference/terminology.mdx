@@ -10,8 +10,9 @@ sidebar:
 A term entry is a record with ten fields. A term page carries it in its
 metadata, and a manifest entry holds the same record. Every reader produces it
 from a body construct too. The fields sit at the root of the page, flat.
-They are drafted as the `manni:terminology:1.0.0-proposal.1` vocabulary, which
-is [under review](/manni/meta/proposals/terminology/).
+They are the `manni:terminology:1.0.0` vocabulary, one of the [manni
+vocabularies](/manni/meta/reference/manni-vocabularies/). The [proposal
+page](/manni/meta/proposals/terminology/) records the reasoning behind them.
 
 ## Marking a file
 
@@ -136,20 +137,20 @@ into one file per entry names each file after.
 
 {/* cite schema-requires-label-definition-or-see */}
 {/* cite check-has-no-neither-rule */}
-`manni term check` checks the set. The shape of one page is a schema's job.
-The draft schema is at
-[`docs/proposals/0023/schemas/terminology/1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/terminology/1.0.0-proposal.1.json),
-and `manni meta validate -s` takes a path to a copy of it. It requires
+`manni term check` checks the set. The shape of one page is a schema's job,
+and `manni:terminology:1.0.0` is that schema. It is a built-in in manni meta's
+default set, so `manni meta validate` applies it unless another set replaces
+the default. It requires
 `label` on a `type: term` page, and a `definition` or a `see`. `check` does
 not report a page that has neither, so the schema is what catches it:
 
 ```console
-$ manni meta validate --no-config -s terminology/1.0.0-proposal.1.json term-without-definition-or-see.md
+$ manni meta validate --no-config -s manni:terminology:1.0.0 term-without-definition-or-see.md
 ✗ term-without-definition-or-see.md
-    (root)  must have required property 'definition'  (line 1)  [terminology/1.0.0-proposal.1.json]
-    (root)  must have required property 'see'  (line 1)  [terminology/1.0.0-proposal.1.json]
-    (root)  must match a schema in anyOf  (line 1)  [terminology/1.0.0-proposal.1.json]
-    (root)  must match "then" schema  (line 1)  [terminology/1.0.0-proposal.1.json]
+    (root)  must have required property 'definition'  (line 1)  [manni:terminology:1.0.0]
+    (root)  must have required property 'see'  (line 1)  [manni:terminology:1.0.0]
+    (root)  must match a schema in anyOf  (line 1)  [manni:terminology:1.0.0]
+    (root)  must match "then" schema  (line 1)  [manni:terminology:1.0.0]
 
 1 file checked, 0 passed, 1 failed, 4 errors
 ```

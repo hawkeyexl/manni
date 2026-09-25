@@ -1,10 +1,10 @@
 docs/src/content/docs/meta/reference/index.mdx:
   citations:
-    - id: reference-index-twenty-three-built-ins
+    - id: reference-index-built-in-count
       claim:
-        integrity: sha256-f60959cd2af8eb0eaa7637271ddf0e0f354cb11c5193ace0e27851d6f1c5ce8d
+        integrity: sha256-ac624c9531a37ecd45a091e25628c66acc1187ef374fbf5949681dbfdf6fcd64
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 55-79
-        integrity: sha256-4a7520e7298eed2f70a07a84e70a8e084937cd3c74ec6e94b7accd516e659d94
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        lines: 66-101
+        integrity: sha256-0e2fd43cc051155b8c10a6389c7fe11b11599dd70964c8f2466e8ef8dd7a6b3e
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67

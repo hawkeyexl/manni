@@ -98,26 +98,26 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-77ca37121d97f960b2b53924554e66d9af01c4a72390252c48487d245663a3ac
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 373-383
+        lines: 406-416
         integrity: sha256-5c1411cf27b7dad2f6a6ffd155522322bae5fa4c0c83f94d581627fa4b76ad8c
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: output-fetched-schema-errors
       claim:
         lines: 599-605
         integrity: sha256-2f4fbcd9d3b336526bfe67b503122d6d452e3e52147f97b0da94c2764b6036df
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 359-371
+        lines: 392-404
         integrity: sha256-ecb2395c34f51e0d9080dc51b871516478899189e786c05c3e2496863fa50071
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: output-a-url-schema-is-checked-before-compiling
       claim:
         integrity: sha256-129e8d89816f2dbcb7e7a989fb776106e74586c42471ffee5d3eedd5aeeb1f59
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 373-378
+        lines: 406-411
         integrity: sha256-7967855980d4be99b7755ea36303efb983d2ab010550abbadaaf5b40f23f3920
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: output-nothing-checked-is-exit-2-not-1
       claim:
         integrity: sha256-c360b83cfa44c47b59476c3bc86072b934de2e96349cc9b2975e28758c6daf5b

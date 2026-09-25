@@ -5,8 +5,8 @@ description: Every schema shipped with manni meta in one table, showing what eac
 
 import { Aside, Tabs, TabItem, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-{/* cite registry-twenty-three-bundled-schemas */}
-manni meta bundles twenty-three schemas. You reference any of them by id, with no file
+{/* cite registry-bundled-schema-count */}
+manni meta bundles thirty-four schemas. You reference any of them by id, with no file
 to write, no URL to host, and no network call at validation time. This page is
 the registry: what each one constrains, whether it requires anything, and which
 are applied when you pass no flags at all.
@@ -42,15 +42,26 @@ installed.
 | `anthropic:claude-skill:2.1` | 20 Claude Code `SKILL.md` fields | nothing | No | [`claude-skill/2.1.json`](/manni/schemas/claude-skill/2.1.json) | [Agent Skills schemas](/manni/meta/reference/agent-skills-schemas/) |
 | `mkdocs:material:9.7` | 19 MkDocs and Material front matter keys | nothing | No | [`mkdocs-material/9.7.json`](/manni/schemas/mkdocs-material/9.7.json) | [Platform schemas](/manni/meta/reference/platform-schemas/) |
 | `anthropic:claude-subagent:2.1` | 18 Claude Code agent definition fields | `name`, `description` | No | [`claude-subagent/2.1.json`](/manni/schemas/claude-subagent/2.1.json) | [Claude Code subagent schema](/manni/meta/reference/claude-subagent-schema/) |
+| `manni:core:1.0.0` | 7 page identity keys: `title`, `description`, `id`, `type`, `keywords`, `language`, `locale` | `title`, `description` | **Yes** | [`core/1.0.0.json`](/manni/schemas/core/1.0.0.json) | [manni vocabularies](/manni/meta/reference/manni-vocabularies/) |
+| `manni:stewardship:1.0.0` | 10 ownership, review and date keys | nothing | **Yes** | [`stewardship/1.0.0.json`](/manni/schemas/stewardship/1.0.0.json) | [manni vocabularies](/manni/meta/reference/manni-vocabularies/) |
+| `manni:audience:1.0.0` | 5 audience and visibility keys | nothing | **Yes** | [`audience/1.0.0.json`](/manni/schemas/audience/1.0.0.json) | [manni vocabularies](/manni/meta/reference/manni-vocabularies/) |
+| `manni:lifecycle:1.0.0` | 4 lifecycle keys | nothing, until `lifecycle: deprecated` | **Yes** | [`lifecycle/1.0.0.json`](/manni/schemas/lifecycle/1.0.0.json) | [manni vocabularies](/manni/meta/reference/manni-vocabularies/) |
+| `manni:structure:1.0.0` | 6 relationship keys | nothing | **Yes** | [`structure/1.0.0.json`](/manni/schemas/structure/1.0.0.json) | [manni vocabularies](/manni/meta/reference/manni-vocabularies/) |
+| `manni:ai-context:1.0.0` | 4 provenance and AI-use keys | nothing | **Yes** | [`ai-context/1.0.0.json`](/manni/schemas/ai-context/1.0.0.json) | [manni vocabularies](/manni/meta/reference/manni-vocabularies/) |
+| `manni:evals:1.0.0` | `evals`, `eval-suite`, `eval-skip` | nothing | **Yes** | [`evals/1.0.0.json`](/manni/schemas/evals/1.0.0.json) | [manni vocabularies](/manni/meta/reference/manni-vocabularies/) |
+| `manni:artifact-evals:1.0.0` | `metadata.evals`, `metadata.eval-skip`, `metadata.meta-provenance` | nothing | **Yes** | [`artifact-evals/1.0.0.json`](/manni/schemas/artifact-evals/1.0.0.json) | [manni vocabularies](/manni/meta/reference/manni-vocabularies/) |
+| `manni:graph:1.0.0` | 17 knowledge-graph fields under `graph` | nothing | **Yes** | [`graph/1.0.0.json`](/manni/schemas/graph/1.0.0.json) | [manni vocabularies](/manni/meta/reference/manni-vocabularies/) |
+| `manni:terminology:1.0.0` | 10 term entry fields | nothing, until `type: term` | **Yes** | [`terminology/1.0.0.json`](/manni/schemas/terminology/1.0.0.json) | [manni vocabularies](/manni/meta/reference/manni-vocabularies/) |
+| `manni:citations:1.0.0` | `citations` | nothing | **Yes** | [`citations/1.0.0.json`](/manni/schemas/citations/1.0.0.json) | [manni vocabularies](/manni/meta/reference/manni-vocabularies/) |
 
 {/* cite registry-all-draft-2020-12-and-builtin-refs */}
-All twenty-three use [Draft
+All thirty-four use [Draft
 2020-12](/manni/meta/reference/schema-resolution/#dialects) and are [built-in
 references](/manni/meta/reference/schema-resolution/#reference-kinds). A typo in an
 id is reported as an unknown built-in rather than a missing file.
 
-{/* cite registry-twenty-two-allow-additional-properties */}
-Twenty-two of them allow additional properties. `agentskills:skill:1.0` is the
+{/* cite registry-all-but-one-allow-additional-properties */}
+Thirty-three of them allow additional properties. `agentskills:skill:1.0` is the
 one exception, and not out of strictness. The tooling that packages a skill for
 distribution *hard-errors* on a key outside the standard's six rather than
 ignoring it. A schema that tolerated unknown keys would pass exactly the file
@@ -91,6 +102,17 @@ https://hawkeyexl.github.io/manni/schemas/agent-skills/1.0.json
 https://hawkeyexl.github.io/manni/schemas/claude-skill/2.1.json
 https://hawkeyexl.github.io/manni/schemas/mkdocs-material/9.7.json
 https://hawkeyexl.github.io/manni/schemas/claude-subagent/2.1.json
+https://hawkeyexl.github.io/manni/schemas/core/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/stewardship/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/audience/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/lifecycle/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/structure/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/ai-context/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/evals/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/graph/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/terminology/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/citations/1.0.0.json
 ```
 
 {/* cite registry-published-urls-have-three-jobs */}
@@ -216,6 +238,12 @@ build tool checks. Nothing fails when `og:image` is missing, and the page just
 renders badly everywhere it is shared. See [Metadata
 vocabularies](/manni/meta/reference/metadata-vocabularies/).
 
+{/* cite registry-house-vocabularies */}
+**House vocabularies** are the fourth kind. The eleven `manni:*:1.0.0`
+schemas are manni's own metadata, one per family, from what a page is to what
+its claims rest on. All eleven are in the default set. See [manni
+vocabularies](/manni/meta/reference/manni-vocabularies/).
+
 {/* cite registry-a-set-attributes-each-failure */}
 The two kinds mostly claim different keys, so they compose. One run can hold a
 page to your generator's contract and to your own standard, attributing each
@@ -251,17 +279,32 @@ compose](/manni/meta/reference/taxonomy-schemas/#which-ones-compose).
 
 ## What runs when you pass no flags
 
-{/* cite registry-only-two-in-the-default-set */}
-Only two of the twenty-three are in the default set:
+{/* cite registry-default-set-members */}
+Thirteen of the thirty-four are in the default set, in this order:
 
 ```text
-google:okf:0.1 + passo-uno:seven-action:1.0
+google:okf:0.1
+passo-uno:seven-action:1.0
+manni:core:1.0.0
+manni:stewardship:1.0.0
+manni:audience:1.0.0
+manni:lifecycle:1.0.0
+manni:structure:1.0.0
+manni:ai-context:1.0.0
+manni:evals:1.0.0
+manni:artifact-evals:1.0.0
+manni:graph:1.0.0
+manni:terminology:1.0.0
+manni:citations:1.0.0
 ```
 
 {/* cite registry-seven-action-safe-by-default */}
-Everything else is opt-in. Seven-Action is safe to carry by default because it
-requires nothing. It rules that an `action`, if present, is legitimate, without
-insisting on one. The default set sits at the bottom of the [precedence
+Everything else is opt-in. OKF requires `type`, and `manni:core:1.0.0`
+requires `title` and `description`. The rest require nothing of a page that
+omits their keys. Seven-Action rules that an `action`, if present, is
+legitimate, without insisting on one. The [manni
+vocabularies](/manni/meta/reference/manni-vocabularies/) page lists the two
+rules that fire on a value a page wrote. The default set sits at the bottom of the [precedence
 chain](/manni/meta/reference/schema-resolution/#precedence). It applies only when
 no `--schema` flag, no in-file `$schema`, and no config rule matched.
 
@@ -386,7 +429,7 @@ built-in and editing it is usually faster than starting from nothing.
     against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
-{/* test {"testId":"built-in-schemas","description":"Every id in the registry table resolves, and the default set is the two this page names."} */}
+{/* test {"testId":"built-in-schemas","description":"Every id in the registry table resolves, and the default set is the thirteen this page names."} */}
 {/* step {"description":"The registry lists google:okf:0.1.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"google:okf:0.1"}} */}
 {/* step {"description":"The registry lists passo-uno:seven-action:1.0.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"passo-uno:seven-action:1.0"}} */}
 {/* step {"description":"The registry lists diataxis:diataxis:1.0.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"diataxis:diataxis:1.0"}} */}
@@ -399,6 +442,8 @@ built-in and editing it is usually faster than starting from nothing.
 {/* step {"description":"The registry lists vitepress:page:1.6.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"vitepress:page:1.6"}} */}
 {/* step {"description":"The registry lists mkdocs:material:9.7.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"mkdocs:material:9.7"}} */}
 {/* step {"description":"The registry lists x:cards:1.0.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"x:cards:1.0"}} */}
+{/* step {"description":"The registry lists manni:core:1.0.0.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"manni:core:1.0.0"}} */}
+{/* step {"description":"The registry lists manni:citations:1.0.0.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"manni:citations:1.0.0"}} */}
 {/* step {"description":"A platform schema composes with an editorial one in a single run, as the page claims.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/docusaurus/docs-unknown-key.md -s docusaurus:docs:3.10 -s diataxis:diataxis:1.0","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* step {"description":"The default set applies when no flag is given, and does not include a Docusaurus schema.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* step {"description":"The documented `tags` overlap: OKF allows string tags only, so a Docusaurus tag object fails against OKF.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/docusaurus/docs-okf-tag-conflict.md -s google:okf:0.1 -s docusaurus:docs:3.10","exitCodes":[1],"stdio":"/tags/0  must be string"}} */}

@@ -27,7 +27,7 @@ For every file, manni meta builds a **schema set** (the list of schemas that fil
 
 4. **Config `schemas`**: the repo-wide default list in `manni.config.yaml`.
 
-5. **The built-in default set**: if nothing above matched, manni meta uses `google:okf:0.1` and `passo-uno:seven-action:1.0` together.
+5. **The built-in default set**: if nothing above matched, manni meta uses `google:okf:0.1`, `passo-uno:seven-action:1.0` and the eleven [manni vocabularies](/manni/meta/reference/manni-vocabularies/) together.
 
 </Steps>
 
@@ -43,7 +43,7 @@ Here is the same chain as a quick-reference table:
 | 2 | File `$schema` key | That one file | String or list of strings. A reserved key, stripped before validation. |
 | 3 | Config `overrides` | Files matching a glob | First matching entry wins; later entries ignored. |
 | 4 | Config `schemas` | All files (repo default) | Used when no override matched. |
-| 5 | Built-in default set | All files (last resort) | `google:okf:0.1` + `passo-uno:seven-action:1.0`. |
+| 5 | Built-in default set | All files (last resort) | `google:okf:0.1`, `passo-uno:seven-action:1.0` and the eleven `manni:*:1.0.0` vocabularies. |
 
 Levels 3 and 4 come from your `manni.config.yaml`. Here is the config the worked example below assumes, with a repo-wide default plus one directory override:
 

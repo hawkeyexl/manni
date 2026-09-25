@@ -56,7 +56,7 @@ served and resolve offline), and the programmatic API.
 
 ## Quick start
 
-Point `manni meta validate` at a file, a directory (walked recursively), or a glob. With no `--schema`, it validates against the default set: the built-in OKF schema plus `passo-uno:seven-action:1.0`, which constrains an optional `action` field and requires nothing on its own.
+Point `manni meta validate` at a file, a directory (walked recursively), or a glob. With no `--schema`, it validates against the default set. That is the built-in OKF schema, then `passo-uno:seven-action:1.0`, then manni's eleven vocabularies, `manni:core:1.0.0` through `manni:citations:1.0.0`. OKF requires `type`, and `manni:core:1.0.0` requires `title` and `description`. The rest check only the keys a page carries.
 
 ```bash
 manni meta validate docs/intro.md

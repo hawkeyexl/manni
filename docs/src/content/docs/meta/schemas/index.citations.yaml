@@ -30,25 +30,25 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-546c0aaae16911ec5ea485d3e113abd28e488fd018c3337df2e9a3fba3a4ee89
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1082-1086
+        lines: 1115-1119
         integrity: sha256-58dcb64f18f7ddeb4a5175d21bb6cb92ee33e473384c5aaca08a9395140bea5e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: the-three-reference-kinds
       claim:
         integrity: sha256-a4fd7bcc0a486a118551bbf7e3bbabc59aa43f8d0e60ef4a49045d1be70dec66
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 283-296
+        lines: 316-329
         integrity: sha256-2f40a8e1715136cf70277d50252b4172f3fd9106e42a5fccd6914c78d0d6f32c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: document-names-its-own-schema
       claim:
         integrity: sha256-2e9e70750388d767b7562acdee44aca8ea482909e69207e404a25dca04fc9d7b
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 415-429
+        lines: 439-453
         integrity: sha256-f26405b820be639365b9174d79e17de8beda43a4c821ae7344dc686113182bd0
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: x-manni-location-keyword
       claim:
         integrity: sha256-6f3824dbf475407aa72146239f3a512a039e282999b13a2640f6577607d1ecb2
@@ -102,23 +102,23 @@ docs/src/content/docs/meta/schemas/index.mdx:
         lines: 100-113
         integrity: sha256-46434326821324b9dd8502221a276e273022bd745f92b1695089d42bd037e4f5
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
-    - id: manni-ships-23-builtin-schemas
+    - id: manni-ships-builtin-schemas
       claim:
-        integrity: sha256-04bc14a77f65ec20c4bd8d16abbf3eaf46d6cd848ecf573140142b39eb2315c5
+        integrity: sha256-75a9d4f4c1267dc61108842bfbcdd7d8342bb4b52baf96d61e894724f6deceb2
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 55-79
-        integrity: sha256-4a7520e7298eed2f70a07a84e70a8e084937cd3c74ec6e94b7accd516e659d94
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 66-101
+        integrity: sha256-0e2fd43cc051155b8c10a6389c7fe11b11599dd70964c8f2466e8ef8dd7a6b3e
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: builtin-ids-are-bundled-not-registered
       claim:
         lines: 182
         integrity: sha256-0461849baf1712aa8de09d0c838d054ea610b7128e0ff7d4ab6f28f4eb81237b
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 55-79
-        integrity: sha256-4a7520e7298eed2f70a07a84e70a8e084937cd3c74ec6e94b7accd516e659d94
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 66-101
+        integrity: sha256-0e2fd43cc051155b8c10a6389c7fe11b11599dd70964c8f2466e8ef8dd7a6b3e
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: okf-tolerates-unknown-keys
       claim:
         lines: 180
@@ -137,14 +137,14 @@ docs/src/content/docs/meta/schemas/index.mdx:
         lines: 7
         integrity: sha256-0e2f5437eb92e030b655c86a57a2dd15bb2acd051cc9be386ce3f58619f6000b
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
-    - id: default-set-is-okf-and-seven-action
+    - id: default-set-starts-with-okf
       claim:
-        integrity: sha256-d06a3b2648332e672be4fefd629f04383d32cc05d061e5a650953e71e4dec57a
+        integrity: sha256-58befc2e5b54a1b3099731c153ec722f7ad85ae5909dc207a312dc78dd6536ad
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 32-35
-        integrity: sha256-af133f1e0fa21ca01b004a947824e1ce63d00d49af5bf112da6ffcda850b9a3c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 32-59
+        integrity: sha256-58c5d05935270d4414c637cee886e207986a7904f1387f3cf8db70d4e48bf87b
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: fixture-title-must-be-non-empty-string
       claim:
         lines: 32

@@ -2,7 +2,7 @@ docs/src/content/docs/meta/index.mdx:
   citations:
     - id: body-below-frontmatter-never-read
       claim:
-        lines: 97-98
+        lines: 99-100
         integrity: sha256-51deef4abb34be45aea7bddc2af2800a193cdc7ce9380a757913e5717f68ae9f
       source:
         file: src/meta/commands/validate.ts
@@ -11,7 +11,7 @@ docs/src/content/docs/meta/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: formats-enforced-by-ajv-formats
       claim:
-        lines: 92-93
+        lines: 94-95
         integrity: sha256-a468756f18d56ccaf94e1a02532414aec245950d691be3767ebf9aab297e4ad8
       source:
         file: src/meta/core/validator.ts
@@ -20,21 +20,21 @@ docs/src/content/docs/meta/index.mdx:
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: required-fields-checked-against-metadata-object
       claim:
-        lines: 92
+        lines: 94
         integrity: sha256-af4f5a31f389ce65cdf3dad01011d038d8fa8b69671d410d8c16078f4db54bda
       source:
         file: src/meta/core/validator.ts
         lines: 632-633
         integrity: sha256-b41d2247f4df563b4638532286fcaf90f3105ab234b56e24619fd7f598d68e59
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
-    - id: twenty-three-built-in-schemas
+    - id: built-in-schema-count
       claim:
-        integrity: sha256-d86b270bafba4035900da70c74c586d6930388aa18c07106982d9abf6af6af8b
+        integrity: sha256-9c58874a0d855df6107aa218f9d8836d434bbd585bfe00ba6f34a1725b797d45
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 55-78
-        integrity: sha256-dd4d1ff69aba4375d1fa91a4f485dd5a682556f8412e7076b4fd273429383bb7
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        lines: 66-101
+        integrity: sha256-0e2fd43cc051155b8c10a6389c7fe11b11599dd70964c8f2466e8ef8dd7a6b3e
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: error-line-names-field-line-and-schema
       claim:
         integrity: sha256-6e24a2751ad70c15d7e6a0c643456d631350f32d19020526786cb196d44968af

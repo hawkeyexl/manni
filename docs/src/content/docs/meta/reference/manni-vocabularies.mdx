@@ -1,0 +1,182 @@
+---
+title: manni vocabularies
+description: "The eleven manni built-in schemas, covering what each requires, where each keeps its fields, and how they sit in the default set."
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+{/* cite manni-eleven-built-ins */}
+manni meta ships eleven vocabularies of its own, one per family, each at
+version `1.0.0`. Together they are the house metadata. They say what a page
+is, who cares for it, who it serves, and where it is in its life. They also
+say what a machine did to it and what its claims rest on. Each is a [built-in
+schema](/manni/meta/reference/built-in-schemas/), referenced by id with no
+file to write.
+
+{/* cite manni-all-eleven-default */}
+All eleven are in the default set, after `google:okf:0.1` and
+`passo-uno:seven-action:1.0`. A page that no `--schema` flag, `$schema` line
+or config rule governs is checked against all thirteen.
+
+## The eleven
+
+| Id | Covers | Requires | Rationale |
+|---|---|---|---|
+| `manni:core:1.0.0` | What the page is | `title`, `description` | [core](/manni/meta/proposals/core/) |
+| `manni:stewardship:1.0.0` | Who cares for the page, and its own dates | nothing | [stewardship](/manni/meta/proposals/stewardship/) |
+| `manni:audience:1.0.0` | Who the page serves and who may see it | nothing | [audience](/manni/meta/proposals/audience/) |
+| `manni:lifecycle:1.0.0` | Where the page is in its life | nothing, until `lifecycle: deprecated` | [lifecycle](/manni/meta/proposals/lifecycle/) |
+| `manni:structure:1.0.0` | Products, concepts and other pages the page connects to | nothing | [structure](/manni/meta/proposals/structure/) |
+| `manni:ai-context:1.0.0` | How machines made the page and may use it | nothing | [ai-context](/manni/meta/proposals/ai-context/) |
+| `manni:evals:1.0.0` | Testable assertions about the page | nothing | [evals](/manni/meta/proposals/evals/) |
+| `manni:artifact-evals:1.0.0` | Assertions about skills, agent definitions and rules files | nothing | [artifact-evals](/manni/meta/proposals/artifact-evals/) |
+| `manni:graph:1.0.0` | Knowledge-graph fields, under one `graph` key | nothing | [graph](/manni/meta/proposals/graph/) |
+| `manni:terminology:1.0.0` | What a term entry says about its term | nothing, until `type: term` | [terminology](/manni/meta/proposals/terminology/) |
+| `manni:citations:1.0.0` | The source lines a page's claims rest on | nothing | [citations](/manni/meta/proposals/citations/) |
+
+Each proposal page records why its fields are shaped the way they are, and
+shows the drafts that led to the `1.0.0` listed here. The
+[vocabularies overview](/manni/meta/proposals/frontmatter-vocabularies/) states
+the conventions every family shares.
+
+## What the default set asks of a page
+
+{/* cite manni-core-requires-two */}
+`manni:core:1.0.0` is the one member that requires a key of every page. A
+page needs a non-empty `title` and a non-empty `description`.
+
+{/* cite manni-others-open-root */}
+The other ten constrain only the keys they name, and leave the page root
+open. A page that omits their keys passes them. A page that uses one is held
+to the same shape on every page.
+
+{/* cite manni-lifecycle-deprecated-owes manni-terminology-term-owes */}
+Two rules fire only on a value a page chose to write. `lifecycle: deprecated`
+owes a `replaced-by`, a `remove-by`, or both. `type: term` owes a `label`, and
+either a `definition` or a `see`.
+
+{/* cite manni-evals-prefix-reserved manni-citations-prefix-reserved manni-graph-block-closed */}
+Three families catch a typo in a key they own. `manni:evals:1.0.0` rejects
+an unknown `eval-*` key at the root, and `manni:citations:1.0.0` an unknown
+`citation-*` key. The `graph` block of `manni:graph:1.0.0` is closed, so an
+unknown key inside it fails.
+
+Here is a small repository with no schema of its own, validated with no flags:
+
+```sh
+manni meta validate docs/
+```
+
+```text
+✗ docs/deprecated.md
+    (root)  must have required property 'replaced-by'  (line 1)  [manni:lifecycle:1.0.0]
+    (root)  must have required property 'remove-by'  (line 1)  [manni:lifecycle:1.0.0]
+    (root)  must match a schema in anyOf  (line 1)  [manni:lifecycle:1.0.0]
+    (root)  must match "then" schema  (line 1)  [manni:lifecycle:1.0.0]
+    /owner  warning "owner" is stored in the page; manni:stewardship:1.0.0 prefers external metadata. Run manni meta relocate.  (line 6)  [location:external]
+✓ docs/fine.md
+✗ docs/no-description.md
+    (root)  must have required property 'description'  (line 1)  [manni:core:1.0.0]
+
+3 files checked, 1 passed, 2 failed, 5 errors, 1 warning
+```
+
+## Where each keeps its fields
+
+{/* cite manni-location-keyword */}
+Every top-level key in the family carries
+[`x-manni-location`](/manni/meta/reference/schema-resolution/#field-location).
+`page` keeps the value in the document's own metadata, where it reaches
+delivered output. `external` keeps it in the collection's
+[external-metadata manifest](/manni/meta/reference/configuration/#external-metadata).
+
+| Id | In the page | In the manifest |
+|---|---|---|
+| `manni:core:1.0.0` | `title`, `description`, `id`, `type`, `keywords`, `language`, `locale` | none |
+| `manni:stewardship:1.0.0` | `last-updated` | `authors`, `owner`, `stakeholders`, `reviewed-by`, `created`, `last-reviewed`, `review-interval`, `verified-against`, `source-of-truth` |
+| `manni:audience:1.0.0` | `audiences`, `intent` | `personas`, `journeys`, `visibility` |
+| `manni:lifecycle:1.0.0` | `lifecycle`, `replaced-by` | `supersedes`, `remove-by` |
+| `manni:structure:1.0.0` | `applies-to`, `not-applicable-to`, `concepts`, `prerequisites`, `next-steps`, `related-pages` | none |
+| `manni:ai-context:1.0.0` | `risks`, `sample-questions` | `provenance`, `meta-provenance` |
+| `manni:evals:1.0.0` | none | `evals`, `eval-suite`, `eval-skip` |
+| `manni:artifact-evals:1.0.0` | none | `metadata` |
+| `manni:graph:1.0.0` | `graph` | none |
+| `manni:terminology:1.0.0` | `label`, `definition`, `abstract`, `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `scope-note` | none |
+| `manni:citations:1.0.0` | none | `citations` |
+
+{/* cite manni-location-is-warning */}
+A manifest key found in the page is a warning, not an error, as `owner` is in
+the run above. `manni meta relocate` moves it into the manifest.
+
+## Choose a different set
+
+{/* cite manni-any-set-replaces-default */}
+The default set applies only when nothing else resolves. A `--schema` flag,
+a `$schema` line, or a config rule replaces it whole, so none of the eleven
+apply unless that set names them.
+
+To keep the set that ran before the manni vocabularies joined it, name its
+two members:
+
+```sh
+manni meta validate docs/ -s google:okf:0.1 -s passo-uno:seven-action:1.0
+```
+
+To keep some of the family, list the ones you want in config:
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas:
+    - google:okf:0.1
+    - manni:core:1.0.0
+    - manni:lifecycle:1.0.0
+    - manni:citations:1.0.0
+```
+
+<Aside type="note" title="A house schema can extend one by id">
+Every built-in is registered for `$ref`, so a schema of your own can build on
+a member. `{ "allOf": [{ "$ref": "manni:stewardship:1.0.0" }], "required":
+["owner"] }` makes `owner` mandatory and keeps every other rule of the
+vocabulary.
+</Aside>
+
+## The published URLs
+
+{/* cite manni-published-urls */}
+Each vocabulary is also served as plain JSON under
+`https://hawkeyexl.github.io/manni/schemas/`, at `<family>/1.0.0.json`:
+
+```text
+https://hawkeyexl.github.io/manni/schemas/core/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/stewardship/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/audience/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/lifecycle/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/structure/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/ai-context/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/evals/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/graph/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/terminology/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/citations/1.0.0.json
+```
+
+manni meta answers these URLs from its bundled copy, with no network call, as
+it does for [every built-in](/manni/meta/reference/built-in-schemas/#the-published-urls).
+
+<CardGrid>
+  <LinkCard
+    title="Built-in schemas"
+    href="/manni/meta/reference/built-in-schemas/"
+    description="The registry: every schema manni meta ships, what it constrains, and which are on by default."
+  />
+  <LinkCard
+    title="Schema resolution reference"
+    href="/manni/meta/reference/schema-resolution/"
+    description="The precedence chain, field location, and the supported dialects."
+  />
+  <LinkCard
+    title="Keep metadata outside the document"
+    href="/manni/meta/set-up/external-metadata/"
+    description="Declare a manifest for a collection and move the keys the vocabularies mark external."
+  />
+</CardGrid>

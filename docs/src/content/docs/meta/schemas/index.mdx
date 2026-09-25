@@ -136,8 +136,8 @@ Setting `"additionalProperties": false`? A document's own `$schema:` key won't t
 
 ## The built-in OKF schema, a fuller example
 
-{/* cite default-set-is-okf-and-seven-action */}
-The schema anchoring manni meta's default set is [Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md), addressed as `google:okf:0.1`. Run `manni meta schemas` for the full built-in list. OKF is a useful reference because it combines every technique on this page in a realistic standard. Reading it is the fastest way to see how the pieces fit together. When no other schema applies, manni meta falls back to a *set* rather than to OKF alone. That set is `google:okf:0.1` together with [`passo-uno:seven-action:1.0`](/manni/meta/reference/taxonomy-schemas/), which constrains an optional `action` field and requires nothing of its own.
+{/* cite default-set-starts-with-okf */}
+The first schema in manni meta's default set is [Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md), addressed as `google:okf:0.1`. Run `manni meta schemas` for the full built-in list. OKF is a useful reference because it combines every technique on this page in a realistic standard. Reading it is the fastest way to see how the pieces fit together. When no other schema applies, manni meta falls back to a *set* rather than to OKF alone. That set is `google:okf:0.1`, then [`passo-uno:seven-action:1.0`](/manni/meta/reference/taxonomy-schemas/), then the eleven [manni vocabularies](/manni/meta/reference/manni-vocabularies/). Of those twelve, only `manni:core:1.0.0` requires anything, a non-empty `title` and `description`.
 
 ```json title="src/schemas/okf/0.1.json"
 {
@@ -206,8 +206,8 @@ If OKF's field set is close to what you need, copy it into a file and adjust it.
 
 ## Borrow a schema instead of writing one
 
-{/* cite manni-ships-23-builtin-schemas */}
-Everything above assumes you're defining the field set yourself. manni meta ships twenty-three schemas you can adopt without authoring anything. The [built-in schema registry](/manni/meta/reference/built-in-schemas/) lists all of them in one table, with what each constrains and which two are on by default.
+{/* cite manni-ships-builtin-schemas */}
+Everything above assumes you're defining the field set yourself. manni meta ships thirty-four schemas you can adopt without authoring anything. The [built-in schema registry](/manni/meta/reference/built-in-schemas/) lists all of them in one table, with what each constrains and which thirteen are on by default.
 
 If your site is built with Docusaurus, start with [`docusaurus:docs:3.10`](/manni/meta/reference/docusaurus-schemas/) and its blog and pages counterparts. They encode the front matter contract of Docusaurus 3.10 and require nothing. Switching one on cannot fail a page that was already building. It only catches a `sidebar_position: "2"` that your site would have rejected later. They claim none of the `type` or `action` keys below, so they stack with any of the vocabularies. They do share `tags` with OKF, which allows only strings where Docusaurus also allows tag objects. See [the overlap note](/manni/meta/reference/built-in-schemas/#two-kinds-of-built-in) before pairing those two.
 
@@ -326,7 +326,7 @@ through every command.
   <LinkCard
     title="Built-in schemas"
     href="/manni/meta/reference/built-in-schemas/"
-    description="The registry: every schema manni meta ships, what it constrains, and which two are on by default."
+    description="The registry: every schema manni meta ships, what it constrains, and which thirteen are on by default."
   />
   <LinkCard
     title="How schema resolution works"
@@ -359,7 +359,7 @@ through every command.
 {/* step {"description":"The minimal title.schema.json shape (the extra.schema.json fixture) passes a doc that has a title.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md -s ./test/fixtures/extra.schema.json","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* step {"description":"A required field that is absent is a hard failure: a frontmatter-free doc fails the required `title`.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/no-frontmatter.md -s ./test/fixtures/extra.schema.json","exitCodes":[1],"stdio":"must have required property 'title'"}} */}
 {/* step {"description":"The date-time format is enforced: a malformed timestamp fails against OKF.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/bad-timestamp.md","exitCodes":[1],"stdio":"date-time"}} */}
-{/* step {"description":"`schemas` lists the built-in OKF schema the page documents, one of the two the default set falls back to.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"google:okf:0.1"}} */}
+{/* step {"description":"`schemas` lists the built-in OKF schema the page documents, the first of the thirteen the default set falls back to.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"google:okf:0.1"}} */}
 {/* step {"description":"`schemas` also lists the Diataxis vocabulary this page points readers at.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"diataxis:diataxis:1.0"}} */}
 {/* step {"description":"Stacking OKF with a taxonomy schema passes a document carrying a canonical Diataxis type.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/taxonomy/diataxis-how-to.md -s google:okf:0.1 -s diataxis:diataxis:1.0","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* step {"description":"The vocabulary is closed: a near-miss spelling fails against the Diataxis schema.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/taxonomy/diataxis-bad-type.md -s diataxis:diataxis:1.0","exitCodes":[1],"stdio":"allowed values"}} */}

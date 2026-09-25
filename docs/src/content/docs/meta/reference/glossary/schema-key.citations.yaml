@@ -5,9 +5,9 @@ docs/src/content/docs/meta/reference/glossary/schema-key.mdx:
         integrity: sha256-0cf73e89c65731092a4a17e7e787de8fd5defa46a02ccf02f77deccb3be45f32
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 240-249
+        lines: 264-273
         integrity: sha256-71ef438f3ca35d85e21c28ff90ee155ade916de0a113151793b8687fc90e4cc3
-        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: schema-key-stripped-before-validation
       claim:
         integrity: sha256-0cf73e89c65731092a4a17e7e787de8fd5defa46a02ccf02f77deccb3be45f32

@@ -1,0 +1,106 @@
+docs/src/content/docs/meta/reference/manni-vocabularies.mdx:
+  citations:
+    - id: manni-published-urls
+      claim:
+        integrity: sha256-d6b09154d9c0969a9395a1fed1de314ec5a2fe13c70791b353e040cdc818cac5
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 212-222
+        integrity: sha256-a0a4bd6b138208246f4987a233f06738d9fdc7aeb202284909c47401a0f4f3e3
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
+    - id: manni-any-set-replaces-default
+      claim:
+        integrity: sha256-4555ffb01f75a44f0ebc514ceb0929415790576e115b443787ddfed353924d3d
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 1-8
+        integrity: sha256-3f4cb717e0a632173838fb8f774fc67c329f91a12e9b96b716a39d2f8d4daec6
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
+    - id: manni-location-is-warning
+      claim:
+        integrity: sha256-dba57c3560f0fc308c539145dd16c4244c0edd6ed4706062d597e7c1ddc5904f
+      source:
+        file: src/meta/commands/validate.ts
+        lines: 431-436
+        integrity: sha256-322c785e2c90e19dccc0203214bfcfda36622ae1d2bf7b2715ee0fb9e978d19a
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
+    - id: manni-location-keyword
+      claim:
+        integrity: sha256-7bbdea06998d3bbee6d4131d5e743359b3389fdd89be178739e80e53b5bca0b0
+      source:
+        file: src/meta/core/location.ts
+        lines: 19-23
+        integrity: sha256-48ff344f9216756bc5183a20142b459ec673734806b26eda92266551b0a4e3a6
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
+    - id: manni-evals-prefix-reserved
+      claim:
+        integrity: sha256-01d25f5fb922d57b4cba2cd525ae13b43b391f06f7809403e3023711e7f7edf6
+      source:
+        file: src/meta/schemas/evals/1.0.0.json
+        lines: 438-440
+        integrity: sha256-0c444e44fd1830230fc1461c16d66a0dfef9d1f1a17f73a10d6886d47f44e1bf
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
+    - id: manni-citations-prefix-reserved
+      claim:
+        integrity: sha256-01d25f5fb922d57b4cba2cd525ae13b43b391f06f7809403e3023711e7f7edf6
+      source:
+        file: src/meta/schemas/citations/1.0.0.json
+        lines: 19-21
+        integrity: sha256-2e0149b8fd40d5b1db23162580f0d6610adf5a5517915739b9e489e6721fd9bd
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
+    - id: manni-graph-block-closed
+      claim:
+        integrity: sha256-01d25f5fb922d57b4cba2cd525ae13b43b391f06f7809403e3023711e7f7edf6
+      source:
+        file: src/meta/schemas/graph/1.0.0.json
+        lines: 9-11
+        integrity: sha256-1e3f8aa24120f40a372724fbfc2038a61f5a21a4efa1cd01d87763c2ade12ed5
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
+    - id: manni-lifecycle-deprecated-owes
+      claim:
+        integrity: sha256-c091377d24bd212c7b70e52d458bcfd90bda62ffd63c12c23a2a3e5780710968
+      source:
+        file: src/meta/schemas/lifecycle/1.0.0.json
+        lines: 36-64
+        integrity: sha256-329fa8ed54e4fffb0e421bec0f592589783405e3cc9beda4a64dc040e373a2b3
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
+    - id: manni-terminology-term-owes
+      claim:
+        integrity: sha256-c091377d24bd212c7b70e52d458bcfd90bda62ffd63c12c23a2a3e5780710968
+      source:
+        file: src/meta/schemas/terminology/1.0.0.json
+        lines: 65-96
+        integrity: sha256-b26d29e74d2ce5431ce7e28d8742c5a9f00ed51bcd7fc4b8ec522ea1b5ca9d52
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
+    - id: manni-others-open-root
+      claim:
+        integrity: sha256-7fdd7ffbfc4674b304c356aa296b4bea59d34b4c4697644db645512b9a019471
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 32-36
+        integrity: sha256-f0bac06c2e5470a73443d33dcdb041560cf2ea125da4857c20d864d40df4d9bd
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
+    - id: manni-core-requires-two
+      claim:
+        integrity: sha256-a86b0a2d484caab49678c2716093e35b335280a732ccd9eaf9940ae25ecff2f0
+      source:
+        file: src/meta/schemas/core/1.0.0.json
+        lines: 7-10
+        integrity: sha256-98fcf79e73fedcae890cf5bd3e046d078dd3d4383a6605e807f275913b625764
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
+    - id: manni-all-eleven-default
+      claim:
+        integrity: sha256-2a8d9866e8338c1e32063d957a36d22a50e157d386bbfaab4f3741c610277601
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 45-59
+        integrity: sha256-325b56668f0caf5475c6280c0a403100845a4ab1840909e42121ad52801302bb
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
+    - id: manni-eleven-built-ins
+      claim:
+        integrity: sha256-714ed3a6e06f9cdc97300987c0c2c3d280d40110f3fcb8f8930dedd3d04e2b73
+      source:
+        file: src/meta/core/schema-registry.ts
+        lines: 90-100
+        integrity: sha256-cc602283c39b085db2bee0eb629bc890ec9cba9c09ac7df639e22d13786b68c7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67

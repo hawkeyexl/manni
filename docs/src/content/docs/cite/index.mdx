@@ -153,10 +153,10 @@ the file grammar, the hashing rule, markers and the sidecar manifest.
 {/* cite own-config-key */}
 {/* cite one-config-file */}
 {/* cite bundles-citations-schema */}
-Citations are written in the `manni:citations` vocabulary. Its draft is open
-for review with the family's other vocabularies, and manni cite
-bundles it. It is not a built-in schema of manni meta. With the schema file in
-its set, `manni meta validate` checks that an entry is well-formed; only `manni cite check` can say whether it still holds. Both
+Citations are written in the `manni:citations` vocabulary, and manni cite
+bundles it. manni meta ships it as the built-in `manni:citations:1.0.0`, in
+its default set. So `manni meta validate` checks that an entry is well-formed;
+only `manni cite check` can say whether it still holds. Both
 tools ship in one package and read one `manni.config.yaml`, under their own
 keys.
 
@@ -168,5 +168,5 @@ keys.
 {/* step {"description":"A page whose two pins still match passes with both ends current and a green summary.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/current.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 findings"}} */}
 {/* step {"description":"The claim end reads in file lines, and the source end is spelled as the entry spelled it.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/current.md","exitCodes":[0],"stdio":"/fetch-timeout\\s+:15 current\\s+src\\/limits\\.ts:2 current/"}} */}
 {/* step {"description":"A page whose cited line changed fails, with the claim end still current beside it.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/source-changed.md","exitCodes":[1],"stdio":"/fetch-timeout\\s+:15 current\\s+src\\/changed\\.ts:2 changed/"}} */}
-{/* step {"description":"Metadata validation passes the same stale page, because a hash that is well-formed is all a schema can check.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config -s docs/proposals/0044/schemas/citations/1.0.0-proposal.4.json test/fixtures/cite/pages/source-changed.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 errors"}} */}
+{/* step {"description":"Metadata validation passes the same stale page, because a hash that is well-formed is all a schema can check.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config -s manni:citations:1.0.0 test/fixtures/cite/pages/source-changed.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 errors"}} */}
 {/* test end */}

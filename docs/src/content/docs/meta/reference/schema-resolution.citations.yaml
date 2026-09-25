@@ -281,94 +281,94 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
         integrity: sha256-50c07587dfba8aa495af6bdec08f82397d853b066a1da32514a95d0c5d32379a
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 608-613
+        lines: 641-646
         integrity: sha256-3e13e4ec98dc9ae00902ef88f5eb4bf8a2d7f8842ed56dcd294c1327aaf1b5b4
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-a-fetched-empty-schema-is-rejected
       claim:
         lines: 353-358
         integrity: sha256-832879908a2cb778b982d03c599a94c907295da52f88922616365bd8bd1bb05c
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 374-378
+        lines: 407-411
         integrity: sha256-240e7db378b2bd84c9572f79ce3ea62119d21d1826cd1d4aa7af8f2f03d8b18a
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-keyword-list-is-generous
       claim:
         integrity: sha256-b3aa61c149168daf7c53bfbeacba13b3f87c2c7c1edd32531e659476b5df38b3
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 386-392
+        lines: 419-425
         integrity: sha256-f1f2a486c168bc5ffda892de8fa9bc5b4f8cd7d4017fc415fbe191d77dbbc9c1
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-not-meta-schema-validation
       claim:
         integrity: sha256-02eb5aff3ad356b9ef240482afba8ef8657717f0988f71b4917939b6716e94d0
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 380-383
+        lines: 413-416
         integrity: sha256-7287eda8207009dcbb69f74ee92da99b3aeb7a21e5e4d1fc28e4419f77e17105
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-error-envelope-served-with-200
       claim:
         integrity: sha256-992adc6d4fa613d6cc235650198445ab095d115f77e3e298418c10be59a48850
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 373-378
+        lines: 406-411
         integrity: sha256-7967855980d4be99b7755ea36303efb983d2ab010550abbadaaf5b40f23f3920
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-fetched-body-capped-at-5mb
       claim:
         lines: 321
         integrity: sha256-59ad185df2d750432d1192ea40b8cfe7d30ff48b318df68593fd6d49f0a0ec6c
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 362-371
+        lines: 395-404
         integrity: sha256-d0978ce0ad561393f612e9053c90107ecd39f958b5bbd003cf9ecae5c7582bb4
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-fetched-body-needs-a-schema-keyword
       claim:
         lines: 320
         integrity: sha256-2a045f5819efaa0d720818803ca30fa2c07d161ff4ece270eb3a0f9b89c7e48d
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 393-400
+        lines: 426-433
         integrity: sha256-12111a38e4f40a9f856c202cb81020b9128334c8fd9b10e9f067beadb3bda15a
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-offline-needs-a-primed-cache
       claim:
         integrity: sha256-4afe80bc7d81f8546991f19386dca839422a4e9ecd202ef4a12afc8152252b39
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 869-877
+        lines: 902-910
         integrity: sha256-0fdd2bc93eb0acbc84d62eaaf5f1c7ec2795441da58714327642a7d7ee77c36c
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-uncached-url-offline-is-exit-2
       claim:
         lines: 302-303
         integrity: sha256-47246348af160013263aaeaddb362196a6a7d9d5de09985a037ab7f6c08848d8
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 852-877
+        lines: 885-910
         integrity: sha256-b7c412a8dd8b54cd98822a4c3a92c1d04e0727af5f4632447b4ab7d5b17dc1b9
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-offline-ignores-the-ttl
       claim:
         lines: 300-301
         integrity: sha256-3802ac48280aee951f2e69e90723969a74708666bbf33a3615a67633e4d444e3
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 841-848
+        lines: 874-881
         integrity: sha256-63a8a31f087ca9f5917ef573968fb5a31310ccde4025c5730e167ac1bec660e0
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-offline-flag-and-config
       claim:
         integrity: sha256-a651ad07ccba72f8dac7f409b126631527a88d675288bb5181a088e39354d967
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 914-915
+        lines: 947-948
         integrity: sha256-1a8007ad3a2314537df5ef70046f8e946e8136055a776366869bb4c3e6484eb7
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-a-damaged-cache-entry-is-a-miss
       claim:
         lines: 275-276
@@ -453,25 +453,25 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
         integrity: sha256-a3784f603269947aefb65d818bbebf2104f5601c1760904f7d5a6aaac156e4f3
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 445-452
+        lines: 478-485
         integrity: sha256-634260937cf51c533911c01ad3266634ed6fe4704eb695a2cbdcef4ce938c2ad
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-ten-second-fetch-timeout
       claim:
         integrity: sha256-c2ffc7a7abdb5b9e665c22cc261ff6116cad644d275ae8fd68b07465379cdfef
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 359-360
+        lines: 392-393
         integrity: sha256-aa333a8e669bd4b424cabd01575e4c0bb18cb0b7837d95668f032f176ddaa95b
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-pin-attests-to-the-upstream-bytes
       claim:
         integrity: sha256-f3da88bf00e7d8cad76312413990abac0dec85973b1448bf1cf27d46222bc518
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 755-765
+        lines: 788-798
         integrity: sha256-9c5b10f86ca76fef66bf919e5ccb8e7a550c615af8e604f6d951eb01513c41a5
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-pin-on-a-builtin-or-url-is-rejected
       claim:
         lines: 209
@@ -487,222 +487,222 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
         integrity: sha256-4b667158020161b7bf2a21799eb03114cb9e2c4095775154a86fa958d781e748
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1100-1104
+        lines: 1133-1137
         integrity: sha256-6e9e3065c7f2c1b42d6f4a695e5e022dcdd8b8377e8afb458515b0c124d8615c
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-line-ending-only-mismatch
       claim:
         lines: 207
         integrity: sha256-0fe833a9583dedfa2e3ba46f6fcd376f1e595dbdf30c100a3b4e2e1f5ba888c4
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 970-973
+        lines: 1003-1006
         integrity: sha256-ac433cf30b28a75abfd05ebb445add67fa85a219413ddf66292d8295b097c7b5
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-integrity-mismatch-has-no-fallback
       claim:
         integrity: sha256-f12885fcb1d3534eb47773ce7d6c4cc7fbe6814e73a5b5c0497de6025fa9402e
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 975-981
+        lines: 1008-1014
         integrity: sha256-30d7a8c8c2410a43ebe68cd17adb0ef6caabd0782fe7792f38b471c3e6ff17d8
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-bytes-hashed-before-parsing
       claim:
         integrity: sha256-aab68e0aff8f61f391d71bad01e08116cf53c23bdcbce120a4d43ba1ac7eb13b
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1106-1113
+        lines: 1139-1146
         integrity: sha256-5dd8392311c6904c00630a970bcfabd7543a3dc848d33f17720715d2dee60100
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-pinned-ref-resolves-like-any-file-ref
       claim:
         integrity: sha256-c2cbe3ecfb748641a403e1b0e085e418422561b5a3e791f3bfe509e52fcd8d64
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 38-49
+        lines: 62-73
         integrity: sha256-93823499e4d8d2589409384f258882a071f622900447a0573aaf8ce59b635f28
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-local-json-error-does-not-quote-the-file
       claim:
         integrity: sha256-9d0a6c263001e8502ab2ca06aee37f56c4cf966df594effd6af2d7846378c9ee
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1112-1119
+        lines: 1145-1152
         integrity: sha256-d92c3fbcc98ea1364c857d254d7bc64b7b972a31eb765b9972332b4746a26681
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-document-path-must-stay-in-the-repo
       claim:
         integrity: sha256-818a0c55660ee44258c94ff043a073e1d910d148560ec26fa96c4d8de7f6e4aa
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 340-349
+        lines: 364-373
         integrity: sha256-69033f09ff0fbc107f79cacc63d2519c15395b45435e144f2f74c9191f9eb057
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-config-schemas-report-absolute-paths
       claim:
         lines: 143-145
         integrity: sha256-fad0d7c2df2b0237229db617270e35079a72835ff4f134c25c3936fe48642523
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 92-97
+        lines: 116-121
         integrity: sha256-ff8f0031d085b274c0a352a42aa2800840c4dc34aee5d9281c3139eebba21ef3
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-config-refs-rebase-to-the-config-dir
       claim:
         integrity: sha256-db11760a4168591001d5a018bce45aa8870d7fa42f32c5df0c2227bef6f00c3c
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 78-85
+        lines: 102-109
         integrity: sha256-96a6b799fc590c8d8c44fa171606e523266e9cc675fee590a16577fc636df3f7
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-document-and-cli-refs-resolve-from-cwd
       claim:
         lines: 133
         integrity: sha256-3eecc24d15c7a12ecacc58545169fb7355e8f7fa379804b66a19393cb6af0ddc
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 86-89
+        lines: 110-113
         integrity: sha256-ab257449be11c1bce7498f6894571d938b3ee8d443527bfbf8a77436532aad0e
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-config-ref-resolves-from-the-config-dir
       claim:
         lines: 132
         integrity: sha256-79051f61743b7abd510e51566abfba0fe0e438cd6a19fb81a1ca8ee0b950c1eb
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 78-85
+        lines: 102-109
         integrity: sha256-96a6b799fc590c8d8c44fa171606e523266e9cc675fee590a16577fc636df3f7
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-a-file-ref-resolves-from-whatever-named-it
       claim:
         integrity: sha256-b1f09e482207c627f3019fd79872d466e1f9c9c1e8e871bdec0ea22a26220117
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 98-110
+        lines: 122-134
         integrity: sha256-a47a30d3843636b229677fff9dc590b7d4891432663fe6270eeab29c0543955b
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-windows-paths-and-json-are-not-builtins
       claim:
         integrity: sha256-946cfb035259cf93565a97a2bdbaaa59ec98e8af9eb64ff6491ee351368abb21
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 277-283
+        lines: 310-316
         integrity: sha256-4da98acbf2269002e21c5e9cbeddefff319b763e81f8845510bfbf932304df32
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-how-a-ref-is-classified
       claim:
         lines: 112-117
         integrity: sha256-a6dbc3810a1dc8c65dec71340085b38f07638f09b8f90d4656b6983c71a911ef
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 285-296
+        lines: 318-329
         integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-kind-url
       claim:
         lines: 108
         integrity: sha256-36f954d1cd80b13c3f2d02c44bc7b055142840c5e7d95e44d76e29d1f6be34cc
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1014-1030
+        lines: 1047-1063
         integrity: sha256-6387e5cfc4d77a90804dd002a85ee75b98fce2485d9344bf0b551c3eb75ee3a6
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-kind-file
       claim:
         lines: 107
         integrity: sha256-21ce5c8512c3c464f81eea746a52af7c857dd3b14cfd06bf5ee84e8dbe192b72
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 294-296
+        lines: 327-329
         integrity: sha256-2d7c532f44a762244b3740e334540db84ce8607bc2464bff49c8e1209502abc5
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-kind-builtin
       claim:
         lines: 106
         integrity: sha256-3dffdc16ba2aa13efbee846785dc0e710f24b2d122fbf29fe0fe0c5b7b04ef04
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 283
+        lines: 316
         integrity: sha256-f5e3a939a781ffcfd02b1e0b1fc055d28d3a1ed1a39efbe53a978870587c0b1d
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-three-reference-kinds
       claim:
         integrity: sha256-5658ed471b0b72c64c622a84d8c6a553c58bc7f07330f45d2822dc9ef14347c9
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 275
+        lines: 308
         integrity: sha256-8dc3cd1b79e538057cb88d3b5bd5ad19048142fc838e43023fbe81fec6a158d6
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-a-refused-document-ref-fails-that-file
       claim:
         integrity: sha256-381848adf8297501eed80ef563933e1a400a257a6d23ecd10c34780a0e38615f
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 392-399
+        lines: 416-423
         integrity: sha256-3c09b2d07c67c692c2aa7b3fbf151cbd2b0b33305f59122c700bc62571fb585c
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-operator-refs-are-never-filtered
       claim:
         lines: 89-91
         integrity: sha256-4c78eab4af3983bd10d6c81d6313a8a74d6434e20ee79294925e02665372c01c
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 362-364
+        lines: 386-388
         integrity: sha256-7fb2aac5901499b35c1b1384a2dba0d0775c23012ef4413c247c0c657921f886
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-document-path-inside-the-repo
       claim:
         lines: 86-88
         integrity: sha256-d4dc55c692c2f60707ff37c95716b95b076c3a43bc07b960c33e3659611accf2
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 340-349
+        lines: 364-373
         integrity: sha256-69033f09ff0fbc107f79cacc63d2519c15395b45435e144f2f74c9191f9eb057
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-trust-none-skips-level-2
       claim:
         lines: 82
         integrity: sha256-3219a38bda8ffc697728f8f8a93c4506964262bf19268dcecb00fdce47f7d6a5
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 420-425
+        lines: 444-449
         integrity: sha256-50d172494006137c88a664b7ac5228cc45d453a8816c2bb6099aeee80e669b25
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-trust-local-refuses-a-url
       claim:
         lines: 81
         integrity: sha256-d95367b82c7a8c4a923297a6eb5bb45723098f4f3c213a2e19920899d41f739d
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 311-316
+        lines: 335-340
         integrity: sha256-027bd0c012f06f7790123726245a52aa192dd92dc4e0d708424b4ef5ee054a01
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-trust-any-is-the-default
       claim:
         lines: 80
         integrity: sha256-e4b02a8165505af78885f8018d96157145f9a6b33e1e7992f1684083e835591f
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 317-318
+        lines: 341-342
         integrity: sha256-b6b246eedfe7de323eb35b78d263cb24aa8852db409895a30ac5cc7fa4759b9d
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-schematrust-narrows-level-2-only
       claim:
         integrity: sha256-842eff79988706ddfa6820ab1e37246caaec24532c4a14b5d7e96e6f29f39ac0
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 417-420
+        lines: 441-444
         integrity: sha256-dd1e014b930412dfe1dea37985e1107b752eeeda99eff42856e27fdfb36cc892
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-a-document-may-name-all-three-kinds
       claim:
         integrity: sha256-a6505bb2b32be601ef8ce7d88d4e4be071cddd07ca0c2c569f9fbb58ebe43546
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 285-309
+        lines: 309-333
         integrity: sha256-df42cb79d616eb240ac864ce73a8cb5d8aea0bcdd363b204e39d7617849ef654
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-schema-key-is-stripped-before-validation
       claim:
         integrity: sha256-cd6449233dc0ae9b33a51a408853aa21d996292b88f917483195bbc05f265aea
@@ -716,71 +716,71 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
         integrity: sha256-3e86978e510761759ab240d34af435a75f4d56d9c4185240ae14d605184a7b07
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 240-249
+        lines: 264-273
         integrity: sha256-71ef438f3ca35d85e21c28ff90ee155ade916de0a113151793b8687fc90e4cc3
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-schema-flag-applies-to-the-whole-run
       claim:
         lines: 28-30
         integrity: sha256-d46c8e7de9d1b01b58891f45973dccb7dff565d4c0e246cc2953a38e6aa7f0de
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 411-413
+        lines: 435-437
         integrity: sha256-b0a482ce07120639e210c0a1a8eaa99b3be02b90b7e730b46651986cec134917
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-duplicates-are-removed
       claim:
         integrity: sha256-86a0458bd440c060f4aa15ee913558e0d2d022067bccdba7c2c2789fb1dc7a3e
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 251-253
+        lines: 275-277
         integrity: sha256-8a8c02803285101c5daf2477d78535ed1cfbb4a91f9081dea8d41a01c1abd136
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-level-5-default-set
       claim:
         lines: 21
-        integrity: sha256-a13fa3722abd643002b337dde3979a4a6d8cfcf58a3ac306be448e5c1d346cbf
+        integrity: sha256-bf37ec3d3438d568895382c212953c49c1009a1b495e598120189b708354395a
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 32-35
-        integrity: sha256-af133f1e0fa21ca01b004a947824e1ce63d00d49af5bf112da6ffcda850b9a3c
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        lines: 45-59
+        integrity: sha256-325b56668f0caf5475c6280c0a403100845a4ab1840909e42121ad52801302bb
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-level-4-config-schemas
       claim:
         lines: 20
         integrity: sha256-640798de3749b5747d4431e8f3e8e4af4fb484d8e1632fd1966e3ce52ae4584a
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 440-445
+        lines: 464-469
         integrity: sha256-f99695009a18c93f3a981a816787516b269084b614eacfcd864e8a143c5727a9
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-level-3-first-matching-override
       claim:
         lines: 19
         integrity: sha256-b4d660cea9dcd367378acec09aebdc03106c36339b1191d493d3126b457b1fa0
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 431-438
+        lines: 455-462
         integrity: sha256-59c6d7f45e5f08e7454bbbfef4c99f642acecc72892011d890b2f6204c5ed0d4
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-level-2-file-schema
       claim:
         lines: 18
         integrity: sha256-0dfea986ebdc7741e2f5a5c6044f95ca5d3ed21e4a7fddccd4a6e2466f600be7
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 415-427
+        lines: 439-451
         integrity: sha256-a3296794c726f800c3eacb03937caedf29fa9def8f601636f57c4a89e8f509d2
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-level-1-schema-flag
       claim:
         lines: 17
         integrity: sha256-c842c698f7cf41aeb5667dac8fe58c907d37d8c469e6aded84703f64dc356f60
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 411-413
+        lines: 435-437
         integrity: sha256-b0a482ce07120639e210c0a1a8eaa99b3be02b90b7e730b46651986cec134917
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: resolution-first-non-empty-level-wins
       claim:
         integrity: sha256-ea03d82081cf6e13407c3f389b94936e1bd06309d15ad4f70c2015bf000ed1b7

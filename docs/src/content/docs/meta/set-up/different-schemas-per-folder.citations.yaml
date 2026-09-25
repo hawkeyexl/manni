@@ -13,54 +13,54 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-630f5cc777dadddced8071a8ec2d745eb6b0586b131bac85663a2142417faa21
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 411-416
+        lines: 435-440
         integrity: sha256-64b29f38d642520a4e186688078d04cff0d4bd334e6bee10d083a38787c51342
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: builtin-default-schema-set
       claim:
         lines: 154
-        integrity: sha256-d67680d152494d1a8387e679bcfdfcbe163207bfb9d52a18cc274760e40ec649
+        integrity: sha256-a1f1ea803c46a915cf6697f2a893e81086391ab70b80a9646b6cf9c8bd36c9a8
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 32-35
-        integrity: sha256-af133f1e0fa21ca01b004a947824e1ce63d00d49af5bf112da6ffcda850b9a3c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 45-59
+        integrity: sha256-325b56668f0caf5475c6280c0a403100845a4ab1840909e42121ad52801302bb
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: config-schemas-are-fourth-in-chain
       claim:
         lines: 152
         integrity: sha256-dd260fbf481398e0b41b0432402c94b1248f9e94db73a8ca869930fc8589238c
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 440-445
+        lines: 464-469
         integrity: sha256-f99695009a18c93f3a981a816787516b269084b614eacfcd864e8a143c5727a9
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: config-overrides-are-third-in-chain
       claim:
         lines: 150
         integrity: sha256-1025da6688b1cf5e5dd1a2b4fded268668b23c47c750a4b7c48affde2657763b
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 431-435
+        lines: 455-459
         integrity: sha256-4821c4ddb06366099157563217fe4cb60e7dca33455db9cd545210b3b201f40d
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: document-schema-key-outranks-config
       claim:
         lines: 148
         integrity: sha256-a307f11eecff3218af972ca1f6913941b8ff647a7068440cc26bf62cd2b6c353
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 426-428
+        lines: 450-452
         integrity: sha256-0da2036362514787bf5ee5e02c30f50058e40c4af58eaf3c8d1ed3b67785ebb5
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: cli-schema-flag-tops-resolution-chain
       claim:
         lines: 146
         integrity: sha256-e7cca7ece8fc50ad245f3f852ad673bf6ac527a07b840fb49beb147599cce9c8
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 411-413
+        lines: 435-437
         integrity: sha256-b0a482ce07120639e210c0a1a8eaa99b3be02b90b7e730b46651986cec134917
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: okf-requires-only-type
       claim:
         integrity: sha256-1ddceebfc4b635190778f7f26ca7cb21bf6f69c7b55f0b69093ac323b11c843c
@@ -82,9 +82,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-f845c4c3c38113224165a7865c9e25577ec641b989c0b7580bf2731eb252633c
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 431-435
+        lines: 455-459
         integrity: sha256-4821c4ddb06366099157563217fe4cb60e7dca33455db9cd545210b3b201f40d
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: collection-paths-accepts-list-of-globs
       claim:
         integrity: sha256-f845c4c3c38113224165a7865c9e25577ec641b989c0b7580bf2731eb252633c
@@ -134,9 +134,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-5016b54663c9c20a6570cafba73c2ddf8523598a8384b88d8b51bd55ac882754
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 235-237
+        lines: 259-261
         integrity: sha256-d26092a168e47b6a657fa34ac7d9689e14ccc3b87daa2909ec0a579dd1da1b7c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: globs-matched-against-posix-paths
       claim:
         lines: 83
@@ -151,18 +151,18 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-14bc46085c8a34e087b07479bdebf9b7bea00a292a9abc888085915ec8082c3d
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 433-435
+        lines: 457-459
         integrity: sha256-71ffd95fc76348c87f02b875a1b022e145bbc0526f12fd5403618c31a9b89084
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: override-replaces-default-schema-set
       claim:
         lines: 55
         integrity: sha256-937109e7c66d81cb17b65b7d1a3ee4ae9fec0c1c97e2155f2ef6ba01e7cbb26f
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 434-435
+        lines: 458-459
         integrity: sha256-8022b06602aced964f3aa1ae8f087811581f3bff679cacdbd62cbcd9ec65b582
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: file-may-belong-to-several-collections
       claim:
         integrity: sha256-d228dc703dc8eb61f8bc007fd6899cd7dcb776a2557bd39f66f8309ab94c44c3
@@ -177,9 +177,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-c1bed511bc32b8ee45be1881d4ad8be4c03d67d2fda497c699acfefd02502004
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 440-445
+        lines: 464-469
         integrity: sha256-f99695009a18c93f3a981a816787516b269084b614eacfcd864e8a143c5727a9
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: override-requires-exactly-one-selector
       claim:
         integrity: sha256-a1eec5df37b9d116dca5c8de0ebf501dcf876c0b8d556da8a48760b5ecfeb792
@@ -194,18 +194,18 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-3b1ef5ea484cb6c005a87a57054131f66ad679b5501e8e7490a064cd1fc15598
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 211-216
+        lines: 235-240
         integrity: sha256-69d7f72f912eae2efb24908269110990ce3d15d7babab33418d30b85267cdb4e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: override-collection-matches-membership
       claim:
         lines: 13
         integrity: sha256-33b7d220fbb317999d1bc6c7e5cae7c21e9697b66f9048d2354997007c74ad80
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 232-234
+        lines: 256-258
         integrity: sha256-9ca21226f6f6eeb22609740715b6db41d96b9dac17632db795f91a14e4d59c20
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
     - id: collection-becomes-a-query-view
       claim:
         lines: 13
@@ -220,6 +220,6 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-c086334f56dd9720988769337b78525574929fb7b4ec1043b13a16b071e08219
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 431-435
+        lines: 455-459
         integrity: sha256-4821c4ddb06366099157563217fe4cb60e7dca33455db9cd545210b3b201f40d
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 566625cc092292c074dcae35d9b962eb7a8aca67
