@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:05.600
+A page, no description: A guide with a type and a title, and no description. No config, no schema named.
+
+2
+00:00:05.600 --> 00:00:14.367
+The default set checks it: A bare validate now applies manni:core:1.0.0, which requires a description: exit 1.
+
+3
+00:00:14.367 --> 00:00:25.200
+fill proposes the fields: fill infers the description, plus audiences and lifecycle. It took 23 s; the wait is shortened.
+
+4
+00:00:25.200 --> 00:00:31.233
+Written to the page: The three values are frontmatter now. The lines below them record which model wrote them.
+
+5
+00:00:31.233 --> 00:00:40.800
+Valid: exit 0: The same bare validate passes: exit 0. The warning is ai-context asking for a sidecar.
+

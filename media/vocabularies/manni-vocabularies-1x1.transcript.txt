@@ -1,0 +1,73 @@
+manni vocabularies, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 40.8 s. Every terminal line is real output of cat, head, echo, bash's time and of
+`node dist/cli.js meta ...` (typed as manni), run in a directory outside the manni checkout with no manni.config.yaml.
+media/vocabularies/capture/capture.sh stages page.md from test/fixtures/missing-description.md and captures every byte.
+fill ran a real model through the claude CLI. It took 22.919 s, and the replay shows that wait as 2 s.
+
+[0:00-0:06] Title: A page, no description (1 / 5)
+$ cat page.md
+---
+type: guide
+title: Fitting progressive lenses
+---
+# Fitting progressive lenses
+
+Measure the pupil height before you order.
+Most wearers adapt within two weeks.
+Highlighted rows: lines containing "title: Fitting progressive lenses"
+Caption: A guide with a type and a title, and no description. No config, no schema named.
+
+[0:06-0:14] Title: The default set checks it (2 / 5)
+$ manni meta validate page.md
+✗ page.md   (cross in red)
+    (root)  must have required property 'description'  (line 1)  [manni:core:1.0.0]   ("(root)" in cyan, line and schema tag dimmed)
+
+1 file checked, 0 passed, 1 failed, 1 error   (in red)
+$ echo $?
+1
+Highlighted rows: lines containing "'description'"
+Caption: A bare validate now applies manni:core:1.0.0, which requires a description: exit 1.
+
+[0:14-0:25] Title: fill proposes the fields (3 / 5)
+$ time manni meta fill page.md --fields description,audiences,lifecycle
+inference: provider "auto" — auto-selected "claude-cli". Pass an explicit `provider` to pin it.
+manni: wrote meta-provenance to 1 page; the schema prefers external metadata. Run manni meta relocate to give it a manifest.
+✓ page.md   (check mark in green)
+    /description  A guide to fitting progressive lenses, covering measurement requirements and typical adaptation periods.  0.85   (field name in cyan, confidence dimmed)
+    /audiences  ["opticians","eye-care-professionals"]  0.75   (field name in cyan, confidence dimmed)
+    /lifecycle  draft  0.70   (field name in cyan, confidence dimmed)
+    meta-provenance  claude-sonnet-4-5: /description, /audiences, /lifecycle   (field name in cyan, confidence dimmed)
+
+claude-cli/claude-sonnet-4-5 · Threshold 0.7 · 1 file · 3 fields written · 0 skipped
+
+real    0m22.919s
+user    0m0.015s
+sys     0m0.015s
+Highlighted rows: lines containing "/description  A", "/audiences  [", "/lifecycle  draft", "real "
+Caption: fill infers the description, plus audiences and lifecycle. It took 23 s; the wait is shortened.
+
+[0:25-0:31] Title: Written to the page (4 / 5)
+$ head -n 8 page.md
+---
+type: guide
+title: Fitting progressive lenses
+description: A guide to fitting progressive lenses, covering measurement requirements and typical adaptation periods.
+audiences:
+  - opticians
+  - eye-care-professionals
+lifecycle: draft
+Highlighted rows: lines containing "description:", "audiences:", "  - ", "lifecycle:"
+Caption: The three values are frontmatter now. The lines below them record which model wrote them.
+
+[0:31-0:41] Title: Valid: exit 0 (5 / 5)
+$ manni meta validate page.md
+⚠ page.md   (warning sign in yellow)
+    /meta-provenance  warning "meta-provenance" is stored in the page; manni:ai-context:1.0.0 prefers external metadata. Run manni meta relocate.  (line 9)  [location:external]   ("/meta-provenance" in cyan, "warning" in yellow, line and tag dimmed)
+
+1 file checked, 1 passed, 0 failed, 0 errors, 1 warning   (in green)
+$ echo $?
+0
+Highlighted rows: lines containing "1 passed"
+Caption: The same bare validate passes: exit 0. The warning is ai-context asking for a sidecar.
+

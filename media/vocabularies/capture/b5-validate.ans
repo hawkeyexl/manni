@@ -1,0 +1,4 @@
+[33m⚠[39m page.md
+    [36m/meta-provenance[39m  [33mwarning[39m "meta-provenance" is stored in the page; manni:ai-context:1.0.0 prefers external metadata. Run manni meta relocate.[2m  (line 9)[22m  [2m[location:external][22m
+
+[32m1 file checked, 1 passed, 0 failed, 0 errors, 1 warning[39m

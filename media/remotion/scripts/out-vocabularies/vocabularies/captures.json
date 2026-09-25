@@ -1,0 +1,13 @@
+{
+  "b1 cat page": "---\ntype: guide\ntitle: Fitting progressive lenses\n---\n# Fitting progressive lenses\n\nMeasure the pupil height before you order.\nMost wearers adapt within two weeks.\n",
+  "b2 validate": "\u001b[31m✗\u001b[39m page.md\n    \u001b[36m(root)\u001b[39m  must have required property 'description'\u001b[2m  (line 1)\u001b[22m  \u001b[2m[manni:core:1.0.0]\u001b[22m\n\n\u001b[31m1 file checked, 0 passed, 1 failed, 1 error\u001b[39m\n",
+  "b3 fill": "inference: provider \"auto\" — auto-selected \"claude-cli\". Pass an explicit `provider` to pin it.\nmanni: wrote meta-provenance to 1 page; the schema prefers external metadata. Run manni meta relocate to give it a manifest.\n\u001b[32m✓\u001b[39m page.md\n    \u001b[36m/description\u001b[39m  A guide to fitting progressive lenses, covering measurement requirements and typical adaptation periods.  \u001b[2m0.85\u001b[22m\n    \u001b[36m/audiences\u001b[39m  [\"opticians\",\"eye-care-professionals\"]  \u001b[2m0.75\u001b[22m\n    \u001b[36m/lifecycle\u001b[39m  draft  \u001b[2m0.70\u001b[22m\n    \u001b[36mmeta-provenance\u001b[39m  claude-sonnet-4-5: /description, /audiences, /lifecycle\n\nclaude-cli/claude-sonnet-4-5 · Threshold 0.7 · 1 file · 3 fields written · 0 skipped\n\nreal    0m22.919s\nuser    0m0.015s\nsys     0m0.015s\n",
+  "b4 head page": "---\ntype: guide\ntitle: Fitting progressive lenses\ndescription: A guide to fitting progressive lenses, covering measurement requirements and typical adaptation periods.\naudiences:\n  - opticians\n  - eye-care-professionals\nlifecycle: draft\n",
+  "b5 validate": "\u001b[33m⚠\u001b[39m page.md\n    \u001b[36m/meta-provenance\u001b[39m  \u001b[33mwarning\u001b[39m \"meta-provenance\" is stored in the page; manni:ai-context:1.0.0 prefers external metadata. Run manni meta relocate.\u001b[2m  (line 9)\u001b[22m  \u001b[2m[location:external]\u001b[22m\n\n\u001b[32m1 file checked, 1 passed, 0 failed, 0 errors, 1 warning\u001b[39m\n",
+  "headN": "8",
+  "exits": {
+    "b2": "1",
+    "b3": "0",
+    "b5": "0"
+  }
+}

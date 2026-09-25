@@ -1,0 +1,13 @@
+inference: provider "auto" — auto-selected "claude-cli". Pass an explicit `provider` to pin it.
+manni: wrote meta-provenance to 1 page; the schema prefers external metadata. Run manni meta relocate to give it a manifest.
+[32m✓[39m page.md
+    [36m/description[39m  A guide to fitting progressive lenses, covering measurement requirements and typical adaptation periods.  [2m0.85[22m
+    [36m/audiences[39m  ["opticians","eye-care-professionals"]  [2m0.75[22m
+    [36m/lifecycle[39m  draft  [2m0.70[22m
+    [36mmeta-provenance[39m  claude-sonnet-4-5: /description, /audiences, /lifecycle
+
+claude-cli/claude-sonnet-4-5 · Threshold 0.7 · 1 file · 3 fields written · 0 skipped
+
+real	0m22.919s
+user	0m0.015s
+sys	0m0.015s

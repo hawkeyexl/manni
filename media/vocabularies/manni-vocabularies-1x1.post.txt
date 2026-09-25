@@ -1,0 +1,13 @@
+Every docs page should say what it is about. Most don't, and nothing checks.
+
+manni meta now ships eleven metadata vocabularies as built-in schemas. They are core, stewardship, audience, lifecycle, structure, ai-context, evals, artifact-evals, graph, terminology and citations. All eleven are in the default set.
+
+So a bare manni meta validate, with no config and no schema named, now requires a title and a description on every page. A page without one fails with exit 1, naming manni:core:1.0.0.
+
+manni meta fill closes the gap. It asks a model for the missing description, and for any vocabulary field you name, such as audiences or lifecycle. It writes only proposals above a confidence threshold, and it records which model wrote which field.
+
+Run validate again and the page passes.
+
+This is a breaking change for anyone relying on the old default. Pin the previous set with -s, or name your schemas in manni.config.yaml.
+
+#docsascode #technicalwriting #metadata #devtools

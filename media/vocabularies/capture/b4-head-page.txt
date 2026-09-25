@@ -1,0 +1,8 @@
+---
+type: guide
+title: Fitting progressive lenses
+description: A guide to fitting progressive lenses, covering measurement requirements and typical adaptation periods.
+audiences:
+  - opticians
+  - eye-care-professionals
+lifecycle: draft

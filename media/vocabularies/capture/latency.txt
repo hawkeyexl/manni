@@ -1,0 +1,6 @@
+b2-validate exit=1 656ms
+b3-fill exit=0 real 0m22.919s
+b5-validate exit=0 604ms
+timing1 b2-validate 597ms b5-validate 589ms
+timing2 b2-validate 597ms b5-validate 598ms
+timing3 b2-validate 584ms b5-validate 599ms
