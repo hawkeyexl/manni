@@ -1,0 +1,14 @@
+{
+  "templates": {
+    "concept": {
+      "types": ["concept"],
+      "sections": [
+        {
+          "id": "overview",
+          "heading": "Overview",
+          "contains": { "paragraphs": { "min": 1 } }
+        }
+      ]
+    }
+  }
+}

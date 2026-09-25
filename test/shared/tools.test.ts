@@ -1,11 +1,12 @@
 /**
  * `tools:`, the family-level home for an outside tool's settings (proposal
  * 0052, in the shape lint's 0050 recorded). Each tool gets a namespace of its
- * own keys. The first is Vale, whose one key names its config file.
+ * own keys. Vale's one key names its config file, and DITA Open Toolkit's
+ * names the directory it is installed in.
  */
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseTools, valeConfigPath } from "../../src/shared/tools.js";
+import { ditaOtHome, parseTools, valeConfigPath } from "../../src/shared/tools.js";
 
 const SOURCE = "manni.config.yaml";
 const toError = (message: string): Error => new Error(message);
@@ -39,7 +40,7 @@ describe("parseTools", () => {
 
   it("refuses a tool it does not know, naming the ones it does", () => {
     expect(() => parse({ prettier: {} })).toThrow(
-      `${SOURCE}: tools has unknown key "prettier". Supported keys: vale.`,
+      `${SOURCE}: tools has unknown key "prettier". Supported keys: vale, dita-ot.`,
     );
   });
 
@@ -85,5 +86,67 @@ describe("valeConfigPath", () => {
   it("is undefined when no path is set, so Vale finds its own", () => {
     expect(valeConfigPath({}, dir)).toBeUndefined();
     expect(valeConfigPath({ vale: {} }, dir)).toBeUndefined();
+  });
+});
+
+describe("parseTools: DITA Open Toolkit", () => {
+  it("reads the installation directory", () => {
+    expect(parse({ "dita-ot": { home: "/opt/dita-ot" } })).toEqual({
+      "dita-ot": { home: "/opt/dita-ot" },
+    });
+  });
+
+  it("reads it beside Vale, because a namespace is per tool", () => {
+    expect(
+      parse({ vale: { config: ".vale.ini" }, "dita-ot": { home: "/opt/dita-ot" } }),
+    ).toEqual({
+      vale: { config: ".vale.ini" },
+      "dita-ot": { home: "/opt/dita-ot" },
+    });
+  });
+
+  it("accepts the namespace with no keys", () => {
+    expect(parse({ "dita-ot": {} })).toEqual({ "dita-ot": {} });
+  });
+
+  it("refuses a key it never reads", () => {
+    expect(() => parse({ "dita-ot": { path: "/opt/dita-ot" } })).toThrow(
+      `${SOURCE}: tools.dita-ot has unknown key "path". Supported keys: home.`,
+    );
+  });
+
+  it("refuses a home that is not a usable string", () => {
+    for (const home of ["", "   ", 7, null, []]) {
+      expect(() => parse({ "dita-ot": { home } })).toThrow(
+        `${SOURCE}: tools.dita-ot.home must be a non-empty string.`,
+      );
+    }
+  });
+
+  it("refuses a namespace that is not a mapping", () => {
+    expect(() => parse({ "dita-ot": "/opt/dita-ot" })).toThrow(
+      `${SOURCE}: tools.dita-ot must be a mapping.`,
+    );
+  });
+});
+
+describe("ditaOtHome", () => {
+  const dir = join(process.cwd(), "repo", "root");
+
+  it("resolves a relative home against the config file's directory", () => {
+    expect(ditaOtHome({ "dita-ot": { home: "vendor/dita-ot" } }, dir)).toBe(
+      join(dir, "vendor", "dita-ot"),
+    );
+  });
+
+  it("keeps an absolute home as written", () => {
+    const absolute = join(process.cwd(), "opt", "dita-ot");
+    expect(ditaOtHome({ "dita-ot": { home: absolute } }, dir)).toBe(absolute);
+  });
+
+  // Unset means the `dita` on PATH, which is how a person runs it.
+  it("is undefined when no home is set", () => {
+    expect(ditaOtHome({}, dir)).toBeUndefined();
+    expect(ditaOtHome({ "dita-ot": {} }, dir)).toBeUndefined();
   });
 });

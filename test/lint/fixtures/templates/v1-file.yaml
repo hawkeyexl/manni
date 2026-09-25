@@ -1,0 +1,20 @@
+# A v1 template file, as someone who tried the format early still has it on
+# disk. v1 never shipped, so there is no migration mode: the loader refuses it
+# and names the v2 spelling of the first key it meets.
+templates:
+  how-to:
+    types: [how-to]
+    additionalSections: true
+    sections:
+      overview:
+        heading:
+          const: Overview
+        paragraphs:
+          min: 1
+          patterns:
+            - "^This guide"
+      task:
+        repeat: true
+        required: false
+        code_blocks:
+          min: 1

@@ -17,7 +17,7 @@ Maya owns a 2,000-page docs-as-code repo for a platform product. She is comforta
 
 **How she uses manni meta.** She installs it, writes or adopts a schema, adds a CI step, then mostly operates it hands-off. She returns when the standard needs tightening.
 
-**Which tools she owns work in.** She owns work in meta, cite and a11y, standing up the metadata gate, pinning claims on her pages, and checking the published site.
+**Which tools she owns work in.** She owns work in meta, lint, cite and a11y. She stands up the metadata gate and holds each page to the shape its doctype promises. She pins the claims on her pages, and she checks the published site.
 
 **The one decision she is not equipped for.** `fill` is the only part of manni meta that sends her documents to a third party. Clearing the retrofit backlog (M4) therefore makes her choose a provider, or refuse hosted inference entirely and run it on her own hardware. She does not own her organization's data-egress policy, but she is the one who has to answer to it. And the default is detected from her environment rather than chosen.
 
@@ -38,7 +38,7 @@ Devin maintains CI/CD infrastructure for dozens of repos on a mix of GitHub Acti
 
 **How he uses manni meta.** He installs via a CI step, sets flags, and plugs the exit code into a pipeline gate. He can also pass JSON output to a dashboard. He returns when a new CI platform is added or the output format changes.
 
-**Which tools he owns work in.** He owns work in all four tools, and the key rotation runbook is his, so one pipeline gates metadata, citations and accessibility.
+**Which tools he owns work in.** He owns work in every tool, and the key rotation runbook is his, so one pipeline gates metadata, structure, citations and accessibility.
 
 **The one command that breaks his model of the tool.** Every other part of manni meta reads files and stays on the box, so `fill` is the exception he has to make a call on. It is the one thing that transmits repo content off-site. Provider detection also means an unpinned runner picks one from whatever environment variable happens to be set. Failing that, it falls through to a multi-gigabyte local-model download on every fresh agent. He pins it in config rather than leaving it to the environment.
 
@@ -74,4 +74,4 @@ Theo is a developer or technical writer who opened a PR. The manni meta check is
 
 **How he uses manni meta.** He follows the error link, or searches, to reach the fix-it page. He maps the error to a field and file location, then applies the fix. He runs `npx @hawkeyexl/manni meta validate <file>` locally to confirm green, and he is done.
 
-**Which tools he owns work in.** He owns work in none of them, and reaches meta, cite or a11y only to fix the check that turned his pull request red.
+**Which tools he owns work in.** He owns work in none of them, and reaches meta, lint, cite or a11y only to fix the check that turned his pull request red.

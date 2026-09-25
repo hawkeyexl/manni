@@ -64,6 +64,20 @@ Key layers:
   - `src/cite/reporters/`: output formatting (pretty / json / github).
   - `src/cite/cli.ts`: thin commander wrapper exported as `buildProgram()` and
     mounted by `src/cli.ts`. No entry point of its own.
+- `src/lint/`: the structure tool, `manni lint check` and `manni lint structure`,
+  plus `templates` and `tools` (proposal 0050). A verb names the **job** being
+  checked; the **tool** answering it is named in config, and lint's own engine
+  is `manni`. `check` runs every configured job.
+  - `src/lint/core/`: template resolution and routing, the structure rules, the
+    template registry, and the `lint:` config loader.
+  - `src/lint/parsers/`: per-format document trees behind `DocumentParser`
+    (markdown, mdx, html, asciidoc, rst, xml).
+  - `src/lint/commands/`: the command cores, free of CLI/IO plumbing.
+  - `src/lint/reporters/`: output formatting (pretty / json / github / sarif / junit).
+  - `src/lint/cli.ts`: thin commander wrapper exported as `buildProgram()` and
+    mounted by `src/cli.ts`. No entry point of its own.
+  - `templates/lint/tgdp/`: the built-in TGDP templates, pinned to a release and
+    watched by `npm run check:tgdp-pin`.
 - `src/key/`: the family key's domain, `manni key set` and `manni key rotate`
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
   cite's re-encryption, and the one ciphertext format lives in
@@ -484,6 +498,14 @@ npm run docs:sync-versions   # rewrite the stale ones; the release runs the same
 npm run docs:check-links  # every internal link and anchor in the built site
                         # resolves. Reads docs/dist, so it needs
                         # `cd docs && npm run build` first.
+npm run smoke:lint      # build, then exercise lint's built-in templates through
+                        # the real dist/cli.js. The templates are YAML files read
+                        # by path at runtime, so a path right in src/ can be wrong
+                        # in dist/ with every unit test green. Runs in PR CI.
+npm run check:tgdp-pin  # has upstream moved past the TGDP release lint's built-in
+                        # templates are pinned to? A report, not a gate — it hits
+                        # the network, so it runs weekly, not in PR CI. See
+                        # tgdp-pin.yml. Add `-- --strict` to exit 1 when behind.
 npm run schemas:check   # published built-in schemas immutable and in sync (local)
 npm run schemas:check-published  # ...and the live URLs still serve those bytes.
                         # Hits the network, so it runs on a daily schedule

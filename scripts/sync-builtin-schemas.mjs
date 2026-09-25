@@ -54,6 +54,15 @@ function sourceKeys(base) {
   return keys.sort();
 }
 
+/**
+ * The top-level directories under `docs/public/schemas/` that meta owns, which
+ * are exactly the ones its own source declares. Anything else there belongs to
+ * a sibling domain and is left alone.
+ */
+function ownedDirectories(keys) {
+  return [...new Set(keys.map((key) => key.split("/")[0]))];
+}
+
 const hashOf = (file) =>
   `sha256-${createHash("sha256").update(readFileSync(file)).digest("hex")}`;
 
@@ -76,7 +85,16 @@ if (keys.length === 0) {
 // orphan being served. Removing a published version is itself a promise broken,
 // and `schemas:check` reports it — but it reports it against `src/meta/schemas`,
 // which is the copy that has to be restored.
-rmSync(PUBLIC, { recursive: true, force: true });
+//
+// Only the namespaces `src/meta/schemas` declares, though. `docs/public/schemas/`
+// is shared now: `manni lint` publishes its template schema at
+// `lint/template/2.json`, and a `rmSync` of the whole directory deleted it
+// silently — nothing here reads it, and `schemas:check` scans one level deep so
+// it never saw the loss either. A sibling domain's published schema is not this
+// script's to remove.
+for (const dir of ownedDirectories(keys)) {
+  rmSync(path.join(PUBLIC, dir), { recursive: true, force: true });
+}
 for (const key of keys) {
   const segments = key.split("/");
   const dest = path.join(PUBLIC, ...segments);

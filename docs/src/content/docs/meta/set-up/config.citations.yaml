@@ -15,9 +15,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-fb7c529cccf65d401ed84c76cb84e69f686eae82b6ec389201f42b468f076da3
       source:
         file: src/meta/core/load-files.ts
-        lines: 133
+        lines: 234
         integrity: sha256-062dfc0e8704a9f5cfab261efdea54ca2e9e82c088fa4257187e47da6a73fc6c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: collection-flag-narrows-run
       claim:
         lines: 233
@@ -146,9 +146,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-6db4d5d084e63d6301555a29399627c768a89ea90219446ce59f29e70f534908
       source:
         file: src/meta/core/load-files.ts
-        lines: 133
+        lines: 234
         integrity: sha256-062dfc0e8704a9f5cfab261efdea54ca2e9e82c088fa4257187e47da6a73fc6c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: config-exclude-stopped-filtering-typed-paths-in-1-0
       claim:
         lines: 117
@@ -308,9 +308,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-84cb8af7eb6ed17ab9c941ee72c296eae5faa41e0542cd5c7ed0c2f49e9cd226
       source:
         file: src/meta/core/load-files.ts
-        lines: 15
+        lines: 16
         integrity: sha256-84752dfdaf912a4e2ffe61f21e2984820d5364e5329ac0d8f36bd8290e6971e4
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: exclude-removes-members-from-paths
       claim:
         lines: 74

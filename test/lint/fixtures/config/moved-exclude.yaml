@@ -1,0 +1,5 @@
+# The other half of the same move. `exclude:` belongs to the collection it
+# shapes, not to one tool's section.
+lint:
+  exclude:
+    - "**/drafts/**"

@@ -1,0 +1,711 @@
+---
+title: CLI reference
+description: "Every manni lint command, argument, and flag (check, structure, templates, templates infer, tools), with the output formats, the rule ids, and the exit codes."
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* The command, argument, and option tables on this page are drift-checked
+    against src/lint/cli.ts by scripts/check-cli-reference.mjs (npm run docs:check-cli),
+    enforced in CI. Keep flags, arguments, and defaults in sync with the code;
+    descriptions are free-form. */}
+
+manni lint has four subcommands. Two of them lint.
+[`check`](#lint-check) runs every configured job, and
+[`structure`](#lint-structure) runs the structure job. Two of them answer
+questions about configuration. [`templates`](#lint-templates) lists what could
+route a page, and [`tools`](#lint-tools) lists what performs each job.
+
+`templates` has one subcommand of its own.
+[`templates infer`](#lint-templates-infer) writes a first template from a page
+that already has the shape you want.
+
+There is no default subcommand. `manni lint docs/` is a usage error, and the
+verb is always spelled.
+
+```sh
+manni lint [options] <check|structure|templates|tools> [arguments] [command options]
+```
+
+## Global options
+
+Global options are accepted before the subcommand.
+
+| Option | Description |
+|---|---|
+| `-V, --version` | Print the manni version and exit. |
+| `-h, --help` | Print help for the program or a subcommand. |
+
+## `lint`
+
+The structure tool. `lint` accepts its own `-V, --version` (the same version)
+and `-h, --help`. Run with no subcommand it prints the verb list and exits `2`.
+
+```sh
+manni lint [options] <check|structure|templates|tools>
+```
+
+### Options
+
+| Option | Description |
+|---|---|
+| `--no-color` | Disable colored output. Color is on only when stdout is a TTY, and never under `NO_COLOR`. The meanings match `manni meta`'s: `✓` green, `✗` red, rule ids dim. |
+
+### Verbs name the job
+
+A **job** is the kind of check. A **tool** is the implementation that answers
+it. `structure` is the job; `manni`, this package's own engine, is the tool that
+performs it. Naming the verb after the job keeps the command the same whichever
+tool performs it. Proposal 0050 is the record.
+
+## `lint check`
+
+Run every configured lint job over the given files, directories, or globs.
+The one job is `structure`, so `check` and `structure` report the same findings
+over the same inputs.
+
+```sh
+manni lint check [paths...] [options]
+```
+
+In `pretty` output it names the jobs it covered on stderr, once, before the
+report:
+
+```
+Checked: structure.
+```
+
+`check` takes the shared input options and nothing else. Anything a job owns
+belongs to the job verb, a template ref, an explain mode and a tool name
+included. That way `check` cannot accumulate every job's flags.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to lint, space-separated. `-` reads stdin, and needs `--as` to pick a parser. Optional: with none, targets come from the collections declared in [`collections:`](/manni/meta/reference/configuration/#collections). No paths and no config is an error (exit 2). |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections). Repeatable, one name per occurrence, never comma-separated. Needs a config file, and an unknown name is an error (exit 2). |
+| `--ext` | `<list>` | | Comma-separated extensions used when walking a directory, given once. A second `--ext` replaces the first. |
+| `--exclude` | `<glob>` | | Glob to exclude. Repeatable, one glob per occurrence, never comma-separated. Adds to whatever a collection already excludes. |
+| `--as` | `<format>` | | Force an input format instead of inferring it from the extension: `markdown`, `mdx`, `html`, `asciidoc`, `rst`, or `xml`. Required with `-`. |
+| `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | [Output format](#output-formats). An unknown value is an error (exit 2). |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/lint/reference/configuration/). When set, the file must exist or the run exits 2. |
+| `--no-config` | n/a | off | Ignore any discovered config file. `-c` and `--no-config` set the same option, so the one written later on the command line wins. |
+| `--allow-empty` | n/a | off | Treat zero matched files as success rather than an operational error. Mirrors config `allowEmpty:`. |
+| `--no-gitignore` | n/a | off | Lint files `.gitignore` covers. Ignored files are skipped by default. |
+
+## `lint structure`
+
+Lint document structure against doctype templates, routing each page by its
+`type` frontmatter. This is the `structure` job on its own, with the options of
+the tool that performs it.
+
+```sh
+manni lint structure [paths...] [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `[paths...]` | Files, directories, or globs to lint, space-separated. `-` reads stdin, and needs `--as` to pick a parser. Optional: with none, targets come from the collections declared in [`collections:`](/manni/meta/reference/configuration/#collections). No paths and no config is an error (exit 2). |
+
+### Options
+
+The first nine are the family's, identical in name and meaning to
+[`check`](#lint-check)'s. The last four print under a **Tool options** heading
+in `--help`, because they belong to the tool performing the job rather than to
+the job itself.
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--collection` | `<name>` | every collection | Run over a configured [collection](/manni/meta/reference/configuration/#collections). Repeatable, one name per occurrence, never comma-separated. |
+| `--ext` | `<list>` | | Comma-separated extensions used when walking a directory, given once. |
+| `--exclude` | `<glob>` | | Glob to exclude. Repeatable, one glob per occurrence. |
+| `--as` | `<format>` | | Force an input format: `markdown`, `mdx`, `html`, `asciidoc`, `rst`, or `xml`. Required with `-`. |
+| `-f, --format` | `<pretty\|json\|github\|sarif\|junit>` | `pretty` | [Output format](#output-formats). An unknown value is an error (exit 2). |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/lint/reference/configuration/). |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+| `--allow-empty` | n/a | off | Treat zero matched files as success. Mirrors config `allowEmpty:`. |
+| `--no-gitignore` | n/a | off | Lint files `.gitignore` covers. |
+| `--tool` | `<name>` | `manni` | Which tool performs the job: `manni` or `dita-ot`. Anything else is an error naming the known set (exit 2). `manni` is this package's own engine; `dita-ot` is DITA Open Toolkit, which you install yourself. Mirrors config `structure.tool:`. |
+| `-t, --template` | `<ref>` | | Apply one [template ref](/manni/lint/reference/templates/#template-refs) to every file, overriding type routing. The first rung of the [resolution chain](/manni/lint/reference/configuration/#how-a-template-is-chosen). |
+| `--templates` | `<path>` | | Template file to route by. Its templates' `types:` outrank the built-ins. Repeatable, one path per occurrence, never comma-separated. Mirrors config `templates:`. |
+| `--explain` | n/a | off | Print how each file's template was chosen and lint nothing. [Always exits 0](#explain), unrouted pages included. |
+
+<Aside type="note" title="One separator per list">
+`--ext` is a `<list>` option: one comma-separated value, given once, replaced
+rather than accumulated by a repeat. `--exclude`, `--collection` and
+`--templates` are repeatable options: one value per occurrence, and a comma in
+one of them is part of the value. Positional paths are space-separated, because
+that is what argv is.
+</Aside>
+
+## `lint templates`
+
+List the templates that can be applied, and the doctypes each serves. It is the
+answer to "what could route a page?", so it loads exactly the template files a
+lint would. That is the built-ins, plus everything config `templates:` names,
+plus anything `--templates` adds.
+
+```sh
+manni lint templates [options]
+```
+
+```
+Templates:
+  tgdp:how-to:1.6  —  How-to guide (The Good Docs Project)  types: how-to  [builtin]
+  tgdp:tutorial:1.6  —  Tutorial (The Good Docs Project)  types: tutorial  [builtin]
+  tgdp:reference:1.6  —  Reference (The Good Docs Project)  types: reference  [builtin]
+  tgdp:concept:1.6  —  Concept (The Good Docs Project)  types: concept, explanation  [builtin]
+  tgdp:troubleshooting:1.6  —  Troubleshooting (The Good Docs Project)  types: troubleshooting  [builtin]
+  tgdp:release-notes:1.6  —  Release notes (The Good Docs Project)  types: release-notes  [builtin]
+  tgdp:readme:1.6  —  README (The Good Docs Project)  types: readme  [builtin]
+  runbook  types: runbook  [./templates.yaml]
+```
+
+A template from a file prints the file it came from instead of `[builtin]`. The
+listing is ordered built-ins first, then the files, in the order they load.
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--templates` | `<path>` | | Also list the templates in this file. Repeatable, one path per occurrence. Given at least once, it replaces config `templates:` for this listing. |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/lint/reference/configuration/). |
+| `--no-config` | n/a | off | Ignore any discovered config file, and list only the built-ins plus whatever `--templates` names. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints one object, `{ "templates": [ { "id", "title", "types", "source" } ] }`, where `source` is `"builtin"` or the file the entry came from. An unknown value is an error (exit 2). |
+
+## `lint templates infer`
+
+Write a first template from a page that already has the shape you want. One
+page, never a set. A template is a generalisation, and this makes exactly the
+generalisation one exemplar supports.
+
+```sh
+manni lint templates infer <page> [options]
+```
+
+```sh
+manni lint templates infer docs/rotate-key.md
+```
+
+```yaml
+templates:
+  how-to:
+    heading: Rotate an API key
+    sections:
+      - heading: Overview
+        contains:
+          paragraphs:
+            min: 1
+      - heading: Before you start
+        contains:
+          paragraphs:
+            min: 1
+```
+
+The output goes to stdout, so it can be piped or redirected. With `-o` it is
+written to a file and the confirmation goes to stderr, leaving stdout empty:
+
+```
+Wrote template "how-to" to ./templates.yaml
+```
+
+Every rule it writes is **exactly one occurrence**, and every heading is the
+exact text the page used. One page cannot show what varies, so no `min: 0`, no
+`max`, no `repeat` and no `pattern` is invented. Loosening the output is the
+author's job, and
+[Write a template](/manni/lint/set-up/write-a-template/) walks through it.
+
+What it does claim is the weakest claim that still describes the page, so the
+template it writes lints its own source clean. `contains:` lists only the kinds
+that are present, at `min: 1`. A table's `columns:` is claimed only where every
+table in that section agrees about them. A code block's `language:` is claimed
+only where every block in the section declares one.
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<page>` | One file to infer from. `-` reads stdin, and needs `--as` to pick a parser. Required. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--as` | `<format>` | | Force an input format instead of inferring it from the extension: `markdown`, `mdx`, `html`, `asciidoc`, `rst`, or `xml`. Required with `-`. |
+| `--name` | `<name>` | the page's `type` | Name for the template. Defaults to the page's own `type` frontmatter, then to the filename stem, then to `stdin`. A name starts with a letter and holds letters, digits, `-` and `_`. |
+| `-f, --format` | `<yaml\|json>` | `yaml` | How the template file is written. Not the report formats: a template is YAML or JSON because those are the two the loader reads back. An unknown value is an error (exit 2). |
+| `-o, --out` | `<path>` | stdout | Write the template here instead. Parent directories are created. An existing path is an error unless `--force` is given. |
+| `--force` | n/a | off | Overwrite the `--out` path. |
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/lint/reference/configuration/). It settles which directory relative paths are read against. |
+| `--no-config` | n/a | off | Ignore any discovered config file. |
+
+## `lint tools`
+
+List the lint jobs, the tool that performs each, whether it is configured and
+available, and what config it reads. Each tool's input formats follow, with the
+content kinds each of them reports.
+
+```sh
+manni lint tools [options]
+```
+
+```
+Jobs:
+  structure  tool: manni 2.4.0  [configured, available]
+    config: manni.config.yaml
+    formats:
+      markdown  Markdown (.md, .markdown)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote
+      mdx  MDX (.mdx)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, element
+      html  HTML (.html, .htm)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
+      asciidoc  AsciiDoc (.adoc, .asciidoc)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
+      rst  reStructuredText (.rst)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
+      xml  XML (.xml, .dita, .ditamap)  kinds: paragraph, codeBlock, list, table, admonition, image, blockquote, definitionList
+```
+
+`[configured]` means the repository's config declares the job, and `[not
+configured]` means it is running on built-in defaults. `available` means the
+tool can run here. `config:` names the file the tool read, or
+`built-in defaults` when there was none. `formats:` lists every input format the
+tool reads, and each name is one `--as` accepts.
+
+`kinds:` is what that parser can report, and it is the authority behind the
+[kind matrix](/manni/lint/reference/templates/#which-kinds-each-format-reports)
+in the templates reference. A template rule about a kind missing from a file's
+format is removed before matching and reported as a warning. A warning never
+changes the exit code. Run this command when a rule you wrote is not firing.
+
+This is what to run when two machines disagree. A difference between a
+developer's laptop and CI is usually one of two things. It is a different
+version of one tool, or a config file found in one place and not the other.
+Both are on this screen.
+
+<Aside type="note" title="It replaced `formats`">
+The imported tool spelled this verb `formats`, and `manni lint formats` is an
+unknown command. The format list it printed is here, under each job's tool.
+</Aside>
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to a [config file](/manni/lint/reference/configuration/). |
+| `--no-config` | n/a | off | Ignore any discovered config file, and report the built-in defaults. |
+| `-f, --format` | `<pretty\|json>` | `pretty` | Output format. `json` prints one array of job records, each with `job`, `tool`, `configured`, `available`, `version`, `config` and `formats[]`. Each format is an object with `name`, `label`, `extensions` and `kinds`. An unknown value is an error (exit 2). |
+
+## Rule ids
+
+Every finding carries an id of three segments:
+
+```
+manni:lint/<job>/<rule>
+```
+
+So a missing section is `manni:lint/structure/missing-section`. That is three
+segments rather than the two `manni cite` uses. Anything that parses family
+rule ids must not assume two.
+
+The id is the durable name. It is the SARIF `ruleId`, the `type` attribute of a
+JUnit `<failure>`, the GitHub annotation `title`, and the `ruleId` the JSON
+reporter carries beside `type`.
+
+The page's shape:
+
+| Rule id | Fires when |
+|---|---|
+| `manni:lint/structure/missing-section` | A required occurrence of a rule found no section. |
+| `manni:lint/structure/missing-group` | A copy of a `repeat` group is absent whole. Reported once for the group rather than once per member. |
+| `manni:lint/structure/unexpected-section` | The document carries a section no rule took. The message names the escape, which is a trailing rule with `min: 0`. |
+| `manni:lint/structure/heading` | A heading does not satisfy the rule's `heading`, in any of its four forms. |
+
+What is inside a section:
+
+| Rule id | Fires when |
+|---|---|
+| `manni:lint/structure/content-order` | Content appears in an order the section's `sequence` does not allow. |
+| `manni:lint/structure/paragraphs-count` | A section has fewer or more paragraphs than `paragraphs.min` / `paragraphs.max`. |
+| `manni:lint/structure/paragraphs-pattern` | A paragraph does not match `paragraphs.pattern`. |
+| `manni:lint/structure/code-blocks-count` | A section has fewer or more code blocks than `codeBlocks.min` / `codeBlocks.max`. |
+| `manni:lint/structure/code-blocks-language` | A code block does not declare the language `codeBlocks.language` asks for. |
+| `manni:lint/structure/lists-count` | A section has fewer or more lists than `lists.min` / `lists.max`. |
+| `manni:lint/structure/lists-items-count` | A list has fewer or more items than `lists.items.min` / `lists.items.max`. |
+| `manni:lint/structure/lists-ordered` | A list is ordered where `lists.ordered` asks for unordered, or the other way round. |
+| `manni:lint/structure/tables-count` | A section has fewer or more tables than `tables.min` / `tables.max`. |
+| `manni:lint/structure/tables-columns` | A table's header cells are not the ones `tables.columns` names. |
+| `manni:lint/structure/admonitions-count` | A section has fewer or more admonitions than `admonitions.min` / `admonitions.max`. |
+| `manni:lint/structure/admonitions-variant` | An admonition is not the variant `admonitions.variant` asks for. |
+| `manni:lint/structure/images-count` | A section has fewer or more images than `images.min` / `images.max`. |
+| `manni:lint/structure/blockquotes-count` | A section has fewer or more block quotes than `blockquotes.min` / `blockquotes.max`. |
+| `manni:lint/structure/definition-lists-count` | A section has fewer or more definition lists than `definitionLists.min` / `definitionLists.max`. |
+| `manni:lint/structure/elements-count` | A section has fewer or more matching elements than `elements.min` / `elements.max`. |
+| `manni:lint/structure/elements-attribute` | An element does not carry the attributes `elements.attributes` requires. |
+
+Routing, loading, and the one warning:
+
+| Rule id | Fires when |
+|---|---|
+| `manni:lint/structure/unknown-type` | The page declares a `type:` no template serves. The message lists the known doctypes, or suggests the nearest. |
+| `manni:lint/structure/template` | The template itself could not be resolved or is invalid. |
+| `manni:lint/structure/parse` | The document could not be parsed. |
+| `manni:lint/structure/unsupported-content-kind` | A rule asks about a content kind this file's format cannot report. A **warning**, anchored at `1:1`, one per unchecked rule. |
+
+Every finding but the last is `error` on the [family severity
+scale](/manni/meta/reference/output-and-exit-codes/#severity-across-the-family).
+There is no severity map, and no rule can be turned down by configuration.
+
+`unsupported-content-kind` is the one warning, and it never moves the exit
+code. A file whose only finding is that warning is a pass. It is marked `⚠`
+rather than `✓` in `pretty`, so a docset of mixed formats stays green while
+still saying which rules went unchecked, and where. Run
+[`manni lint tools`](#lint-tools) to see which kinds each format reports.
+
+## Output formats
+
+**`pretty`** (the default) is for people. One line per file, its findings
+indented under it, and a summary:
+
+```
+✗ docs/rotate-key.md
+    5:1  manni:lint/structure/missing-section  Rotate an API key: Missing section "See also"
+
+1 file checked, 0 passed, 1 failed, 0 skipped
+```
+
+Each finding line is `line:column`, the rule id, and the message, which names
+the section heading the finding is about. A clean file is one `✓` line. A file
+that could not be routed prints `-` and its reason, and counts as skipped
+rather than failed:
+
+```
+- docs/notes.md  skipped: no type in frontmatter and no template resolved
+✗ docs/rotate-key.md
+    5:1  manni:lint/structure/missing-section  Rotate an API key: Missing section "See also"
+
+1 file checked, 0 passed, 1 failed, 1 skipped
+```
+
+A file whose findings are all warnings is marked `⚠` and counted as a pass. The
+level is printed before the message, and the summary gains a warning count:
+
+```
+⚠ docs/api-reference.md
+    1:1  manni:lint/structure/unsupported-content-kind  warning The markdown parser does not report definition lists, so the "glossary" rule in template "reference" is not checked for this file.
+
+1 file checked, 1 passed, 0 failed, 0 skipped, 1 warning
+```
+
+In `pretty`, the config that governed the run is named on stderr, so a report
+cannot be read against the wrong settings: `Using manni.config.yaml (.)`.
+Discovery walks up to the project boundary, so an unexpected ancestor config is
+worth one line.
+
+**`json`** prints one array, one object per file:
+
+```json
+[
+  {
+    "file": "docs/rotate-key.md",
+    "success": false,
+    "errors": [
+      {
+        "type": "missing_section",
+        "ruleId": "manni:lint/structure/missing-section",
+        "tool": "manni",
+        "heading": "Rotate an API key",
+        "message": "Missing section \"See also\"",
+        "position": {
+          "start": { "line": 5, "column": 1, "offset": 22 },
+          "end": { "line": 22, "column": 1, "offset": 307 }
+        },
+        "severity": "error"
+      }
+    ],
+    "skipped": null
+  }
+]
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `file` | string | The path as the run referred to it, or `<stdin>`. |
+| `success` | boolean | `true` only when the file was linted and produced no `error`-severity finding. A file carrying warnings alone is `true` with a non-empty `errors[]`. A skipped file is `false`, because calling it a pass would hide the gap. |
+| `errors[].type` | string | The machine-readable finding name, in snake case. Stable: `manni docevals`' grader reads it. |
+| `errors[].ruleId` | string | `manni:lint/<job>/<rule>`, derived from `type`. |
+| `errors[].tool` | string | The tool that produced the finding, `manni` for every structural one. |
+| `errors[].heading` | string \| `null` | The section heading the finding is about, or `null` for a whole-file finding. |
+| `errors[].message` | string | What to change, in one sentence. |
+| `errors[].position` | object | `start` and `end`, each with `line`, `column` and `offset`. |
+| `errors[].severity` | string | `error` or `warning`, on the family scale. It is what tells a warning-only file apart from a failure whose finding went missing. |
+| `skipped` | string \| `null` | Why the file was not linted. One of `no-template`, `unsupported-format` or `unreadable`. It is `null` when the file was linted, so a skip and an older version of this reporter are never the same reading. |
+
+The envelope is a top-level array and `type` keeps its value, whatever else is
+added beside it.
+
+**`github`** prints one workflow command per finding, anchored to the file and
+line, and nothing at all when the run is clean:
+
+```
+::error file=docs/rotate-key.md,line=5,col=1,title=manni%3Alint/structure/missing-section::Rotate an API key: Missing section "See also"
+```
+
+The colon in the rule id is percent-encoded, because a workflow command's
+properties are comma-and-colon delimited.
+
+**`sarif`** prints a SARIF 2.1.0 log for GitHub code scanning and any other
+SARIF consumer. The driver is named `manni-lint`. Each rule the run produced is
+declared once under `tool.driver.rules`, with `defaultConfiguration.level` of
+`error`, and each finding is one `results[]` entry with `ruleId`, `level`, and a
+`physicalLocation` whose `region` carries the full `startLine` /
+`startColumn` / `endLine` / `endColumn` span. Paths are relative to a
+`SRCROOT` base, so the upload resolves against the repository root.
+
+A skipped file is not a result. It is a `toolExecutionNotification` at level
+`note`, declared under `tool.driver.notifications` as `no-template`,
+`unsupported-format` or `unreadable`. Code scanning therefore does not read
+"not linted" as "clean".
+`invocations[0].executionSuccessful` is always `true`: findings are the tool
+working, not the tool failing.
+
+**`junit`** prints a JUnit XML suite for the CI "Tests" tab. One `testcase`
+per linted file, `classname="manni.lint"`, and one `<failure>` per finding
+whose `type` attribute is the rule id:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="manni" tests="1" failures="1" errors="0">
+  <testsuite name="manni" tests="1" failures="1" errors="0">
+    <testcase name="docs/rotate-key.md" classname="manni.lint">
+      <failure type="manni:lint/structure/missing-section" message="(root) Rotate an API key: Missing section &quot;See also&quot; (line 5)"/>
+    </testcase>
+  </testsuite>
+</testsuites>
+```
+
+`tests` counts the files that were checked, not the findings, and matches the
+`N files checked` of the pretty report. A skipped file is not a testcase. JUnit
+offers a pass or a failure and nothing else, so a file nothing looked at would
+arrive as a green test. The skip is reported where there is somewhere to put
+it. `pretty` says so in words, and `sarif` files a `toolExecutionNotification`.
+A finding below `error` severity is not a `<failure>`, because a failure that
+did not fail the run would make the tab disagree with the exit code.
+
+Only `github` may print nothing on a clean run, because an empty annotation
+stream *is* a clean check. Every other format owes its envelope: an empty JSON
+array, a SARIF log with no results, a JUnit suite of passing testcases. A
+consumer parsing stdout must never have to treat "no output" as a third
+outcome.
+
+## Explain
+
+`--explain` prints the routing table and lints nothing. Each file gets one block
+listing every rung of the [resolution
+chain](/manni/lint/reference/configuration/#how-a-template-is-chosen). A `·`
+marks a rung that did not decide, `→` the one that did, and `✗` a page
+that fell off the end. A page that routed also gets the **alignment**, which is
+the pairing the matcher chose:
+
+```
+▸ docs/rotate-key.md
+    · cli                  --template not given
+    · frontmatter-template no $template in frontmatter
+    · config-override      no overrides configured
+    → type                 tgdp:how-to:1.6  type: how-to -> builtin template
+    alignment
+      (page)                 ← "Rotate an API key"
+        overview             ← "Overview"
+        before-you-start     ← "Before you start"
+        task                 ← "Rotate the key"
+        see-also             ← "See also"
+
+- docs/notes.md
+    · cli                  --template not given
+    · frontmatter-template no $template in frontmatter
+    · config-override      no overrides configured
+    · type                 no type in frontmatter
+    · config-default       no default configured
+    skipped: the page declares no type
+
+2 files, 1 routed, 1 unrouted
+```
+
+### The alignment block
+
+One row per rule, indented to follow the section tree. The left column names
+the rule and the right column names the section it took.
+
+| Left column | Means |
+|---|---|
+| `(page)` | The template itself, paired with the page's own title. `(synthesized from frontmatter)` follows a title the parser took from `title:` because the body carried no heading of its own. |
+| A rule's `id` | The rule, named by the handle you gave it. |
+| A literal heading | A rule with no `id` whose `heading` is an exact string. |
+| `(any)` | A rule with no `id` and no exact heading. A wildcard, a list, a pattern, or `heading: false`. |
+| `(repeat)` | A `repeat` group with no `id`. Its members are listed under it. |
+| `(unexpected)` | A section no rule took. It appears in document order, with its title on the right. |
+
+| Right column | Means |
+|---|---|
+| `← "Overview"` | The rule took that section. |
+| `← "Overview" (coerced)` | The rule took a section its `heading` rejects, because nothing else could. The heading rule reports separately. |
+| `← "A" … "C"` | Several sections, collapsed. The label then carries `×N`. |
+| `← (missing)` | The rule took nothing. |
+| `← (no heading)` | The section it took has no heading of its own. |
+
+This is what to read when a finding surprises you. Two pairings can cost the
+same, and the [tie-breaks](/manni/lint/reference/templates/#how-sections-are-matched)
+pick one, so the block is how you see which.
+
+It **always exits `0`**, unrouted pages included. That is counterintuitive
+enough to be worth stating. `--explain` answers a question about configuration,
+so its exit code says whether it could answer, not whether the docs are clean.
+A page that routes nowhere is an answered question. Automation reads the
+ordinary run for the verdict.
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Every linted file was clean, warnings included. Also every `--explain` run, every `templates` or `tools` listing, and every `templates infer`. |
+| `1` | At least one `error`-level finding. Warnings alone never reach this. |
+| `2` | Usage or operational error. That covers an unknown flag value, an unknown `--tool`, an unresolvable template, or a config carrying a moved key. It also covers no inputs and no config, and a run in which every file was skipped. One line on stderr, prefixed `manni: `. |
+
+The `1`/`2` split is what lets a workflow tell "the docs are wrong" apart from
+"the linter is misconfigured". A single non-zero exit cannot.
+
+## Examples
+
+From the least you can type to the most:
+
+```bash
+# One file, routed by its own `type:`.
+manni lint structure docs/rotate-key.md
+
+# A directory. Every file the walk finds is routed by its own `type:`.
+manni lint structure docs/
+
+# No paths: targets come from `collections:` in manni.config.yaml. The same
+# command locally and in CI.
+manni lint check
+
+# One declared collection.
+manni lint check --collection guides
+
+# Every configured job, with GitHub annotations, for CI.
+manni lint check "**/*.md" -f github
+
+# Route by your own templates as well as the built-ins.
+manni lint structure docs/ --templates ./templates.yaml
+
+# Force one template over everything, ignoring type routing.
+manni lint structure docs/reference/ -t tgdp:reference:1.6
+
+# Why did this page route there?
+manni lint structure docs/ --explain
+
+# What could route a page, and what performs the job?
+manni lint templates
+manni lint tools
+
+# Write a first template from a page that already has the right shape.
+manni lint templates infer docs/rotate-key.md
+
+# ...named, in JSON, written to a file, replacing what was there.
+manni lint templates infer docs/rotate-key.md \
+  --name house-how-to \
+  --format json \
+  --out ./templates.json \
+  --force
+
+# ...from stdin, with the parser named.
+cat page.md | manni lint templates infer - --as markdown
+
+# Scripts: the JSON envelope, piped to jq.
+manni lint structure docs/ -f json | jq '.[] | select(.success == false) | .file'
+
+# From stdin, with the parser named, forcing one template.
+cat page.md | manni lint structure - --as markdown -t tgdp:how-to:1.6
+
+# Every option at once. Two paths (space-separated); one collection; a
+# comma-separated --ext list; two --exclude globs; the tool named; a template
+# file added; JUnit for the tests tab; an explicit config; gitignored files
+# linted; an empty match tolerated; no color.
+manni lint structure docs/ guides/ \
+  --collection guides \
+  --ext md,mdx \
+  --exclude '**/drafts/**' \
+  --exclude '**/_partials/**' \
+  --as markdown \
+  --tool manni \
+  --templates ./templates.yaml \
+  --template tgdp:how-to:1.6 \
+  --format junit \
+  --config ci/manni.config.yaml \
+  --no-gitignore \
+  --allow-empty \
+  --no-color
+```
+
+Usage errors are one line on stderr, prefixed `manni: `, exit `2`:
+
+```bash
+manni lint
+# usage error: no subcommand given; commander lists check, structure, templates and tools
+
+manni lint structure
+# manni: No files to check. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.
+
+manni lint structure docs/ -f yaml
+# manni: Unknown --format "yaml". Use pretty, json, github, sarif, or junit.
+
+manni lint structure docs/ --tool vale
+# manni: Unknown --tool "vale" for structure. Use manni, dita-ot.
+
+manni lint structure docs/ -t nope:x:1
+# manni: Unknown built-in template "nope:x:1". Available: tgdp:how-to:1.6, tgdp:tutorial:1.6, tgdp:reference:1.6, tgdp:concept:1.6, tgdp:troubleshooting:1.6, tgdp:release-notes:1.6, tgdp:readme:1.6.
+
+manni lint structure docs/notes.md
+# manni: Nothing was checked: all 1 file(s) were skipped. 1 had no template: give a page a "type:" that a template serves, pass -t/--template <ref>, or set "lint.template" as a default. Run "manni lint structure <paths> --explain" to see how each file resolved.
+
+manni lint structure docs/ --as notebook
+# manni: Unknown format "notebook". Run "manni lint tools" to see the formats manni lint reads.
+
+manni lint templates infer page.md -f pretty
+# manni: Unknown --format "pretty". Use yaml or json.
+
+manni lint templates infer notes.txt
+# manni: no parser is registered for ".txt". Supported extensions: .md, .markdown, .mdx, .html, .htm, .adoc, .asciidoc, .rst, .dita, .ditamap. Use --as to override.
+
+cat page.md | manni lint templates infer -
+# manni: Reading from stdin (-) requires --as <format> to choose a parser.
+
+manni lint templates infer page.md --name "2024"
+# manni: "2024" is not a usable template name. A name starts with a letter and holds only letters, digits, "-" and "_". Pass --name <name>.
+
+manni lint templates infer page.md -o ./templates.yaml
+# manni: ./templates.yaml exists. Pass --force to overwrite it.
+```
+
+A file the run cannot open is that file's problem, not the run's. It is skipped
+with the reason the operating system gave, the rest of the run continues, and
+the exit code still reports the findings:
+
+```
+- docs/private.md  skipped: could not be read: EACCES: permission denied, open 'docs/private.md'
+```
+
+When every file was unreadable, the "Nothing was checked" message says so
+instead of talking about templates: `N could not be read: check the permissions
+on those paths, or drop them from the run with --exclude <glob>.`
+
+## Configuration
+
+Every setting lives under the `lint:` key of the shared `manni.config.yaml`,
+and the document set lives in the family-level `collections:` beside it. The
+[configuration reference](/manni/lint/reference/configuration/) has every key,
+its type, its default, and the precedence chain a template ref goes through.

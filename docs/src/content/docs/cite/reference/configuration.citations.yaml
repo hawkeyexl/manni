@@ -80,9 +80,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-8a1342cea055c1f71a82188e18255157e106eec03fd24a03c0fa5a9952854f9b
       source:
         file: src/meta/core/load-files.ts
-        lines: 110
+        lines: 211
         integrity: sha256-ee02e578540932639c3aa659c0568d487c6d8a4293633f28b18dd4ff557ad7f9
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: key-baseline
       claim:
         lines: 93

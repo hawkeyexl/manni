@@ -583,9 +583,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-5a7a47a23d93ad29bc73a1032c97a9e22a285d0ca58161a95448feed5dc49b03
       source:
         file: src/meta/core/load-files.ts
-        lines: 200-206
+        lines: 305-311
         integrity: sha256-85d3a1b547e6dd0b5c2ddf480b418769d45c2ce17b92229d56cb67b0f1c7a3b5
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: err-collection-with-paths
       claim:
         lines: 634
@@ -781,18 +781,18 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-74fa46af823202103651db56fef4dc331fcfb1be9c6cff0886a1b554826baee9
       source:
         file: src/meta/core/load-files.ts
-        lines: 200
+        lines: 305
         integrity: sha256-e875231ef845ad664fc8dde395cd7cae437ab1a0eda11a486fcd2cbd153fabc5
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: allow-empty-no-matched-files
       claim:
         lines: 99
         integrity: sha256-74fa46af823202103651db56fef4dc331fcfb1be9c6cff0886a1b554826baee9
       source:
         file: src/meta/core/load-files.ts
-        lines: 258
+        lines: 363
         integrity: sha256-da70dbb9bcc1db6c1d1532237399e11fa14a9f72563d7fca972d0bb400e2e69f
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: write-change-lines
       claim:
         integrity: sha256-c1bf52ffa807562bfa7500e9c177620ee8179ac4b56e044c89307ff72422442c

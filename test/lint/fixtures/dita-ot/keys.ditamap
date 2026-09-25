@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE map PUBLIC "-//OASIS//DTD DITA Map//EN" "map.dtd">
+<!-- Key definitions shared by the maps beside this one. -->
+<map>
+  <title>Keys</title>
+  <keydef keys="rotate" href="rotate-a-key.dita"/>
+  <keydef keys="warnings" href="warnings.dita"/>
+</map>

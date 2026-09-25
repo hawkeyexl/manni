@@ -1,0 +1,15 @@
+# Two templates, so a ref must name one with a `#` fragment.
+templates:
+  how-to:
+    types: [how-to, howto]
+    sections:
+      - id: overview
+        heading: Overview
+  reference:
+    types: [reference]
+    sections:
+      - id: syntax
+        heading: Syntax
+        contains:
+          codeBlocks:
+            min: 1

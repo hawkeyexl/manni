@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A relationship table and a key definition are not navigation. Counting the
+  topicrefs inside them would report a three-entry map as a seven-entry one.
+-->
+<map>
+  <title>Relationships</title>
+  <topicref navtitle="Navigation" href="a.dita"/>
+  <keydef keys="product" href="product.dita">
+    <topicmeta>
+      <navtitle>Not navigation</navtitle>
+    </topicmeta>
+  </keydef>
+  <reltable>
+    <relrow>
+      <relcell><topicref href="a.dita" navtitle="Related A"/></relcell>
+      <relcell><topicref href="b.dita" navtitle="Related B"/></relcell>
+    </relrow>
+  </reltable>
+</map>

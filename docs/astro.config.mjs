@@ -147,7 +147,7 @@ export default defineConfig({
             },
           ],
         },
-        // Each IN_DEV group (docevals, graph, lint, tracevals) is a tool still
+        // Each IN_DEV group (docevals, graph, tracevals) is a tool still
         // on its `tool/<name>` branch, so main carries only an overview page.
         // The branch brings the rest of the section, and the badge, when it
         // merges.
@@ -189,11 +189,41 @@ export default defineConfig({
             },
           ],
         },
+        // `lint` is the structure tool. Four journey tracks and a reference
+        // shelf. The set-up track is Sara's: writing the doctype template a
+        // repository is then held to (S7), which the reference shelf backs.
         {
           label: "lint",
           collapsed: true,
-          badge: IN_DEV,
-          items: [{ label: "Overview", link: "/lint/" }],
+          badge: BETA,
+          items: [
+            { label: "Overview", link: "/lint/" },
+            {
+              label: "Get started",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "lint/get-started" } }],
+            },
+            {
+              label: "Set up",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "lint/set-up" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "lint/ci" } }],
+            },
+            {
+              label: "Fix a failing check",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "lint/fix" } }],
+            },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "lint/reference" } }],
+            },
+          ],
         },
         {
           label: "meta",

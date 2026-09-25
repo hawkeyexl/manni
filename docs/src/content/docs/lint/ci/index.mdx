@@ -1,0 +1,318 @@
+---
+title: Gate document structure in CI
+description: Run manni lint check on every pull request with inline annotations, wire the 0/1/2 exit codes to the gate, upload SARIF to code scanning, and publish JUnit to the tests tab.
+---
+
+import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+You already run `manni meta validate` over these pages. Structure is the other
+half of the same question. Metadata says what a page *is*, and structure says
+whether it is shaped like one. This page wires that into the same job,
+reading the same config file, over the same collections.
+
+Nothing is installed into the repository. The recipes run `npx`, which fetches
+the published package on demand; the runner needs Node.js 24 or newer.
+
+## How the gate works
+
+Two properties carry the integration, and they are the family's rather than
+this tool's.
+
+**Exit codes drive the gate.**
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Every linted file was clean. |
+| `1` | At least one `error`-level finding. |
+| `2` | The run could not happen. That covers a bad flag value, an unknown tool, an unresolvable template, or a config carrying a moved key. It also covers no inputs and no config, and a run in which every file was skipped. The message goes to stderr, prefixed `manni:`. |
+
+Keep `1` and `2` apart. A job that treats every non-zero code as "the docs are
+wrong" reports a misconfigured linter as a failing docset. The two need
+opposite responses. That is the same split
+[`manni meta validate`](/manni/meta/ci/exit-codes-and-annotations/) and
+[`manni a11y check`](/manni/a11y/ci/#exit-codes) use.
+
+Exit `1` is defined as **at least one `error`-level finding**, not "any
+finding". Every structural finding is an error but one. A rule asking about
+content this file's format cannot report is a
+[warning](/manni/lint/fix/#a-rule-that-never-ran), it annotates as `::warning`,
+and it never fails the job.
+
+**`-f github` produces inline annotations.** One workflow command per finding,
+anchored to the file and the line, with the rule id as the title:
+
+```
+::error file=docs/rotate-key.md,line=22,col=1,title=manni%3Alint/structure/missing-section::Rotate an API key: Missing section "See also"
+```
+
+A missing section is anchored where it would go. This page ends without its
+`See also`, so the annotation lands at the end of the file. A gap in the middle
+of a page anchors on the section standing where the missing one belongs.
+
+GitHub renders each as an annotation on the pull request diff, so a reviewer
+sees which page lost its shape without opening the log. The colon in the rule
+id is percent-encoded, because a workflow command's properties are
+comma-and-colon delimited. A clean run prints nothing at all and exits `0`.
+
+## The workflow
+
+<Steps>
+
+1. **Declare the pages once.** Every manni tool reads the family-level
+   `collections:` list, so the metadata gate and the structure gate cover
+   exactly the same files:
+
+   ```yaml title="manni.config.yaml"
+   collections:
+     - name: guides
+       paths: ["docs/**/*.md"]
+       exclude: ["**/drafts/**"]
+
+   lint:
+     templates:
+       - ./templates.yaml
+   ```
+
+   <Aside type="caution" title="`docs` is not a usable collection name">
+     It collides with the table every `manni meta query` reads, and is refused
+     (exit 2). Name the collection for what it holds: `guides`, `site`,
+     `pages`, `api`.
+   </Aside>
+
+2. **Add the workflow.** `.github/workflows/structure.yml`:
+
+   ```yaml title=".github/workflows/structure.yml"
+   # Check that every page has the shape its doctype promises.
+   name: Check structure
+
+   on:
+     push:
+     pull_request:
+
+   jobs:
+     lint:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v7
+         - uses: actions/setup-node@v6
+           with:
+             node-version: 24
+
+         # No paths: the collections in manni.config.yaml supply them, so this
+         # is the same command people run locally.
+         - name: Check document structure
+           run: npx -y @hawkeyexl/manni lint check -f github
+   ```
+
+3. **Narrow it, if you want to.** `--collection` runs over one declared set at
+   a time, which is how a monorepo gates two docsets in two jobs:
+
+   ```yaml
+         - run: npx -y @hawkeyexl/manni lint check --collection guides -f github
+   ```
+
+   The flag is repeatable, one name per occurrence, never comma-separated.
+
+4. **Commit and push.** On the next pull request the job runs. A page missing a
+   section its template requires fails the job, and the annotation lands where
+   that section belongs.
+
+</Steps>
+
+<Aside type="note" title="Pin the version for reproducible runs">
+  `npx -y @hawkeyexl/manni` resolves the latest published version each run.
+  Pin the major, as in `npx -y @hawkeyexl/manni@2 lint check …`, and bump it
+  deliberately.
+</Aside>
+
+## Run it beside the metadata gate
+
+The two commands read one config file and one document set, so they belong in
+one job:
+
+```yaml
+      - name: Check metadata
+        run: npx -y @hawkeyexl/manni meta validate -f github
+      - name: Check structure
+        if: always()
+        run: npx -y @hawkeyexl/manni lint check -f github
+```
+
+`if: always()` on the second step matters. Without it a metadata failure hides
+every structural finding, and a contributor fixes one round of annotations only
+to meet another.
+
+## Output formats
+
+| Format | Use it for | Shape |
+| --- | --- | --- |
+| `pretty` | People, and local runs. The default. | One line per file, findings indented under it, a summary line. `check` also names the jobs it ran, on stderr. |
+| `github` | GitHub Actions annotations. | Workflow commands, one per finding, `title=manni:lint/<job>/<rule>`. The command is the finding's severity, so a warning is `::warning`. Nothing at all on a clean run. |
+| `json` | Scripts and dashboards. | A top-level array, one object per file, each with `file`, `success`, and `errors[]` carrying `type`, `ruleId`, `tool`, `heading`, `message`, `position` and `severity`. |
+| `sarif` | GitHub code scanning and any SARIF consumer. | One result per finding with `ruleId: manni:lint/<job>/<rule>`, `level`, and the full line/column span. Skipped files ride along as tool notifications, never as results. |
+| `junit` | The CI "Tests" tab. | One `testcase` per linted file, `classname="manni.lint"`, one `failure` per finding whose `type` is the rule id. |
+
+Every shape is in the [CLI
+reference](/manni/lint/reference/cli/#output-formats). `templates` and `tools`
+take `pretty` or `json` only, because neither reports on documents.
+
+## Upload SARIF to code scanning
+
+Annotations vanish with the job log. Code scanning keeps a finding open until
+someone closes it, and groups it by rule id across runs.
+
+```yaml title=".github/workflows/structure.yml"
+      - name: Check document structure
+        run: npx -y @hawkeyexl/manni lint check -f sarif > lint.sarif
+        continue-on-error: true
+
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: lint.sarif
+          category: manni-lint
+```
+
+<Aside type="caution" title="The upload must survive a failing run">
+  The failing case is precisely the case with findings. Without
+  `continue-on-error` on the check step, or `if: always()` on the upload, the
+  run that had something to report is the one that uploads nothing. Keep the
+  gate by failing a later step on the exit code, or by reading the code
+  scanning alert count.
+</Aside>
+
+A clean run still writes a complete SARIF log with an empty `results` array,
+because `upload-sarif` rejects an empty file. Only `-f github` may print
+nothing when there is nothing to say.
+
+Run the job from the root of the repository that holds the pages. SARIF paths
+are relative to a `SRCROOT` base, and code scanning drops a result whose URI
+does not resolve against the repository root.
+
+## Publish JUnit to the tests tab
+
+For a dashboard that already reads JUnit, or a runner whose UI has a tests tab:
+
+```yaml
+      - name: Check document structure
+        run: npx -y @hawkeyexl/manni lint check -f junit > lint-results.xml
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: structure-results
+          path: lint-results.xml
+```
+
+One `testcase` per file, so the tab counts pages rather than findings. A
+skipped page rides along as a passing testcase. The `<failure>` element's
+`type` attribute is the rule id, which is what groups a recurring failure
+across runs.
+
+## When nothing gets linted
+
+Two operational failures look like success if you are not watching for them,
+and both are exit `2` rather than `0` on purpose.
+
+**No files matched.** A glob that matches nothing, or a collection whose paths
+have moved:
+
+```
+manni: No files matched. Patterns tried: "docs/**/*.md".
+Nothing was linted, so this is an error rather than a pass.
+Pass --allow-empty (or set allowEmpty: true) if matching nothing is expected.
+```
+
+`--allow-empty` is for the case where an empty list is legitimate. A shared CI
+template does that, and so does a pre-commit hook run over changed files only.
+
+**Every file was skipped.** Pages were found, and none of them routed to a
+template:
+
+```
+manni: Nothing was checked: all 12 file(s) were skipped. 12 had no template: give a page a "type:" that a template serves, pass -t/--template <ref>, or set "lint.template" as a default. Run "manni lint structure <paths> --explain" to see how each file resolved.
+```
+
+This is the normal first-run result on a docset that does not declare doctypes
+yet. Run `manni lint structure --explain` to see the routing, then either add
+`type:` to the pages or set `lint.template` as a default.
+
+## Ramp it in
+
+`manni lint` has no baseline file, unlike `manni meta` and `manni cite`. Two
+things ramp it in instead, and both are plain configuration rather than a mode.
+
+**Start with one collection.** Gate the docset that already declares doctypes,
+and leave the rest reporting nothing because its pages are skipped.
+
+**Start with one doctype.** A page with no `type:` is skipped, not failed, so
+adding `type: how-to` to a page is the act that opts it in. The backlog burns
+down one page at a time, and every page that opts in is gated from that moment.
+
+To see how far along you are without failing anything, run the explain mode in
+a report-only step:
+
+```yaml
+      - name: How many pages route to a template?
+        run: npx -y @hawkeyexl/manni lint structure --explain | tail -1
+```
+
+It always exits `0`, and the last line reads `142 files, 37 routed, 105
+unrouted`.
+
+## Verify it works
+
+Open a pull request that deletes a required section from a page that declares a
+`type:`. Then check that:
+
+- The job is red, and the page carries an inline annotation titled
+  `manni:lint/structure/missing-section`, anchored where the deleted section
+  used to be.
+- Restoring the section turns the job green.
+- A page with no `type:` produces no annotation and does not fail the job.
+- A `type:` no template serves fails the job with
+  `manni:lint/structure/unknown-type`, and the message names the doctypes that
+  do exist.
+
+To see the same lines locally, run with `-f github` from your shell; drop the
+flag for the readable report.
+
+<CardGrid>
+  <LinkCard
+    title="Fix a failing check"
+    href="/manni/lint/fix/"
+    description="What a contributor does with the annotation your job produced. Every rule id, and what to change on the page."
+  />
+  <LinkCard
+    title="Configuration reference"
+    href="/manni/lint/reference/configuration/"
+    description="Every lint: key, the collections: list, and the template resolution chain."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/lint/reference/cli/"
+    description="Every flag, the five output formats, the rule ids, and the exit codes."
+  />
+  <LinkCard
+    title="manni meta in CI"
+    href="/manni/meta/ci/"
+    description="The metadata gate that shares the bin, the config file, the collections and the exit-code contract this page follows."
+  />
+</CardGrid>
+
+{/* Doc Detective inline tests: verify this page's documented manni lint behavior
+    against the local build, exposed as `manni lint` / `npx @hawkeyexl/manni lint` via `npm link`
+    (see .github/workflows/docs-as-tests.yml), over committed fixtures.
+    Run with `npx doc-detective`. Config: .doc-detective.json. */}
+{/* test {"testId":"lint-ci","description":"The properties the CI integration rests on: exit codes, annotations, and the four machine formats, run against the local CLI build and committed fixtures."} */}
+{/* step {"description":"A clean page exits 0 so the job stays green.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to.md -f github","exitCodes":[0]}} */}
+{/* step {"description":"A page missing a required section exits 1 and emits an ::error workflow command titled with the percent-encoded rule id, anchored to the file and line.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to-broken.md -f github","exitCodes":[1],"stdio":"/::error file=.*,line=22,col=1,title=manni%3Alint\\/structure\\/missing-section::/"}} */}
+{/* step {"description":"The JSON envelope is a top-level array carrying type, ruleId and tool per finding.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to-broken.md -f json","exitCodes":[1],"stdio":"/\"ruleId\": \"manni:lint\\/structure\\/missing-section\"[\\s\\S]*\"tool\": \"manni\"/"}} */}
+{/* step {"description":"SARIF carries the rule id and an error level, for code scanning.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to-broken.md -f sarif","exitCodes":[1],"stdio":"/\"ruleId\": \"manni:lint\\/structure\\/missing-section\"[\\s\\S]*\"level\": \"error\"/"}} */}
+{/* step {"description":"A clean SARIF run still writes its envelope, because upload-sarif rejects an empty file.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to.md -f sarif","exitCodes":[0],"stdio":"/\"results\": \\[\\]/"}} */}
+{/* step {"description":"JUnit names one testcase per file, classname manni.lint, with the rule id as the failure type.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config test/lint/fixtures/formats/how-to-broken.md -f junit","exitCodes":[1],"stdio":"/classname=\"manni.lint\"[\\s\\S]*<failure type=\"manni:lint\\/structure\\/missing-section\"/"}} */}
+{/* step {"description":"An operational error (no inputs, no config) exits 2, distinct from a finding.","runShell":{"command":"npx @hawkeyexl/manni lint check --no-config","exitCodes":[2],"stdio":"No files to check"}} */}
+{/* step {"description":"A config still carrying the moved lint.paths key is refused by name, exit 2.","runShell":{"command":"npx @hawkeyexl/manni lint check -c test/lint/fixtures/config/moved-paths.yaml test/lint/fixtures/formats/how-to.md","exitCodes":[2],"stdio":"is no longer a lint key"}} */}
+{/* step {"description":"The explain mode is report-only: it always exits 0 and ends with the routed/unrouted count.","runShell":{"command":"npx @hawkeyexl/manni lint structure --no-config --explain test/lint/fixtures/formats/how-to.md test/lint/fixtures/formats/how-to-broken.md","exitCodes":[0],"stdio":"2 files, 2 routed, 0 unrouted"}} */}
+{/* test end */}

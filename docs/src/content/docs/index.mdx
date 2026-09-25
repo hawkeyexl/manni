@@ -1,6 +1,6 @@
 ---
 title: manni
-description: One command line for documentation that is meant to be checked. Today it validates document metadata against JSON Schema and checks that cited source lines still say what the page says; more tools join it as subcommands.
+description: One command line for documentation that is meant to be checked. It validates metadata and page structure, checks citations against their source, and checks sites for accessibility.
 tableOfContents: false
 hero:
   tagline: One command line for documentation that is meant to be checked.
@@ -48,6 +48,11 @@ npx @hawkeyexl/manni meta validate docs/
     description="Pin a sentence to the source lines it rests on, and find out when those lines move or change. From git alone, no model, no network."
   />
   <LinkCard
+    title="lint"
+    href="/manni/lint/"
+    description="Check that every page has the shape its doctype promises: the sections a how-to needs, in order, with the steps and code blocks inside them."
+  />
+  <LinkCard
     title="key"
     href="/manni/key/"
     description="Set and rotate the family encryption key, so a required field or a private source path is on the page without being readable there."
@@ -59,14 +64,14 @@ npx @hawkeyexl/manni meta validate docs/
   />
 </CardGrid>
 
-`meta` checks what a page says about itself; `cite` checks that what a page
-says about the code is still true. `key` sets and rotates the one encryption
-key both of them encrypt values with. `term` checks that the terms a page
-names are defined, and carries those terms into Vale and translation. More tools are folded in as they become
-ready to ship. Until one lands, its subcommand does not exist, and
-`manni --help` lists exactly what does.
+`meta` checks what a page says about itself. `lint` checks whether it is shaped
+like what it says it is. `cite` checks that what a page says about the code is
+still true. `term` checks that the terms a page names are defined, and carries
+those terms into Vale and translation. `key` sets and rotates the one encryption
+key that `meta` and `cite` encrypt values with. `manni --help` lists exactly the tools the package
+carries.
 
-`cite`, `key` and `term` are in beta. Their commands, config keys and output
+`cite`, `key`, `term` and `lint` are in beta. Their commands, config keys and output
 can change in any release, without notice.
 
 ## Coming from docmeta?

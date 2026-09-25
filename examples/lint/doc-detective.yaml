@@ -1,0 +1,96 @@
+# Fern-shaped MDX doctypes, worked in the v2 template grammar (proposal 0061)
+# over the shared content model (0065). Fern is the docs platform Doc
+# Detective's own site is built on; nothing here is Doc Detective's text -
+# it is a synthetic docset shaped like an action/schema/how-to triad, so the
+# fixtures that lint against it are original pages, never vendored ones.
+info:
+  title: Fern-shaped MDX doctypes (worked example)
+
+templates:
+  # One test action: an intro paragraph, then an `Examples` section holding
+  # one scenario per H3 - any heading, since the scenario's own name is the
+  # author's choice - each holding at least one `json` code block.
+  action:
+    types: [action]
+    contains:
+      paragraphs:
+        min: 1
+    sections:
+      - id: examples
+        heading: Examples
+        max: 1
+        sections:
+          - id: scenario
+            description: A worked call, keyed by whatever heading the author gave it.
+            min: 0
+            contains:
+              codeBlocks:
+                min: 1
+                language: json
+
+  # A schema reference: what points at it (optional, a bulleted list), the
+  # fields themselves (required, a table), then worked examples. `Fields`
+  # is pulled from `components:` so a second schema doctype in this file
+  # could share the same table shape without restating its columns.
+  schema-reference:
+    types: [schema-reference]
+    sections:
+      - id: referenced-in
+        heading: Referenced In
+        min: 0
+        max: 1
+        contains:
+          lists:
+            min: 1
+      - id: fields
+        $ref: "#/components/fields"
+      - id: examples
+        heading: Examples
+        max: 1
+
+  # A how-to: prerequisites under either spelling, then one or more
+  # `Step N: ...` sections - a `repeat:` group of one rule, each requiring a
+  # paragraph followed by a code block - then verification, optional
+  # troubleshooting, and a closer.
+  how-to:
+    types: [how-to]
+    sections:
+      - id: prerequisites
+        heading:
+          - Prerequisites
+          - Before you begin
+        min: 0
+        max: 1
+      - id: steps
+        repeat:
+          - id: step
+            heading:
+              pattern: '^Step \d+:'
+            sequence:
+              - paragraphs:
+                  min: 1
+              - codeBlocks:
+                  min: 1
+      - id: verify
+        heading: Verify it works
+        max: 1
+      - id: troubleshooting
+        heading: Troubleshooting
+        min: 0
+        max: 1
+      - id: closer
+        heading:
+          - Next steps
+          - What's next
+          - See also
+        max: 1
+
+components:
+  fields:
+    id: fields
+    heading: Fields
+    max: 1
+    contains:
+      tables:
+        min: 1
+        columns: [Field, Type, Description, Default]

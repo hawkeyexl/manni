@@ -1,0 +1,16 @@
+{
+  "cat page": "---\ntype: how-to\n---\n\n# Rotate an API key\n\n## Overview\n\nRotating a key replaces the old secret without interrupting live traffic.\n\n## Before you start\n\nYou need an account with the `admin` role.\n\n## Rotate the key\n\nIssue the replacement, then retire the old one.\n\n```bash\nwidget keys rotate --id abc123\n```\n\n## See also\n\nRead about key scopes and expiry.\n",
+  "cat stub": "templates:\n  how-to:\n    types: [how-to]\n    sections:\n      - id: overview\n        heading: Overview\n",
+  "lint wall": "Using manni.config.yaml (.)\n\u001b[31m✗\u001b[39m docs/rotate-key.md\n    \u001b[2m11:1\u001b[22m  \u001b[36mmanni:lint/structure/unexpected-section\u001b[39m  Before you start: Unexpected section \"Before you start\". Add a trailing rule with min: 0 to allow sections the template does not describe.\n    \u001b[2m15:1\u001b[22m  \u001b[36mmanni:lint/structure/unexpected-section\u001b[39m  Rotate the key: Unexpected section \"Rotate the key\". Add a trailing rule with min: 0 to allow sections the template does not describe.\n    \u001b[2m23:1\u001b[22m  \u001b[36mmanni:lint/structure/unexpected-section\u001b[39m  See also: Unexpected section \"See also\". Add a trailing rule with min: 0 to allow sections the template does not describe.\n\n\u001b[31m1 file checked, 0 passed, 1 failed, 0 skipped\u001b[39m\n",
+  "infer stdout": "Using manni.config.yaml (.)\ntemplates:\n  how-to:\n    heading: Rotate an API key\n    sections:\n      - heading: Overview\n        contains:\n          paragraphs:\n            min: 1\n      - heading: Before you start\n        contains:\n          paragraphs:\n            min: 1\n      - heading: Rotate the key\n        contains:\n          paragraphs:\n            min: 1\n          codeBlocks:\n            min: 1\n            language: bash\n      - heading: See also\n        contains:\n          paragraphs:\n            min: 1\n",
+  "infer write": "Using manni.config.yaml (.)\nWrote template \"how-to\" to templates.yaml\n",
+  "lint pass": "Using manni.config.yaml (.)\n\u001b[32m✓\u001b[39m docs/rotate-key.md\n\n\u001b[32m1 file checked, 1 passed, 0 failed, 0 skipped\u001b[39m\n",
+  "lint broken": "Using manni.config.yaml (.)\n\u001b[31m✗\u001b[39m docs/rotate-key.md\n    \u001b[2m23:1\u001b[22m  \u001b[36mmanni:lint/structure/missing-section\u001b[39m  Rotate an API key: Missing section \"See also\"\n\n\u001b[31m1 file checked, 0 passed, 1 failed, 0 skipped\u001b[39m\n",
+  "exits": {
+    "lintWall": "1",
+    "inferStdout": "0",
+    "inferWrite": "0",
+    "lintPass": "0",
+    "lintBroken": "1"
+  }
+}

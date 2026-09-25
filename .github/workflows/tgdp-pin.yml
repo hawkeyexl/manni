@@ -1,0 +1,59 @@
+name: TGDP pin
+
+# The lint domain's built-in doctype templates are derived by hand from The
+# Good Docs Project's published templates at a pinned release, and every
+# template id carries that release (`tgdp:how-to:1.6`). A version in an id is a
+# claim about which upstream revision the template mirrors, and a claim nobody
+# checks decays quietly. This asks GitLab what the latest TGDP release is and
+# compares it against `templates/lint/tgdp/manifest.json`.
+#
+# Scheduled rather than run on every pull request, for the reasons
+# published-schemas.yml is. Upstream releasing does not make this repository
+# wrong, and no contributor can fix it inside the change they came to make — so
+# gating merges on it would turn unrelated pull requests red for someone else's
+# release. It also reaches the network, and a network blip is not a finding
+# about the pin.
+#
+# Weekly rather than daily, because the thing it watches is a hand-maintained
+# upstream that releases a few times a year, and re-vendoring is a day of work
+# either way. `--strict` so the job actually goes red when upstream moves;
+# without it the script reports and exits 0, and a job that is always green is
+# a job nobody reads.
+#
+# The `pull_request` trigger is deliberately narrow, matching
+# published-schemas.yml: it fires on changes to this workflow, the checker, or
+# the manifest it reads, so a change to *how* the check works is exercised
+# before merging.
+on:
+  schedule:
+    # 06:40 UTC Monday. Off the hour on purpose — GitHub queues the top of the
+    # hour heavily — and off published-schemas.yml's 06:20 so the two do not
+    # arrive together.
+    - cron: "40 6 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - scripts/lint-check-tgdp-pin.mjs
+      - templates/lint/tgdp/manifest.json
+      - .github/workflows/tgdp-pin.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tgdp-pin-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: pinned TGDP release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      # No `npm ci`: the checker reads one JSON file and makes one HTTP request
+      # with node: builtins and global fetch. Installing the tree to do that
+      # would be the slowest and most fragile part of this workflow.
+      - run: npm run check:tgdp-pin -- --strict

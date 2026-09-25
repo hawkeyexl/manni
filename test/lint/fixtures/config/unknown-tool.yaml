@@ -1,0 +1,5 @@
+# A tool nothing implements. Refused rather than ignored: falling back to
+# manni's own engine would lint with something other than what was asked for.
+lint:
+  structure:
+    tool: vale

@@ -1,0 +1,6 @@
+templates:
+  how-to:
+    types: [how-to]
+    sections:
+      - id: overview
+        heading: Overview

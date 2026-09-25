@@ -1,0 +1,9 @@
+# `paragrafs` is a typo. The loader must say where it is, not just that the
+# file is invalid.
+templates:
+  how-to:
+    sections:
+      - id: overview
+        contains:
+          paragrafs:
+            min: 1
