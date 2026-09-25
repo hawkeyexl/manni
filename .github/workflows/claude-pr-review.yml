@@ -72,11 +72,7 @@ jobs:
       - name: Run Claude Code
         id: claude
         if: steps.guard.outputs.enabled == 'true'
-        # Pinned: a later v1 fails at once, at no cost, on a PR with a long
-        # review history (#11 carries ~600k characters of review comments and
-        # their diff hunks). v1.0.231 reviewed that PR; move off it once a newer
-        # release does too.
-        uses: anthropics/claude-code-action@cfc3eb22bfed5c26ef66e3223c982af27e4524de # v1.0.231
+        uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           track_progress: true
