@@ -41,7 +41,7 @@ jobs:
           # repository's own history, and a shallow checkout is refused by
           # design (proposal 0040, decision 6).
           fetch-depth: 0
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
