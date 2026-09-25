@@ -859,14 +859,16 @@ describe("the repository's own manni.config.yaml", () => {
         // this per file with `memberOf`.
         memberOf: ["site"],
       }),
-      // Two, and both are load-bearing. The local schema is the house rule
-      // (title + description, neither of which Starlight itself requires); the
-      // built-in is the platform contract the site actually runs on, which
-      // checks everything the house schema leaves unconstrained —
-      // `sidebar.order`, `template`, a `badge` object's `text`.
+      // The local schema is the house rule (title + description, neither of
+      // which Starlight itself requires); Starlight is the platform contract
+      // the site actually runs on, which checks everything the house schema
+      // leaves unconstrained — `sidebar.order`, `template`, a `badge`
+      // object's `text`. Then the manni vocabularies, the same members the
+      // default set appends, because the override replaces that set.
     ).toEqual([
       "./docs/doc-frontmatter.schema.json",
       "astro:starlight:0.41",
+      ...DEFAULT_SCHEMAS.filter((id) => id.startsWith("manni:")),
     ]);
     // A file outside the collection is a member of nothing, so the override
     // cannot reach it and DEFAULT_SCHEMAS stands.
