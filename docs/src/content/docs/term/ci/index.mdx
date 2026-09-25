@@ -1,6 +1,74 @@
 ---
 title: Run it in CI
 description: "Gate a pull request on manni term check with inline annotations, ramp in with a baseline, keep the generated Vale style current with write --check, and lint definitions, all under the 0/1/2 exit-code contract."
+id: term-ci
+type: task
+keywords:
+  - CI
+  - continuous integration
+  - GitHub Actions
+  - Vale
+  - baseline
+  - exit codes
+  - annotations
+  - workflow
+  - pull request
+language: en
+audiences:
+  - CI engineers
+  - DevOps engineers
+  - documentation engineers
+intent: Set up manni term check to run in CI with exit-code gating and inline annotations
+visibility: public
+lifecycle: published
+prerequisites:
+  - Basic CI/CD knowledge
+  - GitHub Actions familiarity
+  - Node.js 24 or newer
+next-steps:
+  - /manni/term/fix/
+  - /manni/term/reference/rules/
+  - /manni/term/reference/cli/
+related-pages:
+  - /manni/term/fix/
+  - /manni/term/reference/rules/
+  - /manni/term/reference/cli/
+risks: read-only
+sample-questions:
+  - How do I run manni term check in CI?
+  - How do I set up term checking in GitHub Actions?
+  - How do I use baselines to ramp in term checks?
+  - What exit codes does manni term use?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.85
+      /intent: 0.9
+      /visibility: 0.95
+      /lifecycle: 0.95
+      /prerequisites: 0.85
+      /next-steps: 0.95
+      /related-pages: 0.9
+      /risks: 1
+      /sample-questions: 0.9
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

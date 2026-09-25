@@ -1,6 +1,73 @@
 ---
 title: CLI reference
 description: "Every manni a11y command, argument, and flag (check), with the crawl model, the score, the output formats, exit codes, and the a11y config keys."
+id: a11y-cli-reference
+type: reference
+keywords:
+  - accessibility
+  - a11y
+  - CLI
+  - check
+  - crawl
+  - axe
+  - violations
+  - sitemap
+  - configuration
+  - exit codes
+  - flags
+language: en
+source-of-truth: src/a11y/cli.ts
+audiences:
+  - developers
+  - CI engineers
+  - QA engineers
+personas: Devin
+intent: Understand all manni a11y check command options, flags, and configuration
+visibility: public
+lifecycle: published
+related-pages:
+  - /manni/a11y/get-started/
+  - /manni/a11y/reference/configuration/
+risks: read-only
+sample-questions:
+  - What exit codes does manni a11y check return?
+  - How do I configure the crawl behavior?
+  - What output formats are supported?
+  - How do I exclude pages from accessibility checks?
+graph:
+  type: reference
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /audiences
+      - /personas
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /related-pages
+      - /risks
+      - /sample-questions
+      - /graph
+    confidence:
+      /id: 0.95
+      /type: 0.98
+      /keywords: 0.92
+      /language: 1
+      /source-of-truth: 0.95
+      /audiences: 0.88
+      /personas: 0.8
+      /intent: 0.93
+      /visibility: 0.85
+      /lifecycle: 0.9
+      /related-pages: 0.95
+      /risks: 0.9
+      /sample-questions: 0.9
+      /graph: 0.9
 ---
 
 import { Aside } from '@astrojs/starlight/components';

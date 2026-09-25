@@ -10,6 +10,48 @@ abstract: The key a document uses to name its own schemas.
 definition: >-
   A reserved key a document can put in its own metadata, to name the schema or
   schemas it should be validated against.
+keywords:
+  - schema
+  - validation
+  - metadata
+  - JSON Schema
+  - frontmatter
+  - precedence
+language: en
+intent: Understand what the $schema key does in document metadata and how it affects validation
+visibility: public
+lifecycle: published
+concepts:
+  - metadata
+related-pages:
+  - /manni/meta/reference/schema-resolution/
+risks: read-only
+sample-questions:
+  - What does the $schema key do?
+  - Why is $schema stripped before validation?
+  - Where does $schema sit in precedence?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /keywords
+      - /language
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /concepts
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /keywords: 0.9
+      /language: 0.95
+      /intent: 0.9
+      /visibility: 0.95
+      /lifecycle: 0.9
+      /concepts: 0.85
+      /related-pages: 0.8
+      /risks: 0.95
+      /sample-questions: 0.85
 ---
 
 <p>{frontmatter.definition}</p>

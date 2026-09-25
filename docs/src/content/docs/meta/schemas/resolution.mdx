@@ -4,6 +4,87 @@ description: The precedence order that decides which schema validates a file, th
 sidebar:
   label: How resolution works
   order: 2
+id: schema-resolution
+type: reference
+keywords:
+  - schema resolution
+  - precedence
+  - validation
+  - JSON Schema
+  - dialect detection
+  - $schema
+  - overrides
+  - built-in schemas
+language: en
+source-of-truth:
+  - path: src/meta/core/resolve-schema.ts
+    kind: source-code
+  - path: src/meta/core/validator.ts
+    kind: source-code
+  - path: src/meta/core/schema-registry.ts
+    kind: source-code
+intent: Understand how manni meta decides which schema validates each file and configure schema resolution
+visibility: public
+lifecycle: published
+concepts:
+  - validation
+  - dialect
+prerequisites:
+  - Understanding of JSON Schema basics
+  - Familiarity with manni meta validate command
+next-steps:
+  - /manni/meta/schemas/
+  - /manni/meta/schemas/versioning/
+  - /manni/meta/ci/govern-shared-schema/
+related-pages:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/schemas/
+  - /manni/meta/schemas/versioning/
+risks: read-only
+sample-questions:
+  - How does manni meta choose which schema validates a file?
+  - What is the schema precedence order?
+  - How do I override the default schema?
+  - What are the three kinds of schema references?
+  - How are JSON Schema dialects detected?
+graph:
+  type: reference
+  concepts:
+    - validation
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /concepts
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+      - /graph
+    confidence:
+      /id: 0.85
+      /type: 0.8
+      /keywords: 0.9
+      /language: 1
+      /source-of-truth: 0.95
+      /intent: 0.85
+      /visibility: 0.95
+      /lifecycle: 0.95
+      /concepts: 0.85
+      /prerequisites: 0.75
+      /next-steps: 0.9
+      /related-pages: 0.85
+      /risks: 1
+      /sample-questions: 0.9
+      /graph: 0.8
 ---
 
 import { Steps, Tabs, TabItem, Card, CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';

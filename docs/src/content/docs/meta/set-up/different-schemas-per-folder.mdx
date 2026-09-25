@@ -2,6 +2,55 @@
 title: Apply different schemas to different folders
 description: Use config overrides to require different metadata for /api than for /guides, pointing each one at a collection or at a glob, with precedence and multiple schemas per file.
 concepts: [override]
+id: different-schemas-per-folder
+type: how-to
+keywords:
+  - overrides
+  - schemas
+  - collections
+  - folders
+  - configuration
+  - validation
+  - manni.config.yaml
+language: en
+audiences:
+  - developers
+  - documentation-engineers
+intent: Apply different schemas to different folders using config overrides
+applies-to:
+  - manni-meta
+prerequisites:
+  - /manni/meta/set-up/config/
+related-pages:
+  - /manni/meta/reference/schema-resolution/
+sample-questions:
+  - How do I apply different schemas to different folders?
+  - How do I require different metadata for /api than for /guides?
+  - How do I validate one file against multiple schemas?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /applies-to
+      - /prerequisites
+      - /related-pages
+      - /sample-questions
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.85
+      /intent: 0.95
+      /applies-to: 1
+      /prerequisites: 0.85
+      /related-pages: 0.9
+      /sample-questions: 0.9
 ---
 
 import { Steps, Aside, LinkCard } from '@astrojs/starlight/components';

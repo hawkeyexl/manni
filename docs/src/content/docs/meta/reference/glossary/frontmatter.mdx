@@ -8,6 +8,71 @@ related-terms: [metadata]
 abstract: The metadata block at the very top of a document.
 definition: >-
   A block of metadata at the very top of a document, set off from the body.
+keywords:
+  - YAML
+  - TOML
+  - JSON
+  - fence
+  - metadata block
+  - document header
+  - AsciiDoc
+  - reStructuredText
+  - Markdown
+  - MDX
+language: en
+source-of-truth:
+  - path: src/meta/extractors/frontmatter.ts
+    kind: source-code
+  - path: src/meta/types.ts
+    kind: source-code
+intent: Understand what frontmatter is in manni meta and which fence flavors and formats are supported.
+visibility: public
+lifecycle: published
+concepts:
+  - frontmatter
+  - metadata
+risks: read-only
+sample-questions:
+  - What is frontmatter?
+  - What fence flavors does manni meta support?
+  - Where does frontmatter go in different document formats?
+  - How do I write frontmatter in Markdown?
+alt-labels:
+  - document header
+  - metadata block
+  - YAML header
+  - front matter
+broader:
+  - metadata
+scope-note: In manni meta, frontmatter specifically refers to the fenced metadata block at the top of a document, supporting YAML, TOML, or JSON fence flavors across multiple format families.
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /concepts
+      - /risks
+      - /sample-questions
+      - /alt-labels
+      - /broader
+      - /scope-note
+    confidence:
+      /keywords: 0.85
+      /language: 1
+      /source-of-truth: 0.9
+      /intent: 0.85
+      /visibility: 0.9
+      /lifecycle: 0.9
+      /concepts: 0.9
+      /risks: 0.95
+      /sample-questions: 0.85
+      /alt-labels: 0.75
+      /broader: 0.85
+      /scope-note: 0.8
 ---
 
 <p>{frontmatter.definition}</p>

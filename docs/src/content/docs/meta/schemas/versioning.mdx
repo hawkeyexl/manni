@@ -4,6 +4,81 @@ description: Encode a schema version consumers can pin, roll out tightening chan
 sidebar:
   label: Versioning & dialects
   order: 3
+id: meta-schemas-versioning
+type: task
+keywords:
+  - schema versioning
+  - JSON Schema
+  - dialects
+  - breaking changes
+  - additive changes
+  - schema evolution
+  - version pinning
+  - staged ratchet
+language: en
+source-of-truth:
+  - path: src/meta/core/validator.ts
+    kind: source-code
+audiences:
+  - schema authors
+  - documentation engineers
+  - CI engineers
+intent: Version and evolve JSON Schema safely without breaking CI across repositories
+visibility: public
+lifecycle: published
+applies-to: manni meta
+concepts:
+  - schema
+  - dialect
+prerequisites: Understanding of JSON Schema basics
+next-steps:
+  - /manni/meta/set-up/new-required-field/
+  - /manni/meta/ci/govern-shared-schema/
+  - /manni/meta/schemas/resolution/
+  - /manni/meta/reference/schema-resolution/
+related-pages:
+  - /manni/meta/set-up/new-required-field/
+  - /manni/meta/ci/govern-shared-schema/
+  - /manni/meta/schemas/resolution/
+sample-questions:
+  - How do I version a schema?
+  - What JSON Schema dialects does manni meta support?
+  - How do I make breaking changes to a schema safely?
+  - How do I add a required field without breaking CI?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /concepts
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /sample-questions
+    confidence:
+      /id: 0.95
+      /type: 0.85
+      /keywords: 0.9
+      /language: 1
+      /source-of-truth: 0.95
+      /audiences: 0.85
+      /intent: 0.9
+      /visibility: 1
+      /lifecycle: 1
+      /applies-to: 1
+      /concepts: 0.9
+      /prerequisites: 0.8
+      /next-steps: 1
+      /related-pages: 0.95
+      /sample-questions: 0.85
 ---
 
 import { Steps, Tabs, TabItem, Card, CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';

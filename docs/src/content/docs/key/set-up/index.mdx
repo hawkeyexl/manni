@@ -3,6 +3,69 @@ title: Put the key where every tool finds it
 description: "Choose between the config key and MANNI_ENCRYPTION_KEY, keep a key out of a shared repository, decide who on the team needs it, and learn what each command does without one."
 sidebar:
   order: 1
+id: encryption-key-setup
+type: how-to
+keywords:
+  - encryption key
+  - MANNI_ENCRYPTION_KEY
+  - manni.config.yaml
+  - setup
+  - configuration
+  - CI
+  - environment variables
+language: en
+audiences:
+  - developers
+  - DevOps engineers
+  - CI/CD administrators
+intent: Set up and configure the encryption key for manni family tools
+prerequisites:
+  - understanding of environment variables
+  - git repository basics
+  - YAML configuration
+next-steps:
+  - /manni/meta/schemas/encrypted-fields/
+  - /manni/key/ci/
+  - /manni/key/reference/cli/
+  - /manni/meta/reference/configuration/#encryption-key
+related-pages:
+  - /manni/meta/schemas/encrypted-fields/
+  - /manni/key/ci/
+  - /manni/key/reference/cli/
+  - /manni/meta/reference/configuration/#encryption-key
+risks:
+  - privileged
+sample-questions:
+  - How do I set up the encryption key for manni?
+  - Where should I store the encryption key?
+  - What commands need the encryption key?
+  - Can I use manni without an encryption key?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.95
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.85
+      /intent: 0.95
+      /prerequisites: 0.85
+      /next-steps: 1
+      /related-pages: 1
+      /risks: 0.8
+      /sample-questions: 0.9
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

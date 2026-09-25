@@ -1,6 +1,67 @@
 ---
 title: Run fill under a data-egress policy
 description: "Exactly what manni meta fill transmits on each inference call, how much of each document goes, what the proposal cache keeps afterwards, and how to bound the egress or eliminate it entirely."
+id: meta-fill-providers
+type: reference
+keywords:
+  - data egress
+  - privacy
+  - security
+  - fill
+  - inference
+  - provider
+  - cache
+  - local model
+  - chunking
+  - offline
+language: en
+audiences:
+  - security engineers
+  - compliance officers
+  - developers
+intent: Understand what data manni meta fill transmits and how to control or eliminate data egress
+prerequisites:
+  - /manni/meta/reference/cli/#meta-fill
+next-steps:
+  - /manni/meta/set-up/retrofit/
+  - /manni/meta/reference/cli/#meta-fill
+related-pages:
+  - /manni/meta/set-up/retrofit/
+  - /manni/meta/reference/cli/#meta-fill
+risks:
+  - open-world
+  - cost-incurring
+sample-questions:
+  - What data does manni meta fill send to the inference provider?
+  - How do I prevent data from leaving my machine when using fill?
+  - What is stored in the proposal cache?
+  - How does --local differ from --offline?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.85
+      /type: 0.8
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.85
+      /intent: 0.95
+      /prerequisites: 0.75
+      /next-steps: 0.95
+      /related-pages: 0.95
+      /risks: 0.85
+      /sample-questions: 0.9
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

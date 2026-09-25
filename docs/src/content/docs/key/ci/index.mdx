@@ -3,6 +3,88 @@ title: Rotate the key without breaking CI
 description: "Generate a new key, re-encrypt the whole family, update the CI secret, re-record the citation baseline, verify under the new key, and resume a run that stopped part of the way."
 sidebar:
   order: 1
+id: key-ci-rotation
+type: task
+keywords:
+  - key rotation
+  - encryption
+  - CI/CD
+  - re-encryption
+  - manni
+  - baseline
+  - config
+  - dry run
+language: en
+source-of-truth:
+  - path: src/key/commands/rotate.ts
+    kind: implementation
+  - path: src/key/reporters/pretty.ts
+    kind: implementation
+audiences:
+  - developers
+  - devops-engineers
+  - documentation-engineers
+intent: Rotate the encryption key for a documentation repository without breaking CI validation pipelines
+visibility: public
+lifecycle: published
+applies-to:
+  - manni
+  - manni key
+prerequisites:
+  - /manni/key/set-up/
+next-steps:
+  - /manni/key/set-up/
+  - /manni/key/reference/cli/
+  - /manni/cite/ci/
+  - /manni/meta/schemas/encrypted-fields/
+related-pages:
+  - /manni/key/set-up/
+risks:
+  - destructive
+  - privileged
+sample-questions:
+  - How do I rotate the encryption key without breaking CI?
+  - What happens if a key rotation is interrupted?
+  - How do I resume an incomplete key rotation?
+graph:
+  type: task
+  about-product-lifecycle: administration
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+      - /graph
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /source-of-truth: 0.95
+      /audiences: 0.85
+      /intent: 0.95
+      /visibility: 0.9
+      /lifecycle: 0.95
+      /applies-to: 0.95
+      /prerequisites: 0.95
+      /next-steps: 1
+      /related-pages: 0.9
+      /risks: 0.9
+      /sample-questions: 0.9
+      /graph: 0.85
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

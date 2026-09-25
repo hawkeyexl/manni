@@ -1,6 +1,71 @@
 ---
 title: GitHub Action reference
 description: Every input and output of the hawkeyexl/manni GitHub Action, with defaults, the multi-value input rules, and how it maps onto the CLI.
+id: meta-reference-action
+type: reference
+keywords:
+  - GitHub Action
+  - CI/CD
+  - inputs
+  - outputs
+  - workflow
+  - manni action
+  - versioning
+  - composite action
+language: en
+source-of-truth:
+  - path: action.yml
+    kind: github-action-manifest
+audiences:
+  - developers
+  - ci-engineers
+intent: configure and use the hawkeyexl/manni GitHub Action in a CI workflow
+visibility: public
+lifecycle: published
+applies-to:
+  - manni-v2
+  - github-actions
+prerequisites:
+  - github-actions-basics
+  - yaml-syntax
+related-pages:
+  - meta/reference/cli
+  - meta/reference/configuration
+sample-questions:
+  - How do I configure the manni GitHub Action?
+  - What inputs does the hawkeyexl/manni action accept?
+  - How do I pin the Action to a specific version?
+  - What's the difference between the Action and running the CLI directly?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /prerequisites
+      - /related-pages
+      - /sample-questions
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.85
+      /language: 1
+      /source-of-truth: 0.9
+      /audiences: 0.8
+      /intent: 0.9
+      /visibility: 0.95
+      /lifecycle: 0.9
+      /applies-to: 0.85
+      /prerequisites: 0.75
+      /related-pages: 0.8
+      /sample-questions: 0.85
 ---
 
 import { Aside } from '@astrojs/starlight/components';

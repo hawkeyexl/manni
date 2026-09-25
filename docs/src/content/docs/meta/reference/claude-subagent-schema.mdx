@@ -1,6 +1,85 @@
 ---
 title: Claude Code subagent schema
 description: The built-in schema for agent definition front matter under .claude/agents/, covering every field, the enumerated sets, and the four places it differs from the SKILL.md contract it resembles.
+id: claude-subagent-schema
+type: reference
+keywords:
+  - Claude Code
+  - subagent
+  - schema
+  - frontmatter
+  - YAML
+  - agent definition
+  - validation
+  - anthropic:claude-subagent:2.1
+  - metadata
+language: en
+source-of-truth:
+  path: src/meta/schemas/claude-subagent/2.1.json
+  kind: json-schema
+audiences:
+  - developers
+  - Claude Code users
+  - agent authors
+intent: validate agent definition frontmatter against the anthropic:claude-subagent:2.1 schema
+visibility: public
+lifecycle: published
+concepts:
+  - schema
+  - frontmatter
+  - validation
+related-pages:
+  - /manni/meta/reference/agent-skills-schemas/
+risks: read-only
+sample-questions:
+  - What fields are required in a Claude Code subagent definition?
+  - How do I validate my agent frontmatter?
+  - What's the difference between the subagent schema and the skill schema?
+  - Which fields are enumerated in the subagent schema?
+graph:
+  type: reference
+  concepts:
+    - schema
+    - frontmatter
+    - validation
+label: anthropic:claude-subagent:2.1
+definition: The built-in JSON Schema that validates agent definition frontmatter under .claude/agents/, specifying 18 fields with 2 required.
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /concepts
+      - /related-pages
+      - /risks
+      - /sample-questions
+      - /graph
+      - /label
+      - /definition
+    confidence:
+      /id: 0.95
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /source-of-truth: 0.95
+      /audiences: 0.85
+      /intent: 0.9
+      /visibility: 0.95
+      /lifecycle: 0.9
+      /concepts: 0.9
+      /related-pages: 0.95
+      /risks: 1
+      /sample-questions: 0.9
+      /graph: 0.85
+      /label: 0.9
+      /definition: 0.95
 ---
 
 import { Aside } from '@astrojs/starlight/components';

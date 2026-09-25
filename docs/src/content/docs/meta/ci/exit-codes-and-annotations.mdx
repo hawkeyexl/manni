@@ -1,6 +1,70 @@
 ---
 title: Exit codes & PR annotations
 description: The manni meta exit-code contract (0/1/2) and the pretty, json, github, sarif, and junit output formats, including the exact annotation line format and color behavior.
+id: meta-ci-exit-codes-annotations
+type: reference
+keywords:
+  - exit codes
+  - annotations
+  - output formats
+  - CI
+  - GitHub Actions
+  - SARIF
+  - JUnit
+  - validation
+  - pretty format
+  - json format
+language: en
+audiences:
+  - ci-engineers
+  - devops
+  - pipeline-developers
+intent: understand the exit code contract and output formats for integrating manni meta into CI pipelines
+visibility: public
+lifecycle: published
+applies-to: manni-meta
+next-steps:
+  - /manni/meta/ci/
+  - /manni/meta/ci/recipes/
+related-pages:
+  - /manni/meta/ci/
+  - /manni/meta/ci/recipes/
+risks: read-only
+sample-questions:
+  - What exit code does manni meta return when validation fails?
+  - How do I get GitHub PR annotations from manni meta?
+  - What output formats does manni meta validate support?
+  - What's the difference between exit code 1 and 2?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.85
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.85
+      /intent: 0.9
+      /visibility: 1
+      /lifecycle: 0.95
+      /applies-to: 1
+      /next-steps: 0.95
+      /related-pages: 0.9
+      /risks: 1
+      /sample-questions: 0.88
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

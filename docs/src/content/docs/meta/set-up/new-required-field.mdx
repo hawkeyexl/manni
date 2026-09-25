@@ -1,6 +1,67 @@
 ---
 title: Roll out a new required field without breaking the build
 description: Make a metadata field required today, record the existing backlog as a baseline so the build stays green, and let the debt shrink from there.
+id: new-required-field
+type: how-to
+keywords:
+  - baseline
+  - required field
+  - metadata validation
+  - CI
+  - schema
+  - ratchet
+  - backlog
+  - write-baseline
+language: en
+personas:
+  - devin
+intent: Add a required metadata field without breaking the CI build using baselines
+visibility: public
+lifecycle: published
+applies-to: manni meta
+prerequisites:
+  - meta/get-started/index.mdx
+next-steps:
+  - meta/set-up/retrofit/
+  - meta/set-up/different-schemas-per-folder/
+related-pages:
+  - meta/set-up/retrofit/
+  - meta/set-up/different-schemas-per-folder/
+  - meta/reference/cli/
+sample-questions:
+  - How do I add a required field without breaking the build?
+  - How do I use baselines in manni meta?
+  - How can I enforce new metadata requirements gradually?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /personas
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /sample-questions
+    confidence:
+      /id: 0.95
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /personas: 0.85
+      /intent: 0.95
+      /visibility: 0.95
+      /lifecycle: 0.95
+      /applies-to: 1
+      /prerequisites: 0.85
+      /next-steps: 0.9
+      /related-pages: 0.95
+      /sample-questions: 0.9
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

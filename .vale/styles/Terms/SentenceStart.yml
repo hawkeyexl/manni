@@ -7,3 +7,5 @@ nonword: true
 vocab: false
 swap:
   \bmeta-schema uri\b: "[Mm]eta-schema URI"
+  \bschema dialect uri\b: "[Ss]chema dialect URI"
+  \bmeta schema uri\b: "[Mm]eta schema URI"

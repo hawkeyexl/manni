@@ -1,6 +1,66 @@
 ---
 title: Retrofit manni meta into an existing docs repo
 description: Adopt manni meta on a repo that has never had metadata validation. Measure the metadata you already have, start with a permissive schema so the build goes green on day one, wire the CI gate, then ratchet strictness over time.
+id: retrofit
+type: how-to
+keywords:
+  - retrofit
+  - incremental adoption
+  - baseline
+  - schema inference
+  - CI gate
+  - permissive schema
+  - coverage
+  - validation
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+intent: Adopt manni meta on an existing documentation repository without breaking the build on day one
+visibility: public
+lifecycle: published
+prerequisites:
+  - understanding-json-schema
+  - ci-cd-concepts
+next-steps:
+  - /manni/meta/set-up/config/
+  - /manni/meta/schemas/
+related-pages:
+  - /manni/meta/set-up/config/
+  - /manni/meta/schemas/
+  - /manni/meta/set-up/fill-providers/
+sample-questions:
+  - How do I add manni meta to an existing docs repo?
+  - How do I avoid breaking the build when adding metadata validation?
+  - How do I adopt metadata validation incrementally?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /sample-questions
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.85
+      /language: 1
+      /audiences: 0.8
+      /intent: 0.9
+      /visibility: 0.9
+      /lifecycle: 0.9
+      /prerequisites: 0.75
+      /next-steps: 0.95
+      /related-pages: 0.9
+      /sample-questions: 0.85
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

@@ -8,6 +8,61 @@ related-terms: [metadata, extraction]
 abstract: The format-specific reader of a document's metadata.
 definition: >-
   The format-specific component that reads metadata out of a document.
+keywords:
+  - extractor
+  - metadata
+  - extraction
+  - file format
+  - input format
+  - stdin
+  - as flag
+language: en
+source-of-truth:
+  - path: src/meta/extractors/index.ts
+    kind: implementation
+  - path: src/meta/commands/validate.ts
+    kind: implementation
+intent: Understand what an extractor is in manni meta and how to specify one
+visibility: public
+lifecycle: published
+applies-to: manni-meta
+concepts:
+  - extractor
+  - metadata
+  - extraction
+related-pages:
+  - /manni/meta/reference/formats/
+risks: read-only
+sample-questions:
+  - What is an extractor in manni meta?
+  - How do I force a specific extractor?
+  - Why does reading from stdin require --as?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /concepts
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /keywords: 0.9
+      /language: 0.95
+      /source-of-truth: 0.9
+      /intent: 0.9
+      /visibility: 0.85
+      /lifecycle: 0.9
+      /applies-to: 0.8
+      /concepts: 0.95
+      /related-pages: 0.95
+      /risks: 0.9
+      /sample-questions: 0.85
 ---
 
 <p>{frontmatter.definition}</p>

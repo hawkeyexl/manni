@@ -2,6 +2,67 @@
 title: Built-in OKF schema
 description: The google:okf:0.1 schema shipped with manni meta, covering its required and recommended fields, value formats, and JSON Schema dialect.
 concepts: [OKF]
+id: okf-schema
+type: reference
+keywords:
+  - OKF
+  - Open Knowledge Format
+  - schema
+  - frontmatter
+  - validation
+  - google:okf:0.1
+  - built-in schema
+  - JSON Schema
+  - metadata
+  - manni meta
+language: en
+source-of-truth:
+  - path: src/meta/schemas/okf/0.1.json
+    kind: json-schema
+  - path: src/meta/core/schema-registry.ts
+    kind: source-code
+intent: reference the OKF schema's required and recommended fields, constraints, and validation rules
+visibility: public
+lifecycle: published
+related-pages:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/built-in-schemas/
+  - /manni/meta/reference/manni-vocabularies/
+  - /manni/meta/reference/taxonomy-schemas/
+  - /manni/schemas/okf/0.1.json
+risks: read-only
+sample-questions:
+  - What fields does the OKF schema require?
+  - What is the google:okf:0.1 schema?
+  - What are the recommended fields in the OKF schema?
+  - What JSON Schema dialect does OKF use?
+  - Does OKF allow additional properties?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.85
+      /language: 1
+      /source-of-truth: 0.9
+      /intent: 0.9
+      /visibility: 0.95
+      /lifecycle: 0.95
+      /related-pages: 0.9
+      /risks: 1
+      /sample-questions: 0.85
 ---
 
 import { Aside } from '@astrojs/starlight/components';

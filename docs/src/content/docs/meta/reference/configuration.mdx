@@ -1,6 +1,77 @@
 ---
 title: Configuration reference
 description: "Every manni.config.yaml key: the top-level collections list every tool reads, and the meta section's schemas, overrides, checks and schemaTrust, with types, defaults, discovery rules, and how config merges with CLI flags."
+id: meta-config-reference
+type: reference
+keywords:
+  - remote manifest
+  - GitHub
+  - GitLab
+  - bearer token
+  - authentication
+  - fetch
+  - external metadata
+  - tokenEnv
+language: en
+audiences:
+  - developers
+  - technical-writers
+  - devops-engineers
+intent: understand how to configure manni meta validation, schema resolution, and CLI behavior
+visibility: public
+lifecycle: published
+applies-to: manni
+concepts:
+  - validation
+prerequisites:
+  - /manni/meta/get-started/
+  - /manni/meta/reference/schema-resolution/
+related-pages:
+  - /manni/key/
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/cli/
+risks: read-only
+sample-questions:
+  - How do I configure schema validation in manni.config.yaml?
+  - What's the difference between schemas and overrides?
+  - How do CLI flags override configuration settings?
+  - Where does manni meta discover configuration files?
+graph:
+  type: reference
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /concepts
+      - /prerequisites
+      - /related-pages
+      - /risks
+      - /sample-questions
+      - /graph
+    confidence:
+      /id: 0.95
+      /type: 0.98
+      /keywords: 0.95
+      /language: 1
+      /audiences: 0.9
+      /intent: 0.93
+      /visibility: 0.95
+      /lifecycle: 0.95
+      /applies-to: 1
+      /concepts: 0.92
+      /prerequisites: 0.88
+      /related-pages: 0.95
+      /risks: 1
+      /sample-questions: 0.91
+      /graph: 0.85
 ---
 
 import { Aside } from '@astrojs/starlight/components';

@@ -1,6 +1,74 @@
 ---
 title: Govern a shared schema across repos
 description: Vendor one canonical JSON Schema into each consuming repository with manni meta schemas vendor, so CI validates against a committed, hash-pinned copy instead of a live URL, keep the plain URL form where its tradeoff is acceptable, and stop a contributed document choosing its own schema.
+id: govern-shared-schema
+type: how-to
+keywords:
+  - schema vendoring
+  - shared schema
+  - JSON Schema
+  - CI
+  - schema governance
+  - integrity hash
+  - manni meta
+language: en
+audiences:
+  - ci-engineers
+  - schema-authors
+  - docs-engineers
+intent: Vendor a canonical JSON Schema into consuming repositories for CI validation
+visibility: public
+lifecycle: published
+applies-to: meta
+prerequisites:
+  - meta/reference/schema-resolution
+  - meta/reference/cli
+next-steps:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/cli/#meta-schemas-vendor
+  - /manni/meta/ci/exit-codes-and-annotations/
+  - /manni/meta/reference/configuration/#schema-trust
+related-pages:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/configuration/
+  - /manni/meta/ci/exit-codes-and-annotations/
+risks: read-only
+sample-questions:
+  - How do I share a JSON Schema across multiple repositories?
+  - Should I vendor a schema or reference it by URL?
+  - How do I vendor a schema with manni meta?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.85
+      /intent: 0.95
+      /visibility: 0.85
+      /lifecycle: 0.85
+      /applies-to: 0.95
+      /prerequisites: 0.8
+      /next-steps: 0.95
+      /related-pages: 0.9
+      /risks: 0.85
+      /sample-questions: 0.9
 ---
 
 import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';

@@ -1,6 +1,68 @@
 ---
 title: Fix a failing check
 description: "Read a manni term annotation, find the rule, make the one edit it asks for in the term pages or the Vale style, and confirm green locally before you push."
+id: term-fix
+type: how-to
+keywords:
+  - term check
+  - annotation
+  - pull request
+  - CI
+  - validation
+  - error
+  - fix
+  - debugging
+  - Vale
+  - rule
+language: en
+audiences:
+  - developers
+  - documentation engineers
+  - technical writers
+intent: Fix a failing term check in a pull request
+concepts:
+  - validation
+prerequisites:
+  - Understanding of git and pull requests
+  - Familiarity with YAML frontmatter
+  - Basic knowledge of CI workflows
+related-pages:
+  - /manni/term/reference/rules/
+  - /manni/term/ci/
+  - /manni/term/reference/cli/
+  - /manni/cite/fix/
+risks: read-only
+sample-questions:
+  - How do I fix a failing term check?
+  - What does this term annotation mean?
+  - How do I resolve undefined-term errors?
+  - Why is my pull request's term check red?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /concepts
+      - /prerequisites
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.85
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.85
+      /intent: 0.95
+      /concepts: 0.85
+      /prerequisites: 0.8
+      /related-pages: 0.95
+      /risks: 0.7
+      /sample-questions: 0.9
 ---
 
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';

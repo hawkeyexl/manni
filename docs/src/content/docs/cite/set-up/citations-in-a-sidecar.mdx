@@ -1,6 +1,71 @@
 ---
 title: Keep citations out of the page
 description: "Declare a manifest that owns the citations key for a collection, move a page's entries into it, and keep checking the same way. The page carries no citation YAML, and a finding on an entry names the manifest and the entry's line."
+id: citations-in-a-sidecar
+type: task
+keywords:
+  - citations
+  - sidecar
+  - manifest
+  - external metadata
+  - frontmatter
+  - configuration
+  - manni cite
+language: en
+intent: Move citation entries from page frontmatter into sidecar manifest files
+visibility: public
+lifecycle: published
+applies-to: manni cite
+concepts:
+  - frontmatter
+prerequisites:
+  - docs/src/content/docs/cite/get-started/index.mdx
+next-steps:
+  - /manni/cite/set-up/
+  - /manni/cite/set-up/public-docs-private-code/
+  - /manni/cite/reference/citations/#the-sidecar
+  - /manni/cite/reference/configuration/#the-citations-manifest
+related-pages:
+  - /manni/cite/reference/citations/
+  - /manni/cite/reference/configuration/
+risks: read-only
+sample-questions:
+  - How do I keep citations out of page frontmatter?
+  - What is a sidecar manifest for citations?
+  - How do I configure external metadata for citations?
+  - Where does a finding appear when citations are in a manifest?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /concepts
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /intent: 0.95
+      /visibility: 0.9
+      /lifecycle: 0.85
+      /applies-to: 0.9
+      /concepts: 0.9
+      /prerequisites: 0.85
+      /next-steps: 0.95
+      /related-pages: 0.9
+      /risks: 0.85
+      /sample-questions: 0.9
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

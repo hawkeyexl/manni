@@ -9,6 +9,59 @@ abstract: A JSON Schema declaring the metadata a file carries.
 definition: >-
   A JSON Schema document that declares which metadata fields are required,
   which are optional, and what shape each value must take.
+keywords:
+  - schema
+  - JSON Schema
+  - metadata
+  - validation
+  - built-in schema
+  - schema reference
+  - schema set
+language: en
+source-of-truth:
+  file: src/meta/core/schema-registry.ts
+  lines: 318-329
+intent: Understand what a schema is in manni meta and where schemas come from
+visibility: public
+lifecycle: published
+concepts:
+  - schema
+  - schema reference
+  - schema set
+  - metadata
+  - validation
+related-pages:
+  - schema reference
+  - schema set
+risks: read-only
+sample-questions:
+  - What is a schema in manni meta?
+  - Where can schemas come from?
+  - What is the difference between a builtin schema and a file schema?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /concepts
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /keywords: 0.9
+      /language: 1
+      /source-of-truth: 0.8
+      /intent: 0.85
+      /visibility: 0.9
+      /lifecycle: 0.9
+      /concepts: 0.85
+      /related-pages: 0.95
+      /risks: 1
+      /sample-questions: 0.85
 ---
 
 <p>{frontmatter.definition}</p>

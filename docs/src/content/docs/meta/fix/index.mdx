@@ -1,6 +1,65 @@
 ---
 title: Fix a failing check
 description: Read a manni meta validation error, map it to the offending field and line, fix it, and confirm green locally.
+id: meta-fix-failing-check
+type: troubleshooting
+keywords:
+  - validation
+  - errors
+  - debugging
+  - schema
+  - frontmatter
+  - exit codes
+  - CI
+  - troubleshooting
+language: en
+audiences:
+  - developers
+  - CI engineers
+intent: Fix a failing manni meta validation check
+visibility: public
+lifecycle: published
+applies-to: meta
+concepts:
+  - validation
+  - frontmatter
+prerequisites:
+  - meta/get-started
+risks: read-only
+sample-questions:
+  - How do I fix a manni meta validation error?
+  - What does this error message mean?
+  - Why is my PR check failing?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /concepts
+      - /prerequisites
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.85
+      /type: 0.9
+      /keywords: 0.88
+      /language: 1
+      /audiences: 0.8
+      /intent: 0.95
+      /visibility: 0.95
+      /lifecycle: 0.95
+      /applies-to: 0.92
+      /concepts: 0.85
+      /prerequisites: 0.75
+      /risks: 0.95
+      /sample-questions: 0.9
 ---
 
 import { Steps, Aside, LinkCard } from '@astrojs/starlight/components';

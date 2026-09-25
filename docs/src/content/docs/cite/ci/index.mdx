@@ -1,6 +1,68 @@
 ---
 title: Run it in CI
 description: Add the citation check to CI with inline PR annotations, SARIF or JUnit output, the 0/1/2 exit-code contract, the published pre-commit hook, a baseline for ramping in, and full git history so every status can be told apart.
+id: cite-ci
+type: how-to
+keywords:
+  - CI
+  - GitHub Actions
+  - citations
+  - workflow
+  - SARIF
+  - JUnit
+  - annotations
+  - exit codes
+  - pre-commit
+  - baseline
+language: en
+intent: Set up automated citation checking in continuous integration workflows
+visibility: public
+lifecycle: published
+applies-to: cite
+prerequisites:
+  - cite/reference/cli
+  - cite/reference/configuration
+next-steps:
+  - Fix a failing check
+  - Public docs, private code
+  - CLI reference
+related-pages:
+  - /manni/cite/reference/cli/
+  - /manni/cite/reference/configuration/
+  - /manni/cite/set-up/public-docs-private-code/
+sample-questions:
+  - How do I run citation checks in CI?
+  - How do I add citation checking to GitHub Actions?
+  - What exit codes does manni cite check use?
+  - How do I get inline PR annotations for citation failures?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /sample-questions
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /intent: 0.95
+      /visibility: 1
+      /lifecycle: 1
+      /applies-to: 0.95
+      /prerequisites: 0.8
+      /next-steps: 0.9
+      /related-pages: 0.9
+      /sample-questions: 0.9
 ---
 
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';

@@ -1,6 +1,77 @@
 ---
 title: Consume results programmatically
 description: Feed manni meta validation output into your own tooling, covering the json output format with jq, the get command for scripted field extraction, and the TypeScript API for tools built on top of manni meta.
+id: meta-ci-consume-results
+type: how-to
+keywords:
+  - json
+  - jq
+  - get command
+  - TypeScript API
+  - programmatic integration
+  - validation results
+  - scripting
+  - CI pipeline
+  - stdout
+  - subprocess
+language: en
+audiences:
+  - developers
+  - CI engineers
+  - DevOps engineers
+  - automation engineers
+intent: consume manni meta validation results programmatically for integration into custom tooling or CI pipelines
+visibility: public
+lifecycle: published
+applies-to: manni meta
+prerequisites:
+  - meta/reference/cli
+  - meta/ci/index
+next-steps:
+  - /manni/meta/ci/exit-codes-and-annotations/
+  - /manni/meta/ci/govern-shared-schema/
+  - /manni/meta/ci/recipes/
+related-pages:
+  - /manni/meta/ci/exit-codes-and-annotations/
+  - /manni/meta/ci/govern-shared-schema/
+  - /manni/meta/ci/recipes/
+risks: read-only
+sample-questions:
+  - How do I consume manni meta results programmatically?
+  - How do I parse manni meta JSON output with jq?
+  - How do I use the manni meta TypeScript API in my tool?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.9
+      /type: 0.85
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.9
+      /intent: 0.95
+      /visibility: 0.95
+      /lifecycle: 0.95
+      /applies-to: 1
+      /prerequisites: 0.8
+      /next-steps: 0.95
+      /related-pages: 0.95
+      /risks: 0.9
+      /sample-questions: 0.9
 ---
 
 import { Tabs, TabItem, Aside, Steps, CardGrid, LinkCard } from '@astrojs/starlight/components';

@@ -4,6 +4,66 @@ description: "Mark a property x-manni-encrypt and follow the value: what validat
 sidebar:
   label: Encrypted fields
   order: 4
+id: encrypted-fields
+type: guide
+keywords:
+  - encryption
+  - x-manni-encrypt
+  - schema
+  - validation
+  - ciphertext
+  - private fields
+  - encrypted metadata
+language: en
+intent: Mark schema properties as encrypted and understand validation behavior with plain, decryptable, and unreadable values
+visibility: public
+lifecycle: published
+concepts:
+  - validation
+  - schema
+prerequisites:
+  - /manni/key/set-up/
+next-steps:
+  - /manni/meta/reference/schema-resolution/#encrypted-values
+  - /manni/key/ci/
+  - /manni/meta/schemas/versioning/
+related-pages:
+  - /manni/meta/reference/schema-resolution/#encrypted-values
+  - /manni/key/ci/
+  - /manni/meta/schemas/versioning/
+sample-questions:
+  - How do I mark a schema property as encrypted?
+  - What happens when validation encounters a plain value in an encrypted field?
+  - How does manni meta fill handle encrypted fields?
+  - What commands write encrypted values?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /concepts
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /sample-questions
+    confidence:
+      /id: 0.95
+      /type: 0.9
+      /keywords: 0.92
+      /language: 1
+      /intent: 0.93
+      /visibility: 0.95
+      /lifecycle: 0.95
+      /concepts: 0.88
+      /prerequisites: 0.9
+      /next-steps: 0.95
+      /related-pages: 0.95
+      /sample-questions: 0.9
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

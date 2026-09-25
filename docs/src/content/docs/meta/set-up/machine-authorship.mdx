@@ -1,6 +1,69 @@
 ---
 title: See which lines a machine wrote
 description: "Record which body lines an agent or a model wrote, pin each range with an integrity hash, and fail the build when a person edits machine text."
+id: meta-setup-machine-authorship
+type: how-to
+keywords:
+  - provenance
+  - machine authorship
+  - AI-generated content
+  - integrity hash
+  - derive
+  - validation
+  - pre-commit hooks
+  - git blame
+  - MANNI_GENERATED_BY
+language: en
+intent: track which body lines an agent or model wrote and fail builds when people edit machine-generated text
+visibility: public
+lifecycle: published
+prerequisites:
+  - derived metadata
+  - git basics
+  - pre-commit hooks
+next-steps:
+  - meta/reference/configuration/#derive
+  - meta/reference/cli/#meta-derive
+  - meta/set-up/derived-metadata/
+  - meta/ci/recipes/#pre-commit
+related-pages:
+  - /manni/meta/set-up/derived-metadata/
+  - /manni/meta/reference/configuration/
+  - /manni/meta/set-up/external-metadata/
+risks:
+  - read-only
+sample-questions:
+  - How do I track which lines an AI agent wrote?
+  - How do I prevent people from editing machine-generated text?
+  - How do I configure provenance tracking in manni?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.95
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /intent: 0.95
+      /visibility: 0.85
+      /lifecycle: 0.88
+      /prerequisites: 0.85
+      /next-steps: 0.95
+      /related-pages: 0.95
+      /risks: 0.8
+      /sample-questions: 0.9
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

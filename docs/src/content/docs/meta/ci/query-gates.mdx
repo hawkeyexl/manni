@@ -1,6 +1,70 @@
 ---
 title: Gate on rules that span files
 description: Use manni meta query to run SQL over your corpus's metadata, turn cross-file rules like dangling references and duplicate slugs into CI gates with --check, and feed the same table to dashboards and scripts.
+id: query-gates
+type: how-to
+keywords:
+  - SQL
+  - query
+  - CI gates
+  - metadata validation
+  - cross-file rules
+  - dangling references
+  - duplicate slugs
+  - check flag
+  - dry-run
+language: en
+intent: Set up CI gates for cross-file metadata validation rules using SQL queries
+visibility: public
+lifecycle: published
+prerequisites:
+  - meta/reference/query/
+  - understanding of SQL
+  - metadata schema knowledge
+next-steps:
+  - meta/reference/query/
+  - meta/set-up/new-required-field/
+  - meta/schemas/versioning/
+  - meta/ci/consume-results/
+related-pages:
+  - meta/reference/query/
+  - meta/set-up/new-required-field/
+  - meta/schemas/versioning/
+  - meta/ci/consume-results/
+risks: read-only
+sample-questions:
+  - How do I check for duplicate slugs?
+  - How do I find dangling author references?
+  - How do I turn a SQL query into a CI gate?
+  - How do I validate cross-file metadata rules?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.95
+      /type: 0.95
+      /keywords: 0.95
+      /language: 1
+      /intent: 0.95
+      /visibility: 0.9
+      /lifecycle: 0.9
+      /prerequisites: 0.85
+      /next-steps: 0.95
+      /related-pages: 0.95
+      /risks: 0.75
+      /sample-questions: 0.9
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

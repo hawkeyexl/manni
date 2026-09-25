@@ -1,6 +1,61 @@
 ---
 title: CLI reference
 description: "Every manni key command, argument, and flag (set and rotate), with exit codes, how rotation finds encrypted values and survives an interruption, every refusal, and the examples."
+id: key-cli-reference
+type: reference
+keywords:
+  - CLI
+  - command line
+  - encryption key
+  - key rotation
+  - manni key
+  - key set
+  - key rotate
+  - reference
+language: en
+source-of-truth:
+  path: src/key/cli.ts
+  kind: cli-implementation
+audiences:
+  - developers
+  - operators
+  - administrators
+intent: Look up syntax, options, and behavior of manni key commands
+visibility: public
+lifecycle: published
+risks:
+  - destructive
+sample-questions:
+  - How do I set an encryption key with manni?
+  - What are the options for manni key rotate?
+  - What exit codes does manni key return?
+  - How do I rotate encryption keys without writing to config?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.95
+      /type: 0.98
+      /keywords: 0.92
+      /language: 1
+      /source-of-truth: 0.95
+      /audiences: 0.87
+      /intent: 0.9
+      /visibility: 0.95
+      /lifecycle: 0.95
+      /risks: 0.85
+      /sample-questions: 0.9
 ---
 
 import { Aside } from '@astrojs/starlight/components';

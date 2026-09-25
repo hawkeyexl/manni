@@ -6,5 +6,7 @@ ignorecase: true
 nonword: true
 vocab: false
 swap:
+  \bjson schema dialect\b: JSON Schema dialect
+  \byaml header\b: YAML header
   \bjson pointer\b: JSON Pointer
   \bopen knowledge format\b: Open Knowledge Format

@@ -1,6 +1,69 @@
 ---
 title: Add manni meta to CI (GitHub Actions)
 description: Add a document-metadata gate to GitHub Actions, with inline pull request annotations from the github output format.
+id: meta-ci-github-actions
+type: task
+keywords:
+  - GitHub Actions
+  - CI
+  - metadata validation
+  - frontmatter
+  - workflow
+  - npx
+  - annotations
+  - pull request
+language: en
+audiences:
+  - developers
+  - devops-engineers
+  - ci-engineers
+intent: Set up manni meta validation in GitHub Actions with inline pull request annotations
+visibility: public
+lifecycle: published
+applies-to:
+  - github-actions
+  - manni-v2
+prerequisites: Node.js 24 or newer
+next-steps:
+  - /manni/meta/ci/exit-codes-and-annotations/
+  - /manni/meta/ci/recipes/
+related-pages:
+  - /manni/meta/set-up/config/
+sample-questions:
+  - How do I add manni meta to GitHub Actions?
+  - How do I validate document metadata in CI?
+  - How do I get inline PR annotations for metadata failures?
+  - What Node.js version does manni meta require in CI?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /sample-questions
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.85
+      /intent: 0.95
+      /visibility: 0.9
+      /lifecycle: 0.9
+      /applies-to: 0.9
+      /prerequisites: 0.95
+      /next-steps: 1
+      /related-pages: 0.9
+      /sample-questions: 0.9
 ---
 
 import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';

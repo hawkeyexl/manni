@@ -1,6 +1,78 @@
 ---
 title: Keep metadata outside the document
 description: "Keep frontmatter values outside the page and merge them at run time, from a manifest beside the config, from a private repository, or from a URL in another repository."
+id: meta-external-metadata-setup
+type: how-to
+keywords:
+  - external metadata
+  - manifest
+  - frontmatter
+  - YAML
+  - collections
+  - sidecar
+  - configuration
+  - private values
+  - lean documents
+language: en
+audiences:
+  - documentation engineers
+  - CI engineers
+  - schema authors
+intent: Configure external metadata to keep frontmatter values outside documents in a YAML manifest
+visibility: public
+lifecycle: published
+applies-to: meta
+concepts:
+  - frontmatter
+prerequisites:
+  - collections
+  - configuration basics
+next-steps:
+  - /manni/meta/reference/configuration/#external-metadata
+  - /manni/meta/reference/configuration/#collections
+  - /manni/meta/ci/query-gates/
+related-pages:
+  - /manni/meta/reference/configuration/#external-metadata
+risks: read-only
+sample-questions:
+  - How do I keep metadata outside my documents?
+  - How do I set up external metadata in manni?
+  - What is a manifest in manni meta?
+  - How do I configure private values for public documents?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /concepts
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.85
+      /intent: 0.95
+      /visibility: 0.9
+      /lifecycle: 0.95
+      /applies-to: 0.85
+      /concepts: 0.9
+      /prerequisites: 0.8
+      /next-steps: 1
+      /related-pages: 0.95
+      /risks: 1
+      /sample-questions: 0.9
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

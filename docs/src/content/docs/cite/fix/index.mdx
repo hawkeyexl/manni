@@ -1,6 +1,64 @@
 ---
 title: Fix a failing check
 description: Read a manni cite finding, map the rule to what happened to the source or the page, apply the fix, and confirm green locally. Every rule in one place.
+id: cite-fix
+type: troubleshooting
+keywords:
+  - citation
+  - fix
+  - troubleshooting
+  - validation
+  - manni cite
+  - source-moved
+  - claim-changed
+  - marker
+  - pin
+  - integrity
+language: en
+audiences:
+  - developers
+  - documentation engineers
+  - ci engineers
+intent: Fix a failing citation check by understanding the rule, what happened, and which command clears it
+prerequisites:
+  - cite/get-started
+related-pages:
+  - /manni/cite/reference/cli/
+  - /manni/cite/reference/citations/
+risks: read-only
+sample-questions:
+  - How do I fix a source-moved error?
+  - What does source-changed mean?
+  - How do I resolve a claim-moved warning?
+  - Which command fixes a source-moved-ambiguous finding?
+graph:
+  type: troubleshooting
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /prerequisites
+      - /related-pages
+      - /risks
+      - /sample-questions
+      - /graph
+    confidence:
+      /id: 0.95
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.8
+      /intent: 0.95
+      /prerequisites: 0.75
+      /related-pages: 0.9
+      /risks: 1
+      /sample-questions: 0.9
+      /graph: 0.95
 ---
 
 import { Steps, Aside, LinkCard } from '@astrojs/starlight/components';

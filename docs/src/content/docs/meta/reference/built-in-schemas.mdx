@@ -1,6 +1,81 @@
 ---
 title: Built-in schemas
 description: Every schema shipped with manni meta in one table, showing what each constrains, which fields it requires, which are on by default, and how to turn one on.
+id: built-in-schemas
+type: reference
+keywords:
+  - schemas
+  - built-in
+  - JSON Schema
+  - registry
+  - validation
+  - OKF
+  - Diataxis
+  - platform schemas
+  - vocabulary
+language: en
+source-of-truth: src/meta/core/schema-registry.ts
+audiences:
+  - documentation-engineers
+  - technical-writers
+  - developers
+intent: Understand what built-in schemas are available and select appropriate ones for validating document metadata
+visibility: public
+lifecycle: published
+applies-to: manni meta
+concepts:
+  - schema
+  - validation
+prerequisites:
+  - /manni/meta/get-started/
+  - /manni/meta/reference/schema-resolution/
+related-pages:
+  - /manni/meta/reference/vocabularies/
+  - /manni/meta/reference/docusaurus-schemas/
+risks: read-only
+sample-questions:
+  - What schemas are built into manni meta?
+  - How do I reference a built-in schema?
+  - Which schemas are on by default?
+  - What does the OKF schema validate?
+graph:
+  type: reference
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /concepts
+      - /prerequisites
+      - /related-pages
+      - /risks
+      - /sample-questions
+      - /graph
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /source-of-truth: 0.85
+      /audiences: 0.8
+      /intent: 0.9
+      /visibility: 1
+      /lifecycle: 0.95
+      /applies-to: 1
+      /concepts: 0.85
+      /prerequisites: 0.8
+      /related-pages: 1
+      /risks: 1
+      /sample-questions: 0.9
+      /graph: 0.85
 ---
 
 import { Aside, Tabs, TabItem, CardGrid, LinkCard } from '@astrojs/starlight/components';

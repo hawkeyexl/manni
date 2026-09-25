@@ -1,6 +1,78 @@
 ---
 title: Output formats & exit codes
 description: The pretty, json, github, sarif, and junit output formats; the 0/1/2 exit-code contract; and color, stdout/stderr behavior for manni meta validate.
+id: meta-output-and-exit-codes
+type: reference
+keywords:
+  - output formats
+  - exit codes
+  - severity
+  - pretty
+  - json
+  - github
+  - sarif
+  - junit
+  - baseline
+  - validation
+  - error
+  - warning
+  - notice
+language: en
+source-of-truth:
+  - path: src/meta/reporters/index.ts
+    kind: source
+  - path: src/shared/severity.ts
+    kind: source
+  - path: src/shared/run.ts
+    kind: source
+audiences:
+  - developers
+  - ci-engineers
+intent: Understand how to interpret manni meta validate output formats and exit codes
+visibility: public
+lifecycle: published
+applies-to: meta
+concepts:
+  - validation
+risks: read-only
+sample-questions:
+  - What output formats does manni meta validate support?
+  - What do the exit codes mean?
+  - How do I use SARIF format in GitHub Actions?
+graph:
+  type: reference
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /concepts
+      - /risks
+      - /sample-questions
+      - /graph
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.95
+      /language: 1
+      /source-of-truth: 0.8
+      /audiences: 0.85
+      /intent: 0.9
+      /visibility: 0.95
+      /lifecycle: 0.95
+      /applies-to: 1
+      /concepts: 0.9
+      /risks: 1
+      /sample-questions: 0.9
+      /graph: 0.95
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';

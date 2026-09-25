@@ -9,6 +9,61 @@ abstract: A version of the JSON Schema specification.
 definition: >-
   A version of the JSON Schema specification: Draft 2020-12, 2019-09, draft-07,
   draft-06, or draft-04.
+keywords:
+  - JSON Schema
+  - validator
+  - Draft 2020-12
+  - meta-schema
+  - specification version
+language: en
+source-of-truth:
+  - file: src/meta/core/validator.ts
+    lines: 62-76
+  - file: src/meta/core/validator.ts
+    lines: 430-437
+intent: Understand what a JSON Schema dialect is and how manni meta detects and handles different dialects
+visibility: public
+lifecycle: published
+applies-to: manni meta
+concepts:
+  - dialect
+  - schema
+  - meta-schema URI
+related-pages:
+  - /manni/meta/reference/schema-resolution/#dialects
+sample-questions:
+  - What is a JSON Schema dialect?
+  - How does manni meta detect a schema's dialect?
+  - What dialect does manni meta use as a fallback?
+alt-labels:
+  - JSON Schema dialect
+  - schema dialect
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /keywords
+      - /language
+      - /source-of-truth
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /concepts
+      - /related-pages
+      - /sample-questions
+      - /alt-labels
+    confidence:
+      /keywords: 0.85
+      /language: 0.95
+      /source-of-truth: 0.95
+      /intent: 0.9
+      /visibility: 0.9
+      /lifecycle: 0.9
+      /applies-to: 0.9
+      /concepts: 0.95
+      /related-pages: 0.9
+      /sample-questions: 0.85
+      /alt-labels: 0.7
 ---
 
 <p>{frontmatter.definition}</p>

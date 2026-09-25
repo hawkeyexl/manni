@@ -1,6 +1,76 @@
 ---
 title: Gate accessibility in CI
 description: "Run manni a11y check on a schedule against the live site, and on every pull request against the build the branch produces, with GitHub annotations."
+id: a11y-ci
+type: how-to
+keywords:
+  - accessibility
+  - CI
+  - GitHub Actions
+  - a11y
+  - automation
+  - workflows
+  - pull requests
+  - scheduled checks
+language: en
+audiences:
+  - developers
+  - DevOps engineers
+  - CI/CD engineers
+intent: automate accessibility testing in GitHub Actions workflows
+visibility: public
+lifecycle: published
+applies-to: manni-a11y
+prerequisites:
+  - understanding of GitHub Actions
+  - basic CI/CD knowledge
+  - familiarity with YAML
+next-steps:
+  - /manni/a11y/get-started/
+  - /manni/a11y/fix/
+  - /manni/a11y/reference/cli/
+related-pages:
+  - /manni/meta/ci/
+risks:
+  - cost-incurring
+  - open-world
+sample-questions:
+  - How do I check accessibility in CI?
+  - How do I run accessibility checks on pull requests?
+  - How do I schedule accessibility checks?
+  - What exit codes does manni a11y check return?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.9
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.85
+      /intent: 0.95
+      /visibility: 0.95
+      /lifecycle: 0.95
+      /applies-to: 0.9
+      /prerequisites: 0.85
+      /next-steps: 0.95
+      /related-pages: 0.9
+      /risks: 0.8
+      /sample-questions: 0.9
 ---
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';

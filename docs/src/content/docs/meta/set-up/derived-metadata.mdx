@@ -1,6 +1,76 @@
 ---
 title: Stamp stewardship fields from evidence
 description: "Let manni meta stamp created, last-updated, authors, owner, reviewed-by and last-reviewed from git, CODEOWNERS, GitHub and GitLab, and fail the build when a stamp goes stale."
+id: meta-setup-derived-metadata
+type: how-to
+keywords:
+  - derived metadata
+  - stewardship fields
+  - git
+  - CODEOWNERS
+  - GitHub
+  - GitLab
+  - manni meta derive
+  - validation
+  - managed fields
+  - evidence-based metadata
+language: en
+audiences:
+  - documentation engineers
+  - CI engineers
+  - technical writers
+intent: Set up automatic stamping of stewardship metadata fields from git, CODEOWNERS, and code host approvals
+visibility: public
+lifecycle: published
+applies-to: manni meta
+prerequisites:
+  - meta/get-started/index.mdx
+  - meta/ci/index.mdx
+next-steps:
+  - /manni/meta/reference/configuration/#derive
+  - /manni/meta/reference/cli/#meta-derive
+  - /manni/meta/proposals/stewardship/
+  - /manni/meta/set-up/new-required-field/
+  - /manni/meta/set-up/machine-authorship/
+related-pages:
+  - /manni/meta/reference/configuration/
+  - /manni/meta/reference/cli/
+  - /manni/meta/proposals/stewardship/
+sample-questions:
+  - How do I automatically stamp metadata fields from git?
+  - How do I set up derived metadata in CI?
+  - How do I stamp review fields from GitHub approvals?
+  - How do I roll out derived metadata on an existing corpus?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /prerequisites
+      - /next-steps
+      - /related-pages
+      - /sample-questions
+    confidence:
+      /id: 0.95
+      /type: 0.95
+      /keywords: 0.9
+      /language: 1
+      /audiences: 0.85
+      /intent: 0.95
+      /visibility: 0.95
+      /lifecycle: 0.9
+      /applies-to: 1
+      /prerequisites: 0.85
+      /next-steps: 1
+      /related-pages: 0.9
+      /sample-questions: 0.9
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

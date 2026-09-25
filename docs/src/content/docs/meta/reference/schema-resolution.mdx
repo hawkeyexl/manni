@@ -2,6 +2,71 @@
 title: Schema resolution reference
 description: How manni meta picks the schema set for each file, covering the precedence chain, the three reference kinds, and the supported JSON Schema dialects.
 concepts: [schema set, schema reference, $schema key, dialect, override]
+id: schema-resolution-reference
+type: reference
+keywords:
+  - schema resolution
+  - JSON Schema
+  - built-in schemas
+  - file references
+  - URL references
+  - schema dialects
+  - schema cache
+  - offline mode
+  - trust levels
+  - precedence chain
+language: en
+audiences:
+  - schema authors
+  - CI engineers
+intent: Understand how manni meta resolves and selects schemas for validating document metadata
+visibility: public
+lifecycle: published
+applies-to: manni meta
+risks: read-only
+sample-questions:
+  - How does manni meta choose which schema to validate against?
+  - What is the schema resolution precedence chain?
+  - How do I reference a schema by URL?
+  - What JSON Schema dialects are supported?
+  - How does offline mode work with schema caching?
+graph:
+  label: schema resolution
+  definition: The process by which manni meta determines which JSON schemas to validate each file's metadata against, following a five-level precedence chain from CLI flags through document $schema keys to built-in defaults.
+  abstract: How manni meta picks the schema set for validating each file's metadata.
+  concepts:
+    - schema set
+    - schema reference
+    - $schema key
+    - dialect
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /applies-to
+      - /risks
+      - /sample-questions
+      - /graph
+    confidence:
+      /id: 0.95
+      /type: 0.98
+      /keywords: 0.92
+      /language: 1
+      /audiences: 0.75
+      /intent: 0.95
+      /visibility: 0.95
+      /lifecycle: 0.95
+      /applies-to: 1
+      /risks: 1
+      /sample-questions: 0.88
+      /graph: 0.9
 ---
 
 import { Aside } from '@astrojs/starlight/components';

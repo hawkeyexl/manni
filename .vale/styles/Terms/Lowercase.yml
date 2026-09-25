@@ -7,14 +7,25 @@ nonword: true
 vocab: false
 swap:
   \bdialect\b: "[Dd]ialect"
+  \bschema dialect\b: "[Ss]chema dialect"
   \bextraction\b: "[Ee]xtraction"
   \bextractor\b: "[Ee]xtractor"
   \bfrontmatter\b: "[Ff]rontmatter"
+  \bdocument header\b: "[Dd]ocument header"
+  \bmetadata block\b: "[Mm]etadata block"
+  \bfront matter\b: "[Ff]ront matter"
   \bmetadata\b: "[Mm]etadata"
+  \bdocument metadata\b: "[Dd]ocument metadata"
+  \bfrontmatter fields\b: "[Ff]rontmatter fields"
+  \bkey-value pairs\b: "[Kk]ey-value pairs"
   \boverride\b: "[Oo]verride"
   \B\$schema key\b: \$schema key
   \B\$schema\b: \$schema
   \bschema reference\b: "[Ss]chema reference"
+  \bschema ref\b: "[Ss]chema ref"
+  \breference to schema\b: "[Rr]eference to schema"
   \bschema set\b: "[Ss]chema set"
   \bschema\b: "[Ss]chema"
   \bvalidation\b: "[Vv]alidation"
+  \bvalidate\b: "[Vv]alidate"
+  \bvalidation operation\b: "[Vv]alidation operation"

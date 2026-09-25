@@ -1,6 +1,75 @@
 ---
 title: query command reference
 description: The complete contract of manni meta query, covering the docs table and its columns, the DML and DDL vocabulary, collections as views, rows as findings, bound parameters, and every output format.
+id: meta-reference-query
+type: reference
+keywords:
+  - SQL
+  - SQLite
+  - database
+  - query
+  - metadata
+  - DML
+  - DDL
+  - collections
+  - views
+  - findings
+  - parameters
+  - bound parameters
+  - encryption
+language: en
+audiences:
+  - documentation engineers
+  - DevOps engineers
+  - developers
+  - CI engineers
+intent: Query and manipulate document metadata using SQL, including reads, updates, schema evolution, and validation checks
+visibility: public
+lifecycle: published
+prerequisites:
+  - SQL basics
+  - manni meta get-started
+  - JSON Schema knowledge
+related-pages:
+  - /manni/meta/ci/query-gates/
+  - /manni/meta/reference/cli/
+  - /manni/meta/reference/configuration/
+risks:
+  - destructive
+sample-questions:
+  - How do I query document metadata with SQL?
+  - How do I validate metadata using query checks?
+  - How do I evolve schemas with DDL statements?
+  - How do I use bound parameters in metadata queries?
+  - What output formats does manni meta query support?
+meta-provenance:
+  - generated-by: claude-sonnet-4-5
+    fields:
+      - /id
+      - /type
+      - /keywords
+      - /language
+      - /audiences
+      - /intent
+      - /visibility
+      - /lifecycle
+      - /prerequisites
+      - /related-pages
+      - /risks
+      - /sample-questions
+    confidence:
+      /id: 0.95
+      /type: 0.98
+      /keywords: 0.92
+      /language: 1
+      /audiences: 0.9
+      /intent: 0.96
+      /visibility: 0.98
+      /lifecycle: 0.97
+      /prerequisites: 0.88
+      /related-pages: 0.92
+      /risks: 0.94
+      /sample-questions: 0.91
 ---
 
 import { Aside } from '@astrojs/starlight/components';
