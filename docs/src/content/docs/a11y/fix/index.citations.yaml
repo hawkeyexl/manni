@@ -296,7 +296,7 @@ docs/src/content/docs/a11y/fix/index.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 151
         integrity: sha256-4b92f726f1d61da2762ae162caa2989ac531a7f0cd2ae7f9c5a5510b263578db
-        commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: incomplete-never-fails
       claim:
         lines: 156-158
@@ -305,7 +305,7 @@ docs/src/content/docs/a11y/fix/index.mdx:
         file: src/a11y/commands/check.ts
         lines: 157
         integrity: sha256-d9bf347fb2ed4cd734dd83ea96559d152816f6a56dc50c63da047ffae05f01ad
-        commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: incomplete-json-only
       claim:
         lines: 157
@@ -314,7 +314,7 @@ docs/src/content/docs/a11y/fix/index.mdx:
         file: src/a11y/reporters/json.ts
         lines: 7-9
         integrity: sha256-48ebcf5ac9c1feba26bea501d71cba010b582960a191bf491154b38fcbd71e50
-        commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: github-silent-on-clean-run
       claim:
         lines: 125
@@ -323,7 +323,7 @@ docs/src/content/docs/a11y/fix/index.mdx:
         file: src/a11y/cli.ts
         lines: 354-358
         integrity: sha256-d2f531bc441897e7c4291106a68e1eb5cf8bba609038312ccfce5beb1788004a
-        commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: score-share-of-rules-passed
       claim:
         lines: 125-126
@@ -332,7 +332,7 @@ docs/src/content/docs/a11y/fix/index.mdx:
         file: src/a11y/commands/check.ts
         lines: 141-142
         integrity: sha256-ed3bfa5ec056b37ee8066e37f50435641caf3554c8c334ff4cc681890c3bfee2
-        commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: score-excludes-below-floor
       claim:
         integrity: sha256-22967707c22302be55737e74def3bd242eb1a8172c4646926ec1f83356bc0f0d
@@ -340,4 +340,4 @@ docs/src/content/docs/a11y/fix/index.mdx:
         file: src/a11y/commands/check.ts
         lines: 138-142
         integrity: sha256-30e2ee7a755c0558da729349b48f216c838788e63832b00ca96ecfefee5cd0db
-        commit-sha: 9d4cdd83bb865369a4d76950118ab21f2fe44124
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7

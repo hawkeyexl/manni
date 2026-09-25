@@ -7,7 +7,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/cli.ts
         lines: 283
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: exit-zero-clean
       claim:
         lines: 20
@@ -16,7 +16,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/cli.ts
         lines: 132
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: exit-two-no-terms
       claim:
         lines: 22
@@ -25,7 +25,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/load-set.ts
         lines: 214-218
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: exit-two-no-vale
       claim:
         lines: 22
@@ -34,7 +34,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/vale.ts
         lines: 177
         integrity: sha256-113c628c540865488a4235a1bf16e7a9e9920822d6b3342ea72c80b449bf307c
-        commit-sha: 1b24bdec37ae54ce6a25aa78d3ceb362fd4a47bc
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: exit-two-bad-config-key
       claim:
         lines: 22
@@ -43,7 +43,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/config.ts
         lines: 74-87
         integrity: sha256-1c53d7c993b5e33965951a315a3bfcf1bcaa56c6a320ed87bbda1903643aa259
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: default-severities
       claim:
         integrity: sha256-f2d828741f535cebeff1dd8b8e736ef5085cd8774b47659d7b66435355e68a79
@@ -51,7 +51,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/severity.ts
         lines: 12-23
         integrity: sha256-9b765fe3fe333158cf2e84e957e616b00a862c6cf92f0f4caf9ef1ffff2e5cc3
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: severity-config-override
       claim:
         integrity: sha256-f2d828741f535cebeff1dd8b8e736ef5085cd8774b47659d7b66435355e68a79
@@ -59,7 +59,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/config.ts
         lines: 125-141
         integrity: sha256-34a0f6991d46f2d1a922ccd130aac2ef307adc8a37d5b3ddcd4f658cba220b1e
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: exit-zero-error-severity-only
       claim:
         lines: 20
@@ -68,7 +68,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/commands/findings.ts
         lines: 94
         integrity: sha256-aa96e5e4a89c13ae7255a517fdc1c210b848408bff13c40c90b82d628a2b24a0
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: exit-one-baseline-holds
       claim:
         lines: 21
@@ -77,7 +77,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/commands/check.ts
         lines: 50
         integrity: sha256-b9c9fa5306ca6a51db7806e4849619d720d81d0ffbf997164b0dc80b639ace4f
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: exit-two-stderr-prefix
       claim:
         lines: 22
@@ -86,7 +86,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/shared/run.ts
         lines: 17-24
         integrity: sha256-8e7f6f763f246f5096b0a4f04253ca64c77ad5468f80cc785e65b7e778475d40
-        commit-sha: 43837e26fb78b459684ff696c38d0d47fa248190
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: exit-two-bad-flag
       claim:
         lines: 22
@@ -95,7 +95,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/shared/run.ts
         lines: 81-90
         integrity: sha256-0b1adcea878f72a48497137fff1e405ac1b9c8b8b5906e17eb740806b00ca825
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: github-annotation-shape
       claim:
         integrity: sha256-46b7005e50526e29b358cf30eb818571fa40754f281d691e055fb8df2ad55eb3
@@ -103,7 +103,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/reporters/github.ts
         lines: 11-19
         integrity: sha256-676956d29c1d339176e8792d2e661fef1a00b31c760a228fb27065c919964e5a
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: undefined-term-alt-label-message
       claim:
         lines: 37
@@ -112,7 +112,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/check.ts
         lines: 69-73
         integrity: sha256-4299d6bf2633bda6a508a9c61cb174217dc218f32a398ac982d10e4127b34e5a
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: lint-github-same-renderer
       claim:
         integrity: sha256-70c60d6211778341eb324e58c93e8964ed306a1da67ba341946d7ef0c0a143ed
@@ -120,7 +120,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/cli.ts
         lines: 241-245
         integrity: sha256-16ec9c73536b0f867f0b27a1096bd188d56dd361f1983cd15168834ec743362b
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: lint-prose-rule-id
       claim:
         integrity: sha256-70c60d6211778341eb324e58c93e8964ed306a1da67ba341946d7ef0c0a143ed
@@ -128,7 +128,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/severity.ts
         lines: 29-31
         integrity: sha256-3ccb0f4e5db1182b106610be75d2be447542a3028c8927e95507ea200d81228b
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: finding-formats
       claim:
         integrity: sha256-1bef6d7692b7c12aa6db4c4155f892f6f40a38b3de5dc2559ad5913d1ffeab21
@@ -136,7 +136,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/commands/findings.ts
         lines: 26
         integrity: sha256-e289e4d42c2edea48f60e352e576d5373faa082ce54a0c93bbe0c20fb4cd7540
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: sarif-no-git-root-notice
       claim:
         lines: 59
@@ -145,7 +145,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/meta/reporters/sarif.ts
         lines: 66-67
         integrity: sha256-d99e433a7e95a84d15df4c85708647b21ca7669c2d3f9219017a3abdb26de928
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: sarif-notice-to-stderr
       claim:
         lines: 59
@@ -154,7 +154,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/cli.ts
         lines: 125
         integrity: sha256-b1d76731e86f841f6007d397c2ee26353efb88d6c9ec5ebf192817056dcc3161
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: vale-style-terms-dir
       claim:
         lines: 81
@@ -163,7 +163,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/writers/vale.ts
         lines: 180-182
         integrity: sha256-15547209755bd744cb79b6dcf3fd86d965556a0502e5a87f7b6b88607635288b
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: check-log-names-files
       claim:
         lines: 126
@@ -172,7 +172,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/reporters/pretty.ts
         lines: 244-247
         integrity: sha256-a568150112aae7894fd4833352fe48ece756c9a0ee8e64251617de53fc56b8c0
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: check-prints-differences
       claim:
         integrity: sha256-ca1d8d56e47c34606b5c26f602f0672040da31e021b3bb75da7addba13017ec5
@@ -180,7 +180,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/reporters/pretty.ts
         lines: 170-179
         integrity: sha256-4a46913a482241c5208c12db8e4c7d97048bce18ac2a671cd09593de1853404c
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: would-change-line
       claim:
         lines: 135
@@ -189,7 +189,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/reporters/pretty.ts
         lines: 174-175
         integrity: sha256-ff52bb820e0e62c18615cca9368684fa17e3d4bbf844a230264905da38748b8f
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: baseline-records-when-missing
       claim:
         lines: 156
@@ -198,7 +198,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/commands/check.ts
         lines: 42-48
         integrity: sha256-41f69f1e7daaf35b12581fc9325939a38566681650d58bf51fdde85dbca03ca5
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: baseline-recorded-line
       claim:
         lines: 160
@@ -207,7 +207,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/reporters/pretty.ts
         lines: 133-135
         integrity: sha256-19f690d3af78cd4bde2a7bd34d99403080546123865c795bbfc650f02565b59b
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: baseline-default-path
       claim:
         lines: 160
@@ -216,7 +216,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/config.ts
         lines: 35
         integrity: sha256-4d17b9f65348d0e429788106428839d85f568d19ce5fd9e335a9896c6b2c21fc
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: baseline-suppresses-held
       claim:
         lines: 166
@@ -225,7 +225,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/commands/check.ts
         lines: 50
         integrity: sha256-b9c9fa5306ca6a51db7806e4849619d720d81d0ffbf997164b0dc80b639ace4f
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: baselined-clean-line
       claim:
         lines: 170
@@ -234,7 +234,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/reporters/pretty.ts
         lines: 136-142
         integrity: sha256-cf9da651d7ba75a8bd57cb8833f4e1dace02ff229f9ebbc7a9235c4edf11b40d
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: baseline-config-compares
       claim:
         integrity: sha256-2c0716ab2eca62285f8d5d752b060b70e418e7021097cc6cf82973f9021d119f
@@ -242,7 +242,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/commands/check.ts
         lines: 35-41
         integrity: sha256-edb5db56bc8f62dfd561012407348161a3def5b86d03ef7652d50cf44431bfef
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: baseline-config-key
       claim:
         integrity: sha256-2c0716ab2eca62285f8d5d752b060b70e418e7021097cc6cf82973f9021d119f
@@ -250,7 +250,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/config.ts
         lines: 175
         integrity: sha256-1f2d739668a3392afe7dfbadeada73383ba567899e14073b664222741a721c41
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: baseline-config-missing-file
       claim:
         integrity: sha256-eb14afeb3b0bc8bfd1472e483fa189d2df49c61adeaf02d1d27eed208caab3cd
@@ -258,7 +258,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/commands/check.ts
         lines: 42-47
         integrity: sha256-c31d555e6a43e698ee86c4d61c89c374a5e9f496a12b881e998c3a600870e63e
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: verify-undefined-term-names-entry
       claim:
         lines: 200
@@ -267,7 +267,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/check.ts
         lines: 69-73
         integrity: sha256-4299d6bf2633bda6a508a9c61cb174217dc218f32a398ac982d10e4127b34e5a
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: verify-unused-term-notice
       claim:
         lines: 202
@@ -276,7 +276,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/check.ts
         lines: 153-156
         integrity: sha256-f847edcdc7dd7b7372a612a3915dd051121575508a400301633257186ec9ce85
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: verify-unused-term-level
       claim:
         lines: 202
@@ -285,7 +285,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/severity.ts
         lines: 22
         integrity: sha256-2252e12c77a2abd254fa58de52ac1b431c5ad799c3c0a51ac5e31c74497001fa
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: verify-hidden-label-deprecated
       claim:
         lines: 204
@@ -294,7 +294,7 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/core/writers/vale.ts
         lines: 228-230
         integrity: sha256-786a61b368ac6ed7d3b289735fd483969a0bb7d5add1f0098826d03b66251753
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: exit-one-check-drift
       claim:
         lines: 21
@@ -303,4 +303,4 @@ docs/src/content/docs/term/ci/index.mdx:
         file: src/term/cli.ts
         lines: 283
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: e5edf90e4eeadd018eab10157327e3b8dd67bf91
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7

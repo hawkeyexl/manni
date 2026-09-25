@@ -332,6 +332,17 @@ export interface GitClient {
    * is `changed` with no baseline.
    */
   pageCommits?(path: string, cap: number): Promise<PageHistory>;
+  /**
+   * Whether the clone is shallow, so a commit it lacks may still be in the
+   * history. A client without it, or without `isAncestor`, never re-records
+   * a commit for being outside the history.
+   */
+  shallow?(): Promise<boolean>;
+  /**
+   * Whether `commit` is `of` or one of its ancestors. A commit the clone does
+   * not have is not.
+   */
+  isAncestor?(commit: string, of: string): Promise<boolean>;
 }
 
 /**
@@ -623,6 +634,9 @@ export interface UpdateOptions extends Omit<CheckOptions, "baseline" | "writeBas
  * for pins. `from` and `to` carry the same values, but which of the two a row
  * holds depends on the row, so they are easy to misuse.
  */
+/** Why `--recommit` re-recorded a commit. */
+export type RecommitReason = "not-contained" | "not-in-history";
+
 export interface UpdateRewrite {
   id?: string;
   /** Index in the page's `citations`. */
@@ -657,6 +671,12 @@ export interface UpdateRewrite {
   /** A re-committed source: the commit it recorded, and the one it records now. */
   fromCommit?: string;
   toCommit?: string;
+  /**
+   * A re-committed source: why the recorded commit could not stand.
+   * `not-contained`: it does not hold the pinned lines. `not-in-history`: it
+   * holds them, but is not in the history of HEAD.
+   */
+  because?: RecommitReason;
   /** A re-anchored claim: the span that held, in file lines. */
   lines?: string;
   /** A re-anchored claim: the span now pinned, in file lines. */

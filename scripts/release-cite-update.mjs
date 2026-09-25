@@ -20,9 +20,16 @@
  * same changelog and make the same release commit, so their pins move exactly
  * as `main`'s do.
  *
- * The update is plain — never `--accept`. A plain update shifts a moved pin's
+ * The update is never `--accept`. A plain update shifts a moved pin's
  * recorded lines and cannot mis-pin; `--accept` re-mints over whatever occupies
  * a line, and a release is the worst place to do that unwatched.
+ *
+ * On `main` it adds `--recommit`, which changes only `commit-sha` and only
+ * where HEAD holds the pinned lines. This repo squash-merges, so a pin minted
+ * on a pull request records a branch commit main never takes. Only a commit
+ * on main lasts, and the release commit's parent is one. A prerelease runs
+ * the plain update, because its commits stay on its own branch and recording
+ * one would orphan the pin again.
  *
  * semantic-release resolves a plugin given as a path against the working
  * directory and imports it. With no default export it uses the named exports,
@@ -45,24 +52,24 @@ const BIN = join("dist", "cli.js");
  * half-finished operation in the checkout is the realistic way it stops making
  * progress, and no amount of waiting fixes either.
  *
- * Measured over this repo's corpus of 4,143 citations: 2.5s for a run that
- * moves nothing, 5.0s for one that re-anchors the two changelog pins, the git
- * re-mint included. Sixty seconds is an order of magnitude above the slower of
- * those, which leaves room for a cold runner and for the corpus to grow
- * several times over before the number needs another look.
+ * Measured over this repo's corpus of 4,173 citations, on a Windows laptop
+ * where each git call costs most: 3.7s for a plain run that moves nothing, and
+ * 15.2s for a `--recommit` run that moves nothing, since it reads each
+ * recorded commit's file. The first `--recommit` on main re-records 3,004
+ * pins and took 31.1s. Two minutes is about four times the slowest of those,
+ * which leaves room for a cold runner and a growing corpus.
  *
- * It is also small enough to change nothing about the job's budget.
- * `release.yml` runs on `timeout-minutes: 20` and spends up to ten of them
- * polling npm after the publish, against a release step that reached that poll
- * five minutes in, so about four minutes are spare. A minute of
- * hang-detection keeps that spare; a longer bound would eat it, and a
- * cancelled job reports nothing at all.
+ * It still fits the job's budget. `release.yml` runs on `timeout-minutes: 20`
+ * and spends up to ten of them polling npm after the publish, against a
+ * release step that reached that poll five minutes in, so about four minutes
+ * are spare. Two minutes of hang-detection leaves half of that. A longer
+ * bound would eat it, and a cancelled job reports nothing at all.
  *
  * `release-sync-versions.mjs` has no bound and keeps none here. It rewrites
  * files and talks to no other process, so it does not hang the way a git
  * operation does; giving it one is its own change.
  */
-export const TIMEOUT_MS = 60_000;
+export const TIMEOUT_MS = 120_000;
 
 /**
  * What an outcome of `manni cite update` means for the release.
@@ -134,8 +141,19 @@ export function summarize(stdout) {
     : summary;
 }
 
+/**
+ * The `manni` arguments for the release on `branch`, semantic-release's
+ * `context.branch`. Its `prerelease` is falsy on `main`, and the channel name
+ * or `true` on `next` and `feat/**`. With no branch to read, the run is
+ * plain: re-recording to a commit that may not last is the one harm here.
+ */
+export function updateArgs(branch) {
+  const onMain = branch !== undefined && branch !== null && !branch.prerelease;
+  return onMain ? ["cite", "update", "--recommit"] : ["cite", "update"];
+}
+
 export async function prepare(_pluginConfig, context) {
-  const { logger, cwd, stdout, stderr } = context;
+  const { logger, cwd, stdout, stderr, branch } = context;
   const root = cwd ?? process.cwd();
 
   // The release workflow builds before it runs semantic-release. Say which
@@ -144,7 +162,7 @@ export async function prepare(_pluginConfig, context) {
     throw new Error(`Citations could not be re-anchored: ${BIN} is not built.`);
   }
 
-  const run = spawnSync(process.execPath, [BIN, "cite", "update"], {
+  const run = spawnSync(process.execPath, [BIN, ...updateArgs(branch)], {
     cwd: root,
     encoding: "utf8",
     timeout: TIMEOUT_MS,

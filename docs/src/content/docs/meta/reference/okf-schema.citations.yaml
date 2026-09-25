@@ -148,4 +148,4 @@ docs/src/content/docs/meta/reference/okf-schema.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 25-35
         integrity: sha256-cdf674ddd56e8c1c891cc633bae6ce4d8a34606bd8d54a74f93f6e42ac01aed3
-        commit-sha: edd82f3e2edc25cbb224db57c4af509ab15206c2
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7

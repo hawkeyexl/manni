@@ -7,7 +7,7 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         file: src/meta/commands/get.ts
         lines: 496-502
         integrity: sha256-495ffdf01f73b7275bfcc4fcf36a79c97478f992ed666a0dc962fa3fbd8edb63
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: element-pointer-and-dot-notation-both-work
       claim:
         integrity: sha256-4a50876d9419354c5c40b89c85df1a13373722cb9b04e69b650eaf654e69ede3
@@ -15,7 +15,7 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         file: src/meta/commands/get.ts
         lines: 486-494
         integrity: sha256-80a40363a4c3211debea1d799d96c7d19655f448f3c3d1d38f16f30733aa1ab7
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: element-collision-guard-is-narrow
       claim:
         lines: 229-231

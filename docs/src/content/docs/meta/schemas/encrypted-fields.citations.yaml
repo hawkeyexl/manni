@@ -7,7 +7,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/shared/encryption.ts
         lines: 123-129
         integrity: sha256-962884e0ed5f7b70f42c8a70ddff66003c9a8ecdedd3b3b91f5e1f4c2f7551bb
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: undecryptable-value-stops-the-rotation
       claim:
         integrity: sha256-c8a238fe41acd591b6d982c134c25a4d53ee352608147ebdedb4aa732cae5eb9
@@ -15,7 +15,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/core/reencrypt.ts
         lines: 153-156
         integrity: sha256-567c441e66c1b4021f58ab6e1f05fde13b267831df544893d92804754454bbe7
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: rotation-finds-values-by-ciphertext
       claim:
         integrity: sha256-929dde42cd9e90d19ee82a366b60c4a6d4d1790efaa8594894ca9da9aa8afc1f
@@ -23,7 +23,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/core/reencrypt.ts
         lines: 138-140
         integrity: sha256-073f4a899716ebfe69a59b7b5fc0dbefd8cd223af294e02a9e5ec1c62d18c8b3
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: only-location-findings-are-warnings
       claim:
         lines: 199-200
@@ -32,7 +32,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/commands/validate.ts
         lines: 431-438
         integrity: sha256-1973f37dd5436ece748c776b24dbfea838d2cad07428841d9036551a77a89caa
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: sarif-rule-id-for-encrypted-plain
       claim:
         lines: 196
@@ -41,7 +41,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/reporters/rule-id.ts
         lines: 40-43
         integrity: sha256-01dd1c622034fd297e35eaca235e81d6070b9aa47081002387b1c75effcb4392
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: json-keyword-encrypted
       claim:
         lines: 194
@@ -50,7 +50,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/reporters/rule-id.ts
         lines: 40-43
         integrity: sha256-01dd1c622034fd297e35eaca235e81d6070b9aa47081002387b1c75effcb4392
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: only-top-level-properties-are-written-encrypted
       claim:
         integrity: sha256-6e002a60cfaaef2d6b30ab0938e3c882386ead1ddb46b38633634b97f1eac674
@@ -58,7 +58,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/commands/query.ts
         lines: 3592-3597
         integrity: sha256-983a738ccc84d8cd3a7f08b068c28f14291829e60f5ed3d247cfda0c90401ac8
-        commit-sha: c66b65fbaa3bfc2249911078b0d56aa1ca924d8e
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: equal-ciphertexts-make-joins-work
       claim:
         integrity: sha256-3548ae43b085633b0a627b4ddd898c9a7c1a7392285ca7e90e53787df800a505
@@ -66,7 +66,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/shared/encryption.ts
         lines: 123-129
         integrity: sha256-962884e0ed5f7b70f42c8a70ddff66003c9a8ecdedd3b3b91f5e1f4c2f7551bb
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: query-writes-a-marked-property-encrypted
       claim:
         integrity: sha256-d42dd91be35640aadfeb6e6bc4a6eac10bc3fc55280cb23f7e4e3b6faa7abda7
@@ -74,7 +74,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/commands/query.ts
         lines: 3592-3597
         integrity: sha256-983a738ccc84d8cd3a7f08b068c28f14291829e60f5ed3d247cfda0c90401ac8
-        commit-sha: c66b65fbaa3bfc2249911078b0d56aa1ca924d8e
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: encrypted-plain-fires-without-a-key
       claim:
         lines: 119-120
@@ -83,7 +83,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/core/encrypted.ts
         lines: 42-43
         integrity: sha256-545fee6a5f3b7c0c9b0ca21dc35e59d15acd48e39df07e26c027ec0eda9f197f
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: findings-under-an-encrypted-value-are-dropped
       claim:
         integrity: sha256-03e23ed2db657738f3936f8cd530af4c599f91701ec071c57656e5597177d784
@@ -91,7 +91,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/core/encrypted.ts
         lines: 262-266
         integrity: sha256-a09f0153a0be65bdf1c459f1a8ba31a7d6bf2d42c1de6e73892e9a43b2a70b35
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: validation-works-on-a-decrypted-copy
       claim:
         integrity: sha256-b6a29facc67442b81d58b13a66792d9cc5afac9b360655b454825e3d6bc6ba7e
@@ -99,7 +99,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/core/encrypted.ts
         lines: 267-273
         integrity: sha256-7e9924edc03876c121abf64fc86f3ff5ed8d7eb017a1a41a74c384edc576e172
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: fill-encrypts-a-plain-value
       claim:
         integrity: sha256-145f4f58c93b8182e60f8b04e27de2a31b1590e799b772287f2243f09de1b2fc
@@ -107,7 +107,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/commands/fill.ts
         lines: 618-624
         integrity: sha256-c2dc89be0e81f96d389d7bcf9f11b2289d63bfdb73eaa79b74d1d9b8fd361f9a
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: reads-do-not-decrypt
       claim:
         integrity: sha256-01182f60c58cc3372d664f673964b422969595a876eb743a8bebd502cd67fd86
@@ -115,7 +115,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/commands/get.ts
         lines: 328-340
         integrity: sha256-46f190d7734fe1b52d4925c05d640c43755197b1c0ca47e93aca308b1001ae21
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: ciphertext-is-tilde-plus-82-chars
       claim:
         integrity: sha256-e8ae5d4ddb21d0e2004225929e2d9c5863d0e52bcc05bb9e2a307f06e0f89207
@@ -123,7 +123,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/shared/encryption.ts
         lines: 44
         integrity: sha256-44320cc0f23ee1652161af979ef8fe28bf5b37df6fe4583d03904083772357d0
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: mark-counts-where-the-validator-evaluates-it
       claim:
         integrity: sha256-e77d0c020fddba0460eeea476f757ac8f641110b7767415cae5038974c57ee53
@@ -131,7 +131,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/core/validator.ts
         lines: 122-139
         integrity: sha256-4eed67547bf1a96ae677704ca6a07760f6dfb83a69b785122be7cb374d8f6064
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: encrypt-keyword-is-x-manni-encrypt
       claim:
         integrity: sha256-1c5d5196746ac421b736fec16debdf032a51056c426a9ddd590f957a52967d66
@@ -139,7 +139,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/core/encrypted.ts
         lines: 35
         integrity: sha256-fff9080857b4819b8081506b3ba9927b48d0f65a2c1df08e7a225029857c06b7
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: non-boolean-mark-is-a-compile-error
       claim:
         lines: 40-41
@@ -148,4 +148,4 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         file: src/meta/core/validator.ts
         lines: 510-515
         integrity: sha256-32ae7c90403fd1cddb487dfc93579f272e5dbfa59abee2f8f2d13b8f46e11be6
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7

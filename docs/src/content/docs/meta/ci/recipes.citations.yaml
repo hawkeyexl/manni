@@ -7,7 +7,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: .pre-commit-hooks.yaml
         lines: 29
         integrity: sha256-f74d9657e270288b5051d5c5f141abd1bec045b47a14accc36e64e82072dc2c4
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: hook-entry-runs-the-latest-cli
       claim:
         integrity: sha256-0e27eb9c9be3617eb464c72f3ca66164bef43e6766b3881506e99d9333b62cba
@@ -15,7 +15,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: .pre-commit-hooks.yaml
         lines: 27
         integrity: sha256-e4907b179c4046bb821ce4973c2e687c402ff1dbc6ae83d84bd7b95432620941
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: derive-hook-stamps-managed-fields
       claim:
         integrity: sha256-6d8726712e61b7c53920269af05c31900f213db1ef3d7426ef8d520457f01694
@@ -23,7 +23,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: .pre-commit-hooks.yaml
         lines: 37-42
         integrity: sha256-64bb05927342700c14e3ac71b973aebc558a072df28bd97c18d2826b96693cf1
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: junit-one-test-per-file
       claim:
         integrity: sha256-6f2863da42771090048d19388af3f1634b8f93c1e0250c7ef53a459c511cfffb
@@ -31,7 +31,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/reporters/junit.ts
         lines: 116-117
         integrity: sha256-3a8e64040d3aed8a31fd02a30d8adb9db95dfff0dff326d774ff2439cffed180
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: recipes-exit-0-and-1
       claim:
         integrity: sha256-fecd0355b9b7433272aeb0bfbae1007c1c662a434f9324138e958cbd97fe335c
@@ -39,7 +39,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/cli.ts
         lines: 872
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: validate-judges-the-derived-stamp
       claim:
         integrity: sha256-3219f33ff597c89ce4d5ecf4eae156536902e01c392bc0b3198016462ff8b762
@@ -47,7 +47,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/commands/validate.ts
         lines: 988-998
         integrity: sha256-705564be93671f57572066f8b5c65e89e68fc6228453bf1746a821f580d13aa1
-        commit-sha: 282d65b39b20473ef9903a9df781db7ed5655aac
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: recipes-operational-error-exits-2
       claim:
         lines: 11-12
@@ -56,7 +56,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/shared/run.ts
         lines: 24-37
         integrity: sha256-731c8ac7d223ae66f23904fe28271963d5e352e3f70564e346d97a5d392d4cb5
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: github-format-emits-workflow-commands
       claim:
         lines: 17
@@ -65,7 +65,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/reporters/index.ts
         lines: 305-326
         integrity: sha256-60cada7804b9986454e20a28822cd9a49d056cf07492243254e208ef0c2e67d8
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: manni-rebases-paths-onto-the-git-root
       claim:
         lines: 86-87
@@ -74,7 +74,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/reporters/sarif.ts
         lines: 141-144
         integrity: sha256-6679bb684dbe1ea06983c60d39b4ad0769236d43eb6368ade8022992682c2c51
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: no-git-root-warns-on-stderr
       claim:
         lines: 88-89
@@ -83,7 +83,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/reporters/sarif.ts
         lines: 64-68
         integrity: sha256-5885a7f1a18f3127f0428c6c12d0992d17b49a381685c0157a0be21f9d76fbd9
-        commit-sha: c738ae40dc2bf9dbad87541c579cc3fe852024fa
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: hook-needs-node-24
       claim:
         lines: 301-302
@@ -100,4 +100,4 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: .pre-commit-hooks.yaml
         lines: 57-62
         integrity: sha256-4b50062244217ee8e33835618a67c13fe6c7636841aa1d283edb879bd674f333
-        commit-sha: 4f40394e1be328a7bce1a85a7c77d65c7d42d89e
+        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7

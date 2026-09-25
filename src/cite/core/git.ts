@@ -91,6 +91,22 @@ export function gitClient(root: string): GitClient {
   return {
     available,
 
+    shallow,
+
+    // `merge-base --is-ancestor` exits 0 for yes and 1 for no. For a commit
+    // it does not have it exits 128, `Not a valid commit name`, which reads
+    // as git failing. So `hasCommit` answers first, and is required rather
+    // than an optimization: a commit git lacks is in no history it holds,
+    // which is a no, and exactly the pin a deleted branch leaves behind.
+    isAncestor: (commit, of) =>
+      once(`ancestor\0${commit}\0${of}`, async () => {
+        if (!(await hasCommit(commit))) return false;
+        const out = await run(root, ["merge-base", "--is-ancestor", "--end-of-options", commit, of]);
+        if (out.ok) return true;
+        if (out.code === 1) return false;
+        throw failed("merge-base", out);
+      }),
+
     head: () =>
       once("head", async () => {
         if (!(await available())) return null;
@@ -191,6 +207,13 @@ export const GIT_UNAVAILABLE_HISTORY =
  */
 export const PAGE_HISTORY_UNAVAILABLE =
   "the page history ends before the pin held; use fetch-depth: 0 to tell reanchored claims from changed ones";
+
+/**
+ * What `update --recommit` says, once, in a shallow clone. A commit the clone
+ * lacks may still be in the history, so only the containment test ran.
+ */
+export const SHALLOW_RECOMMIT =
+  "this clone is shallow, so --recommit re-recorded only commits that do not contain their lines. Fetch full history to check the rest.";
 
 /** What `add` and `update --accept` say, once, when a commit would have been recorded and git is not there. */
 export const GIT_UNAVAILABLE_COMMIT = "git is not available here, so the citation records no commit.";
