@@ -1,6 +1,6 @@
 # 0052: The `term` domain
 
-- **Status:** Implemented (#40, #TBD); superseded in part by 0063
+- **Status:** Implemented (#40, #124); superseded in part by 0063
 - **Serves:** Three journeys, all new to `../content-strategy/cujs.md`.
   - Sara · S6, "Define our terminology and make `concepts:` mean something".
   - Maya · M9, "Keep the terms and the docs in step".

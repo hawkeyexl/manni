@@ -1,6 +1,6 @@
 # 0063: the `graph` vocabulary
 
-- **Status:** Implemented (#121, #TBD)
+- **Status:** Implemented (#121, #124)
 - **Serves:** Two readers of one block.
   - Sara · S1, "Define our metadata standard as a schema". She composes the
     0023 drafts, and a block named for a tool reads as that tool's private
