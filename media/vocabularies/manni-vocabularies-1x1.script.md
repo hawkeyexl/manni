@@ -1,4 +1,4 @@
-# Video script: the manni vocabularies in the default set
+# The video script for the manni vocabularies in the default set
 
 **Objective:** Show that a bare `manni meta validate` now holds a page to the
 manni vocabularies. A page with a title and no description fails on
@@ -59,18 +59,19 @@ bash's `time`, or `node dist/cli.js`. The CLI was built by `npm run build` on
   every property of all thirteen default schemas, and the `no-proposal:`
   lines alone run to 42 rows. The three fields name one member of each of
   three vocabularies: core, audience and lifecycle.
-- **The wait is compressed, and the real time is on screen.** fill took
-  22.919 s. design.md allows compressing static wait only, provided the real
-  elapsed time is disclosed, and it names bash's own `time` output as the
-  strongest form. So `time` is typed, and its three lines are in frame,
-  unedited. The replay shortens the gap between Enter and the output to
-  2.0 s, a factor of 1/11.5, and the caption says the wait is shortened.
+- **The wait is compressed, and the real time is on screen.**
+
+  The fill run took just under 23 seconds. The design spec allows compressing
+  a static wait only when the real elapsed time is disclosed. It names bash's
+  own `time` output as the strongest form. So `time` is typed, and its three
+  lines stay in frame, unedited. The replay shortens the gap between Enter and
+  the output to 2 seconds. The caption says the wait is shortened.
   Typing and output run at 1x.
 - **Beat 4 types `head -n 8`, and the 8 is computed.** `capture.sh` reads the
   line number of `lifecycle:` from the filled file. The whole filled file
-  runs to 23 lines, which is too tall to read at this size. Lines 9 to 18 are
-  the `meta-provenance:` block that fill's own output in beat 3 already
-  showed, and beat 5's warning names it at line 9. The full file is kept as
+  runs to 23 lines. That is too tall to read at this size. Lines 9 to 18 are
+  the `meta-provenance:` block, which fill's own output in beat 3 already
+  showed. Beat 5's warning names it at line 9. The full file is kept as
   `capture/b4-page-full.txt`.
 - **The last validate passes with one warning, and the video keeps it.**
   fill records which model wrote which field as `meta-provenance`, in the
@@ -95,7 +96,7 @@ indent is 42, so no token decides the size. The typed fill command does, at
 
 The video uses **23 px / 75 columns**, one step below the largest fit. At
 24 px the fill command and beat 4's `description:` row each fill all 72
-columns, and the description row's rightmost ink sits 23 px from the frame
+columns. The description row's rightmost ink then sits 23 px from the frame
 edge. At 23 px every row keeps at least 40 px. fill's 84-character footer
 wraps at both sizes, at a space. Line height is 32 px. The tallest beat (3)
 is 20 rows, 640 px of the 838 px available.
@@ -111,7 +112,7 @@ to the next, with no transitions.
 | 2 | The default set checks it | `manni meta validate page.md`, `echo $?` | A bare validate now applies manni:core:1.0.0, which requires a description: exit 1. | 0:05.6-0:14.4 |
 | 3 | fill proposes the fields | `time manni meta fill page.md --fields description,audiences,lifecycle` | fill infers the description, plus audiences and lifecycle. It took 23 s; the wait is shortened. | 0:14.4-0:25.2 |
 | 4 | Written to the page | `head -n 8 page.md` | The three values are frontmatter now. The lines below them record which model wrote them. | 0:25.2-0:31.2 |
-| 5 | Valid: exit 0 | `manni meta validate page.md`, `echo $?` | The same bare validate passes: exit 0. The warning is ai-context asking for a sidecar. | 0:31.2-0:40.8 |
+| 5 | Valid, exit 0 | `manni meta validate page.md`, `echo $?` | The same bare validate passes, with exit 0. The warning is ai-context asking for a sidecar. | 0:31.2-0:40.8 |
 
 Beat 1 highlights the title. Beat 2 highlights the `description` error and
 its `[manni:core:1.0.0]` tag. Beat 3 highlights the three proposals and
