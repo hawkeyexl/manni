@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:lifecycle-strict:1.0.0-proposal.1",
+  "title": "manni lifecycle strict (1.0.0-proposal.1)",
+  "description": "The strict overlay for manni:lifecycle:1.0.0-proposal.2. Stack it beside the open draft. It narrows the form of values the draft already claims and requires no key.",
+  "type": "object",
+  "properties": {
+    "replaced-by": {
+      "type": "string",
+      "pattern": "^\\S(?:.*\\S)?$",
+      "description": "Strict holds the successor to one id, path or URL on one line with no surrounding space. A path may contain spaces."
+    },
+    "supersedes": {
+      "pattern": "^\\S(?:.*\\S)?$",
+      "items": {
+        "type": "string",
+        "pattern": "^\\S(?:.*\\S)?$"
+      },
+      "description": "Strict holds each superseded page to one id, path or URL on one line with no surrounding space, in the string form and the list form alike."
+    },
+    "remove-by": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$",
+      "description": "Strict holds the removal date to an RFC 3339 full date, `YYYY-MM-DD`. A year or month alone fails, and so does a timestamp."
+    }
+  }
+}
