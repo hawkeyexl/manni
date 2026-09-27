@@ -8,7 +8,7 @@ description: Every schema shipped with manni meta in one table, showing what eac
 import { Aside, Tabs, TabItem, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 {/* cite registry-forty-five-bundled-schemas */}
-manni meta bundles forty-five schemas. You reference any of them by id, with no file
+manni meta bundles forty-seven schemas. You reference any of them by id, with no file
 to write, no URL to host, and no network call at validation time. This page is
 the registry: what each one constrains, whether it requires anything, and which
 are applied when you pass no flags at all. Each id links to its own page, with
@@ -25,7 +25,9 @@ installed.
 | [`google:okf:0.1`](/manni/meta/reference/schemas/google-okf/) | `type`, `title`, `description`, `resource`, `tags`, `timestamp` | `type` | **Yes** | [`okf/0.1.json`](/manni/schemas/okf/0.1.json) |
 | [`passo-uno:seven-action:1.0`](/manni/meta/reference/schemas/passo-uno-seven-action/) | `action` | nothing | **Yes** | [`seven-action/1.0.json`](/manni/schemas/seven-action/1.0.json) |
 | [`diataxis:diataxis:1.0`](/manni/meta/reference/schemas/diataxis/) | `type` | `type` | No | [`diataxis/1.0.json`](/manni/schemas/diataxis/1.0.json) |
-| [`tgdp:templates:1.0`](/manni/meta/reference/schemas/tgdp-templates/) | `type` | `type` | No | [`tgdp/1.0.json`](/manni/schemas/tgdp/1.0.json) |
+| [`tgdp:templates:1.0`](/manni/meta/reference/schemas/tgdp-templates-1-0/) | `type` | `type` | No | [`tgdp/1.0.json`](/manni/schemas/tgdp/1.0.json) |
+| [`tgdp:templates:1.1`](/manni/meta/reference/schemas/tgdp-templates/) | `type` | `type` | No | [`tgdp/1.1.json`](/manni/schemas/tgdp/1.1.json) |
+| [`tgdp:templates-strict:1.1`](/manni/meta/reference/schemas/tgdp-templates/#strict-overlay) | `type`, closed to the 25 template slugs | nothing | No | [`tgdp-strict/1.1.json`](/manni/schemas/tgdp-strict/1.1.json) |
 | [`docusaurus:docs:3.10`](/manni/meta/reference/schemas/docusaurus-docs/) | 25 Docusaurus docs fields | nothing | No | [`docusaurus-docs/3.10.json`](/manni/schemas/docusaurus-docs/3.10.json) |
 | [`docusaurus:blog:3.10`](/manni/meta/reference/schemas/docusaurus-blog/) | 20 Docusaurus blog fields | nothing | No | [`docusaurus-blog/3.10.json`](/manni/schemas/docusaurus-blog/3.10.json) |
 | [`docusaurus:pages:3.10`](/manni/meta/reference/schemas/docusaurus-pages/) | 9 Docusaurus pages fields | nothing | No | [`docusaurus-pages/3.10.json`](/manni/schemas/docusaurus-pages/3.10.json) |
@@ -69,13 +71,13 @@ installed.
 | [`manni:citations-strict:1.0.0`](/manni/meta/reference/schemas/manni-citations/#strict-overlay) | the form of `citations` | nothing | No | [`citations-strict/1.0.0.json`](/manni/schemas/citations-strict/1.0.0.json) |
 
 {/* cite registry-all-draft-2020-12-and-builtin-refs */}
-All forty-five use [Draft
+All forty-seven use [Draft
 2020-12](/manni/meta/reference/schema-resolution/#dialects) and are [built-in
 references](/manni/meta/reference/schema-resolution/#reference-kinds). A typo in an
 id is reported as an unknown built-in rather than a missing file.
 
 {/* cite registry-forty-four-allow-additional-properties */}
-Forty-four of them allow additional properties. `agentskills:skill:1.0` is the
+Forty-six of them allow additional properties. `agentskills:skill:1.0` is the
 one exception, and not out of strictness. The tooling that packages a skill for
 distribution *hard-errors* on a key outside the standard's six rather than
 ignoring it. A schema that tolerated unknown keys would pass exactly the file
@@ -138,6 +140,8 @@ https://hawkeyexl.github.io/manni/schemas/graph/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/graph-strict/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/citations/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/citations-strict/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/tgdp/1.1.json
+https://hawkeyexl.github.io/manni/schemas/tgdp-strict/1.1.json
 ```
 
 {/* cite registry-published-urls-have-three-jobs */}
@@ -291,7 +295,7 @@ full, so a page using the object form fails OKF:
 ```
 
 If your docs set uses object tags, pair the Docusaurus schema with
-`diataxis:diataxis:1.0` or `tgdp:templates:1.0` rather than with OKF, or use the
+`diataxis:diataxis:1.0` or `tgdp:templates:1.1` rather than with OKF, or use the
 string form. Those two claim only `type`. `title` and `description` also appear
 in both, and those definitions agree.
 </Aside>
@@ -306,7 +310,7 @@ compose](/manni/meta/reference/taxonomy-schemas/#which-ones-compose).
 ## What runs when you pass no flags
 
 {/* cite registry-only-two-in-the-default-set */}
-Only two of the forty-five are in the default set:
+Only two of the forty-seven are in the default set:
 
 ```text
 google:okf:0.1 + passo-uno:seven-action:1.0

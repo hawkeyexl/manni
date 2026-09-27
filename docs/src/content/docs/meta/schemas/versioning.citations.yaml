@@ -83,9 +83,9 @@ docs/src/content/docs/meta/schemas/versioning.mdx:
         integrity: sha256-8d4b7b7cfd020313de01f1ed856cbc929ad665e5c342a0186293651320621f29
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 349
+        lines: 355
         integrity: sha256-f5e3a939a781ffcfd02b1e0b1fc055d28d3a1ed1a39efbe53a978870587c0b1d
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bb0ad587be4967e7033b5cfc112708fece1f2fe4
     - id: builtin-forks-to-a-local-copy
       claim:
         integrity: sha256-7888cd94054ec3a216d12730105adcf31bd6554656a19299f1d93869a7938395

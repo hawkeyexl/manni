@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/index.mdx:
   citations:
     - id: reference-index-forty-five-built-ins
       claim:
-        integrity: sha256-14b875c3185c8b0444a344deecbaeac2785f3abad143b5d7d5b9d0f9587e74ca
+        integrity: sha256-79b93ec125506d6328a4470da962162f2a1d98fa5f63259c10d499fb5b72ec74
       source:
         file: src/meta/core/schema-registry.ts
         lines: 77-123

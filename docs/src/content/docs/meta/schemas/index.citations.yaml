@@ -30,17 +30,17 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-546c0aaae16911ec5ea485d3e113abd28e488fd018c3337df2e9a3fba3a4ee89
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1148-1152
+        lines: 1154-1158
         integrity: sha256-58dcb64f18f7ddeb4a5175d21bb6cb92ee33e473384c5aaca08a9395140bea5e
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bb0ad587be4967e7033b5cfc112708fece1f2fe4
     - id: the-three-reference-kinds
       claim:
         integrity: sha256-a4fd7bcc0a486a118551bbf7e3bbabc59aa43f8d0e60ef4a49045d1be70dec66
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 349-362
+        lines: 355-368
         integrity: sha256-2f40a8e1715136cf70277d50252b4172f3fd9106e42a5fccd6914c78d0d6f32c
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bb0ad587be4967e7033b5cfc112708fece1f2fe4
     - id: document-names-its-own-schema
       claim:
         integrity: sha256-2e9e70750388d767b7562acdee44aca8ea482909e69207e404a25dca04fc9d7b
@@ -75,15 +75,6 @@ docs/src/content/docs/meta/schemas/index.mdx:
         lines: 8-21
         integrity: sha256-ecd0e48ef3b4b3af9f40019b012db5458414c1494d41b4da7513f4bcc7d6c800
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
-    - id: tgdp-25-template-slugs
-      claim:
-        lines: 210
-        integrity: sha256-b91f28dc42aa5721150acedd43372bde4868238b764414327e883777be28275f
-      source:
-        file: src/meta/schemas/tgdp/1.0.json
-        lines: 8-41
-        integrity: sha256-2bf3a1a31a7c4c076a2cf565b5112d76c06ffa114ae0e434d3a8a939d2f427e4
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: diataxis-four-forms
       claim:
         lines: 209
@@ -104,7 +95,7 @@ docs/src/content/docs/meta/schemas/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: manni-ships-45-builtin-schemas
       claim:
-        integrity: sha256-63d63526f7ec8cf5131b97a6623aed44c008f6564dab718ab904da6b6b0bdbfc
+        integrity: sha256-5d0861b39ce9e64bc9209d49ee6ce7bcd29c13da309cf77ca506b51a679f98ef
       source:
         file: src/meta/core/schema-registry.ts
         lines: 77-123
@@ -180,3 +171,11 @@ docs/src/content/docs/meta/schemas/index.mdx:
         lines: 625-627
         integrity: sha256-b8f39d6d21f30a400cabe25059d553fc2d70ec3f6633292881c053d55975c4ca
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+    - id: tgdp-25-template-slugs
+      claim:
+        lines: 210
+        integrity: sha256-721af00a2321ac7e27d280d7dfee6c57afccfe25347a801f3ed128c0a9250649
+      source:
+        file: src/meta/schemas/tgdp/1.1.json
+        lines: 8-48
+        integrity: sha256-830fab2b6925f714dcbc475689bc2803e3640abd0a0a8544107fbbea908ebecc

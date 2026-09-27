@@ -29,7 +29,7 @@ docs/src/content/docs/meta/index.mdx:
         commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
     - id: forty-five-built-in-schemas
       claim:
-        integrity: sha256-0bcaae9147624ccb3c92313feda81515fb026399d94f7cc20efbaf2886171e35
+        integrity: sha256-f1d6abfbc94bfaaf4918aa31b526fa8b929987ce3b1782bf3cad9946b473e906
       source:
         file: src/meta/core/schema-registry.ts
         lines: 77-123

@@ -277,6 +277,115 @@ describe("tgdp:templates:1.0", () => {
   });
 });
 
+describe("tgdp:templates:1.1 and its strict overlay", () => {
+  // 1.0 closes `type` in one file. 1.1 splits that check in two: the open
+  // schema requires a non-empty `type` and recommends the 25 slugs, and the
+  // strict overlay closes `type` to them. 1.0 stays published as it was.
+  const OPEN = "tgdp:templates:1.1";
+  const STRICT = "tgdp:templates-strict:1.1";
+
+  async function checkOpen(fixture: string, cliSchemas: string[]) {
+    const { results } = await runValidate({
+      inputs: [`test/fixtures/tgdp-open/${fixture}`],
+      cliSchemas,
+      cwd: root,
+      noConfig: true,
+    });
+    const r = results[0];
+    if (!r) throw new Error(`no result for ${fixture}`);
+    return r;
+  }
+
+  it("accepts a TGDP slug, open and strict alike", async () => {
+    expect((await checkOpen("recommended-slug.md", [OPEN])).errors).toEqual([]);
+    expect(
+      (await checkOpen("recommended-slug.md", [OPEN, STRICT])).errors,
+    ).toEqual([]);
+  });
+
+  it("accepts every TGDP slug under the overlay", async () => {
+    for (const type of TGDP_SLUGS) {
+      const { results } = await runValidate({
+        inputs: ["-"],
+        as: "markdown",
+        stdinContent: `---\ntype: ${type}\n---\n`,
+        cliSchemas: [OPEN, STRICT],
+        cwd: root,
+        noConfig: true,
+      });
+      expect(results[0]?.ok, `type: ${type}`).toBe(true);
+    }
+  });
+
+  it("accepts a page type TGDP does not publish, until the overlay joins", async () => {
+    expect((await checkOpen("unpublished-type.md", [OPEN])).errors).toEqual([]);
+
+    const both = await checkOpen("unpublished-type.md", [OPEN, STRICT]);
+    expect(both.ok).toBe(false);
+    expect(both.errors.length).toBeGreaterThan(0);
+    for (const e of both.errors) {
+      expect(e.schema).toBe(STRICT);
+      expect(e.instancePath).toBe("/type");
+    }
+  });
+
+  it("rejects an empty type", async () => {
+    const r = await checkOpen("empty-type.md", [OPEN]);
+    expect(r.ok).toBe(false);
+    expect(r.errors.every((e) => e.schema === OPEN)).toBe(true);
+    expect(
+      r.errors.some(
+        (e) => e.keyword === "minLength" && e.instancePath === "/type",
+      ),
+    ).toBe(true);
+  });
+
+  it("requires type", async () => {
+    const r = await checkOpen("missing-type.md", [OPEN]);
+    expect(r.ok).toBe(false);
+    expect(r.errors[0]?.schema).toBe(OPEN);
+    expect(r.errors[0]?.keyword).toBe("required");
+    expect(r.errors[0]?.message).toContain("type");
+  });
+
+  it("leaves tgdp:templates:1.0 closed", async () => {
+    const r = await checkOpen("unpublished-type.md", [TGDP]);
+    expect(r.ok).toBe(false);
+    expect(r.errors[0]?.schema).toBe(TGDP);
+    expect(r.errors[0]?.instancePath).toBe("/type");
+  });
+
+  it("recommends and closes to exactly the published vocabulary", async () => {
+    const open = (await loadSchema(OPEN)) as {
+      properties: { type: { anyOf: { enum?: string[] }[] } };
+    };
+    const recommended = open.properties.type.anyOf.find(
+      (b) => b.enum !== undefined,
+    )?.enum;
+    expect([...(recommended ?? [])].sort()).toEqual([...TGDP_SLUGS].sort());
+
+    const strict = (await loadSchema(STRICT)) as {
+      properties: { type: { enum: string[] } };
+    };
+    const closed = strict.properties.type.enum;
+    expect([...closed].sort()).toEqual([...TGDP_SLUGS].sort());
+    expect(new Set(closed).size).toBe(closed.length);
+  });
+
+  it("shapes the overlay as the manni overlays are shaped", async () => {
+    const s = await loadSchema(STRICT);
+    expect(s.$schema).toBe("https://json-schema.org/draft/2020-12/schema");
+    expect(s.$id).toBe(STRICT);
+    expect(s.title).toBe("The Good Docs Project templates strict overlay v1.1");
+    expect(s.type).toBe("object");
+    expect(s.additionalProperties).toBe(true);
+    expect(s.required).toBeUndefined();
+    const text = JSON.stringify(s);
+    expect(text).not.toContain("x-manni-location");
+    expect(text).not.toContain('"format"');
+  });
+});
+
 describe("Seven-Action does not require its key", () => {
   // It is the only one of the three that checks a value without demanding it;
   // that is what makes it safe to carry in the default set.
