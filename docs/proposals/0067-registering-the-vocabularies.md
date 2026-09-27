@@ -1,6 +1,6 @@
 # 0067: registering the vocabularies at 1.0.0, without `locale`
 
-- **Status:** Proposed
+- **Status:** Implemented (#130)
 - **Serves:** Sara · S1, "Define our metadata standard as a schema", and
   Maya · M1, "Stand up metadata validation for my repo". Both name a schema
   by id today only when it is a built-in.
