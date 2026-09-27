@@ -1,0 +1,27 @@
+docs/src/content/docs/meta/reference/schemas/diataxis.mdx:
+  citations:
+    - id: taxonomy-diataxis-is-not-in-the-default-set
+      claim:
+        integrity: sha256-e106e9e77a5193038dc625927888c306a90c8dae2661856468d11c0a396d7d58
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 25-31
+        integrity: sha256-e422d6fee4c027743e2ef6b44e94c3be5ee5aa4745ebfce5ad32dcc5950e202a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-diataxis-requires-and-constrains-type
+      claim:
+        integrity: sha256-850d50f342f367163a19e8ebbd1f3996adce5b76657739a221f195351d7190d3
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 8-13
+        integrity: sha256-eb032decab002a44515845a44957313bdd14e12d9f4c077a7a92c0dfbaefbbe4
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-diataxis-four-forms
+      claim:
+        lines: 46-49
+        integrity: sha256-c7965ad03d78f749c06dcf09664a098fce99532ecf9378400e484c070cddf84f
+      source:
+        file: src/meta/schemas/diataxis/1.0.json
+        lines: 12-13
+        integrity: sha256-1175148898279c096d485707094e5fd08c65975f82f548472da002a2d4275f58
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

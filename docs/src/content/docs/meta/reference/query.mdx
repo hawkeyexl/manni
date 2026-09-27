@@ -192,9 +192,7 @@ Views were disjoint. A file whose own `$schema` outranked its override dropped
 out of the view with a notice on stderr. And a plain read had to resolve
 schemas to know what a view contained. Membership now follows the config's
 globs instead, which is why views can overlap, why the notice is gone, and why
-a read resolves nothing. [Proposal 0041](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0041-collections.md)
-records the reasoning; [0027](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0027-named-collections.md)
-records what it replaced.
+a read resolves nothing.
 </Aside>
 
 <Aside type="note" title="Checks see the same views">

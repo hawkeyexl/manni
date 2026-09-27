@@ -1,0 +1,300 @@
+---
+title: manni citations vocabulary
+description: "The manni:citations:1.0.0 schema pins a sentence to the source lines it rests on, by a hash at each end, so a drift check can say which claim went stale."
+sidebar:
+  label: "manni:citations:1.0.0"
+---
+
+**Built-in id:** `manni:citations:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/citations/1.0.0.json`.
+A `$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+**The question it answers: what do this page's claims rest on?** Citations is
+a common vocabulary for pinning a sentence to the source lines it was written
+from. Any drift check can implement it. The check hashes the cited lines the
+same way, compares them against the pin, and reports the sentence that
+stopped being true. Reach for it when a page states facts about code or other
+files that change under it.
+
+`manni cite` implements the vocabulary. It reads this registered schema and
+checks each entry against it, so the tool and `manni meta` never disagree on
+the shape. The [citations reference](/manni/cite/reference/citations/)
+documents the vocabulary as `manni cite` runs it, including every finding it
+reports.
+
+## Use it
+
+Name the id in `manni.config.yaml`. The vocabularies are not in the default
+set, so a run checks citations only where the config names it.
+
+```yaml
+meta:
+  schemas:
+    - manni:core:1.0.0
+    - manni:citations:1.0.0
+```
+
+The schema checks the shape of any `citations` a page carries, and a page
+without the key passes. A house schema that requires citations reaches the
+vocabulary by `$ref`.
+
+```json
+{ "allOf": [{ "$ref": "manni:citations:1.0.0" }], "required": ["citations"] }
+```
+
+See [require citations](/manni/cite/set-up/require-citations/) for that setup
+end to end.
+
+## Fields
+
+Citations claims one page-level key, `citations`.
+
+| Field | Type | Required | Location | Notes |
+|---|---|---|---|---|
+| `citations` | non-empty list of entries | no | `external` | One entry per claim or pin. A page with no citations omits the key, since an empty list is not a declaration |
+
+An entry is a closed object with one required block, `source`. The optional
+`claim` block is the other end, and both ends carry a line range and a hash.
+
+| Entry field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | kebab case, unique per page | when a marker names the entry | What a body marker names, and what a finding is reported under |
+| `claim` | block | no | The page text the citation supports. Absent, the entry is a bare pin, or a marker with no drift check on its sentence |
+| `claim.lines` | `L` or `"L1-L2"` | unless a marker names the entry | Lines of the page body, counted after the frontmatter, so editing the frontmatter never moves a claim |
+| `claim.integrity` | `sha256-` and 64 hex digits | **yes**, inside `claim` | The claimed lines hashed under the one rule. Always plain, because the page is public |
+| `source` | block | **yes** | The lines the claim rests on |
+| `source.file` | path, or `~` and at least 82 base64url characters | **yes** | A repo-root-relative posix path, or that path encrypted under the family encryption key |
+| `source.lines` | `L` or `"L1-L2"` | no | File lines, 1-based and inclusive. Absent, the whole file is pinned. Readable even when `file` is encrypted |
+| `source.integrity` | `sha256-` or `hmac-sha256-`, and 64 hex digits | **yes** | The pin over the cited lines. `hmac-sha256-` goes with an encrypted `file`, and `sha256-` with a plain one |
+| `source.commit-sha` | 7 to 64 hex digits | no | The commit the source pin was taken at. Tooling writes the full hash |
+| `quote` | boolean, default `false` | no | The claim is a fenced block that reproduces the source lines |
+
+The Location column is the `x-manni-location` mark the key carries. `page`
+means the value belongs in the document's own metadata and reaches delivered
+output. `external` means it belongs in the collection's external-metadata
+manifest. A field is `page` when an agent fetching the page acts on it.
+Citations belong to CI, because a drift check reads them and an agent
+reading the page does not. The fields inside an entry carry no mark of their
+own. See [field location](/manni/meta/schemas/field-location/) for how the
+marks are used.
+
+A line range is an integer for one line, or `"L1-L2"` for several. There is
+no line 0. That the end line is not before the start line is a rule on
+implementations, because a pattern cannot compare two numbers. The same holds
+for unique ids across a list and for pairing the pin prefix with `file`.
+`manni cite check` reports each of those as
+[`entry-invalid`](/manni/cite/reference/citations/#entry-invalid).
+
+The `source.file` pattern rejects an absolute path, a drive letter, a
+backslash, a `.` or `..` segment, an empty segment and a URL. So a source that
+cannot be resolved fails at the schema. Spaces and dots inside a segment are
+fine, and `docs/release notes/v1.2.md` is a file.
+
+**The hashing rule** is stated once, in the schema's `source.integrity`
+description, and applies to both ends. It decodes UTF-8, drops a byte-order
+mark, and turns CRLF into LF. The cited lines are joined with LF and no
+trailing LF, and trailing whitespace is kept. An encrypted `file` is pinned
+with an HMAC under a key derived from the family encryption key. The
+[hashing rule](/manni/cite/reference/citations/#the-hashing-rule) and
+[encrypted sources](/manni/cite/reference/citations/#encrypted-sources) give
+the full construction.
+
+**Markers.** A claim can be anchored from the body by a marker instead of by
+`claim.lines`. A marker is one comment naming one or more entries by id,
+written in the format's own comment syntax. The entry itself lives in the
+frontmatter or a sidecar manifest, never in the body. Metadata validation sees
+the entries only. The [markers](/manni/cite/reference/citations/#markers)
+section lists every form and how a marker anchors its text.
+
+## Additional properties
+
+The page root is allowed extra keys, so sibling tools' keys and the other
+vocabularies' keys pass beside `citations`. The `citation-` prefix is
+reserved, so any `citation-*` key at the page root fails. An entry, its
+`claim` and its `source` are each closed, so an unknown field inside them
+fails instead of being ignored.
+
+## Example
+
+One sentence on body line 1, pinned to one source line:
+
+```yaml
+---
+title: Request limits
+description: The limits the client applies to every request.
+citations:
+  - id: fetch-timeout
+    claim:
+      lines: 1
+      integrity: sha256-c41f09aa8ba1a04a3d5a0a0dbb1d9c1e8e9e26a1c5f0b2dd4e9a0c17f4f19aab
+    source:
+      file: src/limits.ts
+      lines: 2
+      integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f
+      commit-sha: 3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182
+---
+The fetch timeout is 10 seconds.
+```
+
+A bare pin says the page rests on a whole file:
+
+```yaml
+citations:
+  - source:
+      file: src/limits.ts
+      integrity: sha256-aebba92fe4cddf100cc781281d1f24ad7c234b6189413e2130d5fe71ed86e023
+```
+
+A marker anchors an entry to a paragraph. In markdown:
+
+```md
+<!-- cite retries -->
+Retries default to 3, and the count is not configurable.
+```
+
+In MDX:
+
+```mdx
+{/* cite retries */}
+Retries default to 3, and the count is not configurable.
+```
+
+An encrypted entry cites a private source from a public page. The ciphertext
+replaces the path, and the pin is keyed by the same family encryption key. So
+the page carries neither the path nor a verifier for the line.
+
+```yaml
+citations:
+  - id: retries
+    quote: true
+    source:
+      file: "~AQ…"
+      lines: 1-3
+      integrity: hmac-sha256-…
+```
+
+## A common mistake
+
+Writing `line` for `lines` inside `source` fails, because the block is closed.
+
+```yaml
+---
+title: Request limits
+description: The limits the client applies to every request.
+citations:
+  - id: fetch-timeout
+    source:
+      file: src/limits.ts
+      line: 2
+      integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:citations:1.0.0
+✗ page.md
+    /citations/0/source  must NOT have additional property 'line'  (line 6)  [manni:citations:1.0.0]
+    /citations  warning "citations" is stored in the page; manni:citations:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+
+1 file checked, 0 passed, 1 failed, 1 error, 1 warning
+```
+
+The exit code is 1. The warning comes from the `external` mark, since
+`--no-config` gives the page no manifest to hold the key.
+
+## Design decisions
+
+- **A pin is a record of the past.** A hash of lines that sit right there
+  looks derivable, and it is not. The pin says what the lines were when the
+  sentence was written. The check compares that record with the file now.
+  Recompute it on every run and there is nothing to compare against. It is the
+  same object as the evals `generated-assertion-hash` and the `integrity` pins
+  on a config's schema entries.
+- **`integrity`, with an algorithm prefix.** The name says what the value is
+  rather than how it is computed, as with the config's schema pins and
+  Subresource Integrity. So a second algorithm can arrive without a second
+  field. It is hex rather than base64, because the family's other hash is hex.
+- **One normalization rule, up front.** CRLF and a byte-order mark are not
+  changes. A check that runs on every push cannot afford a page of false
+  findings on one platform. Trailing whitespace is kept, because a trailing
+  space is a change.
+- **An encrypted path, under the family's key.** A checkout with the family
+  encryption key and the files can decrypt the path and read the lines, so it
+  needs no second secret. The encryption is deterministic, so one path under
+  one key always gives one ciphertext. A public site therefore reveals how
+  often a private file is cited, and that cost is accepted.
+- **A keyed pin for an encrypted source.** A plain hash over a short private
+  line is a verifier a reader can run against guesses. A keyed pin closes
+  that, at the cost that only a checkout with the key can check the pin. It
+  reads `hmac-sha256-`, so the prefix says what the value is.
+- **The claim is pinned, not copied.** A claim is a line range and a hash, the
+  same shape as the source end. A pinned range cannot be ambiguous on the page
+  it was taken from, and a copied sentence could be.
+- **Entries in one place, markers as anchors.** An entry lives in the
+  frontmatter or a sidecar manifest, and a marker only names it. So a source is
+  never written into the body, and a public page never carries a private path
+  twice.
+- **A closed entry and a guarded prefix.** The entry rejects unknown fields,
+  so `line: 2` beside `file` fails instead of being ignored. The page root stays
+  open for sibling vocabularies. The `citation-` prefix is reserved, so a
+  misspelled `citation-comit` fails the way a closed container would make it.
+- **A citation is finer than `source-of-truth`.** The
+  [stewardship](/manni/meta/reference/schemas/manni-stewardship/) key names
+  the file a page answers to. A citation names the lines a sentence answers to.
+
+## Strict overlay
+
+**Strict overlay id:** `manni:citations-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/citations-strict/1.0.0.json`.
+The overlay holds only what strict adds. It narrows the form of a value that is
+present and requires no key, so a page with no `citations` still passes it.
+Hashes stay lowercase hex in both.
+
+| Field | Strict adds |
+|---|---|
+| `source.commit-sha` | A full commit hash, 40 hex digits, or 64 in a SHA-256 repository |
+| `source.integrity` | `hmac-sha256-` exactly when `file` is encrypted, and `sha256-` when it is plain |
+
+List both ids to adopt it:
+
+```yaml
+meta:
+  schemas:
+    - manni:citations:1.0.0
+    - manni:citations-strict:1.0.0
+```
+
+Each schema is checked on its own, and a finding names the one that produced
+it. A strict-only failure reads as one.
+
+```yaml
+---
+title: Request limits
+description: The limits the client applies to every request.
+citations:
+  - id: fetch-timeout
+    source:
+      file: src/limits.ts
+      lines: 2
+      integrity: hmac-sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f
+      commit-sha: 3f9c2a1
+---
+```
+
+```text
+$ manni meta validate limits.md --no-config -s manni:core:1.0.0 -s manni:citations:1.0.0 -s manni:citations-strict:1.0.0
+✗ limits.md
+    /citations/0/source/integrity  must match pattern "^sha256-"  (line 9)  [manni:citations-strict:1.0.0]
+    /citations/0/source  must match "else" schema  (line 6)  [manni:citations-strict:1.0.0]
+    /citations/0/source/commit-sha  must match pattern "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"  (line 10)  [manni:citations-strict:1.0.0]
+    /citations  warning "citations" is stored in the page; manni:citations:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+
+1 file checked, 0 passed, 1 failed, 3 errors, 1 warning
+```
+
+The exit code is 1. The open vocabulary accepts both values, so the overlay
+alone fails the page, while `manni cite check` reports the mismatched prefix
+as `entry-invalid` either way.

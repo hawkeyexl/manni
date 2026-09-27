@@ -1,0 +1,190 @@
+---
+title: manni structure vocabulary
+description: "The manni:structure:1.0.0 schema, which says what a page connects to, such as products, concepts, and other pages."
+sidebar:
+  label: "manni:structure:1.0.0"
+---
+
+**Built-in id:** `manni:structure:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/structure/1.0.0.json`.
+A `$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+**The question it answers: what does this page connect to?** Structure
+describes relationships between pages, which no generator owns. It never
+describes position in a navigation tree, which every generator does. There is
+no ordering, no parent, and no nav title here. Reach for it when readers or
+agents move from one page to the next, or when one page covers some products
+and not others.
+
+## Use it
+
+Name the id in `manni.config.yaml`. The vocabularies are not in the default
+set, so a run checks structure only where the config names it. It stacks with
+[core](/manni/meta/reference/schemas/manni-core/).
+
+```yaml
+meta:
+  schemas:
+    - manni:core:1.0.0
+    - manni:structure:1.0.0
+```
+
+## Fields
+
+| Field | Type | Location | Notes |
+|---|---|---|---|
+| `applies-to` | string or list | `page` | Flat product, variant, or version labels, such as `operator-1.4` or `kubernetes` |
+| `not-applicable-to` | string or list | `page` | The exclusion `applies-to` alone cannot state. A page for `operator-1.4` names `operator-1.4-fips` here |
+| `concepts` | string or list | `page` | Controlled glossary terms. Core's `keywords` holds free words, and this is the curated list |
+| `prerequisites` | string or list | `page` | Pages, ids, or capabilities the reader needs first |
+| `next-steps` | string or list | `page` | Sensible follow-ons, unordered. Several are allowed, unlike the generator's single `next`. A more advanced page on the same topic goes here |
+| `related-pages` | string or list | `page` | Related pages, ids, or URLs. A site renders this list as "See also" |
+
+No field is required. Every field accepts one non-empty string, or a non-empty
+list of unique non-empty strings.
+
+The Location column is the `x-manni-location` mark each field carries. `page`
+means the value belongs in the document's own metadata and reaches delivered
+output. `external` means it belongs in the collection's external-metadata
+manifest. A field is `page` when an agent fetching the page acts on it. Every
+structure field passes that test, because each is context an agent assembles,
+or a link it follows, from one page to the next. See
+[field location](/manni/meta/schemas/field-location/) for how the marks are
+used.
+
+## Additional properties
+
+Allowed. The root is open, so a generator's keys and the other vocabularies'
+keys pass beside structure's. Structure checks only the six keys it claims.
+
+## Example
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+applies-to: [operator-1.4, kubernetes]
+not-applicable-to: [operator-1.4-fips]
+concepts: [Operator, Helm chart]
+prerequisites: [create-api-token]
+next-steps: [verify-rollout, configure-alerts]
+related-pages: [operator-architecture]
+---
+```
+
+## A common mistake
+
+A template that leaves an empty list behind fails. An empty list says nothing,
+so every list here needs at least one item.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+related-pages: []
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:structure:1.0.0
+✗ page.md
+    /related-pages  must NOT have fewer than 1 items  (line 4)  [manni:structure:1.0.0]
+    /related-pages  must match "then" schema  (line 4)  [manni:structure:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 2 errors
+```
+
+The exit code is 1. Remove the key, or give it a value. A label listed twice
+fails the same way, with `must NOT have duplicate items`.
+
+## Design decisions
+
+- **This vocabulary stops at relationships.** A field that duplicates
+  something the generator already owns under a second name is worse than a
+  collision, because a collision at least fails loudly. `next-steps` is
+  several unordered suggestions. The generator's `next` and `prev` position
+  keys are a different fact and stay with the generator.
+- **"A more advanced page" is a `next-steps` entry.** There is no `advanced`
+  or `deeper-dive` key and no ordering among next steps. "More advanced" is a
+  claim about the reader, not about the page. It is derived instead. Two pages
+  share `concepts` while pointing at
+  [`personas`](/manni/meta/reference/schemas/manni-audience/) of different
+  levels. The same reasoning keeps reader `expertise` out of this family,
+  since level belongs to the persona definitions a page points at. The cost is
+  that a docs set with no persona definitions cannot derive it. The audience
+  vocabulary makes the same trade for teams starting out.
+- **"See also" is a label for `related-pages`.** The heading most docs sites
+  render is editorial, and the key underneath it stays semantic. There is no
+  `see-also` alias. One fact reachable by two keys is the kind of second
+  surface this family exists to prevent, and an alias is permanent. A style
+  guide might split "See also", for the same product, from "Learn more", off
+  site. `related-pages` accepts URLs, so that split is a rendering decision
+  over one field.
+- **`applies-to` is flat.** It has no named dimensions such as `product:` or
+  `deployment:`. An org that needs axes prefixes its labels, as in
+  `deploy:kubernetes`, or overlays its own schema.
+- **The negative exists at both levels.** `not-applicable-to` sits beside
+  `applies-to` here and inside the `graph` block. A page states "not the FIPS
+  build" without opening a `graph` block for one field. JSON Schema cannot
+  compare two sibling lists. So a page naming the same label on both sides
+  passes here, and the overlap is a graph-layer (SHACL) check at both levels.
+- **Three fields are fallbacks for the `graph` block.** `applies-to`,
+  `not-applicable-to`, and `concepts` share names and shapes with their
+  counterparts inside the
+  [graph vocabulary](/manni/meta/reference/schemas/manni-graph/)'s block. The
+  deeper declaration wins. When the `graph` block sets a fact, its value is
+  used. When the block is silent, the page-level field feeds the graph. Both
+  sides accept the same non-empty, duplicate-free list shape. So a promoted
+  page-level value never produces a document the `graph` block rejects.
+- **`related-pages` says what it points at.** The suffix exists because
+  `graph.related-concepts` relates concepts. Each name names its target.
+
+## Strict overlay
+
+**Strict overlay id:** `manni:structure-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/structure-strict/1.0.0.json`.
+The overlay holds only what strict adds. It narrows the form of a value that is
+present and requires no key. Each rule applies to the string form and to every
+item of the list form.
+
+| Field | Strict adds |
+|---|---|
+| `applies-to`, `not-applicable-to` | A flat label of lowercase letters, digits, dots and hyphens, starting with a letter or digit. One prefix such as `deploy:` may lead it, so `operator-1.4` and `deploy:k8s-1.30` pass |
+| `prerequisites`, `next-steps`, `related-pages` | One id, path or URL on one line, with no leading or trailing whitespace. A path may contain spaces |
+
+`concepts` is the same in both, because a glossary label may contain spaces.
+
+List both ids to adopt it:
+
+```yaml
+meta:
+  schemas:
+    - manni:structure:1.0.0
+    - manni:structure-strict:1.0.0
+```
+
+Each schema is checked on its own, and a finding names the one that produced
+it. A strict-only failure reads as one.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+applies-to: [Operator 1.4, kubernetes]
+related-pages: " operator-architecture"
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:structure:1.0.0 -s manni:structure-strict:1.0.0
+✗ page.md
+    /applies-to/0  must match pattern "^(?:[a-z0-9-]+:)?[a-z0-9][a-z0-9.-]*$"  (line 4)  [manni:structure-strict:1.0.0]
+    /related-pages  must match pattern "^\S(?:.*\S)?$"  (line 5)  [manni:structure-strict:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 2 errors
+```
+
+The open vocabulary accepts both values, so the overlay alone fails the page.

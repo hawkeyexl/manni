@@ -1,0 +1,125 @@
+---
+title: Sphinx docinfo schema
+description: The sphinx:docinfo:9.1 schema shipped with manni meta, covering the five file-wide metadata fields Sphinx reads from a reStructuredText page, and the finding a non-integer tocdepth produces.
+sidebar:
+  label: "sphinx:docinfo:9.1"
+---
+
+**Built-in id:** `sphinx:docinfo:9.1`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/sphinx/9.1.json`. A
+`$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+import { Aside } from '@astrojs/starlight/components';
+
+`sphinx:docinfo:9.1` checks the file-wide metadata Sphinx 9.1 reads from an
+`.rst` page. It requires nothing, so it can only fail a page on the shape of a
+value the page already carries. It is one of the [platform
+schemas](/manni/meta/reference/platform-schemas/), which say what a generator
+accepts rather than what your team agreed.
+
+{/* cite platform-sphinx-requires-nothing */}
+Sphinx reads file-wide metadata from a field list at the top of the document.
+Every field is optional, and flag fields are written bare.
+
+| Property | Value |
+|---|---|
+| Id | `sphinx:docinfo:9.1` |
+| Title | Sphinx file-wide metadata v9.1 |
+| Files it fits | `.rst` |
+| Dialect | [Draft 2020-12](/manni/meta/reference/schema-resolution/#dialects) |
+| Required fields | None |
+| Additional properties | Allowed (`additionalProperties: true`) |
+| Reference kind | [builtin](/manni/meta/reference/schema-resolution/#reference-kinds) |
+| On by default | No |
+| Upstream reference | [Field lists](https://www.sphinx-doc.org/en/master/usage/restructuredtext/field-lists.html) |
+| JSON | [`sphinx/9.1.json`](/manni/schemas/sphinx/9.1.json) |
+
+## Use it
+
+Name the id for the reStructuredText pages in `manni.config.yaml`. An override
+keyed on the extension keeps it off any Markdown in the same tree:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: "**/*.rst"
+      schemas:
+        - sphinx:docinfo:9.1
+```
+
+For a one-off run, pass the id directly:
+
+```bash
+manni meta validate docs/ -s sphinx:docinfo:9.1
+```
+
+A Sphinx tree that also carries MyST pages splits the two by extension, as
+[composing with a
+vocabulary](/manni/meta/reference/platform-schemas/#composing-with-a-vocabulary)
+shows.
+
+## Fields
+
+| Field | Type | Notes |
+|---|---|---|
+| `tocdepth` | integer | Local toctree depth. Does not affect the global sidebar. |
+| `orphan` | boolean | Suppresses the not-in-any-toctree warning. |
+| `nocomments` | boolean | Suppresses the comment form. |
+| `no-search` | boolean | Excludes the page from full-text search. |
+| `nosearch` | boolean | Deprecated spelling of `no-search`. |
+
+{/* cite platform-sphinx-docinfo-values-are-strings */}
+The set is small on purpose. Sphinx parses every docinfo value as a string, so a
+field list cannot carry a list or a mapping. Anything richer belongs somewhere
+else.
+
+<Aside type="note" title="`nosearch` is annotated, not rejected">
+Sphinx renamed `nosearch` to `no-search` in 7.3 and still accepts the old
+spelling. The schema marks it `deprecated` and names the replacement in its
+description, but does not fail it. A schema that failed the build on a spelling
+the tool accepts would be asserting something untrue about the tool.
+</Aside>
+
+## Additional properties
+
+Allowed. A field Sphinx does not define passes unchecked.
+
+## Example page
+
+Three fields in the leading field list, two of them bare flags. This is
+`test/fixtures/platform/sphinx-valid.rst`, and it passes.
+
+```rst title="docs/installation.rst"
+Installation
+============
+
+:tocdepth: 2
+:orphan:
+:no-search:
+
+Install the package.
+```
+
+## A common mistake
+
+`tocdepth` is a number of levels, so a word fails:
+
+```rst title="test/fixtures/platform/sphinx-bad-tocdepth.rst"
+Installation
+============
+
+:tocdepth: deep
+
+Install the package.
+```
+
+```text
+✗ test/fixtures/platform/sphinx-bad-tocdepth.rst
+    /tocdepth  must be integer  (line 4)  [sphinx:docinfo:9.1]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+Give the depth as a whole number, such as `:tocdepth: 2`.

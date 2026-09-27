@@ -83,9 +83,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-f90d3f4101561cdf11c4eb17ff96aaf0cb3acb931128d11021db5346d491d9a0
       source:
         file: src/cite/core/page.ts
-        lines: 273-278
+        lines: 274-279
         integrity: sha256-da065ce67f2390268d84dc781987cace6b21280c5cdcbc7624c1042a4d38c8d5
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
     - id: half-moved-meta-external-owned
       claim:
         integrity: sha256-5f4cc11e7561e3276100645eaebc39195a189f35e0ed3700a52f795aa2b0250f

@@ -520,9 +520,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-c85540d48165f4c20ba7f27b10363e53bf5b923e34bec1f3d28793b39210c158
       source:
         file: src/cite/core/page.ts
-        lines: 72-75
+        lines: 73-76
         integrity: sha256-8832eaa02c1fafc08d583f77347091315ddb862f8db9a290ed6071648d848046
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
     - id: join-field-keys-the-manifest
       claim:
         integrity: sha256-503b16cb612ed5f58150898070c75d6a1bd7fc33f7c5bd8eca6fc0e0274e24b1
@@ -1425,9 +1425,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-a0445253f21233dd09149c4dcbb9ca1f871514f2a509d21ee22874f7f3acf86b
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 869-877
+        lines: 935-943
         integrity: sha256-0fdd2bc93eb0acbc84d62eaaf5f1c7ec2795441da58714327642a7d7ee77c36c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
     - id: offline-flag-is-per-run
       claim:
         integrity: sha256-50cc1fbd993bc5e2a23e9cdb9373a16358550f893478fc626477be551f7abcc7

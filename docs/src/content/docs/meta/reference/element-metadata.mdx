@@ -107,7 +107,7 @@ schema written against it has to say so.
 {/* cite element-content-model-decides-cardinality */}
 Where a content model *does* state the cardinality, the key follows it.
 `head.title` is a scalar because HTML permits one `<title>`;
-[DITA's keys](/manni/meta/reference/dita-schema/) are typed element by element
+[DITA's keys](/manni/meta/reference/schemas/oasis-dita-metadata/) are typed element by element
 because the OASIS content model says which repeat.
 
 ## Key types
@@ -204,7 +204,7 @@ shape. So it works in any dialect, including ones manni meta knows nothing about
 <TabItem label="Creating">
 
 Adding an element that is not there means knowing where the element is legal.
-manni meta does that only for [DITA](/manni/meta/reference/dita-schema/), whose
+manni meta does that only for [DITA](/manni/meta/reference/schemas/oasis-dita-metadata/), whose
 content model can answer. It places the new element, and any containers it
 needs, at the position the model requires.
 

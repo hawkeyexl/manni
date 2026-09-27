@@ -1,0 +1,107 @@
+docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
+  citations:
+    - id: taxonomy-seven-action-is-in-the-default-set
+      claim:
+        integrity: sha256-fbd106631ed408aa4a86d8ba88f7c6527172a29718afe8ba5882b4c0160944a6
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 25-35
+        integrity: sha256-cdf674ddd56e8c1c891cc633bae6ce4d8a34606bd8d54a74f93f6e42ac01aed3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-only-the-enum-values-validate
+      claim:
+        integrity: sha256-d913699491c1be6f76b61428ba514185997dea8fa7c31ce39bc7011af4591347
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 11-19
+        integrity: sha256-7968edcb21dac87803c3e61365910c23cb24e0318c94ec3039285a89787dcfdd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-seven-action-upstream-version
+      claim:
+        integrity: sha256-a1b5f00d05f666bf49a68fab65d7581f54683f06a2efa2dcd4b99bf3edbafb9c
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 3-5
+        integrity: sha256-0288114c773b7c83cd15131f6bc5d891d03e49044ccb2f8894f7f68dc748afb2
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-config-schemas-replace-the-default-set
+      claim:
+        lines: 88-89
+        integrity: sha256-14c14eed80f9cdfa29aa4aa76e1930e96bbddc47658b4c778b16289f9c77c3d2
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 440-445
+        integrity: sha256-f99695009a18c93f3a981a816787516b269084b614eacfcd864e8a143c5727a9
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-a-foreign-action-value-fails
+      claim:
+        lines: 81-82
+        integrity: sha256-e6b29afabc5d2f1b8711e5edaf0aca27ccddecc3595c171f3ebb5c53cb06ac28
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 20
+        integrity: sha256-85889e262c17d0cb12d796d1b6adc40c288aee427c995f92e7a427736e3fcecc
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-troubleshoot
+      claim:
+        lines: 49
+        integrity: sha256-b88716757944342309e06abb67c8744883e0dd9b16dfb9610da7c5487d2630ba
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 18
+        integrity: sha256-1eb870738323c5120fe253691f1e8ab0bdc78cee2e4fcbf03132f869aa9b5cf9
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-develop
+      claim:
+        lines: 48
+        integrity: sha256-7c479ac281dfd6817e909b39c3fb291b286e14215fb3fedfcb753c6899fdfefc
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 17
+        integrity: sha256-b88e0d3a9af7f1474fd0b26082fc53ecd6e15672992fbaa62c54275d243ee07b
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-remember
+      claim:
+        lines: 47
+        integrity: sha256-7bc8e59d31262ce9174f81bd91897626d74a4145c96ad9bddd10579a15d6e400
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 16
+        integrity: sha256-6297417667a930c49507c43a23ad12ff3d78fbd4c7d7f46deffb4f82a72b81cf
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-practice
+      claim:
+        lines: 46
+        integrity: sha256-0bd1b32063e473a631ac2b9d42b5adcdfd549b6d0d7988cf560c4319375d17be
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 15
+        integrity: sha256-e9ea3f92d0488a82bd65d707e35882c87de83bb19057054ba27a9dfe96a317c9
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-explore
+      claim:
+        lines: 45
+        integrity: sha256-281b3d0401bb6ac77f45556e6483360dc0664b6543ae259c6add1f911c278dec
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 14
+        integrity: sha256-d294a9bd2f7d1de741c519962f66d275997f19844e6b817e7ab7d4132c468fc5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-understand
+      claim:
+        lines: 44
+        integrity: sha256-dc8774dc41edb4308dd8779a1c0a63c89bc15fab2f3232da14eeb36e6763b7e8
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 13
+        integrity: sha256-1f5326851e115fe26b517f88090cc974886fc1fb160e8d5bcfa899354d1df59c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-action-appraise
+      claim:
+        lines: 43
+        integrity: sha256-94c4a1ea86552d8ed60aefbd2ded4016de68cf4d0db9abb1d653457eb4ac294d
+      source:
+        file: src/meta/schemas/seven-action/1.0.json
+        lines: 12
+        integrity: sha256-07a41da4dc350533297fceb18c9888ec80d5323bdaf81690ea35ee867f5fe945
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

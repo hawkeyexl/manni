@@ -1,0 +1,256 @@
+---
+title: manni graph vocabulary
+description: "The manni:graph:1.0.0 schema, one closed graph block of SKOS concepts, iiRDS typing and PROV lineage that a knowledge-graph builder reads."
+sidebar:
+  label: "manni:graph:1.0.0"
+---
+
+**Built-in id:** `manni:graph:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/graph/1.0.0.json`. A
+`$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+**The question it answers: what does the knowledge graph know about this
+page?** Graph is a common vocabulary that any graph builder or retrieval tool
+can implement. It names the concept a page is about and types the page and
+its sections in iiRDS terms. It also records the documents the page revises
+or derives from. Reach for it when a graph or a retrieval index reads your docs. Files
+without a `graph` key pass.
+
+## Use it
+
+Name the id in `manni.config.yaml`. The vocabularies are not in the default
+set, so a run checks graph only where the config names it.
+
+```yaml
+meta:
+  schemas:
+    - manni:core:1.0.0
+    - manni:graph:1.0.0
+```
+
+Graph stacks with the rest of the
+[manni family](/manni/meta/reference/schemas/manni-vocabularies/). A page that
+also declares its terms or its product scope at the page level lists those
+vocabularies beside it.
+
+```yaml
+meta:
+  schemas:
+    - manni:core:1.0.0
+    - manni:structure:1.0.0
+    - manni:terminology:1.0.0
+    - manni:graph:1.0.0
+```
+
+## Fields
+
+Graph claims one page-level key, `graph`. Every field below sits inside it.
+
+| Field | Type | Required | Location | Notes |
+|---|---|---|---|---|
+| `graph` | object, closed | no | `page` | The block. Files without it pass |
+| `graph.label` | string, non-empty | when a SKOS field is set | with the block | The one canonical name of the concept this page is about (`skos:prefLabel`) |
+| `graph.alt-labels` | label or list | no | with the block | Every other name the concept goes by, such as synonyms and abbreviations (`skos:altLabel`). Search matches these. Needs `label` |
+| `graph.definition` | string, non-empty | no | with the block | What the concept is (`skos:definition`). Needs `label`, the name it defines |
+| `graph.abstract` | string, non-empty | no | with the block | The one-sentence form of `definition`, for a hover card or a tooltip. Needs `definition` |
+| `graph.broader` | label or list | no | with the block | Parent concepts (`skos:broader`). Needs `label` |
+| `graph.narrower` | label or list | no | with the block | Child concepts (`skos:narrower`). Needs `label` |
+| `graph.related-concepts` | label or list | no | with the block | Associated concepts (`skos:related`). The page-level `related-pages` relates pages, and this relates concepts. Needs `label` |
+| `graph.concepts` | label or list | no | with the block | What the page covers (`dcterms:subject`). The same fact as the page-level `concepts`, one level deeper |
+| `graph.type` | enum | no | with the block | The iiRDS topic type (`iirds:has-topic-type`). One of `task`, `concept`, `reference`, `learning`, `troubleshooting` or `form` |
+| `graph.applies-to` | label or list | no | with the block | Product or variant labels the page applies to (`iirds:relates-to-product-variant`) |
+| `graph.not-applicable-to` | label or list | no | with the block | Product or variant labels the page explicitly does not apply to |
+| `graph.about-product-lifecycle` | enum or list | no | with the block | The product phases the content covers, never the page's own lifecycle. One or more of `administration`, `customization`, `update`, `deployment`, `integration` and `deinstallation` |
+| `graph.about-product-aspect` | enum or list | no | with the block | The product aspects the content is about (`iirds:has-subject`). One or more of `architecture`, `interface` and `system-requirement` |
+| `graph.not-about-product-aspect` | enum or list | no | with the block | The product aspects the content is explicitly not about. Same values |
+| `graph.sections` | object | no | with the block | Per-heading typing, keyed by heading slug. See the next table |
+| `graph.revision-of` | label or list | no | with the block | Paths or URLs of earlier documents this one revises (`prov:wasRevisionOf`) |
+| `graph.derived-from` | label or list | no | with the block | Paths or URLs this document was derived from (`prov:wasDerivedFrom`) |
+
+A label is one non-empty string. A list is non-empty, with no duplicates. An
+enum list follows the same rule. The three iiRDS value lists are closed,
+because iiRDS publishes them.
+
+Each entry under `sections` types one heading. The entry is closed and holds
+at least one field. It inherits nothing from the page.
+
+| Section field | Type | Notes |
+|---|---|---|
+| `type` | enum | The iiRDS topic type for this section |
+| `applies-to` | label or list | Product or variant labels this section applies to |
+| `not-applicable-to` | label or list | Product or variant labels this section does not apply to |
+| `about-product-lifecycle` | enum or list | Product phases this section covers |
+| `about-product-aspect` | enum or list | Product aspects this section is about |
+| `not-about-product-aspect` | enum or list | Product aspects this section is not about |
+| `concepts` | label or list | Concept labels for this section |
+
+The SKOS fields, meaning `label`, `alt-labels`, `definition`, `abstract`,
+`broader`, `narrower` and `related-concepts`, are not available per section.
+A section belongs to the page's concept rather than naming one of its own.
+
+The Location column is the `x-manni-location` mark each field carries. `page`
+means the value belongs in the document's own metadata and reaches delivered
+output. `external` means it belongs in the collection's external-metadata
+manifest. A field is `page` when an agent fetching the page acts on it. Graph
+marks its one top-level key, `graph`, as `page`, because the delivered page's
+consumers read the categorization. The fields inside carry no mark of their
+own and travel with the block. See
+[field location](/manni/meta/schemas/field-location/) for how the marks are
+used.
+
+## Additional properties
+
+The page root is allowed extra keys, so a generator's keys and the other
+vocabularies' keys pass beside `graph`. The `graph` block is closed. A key
+inside it that the table does not list fails, so a misspelled field is a
+finding rather than a silent miss. Each `sections` entry is closed the same
+way. Section keys themselves are any string, because matching a slug to a
+heading needs the body, which the graph builder reads.
+
+## Example
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+type: how-to
+graph:
+  label: Operator installation
+  alt-labels: [operator install]
+  definition: Deploying the operator into a Kubernetes cluster with its Helm chart.
+  broader: [Operator]
+  related-concepts: [Helm chart]
+  type: task
+  applies-to: [operator-1.4]
+  about-product-lifecycle: [deployment]
+  sections:
+    verify-the-rollout:
+      type: reference
+  revision-of: docs/install-operator-1.3.md
+---
+```
+
+## A common mistake
+
+A typo inside the block fails, and so does the field that depended on the
+misspelled one.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+graph:
+  lable: Operator installation
+  broader: [Operator]
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:graph:1.0.0
+✗ page.md
+    /graph  must NOT have additional property 'lable'  (line 4)  [manni:graph:1.0.0]
+    /graph  must have property label when property broader is present  (line 4)  [manni:graph:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 2 errors
+```
+
+The exit code is 1. Spelling `label` correctly clears both findings.
+
+## Design decisions
+
+- **The closed block is the one exception to the family's flat-keys rule.**
+  The envelope is what lets a closed, typo-catching block coexist with an open
+  page root.
+- **The deeper declaration wins, and the page level is the fallback.** `type`,
+  `concepts`, `applies-to` and `not-applicable-to` appear both in the block
+  and at the page level. The block's value wins, fact by fact, and the
+  page-level field feeds the graph when the block is silent. The page-level
+  fields come from [structure](/manni/meta/reference/schemas/manni-structure/)
+  and core. The `supersedes` key of lifecycle is the fallback for
+  `revision-of` the same way.
+- **A page type can default the topic type.** When `graph.type` is absent, a
+  graph builder may derive it from the page's `type`. `how-to` becomes `task`,
+  `tutorial` becomes `learning`, and `explanation` becomes `concept`. An
+  explicit block always wins.
+- **Terminology's root fields are the fallback for seven more.** On a page
+  with no `graph` block, a graph builder reads the root fields of
+  [terminology](/manni/meta/reference/schemas/manni-terminology/). `label`,
+  `alt-labels`, `broader`, `narrower`, `definition` and `abstract` map by name,
+  and `related-terms` maps to `related-concepts`. A page that opens a `graph`
+  block keeps the block's behaviour exactly.
+- **Plain-language kebab names, with the RDF mapping in the descriptions.**
+  iiRDS itself spells its properties in kebab case (`has-topic-type`), so
+  mirroring a vocabulary's internal spellings in the key names gains nothing.
+  `label` is `skos:prefLabel`, and each field description carries its mapping.
+- **The `about-` prefix makes the subject explicit.**
+  `about-product-lifecycle: [deinstallation]` describes what the content
+  covers. A page about uninstalling is not a deprecated page. The page's own
+  life is [lifecycle](/manni/meta/reference/schemas/manni-lifecycle/).
+- **No SKOS field without a name.** `alt-labels`, `definition`, `broader`,
+  `narrower` and `related-concepts` each need `label`, and `abstract` needs
+  `definition`. So there are no synonyms of nothing.
+- **Provenance lives outside the block.** The machines that wrote the page
+  come from the page-level `provenance`. Attribution for machine-proposed
+  graph fields is the page-level `meta-provenance` in
+  [ai-context](/manni/meta/reference/schemas/manni-ai-context/), where each
+  field is a JSON Pointer such as `/graph/broader`. Keeping hand-curated
+  fields out of machine attribution is the graph builder's job.
+- **Overlap between `applies-to` and `not-applicable-to` is checked at the
+  graph layer.** JSON Schema sees one file at a time, and the same is true of
+  the two aspect lists.
+
+## Strict overlay
+
+**Strict overlay id:** `manni:graph-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/graph-strict/1.0.0.json`.
+The overlay holds only what strict adds. It narrows the form of a value that is
+present and requires no key, so a page with no `graph` block still passes it.
+The iiRDS value lists are closed in the open vocabulary already, and strict
+leaves them as they are.
+
+| Field | Strict adds |
+|---|---|
+| `graph.sections` keys | A heading slug of lowercase letters, caseless letters and their marks, digits, `_` and `-`. An uppercase letter or a space fails. Slugs from scripts without case, such as Han, Arabic and Devanagari, pass |
+| `graph.revision-of`, `graph.derived-from` | A path or URL on one line with no surrounding space, alone or in each list item. A path may contain spaces |
+
+List both ids to adopt it:
+
+```yaml
+meta:
+  schemas:
+    - manni:graph:1.0.0
+    - manni:graph-strict:1.0.0
+```
+
+Each schema is checked on its own, and a finding names the one that produced
+it. A strict-only failure reads as one.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+graph:
+  label: Operator installation
+  sections:
+    Verify the rollout:
+      type: reference
+  derived-from: "docs/install-operator.md "
+---
+```
+
+```text
+$ manni meta validate install.md --no-config -s manni:core:1.0.0 -s manni:graph:1.0.0 -s manni:graph-strict:1.0.0
+✗ install.md
+    /graph/sections  must match pattern "^[\p{Ll}\p{Lm}\p{Lo}\p{M}\p{Nd}_-]+$"  (line 6)  [manni:graph-strict:1.0.0]
+    /graph/sections  property name must be valid  (line 6)  [manni:graph-strict:1.0.0]
+    /graph/derived-from  must match pattern "^\S(?:.*\S)?$"  (line 9)  [manni:graph-strict:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 3 errors
+```
+
+The exit code is 1. A bad section key reports twice, once for its pattern and
+once for the key as a whole. The open vocabulary accepts both values, so the
+overlay alone fails the page.

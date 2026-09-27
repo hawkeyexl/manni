@@ -1,0 +1,99 @@
+---
+title: Seven-Action schema
+description: The passo-uno:seven-action:1.0 schema shipped with manni meta, which constrains an optional action key to the seven reader actions and runs by default.
+sidebar:
+  label: "passo-uno:seven-action:1.0"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Built-in id:** `passo-uno:seven-action:1.0`
+
+**Published at:** [`https://hawkeyexl.github.io/manni/schemas/seven-action/1.0.json`](/manni/schemas/seven-action/1.0.json)
+
+{/* cite taxonomy-seven-action-upstream-version */}
+Constrains `action` to the seven reader actions. Derived from upstream model
+version `2025-01-09`.
+
+It is one of the [taxonomy schemas](/manni/meta/reference/taxonomy-schemas/).
+Where Diátaxis and TGDP classify what a page *is*, the [Seven-Action
+Documentation Model](https://passo.uno/seven-action-model/) classifies what a
+reader is *doing*. It claims a different key, so it composes with either.
+
+## Use it
+
+{/* cite taxonomy-seven-action-is-in-the-default-set */}
+This schema **is** in the default set, alongside OKF. It can be, because it
+constrains a key that documents do not otherwise carry and does not require it.
+So it fails nothing that passed before.
+
+A run with no `-s`, no in-file `$schema` and no config rule already applies it.
+A `schemas:` list in config replaces the default set, so name it there to keep
+it:
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas:
+    - diataxis:diataxis:1.0
+    - passo-uno:seven-action:1.0
+```
+
+## Fields
+
+| Field | Type | Required | Values |
+|---|---|---|---|
+| `action` | string | No | `appraise`, `understand`, `explore`, `practice`, `remember`, `develop`, `troubleshoot` |
+
+| Value | Alternate verb | What the reader is doing |
+|---|---|---|
+| `appraise` | Discern | Judging whether something fits their situation |
+| `understand` | Learn | Grasping a concept |
+| `explore` | Discover | Finding out what exists |
+| `practice` | Train | Building a skill by doing |
+| `remember` | Recall | Looking up a detail they once knew |
+| `develop` | Integrate | Building the thing into their own work |
+| `troubleshoot` | Solve | Getting past a problem |
+
+{/* cite taxonomy-only-the-enum-values-validate */}
+Only the left column validates. The alternate verbs are how the model names each
+action in prose; `action: learn` fails.
+
+## Additional properties
+
+Allowed. The schema says nothing about any key but `action`.
+
+## Example
+
+```md
+---
+action: practice
+title: Work through the tutorial
+---
+```
+
+## A common mistake
+
+Writing the alternate verb instead of the value is the usual failure:
+
+```text
+✗ docs/tutorial.md
+    /action  must be equal to one of the allowed values  (line 2)  [passo-uno:seven-action:1.0]
+```
+
+<Aside type="caution" title="If you already use an `action` key">
+`action` is a generic field name. If your frontmatter already uses it for
+something else (a workflow name, a button label), two things change:
+
+- **`validate` fails.** Your value is not in the vocabulary, so it is reported
+  as an error against `passo-uno:seven-action:1.0`.
+- **`fill` overwrites it.** A key whose value is invalid is a candidate for
+  *replacement*, not just for filling a gap, and `manni meta fill` writes to disk
+  unless you pass `--dry-run`. Run `manni meta fill --dry-run` first on any repo
+  that uses `action` for something of its own.
+
+Set a `schemas:` list in `manni.config.yaml` before running either command.
+It replaces the default set entirely, which opts you out of both.
+</Aside>
+
+The [taxonomy schemas](/manni/meta/reference/taxonomy-schemas/) overview maps
+each action to a Diátaxis type.

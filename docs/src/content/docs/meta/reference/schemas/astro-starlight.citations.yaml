@@ -1,0 +1,36 @@
+docs/src/content/docs/meta/reference/schemas/astro-starlight.mdx:
+  citations:
+    - id: platform-starlight-pin-moves-faster
+      claim:
+        lines: 81-86
+        integrity: sha256-848676a22a40a6594c3b1fd21254de47fbb82658c3f193618686854a026f873c
+      source:
+        file: src/meta/schemas/starlight/0.41.json
+        lines: 3
+        integrity: sha256-b0c2bdf0c9a8ea48946e049dc16148ad0aa6de21cbbe2d0966ffaa2a8118b2e0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-starlight-toc-uses-if-then
+      claim:
+        integrity: sha256-049c159867968abf48ce35ff06b25dbb70445013a5f304a5bd6be56629e3d284
+      source:
+        file: src/meta/schemas/starlight/0.41.json
+        lines: 70-81
+        integrity: sha256-1127bff5a7f0b62098a8c53821e09085f3570caf04e613973cb97d00dddf73a5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-starlight-field-table
+      claim:
+        lines: 51-64
+        integrity: sha256-ec03f8ae8bf4b877d9a26a84f95ed0c4fa4e371161e7fefe931610a77b990785
+      source:
+        file: src/meta/schemas/starlight/0.41.json
+        lines: 28-181
+        integrity: sha256-850ccba1f9aa4384f46bd3f52da1e8de809d656d8cbc697b0273ea25b5ff1b78
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-starlight-tolerates-unknown-keys
+      claim:
+        integrity: sha256-dad5ea10d7dbad94a17addd3b1c1d3eea205f8a875040e44da03ffd66ba7ba1c
+      source:
+        file: src/meta/schemas/starlight/0.41.json
+        lines: 5-8
+        integrity: sha256-77d2f70cd43f6787537ff59e2fd0a3d315903b05277e6f267b4748a550a2455e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

@@ -1,0 +1,101 @@
+---
+title: The Good Docs Project schema
+description: The tgdp:templates:1.0 schema shipped with manni meta, which requires a type key and constrains it to the 25 Good Docs Project template slugs.
+sidebar:
+  label: "tgdp:templates:1.0"
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Built-in id:** `tgdp:templates:1.0`
+
+**Published at:** [`https://hawkeyexl.github.io/manni/schemas/tgdp/1.0.json`](/manni/schemas/tgdp/1.0.json)
+
+{/* cite taxonomy-tgdp-requires-and-constrains-type */}
+Requires `type` and constrains it to the template slugs published by [The Good
+Docs Project](https://www.thegooddocsproject.dev/template). Where Diátaxis names
+four abstract forms, TGDP names 25 concrete deliverables. That suits a docs set
+that thinks in deliverables rather than quadrants. Such a set says "we owe this
+product an installation guide and a changelog".
+
+It is one of the [taxonomy schemas](/manni/meta/reference/taxonomy-schemas/),
+which fix a classification key to a published set of values.
+
+## Use it
+
+{/* cite taxonomy-tgdp-is-not-in-the-default-set */}
+Like Diátaxis, TGDP is **not** in the [default
+set](/manni/meta/reference/schema-resolution/#precedence). It both constrains and
+requires `type`, so defaulting it would fail every untyped document in every
+repo that had not opted in.
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas:
+    - tgdp:templates:1.0
+    - google:okf:0.1
+```
+
+To try it once without config:
+
+```bash
+manni meta validate docs/ -s tgdp:templates:1.0
+```
+
+## Fields
+
+| Field | Type | Required | Values |
+|---|---|---|---|
+| `type` | string | **Yes** | One of the 25 template slugs below |
+
+{/* cite taxonomy-all-25-slugs-validate */}
+The values are the template directory slugs from the upstream
+[templates repo](https://gitlab.com/tgdp/templates), grouped here by the pack
+each belongs to. All 25 validate regardless of pack; the grouping is upstream's,
+and is reproduced only to show what you are opting into.
+
+| Pack | Values |
+|---|---|
+| Core | `concept`, `how-to`, `readme`, `reference`, `release-notes`, `troubleshooting`, `tutorial` |
+| Community | `bug-report`, `changelog`, `code-of-conduct`, `code-of-conduct-incident-record`, `code-of-conduct-remediation-record`, `code-of-conduct-response-plan`, `contributing-guide`, `our-team` |
+| Misc | `api-getting-started`, `api-reference`, `contact-support`, `glossary`, `installation-guide`, `quickstart`, `sdk-overview`, `style-guide`, `terminology-system`, `user-personas` |
+
+<Aside type="note" title="TGDP prescribes no frontmatter of its own">
+The upstream templates are body-structure templates. They open at a heading and
+carry no YAML block. The only metadata TGDP publishes is `index.json`, which
+describes the *templates* (`name`, `summary`, `last_updated`, `contributors`,
+`packs`), not documents written from them. So the vocabulary here is lifted from
+the template set, not an implementation of a TGDP metadata spec. Requiring
+`type` is manni meta's choice rather than an upstream rule. It is the same choice
+manni meta makes for Diátaxis, which likewise publishes no frontmatter spec. Pair
+it with [`google:okf:0.1`](/manni/meta/reference/schemas/google-okf/) for the fields TGDP
+leaves unspecified.
+</Aside>
+
+## Additional properties
+
+Allowed. The schema says nothing about any key but `type`.
+
+## Example
+
+```md
+---
+type: installation-guide
+title: Install the collector
+---
+```
+
+## A common mistake
+
+The enum carries no aliases, so a slug has to match exactly. `howto` is not
+`how-to`:
+
+```text
+✗ docs/install.md
+    /type  must be equal to one of the allowed values  (line 2)  [tgdp:templates:1.0]
+```
+
+The [taxonomy schemas](/manni/meta/reference/taxonomy-schemas/) overview
+explains why this schema and
+[`diataxis:diataxis:1.0`](/manni/meta/reference/schemas/diataxis/) are
+alternatives, and how to write a vocabulary of your own.

@@ -1,0 +1,142 @@
+docs/src/content/docs/meta/reference/schemas/x-cards.mdx:
+  citations:
+    - id: vocab-pixels-typed-for-both-channels
+      claim:
+        lines: 79-82
+        integrity: sha256-b51042c096ba5621a1e904fe302a4b8d89ec2916fc543c0f419d995748e6f367
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 26-30
+        integrity: sha256-5f95b5a8dc87cda5c1a8c092cce279236a0ee23c33ce41583d39d76ad17e7712
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-player-card-required-set
+      claim:
+        lines: 72-75
+        integrity: sha256-8566c201b2180193cd831f6bfb05a2917068f93b137ea825e30bb34bf326ab9d
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 106-119
+        integrity: sha256-163e2b76a17b4cd4c6093c9a370061ef6956064b707b5f0f14465a02c18d8b46
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-image-must-be-https
+      claim:
+        integrity: sha256-4fa272ca3061b06a78bc29caee0a67708b00e38b7918e9aeb8bb06bb0cc73d3c
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 20-25
+        integrity: sha256-36d7ba9d8633a4e26b410086ffbf2048dd6c62d53a2ea9c431abaaeabb37ddc8
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-card-has-no-fallback
+      claim:
+        integrity: sha256-e8e19be1b88492a6491fb93a8698cd53d68a09c4019ea760f5f209f0c2e08da3
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 34-38
+        integrity: sha256-a27b60c3934d97496a3095201b0a80cac1b464ac03688c607d573bc6e630c7bd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-other-card-tags-fall-back-to-og
+      claim:
+        integrity: sha256-db438cccc2451bcc95166aea55ce77528b47f1434ff423adeedbc13fa975f4c7
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 5
+        integrity: sha256-6c108f21ca68561642b7fa04c8c992babb015dff18ea7cc3b4fc7a6c11f4590e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-app-fields
+      claim:
+        lines: 51
+        integrity: sha256-d7d962f3a6731be36a860401bb36790ad136ca8fffadb1cfeceddd44d992fbeb
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 91-104
+        integrity: sha256-31148c2135c8bbfb666b58b3c0ac517adb1665c8588f32538f1038722253c1c4
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-player-dimensions
+      claim:
+        lines: 50
+        integrity: sha256-11aedd6a799b1f590e1bfcd9a1dd8cf36d610e4075c9a923a0671afef90c22b5
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 79-86
+        integrity: sha256-d646e70fca4e3f47b586a5328051b56f46fffc58d5a74a955f3adcc634112149
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-player
+      claim:
+        lines: 49
+        integrity: sha256-712a7446a54adeb23a51a276e909c4e557bfda723d07af3867ea379387119fb8
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 75-78
+        integrity: sha256-d9bea2ff28f4b4a553d0ec837eebde505241b1785d9e9eeaa16224123748410f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-image-alt
+      claim:
+        lines: 48
+        integrity: sha256-181f5ebcd0dad8ae75c6067a12c29b691d9d71488d8e752c16c0d22f8745df1a
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 70-74
+        integrity: sha256-c321f6d80b5fc6127e07b3c45168b27f13fe6d1cc3008e39f28e9325d9e743df
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-image
+      claim:
+        lines: 47
+        integrity: sha256-861ad4382230af8a608b1a2d60bf4773d53e3716ec8eb922bec4eab972282c04
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 66-69
+        integrity: sha256-097e01516482535f55af40afdfa0ae0cdd2f34d7f8e781905741ff2fd0c9c499
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-description
+      claim:
+        lines: 46
+        integrity: sha256-a95a8546a8d333f4ce57002bd320140c4b2b21d30a3fa844f05ff600a99f8dc1
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 61-65
+        integrity: sha256-38a13e660636c1f6eedae69be123820528a27774a5c95649d04b7bf26edf1aeb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-title
+      claim:
+        lines: 45
+        integrity: sha256-54dde2066fa7d54bb1797f3cf0ace92f258f6a926f45ca89de635e9a42151fad
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 55-60
+        integrity: sha256-f59493aba9a9a9dfba7b071ea031561892fe22e5e9ec6d64b5668d4210e09286
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-account-ids
+      claim:
+        lines: 44
+        integrity: sha256-995d24d0664edda2e0c18da04f224f8bbc3d37998ea0b915d267d6a4ec5b6ef8
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 15-18
+        integrity: sha256-bd8f1d686859253f47ec620300b4670fb59dbe6f199a6269402e9efa4697d8fc
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-handles
+      claim:
+        lines: 43
+        integrity: sha256-3efde0febfc94358d525b26deaca805d28be4906d69053de443fce863e12b033
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 10-14
+        integrity: sha256-97161e9983124527d80b1ac98e2c97da28af1726ed5f6666dbae57d7ed7dafae
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-twitter-card-enum
+      claim:
+        lines: 42
+        integrity: sha256-ecb6fdd55968f6bfc866ec7195596b60a9a26392d15a9586e6886071cb4586c3
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 34-38
+        integrity: sha256-a27b60c3934d97496a3095201b0a80cac1b464ac03688c607d573bc6e630c7bd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-x-cards-is-the-ogp-companion
+      claim:
+        integrity: sha256-978cba84c172049b0e2d6a13098a48d61717e353087d03be906cdc5ea38e6c88
+      source:
+        file: src/meta/schemas/x-cards/1.0.json
+        lines: 3-5
+        integrity: sha256-3a1a3e5dab15064d97225f29a2103fa4920ace92362c948357a3507be0712fe1
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

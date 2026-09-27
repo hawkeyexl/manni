@@ -148,8 +148,8 @@ checks.
   </Card>
 </CardGrid>
 
-Term entries are written in the `manni:terminology` vocabulary, whose draft is
-[under review](/manni/meta/proposals/terminology/). No built-in schema covers
-it. `manni meta validate` checks one page's shape against the draft when the
-page's schema set includes it, as `-s` with the draft's JSON file does. `manni
+Term entries are written in the built-in
+[`manni:terminology:1.0.0`](/manni/meta/reference/schemas/manni-terminology/)
+vocabulary. `manni meta validate` checks one page's shape against it when the
+page's schema set includes it, as `-s manni:terminology:1.0.0` does. `manni
 term check` checks the set.

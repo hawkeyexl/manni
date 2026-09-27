@@ -1,0 +1,85 @@
+---
+title: Diátaxis schema
+description: The diataxis:diataxis:1.0 schema shipped with manni meta, which requires a type key and constrains it to the four Diátaxis forms.
+sidebar:
+  label: "diataxis:diataxis:1.0"
+---
+
+**Built-in id:** `diataxis:diataxis:1.0`
+
+**Published at:** [`https://hawkeyexl.github.io/manni/schemas/diataxis/1.0.json`](/manni/schemas/diataxis/1.0.json)
+
+{/* cite taxonomy-diataxis-requires-and-constrains-type */}
+Requires `type` and constrains it to the four Diátaxis forms.
+
+It is one of the [taxonomy schemas](/manni/meta/reference/taxonomy-schemas/),
+which fix a classification key to a published set of values.
+[`google:okf:0.1`](/manni/meta/reference/schemas/google-okf/) requires a
+`type` but accepts any non-empty string. This schema stops `how-to`, `howto`
+and `guide` from all meaning the same thing. The framework itself is
+documented at [diataxis.fr](https://diataxis.fr/).
+
+## Use it
+
+{/* cite taxonomy-diataxis-is-not-in-the-default-set */}
+Diátaxis is **not** part of the [default
+set](/manni/meta/reference/schema-resolution/#precedence). It both requires and
+constrains `type`, so applying it by default would fail every repo not already
+using Diátaxis. Opt in with `-s` or a `schemas:` entry in config.
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas:
+    - diataxis:diataxis:1.0
+    - google:okf:0.1
+```
+
+The pair checks `type` against the vocabulary and the other OKF fields for
+format. To try it once without config:
+
+```bash
+manni meta validate docs/ -s diataxis:diataxis:1.0
+```
+
+## Fields
+
+| Field | Type | Required | Values |
+|---|---|---|---|
+| `type` | string | **Yes** | `tutorial`, `how-to`, `reference`, `explanation` |
+
+| Value | Orientation |
+|---|---|
+| `tutorial` | Learning-oriented |
+| `how-to` | Task-oriented |
+| `reference` | Information-oriented |
+| `explanation` | Understanding-oriented |
+
+## Additional properties
+
+Allowed. The schema says nothing about any key but `type`, so a page may carry
+whatever else it needs.
+
+## Example
+
+```md
+---
+type: how-to
+title: Rotate an API key
+---
+```
+
+## A common mistake
+
+A near-miss spelling is the usual failure. `type: guide` reads naturally and is
+not one of the four forms:
+
+```text
+✗ docs/rotate-keys.md
+    /type  must be equal to one of the allowed values  (line 2)  [diataxis:diataxis:1.0]
+```
+
+A page with no `type` at all fails too, because the key is required. The
+[taxonomy schemas](/manni/meta/reference/taxonomy-schemas/) overview covers
+retrofitting an existing docs set, and why this schema and
+[`tgdp:templates:1.0`](/manni/meta/reference/schemas/tgdp-templates/) are
+alternatives rather than a pair.

@@ -1846,9 +1846,9 @@ there. Its copy at a past commit is simply not read as evidence.
 
 {/* cite derivable-fields-are-seven */}
 Six fields of the [stewardship
-vocabulary](/manni/meta/proposals/stewardship/) have a built-in source, and so
+vocabulary](/manni/meta/reference/schemas/manni-stewardship/) have a built-in source, and so
 does `provenance` from the [ai-context
-vocabulary](/manni/meta/proposals/ai-context/). The
+vocabulary](/manni/meta/reference/schemas/manni-ai-context/). The
 other four, `stakeholders`, `review-interval`, `verified-against` and
 `source-of-truth`, are judgments a person makes, and no built-in reads them.
 Naming one of them in `fields` is a config error unless a
@@ -1898,7 +1898,7 @@ it. `--no-cache` bypasses the cache for one run.
 
 {/* cite provenance-entry-shape */}
 `provenance` records which body lines a machine wrote. Each entry is a pin, as
-a [citation's](/manni/meta/proposals/citations/) claim end is. `lines` is
+a [citation's](/manni/meta/reference/schemas/manni-citations/) claim end is. `lines` is
 where the pin was last seen, counted in body lines from the first line after
 the metadata block. `integrity` is a `sha256-` hash of those lines, and the
 entry's identity. [See which lines a machine

@@ -1,0 +1,36 @@
+docs/src/content/docs/meta/reference/schemas/jekyll-page.mdx:
+  citations:
+    - id: platform-jekyll-theme-keys-are-unknown
+      claim:
+        lines: 71-74
+        integrity: sha256-327cef65abb1ed696b40815d8996031cd6606f0731dddbfab115cc6156d7ae8c
+      source:
+        file: src/meta/schemas/jekyll/4.4.json
+        lines: 5
+        integrity: sha256-34111548673d28dfe11f1784a9a32cc8a54b579c25bd07fdf610868223f74f55
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-jekyll-published-must-be-a-boolean
+      claim:
+        integrity: sha256-8d1feff2572d2f0478e94c4a202a796055e9269fd8c438179bcf27fb55994e11
+      source:
+        file: src/meta/schemas/jekyll/4.4.json
+        lines: 25-28
+        integrity: sha256-f33777dd6717a5468b67c6c7dbdad16f3c39127e9e3b356f2ab46cf6d934ab6c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-jekyll-field-table
+      claim:
+        lines: 56-60
+        integrity: sha256-d46dfde9c589ea8900f1fd016920645f5f90d2ad21946f7c5dbbce7da0760869
+      source:
+        file: src/meta/schemas/jekyll/4.4.json
+        lines: 17-46
+        integrity: sha256-2a3f4d386a947e523c92e850a860c29be86edc5ebe2a967bb3a7d721ffba48ee
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-jekyll-is-the-smallest-builtin
+      claim:
+        integrity: sha256-0d4a617b0432c9c817b290b06f8fbe3181f069cd3a586d4c77aab75c05b1a457
+      source:
+        file: src/meta/schemas/jekyll/4.4.json
+        lines: 5-7
+        integrity: sha256-62b337f36fa478e10c0d4e93cc3e16b66e7f18212bc28048c15015c0667e66dd
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

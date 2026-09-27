@@ -1,0 +1,44 @@
+docs/src/content/docs/meta/reference/schemas/tgdp-templates.mdx:
+  citations:
+    - id: taxonomy-tgdp-is-not-in-the-default-set
+      claim:
+        integrity: sha256-6a725850f62e1947fb2c435c7559a3776e94511bfa16e8e188a289c75eae2b29
+      source:
+        file: src/meta/core/resolve-schema.ts
+        lines: 32-35
+        integrity: sha256-af133f1e0fa21ca01b004a947824e1ce63d00d49af5bf112da6ffcda850b9a3c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-all-25-slugs-validate
+      claim:
+        integrity: sha256-016bbd132e10966e39ce540d9e73076b6e4f4c946b0cf7dfe2990a0094a297da
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 12-38
+        integrity: sha256-fba7a1ce762f04503f14881b533f64e01a0986e11bf722dff3645245d87fff5f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-tgdp-requires-and-constrains-type
+      claim:
+        integrity: sha256-f7ac3c77ea2774a514b3c40256f77ed6f371426da300087a935de96cf2ca7664
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 8-38
+        integrity: sha256-d133d550f15ea9dc5b2cc0b67f8fa46d73609f2272fb88d20d627423d75c61a8
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-tgdp-values-by-pack
+      claim:
+        lines: 53-55
+        integrity: sha256-4d49645b6d5907ad196f0b13ecaed9e53accd51efa95fc1bad19ff449affd693
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 12-39
+        integrity: sha256-f10f6bca20a40a6ff1297af4a4aed8662b35cce5fd773c0b6863155be8deea90
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: taxonomy-requiring-type-is-mannis-choice
+      claim:
+        lines: 58-66
+        integrity: sha256-7cc34dcf6a1889e3f880faf9fb8d0645eb03416a05c20ac3a5629b077a74ded0
+      source:
+        file: src/meta/schemas/tgdp/1.0.json
+        lines: 5
+        integrity: sha256-c7a62da24b33856d762d5613856965ad337ffd3a4c405d183a75be167c3c0e75
+        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0

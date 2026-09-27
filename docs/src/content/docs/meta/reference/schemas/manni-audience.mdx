@@ -1,0 +1,176 @@
+---
+title: manni audience vocabulary
+description: "The manni:audience:1.0.0 schema for who a page serves, which journeys it belongs to, and who may see it."
+sidebar:
+  label: "manni:audience:1.0.0"
+---
+
+**Built-in id:** `manni:audience:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/audience/1.0.0.json`.
+A `$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+**The question it answers: who does this page serve, and who may see it?**
+`audiences` works in any repo from the start. `personas` and `journeys` are
+the upgrade once a content strategy exists to point into. `visibility` is the
+access switch that downstream tooling acts on. Adopt it when retrieval,
+routing, or a coverage report needs to know who a page is for.
+
+## Use it
+
+Name the id in `manni.config.yaml`. The vocabularies are not in the default
+set, so a run checks audience only where the config names it. It stacks with
+[core](/manni/meta/reference/schemas/manni-core/).
+
+```yaml
+meta:
+  schemas:
+    - manni:core:1.0.0
+    - manni:audience:1.0.0
+```
+
+## Fields
+
+| Field | Type | Location | Notes |
+|---|---|---|---|
+| `audiences` | string or list | `page` | Who the page is for, in your own words, such as `administrators` or `sre`. Plural because pages usually serve several groups. Not enumerated, because audience taxonomies belong to the org |
+| `personas` | string or list | `external` | Ids into your content-strategy documents, such as `persona-platform-admin`. Adopt it once you keep personas, because without them the ids point at nothing |
+| `journeys` | string or list | `external` | Ids of the user journeys (CUJs) this page belongs to. This is how a docs set shows it covers its own strategy |
+| `intent` | string, non-empty | `page` | The reader's job in one line, such as `deploy the operator on a running cluster`. Retrieval matches questions against it |
+| `visibility` | enum | `external` | One of `draft`, `restricted`, `confidential`, `internal`, or `public`, from no audience yet to everyone |
+
+No field is required. A list field takes one non-empty string or a non-empty
+list of unique ones.
+
+The Location column is the `x-manni-location` mark each field carries. `page`
+means the value belongs in the document's own metadata and reaches delivered
+output. `external` means it belongs in the collection's external-metadata
+manifest. A field is `page` when an agent fetching the page acts on it.
+`audiences` and `intent` are what an ingester filters and routes on.
+`personas` and `journeys` are internal names that mean nothing outside.
+`visibility` is a build-time switch, because delivered output is public by
+definition. See [field location](/manni/meta/schemas/field-location/) for how
+the marks are used.
+
+## Additional properties
+
+Allowed. The root is open, so a generator's keys and the other vocabularies'
+keys pass beside audience's. Audience checks only the five keys it claims.
+
+## Example
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+audiences: [administrators]
+personas: [persona-platform-admin]
+journeys: [cuj-install]
+intent: Deploy the operator on a running cluster
+visibility: public
+---
+```
+
+## A common mistake
+
+`visibility` is a closed ladder, so a house word for an access level fails.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+audiences: [administrators]
+visibility: private
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:audience:1.0.0
+✗ page.md
+    /visibility  must be equal to one of the allowed values  (line 5)  [manni:audience:1.0.0]
+    /visibility  warning "visibility" is stored in the page; manni:audience:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 5)  [location:external]
+
+1 file checked, 0 passed, 1 failed, 1 error, 1 warning
+```
+
+The exit code is 1. The warning is the location mark at work, because
+`--no-config` gives an `external` field no manifest to live in. Pick the rung
+that matches, which for a page only its authors see is `draft`.
+
+## Design decisions
+
+- **`visibility` is enumerated, and `audiences` is not.** Something downstream
+  branches on `visibility`, and an unrecognized access level fails open
+  without anyone noticing. Audience taxonomies belong to the org, so
+  `audiences` takes any label. The same reason produces both calls.
+- **`visibility` folds a draft flag and an access level into one switch.**
+  Your generator's own `draft` or `unlisted` keys remain its rendering
+  controls, and this vocabulary does not claim them. A page can be
+  `visibility: public` in metadata while the generator still hides it.
+  Reconciling the two is a job for site tooling, not for a schema.
+- **`visibility` is not `lifecycle`.** The
+  [lifecycle vocabulary](/manni/meta/reference/schemas/manni-lifecycle/) holds
+  editorial state. `lifecycle: draft` says the content is unfinished.
+  `visibility: draft` says nobody outside the authors can see it. An
+  unfinished page that is already visible inside the org is a legal and common
+  combination.
+- **There is no `expertise` field.** Reader level belongs to the persona
+  definitions a page points at. A page saying `expertise: beginner` next to
+  `personas: [persona-expert-admin]` could contradict the persona's own
+  proficiency. A fact belongs at the level that owns it.
+- **`intent` is free text.** A free-text field earns its place only when
+  something consumes it. Retrieval and eval pipelines match reader questions
+  against this one.
+- **`audiences` and `personas` are an upgrade path.** Labels work on day one
+  in a repo with no content strategy. Persona ids point into that strategy
+  once it exists, and a page can carry both.
+
+## Strict overlay
+
+**Strict overlay id:** `manni:audience-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/audience-strict/1.0.0.json`.
+The overlay holds only what strict adds. It narrows the form of a value that is
+present and requires no key, so a page with no audience fields still passes it.
+
+| Field | Strict adds |
+|---|---|
+| `audiences`, `personas`, `journeys` | Kebab case for each value, in the string form and the list form alike. That means lowercase letters, digits and hyphens that start with a letter or digit |
+| `intent` | A single line |
+
+`visibility` is the same in both, because its ladder is already closed.
+
+List both ids to adopt it:
+
+```yaml
+meta:
+  schemas:
+    - manni:audience:1.0.0
+    - manni:audience-strict:1.0.0
+```
+
+Each schema is checked on its own, and a finding names the one that produced
+it. A strict-only failure reads as one.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+audiences: [Administrators, sre]
+intent: |
+  Deploy the operator
+  on a running cluster
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:audience:1.0.0 -s manni:audience-strict:1.0.0
+✗ page.md
+    /audiences/0  must match pattern "^[a-z0-9][a-z0-9-]*$"  (line 4)  [manni:audience-strict:1.0.0]
+    /intent  must match pattern "^[^\r\n]+$"  (line 5)  [manni:audience-strict:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 2 errors
+```
+
+The open vocabulary accepts both values, so the overlay alone fails the page.

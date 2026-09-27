@@ -30,7 +30,7 @@ the [configuration reference](/manni/meta/reference/configuration/#derive).
 
 ## The tired updater
 
-The [stewardship vocabulary](/manni/meta/proposals/stewardship/) asks three
+The [stewardship vocabulary](/manni/meta/reference/schemas/manni-stewardship/) asks three
 questions of every page. Who wrote it, and who answers for it now? When did
 it change, and when was it last reviewed? What was it verified against? Each
 answer is a field, and a schema can require every one of them.
@@ -263,7 +263,7 @@ meta:
 every platform. The command runs once, in the config file's directory, and
 its trimmed stdout is the value for every page. Structured JSON is parsed, so
 a script that prints `{"name":"operator","version":"1.4.2"}` derives the
-object form the [vocabulary](/manni/meta/proposals/stewardship/) recommends
+object form the [vocabulary](/manni/meta/reference/schemas/manni-stewardship/) recommends
 for a checker. Anything else stays the text the command printed, so a version
 such as `1.10` is stamped as you wrote it.
 
@@ -569,8 +569,8 @@ holds the page to the evidence. What it can do is change the body and run
   />
   <LinkCard
     title="The stewardship vocabulary"
-    href="/manni/meta/proposals/stewardship/"
-    description="The ten fields, which six are derivable, and the open review questions."
+    href="/manni/meta/reference/schemas/manni-stewardship/"
+    description="The ten fields, their types and location marks, and the strict overlay."
   />
   <LinkCard
     title="Roll out a new required field"
@@ -589,9 +589,9 @@ holds the page to the evidence. What it can do is change the body and run
     (see .github/workflows/docs-as-tests.yml), over this repository's own history.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"set-up-derived-metadata","description":"Derived metadata journey, mapped to the local CLI build over this repository's own git history."} */}
-{/* step {"description":"get derives without a flag and prints the resolved value with its origin, from this repository's history (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/proposals/stewardship.mdx","exitCodes":[0],"stdio":"created="}} */}
-{/* step {"description":"--derived is still accepted, so a script written before derivation became the default keeps working (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/proposals/stewardship.mdx --derived","exitCodes":[0],"stdio":"created="}} */}
-{/* step {"description":"--no-derived prints only what the document stores, consulting no source (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/proposals/stewardship.mdx --no-derived","exitCodes":[0],"stdio":"created="}} */}
+{/* step {"description":"get derives without a flag and prints the resolved value with its origin, from this repository's history (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx","exitCodes":[0],"stdio":"created="}} */}
+{/* step {"description":"--derived is still accepted, so a script written before derivation became the default keeps working (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx --derived","exitCodes":[0],"stdio":"created="}} */}
+{/* step {"description":"--no-derived prints only what the document stores, consulting no source (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta get created docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx --no-derived","exitCodes":[0],"stdio":"created="}} */}
 {/* step {"description":"A field that is not derivable is refused by name before any source is consulted (exit 2).","runShell":{"command":"npx @hawkeyexl/manni meta derive --fields verified-against","exitCodes":[2],"stdio":"not derivable"}} */}
 {/* step {"description":"A command in the config derives verified-against from the fixture's version file, and --dry-run reports it without writing (exit 0).","runShell":{"command":"npx @hawkeyexl/manni meta derive --fields verified-against --dry-run -c test/fixtures/derive/command/manni.config.yaml","exitCodes":[0],"stdio":"verified-against"}} */}
 {/* test end */}

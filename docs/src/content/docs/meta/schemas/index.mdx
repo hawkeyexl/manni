@@ -206,10 +206,10 @@ If OKF's field set is close to what you need, copy it into a file and adjust it.
 
 ## Borrow a schema instead of writing one
 
-{/* cite manni-ships-23-builtin-schemas */}
-Everything above assumes you're defining the field set yourself. manni meta ships twenty-three schemas you can adopt without authoring anything. The [built-in schema registry](/manni/meta/reference/built-in-schemas/) lists all of them in one table, with what each constrains and which two are on by default.
+{/* cite manni-ships-45-builtin-schemas */}
+Everything above assumes you're defining the field set yourself. manni meta ships forty-five schemas you can adopt without authoring anything. The [built-in schema registry](/manni/meta/reference/schemas/) lists all of them in one table, with what each constrains and which two are on by default. Twenty-two are the [manni vocabularies](/manni/meta/reference/schemas/manni-vocabularies/), eleven families for maintained docs with a strict overlay each.
 
-If your site is built with Docusaurus, start with [`docusaurus:docs:3.10`](/manni/meta/reference/docusaurus-schemas/) and its blog and pages counterparts. They encode the front matter contract of Docusaurus 3.10 and require nothing. Switching one on cannot fail a page that was already building. It only catches a `sidebar_position: "2"` that your site would have rejected later. They claim none of the `type` or `action` keys below, so they stack with any of the vocabularies. They do share `tags` with OKF, which allows only strings where Docusaurus also allows tag objects. See [the overlap note](/manni/meta/reference/built-in-schemas/#two-kinds-of-built-in) before pairing those two.
+If your site is built with Docusaurus, start with [`docusaurus:docs:3.10`](/manni/meta/reference/docusaurus-schemas/) and its blog and pages counterparts. They encode the front matter contract of Docusaurus 3.10 and require nothing. Switching one on cannot fail a page that was already building. It only catches a `sidebar_position: "2"` that your site would have rejected later. They claim none of the `type` or `action` keys below, so they stack with any of the vocabularies. They do share `tags` with OKF, which allows only strings where Docusaurus also allows tag objects. See [the overlap note](/manni/meta/reference/schemas/#two-kinds-of-built-in) before pairing those two.
 
 If what you need is a *closed list of document types*, three of the built-ins are vocabularies:
 
@@ -325,7 +325,7 @@ through every command.
 <CardGrid>
   <LinkCard
     title="Built-in schemas"
-    href="/manni/meta/reference/built-in-schemas/"
+    href="/manni/meta/reference/schemas/"
     description="The registry: every schema manni meta ships, what it constrains, and which two are on by default."
   />
   <LinkCard
@@ -345,7 +345,7 @@ through every command.
   />
   <LinkCard
     title="Built-in OKF schema, explained"
-    href="/manni/meta/reference/okf-schema/"
+    href="/manni/meta/reference/schemas/google-okf/"
     description="Every field in google:okf:0.1, its dialect, and the upstream spec."
   />
 </CardGrid>

@@ -1,0 +1,141 @@
+---
+title: Claude Code skill schema
+description: The anthropic:claude-skill:2.1 schema shipped with manni meta, covering the twenty SKILL.md fields Claude Code accepts, the enumerated ones, and its six boolean spellings.
+sidebar:
+  label: "anthropic:claude-skill:2.1"
+---
+
+**Built-in id:** `anthropic:claude-skill:2.1`
+
+**Published at:** [`https://hawkeyexl.github.io/manni/schemas/claude-skill/2.1.json`](/manni/schemas/claude-skill/2.1.json)
+
+{/* cite skills-claude-schema-requires-nothing */}
+The six fields of the Agent Skills standard, plus the fourteen fields Claude
+Code adds. It requires nothing, because Claude Code marks every field optional.
+A `SKILL.md` with no front matter at all still loads, and takes its description
+from the first paragraph of the body.
+
+[`agentskills:skill:1.0`](/manni/meta/reference/schemas/agentskills-skill/)
+is the portable standard this schema extends. Run this one over the skills that
+live in `.claude/skills/`. The [Agent Skills
+schemas](/manni/meta/reference/agent-skills-schemas/) overview explains how the
+two pair.
+
+## Use it
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: ".claude/skills/**/SKILL.md"
+      schemas:
+        - anthropic:claude-skill:2.1
+```
+
+To try it once without config:
+
+```bash
+manni meta validate .claude/skills/**/SKILL.md -s anthropic:claude-skill:2.1
+```
+
+## Fields
+
+| Field | Type | Notes |
+|---|---|---|
+| `name` | string | Display label in skill listings; the command still comes from the directory. In a plugin skill it sets the last command segment. |
+| `description` | string | How Claude decides to load the skill. Falls back to the first body paragraph. |
+| `when_to_use` | string | Trigger phrases appended to `description` in the listing. |
+| `argument-hint` | string | Autocomplete hint, such as `[issue-number]`. |
+| `arguments` | string \| list | Named positional arguments for `$name` substitution. |
+| `disable-model-invocation` | boolean | `true` leaves `/name` as the only way in. |
+| `user-invocable` | boolean | `false` hides it from the `/` menu, leaving Claude as the only caller. |
+| `allowed-tools` | string \| list | Tools pre-approved for the invoking turn. |
+| `disallowed-tools` | string \| list | Tools removed from the pool while the skill is active. |
+| `model` | string | Same values as `/model`, plus `inherit`. |
+| `effort` | enum | `low`, `medium`, `high`, `xhigh`, `max`. |
+| `context` | `fork` | Runs the skill in its own subagent context. |
+| `agent` | string | Which subagent type, with `context: fork`. |
+| `background` | boolean | With `context: fork`, `false` waits for the result in the invoking turn. |
+| `hooks` | object | Hooks registered for the rest of the session. |
+| `paths` | string \| list | Globs scoping automatic activation. |
+| `shell` | enum | `bash` or `powershell`, for inline command injection. |
+| `metadata` | object | Free-form, unlike the standard's string map. |
+| `license` | string | Accepted, not acted on. |
+| `compatibility` | string | Accepted, not acted on. Up to 500 characters. |
+
+### Three fields are enumerated, and one deliberately is not
+
+{/* cite skills-effort-context-and-shell-are-enumerated */}
+`effort`, `context` and `shell` have closed, published value sets, so a typo in
+one is an error:
+
+```text
+✗ .claude/skills/audit/SKILL.md
+    /effort  must be equal to one of the allowed values  (line 4)  [anthropic:claude-skill:2.1]
+```
+
+{/* cite skills-model-is-not-enumerated */}
+`model` is not enumerated. Its accepted values move with the product, and an
+organisation's `availableModels` allowlist narrows them further. A list written
+here would reject skills that work. This is the same rule the [vocabulary
+schemas](/manni/meta/reference/metadata-vocabularies/) follow for `ms.topic`: a set
+assembled from examples fails correct documents.
+
+{/* cite skills-claude-name-is-unconstrained */}
+`name` is not constrained either, and that one is the division of labour between
+the two schemas. `name: Fancy Review` is a legal Claude Code display label and an
+illegal Agent Skills name. Validating against the spec schema is how you find
+out.
+
+### Booleans have six spellings, and YAML only understands two
+
+{/* cite skills-six-boolean-spellings */}
+Claude Code accepts `yes`, `no`, `on`, `off`, `1` and `0` in any letter case, as
+well as `true` and `false`. A YAML 1.2 parser, which is what reads your front
+matter, resolves only `true` and `false` to booleans. Everything else arrives as
+a string or an integer:
+
+```yaml
+disable-model-invocation: yes   # the string "yes"
+background: 0                   # the integer 0
+user-invocable: TRUE            # the boolean true
+```
+
+{/* cite skills-flag-accepts-three-types */}
+All three work in Claude Code, so the schema accepts all three types rather than
+`boolean` alone. A `pattern` constrains only the string form, a `0`–`1` range
+constrains only the integer one, and booleans are left as they are. A word that is
+not one of the spellings still fails:
+
+```text
+✗ .claude/skills/audit/SKILL.md
+    /disable-model-invocation  must match pattern "^(?:[Tt][Rr][Uu][Ee]|…)$"  (line 4)  [anthropic:claude-skill:2.1]
+```
+
+## Additional properties
+
+Allowed, because Claude Code ignores a field it does not recognise. That
+tolerance is why this schema cannot tell you a skill is ready to publish.
+[`agentskills:skill:1.0`](/manni/meta/reference/schemas/agentskills-skill/)
+can.
+
+## Example
+
+```markdown
+---
+name: audit
+description: Audit the repository for stale dependencies. Use before a release.
+disable-model-invocation: true
+allowed-tools: Bash(npm outdated) Read
+effort: high
+context: fork
+---
+```
+
+## A common mistake
+
+An `effort` value outside the published set, such as `effort: extreme`, fails:
+
+```text
+✗ .claude/skills/audit/SKILL.md
+    /effort  must be equal to one of the allowed values  (line 4)  [anthropic:claude-skill:2.1]
+```

@@ -1,6 +1,6 @@
 ---
 title: Require citations in the standard
-description: "Make citations part of the metadata standard you own. Put the vocabulary in the repository, require the citations key on a class of pages, choose a severity per rule, and settle frontmatter against a sidecar as policy."
+description: "Make citations part of the metadata standard you own. Name the built-in vocabulary, require the citations key on a class of pages, choose a severity per rule, and settle frontmatter against a sidecar as policy."
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -18,40 +18,32 @@ holds**. The schema is where the first half is written down.
 
 Every transcript below is real output from the built tool.
 
-## Put the vocabulary in the repository
+## Name the vocabulary
 
 {/* cite vocabulary-id */}
-The entry shape is already specified, as `manni:citations:1.0.0-proposal.4`.
+The entry shape is already specified, as the built-in `manni:citations:1.0.0`.
 Do not restate it in your own schema. Two definitions of one key is the drift
 this composition avoids.
 
-{/* cite vocabulary-not-built-in */}
-{/* cite vendor-takes-http-url */}
-The vocabulary is not one of the [built-in
-schemas](/manni/meta/reference/built-in-schemas/), and no published URL serves
-it. The draft is [open for review](/manni/meta/proposals/citations/). So
-`manni meta schemas vendor`, which downloads an http(s) URL, has nothing to
-download. Copy
-[`1.0.0-proposal.4.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0044/schemas/citations/1.0.0-proposal.4.json)
-into your repository beside your own schemas, and commit it:
+{/* cite vocabulary-is-built-in */}
+The vocabulary is one of the [built-in
+schemas](/manni/meta/reference/schemas/manni-citations/), bundled with the
+tool. There is nothing to download or commit. Name it by its id, and every run
+resolves the same bytes, offline or in CI.
 
-```
-schema/citations-1.0.0-proposal.4.json
-schema/reference-page.schema.json
-```
-
-<Aside type="caution" title="A house schema cannot reach it through $ref">
+<Aside type="note" title="Or reach it through $ref">
   `$ref` resolves against the bundled built-ins and nothing else. No schema is
   fetched to satisfy a reference, and no relative file path is read for one.
-  So `{ "$ref": "manni:citations:1.0.0-proposal.4" }` inside your schema is a
-  compile failure, exit `2`, when the first page it governs is validated:
+  The vocabulary is a built-in, so one house schema can carry both halves:
 
-  ```
-  manni: Schema "schema/reference-page.schema.json" failed to compile: can't resolve reference manni:citations:1.0.0-proposal.4 from id https://example.com/reference-page.schema.json
+  ```json
+  "allOf": [{ "$ref": "manni:citations:1.0.0" }],
   ```
 
-  Compose it as a **set** instead, which is the next step. A set needs no
-  `$ref`, so it works with the file you committed.
+  The config then names one schema instead of two. The trade is in the
+  findings. A malformed entry is tagged with your schema rather than the
+  vocabulary. A `$ref` to a file path or a URL is a
+  compile failure, exit `2`, when the first page it governs is validated.
 </Aside>
 
 ## Require the key
@@ -100,7 +92,7 @@ meta:
     - collection: reference
       schemas:
         - ./schema/reference-page.schema.json
-        - ./schema/citations-1.0.0-proposal.4.json
+        - manni:citations:1.0.0
 ```
 
 {/* cite override-one-of-collection-files */}
@@ -113,6 +105,13 @@ which level wins, and [validating against more than one
 schema](/manni/meta/schemas/resolution/#validating-against-more-than-one-schema)
 says what a set does.
 
+{/* cite strict-overlay-narrows */}
+To hold every pin to what `manni cite add` writes, add
+`manni:citations-strict:1.0.0` as a third member. It asks for a full commit
+hash, and it pairs the pin's prefix with the source file. The [strict
+overlay](/manni/meta/reference/schemas/manni-citations/#strict-overlay)
+documents both rules.
+
 Three pages, three outcomes, one run:
 
 ```sh
@@ -121,10 +120,10 @@ manni meta validate docs/reference/
 
 ```
 ✗ docs/reference/entry-invalid.md
-    /citations/0/source  must have required property 'integrity'  (line 5)  [./schema/citations-1.0.0-proposal.4.json]
-    /citations  warning "citations" is stored in the page; schema/citations-1.0.0-proposal.4.json prefers external metadata. Run manni meta relocate.  (line 3)  [location:external]
+    /citations/0/source  must have required property 'integrity'  (line 5)  [manni:citations:1.0.0]
+    /citations  warning "citations" is stored in the page; manni:citations:1.0.0 prefers external metadata. Run manni meta relocate.  (line 3)  [location:external]
 ⚠ docs/reference/limits.md
-    /citations  warning "citations" is stored in the page; schema/citations-1.0.0-proposal.4.json prefers external metadata. Run manni meta relocate.  (line 3)  [location:external]
+    /citations  warning "citations" is stored in the page; manni:citations:1.0.0 prefers external metadata. Run manni meta relocate.  (line 3)  [location:external]
 ✗ docs/reference/retries.md
     (root)  must have required property 'citations'  (line 1)  [./schema/reference-page.schema.json]
 
@@ -302,11 +301,13 @@ meets them before CI does.
     (see .github/workflows/docs-as-tests.yml), over committed fixtures.
     Run with `npx doc-detective`. Config: .doc-detective.json. */}
 {/* test {"testId":"cite-require-citations","description":"Composing the citations vocabulary with a house schema that requires the key, and moving a rule's severity."} */}
-{/* step {"description":"A house schema cannot reach the vocabulary through $ref: only the bundled built-ins are registered, so the schema fails to compile and the run exits 2.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config -s test/fixtures/cite/citations-ref.schema.json test/fixtures/cite/pages/current.md","exitCodes":[2],"stdio":"failed to compile: can't resolve reference manni:citations:1.0.0-proposal.4"}} */}
-{/* step {"description":"Composed as a set, a page that carries a well-formed citation satisfies both members.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config -s test/fixtures/cite/requires-citations.schema.json -s docs/proposals/0044/schemas/citations/1.0.0-proposal.4.json test/fixtures/cite/pages/current.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 errors"}} */}
-{/* step {"description":"A page with no citations fails under the house schema, and the finding names that schema.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config -s test/fixtures/cite/requires-citations.schema.json -s docs/proposals/0044/schemas/citations/1.0.0-proposal.4.json test/fixtures/cite/pages/no-citations.md","exitCodes":[1],"stdio":"/\\(root\\)\\s+must have required property 'citations'[\\s\\S]*requires-citations\\.schema\\.json\\]/"}} */}
-{/* step {"description":"A malformed entry fails under the vocabulary instead, and the finding names the vocabulary.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config -s test/fixtures/cite/requires-citations.schema.json -s docs/proposals/0044/schemas/citations/1.0.0-proposal.4.json test/fixtures/cite/pages/entry-invalid.md","exitCodes":[1],"stdio":"/citations\\/1\\.0\\.0-proposal\\.4\\.json\\]/"}} */}
-{/* step {"description":"The required key is satisfied by the merged view, so a page whose entries live in a sidecar manifest passes with no citation YAML of its own, while a page with none still fails.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/cite-sidecar/manni.config.yaml -s test/fixtures/cite/requires-citations.schema.json -s docs/proposals/0044/schemas/citations/1.0.0-proposal.4.json test/fixtures/cite-sidecar/pages/limits.md test/fixtures/cite-sidecar/pages/retries.md","exitCodes":[1],"stdio":"/✓ \\S*pages\\/limits\\.md[\\s\\S]*must have required property 'citations'/"}} */}
+{/* step {"description":"A house schema reaches the vocabulary through $ref, because the vocabulary is a built-in, so a page that carries a well-formed citation passes.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config -s test/fixtures/cite/citations-ref.schema.json test/fixtures/cite/pages/current.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 errors, 1 warning"}} */}
+{/* step {"description":"Through $ref, a malformed entry fails, and the finding is tagged with the house schema rather than the vocabulary.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config -s test/fixtures/cite/citations-ref.schema.json test/fixtures/cite/pages/entry-invalid.md","exitCodes":[1],"stdio":"/must have required property 'integrity'\\s+\\(line 5\\)\\s+\\[\\S*citations-ref\\.schema\\.json\\]/"}} */}
+{/* step {"description":"Composed as a set, a page that carries a well-formed citation satisfies both members.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config -s test/fixtures/cite/requires-citations.schema.json -s manni:citations:1.0.0 test/fixtures/cite/pages/current.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 errors, 1 warning"}} */}
+{/* step {"description":"The strict overlay stacks as a third member, and a pin that manni cite add wrote satisfies it.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config -s test/fixtures/cite/requires-citations.schema.json -s manni:citations:1.0.0 -s manni:citations-strict:1.0.0 test/fixtures/cite/pages/current.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 errors, 1 warning"}} */}
+{/* step {"description":"A page with no citations fails under the house schema, and the finding names that schema.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config -s test/fixtures/cite/requires-citations.schema.json -s manni:citations:1.0.0 test/fixtures/cite/pages/no-citations.md","exitCodes":[1],"stdio":"/\\(root\\)\\s+must have required property 'citations'[\\s\\S]*requires-citations\\.schema\\.json\\]/"}} */}
+{/* step {"description":"A malformed entry fails under the vocabulary instead, and the finding names the vocabulary.","runShell":{"command":"npx @hawkeyexl/manni meta validate --no-config -s test/fixtures/cite/requires-citations.schema.json -s manni:citations:1.0.0 test/fixtures/cite/pages/entry-invalid.md","exitCodes":[1],"stdio":"/\\[manni:citations:1\\.0\\.0\\]/"}} */}
+{/* step {"description":"The required key is satisfied by the merged view, so a page whose entries live in a sidecar manifest passes with no citation YAML of its own, while a page with none still fails.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/cite-sidecar/manni.config.yaml -s test/fixtures/cite/requires-citations.schema.json -s manni:citations:1.0.0 test/fixtures/cite-sidecar/pages/limits.md test/fixtures/cite-sidecar/pages/retries.md","exitCodes":[1],"stdio":"/✓ \\S*pages\\/limits\\.md[\\s\\S]*must have required property 'citations'/"}} */}
 {/* step {"description":"claim-changed at its default is a warning: reported, and the run exits 0.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/claim-changed.md","exitCodes":[0],"stdio":"/↕ fetch-timeout\\s+:15 changed[\\s\\S]*1 finding \\(1 warning\\)/"}} */}
 {/* step {"description":"Moved to error under severity:, the same page fails the run and exits 1.","runShell":{"command":"npx @hawkeyexl/manni cite check -c test/fixtures/cite/strict/manni.config.yaml test/fixtures/cite/pages/claim-changed.md","exitCodes":[1],"stdio":"/✗ fetch-timeout\\s+:15 changed[\\s\\S]*0 passed, 1 failed, 1 finding/"}} */}
 {/* step {"description":"A duplicate id is not something the schema can refuse, so cite check refuses it, on the second entry's line.","runShell":{"command":"npx @hawkeyexl/manni cite check --no-config --root test/fixtures/cite test/fixtures/cite/pages/entry-invalid.md","exitCodes":[1],"stdio":"/duplicate id \"fetch-timeout\"\\s+\\(line 13\\)/"}} */}

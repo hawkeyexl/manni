@@ -18,7 +18,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: same-token-format
       claim:
-        integrity: sha256-2d4f1fa23a1722112d1f9c4e0a869fd8df8ca7767457e507b158934b667779f3
+        integrity: sha256-fa02a3c5d42164f051066b34b3a3c6dca1910ec1c585d665a982447c7ea6b4af
       source:
         file: src/cite/core/sources.ts
         lines: 23-29
@@ -42,7 +42,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: 968d1ada4fa14a7ce44bf9513653dac28d4a2496
     - id: ciphertext-shape
       claim:
-        integrity: sha256-2d4f1fa23a1722112d1f9c4e0a869fd8df8ca7767457e507b158934b667779f3
+        integrity: sha256-fa02a3c5d42164f051066b34b3a3c6dca1910ec1c585d665a982447c7ea6b4af
       source:
         file: src/shared/encryption.ts
         lines: 43-44
@@ -50,7 +50,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: keyed-pin-hmac
       claim:
-        integrity: sha256-2d4f1fa23a1722112d1f9c4e0a869fd8df8ca7767457e507b158934b667779f3
+        integrity: sha256-fa02a3c5d42164f051066b34b3a3c6dca1910ec1c585d665a982447c7ea6b4af
       source:
         file: src/shared/encryption.ts
         lines: 230-235
