@@ -1,6 +1,6 @@
 # 0066: strict overlays for the proposed vocabularies
 
-- **Status:** Proposed; superseded in part by 0067
+- **Status:** Implemented (#129); superseded in part by 0067
 - **Serves:** Sara · S1, "Define our metadata standard as a schema". She
   adopts the 0023 drafts for a corpus her team owns. She wants the standards
   the drafts only recommend to be enforced.
