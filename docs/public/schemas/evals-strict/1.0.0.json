@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:evals-strict:1.0.0",
+  "title": "manni evals strict overlay v1.0.0",
+  "description": "The strict overlay for manni:evals:1.0.0. Stack it beside the open vocabulary, which owns every key, every required rule and every conditional. It narrows names to kebab ids and model ids, exit codes to the range a process returns, companion paths to relative ones, and the assertion hash to its full form.",
+  "additionalProperties": true,
+  "type": "object",
+  "properties": {
+    "evals": {
+      "description": "Strict narrows the object entries of the list. A string shorthand, alone or in the list, passes as the open vocabulary reads it.",
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    },
+    "eval-suite": {
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Strict requires a kebab suite name."
+    }
+  },
+  "$defs": {
+    "entry": {
+      "description": "The rules strict adds to an object entry, either a `use:` reference or an inline definition.",
+      "properties": {
+        "use": {
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "A kebab eval name from the config."
+        },
+        "provider": {
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "A kebab provider name, such as `anthropic` or `llama-cpp`."
+        },
+        "model": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/\\\\@-]*$",
+          "description": "A model id of letters in either case, digits, `.`, `_`, `:`, `/`, `\\`, `@` and `-`, with no spaces. A Windows path to a local model passes."
+        },
+        "success-exit-codes": {
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "description": "Distinct exit codes, each from 0 to 255, the range a process can return."
+        },
+        "target": {
+          "properties": {
+            "path": {
+              "pattern": "^(?![\\\\/~])(?![A-Za-z]:)(?![A-Za-z][A-Za-z0-9+.-]*://).+$",
+              "description": "A relative path. It starts with no `/`, `\\` or `~`, no drive letter, and no URL scheme."
+            }
+          }
+        },
+        "generated-assertion-hash": {
+          "pattern": "^sha256-[0-9a-f]{64}$",
+          "description": "`sha256-` and sixty-four lowercase hex digits."
+        }
+      }
+    }
+  }
+}

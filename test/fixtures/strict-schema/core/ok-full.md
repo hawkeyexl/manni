@@ -7,7 +7,6 @@ id: install-operator-k8s
 type: how-to
 keywords: [helm, operator, rollout status]
 language: zh-Hant-TW
-locale: th-TH-u-ca-buddhist
 ---
 
 # Install the operator

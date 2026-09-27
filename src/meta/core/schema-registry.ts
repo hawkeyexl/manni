@@ -43,6 +43,28 @@ import agentSkills10 from "../schemas/agent-skills/1.0.json" with { type: "json"
 import claudeSkill21 from "../schemas/claude-skill/2.1.json" with { type: "json" };
 import mkdocsMaterial97 from "../schemas/mkdocs-material/9.7.json" with { type: "json" };
 import claudeSubagent21 from "../schemas/claude-subagent/2.1.json" with { type: "json" };
+import manniCore100 from "../schemas/core/1.0.0.json" with { type: "json" };
+import manniStewardship100 from "../schemas/stewardship/1.0.0.json" with { type: "json" };
+import manniAudience100 from "../schemas/audience/1.0.0.json" with { type: "json" };
+import manniLifecycle100 from "../schemas/lifecycle/1.0.0.json" with { type: "json" };
+import manniStructure100 from "../schemas/structure/1.0.0.json" with { type: "json" };
+import manniTerminology100 from "../schemas/terminology/1.0.0.json" with { type: "json" };
+import manniAiContext100 from "../schemas/ai-context/1.0.0.json" with { type: "json" };
+import manniEvals100 from "../schemas/evals/1.0.0.json" with { type: "json" };
+import manniArtifactEvals100 from "../schemas/artifact-evals/1.0.0.json" with { type: "json" };
+import manniGraph100 from "../schemas/graph/1.0.0.json" with { type: "json" };
+import manniCitations100 from "../schemas/citations/1.0.0.json" with { type: "json" };
+import manniCoreStrict100 from "../schemas/core-strict/1.0.0.json" with { type: "json" };
+import manniStewardshipStrict100 from "../schemas/stewardship-strict/1.0.0.json" with { type: "json" };
+import manniAudienceStrict100 from "../schemas/audience-strict/1.0.0.json" with { type: "json" };
+import manniLifecycleStrict100 from "../schemas/lifecycle-strict/1.0.0.json" with { type: "json" };
+import manniStructureStrict100 from "../schemas/structure-strict/1.0.0.json" with { type: "json" };
+import manniTerminologyStrict100 from "../schemas/terminology-strict/1.0.0.json" with { type: "json" };
+import manniAiContextStrict100 from "../schemas/ai-context-strict/1.0.0.json" with { type: "json" };
+import manniEvalsStrict100 from "../schemas/evals-strict/1.0.0.json" with { type: "json" };
+import manniArtifactEvalsStrict100 from "../schemas/artifact-evals-strict/1.0.0.json" with { type: "json" };
+import manniGraphStrict100 from "../schemas/graph-strict/1.0.0.json" with { type: "json" };
+import manniCitationsStrict100 from "../schemas/citations-strict/1.0.0.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 
 export interface BuiltinInfo {
@@ -76,6 +98,28 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
   ["anthropic:claude-skill:2.1", claudeSkill21],
   ["mkdocs:material:9.7", mkdocsMaterial97],
   ["anthropic:claude-subagent:2.1", claudeSubagent21],
+  ["manni:core:1.0.0", manniCore100],
+  ["manni:stewardship:1.0.0", manniStewardship100],
+  ["manni:audience:1.0.0", manniAudience100],
+  ["manni:lifecycle:1.0.0", manniLifecycle100],
+  ["manni:structure:1.0.0", manniStructure100],
+  ["manni:terminology:1.0.0", manniTerminology100],
+  ["manni:ai-context:1.0.0", manniAiContext100],
+  ["manni:evals:1.0.0", manniEvals100],
+  ["manni:artifact-evals:1.0.0", manniArtifactEvals100],
+  ["manni:graph:1.0.0", manniGraph100],
+  ["manni:citations:1.0.0", manniCitations100],
+  ["manni:core-strict:1.0.0", manniCoreStrict100],
+  ["manni:stewardship-strict:1.0.0", manniStewardshipStrict100],
+  ["manni:audience-strict:1.0.0", manniAudienceStrict100],
+  ["manni:lifecycle-strict:1.0.0", manniLifecycleStrict100],
+  ["manni:structure-strict:1.0.0", manniStructureStrict100],
+  ["manni:terminology-strict:1.0.0", manniTerminologyStrict100],
+  ["manni:ai-context-strict:1.0.0", manniAiContextStrict100],
+  ["manni:evals-strict:1.0.0", manniEvalsStrict100],
+  ["manni:artifact-evals-strict:1.0.0", manniArtifactEvalsStrict100],
+  ["manni:graph-strict:1.0.0", manniGraphStrict100],
+  ["manni:citations-strict:1.0.0", manniCitationsStrict100],
 ]);
 
 /**
@@ -187,6 +231,28 @@ const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
   ["claude-skill/2.1.json", "anthropic:claude-skill:2.1"],
   ["mkdocs-material/9.7.json", "mkdocs:material:9.7"],
   ["claude-subagent/2.1.json", "anthropic:claude-subagent:2.1"],
+  ["core/1.0.0.json", "manni:core:1.0.0"],
+  ["stewardship/1.0.0.json", "manni:stewardship:1.0.0"],
+  ["audience/1.0.0.json", "manni:audience:1.0.0"],
+  ["lifecycle/1.0.0.json", "manni:lifecycle:1.0.0"],
+  ["structure/1.0.0.json", "manni:structure:1.0.0"],
+  ["terminology/1.0.0.json", "manni:terminology:1.0.0"],
+  ["ai-context/1.0.0.json", "manni:ai-context:1.0.0"],
+  ["evals/1.0.0.json", "manni:evals:1.0.0"],
+  ["artifact-evals/1.0.0.json", "manni:artifact-evals:1.0.0"],
+  ["graph/1.0.0.json", "manni:graph:1.0.0"],
+  ["citations/1.0.0.json", "manni:citations:1.0.0"],
+  ["core-strict/1.0.0.json", "manni:core-strict:1.0.0"],
+  ["stewardship-strict/1.0.0.json", "manni:stewardship-strict:1.0.0"],
+  ["audience-strict/1.0.0.json", "manni:audience-strict:1.0.0"],
+  ["lifecycle-strict/1.0.0.json", "manni:lifecycle-strict:1.0.0"],
+  ["structure-strict/1.0.0.json", "manni:structure-strict:1.0.0"],
+  ["terminology-strict/1.0.0.json", "manni:terminology-strict:1.0.0"],
+  ["ai-context-strict/1.0.0.json", "manni:ai-context-strict:1.0.0"],
+  ["evals-strict/1.0.0.json", "manni:evals-strict:1.0.0"],
+  ["artifact-evals-strict/1.0.0.json", "manni:artifact-evals-strict:1.0.0"],
+  ["graph-strict/1.0.0.json", "manni:graph-strict:1.0.0"],
+  ["citations-strict/1.0.0.json", "manni:citations-strict:1.0.0"],
 ];
 
 /** Published URL → built-in id, under the current base. */

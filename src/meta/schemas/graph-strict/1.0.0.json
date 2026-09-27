@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:graph-strict:1.0.0",
+  "title": "manni graph strict overlay v1.0.0",
+  "description": "The strict overlay for manni:graph:1.0.0. Stack it beside the open vocabulary, which owns the closed `graph` block and its iiRDS enums. It narrows section keys to heading slugs and lineage references to single tokens.",
+  "additionalProperties": true,
+  "type": "object",
+  "properties": {
+    "graph": {
+      "description": "Strict narrows `sections` keys, `revision-of` and `derived-from`. Every other member of the block passes as the open vocabulary reads it.",
+      "properties": {
+        "sections": {
+          "propertyNames": {
+            "pattern": "^[\\p{Ll}\\p{Lm}\\p{Lo}\\p{M}\\p{Nd}_-]+$",
+            "description": "A heading slug of lowercase letters, caseless letters and their marks, digits, `_` and `-`. It admits slugs from scripts without case, such as Han, Arabic and Devanagari."
+          }
+        },
+        "revision-of": {
+          "$ref": "#/$defs/refList"
+        },
+        "derived-from": {
+          "$ref": "#/$defs/refList"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "refList": {
+      "pattern": "^\\S(?:.*\\S)?$",
+      "items": {
+        "pattern": "^\\S(?:.*\\S)?$"
+      },
+      "description": "A path or URL on one line with no surrounding space, alone or in each item of the list. A path may contain spaces."
+    }
+  }
+}

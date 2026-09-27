@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:stewardship-strict:1.0.0",
+  "title": "manni stewardship strict overlay v1.0.0",
+  "description": "The strict overlay for manni:stewardship:1.0.0. Stack it beside the open vocabulary. It narrows the form of values the open vocabulary already claims and requires no key.",
+  "additionalProperties": true,
+  "type": "object",
+  "properties": {
+    "authors": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "pattern": "^\\S(?:.*\\S)?$",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^\\S(?:.*\\S)?$"
+          },
+          "email": {
+            "type": "string",
+            "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^https?://\\S+$"
+          }
+        }
+      },
+      "description": "Strict takes authors as a list of unique entries. A string entry is one line with no surrounding space. A person object names the person, and its `email` and `url` are well formed."
+    },
+    "owner": {
+      "$ref": "#/$defs/handles",
+      "description": "Strict holds each owner to a handle a GitHub or GitLab CODEOWNERS file accepts, in the string form and the list form alike."
+    },
+    "stakeholders": {
+      "$ref": "#/$defs/names",
+      "description": "Strict holds each stakeholder to one line with no surrounding space. A stakeholder is a person or team, named in any form."
+    },
+    "reviewed-by": {
+      "$ref": "#/$defs/names",
+      "description": "Strict holds each reviewer to one line with no surrounding space. `manni meta derive` writes review-API logins and commit-trailer names, so no handle form is required."
+    },
+    "created": {
+      "$ref": "#/$defs/date",
+      "description": "Strict holds the creation date to an RFC 3339 full date or date-time. A year or month alone fails, and so does a timestamp without seconds."
+    },
+    "last-updated": {
+      "$ref": "#/$defs/date",
+      "description": "Strict holds the update date to an RFC 3339 full date or date-time. A year or month alone fails, and so does a timestamp without seconds."
+    },
+    "last-reviewed": {
+      "$ref": "#/$defs/date",
+      "description": "Strict holds the review date to an RFC 3339 full date or date-time. A year or month alone fails, and so does a timestamp without seconds."
+    },
+    "verified-against": {
+      "required": [
+        "name",
+        "version"
+      ],
+      "items": {
+        "required": [
+          "name",
+          "version"
+        ]
+      },
+      "description": "Strict requires an object entry to carry `name` and `version`, alone or in a list. The version's format stays free, and a string entry is unchanged."
+    },
+    "source-of-truth": {
+      "$ref": "#/$defs/source",
+      "items": {
+        "$ref": "#/$defs/source"
+      },
+      "description": "Strict requires an object entry to carry `path` or `url`, alone or in a list. A string entry is one id, path or URL on one line with no surrounding space."
+    }
+  },
+  "$defs": {
+    "handles": {
+      "pattern": "^(?:@@?[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?(?:/[A-Za-z0-9._-]+)*|[^\\s@]+@[^\\s@]+\\.[^\\s@]+)$",
+      "items": {
+        "pattern": "^(?:@@?[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?(?:/[A-Za-z0-9._-]+)*|[^\\s@]+@[^\\s@]+\\.[^\\s@]+)$"
+      },
+      "description": "A handle a CODEOWNERS file accepts, as a string or as each member of a list. That is `@user`, `@org/team`, a GitLab nested group or `@@role`, or an email address."
+    },
+    "names": {
+      "pattern": "^\\S(?:.*\\S)?$",
+      "items": {
+        "pattern": "^\\S(?:.*\\S)?$"
+      },
+      "description": "One line with no surrounding space, as a string or as each member of a list."
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])(?:T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9]))?$",
+      "description": "An RFC 3339 full date, or a date-time with seconds and an offset."
+    },
+    "source": {
+      "pattern": "^\\S(?:.*\\S)?$",
+      "anyOf": [
+        {
+          "required": [
+            "path"
+          ]
+        },
+        {
+          "required": [
+            "url"
+          ]
+        }
+      ],
+      "description": "A source entry. A string is one id, path or URL on one line with no surrounding space. An object carries `path` or `url`."
+    }
+  }
+}
