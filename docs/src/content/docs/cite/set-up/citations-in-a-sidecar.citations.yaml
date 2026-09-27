@@ -6,9 +6,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-8d3b4c9b0dda52b09b751673bb83b0fbb531dfbf67303ba2c72b1c71f44e7b14
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 394-396
+        lines: 396-398
         integrity: sha256-55e40b5ece9b5bcb3bdd7db7bd7e794020e74c28c0090585286392b7d038d0fa
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
     - id: one-manifest-owns-a-key
       claim:
         lines: 115-116
@@ -207,9 +207,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-ae7191a2eb66ade00be7619c590be4140a6be5a3e4aff2bd003219c51df40eae
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 658-665
+        lines: 660-667
         integrity: sha256-0c044a14d96e5939bada035cffde62d350cef82b60fc00d13b42507dac93b0a5
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
     - id: page-placeholder-sibling
       claim:
         integrity: sha256-9bbfabf07af711d018ef47849edd424ed67f3177f4a8337aaa30174c48812bcc

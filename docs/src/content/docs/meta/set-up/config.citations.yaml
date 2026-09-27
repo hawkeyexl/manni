@@ -378,9 +378,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-ccaea7a4e51be923a8e80d44e4a0a9dd69a565c75a835b06d59a8189cec4958d
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 394-396
+        lines: 396-398
         integrity: sha256-55e40b5ece9b5bcb3bdd7db7bd7e794020e74c28c0090585286392b7d038d0fa
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
     - id: local-schema-ref-rebased-to-config-dir
       claim:
         lines: 44

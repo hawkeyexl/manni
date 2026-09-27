@@ -22,9 +22,9 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-5103fa868d137b1ae86f359fa98f2e775eff1d6954349c489f5ff967682b1c16
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 938-944
+        lines: 940-946
         integrity: sha256-ec1f4494ff206c8d5bb37b8464603f8558df039b62f69eced8ee01a0ccbe2f08
-        commit-sha: e4e19507303e485c26f924f195f51163cf77bc40
+        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
     - id: no-config-is-not-offered
       claim:
         lines: 424
@@ -123,9 +123,9 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-c91d48f71c9158c367af6b22fd2928fe1a799315a2ec9e58042474478b5373dc
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 77-84
+        lines: 79-86
         integrity: sha256-566b9a706afeb0ee880f0c31afa7d72f1fcfe64177535f1dc04f72deff372a88
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
     - id: url-manifest-write-is-refused
       claim:
         lines: 363

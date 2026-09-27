@@ -195,8 +195,8 @@ docs/src/content/docs/meta/reference/api.mdx:
       source:
         file: src/meta/core/external-metadata.ts
         lines: 1-20
-        integrity: sha256-aea8113d1b5af76e067724537a7fca76422f10737347be91ef5bfeafa7a9d08d
-        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
+        integrity: sha256-eda0d46c747ca14a224c3d76b66a9f5f0728b40d02c138274d9601720ac3322b
+        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
     - id: api-collection-exports
       claim:
         lines: 109-115
@@ -272,8 +272,8 @@ docs/src/content/docs/meta/reference/api.mdx:
       source:
         file: src/meta/core/external-metadata.ts
         lines: 1-20
-        integrity: sha256-aea8113d1b5af76e067724537a7fca76422f10737347be91ef5bfeafa7a9d08d
-        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
+        integrity: sha256-eda0d46c747ca14a224c3d76b66a9f5f0728b40d02c138274d9601720ac3322b
+        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
     - id: api-cores-have-no-cli-plumbing
       claim:
         integrity: sha256-68e9c41fd7d5d06aa7ef5a1556c586a563bde3e033fcf25d80781b053a1f5acc
