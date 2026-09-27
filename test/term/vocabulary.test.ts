@@ -29,6 +29,7 @@ import { dirname, resolve } from "node:path";
 import { runValidate } from "../../src/meta/commands/validate.js";
 import type { ValidationResult } from "../../src/meta/types.js";
 import { loadSchema } from "../../src/meta/core/schema-registry.js";
+import { type Json, withoutProse } from "../helpers/json.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
@@ -371,8 +372,6 @@ describe("manni:kg:1.0.0-proposal.4", () => {
   });
 });
 
-type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
-
 /** The one sentence the graph draft adds to kg's top-level description. */
 const PREDECESSOR =
   " This is the kg vocabulary renamed, and manni:kg:1.0.0-proposal.4 is its predecessor.";
@@ -395,21 +394,6 @@ function asKgProse(text: string): string {
     .replaceAll("/graph/", "/kg/")
     .replaceAll("graph fields", "kg fields")
     .replace("manni:kg:1.0.0-proposal.1 carried", "proposal.1 carried");
-}
-
-/** The schema without `$id`, `title` or any `description`, which are prose. */
-function withoutProse(node: Json, top = true): Json {
-  if (Array.isArray(node)) return node.map((item) => withoutProse(item, false));
-  if (node !== null && typeof node === "object") {
-    return Object.fromEntries(
-      Object.entries(node)
-        .filter(
-          ([k]) => k !== "description" && !(top && (k === "$id" || k === "title")),
-        )
-        .map(([k, v]) => [k, withoutProse(v, false)]),
-    );
-  }
-  return node;
 }
 
 /** Apply `asKgProse` to every description string, and leave every other value alone. */

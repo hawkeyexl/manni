@@ -21,6 +21,12 @@
  *
  * Usage:
  *   node scripts/check-published-schemas.mjs [baseUrl]
+ *
+ * With `DEPLOYED_MANIFEST` set to a manifest file, only the keys that manifest
+ * records are fetched. The pull_request run passes main's manifest, the one the
+ * live site was built from, because a file this branch adds has no URL until
+ * it merges and the docs redeploy. A published file never changes, so a key in
+ * both manifests carries one hash.
  * Exit 0 = every URL serves the bytes the manifest records, 1 = drift or an
  * unreachable URL, 2 = setup error.
  */
@@ -92,7 +98,26 @@ try {
   setupError(`could not read src/meta/schemas/manifest.json.\n${err.message}`);
 }
 
-const entries = Object.entries(manifest?.schemas ?? {});
+let entries = Object.entries(manifest?.schemas ?? {});
+
+const deployedPath = process.env.DEPLOYED_MANIFEST;
+if (deployedPath) {
+  let deployed;
+  try {
+    deployed = JSON.parse(readFileSync(deployedPath, "utf8"));
+  } catch (err) {
+    setupError(`could not read DEPLOYED_MANIFEST ${deployedPath}.
+${err.message}`);
+  }
+  const live = new Set(Object.keys(deployed?.schemas ?? {}));
+  const unpublished = entries.filter(([key]) => !live.has(key)).map(([key]) => key);
+  entries = entries.filter(([key]) => live.has(key));
+  if (unpublished.length > 0) {
+    console.log(
+      `Not deployed yet, so not fetched (${unpublished.length}): ${unpublished.join(", ")}`,
+    );
+  }
+}
 if (entries.length === 0) {
   // Refusing to pass vacuously: an empty manifest means the check verified
   // nothing, and "0 URLs OK" reads exactly like success.

@@ -30,7 +30,7 @@
       }
     },
     "risks": {
-      "description": "Strict closes the flags to the seven the open vocabulary recommends, in both the single-string and the list form.",
+      "description": "Strict closes the flags to the seven the open vocabulary recommends, in both the single-string and the list form. The `if`/`then` pair holds the single string, and the sibling `items` holds each member of a list. Each keyword applies to one type only, so neither needs a type guard.",
       "if": {
         "type": "string"
       },

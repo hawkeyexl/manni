@@ -2,7 +2,7 @@
   "version": 1,
   "schemas": {
     "agent-skills/1.0.json": "sha256-03be80305cae9f8100382c9bbb812798fb8cf23c67abb43ce5acc3ea1cd3932f",
-    "ai-context-strict/1.0.0.json": "sha256-9a4df6527a086791aa9d4c7c00ff952cee628512a0a1d4ca43a6bd485bf2d1e5",
+    "ai-context-strict/1.0.0.json": "sha256-1036b89236c0ca7ddce4f46b3cf9083f64f801aba6a606b1cd6272555b8d7967",
     "ai-context/1.0.0.json": "sha256-0c9100029034ca6411cd77ada16c87a8f89bc702601fdacdf4a714fa50b195ab",
     "antora/3.1.json": "sha256-fcce5415e1742725a4980eebee9ab219dfe685f7721d927810e050069331ceb0",
     "artifact-evals-strict/1.0.0.json": "sha256-9804337584c756091f1f7d53d9931889ee22884dd6a6bb7abd6977e1ed2d0ac8",

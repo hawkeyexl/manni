@@ -22,8 +22,10 @@ name: Published schemas
 #
 # The `pull_request` trigger below is deliberately narrow for that reason: it
 # fires only on changes to this workflow or to the checker itself, so a change
-# to *how* the check works is exercised before merging, while a change to *what*
-# it checks is left to the schedule — by which time the deploy has happened.
+# to *how* the check works is exercised before merging. That run passes main's
+# manifest as DEPLOYED_MANIFEST, so it fetches only what the live site was
+# built from. A file the branch adds is left to the schedule, by which time the
+# deploy has happened.
 on:
   schedule:
     # 06:20 UTC. Off the hour on purpose — GitHub queues the top of the hour
@@ -57,4 +59,11 @@ jobs:
       # No `npm ci`: the checker uses only node: builtins and global fetch, so
       # installing 700 packages to make seven requests would be the slowest and
       # most fragile part of this workflow.
+      # On a pull request, the live site is main's build, so main's manifest
+      # names what it serves.
+      - if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          git show origin/main:src/meta/schemas/manifest.json > "$RUNNER_TEMP/deployed-manifest.json"
+          echo "DEPLOYED_MANIFEST=$RUNNER_TEMP/deployed-manifest.json" >> "$GITHUB_ENV"
       - run: npm run schemas:check-published
