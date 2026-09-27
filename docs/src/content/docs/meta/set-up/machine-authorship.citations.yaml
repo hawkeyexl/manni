@@ -86,8 +86,8 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
       source:
         file: src/meta/core/derive/provenance-place.ts
         lines: 79-82
-        integrity: sha256-6b9967c5a7122c9502fea975efe7dbde3bab45ee8baa63e8b9314e0cffbedbd3
-        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
+        integrity: sha256-2a2feebe9dba28e0b36ae75d1090b49f8d9c027171d41a4a4e0e5bebde29ec6d
+        commit-sha: 1ccfcc3fe399cab7d2d6ea4bff10a5071492ded1
     - id: empty-plan-removes-provenance-key
       claim:
         integrity: sha256-1a4a97071c2b901d6a4c4ab5d54c8e3356b2c281c47cfcf869202f66a5f52018
@@ -149,9 +149,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-b9e91fe888d57899a3d7f10ab52a68534b9731b82c4e7b3176dd1403be7d2263
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 332-335
-        integrity: sha256-36059015a0afab51c18d810c52c7d8f3e547f0a769b13785db2abddd8cecf20d
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 360-364
+        integrity: sha256-230b7273797aae64c0d04884098570b91458a5f1eef3b914ee8f2f2a0f843168
+        commit-sha: 1ccfcc3fe399cab7d2d6ea4bff10a5071492ded1
     - id: operational-refusal-is-exit-2
       claim:
         integrity: sha256-270e1aebcc0c40be7a283d5254f4b22ab8ba9ff72b569a3eccec71b112b695f6
@@ -314,9 +314,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-6fedd5181bee831ead0082f85c35f9fc1c3fa914171509b11b5e96544abcce95
       source:
         file: src/meta/commands/validate.ts
-        lines: 573-579
-        integrity: sha256-ba6db3fb30e7c6c5fbec208481926381080b4d086da84fc046b949fc0de943f8
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        lines: 575-584
+        integrity: sha256-6f9df11dc130841f621a9207a00e82ce264cc4ac92855aad30d05ff540127df1
+        commit-sha: 1ccfcc3fe399cab7d2d6ea4bff10a5071492ded1
     - id: changed-pin-finding-at-first-file-line
       claim:
         integrity: sha256-6fedd5181bee831ead0082f85c35f9fc1c3fa914171509b11b5e96544abcce95
@@ -374,5 +374,5 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
       source:
         file: src/meta/core/derive/provenance-place.ts
         lines: 141-147
-        integrity: sha256-a164bc6b15e89caeea4c7af0d121184287dc0f2b88ede24f21463589404a4955
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        integrity: sha256-2af2ebc4f0b3c9337bd9e45669f2920425314a4e7b21eb99de76045707498186
+        commit-sha: 1ccfcc3fe399cab7d2d6ea4bff10a5071492ded1

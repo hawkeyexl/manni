@@ -53,7 +53,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
     - id: output-derive-source-errors
       claim:
         lines: 687-724
-        integrity: sha256-105b67c8117271e56c4391616dbfb61355cdda17a6717e36ce7bcafc884f79c6
+        integrity: sha256-89594d83069a2aba3034fa9b4aebd5829b0a153f9bb511deab32e88a4273b9a6
       source:
         file: src/meta/core/derive/types.ts
         lines: 1-20

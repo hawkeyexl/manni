@@ -1026,8 +1026,8 @@ docs/src/content/docs/meta/reference/query.mdx:
       source:
         file: src/meta/commands/query.ts
         lines: 931-932
-        integrity: sha256-49578f90161f4cb5c38909915171d1b55997e170c95d73f38057076fdf425f2e
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        integrity: sha256-72f6074de0b85784fb6853cb3e97b76806d063718543abf6e802924b21ee316e
+        commit-sha: 1ccfcc3fe399cab7d2d6ea4bff10a5071492ded1
     - id: derived-only-the-columns-read
       claim:
         integrity: sha256-a42942efd20a6c8d6ec7d5cf24163a573e7672239a53c3f65dadc13a0f03567f

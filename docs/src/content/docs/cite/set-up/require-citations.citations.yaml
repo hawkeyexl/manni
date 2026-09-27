@@ -154,9 +154,9 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-245441ed6bb8a25ed6c31e1475f511797d938a6c0d3d7e1d29eda18941b47727
       source:
         file: src/meta/commands/validate.ts
-        lines: 688-707
-        integrity: sha256-1f15efc0958e05dee190b938771bcfaee793b60d1b7032f041b0906ffdb20d57
-        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
+        lines: 698-723
+        integrity: sha256-8843067ec79fb617e3ee52191fbfb428ac764dc2a6f593372fdf4c72d0bb67e4
+        commit-sha: 1ccfcc3fe399cab7d2d6ea4bff10a5071492ded1
     - id: manifest-finding-on-manifest-line
       claim:
         lines: 143-144
