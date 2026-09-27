@@ -33,18 +33,18 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-df8aa1a23de1a48818b6bb601ddbacc43696c61fc4192ba7c218a9fbf18cefc9
       source:
         file: src/cite/core/sidecar.ts
-        lines: 413-417
+        lines: 416-420
         integrity: sha256-9f678f0a57521d703c2bd47694d52ac6e50aceed14ef33d79ed2f8d3fa43688e
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
     - id: no-config-frontmatter-only
       claim:
         lines: 196-197
         integrity: sha256-86c39ef0899349402579df9aa7b63e25149a37d4093ed51579ec4f8cb84b8c07
       source:
         file: src/cite/core/sidecar.ts
-        lines: 413-414
+        lines: 416-417
         integrity: sha256-dae4c906327d834b6eb32a2c2a313026a27656063640423ff509549c598aa7d3
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
     - id: entry-finding-on-manifest-line
       claim:
         integrity: sha256-ce3ca41f20885edc437fb252412f3526187520fcb91bed6f063594664bc80654
@@ -139,9 +139,9 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-1f472d3fbeb438cba35b11f8eae962e80d4b011dab546cf12675616995715fc0
       source:
         file: src/cite/core/sidecar.ts
-        lines: 311-316
+        lines: 314-319
         integrity: sha256-44391d04d9c2963a5cbbb57a723fc3aa4a33f741c3a927590a7851eff3697a19
-        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
+        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
     - id: duplicate-join-refused
       claim:
         integrity: sha256-290e56f298c2b37338c9d647aca729b9426de925a8ba57540f9c7c9d6cee4f5e
@@ -156,18 +156,18 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         integrity: sha256-96fedd3a29137cb4484bcf6754a046db0e5e6f5b39a244beeaa1dae20d5fd6b2
       source:
         file: src/cite/core/sidecar.ts
-        lines: 164-166
+        lines: 163-165
         integrity: sha256-8aa228d0b9756d7398b3298b92246502a0421ec4f7f60af0de60c0f358c76b67
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
     - id: refusal-two-manifests
       claim:
         lines: 376
         integrity: sha256-16ff917be6bb0f247671195738ca63fdfccfa44b1da090b5c3307c18e78a0364
       source:
         file: src/cite/core/sidecar.ts
-        lines: 169-171
+        lines: 168-170
         integrity: sha256-3d2d4aeaa0fa6d82490907ae98526eb59ce655b28ed26c3757b0d1bab5f06231
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
     - id: refusal-stdin-add
       claim:
         lines: 377

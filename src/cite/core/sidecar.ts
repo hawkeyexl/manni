@@ -31,13 +31,12 @@
  */
 import { existsSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
-import { configMarks, gitIgnored, type PageMarks } from "../../meta/internal.js";
+import { configMarks, gitIgnored, mergeWithMarks, type PageMarks } from "../../meta/internal.js";
 import {
   classifyRef,
   externalMetadataJoin,
   loadExternalMetadata,
   memberOf,
-  mergeExternalMetadata,
   orphanEntries,
   orphanError,
   orphanJoins,
@@ -300,9 +299,13 @@ function sidecars(
     const owner = pageOwner(declared, label);
     if (owner === undefined) return { joins: [] };
 
-    const merged = mergeExternalMetadata(label, extract(), index, members, base, {
+    // The merge judges every field a keyless manifest holds, not only
+    // `citations`, so it reads the page's marks with those values in place,
+    // as meta's own merge does.
+    const readMarks = await marksOnce();
+    const merged = await mergeWithMarks(label, extract(), index, members, base, {
       encryptionKey: () => opts.key,
-      ...(marked === undefined ? {} : { marked }),
+      ...(readMarks === undefined ? {} : { marks: readMarks }),
     });
 
     const out: PageSidecar = { owner, joins: merged.joins };

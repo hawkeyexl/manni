@@ -864,7 +864,12 @@ export function mergeExternalMetadata(
   return mergeWith(label, extracted, index, memberOf, base, options.encryptionKey, options.marked ?? UNKNOWN);
 }
 
-/** No marks known: a keyless manifest owns nothing. */
+/**
+ * No marks known: a keyless manifest owns nothing, and a value it holds is
+ * skipped rather than refused. Compared by reference, because an explicit
+ * empty set means something else: the marks are known and name nothing, so
+ * every value a keyless manifest holds for the page is refused.
+ */
 const UNKNOWN: ReadonlySet<string> = new Set();
 
 /**
@@ -897,7 +902,7 @@ function mergeWith(
   // whether one owns a key for this file.
   const implied = (impliedOwners.get(index) ?? []).filter((o) => mine(o.collection.name));
   const impliedOwns = (o: ImpliedOwner, key: string): boolean =>
-    ownsKey(o.collection, o.manifest, key, probing ? new Set([key]) : marked);
+    probing ? !neverOwned(o.collection, o.manifest).has(key) : ownsKey(o.collection, o.manifest, key, marked);
   /** Every manifest of this file's collections that owns `key` for it. Not asked while probing. */
   const ownersOf = (key: string): { collection: string; file: string }[] =>
     pageOwners(index, key, memberOf, probing ? undefined : marked);
@@ -1090,6 +1095,8 @@ export async function mergeWithMarks(
   }
   const probe = mergeWith(label, extracted, index, memberOf, base, encryptionKey, PROBE).extracted.data;
   const marked = await marks(label, probe, memberOf);
+  // With the page's schema set unresolvable, the probe was spent for
+  // nothing, and the merge below is the one a keyless-free collection gets.
   const merged = mergeWith(label, extracted, index, memberOf, base, encryptionKey, marked ?? UNKNOWN);
   return marked === undefined ? merged : { ...merged, marked };
 }

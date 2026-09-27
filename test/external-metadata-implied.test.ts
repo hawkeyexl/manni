@@ -242,4 +242,13 @@ describe("the writers follow the marks", () => {
       index: 0,
     });
   });
+
+  it("cite reads a keyless manifest that also holds another external field", async () => {
+    // Ownership is judged over the page with the manifest's values in place,
+    // so `owner`, which stewardship marks external, is the manifest's too.
+    const run = await runCheck({ cwd: join(FIXTURES, "cite-other"), inputs: [], gitClient: noGit(), env: {} });
+    const page = run.pages.find((p) => p.file === "docs/limits.md");
+    expect(page?.citations[0]?.citation.id).toBe("fetch-timeout");
+    expect(page?.citations[0]?.origin.kind).toBe("manifest");
+  });
 });

@@ -51,4 +51,4 @@ docs/src/content/docs/meta/reference/schemas/tgdp-templates.mdx:
       source:
         file: src/meta/schemas/tgdp/1.1.json
         lines: 8-48
-        integrity: sha256-830fab2b6925f714dcbc475689bc2803e3640abd0a0a8544107fbbea908ebecc
+        integrity: sha256-000fb36f2b856309b3b1d50f75d4f6e61a602f5b128fd7b8d4aa2359d90fe0b8
