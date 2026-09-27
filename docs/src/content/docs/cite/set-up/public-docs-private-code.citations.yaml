@@ -119,17 +119,17 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-31c2cdd1286ba74f030e9e665f3075981d548829ff2bccad6eb610c7dc970438
       source:
         file: src/key/commands/rotate.ts
-        lines: 639-652
+        lines: 642-655
         integrity: sha256-164ed6a3061b0eadee95679f54b5b874f47de026f25093a36129ca17aed4637d
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: rotate-metadata-same-run
       claim:
         integrity: sha256-31c2cdd1286ba74f030e9e665f3075981d548829ff2bccad6eb610c7dc970438
       source:
         file: src/key/commands/rotate.ts
-        lines: 564-571
+        lines: 567-574
         integrity: sha256-bbd38a298036dc5f22c04350225242eb9d895a3836422eaf0d60e9d5275b5e0a
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: rotate-rekeys-from-cited-lines
       claim:
         integrity: sha256-31c2cdd1286ba74f030e9e665f3075981d548829ff2bccad6eb610c7dc970438
@@ -143,17 +143,17 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-b93bfc3e7a5ae697326e02c221131e27a7e85729925838e27b2c11432ae6b50e
       source:
         file: src/key/commands/rotate.ts
-        lines: 458
+        lines: 459
         integrity: sha256-d5e1fc9f01fa9e06e6b5e3685957b987ba7770881d8333f822983a13cccd6dd5
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: rotate-env-config-not-written
       claim:
         integrity: sha256-b93bfc3e7a5ae697326e02c221131e27a7e85729925838e27b2c11432ae6b50e
       source:
         file: src/key/commands/rotate.ts
-        lines: 633-638
+        lines: 636-641
         integrity: sha256-5e9d429885c50bf125fcb5ec3ed862f7337ace9eeaef13d5642ad77027a9488f
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: rotate-env-message
       claim:
         lines: 138
@@ -168,9 +168,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-4c83e28f59be1d556b9d28b63a49c999c0dcf99d0d441857a0e0c52931f14350
       source:
         file: src/key/commands/rotate.ts
-        lines: 446-459
+        lines: 447-460
         integrity: sha256-216404008d78a19bb750323130719ce3047555b4c01ffb329f3e2cfc353a32cb
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: reveal-pretty-only
       claim:
         lines: 151-153
@@ -212,7 +212,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-f1cfea2e6f24bdc432e0171c2be07edddff6d118c039afafa5175dd3df5626af
       source:
         file: src/cite/core/sidecar.ts
-        lines: 183-185
+        lines: 204-207
         integrity: sha256-a84cdf9f159b12a5b12a2d73d10cad4c24c8cedcfc1b482a7af738f756910dce
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: key-set-256-bits

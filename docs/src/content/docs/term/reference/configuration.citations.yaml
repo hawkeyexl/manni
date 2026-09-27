@@ -29,9 +29,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-de02cceeffeb5919c1b3e83fb65958d51dad9dbc7451bdc8fe37441d654d24fa
       source:
         file: src/shared/collections.ts
-        lines: 462
+        lines: 544
         integrity: sha256-4c122a9104135ababd403fb8ad12965858226a24b861d98132dbeda32b828b95
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: collection-flag-narrows
       claim:
         integrity: sha256-de02cceeffeb5919c1b3e83fb65958d51dad9dbc7451bdc8fe37441d654d24fa

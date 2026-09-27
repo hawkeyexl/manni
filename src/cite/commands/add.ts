@@ -211,7 +211,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
   }
   const sidecar: PageSidecar | undefined = usingStdin
     ? undefined
-    : sidecars?.forPage(label, content, opts.as);
+    : await sidecars?.forPage(label, content, opts.as);
   const owner = sidecar?.owner;
 
   const page = readPage(label, content, {

@@ -53,18 +53,18 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         integrity: sha256-f0d91aee9bf52e2f88c7d3a5c102ff3141869f6dd3c7e53859cfe91f9a34520e
       source:
         file: src/meta/commands/schemas.ts
-        lines: 240-258
+        lines: 242-260
         integrity: sha256-8baa3fd59785c989fe60230d0abe1490f66989334a6f065017a9e6d65bf28cd2
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: vendor-default-directory-is-schema
       claim:
         lines: 41-42
         integrity: sha256-04c8f67c0f7c80aa75be03004ceacecd8ff2c76704d91f7ebf5cdc1baa214a7d
       source:
         file: src/meta/commands/schemas.ts
-        lines: 63-70
+        lines: 65-72
         integrity: sha256-2d6c72f12d361f58f4ad777a2968ebce3c274c4e7d441ab60f952439d9668241
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: integrity-mismatch-stops-the-run
       claim:
         integrity: sha256-2973c169c742086fe64426492cc18bb77545a9dd9c289594b55ea3b731de380f
@@ -97,18 +97,18 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         integrity: sha256-9d6d1f0a54c855eaf7bd9f69baf57d112108fe895a96a7ae65d85a8f8f60dd41
       source:
         file: src/meta/commands/schemas.ts
-        lines: 183-191
+        lines: 185-193
         integrity: sha256-d1e100d98877837f95c15711e8dbbc3ec2a64319e419afc24bf09848d544d18e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: no-git-means-the-check-is-skipped
       claim:
         lines: 94-95
         integrity: sha256-1576a5c019e41c4821fd7b306549918c39035f4127a7e1a0c2757f6524f075e5
       source:
         file: src/meta/commands/schemas.ts
-        lines: 187-191
+        lines: 189-193
         integrity: sha256-79e5f8c927735974ecab1d39cacd59587ddbaa43276078a01bdf9a43f789b41d
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: timeout-message
       claim:
         lines: 239

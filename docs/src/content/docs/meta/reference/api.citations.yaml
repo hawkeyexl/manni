@@ -183,7 +183,7 @@ docs/src/content/docs/meta/reference/api.mdx:
     - id: api-external-metadata-exports
       claim:
         lines: 136-157
-        integrity: sha256-fc8e1f539d2f720251cd0ca09824fb02f40238d82fbae9d686b5bc05f02f0772
+        integrity: sha256-02e89af6540e9aaedb7aec5d3273a78b88bbe2a0aa9edf720dd1b4f89119e602
       source:
         file: src/meta/index.ts
         lines: 99-117
@@ -200,7 +200,7 @@ docs/src/content/docs/meta/reference/api.mdx:
     - id: api-collection-exports
       claim:
         lines: 109-115
-        integrity: sha256-fbe1e10dce2c4255ab2b4141e544a305d8b36d449a64d3f1aa0ca6d6af2a743b
+        integrity: sha256-4f772019c26de9a7914f79a6fde794094bc8d835a1ca6a3aa93a259bfb4f1222
       source:
         file: src/meta/index.ts
         lines: 59-69

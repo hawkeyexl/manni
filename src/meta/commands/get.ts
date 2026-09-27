@@ -5,7 +5,8 @@
  * identically.
  */
 import { readFile } from "node:fs/promises";
-import { loadExternalMetadata, mergeExternalMetadata } from "../core/external-metadata.js";
+import { loadExternalMetadata, mergeWithMarks } from "../core/external-metadata.js";
+import { marksValidator, pageMarks } from "../core/page-marks.js";
 import { resolve, extname } from "node:path";
 import { resolveElements } from "../core/resolve-schema.js";
 import { memberOf, retainMembers } from "../core/collections.js";
@@ -24,6 +25,7 @@ import {
 } from "../core/load-files.js";
 import {
   resolveRunConfig,
+  schemaTrustRoot,
   type ConfigNotice,
   type DocmetaConfig,
 } from "../core/config.js";
@@ -274,7 +276,22 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   /** Where each parsed file's body starts, for `provenance` (0046). */
   const bodyLines = new Map<string, number>();
 
-  const readOne = (label: string, content: string, extension: string): void => {
+  // A manifest with no keys (proposal 0068) owns what each page's schemas
+  // mark external. `get` validates nothing, so the schemas are loaded only
+  // for a page one of those manifests covers.
+  const marks = pageMarks({
+    validator: marksValidator({
+      config,
+      cwd,
+      ...(configDir !== undefined ? { configDir } : {}),
+      ...(opts.offline !== undefined ? { offline: opts.offline } : {}),
+    }),
+    config,
+    cwd,
+    trustRoot: schemaTrustRoot(cwd, configDir),
+  });
+
+  const readOne = async (label: string, content: string, extension: string): Promise<void> => {
     const extractor = forced ?? extractorForExtension(extension);
     if (!extractor) {
       throw new DocmetaError(
@@ -287,10 +304,14 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
       const own = extractor.extract(content, label, {
         elements: resolveElements(label, config, members),
       });
+      const merged = await mergeWithMarks(label, own, externalMetadata, members, base, {
+        encryptionKey: joinKey,
+        marks,
+      });
       if (deriving && label !== STDIN_LABEL) {
         const place = provenanceManifests.length === 0
           ? undefined
-          : readerPlace(label, own.data, provenanceManifests, declaredCollections, configDir ?? cwd, base);
+          : readerPlace(label, own.data, provenanceManifests, declaredCollections, configDir ?? cwd, base, merged.marked);
         deriveInputs.push({
           label,
           absPath: resolve(base, label),
@@ -302,9 +323,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
       if (wantsProvenance) {
         bodyLines.set(label, readProvenancePage(content, { fenced: provenanceFenced(own) }).bodyLine);
       }
-      extracted = mergeExternalMetadata(label, own, externalMetadata, members, base, {
-        encryptionKey: joinKey,
-      }).extracted;
+      extracted = merged.extracted;
     } catch (err) {
       // A `DocmetaError` is already operational and already carries a message
       // written for a person — rethrow it untouched, exactly as `validate`
@@ -346,12 +365,12 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
         "Reading from stdin (`-`) requires --as <format> to choose an extractor.",
       );
     }
-    readOne(STDIN_LABEL, opts.stdinContent ?? "", forced.extensions[0] ?? "");
+    await readOne(STDIN_LABEL, opts.stdinContent ?? "", forced.extensions[0] ?? "");
   }
 
   for (const file of files) {
     const content = await readFile(resolve(base, file), "utf8");
-    readOne(file, content, extname(file));
+    await readOne(file, content, extname(file));
   }
 
   if (deriving) {

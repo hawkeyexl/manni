@@ -24,18 +24,18 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-b6fce5be90865cb419e8a611ddcb461aa6badeb4048a0233c660f36fcbe15583
       source:
         file: src/meta/core/config.ts
-        lines: 1672-1676
+        lines: 1674-1678
         integrity: sha256-f6e52c1599511310259e1d366365c79a3563e4ca9a5ad654fb0566d26fb21369
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: empty-inputs-fall-back-to-collections
       claim:
         lines: 262-264
         integrity: sha256-d58856eea2d47021e0e5623eb94c4c9be4962c678f4068a6b838f8298c943981
       source:
         file: src/meta/core/config.ts
-        lines: 1709-1717
+        lines: 1711-1719
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: get-quiet-drops-all-unset-files
       claim:
         lines: 223-224
@@ -69,18 +69,18 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-ffc258c2691109dc0b6503d92b9a6fd00e7ba6f6d602092374a282c805c647cb
       source:
         file: src/meta/commands/get.ts
-        lines: 504-517
+        lines: 523-536
         integrity: sha256-3de206ba7b2d15623d6b478a91053a59fae6f997f965d443274221d9761769f6
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: get-json-file-present-values
       claim:
         lines: 173-176
         integrity: sha256-07386cb057c62a0a4ab3e116dc94fc760856568bf8b8de298b248e077dbfef00
       source:
         file: src/meta/commands/get.ts
-        lines: 117-120
+        lines: 119-122
         integrity: sha256-a6c55d99822a9da90fbf1e63657a67f42536e8e1cb0d71d28681ebc26cf6237d
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: pretty-prints-unset
       claim:
         lines: 183-184

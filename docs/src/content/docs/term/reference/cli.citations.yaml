@@ -601,9 +601,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-77c400321692e6aeb6a8f221c6e1e97ddb77d30202d40b18b76a1353c982fc02
       source:
         file: src/shared/collections.ts
-        lines: 480-483
+        lines: 562-565
         integrity: sha256-cf34a629a869a2b153f7a1ef735b5b70a34e7f64102e745168365ca677431257
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: err-config-not-found
       claim:
         lines: 636

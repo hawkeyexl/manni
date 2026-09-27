@@ -1,0 +1,10 @@
+# Proposal 0068 rule 3: a manifest joined on slug reads slug from the page,
+# even though the schema marks slug external.
+meta:
+  schemas: [./page.schema.json]
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: ./site-meta.yaml
+        join: slug

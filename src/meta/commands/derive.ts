@@ -94,10 +94,11 @@ import {
 } from "../core/derive/provenance-place.js";
 import {
   loadExternalMetadata,
-  mergeExternalMetadata,
+  mergeWithMarks,
   type ExternalMetadataIndex,
   type SourceLocation,
 } from "../core/external-metadata.js";
+import { pageMarks } from "../core/page-marks.js";
 import { classifyRef } from "../core/schema-registry.js";
 import type { FieldLocation } from "../core/location.js";
 import type { CollectionConfig } from "../../shared/collections.js";
@@ -362,6 +363,9 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   });
   const trustRoot = schemaTrustRoot(cwd, configDir);
   const validator = new Validator(schemaOptions);
+  // What each page's schemas mark external, which a manifest with no keys
+  // owns (proposal 0068).
+  const marks = pageMarks({ validator, config, cwd, trustRoot, memberOf: (label) => membersFor(label) });
   const configuredKey = lazyKey(configFile, opts.env);
   let ensuredKey: string | undefined;
   const currentKey = (): string | undefined => ensuredKey ?? configuredKey();
@@ -514,10 +518,14 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     // Only the manifests that own `provenance` are read, as cite reads only
     // the ones that own `citations`: a sibling manifest is none of derive's
     // business, and a URL one is never fetched here.
+    // A keyless manifest (proposal 0068) may hold a page's record, when the
+    // page's schemas mark it; a URL one is never fetched here.
     const provenanceCollections = declaredCollections
       .map((c) => ({
         ...c,
-        externalMetadata: c.externalMetadata.filter((m) => m.keys.includes(PROVENANCE_FIELD)),
+        externalMetadata: c.externalMetadata.filter((m) =>
+          m.keys === undefined ? classifyRef(m.file).kind !== "url" : m.keys.includes(PROVENANCE_FIELD),
+        ),
       }))
       .filter((c) => c.externalMetadata.length > 0);
     const provenanceIndex =
@@ -527,6 +535,16 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     const places = new Map<string, ProvenancePlace>();
     for (const doc of loaded.values()) {
       if (!wantsProvenance) break;
+      // Asked with the record in place, since a mark counts only on a present value.
+      const marked = manifests.some((m) => m.implied !== undefined)
+        ? await marks(
+            doc.label,
+            Object.hasOwn(doc.extracted.data, PROVENANCE_FIELD)
+              ? doc.extracted.data
+              : { ...doc.extracted.data, [PROVENANCE_FIELD]: null },
+            membersFor(doc.label),
+          )
+        : undefined;
       const place = provenancePlace(
         doc.label,
         doc.extracted.data,
@@ -534,6 +552,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         declaredCollections,
         provenanceRoot,
         base,
+        marked,
       );
       if (place !== undefined) {
         places.set(doc.label, place);
@@ -558,7 +577,8 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         externalMetadata: c.externalMetadata.filter(
           (m) =>
             classifyRef(m.file).kind !== "url" &&
-            m.keys.some((k) => k !== PROVENANCE_FIELD && fields.includes(k)),
+            // A keyless manifest (proposal 0068) owns what each page marks.
+            (m.keys === undefined || m.keys.some((k) => k !== PROVENANCE_FIELD && fields.includes(k))),
         ),
       }))
       .filter((c) => c.externalMetadata.length > 0);
@@ -606,11 +626,11 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   };
   let prepared = await prepare();
   /** The page's `provenance` as its record holds it: the manifest's, or the page's own. */
-  const stampOf = (doc: Loaded): unknown => {
+  const stampOf = async (doc: Loaded): Promise<unknown> => {
     if (!prepared.places.has(doc.label)) return doc.extracted.data[PROVENANCE_FIELD];
     const root = configDir ?? cwd;
     const members = memberOf(prepared.provenanceCollections, root, base, doc.label);
-    return mergeExternalMetadata(doc.label, doc.extracted, prepared.provenanceIndex, members, base)
+    return (await mergeWithMarks(doc.label, doc.extracted, prepared.provenanceIndex, members, base, { marks }))
       .extracted.data[PROVENANCE_FIELD];
   };
 
@@ -655,8 +675,9 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     if (prepared.ownedIndex !== null) {
       try {
         const members = memberOf(prepared.ownedCollections, configDir ?? cwd, base, doc.label);
-        const merged = mergeExternalMetadata(doc.label, doc.extracted, prepared.ownedIndex, members, base, {
+        const merged = await mergeWithMarks(doc.label, doc.extracted, prepared.ownedIndex, members, base, {
           encryptionKey: currentKey,
+          marks,
         });
         own = merged.extracted;
         locate = merged.locate;
@@ -847,7 +868,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       // record wherever it lives, never by `compareDerived`.
       const place = places.get(label);
       const provenance = wantsProvenance
-        ? judgeProvenance(stampOf(doc), derived.provenance?.get(label), record?.fields[PROVENANCE_FIELD] ?? null, place)
+        ? judgeProvenance(await stampOf(doc), derived.provenance?.get(label), record?.fields[PROVENANCE_FIELD] ?? null, place)
         : undefined;
       const compared = fields.map((field) =>
         field === PROVENANCE_FIELD && provenance !== undefined

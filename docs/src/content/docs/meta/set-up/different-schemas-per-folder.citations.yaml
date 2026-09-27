@@ -90,9 +90,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-f845c4c3c38113224165a7865c9e25577ec641b989c0b7580bf2731eb252633c
       source:
         file: src/shared/collections.ts
-        lines: 200-208
+        lines: 205-213
         integrity: sha256-d2a27691abd90f8d893ecdd0620a5e047ed2475938888df71b922fec1b0f2d1d
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: override-globs-match-dotfiles
       claim:
         lines: 116
@@ -126,9 +126,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-bc936dc954459bbedd45b77656574fb1b1dcbefa1c61273a764f02100214f1a6
       source:
         file: src/meta/commands/validate.ts
-        lines: 316-321
+        lines: 317-322
         integrity: sha256-b9909f90ce53a01707f10cda095ef0087f97d534b1f34fd343a25db300a03bf9
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: files-list-matches-any-glob
       claim:
         integrity: sha256-5016b54663c9c20a6570cafba73c2ddf8523598a8384b88d8b51bd55ac882754
@@ -185,9 +185,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-a1eec5df37b9d116dca5c8de0ebf501dcf876c0b8d556da8a48760b5ecfeb792
       source:
         file: src/meta/core/config.ts
-        lines: 1107-1113
+        lines: 1109-1115
         integrity: sha256-a617e4baa07e2514b23c646b164d13ab8bc95d76e2f57f092d2e55ea33d1a713
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: override-files-accepts-glob-or-list
       claim:
         lines: 14
@@ -212,9 +212,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-33b7d220fbb317999d1bc6c7e5cae7c21e9697b66f9048d2354997007c74ad80
       source:
         file: src/meta/commands/query.ts
-        lines: 865-872
+        lines: 891-898
         integrity: sha256-90378bbac350e5d84bde1556a1ff841a6bda832f689a1f352d09b1c81940eff6
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: overrides-map-subsets-to-schema-sets
       claim:
         integrity: sha256-c086334f56dd9720988769337b78525574929fb7b4ec1043b13a16b071e08219

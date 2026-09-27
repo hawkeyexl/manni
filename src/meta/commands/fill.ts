@@ -20,9 +20,11 @@
 import { readFile } from "node:fs/promises";
 import {
   loadExternalMetadata,
-  mergeExternalMetadata,
+  mergeWithMarks,
+  pageOwners,
   type MergedMetadata,
 } from "../core/external-metadata.js";
+import { pageMarks } from "../core/page-marks.js";
 import { keyHome, relocationContext, type KeyHome } from "../core/relocation.js";
 import {
   externalWriteWarnings,
@@ -456,6 +458,16 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const pricing = pricingFor(identity.model);
 
   const validator = new Validator(schemaOptions);
+  // What each page's schemas mark external, which a manifest with no keys
+  // owns (proposal 0068). Resolved over the run's collections, as below.
+  const marks = pageMarks({
+    validator,
+    config,
+    cwd,
+    trustRoot,
+    ...(opts.cliSchemas !== undefined ? { cliSchemas: opts.cliSchemas } : {}),
+    memberOf: (label) => membersFor(label),
+  });
   let costUsd = 0;
   let cachedCount = 0;
   let turnsSpent = false;
@@ -657,13 +669,13 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     let extracted;
     let merged;
     try {
-      merged = mergeExternalMetadata(
+      merged = await mergeWithMarks(
         label,
         extractor.extract(content, label, { elements }),
         externalMetadata,
         mergeMembersFor(label),
         base,
-        { encryptionKey: currentKey },
+        { encryptionKey: currentKey, marks },
       );
       extracted = merged.extracted;
     } catch (err) {
@@ -806,6 +818,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       if (key === undefined || (only !== undefined && !only.has(key))) return [];
       if (PROVENANCE_KEYS.has(key)) return [];
       if (externalMetadata?.owners.has(key) === true) return [];
+      if (pageOwners(externalMetadata, key, mergeMembersFor(label), merged.marked).length > 0) return [];
       if (candidates.some((c) => c.key === key)) return [];
       return [{ key, pointer, value: extracted.data[key] }];
     });

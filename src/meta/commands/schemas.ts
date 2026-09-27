@@ -5,7 +5,8 @@
  */
 import { existsSync } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
-import { loadExternalMetadata, mergeExternalMetadata } from "../core/external-metadata.js";
+import { loadExternalMetadata, mergeWithMarks } from "../core/external-metadata.js";
+import { marksValidator, pageMarks } from "../core/page-marks.js";
 import { dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parseDocument, parse as parseYaml, stringify } from "yaml";
 import { resolveElements } from "../core/resolve-schema.js";
@@ -31,6 +32,7 @@ import {
   parseConfigValue,
   loadConfig,
   resolveRunConfig,
+  schemaTrustRoot,
   type ConfigNotice,
   type SchemaEntry,
 } from "../core/config.js";
@@ -871,7 +873,21 @@ export async function runInferSchema(
   let filesScanned = 0;
   let filesWithoutMetadata = 0;
 
-  const scanOne = (label: string, content: string, extension: string): void => {
+  // What each page's schemas mark external, which a manifest with no keys
+  // owns (proposal 0068). Loaded only for a page one of those covers.
+  const marks = pageMarks({
+    validator: marksValidator({
+      config,
+      cwd,
+      ...(configDir !== undefined ? { configDir } : {}),
+      ...(opts.offline !== undefined ? { offline: opts.offline } : {}),
+    }),
+    config,
+    cwd,
+    trustRoot: schemaTrustRoot(cwd, configDir),
+  });
+
+  const scanOne = async (label: string, content: string, extension: string): Promise<void> => {
     const extractor = forced ?? extractorForExtension(extension);
     if (!extractor) {
       throw new DocmetaError(
@@ -882,15 +898,17 @@ export async function runInferSchema(
     const members = membersFor(label);
     let extracted;
     try {
-      extracted = mergeExternalMetadata(
-        label,
-        extractor.extract(content, label, {
-          elements: resolveElements(label, config, members),
-        }),
-        externalMetadata,
-        members,
-        base,
-        { encryptionKey: joinKey },
+      extracted = (
+        await mergeWithMarks(
+          label,
+          extractor.extract(content, label, {
+            elements: resolveElements(label, config, members),
+          }),
+          externalMetadata,
+          members,
+          base,
+          { encryptionKey: joinKey, marks },
+        )
       ).extracted;
     } catch (err) {
       // One malformed block must not end the scan: the coverage question is
@@ -914,11 +932,11 @@ export async function runInferSchema(
   };
 
   if (usingStdin && forced) {
-    scanOne(STDIN_LABEL, opts.stdinContent ?? "", forced.extensions[0] ?? "");
+    await scanOne(STDIN_LABEL, opts.stdinContent ?? "", forced.extensions[0] ?? "");
   }
   for (const file of files) {
     const content = await readFile(resolve(base, file), "utf8");
-    scanOne(file, content, extname(file));
+    await scanOne(file, content, extname(file));
   }
 
   for (const u of unreadable) {

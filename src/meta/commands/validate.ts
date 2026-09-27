@@ -6,7 +6,7 @@
 import { readFile } from "node:fs/promises";
 import {
   loadExternalMetadata,
-  mergeExternalMetadata,
+  mergeWithMarks,
   orphanEntries,
   orphanError,
   orphanJoins,
@@ -23,6 +23,7 @@ import {
   LOCATION_FINDING_KEYWORD,
   LOCATION_PAGE_SCHEMA,
 } from "../core/location.js";
+import { pageMarks } from "../core/page-marks.js";
 import {
   keyHome,
   relocationContext,
@@ -369,6 +370,14 @@ export async function runValidate(
       pins: collectSchemaPins(config),
     }),
   );
+  // What each page's schemas mark external, for a keyless manifest (0068).
+  const marks = pageMarks({
+    validator,
+    config,
+    cwd,
+    trustRoot,
+    ...(opts.cliSchemas !== undefined ? { cliSchemas: opts.cliSchemas } : {}),
+  });
   // Where a misplaced value could go (proposal 0047), asked only to word a
   // `location:external` finding. Built on first use: most runs mark nothing.
   let relocation: RelocationContext | undefined;
@@ -674,10 +683,16 @@ export async function runValidate(
     // (0047) is asserted by the manifest, and `merged.locate` points its
     // finding at the manifest's line. `provenance`'s record may live in a
     // manifest too (0046), which the git source then reads at each commit.
+    // A manifest with no keys (proposal 0068) owns what this page's schemas
+    // mark external, so those marks are read before the merge.
+    const merged = await mergeWithMarks(label, extracted, externalMetadata, members, base, {
+      encryptionKey,
+      marks,
+    });
     if (keepDeriveInputs && label !== STDIN_LABEL) {
       const place = provenanceManifests.length === 0
         ? undefined
-        : readerPlace(label, extracted.data, provenanceManifests, declaredCollections, configDir ?? cwd, base);
+        : readerPlace(label, extracted.data, provenanceManifests, declaredCollections, configDir ?? cwd, base, merged.marked);
       deriveInputs.push({
         label,
         absPath: resolve(base, label),
@@ -686,9 +701,6 @@ export async function runValidate(
         ...(place !== undefined ? { provenanceManifest: place } : {}),
       });
     }
-    const merged = mergeExternalMetadata(label, extracted, externalMetadata, members, base, {
-      encryptionKey,
-    });
     // The page's own keys, for telling a value the page holds from one a
     // manifest supplied (proposal 0047).
     const own = extracted.data;

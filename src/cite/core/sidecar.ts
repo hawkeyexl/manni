@@ -19,7 +19,8 @@
  *    would report every entry as missing and then write a second copy.
  *  - **A URL manifest may not own `citations`** (exit 2). cite writes them,
  *    and a URL is not somewhere to write; it would also put a private
- *    `source.file` in public CI output.
+ *    `source.file` in public CI output. A URL manifest with no `keys`
+ *    (proposal 0068) is refused for the pages whose schemas give it them.
  *  - **A page whose collections own `citations` twice is refused** (exit 2),
  *    even before either manifest has an entry for it: a writer has to know
  *    which file to write to, and picking one would be the tiebreak 0020
@@ -30,7 +31,7 @@
  */
 import { existsSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
-import { gitIgnored } from "../../meta/internal.js";
+import { configMarks, gitIgnored, type PageMarks } from "../../meta/internal.js";
 import {
   classifyRef,
   externalMetadataJoin,
@@ -49,6 +50,7 @@ import {
   type ExtractedMetadata,
 } from "../../meta/index.js";
 import { hasPagePlaceholder, pageManifestPath } from "../../shared/page-manifest.js";
+import { ownsKey } from "../../shared/collections.js";
 import { CiteError } from "../errors.js";
 import type { CitationInput, CiteRun } from "../types.js";
 import { pickExtractor } from "./page.js";
@@ -81,6 +83,12 @@ export interface CitationManifest {
    * created by the first write.
    */
   pattern?: string;
+  /**
+   * The manifest names no `keys` (proposal 0068), so it keeps a page's
+   * citations only when the page's schemas mark `citations` external. The
+   * declaration, for `ownsKey`.
+   */
+  implied?: { collection: CollectionConfig; manifest: ExternalMetadataConfig };
 }
 
 /** Where one page's citations are kept, and what the manifest already holds. */
@@ -107,7 +115,7 @@ export interface CitationSidecars {
   configDir: string;
   /** Directory the run's file labels are relative to. */
   base: string;
-  forPage(label: string, content: string, format?: string): PageSidecar;
+  forPage(label: string, content: string, format?: string): Promise<PageSidecar>;
   /**
    * Manifest entries naming a page this run did not load, under meta's own
    * corpus invariant. `covered` names the collections a `--collection` run
@@ -145,6 +153,11 @@ export interface LoadSidecarOptions {
   key?: string;
   /** The tool's error class; `CiteError` unless a sibling command says otherwise. */
   toError?: (message: string) => Error;
+  /**
+   * What a page's schemas mark external (proposal 0068), asked only for a
+   * page a manifest with no `keys` may keep citations for.
+   */
+  marks?: () => Promise<PageMarks | undefined>;
 }
 
 /** `collection <name>: citations cannot come from a URL manifest, because cite writes them.` */
@@ -157,9 +170,13 @@ export function twoManifestsRefusal(label: string, a: string, b: string): string
   return `${label} is in collections ${a} and ${b}, and both keep citations in a manifest.`;
 }
 
-/** Does any declared collection keep `citations` in a manifest? */
+/**
+ * May this manifest keep `citations`? One whose `keys` name them does. One
+ * with no `keys` (proposal 0068) may, for the pages whose schemas mark them
+ * external, which `forPage` decides.
+ */
 function ownsCitations(manifest: ExternalMetadataConfig): boolean {
-  return manifest.keys.includes(CITATIONS_KEY);
+  return manifest.keys === undefined || manifest.keys.includes(CITATIONS_KEY);
 }
 
 /**
@@ -175,14 +192,23 @@ export async function loadCitationSidecars(
 ): Promise<CitationSidecars | null> {
   const toError = opts.toError ?? ((message: string): Error => new CiteError(message));
   const manifests: CitationManifest[] = [];
+  /** Keyless URL manifests: never fetched, and refused for a page they would keep citations for. */
+  const urls: CitationManifest[] = [];
   const scoped: CollectionConfig[] = [];
   for (const collection of opts.collections) {
     const owning = collection.externalMetadata.filter(ownsCitations);
     if (owning.length === 0) continue;
+    const loaded: ExternalMetadataConfig[] = [];
     for (const manifest of owning) {
+      const implied = manifest.keys === undefined ? { implied: { collection, manifest } } : {};
       if (classifyRef(manifest.file).kind === "url") {
-        throw toError(urlManifestRefusal(opts.configSource, collection.name));
+        if (manifest.keys !== undefined) {
+          throw toError(urlManifestRefusal(opts.configSource, collection.name));
+        }
+        urls.push({ collection: collection.name, path: manifest.file, file: manifest.file, join: externalMetadataJoin(manifest), ...implied });
+        continue;
       }
+      loaded.push(manifest);
       const path = isAbsolute(manifest.file)
         ? manifest.file
         : resolve(opts.configDir, manifest.file);
@@ -192,9 +218,10 @@ export async function loadCitationSidecars(
         file: reportedPath(path, opts.base),
         join: externalMetadataJoin(manifest),
         ...(hasPagePlaceholder(manifest.file) ? { pattern: manifest.file } : {}),
+        ...implied,
       });
     }
-    scoped.push({ ...collection, externalMetadata: owning });
+    if (loaded.length > 0) scoped.push({ ...collection, externalMetadata: loaded });
   }
   if (manifests.length === 0) return null;
 
@@ -204,17 +231,20 @@ export async function loadCitationSidecars(
     ...(opts.pages === undefined ? {} : { pages: opts.pages }),
   });
   if (index === null) return null;
-  return sidecars(index, manifests, scoped, opts);
+  return sidecars(index, manifests, urls, scoped, opts);
 }
 
 function sidecars(
   index: ExternalMetadataIndex,
   manifests: readonly CitationManifest[],
+  urls: readonly CitationManifest[],
   collections: readonly CollectionConfig[],
   opts: LoadSidecarOptions,
 ): CitationSidecars {
   const toError = opts.toError ?? ((message: string): Error => new CiteError(message));
   const { configDir, base } = opts;
+  let marks: Promise<PageMarks | undefined> | undefined;
+  const marksOnce = (): Promise<PageMarks | undefined> => (marks ??= opts.marks?.() ?? Promise.resolve(undefined));
 
   /**
    * The manifest a page's citations live in. A concrete `file` is the one
@@ -232,13 +262,36 @@ function sidecars(
     return { ...owner, path: resolved.abs, file: reportedPath(resolved.abs, base) };
   };
 
-  const forPage = (label: string, content: string, format?: string): PageSidecar => {
+  const forPage = async (label: string, content: string, format?: string): Promise<PageSidecar> => {
+    // Membership over every declared collection: a keyless URL manifest's
+    // collection may not be among the ones loaded.
+    const declaredMembers = memberOf(opts.collections, configDir, base, label);
+    if (declaredMembers.length === 0) return { joins: [] };
     const members = memberOf(collections, configDir, base, label);
-    if (members.length === 0) return { joins: [] };
+    const memberOfCollection = (m: CitationManifest): boolean => declaredMembers.includes(m.collection);
 
-    // The owning manifest is the page's, decided before anything is read:
+    // A manifest with no keys (proposal 0068) keeps the page's citations
+    // when the page's schemas mark them external, asked with them in place.
+    let extracted: ExtractedMetadata | undefined;
+    const extract = (): ExtractedMetadata => (extracted ??= pickExtractor(label, format).extract(content, label));
+    const candidates = [...manifests, ...urls].filter((m) => m.implied !== undefined && memberOfCollection(m));
+    let marked: ReadonlySet<string> | undefined;
+    if (candidates.length > 0) {
+      const read = await marksOnce();
+      const data = extract().data;
+      marked =
+        read === undefined
+          ? undefined
+          : await read(label, Object.hasOwn(data, CITATIONS_KEY) ? data : { ...data, [CITATIONS_KEY]: null }, declaredMembers);
+    }
+    const keeps = (m: CitationManifest): boolean =>
+      m.implied === undefined || ownsKey(m.implied.collection, m.implied.manifest, CITATIONS_KEY, marked);
+    const url = urls.find((m) => memberOfCollection(m) && keeps(m));
+    if (url !== undefined) throw toError(urlManifestRefusal(opts.configSource, url.collection));
+
+    // The owning manifest is the page's, decided before any entry is read:
     // two of them is a refusal even when only one has an entry today.
-    const mine = manifests.filter((m) => members.includes(m.collection));
+    const mine = manifests.filter((m) => members.includes(m.collection) && keeps(m));
     const [declared, second] = mine;
     if (declared === undefined) return { joins: [] };
     if (second !== undefined) {
@@ -247,10 +300,9 @@ function sidecars(
     const owner = pageOwner(declared, label);
     if (owner === undefined) return { joins: [] };
 
-    const extractor = pickExtractor(label, format);
-    const extracted: ExtractedMetadata = extractor.extract(content, label);
-    const merged = mergeExternalMetadata(label, extracted, index, members, base, {
+    const merged = mergeExternalMetadata(label, extract(), index, members, base, {
       encryptionKey: () => opts.key,
+      ...(marked === undefined ? {} : { marked }),
     });
 
     const out: PageSidecar = { owner, joins: merged.joins };
@@ -260,7 +312,7 @@ function sidecars(
       const value = merged.joins.find((j) => j.field === owner.join)?.value;
       // No match: the page's own value of the join field still keys it, so a
       // first `add` can write an entry a later run will match.
-      const raw = value ?? extracted.data[owner.join];
+      const raw = value ?? extract().data[owner.join];
       if (typeof raw === "string" && raw !== "") out.entry = raw;
       else if (typeof raw === "number" || typeof raw === "boolean") out.entry = String(raw);
     }
@@ -369,5 +421,12 @@ export function sidecarsFor(
     ...(run.key === undefined ? {} : { key: run.key }),
     ...(over.toError === undefined ? {} : { toError: over.toError }),
     ...(over.pages === undefined ? {} : { pages: over.pages }),
+    // A keyless manifest (proposal 0068) keeps what a page's schemas mark,
+    // read from meta's section of the same file.
+    ...(run.configPath === undefined ? {} : { marks: marksFrom(run.configPath, run.base) }),
   });
+}
+
+function marksFrom(configPath: string, cwd: string): () => Promise<PageMarks | undefined> {
+  return () => configMarks(configPath, cwd);
 }

@@ -11,7 +11,11 @@
  * still a member of the collection whose manifest holds its record.
  */
 import { isAbsolute, relative, resolve, sep } from "node:path";
-import type { CollectionConfig } from "../../../shared/collections.js";
+import {
+  ownsKey,
+  type CollectionConfig,
+  type ExternalMetadataConfig,
+} from "../../../shared/collections.js";
 import { hasPagePlaceholder, pageManifestPath } from "../../../shared/page-manifest.js";
 import { DocmetaError } from "../../types.js";
 import { memberOf } from "../collections.js";
@@ -36,6 +40,12 @@ export interface ProvenanceManifest {
   perPage: boolean;
   /** `file:` as the config writes it, which a `{page}` manifest resolves per page. */
   written: string;
+  /**
+   * The manifest names no `keys` (proposal 0068), so it holds a page's record
+   * only when the page's schemas mark `provenance` external. The declaration,
+   * for `ownsKey`.
+   */
+  implied?: { collection: CollectionConfig; manifest: ExternalMetadataConfig; url: boolean };
 }
 
 /** One page's record in a manifest. */
@@ -46,8 +56,11 @@ export interface ProvenancePlace extends ProvenanceManifestRef {
 const toPosix = (p: string): string => p.split(sep).join("/");
 
 /**
- * Every declared manifest that owns `provenance`. A URL manifest may not:
- * `derive` writes the record, and a URL is not somewhere to write.
+ * Every declared manifest that owns `provenance`, or may: a manifest with no
+ * `keys` (proposal 0068) owns it for the pages whose schemas mark it. A URL
+ * manifest may not own it: `derive` writes the record, and a URL is not
+ * somewhere to write. One that names it is refused here, and a keyless one
+ * when a page's marks give it the record.
  */
 export function provenanceManifests(
   collections: readonly CollectionConfig[],
@@ -57,11 +70,21 @@ export function provenanceManifests(
   const out: ProvenanceManifest[] = [];
   for (const collection of collections) {
     for (const manifest of collection.externalMetadata) {
-      if (!manifest.keys.includes(PROVENANCE_FIELD)) continue;
-      if (classifyRef(manifest.file).kind === "url") {
-        throw new DocmetaError(
-          `collection ${collection.name}: ${PROVENANCE_FIELD} cannot come from a URL manifest, because manni meta derive writes it.`,
-        );
+      const implied = manifest.keys === undefined;
+      if (!implied && manifest.keys?.includes(PROVENANCE_FIELD) !== true) continue;
+      const url = classifyRef(manifest.file).kind === "url";
+      if (url && !implied) throw new DocmetaError(urlRefusal(collection.name));
+      if (url) {
+        out.push({
+          collection: collection.name,
+          absPath: manifest.file,
+          file: manifest.file,
+          join: externalMetadataJoin(manifest),
+          perPage: false,
+          written: manifest.file,
+          implied: { collection, manifest, url },
+        });
+        continue;
       }
       const absPath = isAbsolute(manifest.file) ? manifest.file : resolve(configDir, manifest.file);
       const perPage = hasPagePlaceholder(manifest.file);
@@ -72,10 +95,15 @@ export function provenanceManifests(
         join: externalMetadataJoin(manifest),
         perPage,
         written: manifest.file,
+        ...(implied ? { implied: { collection, manifest, url } } : {}),
       });
     }
   }
   return out;
+}
+
+function urlRefusal(collection: string): string {
+  return `collection ${collection}: ${PROVENANCE_FIELD} cannot come from a URL manifest, because manni meta derive writes it.`;
 }
 
 /**
@@ -84,6 +112,8 @@ export function provenanceManifests(
  * `provenance` is refused: a writer has to know which file to write to.
  * `data` is the page's own metadata, for a manifest joined on a field; a page
  * that does not carry that field has no entry to write to, and is refused.
+ * `marked` is what the page's schemas mark external, which decides whether a
+ * manifest with no `keys` holds the record (proposal 0068).
  */
 export function provenancePlace(
   label: string,
@@ -92,10 +122,15 @@ export function provenancePlace(
   collections: readonly CollectionConfig[],
   configDir: string,
   base: string,
+  marked?: ReadonlySet<string>,
 ): ProvenancePlace | undefined {
   if (manifests.length === 0) return undefined;
   const members = new Set(memberOf(collections, configDir, base, label));
-  const owning = manifests.filter((m) => members.has(m.collection));
+  const owning = manifests.filter(
+    (m) =>
+      members.has(m.collection) &&
+      (m.implied === undefined || ownsKey(m.implied.collection, m.implied.manifest, PROVENANCE_FIELD, marked)),
+  );
   const [declared, second] = owning;
   if (declared === undefined) return undefined;
   if (second !== undefined) {
@@ -103,6 +138,7 @@ export function provenancePlace(
       `${label} is in collections ${declared.collection} and ${second.collection}, and both keep ${PROVENANCE_FIELD} in a manifest.`,
     );
   }
+  if (declared.implied?.url === true) throw new DocmetaError(urlRefusal(declared.collection));
   const manifest = declared.perPage ? ownManifest(declared, label, collections, configDir, base) : declared;
   if (manifest.join === PATH_JOIN) {
     const entry = toPosix(relative(configDir, resolve(base, label)));
@@ -135,7 +171,7 @@ function ownManifest(
       .find((c) => c.name === manifest.collection)
       ?.externalMetadata.find((m) => m.file === manifest.written);
     throw new DocmetaError(
-      outsideRefusal(declared ?? { file: manifest.written, keys: [] }, manifest.collection, resolved.pageRel),
+      outsideRefusal(declared ?? { file: manifest.written }, manifest.collection, resolved.pageRel),
     );
   }
   return { ...manifest, absPath: resolved.abs, file: reportedPath(resolved.abs, base) };
@@ -170,9 +206,10 @@ export function readerPlace(
   collections: readonly CollectionConfig[],
   configDir: string,
   base: string,
+  marked?: ReadonlySet<string>,
 ): ProvenanceManifestRef | undefined {
   try {
-    const place = provenancePlace(label, data, manifests, collections, configDir, base);
+    const place = provenancePlace(label, data, manifests, collections, configDir, base, marked);
     return place === undefined ? undefined : { absPath: place.absPath, entry: place.entry, join: place.join };
   } catch (err) {
     if (err instanceof DocmetaError) return undefined;

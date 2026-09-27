@@ -6,8 +6,8 @@ description: "Keep frontmatter values outside the page and merge them at run tim
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
 {/* cite external-metadata-merged-before-schema-resolution */}
-**External metadata** is a YAML **manifest** that supplies a fixed set of
-frontmatter keys for named documents. `manni meta` merges the values into each
+**External metadata** is a YAML **manifest** that supplies the frontmatter
+keys it owns for named documents. `manni meta` merges the values into each
 page's metadata before resolving its schema, so every command sees one object.
 The page never holds the value. The contract on it stays with the page, in the
 same schema set, checked by the same run, with the same exit code.
@@ -683,6 +683,46 @@ config edits keep comments and key order:
 
 [Keep maintainer metadata out of delivered
 pages](/manni/meta/schemas/field-location/) walks through each case.
+
+## Let the schemas name the keys
+
+A page's bookkeeping can sit in a manifest of its own, beside the page.
+Listing every bookkeeping field in `keys:` repeats what the schemas already
+say, because each vocabulary marks where its fields
+[belong](/manni/meta/schemas/field-location/). Leave `keys` out, and the
+manifest owns every field the page's schemas mark `x-manni-location: external`.
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas: ["manni:stewardship:1.0.0"]
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+```
+
+```yaml title="docs/install.meta.yaml"
+docs/install.md:
+  owner: platform-docs
+  last-reviewed: 2026-09-01
+```
+
+The stewardship vocabulary marks `owner` and `last-reviewed` external, so the
+manifest owns both for `docs/install.md`. The page keeps `title` and the rest
+of what it is about. When a vocabulary gains an external field, the manifest
+owns that one too, with no config edit.
+
+Ownership follows each page's own schema set. An override that gives the
+glossary another vocabulary gives its pages' manifests the fields that
+vocabulary marks. A field another manifest names in its `keys` stays with that
+manifest, so a `{page}.citations.yaml` with `keys: [citations]` keeps the
+citations. At most one manifest per collection may leave `keys` out.
+
+`relocate` moves the marked fields out of the pages and into each page's
+manifest, and leaves `keys:` alone. [A manifest with no
+keys](/manni/meta/reference/configuration/#a-manifest-with-no-keys) has every
+rule.
 
 ## Where to go next
 

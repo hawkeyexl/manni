@@ -22,9 +22,9 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-5103fa868d137b1ae86f359fa98f2e775eff1d6954349c489f5ff967682b1c16
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 809-815
+        lines: 938-944
         integrity: sha256-ec1f4494ff206c8d5bb37b8464603f8558df039b62f69eced8ee01a0ccbe2f08
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: e4e19507303e485c26f924f195f51163cf77bc40
     - id: no-config-is-not-offered
       claim:
         lines: 424
@@ -39,9 +39,9 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-17527dfc7a5041e193437b538b86d9d82d1cb1d63e920236c88d410cab33dd59
       source:
         file: src/meta/core/relocation.ts
-        lines: 167-169
+        lines: 169-171
         integrity: sha256-7a696206a70ac73d552cbdd045807425eb62dce4386440c38ece54ccbc8549ef
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: relocate-moves-values-to-their-mark
       claim:
         integrity: sha256-dceab7481b0a784d6b82d7a3872734c62f96ee035efa4ee64a69386e670a3e2c
@@ -74,26 +74,26 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-28ba066f72a33ebfba71c81790006aa129debac4d3b75427391339bd79738cf1
       source:
         file: src/meta/commands/validate.ts
-        lines: 439-444
+        lines: 448-453
         integrity: sha256-f9ebe6cfa4d1fc4869626c0ba763cb224f66eb119244753a5dcb8c1b5284778d
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: location-page-points-at-the-manifest-line
       claim:
         lines: 109
         integrity: sha256-f2e23d6f70c3854478e5cdea81aaa3c77ca9f73838a00d71a1f4a7f7c5001a23
       source:
         file: src/meta/commands/validate.ts
-        lines: 457-463
+        lines: 466-472
         integrity: sha256-76ea9587ed1a61fda49c35c283c66bf72e189c2cb3e9d472945e24a5429aa1d2
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: a-misplaced-value-is-a-warning
       claim:
         integrity: sha256-fd378ca047b8b1df4f9ddfebdc384567076c273d27a39ec3f16fd545b57db69f
       source:
         file: src/meta/commands/validate.ts
-        lines: 431-438
+        lines: 440-447
         integrity: sha256-1973f37dd5436ece748c776b24dbfea838d2cad07428841d9036551a77a89caa
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: where-a-location-mark-counts
       claim:
         integrity: sha256-646dc84ff071894eb3c038c24d258a9f67582ebd61e227bbf0a2d74d234ed3a4
@@ -123,23 +123,23 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-c91d48f71c9158c367af6b22fd2928fe1a799315a2ec9e58042474478b5373dc
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 71-78
+        lines: 77-84
         integrity: sha256-566b9a706afeb0ee880f0c31afa7d72f1fcfe64177535f1dc04f72deff372a88
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: url-manifest-write-is-refused
       claim:
         lines: 363
         integrity: sha256-cdf9f72d15760ddc8ef42a076541221895484de6bf2e8a029006f04553c66b78
       source:
         file: src/meta/commands/query.ts
-        lines: 3093-3097
+        lines: 3119-3123
         integrity: sha256-498f7cd21ff8c8eaa06a5d124edf0e84232822f01e60078f49037a8a18baf7d3
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: keys-are-per-collection
       claim:
         integrity: sha256-2af7623b88a73d6c3b90872aec898d8f117cdcc3f4b515795866d9a4b5a1425f
       source:
         file: src/shared/collections.ts
-        lines: 366-372
+        lines: 385-391
         integrity: sha256-bb34eb54b93975df25155299599631892503a8779ac51578da6316e798b1a3fc
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3

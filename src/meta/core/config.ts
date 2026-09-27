@@ -790,7 +790,9 @@ export interface ManifestOwner {
  * Every declared collection counts, not only the ones a run selected: a
  * manifest's `keys:` list is a claim about the key everywhere, not about one
  * run. No manifest is read, because the config's own `keys:` list is the whole
- * claim.
+ * claim. A URL manifest with no `keys` (proposal 0068) owns a key only for the
+ * pages whose schemas mark it, so it is refused per page when a write reaches
+ * it, through `keyHome`.
  */
 export function urlManifestOwning(
   key: string,
@@ -798,7 +800,7 @@ export function urlManifestOwning(
 ): ManifestOwner | undefined {
   for (const [c, collection] of collections.entries()) {
     for (const [e, manifest] of collection.externalMetadata.entries()) {
-      if (manifest.keys.includes(key) && classifyRef(manifest.file).kind === "url") {
+      if (manifest.keys?.includes(key) === true && classifyRef(manifest.file).kind === "url") {
         return { collection: c, name: collection.name, entry: e, file: manifest.file };
       }
     }

@@ -304,7 +304,7 @@ unrelated. `file:` names the manifest; `url:` sits at the collection level besid
 
 {/* cite manifests-supply-keys-for-named-documents */}
 `externalMetadata` is a list of YAML **manifests** joined to the collection's
-[members](#membership). Each supplies a fixed set of top-level keys for named
+[members](#membership). Each supplies the top-level keys it owns for named
 documents. The values are merged into each document's extracted metadata before
 schema resolution, so `validate`, `get`, `query` and `fill` all see one object.
 A manifest is never a document itself. No extractor reads it, and it has no row
@@ -336,7 +336,7 @@ the journey, with a worked path for each; this section is the contract.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `file` | `string` | yes | Manifest path, relative to the config file's directory, or an `https://` URL fetched at the start of every run. A path may hold one `{page}` placeholder, which gives each page a manifest of its own; see [A manifest per page](#a-manifest-per-page). A manifest that cannot be read or fetched, or is not valid YAML, is an operational error (exit 2). A missing `{page}` manifest is the one exception, and reads as empty. See [Remote manifests](#remote-manifests). |
-| `keys` | `string[]` | yes | The top-level keys this manifest **owns**. Non-empty, no duplicates, disjoint across the collection's manifests, and never `$schema`. Each violation is a config error (exit 2) naming `collections[c].externalMetadata[i].keys`. |
+| `keys` | `string[]` | no | The top-level keys this manifest **owns**. Non-empty, no duplicates, disjoint across the collection's manifests, and never `$schema`. Each violation is a config error (exit 2) naming `collections[c].externalMetadata[i].keys`. Absent, the manifest owns the fields each page's schemas mark `x-manni-location: external`, and at most one entry per collection may leave it out. See [A manifest with no keys](#a-manifest-with-no-keys). |
 | `tokenEnv` | `string` | no | Name of an environment variable whose value is sent as a bearer token when `file` is a URL. Allowed only on a URL. On a path it is a config error (exit 2), because no request is made and the token would go nowhere. |
 | `join` | `string` | no | `path` (the default), or the top-level frontmatter field the manifest's keys are values of. Never `$schema`, and never a key the same entry owns. A rename cannot orphan a field-joined entry. See [Joining by a field](#joining-by-a-field). |
 
@@ -369,6 +369,7 @@ manni.config.yaml: collections[0].externalMetadata[0].keys must be a non-empty l
 manni.config.yaml: collections[0].externalMetadata[0].keys lists "jira" twice.
 manni.config.yaml: collections[0].externalMetadata[0].keys may not include "$schema" — a manifest never chooses the schema a document is judged by; use "overrides".
 manni.config.yaml: collections[0].externalMetadata[1].keys claims "jira", which externalMetadata[0] already owns — a key has exactly one manifest in a collection.
+manni.config.yaml: collections[0].externalMetadata: entries 1 and 2 both omit keys; at most one manifest may own the external-marked fields
 manni.config.yaml: collections[0].externalMetadata[0].join must be "path" or the name of a top-level frontmatter field.
 manni.config.yaml: collections[0].externalMetadata[0].join names "id", which the same entry owns — the value that selects an entry cannot come from the entry.
 manni.config.yaml: collections[0].externalMetadata[0].file uses "{collection}", which is not a placeholder. The only placeholder is {page}.
@@ -490,6 +491,58 @@ above. These are raised once the pages are known, each exit 2:
 The last is the [orphan check](#the-orphan-check) for a per-page manifest. A
 `git mv` that leaves a page's manifest behind is the usual cause, so move the
 two together.
+
+#### A manifest with no keys
+
+An entry may leave `keys` out. It then owns the fields each page's schemas
+mark `x-manni-location: external`, the
+[field location](/manni/meta/reference/schema-resolution/#field-location) mark
+that `validate` warns on and `relocate` follows. When a vocabulary gains an
+external field, the manifest owns it with no config edit.
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+      - file: "{page}.meta.yaml"   # owns the other external fields
+```
+
+Ownership is decided per page, from the page's resolved schema set. An
+override that gives some pages another set gives their manifest other fields.
+Four rules settle the rest.
+
+- **Written keys win.** A field another manifest of the collection names in
+  its `keys` belongs to that manifest. Above, `citations` stays in
+  `{page}.citations.yaml`, although the citations vocabulary marks it external.
+- **The join field stays on the page.** A manifest joined on a field reads
+  that field from the page, marked or not.
+- **Nothing marked, nothing owned.** A field the page's schemas do not mark
+  external is not the manifest's. An entry that sets one anyway is refused,
+  exit 2, as an entry setting a key outside `keys` is. A page whose schema
+  set fails to resolve owns nothing through the manifest, and its entry is not
+  judged.
+- **At most one per collection.** Two entries without `keys` would claim the
+  same fields, so the config is refused, exit 2. The message is in the
+  refusals list above.
+
+Everything downstream reads the same as for a manifest with `keys`. A page
+carrying a field the manifest owns is [`external:owned`](#finding-identity).
+`get` and `query` read the manifest's value. `relocate` moves a marked field
+into it without editing `keys:`, and `derive` stamps a managed field there. A
+URL manifest may omit `keys` too, and a write that would land in it is refused,
+as for any key a URL manifest owns.
+
+An entry may set only the fields its manifest owns for the page. Each refusal
+is exit 2.
+
+| Problem | Message |
+|---|---|
+| The entry sets a field another manifest names. | `Manifest docs/guide.meta.yaml:1: "docs/guide.md" sets "citations", which another manifest of this collection names in its "keys". Move it to that manifest, or remove it from the entry.` |
+| The entry sets the field its manifest joins on. | `Manifest site-meta.yaml:1: "install" sets "slug", the field this manifest joins on, which the page carries. Remove it from the entry.` |
+| The entry sets a field the page's schemas do not mark external. | `Manifest docs/guide.meta.yaml:1: "docs/guide.md" sets "status", which this manifest does not own, because the page's schemas do not mark it x-manni-location: external. Mark it external in the page's schemas, or remove it from the entry.` |
 
 #### A manifest that owns citations
 
@@ -777,6 +830,8 @@ whole by the message:
    manifests can never disagree about one key. The config parser refuses a
    second claim:
    `collections[0].externalMetadata[1].keys claims "jira", which externalMetadata[0] already owns — a key has exactly one manifest in a collection.`
+   An entry with no `keys` owns what each page's schemas mark external. See
+   [A manifest with no keys](#a-manifest-with-no-keys).
    No manifest may own `$schema`. External metadata never feeds
    [schema resolution](/manni/meta/reference/schema-resolution/); the document's
    contract comes from `overrides` and the rest of the precedence chain.

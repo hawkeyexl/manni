@@ -75,7 +75,8 @@ that page's fields live, so a glossary page and a how-to page can differ.
    `derive` refuses to stamp into it, as it refuses any key a URL manifest
    owns today.
 5. **Nothing marked means nothing owned.** A page whose schemas mark no
-   field `external` reads the manifest as empty.
+   field `external` reads the manifest as empty. A manifest entry that
+   carries a field nothing marks is refused, as an unowned key is today.
 
 Everything downstream of ownership is unchanged. A page carrying a key its
 manifest owns is the existing `external:owned` error, exit 1. `get` and

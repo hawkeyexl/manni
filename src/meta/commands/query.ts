@@ -15,8 +15,11 @@ import {
   externalMetadataJoin,
   loadExternalMetadata,
   mergeExternalMetadata,
+  mergeWithMarks,
+  type PageMarks,
   type ExternalMetadataIndex,
 } from "../core/external-metadata.js";
+import { pageMarks } from "../core/page-marks.js";
 import { dirname, isAbsolute, resolve, extname, sep } from "node:path";
 import {
   FILE_SCHEMA_KEY,
@@ -514,7 +517,17 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     offline: opts.offline ?? config?.offline ?? false,
   };
 
-  const readOne = (label: string, content: string, extension: string): void => {
+  // What each page's schemas mark external, which a manifest with no keys
+  // owns (proposal 0068). The validator is the one a write builds, on first use.
+  const marks = pageMarks({
+    validator: encryption.validator,
+    config,
+    cwd,
+    trustRoot: schemaTrustRoot(cwd, configDir),
+    ...(opts.schemas !== undefined && opts.schemas.length > 0 ? { cliSchemas: opts.schemas } : {}),
+  });
+
+  const readOne = async (label: string, content: string, extension: string): Promise<void> => {
     const extractor = forced ?? extractorForExtension(extension);
     if (!extractor) {
       throw new DocmetaError(
@@ -525,10 +538,18 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     const own = extractor.extract(content, label, {
       elements: resolveElements(label, config, members),
     });
-    const extracted = mergeExternalMetadata(label, own, externalMetadata, members, base, {
+    const merged = await mergeWithMarks(label, own, externalMetadata, members, base, {
       encryptionKey: currentKey,
-    }).extracted;
-    entries.push({ label, extracted, extractor, own, content });
+      marks,
+    });
+    entries.push({
+      label,
+      extracted: merged.extracted,
+      extractor,
+      own,
+      content,
+      ...(merged.marked !== undefined ? { marked: merged.marked } : {}),
+    });
   };
 
   if (usingStdin) {
@@ -546,12 +567,12 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
         `Format "${forced.name}" registers no file extension to read stdin as.`,
       );
     }
-    readOne(STDIN_LABEL, opts.stdinContent ?? "", ext);
+    await readOne(STDIN_LABEL, opts.stdinContent ?? "", ext);
   }
 
   for (const file of files) {
     const content = await readFile(resolve(base, file), "utf8");
-    readOne(file, content, extname(file));
+    await readOne(file, content, extname(file));
   }
 
   // The export path resolves like every positional the user typed: from
@@ -577,6 +598,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     configSection,
     trustRoot: schemaTrustRoot(cwd, configDir),
     externalMetadata,
+    marks,
     collections,
     declaredCollections,
     memberships: membersFor,
@@ -604,6 +626,8 @@ interface QueryEntry {
    */
   own: ExtractedMetadata;
   content: string;
+  /** What the page's schemas mark external, when a keyless manifest needed asking (proposal 0068). */
+  marked?: ReadonlySet<string>;
 }
 
 /**
@@ -663,6 +687,8 @@ interface RunContext {
   trustRoot: SchemaTrustRoot;
   /** External metadata of the run (proposal 0037); null when none are configured. */
   externalMetadata: ExternalMetadataIndex | null;
+  /** What a page's schemas mark external, which a manifest with no keys owns (proposal 0068). */
+  marks: PageMarks;
   /** The collections the run covers (proposal 0041); `[]` with no config. */
   collections: readonly CollectionConfig[];
   /**
@@ -907,7 +933,7 @@ async function runSql(
         .map((e) => {
           const place = manifests.length === 0
             ? undefined
-            : readerPlace(e.label, e.own.data, manifests, ctx.declaredCollections, manifestRoot, ctx.base);
+            : readerPlace(e.label, e.own.data, manifests, ctx.declaredCollections, manifestRoot, ctx.base, e.marked);
           return {
             label: e.label,
             absPath: resolve(ctx.base, e.label),
@@ -3732,15 +3758,17 @@ async function applyChanges(
     // The change was computed against load-time data; if the file moved
     // since, applying it would encode a state nobody previewed.
     const members = ctx.memberships(label);
-    const current = mergeExternalMetadata(
-      label,
-      entry.extractor.extract(content, label, {
-        elements: resolveElements(label, ctx.config, members),
-      }),
-      ctx.externalMetadata,
-      members,
-      ctx.base,
-      { encryptionKey: ctx.encryption.key },
+    const current = (
+      await mergeWithMarks(
+        label,
+        entry.extractor.extract(content, label, {
+          elements: resolveElements(label, ctx.config, members),
+        }),
+        ctx.externalMetadata,
+        members,
+        ctx.base,
+        { encryptionKey: ctx.encryption.key, marks: ctx.marks },
+      )
     ).extracted;
 
     if (ops.cleared) {
