@@ -540,8 +540,8 @@ docs/src/content/docs/cite/reference/citations.mdx:
       source:
         file: src/cite/core/sidecar.ts
         lines: 306-309
-        integrity: sha256-c70bcc0b6929e6d89aa54b662a32016ebb95e66d4eb419c93724a10726494cf7
-        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
+        integrity: sha256-7e7543544710999fcacdf8ff5c03761e02f9bd578a770ab3520ae366224b0a9d
+        commit-sha: 08171a87c6d1a5a5f445ee415a0912c8562a54d1
     - id: sidecar-update-writes-once
       claim:
         integrity: sha256-0489712fbe78c0301c3972b850bdd07c4e70fd47c7478b48de48978fecda4511
