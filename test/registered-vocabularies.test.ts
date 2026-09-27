@@ -38,7 +38,13 @@ async function load(ref: string): Promise<JsonObject> {
   return (await loadSchema(ref)) as unknown as JsonObject;
 }
 
-/** The draft with `locale` gone from its properties, which 0067 dropped from core. */
+/**
+ * The draft with `locale` gone from its properties, which 0067 dropped from core.
+ *
+ * It asserts the draft still has `locale` first. Both callers pass a core draft
+ * that carries it, so a draft that had already lost the key fails here, rather
+ * than letting the comparison pass on a draft 0067 never saw.
+ */
 function withoutLocale(schema: JsonObject): JsonObject {
   const props = schema.properties;
   if (props === null || typeof props !== "object" || Array.isArray(props)) {
