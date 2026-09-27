@@ -40,9 +40,9 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         integrity: sha256-8172fafffc6de7f79aa21fb094ec19b183be3bceccf52f81f00bde1efb7f6ec9
       source:
         file: src/meta/core/validator.ts
-        lines: 652-659
+        lines: 654-661
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
+        commit-sha: d1e637fbfa53b823549e0972087cd1603a58e885
     - id: docusaurus-misspelled-key-passes
       claim:
         lines: 120-123
