@@ -503,18 +503,18 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-a0acafceccd3463330e81fb7eb329980a391f22578eafd0a3b985c6e79fdf442
       source:
         file: src/cite/core/sidecar.ts
-        lines: 201-206
+        lines: 206-211
         integrity: sha256-d46775f654bb6e98cb804184b23d749dd7121d8c3509c345b1a9efd71639c2ba
-        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
+        commit-sha: 0a9449f8fde0c267a46e4f267d8a96b17623015e
     - id: citation-finding-sits-on-the-manifest
       claim:
         lines: 579-583
         integrity: sha256-dbbc615fad3976bd0457a6300aabd973a03c5150c10b7f3968b41be34d087d18
       source:
         file: src/cite/core/sidecar.ts
-        lines: 331-339
+        lines: 343-351
         integrity: sha256-c090ea05df7887a8c9d4ffb6daccc40f3f486fcac65bb348ada25f5cc0b07fd4
-        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
+        commit-sha: 0a9449f8fde0c267a46e4f267d8a96b17623015e
     - id: page-citations-beside-an-owning-manifest-is-invalid
       claim:
         integrity: sha256-c85540d48165f4c20ba7f27b10363e53bf5b923e34bec1f3d28793b39210c158
@@ -2865,5 +2865,5 @@ docs/src/content/docs/meta/reference/configuration.mdx:
       source:
         file: src/cite/core/sidecar.ts
         lines: 189-234
-        integrity: sha256-b9aa2659b1167a570f8daa89a66e10ccbe7f4c1baec8c7b8c4247c8663b5e3e7
-        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
+        integrity: sha256-5357c27ae0453f98915d4fd08236edcce43143769299de71d74913904aba63b0
+        commit-sha: c269d872a0018626d835ea01b7f1c46d776442ad

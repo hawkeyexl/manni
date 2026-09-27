@@ -288,9 +288,9 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-c41a610a70e78b9a25d18bd86068ec60ba4bd672553e303f7606a36778ac4894
       source:
         file: src/cite/core/sidecar.ts
-        lines: 312-313
+        lines: 324-325
         integrity: sha256-47c91ecc284dc08a70588617ecca95acd3e9d029aa5dce297a145f1b58e162c3
-        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
+        commit-sha: 0a9449f8fde0c267a46e4f267d8a96b17623015e
     - id: duplicate-id-entry-invalid
       claim:
         lines: 256-258
