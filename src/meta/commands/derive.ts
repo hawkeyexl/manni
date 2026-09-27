@@ -571,7 +571,9 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         for (const f of dated) if (!Object.hasOwn(probe, f)) probe[f] = null;
         const datedMarks = await marks(doc.label, probe, membersFor(doc.label));
         const owned = stampManifests(doc.label, doc.extracted.data, declaredCollections, provenanceRoot, base, datedMarks, dated);
-        if (Object.keys(owned).length > 0) doc.stampManifests = owned;
+        // Set after the object is built, unlike validate, get and query: which
+    // fields a page manages is known only once its schemas' claims are read.
+    if (Object.keys(owned).length > 0) doc.stampManifests = owned;
       }
       if (!fieldsOf(doc.label).includes(PROVENANCE_FIELD)) continue;
       // Asked with the record in place, since a mark counts only on a present value.

@@ -1,6 +1,6 @@
 # 0069: merge-safe stamps by default
 
-- **Status:** Proposed
+- **Status:** Implemented (#132)
 - **Serves:** Devin · D5, whose docs gate runs `validate` on the base branch
   after every merge, and Maya · M2, who stamps pages in a pull request.
 - **Depends on:** [0040](0040-derived-metadata.md), which made derive and its
