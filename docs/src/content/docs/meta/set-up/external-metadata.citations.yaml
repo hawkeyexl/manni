@@ -200,9 +200,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-69d5631950215115c483a0030706adf8ab5e4aaaebd6413463bff63b18516277
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 982-987
+        lines: 987-992
         integrity: sha256-7060eb803b38484ca02cb44a0343c8c769524a3c74d3d4838480b8d3d617f0db
-        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
+        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
     - id: two-collections-may-own-same-key
       claim:
         integrity: sha256-3fd31362e923f26dea095eafbeba15a45218cd4911f761086ab9d3d2e390d7d4
@@ -240,9 +240,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-3608f2f276b5f30f08b3371ce7bb0d2df0a9f83c1a821eb4b5566f4f8bf200ad
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 1000-1015
+        lines: 1005-1020
         integrity: sha256-1d312447b6311e05f058b300628753ccdb87e1bce7ac1f71d065cc9b66ef3c66
-        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
+        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
     - id: duplicate-join-finding-on-both-pages
       claim:
         integrity: sha256-3608f2f276b5f30f08b3371ce7bb0d2df0a9f83c1a821eb4b5566f4f8bf200ad
@@ -257,9 +257,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-d8cc632234610356a9f605fb83951aa2e5bea3f27eecfe82c6a6b957209987ac
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 951-953
+        lines: 956-958
         integrity: sha256-15fb5872eee8563cc33a3ebb35450bec0c0103a7289abd8fc64f571ee100c2b7
-        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
+        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
     - id: join-value-compared-as-string
       claim:
         lines: 498
@@ -282,9 +282,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-3ce1fa15bf05088eb5fe21c15bdf3d14ca8dde7857b58cc14cef115870933cb3
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 929-930
+        lines: 934-935
         integrity: sha256-4fa84a255870d489e965b13866aa4e1bba3014e9a7042b74e7d733ff00a3e633
-        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
+        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
     - id: field-join-survives-rename
       claim:
         integrity: sha256-3ce1fa15bf05088eb5fe21c15bdf3d14ca8dde7857b58cc14cef115870933cb3
@@ -413,9 +413,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-516ff9cec4e51186358ec822fd7500c32ea804bc15b46f93635e5c5be22878d3
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 1220-1225
+        lines: 1227-1232
         integrity: sha256-18d6e9a25475575ae19a8fed06a29041f7c75a7da3b224dc9729515b3713f577
-        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
+        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
     - id: positional-path-run-skips-orphan-check
       claim:
         lines: 191
@@ -591,22 +591,22 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-9ead88eb08e5be260af97472c4dc500b6aff19f6c30e9e8f661542386660f130
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 1255-1260
+        lines: 1262-1267
         integrity: sha256-f72d2cac2a3aed9fa1604762aff6b650eb001d624856ff552361750733a02afb
-        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
+        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
     - id: path-entry-orphaned-by-absolute-path-lookup
       claim:
         integrity: sha256-fbaf89eb7558e62999d0f8f8c9a2da2065c7c224f764a11461caf95e8ef3282f
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 1159-1166
+        lines: 1166-1173
         integrity: sha256-dc832fa3c3b73e16c321b828aef1d05a24e6c650ea46a91e9f1506c7544f7e7a
-        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
+        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
     - id: orphan-path-entry-message-text
       claim:
         integrity: sha256-6dcf9dc0a8a2adbfbf1d501496f2ea9debace81becfe031c8dc4fd745a01a280
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 1253-1260
+        lines: 1260-1267
         integrity: sha256-740f5f08ff708565c31cee8293b251f119b026a036b47135f4514457a3dd08f6
-        commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
+        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
