@@ -363,13 +363,13 @@ describe("runDerive", () => {
     );
   });
 
-  it("has nothing to derive with no config and no --fields", async () => {
+  it("has nothing to derive when no page claims a merge-safe field and no --fields is given", async () => {
     const { dir } = stageCorpus();
     await expect(
       runDerive({ inputs: ["docs/install.md"], cwd: dir, noConfig: true }),
     ).rejects.toThrow(
       new DocmetaError(
-        "nothing to derive: set derive.fields in manni.config.yaml or pass --fields",
+        "nothing to derive: no page's schemas claim a merge-safe field (owner, created, last-updated, provenance); set derive.fields or pass --fields",
       ),
     );
   });

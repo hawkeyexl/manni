@@ -661,3 +661,34 @@ describe("bodyOf", () => {
     );
   });
 });
+
+describe.each(forms)("deriveFromGit: the owning manifest (0069, $name)", ({ opts }) => {
+  it("reads created and last-updated from the owning manifest at the fact commits (rule 1)", async () => {
+    const dir = tempRepo({
+      "a.md": doc("title: t", "one"),
+      "meta.yaml": "a.md:\n  created: 1999-09-09\n  last-updated: 1999-09-09\n",
+    });
+    const first = commit(dir, "add", { authorDate: D1 });
+    writeFile(dir, "a.md", doc("title: t", "two"));
+    writeFile(dir, "meta.yaml", "a.md:\n  created: 1999-09-09\n  last-updated: 2001-01-01\n");
+    const second = commit(dir, "edit and stamp", { authorDate: D2 });
+
+    const ref = { absPath: join(dir, "meta.yaml"), entry: "a.md", join: "path" };
+    const result = await deriveFromGit(
+      [{ ...input(dir, "a.md"), stampManifests: { created: ref, "last-updated": ref } }],
+      opts(dir),
+    );
+    expect(result.status).toEqual({ available: true });
+    const facts = result.records.get("a.md");
+    expect(facts?.created).toEqual({
+      value: "1999-09-09",
+      source: "git",
+      evidence: `stamped in ${first.slice(0, 7)}`,
+    });
+    expect(facts?.["last-updated"]).toEqual({
+      value: "2001-01-01",
+      source: "git",
+      evidence: `stamped in ${second.slice(0, 7)}`,
+    });
+  });
+});

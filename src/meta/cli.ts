@@ -780,7 +780,7 @@ export function buildProgram(): Command {
     .option("--no-cache", "bypass the GitHub or GitLab review cache")
     .option(
       "--no-derive",
-      "skip the derived-value comparison configured by derive.fields",
+      "skip the derived-value comparison configured by derive:",
     )
     .addHelpText(
       "after",
@@ -1490,7 +1490,7 @@ export function buildProgram(): Command {
     )
     .option(
       "--fields <list>",
-      "comma-separated managed fields to stamp; config derive.fields otherwise",
+      "comma-separated managed fields to stamp; config derive.fields otherwise, else the merge-safe fields each page's schemas claim",
     )
     .option(
       "--generated-by <name>",
@@ -1529,7 +1529,7 @@ export function buildProgram(): Command {
       [
         "",
         "Examples:",
-        "  manni meta derive                                # stamp config derive.fields over every collection",
+        "  manni meta derive                                # stamp the managed fields over every collection",
         "  manni meta derive --collection guides            # stamp one configured collection",
         "  manni meta derive --dry-run docs/install.md      # what would change, nothing written",
         "  manni meta derive --check -f github              # CI: a stale stamp is an annotation, exit 1",

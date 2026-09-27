@@ -41,11 +41,12 @@ import {
   readProvenancePage,
   type ProvenanceDerivation,
 } from "../core/derive/provenance.js";
-import { readerManifests, readerPlace } from "../core/derive/provenance-place.js";
+import { readerManifests, readerPlace, stampManifests } from "../core/derive/provenance-place.js";
 import {
   DERIVE_SOURCES,
   isBuiltinField,
   PROVENANCE_FIELD,
+  STAMPED_DATE_FIELDS,
   type DerivableField,
   type DeriveCommand,
   type DerivedRecord,
@@ -312,12 +313,18 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
         const place = provenanceManifests.length === 0
           ? undefined
           : readerPlace(label, own.data, provenanceManifests, declaredCollections, configDir ?? cwd, base, merged.marked);
+        // Rule 1 of 0069: the manifest that owns a dated field is read at each fact commit.
+        const owned =
+          declaredCollections.length === 0
+            ? {}
+            : stampManifests(label, own.data, declaredCollections, configDir ?? cwd, base, merged.marked, STAMPED_DATE_FIELDS);
         deriveInputs.push({
           label,
           absPath: resolve(base, label),
           content,
           extracted: own,
           ...(place !== undefined ? { provenanceManifest: place } : {}),
+          ...(Object.keys(owned).length > 0 ? { stampManifests: owned } : {}),
         });
       }
       if (wantsProvenance) {

@@ -30,9 +30,9 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         integrity: sha256-c3e09a4eb152037e2465c346d0c138fed65606504e8311614ceb8d51e629aeb4
       source:
         file: src/meta/commands/validate.ts
-        lines: 440-447
+        lines: 442-449
         integrity: sha256-1973f37dd5436ece748c776b24dbfea838d2cad07428841d9036551a77a89caa
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: sarif-rule-id-for-encrypted-plain
       claim:
         lines: 196
@@ -56,9 +56,9 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         integrity: sha256-6e002a60cfaaef2d6b30ab0938e3c882386ead1ddb46b38633634b97f1eac674
       source:
         file: src/meta/commands/query.ts
-        lines: 3618-3623
+        lines: 3630-3635
         integrity: sha256-983a738ccc84d8cd3a7f08b068c28f14291829e60f5ed3d247cfda0c90401ac8
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: equal-ciphertexts-make-joins-work
       claim:
         integrity: sha256-3548ae43b085633b0a627b4ddd898c9a7c1a7392285ca7e90e53787df800a505
@@ -72,9 +72,9 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         integrity: sha256-d42dd91be35640aadfeb6e6bc4a6eac10bc3fc55280cb23f7e4e3b6faa7abda7
       source:
         file: src/meta/commands/query.ts
-        lines: 3618-3623
+        lines: 3630-3635
         integrity: sha256-983a738ccc84d8cd3a7f08b068c28f14291829e60f5ed3d247cfda0c90401ac8
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: encrypted-plain-fires-without-a-key
       claim:
         lines: 119-120
@@ -105,17 +105,17 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         integrity: sha256-145f4f58c93b8182e60f8b04e27de2a31b1590e799b772287f2243f09de1b2fc
       source:
         file: src/meta/commands/fill.ts
-        lines: 630-636
+        lines: 631-637
         integrity: sha256-c2dc89be0e81f96d389d7bcf9f11b2289d63bfdb73eaa79b74d1d9b8fd361f9a
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: reads-do-not-decrypt
       claim:
         integrity: sha256-01182f60c58cc3372d664f673964b422969595a876eb743a8bebd502cd67fd86
       source:
         file: src/meta/commands/get.ts
-        lines: 347-359
+        lines: 354-366
         integrity: sha256-46f190d7734fe1b52d4925c05d640c43755197b1c0ca47e93aca308b1001ae21
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: ciphertext-is-tilde-plus-82-chars
       claim:
         integrity: sha256-e8ae5d4ddb21d0e2004225929e2d9c5863d0e52bcc05bb9e2a307f06e0f89207

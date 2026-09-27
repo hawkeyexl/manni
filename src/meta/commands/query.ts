@@ -100,8 +100,14 @@ import {
   mentionsResolved,
   RESOLVED_VIEW,
 } from "../core/derive/table.js";
-import { readerManifests, readerPlace } from "../core/derive/provenance-place.js";
-import { derivableFields, PROVENANCE_FIELD, type DeriveInput } from "../core/derive/types.js";
+import { readerManifests, readerPlace, stampManifests } from "../core/derive/provenance-place.js";
+import {
+  derivableFields,
+  managedFields,
+  PROVENANCE_FIELD,
+  STAMPED_DATE_FIELDS,
+  type DeriveInput,
+} from "../core/derive/types.js";
 import type { FingerprintContext } from "../core/baseline.js";
 import {
   Validator,
@@ -602,7 +608,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     collections,
     declaredCollections,
     memberships: membersFor,
-    managed: new Set(config?.derive?.fields ?? []),
+    managed: new Set(managedFields(config?.derive)),
     onNotice: opts.onNotice,
     encryption,
     location,
@@ -923,7 +929,7 @@ async function runSql(
       // evidence rule 2, as `validate` and `get` hand them to the git source.
       // Only when provenance is derived: named, or managed by `derive.fields`.
       const provenanceDerived =
-        fields.includes(PROVENANCE_FIELD) || ctx.config?.derive?.fields.includes(PROVENANCE_FIELD) === true;
+        fields.includes(PROVENANCE_FIELD) || ctx.config?.derive?.fields?.includes(PROVENANCE_FIELD) === true;
       const manifestRoot = ctx.configDir ?? ctx.cwd;
       const manifests = provenanceDerived
         ? readerManifests(ctx.declaredCollections, manifestRoot, ctx.base)
@@ -934,12 +940,18 @@ async function runSql(
           const place = manifests.length === 0
             ? undefined
             : readerPlace(e.label, e.own.data, manifests, ctx.declaredCollections, manifestRoot, ctx.base, e.marked);
+          // Rule 1 of 0069: the manifest that owns a dated field is read at each fact commit.
+          const owned =
+            ctx.declaredCollections.length === 0
+              ? {}
+              : stampManifests(e.label, e.own.data, ctx.declaredCollections, manifestRoot, ctx.base, e.marked, STAMPED_DATE_FIELDS);
           return {
             label: e.label,
             absPath: resolve(ctx.base, e.label),
             content: e.content,
             extracted: e.own,
             ...(place !== undefined ? { provenanceManifest: place } : {}),
+            ...(Object.keys(owned).length > 0 ? { stampManifests: owned } : {}),
           };
         });
       const records = await deriveForTable(

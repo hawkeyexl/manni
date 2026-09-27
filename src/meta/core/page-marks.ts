@@ -8,6 +8,10 @@
  * collection and override, and by the page's own `$schema`, which a manifest
  * may never supply. So the set is known before anything is merged, and the
  * marks are read over the page with its keyless manifests' values in place.
+ *
+ * `pageClaims` reads the same set for what it claims rather than what it
+ * marks: the top-level properties that decide which merge-safe fields a
+ * `derive:` block with no `fields` manages on the page (proposal 0069).
  */
 import { DocmetaError } from "../types.js";
 import { loadConfig, schemaTrustRoot, type DocmetaConfig, type SchemaTrustRoot } from "./config.js";
@@ -44,25 +48,10 @@ export interface PageMarksOptions {
  * and the command reports the schema the way it always has.
  */
 export function pageMarks(opts: PageMarksOptions): PageMarks {
-  let built: Validator | undefined;
-  const validator = (): Validator =>
-    opts.validator instanceof Validator ? opts.validator : (built ??= opts.validator());
+  const validator = lazyValidator(opts);
   return async (label, probe, memberOf) => {
-    let refs: string[];
-    try {
-      refs = resolveSchemaSetWithSource({
-        filePath: label,
-        fileSchema: probe[FILE_SCHEMA_KEY],
-        ...(opts.cliSchemas !== undefined ? { cliSchemas: [...opts.cliSchemas] } : {}),
-        config: opts.config,
-        memberOf: opts.memberOf?.(label) ?? memberOf,
-        fileBase: opts.cwd,
-        trustRoot: opts.trustRoot,
-      }).schemas;
-    } catch (err) {
-      if (err instanceof DocmetaError) return undefined;
-      throw err;
-    }
+    const refs = pageRefs(opts, label, probe, memberOf);
+    if (refs === undefined) return undefined;
     try {
       const preferences = await validator().locationPreferences({ ...probe }, refs);
       const marked = new Set<string>();
@@ -73,6 +62,61 @@ export function pageMarks(opts: PageMarksOptions): PageMarks {
       throw err;
     }
   };
+}
+
+/**
+ * What a page's schemas claim, for the merge-safe default (proposal 0069):
+ * the top-level property names of every schema in its set, resolved the way
+ * `pageMarks` resolves it. `undefined` when the set cannot be resolved or
+ * loaded, so the page claims nothing and the command reports the schema the
+ * way it always has.
+ */
+export type PageClaims = (
+  label: string,
+  probe: Readonly<Record<string, unknown>>,
+  memberOf: readonly string[],
+) => Promise<ReadonlySet<string> | undefined>;
+
+export function pageClaims(opts: PageMarksOptions): PageClaims {
+  const validator = lazyValidator(opts);
+  return async (label, probe, memberOf) => {
+    const refs = pageRefs(opts, label, probe, memberOf);
+    if (refs === undefined) return undefined;
+    try {
+      return await validator().claimedProperties(refs);
+    } catch (err) {
+      if (err instanceof DocmetaError) return undefined;
+      throw err;
+    }
+  };
+}
+
+function lazyValidator(opts: PageMarksOptions): () => Validator {
+  let built: Validator | undefined;
+  return () => (opts.validator instanceof Validator ? opts.validator : (built ??= opts.validator()));
+}
+
+/** The page's schema set, or undefined when it cannot be resolved. */
+function pageRefs(
+  opts: PageMarksOptions,
+  label: string,
+  probe: Readonly<Record<string, unknown>>,
+  memberOf: readonly string[],
+): string[] | undefined {
+  try {
+    return resolveSchemaSetWithSource({
+      filePath: label,
+      fileSchema: probe[FILE_SCHEMA_KEY],
+      ...(opts.cliSchemas !== undefined ? { cliSchemas: [...opts.cliSchemas] } : {}),
+      config: opts.config,
+      memberOf: opts.memberOf?.(label) ?? memberOf,
+      fileBase: opts.cwd,
+      trustRoot: opts.trustRoot,
+    }).schemas;
+  } catch (err) {
+    if (err instanceof DocmetaError) return undefined;
+    throw err;
+  }
 }
 
 /**

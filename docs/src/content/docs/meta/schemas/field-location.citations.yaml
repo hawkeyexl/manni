@@ -74,26 +74,26 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-28ba066f72a33ebfba71c81790006aa129debac4d3b75427391339bd79738cf1
       source:
         file: src/meta/commands/validate.ts
-        lines: 448-453
+        lines: 450-455
         integrity: sha256-f9ebe6cfa4d1fc4869626c0ba763cb224f66eb119244753a5dcb8c1b5284778d
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: location-page-points-at-the-manifest-line
       claim:
         lines: 109
         integrity: sha256-f2e23d6f70c3854478e5cdea81aaa3c77ca9f73838a00d71a1f4a7f7c5001a23
       source:
         file: src/meta/commands/validate.ts
-        lines: 466-472
+        lines: 468-474
         integrity: sha256-76ea9587ed1a61fda49c35c283c66bf72e189c2cb3e9d472945e24a5429aa1d2
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: a-misplaced-value-is-a-warning
       claim:
         integrity: sha256-fd378ca047b8b1df4f9ddfebdc384567076c273d27a39ec3f16fd545b57db69f
       source:
         file: src/meta/commands/validate.ts
-        lines: 440-447
+        lines: 442-449
         integrity: sha256-1973f37dd5436ece748c776b24dbfea838d2cad07428841d9036551a77a89caa
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: where-a-location-mark-counts
       claim:
         integrity: sha256-646dc84ff071894eb3c038c24d258a9f67582ebd61e227bbf0a2d74d234ed3a4
@@ -132,9 +132,9 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-cdf9f72d15760ddc8ef42a076541221895484de6bf2e8a029006f04553c66b78
       source:
         file: src/meta/commands/query.ts
-        lines: 3119-3123
+        lines: 3131-3135
         integrity: sha256-498f7cd21ff8c8eaa06a5d124edf0e84232822f01e60078f49037a8a18baf7d3
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: keys-are-per-collection
       claim:
         integrity: sha256-2af7623b88a73d6c3b90872aec898d8f117cdcc3f4b515795866d9a4b5a1425f
