@@ -12,7 +12,7 @@
         "sections": {
           "propertyNames": {
             "pattern": "^[\\p{Ll}\\p{Lm}\\p{Lo}\\p{M}\\p{Nd}_-]+$",
-            "description": "A heading slug of lowercase letters, caseless letters and their marks, digits, `_` and `-`. It admits slugs from scripts without case, such as Han, Arabic and Devanagari."
+            "description": "A heading slug of lowercase letters, caseless letters and their marks, digits, `_` and `-`. It admits slugs from scripts without case, such as Han, Arabic and Devanagari. The pattern uses Unicode property escapes, so a validator must compile it with the ECMA-262 `u` flag, as Ajv does for a 2020-12 schema."
           }
         },
         "revision-of": {
