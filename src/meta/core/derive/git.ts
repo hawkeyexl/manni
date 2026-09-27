@@ -48,10 +48,12 @@ import {
 } from "./provenance.js";
 import {
   PROVENANCE_FIELD,
+  STAMPED_DATE_FIELDS,
   type DeriveInput,
   type DerivedValue,
-  type ProvenanceManifestRef,
+  type ManifestRef,
   type SourceStatus,
+  type StampedDateField,
 } from "./types.js";
 
 /** Facts git can state about one document. Every field is null when git answered but has no fact. */
@@ -243,10 +245,19 @@ export async function deriveFromGit(
         continue;
       }
       const blobs = await fetchBlobs(run, neededBlobs(histories));
+      const manifestStamps = await stampsInManifests(run, root, bucket, histories, blobs);
 
       for (const entry of bucket) {
         const history = histories.get(entry.rel) ?? [];
-        const facts = judge(entry.input, root, history, blobs, opts.now, machines);
+        const facts = judge(
+          entry.input,
+          root,
+          history,
+          blobs,
+          opts.now,
+          machines,
+          manifestStamps.get(entry.input.label),
+        );
         if (wantsProvenance) {
           const derived = await provenanceFor(run, root, entry, history, blobs, {
             machines,
@@ -602,6 +613,95 @@ const git = (value: unknown, evidence: string): DerivedValue => ({
   evidence,
 });
 
+/**
+ * The commits decision 2 reads a document's facts from: its oldest, for
+ * `created`, and its newest body change, for `last-updated`.
+ * `bodyChanging` is oldest first, so authors read in order of first appearance.
+ */
+interface FactCommits {
+  bodyChanging: FileHistory[];
+  oldest: FileHistory | undefined;
+  newestBody: FileHistory | undefined;
+}
+
+function factCommits(
+  input: DeriveInput,
+  history: readonly FileHistory[],
+  blobs: ReadonlyMap<string, string>,
+): FactCommits {
+  const fenced = input.extracted.fenced;
+  const blobBody = (sha: string | null): string | null =>
+    sha === null ? null : bodyOf(blobs.get(sha) ?? "", fenced);
+  const bodyChanging = [...history]
+    .reverse()
+    .filter((h) => !sameBody(blobBody(h.newBlob), blobBody(h.oldBlob)));
+  return {
+    bodyChanging,
+    oldest: history[history.length - 1],
+    newestBody: bodyChanging[bodyChanging.length - 1],
+  };
+}
+
+/**
+ * The value a manifest held for one dated field of a page (proposal 0069,
+ * rule 1), at a commit (`sha`) or at its first parent (`sha^`). Undefined
+ * when no manifest owns the field, or the manifest held no value there.
+ */
+type ManifestStamp = (field: StampedDateField, rev: string) => unknown;
+
+/**
+ * Read, per page, the stamps the manifests that own its dated fields held at
+ * the fact commits: the oldest commit for `created`, and the newest body
+ * change and its parent for `last-updated`. One `git cat-file --batch` by
+ * `<rev>:<path>` for the whole root, as provenance reads its manifest.
+ */
+async function stampsInManifests(
+  run: GitRun,
+  root: string,
+  bucket: readonly RootEntry[],
+  histories: ReadonlyMap<string, FileHistory[]>,
+  blobs: ReadonlyMap<string, string>,
+): Promise<Map<string, ManifestStamp>> {
+  interface Read {
+    label: string;
+    field: StampedDateField;
+    rev: string;
+    spec: string;
+    key: string;
+    join: string;
+  }
+  const reads: Read[] = [];
+  for (const entry of bucket) {
+    const refs = entry.input.stampManifests;
+    if (refs === undefined) continue;
+    const { oldest, newestBody } = factCommits(entry.input, histories.get(entry.rel) ?? [], blobs);
+    for (const field of STAMPED_DATE_FIELDS) {
+      const ref = refs[field];
+      const at = field === "created" ? oldest : newestBody;
+      if (ref === undefined || at === undefined) continue;
+      const rel = insideRoot(root, ref.absPath);
+      if (rel === undefined) continue;
+      const key = ref.join === "path" ? entryAt(ref.entry, entry.rel, at.pathAtCommit) : ref.entry;
+      const revs = field === "created" ? [at.sha] : [at.sha, `${at.sha}^`];
+      for (const rev of revs) {
+        reads.push({ label: entry.input.label, field, rev, spec: `${rev}:${rel}`, key, join: ref.join });
+      }
+    }
+  }
+  const out = new Map<string, ManifestStamp>();
+  if (reads.length === 0) return out;
+  const fetched = await fetchSpecs(run, [...new Set(reads.map((r) => r.spec))]);
+  const values = new Map<string, unknown>();
+  const keyOf = (label: string, field: string, rev: string): string => `${label}\0${field}\0${rev}`;
+  for (const r of reads) {
+    values.set(keyOf(r.label, r.field, r.rev), manifestValue(fetched.get(r.spec), r.key, r.join, r.field));
+  }
+  for (const label of new Set(reads.map((r) => r.label))) {
+    out.set(label, (field, rev) => values.get(keyOf(label, field, rev)));
+  }
+  return out;
+}
+
 function judge(
   input: DeriveInput,
   root: string,
@@ -609,6 +709,7 @@ function judge(
   blobs: Map<string, string>,
   now: () => Date,
   machines: readonly string[],
+  manifestStamp?: ManifestStamp,
 ): GitFacts {
   const fenced = input.extracted.fenced;
   const extractor = extractorFor(input);
@@ -619,17 +720,22 @@ function judge(
     const content = blobs.get(sha);
     return content === undefined ? {} : extractStamps(extractor, content, input.absPath);
   };
+  /**
+   * The stamp a commit carries for a dated field (0069 rule 1): the owning
+   * manifest's value at the commit, or else the page's. `parent` reads the
+   * state before the commit, which tells a changed stamp from a kept one.
+   */
+  const stampAt = (field: StampedDateField, h: FileHistory, parent: boolean): unknown => {
+    const kept = manifestStamp?.(field, parent ? `${h.sha}^` : h.sha);
+    if (kept !== undefined && kept !== null) return kept;
+    return stampsOf(parent ? h.oldBlob : h.newBlob)[field];
+  };
 
-  // Oldest first, so authors read in order of first appearance.
-  const bodyChanging = [...history]
-    .reverse()
-    .filter((h) => !sameBody(blobBody(h.newBlob), blobBody(h.oldBlob)));
-  const oldest = history[history.length - 1];
-  const newestBody = bodyChanging[bodyChanging.length - 1];
+  const { bodyChanging, oldest, newestBody } = factCommits(input, history, blobs);
   const head = history[0];
   const headBlob = head === undefined ? null : head.newBlob;
 
-  const created = oldest === undefined ? null : createdOf(oldest, stampsOf(oldest.newBlob));
+  const created = oldest === undefined ? null : createdOf(oldest, stampAt("created", oldest, false));
 
   const workingChanged = !sameBody(
     bodyOf(input.content, fenced),
@@ -653,8 +759,8 @@ function judge(
     lastBodyCommit = newestBody.sha;
     lastUpdated = lastUpdatedOf(
       newestBody,
-      stampsOf(newestBody.newBlob),
-      stampsOf(newestBody.oldBlob),
+      stampAt("last-updated", newestBody, false),
+      stampAt("last-updated", newestBody, true),
     );
   }
 
@@ -680,11 +786,7 @@ function judge(
   };
 }
 
-function createdOf(
-  oldest: FileHistory,
-  stamps: Record<string, unknown>,
-): DerivedValue {
-  const stamp = stamps["created"];
+function createdOf(oldest: FileHistory, stamp: unknown): DerivedValue {
   if (stamp !== undefined && stamp !== null) {
     return git(stamp, `stamped in ${short(oldest.sha)}`);
   }
@@ -692,13 +794,14 @@ function createdOf(
   return git(date, `added in ${short(oldest.sha)} (${date})`);
 }
 
-function lastUpdatedOf(
-  commit: FileHistory,
-  after: Record<string, unknown>,
-  before: Record<string, unknown>,
-): DerivedValue {
-  const stamp = after["last-updated"];
-  if (stamp !== undefined && stamp !== null && !sameValue(stamp, before["last-updated"])) {
+/**
+ * `last-updated` from the newest body change (decision 2). A stamp counts
+ * only when the commit changed it, on the page or in the manifest that owns
+ * the field: a stamp the edit kept was written for an earlier change, so the
+ * commit's own date stands.
+ */
+function lastUpdatedOf(commit: FileHistory, stamp: unknown, before: unknown): DerivedValue {
+  if (stamp !== undefined && stamp !== null && !sameValue(stamp, before)) {
     return git(stamp, `stamped in ${short(commit.sha)}`);
   }
   const date = datePart(commit.authorDate);
@@ -916,7 +1019,7 @@ async function commitEvidence(
   blame: readonly BlameLine[],
   history: readonly FileHistory[],
   blobs: ReadonlyMap<string, string>,
-  manifest: ProvenanceManifestRef | undefined,
+  manifest: ManifestRef | undefined,
 ): Promise<Map<string, CommitEvidence>> {
   const pathAt = new Map<string, string>();
   for (const line of blame) {
@@ -1005,22 +1108,36 @@ function entryAt(entry: string, rel: string, relAtCommit: string): string {
 function manifestStamp(
   text: string | undefined,
   key: string,
-  join: ProvenanceManifestRef["join"],
+  join: ManifestRef["join"],
 ): ProvenanceEntry[] {
-  if (text === undefined) return [];
+  return provenanceEntries(manifestValue(text, key, join, PROVENANCE_FIELD));
+}
+
+/**
+ * One field's value in a manifest's text for one page, under `key` (joined
+ * on `join`). Undefined when the manifest does not parse, has no entry for
+ * the page, or the entry has no such field.
+ */
+function manifestValue(
+  text: string | undefined,
+  key: string,
+  join: ManifestRef["join"],
+  field: string,
+): unknown {
+  if (text === undefined) return undefined;
   let data: unknown;
   try {
     data = parseYaml(text);
   } catch {
-    return [];
+    return undefined;
   }
-  if (!isRecord(data)) return [];
+  if (!isRecord(data)) return undefined;
   for (const [candidate, value] of Object.entries(data)) {
     const same =
       join === "path" ? posix.normalize(candidate) === posix.normalize(key) : candidate === key;
-    if (same && isRecord(value)) return provenanceEntries(value[PROVENANCE_FIELD]);
+    if (same && isRecord(value)) return value[field];
   }
-  return [];
+  return undefined;
 }
 
 function isRecord(x: unknown): x is Record<string, unknown> {

@@ -18,7 +18,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: output-color-conditions
       claim:
-        lines: 786-789
+        lines: 787-790
         integrity: sha256-b50c691d572269c0b54e69170110b4d914fe806d0a863d4ef6b212851061f980
       source:
         file: src/shared/color.ts
@@ -35,7 +35,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: output-stdout-vs-stderr
       claim:
-        lines: 759-770
+        lines: 760-771
         integrity: sha256-1846e90461cbc7d74fda8cd2c7e0f3304c2fd4b0c88ce7a93916cc0a08c04966
       source:
         file: src/shared/run.ts
@@ -47,13 +47,13 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-2677eb6d7a6765f13cc493817052e1a39e51136d6266f8d0c9f35b48299eced3
       source:
         file: src/meta/commands/validate.ts
-        lines: 440-445
+        lines: 442-447
         integrity: sha256-322c785e2c90e19dccc0203214bfcfda36622ae1d2bf7b2715ee0fb9e978d19a
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: output-derive-source-errors
       claim:
         lines: 687-724
-        integrity: sha256-105b67c8117271e56c4391616dbfb61355cdda17a6717e36ce7bcafc884f79c6
+        integrity: sha256-89594d83069a2aba3034fa9b4aebd5829b0a153f9bb511deab32e88a4273b9a6
       source:
         file: src/meta/core/derive/types.ts
         lines: 1-20
@@ -73,17 +73,17 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-bc5b70ccf07c52bfba02ab05ded97e988a1c9574ab64acaac50858a80cf0b695
       source:
         file: src/meta/core/config.ts
-        lines: 1666-1684
+        lines: 1670-1688
         integrity: sha256-497f42dc45f97d01d499d4e10d32a84e6153840172444261727342a92364acf4
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: output-collection-refusals-are-usage-errors
       claim:
         integrity: sha256-d0aa7ba12148e37a497fad5a0d1b1f7da6fd5dedac963f7cfa32bdbad36d7a9b
       source:
         file: src/meta/core/config.ts
-        lines: 1666-1673
+        lines: 1670-1677
         integrity: sha256-506b8f2226ceb9120dd1f7bb5d76f7272b794c052017e5ddbf80b0a09e655205
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: output-external-metadata-errors
       claim:
         lines: 623-641
@@ -187,16 +187,16 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: output-derive-exit-1
       claim:
-        lines: 744
+        lines: 745
         integrity: sha256-64f5a84537de465d76fd5992dd2afa592a1016497f3fc073482bfd9fa2354c1a
       source:
         file: src/meta/commands/derive.ts
-        lines: 1139-1150
+        lines: 1179-1190
         integrity: sha256-67743f0987fd80adcdeecfe7b5645f4f1bb229bffbb4e9c0ff43c6b020b59fa3
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: output-fill-exit-1
       claim:
-        lines: 743
+        lines: 744
         integrity: sha256-14026b8d4677df264f3d40958ccd0ec693fc268ea2976d3018a0bd904fc603e0
       source:
         file: src/meta/cli.ts
@@ -208,9 +208,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-f5b0936b6d55ddc6d4f6a2f3d9f367017e566ca01aae3c768216f20e5de8d15d
       source:
         file: src/meta/commands/derive.ts
-        lines: 1139-1150
+        lines: 1179-1190
         integrity: sha256-67743f0987fd80adcdeecfe7b5645f4f1bb229bffbb4e9c0ff43c6b020b59fa3
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: output-a-baseline-relaxes-no-schema
       claim:
         integrity: sha256-ce933b1d1a858c5ce9a0a418feda1c68c47c217c00cb0b7220db6455d87ddd1f
@@ -281,9 +281,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-a30f8c40d884446ee776b51c0efd006a998ed961667935685d91da44da2874d4
       source:
         file: src/meta/commands/validate.ts
-        lines: 440-445
+        lines: 442-447
         integrity: sha256-322c785e2c90e19dccc0203214bfcfda36622ae1d2bf7b2715ee0fb9e978d19a
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: output-which-tool-emits-which
       claim:
         lines: 429-434

@@ -100,7 +100,8 @@ wrote](/manni/meta/set-up/machine-authorship/) is that journey.
 
 ## Configure it
 
-Name the fields you want managed. Everything else is optional.
+Name the fields you want managed, or leave `fields` out for the
+[merge-safe default](#merge-safe-by-default). Everything else is optional.
 
 <Steps>
 
@@ -145,6 +146,63 @@ Name the fields you want managed. Everything else is optional.
 A managed field cannot also be a key an [external-metadata
 manifest](/manni/meta/set-up/external-metadata/) owns. The two would disagree
 about where the value lives, so the config is refused.
+
+## Merge-safe by default
+
+A stamp is written in a pull request and judged on the base branch after
+the merge. A squash merge makes one new commit, authored by whoever merged
+and dated at the merge. GitHub appends a `Co-authored-by` trailer for each
+author of the branch. Some fields stay current through that commit, and
+some cannot.
+
+| Field | Current after a squash? | Why |
+|---|---|---|
+| `owner` | yes | It comes from CODEOWNERS, and no commit is involved. |
+| `created`, `last-updated` | yes | The squash commit carries the stamp, on the page or in its manifest. |
+| `provenance` | yes | The squash commit carries the stamped ranges. |
+| `authors` | no | The person who merged and the appended trailers join the list. |
+| `reviewed-by`, `last-reviewed` | no | They come from merged pull requests only, so a branch has nothing to stamp. |
+| `verified-against`, and any command field | no | The release commit after the merge changes the evidence. |
+
+A `derive:` block with no `fields` manages the four merge-safe fields. Each
+is managed only on a page whose schemas claim it as a top-level property.
+A page without the [stewardship
+vocabulary](/manni/meta/reference/schemas/manni-stewardship/) is never held
+to an owner.
+
+```yaml title="manni.config.yaml"
+meta:
+  derive:
+    sources: [git, codeowners]
+```
+
+Two rules keep a stamp written on a branch current after the squash.
+
+1. **A stamp is read where it lives.** The commit's copy of the page is
+   read, and so is the manifest that owns `created` or `last-updated`. A
+   date kept in `{page}.meta.yaml` survives a squash as one on the page does.
+2. **A stamped commit accounts for all of its lines.** When the commit that
+   last touched a line carries the page's `provenance` stamp, a line outside
+   every stamped range has no machine. A trailer the squash appends cannot
+   turn a human line into a machine's.
+
+One case still reads stale once. An edit made on a day the page already
+carries that day's `last-updated` leaves the stamp unchanged. Merged on a
+later day, the squash changes the body and keeps the stamp. Git cannot tell
+that from an edit whose author forgot to restamp, so the merge date stands.
+Running `manni meta derive` on the base branch clears it.
+
+`fields: []` manages nothing. A written `fields` list is managed exactly as
+written, safe or not. A team that stamps `authors` or the review fields
+after the merge lists them there, and runs `manni meta derive` on its base
+branch.
+
+When no page's schemas claim a merge-safe field, `manni meta derive` exits
+2 rather than stamping nothing.
+
+```text
+manni: nothing to derive: no page's schemas claim a merge-safe field (owner, created, last-updated, provenance); set derive.fields or pass --fields
+```
 
 ## Run it locally
 
@@ -568,8 +626,9 @@ believe. So "every page whose stamp disagrees with git" is a SQL question,
 and so is "every page whose owner nobody wrote down".
 
 {/* cite unmanaged-field-is-no-longer-compared */}
-To stop managing a field, remove it from `derive.fields`. The stamp stays in
-the page as an ordinary asserted value, and nothing compares it any more.
+To stop managing a field, leave it out of a written `derive.fields` list. The
+stamp stays in the page as an ordinary asserted value, and nothing compares it
+any more.
 
 ## If the updater is an agent
 

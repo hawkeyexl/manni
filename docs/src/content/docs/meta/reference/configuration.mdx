@@ -1859,7 +1859,7 @@ is the journey. This section is the contract.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `fields` | `string[]` | no, but a `derive:` must set one of the five keys | The managed fields. Non-empty when present, unique, and each one of [the derivable fields](#the-derivable-fields) or a key with an entry in [`commands`](#commands). Each violation is a config error (exit 2) naming `derive.fields`. A key a collection's local [external-metadata](#external-metadata) manifest owns is compared and stamped in that manifest. A key a URL manifest owns is refused (exit 2), because a fetched file cannot be written. See [a field a manifest owns](#a-field-a-manifest-owns). Absent means nothing is managed and `validate` compares nothing; `sources`, `codeowners`, `commands` or `machines` alone still shape the reads. |
+| `fields` | `string[]` | no, but a `derive:` must set one of the five keys | The managed fields. Unique when present, and each one of [the derivable fields](#the-derivable-fields) or a key with an entry in [`commands`](#commands). Each violation is a config error (exit 2) naming `derive.fields`. A key a collection's local [external-metadata](#external-metadata) manifest owns is compared and stamped in that manifest. A key a URL manifest owns is refused (exit 2), because a fetched file cannot be written. See [a field a manifest owns](#a-field-a-manifest-owns). Absent means the [merge-safe fields](/manni/meta/set-up/derived-metadata/#merge-safe-by-default), `owner`, `created`, `last-updated` and `provenance`. Each is managed only on a page whose schemas claim it as a top-level property. `[]` manages nothing, and `validate` compares nothing. `sources`, `codeowners`, `commands` or `machines` still shape the reads. |
 | `sources` | `string[]` | no | Which of `git`, `codeowners`, `github`, `gitlab` and `command` to consult. Non-empty and unique. The default is all five. Only the one of `github` and `gitlab` that matches the origin remote is consulted; see [the review sources](#the-review-sources). A field whose only sources are excluded derives null, and can never be stale. |
 | `codeowners` | `string` | no | Path to the CODEOWNERS file, relative to the config file's directory. The default is GitHub's or GitLab's own search order, below. When `codeowners` is an active source, the file must exist (exit 2). |
 | `commands` | map | no | One entry per field a program derives, keyed by the frontmatter key. Each entry has `run`, an argv list, and an optional `timeout` in seconds. The key may not be one of the seven built-in fields, a key a URL manifest owns, or `$schema` (exit 2). See [Commands](#commands). |
@@ -1873,13 +1873,25 @@ collections:
 
 meta:
   derive:
-    fields: [created, last-updated, authors, owner, verified-against]   # managed
+    fields: [created, last-updated, authors, owner, verified-against]   # managed; absent: the merge-safe fields
     sources: [git, codeowners, github, gitlab, command]   # optional; default all five
     codeowners: .github/CODEOWNERS                     # optional; default: GitHub's or GitLab's search order
     commands:                                          # optional; a program per field
       verified-against:
         run: ["jq", "-r", ".version", "package.json"]
     machines: ["*[bot]", "noreply@anthropic.com"]     # optional; default ["*[bot]"]
+```
+
+With no `fields`, a page manages the merge-safe fields its schemas claim.
+Here a page whose set includes `manni:stewardship:1.0.0` manages `owner`,
+`created` and `last-updated`, and a page with only the core vocabulary
+manages nothing.
+
+```yaml
+# manni.config.yaml
+meta:
+  derive:
+    sources: [git, codeowners]   # no fields: the merge-safe fields each page claims
 ```
 
 {/* cite derive-absent-manages-nothing */}
@@ -1938,8 +1950,8 @@ against the product's own version file.
 
 | Field | Source | Derived value | Evidence string |
 |---|---|---|---|
-| `created` | git | The stamp set by the commit that added the path (rename-followed), if it set one. Otherwise that commit's author date as `YYYY-MM-DD` in the author's offset | `added in 7a0d424 (2026-08-26)` / `stamped in 7a0d424` |
-| `last-updated` | git | The stamp set by the newest body-changing commit if it set one; else its author date. With an uncommitted body change: the working value if it differs from HEAD's, else today (the one place derive reads a clock) | `body changed in 424f71a (2026-09-07)` / `uncommitted body change` |
+| `created` | git | The stamp set by the commit that added the path (rename-followed), if it set one. It is read from the page at that commit, and from the manifest that owns `created` there. Otherwise that commit's author date as `YYYY-MM-DD` in the author's offset | `added in 7a0d424 (2026-08-26)` / `stamped in 7a0d424` |
+| `last-updated` | git | The stamp the newest body-changing commit carries, read from the page and from the manifest that owns `last-updated`. It counts only if the commit changed it; else the commit's author date. With an uncommitted body change: the working value if it differs from HEAD's, else today (the one place derive reads a clock) | `body changed in 424f71a (2026-09-07)` / `stamped in 424f71a` / `uncommitted body change` |
 | `authors` | git | Names of authors of body-changing commits plus their `Co-authored-by` trailers, oldest first, deduplicated by email. An identity [`machines`](#derive) matches is excluded, which by default is a name ending `[bot]` | `4 body-changing commits` |
 | `owner` | codeowners | Owners matching the path, `@` kept. GitHub: last matching line wins, first file found of `.github/CODEOWNERS`, `CODEOWNERS`, `docs/CODEOWNERS`. GitLab adds `.gitlab/CODEOWNERS` and sections: every section applies, last match wins per section, union of owners | `.github/CODEOWNERS:12` |
 | `reviewed-by` | `github` or `gitlab`, then `git` | Logins with an `APPROVED` review on the merged PR/MR containing the newest body-changing commit, `[bot]` suffix stripped for dedupe. Fallback: `Reviewed-by:` trailers on that commit | `github PR #18` / `Reviewed-by trailer in 424f71a` |
@@ -2011,6 +2023,11 @@ answers:
    [`machines`](#derive). The machine is the trailer's name as written, or its
    email when the name is empty.
 5. **Otherwise, no evidence.**
+
+A commit that carries a verified stamp is the whole account of the lines it
+last touched. A line outside every stamped range then has no evidence, and
+rules 3 and 4 do not reach it. So a `Co-authored-by:` trailer a squash
+appends cannot make a line the branch left unstamped a machine's.
 
 {/* cite trailer-keys-compare-without-case */}
 Trailer keys compare without case. Among several trailers of one kind, the first that names a machine wins.

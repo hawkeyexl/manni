@@ -209,8 +209,12 @@ export interface DeriveConfig {
    * The managed fields. Each is one of `DERIVABLE_FIELDS` or a key of
    * `commands`, never `$schema`, and never a key a manifest owns: a value
    * with two authorities has none.
+   *
+   * Absent means the merge-safe fields (`MERGE_SAFE_FIELDS`, proposal 0069),
+   * each managed only on a page whose schemas claim it as a top-level
+   * property. `[]` manages nothing. Read it through `managedFields`.
    */
-  fields: DerivableField[];
+  fields?: DerivableField[];
   /** Which sources to consult; absent means all of `DERIVE_SOURCES`. */
   sources?: DeriveSource[];
   /**
@@ -865,9 +869,10 @@ function assertManagedFieldsUnowned(
  * A `derive:` must say something: `fields` to manage, or `sources` or
  * `codeowners` to shape the reads (`get --derived`, the `derived` table). A
  * bare `derive:` reads as configured and is not — the same silence
- * `rejectUnknownKeys` exists to end. `fields` defaults to none when the
- * other keys carry the block, so a repository without `gh` can narrow
- * `sources` for its reads without inventing a managed field.
+ * `rejectUnknownKeys` exists to end. When the other keys carry the block,
+ * `fields` stays absent, which is the merge-safe default (proposal 0069).
+ * `fields: []` manages nothing, so a repository without `gh` can narrow
+ * `sources` for its reads without managing a field.
  * A field is refused when it is not derivable (nothing could ever fill it)
  * or repeated. `$schema` falls out of the derivable list, so it never needs a
  * rule of its own there. A field a URL manifest owns is refused as well, by
@@ -908,11 +913,10 @@ function parseDerive(
   if (
     e.fields !== undefined &&
     (!Array.isArray(e.fields) ||
-      e.fields.length === 0 ||
       e.fields.some((f) => typeof f !== "string"))
   ) {
     throw new DocmetaError(
-      `${source}: derive.fields must be a non-empty list of field names. ${DERIVABLE_LIST}`,
+      `${source}: derive.fields must be a list of field names. ${DERIVABLE_LIST}`,
     );
   }
   const fields: DerivableField[] = [];
@@ -927,7 +931,7 @@ function parseDerive(
     }
     fields.push(f);
   });
-  const derive: DeriveConfig = { fields };
+  const derive: DeriveConfig = e.fields === undefined ? {} : { fields };
 
   if (e.sources !== undefined) {
     if (

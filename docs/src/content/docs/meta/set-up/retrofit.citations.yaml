@@ -5,17 +5,17 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-e6b4f01e32ef0a248e9a777051df94a74633ca633c4786dbd907f30568c63e82
       source:
         file: src/meta/commands/fill.ts
-        lines: 242-246
+        lines: 243-247
         integrity: sha256-9e2b9ac542ee48a8f0ed3c9c4867b50acec76d2bca3bdb00c31b003abff2483b
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: confidence-gate-skips-below-threshold
       claim:
         integrity: sha256-41593122f94befb57ec4d9d88620053959aabb7d1ced18284efb28756315c068
       source:
         file: src/meta/commands/fill.ts
-        lines: 1956-1963
+        lines: 1957-1964
         integrity: sha256-7880c750932cd62c7b498e9e095894497608dd4c4cf1dd8499da157ecc3562a1
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: low-confidence-fields-listed-with-scores
       claim:
         integrity: sha256-41593122f94befb57ec4d9d88620053959aabb7d1ced18284efb28756315c068
@@ -37,9 +37,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-88e08c91d8f138cb3243f2f700d7eb4483bfcbfea2b70d65752e5e2139913bcb
       source:
         file: src/meta/commands/fill.ts
-        lines: 1437-1441
+        lines: 1438-1442
         integrity: sha256-c0de2de5d9234ffa87ac58747c9bb9ebbe329bfed2c72aac43d2434ed9124cf4
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: meta-provenance-skipped-on-schema-mismatch
       claim:
         integrity: sha256-88e08c91d8f138cb3243f2f700d7eb4483bfcbfea2b70d65752e5e2139913bcb
@@ -70,33 +70,33 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-59672769dec712879077966b41a61cbfcaebcbeb8057dd96fbcb017975086fe8
       source:
         file: src/meta/commands/fill.ts
-        lines: 153
+        lines: 154
         integrity: sha256-b08b0888f8a25130aba9749d34f337ba927f983f56f5abb32a6d2bb5beba5ccb
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: fill-uses-validate-schema-resolution
       claim:
         integrity: sha256-129ba97597f17f735a9cbf31de18de292ee027257dc0824bdbf8a51b419a4fdd
       source:
         file: src/meta/commands/fill.ts
-        lines: 687-694
+        lines: 688-695
         integrity: sha256-64c15ece18ff7766d3093291822e0f136cfc2211d26bab2fd6181d94507e09f6
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: fill-candidates-are-missing-or-invalid
       claim:
         integrity: sha256-129ba97597f17f735a9cbf31de18de292ee027257dc0824bdbf8a51b419a4fdd
       source:
         file: src/meta/commands/fill.ts
-        lines: 1608-1609
+        lines: 1609-1610
         integrity: sha256-d19e8e456bc7fa207f429c489335bc4b2b40ad51a6852aeaa3a6d7c998d39f5a
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: fill-candidates-come-from-schema-properties
       claim:
         integrity: sha256-129ba97597f17f735a9cbf31de18de292ee027257dc0824bdbf8a51b419a4fdd
       source:
         file: src/meta/commands/fill.ts
-        lines: 1582-1587
+        lines: 1583-1588
         integrity: sha256-a698aeb66ec58d2b251f3d3d529c83e1417187ab67171c100874e7f6079e9242
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: baseline-debt-printed-on-every-run
       claim:
         integrity: sha256-17cd8d4365ad9189035a0380e44bdf1612c7599414ff4120277b5998f9a62b47
@@ -159,18 +159,18 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-b434cb91645fc3c84066f41be4d26f16a21838ce807764daf2b443931b3738bd
       source:
         file: src/meta/commands/validate.ts
-        lines: 313-316
+        lines: 315-318
         integrity: sha256-7f1973d8b0245da7e1deff8552f047c5e989da046b9bd61a922b7a1d15eef004
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: collection-exclude-applies-on-a-collection-run
       claim:
         lines: 154
         integrity: sha256-b434cb91645fc3c84066f41be4d26f16a21838ce807764daf2b443931b3738bd
       source:
         file: src/meta/commands/validate.ts
-        lines: 329-333
+        lines: 331-335
         integrity: sha256-3e37842784cbe6627a93f287b54a47f31340c33daf9a4e3749468d20cf91d6a2
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: exclude-flag-filters-a-typed-path
       claim:
         lines: 154
@@ -222,17 +222,17 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-5a470798b1a0da03116965bc7fe5d49a92d8a10669c9c0446a12bbda8bbe1d85
       source:
         file: src/meta/core/config.ts
-        lines: 1715-1719
+        lines: 1719-1723
         integrity: sha256-c1073b37482c4ef603d5aa2fdb9f74e8f729af80021b238d65433942c1e5995a
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: collections-supply-inputs-for-a-bare-run
       claim:
         integrity: sha256-ce6cb10426c10dee729abc094d8e5acb8f6bcf2b388a525828a581ba33c23ab5
       source:
         file: src/meta/core/config.ts
-        lines: 1711-1714
+        lines: 1715-1718
         integrity: sha256-97e2c7153041a93dd1f1732aff7f763b2e640bb922d7ea45555d856d7aacb622
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: github-format-emits-workflow-annotations
       claim:
         integrity: sha256-1b191f0f554deba2bbab4959b821b4e2fa0752c14aba132edf90c01756d180a2
@@ -264,9 +264,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-da59c96ff70a2697a0fc59ddb956d56bfb63ce8c342ba66732ba15070e980073
       source:
         file: src/meta/core/validator.ts
-        lines: 630-637
+        lines: 649-656
         integrity: sha256-b48ac4d82755fecd8e18db834350064c599086be6c3d1f91c61a07f023cdb60e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: infer-out-refuses-to-overwrite
       claim:
         integrity: sha256-3746e1c609dd5cd8b56b88ec468eed1740a4bcc53e67a6b39f9520954e144f3c

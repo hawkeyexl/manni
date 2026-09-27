@@ -320,10 +320,38 @@ function stampEvidence(commit: CommitEvidence, origLine: number, fenced: boolean
 }
 
 /**
+ * Whether a commit carries the page's provenance stamp (proposal 0069, rule
+ * 3): at least one entry of its stamp verifies against the page at that
+ * commit. Such a commit is the whole account of the lines it last touched.
+ */
+function carriesStamp(commit: CommitEvidence, fenced: boolean | undefined): boolean {
+  const known = carried.get(commit);
+  if (known !== undefined) return known;
+  let verified = false;
+  if (commit.blob !== undefined) {
+    const page = readProvenancePage(commit.blob, fenced === undefined ? undefined : { fenced });
+    const stamp = commit.stamp === undefined ? page.stamp : provenanceEntries(commit.stamp);
+    verified = stamp.some((entry) => {
+      const span = parseLines(entry.lines);
+      return span !== undefined && pinOfLines(page.body, span) === entry.integrity;
+    });
+  }
+  carried.set(commit, verified);
+  return verified;
+}
+
+/** `carriesStamp` per commit, since every line a commit last touched asks it. */
+const carried = new WeakMap<CommitEvidence, boolean>();
+
+/**
  * Rules 2 to 4 for one line. An uncommitted line has no commit, so none of
  * them applies to it; in particular the working tree's own stamp is never
  * evidence for itself. A stamp outranks its own commit's trailers, because
- * the stamp names lines and a trailer names a commit.
+ * the stamp names lines and a trailer names a commit. And a commit that
+ * carries a verified stamp is the whole account of its lines (proposal 0069,
+ * rule 3): a line outside every stamped range has no evidence, so a trailer
+ * a squash appended cannot turn a line the branch left unstamped into a
+ * machine's.
  */
 function recordedEvidence(line: BlameLine, ctx: EvidenceContext): LineEvidence {
   if (line.uncommitted) return { rule: 5, sha: line.sha };
@@ -331,6 +359,7 @@ function recordedEvidence(line: BlameLine, ctx: EvidenceContext): LineEvidence {
   if (commit === undefined) throw new Error(`no commit ${line.sha}`);
   const stamped = stampEvidence(commit, line.origLine, ctx.fenced);
   if (stamped !== undefined) return { machine: stamped, rule: 2, sha: line.sha };
+  if (carriesStamp(commit, ctx.fenced)) return { rule: 5, sha: line.sha };
   const generated = commit.trailers.generatedBy.map((v) => v.trim()).find((v) => v !== "");
   if (generated !== undefined) return { machine: generated, rule: 3, sha: line.sha };
   for (const value of commit.trailers.coAuthoredBy) {

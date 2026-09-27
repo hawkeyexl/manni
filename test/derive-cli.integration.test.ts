@@ -162,12 +162,12 @@ describe("manni meta derive (built bin)", { timeout: 60_000 }, () => {
     expect(r.stderr).toContain('Unknown --format "yaml"');
   });
 
-  it("has nothing to derive with --no-config and no --fields", () => {
+  it("has nothing to derive with --no-config, no --fields, and no page claiming a merge-safe field", () => {
     const { dir } = stageCorpus();
     const r = run(["derive", "--no-config", "docs/install.md"], dir);
     expect(r.status).toBe(2);
     expect(r.stderr).toContain(
-      "nothing to derive: set derive.fields in manni.config.yaml or pass --fields",
+      "nothing to derive: no page's schemas claim a merge-safe field (owner, created, last-updated, provenance); set derive.fields or pass --fields",
     );
   });
 

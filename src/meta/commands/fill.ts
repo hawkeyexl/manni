@@ -127,6 +127,7 @@ import type {
   ProposalSet,
 } from "./fill-types.js";
 import { errorMessage } from "../../shared/errors.js";
+import { managedFields } from "../core/derive/types.js";
 
 export type {
   Candidate,
@@ -329,7 +330,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const dryRun = Boolean(opts.dryRun);
   const only = opts.fields != null ? new Set(opts.fields) : undefined;
   /** The managed fields (0040): read everywhere, written only by `derive`. */
-  const managed = new Set<string>(config?.derive?.fields ?? []);
+  const managed = new Set<string>(managedFields(config?.derive));
 
   const requestedProvider = (opts.provider ??
     config?.fill?.provider ??

@@ -243,6 +243,14 @@ describe("the writers follow the marks", () => {
     });
   });
 
+  it("cite refuses a keyless URL manifest that would own a page's citations", async () => {
+    // The page's schemas mark citations external, so the URL manifest would
+    // own them, and cite writes citations. Refused before any fetch.
+    await expect(
+      runCheck({ cwd: join(FIXTURES, "cite-url"), inputs: [], gitClient: noGit(), env: {} }),
+    ).rejects.toThrow(/collection site: citations cannot come from a URL manifest, because cite writes them./);
+  });
+
   it("cite reads a keyless manifest that also holds another external field", async () => {
     // Ownership is judged over the page with the manifest's values in place,
     // so `owner`, which stewardship marks external, is the manifest's too.

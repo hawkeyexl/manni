@@ -13,6 +13,6 @@ docs/src/content/docs/meta/reference/glossary/schema-key.mdx:
         integrity: sha256-0cf73e89c65731092a4a17e7e787de8fd5defa46a02ccf02f77deccb3be45f32
       source:
         file: src/meta/core/validator.ts
-        lines: 625-628
+        lines: 644-647
         integrity: sha256-e6388b6208ca32ca246af365a9c7cd8985ef19f0f4a3b4a45a252bfabd33ba80
-        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8

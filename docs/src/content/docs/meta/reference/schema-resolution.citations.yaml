@@ -14,35 +14,35 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
         integrity: sha256-c16580ff89552c73b4ba161960be0c4173261b9b70f1b166eae38f0c51864d79
       source:
         file: src/meta/commands/validate.ts
-        lines: 467-476
+        lines: 469-478
         integrity: sha256-4ab343fff50e971ddfb32c429f4bad9406c8a0d9fc51da53f2227b8a449347d4
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: resolution-owned-key-gets-no-location-finding
       claim:
         lines: 542
         integrity: sha256-413e776bc1cf35dfa432a3b95c44f2e5f8d783d50619bda4b7cc5203987f111b
       source:
         file: src/meta/commands/validate.ts
-        lines: 446-448
+        lines: 448-450
         integrity: sha256-2a711c152bf3769485a0585f0e0c8beaa0fe9362a964307209321704a850cd2b
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: resolution-location-external-finding-wording
       claim:
         lines: 538-541
         integrity: sha256-20f2ba67e2d54c5897ba87007cdad2d4b36f791314db124a03bfa525ea2431e7
       source:
         file: src/meta/commands/validate.ts
-        lines: 450-463
+        lines: 452-465
         integrity: sha256-763d6e1c09fa74afffd04cd0ed808f86a19e111e4cf1c38d84597bdfa32c4fb9
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: resolution-location-findings-are-warnings
       claim:
         integrity: sha256-838873612f239a30153c58513d17a117f3af29333f5b26a8e9807af2912456f5
       source:
         file: src/meta/commands/validate.ts
-        lines: 440-445
+        lines: 442-447
         integrity: sha256-322c785e2c90e19dccc0203214bfcfda36622ae1d2bf7b2715ee0fb9e978d19a
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: resolution-branch-marks-are-not-an-error
       claim:
         integrity: sha256-6e1c918e24485f5c60dd63f2be08749727f602b8c052a7652e12634709902092
@@ -74,9 +74,9 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
         integrity: sha256-79591167b6de655d25bcdd43e18ffe0e180dd70948e9e73b366dc69bb1954e8e
       source:
         file: src/meta/commands/validate.ts
-        lines: 428-432
+        lines: 430-434
         integrity: sha256-4a4b867ef027ab5340898ee627527b9022f2c51c110a2df43c4715c5d7bb579b
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: resolution-later-schema-wins
       claim:
         lines: 504-506
@@ -195,9 +195,9 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
         integrity: sha256-f27b0d4b7b8a7e74442abd2207c035db8839c8b4212f10ccd62421c23a045f14
       source:
         file: src/meta/core/validator.ts
-        lines: 631-638
+        lines: 650-657
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: resolution-two-different-schema-keys
       claim:
         lines: 387-390
@@ -478,9 +478,9 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
         integrity: sha256-061e254bfe5805f32156af0e526f7f3346a24c6101e671871030623de8b0df7a
       source:
         file: src/meta/core/config.ts
-        lines: 587-592
+        lines: 591-596
         integrity: sha256-26b24c53d92b2aca997eb5a8a4fe748319c1b9b8e7d5d6e10f96aa5734b8aa3f
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: resolution-missing-vendored-file-message
       claim:
         lines: 208
@@ -708,9 +708,9 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
         integrity: sha256-cd6449233dc0ae9b33a51a408853aa21d996292b88f917483195bbc05f265aea
       source:
         file: src/meta/core/validator.ts
-        lines: 625-628
+        lines: 644-647
         integrity: sha256-e6388b6208ca32ca246af365a9c7cd8985ef19f0f4a3b4a45a252bfabd33ba80
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: resolution-file-schema-may-be-a-string-or-a-list
       claim:
         integrity: sha256-3e86978e510761759ab240d34af435a75f4d56d9c4185240ae14d605184a7b07

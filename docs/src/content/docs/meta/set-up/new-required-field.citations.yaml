@@ -5,17 +5,17 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-3611e0d7a010d117bd5e0fe66e511e3ad8354b0df5e546f9d7e43c7ea3c9ac2f
       source:
         file: src/meta/commands/query.ts
-        lines: 2188-2194
+        lines: 2200-2206
         integrity: sha256-c4d1b813f220e0600544c674258128912ad2bc7b5a76d70fc4c504bc46cf61ff
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: query-dry-run-previews-without-writing
       claim:
         integrity: sha256-abcc8766e6427b41f9caff39e2d4d0f73195f3cbedddddd6e517d25ea5f0b9cd
       source:
         file: src/meta/commands/query.ts
-        lines: 584-590
+        lines: 590-596
         integrity: sha256-d7a2219883fa034e4ce04c982c3f736d24aa6a5781a6c97be0d532058d7e6cf9
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: query-preview-names-schema-file-edits
       claim:
         integrity: sha256-abcc8766e6427b41f9caff39e2d4d0f73195f3cbedddddd6e517d25ea5f0b9cd
@@ -29,17 +29,17 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-3d8c581d109ba14189664aba99bab28e4caf68250e257fa94bbf97599529ab6c
       source:
         file: src/meta/commands/query.ts
-        lines: 2378-2384
+        lines: 2390-2396
         integrity: sha256-545e1af872e2d1c159cb8db5b380b588f7a51ead4e0edc4a60076b48d1fddbc7
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: alter-default-backfills-the-corpus
       claim:
         integrity: sha256-3d8c581d109ba14189664aba99bab28e4caf68250e257fa94bbf97599529ab6c
       source:
         file: src/meta/commands/query.ts
-        lines: 1734-1740
+        lines: 1746-1752
         integrity: sha256-cc17431dd2df8b21797909f9a3b4a96dd875ce73adaf856341cf4f3e2fc4bf6a
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: required-rule-flags-frontmatter-free-files
       claim:
         lines: 141
@@ -191,9 +191,9 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-e2ede85433e037bc1aa99d5e7e54e8f30bb64ff998d754010281069376922ffb
       source:
         file: src/meta/commands/query.ts
-        lines: 2195-2197
+        lines: 2207-2209
         integrity: sha256-67a96397f9cc99fde680c70048c3d5052927f4d4f0cb794adce1dc3e43218d40
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: baseline-entries-keyed-by-document-path
       claim:
         lines: 9

@@ -105,17 +105,17 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-da83722de200fc7b4e3eb846c62aa0e4848cba9325b94c78985ea41ebd85fde9
       source:
         file: src/meta/core/validator.ts
-        lines: 630-639
+        lines: 649-658
         integrity: sha256-75d948f29fe0df3ee8312fb246489c85b483e992468754f8ae4e725a8afbe748
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: override-one-of-collection-files
       claim:
         integrity: sha256-fd238d22d3a97070e5d72bf6b44b7f425110fabda3bd9b49e1866354c98ebe53
       source:
         file: src/meta/core/config.ts
-        lines: 1109-1115
+        lines: 1113-1119
         integrity: sha256-a617e4baa07e2514b23c646b164d13ab8bc95d76e2f57f092d2e55ea33d1a713
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: config-schema-paths-config-relative
       claim:
         integrity: sha256-fd238d22d3a97070e5d72bf6b44b7f425110fabda3bd9b49e1866354c98ebe53
@@ -129,17 +129,17 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-ea6e97c1c85caaa8ee524cbd0d393b225848d4f632a9028eb68da55df8415d8c
       source:
         file: src/meta/core/validator.ts
-        lines: 635-637
+        lines: 654-656
         integrity: sha256-e89905f26b5d02994e8a5202d6e923c3c4d7ce91e155d6bf9ac391798e11bd70
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: location-finding-is-warning
       claim:
         integrity: sha256-ea6e97c1c85caaa8ee524cbd0d393b225848d4f632a9028eb68da55df8415d8c
       source:
         file: src/meta/commands/validate.ts
-        lines: 440-445
+        lines: 442-447
         integrity: sha256-322c785e2c90e19dccc0203214bfcfda36622ae1d2bf7b2715ee0fb9e978d19a
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: vocabulary-prefers-external
       claim:
         integrity: sha256-ea6e97c1c85caaa8ee524cbd0d393b225848d4f632a9028eb68da55df8415d8c
@@ -154,18 +154,18 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-245441ed6bb8a25ed6c31e1475f511797d938a6c0d3d7e1d29eda18941b47727
       source:
         file: src/meta/commands/validate.ts
-        lines: 688-707
-        integrity: sha256-1f15efc0958e05dee190b938771bcfaee793b60d1b7032f041b0906ffdb20d57
-        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
+        lines: 698-723
+        integrity: sha256-8843067ec79fb617e3ee52191fbfb428ac764dc2a6f593372fdf4c72d0bb67e4
+        commit-sha: 1ccfcc3fe399cab7d2d6ea4bff10a5071492ded1
     - id: manifest-finding-on-manifest-line
       claim:
         lines: 143-144
         integrity: sha256-5c40a609b40a8da1a57e3388a08619e2bb4954876962cbc99bef72387048d7a9
       source:
         file: src/meta/commands/validate.ts
-        lines: 787-793
+        lines: 816-822
         integrity: sha256-167ee019d17e4343ef8dba58f75b5206caced8b1f6a4aeb7231e0a5cd6e2f96a
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: claim-changed-any-edit
       claim:
         integrity: sha256-fd2d30168b39c4da2eaa41af1db964c2c7905dbbf72592f22d0b08ea35ea2d34
@@ -288,9 +288,9 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-c41a610a70e78b9a25d18bd86068ec60ba4bd672553e303f7606a36778ac4894
       source:
         file: src/cite/core/sidecar.ts
-        lines: 312-313
+        lines: 324-325
         integrity: sha256-47c91ecc284dc08a70588617ecca95acd3e9d029aa5dce297a145f1b58e162c3
-        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
+        commit-sha: 0a9449f8fde0c267a46e4f267d8a96b17623015e
     - id: duplicate-id-entry-invalid
       claim:
         lines: 256-258
@@ -359,6 +359,6 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-1bfb76b91bd99d9f334fb8e843eb3bb87d75bf00aa2605f2bfa2ff14ac8d5dec
       source:
         file: src/meta/core/validator.ts
-        lines: 630-633
+        lines: 649-652
         integrity: sha256-5b98c76ade3d481f6fe3cc35a2034bb41178dea6614b7267250d6911833ee8d9
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8

@@ -1,0 +1,18 @@
+# Proposal 0069: a derive block with no fields manages the merge-safe fields,
+# and on each page only the ones its schemas claim. The stewardship pages
+# claim owner, created and last-updated; the plain page claims none of them.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  schemas:
+    - ./permissive.schema.json
+  overrides:
+    - files: "docs/steward/**"
+      schemas:
+        - ./permissive.schema.json
+        - manni:stewardship:1.0.0
+  derive:
+    sources: [git, codeowners]

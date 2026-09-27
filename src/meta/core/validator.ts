@@ -601,6 +601,25 @@ export class Validator {
   }
 
   /**
+   * The top-level property names the schemas in `refs` claim: the keys of
+   * each schema's own `properties`, each once. What a page's schema set
+   * claims decides which merge-safe fields a `derive:` block with no `fields`
+   * manages on it (proposal 0069). A schema that fails to load or compile
+   * throws, as it would for `validate`.
+   */
+  async claimedProperties(refs: readonly string[]): Promise<Set<string>> {
+    const claimed = new Set<string>();
+    for (const ref of refs) {
+      // Compiled first, so a schema the run would refuse is refused here too.
+      await this.compile(ref);
+      const properties = (await loadSchema(ref, this.schemaOptions))["properties"];
+      if (typeof properties !== "object" || properties === null || Array.isArray(properties)) continue;
+      for (const key of Object.keys(properties)) claimed.add(key);
+    }
+    return claimed;
+  }
+
+  /**
    * Validate `data` against every schema in `refs`. Returns all violations,
    * each tagged with the schema that produced it and a source line via
    * `lineFor`.
