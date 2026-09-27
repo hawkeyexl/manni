@@ -2865,5 +2865,5 @@ docs/src/content/docs/meta/reference/configuration.mdx:
       source:
         file: src/cite/core/sidecar.ts
         lines: 189-234
-        integrity: sha256-b9aa2659b1167a570f8daa89a66e10ccbe7f4c1baec8c7b8c4247c8663b5e3e7
-        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
+        integrity: sha256-5357c27ae0453f98915d4fd08236edcce43143769299de71d74913904aba63b0
+        commit-sha: c269d872a0018626d835ea01b7f1c46d776442ad
