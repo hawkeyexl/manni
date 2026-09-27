@@ -86,8 +86,8 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
       source:
         file: src/meta/core/derive/provenance-place.ts
         lines: 73-76
-        integrity: sha256-6a1aa131c1482a5371001dbebaaa8121f3128e0a9a61a2b872669c435c325884
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-6b9967c5a7122c9502fea975efe7dbde3bab45ee8baa63e8b9314e0cffbedbd3
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: empty-plan-removes-provenance-key
       claim:
         integrity: sha256-1a4a97071c2b901d6a4c4ab5d54c8e3356b2c281c47cfcf869202f66a5f52018

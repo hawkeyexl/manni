@@ -946,8 +946,8 @@ docs/src/content/docs/meta/reference/cli.mdx:
       source:
         file: src/meta/core/relocation.ts
         lines: 475
-        integrity: sha256-25b7c2f5bbd2dd1bbdf463bd4eb50f8c3f66fa9e0da7d092e65cb4ef2d1067bb
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-2083a2c13e0a9792802b8d5c032bc53304ee4c5b3936cf1878050b24812f0252
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: config-created-at-the-git-root
       claim:
         integrity: sha256-575ce258234f675b0922fe327b3b7e54fae3cd72fa223add6954afd7969f5e3a
@@ -2004,8 +2004,8 @@ docs/src/content/docs/meta/reference/cli.mdx:
       source:
         file: src/meta/commands/get.ts
         lines: 311-315
-        integrity: sha256-f6d6ca30a8f07e9bf5a945e03bf41231ac538e6fe520c806d4526aa95b21aaec
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-08934b6a7ce5d89f10be24faf8cb97686fa2087245e117fc40048b68843c9498
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: get-json-adds-resolved-and-origin
       claim:
         integrity: sha256-5d28d8f6d6a50cf7bf3a780fa94c33af40be04d0d3cadb6ffa8f83ed043cf264
@@ -2263,8 +2263,8 @@ docs/src/content/docs/meta/reference/cli.mdx:
       source:
         file: src/meta/commands/validate.ts
         lines: 688-691
-        integrity: sha256-aad4b560c3ae6acabfee3436218d29228c9c54e398d3b57a94aa5353b3a72338
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-c602f128fe1b6c4d4795856d67a58fa00e402aa187013922172a5041def459a2
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: external-owned-finding-per-owned-key
       claim:
         integrity: sha256-08b89aff65e9b914b2f2673ecc7883f46a02e45e395be9fec30be612f6fc4d78

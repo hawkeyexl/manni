@@ -91,8 +91,8 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
       source:
         file: src/meta/core/external-metadata.ts
         lines: 1-20
-        integrity: sha256-449ec86425bb41dd202e5356adab9658329737f994935210585fc7d33ac04c7d
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        integrity: sha256-aea8113d1b5af76e067724537a7fca76422f10737347be91ef5bfeafa7a9d08d
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: output-a-non-schema-would-exit-0
       claim:
         integrity: sha256-77ca37121d97f960b2b53924554e66d9af01c4a72390252c48487d245663a3ac

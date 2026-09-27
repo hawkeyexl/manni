@@ -7,8 +7,8 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
       source:
         file: src/meta/core/relocation.ts
         lines: 540-541
-        integrity: sha256-8dd518cf2083e4e7f656246a790684b3626786a72fc3b71e27e53aec197175ca
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-6e912e5b757ad678a252df95446eb2b72abefb912d084daef3df81037e21fb80
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: emptied-manifest-file-left-on-disk
       claim:
         lines: 678
@@ -70,8 +70,8 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
       source:
         file: src/meta/core/relocation.ts
         lines: 472-475
-        integrity: sha256-66ca83af9634b58402c61cf80bece88824e681dea77a684cd342e1c8945648b9
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-705916ce301f8ceb99a82286eaae68a52122270360abdb02395faf048a5f27cb
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: relocate-config-edit-keeps-comments-and-order
       claim:
         integrity: sha256-e1e5e6733f3dc268dc7e19642e3e40a85f57d20f26f3b0b720611eddf1a5be00
@@ -201,8 +201,8 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
       source:
         file: src/meta/core/external-metadata.ts
         lines: 980-985
-        integrity: sha256-9b3c7dd663d6c8925a7374f2d5ad390b9ead0fa3893b4bb8ec11153464e2082c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-7060eb803b38484ca02cb44a0343c8c769524a3c74d3d4838480b8d3d617f0db
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: two-collections-may-own-same-key
       claim:
         integrity: sha256-3fd31362e923f26dea095eafbeba15a45218cd4911f761086ab9d3d2e390d7d4
@@ -241,8 +241,8 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
       source:
         file: src/meta/core/external-metadata.ts
         lines: 998-1013
-        integrity: sha256-da928a2410702f63eb11ae2bbf3853d9f82a4ec6f60e2939203eed7c291bb93b
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-1d312447b6311e05f058b300628753ccdb87e1bce7ac1f71d065cc9b66ef3c66
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: duplicate-join-finding-on-both-pages
       claim:
         integrity: sha256-3608f2f276b5f30f08b3371ce7bb0d2df0a9f83c1a821eb4b5566f4f8bf200ad
@@ -275,8 +275,8 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
       source:
         file: src/shared/collections.ts
         lines: 357-364
-        integrity: sha256-535c872d7434a51d24b22d7916ec3c8c67851c28f9891f868177737cc52df293
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-b18065ed207b1c894715f87c1442232e9afbd98ef74fd5c2baadd588cef0f906
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: join-keys-manifest-by-frontmatter-field
       claim:
         integrity: sha256-3ce1fa15bf05088eb5fe21c15bdf3d14ca8dde7857b58cc14cef115870933cb3
@@ -514,8 +514,8 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
       source:
         file: src/meta/core/external-metadata.ts
         lines: 485-491
-        integrity: sha256-442480b513758075aa0951e6fc69a5d512ae8f37cdf64b3cd0e4b3ce6aa64006
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-84eaf33163d884f346996a3f0962804e41aa9dc116103c8090411d72f9293f3b
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: keys-declares-manifest-ownership
       claim:
         lines: 102

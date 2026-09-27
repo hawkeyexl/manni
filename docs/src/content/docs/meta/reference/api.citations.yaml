@@ -195,8 +195,8 @@ docs/src/content/docs/meta/reference/api.mdx:
       source:
         file: src/meta/core/external-metadata.ts
         lines: 1-20
-        integrity: sha256-449ec86425bb41dd202e5356adab9658329737f994935210585fc7d33ac04c7d
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        integrity: sha256-aea8113d1b5af76e067724537a7fca76422f10737347be91ef5bfeafa7a9d08d
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: api-collection-exports
       claim:
         lines: 109-115
@@ -220,8 +220,8 @@ docs/src/content/docs/meta/reference/api.mdx:
       source:
         file: src/shared/collections.ts
         lines: 1-20
-        integrity: sha256-a38de7a733dd60a8ef1cf984fd35c721e779e8034d1479246b47f700a47df6a6
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        integrity: sha256-03cf4847b019f9736421dc9ea5f773cb1a2175d2592ccd0dcf1c0860ab822299
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: api-validation-engine-exports
       claim:
         lines: 79-88
@@ -272,16 +272,16 @@ docs/src/content/docs/meta/reference/api.mdx:
       source:
         file: src/meta/core/external-metadata.ts
         lines: 1-20
-        integrity: sha256-449ec86425bb41dd202e5356adab9658329737f994935210585fc7d33ac04c7d
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        integrity: sha256-aea8113d1b5af76e067724537a7fca76422f10737347be91ef5bfeafa7a9d08d
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: api-cores-have-no-cli-plumbing
       claim:
         integrity: sha256-68e9c41fd7d5d06aa7ef5a1556c586a563bde3e033fcf25d80781b053a1f5acc
       source:
         file: src/meta/commands/validate.ts
         lines: 1-12
-        integrity: sha256-bf81eaa637fb1caa32a086701db23bbe605721daeae78ef28d5b7d9912cbb76b
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        integrity: sha256-93ea4728e27eb7e3fe74de5b18835507c1b62d8e528c9f6a4ce77f6609fdaccf
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: api-json-format-serializes-these-shapes
       claim:
         integrity: sha256-56d798bce3c337402d8fe93ebf6272b66912b251298351030af5f8278d3cf80e

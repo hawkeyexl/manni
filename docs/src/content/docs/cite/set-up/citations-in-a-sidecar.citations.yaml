@@ -140,8 +140,8 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
       source:
         file: src/cite/core/sidecar.ts
         lines: 311-316
-        integrity: sha256-cd2387904d070c102d68f5bb1872e6975f5e3ec2b16f75c33e8f77e84859d864
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-44391d04d9c2963a5cbbb57a723fc3aa4a33f741c3a927590a7851eff3697a19
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: duplicate-join-refused
       claim:
         integrity: sha256-290e56f298c2b37338c9d647aca729b9426de925a8ba57540f9c7c9d6cee4f5e

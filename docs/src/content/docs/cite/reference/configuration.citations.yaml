@@ -46,8 +46,8 @@ docs/src/content/docs/cite/reference/configuration.mdx:
       source:
         file: src/cite/core/sidecar.ts
         lines: 202-207
-        integrity: sha256-d8be236ad2bf383581df725cc479ab3b4da4daf2df2c0dda20401c322965d323
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-d46775f654bb6e98cb804184b23d749dd7121d8c3509c345b1a9efd71639c2ba
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: moved-keys-refused
       claim:
         integrity: sha256-cdc669af18e1f370876a88f7794436736bab8f1b25453b4f4d0ecfc7599a97d9

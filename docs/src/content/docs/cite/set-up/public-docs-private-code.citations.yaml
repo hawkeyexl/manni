@@ -213,8 +213,8 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
       source:
         file: src/cite/core/sidecar.ts
         lines: 204-207
-        integrity: sha256-a84cdf9f159b12a5b12a2d73d10cad4c24c8cedcfc1b482a7af738f756910dce
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        integrity: sha256-c05a70a897a67097d072cd86a70e60c2c668ea2ebb65ea203fe4f0bf4e66d881
+        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
     - id: key-set-256-bits
       claim:
         lines: 195
