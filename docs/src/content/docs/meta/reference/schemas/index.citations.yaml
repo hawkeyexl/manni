@@ -210,9 +210,9 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         integrity: sha256-b7069d30bb6b6c8f0f28cea867e9eaff12f796b63fe73d5c17f09bd77c4306b0
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 77-123
-        integrity: sha256-dee42d1936d98b34eeaed75299d5516102db060318ca04b74ef4601d183195d9
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        lines: 79-127
+        integrity: sha256-b34b13447649abac27c865e57b62674978e2d0b5f1b1c3bef6380c9c9a1b98df
+        commit-sha: c48fb7666149438e2d63f3213e8beddba66f6758
     - id: registry-manni-core-is-the-only-vocabulary-that-requires
       claim:
         integrity: sha256-27ab2a77db0951ee1e4ac80d89f0d8c1a8a91faa629f45a54e16258dfb1b422d
