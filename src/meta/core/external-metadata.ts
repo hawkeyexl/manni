@@ -16,8 +16,10 @@
  *    a manifest entry supplying a key it does not own is an operational error.
  *    A manifest that declares none (proposal 0068) owns, for each page, what
  *    that page's schemas mark `x-manni-location: external`, less what its
- *    siblings name. `ownsKey` decides it, and a value such a manifest holds
- *    for a key the page does not mark is not merged.
+ *    siblings name. `ownsKey` decides it. A value such a manifest holds for a
+ *    key the page does not mark is the unowned-key refusal, raised at the
+ *    merge because ownership is per page. With the page's marks unknown, the
+ *    manifest owns nothing for it and nothing is judged.
  *    Ownership is what gives a write to an absent key somewhere to go, and it
  *    is what makes a document carrying a private key visible with or without
  *    a manifest entry.
