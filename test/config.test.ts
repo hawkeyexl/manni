@@ -895,8 +895,8 @@ describe("the repository's own manni.config.yaml", () => {
       "manni:terminology-strict:1.0.0",
       ...SITE_VOCABULARIES,
     ]);
-    // The glossary's index is not a term page. It declares a TGDP type, so its
-    // own entry, ahead of the glossary's, gives it the site's set.
+    // The glossary's index is not a term page. It declares a TGDP type, and
+    // the glossary's glob leaves it out, so it takes the site's set.
     expect(
       resolveSchemaSet({
         filePath: "docs/src/content/docs/meta/reference/glossary/index.mdx",
