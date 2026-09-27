@@ -84,6 +84,8 @@ meta:
     # Glossary term pages follow the terminology vocabulary and keep
     # `type: term`, which `manni term` reads, so they take no TGDP type. The
     # glossary's index is not a term page, so the glob leaves it to the site.
+    # Its vocabularies repeat the site entry's below, because YAML cannot join
+    # two lists. test/config.test.ts holds both to one list, so they cannot drift.
     - files: "docs/src/content/docs/meta/reference/glossary/!(index).mdx"
       schemas:
         - ./docs/doc-frontmatter.schema.json
