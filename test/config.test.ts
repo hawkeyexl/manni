@@ -811,6 +811,11 @@ describe("schemaTrustRoot", () => {
  */
 describe("the repository's own manni.config.yaml", () => {
   const repoRoot = resolve(here, "..");
+  /** The vocabularies every docs page is held to, each beside its strict overlay. */
+  const SITE_VOCABULARIES = [
+    "core", "audience", "structure", "stewardship", "lifecycle",
+    "ai-context", "evals", "graph", "citations",
+  ].flatMap((family) => [`manni:${family}:1.0.0`, `manni:${family}-strict:1.0.0`]);
 
   it("is what discovery finds from the repo root, and names a schema that is there", async () => {
     const loaded = await loadConfig(undefined, repoRoot);
@@ -826,7 +831,12 @@ describe("the repository's own manni.config.yaml", () => {
         // The docs' citations live in a manifest beside each page (0058)
         // rather than in page frontmatter: the house schema marks `citations`
         // as `x-manni-location: external`, and `manni meta relocate` moved them.
-        externalMetadata: [{ file: "{page}.citations.yaml", keys: ["citations"] }],
+        // Every other field the schemas mark external lives in a keyless
+        // manifest beside the page, which owns what the marks say (0068).
+        externalMetadata: [
+          { file: "{page}.citations.yaml", keys: ["citations"] },
+          { file: "{page}.meta.yaml" },
+        ],
         // Where the site is published, so `manni a11y check` needs no `urls:`
         // of its own (0041 rule 12). The local preview, not the deployed site.
         url: "http://127.0.0.1:4321/manni/",
@@ -859,14 +869,31 @@ describe("the repository's own manni.config.yaml", () => {
         // this per file with `memberOf`.
         memberOf: ["site"],
       }),
-      // Two, and both are load-bearing. The local schema is the house rule
-      // (title + description, neither of which Starlight itself requires); the
-      // built-in is the platform contract the site actually runs on, which
-      // checks everything the house schema leaves unconstrained —
-      // `sidebar.order`, `template`, a `badge` object's `text`.
+      // The house rule (title + description, neither of which Starlight itself
+      // requires), the platform contract the site runs on, the page's open
+      // TGDP type, and every manni vocabulary the site dogfoods, each with its
+      // strict overlay.
     ).toEqual([
       "./docs/doc-frontmatter.schema.json",
       "astro:starlight:0.41",
+      "tgdp:templates:1.1",
+      ...SITE_VOCABULARIES,
+    ]);
+    // A glossary page takes the terminology vocabulary instead of a TGDP
+    // type, because it keeps `type: term` for manni term. The first match
+    // wins, so its override comes before the collection's.
+    expect(
+      resolveSchemaSet({
+        filePath: "docs/src/content/docs/meta/reference/glossary/schema.mdx",
+        config,
+        memberOf: ["site"],
+      }),
+    ).toEqual([
+      "./docs/doc-frontmatter.schema.json",
+      "astro:starlight:0.41",
+      "manni:terminology:1.0.0",
+      "manni:terminology-strict:1.0.0",
+      ...SITE_VOCABULARIES,
     ]);
     // A file outside the collection is a member of nothing, so the override
     // cannot reach it and DEFAULT_SCHEMAS stands.

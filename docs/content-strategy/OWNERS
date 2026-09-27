@@ -4,6 +4,8 @@
 # `meta.derive.codeowners` in manni.config.yaml. It lives here rather than at a
 # path GitHub searches (`.github/`, the repository root or `docs/`), so it
 # stamps an owner without turning on GitHub's automatic review requests.
-# Last matching line wins, as in CODEOWNERS.
+# Last matching line wins, as in CODEOWNERS. It names the published pages
+# only: this file is read by every manni run under the repository, the test
+# suite included, so a catch-all would give every fixture an owner.
 
-* @hawkeyexl
+/docs/src/content/docs/ @hawkeyexl
