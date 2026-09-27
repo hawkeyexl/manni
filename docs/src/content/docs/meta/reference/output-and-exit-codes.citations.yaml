@@ -191,9 +191,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-64f5a84537de465d76fd5992dd2afa592a1016497f3fc073482bfd9fa2354c1a
       source:
         file: src/meta/commands/derive.ts
-        lines: 1179-1190
+        lines: 1181-1192
         integrity: sha256-67743f0987fd80adcdeecfe7b5645f4f1bb229bffbb4e9c0ff43c6b020b59fa3
-        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
+        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
     - id: output-fill-exit-1
       claim:
         lines: 744
@@ -208,9 +208,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-f5b0936b6d55ddc6d4f6a2f3d9f367017e566ca01aae3c768216f20e5de8d15d
       source:
         file: src/meta/commands/derive.ts
-        lines: 1179-1190
+        lines: 1181-1192
         integrity: sha256-67743f0987fd80adcdeecfe7b5645f4f1bb229bffbb4e9c0ff43c6b020b59fa3
-        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
+        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
     - id: output-a-baseline-relaxes-no-schema
       claim:
         integrity: sha256-ce933b1d1a858c5ce9a0a418feda1c68c47c217c00cb0b7220db6455d87ddd1f

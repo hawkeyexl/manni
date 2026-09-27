@@ -139,49 +139,49 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-2a92270a056121c9517f9f40032ce7b62e09aacc74668d10a25ea220748cdc48
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 746-748
+        lines: 751-753
         integrity: sha256-ca0a636ac51279dde536411183c5abfeb21354d081a7f8742a0b5155d1a4b8b8
-        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
+        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
     - id: human-rewritten-lines-drop-out
       claim:
         integrity: sha256-2a92270a056121c9517f9f40032ce7b62e09aacc74668d10a25ea220748cdc48
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 447
+        lines: 452
         integrity: sha256-fc6e94c3bfff6ed48270cfc431da52fa11fd19490ffd00575452c6ed05dda1e6
-        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
+        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
     - id: stale-says-blame-names-another-machine
       claim:
         integrity: sha256-e55e3df51445a11428bc6c8b8bfdcbdb7906125d407e86e1c6eb4611cc50f45f
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 741
+        lines: 746
         integrity: sha256-014e07adb061b0d2d68199e567ac626f736234905873e01dc1eef9c5ce30ce4f
-        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
+        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
     - id: unset-lines-blame-credits-a-machine
       claim:
         integrity: sha256-e55e3df51445a11428bc6c8b8bfdcbdb7906125d407e86e1c6eb4611cc50f45f
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 744
+        lines: 749
         integrity: sha256-ffc1d9d6a193ef9a1bcaee0bf068ccf2a2b0599008e4875ee09906de9f375af7
-        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
+        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
     - id: provenance-entry-pins-range-with-hash
       claim:
         integrity: sha256-f25967a31bcf0cdadc787fbde8dd75d1c3b7f349e21401ff2293b0cd1684dc30
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 462
+        lines: 467
         integrity: sha256-3f208279cbf8e8b85bf765bf75ce87bce09b9e080748637a913e257b834a71e4
-        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
+        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
     - id: changed-pin-message
       claim:
         integrity: sha256-f25967a31bcf0cdadc787fbde8dd75d1c3b7f349e21401ff2293b0cd1684dc30
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 738
+        lines: 743
         integrity: sha256-3ee0dc84970945e61417098e7722b6fd2bbfeb98a3cf8f53ebc4980df9d6cecb
-        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
+        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
     - id: parse-error-names-the-flavor
       claim:
         integrity: sha256-aaa718e4387400f40c085ef29f7d77eab6d31f497b2f9ab4fca7422a7393bed7

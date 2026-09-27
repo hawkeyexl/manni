@@ -164,9 +164,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-c8465740603ef96129e4b7d4cdabc6a5e3da1d642132008bac8eff3dcbaaa4fd
       source:
         file: src/meta/core/validator.ts
-        lines: 650-652
+        lines: 652-654
         integrity: sha256-fd6c62879ca6dd0866db5f17bc5ea78109d35123b28badc7bd9eba85c3ebcc2c
-        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
+        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
     - id: first-source-wins-no-merging
       claim:
         integrity: sha256-09badd190a54f1f5acfe49df0b5a97fe10281fb0d07ab4983a64bef11d0b3611

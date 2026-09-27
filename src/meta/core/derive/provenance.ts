@@ -340,7 +340,12 @@ function carriesStamp(commit: CommitEvidence, fenced: boolean | undefined): bool
   return verified;
 }
 
-/** `carriesStamp` per commit, since every line a commit last touched asks it. */
+/**
+ * `carriesStamp` per commit, since every line a commit last touched asks it.
+ * Keyed by identity: a run builds its CommitEvidence objects fresh, so an
+ * entry never outlives the evidence it describes. A pool of reused objects
+ * would need this cleared between runs.
+ */
 const carried = new WeakMap<CommitEvidence, boolean>();
 
 /**

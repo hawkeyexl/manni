@@ -610,9 +610,11 @@ export class Validator {
   async claimedProperties(refs: readonly string[]): Promise<Set<string>> {
     const claimed = new Set<string>();
     for (const ref of refs) {
-      // Compiled first, so a schema the run would refuse is refused here too.
-      await this.compile(ref);
-      const properties = (await loadSchema(ref, this.schemaOptions))["properties"];
+      // Read from the compiled schema, which the cache already holds, so a
+      // schema the run would refuse is refused here too and none loads twice.
+      const schema: unknown = (await this.compile(ref)).schema;
+      if (typeof schema !== "object" || schema === null) continue;
+      const properties: unknown = (schema as Record<string, unknown>)["properties"];
       if (typeof properties !== "object" || properties === null || Array.isArray(properties)) continue;
       for (const key of Object.keys(properties)) claimed.add(key);
     }
