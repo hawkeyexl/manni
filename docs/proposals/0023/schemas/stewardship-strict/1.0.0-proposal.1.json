@@ -57,14 +57,14 @@
       "items": {
         "required": ["name", "version"]
       },
-      "description": "Strict requires an object entry to carry `name` and `version`, alone or in a list. The version's format stays free, and a string entry is unchanged."
+      "description": "Strict requires an object entry to carry `name` and `version`, alone or in a list. The version's format stays free, and a string entry is unchanged. The top-level `required` holds the single-object form, and `items` holds each object in a list, since `required` applies only to an object."
     },
     "source-of-truth": {
       "$ref": "#/$defs/source",
       "items": {
         "$ref": "#/$defs/source"
       },
-      "description": "Strict requires an object entry to carry `path` or `url`, alone or in a list. A string entry is one id, path or URL on one line with no surrounding space."
+      "description": "Strict requires an object entry to carry `path` or `url`, alone or in a list. A string entry is one id, path or URL on one line with no surrounding space. The top-level `$ref` holds the string and single-object forms, and `items` holds each entry in a list, since `required` applies only to an object."
     }
   },
   "$defs": {
