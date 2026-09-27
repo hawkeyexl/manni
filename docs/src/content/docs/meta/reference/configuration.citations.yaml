@@ -494,27 +494,27 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-f4babb8249ebef95b64565947bf85205707ae07e121ef78f2bb1e5930fb32f93
       source:
         file: src/cite/core/sidecar.ts
-        lines: 173-180
+        lines: 172-179
         integrity: sha256-ce34530c329522305158a6f54fc76a9a817ddf7d6db999005531eb11af6c15c9
-        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
+        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
     - id: url-manifest-may-not-own-citations
       claim:
         lines: 576-578
         integrity: sha256-a0acafceccd3463330e81fb7eb329980a391f22578eafd0a3b985c6e79fdf442
       source:
         file: src/cite/core/sidecar.ts
-        lines: 202-207
+        lines: 201-206
         integrity: sha256-d46775f654bb6e98cb804184b23d749dd7121d8c3509c345b1a9efd71639c2ba
-        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
+        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
     - id: citation-finding-sits-on-the-manifest
       claim:
         lines: 579-583
         integrity: sha256-dbbc615fad3976bd0457a6300aabd973a03c5150c10b7f3968b41be34d087d18
       source:
         file: src/cite/core/sidecar.ts
-        lines: 328-336
+        lines: 331-339
         integrity: sha256-c090ea05df7887a8c9d4ffb6daccc40f3f486fcac65bb348ada25f5cc0b07fd4
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
     - id: page-citations-beside-an-owning-manifest-is-invalid
       claim:
         integrity: sha256-c85540d48165f4c20ba7f27b10363e53bf5b923e34bec1f3d28793b39210c158
@@ -2864,6 +2864,6 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-7ea791a69f42aa9e880cc2cfdf03a1bd0142a320ea1acaa62a4ccdcd5e7f6082
       source:
         file: src/cite/core/sidecar.ts
-        lines: 190-235
+        lines: 189-234
         integrity: sha256-b9aa2659b1167a570f8daa89a66e10ccbe7f4c1baec8c7b8c4247c8663b5e3e7
-        commit-sha: c657ae3678c79e1eaf8daa54ea5985dc1c33fd1e
+        commit-sha: c515112e4f4b0f54d8876d518a394420a12046e0
