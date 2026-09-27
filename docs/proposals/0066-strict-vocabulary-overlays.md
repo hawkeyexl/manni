@@ -170,7 +170,11 @@ Named patterns:
    stays about the open drafts.
 6. **A heading in a script without case.** A slug such as `安装` has no
    lowercase letter. The `sections` key pattern admits caseless letters and
-   combining marks, so Han, Arabic and Devanagari headings pass.
+   combining marks, so Han, Arabic and Devanagari headings pass. It spells
+   them as Unicode property escapes such as `p{Lo}`, which need the
+   ECMA-262 `u` flag. Ajv sets that flag for a 2020-12 schema. A validator
+   that does not reads `p` as a literal `p`, so the pattern's
+   description names the requirement.
 7. **A pin recorded by `manni cite`.** `add` and `update` record
    `git rev-parse HEAD`, a full hash. All 4,173 `commit-sha` values in this
    site's manifests are 40 digits long.

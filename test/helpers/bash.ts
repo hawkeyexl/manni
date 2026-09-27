@@ -11,8 +11,10 @@ import { join } from "node:path";
  * Linux path and drops the backslashes of a Windows one, so every script the
  * suites write to a temp directory fails with "No such file or directory".
  * Git for Windows' bash is the one the Windows CI runners use. It sits beside
- * git itself, three levels above `git --exec-path`, whatever the architecture
- * directory is called.
+ * git itself. `git --exec-path` is `<root>/<arch>/libexec/git-core`, where
+ * `<arch>` is `mingw64` on x64 and `clangarm64` on arm64, so the install
+ * root is three levels up and bash is `<root>/bin/bash.exe`. An install laid
+ * out any other way fails the `existsSync` below and falls back to PATH.
  *
  * Elsewhere, and when git cannot be asked, it is plain `bash` from PATH.
  */

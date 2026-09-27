@@ -141,7 +141,7 @@ describe.each(Object.keys(FAMILIES))("the %s strict overlay", (family) => {
     expect(s.unevaluatedProperties).toBeUndefined();
   });
 
-  it("constrains only keys its open draft claims", async () => {
+  it("constrains only top-level keys its open draft claims", async () => {
     const o = await readJson(open);
     const s = await readJson(strict);
     const claimed = new Set(propertyNames(o));
