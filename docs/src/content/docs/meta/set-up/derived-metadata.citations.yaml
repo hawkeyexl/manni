@@ -329,7 +329,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: command-argv-is-never-a-shell-string
       claim:
-        integrity: sha256-fc4581dcc5465256834f3065fb4fda0934d9a65e3c0fac2c10b3b6dda35d85ab
+        integrity: sha256-b78c17551d06c14f6f9d1c550438207d2edc2171aa4e072fe4ac963bf918a6fb
       source:
         file: src/meta/core/derive/spawn.ts
         lines: 61-64
@@ -337,7 +337,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: command-runs-in-config-directory
       claim:
-        integrity: sha256-fc4581dcc5465256834f3065fb4fda0934d9a65e3c0fac2c10b3b6dda35d85ab
+        integrity: sha256-b78c17551d06c14f6f9d1c550438207d2edc2171aa4e072fe4ac963bf918a6fb
       source:
         file: src/meta/core/derive/index.ts
         lines: 233-236
@@ -345,7 +345,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: whole-run-command-value-copied-to-every-page
       claim:
-        integrity: sha256-fc4581dcc5465256834f3065fb4fda0934d9a65e3c0fac2c10b3b6dda35d85ab
+        integrity: sha256-b78c17551d06c14f6f9d1c550438207d2edc2171aa4e072fe4ac963bf918a6fb
       source:
         file: src/meta/core/derive/command.ts
         lines: 99-103
@@ -353,7 +353,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: structured-json-stdout-is-parsed
       claim:
-        integrity: sha256-fc4581dcc5465256834f3065fb4fda0934d9a65e3c0fac2c10b3b6dda35d85ab
+        integrity: sha256-b78c17551d06c14f6f9d1c550438207d2edc2171aa4e072fe4ac963bf918a6fb
       source:
         file: src/meta/core/derive/command.ts
         lines: 70-75
@@ -361,7 +361,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: bare-scalar-stdout-stays-text
       claim:
-        integrity: sha256-fc4581dcc5465256834f3065fb4fda0934d9a65e3c0fac2c10b3b6dda35d85ab
+        integrity: sha256-b78c17551d06c14f6f9d1c550438207d2edc2171aa4e072fe4ac963bf918a6fb
       source:
         file: src/meta/core/derive/command.ts
         lines: 67-70

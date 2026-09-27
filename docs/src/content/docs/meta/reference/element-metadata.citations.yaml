@@ -55,7 +55,7 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
     - id: element-creation-is-dita-only
       claim:
         lines: 202-205
-        integrity: sha256-8abe84c15c944e74447726b96388a08fa5fd65f9c683b07e6b1a48f42b3a4f0d
+        integrity: sha256-9ac3e4f228c0304389b1bfdf10e988122c7261b681d110a20195ff3a8cd27a2a
       source:
         file: src/meta/extractors/dita-write.ts
         lines: 179-202
@@ -184,7 +184,7 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: element-content-model-decides-cardinality
       claim:
-        integrity: sha256-3dbd8e4699591c5473541799571f937baa9ce6897afb594a5eeaf92cee95e6e2
+        integrity: sha256-6c11184ce9f323723863f4552737d00c6e2a2fdc5d8751599ced5133c89cf071
       source:
         file: src/meta/extractors/html-read.ts
         lines: 74-81

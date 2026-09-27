@@ -602,7 +602,7 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
     - id: resolution-kind-url
       claim:
         lines: 108
-        integrity: sha256-36f954d1cd80b13c3f2d02c44bc7b055142840c5e7d95e44d76e29d1f6be34cc
+        integrity: sha256-f8d82ae35391d5fb5dc13dddfdebc20f0b519b366abb64d4ae0ff5ce152ca5d8
       source:
         file: src/meta/core/schema-registry.ts
         lines: 1080-1096
@@ -672,7 +672,7 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
     - id: resolution-trust-local-refuses-a-url
       claim:
         lines: 81
-        integrity: sha256-d95367b82c7a8c4a923297a6eb5bb45723098f4f3c213a2e19920899d41f739d
+        integrity: sha256-52ac2f4550b32e014b7159af0216280914016a00382717dc43f7335e09cf9e2e
       source:
         file: src/meta/core/resolve-schema.ts
         lines: 311-316

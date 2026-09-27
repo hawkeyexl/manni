@@ -1922,7 +1922,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: derivable-fields-are-seven
       claim:
-        integrity: sha256-e5a3bd67b0150d8f21a21f41885e1308a42a0ea67cd1d8558a07e10275160d1b
+        integrity: sha256-3c5ca06c9ec4c1ace46f783308b96255a313a25acbf627342163190bb6dc051b
       source:
         file: src/meta/core/derive/types.ts
         lines: 19-36
@@ -2026,7 +2026,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: provenance-entry-shape
       claim:
-        integrity: sha256-a73f7ddd737f9a52d43cd041163918eedb2ae6bb34675b59948b7e6311638869
+        integrity: sha256-b9660441f1d87c1f7ac0d755072103f8084dad25b119c86e7af7d38c47a9c2d0
       source:
         file: src/meta/core/derive/provenance.ts
         lines: 55-62
