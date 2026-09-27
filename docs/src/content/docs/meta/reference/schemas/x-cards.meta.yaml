@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/x-cards.mdx:
       assertion: "A reader can explain why every card tag except twitter:card may be left out."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-106
+      integrity: sha256-4853b1882c767024fea0100ac78a8fce2d00a33cf1b5e4980ec6eb6d85a2619d
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

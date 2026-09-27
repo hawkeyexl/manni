@@ -21,3 +21,10 @@ docs/src/content/docs/term/set-up/index.mdx:
       assertion: A reader can run manni term lint and map its findings back to the field lines of a term.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-308
+      integrity: sha256-b35b17b1430ec4884c5a9c9ef2a3d5e8b1a662b26552ce149aca661729b08595
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

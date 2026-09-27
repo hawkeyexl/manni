@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/schema-reference.mdx:
       assertion: A reader can say what schema reference means in manni meta.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-14
+      integrity: sha256-62d4407c1a231015b67356bb5f81301010a19005703f2da1f4c6d586a3056b12
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

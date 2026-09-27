@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/extractor.mdx:
       assertion: A reader can say what extractor means in manni meta.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-12
+      integrity: sha256-5e786e6f1f32782e4099ced9531260cfdf23dff44ec6765eb7cdbdda3ad8e02a
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

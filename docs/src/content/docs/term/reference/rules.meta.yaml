@@ -22,3 +22,22 @@ docs/src/content/docs/term/reference/rules.mdx:
       assertion: A reader can say what edit clears a finding of any term check rule.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-73
+      integrity: sha256-3add284c159d2e740ab3a112aacdc32ca4e9f92e197b525689608eb22eeed787
+    - generated-by: Claude Opus 5.5
+      lines: 74
+      integrity: sha256-9ecf435064f8764e3b2cd2b53a05a9e9d63e55567eb013b7f5f301dcf6a3a64d
+    - generated-by: Claude Opus 5
+      lines: 75-77
+      integrity: sha256-731a4b4c4fa019f975ce498df183acc8d9ec06b5b2e6777d7fd44e716e73e031
+    - generated-by: Claude Opus 5.5
+      lines: 78
+      integrity: sha256-feaa780067850c77ec3893f7cebb804283c94892535f12a5abef778e6ffc6452
+    - generated-by: Claude Opus 5
+      lines: 79-147
+      integrity: sha256-665e95ca2184ad537db04ef1ffe9623544f58ce4eae04a0f6dd53a185be70e99
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

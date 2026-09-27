@@ -17,3 +17,10 @@ docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx:
       assertion: "A reader can say what the stewardship strict overlay rejects that the open vocabulary accepts."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-253
+      integrity: sha256-0fd29720944a92faddd9ef3a67eae93eb5a5907acdd860eb9717fc2e039743f9
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

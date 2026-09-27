@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/microsoft-learn.mdx:
       assertion: "A reader can write an ms.date value that passes the MM/DD/YYYY rule."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-94
+      integrity: sha256-50b04e79c606cf082ba42f233c05558b5b80dfbf8daf5a33d37f5c150640de0c
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

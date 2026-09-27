@@ -7,3 +7,10 @@ docs/src/content/docs/graph/index.mdx:
       assertion: "A reader can say what manni graph derives and that it is not in the published package."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-8
+      integrity: sha256-58022d75a6645cfd13f5cf31afc96af4e01f6f2967e54e8d814227a23b8d4a9a
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-24

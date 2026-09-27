@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/index.mdx:
       assertion: A reader can find the short definition of any term manni meta uses and open its page.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-20
+      integrity: sha256-a5156697915f3280901fd0e0f3bf98b47557a906bb6bdf8e923d91ec1ef6b7c6
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

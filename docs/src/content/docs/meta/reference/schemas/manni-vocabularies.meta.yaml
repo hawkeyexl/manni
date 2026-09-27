@@ -15,3 +15,10 @@ docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
       assertion: "A reader can stack manni vocabularies in a config with their strict overlays."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-289
+      integrity: sha256-05d7f550948f56d2b11da215175c757564ef237e3c91752484e82002ffae2981
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

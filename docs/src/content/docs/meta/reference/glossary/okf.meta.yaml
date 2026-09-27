@@ -12,3 +12,13 @@ docs/src/content/docs/meta/reference/glossary/okf.mdx:
       assertion: A reader can say what OKF means in manni meta.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-8
+      integrity: sha256-806f1b3af2efac4b814513ab36e2d1f08697d91e7dfa83436097a23f03bbc67b
+    - generated-by: Claude Opus 5.5
+      lines: 9
+      integrity: sha256-5661ef35877d747bba425cacd84e3e491dfa9f86f484f6a00994aeaa7703b73e
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/vitepress-page.mdx:
       assertion: "A reader can fix the finding an unrecognised outline value produces."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-132
+      integrity: sha256-43f4ce707330a2b4fca7ba518e38cc973707d25cfa2a863610b5964b808ee807
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

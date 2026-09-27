@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/astro-starlight.mdx:
       assertion: "A reader can fix the finding a Starlight page without a title produces."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-144
+      integrity: sha256-7eef99fe1eb17baf7d84ce956f8e511b021efd95598af1b9c25864a2f565d375
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

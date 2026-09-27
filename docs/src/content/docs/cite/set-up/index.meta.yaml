@@ -18,3 +18,52 @@ docs/src/content/docs/cite/set-up/index.mdx:
       assertion: A reader can mint the first citation with manni cite add and run the first manni cite check.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 1-69
+      integrity: sha256-c7b4f32fdef572c5931a7fb94a957021c29006665025533b6f6fc448560410a8
+    - generated-by: Claude Opus 5
+      lines: 70-73
+      integrity: sha256-79433410a9da849bfdb56e07fb90a68491cdec00d4285731c235f2e145187d6a
+    - generated-by: Claude Fable 5.1
+      lines: 74-104
+      integrity: sha256-25641f227a5eed1c86deb2a3c91aae4fe54e35eb00beb0d2b0ec763928236251
+    - generated-by: Claude Opus 5
+      lines: 105
+      integrity: sha256-bc3a772c185201f017a635add4a72914bab1b9d469d13034c57d190d45335571
+    - generated-by: Claude Fable 5.1
+      lines: 106-143
+      integrity: sha256-0d869ecf77ef7f6c68ad69fd5c67dc156fa13091316dcc8d801d86e2407453d1
+    - generated-by: Claude Opus 5
+      lines: 144-145
+      integrity: sha256-91d3d75dfcab100b1da53ea91e398da109fe1103cc6089be831df979f292171b
+    - generated-by: Claude Fable 5.1
+      lines: 146-156
+      integrity: sha256-4ee0e680650561f4f3b8374eec23f9154afcd674ab10a7420ac92f1811813fa5
+    - generated-by: Claude Opus 5
+      lines: 157
+      integrity: sha256-acea8d5ca09796e800b68d9a66e1652ac4253746ef57d65119d6df61cc9591d8
+    - generated-by: Claude Fable 5.1
+      lines: 158-162
+      integrity: sha256-9fb5b855333f6ef513f9512e0ec9b712dbf1c13e74b806cf7b794ec7062c5276
+    - generated-by: Claude Opus 5
+      lines: 163-188
+      integrity: sha256-183d8dc594c586fccf26e3a1ac97452de7c927fbcff7dd63f1d79995be6474fc
+    - generated-by: Claude Fable 5.1
+      lines: 189-190
+      integrity: sha256-dd0b647c6fb1d8b259f69afb5fc4af12a45c89c558be053944dd44bef0aab3c7
+    - generated-by: Claude Opus 5
+      lines: 191
+      integrity: sha256-aaecc2fa31f785763ecdbfe7eb8824644e1a9ac6daa95f9b77ee5e45ed86c12e
+    - generated-by: Claude Fable 5.1
+      lines: 192-223
+      integrity: sha256-1bae5f3a28e710a0d48ec5b1c920eb32536e88447093e552a9021ea77318a35b
+    - generated-by: Claude Opus 5
+      lines: 224
+      integrity: sha256-c6e0a43739b2b08dd7937381a5a254d628c1b57c5b6f7efe61987b19c53201b8
+    - generated-by: Claude Fable 5.1
+      lines: 225-229
+      integrity: sha256-7ac9eab0ded80d34f636e6f6ba19aa8b219c54c406304b19689b5c8079dccb94
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-11

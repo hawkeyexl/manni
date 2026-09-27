@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/validation.mdx:
       assertion: A reader can say what validation means in manni meta.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-9
+      integrity: sha256-0698d1255b15ba8f38aa001619c5256b1f5acff0fbc11ecce8d141b2d94e7a77
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

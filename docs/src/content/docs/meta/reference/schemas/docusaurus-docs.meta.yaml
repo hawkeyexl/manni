@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/docusaurus-docs.mdx:
       assertion: "A reader can fix the finding a quoted sidebar_position produces."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-155
+      integrity: sha256-b32d57e1141b005e447eebdd15fc6c9e37cc247cdd8593dc3a8fdd60a17b1e59
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

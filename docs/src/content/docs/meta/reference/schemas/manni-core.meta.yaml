@@ -17,3 +17,10 @@ docs/src/content/docs/meta/reference/schemas/manni-core.mdx:
       assertion: "A reader can say what the core strict overlay rejects that the open vocabulary accepts."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-176
+      integrity: sha256-253e476df85dc7c9773fb1c762cdd4bf14b57de0edd79e9ba601f0f7c8de5713
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

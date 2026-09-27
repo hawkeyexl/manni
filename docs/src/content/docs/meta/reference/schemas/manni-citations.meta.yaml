@@ -17,3 +17,10 @@ docs/src/content/docs/meta/reference/schemas/manni-citations.mdx:
       assertion: "A reader can say what the citations strict overlay rejects that the open vocabulary accepts."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-294
+      integrity: sha256-ea57ed819339834b55288bbb59116f1a4c9140dad1a5ca15226953e5433e325e
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

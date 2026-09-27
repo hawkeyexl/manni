@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/meta-schema-uri.mdx:
       assertion: A reader can say what meta-schema URI means in manni meta.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-11
+      integrity: sha256-e4556f6b29d1c868a15d0769304e276c10fb6c5d8285c9eb4297578c099a58d1
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

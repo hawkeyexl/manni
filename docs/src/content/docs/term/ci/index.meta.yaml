@@ -23,3 +23,10 @@ docs/src/content/docs/term/ci/index.mdx:
       assertion: A reader can record a baseline and gate only on findings the baseline does not hold.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-222
+      integrity: sha256-e2106b54a487de85a3555a4826dea9e9c3ee1d6bba16d161920323dae970b817
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

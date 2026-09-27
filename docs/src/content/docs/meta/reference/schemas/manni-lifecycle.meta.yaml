@@ -17,3 +17,10 @@ docs/src/content/docs/meta/reference/schemas/manni-lifecycle.mdx:
       assertion: "A reader can say what the lifecycle strict overlay rejects that the open vocabulary accepts."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-175
+      integrity: sha256-dea3b34fc4b04f124aabc1cbdc88a96c6e7c65924772f6e16a3a60e494abe3d5
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

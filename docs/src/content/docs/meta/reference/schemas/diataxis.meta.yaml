@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/diataxis.mdx:
       assertion: "A reader can name the four type values the Diátaxis schema accepts."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-79
+      integrity: sha256-e32945a51535e5e7df290f333a5a4ff9d16f41fa08902ca7ca71c860fcf95744
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

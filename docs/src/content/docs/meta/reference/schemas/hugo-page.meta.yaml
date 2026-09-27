@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/hugo-page.mdx:
       assertion: "A reader can fix the finding a quoted weight produces."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-147
+      integrity: sha256-d9d760881f0c48512783984226622ef489e4e22d3adc0fff5bd745872ba0a5d0
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/tgdp-templates-1-0.mdx:
       assertion: "A reader can choose between tgdp:templates:1.0 and tgdp:templates:1.1 with its strict overlay."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-58
+      integrity: sha256-d29eaf73f30450fafbb44bd55112d65ac7543b0581bc708d7a516eceedde48d2
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-27

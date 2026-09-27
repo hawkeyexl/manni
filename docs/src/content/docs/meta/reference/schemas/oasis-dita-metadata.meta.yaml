@@ -21,3 +21,64 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
       assertion: "A reader can predict where fill places an element that is missing from a topic."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-3
+      integrity: sha256-0c7abc6321a537fb4c5c9a1e63d254b9d9fff68c3400e067307d76e0121aa6bf
+    - generated-by: Claude Opus 5.5
+      lines: 4-7
+      integrity: sha256-ab767a65afde6726900804c87ee69a864f49733728d7cb67345f23b01c6aa1eb
+    - generated-by: Claude Opus 5
+      lines: 8-10
+      integrity: sha256-584edab709a70fd7717c9572f99b2c14104a124b6985780f585a3eb923ab125f
+    - generated-by: Claude Fable 5.1
+      lines: 11-12
+      integrity: sha256-a0b318d7cf495a601f7748b6373e13c6e52267fcefdacc744b3603d55ad53e51
+    - generated-by: Claude Opus 5
+      lines: 13-17
+      integrity: sha256-5ab177f0f618622a0a492f466f570001a6fedea1fdc4e2243b1bbb12e56ce890
+    - generated-by: Claude Opus 5.5
+      lines: 18-35
+      integrity: sha256-8eb3d77b910282ad69f1b929723fdc8002d57fcc5f3e1efe7145ff9291040e37
+    - generated-by: Claude Opus 5
+      lines: 36-66
+      integrity: sha256-f93bff5c28f0e245e054c30691b532430231e7eeb2ab9394d3eee6f048059551
+    - generated-by: Claude Fable 5.1
+      lines: 67
+      integrity: sha256-5e1b7ce926c9ac6767ec5f6b716dac7f67968acc4dd9c7823a8011922c234c09
+    - generated-by: Claude Opus 5
+      lines: 68-89
+      integrity: sha256-bd644310c5626c3de2f551a604811cd912494b9e10f5593e4f5b323f70d7d13e
+    - generated-by: Claude Opus 5.5
+      lines: 90-121
+      integrity: sha256-5e3e1fef354101a2edcc52bd2c8cea7d2dab191b99ffb7627d8de4c07ab1f3de
+    - generated-by: Claude Opus 5
+      lines: 122-144
+      integrity: sha256-4203f0a971440df44837e3c374d258cac122bc5a9d816c157ead6bcfa23930b9
+    - generated-by: Claude Fable 5.1
+      lines: 145
+      integrity: sha256-784bdd8f8668e7aa3411d42e89581b8127f4c42208bf9ac326a78cb66340683f
+    - generated-by: Claude Opus 5
+      lines: 146-156
+      integrity: sha256-d3f1f33869b21141c80baa17b49c4896d7d85f64e8c3ee068b686a520a5747b1
+    - generated-by: Claude Fable 5.1
+      lines: 157
+      integrity: sha256-d24bf73b5558ad5509be56abda0e54ba366d0e35e280ec68456608fa14fd6ea7
+    - generated-by: Claude Opus 5
+      lines: 158-177
+      integrity: sha256-a1ad94b2f0014db0fe3d7a2d74b8212db0067c7e35fe40f07edbd31e34082a5e
+    - generated-by: Claude Fable 5.1
+      lines: 178
+      integrity: sha256-9f500d9478fda27bc80bef579db74faca696fdcd623ac27978caebbe115195c9
+    - generated-by: Claude Opus 5
+      lines: 179-185
+      integrity: sha256-6f2628732cb354e82d93179f0dbdcdb37cee875c702465f53d94785a0012cfcf
+    - generated-by: Claude Opus 5.5
+      lines: 186-188
+      integrity: sha256-697a84de8911813f767e84f77753d573e365b9c31c8321da3ff56fa5143d6de4
+    - generated-by: Claude Opus 5
+      lines: 189-199
+      integrity: sha256-9dbcc66e3ee647967c05ea6aeac27de8681b44779be69c3f06435e293a541a88
+  owner:
+    - "@hawkeyexl"
+  created: 2026-08-23

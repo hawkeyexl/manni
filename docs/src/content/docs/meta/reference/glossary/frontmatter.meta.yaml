@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/frontmatter.mdx:
       assertion: A reader can say what frontmatter means in manni meta.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-17
+      integrity: sha256-4af312a41deb09550666947c02a2ef99b807f4519c43ad5e22e866b02d871966
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

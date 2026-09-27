@@ -7,3 +7,10 @@ docs/src/content/docs/lint/index.mdx:
       assertion: "A reader can say what manni lint checks and that it is not in the published package."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-8
+      integrity: sha256-c344b6b5b4d38a40d8ac7d0abb16f2912da3b77ff6969e3d7f0d406c5156d110
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-24

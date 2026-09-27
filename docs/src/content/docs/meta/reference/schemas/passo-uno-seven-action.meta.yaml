@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
       assertion: "A reader can opt out of the Seven-Action schema when their pages use action for something else."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-93
+      integrity: sha256-b04002a80e3d045fb1f284fa7f887afdb690175c336ce1f61c6644497354d35a
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

@@ -17,3 +17,10 @@ docs/src/content/docs/meta/reference/schemas/manni-terminology.mdx:
       assertion: "A reader can point manni:terminology:1.0.0 at the folder that holds the term pages."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-222
+      integrity: sha256-94bd29ac542ce381b6ecc22054a72ae2351ae31a5f7c5f53f220cd6ff9742eb4
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

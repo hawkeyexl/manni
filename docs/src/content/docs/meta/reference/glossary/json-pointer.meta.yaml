@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/json-pointer.mdx:
       assertion: A reader can say what JSON Pointer means in manni meta.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-9
+      integrity: sha256-7ed307d929096ffbb322b76dadf01c7e50faae5a2282eb3526498b7d9a8e1ca3
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

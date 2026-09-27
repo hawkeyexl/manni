@@ -21,3 +21,10 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
       assertion: A reader can write the term set as TBX or CSV for a translation system and say which fields each drops.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-514
+      integrity: sha256-9696c6438c583d7d298f6d05f695e952a0b63d8e1455464f385ffb9e7be7d96e
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

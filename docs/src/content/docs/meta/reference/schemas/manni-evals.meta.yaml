@@ -17,3 +17,10 @@ docs/src/content/docs/meta/reference/schemas/manni-evals.mdx:
       assertion: "A reader can pick a grader for an eval."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-279
+      integrity: sha256-fe9bfbcf63a5159afbce385ff04f9ef27bab6d12e0f5707dc2e38aaf776b01cf
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

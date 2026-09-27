@@ -26,3 +26,82 @@ docs/src/content/docs/meta/reference/platform-schemas.mdx:
       assertion: A reader can compose a platform schema with a vocabulary schema in one schema set.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1
+      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    - generated-by: Claude Opus 5.5
+      lines: 2
+      integrity: sha256-740a148a2e2c9b7a6675260148af841924184d703474c62e74dd3baa931d363d
+    - generated-by: Claude Opus 5
+      lines: 3-5
+      integrity: sha256-cc560bc937d7665cb16529c80d82ea8d4642fe38b3f6cb05cc4603da8434e025
+    - generated-by: Claude Fable 5.1
+      lines: 6
+      integrity: sha256-82a8872eef40a995b1c0299c190c7a2cdd938041448379a14ad329700755f556
+    - generated-by: Claude Opus 5
+      lines: 7-20
+      integrity: sha256-bb4cb082acc60926139f68d81097d716acbd54aead263c702f1169f60b2ca02c
+    - generated-by: Claude Opus 5.5
+      lines: 21-34
+      integrity: sha256-8f1a5509000bb0aebb1f444a606571776d1b603501733424c6ebd7468446bc4c
+    - generated-by: Claude Opus 5
+      lines: 35-39
+      integrity: sha256-ff5b48d200e5a830e9c4376fe286b2aa0d81dac9b5d0365137f3f35293d5e5e2
+    - generated-by: Claude Fable 5.1
+      lines: 40
+      integrity: sha256-bba9b3e906947df800909a42207ed3369f20bcf2ff549daf5c6de8c91239c761
+    - generated-by: Claude Opus 5
+      lines: 41-45
+      integrity: sha256-f1a1f9649631e18c9244662d0c738152a17ed43f83cd23cf7bf72c5fae67ead6
+    - generated-by: Claude Fable 5.1
+      lines: 46
+      integrity: sha256-3bce0c083252829110fe0c8942d5094a1efd6b01b9b7d22051ace04487289f10
+    - generated-by: Claude Opus 5
+      lines: 47-67
+      integrity: sha256-0b56eacbcfbedadf4bd8fcee4e1cfc185cc69d6a98f111c34d4f85c718db9ea2
+    - generated-by: Claude Fable 5.1
+      lines: 68
+      integrity: sha256-70f2d93d7326f8bd1552cc87b137380bdb267347a55d542e4e16937beabe14de
+    - generated-by: Claude Opus 5
+      lines: 69-76
+      integrity: sha256-47f2bfe492577106e80864c9caf335edbeef54a5decbe7f8ede4418577378647
+    - generated-by: Claude Fable 5.1
+      lines: 77-81
+      integrity: sha256-5ef9cfa5d0a0e0c81c12a2db06041e6345cc6b2e7405a5dbca2567af2625ebb9
+    - generated-by: Claude Opus 5
+      lines: 82-89
+      integrity: sha256-553bb00168c50496828b2e53d92ad58a0c79457e2318162c63a49646e12cbb25
+    - generated-by: Claude Fable 5.1
+      lines: 90-97
+      integrity: sha256-5fc8eec8179d2da1ba6bcc6fbaa21eb5409c1636d931fa5f10683fb973ba0f18
+    - generated-by: Claude Opus 5
+      lines: 98-104
+      integrity: sha256-840ced3edc23ccc4b18ad9f9b51dc4eafa8fecc9dd0ef8e1e11d26c2577633a7
+    - generated-by: Claude Fable 5.1
+      lines: 105-113
+      integrity: sha256-6f6c8db4dda8d90794f20a33ddc1e5642e53abd58fc52f89ed061fa492a99b5a
+    - generated-by: Claude Opus 5
+      lines: 114-120
+      integrity: sha256-62fed08952b5ddd81587219a2cc8e70f4b283a0bee352c8aadfa180b6bdd4a37
+    - generated-by: Claude Fable 5.1
+      lines: 121-129
+      integrity: sha256-e409983cdc835748a6d2c8826d7da24e20fa8f2295fa9f102e73184b39aedd31
+    - generated-by: Claude Opus 5
+      lines: 130-137
+      integrity: sha256-7b9262091874fe5d4c304c682014f8cbc3cabedf9a79f1d43871bafda4dca9ab
+    - generated-by: Claude Fable 5.1
+      lines: 138-146
+      integrity: sha256-b3f8b7f360e428619aa0497eeedd9e00547ee6a1731fdbd51d92ed82d4e24feb
+    - generated-by: Claude Opus 5
+      lines: 147-153
+      integrity: sha256-4003d584070fd28d5c7e89d80afde5999e215e856e194c76ce7fa9723c6f54f9
+    - generated-by: Claude Fable 5.1
+      lines: 154-162
+      integrity: sha256-c19a29c677723361c682e331cb3deed1c8d46d98e7cf1a25bc6b6052c1574909
+    - generated-by: Claude Opus 5
+      lines: 163-166
+      integrity: sha256-119e725ffcc770670068df6288d3f3961a4d280f1b4d416e290556bffad594da
+  owner:
+    - "@hawkeyexl"
+  created: 2026-08-23

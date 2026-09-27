@@ -17,3 +17,61 @@ docs/src/content/docs/meta/reference/action.mdx:
       assertion: A reader can write the manni meta validate command the Action runs for a given set of inputs.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-5
+      integrity: sha256-91bf459000546de089facc46719a2b624594a997a93f7e35556a9e772a04b464
+    - generated-by: Claude Fable 5.1
+      lines: 6
+      integrity: sha256-00d8e5c62aa317d92a16bf597c3276e3924d826c4721ff018d460eb1165a4769
+    - generated-by: Claude Opus 5
+      lines: 7-30
+      integrity: sha256-e0e170f9d1f5c75d73aad72f75ef7ca9b470fce37e13e8c27630e45c0f65abe4
+    - generated-by: Claude Fable 5.1
+      lines: 31
+      integrity: sha256-e25c07014741fc8f1e9b6cde1900e41ed2149cb4f27084e1d4a6ba13f1240d4d
+    - generated-by: Claude Opus 5
+      lines: 32-36
+      integrity: sha256-babb71c534cf4e7b1306a08e9b6ed8af3b27ddd154ed33996be9125cd873dcfb
+    - generated-by: Claude Fable 5.1
+      lines: 37
+      integrity: sha256-f8666fd530c3bdadfd1dcdbfaa3f1488d67feb8fbb33f6e9ef3409b69d3128e8
+    - generated-by: Claude Opus 5
+      lines: 38-54
+      integrity: sha256-3ae78066b6864d0bd6ac056c74fa196040557b7fc6edb867a3e6676ce0a915d0
+    - generated-by: Claude Fable 5.1
+      lines: 55
+      integrity: sha256-09d28ba265c1a70988554b548c989913bb5912f38d98740529b071cfbe9e0d72
+    - generated-by: Claude Opus 5
+      lines: 56-58
+      integrity: sha256-2df80d817354176a8fa1d3def9604d45b52bb7bb2b7e44c01b9792548aade1c2
+    - generated-by: Claude Fable 5.1
+      lines: 59-60
+      integrity: sha256-3dbedd7c962756551f3a8f2a83f62b600aa4740b28fe04d2324b140147992432
+    - generated-by: Claude Opus 5
+      lines: 61
+      integrity: sha256-d300380f1402b0c46b27502e052179be698b725b603cb6ba589f4374c035f65c
+    - generated-by: Claude Fable 5.1
+      lines: 62
+      integrity: sha256-4bb50c10566d4dc949e890f2cd06f9b54382dfe6406f3e731d77642991fcb66d
+    - generated-by: Claude Opus 5
+      lines: 63-98
+      integrity: sha256-9898d8ed472dcc7bb515e33a457e011f902daadeba0485592ec91e726008dc3c
+    - generated-by: Claude Fable 5.1
+      lines: 99
+      integrity: sha256-53f4db7821d350968e1e7387c01b49a6e7a795cd6ba626bbe5e4472f204429f6
+    - generated-by: Claude Opus 5
+      lines: 100-128
+      integrity: sha256-0f8a210e10d7bd51d84e46040f62a205d32ecaf97830294cb5e7fcb27ac5d7c7
+    - generated-by: Claude Opus 5
+      lines: 130-141
+      integrity: sha256-f8d19bc244ac1ba53390b6aacd5cc0124c4e6ef24698d6ad4abf5ff78b5ac441
+    - generated-by: Claude Fable 5.1
+      lines: 142
+      integrity: sha256-798120a6204b3b7fafb2269bdc20dc5696f54c378de790bf1475f056eae29358
+    - generated-by: Claude Opus 5
+      lines: 143-158
+      integrity: sha256-de864da5d0fc2e2266fe0267ce1ee7627432796b28f0f0bda37940487c230505
+  owner:
+    - "@hawkeyexl"
+  created: 2026-08-22

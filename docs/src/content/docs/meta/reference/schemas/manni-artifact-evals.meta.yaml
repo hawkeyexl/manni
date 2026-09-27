@@ -17,3 +17,10 @@ docs/src/content/docs/meta/reference/schemas/manni-artifact-evals.mdx:
       assertion: "A reader can pick a grader for an artifact eval."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-292
+      integrity: sha256-10d7a5b1ee822b0f6cdf3daac741545144666cb941b5f985a4d320dbeaaf3f95
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

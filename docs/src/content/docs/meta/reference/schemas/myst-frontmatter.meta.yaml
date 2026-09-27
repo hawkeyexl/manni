@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/myst-frontmatter.mdx:
       assertion: "A reader can fix the finding an over-long short_title produces."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-157
+      integrity: sha256-8827323aa63a19d0cb5557fbc5db00122a32910d898155322afd9cac679ac482
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

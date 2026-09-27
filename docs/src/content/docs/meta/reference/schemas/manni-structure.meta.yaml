@@ -17,3 +17,10 @@ docs/src/content/docs/meta/reference/schemas/manni-structure.mdx:
       assertion: "A reader can say what the structure strict overlay rejects that the open vocabulary accepts."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-184
+      integrity: sha256-551ed0076c22d1d7586172c477f053d74b7ef9d3c2fa1662bb3151a08c145627
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

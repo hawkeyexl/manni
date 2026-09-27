@@ -27,3 +27,16 @@ docs/src/content/docs/term/index.mdx:
       assertion: A reader can pick the manni term page that fits their job, from defining terms to fixing a failing check.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-130
+      integrity: sha256-af76ce9217fb11c775b96d3a05ae2268bcf27ca486f9cf2f47fe603f29f45eb5
+    - generated-by: Claude Opus 5.5
+      lines: 131-134
+      integrity: sha256-36811e81e9457ec7000794f4890b3849b0fa883a52431d31aa59f1c7ad2fb7b1
+    - generated-by: Claude Opus 5
+      lines: 135
+      integrity: sha256-150ebed8747968d256ef60d06d4be894e155f37aa257147333e406d9f0049fbb
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

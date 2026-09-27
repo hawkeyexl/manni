@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/jekyll-page.mdx:
       assertion: "A reader can fix the finding a quoted published flag produces."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-111
+      integrity: sha256-0dcab2d062bdeb10546c87ca4df3af7e5cae405e398f8df01c0521cc365c6140
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

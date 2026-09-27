@@ -15,3 +15,55 @@ docs/src/content/docs/meta/reference/agent-skills-schemas.mdx:
       assertion: A reader can explain why the Agent Skills schema rejects keys the Claude Code schema tolerates.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-9
+      integrity: sha256-97c6e766e648ad67d2112595e37be512761db78f6871c7afa52b3f9707884f9f
+    - generated-by: Claude Opus 5.5
+      lines: 10-11
+      integrity: sha256-2599a2baab5dffe8a8c5d92bebe066fe7965dbd45503ad4c5697d07e2d2a2bd6
+    - generated-by: Claude Opus 5
+      lines: 12-17
+      integrity: sha256-b3417fb84a3297335d7baff6efd1a497cbc39a88446c9405cda4c50dcf94ef5f
+    - generated-by: Claude Fable 5.1
+      lines: 18-19
+      integrity: sha256-6be2a8757095124edc835f76bae21bb14ab41a7b4163510c1061341b05f18d72
+    - generated-by: Claude Opus 5
+      lines: 20-23
+      integrity: sha256-eda7725711998095bc02d1ff142d0bcdeb6e322dd859b907363ae3367dad35de
+    - generated-by: Claude Opus 5.5
+      lines: 24-28
+      integrity: sha256-f32e8b69f86e100ecf3371f9d26246557aea245a29a1b2da7f8f94f9735e9342
+    - generated-by: Claude Opus 5
+      lines: 29-37
+      integrity: sha256-0e898ff61730010b990245b242591d29c63849c4e758152ef4344cf17ec299b0
+    - generated-by: Claude Opus 5.5
+      lines: 38
+      integrity: sha256-8e89b78b05eb34002f6851273172d1cc3b6640a4138e985dca376d5772597256
+    - generated-by: Claude Opus 5
+      lines: 39
+      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    - generated-by: Claude Opus 5.5
+      lines: 40-41
+      integrity: sha256-2f82cf65ce9c467346c640b0a0c226a7b341903ae9dba1c7960209e65aaea0f2
+    - generated-by: Claude Opus 5
+      lines: 42
+      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    - generated-by: Claude Opus 5.5
+      lines: 43-46
+      integrity: sha256-b76245d6b7749bc724675a353bc6c5ba40810f4cfb20c375c25df88c3824a2a0
+    - generated-by: Claude Opus 5
+      lines: 47-55
+      integrity: sha256-0b46691c7236663769f72773de9ceaa6a92c2825be7c40ee2ece529246c1a293
+    - generated-by: Claude Fable 5.1
+      lines: 56
+      integrity: sha256-af4c90a40ba302906980a43ccae64769298486515cd0fd0001af6b68ac3bef9d
+    - generated-by: Claude Opus 5
+      lines: 57-73
+      integrity: sha256-6859d04b1d359bfb671104021a10b3c9f05d77ba6c49023f82e18ef58dcfdd98
+    - generated-by: Claude Opus 5.5
+      lines: 74
+      integrity: sha256-4a265bc0a0296c7be08853a9c14e1f9b22f18a35f0eb362fcf788f67243a2d64
+  owner:
+    - "@hawkeyexl"
+  created: 2026-08-25

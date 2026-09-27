@@ -24,3 +24,25 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
       assertion: A reader can review the fields fill proposed and retire their meta-provenance entries.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-80
+      integrity: sha256-5f6a91394c35cccb1247d9d773f0de36edc55584874c27a36e3e76281cd61704
+    - generated-by: Claude Opus 5
+      lines: 82-351
+      integrity: sha256-affcd94260b57c1fec8edd97b15d5f629fffa946c0d554c46860d611c3f189f9
+    - generated-by: Claude Opus 5.5
+      lines: 352
+      integrity: sha256-2efa8a4c5123ac0edbdb694ff37fbeb921890b0dffdb0f7ac829acebda7ff899
+    - generated-by: Claude Opus 5
+      lines: 353-401
+      integrity: sha256-3a86bb375f779b3751f84a2f1b429b94479df076057a1f45480bcb4ecd910d2b
+    - generated-by: Claude Opus 5.5
+      lines: 402
+      integrity: sha256-574d8cbcb2cd30532f9e0da02b4dc01e6ca79cfe13b6ba0297d696cc7143fa9b
+    - generated-by: Claude Opus 5
+      lines: 403-464
+      integrity: sha256-896493af231f1b82b51ae6a5effd801c86d0a2235816f06d6a346fa529ce7243
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-13

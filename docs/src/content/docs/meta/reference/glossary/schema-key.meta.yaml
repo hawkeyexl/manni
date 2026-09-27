@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/schema-key.mdx:
       assertion: A reader can say what the $schema key means in manni meta.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-13
+      integrity: sha256-ada7091246104987de3e5baf9603522a79c4e2762d9bf47312d26d84bba90cff
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

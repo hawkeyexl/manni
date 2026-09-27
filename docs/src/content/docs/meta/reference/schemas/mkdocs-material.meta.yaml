@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/mkdocs-material.mdx:
       assertion: "A reader can fix the finding an unknown hide value produces."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-213
+      integrity: sha256-3033814e00f5c0dd8234ba09884e057cd21ca87fb9dae9faaee29981010faf56
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

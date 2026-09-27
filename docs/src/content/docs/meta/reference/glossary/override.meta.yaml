@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/override.mdx:
       assertion: A reader can say what override means in manni meta.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-14
+      integrity: sha256-c7839b417f0548d3f23238f6f0db2a146d8783bcf596b3bd7ddd2ec06aba292b
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/docusaurus-blog.mdx:
       assertion: "A reader can fix the finding a numeric authors value produces."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-156
+      integrity: sha256-9423d4782e12800a0e02b0ccd66e8b8f01d522fac03f14406dfd7295e6fb57f8
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

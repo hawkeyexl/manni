@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/dcmi-elements.mdx:
       assertion: "A reader can write a Dublin Core date that passes the W3CDTF rule."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-101
+      integrity: sha256-d3fdfe6225c16ead9ec5825537d308240b42dfb0f3be7f96dd0905889c5a73f3
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

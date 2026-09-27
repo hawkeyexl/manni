@@ -26,3 +26,28 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
       assertion: A reader can decide whether a field belongs on the page or in a manifest.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-458
+      integrity: sha256-10c3d96ee3c069660a7d5f2b0274a775c9ea0c5f8117f3882499ca136f4d14e8
+    - generated-by: Claude Opus 5.5
+      lines: 459-460
+      integrity: sha256-8d183a8424f932086220cc22a27b4848177b32e7949e1ac485d5f210167cfe01
+    - generated-by: Claude Opus 5
+      lines: 461
+      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    - generated-by: Claude Opus 5.5
+      lines: 462
+      integrity: sha256-ea4674af50258051509416c5fbf1ad634f498983ed571bae39148637fafc6e3e
+    - generated-by: Claude Opus 5
+      lines: 463
+      integrity: sha256-23cca02b74f386463efa24796c7a9011b0d2c93f0c38b4d15d5d276205b59b43
+    - generated-by: Claude Opus 5.5
+      lines: 464-474
+      integrity: sha256-fad77ccfefd30c9b771f2b06fe4735fa68c6300b6b57829ab9398f38c1f8bf93
+    - generated-by: Claude Opus 5
+      lines: 475-532
+      integrity: sha256-c41b9545b389e590d014f896f7ca8a34307e62a1a2a0d994b63f615dfb6f71e3
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-14

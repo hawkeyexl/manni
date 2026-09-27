@@ -17,3 +17,10 @@ docs/src/content/docs/meta/reference/schemas/manni-audience.mdx:
       assertion: "A reader can say what the audience strict overlay rejects that the open vocabulary accepts."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-170
+      integrity: sha256-2fe784f963aa6caa3d7b3f87024a50c2ecf3ec5c4e3f9148e21088acc010fa9a
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

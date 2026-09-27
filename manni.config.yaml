@@ -66,13 +66,12 @@ tools:
     config: .vale.ini
 
 meta:
-  # Two managed fields, stamped by `manni meta derive` into each page's
-  # manifest. Only fields a squash merge leaves unchanged are managed. A date
-  # or a reviewer would read stale on main after every merge, and a stale
-  # stamp fails this gate. Those fields stay derivable at read time, so `get`
-  # and `query` still show them.
+  # No `fields` (proposal 0069): derive manages the merge-safe fields each
+  # page's schemas claim. Here that is owner, created and last-updated from
+  # stewardship, and provenance from ai-context, stamped into each page's
+  # manifest. They stay current after a squash merge, which this gate needs.
+  # Authors and reviewers would not, so they stay derivable at read time only.
   derive:
-    fields: [owner, provenance]
     sources: [git, codeowners]
     # CODEOWNERS format, at a path GitHub does not search, so it names an
     # owner without turning on automatic review requests.

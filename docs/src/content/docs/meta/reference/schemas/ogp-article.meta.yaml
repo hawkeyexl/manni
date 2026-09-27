@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/ogp-article.mdx:
       assertion: "A reader can write an og:locale value that passes the schema."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-119
+      integrity: sha256-b1a7a68dfe96d0e11bb3b4de8d31e6573cf724084e6ddbb0d4af99ac94242266
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

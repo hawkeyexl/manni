@@ -21,3 +21,10 @@ docs/src/content/docs/term/get-started/index.mdx:
       assertion: A reader can run manni term check and fix an undefined-term finding by using the preferred label.
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 1-231
+      integrity: sha256-0ac37c97eb5e14173aa5c2b6b6a363d18d85b3bc5f207a6e283ee01137fda571
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

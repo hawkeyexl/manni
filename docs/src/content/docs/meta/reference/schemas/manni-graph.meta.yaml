@@ -17,3 +17,10 @@ docs/src/content/docs/meta/reference/schemas/manni-graph.mdx:
       assertion: "A reader can say what the graph strict overlay rejects that the open vocabulary accepts."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-250
+      integrity: sha256-6ea4699f31a5c8f30ddba807ed25f9dd63880e7cd131fc2ca417363abad846ef
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

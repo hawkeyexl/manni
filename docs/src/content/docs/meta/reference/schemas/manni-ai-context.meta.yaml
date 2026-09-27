@@ -17,3 +17,10 @@ docs/src/content/docs/meta/reference/schemas/manni-ai-context.mdx:
       assertion: "A reader can say what the ai-context strict overlay rejects that the open vocabulary accepts."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-211
+      integrity: sha256-8af702b4cbf822ddcfd71814da3492fd2b6d86a5cd7baf154bea82a5d6230d91
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

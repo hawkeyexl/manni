@@ -16,3 +16,10 @@ docs/src/content/docs/meta/reference/schemas/docusaurus-pages.mdx:
       assertion: "A reader can fix the finding a non-string wrapperClassName produces."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 1-125
+      integrity: sha256-d395c8275c6bb2d87b68952caefd2f87a58b699543884fd6fe6136f0497f12a2
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26

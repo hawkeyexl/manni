@@ -18,3 +18,76 @@ docs/src/content/docs/key/index.mdx:
       assertion: "A reader can set a key with manni key set and rotate it with manni key rotate."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 1-3
+      integrity: sha256-a2aa61f62433212047ebe770c6ba2129c8b3c571fa4be887ec71ab5615252e20
+    - generated-by: Claude Opus 5
+      lines: 4-10
+      integrity: sha256-b75188667349a89e01d119b0af10ae663bfa5fb7e34c34824cef71c6cd75d700
+    - generated-by: Claude Fable 5.1
+      lines: 11-37
+      integrity: sha256-116b9fb904c64023c547ee07d6fe71cc5b55071ca7329423a2f4044318577293
+    - generated-by: Claude Opus 5
+      lines: 38-39
+      integrity: sha256-51e2357bed2783919c1cf00c2dac2c2256db9168d24a3a17cae16f5fc833153a
+    - generated-by: Claude Fable 5.1
+      lines: 40-48
+      integrity: sha256-49ae220b8e8b0a9ef02f886766f567b5c79fa31c3af845aea6d2a483aa669e19
+    - generated-by: Claude Opus 5
+      lines: 49-50
+      integrity: sha256-2f8e4ce4f256841e07a3b2e239314ac2b139b0ae2a99c635b7b8fb30d3c5b704
+    - generated-by: Claude Fable 5.1
+      lines: 51-66
+      integrity: sha256-f3ea07e94786e627eb57d9ec75dd224ed796ef5fb5947af272d13505b4526004
+    - generated-by: Claude Opus 5
+      lines: 67
+      integrity: sha256-6e636ca3ca5440e3ee6cbd7226926c16a1b89915891518f5b93c4765a6630f12
+    - generated-by: Claude Fable 5.1
+      lines: 68-114
+      integrity: sha256-75026a6fa493b60869428d9af60a82d75e43e3d6e5883288e8ab3f22f4ec56ee
+    - generated-by: Claude Opus 5
+      lines: 115-117
+      integrity: sha256-9bfdaafe23a33cb8a896df768282af9a61de62e7a931bd449c69e40a2d1e9759
+    - generated-by: Claude Fable 5.1
+      lines: 118-140
+      integrity: sha256-54a92da1b1208928c1925ccb67218eb3f1611538c910ebd2de327f43f284b772
+    - generated-by: Claude Opus 5
+      lines: 141-142
+      integrity: sha256-2ddbbbe772521f5ae4a7ae0dc6f798a65214d0066eafe83d5ebc9954b911ff39
+    - generated-by: Claude Fable 5.1
+      lines: 143-150
+      integrity: sha256-c069468bfe6a02716e46a44b500b3ac50ee7bc4c7231659422c5629f62eadb3c
+    - generated-by: Claude Opus 5
+      lines: 151-153
+      integrity: sha256-a946ebfea33b8a147deaa44fc20671224d242ebe032bb075ac161d06a3fdb2ea
+    - generated-by: Claude Fable 5.1
+      lines: 154-169
+      integrity: sha256-6ea40e5d7e4a1db1b520e913ee0540d958b102ad5720e34cd51359271efd7354
+    - generated-by: Claude Opus 5
+      lines: 170-171
+      integrity: sha256-9a7fda20887240f2ac6ab71f6972b36612979df66443e4fea426d3cb708cf629
+    - generated-by: Claude Fable 5.1
+      lines: 172-188
+      integrity: sha256-71e13337338cfc0ea28a5e365e846707a29c422bbd4279a7cfd60a9f79678654
+    - generated-by: Claude Opus 5
+      lines: 189-190
+      integrity: sha256-4145c75f620c31aad4b03932b5b718680af2a6cf8d87da5f2525bddce5f128af
+    - generated-by: Claude Fable 5.1
+      lines: 191-199
+      integrity: sha256-54eb1d477b47e73dc457069d5f5535fffbe10fe0fe994b6f2fe5486ef23fa8cc
+    - generated-by: Claude Opus 5
+      lines: 200
+      integrity: sha256-c58fb1109e0e2cabfc11773c970b08ee42065a0aee2133d9493d9a9cd1f3c2c2
+    - generated-by: Claude Fable 5.1
+      lines: 201-213
+      integrity: sha256-e01b1f1bbacbef05c5f4318e178fcd1659d4c72c408438538106ed8cb3798b30
+    - generated-by: Claude Opus 5
+      lines: 214-217
+      integrity: sha256-c8d9fd0ccbbcc9dcf110953b5978087c76f99f7f5427076410ccf4745b011158
+    - generated-by: Claude Fable 5.1
+      lines: 218-244
+      integrity: sha256-c68841e27e3b77a68fdce12c40d4db18b73bacbdfe37c944c39faa8f42c32eff
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-11
