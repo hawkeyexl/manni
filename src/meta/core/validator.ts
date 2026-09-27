@@ -604,8 +604,10 @@ export class Validator {
    * The top-level property names the schemas in `refs` claim: the keys of
    * each schema's own `properties`, each once. What a page's schema set
    * claims decides which merge-safe fields a `derive:` block with no `fields`
-   * manages on it (proposal 0069). A schema that fails to load or compile
-   * throws, as it would for `validate`.
+   * manages on it (proposal 0069). A property reached only through `allOf`,
+   * `$ref` or a conditional is not counted, so a schema that should manage a
+   * field names it in its root `properties`. A schema that fails to load or
+   * compile throws, as it would for `validate`.
    */
   async claimedProperties(refs: readonly string[]): Promise<Set<string>> {
     const claimed = new Set<string>();

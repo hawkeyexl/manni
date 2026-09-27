@@ -13,9 +13,9 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         integrity: sha256-f80f5e8a93f3aa9a205e341ade1f8b80f7b6d15b849c6b1e1680695390b36fb8
       source:
         file: src/meta/core/validator.ts
-        lines: 646-649
+        lines: 648-651
         integrity: sha256-e6388b6208ca32ca246af365a9c7cd8985ef19f0f4a3b4a45a252bfabd33ba80
-        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
+        commit-sha: d1e637fbfa53b823549e0972087cd1603a58e885
     - id: registry-document-schema-beats-config
       claim:
         integrity: sha256-40bec13938a5f36b7d48c28fab3122f0240e8e9215ae80bb8ba9cace74f36262
@@ -79,9 +79,9 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         integrity: sha256-70c0bc8a50160762c515ceb17cc29c30401a31dc17f1ee0656df98a7cbcb20cc
       source:
         file: src/meta/core/validator.ts
-        lines: 652-659
+        lines: 654-661
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
+        commit-sha: d1e637fbfa53b823549e0972087cd1603a58e885
     - id: registry-vocabulary-schemas-face-outward
       claim:
         integrity: sha256-6dcf875e435299895b1dbe1b8566e4fcf59b1d23bd4fab46aa971bb8ac4d7612
@@ -128,9 +128,9 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         integrity: sha256-fead77e2e93fed20a0df1fe78d1b690240aee57ecd3cdaa32ea6ee60dcf9c657
       source:
         file: src/meta/core/validator.ts
-        lines: 652-659
+        lines: 654-661
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
+        commit-sha: d1e637fbfa53b823549e0972087cd1603a58e885
     - id: registry-ref-a-builtin-by-either-name
       claim:
         integrity: sha256-ee72b7a1965a07029c6b6acadb6e8f3b0c1c71f86ad2bfea5d47829bc622739a
