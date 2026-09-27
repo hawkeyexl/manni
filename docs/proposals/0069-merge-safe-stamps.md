@@ -16,9 +16,9 @@
   `docs/src/content/docs/meta/reference/{configuration,cli,api}.mdx`,
   `docs/src/content/docs/meta/set-up/derived-metadata.mdx`
 - **Verdict:** A `derive:` block without `fields` manages the merge-safe
-  fields, and on each page only the ones its schemas claim. Three evidence
-  rules change so that every merge-safe value stamped in a pull request
-  still reads current after a squash merge.
+  fields, and on each page only the ones its schemas claim. Two evidence
+  rules change so that a merge-safe value stamped in a pull request still
+  reads current after a squash merge. One hole remains, and is recorded.
 
 ## Problem
 
@@ -35,8 +35,8 @@ commit, a rebase and a merge commit.
 | `owner` | yes | It comes from CODEOWNERS, and no commit is involved |
 | `created`, `last-updated`, on the page | yes, with one hole | Decision 2 reads the stamp the fact commit carries. The hole is an edit whose stamp value did not change, which falls back to the merge date |
 | `created`, `last-updated`, in a manifest | no | Decision 2 reads the page at the commit and never its manifest |
-| `provenance`, stamped ranges | yes | Rule 2 reads the manifest at the commit |
-| `provenance`, unstamped lines | no | Rule 4 matches the appended machine trailer, so a human line becomes a machine range |
+| `provenance`, stamped ranges | yes | 0046's rule 2 reads the manifest at the commit |
+| `provenance`, unstamped lines | no | 0046's rule 4 matches the appended machine trailer, so a human line becomes a machine range |
 | `authors` | no | The merger and the appended trailers join the list |
 | `reviewed-by`, `last-reviewed` | no | They derive from merged pull requests only, so a branch has nothing to stamp |
 | `verified-against`, and any command field | no | The release commit after the merge changes the evidence |
@@ -72,25 +72,31 @@ claims any of the four, it exits 2:
 manni: nothing to derive: no page's schemas claim a merge-safe field (owner, created, last-updated, provenance); set derive.fields or pass --fields
 ```
 
-### Three evidence rules
+### Two evidence rules
 
 1. **Decision 2 reads the owning manifest.** The fact commit's stamp for
    `created` or `last-updated` is read from the page at that commit. It is
-   also read from the manifest that owns the field, as rule 2 already reads
-   provenance. A
-   date kept in `{page}.meta.yaml` is then as squash-proof as one on the
-   page.
-2. **An unchanged stamp still vouches for its commit.** Take a fact commit
-   that carries a stamp dated between the previous body change and its own
-   author date. It is judged by that stamp, even if it did not change it. An
-   older stamp still cannot vouch for a newer edit, which is why 0040 asked
-   for a change. A branch edit whose date already read today stays current
-   when it is squashed on a later day.
-3. **A stamped commit is the whole account of its lines.** When the commit
+   also read from the manifest that owns the field, as 0046's rule 2 already
+   reads provenance. A date kept in `{page}.meta.yaml` is then as
+   squash-proof as one on the page.
+2. **A stamped commit is the whole account of its lines.** When the commit
    that last touched a line carries the page's provenance stamp, a line
-   outside every stamped range has no evidence. Rule 4's trailer match does
-   not reach it. A human line the branch left unstamped stays human after the
+   outside every stamped range has no evidence. 0046's trailer rules do not
+   reach it. A human line the branch left unstamped stays human after the
    squash appends a machine trailer.
+
+### The hole that remains
+
+An edit made on a day the page already carries that day's `last-updated`
+leaves the stamp unchanged. Squashed on a later day, the fact commit did not
+change the stamp, so decision 2 falls back to the merge date. The base branch
+reads the page stale once, and `manni meta derive` there clears it.
+
+A third rule was drafted to close it. It accepted an unchanged stamp that
+lies between the previous body change and the fact commit's date, and it was
+rejected. To git, that squash is the same as a page edited later without a
+restamp, which is the stale stamp 0040 exists to catch. Missing that is worse
+than one stale finding after a same-day re-edit.
 
 Nothing else changes. `get` and `query` still derive every derivable field
 at read time, and a `derived:stale` finding reads as before.
@@ -101,11 +107,11 @@ at read time, and a `derived:stale` finding reads as before.
    live in its manifest. The squash commit adds the page and the manifest
    together, so rule 1 reads the stamps there, and both stay current.
 2. **An edit on a day the page was already stamped.** The stamp does not
-   change, and the squash lands tomorrow. Rule 2 keeps the stamp as the
-   authority, because it lies between the previous change and the squash.
+   change, and the squash lands tomorrow. The base reads it stale once. This
+   is the hole above, and a test pins it.
 3. **A human line in a Claude-co-authored pull request.** The branch stamps
    the machine ranges and leaves the human line out. The squash carries the
-   stamp, so rule 3 keeps the line human.
+   stamp, so rule 2 keeps the line human.
 4. **A page with only the core vocabulary.** It claims none of the four, so
    nothing is managed on it, and `validate` reports no stale stamp for it.
 5. **A team that stamps authors after merge.** It lists `authors` in
