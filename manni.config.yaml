@@ -81,36 +81,12 @@ meta:
   # The docs site dogfoods the built-in vocabularies. First match wins, so the
   # glossary comes before the collection it belongs to.
   overrides:
-    # Glossary pages follow the terminology vocabulary and keep `type: term`,
-    # which `manni term` reads, so they take no TGDP type.
-    - files: "docs/src/content/docs/meta/reference/glossary/*.mdx"
-      schemas:
-        - ./docs/doc-frontmatter.schema.json
-        - astro:starlight:0.41
-        - manni:terminology:1.0.0
-        - manni:terminology-strict:1.0.0
-        - manni:core:1.0.0
-        - manni:core-strict:1.0.0
-        - manni:audience:1.0.0
-        - manni:audience-strict:1.0.0
-        - manni:structure:1.0.0
-        - manni:structure-strict:1.0.0
-        - manni:stewardship:1.0.0
-        - manni:stewardship-strict:1.0.0
-        - manni:lifecycle:1.0.0
-        - manni:lifecycle-strict:1.0.0
-        - manni:ai-context:1.0.0
-        - manni:ai-context-strict:1.0.0
-        - manni:evals:1.0.0
-        - manni:evals-strict:1.0.0
-        - manni:graph:1.0.0
-        - manni:graph-strict:1.0.0
-        - manni:citations:1.0.0
-        - manni:citations-strict:1.0.0
-    # Every other published page. Each one must declare a non-empty title and
-    # description, which the house schema requires.
-    - collection: site
-      schemas:
+    # The glossary's index is a page like any other, with a TGDP `type`, so it
+    # takes the site's set. It comes first, because the entry below would catch it.
+    # Every published page must declare a non-empty title and description,
+    # which the house schema requires.
+    - files: "docs/src/content/docs/meta/reference/glossary/index.mdx"
+      schemas: &site-schemas
         - ./docs/doc-frontmatter.schema.json
         # The platform contract this site actually runs on. The house schema
         # above stays because Starlight itself does not require `description`
@@ -141,6 +117,35 @@ meta:
         - manni:graph-strict:1.0.0
         - manni:citations:1.0.0
         - manni:citations-strict:1.0.0
+    # Glossary pages follow the terminology vocabulary and keep `type: term`,
+    # which `manni term` reads, so they take no TGDP type.
+    - files: "docs/src/content/docs/meta/reference/glossary/*.mdx"
+      schemas:
+        - ./docs/doc-frontmatter.schema.json
+        - astro:starlight:0.41
+        - manni:terminology:1.0.0
+        - manni:terminology-strict:1.0.0
+        - manni:core:1.0.0
+        - manni:core-strict:1.0.0
+        - manni:audience:1.0.0
+        - manni:audience-strict:1.0.0
+        - manni:structure:1.0.0
+        - manni:structure-strict:1.0.0
+        - manni:stewardship:1.0.0
+        - manni:stewardship-strict:1.0.0
+        - manni:lifecycle:1.0.0
+        - manni:lifecycle-strict:1.0.0
+        - manni:ai-context:1.0.0
+        - manni:ai-context-strict:1.0.0
+        - manni:evals:1.0.0
+        - manni:evals-strict:1.0.0
+        - manni:graph:1.0.0
+        - manni:graph-strict:1.0.0
+        - manni:citations:1.0.0
+        - manni:citations-strict:1.0.0
+    # Every other published page.
+    - collection: site
+      schemas: *site-schemas
 
 # The accessibility tool reads `a11y:` and nothing else. Same narrowness as
 # above, for the same reason: this file is ambient for every run beneath the

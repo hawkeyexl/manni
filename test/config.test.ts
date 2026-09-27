@@ -895,6 +895,20 @@ describe("the repository's own manni.config.yaml", () => {
       "manni:terminology-strict:1.0.0",
       ...SITE_VOCABULARIES,
     ]);
+    // The glossary's index is not a term page. It declares a TGDP type, so its
+    // own entry, ahead of the glossary's, gives it the site's set.
+    expect(
+      resolveSchemaSet({
+        filePath: "docs/src/content/docs/meta/reference/glossary/index.mdx",
+        config,
+        memberOf: ["site"],
+      }),
+    ).toEqual([
+      "./docs/doc-frontmatter.schema.json",
+      "astro:starlight:0.41",
+      "tgdp:templates:1.1",
+      ...SITE_VOCABULARIES,
+    ]);
     // A file outside the collection is a member of nothing, so the override
     // cannot reach it and DEFAULT_SCHEMAS stands.
     expect(
