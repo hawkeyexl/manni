@@ -1,6 +1,37 @@
 ---
 title: Retrofit manni meta into an existing docs repo
 description: Adopt manni meta on a repo that has never had metadata validation. Measure the metadata you already have, start with a permissive schema so the build goes green on day one, wire the CI gate, then ratchet strictness over time.
+type: tutorial
+id: meta-set-up-retrofit
+keywords:
+  - retrofit
+  - existing docs repo
+  - permissive schema
+  - ratchet
+  - fill
+language: en
+audiences:
+  - docs-engineers
+intent: Adopt manni meta on a repo that never had metadata validation, green on day one and stricter over time.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-set-up-config
+  - meta-schemas
+concepts:
+  - metadata
+  - schema
+  - override
+risks:
+  - destructive
+sample-questions:
+  - How do I adopt manni meta on a docs repo with no metadata?
+  - How do I keep the build green while I tighten the schema?
+  - How do I backfill missing fields with fill?
+graph:
+  label: Retrofit manni meta into an existing docs repo
+  type: learning
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

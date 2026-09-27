@@ -1,0 +1,17 @@
+docs/src/content/docs/meta/get-started/index.mdx:
+  personas:
+    - maya
+  journeys:
+    - m1
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: validate-first-file
+      assertion: A reader can run manni meta validate on one file with npx and get a result.
+      type: capability
+      grader: ai
+    - id: read-failing-result
+      assertion: A reader can read a failing result and name the missing field and the schema that flagged it.
+      type: capability
+      grader: ai

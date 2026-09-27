@@ -1,0 +1,17 @@
+docs/src/content/docs/meta/ci/recipes.mdx:
+  personas:
+    - devin
+  journeys:
+    - d1
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: pick-recipe
+      assertion: A reader can copy the recipe for their CI platform and have it fail on invalid metadata.
+      type: capability
+      grader: ai
+    - id: pre-commit-hook
+      assertion: A reader can run manni meta from pre-commit, with or without the published hook.
+      type: capability
+      grader: ai

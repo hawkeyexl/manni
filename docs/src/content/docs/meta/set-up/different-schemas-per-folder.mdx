@@ -1,7 +1,30 @@
 ---
 title: Apply different schemas to different folders
 description: Use config overrides to require different metadata for /api than for /guides, pointing each one at a collection or at a glob, with precedence and multiple schemas per file.
-concepts: [override]
+type: how-to
+id: meta-set-up-different-schemas-per-folder
+keywords:
+  - overrides
+  - schemas per folder
+  - precedence
+  - multiple schemas
+language: en
+audiences:
+  - docs-engineers
+intent: Apply different schema sets to different folders or collections with config overrides, and predict which one wins.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - override
+  - schema set
+sample-questions:
+  - How do I require stricter metadata for one folder?
+  - Which override applies when two match a file?
+  - Can one file be validated against several schemas?
+graph:
+  label: Apply different schemas to different folders
+  type: task
 ---
 
 import { Steps, Aside, LinkCard } from '@astrojs/starlight/components';

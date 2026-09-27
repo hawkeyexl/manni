@@ -1,0 +1,19 @@
+docs/src/content/docs/meta/reference/schemas/manni-graph.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/graph/1.0.0.json
+    - path: src/meta/schemas/graph-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: graph-block
+      assertion: "A reader can write a graph block with a label and an iiRDS type."
+      type: capability
+      grader: ai
+    - id: strict-overlay
+      assertion: "A reader can say what the graph strict overlay rejects that the open vocabulary accepts."
+      type: capability
+      grader: ai

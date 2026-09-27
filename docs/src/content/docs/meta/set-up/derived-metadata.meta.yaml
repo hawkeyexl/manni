@@ -1,0 +1,29 @@
+docs/src/content/docs/meta/set-up/derived-metadata.mdx:
+  personas:
+    - maya
+    - devin
+    - theo
+  journeys:
+    - m1
+    - m2
+    - d4
+    - t1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/derive/
+    - path: src/meta/core/config.ts
+  eval-suite: meta
+  evals:
+    - id: configure-derive
+      assertion: A reader can configure derive fields and sources and stamp them locally.
+      type: capability
+      grader: ai
+    - id: fix-stale-stamp
+      assertion: A reader can clear a derived:stale finding by running manni meta derive.
+      type: capability
+      grader: ai
+    - id: derive-in-pr
+      assertion: A reader can run derive in a pull request with the history it needs.
+      type: capability
+      grader: ai

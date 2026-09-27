@@ -1,0 +1,24 @@
+docs/src/content/docs/cite/reference/citations.mdx:
+  personas:
+    - maya
+    - theo
+  journeys:
+    - m5
+    - m6
+    - t2
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/citations/1.0.0.json
+    - path: src/cite/core/statements.ts
+    - path: src/cite/core/sidecar.ts
+  eval-suite: cite
+  evals:
+    - id: write-entry
+      assertion: A reader can write a valid citation entry with its claim and source ends.
+      type: capability
+      grader: ai
+    - id: explain-status
+      assertion: A reader can explain what each citation status means and its default severity.
+      type: capability
+      grader: ai

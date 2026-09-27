@@ -1,0 +1,23 @@
+docs/src/content/docs/meta/set-up/retrofit.mdx:
+  personas:
+    - maya
+  journeys:
+    - m1
+    - m2
+    - m4
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: coverage-reading
+      assertion: A reader can take a coverage reading of the metadata a repo already has.
+      type: capability
+      grader: ai
+    - id: green-day-one
+      assertion: A reader can start with a permissive schema so the first CI run passes.
+      type: capability
+      grader: ai
+    - id: close-backlog-fill
+      assertion: A reader can close a missing-field backlog with manni meta fill.
+      type: capability
+      grader: ai

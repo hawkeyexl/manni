@@ -1,0 +1,17 @@
+docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
+  personas:
+    - devin
+  journeys:
+    - d2
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: vendor-schema
+      assertion: A reader can vendor a shared schema with manni meta schemas vendor and validate against the pinned copy.
+      type: capability
+      grader: ai
+    - id: url-tradeoff
+      assertion: A reader can say when a remote schema URL is enough and what happens when its fetch fails.
+      type: capability
+      grader: ai

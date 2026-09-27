@@ -1,0 +1,20 @@
+docs/src/content/docs/key/index.mdx:
+  personas: ["sara", "devin"]
+  journeys: ["s4", "d5"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/shared/encryption-key.ts"
+    - path: "src/shared/encryption.ts"
+    - path: "src/shared/prompt.ts"
+    - path: "src/key/"
+  eval-suite: key
+  evals:
+    - id: where-key-lives
+      assertion: "A reader can say where manni reads the key from and which source wins."
+      type: capability
+      grader: ai
+    - id: set-and-rotate
+      assertion: "A reader can set a key with manni key set and rotate it with manni key rotate."
+      type: capability
+      grader: ai

@@ -1,0 +1,28 @@
+docs/src/content/docs/meta/schemas/field-location.mdx:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s1
+    - m4
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/location.ts
+    - path: src/meta/core/relocation.ts
+    - path: src/meta/commands/relocate.ts
+    - path: src/meta/commands/validate-offer.ts
+  eval-suite: meta
+  evals:
+    - id: mark-location
+      assertion: A reader can mark a property x-manni-location and read the warning validate reports for a misplaced value.
+      type: capability
+      grader: ai
+    - id: relocate-values
+      assertion: A reader can move misplaced values with manni meta relocate.
+      type: capability
+      grader: ai
+    - id: choose-marks
+      assertion: A reader can decide whether a field belongs on the page or in a manifest.
+      type: capability
+      grader: ai

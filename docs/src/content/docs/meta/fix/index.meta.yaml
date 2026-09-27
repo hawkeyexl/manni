@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/fix/index.mdx:
+  personas:
+    - theo
+  journeys:
+    - t1
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: decode-error
+      assertion: A reader can map an error line to its field, source line and schema.
+      type: capability
+      grader: ai
+    - id: fix-and-rerun
+      assertion: A reader can fix a failing field and confirm the check passes locally.
+      type: capability
+      grader: ai
+    - id: exit-code-meaning
+      assertion: A reader can tell a document problem from a setup problem by exit code.
+      type: capability
+      grader: ai

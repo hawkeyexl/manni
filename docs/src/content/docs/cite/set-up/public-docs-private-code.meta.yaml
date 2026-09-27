@@ -1,0 +1,32 @@
+docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
+  personas:
+    - maya
+    - devin
+  journeys:
+    - m5
+    - d5
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/cite/commands/check.ts
+    - path: src/cite/commands/add.ts
+    - path: src/cite/commands/update.ts
+    - path: src/cite/core/severity.ts
+    - path: src/cite/core/sidecar.ts
+    - path: src/cite/core/manifest.ts
+    - path: src/cite/reporters/pretty.ts
+    - path: test/cite/cli.integration.test.ts
+  eval-suite: cite
+  evals:
+    - id: encrypt-source
+      assertion: A reader can add a citation whose source path is encrypted under the family encryption key.
+      type: capability
+      grader: ai
+    - id: split-ci-jobs
+      assertion: A reader can set up a public job with --no-check-sources and a private job that runs with --root and MANNI_ENCRYPTION_KEY.
+      type: capability
+      grader: ai
+    - id: diagnose-missing
+      assertion: A reader can tell which of the three causes made an encrypted source report missing.
+      type: capability
+      grader: ai

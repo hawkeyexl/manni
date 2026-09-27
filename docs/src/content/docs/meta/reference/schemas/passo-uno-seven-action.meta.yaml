@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/seven-action/1.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: allowed-values
+      assertion: "A reader can write an action value the Seven-Action schema accepts."
+      type: capability
+      grader: ai
+    - id: existing-key
+      assertion: "A reader can opt out of the Seven-Action schema when their pages use action for something else."
+      type: capability
+      grader: ai

@@ -2,6 +2,28 @@
 title: Schema resolution reference
 description: How manni meta picks the schema set for each file, covering the precedence chain, the three reference kinds, and the supported JSON Schema dialects.
 concepts: [schema set, schema reference, $schema key, dialect, override]
+type: reference
+id: meta-reference-schema-resolution
+keywords:
+  - schema resolution
+  - precedence
+  - reference kinds
+  - dialects
+language: en
+audiences:
+  - schema-authors
+  - ci-engineers
+intent: Predict which schema set manni meta applies to a file and how each reference resolves.
+lifecycle: published
+applies-to:
+  - domain:meta
+sample-questions:
+  - Which schema does manni meta use for a file?
+  - Does -s override the $schema key in a file?
+  - Which JSON Schema dialects are supported?
+graph:
+  label: Schema resolution reference
+  type: reference
 ---
 
 import { Aside } from '@astrojs/starlight/components';

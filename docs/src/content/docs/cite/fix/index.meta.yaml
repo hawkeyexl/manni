@@ -1,0 +1,26 @@
+docs/src/content/docs/cite/fix/index.mdx:
+  personas:
+    - theo
+  journeys:
+    - t2
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/cite/commands/check.ts
+    - path: src/cite/commands/add.ts
+    - path: src/cite/commands/update.ts
+    - path: src/cite/core/severity.ts
+    - path: src/cite/core/sidecar.ts
+    - path: src/cite/core/manifest.ts
+    - path: src/cite/reporters/pretty.ts
+    - path: test/cite/cli.integration.test.ts
+  eval-suite: cite
+  evals:
+    - id: decode-finding
+      assertion: A reader can decode a manni cite finding line into its id, its claim end and its source end.
+      type: capability
+      grader: ai
+    - id: apply-rule-fix
+      assertion: A reader can find the rule behind a finding and run the command that clears it.
+      type: capability
+      grader: ai

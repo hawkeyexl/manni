@@ -4,6 +4,38 @@ description: "Mark a property x-manni-encrypt and follow the value: what validat
 sidebar:
   label: Encrypted fields
   order: 4
+type: how-to
+id: meta-schemas-encrypted-fields
+keywords:
+  - encrypted fields
+  - x-manni-encrypt
+  - private values
+  - key rotation
+language: en
+audiences:
+  - schema-authors
+intent: Require a field whose value never appears in plain text, and know what validate, fill, query and a rotation do with it.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - key-set-up
+  - meta-reference-schema-resolution
+  - key-ci
+  - meta-schemas-versioning
+concepts:
+  - schema
+  - validation
+risks:
+  - destructive
+  - irreversible
+sample-questions:
+  - How do I keep a required field's value private?
+  - What does validate do with a plain value in an encrypted field?
+  - What does a key rotation change for the schema?
+graph:
+  label: Require a field and keep its value private
+  type: task
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

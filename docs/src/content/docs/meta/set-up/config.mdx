@@ -1,6 +1,32 @@
 ---
 title: Create your manni.config.yaml
 description: Declare your repo's document sets under collections, add the schema set the metadata tool holds them to, and let CI run a bare manni meta validate.
+type: how-to
+id: meta-set-up-config
+keywords:
+  - manni.config.yaml
+  - collections
+  - schemas
+  - overrides
+  - config discovery
+language: en
+audiences:
+  - docs-engineers
+intent: Write a manni.config.yaml that declares the document sets and schemas so a bare manni meta validate runs in CI.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - schema set
+  - override
+  - schema
+sample-questions:
+  - Where does manni meta look for its config file?
+  - What goes under collections and what goes under meta?
+  - How do CLI flags combine with the config?
+graph:
+  label: Create your manni.config.yaml
+  type: task
 ---
 
 import { Aside, LinkCard } from '@astrojs/starlight/components';

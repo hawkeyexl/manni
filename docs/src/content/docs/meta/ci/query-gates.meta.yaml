@@ -1,0 +1,23 @@
+docs/src/content/docs/meta/ci/query-gates.mdx:
+  personas:
+    - devin
+  journeys:
+    - d4
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/commands/query.ts
+  eval-suite: meta
+  evals:
+    - id: join-gate
+      assertion: A reader can turn a SQL join over the docs table into a --check gate that fails CI.
+      type: capability
+      grader: ai
+    - id: named-gate
+      assertion: A reader can name a gate in config so a bare run checks it.
+      type: capability
+      grader: ai
+    - id: dry-run-write
+      assertion: A reader can preview a mutating statement with --dry-run.
+      type: capability
+      grader: ai

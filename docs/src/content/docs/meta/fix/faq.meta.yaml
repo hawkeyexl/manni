@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/fix/faq.mdx:
+  personas:
+    - theo
+  journeys:
+    - t1
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: answer-no-frontmatter
+      assertion: A reader can say why a file with no frontmatter still fails a schema that requires a field.
+      type: capability
+      grader: ai
+    - id: validate-stdin
+      assertion: A reader can validate content from stdin with - and --as.
+      type: capability
+      grader: ai
+    - id: exclude-drafts
+      assertion: A reader can exclude drafts from a run with --exclude or a collection exclude.
+      type: capability
+      grader: ai

@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/schemas/mkdocs-material.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/mkdocs-material/9.7.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on mkdocs:material:9.7 for the pages under docs_dir."
+      type: capability
+      grader: ai
+    - id: hide-value
+      assertion: "A reader can fix the finding an unknown hide value produces."
+      type: capability
+      grader: ai

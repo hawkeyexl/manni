@@ -1,6 +1,33 @@
 ---
 title: Run it in CI
 description: Add the citation check to CI with inline PR annotations, SARIF or JUnit output, the 0/1/2 exit-code contract, the published pre-commit hook, a baseline for ramping in, and full git history so every status can be told apart.
+type: how-to
+id: cite-ci
+keywords:
+  - CI
+  - baseline
+  - pre-commit
+  - exit codes
+  - full history
+language: en
+audiences:
+  - ci-engineers
+intent: Gate citations in CI with annotations, the exit-code contract, full history and a baseline ramp.
+lifecycle: published
+applies-to:
+  - domain:cite
+next-steps:
+  - cite-fix
+  - cite-reference-cli
+risks:
+  - destructive
+sample-questions:
+  - How do I run manni cite check in CI?
+  - Why does the citation check need fetch-depth 0?
+  - How do I ramp in the citation check with a baseline?
+graph:
+  label: Run it in CI
+  type: task
 ---
 
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';

@@ -1,6 +1,35 @@
 ---
 title: Public docs, private code
 description: Cite a private code repository from a public docs site without publishing its paths, and without publishing a verifier for its lines. The two-repo layout, the encrypted source, the sidecar manifest, the family encryption key, and what still shows.
+type: how-to
+id: cite-set-up-public-docs-private-code
+keywords:
+  - private code
+  - encrypted source
+  - encryption key
+  - two-repo layout
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+intent: Cite a private code repository from public docs with encrypted source paths and a public and a private CI job.
+lifecycle: published
+applies-to:
+  - domain:cite
+next-steps:
+  - cite-ci
+  - key
+  - cite-reference-configuration
+risks:
+  - destructive
+  - irreversible
+sample-questions:
+  - How do I cite private code from a public docs site?
+  - What does an encrypted source hide, and what still shows?
+  - Why does an encrypted source report missing?
+graph:
+  label: Public docs, private code
+  type: task
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

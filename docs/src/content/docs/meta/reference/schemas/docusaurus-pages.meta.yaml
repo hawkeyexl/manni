@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/schemas/docusaurus-pages.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/docusaurus-pages/3.10.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can scope docusaurus:pages:3.10 to standalone Docusaurus pages with an override."
+      type: capability
+      grader: ai
+    - id: wrapper-class-name
+      assertion: "A reader can fix the finding a non-string wrapperClassName produces."
+      type: capability
+      grader: ai

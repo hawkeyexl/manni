@@ -1,6 +1,30 @@
 ---
 title: Output formats & exit codes
 description: The pretty, json, github, sarif, and junit output formats; the 0/1/2 exit-code contract; and color, stdout/stderr behavior for manni meta validate.
+type: reference
+id: meta-reference-output-and-exit-codes
+keywords:
+  - output formats
+  - exit codes
+  - severity
+  - SARIF
+  - color
+language: en
+audiences:
+  - ci-engineers
+intent: Pick an output format for a consumer and branch on manni meta's exit codes in CI.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - Validation
+sample-questions:
+  - What does exit code 2 mean?
+  - Which output format produces GitHub annotations?
+  - How does severity map onto the exit code?
+graph:
+  label: Output formats & exit codes
+  type: reference
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';

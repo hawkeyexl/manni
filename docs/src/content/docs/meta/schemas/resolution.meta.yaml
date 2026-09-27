@@ -1,0 +1,17 @@
+docs/src/content/docs/meta/schemas/resolution.mdx:
+  personas:
+    - sara
+  journeys:
+    - s2
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: predict-schema
+      assertion: A reader can predict which source in the precedence chain supplies a file's schema.
+      type: capability
+      grader: ai
+    - id: reference-kinds
+      assertion: A reader can reference a schema as a built-in, a file or a URL.
+      type: capability
+      grader: ai

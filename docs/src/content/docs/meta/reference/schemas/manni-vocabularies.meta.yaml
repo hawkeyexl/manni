@@ -1,0 +1,17 @@
+docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
+  personas: ["sara"]
+  journeys: ["s1", "s5", "s6"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: choose-vocabularies
+      assertion: "A reader can name the question each manni vocabulary answers and pick the ones their docs set needs."
+      type: capability
+      grader: ai
+    - id: stack-and-strict
+      assertion: "A reader can stack manni vocabularies in a config with their strict overlays."
+      type: capability
+      grader: ai

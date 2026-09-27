@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/schemas/sphinx-docinfo.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/sphinx/9.1.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on sphinx:docinfo:9.1 for their reStructuredText pages."
+      type: capability
+      grader: ai
+    - id: tocdepth
+      assertion: "A reader can fix the finding a non-integer tocdepth produces."
+      type: capability
+      grader: ai

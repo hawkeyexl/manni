@@ -1,0 +1,32 @@
+docs/src/content/docs/meta/reference/query.mdx:
+  personas:
+    - devin
+    - maya
+    - sara
+  journeys:
+    - d4
+    - d3
+    - m2
+    - s3
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/commands/query.ts
+    - path: src/meta/core/projection.ts
+    - path: src/meta/core/collections.ts
+    - path: src/meta/core/checks.ts
+    - path: src/meta/reporters/query.ts
+  eval-suite: meta
+  evals:
+    - id: write-select-query
+      assertion: A reader can write a SELECT over the docs table that finds duplicate values across files.
+      type: capability
+      grader: ai
+    - id: preview-dml-write
+      assertion: A reader can preview an UPDATE with --dry-run and then apply it to the files.
+      type: capability
+      grader: ai
+    - id: gate-on-query-rows
+      assertion: A reader can turn a query's rows into findings that fail a CI run.
+      type: capability
+      grader: ai

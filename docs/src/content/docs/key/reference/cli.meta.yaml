@@ -1,0 +1,17 @@
+docs/src/content/docs/key/reference/cli.mdx:
+  personas: ["sara", "devin"]
+  journeys: ["s4", "d5", "d6"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/key/cli.ts"
+  eval-suite: key
+  evals:
+    - id: compose-command
+      assertion: "A reader can compose a manni key set or manni key rotate command from the documented flags."
+      type: capability
+      grader: ai
+    - id: read-refusal
+      assertion: "A reader can match a rotate refusal to its cause and its exit code."
+      type: capability
+      grader: ai

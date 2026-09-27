@@ -1,0 +1,33 @@
+docs/src/content/docs/cite/index.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  journeys:
+    - m5
+    - m6
+    - d5
+    - s5
+    - t2
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/cite/commands/check.ts
+    - path: src/cite/commands/add.ts
+    - path: src/cite/commands/update.ts
+    - path: src/cite/core/severity.ts
+    - path: src/cite/core/sidecar.ts
+    - path: src/cite/core/manifest.ts
+    - path: src/cite/reporters/pretty.ts
+    - path: test/cite/cli.integration.test.ts
+  eval-suite: cite
+  evals:
+    - id: explain-two-ends
+      assertion: A reader can explain that a citation pins a claim on the page and a source range, and that check classifies both ends from git.
+      type: capability
+      grader: ai
+    - id: pick-journey
+      assertion: "A reader can pick the page that matches their goal: get started, public docs over private code, CI, or fixing a failure."
+      type: capability
+      grader: ai

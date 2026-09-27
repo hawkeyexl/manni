@@ -1,0 +1,17 @@
+docs/src/content/docs/meta/schemas/index.mdx:
+  personas:
+    - sara
+  journeys:
+    - s1
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: write-schema
+      assertion: A reader can write a JSON Schema with required fields and value formats and validate a file against it.
+      type: capability
+      grader: ai
+    - id: self-describing-doc
+      assertion: A reader can point a document at its schema with the $schema key.
+      type: capability
+      grader: ai

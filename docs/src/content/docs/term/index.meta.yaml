@@ -1,0 +1,29 @@
+docs/src/content/docs/term/index.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  journeys:
+    - s6
+    - m9
+    - d8
+    - t4
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/term/commands
+    - path: src/term/core/writers
+    - path: src/term/core/vale.ts
+    - path: src/term/core/writers/vale.ts
+    - path: src/term/reporters
+  eval-suite: term
+  evals:
+    - id: explain-term-record
+      assertion: A reader can say what a term record holds and the two shapes a term set can take.
+      type: capability
+      grader: ai
+    - id: route-to-journey
+      assertion: A reader can pick the manni term page that fits their job, from defining terms to fixing a failing check.
+      type: capability
+      grader: ai

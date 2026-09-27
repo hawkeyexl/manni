@@ -10,6 +10,28 @@ abstract: The key a document uses to name its own schemas.
 definition: >-
   A reserved key a document can put in its own metadata, to name the schema or
   schemas it should be validated against.
+keywords:
+  - $schema key
+  - $schema
+  - precedence
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+  - schema-authors
+  - contributors
+intent: Say what the $schema key means in manni meta and where it is covered in full.
+lifecycle: published
+applies-to:
+  - domain:meta
+related-pages:
+  - meta-reference-schema-resolution
+sample-questions:
+  - What does the $schema key in a document do?
+  - Why is the $schema key stripped before validation?
+graph:
+  label: $schema key
+  type: concept
 ---
 
 <p>{frontmatter.definition}</p>

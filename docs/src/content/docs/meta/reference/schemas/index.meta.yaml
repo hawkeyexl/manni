@@ -1,0 +1,22 @@
+docs/src/content/docs/meta/reference/schemas/index.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/schema-registry.ts
+    - path: src/meta/core/resolve-schema.ts
+  eval-suite: meta
+  evals:
+    - id: find-schema
+      assertion: "A reader can find the built-in schema that constrains a given set of fields."
+      type: capability
+      grader: ai
+    - id: default-set
+      assertion: "A reader can name the built-in schemas that run when no schema is passed."
+      type: capability
+      grader: ai
+    - id: turn-on
+      assertion: "A reader can turn on a built-in schema by id in manni.config.yaml or with -s."
+      type: capability
+      grader: ai

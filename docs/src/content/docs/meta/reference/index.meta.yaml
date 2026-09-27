@@ -1,0 +1,14 @@
+docs/src/content/docs/meta/reference/index.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: find-reference-page
+      assertion: A reader can pick the reference page that answers a lookup about a command, config key, format, output, or built-in schema.
+      type: capability
+      grader: ai

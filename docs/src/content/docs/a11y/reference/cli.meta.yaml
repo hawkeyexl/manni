@@ -1,0 +1,18 @@
+docs/src/content/docs/a11y/reference/cli.mdx:
+  personas: ["maya", "devin", "theo"]
+  journeys: ["m7", "d7", "t3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/a11y/cli.ts"
+    - path: "src/a11y/core/config.ts"
+  eval-suite: a11y
+  evals:
+    - id: compose-command
+      assertion: "A reader can compose a manni a11y check command from the documented arguments and flags."
+      type: capability
+      grader: ai
+    - id: config-keys
+      assertion: "A reader can set the a11y config keys and say which flag overrides each one."
+      type: capability
+      grader: ai

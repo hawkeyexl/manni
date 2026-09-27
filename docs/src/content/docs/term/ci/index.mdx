@@ -1,6 +1,35 @@
 ---
 title: Run it in CI
 description: "Gate a pull request on manni term check with inline annotations, ramp in with a baseline, keep the generated Vale style current with write --check, and lint definitions, all under the 0/1/2 exit-code contract."
+type: how-to
+id: term-ci
+keywords:
+  - CI
+  - GitHub Actions
+  - baseline
+  - annotations
+  - exit codes
+language: en
+audiences:
+  - ci-engineers
+  - docs-engineers
+intent: Gate pull requests on manni term check, lint and the Vale style drift check, ramped in with a baseline.
+lifecycle: published
+applies-to:
+  - domain:term
+next-steps:
+  - term-fix
+  - term-reference-rules
+  - term-reference-cli
+risks:
+  - destructive
+sample-questions:
+  - How do I run manni term check in GitHub Actions?
+  - How do I adopt the term check without fixing every existing finding first?
+  - What do exit codes 0, 1 and 2 mean for manni term?
+graph:
+  label: Run it in CI
+  type: task
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

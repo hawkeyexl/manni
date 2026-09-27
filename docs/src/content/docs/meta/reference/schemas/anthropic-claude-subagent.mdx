@@ -3,6 +3,22 @@ title: Claude Code subagent schema
 description: The built-in schema for agent definition front matter under .claude/agents/, covering every field, the enumerated sets, and the four places it differs from the SKILL.md contract it resembles.
 sidebar:
   label: "anthropic:claude-subagent:2.1"
+type: reference
+id: meta-reference-schemas-anthropic-claude-subagent
+keywords: ["Claude Code subagent", ".claude/agents", "anthropic:claude-subagent:2.1", "background", "enumerated fields"]
+language: en
+audiences: ["schema-authors"]
+intent: "Validate Claude Code agent definitions under .claude/agents/ and tell them apart from the SKILL.md contract."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "override"]
+sample-questions:
+  - "Why does the subagent schema require name and description?"
+  - "How does background differ between agents and skills?"
+  - "How do I validate agents and skills in one run?"
+graph:
+  label: "Claude Code subagent schema"
+  type: reference
 ---
 
 import { Aside } from '@astrojs/starlight/components';

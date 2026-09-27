@@ -1,0 +1,19 @@
+docs/src/content/docs/meta/reference/schemas/manni-terminology.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/terminology/1.0.0.json
+    - path: src/meta/schemas/terminology-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: term-entry
+      assertion: "A reader can write a term page with a label and a definition."
+      type: capability
+      grader: ai
+    - id: turn-on
+      assertion: "A reader can point manni:terminology:1.0.0 at the folder that holds the term pages."
+      type: capability
+      grader: ai

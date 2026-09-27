@@ -1,0 +1,26 @@
+docs/src/content/docs/cite/ci/index.mdx:
+  personas:
+    - devin
+  journeys:
+    - d5
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/cite/commands/check.ts
+    - path: src/cite/commands/add.ts
+    - path: src/cite/commands/update.ts
+    - path: src/cite/core/severity.ts
+    - path: src/cite/core/sidecar.ts
+    - path: src/cite/core/manifest.ts
+    - path: src/cite/reporters/pretty.ts
+    - path: test/cite/cli.integration.test.ts
+  eval-suite: cite
+  evals:
+    - id: add-ci-job
+      assertion: A reader can add a GitHub Actions job that runs manni cite check with -f github and a full-history checkout.
+      type: capability
+      grader: ai
+    - id: ramp-with-baseline
+      assertion: A reader can record a baseline with --write-baseline and run the pull request job against it.
+      type: capability
+      grader: ai

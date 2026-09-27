@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/index.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: route-to-journey
+      assertion: "A reader can name the manni meta page that serves their job: setting up, CI, schemas or fixing a check."
+      type: capability
+      grader: ai
+    - id: state-what-meta-checks
+      assertion: A reader can say that manni meta checks metadata presence and format, not prose.
+      type: capability
+      grader: ai

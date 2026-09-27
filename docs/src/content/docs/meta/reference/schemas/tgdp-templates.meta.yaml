@@ -1,0 +1,19 @@
+docs/src/content/docs/meta/reference/schemas/tgdp-templates.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/tgdp/1.1.json
+    - path: src/meta/schemas/tgdp-strict/1.1.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on tgdp:templates:1.1 for their pages."
+      type: capability
+      grader: ai
+    - id: strict-overlay
+      assertion: "A reader can close type to the 25 template slugs with the strict overlay."
+      type: capability
+      grader: ai

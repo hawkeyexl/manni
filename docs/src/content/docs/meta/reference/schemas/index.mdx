@@ -3,6 +3,22 @@ title: Built-in schemas
 sidebar:
   label: Overview
 description: Every schema shipped with manni meta in one table, showing what each constrains, which fields it requires, which are on by default, and how to turn one on.
+type: reference
+id: meta-reference-schemas
+keywords: ["built-in schemas", "registry", "published URLs", "version ids", "default set"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Find the built-in schema that fits a docs set and turn it on by id, URL or $ref."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "dialect", "$schema key", "override"]
+sample-questions:
+  - "Which schemas does manni meta ship?"
+  - "Which built-in schemas run when I pass no flags?"
+  - "How do I turn on a built-in schema?"
+graph:
+  label: "Built-in schemas"
+  type: reference
 ---
 
 import { Aside, Tabs, TabItem, CardGrid, LinkCard } from '@astrojs/starlight/components';

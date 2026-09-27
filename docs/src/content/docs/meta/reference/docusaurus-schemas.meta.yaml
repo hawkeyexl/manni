@@ -1,0 +1,23 @@
+docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s1
+    - m3
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/docusaurus-docs/3.10.json
+    - path: src/meta/schemas/docusaurus-blog/3.10.json
+    - path: src/meta/schemas/docusaurus-pages/3.10.json
+  eval-suite: meta
+  evals:
+    - id: wire-docusaurus-overrides
+      assertion: A reader can write overrides that apply the docs, blog, and pages schemas to their matching directories.
+      type: capability
+      grader: ai
+    - id: explain-docusaurus-gaps
+      assertion: A reader can name a Docusaurus rule these schemas deliberately leave unchecked.
+      type: capability
+      grader: ai

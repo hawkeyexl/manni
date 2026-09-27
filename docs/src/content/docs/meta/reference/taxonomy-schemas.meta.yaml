@@ -1,0 +1,22 @@
+docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
+  personas:
+    - sara
+  journeys:
+    - s1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/diataxis/1.0.json
+    - path: src/meta/schemas/tgdp/1.0.json
+    - path: src/meta/schemas/seven-action/1.0.json
+    - path: src/meta/core/resolve-schema.ts
+  eval-suite: meta
+  evals:
+    - id: pick-taxonomy-schema
+      assertion: A reader can pick one taxonomy schema for type and say which pairs compete for the same key.
+      type: capability
+      grader: ai
+    - id: compose-taxonomy-okf
+      assertion: A reader can compose a taxonomy schema with google:okf:0.1 in one schema set.
+      type: capability
+      grader: ai

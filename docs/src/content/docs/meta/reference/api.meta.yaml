@@ -1,0 +1,19 @@
+docs/src/content/docs/meta/reference/api.mdx:
+  personas:
+    - devin
+  journeys:
+    - d3
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/index.ts
+  eval-suite: meta
+  evals:
+    - id: find-api-export
+      assertion: A reader can name the exported function that runs validation from a Node.js script and the result type it returns.
+      type: capability
+      grader: ai
+    - id: import-api-esm
+      assertion: A reader can import manni meta's programmatic entry point from an ES module on Node.js 24 or newer.
+      type: capability
+      grader: ai

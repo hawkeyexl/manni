@@ -1,0 +1,15 @@
+docs/src/content/docs/a11y/index.mdx:
+  personas: ["maya", "devin", "theo"]
+  journeys: ["m7", "d7", "t3"]
+  visibility: public
+  review-interval: P180D
+  eval-suite: a11y
+  evals:
+    - id: explain-crawl
+      assertion: "A reader can explain how manni a11y discovers pages from seeds, sitemaps and same-host links."
+      type: capability
+      grader: ai
+    - id: read-score
+      assertion: "A reader can say what the per-page accessibility score measures and which findings it counts."
+      type: capability
+      grader: ai

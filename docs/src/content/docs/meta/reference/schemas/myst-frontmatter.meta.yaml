@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/schemas/myst-frontmatter.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/myst/1.10.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on myst:frontmatter:1.10 for their MyST pages."
+      type: capability
+      grader: ai
+    - id: short-title
+      assertion: "A reader can fix the finding an over-long short_title produces."
+      type: capability
+      grader: ai

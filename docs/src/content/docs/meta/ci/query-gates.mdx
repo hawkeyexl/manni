@@ -1,6 +1,29 @@
 ---
 title: Gate on rules that span files
 description: Use manni meta query to run SQL over your corpus's metadata, turn cross-file rules like dangling references and duplicate slugs into CI gates with --check, and feed the same table to dashboards and scripts.
+type: how-to
+id: meta-ci-query-gates
+keywords:
+  - query
+  - SQL
+  - cross-file rules
+  - check gate
+language: en
+audiences:
+  - ci-engineers
+intent: Turn rules that span files, such as dangling references and duplicate slugs, into manni meta query CI gates.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - metadata
+sample-questions:
+  - How do I catch dangling references across documents?
+  - How do I fail CI on duplicate slugs?
+  - How do I preview a query that writes?
+graph:
+  label: Gate on rules that span files
+  type: task
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

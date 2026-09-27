@@ -1,0 +1,23 @@
+docs/src/content/docs/cite/reference/cli.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  journeys:
+    - m5
+    - m6
+    - d5
+    - s5
+    - t2
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/cite/cli.ts
+    - path: scripts/check-cli-reference.mjs
+  eval-suite: cite
+  evals:
+    - id: find-flag
+      assertion: A reader can find the flag and exit code for any manni cite check, add, update or remove invocation.
+      type: capability
+      grader: ai

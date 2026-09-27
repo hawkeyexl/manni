@@ -1,0 +1,17 @@
+docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
+  personas:
+    - devin
+  journeys:
+    - d1
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: interpret-exit-code
+      assertion: A reader can tell a validation failure from an operational error by exit code.
+      type: capability
+      grader: ai
+    - id: choose-format
+      assertion: A reader can choose between pretty, json, github, sarif and junit output for a consumer.
+      type: capability
+      grader: ai

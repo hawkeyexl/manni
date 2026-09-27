@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/ci/consume-results.mdx:
+  personas:
+    - devin
+  journeys:
+    - d3
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: parse-json
+      assertion: A reader can parse --format json output with jq.
+      type: capability
+      grader: ai
+    - id: get-field
+      assertion: A reader can extract a nested field value with manni meta get.
+      type: capability
+      grader: ai
+    - id: pick-interface
+      assertion: A reader can choose between json output, get and the TypeScript API for a task.
+      type: capability
+      grader: ai

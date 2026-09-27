@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/schemas/tgdp-templates-1-0.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/tgdp/1.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on tgdp:templates:1.0 for their pages."
+      type: capability
+      grader: ai
+    - id: versus-1-1
+      assertion: "A reader can choose between tgdp:templates:1.0 and tgdp:templates:1.1 with its strict overlay."
+      type: capability
+      grader: ai

@@ -1,0 +1,24 @@
+docs/src/content/docs/term/reference/rules.mdx:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s6
+    - m9
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/term/core/config.ts
+    - path: src/term/core/severity.ts
+    - path: src/term/core/check.ts
+    - path: src/shared/tools.ts
+  eval-suite: term
+  evals:
+    - id: name-rule-severity
+      assertion: A reader can name each term check rule and its default severity.
+      type: capability
+      grader: ai
+    - id: fix-a-rule
+      assertion: A reader can say what edit clears a finding of any term check rule.
+      type: capability
+      grader: ai

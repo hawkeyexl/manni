@@ -1,0 +1,14 @@
+docs/src/content/docs/index.mdx:
+  personas: ["maya", "devin", "sara", "theo"]
+  visibility: public
+  review-interval: P180D
+  eval-suite: manni
+  evals:
+    - id: choose-a-tool
+      assertion: "A reader can name the manni domain that does a given documentation check."
+      type: capability
+      grader: ai
+    - id: migrate-from-docmeta
+      assertion: "A reader can move a docmeta command, config file and Action reference to their manni equivalents."
+      type: capability
+      grader: ai

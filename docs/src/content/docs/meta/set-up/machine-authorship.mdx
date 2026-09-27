@@ -1,6 +1,36 @@
 ---
 title: See which lines a machine wrote
 description: "Record which body lines an agent or a model wrote, pin each range with an integrity hash, and fail the build when a person edits machine text."
+type: how-to
+id: meta-set-up-machine-authorship
+keywords:
+  - provenance
+  - machine authorship
+  - agent edits
+  - derive
+language: en
+audiences:
+  - docs-engineers
+intent: Record which body lines a machine wrote, pin each range with an integrity hash, and catch a person editing machine text.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-reference-configuration
+  - meta-reference-cli
+  - meta-set-up-derived-metadata
+  - meta-ci-recipes
+concepts:
+  - metadata
+risks:
+  - destructive
+sample-questions:
+  - How do I record which lines an agent wrote?
+  - What happens when a person edits machine-written text?
+  - Where does provenance live for pages that keep it out of the page?
+graph:
+  label: See which lines a machine wrote
+  type: task
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

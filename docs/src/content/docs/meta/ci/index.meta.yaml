@@ -1,0 +1,17 @@
+docs/src/content/docs/meta/ci/index.mdx:
+  personas:
+    - devin
+  journeys:
+    - d1
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: add-actions-workflow
+      assertion: A reader can add a GitHub Actions workflow that fails a pull request with invalid metadata.
+      type: capability
+      grader: ai
+    - id: annotations
+      assertion: A reader can make failures appear as inline pull request annotations.
+      type: capability
+      grader: ai

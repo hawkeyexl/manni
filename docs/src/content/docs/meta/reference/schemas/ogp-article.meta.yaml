@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/schemas/ogp-article.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/ogp/1.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can scope ogp:article:1.0 to the pages they publish with social cards."
+      type: capability
+      grader: ai
+    - id: og-locale
+      assertion: "A reader can write an og:locale value that passes the schema."
+      type: capability
+      grader: ai

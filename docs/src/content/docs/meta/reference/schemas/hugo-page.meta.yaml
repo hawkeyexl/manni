@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/schemas/hugo-page.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/hugo/0.165.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on hugo:page:0.165 for a Hugo site's content."
+      type: capability
+      grader: ai
+    - id: quoted-weight
+      assertion: "A reader can fix the finding a quoted weight produces."
+      type: capability
+      grader: ai

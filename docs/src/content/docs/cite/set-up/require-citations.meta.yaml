@@ -1,0 +1,21 @@
+docs/src/content/docs/cite/set-up/require-citations.mdx:
+  personas:
+    - sara
+  journeys:
+    - s5
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/citations/1.0.0.json
+    - path: src/meta/schemas/citations-strict/1.0.0.json
+    - path: src/cite/core/severity.ts
+  eval-suite: cite
+  evals:
+    - id: compose-vocabulary
+      assertion: A reader can compose manni:citations:1.0.0 with a house schema that requires the citations key on a class of pages.
+      type: capability
+      grader: ai
+    - id: set-rule-severity
+      assertion: A reader can set a per-rule severity under cite.severity, such as making claim-changed an error.
+      type: capability
+      grader: ai

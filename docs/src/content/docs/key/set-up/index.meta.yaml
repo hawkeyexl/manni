@@ -1,0 +1,19 @@
+docs/src/content/docs/key/set-up/index.mdx:
+  personas: ["sara", "devin"]
+  journeys: ["s4", "d6"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/shared/encryption-key.ts"
+    - path: "src/key/commands/set.ts"
+    - path: "src/key/core/config.ts"
+  eval-suite: key
+  evals:
+    - id: choose-location
+      assertion: "A reader can choose between encryptionKey: and MANNI_ENCRYPTION_KEY for their repository."
+      type: capability
+      grader: ai
+    - id: no-key-behaviour
+      assertion: "A reader can say what validation, citations and writes do when no key is available."
+      type: capability
+      grader: ai

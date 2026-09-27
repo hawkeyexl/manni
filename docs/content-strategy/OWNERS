@@ -1,0 +1,9 @@
+# Who owns each published docs page, in CODEOWNERS format.
+#
+# `manni meta derive` reads this file for the stewardship `owner` field, through
+# `meta.derive.codeowners` in manni.config.yaml. It lives here rather than at a
+# path GitHub searches (`.github/`, the repository root or `docs/`), so it
+# stamps an owner without turning on GitHub's automatic review requests.
+# Last matching line wins, as in CODEOWNERS.
+
+* @hawkeyexl

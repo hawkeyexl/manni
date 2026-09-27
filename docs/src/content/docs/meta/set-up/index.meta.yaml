@@ -1,0 +1,17 @@
+docs/src/content/docs/meta/set-up/index.mdx:
+  personas:
+    - maya
+  journeys:
+    - m1
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: stand-up-gate
+      assertion: A reader can go from a repo with no validation to a manni meta check that runs on every pull request.
+      type: capability
+      grader: ai
+    - id: validate-folder
+      assertion: A reader can validate a whole folder and read the summary line.
+      type: capability
+      grader: ai

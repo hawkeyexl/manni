@@ -4,6 +4,37 @@ description: The precedence order that decides which schema validates a file, th
 sidebar:
   label: How resolution works
   order: 2
+type: how-to
+id: meta-schemas-resolution
+keywords:
+  - schema resolution
+  - precedence
+  - schema references
+  - dialects
+language: en
+audiences:
+  - schema-authors
+intent: Predict which schema validates a file and wire each document to the right schema.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-schemas
+  - meta-schemas-versioning
+  - meta-ci-govern-shared-schema
+  - meta-reference-schema-resolution
+concepts:
+  - override
+  - $schema key
+  - schema reference
+  - dialect
+sample-questions:
+  - Which schema validates my file?
+  - What kinds of schema reference does manni meta accept?
+  - How is the JSON Schema dialect detected?
+graph:
+  label: How schema resolution works & how to wire it
+  type: task
 ---
 
 import { Steps, Tabs, TabItem, Card, CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';

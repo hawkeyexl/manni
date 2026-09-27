@@ -1,0 +1,18 @@
+docs/src/content/docs/a11y/fix/index.mdx:
+  personas: ["theo"]
+  journeys: ["t3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/a11y/reporters/pretty.ts"
+    - path: "src/a11y/core/analyzer.ts"
+  eval-suite: a11y
+  evals:
+    - id: decode-finding
+      assertion: "A reader can map a finding's rule id and selector to the element and change that fixes it."
+      type: capability
+      grader: ai
+    - id: confirm-fix
+      assertion: "A reader can reproduce a failure locally and confirm the fix with a green re-run."
+      type: capability
+      grader: ai

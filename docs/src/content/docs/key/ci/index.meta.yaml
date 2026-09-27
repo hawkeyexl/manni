@@ -1,0 +1,20 @@
+docs/src/content/docs/key/ci/index.mdx:
+  personas: ["devin"]
+  journeys: ["d6"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/key/commands/rotate.ts"
+    - path: "src/shared/encryption.ts"
+    - path: "src/cite/core/reencrypt.ts"
+    - path: "src/meta/core/reencrypt.ts"
+  eval-suite: key
+  evals:
+    - id: run-rotation
+      assertion: "A reader can rotate the key over the whole family and update the CI secret."
+      type: capability
+      grader: ai
+    - id: resume-rotation
+      assertion: "A reader can finish a rotation that stopped part of the way."
+      type: capability
+      grader: ai

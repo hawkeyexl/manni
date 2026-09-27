@@ -1,6 +1,35 @@
 ---
 title: query command reference
 description: The complete contract of manni meta query, covering the docs table and its columns, the DML and DDL vocabulary, collections as views, rows as findings, bound parameters, and every output format.
+type: reference
+id: meta-reference-query
+keywords:
+  - query
+  - SQL
+  - docs table
+  - collections
+  - exit codes
+language: en
+audiences:
+  - ci-engineers
+  - docs-engineers
+  - schema-authors
+intent: Write a manni meta query statement that reads, edits, or gates on metadata across files.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - Metadata
+  - Schema
+risks:
+  - destructive
+sample-questions:
+  - Which columns does the docs table have?
+  - How do I preview an UPDATE before it edits files?
+  - How do I fail CI when a query returns rows?
+graph:
+  label: query command reference
+  type: reference
 ---
 
 import { Aside } from '@astrojs/starlight/components';

@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/metadata-vocabularies.mdx:
+  personas:
+    - sara
+  journeys:
+    - s1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/ogp/1.0.json
+    - path: src/meta/schemas/dcmi/1.1.json
+    - path: src/meta/schemas/microsoft-learn/1.0.json
+    - path: src/meta/schemas/x-cards/1.0.json
+  eval-suite: meta
+  evals:
+    - id: pick-metadata-vocabulary
+      assertion: A reader can pick the built-in vocabulary schema for a social card, a catalogue, or a Microsoft Learn build and name what it requires.
+      type: capability
+      grader: ai

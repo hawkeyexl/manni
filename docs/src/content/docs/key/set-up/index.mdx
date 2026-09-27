@@ -3,6 +3,18 @@ title: Put the key where every tool finds it
 description: "Choose between the config key and MANNI_ENCRYPTION_KEY, keep a key out of a shared repository, decide who on the team needs it, and learn what each command does without one."
 sidebar:
   order: 1
+id: "key-set-up"
+type: "how-to"
+keywords: ["encryption key", "encryptionKey", "MANNI_ENCRYPTION_KEY", "environment"]
+language: en
+audiences: ["schema-authors", "ci-engineers"]
+intent: "Put the encryption key in the config or the environment, and know what each tool does without it."
+lifecycle: published
+applies-to: ["domain:key"]
+next-steps: ["meta-schemas-encrypted-fields", "key-ci", "key-reference-cli", "meta-reference-configuration"]
+risks: ["destructive"]
+sample-questions: ["Should the key live in manni.config.yaml or in MANNI_ENCRYPTION_KEY?", "Who on the team needs the encryption key?", "What does each manni tool do when no key is available?"]
+graph: { label: "Put the key where every tool finds it", type: task }
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

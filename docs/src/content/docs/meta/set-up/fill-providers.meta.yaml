@@ -1,0 +1,22 @@
+docs/src/content/docs/meta/set-up/fill-providers.mdx:
+  personas:
+    - maya
+    - devin
+  journeys:
+    - m4
+    - d1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/commands/fill-prompt.ts
+    - path: src/meta/commands/fill.ts
+  eval-suite: meta
+  evals:
+    - id: state-egress
+      assertion: A reader can state what one fill inference call transmits and what the cache keeps afterwards.
+      type: capability
+      grader: ai
+    - id: keep-local
+      assertion: A reader can run fill so that no content leaves the machine.
+      type: capability
+      grader: ai

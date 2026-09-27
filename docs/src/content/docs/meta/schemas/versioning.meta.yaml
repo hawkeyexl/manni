@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/schemas/versioning.mdx:
+  personas:
+    - sara
+  journeys:
+    - s3
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: encode-version
+      assertion: A reader can encode a schema version that consumers pin.
+      type: capability
+      grader: ai
+    - id: classify-change
+      assertion: A reader can tell an additive schema change from a tightening one.
+      type: capability
+      grader: ai
+    - id: alter-ratchet
+      assertion: A reader can add a required field and backfill the corpus with one ALTER TABLE statement.
+      type: capability
+      grader: ai

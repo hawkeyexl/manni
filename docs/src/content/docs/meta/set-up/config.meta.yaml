@@ -1,0 +1,25 @@
+docs/src/content/docs/meta/set-up/config.mdx:
+  personas:
+    - maya
+  journeys:
+    - m1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/shared/collections.ts
+    - path: src/shared/config-file.ts
+    - path: src/meta/core/config.ts
+  eval-suite: meta
+  evals:
+    - id: declare-collection
+      assertion: A reader can declare a collection in manni.config.yaml and run a bare manni meta validate over it.
+      type: capability
+      grader: ai
+    - id: narrow-to-collection
+      assertion: A reader can narrow a run to one collection with --collection.
+      type: capability
+      grader: ai
+    - id: combine-flags-and-config
+      assertion: A reader can predict how a CLI flag combines with the matching config key.
+      type: capability
+      grader: ai

@@ -1,0 +1,19 @@
+docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/stewardship/1.0.0.json
+    - path: src/meta/schemas/stewardship-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: fields
+      assertion: "A reader can record a page's owner, review interval and source of truth."
+      type: capability
+      grader: ai
+    - id: strict-overlay
+      assertion: "A reader can say what the stewardship strict overlay rejects that the open vocabulary accepts."
+      type: capability
+      grader: ai

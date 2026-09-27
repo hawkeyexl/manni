@@ -1,0 +1,14 @@
+docs/src/content/docs/meta/reference/glossary/frontmatter.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-frontmatter
+      assertion: A reader can say what frontmatter means in manni meta.
+      type: capability
+      grader: ai

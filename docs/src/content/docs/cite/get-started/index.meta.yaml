@@ -1,0 +1,30 @@
+docs/src/content/docs/cite/get-started/index.mdx:
+  personas:
+    - maya
+  journeys:
+    - m5
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/cite/commands/check.ts
+    - path: src/cite/commands/add.ts
+    - path: src/cite/commands/update.ts
+    - path: src/cite/core/severity.ts
+    - path: src/cite/core/sidecar.ts
+    - path: src/cite/core/manifest.ts
+    - path: src/cite/reporters/pretty.ts
+    - path: test/cite/cli.integration.test.ts
+  eval-suite: cite
+  evals:
+    - id: pin-first-claim
+      assertion: A reader can run manni cite add to pin a page line to a source line and confirm it with manni cite check.
+      type: capability
+      grader: ai
+    - id: repair-move-and-change
+      assertion: A reader can clear a moved end with manni cite update and re-pin a changed end with manni cite update --accept.
+      type: capability
+      grader: ai
+    - id: anchor-marker-quote
+      assertion: A reader can anchor a citation with --marker and pin a fenced code block with --quote.
+      type: capability
+      grader: ai

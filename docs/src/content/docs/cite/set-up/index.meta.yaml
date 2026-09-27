@@ -1,0 +1,20 @@
+docs/src/content/docs/cite/set-up/index.mdx:
+  personas:
+    - maya
+  journeys:
+    - m5
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/cite/core/config.ts
+    - path: src/shared/collections.ts
+  eval-suite: cite
+  evals:
+    - id: declare-collection
+      assertion: A reader can declare the pages as a collection and let the root default to the git root.
+      type: capability
+      grader: ai
+    - id: first-add-and-check
+      assertion: A reader can mint the first citation with manni cite add and run the first manni cite check.
+      type: capability
+      grader: ai

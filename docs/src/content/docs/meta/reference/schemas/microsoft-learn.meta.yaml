@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/schemas/microsoft-learn.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/microsoft-learn/1.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on microsoft:learn:1.0 for their Learn articles."
+      type: capability
+      grader: ai
+    - id: ms-date
+      assertion: "A reader can write an ms.date value that passes the MM/DD/YYYY rule."
+      type: capability
+      grader: ai

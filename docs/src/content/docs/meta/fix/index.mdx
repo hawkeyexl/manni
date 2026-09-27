@@ -1,6 +1,37 @@
 ---
 title: Fix a failing check
 description: Read a manni meta validation error, map it to the offending field and line, fix it, and confirm green locally.
+type: troubleshooting
+id: meta-fix
+keywords:
+  - fix a failing check
+  - error line
+  - required field
+  - parse error
+  - schema not found
+language: en
+audiences:
+  - contributors
+intent: Read a manni meta error, map it to the field and line, fix it, and confirm green locally.
+lifecycle: published
+applies-to:
+  - domain:meta
+related-pages:
+  - meta-reference
+  - meta-schemas
+concepts:
+  - validation
+  - frontmatter
+  - schema
+risks:
+  - destructive
+sample-questions:
+  - What does this manni meta error line mean?
+  - How do I fix a missing required field?
+  - Why does my check exit 2 instead of 1?
+graph:
+  label: Fix a failing check
+  type: troubleshooting
 ---
 
 import { Steps, Aside, LinkCard } from '@astrojs/starlight/components';

@@ -1,0 +1,17 @@
+docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
+  personas:
+    - maya
+  journeys:
+    - m3
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: assign-override
+      assertion: A reader can write an override that assigns a schema set to one folder or collection.
+      type: capability
+      grader: ai
+    - id: predict-first-match
+      assertion: A reader can predict which override applies when several match a file.
+      type: capability
+      grader: ai

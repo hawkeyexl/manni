@@ -1,6 +1,40 @@
 ---
 title: Stamp stewardship fields from evidence
 description: "Let manni meta stamp created, last-updated, authors, owner, reviewed-by and last-reviewed from git, CODEOWNERS, GitHub and GitLab, and fail the build when a stamp goes stale."
+type: how-to
+id: meta-set-up-derived-metadata
+keywords:
+  - derived metadata
+  - stewardship fields
+  - derive
+  - CODEOWNERS
+  - git history
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+  - contributors
+intent: Stamp stewardship fields from git, CODEOWNERS and review history with manni meta derive, and fail the build when a stamp goes stale.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-reference-configuration
+  - meta-reference-cli
+  - meta-reference-schemas-manni-stewardship
+  - meta-set-up-new-required-field
+  - meta-set-up-machine-authorship
+concepts:
+  - metadata
+risks:
+  - destructive
+sample-questions:
+  - How do I stamp owner and last-updated from git?
+  - What does a derived:stale finding mean?
+  - How do I see what a page resolves to?
+graph:
+  label: Stamp stewardship fields from evidence
+  type: task
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

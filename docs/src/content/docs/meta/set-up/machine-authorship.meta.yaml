@@ -1,0 +1,26 @@
+docs/src/content/docs/meta/set-up/machine-authorship.mdx:
+  personas:
+    - maya
+  journeys:
+    - m8
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/derive/provenance.ts
+    - path: src/meta/core/derive/git.ts
+    - path: src/meta/commands/derive.ts
+    - path: src/meta/commands/fill.ts
+  eval-suite: meta
+  evals:
+    - id: record-agent-edit
+      assertion: A reader can attribute an agent's uncommitted lines and stamp provenance with manni meta derive.
+      type: capability
+      grader: ai
+    - id: attribute-by-hand
+      assertion: A reader can attribute a named line range to a machine by hand.
+      type: capability
+      grader: ai
+    - id: review-fill-proposals
+      assertion: A reader can review the fields fill proposed and retire their meta-provenance entries.
+      type: capability
+      grader: ai

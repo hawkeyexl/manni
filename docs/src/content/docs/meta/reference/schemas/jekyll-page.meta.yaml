@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/schemas/jekyll-page.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/jekyll/4.4.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can scope jekyll:page:4.4 to a Jekyll site's pages with an override."
+      type: capability
+      grader: ai
+    - id: quoted-published
+      assertion: "A reader can fix the finding a quoted published flag produces."
+      type: capability
+      grader: ai

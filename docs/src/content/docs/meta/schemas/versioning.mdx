@@ -4,6 +4,38 @@ description: Encode a schema version consumers can pin, roll out tightening chan
 sidebar:
   label: Versioning & dialects
   order: 3
+type: how-to
+id: meta-schemas-versioning
+keywords:
+  - schema versioning
+  - dialects
+  - staged ratchet
+  - ALTER TABLE
+language: en
+audiences:
+  - schema-authors
+intent: Version a schema consumers can pin and roll out tightening changes without breaking CI everywhere at once.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-set-up-new-required-field
+  - meta-ci-govern-shared-schema
+  - meta-schemas-resolution
+  - meta-reference-schema-resolution
+concepts:
+  - dialect
+  - meta-schema URI
+  - schema
+risks:
+  - destructive
+sample-questions:
+  - How do I version a schema so consumers can pin it?
+  - Which schema changes are breaking?
+  - Do I need to configure the JSON Schema dialect?
+graph:
+  label: Version & evolve a schema safely
+  type: task
 ---
 
 import { Steps, Tabs, TabItem, Card, CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';

@@ -1,6 +1,35 @@
 ---
 title: Fix a failing check
 description: "Read a manni term annotation, find the rule, make the one edit it asks for in the term pages or the Vale style, and confirm green locally before you push."
+type: troubleshooting
+id: term-fix
+keywords:
+  - undefined-term
+  - dangling-reference
+  - label-collision
+  - annotation
+  - exit code
+language: en
+audiences:
+  - contributors
+intent: Read a manni term annotation, make the edit its rule asks for, and confirm the check passes locally.
+lifecycle: published
+applies-to:
+  - domain:term
+next-steps:
+  - term-reference-rules
+  - term-ci
+  - term-reference-cli
+  - cite-fix
+risks:
+  - destructive
+sample-questions:
+  - What does a manni:term annotation on my pull request mean?
+  - How do I fix an undefined-term or dangling-reference finding?
+  - Why does the Vale style check fail after I edit a term?
+graph:
+  label: Fix a failing check
+  type: troubleshooting
 ---
 
 import { Steps, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';

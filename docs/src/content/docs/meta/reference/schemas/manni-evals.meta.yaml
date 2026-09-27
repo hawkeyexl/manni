@@ -1,0 +1,19 @@
+docs/src/content/docs/meta/reference/schemas/manni-evals.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/evals/1.0.0.json
+    - path: src/meta/schemas/evals-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: entries
+      assertion: "A reader can write an inline eval entry with an id, an assertion and a grader."
+      type: capability
+      grader: ai
+    - id: graders
+      assertion: "A reader can pick a grader for an eval."
+      type: capability
+      grader: ai

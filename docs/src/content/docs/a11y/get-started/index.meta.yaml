@@ -1,0 +1,19 @@
+docs/src/content/docs/a11y/get-started/index.mdx:
+  personas: ["maya"]
+  journeys: ["m7"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/a11y/commands/check.ts"
+    - path: "src/a11y/core/analyzer.ts"
+    - path: "src/a11y/core/crawl.ts"
+  eval-suite: a11y
+  evals:
+    - id: first-crawl
+      assertion: "A reader can install a browser, serve a build and run manni a11y check against it."
+      type: capability
+      grader: ai
+    - id: fix-and-rerun
+      assertion: "A reader can fix one reported finding and re-run the check until it exits 0."
+      type: capability
+      grader: ai

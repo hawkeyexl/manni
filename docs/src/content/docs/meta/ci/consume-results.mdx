@@ -1,6 +1,35 @@
 ---
 title: Consume results programmatically
 description: Feed manni meta validation output into your own tooling, covering the json output format with jq, the get command for scripted field extraction, and the TypeScript API for tools built on top of manni meta.
+type: concept
+id: meta-ci-consume-results
+keywords:
+  - json output
+  - get command
+  - TypeScript API
+  - jq
+language: en
+audiences:
+  - ci-engineers
+intent: Feed manni meta results into other tooling through json output, the get command or the TypeScript API.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-ci-exit-codes-and-annotations
+  - meta-ci-govern-shared-schema
+  - meta-ci-recipes
+concepts:
+  - JSON Pointer
+  - extractor
+  - validation
+sample-questions:
+  - How do I read manni meta results in a script?
+  - How do I extract one field value from a document?
+  - When should I use the TypeScript API instead of the CLI?
+graph:
+  label: Consume results programmatically
+  type: concept
 ---
 
 import { Tabs, TabItem, Aside, Steps, CardGrid, LinkCard } from '@astrojs/starlight/components';

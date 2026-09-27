@@ -1,0 +1,28 @@
+docs/src/content/docs/meta/reference/platform-schemas.mdx:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s1
+    - m3
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/starlight/0.41.json
+    - path: src/meta/schemas/antora/3.1.json
+    - path: src/meta/schemas/sphinx/9.1.json
+    - path: src/meta/schemas/myst/1.10.json
+    - path: src/meta/schemas/hugo/0.165.json
+    - path: src/meta/schemas/jekyll/4.4.json
+    - path: src/meta/schemas/vitepress/1.6.json
+    - path: src/meta/schemas/mkdocs-material/9.7.json
+  eval-suite: meta
+  evals:
+    - id: pick-platform-schema
+      assertion: A reader can pick the platform schema for their site generator and say what it requires.
+      type: capability
+      grader: ai
+    - id: compose-platform-vocabulary
+      assertion: A reader can compose a platform schema with a vocabulary schema in one schema set.
+      type: capability
+      grader: ai

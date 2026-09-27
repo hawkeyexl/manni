@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/schemas/diataxis.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/diataxis/1.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on diataxis:diataxis:1.0 for their pages."
+      type: capability
+      grader: ai
+    - id: four-forms
+      assertion: "A reader can name the four type values the Diátaxis schema accepts."
+      type: capability
+      grader: ai

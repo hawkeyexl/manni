@@ -1,6 +1,36 @@
 ---
 title: Roll out a new required field without breaking the build
 description: Make a metadata field required today, record the existing backlog as a baseline so the build stays green, and let the debt shrink from there.
+type: tutorial
+id: meta-set-up-new-required-field
+keywords:
+  - required field
+  - baseline
+  - ratchet
+  - backlog
+language: en
+audiences:
+  - docs-engineers
+intent: Make a new metadata field required today, record the backlog as a baseline, and keep the build green while the debt shrinks.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-set-up-retrofit
+  - meta-set-up-different-schemas-per-folder
+  - meta-reference-cli
+concepts:
+  - schema
+  - validation
+risks:
+  - destructive
+sample-questions:
+  - How do I add a required field without breaking the build?
+  - What does a baseline forgive, and what does it not?
+  - When should I use the one-statement ALTER ratchet?
+graph:
+  label: Roll out a new required field without breaking the build
+  type: learning
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

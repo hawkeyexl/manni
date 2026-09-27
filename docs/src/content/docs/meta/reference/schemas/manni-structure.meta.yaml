@@ -1,0 +1,19 @@
+docs/src/content/docs/meta/reference/schemas/manni-structure.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/structure/1.0.0.json
+    - path: src/meta/schemas/structure-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: fields
+      assertion: "A reader can link a page to its prerequisites, next steps and related pages."
+      type: capability
+      grader: ai
+    - id: strict-overlay
+      assertion: "A reader can say what the structure strict overlay rejects that the open vocabulary accepts."
+      type: capability
+      grader: ai

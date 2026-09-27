@@ -1,0 +1,17 @@
+docs/src/content/docs/meta/set-up/new-required-field.mdx:
+  personas:
+    - maya
+  journeys:
+    - m2
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: write-baseline
+      assertion: A reader can make a field required and record the existing failures with --write-baseline.
+      type: capability
+      grader: ai
+    - id: baseline-limits
+      assertion: A reader can name the two things a baseline does not forgive.
+      type: capability
+      grader: ai

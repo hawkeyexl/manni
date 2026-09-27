@@ -1,0 +1,14 @@
+docs/src/content/docs/meta/reference/glossary/json-pointer.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-json-pointer
+      assertion: A reader can say what JSON Pointer means in manni meta.
+      type: capability
+      grader: ai

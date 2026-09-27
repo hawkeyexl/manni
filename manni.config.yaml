@@ -49,6 +49,10 @@ collections:
     externalMetadata:
       - file: "{page}.citations.yaml"
         keys: [citations]
+      # No `keys` (proposal 0068): this manifest owns every other field the
+      # page's schemas mark `x-manni-location: external`, so a page's
+      # bookkeeping sits beside it and never reaches the published site.
+      - file: "{page}.meta.yaml"
 
 # Where Vale's configuration is, for the tools that run Vale. `manni term lint`
 # runs it over the glossary's definitions, and `manni term write -f vale` reads
@@ -62,9 +66,50 @@ tools:
     config: .vale.ini
 
 meta:
-  # Every published page must declare a non-empty title and description. Scoped
-  # to the `site` collection, so it governs the docs and nothing else.
+  # Two managed fields, stamped by `manni meta derive` into each page's
+  # manifest. Only fields a squash merge leaves unchanged are managed. A date
+  # or a reviewer would read stale on main after every merge, and a stale
+  # stamp fails this gate. Those fields stay derivable at read time, so `get`
+  # and `query` still show them.
+  derive:
+    fields: [owner, provenance]
+    sources: [git, codeowners]
+    # CODEOWNERS format, at a path GitHub does not search, so it names an
+    # owner without turning on automatic review requests.
+    codeowners: docs/content-strategy/OWNERS
+    machines: ["*[bot]", "noreply@anthropic.com"]
+
+  # The docs site dogfoods the built-in vocabularies. First match wins, so the
+  # glossary comes before the collection it belongs to.
   overrides:
+    # Glossary pages follow the terminology vocabulary and keep `type: term`,
+    # which `manni term` reads, so they take no TGDP type.
+    - files: "docs/src/content/docs/meta/reference/glossary/*.mdx"
+      schemas:
+        - ./docs/doc-frontmatter.schema.json
+        - astro:starlight:0.41
+        - manni:terminology:1.0.0
+        - manni:terminology-strict:1.0.0
+        - manni:core:1.0.0
+        - manni:core-strict:1.0.0
+        - manni:audience:1.0.0
+        - manni:audience-strict:1.0.0
+        - manni:structure:1.0.0
+        - manni:structure-strict:1.0.0
+        - manni:stewardship:1.0.0
+        - manni:stewardship-strict:1.0.0
+        - manni:lifecycle:1.0.0
+        - manni:lifecycle-strict:1.0.0
+        - manni:ai-context:1.0.0
+        - manni:ai-context-strict:1.0.0
+        - manni:evals:1.0.0
+        - manni:evals-strict:1.0.0
+        - manni:graph:1.0.0
+        - manni:graph-strict:1.0.0
+        - manni:citations:1.0.0
+        - manni:citations-strict:1.0.0
+    # Every other published page. Each one must declare a non-empty title and
+    # description, which the house schema requires.
     - collection: site
       schemas:
         - ./docs/doc-frontmatter.schema.json
@@ -76,6 +121,27 @@ meta:
         # `text`. Before it existed, every Starlight key on every page went
         # unchecked.
         - astro:starlight:0.41
+        # A page's TGDP template, in `type`. Open, without the strict
+        # overlay, because a few pages are types TGDP does not publish.
+        - tgdp:templates:1.1
+        - manni:core:1.0.0
+        - manni:core-strict:1.0.0
+        - manni:audience:1.0.0
+        - manni:audience-strict:1.0.0
+        - manni:structure:1.0.0
+        - manni:structure-strict:1.0.0
+        - manni:stewardship:1.0.0
+        - manni:stewardship-strict:1.0.0
+        - manni:lifecycle:1.0.0
+        - manni:lifecycle-strict:1.0.0
+        - manni:ai-context:1.0.0
+        - manni:ai-context-strict:1.0.0
+        - manni:evals:1.0.0
+        - manni:evals-strict:1.0.0
+        - manni:graph:1.0.0
+        - manni:graph-strict:1.0.0
+        - manni:citations:1.0.0
+        - manni:citations-strict:1.0.0
 
 # The accessibility tool reads `a11y:` and nothing else. Same narrowness as
 # above, for the same reason: this file is ambient for every run beneath the

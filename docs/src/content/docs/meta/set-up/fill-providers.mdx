@@ -1,6 +1,36 @@
 ---
 title: Run fill under a data-egress policy
 description: "Exactly what manni meta fill transmits on each inference call, how much of each document goes, what the proposal cache keeps afterwards, and how to bound the egress or eliminate it entirely."
+type: concept
+id: meta-set-up-fill-providers
+keywords:
+  - fill
+  - data egress
+  - inference provider
+  - local model
+  - proposal cache
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+intent: "Answer a security review of manni meta fill: what each call transmits, what is kept, and how to bound or remove egress."
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-set-up-retrofit
+  - meta-reference-cli
+concepts:
+  - schema
+risks:
+  - destructive
+sample-questions:
+  - What does manni meta fill send to the model provider?
+  - What does the proposal cache keep?
+  - How do I run fill without content leaving my machine?
+graph:
+  label: Run fill under a data-egress policy
+  type: concept
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

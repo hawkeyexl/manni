@@ -1,0 +1,24 @@
+docs/src/content/docs/term/reference/configuration.mdx:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s6
+    - m9
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/term/core/config.ts
+    - path: src/term/core/severity.ts
+    - path: src/term/core/check.ts
+    - path: src/shared/tools.ts
+  eval-suite: term
+  evals:
+    - id: write-term-config
+      assertion: A reader can write a term section with manifests, a baseline and severity overrides.
+      type: capability
+      grader: ai
+    - id: recognize-refusal
+      assertion: A reader can recognize each configuration refusal and fix the key it names.
+      type: capability
+      grader: ai

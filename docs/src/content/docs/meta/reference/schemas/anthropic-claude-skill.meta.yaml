@@ -1,0 +1,18 @@
+docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/claude-skill/2.1.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on anthropic:claude-skill:2.1 for their Claude Code skills."
+      type: capability
+      grader: ai
+    - id: booleans
+      assertion: "A reader can write a boolean field that both YAML and Claude Code read the same way."
+      type: capability
+      grader: ai

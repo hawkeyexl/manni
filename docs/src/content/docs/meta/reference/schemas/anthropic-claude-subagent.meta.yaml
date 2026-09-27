@@ -1,0 +1,22 @@
+docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/claude-subagent/2.1.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can validate the agent definitions under .claude/agents/ with anthropic:claude-subagent:2.1."
+      type: capability
+      grader: ai
+    - id: skill-differences
+      assertion: "A reader can name the fields that look like skill fields but differ in an agent definition."
+      type: capability
+      grader: ai
+    - id: agents-and-skills
+      assertion: "A reader can configure one run that validates agents and skills against their own schemas."
+      type: capability
+      grader: ai

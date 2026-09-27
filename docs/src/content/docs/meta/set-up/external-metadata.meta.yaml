@@ -1,0 +1,28 @@
+docs/src/content/docs/meta/set-up/external-metadata.mdx:
+  personas:
+    - maya
+    - devin
+  journeys:
+    - m1
+    - m2
+    - d1
+    - d4
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/external-metadata.ts
+    - path: src/shared/collections.ts
+  eval-suite: meta
+  evals:
+    - id: declare-manifest
+      assertion: A reader can declare an external-metadata manifest on a collection and see its values merged at run time.
+      type: capability
+      grader: ai
+    - id: private-manifest
+      assertion: A reader can keep a public page's private values in a manifest in a private repository.
+      type: capability
+      grader: ai
+    - id: fetch-manifest-url
+      assertion: A reader can fetch a manifest by URL from another repository.
+      type: capability
+      grader: ai

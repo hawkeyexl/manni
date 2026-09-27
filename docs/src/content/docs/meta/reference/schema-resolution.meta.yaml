@@ -1,0 +1,23 @@
+docs/src/content/docs/meta/reference/schema-resolution.mdx:
+  personas:
+    - sara
+    - devin
+  journeys:
+    - s2
+    - d2
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/resolve-schema.ts
+    - path: src/meta/core/schema-registry.ts
+    - path: src/meta/core/validator.ts
+  eval-suite: meta
+  evals:
+    - id: predict-schema-set
+      assertion: A reader can say which source supplies a file's schema set when -s, $schema, an override, and the defaults all apply.
+      type: capability
+      grader: ai
+    - id: choose-reference-kind
+      assertion: A reader can reference a schema by built-in id, file path, or URL and say how each resolves.
+      type: capability
+      grader: ai

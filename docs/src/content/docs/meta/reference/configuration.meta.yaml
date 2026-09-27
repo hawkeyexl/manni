@@ -1,0 +1,26 @@
+docs/src/content/docs/meta/reference/configuration.mdx:
+  personas:
+    - maya
+    - devin
+  journeys:
+    - m1
+    - d1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/config.ts
+    - path: src/shared/config-file.ts
+  eval-suite: meta
+  evals:
+    - id: write-config-collections
+      assertion: A reader can declare a collection and an override in manni.config.yaml so a bare manni meta validate checks it.
+      type: capability
+      grader: ai
+    - id: declare-external-metadata
+      assertion: A reader can declare an external-metadata manifest on a collection and say which fields it owns.
+      type: capability
+      grader: ai
+    - id: migrate-0x-config
+      assertion: A reader can move a refused 0.x key to the place its refusal message names.
+      type: capability
+      grader: ai

@@ -1,0 +1,25 @@
+docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
+  personas:
+    - sara
+  journeys:
+    - s4
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/encrypted.ts
+    - path: src/shared/encryption.ts
+    - path: src/shared/encryption-key.ts
+  eval-suite: meta
+  evals:
+    - id: mark-encrypt
+      assertion: A reader can mark a property x-manni-encrypt and predict what validate reports for a plain value.
+      type: capability
+      grader: ai
+    - id: no-key-behavior
+      assertion: A reader can say what the check does when no key is available.
+      type: capability
+      grader: ai
+    - id: rotation-effect
+      assertion: A reader can say what a key rotation rewrites and what it leaves alone.
+      type: capability
+      grader: ai

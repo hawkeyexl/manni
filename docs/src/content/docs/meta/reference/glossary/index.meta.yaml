@@ -1,0 +1,14 @@
+docs/src/content/docs/meta/reference/glossary/index.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: find-term
+      assertion: A reader can find the short definition of any term manni meta uses and open its page.
+      type: capability
+      grader: ai

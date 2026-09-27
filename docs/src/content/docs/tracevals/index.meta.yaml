@@ -1,0 +1,9 @@
+docs/src/content/docs/tracevals/index.mdx:
+  visibility: public
+  review-interval: P180D
+  eval-suite: tracevals
+  evals:
+    - id: what-it-does
+      assertion: "A reader can say what manni tracevals evaluates and that it is not in the published package."
+      type: capability
+      grader: ai

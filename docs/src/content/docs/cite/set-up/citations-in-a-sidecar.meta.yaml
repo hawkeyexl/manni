@@ -1,0 +1,21 @@
+docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
+  personas:
+    - maya
+  journeys:
+    - m6
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/cite/core/sidecar.ts
+    - path: src/cite/core/manifest.ts
+    - path: src/meta/core/external-metadata.ts
+  eval-suite: cite
+  evals:
+    - id: declare-manifest
+      assertion: A reader can declare an externalMetadata manifest that owns the citations key for a collection.
+      type: capability
+      grader: ai
+    - id: move-entries
+      assertion: A reader can move a page's citations into its manifest and confirm the check still passes.
+      type: capability
+      grader: ai

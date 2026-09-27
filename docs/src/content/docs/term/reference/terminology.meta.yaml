@@ -1,0 +1,24 @@
+docs/src/content/docs/term/reference/terminology.mdx:
+  personas:
+    - sara
+    - devin
+  journeys:
+    - s6
+    - d8
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/terminology/1.0.0.json
+    - path: src/term/types.ts
+    - path: src/term/core/id.ts
+    - path: src/term/core/readers
+  eval-suite: term
+  evals:
+    - id: write-term-fields
+      assertion: A reader can write a term entry using the ten fields and their SKOS meanings.
+      type: capability
+      grader: ai
+    - id: predict-term-id
+      assertion: A reader can predict the id an entry gets from its manifest key, file name or label.
+      type: capability
+      grader: ai

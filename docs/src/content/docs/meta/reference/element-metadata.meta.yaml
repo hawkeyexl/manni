@@ -1,0 +1,24 @@
+docs/src/content/docs/meta/reference/element-metadata.mdx:
+  personas:
+    - sara
+  journeys:
+    - s1
+    - s2
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/extractors/element-key.ts
+    - path: src/meta/extractors/element-write.ts
+    - path: src/meta/extractors/xml-read.ts
+    - path: src/meta/extractors/html-read.ts
+    - path: src/meta/core/config.ts
+  eval-suite: meta
+  evals:
+    - id: name-element-key
+      assertion: A reader can state the key manni meta gives a value held in a nested XML or HTML element.
+      type: capability
+      grader: ai
+    - id: configure-elements-key
+      assertion: "A reader can add an elements: entry that lifts an element the convention does not read."
+      type: capability
+      grader: ai

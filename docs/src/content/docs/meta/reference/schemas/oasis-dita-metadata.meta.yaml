@@ -1,0 +1,23 @@
+docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/dita/1.3.json
+    - path: src/meta/extractors/dita.ts
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can validate DITA topics and maps with oasis:dita-metadata:1.3."
+      type: capability
+      grader: ai
+    - id: map-keys
+      assertion: "A reader can explain why a map spells five keys under topicmeta."
+      type: capability
+      grader: ai
+    - id: fill-writes
+      assertion: "A reader can predict where fill places an element that is missing from a topic."
+      type: capability
+      grader: ai

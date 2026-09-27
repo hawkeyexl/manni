@@ -1,6 +1,32 @@
 ---
 title: Configuration reference
 description: "Every manni.config.yaml key: the top-level collections list every tool reads, and the meta section's schemas, overrides, checks and schemaTrust, with types, defaults, discovery rules, and how config merges with CLI flags."
+type: reference
+id: meta-reference-configuration
+keywords:
+  - configuration
+  - manni.config.yaml
+  - collections
+  - overrides
+  - external metadata
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+intent: Write a manni.config.yaml whose collections and meta keys a bare manni meta validate runs from.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - Override
+  - Schema set
+sample-questions:
+  - Which keys does manni.config.yaml accept?
+  - How do I apply a different schema to one directory?
+  - How do I keep metadata in a manifest outside the page?
+graph:
+  label: Configuration reference
+  type: reference
 ---
 
 import { Aside } from '@astrojs/starlight/components';
