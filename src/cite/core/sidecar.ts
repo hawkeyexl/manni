@@ -178,6 +178,11 @@ function ownsCitations(manifest: ExternalMetadataConfig): boolean {
   return manifest.keys === undefined || manifest.keys.includes(CITATIONS_KEY);
 }
 
+/** An index with no manifest in it, for a run whose only candidates are keyless URL manifests. */
+function emptyIndex(): ExternalMetadataIndex {
+  return { owners: new Map(), byPath: new Map(), byField: new Map(), entries: [] };
+}
+
 /**
  * Load every manifest that owns `citations`, or `null` when none does — which
  * is every setup that keeps its citations in frontmatter, and costs nothing.
@@ -222,13 +227,17 @@ export async function loadCitationSidecars(
     }
     if (loaded.length > 0) scoped.push({ ...collection, externalMetadata: loaded });
   }
-  if (manifests.length === 0) return null;
+  if (manifests.length === 0 && urls.length === 0) return null;
 
-  const index = await loadExternalMetadata(scoped, {
-    configDir: opts.configDir,
-    base: opts.base,
-    ...(opts.pages === undefined ? {} : { pages: opts.pages }),
-  });
+  // A keyless URL manifest is never loaded, but a page it would keep
+  // citations for is still refused. With no local manifest to load, an empty
+  // index lets each page reach that refusal.
+  const index =
+    (await loadExternalMetadata(scoped, {
+      configDir: opts.configDir,
+      base: opts.base,
+      ...(opts.pages === undefined ? {} : { pages: opts.pages }),
+    })) ?? (urls.length > 0 ? emptyIndex() : null);
   if (index === null) return null;
   return sidecars(index, manifests, urls, scoped, opts);
 }
@@ -271,6 +280,9 @@ function sidecars(
 
     // A manifest with no keys (proposal 0068) keeps the page's citations
     // when the page's schemas mark them external, asked with them in place.
+    // This asks over every declared collection, because which manifest owns
+    // a page's citations is decided by all of them. The merge below asks
+    // again over the collections this run loaded, for the other fields.
     let extracted: ExtractedMetadata | undefined;
     const extract = (): ExtractedMetadata => (extracted ??= pickExtractor(label, format).extract(content, label));
     const candidates = [...manifests, ...urls].filter((m) => m.implied !== undefined && memberOfCollection(m));
