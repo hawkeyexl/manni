@@ -1,6 +1,6 @@
 # 0068: a manifest owns what the marks say
 
-- **Status:** Proposed
+- **Status:** Implemented (#131)
 - **Serves:** Maya · M6, who keeps each page's bookkeeping in a manifest
   beside it, and Sara · S1, whose schemas already say where each field lives.
 - **Depends on:** [0041](0041-collections.md), which gave a collection its
