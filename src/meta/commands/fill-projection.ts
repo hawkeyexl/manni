@@ -421,8 +421,14 @@ function tighten(
   return out;
 }
 
-/** Key-order-independent text, so equal enum values compare equal. */
-function canonical(value: unknown): string {
+/**
+ * Key-order-independent text, so equal enum values compare equal.
+ *
+ * Exported for `fill.ts`, which needs the same comparison over schema
+ * branches and already-taken values, and would otherwise carry a second,
+ * independently-drifting copy.
+ */
+export function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
   if (isObject(value)) {
     const entries = Object.keys(value)

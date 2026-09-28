@@ -847,6 +847,52 @@ describe("runFill — each value is checked on its own", () => {
     });
   });
 
+  it("treats a retry that answers an unasked key as off-shape, so the first answers stand", async () => {
+    const file = await stage("missing-keys.md");
+    const provider = script(
+      {
+        description: { value: "A summary.", confidence: 0.9 },
+        resource: { value: "not a uri", confidence: 0.8 },
+      },
+      // The retry envelope only asks about "resource" — the one candidate
+      // that failed. This response answers "description" too, a key its own
+      // skeleton (`additionalProperties: false`) never offered.
+      {
+        resource: { value: "still not a uri", confidence: 0.8 },
+        description: { value: "A different summary.", confidence: 0.9 },
+      },
+    );
+    const { results, summary } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      fields: ["description", "resource"],
+      inferenceProvider: provider,
+    });
+
+    expect(results[0]?.error).toBeUndefined();
+    // Off-shape and rejected outright: no third request for either key.
+    expect(provider.requests).toHaveLength(2);
+    expect(asked(provider, 1)).toEqual(["resource"]);
+    expect(summary.written).toBe(1);
+    const resource = results[0]?.fields.find((f) => f.field === "/resource");
+    expect(resource).toEqual({
+      field: "/resource",
+      required: false,
+      confidence: 0.8,
+      reasoning: "stated in the page",
+      written: false,
+      skipReason: "schema-mismatch",
+    });
+    // The first answer for "description" stands — the retry's unasked-for
+    // value for it is never written.
+    const description = results[0]?.fields.find((f) => f.field === "/description");
+    expect(description?.value).toBe("A summary.");
+    const written = await readFile(join(dir, file), "utf8");
+    expect(written).toContain("description: A summary.");
+    expect(written).not.toContain("A different summary.");
+  });
+
   it("replays the checked set from cache with no request, retry included", async () => {
     const file = await stage("missing-keys.md");
     const opts = {

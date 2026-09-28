@@ -88,6 +88,7 @@ import type { CollectionConfig } from "../../shared/collections.js";
 import { Validator, compileWithFormats } from "../core/validator.js";
 import type { ValidateFunction } from "ajv/dist/2020.js";
 import { toJsonText } from "../core/json-text.js";
+import { canonical } from "./fill-projection.js";
 import { writeFileAtomic } from "../core/write-file.js";
 import {
   ENCRYPTED_PLACEHOLDER,
@@ -943,8 +944,13 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
 
     // The envelope is built on a cache hit too. The cache holds the model's
     // raw answers, and each is checked, and coerced, again on every read.
+    //
+    // `envelope`, `check` and `validateShape` are set together, only when
+    // there are candidates to ask about, and never reassigned afterward. Every
+    // use below narrows on that instead of assuming a placeholder that is
+    // never actually called.
     let envelope: Envelope | undefined;
-    let check: ValueCheck = () => ({ ok: true, value: undefined });
+    let check: ValueCheck | undefined;
     let validateShape: ValidateFunction | undefined;
     if (candidates.length > 0) {
       // The library's own Ajv has no ajv-formats, so a lifted subschema with
@@ -972,7 +978,12 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     if (hit) {
       cachedCount++;
       proposals = hit.proposals;
-    } else if (envelope !== undefined && validateShape !== undefined && envelope.asked.length > 0) {
+    } else if (
+      envelope !== undefined &&
+      check !== undefined &&
+      validateShape !== undefined &&
+      envelope.asked.length > 0
+    ) {
       if (turnsExhausted()) {
         turnsSpent = true;
         return errorResult(
@@ -1166,19 +1177,22 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
 
     // ---- Gate -------------------------------------------------------------
     const unsatisfiable = new Set(envelope?.unsatisfiable.map((c) => c.key));
+    // `check` is set exactly when there are candidates (see above), which is
+    // exactly when `gate` would ever call it, so no candidates gates to no
+    // fields rather than needing a value that is never actually used.
     const fields = [
       ...managedSkips,
-      ...gate(candidates, proposals, threshold, check, unsatisfiable),
+      ...(check === undefined ? [] : gate(candidates, proposals, threshold, check, unsatisfiable)),
     ];
 
     // ---- Re-validate, and revert anything that makes the page worse -------
     const accepted = fields.filter((f) => f.written);
     if (accepted.length > 0) {
       // The decrypted copy, so a marked value is judged as its plaintext.
-      const merged = { ...view.data, ...patchOf(accepted) };
+      const revalidationData = { ...view.data, ...patchOf(accepted) };
       const after = settleFindings(
         await validator.validate(
-          merged,
+          revalidationData,
           schemaSet,
           extracted.lineFor,
           extracted.colFor,
@@ -1256,7 +1270,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       const metaManifest = metaHome?.kind === "manifest" ? metaHome : undefined;
       const metaEntry = metaManifest?.entry;
       // The merged metadata: the manifest's list when one owns the key.
-      const merged =
+      const mergedProvenance =
         metaHome?.kind === "url" || (metaManifest !== undefined && metaEntry === undefined)
           ? undefined
           : mergeMetaProvenance(extracted.data[META_PROVENANCE_KEY], identity.model, writable);
@@ -1266,14 +1280,14 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         // A field join the page lacks: the manifest has no entry to hold it.
         metaProvenance = { written: false, skipReason: "unwritable" };
       } else if (
-        merged === undefined ||
+        mergedProvenance === undefined ||
         (await addsFindings(
           (data) =>
             validator
               .validate(data, schemaSet, extracted.lineFor, extracted.colFor)
               .then((errors) => settleFindings(errors, view, extracted)),
           { ...view.data, ...plainPatch },
-          merged.list,
+          mergedProvenance.list,
         ))
       ) {
         // The re-check above ignores root errors, which is where
@@ -1281,11 +1295,15 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         // report, so the entry is checked on its own.
         metaProvenance = { written: false, skipReason: "schema-mismatch" };
       } else if (metaManifest !== undefined && metaEntry !== undefined) {
-        metaWrite = { value: merged.list, home: { ...metaManifest, entry: metaEntry } };
-        metaProvenance = { written: true, entry: merged.entry, destination: metaManifest.file };
+        metaWrite = { value: mergedProvenance.list, home: { ...metaManifest, entry: metaEntry } };
+        metaProvenance = {
+          written: true,
+          entry: mergedProvenance.entry,
+          destination: metaManifest.file,
+        };
       } else {
-        patch[META_PROVENANCE_KEY] = merged.list;
-        metaProvenance = { written: true, entry: merged.entry };
+        patch[META_PROVENANCE_KEY] = mergedProvenance.list;
+        metaProvenance = { written: true, entry: mergedProvenance.entry };
       }
     }
 
@@ -1826,25 +1844,6 @@ function branchesOf(schema: Record<string, unknown>): Record<string, unknown>[] 
     // `fill` proposes for. `{not: {}}` says "never valid" in object form.
     return branch === false ? [{ not: {} }] : [];
   });
-}
-
-/** Key-order-independent serialization, so equal branches compare equal. */
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-  if (typeof value === "object" && value !== null) {
-    const entries = Object.entries(value as Record<string, unknown>)
-      .sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0))
-      .map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`);
-    return `{${entries.join(",")}}`;
-  }
-  // A schema parsed from JSON holds nothing `JSON.stringify` refuses, but
-  // `collectCandidates` is public API and a hand-written JS object can pass an
-  // `undefined`, a function, or a symbol. Tagging by type keeps those apart from
-  // each other and from `null`, which is a legitimate schema value.
-  //
-  // `toJsonText`, not `JSON.stringify`, only so the declared type admits the
-  // `undefined` this fallback exists for — see there.
-  return toJsonText(value) ?? `(${typeof value})`;
 }
 
 const DEF_BLOCKS = ["$defs", "definitions"] as const;
