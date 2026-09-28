@@ -1038,7 +1038,7 @@ each re-derived and written. A range that only moved gets its `lines`
 rewritten. A range that starts or ends on a blank line is rewritten without
 those blank lines, and dropped when it holds nothing else. A range nothing
 contradicts is kept. A range written replaces every entry that lies inside
-it. Where an
+it, and trims an entry it only partly overlaps to the lines outside it. Where an
 [external-metadata](/manni/meta/reference/configuration/#external-metadata)
 manifest owns `provenance`, the entries go into that manifest and the page is
 not touched. A format whose metadata is not a fenced block, such as HTML, XML

@@ -45,7 +45,9 @@ A blank line is one that is empty or holds only whitespace.
    range, every kept entry that lies inside it is dropped. The derived range
    is the newer account of those lines. This also covers a machine that
    extends its own range, whose old shorter entry used to stay beside the new
-   one.
+   one. A kept entry the range partly overlaps keeps only its lines outside
+   the range, split in two if needed. Each piece is trimmed or dropped per
+   rules 1 and 2, and pinned again.
 7. **An entry is written once.** When derive writes provenance, an entry
    identical to one already kept is not written again. Trimming can make two
    old overlapping entries identical, and a list must not hold both.

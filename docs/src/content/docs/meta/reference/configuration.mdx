@@ -2221,7 +2221,9 @@ integrity first:
 | `unset` | The evidence names a machine for non-blank lines no entry covers | `derived:stale` | adds an entry |
 
 {/* cite written-range-replaces-kept-entries */}
-An entry `derive` writes replaces every kept entry that lies inside it.
+An entry `derive` writes replaces every kept entry that lies inside it. A
+kept entry it only partly overlaps keeps its lines outside it. It splits in
+two when the new entry sits in its middle, and each piece is pinned again.
 
 {/* cite nearest-lines-takes-the-match */}
 No evidence is not a contradiction. A pin over lines whose commit names no
