@@ -56,6 +56,7 @@ import {
   type QueryFindingsFormat,
 } from "./reporters/index.js";
 import { rowsToFindings } from "./core/checks.js";
+import { loadConfig } from "./core/config.js";
 import { isParamName } from "./core/projection.js";
 import type { QueryRun } from "./commands/query.js";
 import {
@@ -1704,7 +1705,7 @@ export function buildProgram(): Command {
       `output: ${COMMON_FORMATS.join(" | ")}`,
       "pretty",
     )
-    .action((options: SchemasCliOptions, command: Command) => {
+    .action(async (options: SchemasCliOptions, command: Command) => {
       try {
         // A closed set, checked like every other command's --format. This used
         // to be a bare `=== "json" ? json : pretty`, so `schemas -f github`
@@ -1713,7 +1714,9 @@ export function buildProgram(): Command {
         // case that matters: it is a real docmeta format, just not one this
         // command produces, so nothing about the invocation looked wrong.
         const format = assertCommonFormat(options.format);
-        const info = getSchemasInfo();
+        // The registered schemas come from the config discovery finds.
+        const loaded = await loadConfig(undefined, process.cwd());
+        const info = getSchemasInfo(loaded?.config.registered);
         if (format === "json") {
           process.stdout.write(`${JSON.stringify(info, null, 2)}\n`);
           return;
@@ -1722,6 +1725,12 @@ export function buildProgram(): Command {
         const lines: string[] = [c.bold("Built-in schemas:")];
         for (const b of info.builtins) {
           lines.push(`  ${c.cyan(b.id)}  ${c.dim("—")}  ${b.title}`);
+        }
+        if (info.registered.length > 0) {
+          lines.push("", c.bold("Registered schemas:"));
+          for (const r of info.registered) {
+            lines.push(`  ${c.cyan(r.id)}  ${c.dim("—")}  ${r.file}`);
+          }
         }
         lines.push("", c.bold("Input formats:"));
         for (const f of info.formats) {

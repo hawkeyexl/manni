@@ -27,6 +27,7 @@ import { buildEnvelopeSchema } from "../src/meta/commands/fill-prompt.js";
 import { loadSchema } from "../src/meta/core/schema-registry.js";
 import { compileWithFormats } from "../src/meta/core/validator.js";
 import { runValidate } from "../src/meta/commands/validate.js";
+import { DEFAULT_SCHEMAS } from "../src/meta/core/resolve-schema.js";
 import { DocmetaError } from "../src/meta/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -632,10 +633,7 @@ describe("runFill — mechanical checks precede confidence", () => {
     expect(provider.requests).toHaveLength(0);
     // Schema resolution already succeeded, so the result must say so — "never
     // resolved" and "resolved, then writing refused" need different follow-up.
-    expect(results[0]?.schemas).toEqual([
-      "google:okf:0.1",
-      "passo-uno:seven-action:1.0",
-    ]);
+    expect(results[0]?.schemas).toEqual([...DEFAULT_SCHEMAS]);
   });
 
   it("writes HTML metadata into <head> and leaves the rest byte-identical", async () => {
@@ -804,8 +802,9 @@ describe("runFill — writing", () => {
   });
 
   it("makes no inference call when nothing needs filling", async () => {
-    // "Complete" is relative to the resolved schema set, which by default is
-    // OKF *and* Seven-Action — hence `action` alongside the OKF fields.
+    // "Complete" is relative to the resolved schema set. The default set's
+    // vocabularies declare dozens of optional fields, so the set is named:
+    // OKF *and* Seven-Action, hence `action` alongside the OKF fields.
     await writeFile(
       join(dir, "complete.md"),
       "---\ntype: concept\naction: understand\ntitle: T\ndescription: D\nresource: https://e.com/x\ntags: [a]\ntimestamp: 2026-06-25T10:00:00Z\n---\n\n# T\n",
@@ -816,6 +815,7 @@ describe("runFill — writing", () => {
       ...base,
       cwd: dir,
       inputs: ["complete.md"],
+      cliSchemas: ["google:okf:0.1", "passo-uno:seven-action:1.0"],
       inferenceProvider: provider,
     });
     expect(provider.requests).toHaveLength(0);
@@ -860,6 +860,27 @@ describe("runFill — writing", () => {
     });
     expect(results[0]?.file).toBe("<stdin>");
     expect(results[0]?.content).toContain("description: A summary.");
+  });
+});
+
+describe("runFill — registered schemas (0070)", () => {
+  it("resolves a lifted subschema's $ref to a registered schema in the proposal envelope", async () => {
+    // The envelope is compiled in an Ajv of its own. A property whose
+    // subschema `$ref`s a registered id must resolve there as it does in the
+    // validator, or the file fails before any proposal is gated.
+    const work = join(dir, "register");
+    await cp(join(here, "fixtures", "register"), work, { recursive: true });
+    const { results } = await runFill({
+      ...base,
+      cwd: work,
+      inputs: ["no-team.md"],
+      cliSchemas: [join(work, "ref-team.schema.json")],
+      fields: ["team"],
+      inferenceProvider: propose({ team: { value: "docs", confidence: 1 } }),
+    });
+    expect(results[0]?.error).toBeUndefined();
+    expect(results[0]?.fields.find((f) => f.field === "/team")?.written).toBe(true);
+    expect(await readFile(join(work, "no-team.md"), "utf8")).toContain("team: docs");
   });
 });
 

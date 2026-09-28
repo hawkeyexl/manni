@@ -2,9 +2,11 @@
  * Resolve the schema *set* for a single file by precedence:
  *   1. CLI --schema overrides (apply to all files)
  *   2. $schema in the file's metadata (string or list)
- *   3. first matching config override (by glob)
- *   4. config default schemas
+ *   3. first matching config override (by glob or collection), which replaces
+ *      the set unless it sets `defaults: true`
+ *   4. config `schemas`, joined after the default set unless `defaults: false`
  *   5. the built-in default set (DEFAULT_SCHEMAS)
+ * Tiers 3 to 5 then stack strict versions when `strict` is set (proposal 0070).
  */
 import { isAbsolute, relative, resolve } from "node:path";
 import type {
@@ -16,22 +18,38 @@ import type {
 } from "./config.js";
 import {
   classifyRef,
+  isBuiltinId,
   isPublishedBuiltinUrl,
+  strictIdOf,
+  type RegisteredSchemas,
   type SchemaPin,
 } from "./schema-registry.js";
 import { DocmetaError } from "../types.js";
 import { matchesFileGlob } from "../../shared/globs.js";
 
 /**
- * Applied when nothing else resolves. Seven-Action is safe to include here
- * because it constrains `action` — a key documents don't otherwise carry — and
- * does not require it, so adding it fails nothing that passed before.
- * Diataxis is deliberately absent: it both requires and constrains `type`, so
- * defaulting it would fail every repo not already on Diataxis.
+ * The default set (proposal 0070): what a file is judged by when nothing
+ * replaces it, and what `schemas:` joins unless `defaults: false`.
+ *
+ * Seven-Action constrains `action`, a key documents don't otherwise carry,
+ * and requires nothing. Diataxis is deliberately absent: it both requires and
+ * constrains `type`, so defaulting it would fail every repo not already on
+ * Diataxis. The manni vocabularies follow; core requires `title` and
+ * `description`, and nothing else in the set requires anything.
+ * Terminology, artifact-evals and every `-strict` overlay stay opt-in.
  */
 export const DEFAULT_SCHEMAS: readonly string[] = Object.freeze([
   "google:okf:0.1",
   "passo-uno:seven-action:1.0",
+  "manni:core:1.0.0",
+  "manni:audience:1.0.0",
+  "manni:structure:1.0.0",
+  "manni:stewardship:1.0.0",
+  "manni:lifecycle:1.0.0",
+  "manni:ai-context:1.0.0",
+  "manni:evals:1.0.0",
+  "manni:graph:1.0.0",
+  "manni:citations:1.0.0",
 ]);
 export const FILE_SCHEMA_KEY = "$schema";
 
@@ -306,7 +324,17 @@ function assertDocumentRefAllowed(
   //
   // Deliberately narrow: this is an exact-match table lookup, not a host or
   // prefix rule, so any other URL on the same host stays subject to both checks.
-  if (kind === "builtin" || isPublishedBuiltinUrl(ref)) return;
+  //
+  // A registered id (proposal 0070) counts as a built-in for the same reason:
+  // the config vouches for the file, and `loadSchema` answers from it before
+  // any request, so a registered `https://` id reaches nothing either.
+  if (
+    kind === "builtin" ||
+    isPublishedBuiltinUrl(ref) ||
+    params.config?.registered?.has(ref) === true
+  ) {
+    return;
+  }
 
   if (kind === "url") {
     if (mode === "local") {
@@ -387,6 +415,63 @@ export interface ResolvedSchemaSet {
    * over.
    */
   overrideIndex?: number;
+  /** Whether the default set was put into this set (proposal 0070). */
+  defaults: boolean;
+  /** Whether `strict` stacked strict versions into this set. */
+  strict: boolean;
+}
+
+/**
+ * Stack each default or registered schema's strict version right after it,
+ * where one exists (proposal 0070).
+ *
+ * A default's strict version is a built-in; a registered schema's is
+ * registered. Any other schema in the set is left alone, a listed built-in
+ * outside the default set included: a team that wants one closed lists its
+ * overlay. Duplicates are then removed, the first kept, so an overlay also
+ * listed by hand sits once, after its base.
+ */
+function withStrict(
+  refs: readonly string[],
+  registered: RegisteredSchemas | undefined,
+): string[] {
+  const out: string[] = [];
+  for (const ref of refs) {
+    out.push(ref);
+    const strictId = strictIdOf(ref);
+    if (strictId === undefined) continue;
+    if (DEFAULT_SCHEMAS.includes(ref) && isBuiltinId(strictId)) out.push(strictId);
+    else if (registered?.has(ref) === true && registered.has(strictId)) out.push(strictId);
+  }
+  return dedupe(out);
+}
+
+/**
+ * One tier's set: the defaults first when `defaults`, then `listed`, with
+ * duplicates removed and the first kept, then `strict` applied.
+ */
+function joined(
+  listed: readonly string[],
+  defaults: boolean,
+  strict: boolean,
+  registered: RegisteredSchemas | undefined,
+): string[] {
+  const set = dedupe([...(defaults ? DEFAULT_SCHEMAS : []), ...listed]);
+  return strict ? withStrict(set, registered) : set;
+}
+
+/**
+ * Is this set the default set alone, strict versions included when `strict`
+ * applied? The set `query`'s DDL refuses, because it names no schema of the
+ * corpus's own to evolve.
+ */
+export function isDefaultSetOnly(resolved: ResolvedSchemaSet): boolean {
+  if (!resolved.defaults) return false;
+  const own = joined([], true, resolved.strict, undefined);
+  return (
+    resolved.schemas.length === own.length &&
+    resolved.schemas.every((ref) => own.includes(ref))
+  );
 }
 
 /**
@@ -408,8 +493,10 @@ export function resolveSchemaSetWithSource(
 ): ResolvedSchemaSet {
   const { filePath, fileSchema, cliSchemas, config } = params;
 
+  const registered = config?.registered;
+
   if (cliSchemas && cliSchemas.length > 0) {
-    return { schemas: dedupe(cliSchemas), source: "cli" };
+    return { schemas: dedupe(cliSchemas), source: "cli", defaults: false, strict: false };
   }
 
   const fromFile = coerceFileSchema(fileSchema);
@@ -424,27 +511,50 @@ export function resolveSchemaSetWithSource(
       );
     } else {
       for (const ref of fromFile) assertDocumentRefAllowed(ref, mode, params);
-      return { schemas: dedupe(fromFile), source: "document" };
+      return { schemas: dedupe(fromFile), source: "document", defaults: false, strict: false };
     }
   }
 
+  // An override replaces the set unless it sets `defaults: true`, and never
+  // inherits the top-level `schemas`, `defaults` or `strict`.
   if (config?.overrides) {
     const memberOf = params.memberOf ?? [];
     for (const [i, ov] of config.overrides.entries()) {
       if (overrideMatches(ov, filePath, memberOf) && ov.schemas.length > 0) {
-        return { schemas: dedupe(ov.schemas), source: "override", overrideIndex: i };
+        const defaults = ov.defaults === true;
+        const strict = ov.strict === true;
+        return {
+          schemas: joined(ov.schemas, defaults, strict, registered),
+          source: "override",
+          overrideIndex: i,
+          defaults,
+          strict,
+        };
       }
     }
   }
 
+  const defaults = config?.defaults !== false;
+  const strict = config?.strict === true;
+
   if (config?.schemas && config.schemas.length > 0) {
     return {
-      schemas: dedupe(config.schemas.map(schemaEntryRef)),
+      schemas: joined(config.schemas.map(schemaEntryRef), defaults, strict, registered),
       source: "config",
+      defaults,
+      strict,
     };
   }
 
-  return { schemas: [...DEFAULT_SCHEMAS], source: "default" };
+  // `defaults: false` with no `schemas` is refused when a config file is
+  // parsed; a config built in code that says it gets the empty set it asked
+  // for.
+  return {
+    schemas: joined([], defaults, strict, registered),
+    source: defaults ? "default" : "config",
+    defaults,
+    strict,
+  };
 }
 
 export function resolveSchemaSet(params: ResolveParams): string[] {

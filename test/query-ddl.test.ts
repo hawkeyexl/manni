@@ -53,9 +53,13 @@ const houseOf = (d: string): Record<string, unknown> =>
  * is that section's body, already indented two spaces, so each call site still
  * reads as the YAML it writes, and `lead` carries a comment the config
  * rewriter must preserve.
+ *
+ * `defaults: false` keeps each set exactly as the call site lists it. DDL
+ * evolves one schema and refuses a key two schemas constrain, and the default
+ * set (proposal 0070) declares `title`, `tags` and more.
  */
 const familyConfig = (metaKeys: string, lead = ""): string =>
-  `${lead}collections:\n  - name: pages\n    paths:\n      - "docs/**/*.md"\nmeta:\n${metaKeys}`;
+  `${lead}collections:\n  - name: pages\n    paths:\n      - "docs/**/*.md"\nmeta:\n  defaults: false\n${metaKeys}`;
 
 describe("runQuery DDL — the schema is the table (0024)", () => {
   it("ALTER ADD edits the local schema in place, preview first", async () => {

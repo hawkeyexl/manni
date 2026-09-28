@@ -127,7 +127,7 @@ import type {
   ProposalSet,
 } from "./fill-types.js";
 import { errorMessage } from "../../shared/errors.js";
-import { managedFields } from "../core/derive/types.js";
+import { deriveCovers, managedFields } from "../core/derive/types.js";
 
 export type {
   Candidate,
@@ -273,6 +273,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     ttlHours: config?.schemaCache?.ttlHours,
     offline: opts.offline ?? config?.offline,
     pins: collectSchemaPins(config),
+    registered: config?.registered,
   });
   // Settled once per run, not per file: finding it is a filesystem walk, and
   // every file in one run shares the same repository.
@@ -757,8 +758,10 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     // stamp the channel exists to make trustworthy. Reported rather than
     // dropped, so the omission is visible and a required one still fails
     // the run — the fix being `manni meta derive`, not a better model.
+    // A file outside `derive.collections` has no managed fields (0070).
+    const managedHere = deriveCovers(config?.derive, members) ? managed : new Set<string>();
     const managedSkips: FilledField[] = proposed
-      .filter((c) => managed.has(c.key))
+      .filter((c) => managedHere.has(c.key))
       .map((c) => ({
         field: pointerOf(c.key),
         required: c.required,
@@ -767,7 +770,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         written: false,
         skipReason: "managed",
       }));
-    const candidates = proposed.filter((c) => !managed.has(c.key));
+    const candidates = proposed.filter((c) => !managedHere.has(c.key));
     // Proposal 0047: a candidate a manifest of this page's collections owns
     // is written into the page's entry there. A URL manifest cannot be
     // written, and a field join the page lacks has no entry, so either
@@ -953,7 +956,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       // must not abort a whole directory walk.
       let validate;
       try {
-        validate = compileWithFormats(envelope);
+        validate = compileWithFormats(envelope, config?.registered);
       } catch (err) {
         return errorResult(
           label,

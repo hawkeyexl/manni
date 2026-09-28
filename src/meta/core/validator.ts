@@ -40,6 +40,7 @@ import {
   loadSchema,
   publishedBuiltins,
   type LoadSchemaOptions,
+  type RegisteredSchemas,
 } from "./schema-registry.js";
 import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
 import { ENCRYPT_KEYWORD } from "./encrypted.js";
@@ -328,16 +329,36 @@ function registerBuiltins(ajv: InstanceType<AjvCtor>, dialect: Dialect): void {
 }
 
 /**
+ * Add a config's registered schemas (proposal 0070) to one Ajv, before
+ * anything compiles there, as the built-ins are, so any schema can `$ref` one
+ * by id. draft-04 reads `id` rather than `$id`, so there the id is the key.
+ */
+function registerRegistered(
+  ajv: InstanceType<AjvCtor>,
+  dialect: Dialect,
+  registered: RegisteredSchemas | undefined,
+): void {
+  for (const { id, schema } of registered?.values() ?? []) {
+    ajv.addSchema(schema, dialect === "draft4" ? id : undefined, undefined, false);
+  }
+}
+
+/**
  * Compile an ad-hoc 2020-12 schema with docmeta's format support.
  *
  * `fill` needs this for the proposal envelope it builds around a document
  * schema's own property subschemas: those routinely carry `format: "date-time"`
  * / `"uri"`, and an Ajv without `ajv-formats` refuses to compile them outright.
+ * A lifted subschema may `$ref` a registered schema, so the run's registered
+ * schemas join this instance as they join the validator's.
  */
 export function compileWithFormats(
   schema: Record<string, unknown>,
+  registered?: RegisteredSchemas,
 ): ValidateFunction {
-  return buildAjv("2020").compile(schema);
+  const ajv = buildAjv("2020");
+  registerRegistered(ajv, "2020", registered);
+  return ajv.compile(schema);
 }
 
 /**
@@ -431,6 +452,7 @@ export class Validator {
     let ajv = this.ajvByDialect.get(dialect);
     if (!ajv) {
       ajv = buildAjv(dialect);
+      registerRegistered(ajv, dialect, this.schemaOptions.registered);
       this.ajvByDialect.set(dialect, ajv);
     }
     return ajv;

@@ -132,6 +132,7 @@ import {
   isBuiltinField,
   isDeriveSource,
   MERGE_SAFE_FIELDS,
+  deriveCovers,
   PROVENANCE_FIELD,
   staleFindings,
   type DerivableField,
@@ -370,6 +371,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     ttlHours: config?.schemaCache?.ttlHours,
     offline: config?.offline,
     pins: collectSchemaPins(config),
+    registered: config?.registered,
   });
   const trustRoot = schemaTrustRoot(cwd, configDir);
   const validator = new Validator(schemaOptions);
@@ -382,7 +384,9 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   let runFields: readonly DerivableField[] = fields;
   /** Under the default, each page's own managed fields. */
   let pageFields = new Map<string, readonly DerivableField[]>();
-  const fieldsOf = (label: string): readonly DerivableField[] => pageFields.get(label) ?? runFields;
+  // A file outside `derive.collections` manages nothing (proposal 0070).
+  const fieldsOf = (label: string): readonly DerivableField[] =>
+    deriveCovers(config?.derive, membersFor(label)) ? (pageFields.get(label) ?? runFields) : [];
   const configuredKey = lazyKey(configFile, opts.env);
   let ensuredKey: string | undefined;
   const currentKey = (): string | undefined => ensuredKey ?? configuredKey();
@@ -529,6 +533,10 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     if (defaulted) {
       const claimedBy = new Map<string, readonly DerivableField[]>();
       for (const doc of loaded.values()) {
+        if (!deriveCovers(config?.derive, membersFor(doc.label))) {
+          claimedBy.set(doc.label, []);
+          continue;
+        }
         const claimed = await claims(doc.label, doc.extracted.data, membersFor(doc.label));
         claimedBy.set(doc.label, fields.filter((f) => claimed?.has(f) === true));
       }

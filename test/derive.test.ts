@@ -365,6 +365,17 @@ describe("runDerive", () => {
 
   it("has nothing to derive when no page claims a merge-safe field and no --fields is given", async () => {
     const { dir } = stageCorpus();
+    // --no-config judges a page by the default set, whose stewardship and
+    // ai-context vocabularies claim every merge-safe field. A page that names
+    // its own schema is judged by that alone, and this one claims none.
+    writeFile(
+      dir,
+      "docs/install.md",
+      readFileSync(join(dir, "docs/install.md"), "utf8").replace(
+        "title: Install\n",
+        "title: Install\n$schema: ../permissive.schema.json\n",
+      ),
+    );
     await expect(
       runDerive({ inputs: ["docs/install.md"], cwd: dir, noConfig: true }),
     ).rejects.toThrow(

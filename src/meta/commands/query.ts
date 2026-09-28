@@ -25,6 +25,7 @@ import {
   FILE_SCHEMA_KEY,
   overrideGlobs,
   collectSchemaPins,
+  isDefaultSetOnly,
   resolveElements,
   resolveSchemaSetWithSource,
 } from "../core/resolve-schema.js";
@@ -103,6 +104,7 @@ import {
 import { readerManifests, readerPlace, stampManifests } from "../core/derive/provenance-place.js";
 import {
   derivableFields,
+  deriveCovers,
   managedFields,
   PROVENANCE_FIELD,
   STAMPED_DATE_FIELDS,
@@ -493,6 +495,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
           ttlHours: config?.schemaCache?.ttlHours,
           offline: opts.offline ?? config?.offline,
           pins: collectSchemaPins(config),
+          registered: config?.registered,
         }),
       )),
   };
@@ -1930,7 +1933,9 @@ async function loadSetMembers(
         ref,
         kind: "builtin",
         builtinId,
-        schema: await loadSchema(builtinId),
+        schema: await loadSchema(builtinId, {
+          ...(ctx.config?.registered !== undefined ? { registered: ctx.config.registered } : {}),
+        }),
       });
       continue;
     }
@@ -2021,6 +2026,10 @@ async function planSchemaMutation(
   // path: -s picks the contract, never what the contract says.
   let refs: string[] | undefined;
   const sources = new Set<string>();
+  // Some file runs on the default set alone, which names no schema of the
+  // corpus's own to evolve (proposal 0070 widened the default set, so this is
+  // read off the set rather than off which tier produced it).
+  let defaultOnly = false;
   const groupIndexes = new Set<number>();
   let splitLabel: string | undefined;
   if (ctx.cliSchemas !== undefined) {
@@ -2057,6 +2066,7 @@ async function planSchemaMutation(
         throw new DocmetaError(`"${e.label}": ${errorMessage(err)}`);
       }
       sources.add(resolved.source);
+      if (isDefaultSetOnly(resolved)) defaultOnly = true;
       if (resolved.overrideIndex !== undefined) {
         groupIndexes.add(resolved.overrideIndex);
       }
@@ -2103,7 +2113,7 @@ async function planSchemaMutation(
       `DDL needs the corpus to resolve to one schema set, and this run's is split ("${splitLabel}" resolves differently). ${remedy}`,
     );
   }
-  if (!refs || sources.has("default")) {
+  if (!refs || defaultOnly) {
     throw new DocmetaError(
       "DDL edits the resolved schema, and this corpus runs on the built-in default set. Name a schema to evolve — in the config's `schemas:`, an override group, or the files' own `$schema`. For data-only edits the UPDATE spellings cover every case: `SET k = v` (backfill via `WHERE k IS NULL`), `SET k = NULL` to remove a key, and paired SETs to rename one.",
     );
@@ -2918,6 +2928,8 @@ function refuseManagedWrites(
           : "renamedFrom" in c
             ? [c.key, c.renamedFrom]
             : [c.key];
+    // A file outside `derive.collections` has no managed fields (0070).
+    if (!deriveCovers(ctx.config?.derive, ctx.memberships(c.file))) continue;
     for (const key of keys) if (ctx.managed.has(key)) refuse(key);
   }
 }
