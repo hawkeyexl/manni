@@ -180,7 +180,7 @@ Each is a config error, exit 2, with the config path as its prefix.
 - `meta.overrides[<i>].defaults must be true or false`
 - `meta.overrides[<i>].strict must be true or false`
 - `meta.defaults: false with no meta.schemas leaves files with no schema. List schemas, or remove defaults.`
-- `meta.overrides[<i>] sets defaults or strict, which apply to the entry's schemas. Add schemas, or remove them.`
+- `meta.overrides[<i>] sets <key>, which applies to the entry's schemas. Add schemas, or remove <key>.` The key is `defaults` or `strict`. With both, it reads `sets defaults and strict, which apply to the entry's schemas. Add schemas, or remove them.`
 - `meta.derive.collections names "<name>", which no collection declares.`
 - `meta.register[<i>] names <path>, which does not exist.`
 - `meta.register[<i>] names a directory with no .json files.`

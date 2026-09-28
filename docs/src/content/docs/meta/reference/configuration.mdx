@@ -1857,7 +1857,8 @@ either without `schemas` is refused, exit 2, as is a value that is not a
 boolean:
 
 ```
-manni.config.yaml: meta.overrides[0] sets defaults or strict, which apply to the entry's schemas. Add schemas, or remove them.
+manni.config.yaml: meta.overrides[0] sets strict, which applies to the entry's schemas. Add schemas, or remove strict.
+manni.config.yaml: meta.overrides[0] sets defaults and strict, which apply to the entry's schemas. Add schemas, or remove them.
 manni.config.yaml: meta.overrides[0].defaults must be true or false.
 manni.config.yaml: meta.overrides[0].strict must be true or false.
 ```

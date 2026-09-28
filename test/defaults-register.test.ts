@@ -10,7 +10,15 @@
  * prefix exactly as a user sees it.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cpSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -347,6 +355,26 @@ describe("registered schemas in loading (0070)", () => {
     );
   });
 
+  it("registers a symlinked schema inside a registered directory", async (ctx) => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-register-link-"));
+    try {
+      mkdirSync(join(dir, "real"));
+      mkdirSync(join(dir, "schemas"));
+      cpSync(join(REGISTER, "schemas", "house-page.json"), join(dir, "real", "house-page.json"));
+      try {
+        symlinkSync(join(dir, "real", "house-page.json"), join(dir, "schemas", "house-page.json"), "file");
+      } catch {
+        // Windows without Developer Mode refuses symlinks to unprivileged users.
+        ctx.skip();
+      }
+      writeFileSync(join(dir, "manni.config.yaml"), "meta:\n  register: [./schemas/]\n");
+      const loaded = await loadConfig(undefined, dir);
+      expect([...(loaded?.config.registered?.keys() ?? [])]).toEqual(["house:page:1.0.0"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("lists registered schemas with their files for manni meta schemas", async () => {
     const loaded = await loadConfig(undefined, REGISTER);
     const info = getSchemasInfo(loaded?.config.registered);
@@ -404,7 +432,11 @@ describe("config messages (0070)", () => {
     ],
     [
       "meta:\n  overrides:\n    - files: '*.md'\n      elements: [article/title]\n      strict: true\n",
-      "manni.config.yaml: meta.overrides[0] sets defaults or strict, which apply to the entry's schemas. Add schemas, or remove them.",
+      "manni.config.yaml: meta.overrides[0] sets strict, which applies to the entry's schemas. Add schemas, or remove strict.",
+    ],
+    [
+      "meta:\n  overrides:\n    - files: '*.md'\n      elements: [article/title]\n      defaults: true\n      strict: false\n",
+      "manni.config.yaml: meta.overrides[0] sets defaults and strict, which apply to the entry's schemas. Add schemas, or remove them.",
     ],
     [
       "collections:\n  - name: site\n    paths: ['docs/**']\nmeta:\n  derive:\n    collections: [elsewhere]\n",

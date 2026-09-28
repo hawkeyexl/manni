@@ -1286,9 +1286,13 @@ function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
       }
       // Both shape the entry's schema set, so on an entry with none, one that
       // only adds `elements`, they would switch nothing.
-      if (schemas.length === 0 && (e.defaults !== undefined || e.strict !== undefined)) {
+      const setKeys = (["defaults", "strict"] as const).filter((key) => e[key] !== undefined);
+      if (schemas.length === 0 && setKeys.length > 0) {
+        const one = setKeys.length === 1 ? setKeys[0] : undefined;
         throw new DocmetaError(
-          `${source}: overrides[${i}] sets defaults or strict, which apply to the entry's schemas. Add schemas, or remove them.`,
+          one !== undefined
+            ? `${source}: overrides[${i}] sets ${one}, which applies to the entry's schemas. Add schemas, or remove ${one}.`
+            : `${source}: overrides[${i}] sets defaults and strict, which apply to the entry's schemas. Add schemas, or remove them.`,
         );
       }
       // Whether `collection` names a *declared* collection is checked by

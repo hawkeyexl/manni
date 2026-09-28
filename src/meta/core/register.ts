@@ -29,7 +29,13 @@ export const RESERVED_VENDORS: readonly string[] = [
   "derived",
 ];
 
-/** `vendor:name:version`, each segment the built-in id grammar allows. */
+/**
+ * `vendor:name:version`, each segment the built-in id grammar allows.
+ * Case-insensitive to match `BUILTIN_ID` in `schema-registry.ts`, so every
+ * three-segment id `classifyRef` reads as an id can be registered. Ids still
+ * resolve by exact string, as built-in ids do, and the reserved-vendor check
+ * lowercases the vendor, so `Manni:` is refused like `manni:`.
+ */
 const REGISTERED_ID = /^[a-z0-9][a-z0-9._-]*:[a-z0-9][a-z0-9._-]*:[a-z0-9][a-z0-9._-]*$/i;
 
 /** Is `id` one of the two shapes a registered schema's `$id` may take? */
@@ -45,7 +51,14 @@ function isRegistrableId(id: string): boolean {
   return REGISTERED_ID.test(id) && !id.toLowerCase().endsWith(".json");
 }
 
-/** Every `*.json` file under `dir`, recursively, in a stable order. */
+/**
+ * Every `*.json` file under `dir`, recursively, in a stable order.
+ *
+ * A symlink is followed to a file, as the top-level `stat` in
+ * `loadRegisteredSchemas` follows one, so a directory of linked schemas
+ * registers them. A symlink to a directory is not descended, so a link cycle
+ * cannot loop the walk.
+ */
 async function jsonFilesUnder(dir: string): Promise<string[]> {
   const out: string[] = [];
   const entries = await readdir(dir, { withFileTypes: true });
@@ -53,9 +66,21 @@ async function jsonFilesUnder(dir: string): Promise<string[]> {
   for (const entry of entries) {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) out.push(...(await jsonFilesUnder(path)));
-    else if (entry.isFile() && entry.name.toLowerCase().endsWith(".json")) out.push(path);
+    else if (!entry.name.toLowerCase().endsWith(".json")) continue;
+    else if (entry.isFile() || (entry.isSymbolicLink() && (await isFileTarget(path)))) {
+      out.push(path);
+    }
   }
   return out;
+}
+
+/** Does the symlink at `path` resolve to a file? A dangling link does not. */
+async function isFileTarget(path: string): Promise<boolean> {
+  try {
+    return (await stat(path)).isFile();
+  } catch {
+    return false;
+  }
 }
 
 /** A path relative to the config's directory, with forward slashes. */
