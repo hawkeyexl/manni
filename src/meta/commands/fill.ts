@@ -1168,7 +1168,10 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       if (partsRead !== undefined && partsRead.read < partsRead.total) {
         throw new DocmetaError("Internal error: incomplete proposal set.");
       }
-      // The raw answers are kept, so coercion runs again on every read.
+      // The raw answers are kept, so coercion runs again on every read. That
+      // is deliberate here too, not only for the cache: the merge checks each
+      // answer to pick a winner, and `gate` checks the winner again to get the
+      // coerced value it writes. Coercion is idempotent and runs on a copy.
       proposals = mergeProposals(sets, (key, proposal) => check(key, proposal).ok);
       if (!retrySkipped) {
         cache?.set(cacheKey, { proposals, ...(usageTotal ? { usage: usageTotal } : {}) });

@@ -73,6 +73,14 @@ describe("projectValue", () => {
       });
     });
 
+    it("leaves a ref it cannot follow untyped, for the full check to resolve", () => {
+      // Only #/$defs/… and #/definitions/… are followed. Any other ref, such
+      // as a remote id, projects as any non-null value; the full subschema,
+      // compiled with every schema in the set, still judges the answer.
+      expect(inner({ $ref: "https://example.com/schemas/foo.json" })).toEqual({ oneOf: ANY });
+      expect(inner({ $ref: "#/$defs/Missing" })).toEqual({ oneOf: ANY });
+    });
+
     it("merges a $ref with the keywords beside it", () => {
       const defs = { $defs: { S: { type: "string" } }, definitions: {} };
       expect(inner({ $ref: "#/$defs/S", minLength: 2 }, defs)).toEqual({
@@ -312,6 +320,17 @@ describe("projectValue", () => {
       expect(projectValue({ allOf: [{ type: "string" }, { type: "number" }] }, noDefs)).toEqual({
         unsatisfiable: true,
       });
+    });
+
+    it("reports an anyOf or oneOf whose every branch the keywords beside it rule out", () => {
+      for (const kind of ["anyOf", "oneOf"] as const) {
+        expect(
+          projectValue(
+            { [kind]: [{ type: "string" }, { type: "number" }], allOf: [{ type: "boolean" }] },
+            noDefs,
+          ),
+        ).toEqual({ unsatisfiable: true });
+      }
     });
 
     it("reports an enum none of whose values has the declared type", () => {
