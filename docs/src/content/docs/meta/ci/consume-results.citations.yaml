@@ -24,18 +24,18 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-b6fce5be90865cb419e8a611ddcb461aa6badeb4048a0233c660f36fcbe15583
       source:
         file: src/meta/core/config.ts
-        lines: 1837-1841
+        lines: 1841-1845
         integrity: sha256-f6e52c1599511310259e1d366365c79a3563e4ca9a5ad654fb0566d26fb21369
-        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
+        commit-sha: 80046d14efa00a13ca2557dbb03a508bd223b934
     - id: empty-inputs-fall-back-to-collections
       claim:
         lines: 262-264
         integrity: sha256-d58856eea2d47021e0e5623eb94c4c9be4962c678f4068a6b838f8298c943981
       source:
         file: src/meta/core/config.ts
-        lines: 1874-1882
+        lines: 1878-1886
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
+        commit-sha: 80046d14efa00a13ca2557dbb03a508bd223b934
     - id: get-quiet-drops-all-unset-files
       claim:
         lines: 223-224

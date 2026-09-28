@@ -63,9 +63,9 @@ docs/src/content/docs/meta/reference/action.mdx:
         integrity: sha256-0113d1a7f85bbf3504201be00d013f8bf62f255558838bad7e1b997476f4adc6
       source:
         file: src/meta/core/config.ts
-        lines: 1829-1841
+        lines: 1833-1845
         integrity: sha256-8f9798555e294d5653dff3f561ba19f8d8cee1e3fdc589fd6a95e27bad770d64
-        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
+        commit-sha: 80046d14efa00a13ca2557dbb03a508bd223b934
     - id: action-collection-repeats-rather-than-splitting
       claim:
         integrity: sha256-5a091c023baeaad8d16c07f80fedf9e658e455c3ca544500d15dd539dc28d714
@@ -168,9 +168,9 @@ docs/src/content/docs/meta/reference/action.mdx:
         integrity: sha256-1bd5cce10c595eb85108456f2bed11e24f0fe06f751428c37f9e7580bec1826c
       source:
         file: src/meta/core/config.ts
-        lines: 1874-1882
+        lines: 1878-1886
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
+        commit-sha: 80046d14efa00a13ca2557dbb03a508bd223b934
     - id: action-every-input-is-optional
       claim:
         integrity: sha256-31d1c38ae0b9bea28cef7e9d7843df05bbeab61c6e1d96d4b12325247c3e5099

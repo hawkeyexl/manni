@@ -99,9 +99,9 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-bf9d70dd66236879cb684f86c905690882f7b7544535127fe19740c1e952c780
       source:
         file: src/meta/core/config.ts
-        lines: 1874-1881
+        lines: 1878-1885
         integrity: sha256-e27d3a9f31a8d43f384c35833d5062ac05f23ffb968e2c52197d229b1df52a15
-        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
+        commit-sha: 80046d14efa00a13ca2557dbb03a508bd223b934
     - id: schema-not-found-exits-2
       claim:
         integrity: sha256-48f335ff4af3d5711231bfc5537aa94edad45cd09be1e3a803e0a0583dc47956

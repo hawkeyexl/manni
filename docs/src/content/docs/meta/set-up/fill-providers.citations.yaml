@@ -69,9 +69,9 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
         integrity: sha256-5afc002fa7982ba4f78c80d3bc92830511e1c928429670c788c5839c5f82f729
       source:
         file: src/meta/core/config.ts
-        lines: 1519-1527
+        lines: 1523-1531
         integrity: sha256-b08592595f288c22d6289836f6865910c4afeecfed8deac0a55219d44310aae8
-        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
+        commit-sha: 80046d14efa00a13ca2557dbb03a508bd223b934
     - id: provider-defaults-to-auto
       claim:
         integrity: sha256-32e4d5103aa22a2d3963f8c3b75bb5e072361e484abcf79ca0cb6021b8a603db
