@@ -867,9 +867,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-e1825e65cb9fa335d584c7dce8dff48817c66a167aaa2b2664e63d2fff394d2e
       source:
         file: src/meta/commands/fill.ts
-        lines: 1294-1305
+        lines: 1312-1323
         integrity: sha256-7615ea4dd0305ce2ced937074038b8846e5e1d6bd861a3d274453c9ba2e55c33
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: 2c196b71add6077e3a545fc94de581232ba045c3
     - id: derive-stamps-an-owned-field-in-the-manifest
       claim:
         lines: 891
@@ -1604,18 +1604,18 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-146577d502ee8a0eccaa2e4af61b465fbd19f719dded8cde883c0c94bce49432
       source:
         file: src/meta/commands/fill.ts
-        lines: 2204-2210
+        lines: 2203-2209
         integrity: sha256-169454898e3eb462c2beadac7279b4460389cae1c2e14c1c8905b2d5308acf00
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: 2c196b71add6077e3a545fc94de581232ba045c3
     - id: fill-confidence-threshold-default
       claim:
         lines: 1698
         integrity: sha256-66a21bae45df7251cf73a0fd61f453c3198444802e1bcd58fce6f403f95a48ac
       source:
         file: src/meta/commands/fill.ts
-        lines: 161
+        lines: 162
         integrity: sha256-b08b0888f8a25130aba9749d34f337ba927f983f56f5abb32a6d2bb5beba5ccb
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: 2c196b71add6077e3a545fc94de581232ba045c3
     - id: fill-chunk-chars-default
       claim:
         lines: 1700
@@ -2337,9 +2337,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-0aad4ffe31ae4d66d225c46a0dc8cc2b1bc43cefcca0256411bdac1dcf9e8ef4
       source:
         file: src/meta/commands/fill.ts
-        lines: 769-780
+        lines: 770-781
         integrity: sha256-14d50df26e62e167762b838feadece98cdb96941d91982c3b6021a55af0b54f5
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: 2c196b71add6077e3a545fc94de581232ba045c3
     - id: derived-stale-finding-shape
       claim:
         integrity: sha256-4d125470eb47ef55fb84864c0d324d35afd883e61290fd039d77f391469eea36
@@ -2583,9 +2583,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-43e0ca6d018cb782920192aa884a4c73c9aea9072e01469363493e86f060776e
       source:
         file: src/meta/commands/fill.ts
-        lines: 321-334
+        lines: 322-335
         integrity: sha256-be710dc24feca800b99d1ee23bcf89fce9fd7efaa53fed0c47133d08bfccc778
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: 2c196b71add6077e3a545fc94de581232ba045c3
     - id: offline-flag-overrides-config-restrictively
       claim:
         lines: 2620

@@ -29,25 +29,25 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-557ab945dd0a17f7acc40b727408eb344ffca8e342960ebb989a92a91c17a62b
       source:
         file: src/meta/commands/fill.ts
-        lines: 769-780
+        lines: 770-781
         integrity: sha256-14d50df26e62e167762b838feadece98cdb96941d91982c3b6021a55af0b54f5
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: 2c196b71add6077e3a545fc94de581232ba045c3
     - id: fill-never-proposes-provenance-keys
       claim:
         integrity: sha256-557ab945dd0a17f7acc40b727408eb344ffca8e342960ebb989a92a91c17a62b
       source:
         file: src/meta/commands/fill.ts
-        lines: 154-159
+        lines: 155-160
         integrity: sha256-44fdcbbe0086cea988ff4851a413fd2e1c231b2ea3eb92e2639b3601b5d84712
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: 2c196b71add6077e3a545fc94de581232ba045c3
     - id: fill-writes-meta-provenance-with-filled-fields
       claim:
         integrity: sha256-557ab945dd0a17f7acc40b727408eb344ffca8e342960ebb989a92a91c17a62b
       source:
         file: src/meta/commands/fill.ts
-        lines: 1523-1527
+        lines: 1541-1545
         integrity: sha256-c0de2de5d9234ffa87ac58747c9bb9ebbe329bfed2c72aac43d2434ed9124cf4
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: 2c196b71add6077e3a545fc94de581232ba045c3
     - id: derived-table-one-row-per-page
       claim:
         integrity: sha256-557ab945dd0a17f7acc40b727408eb344ffca8e342960ebb989a92a91c17a62b
