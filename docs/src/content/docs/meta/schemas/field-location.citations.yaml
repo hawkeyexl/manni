@@ -5,17 +5,17 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-65d415eb59e20e3e7e6ba0617020404bdd9d074834ddd81d972e3c2fd4d76a70
       source:
         file: src/meta/core/validator.ts
-        lines: 612-620
+        lines: 622-630
         integrity: sha256-3b7515831639551c487098af7a1bb96164eaba40a87a3839df62c28fdda70092
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: a-mark-covers-a-whole-top-level-key
       claim:
         integrity: sha256-41e35fcd2286e34627ab7e1569437b03f0356f839b2c8edf17c041191c6a54e5
       source:
         file: src/meta/core/validator.ts
-        lines: 157-162
+        lines: 160-165
         integrity: sha256-ffb5f8b6454ea9627588234c4750fa15bf2de9148f17f83bf28fb4a5c7bef61e
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: encrypted-and-external-decrypts-in-the-manifest
       claim:
         lines: 437-438

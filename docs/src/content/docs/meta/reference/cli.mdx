@@ -29,7 +29,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-09-28
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
@@ -831,13 +831,19 @@ Every proposal carries a self-reported confidence between 0 and 1. On its own
 that is a weak signal. It is therefore the **last** of four gates. Three
 mechanical checks run first, and a high confidence cannot override any of them:
 
-1. **The value must satisfy the property's own subschema.** `fill` builds the
-   response schema out of your schema's property definitions. A `timestamp` that
-   is not a valid `date-time` is rejected before it is ever scored. When several
-   schemas in the set define the same property, every one of their rules
-   applies. `-s` order does not change what the model may propose.
+1. **The value must satisfy the property's own subschema.** The model is shown
+   each property's type and shape. Every rule of every schema in the set then
+   checks each value on its own. A `timestamp` that is not a valid `date-time`
+   is rejected before it is ever scored. A value of the wrong JSON type is
+   converted where it can be, so `"2"` is written as `2` for a number and
+   `"api"` as `["api"]` for a list. A value that fails is asked for once more,
+   alone, with the rule it broke. If it fails again, it is skipped as
+   `schema-mismatch`, and the page's other proposals stand. A model may answer
+   `null` for a field it cannot fill, and that reads as `no-proposal`. `-s`
+   order does not change what the model may propose.
 2. **The property must be one manni meta asked about.** The model cannot introduce
-   keys your schema does not define.
+   keys your schema does not define. A response in any other shape fails that
+   file with `Response failed schema validation`.
 3. **The document must still validate afterwards.** Any value that would leave
    the page failing its own schema is reverted and reported.
 

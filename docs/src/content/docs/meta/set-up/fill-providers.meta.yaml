@@ -34,8 +34,20 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
       lines: 7
       integrity: sha256-0f7358973edd9d026d99ae4849fa4c8c0ab4acccfe0ae034438fd6ac47f2ff42
     - generated-by: Claude Opus 5
-      lines: 8-58
-      integrity: sha256-b6a9f90c7a12f376655ded48c40c3bccd75b00cd74cd85cacdc348cb0129fbcf
+      lines: 8-18
+      integrity: sha256-01132a93305ec0d67f291a584a6155659476ff248d0f734683a7e125a96ea605
+    - generated-by: Claude Opus 5
+      lines: 21-23
+      integrity: sha256-44fda79d26b8b3b9bf9cfde4b2d1466103f0762c558b0bfbe6b9d62fb30cc31d
+    - generated-by: Claude Opus 5
+      lines: 26-31
+      integrity: sha256-3b0853aef99ba8d80a37ac5b1f98842a9743fa1880732be5e602bb2e24848c86
+    - generated-by: Claude Opus 5
+      lines: 33-42
+      integrity: sha256-b19ae05263041f11e06482d02f860080e4505706a94434acf1ea2fe6edc0c0ca
+    - generated-by: Claude Opus 5
+      lines: 44-58
+      integrity: sha256-081534d114cd8e697787b924d9a8d5965740e8647ea1558ef3d6fb261393a6eb
     - generated-by: Claude Fable 5.1
       lines: 59
       integrity: sha256-9a0044f18a61c1c8e89c118a244e435853f86fdf6b1581d66402211376291b33

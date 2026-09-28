@@ -30,9 +30,9 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-74f6cdcdea5a4dfd14457d7dae8eca0fa59e4b12a1473a2cf98a1801934df4d2
       source:
         file: src/meta/core/validator.ts
-        lines: 317-319
+        lines: 320-322
         integrity: sha256-bad07eade37e83306f22f308a915e79b456a76502846871a2db805dcbd321760
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: ref-fetches-nothing
       claim:
         lines: 32
@@ -40,17 +40,17 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
       source:
         file: src/meta/core/validator.ts
         lines: 79-89
-        integrity: sha256-9d8dd9c571d6d99db7c3e86afe8fdc279640d54119f13657c2da02d32814e07e
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        integrity: sha256-685fa6c1c889916696ea8e1d51a90712b671710fe05fe9f759b92f4d263021d9
+        commit-sha: 3a26816ab6c2bfe9077b58c22c9438a734e4eddc
     - id: ref-compile-failure
       claim:
         lines: 41-42
         integrity: sha256-1bfb76b91bd99d9f334fb8e843eb3bb87d75bf00aa2605f2bfa2ff14ac8d5dec
       source:
         file: src/meta/core/validator.ts
-        lines: 543-545
+        lines: 553-555
         integrity: sha256-6ab087f31ffcae856a06795623cad104b02b06980fe3a580200fff1f8f58ef43
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: ref-compile-failure-exit-2
       claim:
         lines: 41-42
@@ -105,9 +105,9 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-da83722de200fc7b4e3eb846c62aa0e4848cba9325b94c78985ea41ebd85fde9
       source:
         file: src/meta/core/validator.ts
-        lines: 675-684
+        lines: 685-694
         integrity: sha256-75d948f29fe0df3ee8312fb246489c85b483e992468754f8ae4e725a8afbe748
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: override-one-of-collection-files
       claim:
         integrity: sha256-fd238d22d3a97070e5d72bf6b44b7f425110fabda3bd9b49e1866354c98ebe53
@@ -129,9 +129,9 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-ea6e97c1c85caaa8ee524cbd0d393b225848d4f632a9028eb68da55df8415d8c
       source:
         file: src/meta/core/validator.ts
-        lines: 680-682
+        lines: 690-692
         integrity: sha256-e89905f26b5d02994e8a5202d6e923c3c4d7ce91e155d6bf9ac391798e11bd70
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: location-finding-is-warning
       claim:
         integrity: sha256-ea6e97c1c85caaa8ee524cbd0d393b225848d4f632a9028eb68da55df8415d8c
@@ -359,6 +359,6 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-1bfb76b91bd99d9f334fb8e843eb3bb87d75bf00aa2605f2bfa2ff14ac8d5dec
       source:
         file: src/meta/core/validator.ts
-        lines: 675-678
+        lines: 685-688
         integrity: sha256-5b98c76ade3d481f6fe3cc35a2034bb41178dea6614b7267250d6911833ee8d9
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7

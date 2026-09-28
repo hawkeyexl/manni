@@ -194,9 +194,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-c82bb03d21e4ade3765e2c740d20e63dc8c5d9008ed46ce83512d43699828311
       source:
         file: src/meta/core/validator.ts
-        lines: 744-752
+        lines: 754-762
         integrity: sha256-b520a312dafe5a0bbdb25b6de5df4ceffe64f816a6e9201ec180e2a901f3fb1e
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: github-file-param-always-present
       claim:
         lines: 199
@@ -221,9 +221,9 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         integrity: sha256-e5833376821caa374c3d698d6eee36bb13eb5f53aaeaf156277b33aae30d44b1
       source:
         file: src/meta/core/validator.ts
-        lines: 744-752
+        lines: 754-762
         integrity: sha256-b520a312dafe5a0bbdb25b6de5df4ceffe64f816a6e9201ec180e2a901f3fb1e
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: root-field-label-is-root
       claim:
         lines: 207-208
