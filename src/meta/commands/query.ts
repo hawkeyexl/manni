@@ -1916,7 +1916,11 @@ async function loadSetMembers(
   const seenFiles = new Set<string>();
   const seenBuiltins = new Set<string>();
   for (const ref of refs) {
-    const { kind } = classifyRef(ref);
+    // A registered id (proposal 0070) names a local file the config vouches
+    // for, hand-maintained like any path ref, so it is edited in place rather
+    // than forked as a builtin, and a registered URL id is not refused.
+    const registered = ctx.config?.registered?.get(ref);
+    const { kind } = registered !== undefined ? { kind: "file" as const } : classifyRef(ref);
     if (kind === "url" && !isPublishedBuiltinUrl(ref)) {
       throw new DocmetaError(
         `"${ref}" in the resolved schema set is a URL — DDL edits local schemas only. Vendor it first (manni meta schemas vendor), then evolve the local copy.`,
@@ -1933,13 +1937,11 @@ async function loadSetMembers(
         ref,
         kind: "builtin",
         builtinId,
-        schema: await loadSchema(builtinId, {
-          ...(ctx.config?.registered !== undefined ? { registered: ctx.config.registered } : {}),
-        }),
+        schema: await loadSchema(builtinId),
       });
       continue;
     }
-    const abs = resolve(ctx.cwd, ref);
+    const abs = registered?.path ?? resolve(ctx.cwd, ref);
     const canon = foldPath(abs);
     if (seenFiles.has(canon)) continue;
     seenFiles.add(canon);

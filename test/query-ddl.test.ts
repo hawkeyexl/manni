@@ -359,6 +359,39 @@ describe("runQuery DDL — -s names the contract (0030)", () => {
     expect(existsSync(join(d, "schemas", "okf-0.1.local.json"))).toBe(false);
   });
 
+  it("edits a registered schema's own file in place (0070)", async () => {
+    // A registered id names a local file the config vouches for. It is
+    // hand-maintained like any path ref, so DDL edits it rather than forking
+    // it the way it forks an immutable builtin.
+    const d = copy("register");
+    writeFileSync(
+      join(d, "manni.config.yaml"),
+      "meta:\n  register:\n    - ./schemas/house-page.json\n  schemas:\n    - house:page:1.0.0\n",
+    );
+    const run = await runQuery({
+      sql: "ALTER TABLE docs ADD COLUMN squad TEXT",
+      inputs: ["good.md"],
+      cwd: d,
+      dryRun: false,
+    });
+    expect(run.changes).toHaveLength(1);
+    expect(run.changes?.[0]).toMatchObject({
+      file: "schemas/house-page.json",
+      schema: true,
+      op: "add",
+      key: "squad",
+    });
+    expect(run.changes?.[0]).not.toHaveProperty("forkedFrom");
+    const house = JSON.parse(
+      readFileSync(join(d, "schemas", "house-page.json"), "utf8"),
+    ) as { $id: string; properties: Record<string, unknown> };
+    expect(house.$id).toBe("house:page:1.0.0");
+    expect(Object.keys(house.properties)).toContain("squad");
+    expect(readFileSync(join(d, "manni.config.yaml"), "utf8")).toContain(
+      "- house:page:1.0.0",
+    );
+  });
+
   it("repoints the config entry naming a cli-forked builtin, raw-id spelling", async () => {
     // THE bricking repro: config carries [house.json, google:okf:0.1],
     // -s names the builtin alone. The fork must repoint the entry that

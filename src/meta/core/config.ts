@@ -698,17 +698,13 @@ export function parseConfigValue(
   // owner needs to be told where the key went (0041 § discovery).
   assertNoMovedKeys(raw, source);
   let config: DocmetaConfig;
-  if (section === undefined) {
+  try {
     config = parseConfigDocument(raw, source);
-  } else {
-    try {
-      config = parseConfigDocument(raw, source);
-    } catch (err) {
-      if (err instanceof DocmetaError) {
-        throw new DocmetaError(withSection(err.message, source, section));
-      }
-      throw err;
+  } catch (err) {
+    if (section !== undefined && err instanceof DocmetaError) {
+      throw new DocmetaError(withSection(err.message, source, section));
     }
+    throw err;
   }
   // Outside the wrapper: the sentence names two keys, and `withSection`
   // prefixes only the first.
@@ -1091,16 +1087,14 @@ function parseDerive(
   // Which collections exist is known only to `loadConfig`, which checks each
   // name against the top-level `collections:`.
   if (e.collections !== undefined) {
-    if (
-      !Array.isArray(e.collections) ||
-      e.collections.length === 0 ||
-      e.collections.some((c) => typeof c !== "string" || c.trim() === "")
-    ) {
+    const names: unknown[] = Array.isArray(e.collections) ? e.collections : [];
+    const valid = names.filter((c): c is string => typeof c === "string" && c.trim() !== "");
+    if (names.length === 0 || valid.length !== names.length) {
       throw new DocmetaError(
         `${source}: derive.collections must be a non-empty list of collection names.`,
       );
     }
-    derive.collections = [...new Set(e.collections as string[])];
+    derive.collections = [...new Set(valid)];
   }
 
   return derive;
