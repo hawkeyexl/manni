@@ -40,9 +40,6 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
     - generated-by: Claude Opus 5
       lines: 12
       integrity: sha256-9f9ba50b81b9ae6a115ceef40bb75a5991ff1d8b4b85d470b66e914dc51feb99
-    - generated-by: Claude Fable 5.1
-      lines: 13
-      integrity: sha256-e2ede85433e037bc1aa99d5e7e54e8f30bb64ff998d754010281069376922ffb
     - generated-by: Claude Opus 4.8
       lines: 14
       integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855

@@ -17,11 +17,11 @@ docs/src/content/docs/meta/set-up/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Fable 5.1
-      lines: 1-28
-      integrity: sha256-051b54c80df0dfc0c799e590bfa7856b28d92e1397174252178368164d23741b
-    - generated-by: Claude Opus 5
-      lines: 29
-      integrity: sha256-367d79b349e79a5c130304f6cc29ea21fb1a6180fdfb4df788b74464cedce5b0
+      lines: 1-8
+      integrity: sha256-66282fa87135a259fbebf321b17b9b7d9f2002262757991da7031bf6e9f6ef83
+    - generated-by: Claude Fable 5.1
+      lines: 10-28
+      integrity: sha256-2b032f25da3924cf930ab286165cfece11a04c73e10e28aed42ddb7c8a9bae93
     - generated-by: Claude Fable 5.1
       lines: 30-39
       integrity: sha256-ee249a368e6cd92b98e77ca3624dffaa788f5dc3a60899a4334ea9006a0cc8e3
@@ -35,11 +35,11 @@ docs/src/content/docs/meta/set-up/index.mdx:
       lines: 46-47
       integrity: sha256-c1f33b2b63be49b3502b114e98f4ebb46b2e46d9ea6379da708416e2e2af4806
     - generated-by: Claude Fable 5.1
-      lines: 48-52
-      integrity: sha256-9911ff11ab176292ea08dd67bbb9f6a656568c5b58a0edf6dabd5aa6697a31d5
-    - generated-by: Claude Opus 5
-      lines: 53
-      integrity: sha256-a01520818173db868108e5ee85507d800d5f971c430fbdfa0544c6129eba29d3
+      lines: 49
+      integrity: sha256-cd5959d8ed16a1afe9635e0f8b57cefc8765d3935fe8aa9edf18400dd588c892
+    - generated-by: Claude Fable 5.1
+      lines: 51-52
+      integrity: sha256-0596f6b933d6ba0188466f40ed9aa069a3ae59a6ca062fa7da4d8c2138c7bc56
     - generated-by: Claude Fable 5.1
       lines: 54-57
       integrity: sha256-e900cbf9f9610cdee24432c70151639c2ed7cee48348e706534d745117ee202e
@@ -49,9 +49,6 @@ docs/src/content/docs/meta/set-up/index.mdx:
     - generated-by: Claude Fable 5.1
       lines: 59-62
       integrity: sha256-a5114ed91ad36c0f5d5a49ae4611ca00bd45b7f80b5732e543b1fee41061a190
-    - generated-by: Claude Opus 5
-      lines: 63
-      integrity: sha256-4cc78a17fae5f102ba9736cca8bd7e268640bec880d1c0fa52b1cf3ebd27ffc5
     - generated-by: Claude Fable 5.1
       lines: 64-71
       integrity: sha256-9562fe048ebfc4a6e60b8e9f0a63279f9fb6064f52b598463e2d28301578b0ed

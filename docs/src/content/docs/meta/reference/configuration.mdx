@@ -36,9 +36,9 @@ import { Aside } from '@astrojs/starlight/components';
 A `manni.config.yaml` file has two levels, and the split is the point.
 [`collections:`](#collections) at the top declares the **document sets**, once,
 for every tool in the family to read. [`meta:`](#keys) holds what is the
-metadata validator's own business. That is the default [schema
-set](/manni/meta/reference/schema-resolution/), per-collection and per-glob
-overrides, cross-file checks, and the trust settings. With both in place CI can
+metadata validator's own business. That is the [schema
+set](/manni/meta/reference/schema-resolution/) each file meets, per-collection
+and per-glob overrides, cross-file checks, and the trust settings. With both in place CI can
 run a bare `manni meta validate`.
 
 {/* cite config-is-optional */}
@@ -250,8 +250,8 @@ from the command line.
 1. **A positional path is a file the operator chose.** It is loaded whether or
    not any collection contains it. `manni meta validate README.md` validates
    `README.md` even where no collection mentions it. It simply gets no
-   manifests, and resolves its schema from `schemas:`, a matching glob
-   override, or the built-in default set.
+   manifests, and resolves its schema from a matching glob override, or from
+   the default set and `schemas:`.
 2. **Membership is the collection's own globs.** A file belongs to a collection
    when, relative to **the config file's directory**, it matches one of that
    collection's `paths` and none of its `exclude`. Nothing about the schema the
@@ -1333,7 +1333,10 @@ files a run reads.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `schemas` | `(string \| {ref, source?, integrity?})[]` | none | Default [schema set](/manni/meta/reference/schema-resolution/) applied to every file that no higher-precedence rule matches. See [Schemas](#schemas). |
+| `schemas` | `(string \| {ref, source?, integrity?})[]` | none | Schemas for every file that no higher-precedence rule matches. They join the [default set](/manni/meta/reference/schema-resolution/#the-default-set), after it, unless `defaults` is `false`. See [Schemas](#schemas). |
+| `defaults` | `boolean` | `true` | For files no override matches. `true` puts the default set first, then `schemas`. `false` makes `schemas` replace the default set. See [Defaults and strict](#defaults-and-strict). |
+| `strict` | `boolean` | `false` | For files no override matches. `true` stacks the strict version of each default and each registered schema in the set, right after its base. See [Defaults and strict](#defaults-and-strict). |
+| `register` | `string[]` | none | Paths to local JSON schema files or directories. Each schema is loaded once and named by its `$id`, which then works anywhere a built-in id does. See [Register](#register). |
 | `overrides` | `Override[]` | none | Per-collection or per-glob schema overrides. The first matching entry wins. See [Overrides](#overrides). |
 | `checks` | `Check[]` | none | Named cross-file rules, written as SQL over the corpus's metadata table, that `validate` runs after the per-file schemas, with rows reported as findings. See [Checks](#checks). |
 | `derive` | `Derive` | none | The **managed** fields. `manni meta derive` stamps them from git, CODEOWNERS, the GitHub or GitLab review history, or a command the config names. `validate` compares each stamp against that evidence, and one that disagrees is a finding. See [Derive](#derive). |
@@ -1350,6 +1353,13 @@ files a run reads.
 The section must be a YAML mapping. `schemas` takes [two
 forms](#schemas). `allowEmpty` and `respectGitignore` must be booleans. A quoted `"false"` is a string, and accepting it would turn a
 setting **on** for someone who wrote it off.
+
+`defaults` and `strict` must be booleans too, for the same reason:
+
+```
+manni: manni.config.yaml: meta.defaults must be true or false.
+manni: manni.config.yaml: meta.strict must be true or false.
+```
 
 <Aside type="caution" title="allowEmpty disables a safety check">
 `allowEmpty: true` disables the check that stops a glob which stopped matching
@@ -1433,6 +1443,115 @@ A local `ref`, and a `source` that is itself a local path, is resolved relative
 to **the config file**, exactly like a plain string ref. See [what relative
 paths are relative to](#what-relative-paths-are-relative-to).
 </Aside>
+
+### Defaults and strict
+
+`defaults` and `strict` shape the set for every file no override matches.
+An override entry takes the same two keys for its own files. See
+[Overrides](#overrides).
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `defaults` | `boolean` | `true` | `true` puts the [default set](/manni/meta/reference/schema-resolution/#the-default-set) first, then `schemas`. `false` makes `schemas` replace the default set. |
+| `strict` | `boolean` | `false` | `true` stacks a strict version right after each schema in the set that is a default or a [registered](#register) schema, when one exists. |
+
+A config that adds one house schema to the defaults names only that schema:
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas:
+    - ./schemas/house.json
+```
+
+Each file then meets the eleven defaults and `./schemas/house.json`, in that
+order. A duplicate keeps its first place, so listing a default again changes
+nothing.
+
+To judge files by the listed schemas alone, turn the defaults off:
+
+```yaml title="manni.config.yaml"
+meta:
+  defaults: false
+  schemas:
+    - ./schemas/house.json
+```
+
+With `strict: true`, each `manni:` default gets its overlay after it, such as
+`manni:core-strict:1.0.0` after `manni:core:1.0.0`. A registered
+`vendor:name-strict:version` follows its registered `vendor:name:version` the
+same way. A listed built-in outside the default set stays as listed, so
+`tgdp:templates:1.1` stays open. List `tgdp:templates-strict:1.1` to close it.
+
+```yaml title="manni.config.yaml"
+meta:
+  strict: true
+  schemas:
+    - ./schemas/house.json
+```
+
+`defaults: false` with no `schemas` would leave files with no schema at all.
+It is refused, exit 2:
+
+```
+manni: manni.config.yaml: meta.defaults: false with no meta.schemas leaves files with no schema. List schemas, or remove defaults.
+```
+
+### Register
+
+`register` names local JSON schemas by path, relative to the config file. A
+path is a schema file, or a directory whose `*.json` files all register,
+however deep. Each schema is loaded once and named by its own `$id`.
+
+```yaml title="manni.config.yaml"
+meta:
+  register:
+    - ./schemas/
+  strict: true
+  schemas:
+    - house:page:1.0.0
+```
+
+```json title="schemas/house-page.json"
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "house:page:1.0.0",
+  "type": "object",
+  "required": ["team"]
+}
+```
+
+A registered `$id` is `vendor:name:version`, as in `house:page:1.0.0`, or an
+absolute `https://` URL. It works anywhere a built-in id works:
+
+- in `schemas` and `overrides[].schemas`;
+- in `-s/--schema`;
+- in a document's `$schema`, where it counts as a built-in under
+  [Schema trust](#schema-trust), because the config vouches for the file;
+- in a `$ref` from any schema.
+
+A registered URL id answers from its file, so no fetch is made. A registered
+`vendor:name-strict:version` is the strict version of a registered
+`vendor:name:version`, which `strict: true` stacks right after it. Nothing
+registers under `--no-config`, so a registered id is then an unknown schema.
+[`manni meta schemas`](/manni/meta/reference/cli/#meta-schemas) lists every
+registered id beside its file.
+
+Each of these stops the run before any file is validated, exit 2:
+
+| Situation | Message |
+|---|---|
+| A path that does not exist | `meta.register[<i>] names <path>, which does not exist.` |
+| A directory with nothing to register | `meta.register[<i>] names a directory with no .json files.` |
+| A file that does not parse | `meta.register: <file> is not valid JSON.` |
+| A schema with no `$id` | `meta.register: <file> has no $id. A registered schema is named by its $id.` |
+| An `$id` of another shape | `meta.register: <file>'s $id "<id>" is neither vendor:name:version nor an https URL.` |
+| Two files with one `$id` | `meta.register: <file> and <file> both register "<id>".` |
+| An `$id` a built-in already uses | `meta.register: <file> registers "<id>", which is a built-in id.` |
+| A reserved vendor | `meta.register: <file> registers "<id>" under the reserved "<vendor>" vendor.` |
+
+The reserved vendors are `manni`, `check`, `external`, `encrypted` and
+`derived`. The family's own ids and findings use them. Each message carries
+the usual `manni: <config path>: ` prefix.
 
 ### `respectGitignore`
 
@@ -1524,8 +1643,8 @@ meta:
 
 | `documentRefs` | A document's `$schema` may name | A document's `$schema` may not |
 |---|---|---|
-| `any` (default) | A built-in id, a file inside the repository, or a URL, narrowed by `hosts` when that key is present. | A path outside the repository. |
-| `local` | A built-in id, or a file inside the repository. | Any URL. |
+| `any` (default) | A built-in id, a [registered](#register) id, a file inside the repository, or a URL, narrowed by `hosts` when that key is present. | A path outside the repository. |
+| `local` | A built-in id, a registered id, or a file inside the repository. | Any URL. |
 | `none` | Nothing, because the key is ignored and the config decides. manni meta prints one line to stderr naming the file and the reference it dropped. | n/a |
 
 {/* cite schematrust-never-filters-an-operator-ref */}
@@ -1659,6 +1778,8 @@ metadata](/manni/meta/reference/element-metadata/).
 | `collection` | `string` | one of the two | The name of a declared collection. The entry matches that collection's [members](#membership). |
 | `files` | `string` \| `string[]` | one of the two | A glob, or a list of globs, matched against each file's path. |
 | `schemas` | `string[]` | see below | The schema set applied to matching files. |
+| `defaults` | `boolean` | no, default **`false`** | `true` puts the [default set](/manni/meta/reference/schema-resolution/#the-default-set) first, then the entry's `schemas`. `false` keeps the entry's `schemas` alone. |
+| `strict` | `boolean` | no, default `false` | The same as [`strict`](#defaults-and-strict), for the entry's set. |
 | `elements` | `string[]` | no | Extra [element paths](/manni/meta/reference/element-metadata/) to lift for matching files. These accumulate rather than replacing. |
 
 {/* cite override-must-set-schemas-or-elements */}
@@ -1708,6 +1829,38 @@ Point an override at a collection whenever the collection is the thing you meant
 The config then declares the set once, and the override says what judges it. Keep
 `files:` for a shape no other tool needs to name, such as a single file or a path
 pattern that cuts across collections.
+
+#### Defaults and strict in an override
+
+An override's `schemas` **replace** the set by default. An entry never
+inherits the top-level `schemas`, and it gets the default set only when it
+asks for it with `defaults: true`. Its own `strict` then applies to the
+entry's set:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - collection: guides
+      defaults: true
+      strict: true
+      schemas:
+        - ./schemas/guide.json
+        - tgdp:templates:1.1
+```
+
+A guide then meets the eleven defaults, each `manni:` overlay right after
+its base, then `./schemas/guide.json` and `tgdp:templates:1.1`. TGDP stays
+open, because it is neither a default nor registered.
+
+`defaults` and `strict` apply to the entry's `schemas`. An entry that sets
+either without `schemas` is refused, exit 2, as is a value that is not a
+boolean:
+
+```
+manni.config.yaml: meta.overrides[0] sets defaults or strict, which apply to the entry's schemas. Add schemas, or remove them.
+manni.config.yaml: meta.overrides[0].defaults must be true or false.
+manni.config.yaml: meta.overrides[0].strict must be true or false.
+```
 
 <Aside type="note" title="overrides[].name is gone">
 Until 1.0.0 an override carrying `name:` became a named **collection** and a SQL
@@ -1860,11 +2013,12 @@ is the journey. This section is the contract.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `fields` | `string[]` | no, but a `derive:` must set one of the five keys | The managed fields. Unique when present, and each one of [the derivable fields](#the-derivable-fields) or a key with an entry in [`commands`](#commands). Each violation is a config error (exit 2) naming `derive.fields`. A key a collection's local [external-metadata](#external-metadata) manifest owns is compared and stamped in that manifest. A key a URL manifest owns is refused (exit 2), because a fetched file cannot be written. See [a field a manifest owns](#a-field-a-manifest-owns). Absent means the [merge-safe fields](/manni/meta/set-up/derived-metadata/#merge-safe-by-default), `owner`, `created`, `last-updated` and `provenance`. Each is managed only on a page whose schemas claim it as a top-level property. `[]` manages nothing, and `validate` compares nothing. `sources`, `codeowners`, `commands` or `machines` still shape the reads. |
+| `fields` | `string[]` | no, but a `derive:` must set one of its keys | The managed fields. Unique when present, and each one of [the derivable fields](#the-derivable-fields) or a key with an entry in [`commands`](#commands). Each violation is a config error (exit 2) naming `derive.fields`. A key a collection's local [external-metadata](#external-metadata) manifest owns is compared and stamped in that manifest. A key a URL manifest owns is refused (exit 2), because a fetched file cannot be written. See [a field a manifest owns](#a-field-a-manifest-owns). Absent means the [merge-safe fields](/manni/meta/set-up/derived-metadata/#merge-safe-by-default), `owner`, `created`, `last-updated` and `provenance`. Each is managed only on a page whose schemas claim it as a top-level property. `[]` manages nothing, and `validate` compares nothing. `sources`, `codeowners`, `commands` or `machines` still shape the reads. |
 | `sources` | `string[]` | no | Which of `git`, `codeowners`, `github`, `gitlab` and `command` to consult. Non-empty and unique. The default is all five. Only the one of `github` and `gitlab` that matches the origin remote is consulted; see [the review sources](#the-review-sources). A field whose only sources are excluded derives null, and can never be stale. |
 | `codeowners` | `string` | no | Path to the CODEOWNERS file, relative to the config file's directory. The default is GitHub's or GitLab's own search order, below. When `codeowners` is an active source, the file must exist (exit 2). |
 | `commands` | map | no | One entry per field a program derives, keyed by the frontmatter key. Each entry has `run`, an argv list, and an optional `timeout` in seconds. The key may not be one of the seven built-in fields, a key a URL manifest owns, or `$schema` (exit 2). See [Commands](#commands). |
 | `machines` | `string[]` | no | Trailer identities that are machines. Each entry is a glob matched against an identity's name and against its email. A `Co-authored-by:` trailer that matches names a machine for [`provenance`](#provenance). Any identity that matches, author or co-author, is left out of `authors`. Globs match case-sensitively, and brackets are literal, so `*[bot]` means a name ending in `[bot]`. Non-empty when present, unique, and no entry blank (exit 2). The default is `["*[bot]"]`. Prefer exact addresses, because `*noreply*` also matches the GitHub no-reply addresses people commit with. |
+| `collections` | `string[]` | no | The [collections](#collections) whose members derive manages. A file in none of them is neither stamped nor compared. Absent means every validated file. A name no collection declares is refused, exit 2: `meta.derive.collections names "<name>", which no collection declares.` |
 
 ```yaml
 # manni.config.yaml
@@ -1884,14 +2038,25 @@ meta:
 ```
 
 With no `fields`, a page manages the merge-safe fields its schemas claim.
-Here a page whose set includes `manni:stewardship:1.0.0` manages `owner`,
-`created` and `last-updated`, and a page with only the core vocabulary
-manages nothing.
+The [default set](/manni/meta/reference/schema-resolution/#the-default-set)
+carries `manni:stewardship:1.0.0`, which claims `owner`, `created` and
+`last-updated`, and `manni:ai-context:1.0.0`, which claims `provenance`. A
+page on the defaults manages all four. A page judged by a house schema alone,
+which claims none of them, manages nothing.
+
+`collections` keeps derive on the pages it was set up for. Test fixtures or
+drafts validated from the same root then carry no stamps and draw no stale
+findings.
 
 ```yaml
 # manni.config.yaml
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+
 meta:
   derive:
+    collections: [site]          # only the site's pages are stamped and compared
     sources: [git, codeowners]   # no fields: the merge-safe fields each page claims
 ```
 
@@ -2309,15 +2474,19 @@ collections:
         keys: [source, jira]
 
 meta:
+  register:
+    - ./schemas/house/           # house:page:1.0.0 and house:page-strict:1.0.0
+  strict: true
   schemas:
-    - google:okf:0.1
+    - house:page:1.0.0           # after the eleven defaults
   overrides:
     - collection: api
       schemas:
-        - ./schemas/api.schema.json
+        - ./schemas/api.schema.json   # replaces the set for API pages
     - collection: guides
+      defaults: true
       schemas:
-        - ./schemas/guide.schema.json
+        - ./schemas/guide.schema.json # the defaults, then the guide schema
   checks:
     - name: unique-slugs
       query: >-
@@ -2471,7 +2640,7 @@ corresponding config value; others merge with it.
 | Inputs | `[paths...]` | `collections[].paths` | CLI positional paths **override** the collections entirely. The collections supply the inputs only when no positional inputs are given, `-` included. [`--collection`](#selecting-collections-on-the-command-line) is a request rather than a fallback, so it is honoured even with `-` beside it. |
 | Collections | `--collection` | `collections[].name` | The flag **narrows** which collections supply the inputs, in declaration order. Omitted, every declared collection does. It needs a config to select from, and refuses beside positional paths. |
 | Excludes | `--exclude` | `collections[].exclude` | **Neither overrides nor merges, because they do different jobs.** `--exclude` removes files from the run. A collection's `exclude` removes files from that [collection](#membership). The effective run-level exclude set is every `--exclude` glob plus the [default ignores](/manni/meta/reference/cli/#default-ignores). |
-| Schemas | `-s/--schema` | `schemas` / `overrides` | CLI `--schema` **overrides** both `schemas` and `overrides` for every file. See [precedence](/manni/meta/reference/schema-resolution/#precedence). |
+| Schemas | `-s/--schema` | `schemas` / `defaults` / `strict` / `overrides` | CLI `--schema` **overrides** all four for every file, and the default set with them. A [registered](#register) id still resolves on it. See [precedence](/manni/meta/reference/schema-resolution/#precedence). |
 | Config discovery | `--no-config` | n/a | `--no-config` skips discovery entirely, so no config value applies. It sets the same option as `-c/--config`, so if you pass both, whichever comes later on the command line wins. |
 | Empty input sets | `--allow-empty` | `allowEmpty` | The flag **overrides** the config key, and only in the permissive direction: passing it turns the check off. Omitting it falls back to config, then to off. |
 | Fill settings | `--confidence`, `--provider`, `--model`, `--max-turns`, `--chunk-chars`, `--concurrency` | `fill.*` | Each flag **overrides** its matching `fill` key. An unset flag falls back to config, then to the built-in default. |
@@ -2497,4 +2666,5 @@ Use config `overrides` when different folders need different schemas.
 {/* step {"description":"--collection cannot be combined with positional paths (exit 2).","runShell":{"command":"manni meta validate -c test/fixtures/collections/manni.config.yaml --collection authors test/fixtures/valid.md","exitCodes":[2],"stdio":"cannot be combined with paths"}} */}
 {/* step {"description":"A document carrying a key its collection's manifest owns is a finding naming the manifest and the collection (exit 1).","runShell":{"command":"manni meta validate -c test/fixtures/external-metadata/manni.config.yaml","exitCodes":[1],"stdio":"is owned by manifest docs-meta.yaml (collection pages)"}} */}
 {/* step {"description":"A misspelled top-level key is a usage error (exit 2), not a silent no-op.","runShell":{"command":"manni meta validate -c test/fixtures/dd/misspelled-top-level-key.yaml test/fixtures/valid.md","exitCodes":[2],"stdio":"unknown key"}} */}
+{/* step {"description":"Nothing registers under --no-config, so an id only meta.register could name is an unknown schema (exit 2).","runShell":{"command":"manni meta validate test/fixtures/valid.md -s house:page:1.0.0 --no-config","exitCodes":[2],"stdio":"Unknown schema \"house:page:1.0.0\""}} */}
 {/* test end */}

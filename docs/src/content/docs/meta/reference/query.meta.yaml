@@ -176,8 +176,11 @@ docs/src/content/docs/meta/reference/query.mdx:
       lines: 593
       integrity: sha256-b982d1a23603100b350a0b4c5002bc7495dee45059e11a2337a28bfea5a1476e
     - generated-by: Claude Opus 5
-      lines: 594-611
-      integrity: sha256-b8ba0414b3f9315a9f1dc210a07ffbb4272cfec3ee2931e6eb529ddc47362109
+      lines: 594-598
+      integrity: sha256-760122abc8239762408b7b2cb7503e6bad64e89df6ff37413ce349e4d6e6b7a2
+    - generated-by: Claude Opus 5
+      lines: 601-611
+      integrity: sha256-80cc6e5cfcbed4814201f2d8316d3f1e8b63074eddae5b1b21677fc4d73f4cd1
     - generated-by: Claude Fable 5.1
       lines: 612
       integrity: sha256-449f217f004eaf34ddaee22faf2758135189edd4b09ec4232f4e19fd44347904

@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "OKF schema"
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-09-27
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -31,12 +31,13 @@ import { Aside } from '@astrojs/starlight/components';
 {/* cite okf-anchors-the-default-set */}
 **`google:okf:0.1`** is the Open Knowledge Format (OKF) v0.1 frontmatter schema
 shipped with manni meta. It anchors the [default
-set](/manni/meta/reference/schema-resolution/#precedence). When no `--schema`, file
-`$schema`, or config rule applies, manni meta validates against `google:okf:0.1`.
-It pairs that with
+set](/manni/meta/reference/schema-resolution/#the-default-set), which lists it
+first. When no `--schema`, file `$schema`, or config override applies, manni
+meta validates against `google:okf:0.1`. It pairs that with
 [`passo-uno:seven-action:1.0`](/manni/meta/reference/schemas/passo-uno-seven-action/), which
-constrains an optional `action` field and adds no requirements of its own. For
-every other schema manni meta ships, see the [built-in schema
+constrains an optional `action` field and adds no requirements of its own.
+The nine default [manni vocabularies](/manni/meta/reference/schemas/manni-vocabularies/)
+follow. For every other schema manni meta ships, see the [built-in schema
 registry](/manni/meta/reference/schemas/).
 
 | Property | Value |
@@ -61,12 +62,22 @@ explicitly tolerated, so a file may carry extra metadata without failing.
 
 ## Use it
 
-A run with no `-s` flag, no in-file `$schema` and no config rule already
-applies it. A `schemas:` list in config replaces the default set, so name it
-there to keep it beside a vocabulary of your own choosing:
+A run with no `-s` flag, no in-file `$schema` and no config override already
+applies it. A `schemas:` list in config adds to the default set, so OKF stays
+beside a vocabulary of your own choosing:
 
 ```yaml title="manni.config.yaml"
 meta:
+  schemas:
+    - diataxis:diataxis:1.0
+```
+
+A config that sets `defaults: false`, or an override without
+`defaults: true`, replaces the default set. Name OKF there to keep it:
+
+```yaml title="manni.config.yaml"
+meta:
+  defaults: false
   schemas:
     - google:okf:0.1
     - diataxis:diataxis:1.0

@@ -28,26 +28,44 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-458
-      integrity: sha256-10c3d96ee3c069660a7d5f2b0274a775c9ea0c5f8117f3882499ca136f4d14e8
+      lines: 1-61
+      integrity: sha256-22c95658007a3906571f7e094c0392479ef2c92588ef84888473379d8971bfb7
+    - generated-by: Claude Opus 5
+      lines: 65-67
+      integrity: sha256-56b8ad116d61cc554af23d21815ca18f8ec6780a8b867a316ad82082830aab23
+    - generated-by: Claude Opus 5
+      lines: 69-202
+      integrity: sha256-b5467a2c43c970bd1abd3515f7107301e01d5879d5f15dac68699cb482450ea7
+    - generated-by: Claude Opus 5
+      lines: 204
+      integrity: sha256-0a69fa04a4467debd9782087c8060134a236e49ae1c7095b1f94f028ab0b249b
+    - generated-by: Claude Opus 5
+      lines: 206-462
+      integrity: sha256-4e05559e2333358fb73bcf3fe3c4d641d2f713e28d08e13394381b0a6d263967
     - generated-by: Claude Opus 5.5
-      lines: 459-460
+      lines: 463-464
       integrity: sha256-8d183a8424f932086220cc22a27b4848177b32e7949e1ac485d5f210167cfe01
     - generated-by: Claude Opus 5
-      lines: 461
+      lines: 465
       integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
     - generated-by: Claude Opus 5.5
-      lines: 462
+      lines: 466
       integrity: sha256-ea4674af50258051509416c5fbf1ad634f498983ed571bae39148637fafc6e3e
     - generated-by: Claude Opus 5
-      lines: 463
+      lines: 467
       integrity: sha256-23cca02b74f386463efa24796c7a9011b0d2c93f0c38b4d15d5d276205b59b43
     - generated-by: Claude Opus 5.5
-      lines: 464-474
+      lines: 468-478
       integrity: sha256-fad77ccfefd30c9b771f2b06fe4735fa68c6300b6b57829ab9398f38c1f8bf93
     - generated-by: Claude Opus 5
-      lines: 475-532
-      integrity: sha256-c41b9545b389e590d014f896f7ca8a34307e62a1a2a0d994b63f615dfb6f71e3
+      lines: 479
+      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    - generated-by: Claude Opus 5
+      lines: 484-499
+      integrity: sha256-1a44d817220401f5108a41972fa1c73df2724dbe404d58f64eaba9c8422e9f10
+    - generated-by: Claude Opus 5
+      lines: 503-543
+      integrity: sha256-f380e7ebefea68d20900623273912f571f40077c636611ec57c5ce998bbc3f06
   owner:
     - "@hawkeyexl"
   created: 2026-09-14

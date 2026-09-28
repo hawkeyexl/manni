@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "manni lifecycle vocabulary"
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-09-27
 ---
 
 **Built-in id:** `manni:lifecycle:1.0.0`
@@ -35,15 +35,19 @@ need to be sent somewhere else.
 
 ## Use it
 
-Name the id in `manni.config.yaml`. The vocabularies are not in the default
-set, so a run checks lifecycle only where the config names it. It stacks with
-[core](/manni/meta/reference/schemas/manni-core/).
+Lifecycle is in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it on every page with no config line. A config's own `schemas` add
+to the default set. An override replaces the set, so an entry that should keep
+lifecycle sets `defaults: true`:
 
 ```yaml
 meta:
-  schemas:
-    - manni:core:1.0.0
-    - manni:lifecycle:1.0.0
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/guide.json
 ```
 
 ## Fields
@@ -163,12 +167,20 @@ it.
 `lifecycle` is the same in both, because its ladder is already closed. The
 deprecation rule is also unchanged.
 
-List both ids to adopt it:
+`strict: true` stacks it right after the vocabulary, with every other
+default's overlay beside its own base:
+
+```yaml
+meta:
+  strict: true
+```
+
+To adopt this overlay alone, list its id. The default set already carries the
+vocabulary:
 
 ```yaml
 meta:
   schemas:
-    - manni:lifecycle:1.0.0
     - manni:lifecycle-strict:1.0.0
 ```
 

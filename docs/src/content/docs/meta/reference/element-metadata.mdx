@@ -25,7 +25,7 @@ sample-questions:
 graph:
   label: Element metadata in XML and HTML
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-09-27
 ---
 
 import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
@@ -201,10 +201,10 @@ Four behaviours worth knowing:
   naming `concept/prolog/source` from retyping it out of the scalar its content
   model says it is. A path cannot be used to *override* a key, only to add one
   the convention does not reach.
-- **`elements:` accumulates where `schemas:` replaces.** A schema set is a
-  complete statement about how a file is judged. Element paths are a list of
-  extra places to look, so the repo-wide list and *every* matching override all
-  contribute.
+- **`elements:` accumulates where an override's `schemas:` replaces.** A
+  schema set is a complete statement about how a file is judged, and the first
+  matching override decides it. Element paths are a list of extra places to
+  look, so the repo-wide list and *every* matching override all contribute.
 - **A named path lifts an empty element**, as `[""]`. The convention skips one;
   someone who names it wants "present but empty" checked.
 - **Paths are validated when the config loads.** A typo left to extraction would

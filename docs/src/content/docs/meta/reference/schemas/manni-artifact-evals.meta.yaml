@@ -19,8 +19,14 @@ docs/src/content/docs/meta/reference/schemas/manni-artifact-evals.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-292
-      integrity: sha256-10d7a5b1ee822b0f6cdf3daac741545144666cb941b5f985a4d320dbeaaf3f95
+      lines: 1-17
+      integrity: sha256-2c947ff99dfbeb089cd9d33a653a83ce82a10b4d72bc1a472a35b0aee13a1217
+    - generated-by: Claude Opus 5.5
+      lines: 22-252
+      integrity: sha256-e4880a09d733c9998684471318c788577bff16734e89f9653ea45918bf8263ba
+    - generated-by: Claude Opus 5.5
+      lines: 254-293
+      integrity: sha256-b9ced49e11b54d5beddabb562ce89154b5096291a6bed96953d753792974b555
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

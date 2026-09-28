@@ -24,7 +24,7 @@ sample-questions:
 graph:
   label: Schema resolution reference
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-09-27
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -40,17 +40,66 @@ which JSON Schema dialects are supported.
 manni meta checks these sources, in order, for the schema set of a file.
 The **first** one that yields a non-empty set is the one it uses.
 
-| Level | Source | Scope |
-|---|---|---|
-| 1 | `-s/--schema` on the command line | All files in the run. |
-| 2 | `$schema` in the file's own metadata | That file only. A repo can [narrow what a document may name](#what-a-document-may-reference-and-how-a-repo-narrows-it). |
-| 3 | First matching config `overrides` entry (by glob) | Files matching the glob. An entry whose `files` is a **list** matches on any glob in it, and still counts as one entry here. |
-| 4 | Config `schemas` | All files not matched above. |
-| 5 | Built-in default set: `google:okf:0.1` + `passo-uno:seven-action:1.0` | Every file, when nothing else applies. |
+| Level | Source | Scope | The set it yields |
+|---|---|---|---|
+| 1 | `-s/--schema` on the command line | All files in the run. | The listed schemas alone. |
+| 2 | `$schema` in the file's own metadata | That file only. A repo can [narrow what a document may name](#what-a-document-may-reference-and-how-a-repo-narrows-it). | The listed schemas alone. |
+| 3 | First matching config `overrides` entry with `schemas` | Files the entry matches. An entry whose `files` is a **list** matches on any glob in it, and still counts as one entry here. | The entry's schemas alone. With `defaults: true`, the default set first, then the entry's schemas. The entry's `strict` then applies. |
+| 4 | Config `schemas` | All files not matched above. | The default set first, then `schemas`. With `meta.defaults: false`, `schemas` alone. `meta.strict` then applies. |
+| 5 | No config `schemas` | Every file, when nothing else applies. | The [default set](#the-default-set). `meta.strict` then applies. |
 
 {/* cite resolution-duplicates-are-removed */}
 Once a level produces a set, lower levels are not consulted for that file.
-Within a resolved set, duplicate references are removed.
+Within a resolved set, duplicate references are removed, and the first one
+keeps its place.
+
+An override never inherits config `schemas`. `defaults: true` on an entry
+asks for the default set, and nothing else from the levels below it.
+
+### The default set
+
+The default set is eleven built-in schemas, in this order:
+
+```text
+google:okf:0.1
+passo-uno:seven-action:1.0
+manni:core:1.0.0
+manni:audience:1.0.0
+manni:structure:1.0.0
+manni:stewardship:1.0.0
+manni:lifecycle:1.0.0
+manni:ai-context:1.0.0
+manni:evals:1.0.0
+manni:graph:1.0.0
+manni:citations:1.0.0
+```
+
+`manni:core:1.0.0` requires `title` and `description`, so every file the
+defaults judge needs both. `google:okf:0.1` requires `type`. The other nine
+constrain a field only when the file carries it. A field a vocabulary
+prefers in [external metadata](#field-location) draws a `location:external`
+warning when it sits on the page. Warnings never fail a run.
+
+`manni:terminology:1.0.0`, `manni:artifact-evals:1.0.0` and every strict
+overlay stay out of the default set. A config lists them where they apply.
+
+### Strict versions
+
+{/* cite strict-stacks-after-its-base */}
+`strict: true` stacks a strict version right after each schema that has one.
+It applies at levels 3 to 5, through `meta.strict` or an entry's own
+`strict`. It touches two kinds of schema:
+
+- **A default.** Each of the nine `manni:` defaults gets its overlay, such
+  as `manni:core-strict:1.0.0` after `manni:core:1.0.0`. OKF and
+  Seven-Action have none.
+- **A registered schema.** A [registered](#registered-references)
+  `vendor:name-strict:version` is the strict version of a registered
+  `vendor:name:version`.
+
+A listed built-in outside the default set is left as listed.
+`tgdp:templates:1.1` stays open under `strict: true`. To close it, list
+`tgdp:templates-strict:1.1` beside it.
 
 <Aside type="note" title="--schema applies to the whole run">
 `--schema` is the only level that applies to the whole run. When present, it
@@ -106,7 +155,7 @@ narrows level 2. It changes nothing else in the chain:
 | `schemaTrust.documentRefs` | Effect on level 2 |
 |---|---|
 | `any` (default) | Unchanged. All three kinds, from any host unless `schemaTrust.hosts` is set. |
-| `local` | Built-in ids and repository files resolve, and a URL is refused. The exception is a [published built-in URL](/manni/meta/reference/schemas/#the-published-urls), which is a built-in under a second name. |
+| `local` | Built-in ids, registered ids and repository files resolve, and a URL is refused. The exception is a [published built-in URL](/manni/meta/reference/schemas/#the-published-urls), which is a built-in under a second name. |
 | `none` | Level 2 is skipped entirely, so resolution continues at level 3. The dropped reference is reported on stderr. |
 
 Two things hold in **every** mode, including the default:
@@ -131,9 +180,9 @@ classified into one of three kinds by its shape:
 
 | Kind | Looks like | Resolved from |
 |---|---|---|
-| **builtin** | `vendor:name:version`, e.g. `google:okf:0.1` | A schema shipped with manni meta. |
+| **builtin** | `vendor:name:version`, e.g. `google:okf:0.1` | A schema shipped with manni meta, or a [registered](#registered-references) schema with that `$id`. |
 | **file** | A `.json` path or any path containing a separator, e.g. `./my.schema.json` | The local filesystem. |
-| **url** | An `http://` or `https://` URL | Fetched over the network. The exception is a [published built-in URL](/manni/meta/reference/schemas/#the-published-urls), which manni meta answers from its own bundle. |
+| **url** | An `http://` or `https://` URL | Fetched over the network. Two exceptions answer with no fetch. A [published built-in URL](/manni/meta/reference/schemas/#the-published-urls) comes from manni meta's own bundle. A registered URL `$id` comes from its registered file. |
 
 How a reference is classified:
 
@@ -149,6 +198,38 @@ This deliberately classifies a Windows path (`C:\...`), a URL, and any `.json`
 reference as non-builtin. A typo'd built-in id is then reported as an unknown
 built-in rather than silently treated as a missing file.
 
+{/* cite unknown-schema-names-both-lists */}
+An id that is neither shipped nor registered stops the run with exit 2. The
+message names both lists:
+
+```text
+manni: Unknown schema "house:page:1.0.0". Built-in ids: google:okf:0.1, passo-uno:seven-action:1.0, …. Registered by meta.register: none.
+```
+
+### Registered references
+
+[`meta.register`](/manni/meta/reference/configuration/#register) names local
+schema files, or directories of them, by path. Each file is loaded once and
+named by its own `$id`, which is either `vendor:name:version` or an absolute
+`https://` URL.
+
+A registered id works anywhere a built-in id works:
+
+- in config `schemas` and `overrides[].schemas`;
+- in `-s/--schema`;
+- in a document's `$schema`, where it counts as a built-in under
+  [`schemaTrust`](#what-a-document-may-reference-and-how-a-repo-narrows-it),
+  because the config vouches for the file;
+- in a `$ref` from any schema, because every registered schema joins each
+  validator before any schema compiles.
+
+A registered URL id answers from its file, so no fetch is made. A registered
+id is reported by its `$id`, in findings and in
+[`manni meta schemas`](/manni/meta/reference/cli/#meta-schemas).
+
+Registration belongs to the config. Under `--no-config` nothing registers,
+and a registered id is an unknown schema.
+
 ### File references
 
 {/* cite resolution-a-file-ref-resolves-from-whatever-named-it */}
@@ -157,7 +238,7 @@ it. That is the directory the person who wrote it was looking at:
 
 | Where the ref came from | Resolved relative to |
 |---|---|
-| `schemas:` or `overrides[].schemas` in a config | The **config file's** directory |
+| `schemas:`, `overrides[].schemas` or `register` in a config | The **config file's** directory |
 | A document's own `$schema` | The current working directory |
 | `-s/--schema` on the command line | The current working directory |
 

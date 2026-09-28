@@ -32,7 +32,7 @@ sample-questions:
 graph:
   label: Fix a failing check
   type: troubleshooting
-last-updated: 2026-09-21
+last-updated: 2026-09-27
 ---
 
 import { Steps, Aside, LinkCard } from '@astrojs/starlight/components';
@@ -123,22 +123,23 @@ so there's no line to point at.
 
 ```
 ✗ docs/guide.md
-    /timestamp  must match format "date-time"  (line 4)  [google:okf:0.1]
+    /timestamp  must match format "date-time"  (line 5)  [google:okf:0.1]
 ```
 
 The field is present, but its value doesn't match the format the schema expects.
 Here `timestamp` must be an ISO 8601 `date-time`, and the file has something
 like `last Tuesday`:
 
-```md title="docs/guide.md" {4}
+```md title="docs/guide.md" {5}
 ---
 type: concept
 title: My Guide
+description: A short summary of this guide.
 timestamp: last Tuesday
 ---
 ```
 
-The `/timestamp` pointer and `(line 4)` take you straight to the offending line.
+The `/timestamp` pointer and `(line 5)` take you straight to the offending line.
 
 **Fix.** Replace the value with a properly formatted one. An ISO 8601
 `date-time` looks like this:
@@ -147,6 +148,7 @@ The `/timestamp` pointer and `(line 4)` take you straight to the offending line.
   ---
   type: concept
   title: My Guide
+  description: A short summary of this guide.
 - timestamp: last Tuesday
 + timestamp: 2026-06-25T10:00:00Z
   ---
@@ -161,6 +163,8 @@ The message names the format or constraint that failed.
 ```
 ✗ docs/guide.md
     (root)  must have required property 'type'  [google:okf:0.1]
+    (root)  must have required property 'title'  [manni:core:1.0.0]
+    (root)  must have required property 'description'  [manni:core:1.0.0]
 ```
 
 {/* cite no-frontmatter-reads-as-empty-metadata */}
@@ -178,6 +182,7 @@ the very top of the file.
 + ---
 + type: concept
 + title: My Guide
++ description: A short summary of this guide.
 + ---
 +
   # My Guide
@@ -284,11 +289,12 @@ Sometimes manni meta stops before validating any file and prints a single line t
 **stderr**, prefixed with `manni:`:
 
 ```
-manni: Unknown built-in schema "google:okf:0.2". Available: google:okf:0.1, diataxis:diataxis:1.0, passo-uno:seven-action:1.0, …
+manni: Unknown schema "google:okf:0.2". Built-in ids: google:okf:0.1, diataxis:diataxis:1.0, passo-uno:seven-action:1.0, …. Registered by meta.register: none.
 ```
 
-The `Available:` list names every [built-in id](/manni/meta/schemas/), so the
-real line is much longer than this.
+The `Built-in ids:` list names every [built-in id](/manni/meta/reference/schemas/),
+so the real line is much longer than this. The last list names the ids the
+config [registers](/manni/meta/reference/configuration/#register), or `none`.
 
 or:
 
@@ -441,6 +447,6 @@ understand which schema applied to your file and why, see
 {/* step {"description":"Missing a required field: (root) ... must have required property, tagged with the schema.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/missing-type.md","exitCodes":[1],"stdio":"must have required property 'type'"}} */}
 {/* step {"description":"A value in the wrong format: a malformed timestamp is flagged on its source line.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/bad-timestamp.md","exitCodes":[1],"stdio":"/timestamp  must match format \"date-time\"  \\(line 4\\)/"}} */}
 {/* step {"description":"A frontmatter parse error (malformed YAML) reports the schema as [(parse)] rather than a real schema id.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/dd/malformed-yaml.md","exitCodes":[1],"stdio":"[(parse)]"}} */}
-{/* step {"description":"Schema not found is a setup problem, not a document problem: it exits 2 to stderr.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md -s google:okf:0.2","exitCodes":[2],"stdio":"Unknown built-in schema"}} */}
+{/* step {"description":"Schema not found is a setup problem, not a document problem: it exits 2 to stderr.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md -s google:okf:0.2","exitCodes":[2],"stdio":"Unknown schema \"google:okf:0.2\""}} */}
 {/* step {"description":"Reproduce and confirm locally: after the fix, the file passes with a green summary.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md","exitCodes":[0],"stdio":"1 file checked, 1 passed, 0 failed, 0 errors"}} */}
 {/* test end */}

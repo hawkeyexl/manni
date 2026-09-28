@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "Seven-Action schema"
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-09-27
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -40,16 +40,18 @@ reader is *doing*. It claims a different key, so it composes with either.
 ## Use it
 
 {/* cite taxonomy-seven-action-is-in-the-default-set */}
-This schema **is** in the default set, alongside OKF. It can be, because it
+This schema **is** in the default set, right after OKF. It can be, because it
 constrains a key that documents do not otherwise carry and does not require it.
 So it fails nothing that passed before.
 
-A run with no `-s`, no in-file `$schema` and no config rule already applies it.
-A `schemas:` list in config replaces the default set, so name it there to keep
-it:
+A run with no `-s`, no in-file `$schema` and no config override already
+applies it. A `schemas:` list in config adds to the default set, so it stays.
+A config that sets `defaults: false`, or an override without `defaults: true`,
+replaces the default set. Name it there to keep it:
 
 ```yaml title="manni.config.yaml"
 meta:
+  defaults: false
   schemas:
     - diataxis:diataxis:1.0
     - passo-uno:seven-action:1.0
@@ -108,8 +110,9 @@ something else (a workflow name, a button label), two things change:
   unless you pass `--dry-run`. Run `manni meta fill --dry-run` first on any repo
   that uses `action` for something of its own.
 
-Set a `schemas:` list in `manni.config.yaml` before running either command.
-It replaces the default set entirely, which opts you out of both.
+Set `defaults: false` and a `schemas:` list without Seven-Action in
+`manni.config.yaml` before running either command. The list then replaces the
+default set, which opts you out of both.
 </Aside>
 
 The [taxonomy schemas](/manni/meta/reference/taxonomy-schemas/) overview maps

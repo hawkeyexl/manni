@@ -25,7 +25,7 @@ sample-questions:
 graph:
   label: Apply different schemas to different folders
   type: task
-last-updated: 2026-09-21
+last-updated: 2026-09-27
 ---
 
 import { Steps, Aside, LinkCard } from '@astrojs/starlight/components';
@@ -57,9 +57,9 @@ collections:
     paths: ["guides/**/*.md"]
 
 meta:
-  # The baseline every doc must satisfy.
+  # Added to the built-in default set for every other doc.
   schemas:
-    - google:okf:0.1
+    - ./schemas/house.json
 
   # Area-specific rules.
   overrides:
@@ -73,15 +73,15 @@ meta:
 
 With this config:
 
-- Files in the `api` collection are validated against `./schemas/api-reference.json`.
-- Files in the `guides` collection are validated against `./schemas/guide.json`.
-- Everything else falls back to the default `schemas`: here, `google:okf:0.1`.
+- Files in the `api` collection are validated against `./schemas/api-reference.json` alone.
+- Files in the `guides` collection are validated against `./schemas/guide.json` alone.
+- Everything else gets the built-in default set, then `./schemas/house.json`.
 
 {/* cite file-may-belong-to-several-collections */}
 A file can belong to two collections, when their globs overlap. It still resolves to exactly one schema set, by the first-match rule below.
 
 <Aside type="note">
-An override **replaces** the default `schemas` for matching files; it does not add to them. If you want an area to satisfy the baseline *and* an extra schema, list both in that override (see [Validate one file against multiple schemas](#validate-one-file-against-multiple-schemas) below).
+An override **replaces** the set for matching files. It inherits neither the top-level `schemas` nor the built-in default set. To keep the default set in front of an area's schemas, set `defaults: true` on the entry. List any house schema there again. [Validate one file against multiple schemas](#validate-one-file-against-multiple-schemas) below shows the shape.
 </Aside>
 
 ## First matching override wins
@@ -152,19 +152,20 @@ A grouped entry is still **one** override. It takes a single position in the fir
 ## Validate one file against multiple schemas
 
 {/* cite schema-set-requires-every-schema-to-pass */}
-A `schemas` list, whether the default set or an override, applies as a **set**: the file must satisfy every schema in the list. List more than one to compose rules.
+A `schemas` list, whether the top-level one or an override's, applies as a **set**: the file must satisfy every schema in the list. List more than one to compose rules.
 
 ```yaml title="manni.config.yaml"
 meta:
   overrides:
     - collection: api
+      defaults: true                     # baseline: the built-in default set
+      strict: true                       # and each manni overlay after its base
       schemas:
-        - google:okf:0.1            # baseline: requires type
         - ./schemas/api-reference.json   # plus: requires the api-specific fields
 ```
 
 {/* cite okf-requires-only-type */}
-A file in the `api` collection must now pass both schemas. This lets you keep the shared baseline, which is OKF's required `type`, while layering area-specific requirements on top. You avoid duplicating the baseline rules in every custom schema.
+A file in the `api` collection must now pass the default set and the API schema. The default set is the shared baseline: OKF's required `type`, and core's `title` and `description`. You layer area-specific requirements on top without repeating the baseline in every custom schema. `strict: true` holds the entry's `manni:` defaults to their strict overlays as well.
 
 ## Where overrides sit in schema resolution
 
@@ -176,11 +177,11 @@ Overrides are one link in manni meta's schema-resolution chain. For any single f
 
 2. **File `$schema` field**: a `$schema` key in the file's own frontmatter names its schema set and overrides the config.
 
-3. **Config `overrides`**: the first matching override's `schemas`, matched by `collection:` or by `files:`, as described on this page.
+3. **Config `overrides`**: the first matching override's `schemas`, matched by `collection:` or by `files:`, as described on this page. With `defaults: true`, the built-in default set comes first.
 
-4. **Config `schemas`**: the default set, when no override matches.
+4. **Config `schemas`**: the built-in default set, then these, when no override matches. With `meta.defaults: false`, these alone.
 
-5. **Built-in default set**: [`google:okf:0.1`](/manni/meta/schemas/) plus [`passo-uno:seven-action:1.0`](/manni/meta/reference/taxonomy-schemas/), when nothing else resolves.
+5. **Built-in default set**: eleven schemas, from [`google:okf:0.1`](/manni/meta/schemas/) and [`passo-uno:seven-action:1.0`](/manni/meta/reference/taxonomy-schemas/) through the nine [manni vocabularies](/manni/meta/reference/schemas/manni-vocabularies/), when nothing else resolves.
 
 </Steps>
 
@@ -215,6 +216,6 @@ npx @hawkeyexl/manni meta validate --collection api
 {/* test {"testId":"schemas-per-folder","description":"Multi-schema-set and precedence claims, demonstrated with repeated --schema flags."} */}
 {/* step {"description":"Validate one file against a set of two schemas; a file satisfying both passes.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/schema-ref.md -s google:okf:0.1 -s ./test/fixtures/extra.schema.json","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* step {"description":"The file must satisfy EVERY schema in the set: missing `type` fails the set even though it has a title.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/missing-type.md -s google:okf:0.1 -s ./test/fixtures/extra.schema.json","exitCodes":[1],"stdio":"must have required property 'type'"}} */}
-{/* step {"description":"CLI --schema sits at the top of the resolution chain: forcing a schema the file satisfies makes it pass, overriding the default OKF set it would otherwise fail.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/missing-type.md -s ./test/fixtures/extra.schema.json","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"CLI --schema sits at the top of the resolution chain: forcing a schema the file satisfies makes it pass, overriding the default set it would otherwise fail.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/missing-type.md -s ./test/fixtures/extra.schema.json","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* step {"description":"A file may belong to two collections whose globs overlap, and --collection addresses either of them on its own.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/collections/manni.config.yaml --collection notes","exitCodes":[0],"stdio":"/authors\\/deep\\.md[\\s\\S]*1 file checked, 1 passed/"}} */}
 {/* test end */}

@@ -19,8 +19,20 @@ docs/src/content/docs/meta/reference/schemas/manni-graph.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-250
-      integrity: sha256-6ea4699f31a5c8f30ddba807ed25f9dd63880e7cd131fc2ca417363abad846ef
+      lines: 1-16
+      integrity: sha256-4ec3a614de082f0e85dfbec7eca95c6ab48dcb1fbd406abf5337039321638232
+    - generated-by: Claude Opus 5.5
+      lines: 22-24
+      integrity: sha256-87ae72b3e4eb02b2c967bb86b40b728d6db1637c3a4ee75ca289996e975b7a66
+    - generated-by: Claude Opus 5.5
+      lines: 30-32
+      integrity: sha256-293b1ede49d0f2a8a9525ed7ddca20f4be6896c1e0bead5d75826fb09248f73e
+    - generated-by: Claude Opus 5.5
+      lines: 36-214
+      integrity: sha256-42fafd73c4107726cb828b558f53f2b446169e5d88f17f6c84619a1ebc21d7d9
+    - generated-by: Claude Opus 5.5
+      lines: 225-260
+      integrity: sha256-8b9a730f7447500b97092370a73bce0f484689cfa2d167148cc33234ad9c1f7d
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "manni citations vocabulary"
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-09-27
 ---
 
 **Built-in id:** `manni:citations:1.0.0`
@@ -43,14 +43,19 @@ reports.
 
 ## Use it
 
-Name the id in `manni.config.yaml`. The vocabularies are not in the default
-set, so a run checks citations only where the config names it.
+Citations is in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it on every page with no config line. A config's own `schemas` add
+to the default set. An override replaces the set, so an entry that should keep
+citations sets `defaults: true`:
 
 ```yaml
 meta:
-  schemas:
-    - manni:core:1.0.0
-    - manni:citations:1.0.0
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/guide.json
 ```
 
 The schema checks the shape of any `citations` a page carries, and a page
@@ -275,12 +280,20 @@ Hashes stay lowercase hex in both.
 | `source.commit-sha` | A full commit hash, 40 hex digits, or 64 in a SHA-256 repository |
 | `source.integrity` | `hmac-sha256-` exactly when `file` is encrypted, and `sha256-` when it is plain |
 
-List both ids to adopt it:
+`strict: true` stacks it right after the vocabulary, with every other
+default's overlay beside its own base:
+
+```yaml
+meta:
+  strict: true
+```
+
+To adopt this overlay alone, list its id. The default set already carries the
+vocabulary:
 
 ```yaml
 meta:
   schemas:
-    - manni:citations:1.0.0
     - manni:citations-strict:1.0.0
 ```
 

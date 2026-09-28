@@ -1336,8 +1336,9 @@ manni meta relocate -f json --dry-run            # the scripting form
 ## `meta schemas`
 
 {/* cite schemas-takes-no-paths */}
-List the built-in schemas and the supported input formats. On its own it takes
-no positional arguments and reads no files. Its [`infer`](#meta-schemas-infer)
+List the built-in schemas, the schemas the config registers, and the
+supported input formats. On its own it takes no positional arguments and
+reads no documents. Its [`infer`](#meta-schemas-infer)
 subcommand reads your documents; its [`vendor`](#meta-schemas-vendor) subcommand is
 the one that reaches the network and writes to the repository.
 
@@ -1353,12 +1354,16 @@ manni meta schemas [options]
 
 {/* cite schemas-pretty-lists-builtins-and-formats */}
 {/* cite schemas-json-shape */}
-In `pretty` format, `schemas` lists each built-in schema by id and title. It
-then lists each input format with its extensions and whether
-[`fill`](#meta-fill) can write to it. In `json` format it prints
-`{ builtins, formats }`, where `builtins` is an array of
-`{ id, title, description }` and `formats` is an array of
-`{ name, extensions, writable }`.
+In `pretty` format, `schemas` lists each built-in schema by id and title.
+When the discovered config's
+[`meta.register`](/manni/meta/reference/configuration/#register) names any
+schemas, a **Registered schemas** section follows, with each id and the file
+it came from. It then lists each input format with its extensions
+and whether [`fill`](#meta-fill) can write to it. In `json` format it prints
+`{ builtins, registered, formats }`. `builtins` is an array of
+`{ id, title, description }`, `registered` is an array of `{ id, file }`,
+and `formats` is an array of `{ name, extensions, writable }`. `registered`
+is empty when the config registers nothing.
 
 ```sh
 manni meta schemas
@@ -1810,7 +1815,7 @@ with `No files matched` (exit 2), rather than reporting a green zero.
 {/* step {"description":"Nested fields: dot-notation, JSON Pointer (/author/email), and array index all resolve in one comma-separated request.","runShell":{"command":"manni meta get author.name,/author/email,tags.0 test/fixtures/nested/doc.md -f json","exitCodes":[0],"stdio":"/\"Jane\"[\\s\\S]*\"jane@example.com\"[\\s\\S]*\"intro\"/"}} */}
 {/* step {"description":"Requesting a parent key returns the whole nested object.","runShell":{"command":"manni meta get author test/fixtures/nested/doc.md -f json","exitCodes":[0],"stdio":"/\"name\": \"Jane\"[\\s\\S]*\"email\": \"jane@example.com\"/"}} */}
 {/* step {"description":"An explicitly named file is validated whether or not .gitignore covers it, and --no-gitignore is accepted on validate.","runShell":{"command":"manni meta validate test/fixtures/valid.md --no-gitignore -s google:okf:0.1","exitCodes":[0],"stdio":"1 passed"}} */}
-{/* step {"description":"schemas -f json prints { builtins, formats }.","runShell":{"command":"manni meta schemas -f json","exitCodes":[0],"stdio":"/\"builtins\"[\\s\\S]*\"formats\"/"}} */}
+{/* step {"description":"schemas -f json prints { builtins, registered, formats }.","runShell":{"command":"manni meta schemas -f json","exitCodes":[0],"stdio":"/\"builtins\"[\\s\\S]*\"registered\"[\\s\\S]*\"formats\"/"}} */}
 {/* step {"description":"schemas reports per-format writability, which fill depends on.","runShell":{"command":"manni meta schemas -f json","exitCodes":[0],"stdio":"/\"name\": \"markdown\"[\\s\\S]*\"writable\": true/"}} */}
 {/* step {"description":"schemas rejects a validate-only format rather than silently printing pretty (exit 2).","runShell":{"command":"manni meta schemas -f github","exitCodes":[2],"stdio":"Unknown --format"}} */}
 {/* step {"description":"DDL type bridge (0028): a declared format type previews as the whole property the schema will gain — type, format, required. --dry-run keeps the step read-only.","runShell":{"command":"manni meta query --dry-run -c test/fixtures/ddl-bridge/manni.config.yaml \"ALTER TABLE docs ADD COLUMN reviewed_on DATE NOT NULL DEFAULT '2026-08-26'\" test/fixtures/ddl-bridge/docs","exitCodes":[0],"stdio":"+ reviewed_on (string, format date, required)"}} */}

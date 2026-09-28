@@ -19,8 +19,17 @@ docs/src/content/docs/meta/reference/schemas/manni-terminology.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-222
-      integrity: sha256-94bd29ac542ce381b6ecc22054a72ae2351ae31a5f7c5f53f220cd6ff9742eb4
+      lines: 1-17
+      integrity: sha256-e9f4250337785c2c307f3983f48e1e7cb72f517e447e9d35d257e11fb4dd58d5
+    - generated-by: Claude Opus 5.5
+      lines: 25-29
+      integrity: sha256-f156b095ad7908ac0ae896428f6d6aa0bb15311a216f3c82e70d0526888e9452
+    - generated-by: Claude Opus 5.5
+      lines: 31-187
+      integrity: sha256-d9340f2b5af88e4a4862652d614948eb00289bfc49693165b20e5daae812c906
+    - generated-by: Claude Opus 5.5
+      lines: 189-221
+      integrity: sha256-79023e41b275f5370d390feff8b0b7c140e7341e15db8a823a46bf69af9b465e
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

@@ -30,7 +30,7 @@ sample-questions:
 graph:
   label: query command reference
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-09-27
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -630,8 +630,8 @@ cannot point the edit outside the repository.
 - **The corpus must resolve to one schema set.** A run split across override
   groups refuses, naming each group and its glob. Scope the run to one group, or
   name the set with [`-s`](#naming-the-ddl-target-directly).
-- **A corpus on the built-in default set refuses.** There is no schema of yours
-  to evolve. The message points at the `UPDATE` spellings, which cover every
+- **A corpus on the built-in default set alone refuses.** There is no schema of
+  yours to evolve. The message points at the `UPDATE` spellings, which cover every
   data-only case.
 - **A local schema file is edited in place**, with `properties` and `required`
   only, your indent and line endings preserved, and git as the review surface. A

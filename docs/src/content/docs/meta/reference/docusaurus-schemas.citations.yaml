@@ -31,18 +31,18 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         integrity: sha256-c092029daccd4f4fd85924ed2cbb04e52f1b67f9a6c187c8fada066fc939647e
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 431-438
-        integrity: sha256-59c6d7f45e5f08e7454bbbfef4c99f642acecc72892011d890b2f6204c5ed0d4
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        lines: 518-535
+        integrity: sha256-89b0306867d74134682c6435a02c3d0d7c427c2f9c32ce96b4a14819826e0433
+        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
     - id: docusaurus-each-schema-in-a-set-applies-in-full
       claim:
         lines: 146-151
         integrity: sha256-8172fafffc6de7f79aa21fb094ec19b183be3bceccf52f81f00bde1efb7f6ec9
       source:
         file: src/meta/core/validator.ts
-        lines: 654-661
+        lines: 676-683
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: d1e637fbfa53b823549e0972087cd1603a58e885
+        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
     - id: docusaurus-misspelled-key-passes
       claim:
         lines: 120-123
@@ -134,18 +134,18 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         integrity: sha256-59eed64d69ad7c2760088e7ca3dae3b9411dfb7737bf2eb16d78c4750e01889a
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 32-35
-        integrity: sha256-af133f1e0fa21ca01b004a947824e1ce63d00d49af5bf112da6ffcda850b9a3c
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        lines: 41-53
+        integrity: sha256-90d91c4763d416f468cfa4464dd1b1d64fc920ae5bbacb41d83ce6f97126e5fe
+        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
     - id: docusaurus-reference-kind-builtin
       claim:
         lines: 24
         integrity: sha256-532bd9663597e021387396a0d71bc4ba7d4d902e8235e18167ce466f6bd8fbfa
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 357-368
+        lines: 394-405
         integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
-        commit-sha: bb0ad587be4967e7033b5cfc112708fece1f2fe4
+        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
     - id: docusaurus-no-required-fields-row
       claim:
         lines: 23
@@ -178,9 +178,9 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         integrity: sha256-29f6a94431f637c2546ae1e256b40d65728ed38b56f91c3cb185b2a33f8e8781
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 299-310
+        lines: 336-347
         integrity: sha256-b609d7a86f241caa53f6c3ab9266149e6c0333c7496005e23ab3d94797659c1c
-        commit-sha: bb0ad587be4967e7033b5cfc112708fece1f2fe4
+        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
     - id: docusaurus-row-pages
       claim:
         lines: 11

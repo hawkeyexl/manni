@@ -185,8 +185,11 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       lines: 209-211
       integrity: sha256-5f308966a4d8b5378adfac930cd5a1d4479b5a2179cdbccde8330c1e713f8aab
     - generated-by: Claude Opus 5
-      lines: 212-216
-      integrity: sha256-141f6f53798742e477bc85747b0f1d73a00c0025d0d238533045c435caf73d64
+      lines: 212-214
+      integrity: sha256-8983937b9ca81a70110ab9500b944e230fc357d9f45f2b78b3d26983418f1991
+    - generated-by: Claude Opus 5
+      lines: 216
+      integrity: sha256-0b40c5dffe03ecb9864156eec5a28d376bb0e339c20452e34a46d053da10591b
     - generated-by: Claude Fable 5.1
       lines: 217
       integrity: sha256-2b698c7806a14570163bd479ef548fcc0644d1ab9322f92fa87035b59d405762

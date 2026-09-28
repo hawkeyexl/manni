@@ -19,8 +19,17 @@ docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-253
-      integrity: sha256-0fd29720944a92faddd9ef3a67eae93eb5a5907acdd860eb9717fc2e039743f9
+      lines: 1-16
+      integrity: sha256-c17665994abc81196b842a7619e0fd5a8392012f94aff659497628834fcc156d
+    - generated-by: Claude Opus 5.5
+      lines: 22-24
+      integrity: sha256-87ae72b3e4eb02b2c967bb86b40b728d6db1637c3a4ee75ca289996e975b7a66
+    - generated-by: Claude Opus 5.5
+      lines: 30-221
+      integrity: sha256-a39c5196e705364a5ad186f10dbbd06c3e3375bfb6041832d250036d90f96a36
+    - generated-by: Claude Opus 5.5
+      lines: 232-265
+      integrity: sha256-9e01985a9da87996b9f09c348d550f96b88da30feb38922fd5c31d2ee60185c9
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

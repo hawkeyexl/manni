@@ -19,8 +19,17 @@ docs/src/content/docs/meta/reference/schemas/manni-ai-context.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-211
-      integrity: sha256-8af702b4cbf822ddcfd71814da3492fd2b6d86a5cd7baf154bea82a5d6230d91
+      lines: 1-15
+      integrity: sha256-a08084c532d8e9192978541a527ffe92e709846a054daacf115cdd47011d51e4
+    - generated-by: Claude Opus 5.5
+      lines: 21-23
+      integrity: sha256-87ae72b3e4eb02b2c967bb86b40b728d6db1637c3a4ee75ca289996e975b7a66
+    - generated-by: Claude Opus 5.5
+      lines: 29-186
+      integrity: sha256-a02b88204df4f4fd8d9f8d0402fe44558b98dca91046b380ddea94df2863faff
+    - generated-by: Claude Opus 5.5
+      lines: 197-223
+      integrity: sha256-609d347371224a533b0e3803f86653f14c6bb52c87af0d6b1f637531736f0b4e
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

@@ -32,7 +32,7 @@ sample-questions:
 graph:
   label: override
   type: concept
-last-updated: 2026-09-16
+last-updated: 2026-09-27
 ---
 
 <p>{frontmatter.definition}</p>
@@ -45,6 +45,8 @@ In manni meta, "override" has two related senses:
   [Apply different schemas to different folders](/manni/meta/set-up/different-schemas-per-folder/).
 - More broadly, schema resolution is a chain of overrides. A `--schema` flag
   overrides a document's [`$schema`](/manni/meta/reference/glossary/schema-key/).
-  That overrides config `overrides`, which overrides config `schemas`, which
-  overrides the built-in default. The first source that yields a schema wins.
+  That overrides config `overrides`, which override config `schemas`. The
+  first source that yields a schema wins. Config `schemas` join the built-in
+  default set rather than override it, and so does an override that sets
+  `defaults: true`.
   See [Precedence](/manni/meta/reference/schema-resolution/#precedence).

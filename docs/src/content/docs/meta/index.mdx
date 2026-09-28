@@ -99,10 +99,11 @@ which line, and which schema flagged it:
 ```
 
 That's the whole loop: run it, read the result, fix the field, run it again.
-With no schema configured, manni meta validates against two built-in schemas.
-The [OKF schema](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
-requires only `type`. The Seven-Action schema constrains `action` to seven
-reader actions, and requires nothing.
+With no schema configured, manni meta validates against a built-in default set
+of eleven schemas. The [OKF schema](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+requires `type`. The [manni core vocabulary](/manni/meta/reference/schemas/manni-core/)
+requires `title` and `description`. The Seven-Action schema and the other manni
+vocabularies check a field only when a page carries it.
 
 ## What do you want to do?
 

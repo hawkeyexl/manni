@@ -90,8 +90,11 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
       lines: 156-169
       integrity: sha256-703a3669a4658910eec611b9b922d6798456de791d91f552d2136aba440c06ed
     - generated-by: Claude Opus 5
-      lines: 173-196
-      integrity: sha256-125daeb76ff9c5857b5333d0ead029500ed7fce221e1e82b9b9eef1e06ae1b29
+      lines: 173-174
+      integrity: sha256-277a1a065bc110613173ae81de281527f9afa1b664e1b36047bb767a7d3c5f31
+    - generated-by: Claude Opus 5
+      lines: 179-196
+      integrity: sha256-8a37a402df4b48a0b09b8bc964fccbd815e88fcec9de7adaf6290243f94bada0
     - generated-by: Claude Fable 5.1
       lines: 197
       integrity: sha256-c9cbcd26ffd8ea5d4ccceab751fbf2a79f627bc84ecd93dcaaedd80e5ed24777

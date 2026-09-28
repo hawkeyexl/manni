@@ -226,16 +226,19 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
       lines: 640-682
       integrity: sha256-f4aa3e2371452661772b56f16feed36ea363cc3ed61f1b83db6932cec23de14b
     - generated-by: Claude Opus 5.5
-      lines: 683-722
-      integrity: sha256-69af718a084eab0f728e9c632b780c245e51eea29e9d4e8edfb2fdcce28e1560
+      lines: 683-704
+      integrity: sha256-4644354ff93bf890d8b8128f77dc9dcd03295e3a0d545439ac79beae61392744
+    - generated-by: Claude Opus 5.5
+      lines: 707-721
+      integrity: sha256-e6c8351e0991cad0888382d4b328fb3622865921ae3ca1d51754a133bed91a19
     - generated-by: Claude Opus 5
-      lines: 727-728
+      lines: 726-727
       integrity: sha256-512dc1e3708ed8a074a69e30d2118213e5a00aeebd451879c014b25ea05563b4
     - generated-by: Claude Opus 5
-      lines: 731-735
+      lines: 730-734
       integrity: sha256-2901fe469e82c3750ba39178c92f3ac342e67fcee8f2e394317623f44b638b4a
     - generated-by: Claude Opus 5
-      lines: 747-754
+      lines: 746-753
       integrity: sha256-074c48a184fb27c46c185f4d4bd6e8441bdebf8a265122171112e0b3a8b5fe42
   owner:
     - "@hawkeyexl"
