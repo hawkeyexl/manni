@@ -281,3 +281,19 @@ docs/src/content/docs/meta/schemas/versioning.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  source-of-truth:
+    - path: src/meta/core/validator.ts
+    - path: src/meta/commands/query.ts
+    - path: src/meta/core/schema-registry.ts
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /related-pages
+        - /source-of-truth
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /related-pages: 0.7
+        /source-of-truth: 0.9

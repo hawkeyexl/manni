@@ -380,3 +380,19 @@ docs/src/content/docs/cite/reference/citations.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-11
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /tags: 0.85
+        /action: 0.92
+        /prerequisites: 0.75
+        /next-steps: 0.78
+        /related-pages: 0.85
+        /risks: 0.95

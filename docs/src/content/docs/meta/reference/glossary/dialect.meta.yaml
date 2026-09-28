@@ -19,3 +19,34 @@ docs/src/content/docs/meta/reference/glossary/dialect.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
+  source-of-truth:
+    - path: src/meta/core/validator.ts
+      lines: 63-77
+    - path: src/meta/core/validator.ts
+      lines: 461-468
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /alt-labels
+        - /broader
+        - /narrower
+        - /scope-note
+      confidence:
+        /tags: 0.9
+        /action: 0.95
+        /concepts: 0.9
+        /prerequisites: 0.85
+        /next-steps: 0.9
+        /source-of-truth: 0.95
+        /risks: 0.95
+        /alt-labels: 0.8
+        /broader: 0.9
+        /narrower: 0.95
+        /scope-note: 0.85

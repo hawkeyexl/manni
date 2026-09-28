@@ -19,3 +19,28 @@ docs/src/content/docs/meta/reference/glossary/metadata.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
+  source-of-truth:
+    path: src/meta/types.ts
+    kind: type-definition
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /next-steps
+        - /related-pages
+        - /source-of-truth
+        - /risks
+        - /alt-labels
+        - /scope-note
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /concepts: 0.9
+        /next-steps: 0.9
+        /related-pages: 0.9
+        /source-of-truth: 0.95
+        /risks: 0.95
+        /alt-labels: 0.75
+        /scope-note: 0.9

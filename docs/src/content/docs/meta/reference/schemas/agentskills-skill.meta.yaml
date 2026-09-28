@@ -23,3 +23,15 @@ docs/src/content/docs/meta/reference/schemas/agentskills-skill.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.75
+        /action: 0.8
+        /risks: 0.9

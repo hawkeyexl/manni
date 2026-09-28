@@ -19,3 +19,27 @@ docs/src/content/docs/meta/reference/glossary/schema-reference.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
+  source-of-truth:
+    path: src/meta/core/schema-registry.ts
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /broader
+        - /scope-note
+      confidence:
+        /tags: 0.8
+        /action: 0.95
+        /concepts: 0.9
+        /prerequisites: 0.85
+        /next-steps: 0.9
+        /source-of-truth: 0.9
+        /risks: 1
+        /broader: 0.85
+        /scope-note: 0.95

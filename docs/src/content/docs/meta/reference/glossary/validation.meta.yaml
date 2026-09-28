@@ -19,3 +19,27 @@ docs/src/content/docs/meta/reference/glossary/validation.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
+  source-of-truth:
+    path: src/meta/commands/validate.ts
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /alt-labels
+        - /scope-note
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /concepts: 0.9
+        /prerequisites: 0.85
+        /next-steps: 0.8
+        /source-of-truth: 0.95
+        /risks: 0.9
+        /alt-labels: 0.75
+        /scope-note: 0.9

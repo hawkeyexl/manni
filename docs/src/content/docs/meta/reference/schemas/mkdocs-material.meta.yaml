@@ -23,3 +23,17 @@ docs/src/content/docs/meta/reference/schemas/mkdocs-material.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.72
+        /action: 0.88
+        /related-pages: 0.82
+        /risks: 0.85

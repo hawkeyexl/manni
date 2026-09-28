@@ -114,3 +114,13 @@ docs/src/content/docs/a11y/get-started/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-11
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /risks
+      confidence:
+        /tags: 0.7
+        /action: 0.9
+        /risks: 0.75

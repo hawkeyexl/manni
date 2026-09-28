@@ -344,3 +344,21 @@ docs/src/content/docs/a11y/reference/cli.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-07
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /tags: 0.9
+        /action: 0.95
+        /concepts: 0.7
+        /prerequisites: 0.75
+        /next-steps: 0.7
+        /related-pages: 0.8
+        /risks: 0.85

@@ -256,3 +256,20 @@ docs/src/content/docs/meta/ci/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  source-of-truth:
+    - path: action.yml
+    - path: examples/manni.yml
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /related-pages
+        - /source-of-truth
+        - /risks
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /related-pages: 0.8
+        /source-of-truth: 0.85
+        /risks: 0.85

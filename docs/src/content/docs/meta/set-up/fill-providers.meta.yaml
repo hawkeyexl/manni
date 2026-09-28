@@ -129,3 +129,13 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-08-22
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /related-pages: 0.75

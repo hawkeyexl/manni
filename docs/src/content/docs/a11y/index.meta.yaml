@@ -146,3 +146,20 @@ docs/src/content/docs/a11y/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-07
+  source-of-truth:
+    path: src/a11y/
+    kind: source-code
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /related-pages
+        - /source-of-truth
+        - /risks
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /related-pages: 0.9
+        /source-of-truth: 0.85
+        /risks: 0.95
