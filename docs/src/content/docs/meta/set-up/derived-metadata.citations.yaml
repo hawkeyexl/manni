@@ -5,9 +5,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-83f6545b36a5a8c9f30eda470f8f7d51ce0334ec379aea86d861087fe4a22525
       source:
         file: src/meta/commands/query.ts
-        lines: 2915-2919
+        lines: 2917-2921
         integrity: sha256-05846fc0a08d3c16222cb887a66fe3f1622e803e02eb6097fd17a6134c8b3557
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: finding-message-is-self-contained-instruction
       claim:
         integrity: sha256-390ff6a1320afcba35ed1605d94f6e5bcbc28d448b5e3b662e466ef0b59413b5
@@ -69,17 +69,17 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-7930b5db3b887e4189e91965051a27342cbd609c18a10f1979c1cc720e862aa4
       source:
         file: src/meta/commands/query.ts
-        lines: 2901-2907
+        lines: 2903-2909
         integrity: sha256-9716b9809c5757ffdef329b5bec9bf1d2ac857070bd43cf30e2b4b6cf446da0a
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: query-refuses-write-to-managed-field
       claim:
         integrity: sha256-7930b5db3b887e4189e91965051a27342cbd609c18a10f1979c1cc720e862aa4
       source:
         file: src/meta/commands/query.ts
-        lines: 2915-2919
+        lines: 2917-2921
         integrity: sha256-05846fc0a08d3c16222cb887a66fe3f1622e803e02eb6097fd17a6134c8b3557
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: baselined-findings-count-line
       claim:
         integrity: sha256-74403355ba5154bdef3ef0fad01ee9d95e86a316869b3f293eea330066225904
@@ -292,9 +292,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-637d9dd89d96bea840b607dff4fe8541d8bf7aff840860f06d25b6b48dcc6477
       source:
         file: src/meta/core/config.ts
-        lines: 1136-1139
+        lines: 1130-1133
         integrity: sha256-cc1dbc2b464d4db8fbcbc5b757bfe47e18dc8703ce58445e74c6ed9829366cf6
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: path-placeholder-runs-command-per-document
       claim:
         integrity: sha256-baa16c16b29ee1ecba9f84a36e1db05e8cb4d5e6a4b87041d7dc44c425e4ce46
@@ -316,9 +316,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-baa16c16b29ee1ecba9f84a36e1db05e8cb4d5e6a4b87041d7dc44c425e4ce46
       source:
         file: src/meta/core/config.ts
-        lines: 1180-1183
+        lines: 1174-1177
         integrity: sha256-b871afaed5886bb437df03ab8849214770abb26b635903d3a965f3f50f3775c6
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: command-evidence-is-the-argv-line
       claim:
         integrity: sha256-e7b26234f946d763f11435b657591bb096cd5b6e9e5357c11beec90f32e2a85e
@@ -372,9 +372,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-a021c9ad6a31c64ac33abb83599b92f9c27676c0a552249c376586438aae4a0c
       source:
         file: src/meta/core/config.ts
-        lines: 1019-1024
+        lines: 1015-1020
         integrity: sha256-cfaba9ec3b3646e1be17b24d3f52cad491a72b35ed58b24234463edc250a6123
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: resolved-table-origin-column
       claim:
         integrity: sha256-6794b2226b3e459c735ede1fac439e55318f84bd19dad4b4152442da82a6a002
@@ -542,9 +542,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-f78a1694c10f5642fbeaedba5743a6f5bddf9c3a2ca4db4885655d6d6ad8a698
       source:
         file: src/meta/core/config.ts
-        lines: 1057-1063
+        lines: 1053-1059
         integrity: sha256-2c9b345de1a5681fd3d2678a7773ff695f64dd86ace7190f3d9fa9ca757872fb
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: excluded-source-leaves-field-unknown
       claim:
         lines: 87

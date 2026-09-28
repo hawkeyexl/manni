@@ -60,9 +60,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-23b4200b127b40399a05997509b2db106f4feb482deb936ab5721c1c27671f3d
       source:
         file: src/meta/core/config.ts
-        lines: 1880-1888
+        lines: 1874-1882
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: every-file-satisfies-every-schema
       claim:
         lines: 53

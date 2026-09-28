@@ -5,9 +5,9 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-3611e0d7a010d117bd5e0fe66e511e3ad8354b0df5e546f9d7e43c7ea3c9ac2f
       source:
         file: src/meta/commands/query.ts
-        lines: 2210-2216
+        lines: 2212-2218
         integrity: sha256-c4d1b813f220e0600544c674258128912ad2bc7b5a76d70fc4c504bc46cf61ff
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: query-dry-run-previews-without-writing
       claim:
         integrity: sha256-abcc8766e6427b41f9caff39e2d4d0f73195f3cbedddddd6e517d25ea5f0b9cd
@@ -29,9 +29,9 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-3d8c581d109ba14189664aba99bab28e4caf68250e257fa94bbf97599529ab6c
       source:
         file: src/meta/commands/query.ts
-        lines: 2400-2406
+        lines: 2402-2408
         integrity: sha256-545e1af872e2d1c159cb8db5b380b588f7a51ead4e0edc4a60076b48d1fddbc7
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: alter-default-backfills-the-corpus
       claim:
         integrity: sha256-3d8c581d109ba14189664aba99bab28e4caf68250e257fa94bbf97599529ab6c
@@ -191,9 +191,9 @@ docs/src/content/docs/meta/set-up/new-required-field.mdx:
         integrity: sha256-d25170d7187579ffa292e40f233ca965860e182402f347daa7e598dfba7d92fb
       source:
         file: src/meta/commands/query.ts
-        lines: 2217-2219
+        lines: 2219-2221
         integrity: sha256-67a96397f9cc99fde680c70048c3d5052927f4d4f0cb794adce1dc3e43218d40
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: baseline-entries-keyed-by-document-path
       claim:
         lines: 9

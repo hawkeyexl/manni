@@ -73,17 +73,17 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-bc5b70ccf07c52bfba02ab05ded97e988a1c9574ab64acaac50858a80cf0b695
       source:
         file: src/meta/core/config.ts
-        lines: 1835-1853
+        lines: 1829-1847
         integrity: sha256-497f42dc45f97d01d499d4e10d32a84e6153840172444261727342a92364acf4
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: output-collection-refusals-are-usage-errors
       claim:
         integrity: sha256-d0aa7ba12148e37a497fad5a0d1b1f7da6fd5dedac963f7cfa32bdbad36d7a9b
       source:
         file: src/meta/core/config.ts
-        lines: 1835-1842
+        lines: 1829-1836
         integrity: sha256-506b8f2226ceb9120dd1f7bb5d76f7272b794c052017e5ddbf80b0a09e655205
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: output-external-metadata-errors
       claim:
         lines: 623-641

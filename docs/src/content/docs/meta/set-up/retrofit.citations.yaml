@@ -222,17 +222,17 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-5a470798b1a0da03116965bc7fe5d49a92d8a10669c9c0446a12bbda8bbe1d85
       source:
         file: src/meta/core/config.ts
-        lines: 1884-1888
+        lines: 1878-1882
         integrity: sha256-c1073b37482c4ef603d5aa2fdb9f74e8f729af80021b238d65433942c1e5995a
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: collections-supply-inputs-for-a-bare-run
       claim:
         integrity: sha256-ce6cb10426c10dee729abc094d8e5acb8f6bcf2b388a525828a581ba33c23ab5
       source:
         file: src/meta/core/config.ts
-        lines: 1880-1883
+        lines: 1874-1877
         integrity: sha256-97e2c7153041a93dd1f1732aff7f763b2e640bb922d7ea45555d856d7aacb622
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: github-format-emits-workflow-annotations
       claim:
         integrity: sha256-1b191f0f554deba2bbab4959b821b4e2fa0752c14aba132edf90c01756d180a2

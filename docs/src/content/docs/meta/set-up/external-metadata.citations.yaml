@@ -110,27 +110,27 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-3fd43bd1e1c2b880733c027690fbb5f7b62b5fa54dde2248d5959f9df8baff72
       source:
         file: src/meta/commands/query.ts
-        lines: 3341-3348
+        lines: 3343-3350
         integrity: sha256-42c75dbbc97be83f6fd16d09d9379e3a636755457cd29fdae71ff6df23ae5e15
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: join-field-write-refused-when-entry-matched
       claim:
         lines: 646
         integrity: sha256-d7d8e30e0b6a0639c700a7b2b5218b70da4569f4df4dcdef129d6d132afde5e3
       source:
         file: src/meta/commands/query.ts
-        lines: 2991-2994
+        lines: 2993-2996
         integrity: sha256-49f7d3db3de492b6a8eccb57d02c29254e371d6cc228c0f8c35db2aa03f6597a
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: url-manifest-cannot-be-written
       claim:
         lines: 643
         integrity: sha256-e718e3abe8f0bbed0ca5ba21a7d6a5bd295f2437fb959845d26b350218e420f4
       source:
         file: src/meta/commands/query.ts
-        lines: 3143-3146
+        lines: 3145-3148
         integrity: sha256-f08065cb2b35ffe35134c23718880792743489af32ce7c5c719b888cb375868c
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: manifest-splice-preserves-comments
       claim:
         integrity: sha256-756a1eb87c6a14d7fbd92fc09a0b513c213db34ea64626596c3884017ef52bec
@@ -216,9 +216,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-776e13f5b6c23a26000407530591ea750b9d963b928391ee3103f12a43a1dc7f
       source:
         file: src/meta/commands/query.ts
-        lines: 2990-2994
+        lines: 2992-2996
         integrity: sha256-64153ad32156f49017c5c25e6f2df03618b30844ddaa7228327bf509377e2a12
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: duplicate-finding-fails-the-run
       claim:
         integrity: sha256-ef9bc63ec1edba49b0a15655a5204b49a849fd2329bceb2f21f1ef2f5af186c5
@@ -495,18 +495,18 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-5d2f1225ca5f07c91f3acc7434241efbeeb41f69cca74a12b37b85a86f9166f7
       source:
         file: src/meta/core/config.ts
-        lines: 1880-1883
+        lines: 1874-1877
         integrity: sha256-97e2c7153041a93dd1f1732aff7f763b2e640bb922d7ea45555d856d7aacb622
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: override-points-at-collection-by-name
       claim:
         lines: 104
         integrity: sha256-d2c3c9e5867c78112a8aba316d3f09086e27e55a403fe2a5041eb21d531380e7
       source:
         file: src/meta/core/config.ts
-        lines: 834-836
+        lines: 830-832
         integrity: sha256-214d2e20e4eed70b2af58330270685d7cacbba6617d33b0b30ff458724ef793f
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: manifest-entry-unowned-key-refused
       claim:
         lines: 103
@@ -567,9 +567,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-e3241083a080cfdf0b8b123267800a91d42a6801e8646e0ba6aaab5b4df3c81c
       source:
         file: src/meta/core/config.ts
-        lines: 764-767
+        lines: 760-763
         integrity: sha256-02ba737cf99868ba4edd94f10166a97a02b2c9459f5afdd7bba4a16c50adee34
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: external-metadata-declared-on-collection
       claim:
         integrity: sha256-63d0c5df809c8447fee458f605d72ac3155263fb49c8c405fa865cc15842a363

@@ -636,6 +636,8 @@ cannot point the edit outside the repository.
 - **A local schema file is edited in place**, with `properties` and `required`
   only, your indent and line endings preserved, and git as the review surface. A
   vendored file's `integrity:` pin is refreshed in the same write.
+  A schema named by an id `meta.register` loaded is edited in its own file the
+  same way, and its `$id` stays as it was.
 - **A built-in forks.** Built-ins are immutable, so the statement writes
   `schemas/<name>-<version>.local.json` beside the config, with `$id` suffixed
   `+local`. It repoints every reference that named the built-in. That is the
