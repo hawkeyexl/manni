@@ -53,9 +53,9 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
         integrity: sha256-3f7b47e0443195354e7487bc21f06cdbaf93bd44a9fe639dd6d9bc891cb0436a
       source:
         file: src/meta/commands/fill.ts
-        lines: 2217-2226
+        lines: 2220-2229
         integrity: sha256-4ef594487e1ed4ac6c7643e4a0a7767162a23cf4294e36c87c94142bd0b6fca9
-        commit-sha: 2c196b71add6077e3a545fc94de581232ba045c3
+        commit-sha: 3cd143ab6d1d0a027c7439939b17459b4703b817
     - id: local-refuses-hosted-provider-after-detection
       claim:
         integrity: sha256-606c8e128d87d8e8e59c5b3e07cca8f5989c9c27afc648e80a2c06a5bacfa9e4
@@ -151,9 +151,9 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
         integrity: sha256-c021dc8598ecb43bc92333c5a2c22bbed90b6322521d69b581edc7ba829333a2
       source:
         file: src/meta/commands/fill.ts
-        lines: 1626-1630
+        lines: 1629-1633
         integrity: sha256-b7f154d849f4c181388dbd969c56971c682c1f1242478ad7474f1a586534c323
-        commit-sha: 2c196b71add6077e3a545fc94de581232ba045c3
+        commit-sha: 3cd143ab6d1d0a027c7439939b17459b4703b817
     - id: over-budget-file-is-split-into-chunks
       claim:
         integrity: sha256-e0a20405a1fcc51ee450264d637435b38b21309872563a923afdfafef5edd0a1
@@ -199,9 +199,9 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
         integrity: sha256-cd6d5fceb0a1f22c09075a9a33c54e17b9685a8b3d5d22af6013c3cfcdab6d5e
       source:
         file: src/meta/commands/fill.ts
-        lines: 1390-1394
+        lines: 1393-1397
         integrity: sha256-de85a82c10c7886dc69e077016f7dd45f5b471fcf85816e550f7fb00c1848f20
-        commit-sha: 2c196b71add6077e3a545fc94de581232ba045c3
+        commit-sha: 3cd143ab6d1d0a027c7439939b17459b4703b817
     - id: whole-document-text-is-sent
       claim:
         lines: 18
@@ -226,9 +226,9 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
         integrity: sha256-6c78d4aa7627bdcbc5d8bfe892b4c323f7a7cf2f72585d46630487f78cda027f
       source:
         file: src/meta/commands/fill.ts
-        lines: 1706-1709
+        lines: 1709-1712
         integrity: sha256-b3613d2205a47cf6ee9d4b7f7130b056e86088818fba30d9c65016760652a2e4
-        commit-sha: 2c196b71add6077e3a545fc94de581232ba045c3
+        commit-sha: 3cd143ab6d1d0a027c7439939b17459b4703b817
     - id: two-provenance-keys-removed-from-metadata-sent
       claim:
         lines: 17
