@@ -140,6 +140,9 @@ function project(
     (held, part) => (held === undefined ? undefined : merge(held, part)),
     {},
   );
+  // A node with both keywords distributes one over the other, so the shapes
+  // multiply: two branches each give four. Nested alternatives compound the
+  // same way. Metadata schemas stay shallow, so this is left unbounded.
   for (const keyword of ["anyOf", "oneOf"] as const) {
     const branches = node[keyword];
     if (acc === undefined || !Array.isArray(branches)) continue;

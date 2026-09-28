@@ -211,6 +211,14 @@ describe("projectValue", () => {
       }
     });
 
+    it("drops a draft-07 tuple items array, sending a plain array", () => {
+      // Tuple forms are not projected; the full subschema still checks each
+      // position of the answer.
+      expect(inner({ type: "array", items: [{ type: "string" }, { type: "number" }] })).toEqual({
+        type: "array",
+      });
+    });
+
     it("keeps additionalProperties false and drops a schema-valued one", () => {
       expect(
         inner({ type: "object", properties: { a: { type: "string" } }, additionalProperties: false }),
