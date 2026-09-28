@@ -7,6 +7,7 @@
  * prefix; `loadConfig` adds it, and the `meta.` section with it.
  */
 import { readFile, readdir, stat } from "node:fs/promises";
+import type { Stats } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { DocmetaError } from "../types.js";
 import { stripBom } from "./json-text.js";
@@ -102,13 +103,19 @@ export async function loadRegisteredSchemas(
   const files: string[] = [];
   for (const [i, entry] of register.entries()) {
     const path = resolve(configDir, entry);
-    let isDir: boolean;
+    let entryStats: Stats;
     try {
-      isDir = (await stat(path)).isDirectory();
+      entryStats = await stat(path);
     } catch {
       throw new DocmetaError(`register[${i}] names ${entry}, which does not exist.`);
     }
-    if (!isDir) {
+    // A pipe, socket or device would reach `readFile`, and a FIFO blocks it.
+    if (!entryStats.isDirectory() && !entryStats.isFile()) {
+      throw new DocmetaError(
+        `register[${i}] names ${entry}, which is not a file or a directory.`,
+      );
+    }
+    if (!entryStats.isDirectory()) {
       files.push(path);
       continue;
     }

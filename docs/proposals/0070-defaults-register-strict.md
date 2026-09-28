@@ -183,6 +183,7 @@ Each is a config error, exit 2, with the config path as its prefix.
 - `meta.overrides[<i>] sets <key>, which applies to the entry's schemas. Add schemas, or remove <key>.` The key is `defaults` or `strict`. With both, it reads `sets defaults and strict, which apply to the entry's schemas. Add schemas, or remove them.`
 - `meta.derive.collections names "<name>", which no collection declares.`
 - `meta.register[<i>] names <path>, which does not exist.`
+- `meta.register[<i>] names <path>, which is not a file or a directory.`
 - `meta.register[<i>] names a directory with no .json files.`
 - `meta.register: <file> is not valid JSON.`
 - `meta.register: <file> has no $id. A registered schema is named by its $id.`

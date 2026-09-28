@@ -19,6 +19,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -374,6 +375,23 @@ describe("registered schemas in loading (0070)", () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it.skipIf(process.platform === "win32")(
+    "refuses a register path that is neither a file nor a directory",
+    async () => {
+      const dir = mkdtempSync(join(tmpdir(), "manni-register-fifo-"));
+      try {
+        // A FIFO: reading it would block until a writer opens it.
+        execFileSync("mkfifo", [join(dir, "pipe.json")]);
+        writeFileSync(join(dir, "manni.config.yaml"), "meta:\n  register: [./pipe.json]\n");
+        await expect(loadConfig(undefined, dir)).rejects.toThrow(
+          "manni.config.yaml: meta.register[0] names ./pipe.json, which is not a file or a directory.",
+        );
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
+  );
 
   it("lists registered schemas with their files for manni meta schemas", async () => {
     const loaded = await loadConfig(undefined, REGISTER);

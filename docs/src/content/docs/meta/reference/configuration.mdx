@@ -1541,6 +1541,7 @@ Each of these stops the run before any file is validated, exit 2:
 | Situation | Message |
 |---|---|
 | A path that does not exist | `meta.register[<i>] names <path>, which does not exist.` |
+| A path that is neither a file nor a directory, such as a pipe | `meta.register[<i>] names <path>, which is not a file or a directory.` |
 | A directory with nothing to register | `meta.register[<i>] names a directory with no .json files.` |
 | A file that does not parse | `meta.register: <file> is not valid JSON.` |
 | A schema with no `$id` | `meta.register: <file> has no $id. A registered schema is named by its $id.` |
