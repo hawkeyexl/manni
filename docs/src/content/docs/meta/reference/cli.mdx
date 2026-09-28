@@ -1365,6 +1365,10 @@ and whether [`fill`](#meta-fill) can write to it. In `json` format it prints
 and `formats` is an array of `{ name, extensions, writable }`. `registered`
 is empty when the config registers nothing.
 
+A config that fails to load does not stop the listing. `schemas` prints the
+config's error on stderr, adds `Registered schemas are not listed.`, and
+exits `0` with the built-ins and formats.
+
 ```sh
 manni meta schemas
 manni meta schemas -f json

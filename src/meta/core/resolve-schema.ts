@@ -430,6 +430,11 @@ export interface ResolvedSchemaSet {
  * outside the default set included: a team that wants one closed lists its
  * overlay. Duplicates are then removed, the first kept, so an overlay also
  * listed by hand sits once, after its base.
+ *
+ * A default id counts as a default however it reached the set. With
+ * `defaults: false`, `strict: true` and `schemas: [manni:core:1.0.0]`, the
+ * set is core then core-strict: `strict` pairs what the set holds, and
+ * `defaults` only decides whether the default set joins it.
  */
 function withStrict(
   refs: readonly string[],

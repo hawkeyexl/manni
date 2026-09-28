@@ -289,12 +289,12 @@ Sometimes manni meta stops before validating any file and prints a single line t
 **stderr**, prefixed with `manni:`:
 
 ```
-manni: Unknown schema "google:okf:0.2". Built-in ids: google:okf:0.1, diataxis:diataxis:1.0, passo-uno:seven-action:1.0, …. Registered by meta.register: none.
+manni: Unknown schema "google:okf:0.2". manni meta schemas lists the built-in ids. Registered by meta.register: none.
 ```
 
-The `Built-in ids:` list names every [built-in id](/manni/meta/reference/schemas/),
-so the real line is much longer than this. The last list names the ids the
-config [registers](/manni/meta/reference/configuration/#register), or `none`.
+`manni meta schemas` lists every [built-in id](/manni/meta/reference/schemas/).
+The line itself names the ids the config
+[registers](/manni/meta/reference/configuration/#register), or `none`.
 
 or:
 

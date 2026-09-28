@@ -200,10 +200,11 @@ built-in rather than silently treated as a missing file.
 
 {/* cite unknown-schema-names-both-lists */}
 An id that is neither shipped nor registered stops the run with exit 2. The
-message names both lists:
+message points at `manni meta schemas` for the built-in ids, and names the
+registered ones:
 
 ```text
-manni: Unknown schema "house:page:1.0.0". Built-in ids: google:okf:0.1, passo-uno:seven-action:1.0, …. Registered by meta.register: none.
+manni: Unknown schema "house:page:1.0.0". manni meta schemas lists the built-in ids. Registered by meta.register: none.
 ```
 
 ### Registered references

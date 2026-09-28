@@ -335,7 +335,7 @@ describe("the ladder (0070)", () => {
     });
     await expect(run).rejects.toBeInstanceOf(DocmetaError);
     await expect(run).rejects.toThrow(
-      /^Unknown schema "house:page:1\.0\.0"\. Built-in ids: google:okf:0\.1, .*\. Registered by meta\.register: none\.$/,
+      /^Unknown schema "house:page:1\.0\.0"\. manni meta schemas lists the built-in ids\. Registered by meta\.register: none\.$/,
     );
   });
 });

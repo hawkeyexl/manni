@@ -191,14 +191,18 @@ Each is a config error, exit 2, with the config path as its prefix.
 - `meta.register: <file> registers "<id>", which is a built-in id.`
 - `meta.register: <file> registers "<id>" under the reserved "<vendor>" vendor.`
 
-An unknown id at run time names both lists, and exits 2.
+An unknown id at run time exits 2. The message points at `manni meta
+schemas` for the built-in ids, which are too many for one line, and names
+the registered ones.
 
 ```text
-Unknown schema "<id>". Built-in ids: …. Registered by meta.register: none
+Unknown schema "<id>". manni meta schemas lists the built-in ids. Registered by meta.register: none.
 ```
 
 `manni meta schemas` lists the registered ids in a section of their own, each
-with its file. Its JSON output gains `registered`, an array of `{id, file}`.
+with its file. A config that fails to load does not stop it. The error goes
+to stderr with `Registered schemas are not listed.`, and the built-ins still
+list, exit 0. Its JSON output gains `registered`, an array of `{id, file}`.
 
 ### Breaking
 

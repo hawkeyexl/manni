@@ -1101,17 +1101,17 @@ function assertIntegrity(
 }
 
 /**
- * The message for an id nothing answers to. It names both lists, because a
- * registered id is typed exactly like a built-in one, and a run with no
- * config registers nothing.
+ * The message for an id nothing answers to. It points at `manni meta schemas`
+ * for the built-ins, which are too many to read in one line, and names the
+ * registered ids, because a registered id is typed exactly like a built-in
+ * one and a run with no config registers nothing.
  */
 export function unknownSchemaMessage(
   ref: string,
   registered: RegisteredSchemas | undefined,
 ): string {
-  const builtins = [...BUILTINS.keys()].join(", ");
   const ids = [...(registered?.keys() ?? [])];
-  return `Unknown schema "${ref}". Built-in ids: ${builtins}. Registered by meta.register: ${ids.length > 0 ? ids.join(", ") : "none"}.`;
+  return `Unknown schema "${ref}". manni meta schemas lists the built-in ids. Registered by meta.register: ${ids.length > 0 ? ids.join(", ") : "none"}.`;
 }
 
 /** Load and return the JSON Schema object for a reference. */

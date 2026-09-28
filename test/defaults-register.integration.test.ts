@@ -3,7 +3,7 @@
  * and reads, exit codes included. The command cores are pinned case by case
  * in `defaults-register.test.ts`; this file checks the rungs end to end.
  */
-import { execFileSync, execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -23,18 +23,15 @@ interface Run {
 }
 
 function run(args: string[], cwd: string): Run {
-  try {
-    const stdout = execFileSync("node", [manni, ...args], {
-      cwd,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env, NO_COLOR: "1" },
-    });
-    return { stdout, stderr: "", status: 0 };
-  } catch (e) {
-    const err = e as { stdout?: string; stderr?: string; status?: number };
-    return { stdout: err.stdout ?? "", stderr: err.stderr ?? "", status: err.status ?? 1 };
-  }
+  // spawnSync rather than execFileSync: a passing run's stderr (a warning)
+  // is part of what some rungs assert.
+  const r = spawnSync("node", [manni, ...args], {
+    cwd,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, NO_COLOR: "1" },
+  });
+  return { stdout: r.stdout, stderr: r.stderr, status: r.status ?? 1 };
 }
 
 describe("manni meta validate, proposal 0070's ladder (built bin)", () => {
@@ -79,8 +76,19 @@ describe("manni meta validate, proposal 0070's ladder (built bin)", () => {
   it("9. -s house:page:1.0.0 --no-config is an unknown schema, exit 2", () => {
     const r = run(["meta", "validate", "good.md", "-s", "house:page:1.0.0", "--no-config"], REGISTER);
     expect(r.status).toBe(2);
-    expect(r.stderr).toContain('Unknown schema "house:page:1.0.0". Built-in ids: google:okf:0.1,');
+    expect(r.stderr).toContain('Unknown schema "house:page:1.0.0". manni meta schemas lists the built-in ids.');
     expect(r.stderr).toContain("Registered by meta.register: none.");
+  });
+
+  it("manni meta schemas warns on a broken config and still lists the built-ins", () => {
+    tmp = realpathSync(mkdtempSync(join(tmpdir(), "manni-0070-cli-")));
+    writeFileSync(join(tmp, "manni.config.yaml"), "meta:\n  defaults: maybe\n", "utf8");
+    const r = run(["meta", "schemas"], tmp);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("google:okf:0.1");
+    expect(r.stderr).toContain(
+      "manni.config.yaml: meta.defaults must be true or false. Registered schemas are not listed.",
+    );
   });
 
   it("10. defaults: maybe is a config error, exit 2", () => {
