@@ -76,9 +76,12 @@ function dialectOf(schema: Record<string, unknown>): Dialect {
   return "2020";
 }
 
-function buildAjv(dialect: Dialect): InstanceType<AjvCtor> {
+function buildAjv(
+  dialect: Dialect,
+  coerceTypes: false | "array" = false,
+): InstanceType<AjvCtor> {
   // strict: false so user-supplied schemas with lax metadata still compile.
-  const opts = { allErrors: true, strict: false } as const;
+  const opts = { allErrors: true, strict: false, coerceTypes } as const;
   const ajv =
     dialect === "2019"
       ? new Ajv2019(opts)
@@ -351,12 +354,19 @@ function registerRegistered(
  * / `"uri"`, and an Ajv without `ajv-formats` refuses to compile them outright.
  * A lifted subschema may `$ref` a registered schema, so the run's registered
  * schemas join this instance as they join the validator's.
+ *
+ * `coerce` turns on Ajv's `coerceTypes: "array"`, which rewrites a value of the
+ * wrong JSON type into the declared one, in place, before any rule is judged:
+ * `"2"` to `2`, `"true"` to `true`, a lone scalar to a one-item list. `fill`
+ * checks each proposed value this way, on a copy. Off by default, because
+ * everywhere else a value is judged as it stands.
  */
 export function compileWithFormats(
   schema: Record<string, unknown>,
   registered?: RegisteredSchemas,
+  options: { coerce?: boolean } = {},
 ): ValidateFunction {
-  const ajv = buildAjv("2020");
+  const ajv = buildAjv("2020", options.coerce === true ? "array" : false);
   registerRegistered(ajv, "2020", registered);
   return ajv.compile(schema);
 }
