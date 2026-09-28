@@ -286,6 +286,6 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
         integrity: sha256-d7cef9b2fc948e3134589fed1c8071f9fbe3d1d864df1964f39f6b8d42d3a82d
       source:
         file: src/meta/commands/fill-projection.ts
-        lines: 158-169
+        lines: 195-206
         integrity: sha256-b18a8c0ce0cd26c349e66f9c737816b1fbce5c4841d02f05144451e29b871bab
-        commit-sha: 36b99c65a2a521d7c910e40bada4ad0c74e84473
+        commit-sha: d1377cae1ab5eeddbc9395ea93a21ec83f415bb2
