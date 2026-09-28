@@ -1278,6 +1278,43 @@ describe("blank lines carry no authorship", () => {
       expect(planProvenanceWrite(results, d)).toEqual([machineA("3-4", pin(3, 4))]);
     });
 
+    it("a kept entry a derived range partly overlaps is trimmed to the lines outside it and re-pinned there", () => {
+      // Stamped 2-4 with a blank first line, trimmed to 3-4; claude-a's derived 4-7 reaches into it.
+      const d = owned("hhhaaaahh");
+      expect(entriesOf(d)).toEqual([machineA("4-7", pin(4, 7))]);
+      const results = compareProvenance([machineA("2-4", pin(2, 4))], d);
+      expect(statusesOf(results)).toEqual([
+        { status: "stale", lines: "2-4" },
+        { status: "unset", lines: "4-7" },
+      ]);
+      expect(planProvenanceWrite(results, d)).toEqual([machineA(3, pin(3, 3)), machineA("4-7", pin(4, 7))]);
+    });
+
+    it("a kept entry a derived range sits inside is split around it, each piece trimmed and re-pinned", () => {
+      // Stamped 1-9 and current; claude-a's derived 3-4 sits in its middle.
+      const d = owned("hhaahhhhh");
+      const results = compareProvenance([machineA("1-9", pin(1, 9))], d);
+      expect(statusesOf(results)).toEqual([{ status: "current", lines: "1-9" }]);
+      // 1-2 trims to 1; 5-9 trims to 6-9.
+      expect(planProvenanceWrite(results, d)).toEqual([
+        machineA(1, pin(1, 1)),
+        machineA("3-4", pin(3, 4)),
+        machineA("6-9", pin(6, 9)),
+      ]);
+    });
+
+    it("the piece left beside a derived range is trimmed of the blank line next to it", () => {
+      // Stamped 1-5 ends on a blank line, trimmed to 1-4; claude-a's derived
+      // 3-7 leaves 1-2, whose body 2 is blank.
+      const d = owned("hhaaaaahh");
+      const results = compareProvenance([machineA("1-5", pin(1, 5))], d);
+      expect(statusesOf(results)).toEqual([
+        { status: "stale", lines: "1-5" },
+        { status: "unset", lines: "3-7" },
+      ]);
+      expect(planProvenanceWrite(results, d)).toEqual([machineA(1, pin(1, 1)), machineA("3-7", pin(3, 7))]);
+    });
+
     it("an agent that extends its own range: the old shorter entry does not stay beside the new one", () => {
       const body = ["a", "b", "c", "d"];
       const page = pageText(FRONT_PLAIN, body);

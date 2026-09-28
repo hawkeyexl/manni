@@ -847,6 +847,18 @@ describe("runDerive: provenance (0046)", () => {
     ]);
   });
 
+  it("attributes a named range's blank edge lines to no one: only its trimmed lines are the machine's", async () => {
+    const dir = stageProvenance();
+    // File lines 8 and 12 are blank, committed by the person with lines 9-11.
+    // The rekey reads the trimmed range, so they keep the person's commit.
+    const run = await runDerive({ inputs: [`${LIMITS}:8-12`], cwd: dir, generatedBy: FABLE, env: {} });
+    expect(deriveFailed(run)).toBe(false);
+    expect(provenanceOf(run).ranges?.map((r) => r.lines)).toEqual(["9-11"]);
+    expect(extract(dir, LIMITS).provenance).toEqual([
+      { "generated-by": FABLE, lines: "6-8", integrity: hashLines(HUMAN.join("\n")) },
+    ]);
+  });
+
   it("refuses a range that does not name one file the run reads, and attributes nothing", async () => {
     const dir = stageProvenance();
     agentEdit(dir);

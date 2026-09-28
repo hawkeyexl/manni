@@ -485,7 +485,7 @@ export function deriveProvenance(input: DeriveProvenanceInput): ProvenanceDeriva
     const machine = evidence?.machine;
     // Only blank lines lie between the open group's end and n: any other
     // line would have closed it.
-    if (open !== undefined && machine === open.machine) {
+    if (open !== undefined && machine !== undefined && machine === open.machine) {
       open.end = n;
       continue;
     }
@@ -687,10 +687,13 @@ export function compareProvenance(
  * test 11: the bytes are gone); an entry nothing contradicts never is. An
  * entry stale for its blank lines is kept trimmed to its first and last
  * non-blank line and pinned over those, or dropped when it holds only blank
- * lines (proposal 0071). A derived range not already kept replaces every
- * kept entry that lies within it, of any machine: it is the newer account of
- * those lines. A kept entry keeps any key outside the closed set. Ordered by
- * start line, stably.
+ * lines (proposal 0071). A derived range not already kept is the newer
+ * account of its lines, of any machine: a kept entry within it is dropped,
+ * and one it partly overlaps keeps only the lines outside it, split in two
+ * when the range sits in its middle. Each piece is trimmed of blank edges and
+ * pinned over its own lines, or dropped when only blank lines are left. A
+ * kept entry keeps any key outside the closed set. Ordered by start line,
+ * stably.
  */
 export function planProvenanceWrite(
   comparisons: readonly ProvenanceComparison[],
@@ -699,7 +702,7 @@ export function planProvenanceWrite(
   const { body } = derivation.page;
   const same = (a: ProvenanceEntry, b: ProvenanceEntry): boolean =>
     a["generated-by"] === b["generated-by"] && String(a.lines) === String(b.lines) && a.integrity === b.integrity;
-  const kept: { entry: ProvenanceEntry; span: PageLines }[] = [];
+  const kept: Written[] = [];
   // An entry identical to one already kept is written once: a blank-edged
   // entry trimmed can land on the lines of another entry the stamp holds.
   const keep = (entry: ProvenanceEntry, span: PageLines): void => {
@@ -713,13 +716,40 @@ export function planProvenanceWrite(
       if (span !== undefined) keep({ ...r.entry, lines: lineSpec(span), integrity: pinOf(body, span) }, span);
     }
   }
-  let out = [...kept];
+  /**
+   * What is left of a kept entry beside a derived range: the pieces outside
+   * it, each trimmed of blank edges, pinned over its own lines, and dropped
+   * when only blank lines are left.
+   */
+  const outside = (k: Written, d: PageLines): Written[] => {
+    if (k.span.end < d.start || k.span.start > d.end) return [k];
+    const pieces: PageLines[] = [];
+    if (k.span.start < d.start) pieces.push({ start: k.span.start, end: d.start - 1 });
+    if (k.span.end > d.end) pieces.push({ start: d.end + 1, end: k.span.end });
+    return pieces.flatMap((piece) => {
+      const span = trimBlank(body, piece);
+      if (span === undefined) return [];
+      return [{ entry: { ...k.entry, lines: lineSpec(span), integrity: pinOf(body, span) }, span }];
+    });
+  };
+  let out: Written[] = [...kept];
+  const derived = new Set<Written>();
   for (const d of derivation.derived) {
     if (kept.some((k) => same(k.entry, d.entry))) continue;
-    out = out.filter((k) => !kept.includes(k) || k.span.start < d.span.start || k.span.end > d.span.end);
-    out.push({ entry: d.entry, span: d.span });
+    out = out.flatMap((k) => (derived.has(k) ? [k] : outside(k, d.span)));
+    const written = { entry: d.entry, span: d.span };
+    derived.add(written);
+    out.push(written);
   }
-  return out.sort((a, b) => a.span.start - b.span.start).map((k) => k.entry);
+  const unique: Written[] = [];
+  for (const k of out) if (!unique.some((u) => same(u.entry, k.entry))) unique.push(k);
+  return unique.sort((a, b) => a.span.start - b.span.start).map((k) => k.entry);
+}
+
+/** An entry a write plans, with the body lines it covers. */
+interface Written {
+  entry: ProvenanceEntry;
+  span: PageLines;
 }
 
 // ---------------------------------------------------------------------------
