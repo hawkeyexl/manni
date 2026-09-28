@@ -1531,7 +1531,9 @@ absolute `https://` URL. It works anywhere a built-in id works:
 
 A registered URL id answers from its file, so no fetch is made. A registered
 `vendor:name-strict:version` is the strict version of a registered
-`vendor:name:version`, which `strict: true` stacks right after it. Nothing
+`vendor:name:version`, which `strict: true` stacks right after it. A URL id
+has no strict pair, so `strict: true` stacks nothing after one. List its strict
+version by hand instead. Nothing
 registers under `--no-config`, so a registered id is then an unknown schema.
 [`manni meta schemas`](/manni/meta/reference/cli/#meta-schemas) lists every
 registered id beside its file.
