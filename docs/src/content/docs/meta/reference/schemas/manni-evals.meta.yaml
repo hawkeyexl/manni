@@ -19,17 +19,17 @@ docs/src/content/docs/meta/reference/schemas/manni-evals.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-16
-      integrity: sha256-1fe0007b128e2a32e2a6d30bb79608271baa6bd391951d7939d997d664831e07
+      lines: 2-15
+      integrity: sha256-954d001e899cc429c8fdd3de0bebbf7f18a4c7a0228071946a310f05809ba3d8
     - generated-by: Claude Opus 5.5
-      lines: 22-24
-      integrity: sha256-87ae72b3e4eb02b2c967bb86b40b728d6db1637c3a4ee75ca289996e975b7a66
+      lines: 23-24
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
     - generated-by: Claude Opus 5.5
-      lines: 30-244
-      integrity: sha256-da33a43a5cd0762e5dd81cfd1bc9b271d86ed63e6b2f55c8e90ab96f4e40b2cb
+      lines: 30-243
+      integrity: sha256-3ac3504b94b92d8f0b380ab4e7d0d36ed506da99409673d486af6a649e2a9329
     - generated-by: Claude Opus 5.5
-      lines: 255-291
-      integrity: sha256-b18a85e2c3904cb9e2b80c5ba04e6557cc49c892fa6882e4eef171d563cb9d7c
+      lines: 256-291
+      integrity: sha256-3664d261081605c733acaf802e6b332a710adaf8f1572c8c48d0b3f395111eb6
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

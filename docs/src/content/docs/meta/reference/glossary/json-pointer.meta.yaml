@@ -14,8 +14,8 @@ docs/src/content/docs/meta/reference/glossary/json-pointer.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-9
-      integrity: sha256-7ed307d929096ffbb322b76dadf01c7e50faae5a2282eb3526498b7d9a8e1ca3
+      lines: 2-9
+      integrity: sha256-1cea4e2c4bbb9a758d91d7a74be937e514b20629a878a9a9754189003b29ce04
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

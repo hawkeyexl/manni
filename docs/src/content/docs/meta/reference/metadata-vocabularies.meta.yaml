@@ -18,8 +18,8 @@ docs/src/content/docs/meta/reference/metadata-vocabularies.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-2
-      integrity: sha256-ab723ace615adf8b215af6417837c28a4d37116f9d8e9d2b78b4f253e29b70f1
+      lines: 2
+      integrity: sha256-455ec16c59f3161e83ca8b88359e047df580ab56c1f5734d23ee4951cda8878e
     - generated-by: Claude Fable 5.1
       lines: 3-4
       integrity: sha256-11d7c61498850c6ffa90b377f1c41330dd075655b0e9918cb5c693fb4a7fdd2d
@@ -30,17 +30,11 @@ docs/src/content/docs/meta/reference/metadata-vocabularies.mdx:
       lines: 10-32
       integrity: sha256-8acf33da3cae31116899f30c780b8e902bf028a8ef4cd22cf791cc9b0d65d753
     - generated-by: Claude Opus 5
-      lines: 33-34
-      integrity: sha256-47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d
+      lines: 33
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5.5
-      lines: 35
-      integrity: sha256-6c570cca25690523834fbea2d48a890c5bc3675c0c184eaebdeaa74fdef7a9f1
-    - generated-by: Claude Opus 5
-      lines: 36
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5.5
-      lines: 37-43
-      integrity: sha256-181b066810aea3e918128b12ca16c53701af1dafd8906b2377a9d113285365f0
+      lines: 35-43
+      integrity: sha256-698ffc030020b0b52958709a77102773e863be9ee728cf4cde241c49ee95f320
   owner:
     - "@hawkeyexl"
   created: 2026-08-23

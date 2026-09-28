@@ -18,17 +18,17 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-19
-      integrity: sha256-726cf5b680d3092194fcf3033496a38a501a7139889e94f743f6b6c88209c987
+      lines: 2-19
+      integrity: sha256-c9a27d048483faa48a63496e86d8840728bf0042454aa35d327f21847d254720
     - generated-by: Claude Opus 5.5
-      lines: 21-23
-      integrity: sha256-31487873c9081b29b91e006eec86ab19b2132537605111305804e3783467a5b8
+      lines: 21-22
+      integrity: sha256-9235e95c50739f3ad90f427e4c7c74a1e9c642115a3705794bb21eb6509c3114
     - generated-by: Claude Opus 5.5
-      lines: 28-30
-      integrity: sha256-56b8ad116d61cc554af23d21815ca18f8ec6780a8b867a316ad82082830aab23
+      lines: 29-30
+      integrity: sha256-111e28d22ca5b54c74688ce0acda8e4e07cfff8859f0c7560fe8d09cdcefe3bc
     - generated-by: Claude Opus 5.5
-      lines: 32-89
-      integrity: sha256-c1b8295540affd5f8b25956fb8a89bb3b49768a927aeb38410cc01dd5aac6ba7
+      lines: 32-88
+      integrity: sha256-97bb0b469fe4d97c4540713d9ab256f21a34fd26436097fd6248c338a26a71b4
     - generated-by: Claude Opus 5.5
       lines: 93-96
       integrity: sha256-0b98c1b56531a7de5fdcecc3c60ee2755d9e6b5a8aa6df67d54df43682987111
