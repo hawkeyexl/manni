@@ -1,6 +1,6 @@
 # 0071: blank lines carry no authorship
 
-- **Status:** Proposed
+- **Status:** Implemented (#135)
 - **Serves:** Maya · M8, who reads a page's provenance to see which lines a
   machine wrote, and Devin · D4, whose gate compares the stamp.
 - **Depends on:** [0046](0046-provenance-pins.md), which made provenance
