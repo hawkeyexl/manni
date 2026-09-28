@@ -151,7 +151,44 @@ function project(
       .filter((shape): shape is Shape => shape !== undefined);
     acc = distribute(acc, projected);
   }
-  return acc;
+  return acc === undefined ? undefined : possible(acc);
+}
+
+/** Which pair of bounds constrains each type, lower then upper. */
+const BOUND_PAIRS: Readonly<Record<string, readonly [BoundKey, BoundKey]>> = {
+  string: ["minLength", "maxLength"],
+  number: ["minimum", "maximum"],
+  integer: ["minimum", "maximum"],
+  array: ["minItems", "maxItems"],
+};
+
+/**
+ * Rule 6 for bounds: a type whose own lower bound exceeds its upper bound
+ * admits no value, so it leaves the shape. A shape with no type left admits
+ * nothing. Bounds judge only the type they constrain: `minLength` over
+ * `maxLength` rules out strings and leaves a number free. An enum's values
+ * are already typed, so its bounds are left to the full check.
+ */
+function possible(shape: Shape): Shape | undefined {
+  if (shape.branches !== undefined) {
+    const kept = shape.branches
+      .map(possible)
+      .filter((branch): branch is Shape => branch !== undefined);
+    return alternatives(kept, shape.description);
+  }
+  if (shape.values !== undefined) return shape;
+  const bounds = shape.bounds ?? {};
+  const contradicts = (type: string): boolean => {
+    const pair = BOUND_PAIRS[type];
+    if (pair === undefined) return false;
+    const low = bounds[pair[0]];
+    const high = bounds[pair[1]];
+    return low !== undefined && high !== undefined && low > high;
+  };
+  const types = shape.types ?? [...ANY_TYPES];
+  const allowed = types.filter((type) => !contradicts(type));
+  if (allowed.length === 0) return undefined;
+  return allowed.length === types.length ? shape : { ...shape, types: allowed };
 }
 
 /** Rule 1: a local pointer into the envelope's definitions, followed once. */

@@ -211,6 +211,10 @@ describe("projectValue", () => {
       }
     });
 
+    it("reads items false as only the empty list", () => {
+      expect(inner({ type: "array", items: false })).toEqual({ type: "array", maxItems: 0 });
+    });
+
     it("drops a draft-07 tuple items array, sending a plain array", () => {
       // Tuple forms are not projected; the full subschema still checks each
       // position of the answer.
@@ -339,6 +343,23 @@ describe("projectValue", () => {
           ),
         ).toEqual({ unsatisfiable: true });
       }
+    });
+
+    it("reports bounds that contradict for every type the node allows", () => {
+      for (const schema of [
+        { allOf: [{ type: "string", minLength: 10 }, { maxLength: 5 }] },
+        { type: "integer", minimum: 3, maximum: 1 },
+        { type: "array", minItems: 2, maxItems: 1 },
+      ]) {
+        expect(projectValue(schema, noDefs)).toEqual({ unsatisfiable: true });
+      }
+    });
+
+    it("keeps the types a contradiction does not reach", () => {
+      // minLength over maxLength rules out strings only; numbers still pass.
+      expect(inner({ type: ["string", "number"], minLength: 10, maxLength: 5 })).toEqual({
+        type: "number",
+      });
     });
 
     it("reports an enum none of whose values has the declared type", () => {
