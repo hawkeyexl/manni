@@ -355,6 +355,21 @@ describe("projectValue", () => {
       }
     });
 
+    it("judges bounds a merged property or item gains from two branches", () => {
+      const a = { properties: { a: { type: "string", minLength: 10 } } };
+      const b = { properties: { a: { maxLength: 5 } } };
+      // Optional: the property leaves the shape. Required: nothing passes.
+      expect(inner({ type: "object", allOf: [a, b] })).not.toHaveProperty("properties.a");
+      expect(projectValue({ type: "object", required: ["a"], allOf: [a, b] }, noDefs)).toEqual({
+        unsatisfiable: true,
+      });
+      const items = {
+        type: "array",
+        allOf: [{ items: { type: "string", minLength: 10 } }, { items: { maxLength: 5 } }],
+      };
+      expect(inner(items)).toEqual({ type: "array", maxItems: 0 });
+    });
+
     it("keeps the types a contradiction does not reach", () => {
       // minLength over maxLength rules out strings only; numbers still pass.
       expect(inner({ type: ["string", "number"], minLength: 10, maxLength: 5 })).toEqual({

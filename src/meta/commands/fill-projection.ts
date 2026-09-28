@@ -332,7 +332,7 @@ function merge(a: Shape, b: Shape): Shape | undefined {
         out.properties.set(key, shape);
         continue;
       }
-      const merged = merge(held, shape);
+      const merged = mergedPart(held, shape);
       if (merged !== undefined) out.properties.set(key, merged);
       else if (required?.includes(key) === true) return undefined;
       else out.properties.delete(key);
@@ -341,7 +341,7 @@ function merge(a: Shape, b: Shape): Shape | undefined {
   if (a.closed === true || b.closed === true) out.closed = true;
   let bounds = tighten(a.bounds, b.bounds);
   if (a.items !== undefined && b.items !== undefined) {
-    const items = merge(a.items, b.items);
+    const items = mergedPart(a.items, b.items);
     // Nothing may be an item, so only the empty list passes.
     if (items === undefined) bounds = tighten(bounds, { maxItems: 0 });
     else out.items = items;
@@ -360,6 +360,15 @@ function merge(a: Shape, b: Shape): Shape | undefined {
 }
 
 /** Rule 3: carry a node's keywords into each of its alternatives. */
+/**
+ * A property or item two branches both define, merged and then judged by
+ * rule 6's bounds check, which otherwise runs only on a node `project` built.
+ */
+function mergedPart(a: Shape, b: Shape): Shape | undefined {
+  const merged = merge(a, b);
+  return merged === undefined ? undefined : possible(merged);
+}
+
 function distribute(held: Shape, branches: Shape[]): Shape | undefined {
   const results = branches
     .map((branch) => merge(withoutDescription(held), branch))
