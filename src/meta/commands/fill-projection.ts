@@ -359,7 +359,6 @@ function merge(a: Shape, b: Shape): Shape | undefined {
   return out;
 }
 
-/** Rule 3: carry a node's keywords into each of its alternatives. */
 /**
  * A property or item two branches both define, merged and then judged by
  * rule 6's bounds check, which otherwise runs only on a node `project` built.
@@ -369,6 +368,7 @@ function mergedPart(a: Shape, b: Shape): Shape | undefined {
   return merged === undefined ? undefined : possible(merged);
 }
 
+/** Rule 3: carry a node's keywords into each of its alternatives. */
 function distribute(held: Shape, branches: Shape[]): Shape | undefined {
   const results = branches
     .map((branch) => merge(withoutDescription(held), branch))
