@@ -826,14 +826,18 @@ describe("runDerive: provenance (0046)", () => {
     expect(run.summary).toMatchObject({ stale: 0, unset: 1 });
   });
 
-  it("attributes every range named for one page, merging ranges that touch", async () => {
+  it("attributes every range named for one page, merging ranges that touch or that only blank lines part", async () => {
     const dir = stageProvenance();
-    // File line 7 and 9-10 are apart: line 8, a blank line, is not theirs.
-    const apart = await runDerive({ inputs: [`${LIMITS}:7`, `${LIMITS}:9-10`], cwd: dir, generatedBy: FABLE, env: {} });
-    expect(deriveFailed(apart)).toBe(false);
+    // File line 7 and 9-10 are parted by line 8, a blank line. It carries no
+    // authorship, so it does not split one machine's range (0071).
+    const bridged = await runDerive({ inputs: [`${LIMITS}:7`, `${LIMITS}:9-10`], cwd: dir, generatedBy: FABLE, env: {} });
+    expect(deriveFailed(bridged)).toBe(false);
     expect(extract(dir, LIMITS).provenance).toEqual([
-      { "generated-by": FABLE, lines: 4, integrity: hashLines("Requests are limited per token.") },
-      { "generated-by": FABLE, lines: "6-7", integrity: hashLines(HUMAN.slice(0, 2).join("\n")) },
+      {
+        "generated-by": FABLE,
+        lines: "4-7",
+        integrity: hashLines(["Requests are limited per token.", "", ...HUMAN.slice(0, 2)].join("\n")),
+      },
     ]);
 
     const other = stageProvenance();
