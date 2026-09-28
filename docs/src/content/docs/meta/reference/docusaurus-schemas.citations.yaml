@@ -31,9 +31,9 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         integrity: sha256-c092029daccd4f4fd85924ed2cbb04e52f1b67f9a6c187c8fada066fc939647e
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 518-535
+        lines: 523-540
         integrity: sha256-89b0306867d74134682c6435a02c3d0d7c427c2f9c32ce96b4a14819826e0433
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: docusaurus-each-schema-in-a-set-applies-in-full
       claim:
         lines: 146-151

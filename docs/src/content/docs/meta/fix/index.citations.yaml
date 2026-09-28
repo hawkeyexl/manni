@@ -24,18 +24,18 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-07b926b3d1b0dd543af1b74c402cddae1a42c7b444e1c790298deb518a72670f
       source:
         file: src/meta/cli.ts
-        lines: 873
+        lines: 874
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: exit-0-when-none-failed
       claim:
         lines: 385
         integrity: sha256-e7bbf58b0b32d5100b6d2f2e7609a14ba25e57d27688ee56d0977e065da017fd
       source:
         file: src/meta/cli.ts
-        lines: 873
+        lines: 874
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: fill-skips-below-threshold
       claim:
         integrity: sha256-02de4565fd61c6b243042af6123122aea8b7f2b5fa751679cc4e1a13e155ad6e
@@ -123,9 +123,9 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-f192b317320b2529418915bf19d31db20775947c576c4aedd182153424cb13a1
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1108-1115
-        integrity: sha256-8223eeab2eeaf920bd0af287e04946da1e77e51f20708adba79701665e212f17
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        lines: 1109-1115
+        integrity: sha256-32f532eec4d87ee764584428f50c80c02ce2af2b1bd3f803c01ccec9ae0daf6d
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: derive-rereads-git-blame
       claim:
         integrity: sha256-2a92270a056121c9517f9f40032ce7b62e09aacc74668d10a25ea220748cdc48
@@ -298,6 +298,6 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-bcf94d8c1638f84635db4504c94a64bb4c39bbe603cc80397a62f3870f9949be
       source:
         file: src/meta/cli.ts
-        lines: 725-728
+        lines: 726-729
         integrity: sha256-f4ceae447f423a880bfc75bf0632b4dcdc41c384a805904368fe4c7bae68c9b6
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20

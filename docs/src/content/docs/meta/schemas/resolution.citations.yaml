@@ -164,9 +164,9 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
         integrity: sha256-8da090ffda7e8c749698c430913cfc937540f60bba4ff19adb6b649f79fcbd09
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 491-558
+        lines: 496-563
         integrity: sha256-ee86276fe33cd88ca7f656e8447207eb02a119503cdbc5a2cfa23575ab8d5860
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: level-five-is-the-builtin-default
       claim:
         lines: 23
@@ -182,41 +182,41 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
         integrity: sha256-0aca8a9291fad06cafcf1b396e463932c7469a08529451bc792e4b010c7e4b73
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 537-547
+        lines: 542-552
         integrity: sha256-b01c18f9e05654a4cfb97c7817650fdabd59e2014546ec6925b09f2c4fd4d0d7
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: level-three-is-the-first-matching-override
       claim:
         lines: 19
         integrity: sha256-4ae7df02541767dccfb16ce7665d2ace18280b7913a24e0adc434eefb55fe2c7
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 518-535
+        lines: 523-540
         integrity: sha256-89b0306867d74134682c6435a02c3d0d7c427c2f9c32ce96b4a14819826e0433
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: level-two-is-the-file-schema-key
       claim:
         lines: 17
         integrity: sha256-9c870bbdddb01795d2b5a1d2b29a479dd0d8192a1950428ed7272462b409873a
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 502-516
+        lines: 507-521
         integrity: sha256-f2f0f059fc3071a4b70c5250f321704087ab164b35f97ed69bc2f26c8342f090
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: level-one-is-the-cli-schema-flag
       claim:
         lines: 15
         integrity: sha256-feaae309099512aeaf13c8b0f5774c1ac812fbca8ccaf333f40c5fe4f96e80ec
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 498-500
+        lines: 503-505
         integrity: sha256-2328dc767a27a79cc7799141a446ded2c9b9aedfacd94022a2d5b8d3e41b66aa
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: first-source-that-yields-a-schema-wins
       claim:
         integrity: sha256-55fbb800c2eaac2dde38ece746b61713566892edd94ce0f5fa24f8126a2de9c7
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 491-558
+        lines: 496-563
         integrity: sha256-ee86276fe33cd88ca7f656e8447207eb02a119503cdbc5a2cfa23575ab8d5860
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20

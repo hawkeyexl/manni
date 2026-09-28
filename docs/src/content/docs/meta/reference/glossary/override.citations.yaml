@@ -15,6 +15,6 @@ docs/src/content/docs/meta/reference/glossary/override.mdx:
         integrity: sha256-b13b3b865c02e45609631afb35681e37106a0098bcc65dca0d2c72bc299f0340
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 498-557
+        lines: 503-562
         integrity: sha256-6fb09f29f342076634fd2a5b5360017ebf8764e897dba65fb192ca2b23584538
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20

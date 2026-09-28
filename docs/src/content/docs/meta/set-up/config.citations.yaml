@@ -6,9 +6,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-d9c1aeadf1ba5da91f410f99100e68cd084c4bac9ce5de9435759cea2359ebf4
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 498-500
+        lines: 503-505
         integrity: sha256-2328dc767a27a79cc7799141a446ded2c9b9aedfacd94022a2d5b8d3e41b66aa
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: exclude-adds-to-builtin-ignores
       claim:
         lines: 247
@@ -58,9 +58,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-1538f58a47cba10b4328689b045df20ae494af37ca6fbd93f0283cbd6eeef657
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 518-535
+        lines: 523-540
         integrity: sha256-89b0306867d74134682c6435a02c3d0d7c427c2f9c32ce96b4a14819826e0433
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: override-files-takes-glob-or-list
       claim:
         lines: 170
@@ -452,7 +452,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-c8582f6e12318df472d23f80e7d5f77f47d454263a2d4468908546419b4fddf7
       source:
         file: src/meta/cli.ts
-        lines: 736-737
+        lines: 737-738
         integrity: sha256-9610c35fd394038b93a4e731325748a2728483d7c051fb4d4f8b3e9a127caf94
         commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
     - id: explicit-config-missing-is-an-error
