@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Run fill under a data-egress policy
   type: concept
-last-updated: 2026-09-28
+last-updated: 2026-09-29
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -53,6 +53,7 @@ Per inference call, `fill` transmits:
 | The document text | The whole file. See [how much of the document](#how-much-of-the-document) below. |
 | One shape per property being filled | Each candidate property's type and shape, taken from every schema in the set that defines it. That includes its `description`, which is written for your team and now travels with the request. |
 | The definitions a property reaches | Every `$defs` or `definitions` entry a property's `$ref` leads to, written into that property's shape. Definitions no candidate reaches stay on your machine. |
+| The values offered for a property | Every term label in your glossary, when a property being filled names a glossary term. The `id` of every other page in the page's collections, when one names a page. See [the values `fill` offers](/manni/meta/reference/cli/#the-values-fill-offers). |
 
 Two consequences are worth stating plainly, because neither is what a reader guesses.
 
