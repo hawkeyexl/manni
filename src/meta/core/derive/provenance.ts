@@ -354,6 +354,7 @@ function stampEvidence(commit: CommitEvidence, origLine: number, fenced: boolean
  * commit. Such a commit is the whole account of the lines it last touched.
  */
 function carriesStamp(commit: CommitEvidence, fenced: boolean | undefined): boolean {
+  const carried = fenced === false ? carriedUnfenced : carriedFenced;
   const known = carried.get(commit);
   if (known !== undefined) return known;
   let verified = false;
@@ -373,9 +374,12 @@ function carriesStamp(commit: CommitEvidence, fenced: boolean | undefined): bool
  * `carriesStamp` per commit, since every line a commit last touched asks it.
  * Keyed by identity: a run builds its CommitEvidence objects fresh, so an
  * entry never outlives the evidence it describes. A pool of reused objects
- * would need this cleared between runs.
+ * would need this cleared between runs. One map per fenced setting, since the
+ * answer reads the commit's blob as fenced or not: a commit shared by a
+ * Markdown page and an HTML page is judged once for each.
  */
-const carried = new WeakMap<CommitEvidence, boolean>();
+const carriedFenced = new WeakMap<CommitEvidence, boolean>();
+const carriedUnfenced = new WeakMap<CommitEvidence, boolean>();
 
 /**
  * Rules 2 to 4 for one line. An uncommitted line has no commit, so none of

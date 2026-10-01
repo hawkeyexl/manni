@@ -1160,17 +1160,31 @@ async function fetchSpecs(run: GitRun, specs: readonly string[]): Promise<Map<st
   const out = await run(["cat-file", "--batch"], `${specs.join("\n")}\n`);
   if (out.tooLarge) throw new HistoryTooLarge();
   if (out.code !== 0) throw new BlobsUnreadable(`exit ${String(out.code)}`);
-  const buf = out.raw;
+  for (const [spec, content] of parseSpecBatch(out.raw, specs)) found.set(spec, content);
+  return found;
+}
+
+/**
+ * The objects a `git cat-file --batch` answer holds for `specs`, in input
+ * order. A header that cannot be read, or output that ends before every spec
+ * is answered, leaves no way to find the next object, so the answer is
+ * refused rather than cut short: a cut-short answer would read the rest as
+ * stamps that are not there, and report them stale.
+ */
+export function parseSpecBatch(buf: Buffer, specs: readonly string[]): Map<string, string> {
+  const found = new Map<string, string>();
   let cursor = 0;
   for (const spec of specs) {
     const nl = buf.indexOf(0x0a, cursor);
-    if (nl === -1) break;
+    if (nl === -1) throw new BlobsUnreadable(`the answer ends before ${spec}`);
     const header = buf.toString("utf8", cursor, nl);
     cursor = nl + 1;
     if (header.endsWith(" missing") || header.endsWith(" ambiguous")) continue;
     const parts = header.split(" ");
     const size = Number(parts[2]);
-    if (!Number.isFinite(size)) break;
+    if (parts.length !== 3 || !Number.isInteger(size) || size < 0) {
+      throw new BlobsUnreadable(`unreadable header for ${spec}: ${header}`);
+    }
     if (parts[1] === "blob") found.set(spec, buf.toString("utf8", cursor, cursor + size));
     cursor += size + 1;
   }
