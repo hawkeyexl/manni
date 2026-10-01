@@ -1,6 +1,57 @@
 ---
 title: Built-in platform schemas
 description: The Starlight, Antora, Sphinx, MyST, Hugo, Jekyll, VitePress, and MkDocs Material front matter schemas shipped with manni meta, covering what each one requires and why, and how they compose with a vocabulary.
+type: concept
+id: meta-reference-platform-schemas
+keywords:
+  - platform schemas
+  - Starlight
+  - Antora
+  - Hugo
+  - front matter
+language: en
+audiences:
+  - schema-authors
+  - docs-engineers
+intent: Choose the platform schema for a site generator and compose it with a vocabulary.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - Frontmatter
+  - Schema
+sample-questions:
+  - Which schema checks Starlight front matter?
+  - Why does the Sphinx schema require nothing?
+  - How do I stack a platform schema under a vocabulary?
+graph:
+  label: Built-in platform schemas
+  type: concept
+last-updated: 2026-09-26
+tags:
+  - platform-schemas
+  - site-generators
+  - front-matter
+  - validation
+  - documentation-toolchains
+action: appraise
+next-steps:
+  - /manni/meta/reference/schemas/astro-starlight/
+  - /manni/meta/reference/schemas/antora-page/
+  - /manni/meta/reference/schemas/sphinx-docinfo/
+  - /manni/meta/reference/schemas/myst-frontmatter/
+  - /manni/meta/reference/schemas/hugo-page/
+  - /manni/meta/reference/schemas/jekyll-page/
+  - /manni/meta/reference/schemas/vitepress-page/
+  - /manni/meta/reference/schemas/mkdocs-material/
+related-pages:
+  - /manni/meta/reference/docusaurus-schemas/
+risks: read-only
+prerequisites:
+  - schema
+  - frontmatter
+  - meta-reference-schema-resolution
+  - meta-reference-metadata-vocabularies
 ---
 
 import { Tabs, TabItem } from '@astrojs/starlight/components';

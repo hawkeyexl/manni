@@ -13,6 +13,32 @@ hero:
       link: /manni/key/#where-the-key-lives
       icon: setting
       variant: minimal
+id: "key"
+type: "overview"
+keywords: ["encryption key", "rotate", "encryptionKey", "MANNI_ENCRYPTION_KEY"]
+language: en
+audiences: ["schema-authors", "ci-engineers"]
+intent: "Understand what the family encryption key is for, where it lives, and how to set and rotate it."
+lifecycle: published
+applies-to: ["domain:key"]
+next-steps: ["key-reference-cli"]
+related-pages: ["meta-reference-configuration", "meta-reference-schema-resolution", "cite-reference-cli"]
+risks: ["destructive", "irreversible"]
+sample-questions: ["What is the manni encryption key for?", "Where does manni look for the encryption key?", "Why should a shared repository keep the key out of manni.config.yaml?"]
+graph: { label: "manni key", type: concept }
+last-updated: 2026-09-17
+tags:
+  - encryption
+  - security
+  - key-management
+  - configuration
+  - cli
+action: understand
+prerequisites:
+  - meta-reference-configuration
+concepts:
+  - metadata
+  - frontmatter
 ---
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';

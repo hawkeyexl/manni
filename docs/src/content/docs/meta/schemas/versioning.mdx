@@ -4,6 +4,52 @@ description: Encode a schema version consumers can pin, roll out tightening chan
 sidebar:
   label: Versioning & dialects
   order: 3
+type: how-to
+id: meta-schemas-versioning
+keywords:
+  - schema versioning
+  - dialects
+  - staged ratchet
+  - ALTER TABLE
+language: en
+audiences:
+  - schema-authors
+intent: Version a schema consumers can pin and roll out tightening changes without breaking CI everywhere at once.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-set-up-new-required-field
+  - meta-ci-govern-shared-schema
+  - meta-schemas-resolution
+  - meta-reference-schema-resolution
+concepts:
+  - dialect
+  - meta-schema URI
+  - schema
+risks:
+  - destructive
+sample-questions:
+  - How do I version a schema so consumers can pin it?
+  - Which schema changes are breaking?
+  - Do I need to configure the JSON Schema dialect?
+graph:
+  label: Version & evolve a schema safely
+  type: task
+last-updated: 2026-09-27
+tags:
+  - versioning
+  - json-schema
+  - schema-evolution
+  - breaking-changes
+  - migration
+  - dialects
+action: develop
+related-pages:
+  - meta-schemas
+prerequisites:
+  - meta-schemas
+  - meta-schemas-resolution
 ---
 
 import { Steps, Tabs, TabItem, Card, CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';
@@ -51,6 +97,8 @@ meta:
 
 When you ship a breaking change, add `metadata-1.3.schema.json` (or `v2/metadata.schema.json`) alongside the old file rather than overwriting it. Consumers move by editing the reference, and you can keep the previous version in the repo for as long as anyone still pins it.
 
+A registered file carries its version in its `$id` instead, such as `house:metadata:1.2.0`. [`meta.register`](/manni/meta/reference/configuration/#register) names the file or its directory, and the config lists the id. A new version is a new file with a new `$id`, registered beside the old one.
+
 </TabItem>
 <TabItem label="URL">
 
@@ -97,6 +145,8 @@ Once your schema is versioned, the next question is which changes you can make f
   These need the staged ratchet below, and a new version so consumers opt in.
   </Card>
 </CardGrid>
+
+A strict version is a way to ship tightening without forcing it. Keep the open schema as it is, and publish what strict adds as a second registered schema, `vendor:name-strict:version`. A consumer opts in with `strict: true`, which stacks the strict version right after its base. [Name your schema and its strict version](/manni/meta/schemas/#name-your-schema-and-its-strict-version) sets one up.
 
 The most common breaking change is also the most useful one: promoting a field from recommended to required. That's worth its own playbook.
 

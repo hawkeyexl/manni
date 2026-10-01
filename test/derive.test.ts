@@ -365,6 +365,17 @@ describe("runDerive", () => {
 
   it("has nothing to derive when no page claims a merge-safe field and no --fields is given", async () => {
     const { dir } = stageCorpus();
+    // --no-config judges a page by the default set, whose stewardship and
+    // ai-context vocabularies claim every merge-safe field. A page that names
+    // its own schema is judged by that alone, and this one claims none.
+    writeFile(
+      dir,
+      "docs/install.md",
+      readFileSync(join(dir, "docs/install.md"), "utf8").replace(
+        "title: Install\n",
+        "title: Install\n$schema: ../permissive.schema.json\n",
+      ),
+    );
     await expect(
       runDerive({ inputs: ["docs/install.md"], cwd: dir, noConfig: true }),
     ).rejects.toThrow(
@@ -815,19 +826,35 @@ describe("runDerive: provenance (0046)", () => {
     expect(run.summary).toMatchObject({ stale: 0, unset: 1 });
   });
 
-  it("attributes every range named for one page, merging ranges that touch", async () => {
+  it("attributes every range named for one page, merging ranges that touch or that only blank lines part", async () => {
     const dir = stageProvenance();
-    // File line 7 and 9-10 are apart: line 8, a blank line, is not theirs.
-    const apart = await runDerive({ inputs: [`${LIMITS}:7`, `${LIMITS}:9-10`], cwd: dir, generatedBy: FABLE, env: {} });
-    expect(deriveFailed(apart)).toBe(false);
+    // File line 7 and 9-10 are parted by line 8, a blank line. It carries no
+    // authorship, so it does not split one machine's range (0071).
+    const bridged = await runDerive({ inputs: [`${LIMITS}:7`, `${LIMITS}:9-10`], cwd: dir, generatedBy: FABLE, env: {} });
+    expect(deriveFailed(bridged)).toBe(false);
     expect(extract(dir, LIMITS).provenance).toEqual([
-      { "generated-by": FABLE, lines: 4, integrity: hashLines("Requests are limited per token.") },
-      { "generated-by": FABLE, lines: "6-7", integrity: hashLines(HUMAN.slice(0, 2).join("\n")) },
+      {
+        "generated-by": FABLE,
+        lines: "4-7",
+        integrity: hashLines(["Requests are limited per token.", "", ...HUMAN.slice(0, 2)].join("\n")),
+      },
     ]);
 
     const other = stageProvenance();
     await runDerive({ inputs: [`${LIMITS}:10-11`, `${LIMITS}:9-10`], cwd: other, generatedBy: FABLE, env: {} });
     expect(extract(other, LIMITS).provenance).toEqual([
+      { "generated-by": FABLE, lines: "6-8", integrity: hashLines(HUMAN.join("\n")) },
+    ]);
+  });
+
+  it("attributes a named range's blank edge lines to no one: only its trimmed lines are the machine's", async () => {
+    const dir = stageProvenance();
+    // File lines 8 and 12 are blank, committed by the person with lines 9-11.
+    // The rekey reads the trimmed range, so they keep the person's commit.
+    const run = await runDerive({ inputs: [`${LIMITS}:8-12`], cwd: dir, generatedBy: FABLE, env: {} });
+    expect(deriveFailed(run)).toBe(false);
+    expect(provenanceOf(run).ranges?.map((r) => r.lines)).toEqual(["9-11"]);
+    expect(extract(dir, LIMITS).provenance).toEqual([
       { "generated-by": FABLE, lines: "6-8", integrity: hashLines(HUMAN.join("\n")) },
     ]);
   });

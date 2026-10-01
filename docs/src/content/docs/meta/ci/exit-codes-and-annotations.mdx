@@ -1,6 +1,52 @@
 ---
 title: Exit codes & PR annotations
 description: The manni meta exit-code contract (0/1/2) and the pretty, json, github, sarif, and junit output formats, including the exact annotation line format and color behavior.
+type: how-to
+id: meta-ci-exit-codes-and-annotations
+keywords:
+  - exit codes
+  - annotations
+  - output formats
+  - SARIF
+  - JUnit
+language: en
+audiences:
+  - ci-engineers
+intent: Gate CI on the 0, 1 and 2 exit codes and pick the output format each consumer reads.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-ci
+  - meta-ci-recipes
+concepts:
+  - validation
+sample-questions:
+  - What do exit codes 0, 1 and 2 mean?
+  - What does a github annotation line look like?
+  - When is output colored?
+graph:
+  label: Exit codes & PR annotations
+  type: task
+last-updated: 2026-09-21
+tags:
+  - exit-codes
+  - annotations
+  - output-formats
+  - sarif
+  - junit
+  - github-actions
+  - ci
+  - reporting
+  - validation
+action: develop
+prerequisites:
+  - meta-get-started
+  - validation
+related-pages:
+  - meta-reference-cli
+  - meta-reference-configuration
+risks: read-only
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

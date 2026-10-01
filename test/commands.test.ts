@@ -143,7 +143,7 @@ describe("runValidate", () => {
     const { results } = await runValidate({
       inputs: ["-"],
       as: "markdown",
-      stdinContent: "---\ntype: note\n---\n# Hi\n",
+      stdinContent: "---\ntype: note\ntitle: Hi\ndescription: From stdin.\n---\n# Hi\n",
       cwd: root,
     });
     expect(results[0]?.file).toBe("<stdin>");
@@ -622,7 +622,8 @@ describe("config discovery and resolution base (0004)", () => {
     expect(ownerError(results)).toBe(true);
     // Still the ref exactly as the config wrote it — the fix resolves at read
     // time rather than rewriting refs, so nothing a baseline recorded moves.
-    expect(results[0]?.schemas).toEqual(["./strict.schema.json"]);
+    // It follows the default set it joins (0070).
+    expect(results[0]?.schemas).toEqual([...DEFAULT_SCHEMAS, "./strict.schema.json"]);
   });
 
   it("applies the same config when run from a subdirectory (defect 1)", async () => {
@@ -632,7 +633,7 @@ describe("config discovery and resolution base (0004)", () => {
     });
     expect(summary.failed).toBe(1);
     expect(ownerError(results)).toBe(true);
-    expect(results[0]?.schemas[0]).toMatch(/strict\.schema\.json$/);
+    expect(results[0]?.schemas.at(-1)).toMatch(/strict\.schema\.json$/);
   });
 
   it("resolves a config-relative schema ref for an out-of-cwd -c (defect 2A)", async () => {
@@ -1273,11 +1274,16 @@ describe("a relative config schema ref, for a library caller", () => {
         // `properties` as well as `required`, because `fill` proposes against a
         // property's own subschema and has nothing to offer without one. The
         // validate cases below turn on `required` alone and are unaffected.
-        properties: { owner: { type: "string" } },
-        required: ["owner"],
+        // `squad` rather than a field a default vocabulary declares (0070), so
+        // only this schema can make it required or a fill candidate.
+        properties: { squad: { type: "string" } },
+        required: ["squad"],
       }),
     );
-    await writeFile(join(dir, "a.md"), "---\ntitle: no owner\n---\n");
+    await writeFile(
+      join(dir, "a.md"),
+      "---\ntype: guide\ntitle: no squad\ndescription: The default set accepts it.\n---\n",
+    );
   });
 
   afterEach(async () => {
@@ -1296,7 +1302,7 @@ describe("a relative config schema ref, for a library caller", () => {
     expect(resolve(dir)).not.toBe(resolve(process.cwd()));
 
     const { results } = await runValidate({ inputs: ["a.md"], cwd: dir });
-    expect(results[0]?.errors.map((e) => e.message).join()).toMatch(/'owner'/);
+    expect(results[0]?.errors.map((e) => e.message).join()).toMatch(/'squad'/);
   });
 
   it("resolves the same ref for runFill, which loads schemas on its own path", async () => {
@@ -1307,7 +1313,7 @@ describe("a relative config schema ref, for a library caller", () => {
     // which is the point — the two hand `schemaLoadOptions` the same `cwd`,
     // and a regression in either call site is invisible from the other.
     //
-    // `/owner` is a candidate only because the config's schema was read and
+    // `/squad` is a candidate only because the config's schema was read and
     // its `required` was seen. A ref that failed to resolve throws
     // `Schema file not found` outright, and one that resolved to nothing would
     // leave no candidate to propose against — so the field appearing at all
@@ -1319,13 +1325,13 @@ describe("a relative config schema ref, for a library caller", () => {
       inferenceProvider: new MockProvider([
         {
           json: {
-            owner: { value: "Docs", confidence: 0.9, reasoning: "stated" },
+            squad: { value: "Docs", confidence: 0.9, reasoning: "stated" },
           },
         },
       ]),
     });
     expect(results).toHaveLength(1);
-    expect(results[0]?.fields.map((f) => f.field)).toContain("/owner");
+    expect(results[0]?.fields.map((f) => f.field)).toContain("/squad");
   });
 
   it("keeps the ref string exactly as the config wrote it", async () => {
@@ -1335,7 +1341,9 @@ describe("a relative config schema ref, for a library caller", () => {
     // rewriting the ref to an absolute path would silently move every recorded
     // baseline in every consuming repo.
     const { results } = await runValidate({ inputs: ["a.md"], cwd: dir });
-    expect(results[0]?.schemas).toEqual(["./schema/house.json"]);
+    // Joined to the default set (0070), which a.md satisfies, so the house
+    // schema's is the only error.
+    expect(results[0]?.schemas).toEqual([...DEFAULT_SCHEMAS, "./schema/house.json"]);
     expect(results[0]?.errors[0]?.schema).toBe("./schema/house.json");
   });
 });
@@ -1430,7 +1438,8 @@ describe("0015 · a document opting out of the repo's standard", () => {
     expect(bad?.errors[0]?.message).not.toMatch(/not json at all/);
 
     const honest = results.find((r) => r.file.endsWith("honest.md"));
-    expect(honest?.schemas).toEqual(["google:okf:0.1"]);
+    // The config's OKF joins the defaults (0070), where it already is.
+    expect(honest?.schemas).toEqual([...DEFAULT_SCHEMAS]);
     expect(honest?.errors[0]?.keyword).toBe("required");
   });
 
@@ -1465,7 +1474,8 @@ describe("0015 · a document opting out of the repo's standard", () => {
     expect(refused?.errors[0]?.message).toMatch(/documentRefs/);
     // The honest file is untouched: still judged by the config's schema.
     const honest = results.find((r) => r.file.endsWith("honest.md"));
-    expect(honest?.schemas).toEqual(["google:okf:0.1"]);
+    // The config's OKF joins the defaults (0070), where it already is.
+    expect(honest?.schemas).toEqual([...DEFAULT_SCHEMAS]);
     expect(honest?.errors[0]?.keyword).toBe("required");
   });
 
@@ -1480,7 +1490,7 @@ describe("0015 · a document opting out of the repo's standard", () => {
     // Config decides for both files, so both are judged by google:okf:0.1.
     expect(byFile(results)).toEqual({ "contributed.md": false, "honest.md": false });
     const contributed = results.find((r) => r.file.endsWith("contributed.md"));
-    expect(contributed?.schemas).toEqual(["google:okf:0.1"]);
+    expect(contributed?.schemas).toEqual([...DEFAULT_SCHEMAS]);
     // Ignoring input without saying so is the failure mode this whole proposal
     // set exists to remove.
     expect(notices.join("\n")).toMatch(/contributed\.md/);
@@ -1616,12 +1626,17 @@ describe("0015 · a document-supplied path reaching out of the repository", () =
       "schemas:\n  - ../outside.schema.json\n",
       "utf8",
     );
-    await writeFile(join(project(), "plain.md"), "---\ntitle: Plain\n---\n", "utf8");
+    await writeFile(
+      join(project(), "plain.md"),
+      "---\ntype: guide\ntitle: Plain\ndescription: The default set accepts it.\n---\n",
+      "utf8",
+    );
     const { results } = await runValidate({ inputs: ["plain.md"], cwd: project() });
     expect(results[0]?.ok).toBe(true);
     // Spelled as the config wrote it: the config sits in the run's own
     // directory, so nothing is rebased, and nothing is contained either.
-    expect(results[0]?.schemas).toEqual(["../outside.schema.json"]);
+    // It follows the default set it joins (0070).
+    expect(results[0]?.schemas).toEqual([...DEFAULT_SCHEMAS, "../outside.schema.json"]);
   });
 });
 

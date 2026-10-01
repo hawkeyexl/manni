@@ -9,6 +9,47 @@ abstract: A source that outranks another in schema resolution.
 definition: >-
   A source of schemas that outranks another in schema resolution, such as a
   config overrides entry for the files matching its glob.
+keywords:
+  - override
+  - overrides
+  - precedence
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+  - schema-authors
+  - contributors
+intent: Say what override means in manni meta and where it is covered in full.
+lifecycle: published
+applies-to:
+  - domain:meta
+related-pages:
+  - meta-set-up-different-schemas-per-folder
+  - meta-reference-schema-resolution
+sample-questions:
+  - What is an override in manni meta?
+  - Which schema source wins in manni meta?
+graph:
+  label: override
+  type: concept
+last-updated: 2026-09-27
+tags:
+  - schema-resolution
+  - configuration
+  - precedence
+action: understand
+prerequisites:
+  - schema-set
+  - schema-key
+next-steps:
+  - meta-set-up-different-schemas-per-folder
+  - meta-reference-schema-resolution
+risks: read-only
+alt-labels:
+  - overrides
+narrower:
+  - $schema key
+scope-note: "In manni meta, override has two related senses: a config overrides entry matching files by glob, and the precedence chain in schema resolution where one source outranks another."
 ---
 
 <p>{frontmatter.definition}</p>
@@ -21,6 +62,8 @@ In manni meta, "override" has two related senses:
   [Apply different schemas to different folders](/manni/meta/set-up/different-schemas-per-folder/).
 - More broadly, schema resolution is a chain of overrides. A `--schema` flag
   overrides a document's [`$schema`](/manni/meta/reference/glossary/schema-key/).
-  That overrides config `overrides`, which overrides config `schemas`, which
-  overrides the built-in default. The first source that yields a schema wins.
+  That overrides config `overrides`, which override config `schemas`. The
+  first source that yields a schema wins. Config `schemas` join the built-in
+  default set rather than override it, and so does an override that sets
+  `defaults: true`.
   See [Precedence](/manni/meta/reference/schema-resolution/#precedence).

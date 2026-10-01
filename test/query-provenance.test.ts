@@ -115,6 +115,24 @@ describe("runQuery: provenance in the derived table", () => {
   });
 });
 
+describe("runQuery: blank lines carry no authorship (0071)", () => {
+  it("trims a machine's blank edge lines and spans the blank line between its paragraphs", async () => {
+    const dir = makeTempRepo({ files: {} });
+    dirs.push(dir);
+    writeFile(dir, "manni.config.yaml", "meta:\n  derive:\n    sources: [git]\n");
+    writeFile(dir, "docs/a.md", "---\ntitle: t\n---\nintro\n");
+    commit(dir, "add", { authorDate: D1 });
+    // The machine's commit adds body 2-6: blank, ONE, blank, TWO, blank.
+    writeFile(dir, "docs/a.md", "---\ntitle: t\n---\nintro\n\nONE\n\nTWO\n\n");
+    commit(dir, "edit", { authorDate: D2, trailers: [`Generated-by: ${SONNET}`] });
+
+    const run = await query(dir, "SELECT provenance FROM derived");
+    expect(JSON.parse(String(run.rows[0]?.provenance))).toEqual([
+      { "generated-by": SONNET, lines: "3-5", integrity: hashLines("ONE\n\nTWO") },
+    ]);
+  });
+});
+
 describe("runQuery: provenance kept in an external manifest", () => {
   const LIMITS = "docs/limits.md";
   const HUMAN = [

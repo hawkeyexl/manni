@@ -1,0 +1,46 @@
+docs/src/content/docs/meta/reference/glossary/schema-key.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-schema-key
+      assertion: A reader can say what the $schema key means in manni meta.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-13
+      integrity: sha256-415e9628eb9a66351f9f27d1c2cd0848410dddbe9c6431421b496a41f452d501
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16
+  source-of-truth:
+    - path: src/meta/core/resolve-schema.ts
+    - path: src/meta/core/validator.ts
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /broader
+        - /scope-note
+        - /prerequisites
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /concepts: 0.85
+        /next-steps: 0.9
+        /source-of-truth: 0.95
+        /risks: 0.9
+        /broader: 0.75
+        /scope-note: 0.9
+        /prerequisites: 0.85

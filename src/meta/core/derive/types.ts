@@ -61,6 +61,20 @@ export function managedFields(
 }
 
 /**
+ * Does derive manage fields on a file that belongs to `memberOf`? Only a
+ * member of one of `derive.collections` is stamped and compared (proposal
+ * 0070); with no `collections`, every file is.
+ */
+export function deriveCovers(
+  derive: { collections?: readonly string[] } | undefined,
+  memberOf: readonly string[],
+): boolean {
+  const scope = derive?.collections;
+  if (scope === undefined) return true;
+  return memberOf.some((name) => scope.includes(name));
+}
+
+/**
  * A managed field name: one of the seven built-ins, or a key with an entry in
  * `derive.commands`. The config parser guarantees one or the other.
  */

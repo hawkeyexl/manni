@@ -1,6 +1,49 @@
 ---
 title: Agent Skills schemas
 description: The two built-in schemas for SKILL.md front matter, the portable Agent Skills standard and the Claude Code superset, with every field, why one is strict, and which to run when.
+type: concept
+id: meta-reference-agent-skills-schemas
+keywords:
+  - Agent Skills
+  - SKILL.md
+  - Claude Code
+  - schemas
+language: en
+audiences:
+  - schema-authors
+intent: Choose between the two SKILL.md schemas and validate a skill against both.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - Schema
+  - Frontmatter
+sample-questions:
+  - Which schema checks a SKILL.md file?
+  - Why does agentskills:skill:1.0 reject unknown keys?
+  - How do I validate a skill against both schemas at once?
+graph:
+  label: Agent Skills schemas
+  type: concept
+last-updated: 2026-09-26
+tags:
+  - validation
+  - skill-md
+  - standards
+  - compatibility
+action: understand
+prerequisites:
+  - /manni/meta/reference/glossary/schema/
+  - /manni/meta/reference/glossary/frontmatter/
+next-steps:
+  - /manni/meta/reference/schemas/agentskills-skill/
+  - /manni/meta/reference/schemas/anthropic-claude-skill/
+  - /manni/meta/reference/schemas/anthropic-claude-subagent/
+related-pages:
+  - /manni/meta/reference/schemas/agentskills-skill/
+  - /manni/meta/reference/schemas/anthropic-claude-skill/
+  - /manni/meta/reference/schemas/anthropic-claude-subagent/
+risks: read-only
 ---
 
 import { Aside } from '@astrojs/starlight/components';

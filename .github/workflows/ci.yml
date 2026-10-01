@@ -73,6 +73,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        # The dogfood step below compares each page's stamped `provenance`
+        # with git blame, and `derive` refuses a shallow clone rather than
+        # guessing from one commit.
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
           node-version: 24

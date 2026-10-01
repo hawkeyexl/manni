@@ -6,5 +6,6 @@ ignorecase: true
 nonword: true
 vocab: false
 swap:
+  \bjson schema version\b: JSON Schema version
   \bjson pointer\b: JSON Pointer
   \bopen knowledge format\b: Open Knowledge Format

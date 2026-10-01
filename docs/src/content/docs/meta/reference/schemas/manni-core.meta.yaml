@@ -1,0 +1,56 @@
+docs/src/content/docs/meta/reference/schemas/manni-core.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/core/1.0.0.json
+    - path: src/meta/schemas/core-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: fields
+      assertion: "A reader can write a page that meets manni:core:1.0.0."
+      type: capability
+      grader: ai
+    - id: strict-overlay
+      assertion: "A reader can say what the core strict overlay rejects that the open vocabulary accepts."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-14
+      integrity: sha256-3fc4956302151557cb7aab6a2ca5b9e3bc036b0f061202196d54c92f0dc5d490
+    - generated-by: Claude Opus 5.5
+      lines: 22-23
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+    - generated-by: Claude Opus 5.5
+      lines: 29-31
+      integrity: sha256-b399762b8f581ca2be84b5ed29ae1b107fea7fc419746344722402099a040177
+    - generated-by: Claude Opus 5.5
+      lines: 35-149
+      integrity: sha256-8f5628f9ea7ab78018826459b24ffade82db4f70fb270e72c3cc943d33666d74
+    - generated-by: Claude Opus 5.5
+      lines: 162-189
+      integrity: sha256-74af0d41341d947b57e0a0f6dc50770c444e8cba37a4597e56b0e067a2d04880
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /risks
+        - /prerequisites
+      confidence:
+        /resource: 0.95
+        /tags: 0.7
+        /action: 0.85
+        /next-steps: 0.75
+        /related-pages: 0.9
+        /risks: 0.95
+        /prerequisites: 0.8

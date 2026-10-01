@@ -1,6 +1,54 @@
 ---
 title: TypeScript API reference
 description: Every symbol manni meta publishes from its programmatic entry point, covering command cores, collections, external metadata, schema resolution, config, cache, reporters, extractors, and result types.
+type: reference
+id: meta-reference-api
+keywords:
+  - TypeScript API
+  - command cores
+  - reporters
+  - extractors
+language: en
+audiences:
+  - ci-engineers
+intent: Call manni meta's command cores and helpers from a Node.js or TypeScript tool.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - Validation
+  - Extractor
+  - Schema set
+sample-questions:
+  - Which functions does manni meta export for programmatic use?
+  - How do I run validation from TypeScript without spawning the CLI?
+  - Can I import manni meta with require?
+graph:
+  label: TypeScript API reference
+  type: reference
+last-updated: 2026-10-01
+tags:
+  - api
+  - typescript
+  - programmatic
+  - esm
+  - node
+action: develop
+prerequisites:
+  - meta-reference-cli
+related-pages:
+  - /manni/meta/reference/configuration/
+  - /manni/meta/reference/output-and-exit-codes/
+  - /manni/meta/reference/formats/
+  - /manni/cite/reference/cli/
+  - /manni/key/reference/cli/
+risks: read-only
+next-steps:
+  - meta-ci-consume-results
+  - meta-reference-configuration
+  - meta-reference-schema-resolution
+  - meta-reference-formats
+  - meta-set-up-external-metadata
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -61,7 +109,7 @@ exit code is the caller's.
 | `runRelocate` | Put each value where its schema's `x-manni-location` mark and the config's manifests say it belongs, in both directions. Backs `manni meta relocate`. Creates the collection, manifest file and config entry a value needs, and writes nothing under `dryRun`. Throws `DocmetaError` for stdin, `noConfig`, no inputs, a `fields` name nothing marks or owns, and a manifest path that exists undeclared. |
 | `RelocateOptions` (type) | Input to `runRelocate`: the same input model minus stdin, plus `fields`, `collections`, `cliSchemas` and `dryRun`. `noConfig` is accepted so that it can be refused. |
 | `RelocateResult` (type) | What `runRelocate` resolves to. It carries `dryRun`, the `config` changes, and each `manifests` entry with the keys it gained and lost. Then per-page `files` with the values `moved` and `stayed` (each with its reason), and the `summary`. A run with a stayed value is exit 1 on the CLI. |
-| `getSchemasInfo` | The built-in schema registry and the supported input formats, as data. Backs `manni meta schemas`. |
+| `getSchemasInfo` | The built-in schema registry, the schemas a config registers as `{ id, file }`, and the supported input formats, as data. Backs `manni meta schemas`. |
 | `runVendorSchema` | Fetch a remote schema, write it into the repository, and record its integrity pin. Backs `manni meta schemas vendor`. |
 | `VendorOptions` (type) | Input to `runVendorSchema`: the URL, the destination directory, and whether to update the config. |
 | `VendorResult` (type) | What was written. The file path, the integrity digest, and the config edit that was made. |
@@ -80,7 +128,7 @@ caller and a subprocess caller are reading the same data model.
 
 | Export | Purpose |
 |---|---|
-| `Validator` | The Ajv-backed engine. Validate already-extracted metadata against a schema set without going through the file pipeline. `validate` takes the data, the schema refs, a `lineFor` callback, an optional `colFor`, and an optional fifth `locate` callback. `locate` says where a merged value lives when it is not in the document (an [external-metadata](#external-metadata) manifest's file and line). `markedPointers` takes the data and the schema refs, and resolves to the instance pointers that carry `x-manni-encrypt: true`, wherever validation evaluates the mark. `locationPreferences` takes the same two, and resolves to a map from each top-level key to its `LocationPreference`. Only keys present in the data are marked, a later ref wins, and one schema saying both values for a key throws a `DocmetaError`. |
+| `Validator` | The Ajv-backed engine. Validate already-extracted metadata against a schema set without going through the file pipeline. Registered schemas join it before any compile, so a registered id resolves in a ref list and in a `$ref`. `validate` takes the data, the schema refs, a `lineFor` callback, an optional `colFor`, and an optional fifth `locate` callback. `locate` says where a merged value lives when it is not in the document (an [external-metadata](#external-metadata) manifest's file and line). `markedPointers` takes the data and the schema refs, and resolves to the instance pointers that carry `x-manni-encrypt: true`, wherever validation evaluates the mark. `locationPreferences` takes the same two, and resolves to a map from each top-level key to its `LocationPreference`. Only keys present in the data are marked, a later ref wins, and one schema saying both values for a key throws a `DocmetaError`. |
 | `LOCATION_KEYWORD` | The schema keyword `x-manni-location`, whose value is `page` or `external`. |
 | `FieldLocation` (type) | `"page" \| "external"`. |
 | `LocationPreference` (type) | One key's preferred `location`, and the `schema` ref whose mark decided it. |
@@ -284,8 +332,8 @@ implement.
 
 | Export | Purpose |
 |---|---|
-| `resolveSchemaSet` | Resolve the schema set for one file from CLI refs, the document's `$schema`, config overrides, and the defaults. |
-| `DEFAULT_SCHEMAS` | The built-in default schema set, used when nothing else selects one. |
+| `resolveSchemaSet` | Resolve the schema set for one file from CLI refs, the document's `$schema`, config overrides, and the defaults. It applies `defaults` and `strict`, and stacks each strict version right after its base. |
+| `DEFAULT_SCHEMAS` | The built-in default schema set, eleven ids in order: `google:okf:0.1`, `passo-uno:seven-action:1.0`, then nine `manni:` vocabularies. Config `schemas` join it unless `defaults` is `false`. |
 | `collectSchemaPins` | Gather the integrity pins a config declares, keyed by schema reference. |
 | `schemaEntryRef` | Narrow a config `schemas:` entry, either a bare string or an object, to its reference string. |
 | `rebaseConfigSchemaRefs` | Rewrite a config's relative file refs so they resolve against the config's own directory rather than the process working directory. |
@@ -296,12 +344,14 @@ implement.
 |---|---|
 | `listBuiltins` | Enumerate the schemas manni meta ships, with their ids and titles. |
 | `classifyRef` | Decide whether a reference is a `builtin` id, a `file` path, or a `url`. |
-| `loadSchema` | Resolve any reference to a parsed JSON Schema object, going through the cache and integrity check. |
+| `loadSchema` | Resolve any reference to a parsed JSON Schema object, going through the cache and integrity check. A registered id resolves to its registered file. |
 | `fetchSchemaBytes` | The lower-level fetch: the raw bytes plus their provenance, for callers that need the exact payload (integrity pinning does). |
 | `FetchedSchema` (type) | What `fetchSchemaBytes` returns: the bytes, the resolved URL, and whether the cache served them. |
-| `schemaLoadOptions` | Build a `LoadSchemaOptions` from run-level settings (trust, pins, offline, cache), so every call site derives them the same way. |
-| `LoadSchemaOptions` (type) | Loader settings. Pins, trust policy, cache behavior, and offline mode. |
+| `schemaLoadOptions` | Build a `LoadSchemaOptions` from run-level settings (trust, pins, offline, cache, registered schemas), so every call site derives them the same way. |
+| `LoadSchemaOptions` (type) | Loader settings. Pins, trust policy, cache behavior, offline mode, and the schemas `meta.register` names. |
 | `SchemaPin` (type) | An integrity pin. The reference and the digest it must hash to. |
+| `RegisteredSchema` (type) | One schema [`meta.register`](/manni/meta/reference/configuration/#register) loaded. Its `$id`, its `file` relative to the config's directory, its absolute `path`, and the parsed `schema`. |
+| `RegisteredSchemas` (type) | Every registered schema, keyed by `$id`. The loader, the validator and `getSchemasInfo` take it. |
 | `integrityOf` | The `sha256-…` digest of a byte payload, in the form a pin records. |
 | `isIntegrity` | Whether a string is a well-formed integrity digest. |
 | `INTEGRITY_SHAPE` | The human-readable description of that form, for error messages. |
@@ -334,7 +384,7 @@ its exports are under [Collections](#collections).
 | `loadConfig` | Discover (or take an explicit path to) a config file and parse it. Resolves to `null` when discovery finds none. |
 | `parseConfig` | Parse config text that you already have, with a source label for error messages. |
 | `LoadedConfig` (type) | A parsed config plus where it came from. It carries the file's `path`, its `dir`, and the `source` label every config message spells it as. It also carries the family-file `section` it was read from under, and every `collections` the family file declares. `encryptionKey` is the file's top-level key when it has one, and `configFile` is the file as family discovery found it. |
-| `DocmetaConfig` (type) | The `meta:` section itself: `schemas`, `overrides`, `checks`, `elements`, `derive`, `fill`, `baseline`, `schemaTrust`, `schemaCache`, and the rest. It no longer carries `paths`, `exclude` or `sidecars`; the document set and its external metadata are [collections](#collections), which every tool reads. |
+| `DocmetaConfig` (type) | The `meta:` section itself: `schemas`, `defaults`, `strict`, `register`, `overrides`, `checks`, `elements`, `derive`, `fill`, `baseline`, `schemaTrust`, `schemaCache`, and the rest. Each `overrides` entry carries its own optional `defaults` and `strict`. It no longer carries `paths`, `exclude` or `sidecars`; the document set and its external metadata are [collections](#collections), which every tool reads. |
 | `resolveRunConfig` | Merge config with the run's inputs and flags into the settings a core actually uses. This is the precedence chain, in one place. |
 | `RunConfigOptions` (type) | Input to `resolveRunConfig`: cwd, `configPath`, `noConfig`, the positional `inputs`, the `collections` names `--collection` gave (empty or absent means every declared one), and a load callback. |
 | `RunConfig` (type) | The merged result. It carries the rebased config, the effective `inputs`, and the `base` those are relative to. The inputs are the positional ones, or the selected collections' `paths` concatenated in declaration order. It names the `configDir`/`configPath`/`configSection` that governed the run and the `collections` the run covers. It lists every `declaredCollections` the config declares, each of which is a SQL view whether the run selected it or not. And it carries `fromCollections`, the corpus invariant every scoped check reads. `configFile` is the governing file, which the run's encryption key resolves from. |
@@ -346,7 +396,7 @@ its exports are under [Collections](#collections).
 | `FillConfig` (type) | Config defaults for `fill`: provider, model, confidence threshold, cost ceiling, concurrency. |
 | `SchemaCacheConfig` (type) | Config for the remote-schema cache, currently `ttlHours`. |
 | `CheckConfig` (type) | One named [corpus check](/manni/meta/reference/configuration/#checks). Its `name` (the durable half of its findings' identity) and the SQL `query`. |
-| `DeriveConfig` (type) | The [derived channel](/manni/meta/reference/configuration/#derive). It is made of the optional managed `fields`, the optional `sources` to consult, and an optional `codeowners` path relative to the config's directory. The optional `commands` table and `machines` globs complete it. `fields` absent means `MERGE_SAFE_FIELDS`, each managed only on a page whose schemas claim it, and `[]` manages nothing. The parser has already asserted the fields are unique, and each one of `DERIVABLE_FIELDS` or a key of `commands`. `loadConfig` has also asserted that no field and no `commands` key is a key an [external-metadata](#external-metadata) manifest owns on any collection. `provenance` is the one field a manifest may own. |
+| `DeriveConfig` (type) | The [derived channel](/manni/meta/reference/configuration/#derive). It is made of the optional managed `fields`, the optional `sources` to consult, and an optional `codeowners` path relative to the config's directory. The optional `collections` limits derive to those collections' members. The optional `commands` table and `machines` globs complete it. `fields` absent means `MERGE_SAFE_FIELDS`, each managed only on a page whose schemas claim it, and `[]` manages nothing. The parser has already asserted the fields are unique, and each one of `DERIVABLE_FIELDS` or a key of `commands`. `loadConfig` has also asserted that no field and no `commands` key is a key an [external-metadata](#external-metadata) manifest owns on any collection. `provenance` is the one field a manifest may own. |
 | `DeriveCommandConfig` (type) | One `derive.commands` entry as the config spells it, with the `run` argv, the program first, and an optional `timeout` in seconds. The parser has already asserted `run` is a non-empty list of non-empty strings and `timeout` a positive whole number. It has also refused a key that is a built-in field or `$schema`, and `loadConfig` refuses one a manifest owns. |
 
 ## Reporters

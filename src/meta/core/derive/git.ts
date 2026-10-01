@@ -31,15 +31,15 @@ import {
 } from "../../extractors/index.js";
 import type { ExtractedMetadata, MetadataExtractor } from "../../types.js";
 import { toJsonText } from "../json-text.js";
-import { splitLines } from "../../../shared/pin.js";
+import { parseLines, splitLines, toFileLines } from "../../../shared/pin.js";
 import {
   attributeRange,
   DEFAULT_MACHINES,
   deriveProvenance,
   machineIdentity,
   parseLinePorcelain,
-  parseProvenanceTarget,
   provenanceEntries,
+  readProvenancePage,
   ZERO_SHA,
   type BlameLine,
   type CommitEvidence,
@@ -887,11 +887,16 @@ async function provenanceFor(
   const attribution = input.attribution;
   if (attribution !== undefined) {
     // Refused in 0046's words when a range runs past the end, reaches into
-    // the frontmatter, or evidence names another machine for any of its lines.
+    // the frontmatter, or evidence names another machine for any of its
+    // non-blank lines. Each range is the one attributeRange writes, trimmed
+    // of blank edge lines (0071), in file lines: a blank line outside it is
+    // not the attribution's, and one of only blank lines attributes nothing.
+    const page = readProvenancePage(input.content, { fenced });
+    const { bodyLine } = page;
     const ranges = attribution.targets.flatMap((target) => {
-      attributeRange({ ...base, blame, target, generatedBy: attribution.generatedBy });
-      const range = parseProvenanceTarget(target).lines;
-      return range === undefined ? [] : [range];
+      const entry = attributeRange({ ...base, blame, target, generatedBy: attribution.generatedBy, page });
+      const span = entry === undefined ? undefined : parseLines(entry.lines);
+      return span === undefined ? [] : [toFileLines(span, bodyLine)];
     });
     const inRange = (line: BlameLine): boolean =>
       ranges.some((range) => line.finalLine >= range.start && line.finalLine <= range.end);

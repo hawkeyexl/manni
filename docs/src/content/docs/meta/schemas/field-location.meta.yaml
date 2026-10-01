@@ -1,0 +1,74 @@
+docs/src/content/docs/meta/schemas/field-location.mdx:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s1
+    - m4
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/location.ts
+    - path: src/meta/core/relocation.ts
+    - path: src/meta/commands/relocate.ts
+    - path: src/meta/commands/validate-offer.ts
+  eval-suite: meta
+  evals:
+    - id: mark-location
+      assertion: A reader can mark a property x-manni-location and read the warning validate reports for a misplaced value.
+      type: capability
+      grader: ai
+    - id: relocate-values
+      assertion: A reader can move misplaced values with manni meta relocate.
+      type: capability
+      grader: ai
+    - id: choose-marks
+      assertion: A reader can decide whether a field belongs on the page or in a manifest.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-60
+      integrity: sha256-ce045548be6dde00710dd34e5b969a48de55b6703df925a66a920b8326e556c7
+    - generated-by: Claude Opus 5
+      lines: 66-67
+      integrity: sha256-111e28d22ca5b54c74688ce0acda8e4e07cfff8859f0c7560fe8d09cdcefe3bc
+    - generated-by: Claude Opus 5
+      lines: 69-201
+      integrity: sha256-9c2158e6cdd0ab08c588eec59f4277fe1b80cbebc3abc2cb779eb7e0cc3102f1
+    - generated-by: Claude Opus 5
+      lines: 204
+      integrity: sha256-0a69fa04a4467debd9782087c8060134a236e49ae1c7095b1f94f028ab0b249b
+    - generated-by: Claude Opus 5
+      lines: 206-461
+      integrity: sha256-a4446c4a702411084700bc44e7eea7a6ec133e86992561397d7bf6f3c8669561
+    - generated-by: Claude Opus 5.5
+      lines: 463-466
+      integrity: sha256-13b731d160a679e61bb8679c56782d401cadfb033f9cb8238b8fba44c93d58f6
+    - generated-by: Claude Opus 5
+      lines: 467
+      integrity: sha256-23cca02b74f386463efa24796c7a9011b0d2c93f0c38b4d15d5d276205b59b43
+    - generated-by: Claude Opus 5.5
+      lines: 468-478
+      integrity: sha256-fad77ccfefd30c9b771f2b06fe4735fa68c6300b6b57829ab9398f38c1f8bf93
+    - generated-by: Claude Opus 5
+      lines: 484-498
+      integrity: sha256-45df1d179bed465870ab26a19e55bf1ad51bc56ed2d116ebfce1137a556ec2a4
+    - generated-by: Claude Opus 5
+      lines: 503-543
+      integrity: sha256-f380e7ebefea68d20900623273912f571f40077c636611ec57c5ce998bbc3f06
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-14
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /prerequisites: 0.85
+        /related-pages: 0.95

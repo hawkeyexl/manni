@@ -1,0 +1,105 @@
+docs/src/content/docs/meta/set-up/derived-metadata.mdx:
+  personas:
+    - maya
+    - devin
+    - theo
+  journeys:
+    - m1
+    - m2
+    - d4
+    - t1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/derive/
+    - path: src/meta/core/config.ts
+  eval-suite: meta
+  evals:
+    - id: configure-derive
+      assertion: A reader can configure derive fields and sources and stamp them locally.
+      type: capability
+      grader: ai
+    - id: fix-stale-stamp
+      assertion: A reader can clear a derived:stale finding by running manni meta derive.
+      type: capability
+      grader: ai
+    - id: derive-in-pr
+      assertion: A reader can run derive in a pull request with the history it needs.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-27
+      integrity: sha256-2f00426b72c601f9aaadfaa3ef7605040fb9ecc5cd5a92b7254d997a2f33b9bc
+    - generated-by: Claude Opus 5.5
+      lines: 29
+      integrity: sha256-7e8f9d8f1f301d47b7353545a4ce02b6f595e71c7e0f0f40775cf1a7c1a9c83b
+    - generated-by: Claude Opus 5
+      lines: 30-63
+      integrity: sha256-9859a8ff1ec7136f1168be1d4efd94d4b204e5b66f03918b24c904304f663841
+    - generated-by: Claude Opus 5.5
+      lines: 65-66
+      integrity: sha256-30ae2696a3f920f1831010892dc915063218d0a59d0023282741edb9eceebdf3
+    - generated-by: Claude Opus 5
+      lines: 68-110
+      integrity: sha256-6fa3f7dbc3a3760d9ce46f226c94f26f2f74848db6a80eabdd7982a7840d61f8
+    - generated-by: Claude Opus 5.5
+      lines: 112-132
+      integrity: sha256-00740cebf9b37f3c74e0c879ab965b588cad97f84770f781a826c2d5a2c29baf
+    - generated-by: Claude Opus 5.5
+      lines: 141
+      integrity: sha256-3d982d9bd8884167256d74126d88c175f99f9193f85f7a213254e6272457929e
+    - generated-by: Claude Opus 5.5
+      lines: 146-147
+      integrity: sha256-39ccb573a369855929623249e66833ff97916997a79ffbce79b9bd5b1b541f9f
+    - generated-by: Claude Opus 5.5
+      lines: 149-150
+      integrity: sha256-eb39f22ab770f8bf2cb7c326d39933dbfc309d8fb468354eccb89a1a5d5e9d88
+    - generated-by: Claude Opus 5.5
+      lines: 158-184
+      integrity: sha256-4877f104236934e4326c01e28fca4a24400f765be45fe1d8287362691dfe473f
+    - generated-by: Claude Opus 5
+      lines: 186-237
+      integrity: sha256-f9838bd5b61db1f368da764bd15c890e6479c45f84020e5c4240ff9b6e13798a
+    - generated-by: Claude Opus 5
+      lines: 240-336
+      integrity: sha256-6d8a366147b3effc9dbbce9d82833b0faa09d954828bd9bb6fd9e82fecc6b62d
+    - generated-by: Claude Opus 5.5
+      lines: 337
+      integrity: sha256-926e6dc3d65cba6bdbf52933cfad51effd31f4f42a5bd233a42295d005a59a33
+    - generated-by: Claude Opus 5
+      lines: 338-607
+      integrity: sha256-dc079e0eb844cfd0b2ea52869e6a2da12f9e8fea85d434f6e64bbf98e23f6f0b
+    - generated-by: Claude Opus 5.5
+      lines: 608-610
+      integrity: sha256-a47a54d07a2541ef1b9e0aad108aa37ad9d1e49e21db4ac702caade8783ff568
+    - generated-by: Claude Opus 5
+      lines: 612-643
+      integrity: sha256-dd76cc609bddb63705ec4c87cd39cdf4487cec65baf515eef2efa4dced566bd6
+    - generated-by: Claude Opus 5.5
+      lines: 644-645
+      integrity: sha256-db2560f2477757e9bcfdfdf65a53e3eaa7016218630d6ba4c49e32e3b86b01b3
+    - generated-by: Claude Opus 5
+      lines: 646-663
+      integrity: sha256-43643576daf0ad01e9f50f86f510a9c883e329566e905f3f8008882c00edf0ed
+    - generated-by: Claude Opus 5.5
+      lines: 664-666
+      integrity: sha256-c97892c3e7da6ba01fd5519fd8c13ddd15cfdd50a348503d074c724dd253941c
+    - generated-by: Claude Opus 5
+      lines: 667-669
+      integrity: sha256-727b437b8c6982890bdc24faa522ff6e483be86e163aea67652a874e5b1554b9
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-11
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /related-pages
+        - /prerequisites
+      confidence:
+        /tags: 0.75
+        /action: 0.9
+        /related-pages: 0.98
+        /prerequisites: 0.85

@@ -5,9 +5,9 @@ docs/src/content/docs/meta/reference/schemas/diataxis.mdx:
         integrity: sha256-e106e9e77a5193038dc625927888c306a90c8dae2661856468d11c0a396d7d58
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 25-31
-        integrity: sha256-e422d6fee4c027743e2ef6b44e94c3be5ee5aa4745ebfce5ad32dcc5950e202a
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        lines: 35-37
+        integrity: sha256-c524978711da65266d5c80de3cb5e5a6adaa69bbb5c5a9e8301c83ae66028ddd
+        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
     - id: taxonomy-diataxis-requires-and-constrains-type
       claim:
         integrity: sha256-850d50f342f367163a19e8ebbd1f3996adce5b76657739a221f195351d7190d3
