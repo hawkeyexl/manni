@@ -1,0 +1,43 @@
+docs/src/content/docs/meta/reference/schemas/docusaurus-blog.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/docusaurus-blog/3.10.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can scope docusaurus:blog:3.10 to a Docusaurus blog's posts with an override."
+      type: capability
+      grader: ai
+    - id: authors-value
+      assertion: "A reader can fix the finding a numeric authors value produces."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-156
+      integrity: sha256-d831c72702d59e29ab4869590a0df4ffc9ec1dcbe4db4bbb492d7b7589e9b9c3
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.8
+        /action: 0.85
+        /prerequisites: 0.75
+        /next-steps: 0.7
+        /related-pages: 0.8
+        /risks: 0.9

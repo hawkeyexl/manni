@@ -1,0 +1,12 @@
+# Proposal 0068: created is managed and marked external, and the manifest
+# names no keys, so derive stamps it into the page's own manifest.
+meta:
+  schemas: [./page.schema.json]
+  derive:
+    fields: [created]
+    sources: [git]
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"

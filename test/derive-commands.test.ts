@@ -251,9 +251,12 @@ describe("validate compares managed fields with the evidence", () => {
     reviseA(dir);
     const { results } = await runValidate({ inputs: [], cwd: dir });
     const a = resultFor(results, "docs/a.md");
+    // a.md carries owner, which the default stewardship vocabulary prefers
+    // in external metadata: a warning beside the two findings under test.
     expect(a.errors.map((e) => e.schema).sort()).toEqual([
       "check:stale-stamp",
       "derived:stale",
+      "location:external",
     ]);
     expect(resultFor(results, "docs/b.md").ok).toBe(true);
   });
@@ -284,10 +287,12 @@ describe("validate compares managed fields with the evidence", () => {
     derivations.calls = 0;
     const { results } = await runValidate({ inputs: [], cwd: dir });
     expect(derivations.calls).toBe(1);
-    // One derivation, both readers served.
+    // One derivation, both readers served. The location warning is the
+    // default stewardship vocabulary's, on a.md's page-held owner.
     expect(resultFor(results, "docs/a.md").errors.map((e) => e.schema).sort()).toEqual([
       "check:stale-stamp",
       "derived:stale",
+      "location:external",
     ]);
   });
 });
@@ -940,15 +945,19 @@ describe("query: the resolved table", () => {
     ].join("\n");
     const dir = repo(files);
     const { results } = await runValidate({ inputs: [], cwd: dir });
+    // The location warning is the default stewardship vocabulary's, on
+    // a.md's page-held owner.
     expect(resultFor(results, "docs/a.md").errors.map((e) => e.schema)).toEqual([
+      "location:external",
       "check:owner-asserted",
     ]);
     expect(resultFor(results, "docs/b.md").ok).toBe(true);
   });
 
   it("derives for a check that names resolved when no field is managed", async () => {
-    // The check is the only reason to derive: no `derive.fields`, so the
-    // comparison never runs. Filtering the checks on `mentionsDerived` alone
+    // The check is the only reason to derive: `derive.fields: []`, so the
+    // comparison never runs. (Leaving fields out would manage the merge-safe
+    // fields the default stewardship vocabulary claims, proposal 0069.) Filtering the checks on `mentionsDerived` alone
     // kept no inputs, derived nothing, and read every column NULL — a check
     // that answers the opposite of the truth without saying so.
     const files = fixtureFiles();
@@ -964,6 +973,7 @@ describe("query: the resolved table", () => {
       "  schemas:",
       "    - ./permissive.schema.json",
       "  derive:",
+      "    fields: []",
       "    sources: [git, codeowners]",
       "  checks:",
       "    - name: owner-only-derived",
@@ -1141,8 +1151,11 @@ describe("fill never proposes a managed field", () => {
     const dir = makeTempRepo({
       init: false,
       files: {
+        // defaults: false: the request under test is schema.json's two
+        // fields, not every field of the default vocabularies.
         "manni.config.yaml": [
           "meta:",
+          "  defaults: false",
           "  schemas:",
           "    - ./schema.json",
           "  derive:",
@@ -1205,19 +1218,30 @@ describe("provenance in validate, get and query (0046)", () => {
   const AGENT = "The limit is 120 requests a minute.\nBursts of 30 are allowed.\nA 429 response names the wait in Retry-After.";
   const PIN = hashLines(AGENT);
 
-  function provenanceFiles(): Record<string, string> {
+  /**
+   * The corpus. `typed` gives the page the `type` and `description` the
+   * default vocabularies require, for a case that asserts the whole run is
+   * clean; it adds two frontmatter lines, so file lines move down by two.
+   */
+  function provenanceFiles(typed = false): Record<string, string> {
     const read = (rel: string): string => readFileSync(join(PROVENANCE, rel), "utf8");
+    const limits = read(LIMITS);
     return {
       "manni.config.yaml": read("manni.config.yaml"),
       "permissive.schema.json": read("permissive.schema.json"),
-      [LIMITS]: read(LIMITS),
+      [LIMITS]: typed
+        ? limits.replace(
+            "title: Rate limits\n",
+            "title: Rate limits\ntype: reference\ndescription: How many requests a token may make.\n",
+          )
+        : limits,
     };
   }
   const page = (dir: string): string => readFileSync(join(dir, LIMITS), "utf8");
 
   /** The page as a person wrote it, then the agent's edit stamped and committed. */
-  async function stamped(): Promise<{ dir: string; sha: string }> {
-    const dir = repo(provenanceFiles());
+  async function stamped(typed = false): Promise<{ dir: string; sha: string }> {
+    const dir = repo(provenanceFiles(typed));
     writeFile(dir, LIMITS, page(dir).replace(HUMAN, AGENT));
     await runDerive({ inputs: [], cwd: dir, generatedBy: FABLE, env: {} });
     const sha = commit(dir, "docs: rewrite the limits", { authorDate: D_EDIT });
@@ -1225,7 +1249,7 @@ describe("provenance in validate, get and query (0046)", () => {
   }
 
   it("validate is clean over a current stamp, and files a changed finding at the range's line", async () => {
-    const { dir } = await stamped();
+    const { dir } = await stamped(true);
     const clean = await runValidate({ inputs: [], cwd: dir });
     expect(clean.summary.failed).toBe(0);
 
@@ -1239,8 +1263,8 @@ describe("provenance in validate, get and query (0046)", () => {
         keyword: "derived",
         subject: `provenance ${PIN}`,
         instancePath: "/provenance",
-        message: `provenance lines 13-15 changed since ${FABLE} wrote them — run manni meta derive`,
-        line: 13,
+        message: `provenance lines 15-17 changed since ${FABLE} wrote them — run manni meta derive`,
+        line: 15,
       },
     ]);
     expect(summary.failed).toBe(1);

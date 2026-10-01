@@ -149,3 +149,53 @@ export function commit(dir: string, message: string, opts: CommitOptions = {}): 
   );
   return git(dir, ["rev-parse", "HEAD"]);
 }
+
+export interface SquashOptions {
+  /** The branch whose tip's tree the squash commits. */
+  branch: string;
+  /** The base branch the squash lands on; checked out and moved to the squash. */
+  onto: string;
+  /** ISO 8601 with offset: the merge's date, for author and committer alike. */
+  authorDate: string;
+  /** Who merged. Defaults to someone who wrote none of the branch. */
+  author?: { name: string; email: string };
+  message?: string;
+  /** Appended to the message as its own paragraph, as a host appends co-authors. */
+  trailers?: string[];
+}
+
+/**
+ * Replay a squash merge the way a host performs one (proposal 0069): one
+ * commit on `onto` whose tree is the branch tip's, authored by the person
+ * who merged, dated at the merge, with the trailers the host appends. Built
+ * with `commit-tree`, so nothing of the branch's own commits survives but
+ * their tree. The base branch is then checked out at the new commit.
+ */
+export function replaySquash(dir: string, opts: SquashOptions): string {
+  const author = opts.author ?? { name: "Merger", email: "merger@example.com" };
+  const tree = git(dir, ["rev-parse", `${opts.branch}^{tree}`]);
+  const parent = git(dir, ["rev-parse", opts.onto]);
+  const message = opts.message ?? `Squash ${opts.branch}`;
+  const body =
+    opts.trailers && opts.trailers.length > 0
+      ? `${message}\n\n${opts.trailers.join("\n")}\n`
+      : message;
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: author.name,
+    GIT_AUTHOR_EMAIL: author.email,
+    GIT_AUTHOR_DATE: opts.authorDate,
+    GIT_COMMITTER_NAME: author.name,
+    GIT_COMMITTER_EMAIL: author.email,
+    GIT_COMMITTER_DATE: opts.authorDate,
+  };
+  const sha = execFileSync("git", ["commit-tree", "--no-gpg-sign", tree, "-p", parent, "-m", body], {
+    cwd: dir,
+    encoding: "utf8",
+    env,
+    stdio: ["ignore", "pipe", "ignore"],
+  }).trim();
+  git(dir, ["checkout", "-q", opts.onto]);
+  git(dir, ["reset", "-q", "--hard", sha]);
+  return sha;
+}

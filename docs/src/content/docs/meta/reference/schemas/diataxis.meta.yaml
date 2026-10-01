@@ -1,0 +1,41 @@
+docs/src/content/docs/meta/reference/schemas/diataxis.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/diataxis/1.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on diataxis:diataxis:1.0 for their pages."
+      type: capability
+      grader: ai
+    - id: four-forms
+      assertion: "A reader can name the four type values the Diátaxis schema accepts."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-79
+      integrity: sha256-af48553f2a9b56e4562ac4e41b068b11b039ce8317a1a22860732fbadb12b516
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /prerequisites
+      confidence:
+        /resource: 0.95
+        /tags: 0.7
+        /action: 0.85
+        /next-steps: 0.7
+        /related-pages: 0.9
+        /prerequisites: 0.85

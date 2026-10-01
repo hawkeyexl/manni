@@ -1,6 +1,46 @@
 ---
 title: FAQ
 description: Short answers to the questions that come up most when a manni meta check fails, covering no frontmatter, which schema fired, validating one field, stdin, exit codes, and more.
+type: faq
+id: meta-fix-faq
+keywords:
+  - FAQ
+  - no frontmatter
+  - stdin
+  - exit codes
+  - exclude drafts
+language: en
+audiences:
+  - contributors
+intent: Answer the common follow-up questions about a failing manni meta check.
+lifecycle: published
+applies-to:
+  - domain:meta
+related-pages:
+  - meta-reference
+  - meta-fix
+concepts:
+  - frontmatter
+  - extractor
+  - validation
+sample-questions:
+  - What if a file has no frontmatter?
+  - Can I validate just one field?
+  - How do I exclude drafts from validation?
+graph:
+  label: FAQ
+  type: troubleshooting
+last-updated: 2026-09-27
+tags:
+  - troubleshooting
+  - validation
+  - cli
+action: troubleshoot
+prerequisites:
+  - meta-fix
+next-steps:
+  - meta-reference
+risks: read-only
 ---
 
 import { Aside, LinkCard } from '@astrojs/starlight/components';
@@ -15,9 +55,10 @@ page is for the "wait, but what about…" follow-ups.
 {/* cite empty-metadata-still-fails */}
 It still fails, as long as the schema requires any field. A file with no
 frontmatter block reads as empty metadata. So a schema that requires `type`, as
-the built-in default does, reports the same "must have required property 'type'"
+the built-in default set does, reports the same "must have required property 'type'"
 error. It is the same error you would get for a file that simply left `type`
-out.
+out. The default set also requires `title` and `description`, so those two
+fail beside it.
 
 So an empty or frontmatter-less file earns no free pass. It's the maximally
 failing case. If you expected the file to have metadata, the usual cause is a
@@ -32,11 +73,14 @@ Every error line ends with the schema that produced it, in brackets. For example
 `[google:okf:0.1]`. That's the schema whose rule you tripped. If you're
 surprised by *which* schema applied, manni meta picks it through a fixed precedence
 chain. A `--schema` flag wins over a `$schema` key in your file. That wins over
-config `overrides`, then config `schemas`, then the built-in default.
+config `overrides`, then config `schemas` added to the built-in default set,
+then the default set alone.
 
 {/* cite first-source-wins-no-merging */}
 The first source that yields a schema wins, and lower sources are ignored for
-that file. Say your repo's config assigns a strict schema to `/api/**`, and your
+that file. The default set is the one thing a lower source adds. Config
+`schemas` join it unless the config sets `defaults: false`, and an override
+joins it when it sets `defaults: true`. Say your repo's config assigns a strict schema to `/api/**`, and your
 file is under `/api`. That's the rule that fired, even if you never set anything
 in the file itself.
 

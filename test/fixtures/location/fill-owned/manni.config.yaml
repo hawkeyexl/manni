@@ -1,4 +1,6 @@
 # fill (0047): a local manifest owns owner, so fill writes it there.
+# defaults: false keeps fill to steward.schema.json's fields, which are the
+# subject; the default vocabularies would add dozens more to propose.
 collections:
   - name: site
     paths: ["docs/**/*.md"]
@@ -6,4 +8,5 @@ collections:
       - file: ./site-meta.yaml
         keys: [owner]
 meta:
+  defaults: false
   schemas: [./steward.schema.json]

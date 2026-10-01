@@ -1,6 +1,9 @@
 # fill (0047): owner prefers external metadata and no manifest owns it.
+# defaults: false keeps fill to steward.schema.json's fields, which are the
+# subject; the default vocabularies would add dozens more to propose.
 collections:
   - name: site
     paths: ["docs/**/*.md"]
 meta:
+  defaults: false
   schemas: [./steward.schema.json]

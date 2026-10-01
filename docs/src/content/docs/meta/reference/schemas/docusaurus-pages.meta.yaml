@@ -1,0 +1,43 @@
+docs/src/content/docs/meta/reference/schemas/docusaurus-pages.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/docusaurus-pages/3.10.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can scope docusaurus:pages:3.10 to standalone Docusaurus pages with an override."
+      type: capability
+      grader: ai
+    - id: wrapper-class-name
+      assertion: "A reader can fix the finding a non-string wrapperClassName produces."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-125
+      integrity: sha256-3235a11f6a83de368c85cb025f2b0b157e87d246ece25af11949f8ced9af2802
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /related-pages
+        - /risks
+        - /prerequisites
+        - /next-steps
+      confidence:
+        /resource: 0.95
+        /tags: 0.7
+        /action: 0.75
+        /related-pages: 0.85
+        /risks: 0.85
+        /prerequisites: 0.8
+        /next-steps: 0.75

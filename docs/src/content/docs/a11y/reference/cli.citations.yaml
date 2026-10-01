@@ -300,9 +300,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-1519ce2934c2092329db219ea86d6cfa27a0a1993e464fb7293ae5e0024d2ddb
       source:
         file: src/shared/collections.ts
-        lines: 486
+        lines: 568
         integrity: sha256-84ff935c5a5f70ea0feb9816b3d2ce2f5e0aa48128e595fd5ae923f5f6e4f19f
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: seed-rung-config-urls
       claim:
         lines: 98
@@ -1006,9 +1006,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-286807e221c0bff7082d81523c4667ae0547e433e2b3ffc9d72b379e8cf7bd79
       source:
         file: src/shared/collections.ts
-        lines: 486
+        lines: 568
         integrity: sha256-84ff935c5a5f70ea0feb9816b3d2ce2f5e0aa48128e595fd5ae923f5f6e4f19f
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
     - id: usage-msg-not-http
       claim:
         lines: 525

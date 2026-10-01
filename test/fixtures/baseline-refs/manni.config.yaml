@@ -4,6 +4,10 @@ collections:
       - "docs/**/*.md"
 
 meta:
+  # The page is judged by the local file alone. OKF, in the default set
+  # (proposal 0070), also requires `type`, and its second finding would sit
+  # beside the one the committed baseline records.
+  defaults: false
   schemas:
     - ./strict.schema.json
   baseline: .docmeta-baseline.json

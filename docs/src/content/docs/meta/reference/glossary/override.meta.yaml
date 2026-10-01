@@ -1,0 +1,51 @@
+docs/src/content/docs/meta/reference/glossary/override.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-override
+      assertion: A reader can say what override means in manni meta.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-11
+      integrity: sha256-30cd8250a620d5a9be7ef7fed03b96e0bcd2ee2ba057ec8c75667c14d6c4e55f
+    - generated-by: Claude Opus 5
+      lines: 16
+      integrity: sha256-98fbf68ff4090ac9529db81efbce3892c04beec6d1fd5306f972a068c4177156
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16
+  source-of-truth:
+    - path: src/meta/core/resolve-schema.ts
+      kind: implementation
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /alt-labels
+        - /broader
+        - /scope-note
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /concepts: 0.8
+        /prerequisites: 0.75
+        /next-steps: 0.9
+        /source-of-truth: 0.9
+        /risks: 0.95
+        /alt-labels: 0.85
+        /broader: 0.8
+        /scope-note: 0.9

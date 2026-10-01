@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A local schema that extends a registered one by $id",
+  "allOf": [{ "$ref": "house:page:1.0.0" }]
+}

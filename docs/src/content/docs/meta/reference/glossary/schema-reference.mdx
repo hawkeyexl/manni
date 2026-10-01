@@ -8,6 +8,45 @@ related-terms: [schema, $schema key]
 abstract: A pointer to a schema, as a builtin id, file, or URL.
 definition: >-
   A pointer to a schema.
+keywords:
+  - schema reference
+  - builtin id
+  - schema URL
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+  - schema-authors
+  - contributors
+intent: Say what schema reference means in manni meta and where it is covered in full.
+lifecycle: published
+applies-to:
+  - domain:meta
+related-pages:
+  - meta-reference-schema-resolution
+sample-questions:
+  - What is a schema reference?
+  - Which kinds of schema reference does manni meta accept?
+graph:
+  label: schema reference
+  type: concept
+last-updated: 2026-09-16
+tags:
+  - schema
+  - metadata
+  - validation
+  - configuration
+action: understand
+concepts:
+  - schema
+prerequisites:
+  - schema
+next-steps:
+  - meta-reference-schema-resolution
+risks: read-only
+broader:
+  - schema
+scope-note: "In manni meta, a schema reference is classified into exactly one of three kinds by its shape: builtin (colon-separated id), file (path with separator or .json extension), or URL (http/https)."
 ---
 
 <p>{frontmatter.definition}</p>

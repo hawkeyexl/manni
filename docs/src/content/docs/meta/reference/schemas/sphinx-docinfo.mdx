@@ -3,6 +3,40 @@ title: Sphinx docinfo schema
 description: The sphinx:docinfo:9.1 schema shipped with manni meta, covering the five file-wide metadata fields Sphinx reads from a reStructuredText page, and the finding a non-integer tocdepth produces.
 sidebar:
   label: "sphinx:docinfo:9.1"
+type: reference
+id: meta-reference-schemas-sphinx-docinfo
+keywords: ["Sphinx", "docinfo", "sphinx:docinfo:9.1", "tocdepth"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate the file-wide metadata fields Sphinx reads from a reStructuredText page, and fix a non-integer tocdepth."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "dialect", "override"]
+sample-questions:
+  - "Which metadata fields does sphinx:docinfo:9.1 check?"
+  - "What finding does a non-integer tocdepth produce?"
+graph:
+  label: "Sphinx docinfo schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/sphinx/9.1.json
+tags:
+  - restructuredtext
+  - platform-schema
+  - built-in
+action: remember
+next-steps:
+  - /manni/meta/reference/platform-schemas/
+  - /manni/meta/reference/schema-resolution/
+related-pages:
+  - /manni/meta/reference/platform-schemas/
+  - /manni/meta/reference/schema-resolution/
+risks:
+  - read-only
+  - idempotent
+prerequisites:
+  - meta-reference-platform-schemas
+  - meta-reference-schema-resolution
 ---
 
 **Built-in id:** `sphinx:docinfo:9.1`

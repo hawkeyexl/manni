@@ -1,0 +1,4 @@
+# meta.schemas joins the default set (proposal 0070).
+meta:
+  schemas:
+    - ./house.json

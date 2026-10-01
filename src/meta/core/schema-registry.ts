@@ -65,6 +65,8 @@ import manniEvalsStrict100 from "../schemas/evals-strict/1.0.0.json" with { type
 import manniArtifactEvalsStrict100 from "../schemas/artifact-evals-strict/1.0.0.json" with { type: "json" };
 import manniGraphStrict100 from "../schemas/graph-strict/1.0.0.json" with { type: "json" };
 import manniCitationsStrict100 from "../schemas/citations-strict/1.0.0.json" with { type: "json" };
+import tgdp11 from "../schemas/tgdp/1.1.json" with { type: "json" };
+import tgdpStrict11 from "../schemas/tgdp-strict/1.1.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 
 export interface BuiltinInfo {
@@ -120,6 +122,8 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
   ["manni:artifact-evals-strict:1.0.0", manniArtifactEvalsStrict100],
   ["manni:graph-strict:1.0.0", manniGraphStrict100],
   ["manni:citations-strict:1.0.0", manniCitationsStrict100],
+  ["tgdp:templates:1.1", tgdp11],
+  ["tgdp:templates-strict:1.1", tgdpStrict11],
 ]);
 
 /**
@@ -164,6 +168,43 @@ export function assertPublishableBuiltinId(id: string): void {
 }
 
 for (const id of BUILTINS.keys()) assertPublishableBuiltinId(id);
+
+/** Is `id` one of the bundled built-in ids? */
+export function isBuiltinId(id: string): boolean {
+  return BUILTINS.has(id);
+}
+
+/**
+ * A schema `meta.register` loaded from a local file (proposal 0070), named
+ * everywhere by its own `$id`, as a built-in is named by its id.
+ */
+export interface RegisteredSchema {
+  /** The schema's `$id`: `vendor:name:version`, or an `https://` URL. */
+  id: string;
+  /** The file, relative to the config file's directory, with forward slashes. */
+  file: string;
+  /** The file's absolute path. */
+  path: string;
+  /** The parsed schema: the object every lookup of `id` returns. */
+  schema: Record<string, unknown>;
+}
+
+/** The registered schemas of one config, keyed by `$id`. */
+export type RegisteredSchemas = ReadonlyMap<string, RegisteredSchema>;
+
+/**
+ * The strict version's id for `id`, by the naming the manni overlays use:
+ * `vendor:name:version` becomes `vendor:name-strict:version`. `undefined`
+ * for anything that is not a three-segment id, a URL included.
+ */
+export function strictIdOf(id: string): string | undefined {
+  if (classifyRef(id).kind !== "builtin") return undefined;
+  const parts = id.split(":");
+  if (parts.length !== 3) return undefined;
+  const [vendor, name, version] = parts;
+  if (vendor === undefined || name === undefined || version === undefined) return undefined;
+  return `${vendor}:${name}-strict:${version}`;
+}
 
 export function listBuiltins(): BuiltinInfo[] {
   return [...BUILTINS.entries()].map(([id, schema]) => ({
@@ -253,6 +294,8 @@ const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
   ["artifact-evals-strict/1.0.0.json", "manni:artifact-evals-strict:1.0.0"],
   ["graph-strict/1.0.0.json", "manni:graph-strict:1.0.0"],
   ["citations-strict/1.0.0.json", "manni:citations-strict:1.0.0"],
+  ["tgdp/1.1.json", "tgdp:templates:1.1"],
+  ["tgdp-strict/1.1.json", "tgdp:templates-strict:1.1"],
 ];
 
 /** Published URL → built-in id, under the current base. */
@@ -595,6 +638,12 @@ export interface LoadSchemaOptions {
    * runs.
    */
   pins?: ReadonlyMap<string, SchemaPin>;
+  /**
+   * The schemas `meta.register` loaded (proposal 0070), keyed by `$id`. A ref
+   * naming one resolves to its file's schema before anything else is
+   * consulted, so a registered `https://` id is never fetched.
+   */
+  registered?: RegisteredSchemas;
 }
 
 /**
@@ -981,6 +1030,8 @@ export function schemaLoadOptions(args: {
   offline?: boolean;
   /** From `collectSchemaPins(config)`; omitted when the config pins nothing. */
   pins?: ReadonlyMap<string, SchemaPin>;
+  /** The config's registered schemas (`config.registered`), when it has any. */
+  registered?: RegisteredSchemas;
 }): LoadSchemaOptions {
   return {
     cacheDir: schemaCacheDir(args.root),
@@ -991,6 +1042,9 @@ export function schemaLoadOptions(args: {
     // exactly the options object it produced before 0008.
     ...(args.pins !== undefined && args.pins.size > 0
       ? { pins: args.pins }
+      : {}),
+    ...(args.registered !== undefined && args.registered.size > 0
+      ? { registered: args.registered }
       : {}),
   };
 }
@@ -1046,11 +1100,30 @@ function assertIntegrity(
   );
 }
 
+/**
+ * The message for an id nothing answers to. It points at `manni meta schemas`
+ * for the built-ins, which are too many to read in one line, and names the
+ * registered ids, because a registered id is typed exactly like a built-in
+ * one and a run with no config registers nothing.
+ */
+export function unknownSchemaMessage(
+  ref: string,
+  registered: RegisteredSchemas | undefined,
+): string {
+  const ids = [...(registered?.keys() ?? [])];
+  return `Unknown schema "${ref}". manni meta schemas lists the built-in ids. Registered by meta.register: ${ids.length > 0 ? ids.join(", ") : "none"}.`;
+}
+
 /** Load and return the JSON Schema object for a reference. */
 export async function loadSchema(
   ref: string,
   options: LoadSchemaOptions = {},
 ): Promise<Record<string, unknown>> {
+  // A registered schema answers for its id before a built-in, a cache or a
+  // request is consulted: the config vouches for the file (proposal 0070).
+  const registered = options.registered?.get(ref);
+  if (registered) return registered.schema;
+
   const { kind } = classifyRef(ref);
   const pin = options.pins?.get(ref);
 
@@ -1068,12 +1141,7 @@ export async function loadSchema(
 
   if (kind === "builtin") {
     const schema = BUILTINS.get(ref);
-    if (!schema) {
-      const available = [...BUILTINS.keys()].join(", ");
-      throw new DocmetaError(
-        `Unknown built-in schema "${ref}". Available: ${available || "(none)"}.`,
-      );
-    }
+    if (!schema) throw new DocmetaError(unknownSchemaMessage(ref, options.registered));
     return schema;
   }
 

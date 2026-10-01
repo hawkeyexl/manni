@@ -1,4 +1,5 @@
 meta:
+  defaults: false
   schemas: [./steward.schema.json]
 collections:
   - name: site

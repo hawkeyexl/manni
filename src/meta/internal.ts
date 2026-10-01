@@ -86,3 +86,8 @@ export { LEGACY_CONFIG_NAMES } from "./core/config.js";
 // `manni cite` refuses a page whose opening fence never closes. The locator
 // reads that page as having no block, which would read as no citations.
 export { hasFrontmatterFence } from "./extractors/frontmatter.js";
+// A manifest with no `keys` (proposal 0068) owns what a page's schemas mark
+// external, so `cite` and `key rotate` read those marks the way meta does.
+export { configMarks } from "./core/page-marks.js";
+export { mergeWithMarks } from "./core/external-metadata.js";
+export type { PageMarks } from "./core/external-metadata.js";

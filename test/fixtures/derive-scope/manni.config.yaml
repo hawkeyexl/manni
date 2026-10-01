@@ -1,0 +1,19 @@
+# Proposal 0070: derive.collections limits derive to the members of site.
+# Both collections' pages claim owner through stewardship, but only site's
+# are stamped and compared.
+collections:
+  - name: site
+    paths:
+      - "docs/site/**/*.md"
+  - name: other
+    paths:
+      - "docs/other/**/*.md"
+
+meta:
+  defaults: false
+  schemas:
+    - manni:stewardship:1.0.0
+  derive:
+    collections: [site]
+    fields: [owner]
+    sources: [codeowners]

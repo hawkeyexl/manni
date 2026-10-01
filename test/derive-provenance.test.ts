@@ -322,7 +322,7 @@ function agreesWithLadder(s: LadderScenario, opts: Opts = {}): void {
   expect(planProvenanceWrite(myResults, mine)).toEqual(ladder.writeProvenance(theirResults, theirs));
 }
 
-function refusal(fn: () => ProvenanceEntry): { entry: ProvenanceEntry } | { exit: number; message: string } {
+function refusal(fn: () => ProvenanceEntry | undefined): { entry: ProvenanceEntry | undefined } | { exit: number; message: string } {
   try {
     return { entry: fn() };
   } catch (err) {
@@ -331,7 +331,7 @@ function refusal(fn: () => ProvenanceEntry): { entry: ProvenanceEntry } | { exit
   }
 }
 
-function attribute(s: LadderScenario, target: string, generatedBy: string): ProvenanceEntry {
+function attribute(s: LadderScenario, target: string, generatedBy: string): ProvenanceEntry | undefined {
   return attributeRange({
     target,
     content: s.working,
@@ -707,7 +707,8 @@ describe("F. moved: an insertion above a stamped range", () => {
 
   it("finds the agent's lines at body 5-10, and the inserted lines have no evidence", () => {
     expect(entriesOf(f)).toEqual([fable("5-10", PIN_3_8)]);
-    expect([f.evidenceByLine.get(3)?.rule, f.evidenceByLine.get(4)?.rule]).toEqual([5, 5]);
+    // Body 4, the inserted blank line, carries no authorship and so no evidence at all (0071).
+    expect([f.evidenceByLine.get(3)?.rule, f.evidenceByLine.get(4)?.rule]).toEqual([5, undefined]);
   });
 
   it("same integrity and machine, other lines: moved, and derive rewrites lines only", () => {
@@ -1093,5 +1094,256 @@ describe("an entry key outside the closed set", () => {
     const results = compareProvenance([noted], d);
     expect(statusesOf(results)).toEqual([{ status: "moved", lines: "1-3", newLines: "2-4", noEvidence: true }]);
     expect(planProvenanceWrite(results, d)).toEqual([{ ...noted, lines: "2-4" }]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Proposal 0071: a blank line carries no authorship. A range never starts or
+// ends on one, a range of only blank lines is not written, and blank lines
+// between two lines of one attribution do not split its range.
+// ---------------------------------------------------------------------------
+
+describe("blank lines carry no authorship", () => {
+  // Body 1 a title, 2 blank, 3-4 a paragraph, 5 blank, 6-7 a paragraph, 8 whitespace only, 9 a tail.
+  const BLANK_BODY = ["# Title", "", "p1a", "p1b", "", "p2a", "p2b", " \t", "tail"];
+  const EMPTY_PIN = "sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+  const PLAIN = pageText(FRONT_PLAIN, BLANK_BODY);
+  const pin = (start: number, end: number, body: readonly string[] = BLANK_BODY): string =>
+    String(pinOfLines(body, { start, end }));
+
+  /** The commits a writer letter names: a person, two machines by trailer, and a squash that stamps. */
+  const WRITERS: Record<string, { sha: string; trailers: [string, string][] }> = {
+    h: { sha: "7777777777777777777777777777777777777777", trailers: [] },
+    a: { sha: "8888888888888888888888888888888888888888", trailers: [["Generated-by", "claude-a"]] },
+    b: { sha: "9999999999999999999999999999999999999999", trailers: [["Generated-by", "claude-b"]] },
+    s: { sha: "abababababababababababababababababababab", trailers: [["Generated-by", "claude-b"]] },
+  };
+
+  /**
+   * Blame for `page` where `owners` spells each body line's writer: a letter
+   * of `WRITERS`, or `z` for a line not committed. A person owns the
+   * frontmatter, and every commit's blob is the page itself, so a line keeps
+   * its number and a stamp the page carries is the one each commit carries.
+   */
+  function blamed(owners: string, page: string): { blame: BlameLine[]; commits: Map<string, CommitEvidence> } {
+    const lines = splitLines(page);
+    const front = lines.length - owners.length;
+    const letters = [...Array.from({ length: front }, () => "h"), ...owners.split("")];
+    const segments = letters.map((o, i): [string, number, number] => [o === "z" ? Z : (WRITERS[o]?.sha ?? ""), i + 1, 1]);
+    const ladderCommits = Object.fromEntries(
+      Object.values(WRITERS).map((w) => [w.sha, commit(w.sha, GRACE, "docs: write", w.trailers, page)]),
+    );
+    return {
+      blame: parseLinePorcelain(ladder.porcelain(PATH, page, ladderCommits, segments)),
+      commits: new Map(
+        Object.values(WRITERS).map((w) => [w.sha, { sha: w.sha, trailers: collectTrailers(w.trailers), blob: page }]),
+      ),
+    };
+  }
+
+  function owned(owners: string, opts: { page?: string; generatedBy?: string } = {}): ProvenanceDerivation {
+    const page = opts.page ?? PLAIN;
+    return deriveProvenance({
+      content: page,
+      ...blamed(owners, page),
+      ...(opts.generatedBy !== undefined ? { generatedBy: opts.generatedBy } : {}),
+    });
+  }
+
+  describe("derive", () => {
+    it("trims blank and whitespace-only lines from both ends of a range, and spans the blank inside it", () => {
+      expect(entriesOf(owned("haaaaaaah"))).toEqual([machineA("3-7", pin(3, 7))]);
+    });
+
+    it("writes no range of only blank lines, and a blank line has no evidence", () => {
+      const d = owned("hahhhhhhh");
+      expect(entriesOf(d)).toEqual([]);
+      expect(d.evidenceByLine.get(2)).toBeUndefined();
+    });
+
+    it("a person's blank line between two paragraphs of one machine does not split the range; the pin covers it", () => {
+      expect(entriesOf(owned("hhaahaahh"))).toEqual([machineA("3-7", pin(3, 7))]);
+    });
+
+    it("keeps two machines' paragraphs apart, with the blank line between them in neither", () => {
+      expect(entriesOf(owned("hhaaabbhh"))).toEqual([machineA("3-4", pin(3, 4)), machineB("6-7", pin(6, 7))]);
+      expect(entriesOf(owned("hhaahbbhh"))).toEqual([machineA("3-4", pin(3, 4)), machineB("6-7", pin(6, 7))]);
+    });
+
+    it("a person's non-blank line still splits a machine's range", () => {
+      // Body 5 is claude-a's blank line, and a range still cannot start on it.
+      expect(entriesOf(owned("hhahaaahh"))).toEqual([machineA(3, pin(3, 3)), machineA("6-7", pin(6, 7))]);
+    });
+
+    it("applies to uncommitted lines under --generated-by", () => {
+      expect(entriesOf(owned("hhzzzzzzh", { generatedBy: "claude-a" }))).toEqual([machineA("3-7", pin(3, 7))]);
+      const onlyBlank = owned("hzhhhhhhh", { generatedBy: "claude-a" });
+      expect(entriesOf(onlyBlank)).toEqual([]);
+      expect([...onlyBlank.evidenceByLine.values()].some((e) => e.rule === 1)).toBe(false);
+    });
+
+    it("a blank line a stamped commit wrote outside every range stays unattributed and raises no finding (0069)", () => {
+      // The squash wrote body 3-5, stamps 3-4 only, and carries a claude-b trailer.
+      const stamp = [machineA("3-4", pin(3, 4))];
+      const d = owned("hhssshhhh", { page: pageText(stampFront(stamp), BLANK_BODY) });
+      expect(entriesOf(d)).toEqual(stamp);
+      expect(d.evidenceByLine.get(5)).toBeUndefined();
+      const results = compareProvenance(d.page.stamp, d);
+      expect(statusesOf(results)).toEqual([{ status: "current", lines: "3-4" }]);
+      expect(provenanceFindings(results, d.page.bodyLine)).toEqual([]);
+    });
+  });
+
+  describe("the comparison validate and get run", () => {
+    it("reports no blank line as unset: entries split at a blank line the derivation spans stay current", () => {
+      const d = owned("hhaaaaahh");
+      expect(entriesOf(d)).toEqual([machineA("3-7", pin(3, 7))]);
+      const results = compareProvenance([machineA("3-4", pin(3, 4)), machineA("6-7", pin(6, 7))], d);
+      expect(statusesOf(results)).toEqual([
+        { status: "current", lines: "3-4" },
+        { status: "current", lines: "6-7" },
+      ]);
+      expect(provenanceFindings(results, d.page.bodyLine)).toEqual([]);
+    });
+
+    it("a machine's blank edges are not expected in the stamp", () => {
+      const d = owned("haaaaaaah");
+      const results = compareProvenance([machineA("3-7", pin(3, 7))], d);
+      expect(statusesOf(results)).toEqual([{ status: "current", lines: "3-7" }]);
+      expect(provenanceFindings(results, d.page.bodyLine)).toEqual([]);
+    });
+
+    it("a stamped entry of only blank lines is stale, and derive drops it", () => {
+      const d = owned("hhaahaahh");
+      const results = compareProvenance([machineA("3-7", pin(3, 7)), machineA(5, EMPTY_PIN)], d);
+      expect(statusesOf(results)).toEqual([
+        { status: "current", lines: "3-7" },
+        { status: "stale", lines: 5 },
+      ]);
+      expect(provenanceFindings(results, d.page.bodyLine)).toEqual([
+        {
+          schema: DERIVED_STALE_SCHEMA,
+          keyword: DERIVED_KEYWORD,
+          instancePath: "/provenance",
+          subject: `provenance ${EMPTY_PIN}`,
+          message: "provenance lines 8 say claude-a but hold only blank lines — run manni meta derive",
+          line: 8,
+        },
+      ]);
+      expect(planProvenanceWrite(results, d)).toEqual([machineA("3-7", pin(3, 7))]);
+    });
+
+    it.each([
+      ["2-4", pin(2, 4), "provenance lines 5-7 say claude-a but start on a blank line", machineA("3-4", pin(3, 4))],
+      ["3-5", pin(3, 5), "provenance lines 6-8 say claude-a but end on a blank line", machineA("3-4", pin(3, 4))],
+      ["5-8", pin(5, 8), "provenance lines 8-11 say claude-a but start and end on blank lines", machineA("6-7", pin(6, 7))],
+    ])("a stamped entry at %s is stale, and derive rewrites it trimmed with no other evidence", (lines, integrity, message, rewritten) => {
+      const d = owned("hhhhhhhhh");
+      const results = compareProvenance([machineA(lines, integrity)], d);
+      expect(statusesOf(results)).toEqual([{ status: "stale", lines }]);
+      expect(provenanceFindings(results, d.page.bodyLine).map((f) => f.message)).toEqual([`${message} — run manni meta derive`]);
+      expect(planProvenanceWrite(results, d)).toEqual([rewritten]);
+    });
+
+    it("a blank-edged entry whose text moved is stale where it is now, and is written trimmed there", () => {
+      const d = deriveProvenance({ content: pageText(FRONT_PLAIN, ["new", ...BLANK_BODY]), blame: [], commits: new Map() });
+      const results = compareProvenance([machineA("2-4", pin(2, 4))], d);
+      expect(results).toMatchObject([{ status: "stale", span: { start: 3, end: 5 } }]);
+      expect(planProvenanceWrite(results, d)).toEqual([machineA("4-5", pin(3, 4))]);
+    });
+
+    it("a trimmed entry the derivation also names is written once", () => {
+      const d = owned("hhaahhhhh");
+      const results = compareProvenance([machineA("2-5", pin(2, 5))], d);
+      expect(statusesOf(results)).toEqual([{ status: "stale", lines: "2-5" }]);
+      expect(planProvenanceWrite(results, d)).toEqual([machineA("3-4", pin(3, 4))]);
+    });
+  });
+
+  describe("derive's write", () => {
+    it("a derived range replaces the kept entries it contains: split entries become one", () => {
+      const d = owned("hhaaaaahh");
+      const results = compareProvenance([machineA("3-4", pin(3, 4)), machineA("6-7", pin(6, 7))], d);
+      expect(planProvenanceWrite(results, d)).toEqual([machineA("3-7", pin(3, 7))]);
+    });
+
+    it("an entry trimmed to the same lines as another kept entry is written once", () => {
+      // Stamped before 0071: 2-4 with a blank first line, and 3-4 beside it.
+      const d = owned("hhhhhhhhh");
+      const results = compareProvenance([machineA("2-4", pin(2, 4)), machineA("3-4", pin(3, 4))], d);
+      expect(statusesOf(results)).toEqual([
+        { status: "stale", lines: "2-4" },
+        { status: "current", lines: "3-4", noEvidence: true },
+      ]);
+      expect(planProvenanceWrite(results, d)).toEqual([machineA("3-4", pin(3, 4))]);
+    });
+
+    it("a kept entry a derived range partly overlaps is trimmed to the lines outside it and re-pinned there", () => {
+      // Stamped 2-4 with a blank first line, trimmed to 3-4; claude-a's derived 4-7 reaches into it.
+      const d = owned("hhhaaaahh");
+      expect(entriesOf(d)).toEqual([machineA("4-7", pin(4, 7))]);
+      const results = compareProvenance([machineA("2-4", pin(2, 4))], d);
+      expect(statusesOf(results)).toEqual([
+        { status: "stale", lines: "2-4" },
+        { status: "unset", lines: "4-7" },
+      ]);
+      expect(planProvenanceWrite(results, d)).toEqual([machineA(3, pin(3, 3)), machineA("4-7", pin(4, 7))]);
+    });
+
+    it("a kept entry a derived range sits inside is split around it, each piece trimmed and re-pinned", () => {
+      // Stamped 1-9 and current; claude-a's derived 3-4 sits in its middle.
+      const d = owned("hhaahhhhh");
+      const results = compareProvenance([machineA("1-9", pin(1, 9))], d);
+      expect(statusesOf(results)).toEqual([{ status: "current", lines: "1-9" }]);
+      // 1-2 trims to 1; 5-9 trims to 6-9.
+      expect(planProvenanceWrite(results, d)).toEqual([
+        machineA(1, pin(1, 1)),
+        machineA("3-4", pin(3, 4)),
+        machineA("6-9", pin(6, 9)),
+      ]);
+    });
+
+    it("the piece left beside a derived range is trimmed of the blank line next to it", () => {
+      // Stamped 1-5 ends on a blank line, trimmed to 1-4; claude-a's derived
+      // 3-7 leaves 1-2, whose body 2 is blank.
+      const d = owned("hhaaaaahh");
+      const results = compareProvenance([machineA("1-5", pin(1, 5))], d);
+      expect(statusesOf(results)).toEqual([
+        { status: "stale", lines: "1-5" },
+        { status: "unset", lines: "3-7" },
+      ]);
+      expect(planProvenanceWrite(results, d)).toEqual([machineA(1, pin(1, 1)), machineA("3-7", pin(3, 7))]);
+    });
+
+    it("an agent that extends its own range: the old shorter entry does not stay beside the new one", () => {
+      const body = ["a", "b", "c", "d"];
+      const page = pageText(FRONT_PLAIN, body);
+      const d = owned("aaaa", { page });
+      const results = compareProvenance([machineA("1-2", pin(1, 2, body))], d);
+      expect(statusesOf(results)).toEqual([
+        { status: "current", lines: "1-2" },
+        { status: "unset", lines: "1-4" },
+      ]);
+      expect(planProvenanceWrite(results, d)).toEqual([machineA("1-4", pin(1, 4, body))]);
+    });
+  });
+
+  describe("attributeRange", () => {
+    const attributeOn = (owners: string, range: string): ProvenanceEntry | undefined =>
+      attributeRange({ target: `${PATH}:${range}`, content: PLAIN, ...blamed(owners, PLAIN), generatedBy: "claude-a" });
+
+    it("trims blank lines from both ends of a typed range", () => {
+      // File 5-11 is body 2-8.
+      expect(attributeOn("hhhhhhhhh", "5-11")).toEqual(machineA("3-7", pin(3, 7)));
+    });
+
+    it("writes nothing for a range of only blank lines", () => {
+      expect(attributeOn("hhhhhhhhh", "8")).toBeUndefined();
+    });
+
+    it("another machine's blank line inside the range does not refuse it", () => {
+      // Body 5 is claude-b's blank line; file 6-10 is body 3-7.
+      expect(attributeOn("hhhhbhhhh", "6-10")).toEqual(machineA("3-7", pin(3, 7)));
+    });
   });
 });

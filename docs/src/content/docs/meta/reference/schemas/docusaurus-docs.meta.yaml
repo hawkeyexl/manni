@@ -1,0 +1,43 @@
+docs/src/content/docs/meta/reference/schemas/docusaurus-docs.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/docusaurus-docs/3.10.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on docusaurus:docs:3.10 for a Docusaurus docs directory."
+      type: capability
+      grader: ai
+    - id: sidebar-position
+      assertion: "A reader can fix the finding a quoted sidebar_position produces."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-155
+      integrity: sha256-f4cc1ee8a56efafbf8669fc83f851ff9d5142cee3e99a2d6d15072a99965dfa4
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.8
+        /action: 0.85
+        /prerequisites: 0.75
+        /next-steps: 0.7
+        /related-pages: 0.8
+        /risks: 0.9

@@ -200,6 +200,8 @@ describe("docmeta CLI (built bin)", () => {
       "manni:artifact-evals-strict:1.0.0",
       "manni:graph-strict:1.0.0",
       "manni:citations-strict:1.0.0",
+      "tgdp:templates:1.1",
+      "tgdp:templates-strict:1.1",
     ]);
   });
 
@@ -245,7 +247,10 @@ describe("docmeta CLI (built bin)", () => {
   });
 
   it("validates piped stdin with --as", () => {
-    const r = run(["validate", "-", "--as", "markdown"], "---\ntype: note\n---\n");
+    const r = run(
+      ["validate", "-", "--as", "markdown"],
+      "---\ntype: note\ntitle: Hi\ndescription: From stdin.\n---\n",
+    );
     expect(r.status).toBe(0);
   });
 
@@ -980,7 +985,10 @@ describe("cli empty and unmatched inputs", () => {
   });
 
   it("keeps stdin working: one input, zero files, still a verdict", () => {
-    const r = run(["validate", "-", "--as", "markdown"], "---\ntype: note\n---\n");
+    const r = run(
+      ["validate", "-", "--as", "markdown"],
+      "---\ntype: note\ntitle: Hi\ndescription: From stdin.\n---\n",
+    );
     expect(r.status).toBe(0);
   });
 });
@@ -1241,7 +1249,7 @@ describe("config discovery walks up (0004)", () => {
     properties: { type: { type: "string" }, owner: { type: "string" } },
   });
   // Satisfies the built-in default set; violates the configured one.
-  const PAGE = "---\ntype: guide\ntitle: Hi\n---\n\n# Hi\n";
+  const PAGE = "---\ntype: guide\ntitle: Hi\ndescription: A page the default set accepts.\n---\n\n# Hi\n";
 
   function write(rel: string, content: string): void {
     const p = join(sandbox, rel);
@@ -1376,8 +1384,10 @@ describe("docmeta CLI baseline flags (built bin)", () => {
     // scratch project needs one for the run-from-a-subdirectory case.
     write(".git", "gitdir: nowhere\n");
     write("manni.config.yaml", CONFIG);
-    write("docs/legacy.md", "---\ntitle: No type here\n---\n");
-    write("docs/clean.md", "---\ntype: concept\n---\n");
+    // Each page satisfies the default set the config's OKF joins (0070),
+    // bar legacy.md's one missing `type`, the finding every case records.
+    write("docs/legacy.md", "---\ntitle: No type here\ndescription: D.\n---\n");
+    write("docs/clean.md", "---\ntype: concept\ntitle: Clean\ndescription: D.\n---\n");
   });
   afterEach(() => {
     rmSync(dir, { recursive: true, force: true });
@@ -1415,7 +1425,7 @@ describe("docmeta CLI baseline flags (built bin)", () => {
 
   it("fails on a new violation and names only that one", () => {
     here(["validate", "--write-baseline"]);
-    write("docs/fresh.md", "---\ntitle: Also missing its type\n---\n");
+    write("docs/fresh.md", "---\ntitle: Also missing its type\ndescription: D.\n---\n");
     const r = here(["validate", "--baseline"]);
     expect(r.status).toBe(1);
     expect(r.stdout).toContain("fresh.md");
@@ -1425,7 +1435,7 @@ describe("docmeta CLI baseline flags (built bin)", () => {
 
   it("reports a fixed violation as stale without failing", () => {
     here(["validate", "--write-baseline"]);
-    write("docs/legacy.md", "---\ntype: concept\ntitle: Fixed\n---\n");
+    write("docs/legacy.md", "---\ntype: concept\ntitle: Fixed\ndescription: D.\n---\n");
     const r = here(["validate", "--baseline"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toContain(
@@ -2177,8 +2187,9 @@ describe("docmeta CLI: schemas vendor (built bin)", () => {
     "",
   ].join("\n");
 
-  const OK = "---\ntitle: t\nowner: docs\n---\n\n# t\n";
-  const MISSING_OWNER = "---\ntitle: t\n---\n\n# t\n";
+  // Both satisfy the default set the configured house schema joins (0070).
+  const OK = "---\ntype: guide\ntitle: t\ndescription: d\nowner: docs\n---\n\n# t\n";
+  const MISSING_OWNER = "---\ntype: guide\ntitle: t\ndescription: d\n---\n\n# t\n";
 
   afterEach(() => {
     removeTempRepo(repo);
@@ -3206,14 +3217,16 @@ describe("an overrides entry may group several globs", () => {
     properties: { owner: { type: "string" } },
   });
   const BASELINE = JSON.stringify({ type: "object", required: ["title"] });
+  // Satisfies the default set `schemas:` joins (0070), so only the override fails.
+  const PAGE = "---\ntype: guide\ntitle: t\ndescription: d\n---\n\n# t\n";
 
   const tree = () => ({
     "manni.config.yaml": CONFIG,
     "strict.json": STRICT,
     "baseline.json": BASELINE,
-    ".claude/skills/demo/SKILL.md": DOC,
-    ".claude/agents/reviewer.md": DOC,
-    "docs/guide.md": DOC,
+    ".claude/skills/demo/SKILL.md": PAGE,
+    ".claude/agents/reviewer.md": PAGE,
+    "docs/guide.md": PAGE,
   });
 
   it("applies the override to a file matching any glob in the list", () => {
@@ -3236,7 +3249,21 @@ describe("an overrides entry may group several globs", () => {
     expect(resolved).toEqual({
       ".claude/skills/demo/SKILL.md": ["./strict.json"],
       ".claude/agents/reviewer.md": ["./strict.json"],
-      "docs/guide.md": ["./baseline.json"],
+      // `schemas:` joins the defaults (0070); an override still replaces.
+      "docs/guide.md": [
+        "google:okf:0.1",
+        "passo-uno:seven-action:1.0",
+        "manni:core:1.0.0",
+        "manni:audience:1.0.0",
+        "manni:structure:1.0.0",
+        "manni:stewardship:1.0.0",
+        "manni:lifecycle:1.0.0",
+        "manni:ai-context:1.0.0",
+        "manni:evals:1.0.0",
+        "manni:graph:1.0.0",
+        "manni:citations:1.0.0",
+        "./baseline.json",
+      ],
     });
     const failed = parsed.results
       .filter((x) => !x.ok)
@@ -3536,7 +3563,7 @@ describe("cli --collection (0041, built bin)", () => {
 
     const ok = runIn(
       ["validate", "--collection", "blog", "-", "--as", "markdown", "-f", "json"],
-      "---\ntitle: piped\nbase: b\n---\n",
+      "---\ntype: guide\ntitle: piped\ndescription: d\nbase: b\n---\n",
     );
     expect(ok.status).toBe(0);
     expect(validated(ok)).toEqual(["<stdin>", "blog/hello.md"]);
@@ -3548,7 +3575,7 @@ describe("cli --collection (0041, built bin)", () => {
     // no history and is a member of nothing, so the corpus stays out of it.
     const r = runIn(
       ["validate", "-", "--as", "markdown", "-f", "json"],
-      "---\ntitle: piped\nbase: b\n---\n",
+      "---\ntype: guide\ntitle: piped\ndescription: d\nbase: b\n---\n",
     );
     expect(r.status).toBe(0);
     expect(validated(r)).toEqual(["<stdin>"]);

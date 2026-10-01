@@ -3,6 +3,35 @@ title: manni terminology vocabulary
 description: "The manni:terminology:1.0.0 schema gives a term entry its names, its definition and its place among other terms, flat at the page root and mapped onto SKOS."
 sidebar:
   label: "manni:terminology:1.0.0"
+type: reference
+id: meta-reference-schemas-manni-terminology
+keywords: ["terminology", "manni:terminology:1.0.0", "SKOS", "term", "strict overlay"]
+language: en
+audiences: ["schema-authors"]
+intent: "Give a term entry its names, definition and place among other terms with manni:terminology:1.0.0."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "override"]
+sample-questions:
+  - "Which fields does manni:terminology:1.0.0 define?"
+  - "How do terminology fields map onto SKOS?"
+  - "What does the terminology strict overlay narrow?"
+graph:
+  label: "manni terminology vocabulary"
+  type: reference
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/terminology/1.0.0.json
+action: understand
+prerequisites:
+  - meta-reference-schemas-manni-core
+next-steps:
+  - term-reference-terminology
+related-pages:
+  - meta-reference-schemas-manni-structure
+  - meta-reference-schemas-manni-core
+  - meta-reference-schemas-manni-graph
+  - meta-schemas-field-location
+risks: read-only
 ---
 
 **Built-in id:** `manni:terminology:1.0.0`
@@ -21,21 +50,20 @@ style checker can read it too.
 
 ## Use it
 
-Name the id in `manni.config.yaml`. The vocabularies are not in the default
-set, so a run checks terminology only where the config names it. An override
-points it at the folder that holds the term pages. The override's list
-replaces the default set, so it names
-[core](/manni/meta/reference/schemas/manni-core/) again, which owns `type` and
-`id`.
+Name the id in `manni.config.yaml`. Terminology is not in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it only where the config names it. An override points it at the
+folder that holds the term pages. An override replaces the set, so this one
+sets `defaults: true`. The default set then keeps
+[core](/manni/meta/reference/schemas/manni-core/), which owns `type` and `id`,
+in front of terminology.
 
 ```yaml
 meta:
-  schemas:
-    - manni:core:1.0.0
   overrides:
     - files: "docs/terms/**"
+      defaults: true
       schemas:
-        - manni:core:1.0.0
         - manni:terminology:1.0.0
 ```
 
@@ -192,7 +220,7 @@ still passes it.
 | `see` | One line, with no leading or trailing whitespace, the form a label takes |
 | the entry | `definition` and `see` never appear together |
 
-List both ids to adopt it:
+`strict: true` does not reach this overlay, because the vocabulary is not in the default set. List both ids to adopt it:
 
 ```yaml
 meta:

@@ -1,6 +1,51 @@
 ---
 title: Keep citations out of the page
 description: "Declare a manifest that owns the citations key for a collection, move a page's entries into it, and keep checking the same way. The page carries no citation YAML, and a finding on an entry names the manifest and the entry's line."
+type: how-to
+id: cite-set-up-citations-in-a-sidecar
+keywords:
+  - sidecar
+  - manifest
+  - externalMetadata
+  - citations
+language: en
+audiences:
+  - docs-engineers
+intent: Keep a page's citations in a manifest beside it and keep checking them the same way.
+lifecycle: published
+applies-to:
+  - domain:cite
+next-steps:
+  - cite-set-up
+  - cite-set-up-public-docs-private-code
+  - cite-reference-citations
+  - cite-reference-configuration
+concepts:
+  - frontmatter
+risks:
+  - destructive
+sample-questions:
+  - How do I keep citations out of the page frontmatter?
+  - Where does a finding land when citations live in a manifest?
+  - What does manni cite refuse about a citations manifest?
+graph:
+  label: Keep citations out of the page
+  type: task
+last-updated: 2026-09-24
+tags:
+  - external-metadata
+  - sidecar-pattern
+  - yaml-configuration
+  - citations-placement
+action: develop
+prerequisites:
+  - cite-set-up
+related-pages:
+  - cite-set-up
+  - cite-set-up-public-docs-private-code
+  - cite-reference-citations
+  - cite-reference-configuration
+  - /manni/meta/reference/configuration/#a-manifest-per-page
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

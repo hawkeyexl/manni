@@ -89,15 +89,17 @@ import {
 import {
   provenanceManifests,
   provenancePlace,
+  stampManifests,
   type ProvenanceManifest,
   type ProvenancePlace,
 } from "../core/derive/provenance-place.js";
 import {
   loadExternalMetadata,
-  mergeExternalMetadata,
+  mergeWithMarks,
   type ExternalMetadataIndex,
   type SourceLocation,
 } from "../core/external-metadata.js";
+import { pageClaims, pageMarks } from "../core/page-marks.js";
 import { classifyRef } from "../core/schema-registry.js";
 import type { FieldLocation } from "../core/location.js";
 import type { CollectionConfig } from "../../shared/collections.js";
@@ -129,6 +131,8 @@ import {
   DERIVE_SOURCES,
   isBuiltinField,
   isDeriveSource,
+  MERGE_SAFE_FIELDS,
+  deriveCovers,
   PROVENANCE_FIELD,
   staleFindings,
   type DerivableField,
@@ -317,7 +321,13 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   // The configured commands (0042): a key of theirs is as derivable as a
   // built-in field, and the source runs them where the config lives.
   const commands = commandsOf(config?.derive);
-  const fields = resolveFields(opts.fields, config?.derive?.fields, commands);
+  // Proposal 0069: no `--fields` and no config `fields` is the merge-safe
+  // default, which each page narrows to the fields its schemas claim once it
+  // is read. Written fields are managed exactly as written.
+  const defaulted = opts.fields === undefined && config?.derive?.fields === undefined;
+  const fields: DerivableField[] = defaulted
+    ? [...MERGE_SAFE_FIELDS]
+    : resolveFields(opts.fields, config?.derive?.fields, commands);
   const wantsProvenance = fields.includes(PROVENANCE_FIELD);
   const firstTarget = targets[0];
   if (firstTarget !== undefined && generatedBy === undefined) {
@@ -337,8 +347,10 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   // local manifest that owns a field is where derive writes it. Every
   // declared collection counts, not only the selected ones, and the config's
   // `keys:` list is the whole claim, so no manifest is loaded. `provenance`
-  // keeps its own refusal, raised where its record is placed (0046).
-  for (const field of fields) {
+  // keeps its own refusal, raised where its record is placed (0046). The
+  // merge-safe default names no field, so it refuses none: a page whose
+  // field a URL manifest owns is that file's error when it is written.
+  for (const field of defaulted ? [] : fields) {
     if (field === PROVENANCE_FIELD) continue;
     const owner = urlManifestOwning(field, declaredCollections);
     if (owner !== undefined) throw new DocmetaError(urlManifestMessage(field, owner.file));
@@ -359,9 +371,22 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     ttlHours: config?.schemaCache?.ttlHours,
     offline: config?.offline,
     pins: collectSchemaPins(config),
+    registered: config?.registered,
   });
   const trustRoot = schemaTrustRoot(cwd, configDir);
   const validator = new Validator(schemaOptions);
+  // What each page's schemas mark external, which a manifest with no keys
+  // owns (proposal 0068).
+  const marks = pageMarks({ validator, config, cwd, trustRoot, memberOf: (label) => membersFor(label) });
+  // What each page's schemas claim, which narrows the merge-safe default (0069).
+  const claims = pageClaims({ validator, config, cwd, trustRoot, memberOf: (label) => membersFor(label) });
+  /** The fields the run derives: `fields`, narrowed under the default to what some page claims. */
+  let runFields: readonly DerivableField[] = fields;
+  /** Under the default, each page's own managed fields. */
+  let pageFields = new Map<string, readonly DerivableField[]>();
+  // A file outside `derive.collections` manages nothing (proposal 0070).
+  const fieldsOf = (label: string): readonly DerivableField[] =>
+    deriveCovers(config?.derive, membersFor(label)) ? (pageFields.get(label) ?? runFields) : [];
   const configuredKey = lazyKey(configFile, opts.env);
   let ensuredKey: string | undefined;
   const currentKey = (): string | undefined => ensuredKey ?? configuredKey();
@@ -504,20 +529,43 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       }
     }
 
+    // ---- The merge-safe default (0069): what each page manages ---------------
+    if (defaulted) {
+      const claimedBy = new Map<string, readonly DerivableField[]>();
+      for (const doc of loaded.values()) {
+        if (!deriveCovers(config?.derive, membersFor(doc.label))) {
+          claimedBy.set(doc.label, []);
+          continue;
+        }
+        const claimed = await claims(doc.label, doc.extracted.data, membersFor(doc.label));
+        claimedBy.set(doc.label, fields.filter((f) => claimed?.has(f) === true));
+      }
+      const union = fields.filter((f) => [...claimedBy.values()].some((own) => own.includes(f)));
+      // With no page read, nothing is known about what the schemas claim; the
+      // parse errors are the diagnosis, and they are reported per file below.
+      if (union.length === 0 && loaded.size > 0) throw new DocmetaError(NOTHING_CLAIMED);
+      pageFields = claimedBy;
+      runFields = union;
+    }
+
     // ---- Provenance (0046): where each record lives, and what it says ------
     const provenanceRoot = configDir ?? cwd;
     // A `{page}` manifest (0058) is read for exactly the pages this run derives.
     const pages = files.map((label) => resolve(base, label));
-    const manifests = wantsProvenance
+    const manifests = runFields.includes(PROVENANCE_FIELD)
       ? provenanceManifests(declaredCollections, provenanceRoot, base)
       : [];
     // Only the manifests that own `provenance` are read, as cite reads only
     // the ones that own `citations`: a sibling manifest is none of derive's
     // business, and a URL one is never fetched here.
+    // A keyless manifest (proposal 0068) may hold a page's record, when the
+    // page's schemas mark it; a URL one is never fetched here.
     const provenanceCollections = declaredCollections
       .map((c) => ({
         ...c,
-        externalMetadata: c.externalMetadata.filter((m) => m.keys.includes(PROVENANCE_FIELD)),
+        externalMetadata: c.externalMetadata.filter((m) =>
+          m.keys === undefined ? classifyRef(m.file).kind !== "url" : m.keys.includes(PROVENANCE_FIELD),
+        ),
       }))
       .filter((c) => c.externalMetadata.length > 0);
     const provenanceIndex =
@@ -526,7 +574,28 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         : await loadExternalMetadata(provenanceCollections, { configDir: provenanceRoot, base, pages });
     const places = new Map<string, ProvenancePlace>();
     for (const doc of loaded.values()) {
-      if (!wantsProvenance) break;
+      // Rule 1 of 0069: a manifest that owns a dated field is read at each fact commit.
+      const dated = fieldsOf(doc.label).filter((f) => f === "created" || f === "last-updated");
+      if (dated.length > 0 && declaredCollections.length > 0) {
+        const probe = { ...doc.extracted.data };
+        for (const f of dated) if (!Object.hasOwn(probe, f)) probe[f] = null;
+        const datedMarks = await marks(doc.label, probe, membersFor(doc.label));
+        const owned = stampManifests(doc.label, doc.extracted.data, declaredCollections, provenanceRoot, base, datedMarks, dated);
+        // Set after the object is built, unlike validate, get and query: which
+        // fields a page manages is known only once its schemas' claims are read.
+        if (Object.keys(owned).length > 0) doc.stampManifests = owned;
+      }
+      if (!fieldsOf(doc.label).includes(PROVENANCE_FIELD)) continue;
+      // Asked with the record in place, since a mark counts only on a present value.
+      const marked = manifests.some((m) => m.implied !== undefined)
+        ? await marks(
+            doc.label,
+            Object.hasOwn(doc.extracted.data, PROVENANCE_FIELD)
+              ? doc.extracted.data
+              : { ...doc.extracted.data, [PROVENANCE_FIELD]: null },
+            membersFor(doc.label),
+          )
+        : undefined;
       const place = provenancePlace(
         doc.label,
         doc.extracted.data,
@@ -534,6 +603,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         declaredCollections,
         provenanceRoot,
         base,
+        marked,
       );
       if (place !== undefined) {
         places.set(doc.label, place);
@@ -558,7 +628,8 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         externalMetadata: c.externalMetadata.filter(
           (m) =>
             classifyRef(m.file).kind !== "url" &&
-            m.keys.some((k) => k !== PROVENANCE_FIELD && fields.includes(k)),
+            // A keyless manifest (proposal 0068) owns what each page marks.
+            (m.keys === undefined || m.keys.some((k) => k !== PROVENANCE_FIELD && runFields.includes(k))),
         ),
       }))
       .filter((c) => c.externalMetadata.length > 0);
@@ -573,7 +644,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       base,
       configDir,
       sources,
-      fields,
+      fields: runFields,
       codeowners: config?.derive?.codeowners,
       commands,
       cache: opts.cache ?? true,
@@ -606,11 +677,11 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   };
   let prepared = await prepare();
   /** The page's `provenance` as its record holds it: the manifest's, or the page's own. */
-  const stampOf = (doc: Loaded): unknown => {
+  const stampOf = async (doc: Loaded): Promise<unknown> => {
     if (!prepared.places.has(doc.label)) return doc.extracted.data[PROVENANCE_FIELD];
     const root = configDir ?? cwd;
     const members = memberOf(prepared.provenanceCollections, root, base, doc.label);
-    return mergeExternalMetadata(doc.label, doc.extracted, prepared.provenanceIndex, members, base)
+    return (await mergeWithMarks(doc.label, doc.extracted, prepared.provenanceIndex, members, base, { marks }))
       .extracted.data[PROVENANCE_FIELD];
   };
 
@@ -655,8 +726,9 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     if (prepared.ownedIndex !== null) {
       try {
         const members = memberOf(prepared.ownedCollections, configDir ?? cwd, base, doc.label);
-        const merged = mergeExternalMetadata(doc.label, doc.extracted, prepared.ownedIndex, members, base, {
+        const merged = await mergeWithMarks(doc.label, doc.extracted, prepared.ownedIndex, members, base, {
           encryptionKey: currentKey,
+          marks,
         });
         own = merged.extracted;
         locate = merged.locate;
@@ -689,7 +761,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         key: currentKey,
         locate,
       });
-      for (const field of fields) {
+      for (const field of fieldsOf(doc.label)) {
         const at = pointerOf(field);
         if (view.unverified.some((p) => isAtOrUnder(p, at))) {
           return {
@@ -700,7 +772,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         if (unreadable !== undefined) return { error: unreadableMessage(unreadable) };
       }
       const stamped: Record<string, unknown> = { ...view.data };
-      for (const field of fields) {
+      for (const field of fieldsOf(doc.label)) {
         const d = record?.fields[field];
         if (d != null) stamped[field] = d.value;
       }
@@ -764,7 +836,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       const record = prepared.derived.records.get(doc.label);
       const marks = await markFields(doc, record);
       if ("error" in marks) continue;
-      for (const field of fields) {
+      for (const field of fieldsOf(doc.label)) {
         if (field === PROVENANCE_FIELD || marks.prefs.get(field) !== "external") continue;
         if (!stale(compareDerived(field, marks.data[field], record?.fields[field]))) continue;
         const home = await keyHome(ctx, doc.label, doc.extracted.data, field);
@@ -846,10 +918,11 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
       // Proposal 0046: `provenance` is judged range by range against the
       // record wherever it lives, never by `compareDerived`.
       const place = places.get(label);
-      const provenance = wantsProvenance
-        ? judgeProvenance(stampOf(doc), derived.provenance?.get(label), record?.fields[PROVENANCE_FIELD] ?? null, place)
+      const managed = fieldsOf(label);
+      const provenance = managed.includes(PROVENANCE_FIELD)
+        ? judgeProvenance(await stampOf(doc), derived.provenance?.get(label), record?.fields[PROVENANCE_FIELD] ?? null, place)
         : undefined;
-      const compared = fields.map((field) =>
+      const compared = managed.map((field) =>
         field === PROVENANCE_FIELD && provenance !== undefined
           ? provenance.field
           : compareDerived(field, marks.data[field], record?.fields[field]),
@@ -1107,7 +1180,7 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
   const summary = summarize(results);
   return {
     results,
-    summary: wantsProvenance ? { ...summary, ranges: countRanges(results) } : summary,
+    summary: runFields.includes(PROVENANCE_FIELD) ? { ...summary, ranges: countRanges(results) } : summary,
     dryRun,
     check,
     sources: derived.sources,
@@ -1133,6 +1206,9 @@ function machineName(value: string | undefined): string | undefined {
   const name = value?.trim();
   return name === undefined || name === "" ? undefined : name;
 }
+
+/** Exit 2 when the merge-safe default applies and no page claims any of it (0069). */
+const NOTHING_CLAIMED = `nothing to derive: no page's schemas claim a merge-safe field (${MERGE_SAFE_FIELDS.join(", ")}); set derive.fields or pass --fields`;
 
 /**
  * The fields this run stamps: `--fields`, else config `derive.fields`.

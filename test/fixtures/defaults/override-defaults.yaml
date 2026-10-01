@@ -1,0 +1,7 @@
+# defaults: true on an override puts the default set before its schemas.
+meta:
+  overrides:
+    - files: "*.md"
+      defaults: true
+      schemas:
+        - ./house.json
