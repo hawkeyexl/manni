@@ -532,18 +532,30 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
     // ---- The merge-safe default (0069): what each page manages ---------------
     if (defaulted) {
       const claimedBy = new Map<string, readonly DerivableField[]>();
+      /** Pages whose schema set could not be read, so what they claim is unknown. */
+      const unreadable: string[] = [];
       for (const doc of loaded.values()) {
         if (!deriveCovers(config?.derive, membersFor(doc.label))) {
           claimedBy.set(doc.label, []);
           continue;
         }
         const claimed = await claims(doc.label, doc.extracted.data, membersFor(doc.label));
+        if (claimed === undefined) unreadable.push(doc.label);
         claimedBy.set(doc.label, fields.filter((f) => claimed?.has(f) === true));
       }
       const union = fields.filter((f) => [...claimedBy.values()].some((own) => own.includes(f)));
       // With no page read, nothing is known about what the schemas claim; the
       // parse errors are the diagnosis, and they are reported per file below.
-      if (union.length === 0 && loaded.size > 0) throw new DocmetaError(NOTHING_CLAIMED);
+      if (union.length === 0 && loaded.size > 0) {
+        const [first] = unreadable;
+        if (first !== undefined) {
+          const more = unreadable.length > 1 ? ` and ${String(unreadable.length - 1)} more` : "";
+          throw new DocmetaError(
+            `nothing to derive: the schemas of ${first}${more} could not be read, so what they claim is unknown; fix them or pass --fields`,
+          );
+        }
+        throw new DocmetaError(NOTHING_CLAIMED);
+      }
       pageFields = claimedBy;
       runFields = union;
     }

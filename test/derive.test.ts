@@ -373,7 +373,7 @@ describe("runDerive", () => {
       "docs/install.md",
       readFileSync(join(dir, "docs/install.md"), "utf8").replace(
         "title: Install\n",
-        "title: Install\n$schema: ../permissive.schema.json\n",
+        "title: Install\n$schema: ./permissive.schema.json\n",
       ),
     );
     await expect(
@@ -381,6 +381,27 @@ describe("runDerive", () => {
     ).rejects.toThrow(
       new DocmetaError(
         "nothing to derive: no page's schemas claim a merge-safe field (owner, created, last-updated, provenance); set derive.fields or pass --fields",
+      ),
+    );
+  });
+
+  it("says the schemas could not be read, rather than that they claim nothing", async () => {
+    const { dir } = stageCorpus();
+    // The page's own schema is missing, so what it claims is unknown. Saying
+    // "no page's schemas claim a merge-safe field" would be the wrong diagnosis.
+    writeFile(
+      dir,
+      "docs/install.md",
+      readFileSync(join(dir, "docs/install.md"), "utf8").replace(
+        "title: Install\n",
+        "title: Install\n$schema: ../missing.schema.json\n",
+      ),
+    );
+    await expect(
+      runDerive({ inputs: ["docs/install.md"], cwd: dir, noConfig: true }),
+    ).rejects.toThrow(
+      new DocmetaError(
+        "nothing to derive: the schemas of docs/install.md could not be read, so what they claim is unknown; fix them or pass --fields",
       ),
     );
   });
