@@ -23,6 +23,7 @@ import {
   resolveTargetSet,
 } from "../../meta/internal.js";
 import { errorMessage } from "../../shared/errors.js";
+import { CONCEPT_FIELDS, fieldPointer, valueAt } from "../../shared/reference-fields.js";
 import { TermError } from "../errors.js";
 import type { TermInput, TermReader, TermReference, TermRun, TermSet } from "../types.js";
 import { TERM_READERS, readersForFormat } from "./readers/index.js";
@@ -74,11 +75,7 @@ function referencesOf(input: TermInput): TermReference[] {
       references.push({ file: input.file, label, ...(line === undefined ? {} : { line }) });
     }
   };
-  add(input.metadata["concepts"], "/concepts");
-  const graph = input.metadata["graph"];
-  if (typeof graph === "object" && graph !== null && !Array.isArray(graph)) {
-    add((graph as Record<string, unknown>)["concepts"], "/graph/concepts");
-  }
+  for (const path of CONCEPT_FIELDS) add(valueAt(input.metadata, path), fieldPointer(path));
   return references;
 }
 

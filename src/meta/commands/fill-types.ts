@@ -19,6 +19,18 @@ export interface Candidate {
   present: boolean;
 }
 
+/**
+ * The values offered for one field that names a glossary term or a page (see
+ * `src/shared/reference-fields.ts`). A term field's values replace its
+ * strings as an `enum`; a page field's are offered beside a free string.
+ */
+export interface FieldHint {
+  /** The field, from the page root: its first key is the candidate's. */
+  path: readonly string[];
+  kind: "term" | "page";
+  values: readonly string[];
+}
+
 /** One model proposal, before gating. */
 export interface Proposal {
   value: unknown;
@@ -206,6 +218,12 @@ export interface FillOptions {
   concurrency?: number;
   /** Include the filled document on each result (used for stdin and tests). */
   includeContent?: boolean;
+  /**
+   * The glossary term labels offered for the fields that name a term. When
+   * given, they are used instead of the registered term label source (see
+   * `src/shared/term-labels.ts`). When absent, that source is used, if any.
+   */
+  termLabels?: readonly string[];
   /** Test seam: bypasses `makeProvider`, so no API key is needed. */
   inferenceProvider?: InferenceProvider;
   /**

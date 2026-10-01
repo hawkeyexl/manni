@@ -335,41 +335,41 @@ docs/src/content/docs/term/reference/terminology.mdx:
         integrity: sha256-5b753fbebbe976abf57df76e2ceccbf8ccb7ecb5b764edd09c575017176252ba
       source:
         file: src/term/core/check.ts
-        lines: 133-138
+        lines: 134-139
         integrity: sha256-0ec82aba94f07a6b593ef06114f291020439e0ce8fae368c78c029312ffb80f3
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
     - id: see-resolves-labels-ids
       claim:
         integrity: sha256-41b76e60b60d0b3b47ba9e1388d6c8c979c9f7933f5aa37bcf0dbdbb07563f00
       source:
         file: src/term/core/check.ts
-        lines: 51-61
+        lines: 52-62
         integrity: sha256-73f5e4336f46962c5c6ab1d3b6ac316e7a0e6765d7db007285f6271b059bc58c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
     - id: see-is-reference-field
       claim:
         integrity: sha256-41b76e60b60d0b3b47ba9e1388d6c8c979c9f7933f5aa37bcf0dbdbb07563f00
       source:
-        file: src/term/core/check.ts
-        lines: 21-22
-        integrity: sha256-82b44bf4a9d3d1365825d85263c5fb3861ea389411d70dddde562e4784bce4ff
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        file: src/shared/reference-fields.ts
+        lines: 18
+        integrity: sha256-9426cc108ed63a136774fc49c6bca56ed49730bd99a696a4ccf699b2c2b85301
+        commit-sha: e996aa2b91cd59854b834e0d65a92d73e869c923
     - id: see-not-empty-finding
       claim:
         integrity: sha256-41b76e60b60d0b3b47ba9e1388d6c8c979c9f7933f5aa37bcf0dbdbb07563f00
       source:
         file: src/term/core/check.ts
-        lines: 133-138
+        lines: 134-139
         integrity: sha256-0ec82aba94f07a6b593ef06114f291020439e0ce8fae368c78c029312ffb80f3
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
     - id: see-dangling-reference
       claim:
         integrity: sha256-41b76e60b60d0b3b47ba9e1388d6c8c979c9f7933f5aa37bcf0dbdbb07563f00
       source:
         file: src/term/core/check.ts
-        lines: 124-131
+        lines: 125-132
         integrity: sha256-a83856e184b5fd20094202db589b0043994b7b1d580c800150287b50d5331136
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
     - id: id-order
       claim:
         integrity: sha256-794487f89d866020f14c0220e36a3fd96feecc7c4499194f02937322147e1a9a

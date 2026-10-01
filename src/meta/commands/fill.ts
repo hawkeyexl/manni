@@ -89,6 +89,15 @@ import { Validator, compileWithFormats } from "../core/validator.js";
 import type { ValidateFunction } from "ajv/dist/2020.js";
 import { toJsonText } from "../core/json-text.js";
 import { canonical } from "./fill-projection.js";
+import {
+  fieldHints,
+  offered,
+  pageIdReader,
+  termValueCheck,
+  type TermIndex,
+} from "./fill-hints.js";
+import { PAGE_FIELDS, TERM_FIELDS, type FieldPath } from "../../shared/reference-fields.js";
+import { termLabelSource } from "../../shared/term-labels.js";
 import { writeFileAtomic } from "../core/write-file.js";
 import {
   ENCRYPTED_PLACEHOLDER,
@@ -125,6 +134,7 @@ import {
 } from "./fill-prompt.js";
 import type {
   Candidate,
+  FieldHint,
   FillFileResult,
   FillOptions,
   FillRun,
@@ -526,6 +536,52 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const mergeMembersFor = (label: string): string[] =>
     memberOf(runConfig.declaredCollections, configDir ?? cwd, base, label);
   let externalMetadata = await loadManifests();
+
+  // The values offered for the fields that name a glossary term or a page
+  // (`fill-hints.ts`). The termbase is read once per run and each collection
+  // walked once, and only when some file has a field that needs them.
+  let termbase: Promise<TermIndex | undefined> | undefined;
+  const readTermbase = async (): Promise<TermIndex | undefined> => {
+    if (opts.termLabels !== undefined) return { labels: [...opts.termLabels], ids: [] };
+    const source = termLabelSource();
+    if (source === undefined) return undefined;
+    try {
+      const terms = await source({
+        cwd,
+        ...(opts.configPath === undefined ? {} : { configPath: opts.configPath }),
+        ...(opts.noConfig === true ? { noConfig: true } : {}),
+      });
+      return { labels: terms.map((t) => t.label), ids: terms.map((t) => t.id) };
+    } catch {
+      // A termbase that cannot be read offers nothing, so the field is asked
+      // for as it is where there is no termbase at all.
+      return undefined;
+    }
+  };
+  const respectGitignore = opts.respectGitignore ?? config?.respectGitignore;
+  const pageIds = pageIdReader({
+    collections: runConfig.declaredCollections,
+    configDir: configDir ?? cwd,
+    ...(respectGitignore === undefined ? {} : { respectGitignore }),
+  });
+  /** One file's offered values, and the termbase its term values are checked against. */
+  const hintsFor = async (
+    label: string,
+    candidates: readonly Candidate[],
+  ): Promise<{ hints: FieldHint[]; termIndex: TermIndex | undefined }> => {
+    const keys = new Set(candidates.map((c) => c.key));
+    const wants = (fields: readonly FieldPath[]): boolean =>
+      fields.some(([key]) => key !== undefined && keys.has(key));
+    const termIndex = wants(TERM_FIELDS) ? await (termbase ??= readTermbase()) : undefined;
+    const pages = wants(PAGE_FIELDS)
+      ? await pageIds(resolve(base, label), mergeMembersFor(label))
+      : [];
+    const hints = fieldHints(candidates, {
+      terms: termIndex === undefined ? undefined : offered(termIndex.labels),
+      pages: offered(pages),
+    });
+    return { hints, termIndex };
+  };
   // A schema notice names its file. Preparing runs again after an accepted
   // relocation, and relocation reads the same schemas, so each is said once.
   const noticed = new Set<string>();
@@ -917,6 +973,9 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       (sealedCandidates[0] === undefined ? undefined : pointerOf(sealedCandidates[0].key));
     if (firstSealed !== undefined && !dryRun) await writeKey(firstSealed);
 
+    const { hints, termIndex } =
+      candidates.length > 0 ? await hintsFor(label, candidates) : { hints: [], termIndex: undefined };
+
     // ---- Propose (cache first) -------------------------------------------
     const cacheKey = buildCacheKey([
       identity.provider,
@@ -929,6 +988,8 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       `chunk-${chunkBudget}`,
       schemaSet.join(","),
       candidates.map((c) => c.key).join(","),
+      // The values offered, so a new term or page asks again.
+      `hints-${sha256(canonical(hints))}`,
       sha256(content),
     ]);
     const hit = candidates.length > 0 ? cache?.get(cacheKey) : undefined;
@@ -958,9 +1019,10 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       // keep the failure per-file, since an unresolvable `$ref` in one schema
       // must not abort a whole directory walk.
       try {
-        envelope = buildEnvelopeSchema(candidates, collectDefs(schemas));
+        envelope = buildEnvelopeSchema(candidates, collectDefs(schemas), hints);
         check = valueCheck(
           compileWithFormats(envelope.full, config?.registered, { coerce: true }),
+          termIndex === undefined ? undefined : termValueCheck(hints, termIndex),
         );
         validateShape = compileWithFormats(envelope.skeleton);
       } catch (err) {
@@ -1085,6 +1147,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
             const again = buildEnvelopeSchema(
               failed.map((f) => f.candidate),
               collectDefs(schemas),
+              hints,
             );
             inFlight++;
             let retry;
@@ -2036,23 +2099,34 @@ type ValueCheck = (key: string, proposal: Proposal) => Checked;
  *
  * Errors read as Ajv words them under the field's pointer, such as
  * `/resource: must match format "uri"`, which is what a retry is shown.
+ *
+ * `terms` is the check for the fields offered glossary terms
+ * (`fill-hints.ts`), whose errors read the same way:
+ * `/concepts/1: must be a glossary term label`.
  */
-function valueCheck(validate: ValidateFunction): ValueCheck {
+function valueCheck(
+  validate: ValidateFunction,
+  terms?: (key: string, value: unknown) => string[],
+): ValueCheck {
   return (key, proposal) => {
     const entry = {
       value: structuredClone(proposal.value),
       confidence: proposal.confidence,
       reasoning: proposal.reasoning,
     };
-    if (validate({ [key]: entry })) return { ok: true, value: entry.value };
+    const valid = validate({ [key]: entry });
     const field = pointerOf(key);
     const prefix = `${field}/value`;
-    const errors = (validate.errors ?? []).map((e) => {
-      const at = e.instancePath.startsWith(prefix)
-        ? `${field}${e.instancePath.slice(prefix.length)}`
-        : field;
-      return `${at}: ${e.message ?? e.keyword}`;
-    });
+    const errors = valid
+      ? []
+      : (validate.errors ?? []).map((e) => {
+          const at = e.instancePath.startsWith(prefix)
+            ? `${field}${e.instancePath.slice(prefix.length)}`
+            : field;
+          return `${at}: ${e.message ?? e.keyword}`;
+        });
+    errors.push(...(terms?.(key, entry.value) ?? []));
+    if (errors.length === 0) return { ok: true, value: entry.value };
     return { ok: false, errors: [...new Set(errors)] };
   };
 }
