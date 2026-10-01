@@ -173,17 +173,17 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-270e1aebcc0c40be7a283d5254f4b22ab8ba9ff72b569a3eccec71b112b695f6
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 934-938
+        lines: 939-943
         integrity: sha256-e02671c7392112cf5337ba9ebdc723f08f09d93b7c6de18b307e342e777d684d
-        commit-sha: 31cf54c1a732dc33be311973296eeaba8a02555a
+        commit-sha: 7a2d62f7e294d106cad8e9879aa422471618e6f3
     - id: range-into-frontmatter-is-refused
       claim:
         integrity: sha256-270e1aebcc0c40be7a283d5254f4b22ab8ba9ff72b569a3eccec71b112b695f6
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 939-943
+        lines: 944-948
         integrity: sha256-efc0136c3ee9e9741b667be81688d9d9550981a7a72f3beb18a012053258ff20
-        commit-sha: 31cf54c1a732dc33be311973296eeaba8a02555a
+        commit-sha: 7a2d62f7e294d106cad8e9879aa422471618e6f3
     - id: range-must-name-one-file-derive-reads
       claim:
         integrity: sha256-270e1aebcc0c40be7a283d5254f4b22ab8ba9ff72b569a3eccec71b112b695f6
@@ -205,17 +205,17 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-3fb398aba93b2a36a119c2aa49e389cb28e3e8e847aba5234078a6b8220147e7
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 945-954
+        lines: 950-959
         integrity: sha256-706abe7b399231dd07478ae925f948cb5062dc5a6f135005d84543ff3d607c0a
-        commit-sha: 31cf54c1a732dc33be311973296eeaba8a02555a
+        commit-sha: 7a2d62f7e294d106cad8e9879aa422471618e6f3
     - id: ranged-attribution-works-committed-or-not
       claim:
         integrity: sha256-53eb9a7816eb5ff49d40183dd77a9c31fc4deaad6dd02a3998e1f92efa13bb57
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 918-929
+        lines: 923-934
         integrity: sha256-653d332d7f6668d4384f8248a70e8ceb50e58b66cfe556b099aaaccd059830a1
-        commit-sha: 31cf54c1a732dc33be311973296eeaba8a02555a
+        commit-sha: 7a2d62f7e294d106cad8e9879aa422471618e6f3
     - id: variable-alone-never-refuses-flag-does
       claim:
         integrity: sha256-9a10f8f6c8089e8b096b4ecbf8ded6e3cb641a8abecc3d1aed02c66933925591
