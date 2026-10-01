@@ -29,7 +29,11 @@ import { resolveTargetSet } from "../core/load-files.js";
 import { extractorForExtension } from "../extractors/index.js";
 import type { Candidate, FieldHint } from "./fill-types.js";
 
-/** The most values one field is offered. */
+/**
+ * The most values one field is offered. Past it, the field gets no hint at
+ * all, so its term check lapses too and any string passes. A termbase this
+ * large is not in sight; revisit the cap before one is.
+ */
 export const MAX_OFFERED = 500;
 
 /** What a term value that names no term fails with, after its pointer. */
@@ -76,6 +80,10 @@ export interface TermIndex {
  * ignoring case, as `term check` compares them. A concept field takes a label
  * only, since `term check` resolves a page's `concepts` by label. A term
  * relation takes a label or an id, as `term check` resolves those.
+ *
+ * The offer itself lists labels only, so a model held to it never proposes an
+ * id. Accepting ids here keeps an id a provider proposes anyway, as `term
+ * check` would. A schema that requires ids would see every label refused.
  */
 export function termValueCheck(
   hints: readonly FieldHint[],

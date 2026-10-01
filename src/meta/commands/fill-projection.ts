@@ -594,7 +594,8 @@ export function withOffer(
 /**
  * What one node becomes under the offer, as alternatives. A string under a
  * soft offer becomes two, which a `oneOf` above it takes as two of its own
- * branches rather than as a nested `oneOf`.
+ * branches rather than as a nested `oneOf`. So a `oneOf` grows by one
+ * branch for each of its branches that holds the field, and only those.
  */
 function offerAt(
   node: Record<string, unknown>,
