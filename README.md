@@ -51,13 +51,13 @@ The metadata tool used to be the whole package. Three things changed:
   is still read, with a warning.
 - **The GitHub Action.** `uses: hawkeyexl/manni@v2`, same inputs.
 
-Everything else is the same: the exit codes, the output formats, the built-in
-schemas and their published URLs (the old `…/docmeta/schemas/` URLs stay
-served and resolve offline), and the programmatic API.
+The rename changed nothing else. The exit codes, the output formats and the
+programmatic API carry over, and so do the built-in schemas and their published
+URLs. The old `…/docmeta/schemas/` URLs stay served and resolve offline.
 
 ## Quick start
 
-Point `manni meta validate` at a file, a directory (walked recursively), or a glob. With no `--schema`, it validates against the default set: the built-in OKF schema plus `passo-uno:seven-action:1.0`, which constrains an optional `action` field and requires nothing on its own.
+Point `manni meta validate` at a file, a directory (walked recursively), or a glob. With no `--schema`, it validates against the default set of eleven built-in schemas. The OKF schema requires `type`, and the manni core vocabulary requires `title` and `description`. `passo-uno:seven-action:1.0` and the other eight manni vocabularies check a field only when a page carries it.
 
 ```bash
 manni meta validate docs/intro.md
@@ -65,13 +65,16 @@ manni meta validate docs/intro.md
 
 ```text
 ✗ docs/intro.md
-    (root)      must have required property 'type'   (line 1)  [google:okf:0.1]
-    /timestamp  must match format "date-time"        (line 9)  [google:okf:0.1]
+    (root)      must have required property 'type'                  [google:okf:0.1]
+    (root)      must have required property 'description'           [manni:core:1.0.0]
+    /timestamp  must match format "date-time"             (line 9)  [google:okf:0.1]
 
 1 file checked, 0 passed, 1 failed, 0 errors
 ```
 
 A clean run exits `0`; validation failures exit `1`; operational errors (no input, unknown schema, parse error) exit `2`.
+
+A config's `meta.schemas` add to the default set, and `meta.defaults: false` makes them replace it. `meta.register` names your own schemas by their `$id`, and `meta.strict: true` stacks each strict version beside its base. The [configuration reference](https://hawkeyexl.github.io/manni/meta/reference/configuration/) has every key.
 
 ## Run it in CI
 

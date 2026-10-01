@@ -35,8 +35,8 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
       lines: 9-11
       integrity: sha256-3e69cc70600ec86c31cb94f384ed29be1fa6e4c8153b72800485aed4ebcd51b6
     - generated-by: Claude Opus 5
-      lines: 12-14
-      integrity: sha256-5a63993af71f1346b510b5efa81513e3806146ba4b0d4910076ce81cc92e7439
+      lines: 13-14
+      integrity: sha256-5512c1837380a1d8c72651a2fc2106972f0ee97c77fbad3a79d1b6458e4274bd
     - generated-by: Claude Opus 5.5
       lines: 15
       integrity: sha256-8958fc2a059538cfc8865dd8dc6671a629c89b9ff97651229755931520ede5de
@@ -56,8 +56,8 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
       lines: 25
       integrity: sha256-59eed64d69ad7c2760088e7ca3dae3b9411dfb7737bf2eb16d78c4750e01889a
     - generated-by: Claude Opus 5.5
-      lines: 27-38
-      integrity: sha256-bdf3ea7717bcc7f161b17fc00dbbad987d66cfcb87845c82a5f1a788e7dfc589
+      lines: 27-37
+      integrity: sha256-c4776f616d3e557c773b4f77d637d72824f240b05b2252b1f57e60bf6b54e2ad
     - generated-by: Claude Opus 5
       lines: 41
       integrity: sha256-481a51c19456e8501c226d2ecbd950a89e484d196c44efd6d3f85f83c3a2918a
@@ -83,11 +83,8 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
       lines: 69
       integrity: sha256-264086c1d139d16f0d568ae0df54a5d6e75bd0ad1c55f0cdf7c9497c709bc8cb
     - generated-by: Claude Opus 5.5
-      lines: 70
-      integrity: sha256-3a2159bd9cf0e8d275aedb82d130a8842f47cacb7aa077e2d4cc744f50842f31
-    - generated-by: Claude Opus 5.5
-      lines: 72-76
-      integrity: sha256-c12c3dfd6bb33c3dd7c264f1970405fc3d7ef6dfc8f5be91bad568d046d8333f
+      lines: 70-76
+      integrity: sha256-60721c18bb2f8d5de572908fcd9aca801eb081430aa3166cd3433dc93251f66c
     - generated-by: Claude Opus 5
       lines: 78
       integrity: sha256-2bc6314e3503591c351e88460af09fa8e1e65f41a79e3d23a736543b3ac1c767
@@ -95,11 +92,8 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
       lines: 82
       integrity: sha256-74567968589da9ff99b6594ba819d80226c87c33e396b0f6d904d6a2b26281be
     - generated-by: Claude Opus 5
-      lines: 90
-      integrity: sha256-291e18a7b6691fab2f142fbffb139e336209c833d76bd98fb825abc341204c9b
-    - generated-by: Claude Opus 5
-      lines: 92-93
-      integrity: sha256-384ee1b241c48424a7d7e2b02a2764f0a6cad9f66ed1502082bc601ea2bab378
+      lines: 90-93
+      integrity: sha256-edad1c9399c42a9909e2e37eef5958643fa2a5e5963638f55ca95010972a5c30
     - generated-by: Claude Opus 5
       lines: 97
       integrity: sha256-0d801cd23cda202e6a87a5f196d842906412bf68c0e49652237b819d8cff96b7
@@ -122,11 +116,11 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
       lines: 156-159
       integrity: sha256-ee1db26d4aaf32b336e0db5ee49d2123c60bf19bc5b942a0293f4e12351d6f1b
     - generated-by: Claude Fable 5.1
-      lines: 160-161
-      integrity: sha256-344214d3acb9a9142efcdb946589a56b6da2e32d2b34ba7349ab4ab490abc11e
+      lines: 161
+      integrity: sha256-3d982d9bd8884167256d74126d88c175f99f9193f85f7a213254e6272457929e
     - generated-by: Claude Opus 5
-      lines: 162-169
-      integrity: sha256-d8a6a59399503a67cf635377165ecc6b48f9e91f4ec81d4461bff47d0cc6ab89
+      lines: 162-168
+      integrity: sha256-831048053bdf9487549432b33593f9fa3841e06c02e35b01aaadb0d3684b7f92
     - generated-by: Claude Fable 5.1
       lines: 170-171
       integrity: sha256-ac433574d90aa0e90c21f922ad23067d7397d08a434e93da59a341f03bbdd782
@@ -196,3 +190,19 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-08-10
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /tags: 0.9
+        /action: 0.9
+        /prerequisites: 0.8
+        /next-steps: 0.9
+        /related-pages: 0.85
+        /risks: 0.8

@@ -19,8 +19,33 @@ docs/src/content/docs/meta/reference/schemas/manni-lifecycle.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-175
-      integrity: sha256-dea3b34fc4b04f124aabc1cbdc88a96c6e7c65924772f6e16a3a60e494abe3d5
+      lines: 2-13
+      integrity: sha256-cad6c67aa81f9987d2a5d26800e036b64338c3b3fbd405371c9d98902a474076
+    - generated-by: Claude Opus 5.5
+      lines: 21-22
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+    - generated-by: Claude Opus 5.5
+      lines: 28-145
+      integrity: sha256-0393c1a3365c92dd8f826f9cfa4969e5b029836a9c3a387c49d8691cafeab4ae
+    - generated-by: Claude Opus 5.5
+      lines: 158-187
+      integrity: sha256-6f02f31aa632fba3337c6061f89fe633d34946fb314c2a70bb6b2f09ad07d23b
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /related-pages
+        - /prerequisites
+        - /next-steps
+      confidence:
+        /resource: 0.95
+        /tags: 0.8
+        /action: 0.85
+        /related-pages: 0.9
+        /prerequisites: 0.85
+        /next-steps: 0.75

@@ -18,8 +18,26 @@ docs/src/content/docs/meta/reference/schemas/antora-page.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-122
-      integrity: sha256-27c600722269faf76d9ff34bc0e68c889497c69ad6f8f6d97d1fa519cc5437ac
+      lines: 2-122
+      integrity: sha256-69475b0bc004459ba38fec986f8e7f93f0f3f992d4f14d8fbad43daeb70d994b
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /risks
+        - /prerequisites
+      confidence:
+        /resource: 0.95
+        /tags: 0.7
+        /action: 0.8
+        /next-steps: 0.7
+        /related-pages: 0.85
+        /risks: 0.9
+        /prerequisites: 0.75

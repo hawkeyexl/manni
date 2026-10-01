@@ -14,14 +14,14 @@ docs/src/content/docs/meta/reference/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 4.8
-      lines: 1-4
-      integrity: sha256-b491f039be8ac79f59c8234bbfc246508ef27fe2ae37e2937d959476e7e3f4bb
+      lines: 2-4
+      integrity: sha256-4b7c0dd4b73316ca85dda01f9a98714c2bdb02a6b51be7ed581067355b771dd0
     - generated-by: Claude Fable 5.1
       lines: 5
       integrity: sha256-c6c0d76f16e758d34287a4102deafff37ddd0b8277a6c2527e70734b42cffad5
     - generated-by: Claude Opus 4.8
-      lines: 7-8
-      integrity: sha256-97e434b78a3cf490c220692e0806bdb6fec0013899cd57914c37ceecaa4c10da
+      lines: 7
+      integrity: sha256-4dca15af9d98cd5d82fe2aded991f5d469c82b37a355fd87060653984847bad0
     - generated-by: Claude Opus 5.5
       lines: 9
       integrity: sha256-50e7e8f93fb75a28478d73e2def99e2bef49f410961f53a08d838960a5a17025
@@ -187,3 +187,19 @@ docs/src/content/docs/meta/reference/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /concepts: 0.7
+        /next-steps: 0.9
+        /related-pages: 0.75
+        /risks: 0.95

@@ -35,7 +35,19 @@ sample-questions:
 graph:
   label: How schema resolution works & how to wire it
   type: task
-last-updated: 2026-09-20
+last-updated: 2026-09-27
+tags:
+  - schema
+  - resolution
+  - precedence
+  - configuration
+action: understand
+prerequisites:
+  - meta-schemas
+related-pages:
+  - meta-reference-schema-resolution
+  - meta-reference-configuration
+risks: read-only
 ---
 
 import { Steps, Tabs, TabItem, Card, CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';
@@ -55,35 +67,37 @@ For every file, manni meta builds a **schema set** (the list of schemas that fil
 
 2. **The file's own `$schema` key**: a `$schema` field in the document's metadata. May be a single string or a list of strings.
 
-3. **The first matching `overrides` entry in config**: config `overrides` are checked in order; the first whose glob matches the file path supplies the set.
+3. **The first matching `overrides` entry in config**: config `overrides` are checked in order; the first whose glob or collection matches the file supplies the set. Its schemas replace everything below, unless the entry sets `defaults: true`, which puts the default set first.
 
-4. **Config `schemas`**: the repo-wide default list in `manni.config.yaml`.
+4. **Config `schemas`**: the repo-wide list in `manni.config.yaml`. It joins the default set, after it. `meta.defaults: false` makes it replace the defaults instead.
 
-5. **The built-in default set**: if nothing above matched, manni meta uses `google:okf:0.1` and `passo-uno:seven-action:1.0` together.
+5. **The default set** applies when there are no config `schemas`. Its eleven built-ins are `google:okf:0.1`, `passo-uno:seven-action:1.0` and nine manni vocabularies, led by `manni:core:1.0.0`. Core requires `title` and `description`, so every file the defaults judge needs both.
 
 </Steps>
 
-<Aside type="note" title="First match wins, completely">
-Precedence is not a merge. If you pass `--schema`, the file's `$schema` key and all config rules are ignored for that run. If a file has a `$schema` key, config `overrides` and `schemas` are skipped. Each level is a full stop, not an addition. To combine schemas, list them at a *single* level (several `--schema` flags, a list-valued `$schema`, or multiple entries in one config rule). See [Validating against more than one schema](#validating-against-more-than-one-schema).
+<Aside type="note" title="The first level decides">
+Each level is a full stop. If you pass `--schema`, the file's `$schema` key and all config rules are ignored for that run. If a file has a `$schema` key, config `overrides` and `schemas` are skipped. A level can add only the default set, at levels 3 and 4, and the strict versions `strict: true` stacks. To combine other schemas, list them at a *single* level: several `--schema` flags, a list-valued `$schema`, or multiple entries in one config rule. See [Validating against more than one schema](#validating-against-more-than-one-schema).
 </Aside>
 
 Here is the same chain as a quick-reference table:
 
 | Order | Source | Scope | Notes |
 |------:|--------|-------|-------|
-| 1 | CLI `-s`/`--schema` | All files in the run | Repeatable; overrides everything below. |
+| 1 | CLI `-s`/`--schema` | All files in the run | Repeatable; replaces everything below. |
 | 2 | File `$schema` key | That one file | String or list of strings. A reserved key, stripped before validation. |
-| 3 | Config `overrides` | Files matching a glob | First matching entry wins; later entries ignored. |
-| 4 | Config `schemas` | All files (repo default) | Used when no override matched. |
-| 5 | Built-in default set | All files (last resort) | `google:okf:0.1` + `passo-uno:seven-action:1.0`. |
+| 3 | Config `overrides` | Files matching a glob or a collection | First matching entry wins. Replaces, unless the entry sets `defaults: true`. |
+| 4 | Config `schemas` | All files no override matched | The default set, then these. `meta.defaults: false` drops the defaults. |
+| 5 | The default set | All files (last resort) | Eleven built-ins. See [the default set](/manni/meta/reference/schema-resolution/#the-default-set). |
 
-Levels 3 and 4 come from your `manni.config.yaml`. Here is the config the worked example below assumes, with a repo-wide default plus one directory override:
+At levels 3 to 5, `strict: true` stacks each strict version right after its base. That covers each `manni:` default and each [registered](#register-your-own-ids) schema that has one.
+
+Levels 3 and 4 come from your `manni.config.yaml`. Here is the config the worked example below assumes, with a repo-wide house schema plus one directory override:
 
 ```yaml title="manni.config.yaml"
 meta:
-  # Level 4: the repo-wide default applied to every file...
+  # Level 4: the default set, then the house schema, for every file...
   schemas:
-    - google:okf:0.1
+    - ./schemas/house.schema.json
 
   # Level 3: ...unless a file matches an override glob, checked top to bottom.
   overrides:
@@ -106,10 +120,10 @@ only affects which schema applies. (For every config key, type, and default, see
 the [Configuration reference](/manni/meta/reference/configuration/).)
 
 <Aside type="tip" title="A worked example">
-With the config above, a repo-wide default of `google:okf:0.1` (level 4) and an override applying `api.schema.json` to `api/**` (level 3), resolution plays out like this:
+With the config above, a repo-wide house schema (level 4) and an override applying `api.schema.json` to `api/**` (level 3), resolution plays out like this:
 
-- `api/auth.md` with no `$schema` key → matches the override → validated against **`api.schema.json`**.
-- `guides/intro.md` with no `$schema` key → no override matches → falls through to the config default, **`google:okf:0.1`**.
+- `api/auth.md` with no `$schema` key → matches the override → validated against **`api.schema.json`** alone. Add `defaults: true` to the entry to put the default set first.
+- `guides/intro.md` with no `$schema` key → no override matches → falls through to level 4 → validated against **the default set, then `house.schema.json`**.
 - Any file with `$schema: ./special.schema.json` in its frontmatter → the file key (level 2) beats both config levels → validated against **`./special.schema.json`**.
 - The whole run invoked with `--schema ./audit.schema.json` → level 1 overrides all of the above → *every* file validated against **`./audit.schema.json`**.
 </Aside>
@@ -168,7 +182,7 @@ Everywhere a schema is named, the value is a **reference**. That covers a `--sch
 
   Example: `google:okf:0.1`
 
-  Resolved from the schemas bundled into manni meta. A typo'd id (e.g. an unknown vendor) is reported as an unknown built-in, not silently treated as a missing file.
+  Resolved from the schemas bundled into manni meta, or from a schema your config [registers](#register-your-own-ids) under that id. A typo'd id (e.g. an unknown vendor) is reported as an unknown schema, not silently treated as a missing file.
   </Card>
   <Card title="File" icon="document">
   A path that ends in `.json` **or** contains a path separator (`/` or `\`).
@@ -194,6 +208,10 @@ The classification is purely structural, and it is applied in this order. A valu
 If a reference can't be resolved, manni meta stops with an operational error (exit code 2). It does not skip the file or fall back to the default. This applies to an unknown built-in id, a missing schema file, and a URL that 404s or times out after the 10-second limit. Treat the schema reference as load-bearing: a broken one fails the run, which is what you want in CI.
 </Aside>
 
+### Register your own ids
+
+A house schema is a file, so every config entry names it by path. [`meta.register`](/manni/meta/reference/configuration/#register) gives it an id instead. The config lists the file or its directory, and the schema's own `$id` becomes a name like `house:page:1.0.0`. That id then works in config, on `--schema`, in a document's `$schema`, and in a `$ref` from another schema, exactly as a built-in id does. [Name your schema and its strict version](/manni/meta/schemas/#name-your-schema-and-its-strict-version) walks through it.
+
 URL references are one way to govern a single schema across many repos: a central, versioned schema URL that every consumer points at. Vendoring that URL into each consumer is the other, and the more durable one. Both, with the fetch timeout and caching behavior in depth, are covered in [Govern a shared schema across repos](/manni/meta/ci/govern-shared-schema/).
 
 ## Validating against more than one schema
@@ -205,7 +223,7 @@ A multi-schema set is what you get when you name several schemas at a single pre
 
 - several `--schema` flags on the command line,
 - a list-valued `$schema` key in a document,
-- or multiple entries in one config `overrides` rule or in config `schemas`.
+- or multiple entries in one config `overrides` rule or in config `schemas`, which the default set joins.
 
 This is useful for layering a shared organizational schema with a local one. For example, validate against a company-wide `house-style.schema.json` *and* a team-specific `api.schema.json` at once. Each schema is compiled and cached separately, so layering is cheap.
 

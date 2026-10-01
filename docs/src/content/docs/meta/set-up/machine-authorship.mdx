@@ -31,7 +31,19 @@ sample-questions:
 graph:
   label: See which lines a machine wrote
   type: task
-last-updated: 2026-09-24
+last-updated: 2026-09-28
+tags:
+  - provenance
+  - git
+  - validation
+  - ci
+  - integrity
+action: develop
+prerequisites:
+  - meta-set-up-derived-metadata
+  - meta-get-started
+related-pages:
+  - meta-set-up-external-metadata
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -214,7 +226,8 @@ variable. It wins even when empty, and an empty or blank name is unset.
 
 {/* cite ranged-attribution-works-committed-or-not */}
 A range on the path names the lines, in the spelling `manni cite add` uses. A
-range works whether or not the lines are committed:
+range works whether or not the lines are committed. Blank lines at either end
+of it are left out, because a blank line carries no authorship:
 
 ```sh
 npx -y @hawkeyexl/manni meta derive docs/limits.md:17 --generated-by claude-sonnet-5
@@ -319,8 +332,9 @@ docs/limits.md
 ```
 
 {/* cite uncovered-machine-lines-are-unset-findings */}
-Machine lines with no entry are a finding too. A commit whose trailer names a
-machine, stamped by nobody, reads like this:
+Machine lines with no entry are a finding too. A blank line never is, because
+it carries no authorship. A commit whose trailer names a machine, stamped by
+nobody, reads like this:
 
 ```
 $ manni meta validate
@@ -332,8 +346,9 @@ $ manni meta validate
 
 <Aside type="note" title="No evidence is not a contradiction">
 A pin over lines whose commit names no machine stands for as long as its text
-matches. That is what lets a person attribute lines after the fact. Only a
-changed pin, or evidence that names a different machine, is a finding.
+matches. That is what lets a person attribute lines after the fact. A changed pin
+is a finding. So is evidence that names a different machine, and so is a pin
+that starts or ends on a blank line. Nothing else about a pin is.
 </Aside>
 
 ## Keep the record out of the page

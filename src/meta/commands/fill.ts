@@ -6,11 +6,15 @@
  * not the only one.** A self-reported score is a weak, uncalibrated signal, so
  * three mechanical checks run first and cannot be overridden by a high score:
  *
- *  1. The proposal must satisfy the target property's own subschema — enforced
- *     by the envelope schema inside `completeValidatedJSON`, before `fill` sees
- *     the response at all.
+ *  1. The proposal must satisfy the target property's own subschema. The model
+ *     is shown a projection of it (`fill-projection.ts`), and each value is
+ *     then checked against the whole subschema on its own, with Ajv's type
+ *     coercion. A value that fails is asked for once more, alone, naming the
+ *     rule it broke; one that fails again is skipped as `schema-mismatch`,
+ *     and the file's other proposals stand.
  *  2. It must name a property that was actually a candidate; the envelope's
- *     `additionalProperties: false` makes inventing keys impossible.
+ *     `additionalProperties: false` makes inventing keys impossible, and a
+ *     response that is not the envelope's shape fails the file.
  *  3. After merging, the document must still validate. Anything that would
  *     leave the page failing its own schema is reverted.
  *
@@ -82,7 +86,18 @@ import {
 import { classifyRef, loadSchema, schemaLoadOptions } from "../core/schema-registry.js";
 import type { CollectionConfig } from "../../shared/collections.js";
 import { Validator, compileWithFormats } from "../core/validator.js";
+import type { ValidateFunction } from "ajv/dist/2020.js";
 import { toJsonText } from "../core/json-text.js";
+import { canonical } from "./fill-projection.js";
+import {
+  fieldHints,
+  offered,
+  pageIdReader,
+  termValueCheck,
+  type TermIndex,
+} from "./fill-hints.js";
+import { PAGE_FIELDS, TERM_FIELDS, type FieldPath } from "../../shared/reference-fields.js";
+import { termLabelSource } from "../../shared/term-labels.js";
 import { writeFileAtomic } from "../core/write-file.js";
 import {
   ENCRYPTED_PLACEHOLDER,
@@ -110,13 +125,16 @@ import {
   FILL_PROMPT_VERSION,
   FILL_SYSTEM_PROMPT,
   buildEnvelopeSchema,
+  buildRetryPrompt,
   buildUserPrompt,
   splitBody,
   mergeProposals,
   DEFAULT_CHUNK_CHARS,
+  type Envelope,
 } from "./fill-prompt.js";
 import type {
   Candidate,
+  FieldHint,
   FillFileResult,
   FillOptions,
   FillRun,
@@ -127,7 +145,7 @@ import type {
   ProposalSet,
 } from "./fill-types.js";
 import { errorMessage } from "../../shared/errors.js";
-import { managedFields } from "../core/derive/types.js";
+import { deriveCovers, managedFields } from "../core/derive/types.js";
 
 export type {
   Candidate,
@@ -273,6 +291,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     ttlHours: config?.schemaCache?.ttlHours,
     offline: opts.offline ?? config?.offline,
     pins: collectSchemaPins(config),
+    registered: config?.registered,
   });
   // Settled once per run, not per file: finding it is a filesystem walk, and
   // every file in one run shares the same repository.
@@ -517,6 +536,56 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   const mergeMembersFor = (label: string): string[] =>
     memberOf(runConfig.declaredCollections, configDir ?? cwd, base, label);
   let externalMetadata = await loadManifests();
+
+  // The values offered for the fields that name a glossary term or a page
+  // (`fill-hints.ts`). The termbase is read once per run and each collection
+  // walked once, and only when some file has a field that needs them.
+  let termbase: Promise<TermIndex | undefined> | undefined;
+  const readTermbase = async (): Promise<TermIndex | undefined> => {
+    if (opts.termLabels !== undefined) return { labels: [...opts.termLabels], ids: [] };
+    const source = termLabelSource();
+    if (source === undefined) return undefined;
+    try {
+      const terms = await source({
+        cwd,
+        ...(opts.configPath === undefined ? {} : { configPath: opts.configPath }),
+        ...(opts.noConfig === true ? { noConfig: true } : {}),
+      });
+      return { labels: terms.map((t) => t.label), ids: terms.map((t) => t.id) };
+    } catch (err) {
+      // A termbase that cannot be read offers nothing, so the field is asked
+      // for as it is where there is no termbase at all. Said once, because
+      // otherwise the run looks like one with no termbase and gives no reason.
+      opts.onNotice?.(
+        `The termbase could not be read, so fill offers no glossary labels: ${errorMessage(err)}`,
+      );
+      return undefined;
+    }
+  };
+  const respectGitignore = opts.respectGitignore ?? config?.respectGitignore;
+  const pageIds = pageIdReader({
+    collections: runConfig.declaredCollections,
+    configDir: configDir ?? cwd,
+    ...(respectGitignore === undefined ? {} : { respectGitignore }),
+  });
+  /** One file's offered values, and the termbase its term values are checked against. */
+  const hintsFor = async (
+    label: string,
+    candidates: readonly Candidate[],
+  ): Promise<{ hints: FieldHint[]; termIndex: TermIndex | undefined }> => {
+    const keys = new Set(candidates.map((c) => c.key));
+    const wants = (fields: readonly FieldPath[]): boolean =>
+      fields.some(([key]) => key !== undefined && keys.has(key));
+    const termIndex = wants(TERM_FIELDS) ? await (termbase ??= readTermbase()) : undefined;
+    const pages = wants(PAGE_FIELDS)
+      ? await pageIds(resolve(base, label), mergeMembersFor(label))
+      : [];
+    const hints = fieldHints(candidates, {
+      terms: termIndex === undefined ? undefined : offered(termIndex.labels),
+      pages: offered(pages),
+    });
+    return { hints, termIndex };
+  };
   // A schema notice names its file. Preparing runs again after an accepted
   // relocation, and relocation reads the same schemas, so each is said once.
   const noticed = new Set<string>();
@@ -757,8 +826,10 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     // stamp the channel exists to make trustworthy. Reported rather than
     // dropped, so the omission is visible and a required one still fails
     // the run — the fix being `manni meta derive`, not a better model.
+    // A file outside `derive.collections` has no managed fields (0070).
+    const managedHere = deriveCovers(config?.derive, members) ? managed : new Set<string>();
     const managedSkips: FilledField[] = proposed
-      .filter((c) => managed.has(c.key))
+      .filter((c) => managedHere.has(c.key))
       .map((c) => ({
         field: pointerOf(c.key),
         required: c.required,
@@ -767,7 +838,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         written: false,
         skipReason: "managed",
       }));
-    const candidates = proposed.filter((c) => !managed.has(c.key));
+    const candidates = proposed.filter((c) => !managedHere.has(c.key));
     // Proposal 0047: a candidate a manifest of this page's collections owns
     // is written into the page's entry there. A URL manifest cannot be
     // written, and a field join the page lacks has no entry, so either
@@ -906,6 +977,9 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       (sealedCandidates[0] === undefined ? undefined : pointerOf(sealedCandidates[0].key));
     if (firstSealed !== undefined && !dryRun) await writeKey(firstSealed);
 
+    const { hints, termIndex } =
+      candidates.length > 0 ? await hintsFor(label, candidates) : { hints: [], termIndex: undefined };
+
     // ---- Propose (cache first) -------------------------------------------
     const cacheKey = buildCacheKey([
       identity.provider,
@@ -918,6 +992,8 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       `chunk-${chunkBudget}`,
       schemaSet.join(","),
       candidates.map((c) => c.key).join(","),
+      // The values offered, so a new term or page asks again.
+      `hints-${sha256(canonical(hints))}`,
       sha256(content),
     ]);
     const hit = candidates.length > 0 ? cache?.get(cacheKey) : undefined;
@@ -931,12 +1007,49 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       ),
     );
 
+    // The envelope is built on a cache hit too. The cache holds the model's
+    // raw answers, and each is checked, and coerced, again on every read.
+    //
+    // `envelope`, `check` and `validateShape` are set together, only when
+    // there are candidates to ask about, and never reassigned afterward. Every
+    // use below narrows on that instead of assuming a placeholder that is
+    // never actually called.
+    let envelope: Envelope | undefined;
+    let check: ValueCheck | undefined;
+    let validateShape: ValidateFunction | undefined;
+    if (candidates.length > 0) {
+      // The library's own Ajv has no ajv-formats, so a lifted subschema with
+      // `format: "date-time"` would fail to compile. Compile it ourselves — and
+      // keep the failure per-file, since an unresolvable `$ref` in one schema
+      // must not abort a whole directory walk.
+      try {
+        envelope = buildEnvelopeSchema(candidates, collectDefs(schemas), hints);
+        check = valueCheck(
+          compileWithFormats(envelope.full, config?.registered, { coerce: true }),
+          termIndex === undefined ? undefined : termValueCheck(hints, termIndex),
+        );
+        validateShape = compileWithFormats(envelope.skeleton);
+      } catch (err) {
+        return errorResult(
+          label,
+          extractor.name,
+          `Could not build a proposal schema from ${schemaSet.join(", ")}: ${errorMessage(err)}`,
+          schemaSet,
+        );
+      }
+    }
+
     // No candidates means the only work is encrypting what the page holds.
     let proposals: ProposalSet = {};
     if (hit) {
       cachedCount++;
       proposals = hit.proposals;
-    } else if (candidates.length > 0) {
+    } else if (
+      envelope !== undefined &&
+      check !== undefined &&
+      validateShape !== undefined &&
+      envelope.asked.length > 0
+    ) {
       if (turnsExhausted()) {
         turnsSpent = true;
         return errorResult(
@@ -946,22 +1059,8 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
           schemaSet,
         );
       }
-      const envelope = buildEnvelopeSchema(candidates, collectDefs(schemas));
-      // The library's own Ajv has no ajv-formats, so a lifted subschema with
-      // `format: "date-time"` would fail to compile. Compile it ourselves — and
-      // keep the failure per-file, since an unresolvable `$ref` in one schema
-      // must not abort a whole directory walk.
-      let validate;
-      try {
-        validate = compileWithFormats(envelope);
-      } catch (err) {
-        return errorResult(
-          label,
-          extractor.name,
-          `Could not build a proposal schema from ${schemaSet.join(", ")}: ${errorMessage(err)}`,
-          schemaSet,
-        );
-      }
+      const { asked, sent } = envelope;
+      const shape = validateShape;
       // The whole file goes out, in as many calls as the chunk budget takes.
       // An overflow means the budget was too generous for this model — there is
       // no way to ask a model its input limit ahead of time — so halve it once
@@ -982,6 +1081,9 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       let usageTotal: TokenUsage | undefined;
       let partsRead: { read: number; total: number } | undefined;
       let failure: string | undefined;
+      // Set when the call cap stopped a retry, so the set is not cached: a
+      // later run with room for it would otherwise replay the failed values.
+      let retrySkipped = false;
       while (attempt < 2 && sets === undefined) {
         attempt++;
         const chunks = splitBody(modelContent, chunkChars);
@@ -999,6 +1101,8 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
             cutShort = true;
             break;
           }
+          const part =
+            chunks.length > 1 ? { part: { index: i + 1, total: chunks.length } } : {};
           inFlight++;
           let run;
           try {
@@ -1008,14 +1112,12 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
               user: buildUserPrompt({
                 filePath: label,
                 existing,
-                candidates,
+                candidates: asked,
                 body: chunk,
-                ...(chunks.length > 1
-                  ? { part: { index: i + 1, total: chunks.length } }
-                  : {}),
+                ...part,
               }),
-              schema: envelope,
-              validate,
+              schema: sent,
+              validate: shape,
             });
             costUsd += costOfUsage(run.usage, pricing);
             turnsUsed++;
@@ -1032,7 +1134,62 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
             break;
           }
           usageTotal = addUsage(usageTotal, run.usage);
-          collected.push(run.result);
+          let set = run.result;
+
+          // One more request for the values that failed their rules, and
+          // only for those. It never asks a second time, and a retry that
+          // errors leaves the first answers to fail as `schema-mismatch`.
+          const failed = asked.flatMap((candidate) => {
+            const proposal = set[candidate.key];
+            if (proposal == null || proposal.value === null) return [];
+            const checked = check(candidate.key, proposal);
+            return checked.ok ? [] : [{ candidate, errors: checked.errors }];
+          });
+          if (failed.length > 0 && turnsExhausted()) {
+            retrySkipped = true;
+          } else if (failed.length > 0) {
+            const again = buildEnvelopeSchema(
+              failed.map((f) => f.candidate),
+              collectDefs(schemas),
+              hints,
+            );
+            inFlight++;
+            let retry;
+            try {
+              retry = await completeValidatedJSON<ProposalSet>({
+                provider: getProvider(),
+                system: FILL_SYSTEM_PROMPT,
+                user: buildRetryPrompt({
+                  filePath: label,
+                  existing,
+                  candidates: again.asked,
+                  body: chunk,
+                  ...part,
+                  rejected: failed.flatMap((f) => f.errors),
+                }),
+                schema: again.sent,
+                // The skeleton checks the response's shape only; `check`
+                // judges each value, with the registered schemas.
+                validate: compileWithFormats(again.skeleton),
+                attempts: 1,
+              });
+              costUsd += costOfUsage(retry.usage, pricing);
+              turnsUsed++;
+            } finally {
+              inFlight--;
+            }
+            const answers = retry.result;
+            if (retry.error == null && answers != null) {
+              usageTotal = addUsage(usageTotal, retry.usage);
+              const retried = new Set(failed.map((f) => f.candidate.key));
+              // A retried key the model left out is declined, as a `null` is.
+              set = Object.fromEntries([
+                ...Object.entries(set).filter(([key]) => !retried.has(key)),
+                ...Object.entries(answers),
+              ]);
+            }
+          }
+          collected.push(set);
         }
         if (overflowed && attempt < 2) {
           // The calls this attempt already made stay counted against
@@ -1045,6 +1202,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
           // document rather than the run: leaving the abandoned attempt's
           // tokens in would double-count the content both attempts covered.
           usageTotal = undefined;
+          retrySkipped = false;
           chunkChars = Math.max(1, Math.floor(chunkChars / 2));
           continue;
         }
@@ -1079,21 +1237,34 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       if (partsRead !== undefined && partsRead.read < partsRead.total) {
         throw new DocmetaError("Internal error: incomplete proposal set.");
       }
-      proposals = mergeProposals(sets);
-      cache?.set(cacheKey, { proposals, ...(usageTotal ? { usage: usageTotal } : {}) });
+      // The raw answers are kept, so coercion runs again on every read. That
+      // is deliberate here too, not only for the cache: the merge checks each
+      // answer to pick a winner, and `gate` checks the winner again to get the
+      // coerced value it writes. Coercion is idempotent and runs on a copy.
+      proposals = mergeProposals(sets, (key, proposal) => check(key, proposal).ok);
+      if (!retrySkipped) {
+        cache?.set(cacheKey, { proposals, ...(usageTotal ? { usage: usageTotal } : {}) });
+      }
     }
 
     // ---- Gate -------------------------------------------------------------
-    const fields = [...managedSkips, ...gate(candidates, proposals, threshold)];
+    const unsatisfiable = new Set(envelope?.unsatisfiable.map((c) => c.key));
+    // `check` is set exactly when there are candidates (see above), which is
+    // exactly when `gate` would ever call it, so no candidates gates to no
+    // fields rather than needing a value that is never actually used.
+    const fields = [
+      ...managedSkips,
+      ...(check === undefined ? [] : gate(candidates, proposals, threshold, check, unsatisfiable)),
+    ];
 
     // ---- Re-validate, and revert anything that makes the page worse -------
     const accepted = fields.filter((f) => f.written);
     if (accepted.length > 0) {
       // The decrypted copy, so a marked value is judged as its plaintext.
-      const merged = { ...view.data, ...patchOf(accepted) };
+      const revalidationData = { ...view.data, ...patchOf(accepted) };
       const after = settleFindings(
         await validator.validate(
-          merged,
+          revalidationData,
           schemaSet,
           extracted.lineFor,
           extracted.colFor,
@@ -1171,7 +1342,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
       const metaManifest = metaHome?.kind === "manifest" ? metaHome : undefined;
       const metaEntry = metaManifest?.entry;
       // The merged metadata: the manifest's list when one owns the key.
-      const merged =
+      const mergedProvenance =
         metaHome?.kind === "url" || (metaManifest !== undefined && metaEntry === undefined)
           ? undefined
           : mergeMetaProvenance(extracted.data[META_PROVENANCE_KEY], identity.model, writable);
@@ -1181,14 +1352,14 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         // A field join the page lacks: the manifest has no entry to hold it.
         metaProvenance = { written: false, skipReason: "unwritable" };
       } else if (
-        merged === undefined ||
+        mergedProvenance === undefined ||
         (await addsFindings(
           (data) =>
             validator
               .validate(data, schemaSet, extracted.lineFor, extracted.colFor)
               .then((errors) => settleFindings(errors, view, extracted)),
           { ...view.data, ...plainPatch },
-          merged.list,
+          mergedProvenance.list,
         ))
       ) {
         // The re-check above ignores root errors, which is where
@@ -1196,11 +1367,15 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         // report, so the entry is checked on its own.
         metaProvenance = { written: false, skipReason: "schema-mismatch" };
       } else if (metaManifest !== undefined && metaEntry !== undefined) {
-        metaWrite = { value: merged.list, home: { ...metaManifest, entry: metaEntry } };
-        metaProvenance = { written: true, entry: merged.entry, destination: metaManifest.file };
+        metaWrite = { value: mergedProvenance.list, home: { ...metaManifest, entry: metaEntry } };
+        metaProvenance = {
+          written: true,
+          entry: mergedProvenance.entry,
+          destination: metaManifest.file,
+        };
       } else {
-        patch[META_PROVENANCE_KEY] = merged.list;
-        metaProvenance = { written: true, entry: merged.entry };
+        patch[META_PROVENANCE_KEY] = mergedProvenance.list;
+        metaProvenance = { written: true, entry: mergedProvenance.entry };
       }
     }
 
@@ -1743,25 +1918,6 @@ function branchesOf(schema: Record<string, unknown>): Record<string, unknown>[] 
   });
 }
 
-/** Key-order-independent serialization, so equal branches compare equal. */
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-  if (typeof value === "object" && value !== null) {
-    const entries = Object.entries(value as Record<string, unknown>)
-      .sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0))
-      .map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`);
-    return `{${entries.join(",")}}`;
-  }
-  // A schema parsed from JSON holds nothing `JSON.stringify` refuses, but
-  // `collectCandidates` is public API and a hand-written JS object can pass an
-  // `undefined`, a function, or a symbol. Tagging by type keeps those apart from
-  // each other and from `null`, which is a legitimate schema value.
-  //
-  // `toJsonText`, not `JSON.stringify`, only so the declared type admits the
-  // `undefined` this fallback exists for — see there.
-  return toJsonText(value) ?? `(${typeof value})`;
-}
-
 const DEF_BLOCKS = ["$defs", "definitions"] as const;
 type DefBlock = (typeof DEF_BLOCKS)[number];
 
@@ -1937,16 +2093,76 @@ const escapePointer = (name: string): string =>
 // The gate
 // ---------------------------------------------------------------------------
 
+/** Whether one proposed value meets its property's rules, and as what. */
+type Checked = { ok: true; value: unknown } | { ok: false; errors: string[] };
+type ValueCheck = (key: string, proposal: Proposal) => Checked;
+
+/**
+ * Check each value on its own against the full envelope, compiled with
+ * coercion. The probe holds one key, so a failing neighbour never fails it,
+ * and the value is a copy, so the coerced form is what comes back and the
+ * model's raw answer is left as it was for the cache.
+ *
+ * Errors read as Ajv words them under the field's pointer, such as
+ * `/resource: must match format "uri"`, which is what a retry is shown.
+ *
+ * `terms` is the check for the fields offered glossary terms
+ * (`fill-hints.ts`), whose errors read the same way:
+ * `/concepts/1: must be a glossary term label`.
+ */
+function valueCheck(
+  validate: ValidateFunction,
+  terms?: (key: string, value: unknown) => string[],
+): ValueCheck {
+  return (key, proposal) => {
+    const entry = {
+      value: structuredClone(proposal.value),
+      confidence: proposal.confidence,
+      reasoning: proposal.reasoning,
+    };
+    const valid = validate({ [key]: entry });
+    const field = pointerOf(key);
+    const prefix = `${field}/value`;
+    const errors = valid
+      ? []
+      : (validate.errors ?? []).map((e) => {
+          const at = e.instancePath.startsWith(prefix)
+            ? `${field}${e.instancePath.slice(prefix.length)}`
+            : field;
+          return `${at}: ${e.message ?? e.keyword}`;
+        });
+    errors.push(...(terms?.(key, entry.value) ?? []));
+    if (errors.length === 0) return { ok: true, value: entry.value };
+    return { ok: false, errors: [...new Set(errors)] };
+  };
+}
+
 function gate(
   candidates: Candidate[],
   proposals: ProposalSet,
   threshold: number,
+  check: ValueCheck,
+  unsatisfiable: ReadonlySet<string>,
 ): FilledField[] {
   return candidates.map((c): FilledField => {
+    const field = pointerOf(c.key);
     const proposal: Proposal | undefined = proposals[c.key];
-    if (proposal == null) {
+    // No value can satisfy every schema's rules for this key, so the model
+    // was never asked.
+    if (unsatisfiable.has(c.key)) {
       return {
-        field: pointerOf(c.key),
+        field,
+        required: c.required,
+        confidence: 0,
+        reasoning: "",
+        written: false,
+        skipReason: "schema-mismatch",
+      };
+    }
+    // A `null` value is the model declining, as an omitted key is.
+    if (proposal == null || proposal.value === null) {
+      return {
+        field,
         required: c.required,
         confidence: 0,
         reasoning: "",
@@ -1954,14 +2170,25 @@ function gate(
         skipReason: "no-proposal",
       };
     }
+    const checked = check(c.key, proposal);
+    if (!checked.ok) {
+      return {
+        field,
+        required: c.required,
+        confidence: proposal.confidence,
+        reasoning: proposal.reasoning,
+        written: false,
+        skipReason: "schema-mismatch",
+      };
+    }
     const passes = proposal.confidence >= threshold;
     return {
-      field: pointerOf(c.key),
+      field,
       required: c.required,
       confidence: proposal.confidence,
       reasoning: proposal.reasoning,
       written: passes,
-      ...(passes ? { value: proposal.value } : { skipReason: "low-confidence" as const }),
+      ...(passes ? { value: checked.value } : { skipReason: "low-confidence" as const }),
     };
   });
 }

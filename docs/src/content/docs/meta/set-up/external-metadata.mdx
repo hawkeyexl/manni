@@ -32,6 +32,22 @@ graph:
   label: Keep metadata outside the document
   type: task
 last-updated: 2026-09-27
+tags:
+  - external-metadata
+  - manifest
+  - collections
+  - configuration
+  - private-data
+  - yaml
+  - lean-docs
+action: develop
+prerequisites:
+  - meta-reference-configuration
+related-pages:
+  - /manni/meta/reference/configuration/#external-metadata
+  - /manni/meta/reference/configuration/#collections
+  - /manni/meta/ci/query-gates/
+  - /manni/meta/schemas/field-location/
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -724,8 +740,6 @@ say, because each vocabulary marks where its fields
 manifest owns every field the page's schemas mark `x-manni-location: external`.
 
 ```yaml title="manni.config.yaml"
-meta:
-  schemas: ["manni:stewardship:1.0.0"]
 collections:
   - name: site
     paths: ["docs/**/*.md"]
@@ -739,7 +753,8 @@ docs/install.md:
   last-reviewed: 2026-09-01
 ```
 
-The stewardship vocabulary marks `owner` and `last-reviewed` external, so the
+The stewardship vocabulary is in the built-in default set, so the config
+names no schema. It marks `owner` and `last-reviewed` external, so the
 manifest owns both for `docs/install.md`. The page keeps `title` and the rest
 of what it is about. When a vocabulary gains an external field, the manifest
 owns that one too, with no config edit.

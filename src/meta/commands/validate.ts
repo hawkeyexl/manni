@@ -104,6 +104,7 @@ import {
   compareDerived,
   derivableFields,
   DERIVE_SOURCES,
+  deriveCovers,
   managedFields,
   PROVENANCE_FIELD,
   STAMPED_DATE_FIELDS,
@@ -370,6 +371,7 @@ export async function runValidate(
       // Built from the rebased config, so a pinned local ref is keyed by the
       // same absolute spelling `resolveSchemaSet` will hand to `loadSchema`.
       pins: collectSchemaPins(config),
+      registered: config?.registered,
     }),
   );
   // What each page's schemas mark external, for a keyless manifest (0068).
@@ -699,7 +701,13 @@ export async function runValidate(
       encryptionKey,
       marks,
     });
-    if (keepDeriveInputs && label !== STDIN_LABEL) {
+    // A file outside `derive.collections` is derived only when a check
+    // reads the derived table (proposal 0070).
+    if (
+      keepDeriveInputs &&
+      label !== STDIN_LABEL &&
+      (checksNeedDerived || deriveCovers(deriveConfig, members))
+    ) {
       const place = provenanceManifests.length === 0
         ? undefined
         : readerPlace(label, extracted.data, provenanceManifests, declaredCollections, configDir ?? cwd, base, merged.marked);
@@ -778,7 +786,12 @@ export async function runValidate(
     const schemaSet = resolved.schemas;
     // The merge-safe default (0069): this page manages what its schemas claim.
     // A set that fails to load claims nothing, and validation says why.
-    if (deriveWillRun && defaultedFields && label !== STDIN_LABEL) {
+    if (
+      deriveWillRun &&
+      defaultedFields &&
+      label !== STDIN_LABEL &&
+      deriveCovers(deriveConfig, members)
+    ) {
       let claimed: ReadonlySet<string> = new Set();
       try {
         claimed = await validator.claimedProperties(schemaSet);
@@ -998,7 +1011,12 @@ export async function runValidate(
       // uncompared: the run already says so once, and a guess either way
       // would be a false finding or a false green.
       const managed = managedViews.get(input.label);
-      const managedHere = defaultedFields ? (pageManaged.get(input.label) ?? []) : configuredFields;
+      // A file outside `derive.collections` is not compared (proposal 0070).
+      const managedHere = !deriveCovers(deriveConfig, membersFor(input.label))
+        ? []
+        : defaultedFields
+          ? (pageManaged.get(input.label) ?? [])
+          : configuredFields;
       const fields = managedHere.filter(
         (field) => !(managed?.hidden.some((p) => isAtOrUnder(p, pointerOf(field))) ?? false),
       );

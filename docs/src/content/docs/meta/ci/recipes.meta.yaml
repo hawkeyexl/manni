@@ -17,8 +17,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 4.8
-      lines: 1-3
-      integrity: sha256-b4d7972a072cdd22ffa781bb9a316e9a6566ee1ebecbd1321bff8c8229a04700
+      lines: 2
+      integrity: sha256-0bf6af670c71a210fde0db55103bc0c85c80722ee48dc131b6af249da374b035
     - generated-by: Claude Fable 5.1
       lines: 4
       integrity: sha256-b7829f88cc6ff552beffdcb1849ce6024d729d16a800e3265938eb63892a61c1
@@ -32,14 +32,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 7
       integrity: sha256-75946d9613ae62b9bf0ba802ccc66e012aecfe55d5f2a561eedb88623fa0cdf8
     - generated-by: Claude Opus 5
-      lines: 8
-      integrity: sha256-9e6cce97240a16e8f76d3a6374a05051d44cca3ab395c40e6cb5a28d7d4e5254
-    - generated-by: Claude Opus 4.8
-      lines: 9
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 10
-      integrity: sha256-011b51f48ce158ea195130b5acdde1bb1c815ced39e44b089a96d31789b5b423
+      lines: 8-10
+      integrity: sha256-c201dcaf3c3b98095c8b6c2477e4110a214dadfe051bd7ef101db8dfe63b7ab6
     - generated-by: Claude Fable 5.1
       lines: 11
       integrity: sha256-100b1631ab1e13b3556ae569bf76c5c71803d9620756cfdecac7cb3793af56c3
@@ -50,8 +44,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 15
       integrity: sha256-ef5d2d523247df3dcae4383b6e473feb5aee6ebf6cbaec5dd1e9219c39f0c1b9
     - generated-by: Claude Opus 4.8
-      lines: 16-18
-      integrity: sha256-e6ebe4f2fd63cb3b575bf65f99ba280d697816ec33943bb6d6359cdd063d672f
+      lines: 17-18
+      integrity: sha256-937ec6da7258d1e60f410c50bbcfa954ef1a0bea0033965f07932709dff6cd40
     - generated-by: Claude Opus 5
       lines: 20-22
       integrity: sha256-31a2c831ad0a468a25edf9415437a8a38ac8375fec8af1b7b93f4e74ae32622c
@@ -59,11 +53,11 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 23
       integrity: sha256-34f40fda28942c89a2ed8887579da5f1912389cdbf61b08b5da66b1bc1f454e6
     - generated-by: Claude Opus 4.8
-      lines: 24-25
-      integrity: sha256-d83fd2b93c012a30b846d022a2436edfe17175a771a3d01af056b3d13a6886df
+      lines: 24
+      integrity: sha256-e0cd8dd7cf2d8a61c2523ea3b07cea7958ecce605d53b5da1ef22e4b3c372841
     - generated-by: Claude Opus 5
-      lines: 26-32
-      integrity: sha256-5549fffeda55761d0efa605660e87db3c67e4c0a1c191d87e6dd1ab1235ec547
+      lines: 26-31
+      integrity: sha256-4142bd24a9c4e52f9303a134b3fd9f18bb1a0401a531167364536ba51e9a3097
     - generated-by: Claude Fable 5.1
       lines: 33-34
       integrity: sha256-8a4a25a48703afc9d2e9a9cc9c74efafbc2c5fbfdc88666a73c5dc543fab1536
@@ -74,8 +68,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 78
       integrity: sha256-2c2fb14a05599e99b34ccf9a23d9498a376a1056714878bf5200f4b719a186a2
     - generated-by: Claude Opus 5
-      lines: 79-83
-      integrity: sha256-96c7574f99bfa1afc425b7c6ef49ea7b751e94a5bdbadd3be1c2647fb3fd3312
+      lines: 79-82
+      integrity: sha256-d8aa0da89eaef41ab9f6bdeec04504ae10ffd292f05e659643af0986eb8714f0
     - generated-by: Claude Fable 5.1
       lines: 84
       integrity: sha256-7f1fb491cd6b6d4eeb7d8ac128b8d451ab858e7d4f04b35780aacbbf3be8e19f
@@ -92,17 +86,17 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 89
       integrity: sha256-fb0cc2442a80037a46614c543840ef88e78f12c36b32bf59c92077fae0818985
     - generated-by: Claude Opus 5
-      lines: 90-92
-      integrity: sha256-0b9de44e50f85aa934bd527791abd55f6a365db56117959c0a92c849fc620910
+      lines: 90-91
+      integrity: sha256-3e995bf1a5de8f3b062dd8a7214743af9fed8df3200adf2144b65b14c311e707
     - generated-by: Claude Fable 5.1
       lines: 93
       integrity: sha256-ea66eb3c7220c62e52d84c91f52f5fa340f999e7731a810baae0fa74141576f5
     - generated-by: Claude Opus 5
-      lines: 94-95
-      integrity: sha256-14a5e104b6f5b1587f59e5026671803bbb81df34bb583635746368c31f5d635f
+      lines: 94
+      integrity: sha256-b2b4c496933c36eda266f4c97fd49ca882da30758eb7c389c37b2d0390578da9
     - generated-by: Claude Opus 4.8
-      lines: 96-97
-      integrity: sha256-50235f1d6965d01fda88198dafd4fcb97c6e85adfb5be872c8a3d8bcfb04ad43
+      lines: 96
+      integrity: sha256-b38c0873cf742bebe68eb15748d491e7239199679276be4b601f8c8aafa61b30
     - generated-by: Claude Opus 4.8
       lines: 99
       integrity: sha256-3d40f2e2f4aeb7f41919c904238a24355e40e05129feb1c2ee5caf4ee908927f
@@ -110,8 +104,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 100
       integrity: sha256-cfad1c214ee14be19ff8eb5d503bd1838a1c193412fe4e56e9edd444a6c2e924
     - generated-by: Claude Opus 4.8
-      lines: 101-107
-      integrity: sha256-340e6e539df9913e9141534a4c75b3481d8a48abff6baecfe1a1d53baf99eefd
+      lines: 102-107
+      integrity: sha256-4e0cb94086eae198d3fc6d250fbae9fddeefc1fd9f64127f47b7708dc246e07c
     - generated-by: Claude Opus 4.8
       lines: 109
       integrity: sha256-7800f3a165a5b9f12940fb40fe4e790ade90bfe3c5f2f458db6ff272fb3602c0
@@ -125,8 +119,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 114
       integrity: sha256-4c6711083a6b9bf695d33d29c20a32fd8424cca5767ecd637e7eab861e57767b
     - generated-by: Claude Opus 4.8
-      lines: 115-118
-      integrity: sha256-f72307d96ba506da87fd02c4a6a5fa1bd407b02323e48eba61f69684ae652024
+      lines: 116-118
+      integrity: sha256-7473394a8908ab534d9eafe8ccfb9f522079550111a1ad00f3e434c1d74b61f5
     - generated-by: Claude Opus 5
       lines: 120
       integrity: sha256-0ae8af28cc4885b14231f27862710281dcfb23f9ce4140933e6704d77e0b72fb
@@ -161,14 +155,14 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 144
       integrity: sha256-a025d36d29df1527c439e8fd706b165f24482ab75c8659d8788f93396ca0c3d4
     - generated-by: Claude Opus 4.8
-      lines: 145-146
-      integrity: sha256-47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d
+      lines: 145
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Fable 5.1
       lines: 147
       integrity: sha256-bf61e4a27365c4547776a0a2b27a80e50a3c3f1a7d52334b10dbe9e5d9e3b642
     - generated-by: Claude Opus 4.8
-      lines: 148-150
-      integrity: sha256-b98a3b1d4575901170e9eed4ce88eeb098a573d4df8481e66bc5b36b20f9c184
+      lines: 148-149
+      integrity: sha256-fd340f2218aba849b13b8e42db3ef2f7aa99b4f2e038e9a8c1813f19b235385b
     - generated-by: Claude Opus 5
       lines: 151-156
       integrity: sha256-a3683985b206c45af8cbf57ed5f67f85a1688ff790e0fe8585042c756bde330f
@@ -191,8 +185,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 167
       integrity: sha256-971199e3aaec1530aa25c530d6cd577b962a5de0318bacd551c18bd77a1b9895
     - generated-by: Claude Opus 5
-      lines: 168-169
-      integrity: sha256-4dac5caf989e932ae2b2e967b65d1873fb8e962319b387a3abd535cc7387ba95
+      lines: 168
+      integrity: sha256-31d9d12eef4d6f3c50ea0a1b9c34a12ef00b82e7a153d9ce7f6c466cb340b86f
     - generated-by: Claude Opus 4.8
       lines: 170-182
       integrity: sha256-d6855076b546dd0334e6a6ea3ae3a73ba5d91688d2399d3b921a724f49a9ab37
@@ -212,8 +206,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 211
       integrity: sha256-5f853cd257a36529c2cb49191e5f7cba50dffb79432c49b4791fe72e85fb30c0
     - generated-by: Claude Opus 4.8
-      lines: 212-215
-      integrity: sha256-eabf1132f51479a12c053fbd16961321388549ca5e04d05cefbc8d35ad5586e7
+      lines: 213-215
+      integrity: sha256-4d231e7ac62ee7827ee5724802b90ecd8a5c9fa5a8487287d3ce0184ea474384
     - generated-by: Claude Fable 5.1
       lines: 216
       integrity: sha256-cb9ae2dd5371b509b5d920836998eae2d07d28d60909889a24ecde06af20423a
@@ -224,8 +218,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 220
       integrity: sha256-ed93311ddda09142237acbdb8a252582eb2feb6c749eb19e273dc324c4e307f3
     - generated-by: Claude Opus 4.8
-      lines: 221-225
-      integrity: sha256-a2b9026ede7b69331f3b53614b7bc235495e3bb5fabf3862d05388f34a87a469
+      lines: 221-224
+      integrity: sha256-86788843a82820189c863983aabc2f3577623958d489df5f28b379bca1e2f0f7
     - generated-by: Claude Fable 5.1
       lines: 226
       integrity: sha256-c4c8c7e96b1d505c2bff4e7bfcc3ab49c75735df4450a093c5c22d18def443e8
@@ -242,11 +236,11 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 236
       integrity: sha256-604aa0ba5e6a7d902aceea548098bad5f112167ec9ddd2b15c26b5cb7bd8f190
     - generated-by: Claude Opus 5
-      lines: 237-244
-      integrity: sha256-a68275cbbf0bcb99b5e69f1247cb7b32021b1e21339bbf087c9493978d90c3bf
+      lines: 237-243
+      integrity: sha256-1ac469a319c275622a66eacd4894d1f8562a0bf0c303c3383242aa3295b18d57
     - generated-by: Claude Opus 4.8
-      lines: 245-246
-      integrity: sha256-335fd7286992f4bdae1d564a177fd2ce80b3774f57cdeb233f30c3d1c205c327
+      lines: 245
+      integrity: sha256-2d64822b333b4c0d41a5a1ef2b34a57640dc451ea7b94328586c50490438990d
     - generated-by: Claude Opus 5
       lines: 247-252
       integrity: sha256-219e8368ba9626efbd670524d7e78d491e86bcd255f7d084aa8f8dec066a2795
@@ -275,14 +269,14 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 303
       integrity: sha256-9820d40d449ad409404a20241fd620572d0c592304bfb021f6cf136f30663869
     - generated-by: Claude Opus 4.8
-      lines: 304-305
-      integrity: sha256-d83fd2b93c012a30b846d022a2436edfe17175a771a3d01af056b3d13a6886df
+      lines: 304
+      integrity: sha256-e0cd8dd7cf2d8a61c2523ea3b07cea7958ecce605d53b5da1ef22e4b3c372841
     - generated-by: Claude Opus 5
       lines: 306-310
       integrity: sha256-36705a5bd0a08f420e9767ddb5e0be6145826d35170a14c7f3f5f381ba4661aa
     - generated-by: Claude Opus 4.8
-      lines: 311-318
-      integrity: sha256-52e56980049ac7a9ba826c29180ace47bb6d973e59f313063046fc5857f8d7bf
+      lines: 312-318
+      integrity: sha256-61c094a729f6a4b5a5a886282ae54f5195fae53bcc48f4efb511f2dc0e5c3d8c
     - generated-by: Claude Opus 5
       lines: 319
       integrity: sha256-e2b9380a9775334cb5634843f77aa5dfa40a6a90f46a377800d306c82a124c4d
@@ -290,8 +284,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 320-321
       integrity: sha256-b4baa6038d8333134c46b39777fee535fd8752a858cd7dbf655fa6b9fb3bff98
     - generated-by: Claude Opus 4.8
-      lines: 322-326
-      integrity: sha256-7eb66befc620271a168ef78a016616b67029d17b636f0906d32bccddb998e33b
+      lines: 322-325
+      integrity: sha256-fe6f98b1b0976b55e452564cb65cf107b2df1d78b6a616543d6cd18a3722c3fa
     - generated-by: Claude Fable 5.1
       lines: 327
       integrity: sha256-d1e10aee6ed1f2c6550bb6f723234a2e938535a4bf1e1a5387ebf201d1d49666
@@ -347,8 +341,8 @@ docs/src/content/docs/meta/ci/recipes.mdx:
       lines: 380
       integrity: sha256-7642c7888d67d260a114d90c3553e0619f0876a3c22e4a14e44b473146688943
     - generated-by: Claude Opus 4.8
-      lines: 381-384
-      integrity: sha256-351fcbb6a5e509d57db754aaca0982554f0b376ec099df6bba73fdbfa02960aa
+      lines: 381-383
+      integrity: sha256-421631bfdbff0f21185acc324563bf5b79367f43dfed91eb0838ddbb19382204
     - generated-by: Claude Fable 5.1
       lines: 385-386
       integrity: sha256-c10ae34396175d24d43a88e58fe29f3b66ab96cdb283d8af4b6082ee4644dd81
@@ -367,3 +361,17 @@ docs/src/content/docs/meta/ci/recipes.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /related-pages
+        - /risks
+      confidence:
+        /tags: 0.9
+        /action: 0.95
+        /prerequisites: 0.85
+        /related-pages: 0.95
+        /risks: 0.85

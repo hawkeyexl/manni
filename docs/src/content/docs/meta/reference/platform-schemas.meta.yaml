@@ -27,24 +27,21 @@ docs/src/content/docs/meta/reference/platform-schemas.mdx:
       type: capability
       grader: ai
   provenance:
-    - generated-by: Claude Opus 5
-      lines: 1
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
     - generated-by: Claude Opus 5.5
       lines: 2
       integrity: sha256-740a148a2e2c9b7a6675260148af841924184d703474c62e74dd3baa931d363d
     - generated-by: Claude Opus 5
-      lines: 3-5
-      integrity: sha256-cc560bc937d7665cb16529c80d82ea8d4642fe38b3f6cb05cc4603da8434e025
+      lines: 4-5
+      integrity: sha256-028216bae6d878611b7eb9e045df2fc3c2d3dd30f9bff011a21e8030f17ec913
     - generated-by: Claude Fable 5.1
       lines: 6
       integrity: sha256-82a8872eef40a995b1c0299c190c7a2cdd938041448379a14ad329700755f556
     - generated-by: Claude Opus 5
-      lines: 7-20
-      integrity: sha256-bb4cb082acc60926139f68d81097d716acbd54aead263c702f1169f60b2ca02c
+      lines: 7-19
+      integrity: sha256-df3c4ba9b75af7929eaa42d3f5a819f205e5ffdd2eca82e73983496280933bc9
     - generated-by: Claude Opus 5.5
-      lines: 21-34
-      integrity: sha256-8f1a5509000bb0aebb1f444a606571776d1b603501733424c6ebd7468446bc4c
+      lines: 21-33
+      integrity: sha256-b2115231cbcff4e734281cc4891c3e3619c912a50d1b86f54030b6c097bbb08a
     - generated-by: Claude Opus 5
       lines: 35-39
       integrity: sha256-ff5b48d200e5a830e9c4376fe286b2aa0d81dac9b5d0365137f3f35293d5e5e2
@@ -52,8 +49,8 @@ docs/src/content/docs/meta/reference/platform-schemas.mdx:
       lines: 40
       integrity: sha256-bba9b3e906947df800909a42207ed3369f20bcf2ff549daf5c6de8c91239c761
     - generated-by: Claude Opus 5
-      lines: 41-45
-      integrity: sha256-f1a1f9649631e18c9244662d0c738152a17ed43f83cd23cf7bf72c5fae67ead6
+      lines: 42-45
+      integrity: sha256-a229d3704e749781489eddb65eac14ffc48e045b07f827ecc92180afe7756a5f
     - generated-by: Claude Fable 5.1
       lines: 46
       integrity: sha256-3bce0c083252829110fe0c8942d5094a1efd6b01b9b7d22051ace04487289f10
@@ -64,38 +61,38 @@ docs/src/content/docs/meta/reference/platform-schemas.mdx:
       lines: 68
       integrity: sha256-70f2d93d7326f8bd1552cc87b137380bdb267347a55d542e4e16937beabe14de
     - generated-by: Claude Opus 5
-      lines: 69-76
-      integrity: sha256-47f2bfe492577106e80864c9caf335edbeef54a5decbe7f8ede4418577378647
+      lines: 69-75
+      integrity: sha256-702987a4fb793170e12523a8c42bbbb7ba9095d5aed89e715f907b4662d26c9b
     - generated-by: Claude Fable 5.1
       lines: 77-81
       integrity: sha256-5ef9cfa5d0a0e0c81c12a2db06041e6345cc6b2e7405a5dbca2567af2625ebb9
     - generated-by: Claude Opus 5
-      lines: 82-89
-      integrity: sha256-553bb00168c50496828b2e53d92ad58a0c79457e2318162c63a49646e12cbb25
+      lines: 82-88
+      integrity: sha256-e369cdbcbd95065f2ca09adc2400ebfa674195a1eeffcdc2e081f3db8adb10a4
     - generated-by: Claude Fable 5.1
       lines: 90-97
       integrity: sha256-5fc8eec8179d2da1ba6bcc6fbaa21eb5409c1636d931fa5f10683fb973ba0f18
     - generated-by: Claude Opus 5
-      lines: 98-104
-      integrity: sha256-840ced3edc23ccc4b18ad9f9b51dc4eafa8fecc9dd0ef8e1e11d26c2577633a7
+      lines: 98-103
+      integrity: sha256-dbb2fd8c7013696e10a5ddbb48217482dea78ab9c2180f8549031b7c5addab34
     - generated-by: Claude Fable 5.1
       lines: 105-113
       integrity: sha256-6f6c8db4dda8d90794f20a33ddc1e5642e53abd58fc52f89ed061fa492a99b5a
     - generated-by: Claude Opus 5
-      lines: 114-120
-      integrity: sha256-62fed08952b5ddd81587219a2cc8e70f4b283a0bee352c8aadfa180b6bdd4a37
+      lines: 114-119
+      integrity: sha256-895053408adc37ad71c115448e37c4c2e7601ec66494cf301fa41b249d73b6bc
     - generated-by: Claude Fable 5.1
       lines: 121-129
       integrity: sha256-e409983cdc835748a6d2c8826d7da24e20fa8f2295fa9f102e73184b39aedd31
     - generated-by: Claude Opus 5
-      lines: 130-137
-      integrity: sha256-7b9262091874fe5d4c304c682014f8cbc3cabedf9a79f1d43871bafda4dca9ab
+      lines: 130-136
+      integrity: sha256-6f9b56e5c24492b8294faacb420f96c9408e2e0a5299c79252e50e6fb611cf9d
     - generated-by: Claude Fable 5.1
       lines: 138-146
       integrity: sha256-b3f8b7f360e428619aa0497eeedd9e00547ee6a1731fdbd51d92ed82d4e24feb
     - generated-by: Claude Opus 5
-      lines: 147-153
-      integrity: sha256-4003d584070fd28d5c7e89d80afde5999e215e856e194c76ce7fa9723c6f54f9
+      lines: 147-152
+      integrity: sha256-c02e76e0337ce5793187ea6df6a7ebb38fa6de19a0f43fa6407b627932ccd1cd
     - generated-by: Claude Fable 5.1
       lines: 154-162
       integrity: sha256-c19a29c677723361c682e331cb3deed1c8d46d98e7cf1a25bc6b6052c1574909
@@ -105,3 +102,19 @@ docs/src/content/docs/meta/reference/platform-schemas.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-08-23
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /risks
+        - /prerequisites
+      confidence:
+        /tags: 0.85
+        /action: 0.8
+        /next-steps: 0.9
+        /related-pages: 0.85
+        /risks: 0.95
+        /prerequisites: 0.75

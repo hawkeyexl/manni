@@ -24,14 +24,14 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-5
-      integrity: sha256-64a38da714847d36cde8c0b5602f83fa411372fcb44fb10588f950a39f2b1131
+      lines: 2-5
+      integrity: sha256-abd06f1ee7c8f2b1280fe6777f3da02d1961942af6694c8bffddf8c0e9dc9ada
     - generated-by: Claude Fable 5.1
       lines: 6
       integrity: sha256-98187234fd599a414ea74124c0c0624a29211ca2ca333f71ddc631a70290af08
     - generated-by: Claude Opus 5
-      lines: 7-36
-      integrity: sha256-b16792e0378072ae838c316e51fc5f058fe65a7939ab6d108d1e078a40eb7b09
+      lines: 7-35
+      integrity: sha256-a5f92b071c602bc9506369ec726b26cf82cbe5349b69f81618068aa134f8a6f5
     - generated-by: Claude Fable 5.1
       lines: 37
       integrity: sha256-51fb911ff2f8d8c4b79329b0b7f769334602ff8949ec416b123d7702144d1639
@@ -42,8 +42,8 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
       lines: 71
       integrity: sha256-d0be05c53a379c781ce66d0065c369202d9667c377f80366a8f3656b2d6accf0
     - generated-by: Claude Opus 5
-      lines: 72-82
-      integrity: sha256-6c643f77fdf719943c5b720070a73d87c6ed36c5114f4bb2c8962a5c1e617acc
+      lines: 72-81
+      integrity: sha256-cde3476759f048d892572b0fc9ec51084297dad713b5d7f83cf3ea6a631c1f47
     - generated-by: Claude Opus 5
       lines: 93-94
       integrity: sha256-c68ed3c95a6658f9e41d2a00b3c3ae3ac496b04241a48b962b16986ab6f2ddf7
@@ -57,8 +57,8 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
       lines: 106
       integrity: sha256-10a71c7a67f38393d8fc2e3caa3f62ab398a67eacc745a12415085b2d939acc3
     - generated-by: Claude Opus 5
-      lines: 107-108
-      integrity: sha256-c86254366cd06daecd950530e18bee09d1d40993cd8d2cd5cd70c815a113810c
+      lines: 107
+      integrity: sha256-454f509177a83bd1b364fd22adba731e11fed556d3fe9802d76fbe41012ef049
     - generated-by: Claude Opus 5
       lines: 111-114
       integrity: sha256-9644c944127efeb3a98dcd5e7254ce91980b9183db3e3829a8525d795d929529
@@ -81,23 +81,26 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
       lines: 138
       integrity: sha256-d7b548b3fe3c49b3be0d8eb9be0e181e8ef9d3489d27fc5122cd361eddb8d6cf
     - generated-by: Claude Opus 5
-      lines: 141-146
-      integrity: sha256-18ce45abad79105ab1965e0d18e6b57d5b883ac3e5dcbcd3a3c4b43bae125e2a
+      lines: 141-145
+      integrity: sha256-98d01aabc10c5ad17b4e769af490d7aa290829e89d4be61d05eaa19b3e5c8e38
     - generated-by: Claude Fable 5.1
       lines: 147-155
       integrity: sha256-96bcf9dfa4914a3be0532f57d4708aee3cff834073908583be3515ceb46f31b4
     - generated-by: Claude Opus 5
-      lines: 156-169
-      integrity: sha256-703a3669a4658910eec611b9b922d6798456de791d91f552d2136aba440c06ed
+      lines: 156-168
+      integrity: sha256-14b6008cb5275ee072e822684760382b9fd17fdf3e78a51a31338da1ec5bf5f5
     - generated-by: Claude Opus 5
-      lines: 173-196
-      integrity: sha256-125daeb76ff9c5857b5333d0ead029500ed7fce221e1e82b9b9eef1e06ae1b29
+      lines: 173-174
+      integrity: sha256-277a1a065bc110613173ae81de281527f9afa1b664e1b36047bb767a7d3c5f31
+    - generated-by: Claude Opus 5
+      lines: 179-196
+      integrity: sha256-8a37a402df4b48a0b09b8bc964fccbd815e88fcec9de7adaf6290243f94bada0
     - generated-by: Claude Fable 5.1
       lines: 197
       integrity: sha256-c9cbcd26ffd8ea5d4ccceab751fbf2a79f627bc84ecd93dcaaedd80e5ed24777
     - generated-by: Claude Opus 5
-      lines: 198-202
-      integrity: sha256-8c574ac7a542c3350ce0e0ce1b0171f68ac65450253d2e985a6aaf34913b5765
+      lines: 199-202
+      integrity: sha256-8f64f771916318862bb6d22759a0848afa38dfa4d02c6ee7a52c1ba57cbfd80b
     - generated-by: Claude Opus 5.5
       lines: 203
       integrity: sha256-297c10033a1cd7dd3dfbf9b031c701d60173391d9b79330aa807fbc14bf76842
@@ -119,3 +122,19 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-08-23
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /risks
+        - /prerequisites
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /next-steps: 0.8
+        /related-pages: 0.8
+        /risks: 0.85
+        /prerequisites: 0.85

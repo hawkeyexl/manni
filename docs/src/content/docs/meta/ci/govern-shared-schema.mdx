@@ -31,7 +31,22 @@ sample-questions:
 graph:
   label: Govern a shared schema across repos
   type: task
-last-updated: 2026-09-21
+last-updated: 2026-09-27
+tags:
+  - schema-governance
+  - vendoring
+  - ci
+  - integrity-hash
+  - json-schema
+action: develop
+risks:
+  - open-world
+  - idempotent
+prerequisites:
+  - meta-get-started
+related-pages:
+  - meta-ci-recipes
+  - meta-set-up-different-schemas-per-folder
 ---
 
 import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -247,7 +262,7 @@ npx -y @hawkeyexl/manni meta validate "docs/**/*.md" -s https://schemas.example.
 {/* cite the-precedence-chain */}
 Whichever source supplies it, the schema set for each file is resolved by the
 same precedence chain. That is `--schema` → file `$schema` → config `overrides`
-→ config `schemas` → built-in default. Vendoring does not change that chain; it
+→ config `schemas`, joined to the built-in default set → the default set alone. Vendoring does not change that chain; it
 changes what one reference in it points at. For the full chain, see the [schema
 resolution reference](/manni/meta/reference/schema-resolution/).
 

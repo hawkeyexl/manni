@@ -90,8 +90,10 @@ describe("relocate: out of the pages, into a manifest per page", () => {
     expect(result.files).toEqual([
       {
         file: "docs/guide/page.md",
+        // manni:citations, in the default set, marks citations external, so
+        // the move reads as the schema's preference rather than the keys: list.
         moved: [
-          { key: "citations", to: "manifest", manifest: "meta/docs/guide/page.citations.yaml", line: 2, reason: "owned" },
+          { key: "citations", to: "manifest", manifest: "meta/docs/guide/page.citations.yaml", line: 2, reason: "preferred" },
         ],
         stayed: [],
         beyond: false,

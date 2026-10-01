@@ -14,8 +14,33 @@ docs/src/content/docs/meta/reference/glossary/schema-key.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-13
-      integrity: sha256-ada7091246104987de3e5baf9603522a79c4e2762d9bf47312d26d84bba90cff
+      lines: 2-13
+      integrity: sha256-415e9628eb9a66351f9f27d1c2cd0848410dddbe9c6431421b496a41f452d501
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
+  source-of-truth:
+    - path: src/meta/core/resolve-schema.ts
+    - path: src/meta/core/validator.ts
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /broader
+        - /scope-note
+        - /prerequisites
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /concepts: 0.85
+        /next-steps: 0.9
+        /source-of-truth: 0.95
+        /risks: 0.9
+        /broader: 0.75
+        /scope-note: 0.9
+        /prerequisites: 0.85

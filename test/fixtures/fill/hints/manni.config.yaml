@@ -1,0 +1,9 @@
+# Two collections: the guides a page's ids are offered from, and a glossary
+# whose term pages the term domain reads as the termbase.
+collections:
+  - name: guides
+    paths:
+      - "guides/*.md"
+  - name: glossary
+    paths:
+      - "glossary/*.md"

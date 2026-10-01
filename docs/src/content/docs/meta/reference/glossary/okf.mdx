@@ -32,7 +32,23 @@ sample-questions:
 graph:
   label: OKF
   type: concept
-last-updated: 2026-09-26
+last-updated: 2026-09-27
+tags:
+  - schema
+  - validation
+  - default
+  - metadata
+action: understand
+concepts:
+  - schema
+prerequisites:
+  - schema
+next-steps:
+  - meta-reference-schemas-google-okf
+risks: read-only
+broader:
+  - schema
+scope-note: In manni meta, OKF refers specifically to the v0.1 schema that anchors the default validation set and requires only the type field while treating other fields as recommended.
 ---
 
 <p>{frontmatter.definition}</p>
@@ -41,5 +57,6 @@ last-updated: 2026-09-26
 The schema's id is `google:okf:0.1`. OKF requires only `type` and treats every
 other field (`title`, `description`, `resource`, `tags`, `timestamp`) as
 recommended, tolerating unknown keys. When nothing else is configured, it
-validates your files alongside `passo-uno:seven-action:1.0`. See
+validates your files first in the default set, ahead of
+`passo-uno:seven-action:1.0` and nine manni vocabularies. See
 [the built-in OKF schema](/manni/meta/reference/schemas/google-okf/).

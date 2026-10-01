@@ -138,6 +138,7 @@ export function marksValidator(opts: {
         ttlHours: opts.config?.schemaCache?.ttlHours,
         offline: opts.offline ?? opts.config?.offline,
         pins: collectSchemaPins(opts.config),
+        registered: opts.config?.registered,
       }),
     );
 }

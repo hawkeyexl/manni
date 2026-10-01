@@ -19,8 +19,38 @@ docs/src/content/docs/meta/reference/schemas/manni-graph.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-250
-      integrity: sha256-6ea4699f31a5c8f30ddba807ed25f9dd63880e7cd131fc2ca417363abad846ef
+      lines: 2-15
+      integrity: sha256-78245ff7d6d36fb9667a867e131887963ee678bb6e813210480d6a8316c125c1
+    - generated-by: Claude Opus 5.5
+      lines: 23-24
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+    - generated-by: Claude Opus 5.5
+      lines: 30-32
+      integrity: sha256-293b1ede49d0f2a8a9525ed7ddca20f4be6896c1e0bead5d75826fb09248f73e
+    - generated-by: Claude Opus 5.5
+      lines: 37-213
+      integrity: sha256-52971010caeec4d478cf8d97f1d3407e032dc3a7ae181b8fb9c5d58a60fd8228
+    - generated-by: Claude Opus 5.5
+      lines: 226-260
+      integrity: sha256-2c6299bad720433d8a63dd7186bf93aab91520ab53df04ee4908fcca90f9bffc
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /related-pages
+        - /risks
+        - /next-steps
+      confidence:
+        /resource: 0.95
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.7
+        /related-pages: 0.85
+        /risks: 0.95
+        /next-steps: 0.85

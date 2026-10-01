@@ -19,8 +19,31 @@ docs/src/content/docs/meta/reference/schemas/manni-audience.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-170
-      integrity: sha256-2fe784f963aa6caa3d7b3f87024a50c2ecf3ec5c4e3f9148e21088acc010fa9a
+      lines: 2-14
+      integrity: sha256-1ce57fed07ed5fc395b062e3554c866399c4bf8cc26522cf6d675156bc324669
+    - generated-by: Claude Opus 5.5
+      lines: 22-23
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+    - generated-by: Claude Opus 5.5
+      lines: 29-140
+      integrity: sha256-2e546bc15d698f3003fede198817d795c2b222aa6f719352a0af1953b1134ccb
+    - generated-by: Claude Opus 5.5
+      lines: 153-182
+      integrity: sha256-65fd3e60f53a89ee19565c932fa9db02bb5391467caecd596159aef07de952e1
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /action
+        - /related-pages
+        - /prerequisites
+        - /next-steps
+      confidence:
+        /resource: 0.75
+        /action: 0.9
+        /related-pages: 0.85
+        /prerequisites: 0.85
+        /next-steps: 0.8

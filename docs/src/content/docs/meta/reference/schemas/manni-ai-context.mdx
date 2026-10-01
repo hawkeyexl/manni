@@ -19,7 +19,28 @@ sample-questions:
 graph:
   label: "manni ai-context vocabulary"
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/ai-context/1.0.0.json
+tags:
+  - schema
+  - ai-context
+  - provenance
+  - metadata
+action: remember
+prerequisites:
+  - schema
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/schemas/field-location/
+next-steps:
+  - /manni/meta/set-up/machine-authorship/
+  - /manni/meta/set-up/fill-providers/
+  - /manni/meta/set-up/external-metadata/
+related-pages:
+  - /manni/meta/reference/schemas/manni-graph/
+  - /manni/meta/reference/schemas/manni-evals/
+  - /manni/meta/reference/schemas/manni-artifact-evals/
+  - /manni/meta/reference/schemas/manni-stewardship/
+risks: read-only
 ---
 
 **Built-in id:** `manni:ai-context:1.0.0`
@@ -36,15 +57,19 @@ models write prose or metadata in your docs, or read them to act.
 
 ## Use it
 
-Name the id in `manni.config.yaml`. The vocabularies are not in the default
-set, so a run checks ai-context only where the config names it. It stacks with
-[core](/manni/meta/reference/schemas/manni-core/).
+AI context is in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it on every page with no config line. A config's own `schemas` add
+to the default set. An override replaces the set, so an entry that should keep
+AI context sets `defaults: true`:
 
 ```yaml
 meta:
-  schemas:
-    - manni:core:1.0.0
-    - manni:ai-context:1.0.0
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/guide.json
 ```
 
 ## Fields
@@ -203,12 +228,20 @@ still passes it.
 `provenance` is the same in both. `manni meta derive` writes a commit
 trailer's name there as git records it, such as `Claude Opus 5.5`.
 
-List both ids to adopt it:
+`strict: true` stacks it right after the vocabulary, with every other
+default's overlay beside its own base:
+
+```yaml
+meta:
+  strict: true
+```
+
+To adopt this overlay alone, list its id. The default set already carries the
+vocabulary:
 
 ```yaml
 meta:
   schemas:
-    - manni:ai-context:1.0.0
     - manni:ai-context-strict:1.0.0
 ```
 

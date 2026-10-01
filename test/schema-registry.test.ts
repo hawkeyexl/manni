@@ -108,12 +108,12 @@ describe("schema registry", () => {
     expect((schema as { required?: string[] }).required).toEqual(["type"]);
   });
 
-  it("errors on an unknown built-in id, listing available ones", async () => {
+  it("errors on an unknown built-in id, pointing at manni meta schemas", async () => {
     await expect(loadSchema("google:nope:9.9")).rejects.toBeInstanceOf(
       DocmetaError,
     );
     await expect(loadSchema("google:nope:9.9")).rejects.toThrow(
-      /google:okf:0\.1/,
+      'Unknown schema "google:nope:9.9". manni meta schemas lists the built-in ids. Registered by meta.register: none.',
     );
   });
 

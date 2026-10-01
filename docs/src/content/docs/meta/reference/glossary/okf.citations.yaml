@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/glossary/okf.mdx:
   citations:
     - id: okf-requires-only-type
       claim:
-        integrity: sha256-2bd89379aefdd0618daa7d6899bbb8f04fd179cf22afe0d9350174632b03a667
+        integrity: sha256-748c04529ec32dda10865b5c4c33c2230b1a8b9a6af08fb021a0d9db5cca0552
       source:
         file: src/meta/schemas/okf/0.1.json
         lines: 3-38

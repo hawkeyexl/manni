@@ -811,11 +811,20 @@ describe("schemaTrustRoot", () => {
  */
 describe("the repository's own manni.config.yaml", () => {
   const repoRoot = resolve(here, "..");
-  /** The vocabularies every docs page is held to, each beside its strict overlay. */
-  const SITE_VOCABULARIES = [
-    "core", "audience", "structure", "stewardship", "lifecycle",
-    "ai-context", "evals", "graph", "citations",
-  ].flatMap((family) => [`manni:${family}:1.0.0`, `manni:${family}-strict:1.0.0`]);
+  /**
+   * The default set with `strict: true` (proposal 0070): OKF and Seven-Action,
+   * which have no strict overlay, then each manni default right before its
+   * strict overlay. Spelled out rather than derived from DEFAULT_SCHEMAS, so a
+   * change to the defaults shows up here as a change to what the site is held to.
+   */
+  const STRICT_DEFAULTS = [
+    "google:okf:0.1",
+    "passo-uno:seven-action:1.0",
+    ...[
+      "core", "audience", "structure", "stewardship", "lifecycle",
+      "ai-context", "evals", "graph", "citations",
+    ].flatMap((family) => [`manni:${family}:1.0.0`, `manni:${family}-strict:1.0.0`]),
+  ];
 
   it("is what discovery finds from the repo root, and names a schema that is there", async () => {
     const loaded = await loadConfig(undefined, repoRoot);
@@ -859,6 +868,15 @@ describe("the repository's own manni.config.yaml", () => {
     // `test/` against the docs frontmatter contract.
     const config = (await loadConfig(undefined, repoRoot))?.config;
     expect(config?.schemas).toBeUndefined();
+    // Both docs overrides take the defaults and close them (0070), which is
+    // what replaced the two hand-copied vocabulary lists the overrides once
+    // carried. An override's `defaults` is false unless it says otherwise, so
+    // dropping either key would silently shrink what the site is held to.
+    expect(config?.overrides).toHaveLength(2);
+    for (const ov of config?.overrides ?? []) {
+      expect(ov.defaults).toBe(true);
+      expect(ov.strict).toBe(true);
+    }
 
     expect(
       resolveSchemaSet({
@@ -869,15 +887,15 @@ describe("the repository's own manni.config.yaml", () => {
         // this per file with `memberOf`.
         memberOf: ["site"],
       }),
-      // The house rule (title + description, neither of which Starlight itself
-      // requires), the platform contract the site runs on, the page's open
-      // TGDP type, and every manni vocabulary the site dogfoods, each with its
-      // strict overlay.
+      // The defaults, each with its strict overlay, then the house rule
+      // (title + description, neither of which Starlight itself requires), the
+      // platform contract the site runs on, and the page's open TGDP type.
+      // `strict` leaves TGDP open: it is not a default.
     ).toEqual([
+      ...STRICT_DEFAULTS,
       "./docs/doc-frontmatter.schema.json",
       "astro:starlight:0.41",
       "tgdp:templates:1.1",
-      ...SITE_VOCABULARIES,
     ]);
     // A glossary page takes the terminology vocabulary instead of a TGDP
     // type, because it keeps `type: term` for manni term. The first match
@@ -889,11 +907,11 @@ describe("the repository's own manni.config.yaml", () => {
         memberOf: ["site"],
       }),
     ).toEqual([
+      ...STRICT_DEFAULTS,
       "./docs/doc-frontmatter.schema.json",
       "astro:starlight:0.41",
       "manni:terminology:1.0.0",
       "manni:terminology-strict:1.0.0",
-      ...SITE_VOCABULARIES,
     ]);
     // The glossary's index is not a term page. It declares a TGDP type, and
     // the glossary's glob leaves it out, so it takes the site's set.
@@ -904,10 +922,10 @@ describe("the repository's own manni.config.yaml", () => {
         memberOf: ["site"],
       }),
     ).toEqual([
+      ...STRICT_DEFAULTS,
       "./docs/doc-frontmatter.schema.json",
       "astro:starlight:0.41",
       "tgdp:templates:1.1",
-      ...SITE_VOCABULARIES,
     ]);
     // A file outside the collection is a member of nothing, so the override
     // cannot reach it and DEFAULT_SCHEMAS stands.
@@ -984,8 +1002,9 @@ describe("overrides[].files accepts a list of globs", () => {
         "agentskills:skill:1.0",
       ]);
     }
+    // The listed OKF joins the defaults (0070), where it already is.
     expect(resolveSchemaSet({ filePath: "docs/guide.md", config: cfg })).toEqual([
-      "google:okf:0.1",
+      ...DEFAULT_SCHEMAS,
     ]);
   });
 

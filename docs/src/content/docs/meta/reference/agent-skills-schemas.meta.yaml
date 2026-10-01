@@ -17,44 +17,32 @@ docs/src/content/docs/meta/reference/agent-skills-schemas.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-9
-      integrity: sha256-97c6e766e648ad67d2112595e37be512761db78f6871c7afa52b3f9707884f9f
+      lines: 2-9
+      integrity: sha256-e706923edc8ef7fdcd19148994326f675d5bac128efc202d7bac06b308004faa
     - generated-by: Claude Opus 5.5
       lines: 10-11
       integrity: sha256-2599a2baab5dffe8a8c5d92bebe066fe7965dbd45503ad4c5697d07e2d2a2bd6
     - generated-by: Claude Opus 5
-      lines: 12-17
-      integrity: sha256-b3417fb84a3297335d7baff6efd1a497cbc39a88446c9405cda4c50dcf94ef5f
+      lines: 13-17
+      integrity: sha256-f2e9e3ee2516c0ee211e09d9b63eec95b9a2de140cd2d2a49087ef9a0ecbcf0b
     - generated-by: Claude Fable 5.1
       lines: 18-19
       integrity: sha256-6be2a8757095124edc835f76bae21bb14ab41a7b4163510c1061341b05f18d72
     - generated-by: Claude Opus 5
-      lines: 20-23
-      integrity: sha256-eda7725711998095bc02d1ff142d0bcdeb6e322dd859b907363ae3367dad35de
+      lines: 20-22
+      integrity: sha256-179488e4f1fdffda8654a4efc6be062711df7fbf1bc61a3949a8487968e8569d
     - generated-by: Claude Opus 5.5
       lines: 24-28
       integrity: sha256-f32e8b69f86e100ecf3371f9d26246557aea245a29a1b2da7f8f94f9735e9342
     - generated-by: Claude Opus 5
-      lines: 29-37
-      integrity: sha256-0e898ff61730010b990245b242591d29c63849c4e758152ef4344cf17ec299b0
+      lines: 30-36
+      integrity: sha256-46971310e7d4f750d30b45cdc42121dc03f431f32a34d859289c22ef0b2b71e1
     - generated-by: Claude Opus 5.5
-      lines: 38
-      integrity: sha256-8e89b78b05eb34002f6851273172d1cc3b6640a4138e985dca376d5772597256
+      lines: 38-46
+      integrity: sha256-1bd6d80b6c652a234363708b3445ac90e3ea708faae02f284831d6777bd99e13
     - generated-by: Claude Opus 5
-      lines: 39
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5.5
-      lines: 40-41
-      integrity: sha256-2f82cf65ce9c467346c640b0a0c226a7b341903ae9dba1c7960209e65aaea0f2
-    - generated-by: Claude Opus 5
-      lines: 42
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5.5
-      lines: 43-46
-      integrity: sha256-b76245d6b7749bc724675a353bc6c5ba40810f4cfb20c375c25df88c3824a2a0
-    - generated-by: Claude Opus 5
-      lines: 47-55
-      integrity: sha256-0b46691c7236663769f72773de9ceaa6a92c2825be7c40ee2ece529246c1a293
+      lines: 48-55
+      integrity: sha256-38aaf74303d0a48f57a21bf4693b8cced9fa457b71dbc6cd5c8b8ad4648de747
     - generated-by: Claude Fable 5.1
       lines: 56
       integrity: sha256-af4c90a40ba302906980a43ccae64769298486515cd0fd0001af6b68ac3bef9d
@@ -67,3 +55,25 @@ docs/src/content/docs/meta/reference/agent-skills-schemas.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-08-25
+  source-of-truth:
+    - path: src/meta/schemas/agent-skills/1.0.json
+    - path: src/meta/schemas/claude-skill/2.1.json
+    - path: src/meta/schemas/claude-subagent/2.1.json
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /source-of-truth
+        - /risks
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.75
+        /next-steps: 0.9
+        /related-pages: 0.95
+        /source-of-truth: 0.9
+        /risks: 0.95

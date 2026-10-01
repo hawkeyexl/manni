@@ -29,7 +29,27 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-10-01
+tags:
+  - cli
+  - command-reference
+  - query
+  - sql
+  - metadata
+  - fill
+  - inference
+action: remember
+prerequisites:
+  - /manni/meta/get-started/
+  - /manni/meta/reference/configuration/
+next-steps:
+  - /manni/meta/reference/query/
+  - /manni/meta/reference/configuration/
+related-pages:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/formats/
+  - /manni/meta/reference/output-and-exit-codes/
+  - /manni/meta/reference/configuration/
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
@@ -825,19 +845,55 @@ and that no manifest owns is written to the page, with one warning on stderr
 naming [`relocate`](#meta-relocate). On a terminal, `fill` first offers to give
 it a manifest, before its first model request.
 
+### The values `fill` offers
+
+Some fields name a glossary term or another page. For those, `fill` shows the
+model the values that fit, beside the field's shape.
+
+| Kind | Fields | What the model is offered |
+|---|---|---|
+| Glossary terms | `concepts`, `graph.concepts`, `broader`, `narrower`, `related-terms`, `see` | The term labels [`manni term check`](/manni/term/reference/cli/#term-check) reads, as the only strings allowed. |
+| Page ids | `related-pages`, `next-steps`, `prerequisites`, `replaced-by`, `supersedes` | The `id` of every other page in the page's collections, beside a free string. |
+
+A term value is checked against the termbase, ignoring case. A `concepts`
+value must be a term's label, and a term relation may also name a term's id.
+A value that names no term fails its check. Its retry names the problem, as
+`/concepts/1: must be a glossary term label`, so a value `fill` writes passes
+`term check`.
+
+A page value is never refused for not being an id. A URL, or a line naming a
+capability, stays valid, as the schema allows. A page in no collection is
+offered no ids, and a page without an `id` is never offered.
+
+An empty list is not offered, and neither is a list of more than 500 values.
+The field is then asked for with no values attached. The term labels come
+from the term domain, so the `manni` bin offers them and the `docmeta` bin
+does not. When the termbase cannot be read, `fill` offers no labels and says
+why on stderr, then carries on:
+
+```
+manni: The termbase could not be read, so fill offers no glossary labels: <reason>
+```
+
 ### The confidence gate
 
 Every proposal carries a self-reported confidence between 0 and 1. On its own
 that is a weak signal. It is therefore the **last** of four gates. Three
 mechanical checks run first, and a high confidence cannot override any of them:
 
-1. **The value must satisfy the property's own subschema.** `fill` builds the
-   response schema out of your schema's property definitions. A `timestamp` that
-   is not a valid `date-time` is rejected before it is ever scored. When several
-   schemas in the set define the same property, every one of their rules
-   applies. `-s` order does not change what the model may propose.
+1. **The value must satisfy the property's own subschema.** The model is shown
+   each property's type and shape. Every rule of every schema in the set then
+   checks each value on its own. A `timestamp` that is not a valid `date-time`
+   is rejected before it is ever scored. A value of the wrong JSON type is
+   converted where it can be, so `"2"` is written as `2` for a number and
+   `"api"` as `["api"]` for a list. A value that fails is asked for once more,
+   alone, with the rule it broke. If it fails again, it is skipped as
+   `schema-mismatch`, and the page's other proposals stand. A model may answer
+   `null` for a field it cannot fill, and that reads as `no-proposal`. `-s`
+   order does not change what the model may propose.
 2. **The property must be one manni meta asked about.** The model cannot introduce
-   keys your schema does not define.
+   keys your schema does not define. A response in any other shape fails that
+   file with `Response failed schema validation`.
 3. **The document must still validate afterwards.** Any value that would leave
    the page failing its own schema is reverted and reported.
 
@@ -1035,7 +1091,10 @@ fields](/manni/meta/reference/configuration/#the-derivable-fields).
 `provenance` is judged range by range. A range whose pinned text changed, a
 range git attributes to another machine, and machine lines with no entry are
 each re-derived and written. A range that only moved gets its `lines`
-rewritten. A range nothing contradicts is kept. Where an
+rewritten. A range that starts or ends on a blank line is rewritten without
+those blank lines, and dropped when it holds nothing else. A range nothing
+contradicts is kept. A range written replaces every entry that lies inside
+it, and trims an entry it only partly overlaps to the lines outside it. Where an
 [external-metadata](/manni/meta/reference/configuration/#external-metadata)
 manifest owns `provenance`, the entries go into that manifest and the page is
 not touched. A format whose metadata is not a fenced block, such as HTML, XML
@@ -1336,8 +1395,9 @@ manni meta relocate -f json --dry-run            # the scripting form
 ## `meta schemas`
 
 {/* cite schemas-takes-no-paths */}
-List the built-in schemas and the supported input formats. On its own it takes
-no positional arguments and reads no files. Its [`infer`](#meta-schemas-infer)
+List the built-in schemas, the schemas the config registers, and the
+supported input formats. On its own it takes no positional arguments and
+reads no documents. Its [`infer`](#meta-schemas-infer)
 subcommand reads your documents; its [`vendor`](#meta-schemas-vendor) subcommand is
 the one that reaches the network and writes to the repository.
 
@@ -1353,12 +1413,20 @@ manni meta schemas [options]
 
 {/* cite schemas-pretty-lists-builtins-and-formats */}
 {/* cite schemas-json-shape */}
-In `pretty` format, `schemas` lists each built-in schema by id and title. It
-then lists each input format with its extensions and whether
-[`fill`](#meta-fill) can write to it. In `json` format it prints
-`{ builtins, formats }`, where `builtins` is an array of
-`{ id, title, description }` and `formats` is an array of
-`{ name, extensions, writable }`.
+In `pretty` format, `schemas` lists each built-in schema by id and title.
+When the discovered config's
+[`meta.register`](/manni/meta/reference/configuration/#register) names any
+schemas, a **Registered schemas** section follows, with each id and the file
+it came from. It then lists each input format with its extensions
+and whether [`fill`](#meta-fill) can write to it. In `json` format it prints
+`{ builtins, registered, formats }`. `builtins` is an array of
+`{ id, title, description }`, `registered` is an array of `{ id, file }`,
+and `formats` is an array of `{ name, extensions, writable }`. `registered`
+is empty when the config registers nothing.
+
+A config that fails to load does not stop the listing. `schemas` prints the
+config's error on stderr, adds `Registered schemas are not listed.`, and
+exits `0` with the built-ins and formats.
 
 ```sh
 manni meta schemas
@@ -1810,7 +1878,7 @@ with `No files matched` (exit 2), rather than reporting a green zero.
 {/* step {"description":"Nested fields: dot-notation, JSON Pointer (/author/email), and array index all resolve in one comma-separated request.","runShell":{"command":"manni meta get author.name,/author/email,tags.0 test/fixtures/nested/doc.md -f json","exitCodes":[0],"stdio":"/\"Jane\"[\\s\\S]*\"jane@example.com\"[\\s\\S]*\"intro\"/"}} */}
 {/* step {"description":"Requesting a parent key returns the whole nested object.","runShell":{"command":"manni meta get author test/fixtures/nested/doc.md -f json","exitCodes":[0],"stdio":"/\"name\": \"Jane\"[\\s\\S]*\"email\": \"jane@example.com\"/"}} */}
 {/* step {"description":"An explicitly named file is validated whether or not .gitignore covers it, and --no-gitignore is accepted on validate.","runShell":{"command":"manni meta validate test/fixtures/valid.md --no-gitignore -s google:okf:0.1","exitCodes":[0],"stdio":"1 passed"}} */}
-{/* step {"description":"schemas -f json prints { builtins, formats }.","runShell":{"command":"manni meta schemas -f json","exitCodes":[0],"stdio":"/\"builtins\"[\\s\\S]*\"formats\"/"}} */}
+{/* step {"description":"schemas -f json prints { builtins, registered, formats }.","runShell":{"command":"manni meta schemas -f json","exitCodes":[0],"stdio":"/\"builtins\"[\\s\\S]*\"registered\"[\\s\\S]*\"formats\"/"}} */}
 {/* step {"description":"schemas reports per-format writability, which fill depends on.","runShell":{"command":"manni meta schemas -f json","exitCodes":[0],"stdio":"/\"name\": \"markdown\"[\\s\\S]*\"writable\": true/"}} */}
 {/* step {"description":"schemas rejects a validate-only format rather than silently printing pretty (exit 2).","runShell":{"command":"manni meta schemas -f github","exitCodes":[2],"stdio":"Unknown --format"}} */}
 {/* step {"description":"DDL type bridge (0028): a declared format type previews as the whole property the schema will gain — type, format, required. --dry-run keeps the step read-only.","runShell":{"command":"manni meta query --dry-run -c test/fixtures/ddl-bridge/manni.config.yaml \"ALTER TABLE docs ADD COLUMN reviewed_on DATE NOT NULL DEFAULT '2026-08-26'\" test/fixtures/ddl-bridge/docs","exitCodes":[0],"stdio":"+ reviewed_on (string, format date, required)"}} */}

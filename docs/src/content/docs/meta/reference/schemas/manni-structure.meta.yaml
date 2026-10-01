@@ -19,8 +19,35 @@ docs/src/content/docs/meta/reference/schemas/manni-structure.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-184
-      integrity: sha256-551ed0076c22d1d7586172c477f053d74b7ef9d3c2fa1662bb3151a08c145627
+      lines: 2-15
+      integrity: sha256-5fa2c5325b81c4f44006c9c54cb39e28eb231e9fb96bbd940c74f5fb2ccaa907
+    - generated-by: Claude Opus 5.5
+      lines: 23-24
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+    - generated-by: Claude Opus 5.5
+      lines: 30-156
+      integrity: sha256-9b00b7578983ebf6824a93bd68f74611ae7979f299b5c88d618e1823bc75ce93
+    - generated-by: Claude Opus 5.5
+      lines: 169-196
+      integrity: sha256-85bfd34096b5beeffe8b6511563256b19317ad6483cc8ffcb23e92c478b65fb3
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /risks
+        - /prerequisites
+      confidence:
+        /resource: 0.95
+        /tags: 0.8
+        /action: 0.9
+        /next-steps: 0.75
+        /related-pages: 0.75
+        /risks: 0.95
+        /prerequisites: 0.85

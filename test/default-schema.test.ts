@@ -1,14 +1,13 @@
 /**
  * Behavior of the six house vocabularies — the intent-scoped split of the
  * manni frontmatter vocabulary proposed in docs/proposals/0023 — plus the
- * default-set behavior the nine family ids are intended to join.
+ * the default set the nine family ids joined under proposal 0070.
  *
  * The vocabularies are registered built-ins at 1.0.0, so every case here
  * validates through the built-in ids (`manni:core:1.0.0` and its siblings).
  * The drafts under docs/proposals/0023/schemas stay as the review record.
- * Default-set membership is `describe.skip`ped at the bottom: registering the
- * vocabularies leaves `DEFAULT_SCHEMAS` unchanged, and joining it is a
- * separate decision.
+ * Default-set membership is pinned at the bottom: proposal 0070 put the
+ * nine family ids into `DEFAULT_SCHEMAS`, after OKF and Seven-Action.
  *
  * Design rules pinned here rather than in prose:
  *
@@ -781,22 +780,21 @@ describe("the composability law on claimed keys", () => {
 });
 
 /**
- * Default-set membership. The nine family ids are registered, but
- * `DEFAULT_SCHEMAS` does not include them, so this block stays skipped. The
- * expectations inside describe the state in which they join the default set.
+ * Default-set membership (proposal 0070). Terminology, artifact-evals and
+ * every `-strict` overlay stay opt-in.
  */
-describe.skip("the default set (flips when the family joins it)", () => {
+describe("the default set (proposal 0070)", () => {
   const CORE_ID = ref("core");
   const FAMILY_IDS = [
     CORE_ID,
-    ref("stewardship"),
     ref("audience"),
-    ref("lifecycle"),
     ref("structure"),
+    ref("stewardship"),
+    ref("lifecycle"),
     ref("ai-context"),
     ref("evals"),
     ref("graph"),
-    ref("artifact-evals"),
+    ref("citations"),
   ];
 
   it("appends the whole family after the two existing members", async () => {
@@ -826,7 +824,7 @@ describe.skip("the default set (flips when the family joins it)", () => {
   });
 
   it("validates the companion namespaces on a bare run", async () => {
-    // With evals, graph, and artifact-evals in the default set, a bare run
+    // With evals and graph in the default set, a bare run
     // validates these namespaces rather than passing them through; this
     // fixture carries valid shapes and must stay green.
     const r = await check("companion-namespaces.md", []);

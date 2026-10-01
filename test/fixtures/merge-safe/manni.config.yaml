@@ -1,12 +1,15 @@
 # Proposal 0069: a derive block with no fields manages the merge-safe fields,
 # and on each page only the ones its schemas claim. The stewardship pages
 # claim owner, created and last-updated; the plain page claims none of them.
+# defaults: false keeps the default set (which claims all four) off the plain
+# page, so the two pages differ in exactly the schemas the test is about.
 collections:
   - name: site
     paths:
       - "docs/**/*.md"
 
 meta:
+  defaults: false
   schemas:
     - ./permissive.schema.json
   overrides:

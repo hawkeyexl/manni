@@ -18,8 +18,24 @@ docs/src/content/docs/meta/reference/schemas/ogp-article.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-119
-      integrity: sha256-b1a7a68dfe96d0e11bb3b4de8d31e6573cf724084e6ddbb0d4af99ac94242266
+      lines: 2-119
+      integrity: sha256-783cab20e1952ff3abae3c346c3967c39d37ee27a30e70c0ea74d684509c2bc6
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /action
+        - /next-steps
+        - /related-pages
+        - /risks
+        - /prerequisites
+      confidence:
+        /resource: 0.95
+        /action: 0.8
+        /next-steps: 0.75
+        /related-pages: 0.85
+        /risks: 0.7
+        /prerequisites: 0.75

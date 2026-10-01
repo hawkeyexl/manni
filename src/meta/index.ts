@@ -93,6 +93,8 @@ export {
 export type {
   FetchedSchema,
   LoadSchemaOptions,
+  RegisteredSchema,
+  RegisteredSchemas,
   SchemaPin,
 } from "./core/schema-registry.js";
 export { integrityOf, isIntegrity, INTEGRITY_SHAPE } from "./core/integrity.js";

@@ -36,6 +36,22 @@ graph:
   label: Stamp stewardship fields from evidence
   type: task
 last-updated: 2026-09-27
+tags:
+  - automation
+  - git
+  - codeowners
+  - stewardship
+  - ci-cd
+action: develop
+related-pages:
+  - /manni/meta/reference/configuration/#derive
+  - /manni/meta/reference/cli/#meta-derive
+  - /manni/meta/reference/schemas/manni-stewardship/
+  - /manni/meta/set-up/new-required-field/
+  - /manni/meta/set-up/machine-authorship/
+prerequisites:
+  - meta-get-started
+  - meta-set-up-config
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -169,12 +185,29 @@ A `derive:` block with no `fields` manages the four merge-safe fields. Each
 is managed only on a page whose schemas claim it as a top-level property.
 A page without the [stewardship
 vocabulary](/manni/meta/reference/schemas/manni-stewardship/) is never held
-to an owner.
+to an owner. Stewardship and ai-context are in the built-in default set, so a
+page the defaults judge manages all four.
+
+{/* cite derive-collections-scopes-derive */}
+That reach includes test fixtures and drafts validated from the same root.
+`collections` keeps derive on the pages it was set up for. A file in none of
+the named collections is neither stamped nor compared:
 
 ```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+
 meta:
   derive:
+    collections: [site]
     sources: [git, codeowners]
+```
+
+A name no collection declares is refused, exit 2:
+
+```text
+manni: manni.config.yaml: meta.derive.collections names "sit", which no collection declares.
 ```
 
 Two rules keep a stamp written on a branch current after the squash.
@@ -257,7 +290,7 @@ to](#see-what-a-page-resolves-to) has the rest of the read surface.
 
 {/* cite validate-holds-every-page-to-managed-field */}
 {/* cite stale-finding-carries-derived-stale-schema */}
-Once a field is managed, `validate` holds every page to it:
+Once a field is managed, `validate` holds every page derive covers to it:
 
 ```
 $ manni meta validate

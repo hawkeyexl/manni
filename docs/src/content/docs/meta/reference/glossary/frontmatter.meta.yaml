@@ -14,8 +14,37 @@ docs/src/content/docs/meta/reference/glossary/frontmatter.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-17
-      integrity: sha256-4af312a41deb09550666947c02a2ef99b807f4519c43ad5e22e866b02d871966
+      lines: 2-17
+      integrity: sha256-9432a198830d968f0806fdc4c16c45f58d2c92e67e1e8314158834c094719e6b
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
+  source-of-truth:
+    - path: src/meta/extractors/frontmatter.ts
+      kind: implementation
+    - path: src/meta/types.ts
+      kind: implementation
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /alt-labels
+        - /broader
+        - /scope-note
+        - /prerequisites
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /concepts: 0.9
+        /next-steps: 0.95
+        /source-of-truth: 0.95
+        /risks: 0.95
+        /alt-labels: 0.85
+        /broader: 0.9
+        /scope-note: 0.85
+        /prerequisites: 0.95

@@ -18,8 +18,26 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-135
-      integrity: sha256-172b989c98cd4d839307145b06e04fa8314bd06ad438d2a5ac6b69f6124b4846
+      lines: 2-135
+      integrity: sha256-bbb8f1c9f23d45a36a6c02cc13d770d0880629fecea497781e4c5c3043903017
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.85
+        /next-steps: 0.8
+        /related-pages: 0.85
+        /risks: 0.95

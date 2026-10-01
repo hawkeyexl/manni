@@ -32,7 +32,22 @@ sample-questions:
 graph:
   label: Retrofit manni meta into an existing docs repo
   type: learning
-last-updated: 2026-09-20
+last-updated: 2026-09-27
+tags:
+  - retrofit
+  - adoption
+  - baseline
+  - ratchet
+  - ci-integration
+  - validation
+  - backfill
+action: develop
+prerequisites:
+  - meta-get-started
+related-pages:
+  - /manni/meta/set-up/new-required-field/
+  - /manni/meta/set-up/fill-providers/
+  - /manni/meta/reference/cli/
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -81,7 +96,7 @@ It reports; you decide. There is deliberately no flag that turns a coverage perc
 ## Step 2: Start with a permissive schema
 
 {/* cite okf-requires-only-type */}
-The built-in [`google:okf:0.1`](/manni/meta/schemas/) schema requires a single field, `type`. That is lenient, but on a repo that has never enforced metadata, even one required field may fail a lot of pages. For a true day-one-green adoption, start from a schema that **requires nothing** and tighten from there.
+The built-in [`google:okf:0.1`](/manni/meta/schemas/) schema requires a single field, `type`. The built-in default set adds `title` and `description`, which [`manni:core:1.0.0`](/manni/meta/reference/schemas/manni-core/) requires. That is lenient, but on a repo that has never enforced metadata, even one required field may fail a lot of pages. For a true day-one-green adoption, start from a schema that **requires nothing** and tighten from there.
 
 {/* cite infer-out-writes-the-draft-schema */}
 You do not have to write it by hand. `--out` turns the reading you just took into exactly that schema, with your repo's real properties in it:
@@ -111,7 +126,7 @@ This schema requires no field. It only checks format **when a field is present**
 {/* cite infer-out-refuses-a-gitignored-path */}
 The draft is a starting point, not a verdict. Read it and cut anything that is noise rather than standard. (`--out` refuses to overwrite an existing file, so your edits are safe on a re-run. It also refuses a path `.gitignore` covers, because a schema you cannot commit is missing in CI.)
 
-Point your config at it:
+Point your config at it, and turn the built-in default set off. Config `schemas` otherwise join the defaults, and those require three fields:
 
 ```yaml title="manni.config.yaml"
 collections:
@@ -120,6 +135,7 @@ collections:
       - "docs/**/*.md"
 
 meta:
+  defaults: false
   schemas:
     - ./schemas/permissive.json
 ```
@@ -203,7 +219,8 @@ collections:
     paths: ["docs/guides/**/*.md"]
 
 meta:
-  # Permissive default for the long tail.
+  # Permissive default for the long tail, without the built-in default set.
+  defaults: false
   schemas:
     - ./schemas/permissive.json
 
@@ -249,6 +266,8 @@ meta:
 
 {/* cite baseline-debt-printed-on-every-run */}
 From here the build is green, the stricter rule applies to everything anyone writes, and the summary reports the outstanding debt on every run. Raise the bar one field at a time; each promotion costs one re-record rather than a backlog sprint.
+
+The built-in default set is one more promotion of the same kind. Delete `defaults: false` and re-record, and the backlog of missing `type`, `title` and `description` values joins the baseline.
 
 <LinkCard
   title="Roll out a new required field without breaking the build"

@@ -164,6 +164,17 @@ describe("manni meta derive (built bin)", { timeout: 60_000 }, () => {
 
   it("has nothing to derive with --no-config, no --fields, and no page claiming a merge-safe field", () => {
     const { dir } = stageCorpus();
+    // --no-config judges a page by the default set, whose stewardship and
+    // ai-context vocabularies claim every merge-safe field. A page that names
+    // its own schema is judged by that alone, and this one claims none.
+    writeFile(
+      dir,
+      "docs/install.md",
+      readFileSync(join(dir, "docs/install.md"), "utf8").replace(
+        "title: Install\n",
+        "title: Install\n$schema: ../permissive.schema.json\n",
+      ),
+    );
     const r = run(["derive", "--no-config", "docs/install.md"], dir);
     expect(r.status).toBe(2);
     expect(r.stderr).toContain(
@@ -326,10 +337,24 @@ describe("manni meta derive provenance (built bin)", { timeout: 60_000 }, () => 
     return { stdout: r.stdout ?? "", stderr: r.stderr ?? "", status: r.status ?? 1 };
   }
 
-  function stage(): string {
+  /**
+   * The corpus, committed, with the agent's edit left uncommitted. `typed`
+   * gives the page the `type` and `description` the default vocabularies
+   * require, for a case that asserts `validate` exits 0; it adds two
+   * frontmatter lines, so file lines move down by two.
+   */
+  function stage(typed = false): string {
     const dir = makeTempRepo({ files: {} });
     dirs.push(dir);
     cpSync(PROVENANCE, dir, { recursive: true });
+    if (typed) {
+      const fresh = readFileSync(join(dir, "docs", "limits.md"), "utf8");
+      writeFile(
+        dir,
+        "docs/limits.md",
+        fresh.replace("title: Rate limits\n", "title: Rate limits\ntype: reference\ndescription: How many requests a token may make.\n"),
+      );
+    }
     commit(dir, "add docs", { authorDate: D1 });
     const page = readFileSync(join(dir, "docs", "limits.md"), "utf8");
     writeFile(dir, "docs/limits.md", page.replace("100 requests", "120 requests"));
@@ -337,11 +362,11 @@ describe("manni meta derive provenance (built bin)", { timeout: 60_000 }, () => 
   }
 
   it("stamps an agent's uncommitted edit from MANNI_GENERATED_BY, exit 0", () => {
-    const dir = stage();
+    const dir = stage(true);
     const r = withEnv(["derive"], dir, { MANNI_GENERATED_BY: "claude-fable-5" });
     expect(r.stderr).not.toContain("manni: docs/limits.md");
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain("docs/limits.md\n    provenance  lines 9: (unset) → claude-fable-5  (git: uncommitted)");
+    expect(r.stdout).toContain("docs/limits.md\n    provenance  lines 11: (unset) → claude-fable-5  (git: uncommitted)");
     expect(r.stdout).toContain("1 file, 1 changed, 1 range written");
     expect(readFileSync(join(dir, "docs", "limits.md"), "utf8")).toContain("generated-by: claude-fable-5");
     expect(withEnv(["validate"], dir, {}).status).toBe(0);
@@ -357,7 +382,7 @@ describe("manni meta derive provenance (built bin)", { timeout: 60_000 }, () => 
   });
 
   it("passes --check over a moved pin, as validate does, exit 0", () => {
-    const dir = stage();
+    const dir = stage(true);
     expect(withEnv(["derive", "--generated-by", "claude-fable-5"], dir, {}).status).toBe(0);
     commit(dir, "docs: raise the limit", { authorDate: D2 });
     const page = readFileSync(join(dir, "docs", "limits.md"), "utf8");

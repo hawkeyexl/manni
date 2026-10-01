@@ -26,23 +26,44 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-80
-      integrity: sha256-5f6a91394c35cccb1247d9d773f0de36edc55584874c27a36e3e76281cd61704
+      lines: 2-80
+      integrity: sha256-484d227460c373bba1d45f6ce143cd2befcadc31c1195f1a6f893f0cf42a7cac
     - generated-by: Claude Opus 5
-      lines: 82-351
-      integrity: sha256-affcd94260b57c1fec8edd97b15d5f629fffa946c0d554c46860d611c3f189f9
+      lines: 82-181
+      integrity: sha256-11ab78b0926015d1620d9148a11a372bdfb875bbbd031055dc2519b4d5578ba2
+    - generated-by: Claude Opus 5
+      lines: 185-287
+      integrity: sha256-a0873b331758988a60b81fca2c1e420816cb10528eb8b0633d7947a96e98241e
+    - generated-by: Claude Opus 5
+      lines: 292-301
+      integrity: sha256-8fb40e40a71d3ef4bf6d4a93291bd16f5cc245d1d67be286fe71d1c3b07549e2
+    - generated-by: Claude Opus 5
+      lines: 305-353
+      integrity: sha256-ee18a5c15401e092b780fe25f8edc724540e64df89775c7179f041eb2c0939ac
     - generated-by: Claude Opus 5.5
-      lines: 352
+      lines: 355
       integrity: sha256-2efa8a4c5123ac0edbdb694ff37fbeb921890b0dffdb0f7ac829acebda7ff899
     - generated-by: Claude Opus 5
-      lines: 353-401
+      lines: 356-404
       integrity: sha256-3a86bb375f779b3751f84a2f1b429b94479df076057a1f45480bcb4ecd910d2b
     - generated-by: Claude Opus 5.5
-      lines: 402
+      lines: 405
       integrity: sha256-574d8cbcb2cd30532f9e0da02b4dc01e6ca79cfe13b6ba0297d696cc7143fa9b
     - generated-by: Claude Opus 5
-      lines: 403-464
+      lines: 406-467
       integrity: sha256-896493af231f1b82b51ae6a5effd801c86d0a2235816f06d6a346fa529ce7243
   owner:
     - "@hawkeyexl"
   created: 2026-09-13
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.85
+        /related-pages: 0.8

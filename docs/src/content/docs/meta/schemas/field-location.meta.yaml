@@ -28,26 +28,47 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-458
-      integrity: sha256-10c3d96ee3c069660a7d5f2b0274a775c9ea0c5f8117f3882499ca136f4d14e8
-    - generated-by: Claude Opus 5.5
-      lines: 459-460
-      integrity: sha256-8d183a8424f932086220cc22a27b4848177b32e7949e1ac485d5f210167cfe01
+      lines: 2-60
+      integrity: sha256-ce045548be6dde00710dd34e5b969a48de55b6703df925a66a920b8326e556c7
     - generated-by: Claude Opus 5
-      lines: 461
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5.5
-      lines: 462
-      integrity: sha256-ea4674af50258051509416c5fbf1ad634f498983ed571bae39148637fafc6e3e
+      lines: 66-67
+      integrity: sha256-111e28d22ca5b54c74688ce0acda8e4e07cfff8859f0c7560fe8d09cdcefe3bc
     - generated-by: Claude Opus 5
-      lines: 463
+      lines: 69-201
+      integrity: sha256-9c2158e6cdd0ab08c588eec59f4277fe1b80cbebc3abc2cb779eb7e0cc3102f1
+    - generated-by: Claude Opus 5
+      lines: 204
+      integrity: sha256-0a69fa04a4467debd9782087c8060134a236e49ae1c7095b1f94f028ab0b249b
+    - generated-by: Claude Opus 5
+      lines: 206-461
+      integrity: sha256-a4446c4a702411084700bc44e7eea7a6ec133e86992561397d7bf6f3c8669561
+    - generated-by: Claude Opus 5.5
+      lines: 463-466
+      integrity: sha256-13b731d160a679e61bb8679c56782d401cadfb033f9cb8238b8fba44c93d58f6
+    - generated-by: Claude Opus 5
+      lines: 467
       integrity: sha256-23cca02b74f386463efa24796c7a9011b0d2c93f0c38b4d15d5d276205b59b43
     - generated-by: Claude Opus 5.5
-      lines: 464-474
+      lines: 468-478
       integrity: sha256-fad77ccfefd30c9b771f2b06fe4735fa68c6300b6b57829ab9398f38c1f8bf93
     - generated-by: Claude Opus 5
-      lines: 475-532
-      integrity: sha256-c41b9545b389e590d014f896f7ca8a34307e62a1a2a0d994b63f615dfb6f71e3
+      lines: 484-498
+      integrity: sha256-45df1d179bed465870ab26a19e55bf1ad51bc56ed2d116ebfce1137a556ec2a4
+    - generated-by: Claude Opus 5
+      lines: 503-543
+      integrity: sha256-f380e7ebefea68d20900623273912f571f40077c636611ec57c5ce998bbc3f06
   owner:
     - "@hawkeyexl"
   created: 2026-09-14
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /prerequisites: 0.85
+        /related-pages: 0.95

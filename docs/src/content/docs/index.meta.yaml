@@ -14,26 +14,26 @@ docs/src/content/docs/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 4.8
-      lines: 1-3
-      integrity: sha256-cbcd03d63404069710d022fd1815ab40b783aaf049582f8798aeb33643db35d9
+      lines: 2
+      integrity: sha256-98a3ce9df62ee21de84a2854a832118a0c53a9e8c6efc028860b980a59f2eaf3
     - generated-by: Claude Fable 5.1
       lines: 4-9
       integrity: sha256-69489caf1c51e5ca8f24b6809447e56555cb1025e0595fd14d3902bbd04ba80c
     - generated-by: Claude Opus 4.8
-      lines: 10-11
-      integrity: sha256-768566e692441539cddad8fbbb668c32f1524df61dfad8d9c019b15ce007221b
+      lines: 11
+      integrity: sha256-8af8182ab1e8f509cf81961103ae39b0aa62a55a70dfd31bb9437408df4b7c20
     - generated-by: Claude Fable 5.1
       lines: 12-13
       integrity: sha256-e21a6630c1b332975cc956f0d26403c6d21a3a7fdd98687b088b558f39e55267
     - generated-by: Claude Opus 4.8
-      lines: 14-15
-      integrity: sha256-47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d
+      lines: 14
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Fable 5.1
       lines: 16
       integrity: sha256-5bbc525e36eac0aa434ffdf2fec61c00ad99e3af0429f7830e9eac31ca8d3edf
     - generated-by: Claude Opus 4.8
-      lines: 17-19
-      integrity: sha256-92a9a4eaaec7da4235883a7a39059c08957dff4ab413a435d569ac4fe449e81b
+      lines: 18-19
+      integrity: sha256-5abb11f8dea9cd105ccd491f0990d136b7478fae1302eacff7c41f93da48ea21
     - generated-by: Claude Fable 5.1
       lines: 20-22
       integrity: sha256-544040f9bd917c3629f5620da55090624e993e19c53ba67b45c0ecfbd86a98c7
@@ -47,8 +47,8 @@ docs/src/content/docs/index.mdx:
       lines: 39-43
       integrity: sha256-be91386a716c40a4d984e7246374375922e2065d09b17bb228d4d12f7d6f1c7a
     - generated-by: Claude Opus 4.8
-      lines: 44-45
-      integrity: sha256-00a92e3d405ab87a1143793d295c7024a1b4c176ec9bc7c834b15cc0e44bf911
+      lines: 44
+      integrity: sha256-582ebf3ded795155d25105b5debae773505eca9fc278cf38d08fe470dff25f81
     - generated-by: Claude Fable 5.1
       lines: 46-47
       integrity: sha256-7650b4654a5bdd38f43e3d2ab98a141867547e7f340fae4f510c2a11016ebf42
@@ -59,29 +59,14 @@ docs/src/content/docs/index.mdx:
       lines: 50-51
       integrity: sha256-01707c5e3586b884ea65bba54202a1a857ac134f05245dba050dd8bb17557e88
     - generated-by: Claude Opus 5
-      lines: 53-55
-      integrity: sha256-e9c6a96f28a8c11f1bcd70f1a2db86ac69a8c66e53a14d979797789dd583c3d7
+      lines: 53-54
+      integrity: sha256-e3bb9999be35a6cecf8e91e48f8fbcb95925b260a4b56edae6c48d2b772ebdc3
     - generated-by: Claude Fable 5.1
-      lines: 56
-      integrity: sha256-5e6d2935a7fd07c5d3e2eebebcc9f6e427af832b837c7f4b4a3d59d78cfe426f
-    - generated-by: Claude Opus 4.8
-      lines: 57
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Fable 5.1
-      lines: 58-59
-      integrity: sha256-6dbbefb3002b6bbaf65c675dcd1872d7a7f8489fe529a0722ca6e9e8b664ecbf
-    - generated-by: Claude Opus 4.8
-      lines: 60
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Fable 5.1
-      lines: 61-66
-      integrity: sha256-655fb6380526c37c8e8d2273dd91121ed3d6adf6ced793aa4f929590217ec95a
+      lines: 56-66
+      integrity: sha256-eb894ad7d475c33df77cc37fa0d2679ad1b8973e6992ffdf6eab06cb1abac655
     - generated-by: Claude Opus 5
       lines: 67
       integrity: sha256-5997202277db48b9402fb660e364560cf117d53080f6f1fb74b0c29457b9d36c
-    - generated-by: Claude Opus 4.8
-      lines: 68
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
     - generated-by: Claude Fable 5.1
       lines: 69-70
       integrity: sha256-22ce86ce09a39ce17edb6a75a512ad70e2f70411dfedde4daff639fb7391d7b7
@@ -91,3 +76,20 @@ docs/src/content/docs/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  source-of-truth:
+    - path: package.json
+    - path: src/cli.ts
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /related-pages
+        - /source-of-truth
+        - /risks
+      confidence:
+        /tags: 0.75
+        /action: 0.85
+        /related-pages: 0.9
+        /source-of-truth: 0.7
+        /risks: 0.9

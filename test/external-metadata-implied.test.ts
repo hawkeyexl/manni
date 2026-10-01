@@ -125,7 +125,7 @@ describe("validate: the keyless manifest owns the marked fields", () => {
       expect.objectContaining({ file: "docs/guide.md", ok: true, errors: [] }),
     ]);
     const got = await runGet({ inputs: ["docs/guide.md"], fields: ["owner", "citations"], cwd: dir, derived: false });
-    expect(got[0]?.values).toEqual({ owner: "platform", citations: [{ id: "one" }] });
+    expect(got[0]?.values).toEqual({ owner: "platform", citations: [{ id: "one", source: { file: "src/a.ts", integrity: "sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" } }] });
   });
 
   it("files external:owned when the page carries a field the manifest owns, exit 1", async () => {

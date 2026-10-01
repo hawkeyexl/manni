@@ -18,8 +18,26 @@ docs/src/content/docs/meta/reference/schemas/jekyll-page.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-111
-      integrity: sha256-0dcab2d062bdeb10546c87ca4df3af7e5cae405e398f8df01c0521cc365c6140
+      lines: 2-111
+      integrity: sha256-28eb06bb4a31886d5dfe8f3df2c319482b26e43e203a3e5cc2a7a1980068b775
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.85
+        /action: 0.8
+        /prerequisites: 0.75
+        /next-steps: 0.7
+        /related-pages: 0.9
+        /risks: 0.95

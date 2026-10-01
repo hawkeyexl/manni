@@ -18,8 +18,24 @@ docs/src/content/docs/meta/reference/schemas/diataxis.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-79
-      integrity: sha256-e32945a51535e5e7df290f333a5a4ff9d16f41fa08902ca7ca71c860fcf95744
+      lines: 2-79
+      integrity: sha256-af48553f2a9b56e4562ac4e41b068b11b039ce8317a1a22860732fbadb12b516
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /prerequisites
+      confidence:
+        /resource: 0.95
+        /tags: 0.7
+        /action: 0.85
+        /next-steps: 0.7
+        /related-pages: 0.9
+        /prerequisites: 0.85

@@ -19,7 +19,27 @@ sample-questions:
 graph:
   label: "manni stewardship vocabulary"
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-09-27
+tags:
+  - metadata
+  - schema
+  - vocabulary
+  - stewardship
+  - ownership
+  - review
+action: understand
+next-steps:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/set-up/derived-metadata/
+  - /manni/meta/schemas/field-location/
+related-pages:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/set-up/derived-metadata/
+  - /manni/meta/schemas/field-location/
+risks: read-only
+prerequisites:
+  - schema
+  - meta-schemas-field-location
 ---
 
 **Built-in id:** `manni:stewardship:1.0.0`
@@ -37,15 +57,19 @@ habit, and you want both recorded where a check can see them.
 
 ## Use it
 
-Name the id in `manni.config.yaml`. The vocabularies are not in the default
-set, so a run checks stewardship only where the config names it. It stacks
-with [core](/manni/meta/reference/schemas/manni-core/).
+Stewardship is in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it on every page with no config line. A config's own `schemas` add
+to the default set. An override replaces the set, so an entry that should keep
+stewardship sets `defaults: true`:
 
 ```yaml
 meta:
-  schemas:
-    - manni:core:1.0.0
-    - manni:stewardship:1.0.0
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/guide.json
 ```
 
 ## Fields
@@ -238,12 +262,20 @@ it.
 `review-interval` is the same in both, because its ISO 8601 pattern is already
 strict.
 
-List both ids to adopt it:
+`strict: true` stacks it right after the vocabulary, with every other
+default's overlay beside its own base:
+
+```yaml
+meta:
+  strict: true
+```
+
+To adopt this overlay alone, list its id. The default set already carries the
+vocabulary:
 
 ```yaml
 meta:
   schemas:
-    - manni:stewardship:1.0.0
     - manni:stewardship-strict:1.0.0
 ```
 

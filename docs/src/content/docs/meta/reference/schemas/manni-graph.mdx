@@ -19,7 +19,27 @@ sample-questions:
 graph:
   label: "manni graph vocabulary"
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/graph/1.0.0.json
+tags:
+  - graph
+  - skos
+  - iirds
+  - strict-overlay
+action: understand
+prerequisites:
+  - /manni/meta/reference/schemas/manni-vocabularies/
+  - /manni/meta/reference/schema-resolution/
+related-pages:
+  - /manni/meta/reference/schemas/manni-vocabularies/
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/schemas/field-location/
+risks: read-only
+next-steps:
+  - meta-reference-schemas-manni-terminology
+  - meta-reference-schemas-manni-structure
+  - meta-reference-schemas-manni-lifecycle
+  - meta-schemas-field-location
 ---
 
 **Built-in id:** `manni:graph:1.0.0`
@@ -37,28 +57,30 @@ without a `graph` key pass.
 
 ## Use it
 
-Name the id in `manni.config.yaml`. The vocabularies are not in the default
-set, so a run checks graph only where the config names it.
+Graph is in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it on every page with no config line. A config's own `schemas` add
+to the default set. An override replaces the set, so an entry that should keep
+graph sets `defaults: true`:
 
 ```yaml
 meta:
-  schemas:
-    - manni:core:1.0.0
-    - manni:graph:1.0.0
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/guide.json
 ```
 
 Graph stacks with the rest of the
-[manni family](/manni/meta/reference/schemas/manni-vocabularies/). A page that
-also declares its terms or its product scope at the page level lists those
-vocabularies beside it.
+[manni family](/manni/meta/reference/schemas/manni-vocabularies/). Core and
+structure are in the default set too. A page that also declares its terms at
+the page level adds terminology, which is not.
 
 ```yaml
 meta:
   schemas:
-    - manni:core:1.0.0
-    - manni:structure:1.0.0
     - manni:terminology:1.0.0
-    - manni:graph:1.0.0
 ```
 
 ## Fields
@@ -233,12 +255,20 @@ leaves them as they are.
 | `graph.sections` keys | A heading slug of lowercase letters, caseless letters and their marks, digits, `_` and `-`. An uppercase letter or a space fails. Slugs from scripts without case, such as Han, Arabic and Devanagari, pass |
 | `graph.revision-of`, `graph.derived-from` | A path or URL on one line with no surrounding space, alone or in each list item. A path may contain spaces |
 
-List both ids to adopt it:
+`strict: true` stacks it right after the vocabulary, with every other
+default's overlay beside its own base:
+
+```yaml
+meta:
+  strict: true
+```
+
+To adopt this overlay alone, list its id. The default set already carries the
+vocabulary:
 
 ```yaml
 meta:
   schemas:
-    - manni:graph:1.0.0
     - manni:graph-strict:1.0.0
 ```
 
