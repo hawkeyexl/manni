@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-09-28
+last-updated: 2026-10-01
 tags:
   - configuration
   - yaml
@@ -1520,6 +1520,14 @@ manni: manni.config.yaml: meta.defaults: false with no meta.schemas leaves files
 `register` names local JSON schemas by path, relative to the config file. A
 path is a schema file, or a directory whose `*.json` files all register,
 however deep. Each schema is loaded once and named by its own `$id`.
+
+Inside a registered directory, a symlink to a schema file registers. A symlink
+to a directory is not followed, so a link cycle cannot loop the walk. It is
+named on stderr instead:
+
+```
+manni: meta.register: schemas/linked is a symlink to a directory, which is not followed.
+```
 
 ```yaml title="manni.config.yaml"
 meta:
