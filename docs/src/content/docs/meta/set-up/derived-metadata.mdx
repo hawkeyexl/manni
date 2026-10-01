@@ -238,6 +238,13 @@ When no page's schemas claim a merge-safe field, `manni meta derive` exits
 manni: nothing to derive: no page's schemas claim a merge-safe field (owner, created, last-updated, provenance); set derive.fields or pass --fields
 ```
 
+When a page's schemas cannot be read, what they claim is unknown, so the
+message names that page instead:
+
+```text
+manni: nothing to derive: the schemas of docs/install.md could not be read, so what they claim is unknown; fix them or pass --fields
+```
+
 ## Run it locally
 
 {/* cite derive-runs-over-configured-collections */}

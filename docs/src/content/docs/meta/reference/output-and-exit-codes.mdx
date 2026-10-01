@@ -25,7 +25,7 @@ sample-questions:
 graph:
   label: Output formats & exit codes
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-10-01
 tags:
   - exit-codes
   - output-formats
@@ -759,6 +759,7 @@ The deliberate opt-outs are `--no-derive` on `validate`, `--no-derived` on
 | Config `derive.commands` names a key a collection's URL [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. | `manni.config.yaml: meta.derive.commands.verified-against is owned by manifest https://example.com/versions.yaml, which is fetched and cannot be written; set it in that repository.` |
 | `derive --fields` named a key a collection's URL [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. | `"owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.` |
 | `derive` has no `derive.fields` in config and no `--fields`, and no page's schemas claim a merge-safe field. | `nothing to derive: no page's schemas claim a merge-safe field (owner, created, last-updated, provenance); set derive.fields or pass --fields` |
+| The same, but some page's schemas could not be read, so what they claim is unknown. | `nothing to derive: the schemas of <page> could not be read, so what they claim is unknown; fix them or pass --fields` (with `and <n> more` after the page when there are several) |
 | `derive` has `fields: []` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
 | Config `derive.machines` is empty or not a list of strings. | `manni.config.yaml: meta.derive.machines must be a non-empty list of globs, matched against a trailer's name and its email. Default: ["*[bot]"].` |
 | Config `derive.machines` holds a blank entry. | `manni.config.yaml: meta.derive.machines[0] is blank; a glob must name something.` |

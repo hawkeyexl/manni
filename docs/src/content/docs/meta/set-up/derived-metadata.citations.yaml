@@ -133,9 +133,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-b667afac154ec987166a592cc959e77a1fe69d60d464710be085fd8fc5d48784
       source:
         file: src/meta/commands/derive.ts
-        lines: 1223-1228
+        lines: 1235-1240
         integrity: sha256-77b27b0712c4c796364fc555f68d55c5a55bdb99460af1efa045a9a389bceedc
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: effe3c3f95486afaab5ce3e09328f6d90ec20b58
     - id: gitlab-source-uses-glab-cli
       claim:
         integrity: sha256-a399ea787da201cbd5edf1dca1902f1c9dde90bbbe17b920d51c9c56db90f7d7
@@ -146,7 +146,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: derive-source-hint-is-narrow-sources-or-fields
       claim:
-        lines: 476
+        lines: 483
         integrity: sha256-7cb7a136d5181a06b0a3cf1b7f07dd6b2d63da94b0f32fcd1df1518e8e8e593f
       source:
         file: src/meta/commands/derive.ts
@@ -155,7 +155,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
     - id: no-half-derived-source
       claim:
-        lines: 474
+        lines: 481
         integrity: sha256-52ff3b2094bf1a7ec1e02cab5bc4bdec0ac550f1d9a05b0d569dfa41eba866b4
       source:
         file: src/meta/core/derive/command.ts
@@ -164,7 +164,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: explicit-codeowners-path-missing-is-unavailable
       claim:
-        lines: 473
+        lines: 480
         integrity: sha256-fbcce9dbeb53c0bd1f1361adc82403a8faaf31813bc5654502e46dd1bc0bff86
       source:
         file: src/meta/core/derive/codeowners.ts
@@ -173,7 +173,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: unavailable-source-throws-exit-two
       claim:
-        lines: 472
+        lines: 479
         integrity: sha256-5aa659ad74bf9a7d7ff20675ef32ae9d0c2a481b34b851ec15fa724035a8b884
       source:
         file: src/meta/core/derive/index.ts
@@ -230,7 +230,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: unfenced-format-counts-every-change
       claim:
-        lines: 415
+        lines: 422
         integrity: sha256-36e2781853812a123f0d9b6595b52ae2302f4e060b77ad3b88d0218509e4af2b
       source:
         file: src/meta/core/derive/git.ts
@@ -239,7 +239,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: body-change-excludes-the-metadata-block
       claim:
-        lines: 413
+        lines: 420
         integrity: sha256-ce4c9fe028874b1d2d9cdd50b3985806582f867cbeca39944c6c39a86eb19fa2
       source:
         file: src/meta/core/derive/git.ts
@@ -248,7 +248,7 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: document-content-never-reaches-command-argv
       claim:
-        lines: 406
+        lines: 413
         integrity: sha256-77c0d9420ed1fc5dbae15f7c4768465de306f499408e2bdf92594946c8b935d2
       source:
         file: src/meta/core/derive/command.ts
@@ -578,9 +578,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-5b8f6210b52cc11242e76894f76835f862b64f897ebe868593719a15bcdb29d7
       source:
         file: src/meta/commands/derive.ts
-        lines: 1242-1246
+        lines: 1254-1258
         integrity: sha256-653d473176df9471c4e167769cd167ef1e377d50592459021fa1bf7403fb3421
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: effe3c3f95486afaab5ce3e09328f6d90ec20b58
     - id: only-derive-fields-are-stamped-and-compared
       claim:
         lines: 70

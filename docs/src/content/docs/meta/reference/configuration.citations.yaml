@@ -876,9 +876,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-94ce3fb976c1ad5855fa17c353559ec0f0e259716a991bde9d7685d7cd94032c
       source:
         file: src/meta/commands/derive.ts
-        lines: 729-733
+        lines: 741-745
         integrity: sha256-004224898f6808c8518a4796f9627337ffddd3f81548b2a89818842bef561ff9
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: effe3c3f95486afaab5ce3e09328f6d90ec20b58
     - id: relocate-moves-values-between-page-and-manifest
       claim:
         lines: 892
@@ -1900,9 +1900,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-61415eab460d51465c974f67d241779a48e61b1dbb41d0164e52f55aedada74e
       source:
         file: src/meta/commands/derive.ts
-        lines: 729-733
+        lines: 741-745
         integrity: sha256-004224898f6808c8518a4796f9627337ffddd3f81548b2a89818842bef561ff9
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: effe3c3f95486afaab5ce3e09328f6d90ec20b58
     - id: url-manifest-owned-derive-field-refused
       claim:
         integrity: sha256-a9ecfcd364407463a9f25649da67103bf224f3d1053781cd5ebfc60c345c9bac
@@ -2283,18 +2283,18 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-4eb521321521d2cb1a84bae55d4e529e73f08c214e168dba3614b4b67c01c126
       source:
         file: src/meta/commands/derive.ts
-        lines: 984-993
+        lines: 996-1005
         integrity: sha256-07a16813526c9d286becabb3f272fdf73e31898bc3fa298b930ff84a72405c85
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: effe3c3f95486afaab5ce3e09328f6d90ec20b58
     - id: emptied-provenance-record-is-removed
       claim:
         lines: 2353-2356
         integrity: sha256-438a6b6da74653ed7e80b361ebfb95cc999f9037e2c8f6700f8ba1c9a52b88f3
       source:
         file: src/meta/commands/derive.ts
-        lines: 1087-1091
+        lines: 1099-1103
         integrity: sha256-0fbf7ca7ad3f34fe22c23e64a2ec1cb97b8029cf3440c113849d51fb67e44db7
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: effe3c3f95486afaab5ce3e09328f6d90ec20b58
     - id: validate-compares-managed-fields
       claim:
         lines: 2362
@@ -2310,9 +2310,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-81b24dc882d29844e448a34fcc439024350eda7b3ada6ed496b11d49de7e97b6
       source:
         file: src/meta/commands/derive.ts
-        lines: 936-942
+        lines: 948-954
         integrity: sha256-0d70085e6621acd0e9a89003da4fe63f59b70717fddc3eed16789d80cce5ca7c
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: effe3c3f95486afaab5ce3e09328f6d90ec20b58
     - id: get-shows-origin-on-the-same-line
       claim:
         lines: 2364
