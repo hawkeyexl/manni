@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { MockProvider } from "@hawkeyexl/inference";
 import { runFill, collectCandidates, collectDefs } from "../src/meta/commands/fill.js";
 import { buildEnvelopeSchema } from "../src/meta/commands/fill-prompt.js";
+import { withOffer } from "../src/meta/commands/fill-projection.js";
 import {
   MAX_OFFERED,
   fieldHints,
@@ -133,6 +134,29 @@ describe("offered", () => {
     expect(MAX_OFFERED).toBe(500);
     expect(offered(values(500))).toHaveLength(500);
     expect(offered(values(501))).toBeUndefined();
+  });
+
+  it("drops blank values before it counts them against the cap", () => {
+    const values = Array.from({ length: 499 }, (_, i) => `v${String(i).padStart(4, "0")}`);
+    const listed = offered([...values, "", "  ", "last"]);
+    expect(listed).toHaveLength(500);
+    expect(listed).not.toContain("");
+  });
+});
+
+describe("withOffer", () => {
+  const offer = { values: ["a", "b"], firm: true };
+
+  it("gives a list with no items string items that take the offer", () => {
+    expect(withOffer({ type: "array" }, [], offer)).toEqual({
+      type: "array",
+      items: { type: "string", enum: ["a", "b"] },
+    });
+  });
+
+  it("leaves items it cannot narrow as they are", () => {
+    // items: true admits anything; narrowing it to strings would over-restrict.
+    expect(withOffer({ type: "array", items: true }, [], offer)).toEqual({ type: "array", items: true });
   });
 });
 

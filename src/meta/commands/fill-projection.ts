@@ -618,8 +618,14 @@ function offerAt(
     return [{ ...node, properties: { ...properties, [head]: single(offerAt(field, rest, offer)) } }];
   }
   if (node.type === "array") {
-    const items = isObject(node.items) ? node.items : { type: "string" };
-    return [{ ...node, items: single(offerAt(items, [], offer)) }];
+    // A list with no items is a list of strings here: the reference fields are
+    // string lists whose projection left `items` out. Any other `items`, such
+    // as `true`, is not narrowed, since the offer would over-restrict it.
+    if (node.items === undefined) {
+      return [{ ...node, items: single(offerAt({ type: "string" }, [], offer)) }];
+    }
+    if (!isObject(node.items)) return [node];
+    return [{ ...node, items: single(offerAt(node.items, [], offer)) }];
   }
   if (node.type !== "string" || Object.hasOwn(node, "enum") || Object.hasOwn(node, "const")) {
     return [node];
