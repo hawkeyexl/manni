@@ -76,3 +76,20 @@ docs/src/content/docs/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  source-of-truth:
+    - path: package.json
+    - path: src/cli.ts
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /related-pages
+        - /source-of-truth
+        - /risks
+      confidence:
+        /tags: 0.75
+        /action: 0.85
+        /related-pages: 0.9
+        /source-of-truth: 0.7
+        /risks: 0.9

@@ -55,3 +55,25 @@ docs/src/content/docs/meta/reference/agent-skills-schemas.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-08-25
+  source-of-truth:
+    - path: src/meta/schemas/agent-skills/1.0.json
+    - path: src/meta/schemas/claude-skill/2.1.json
+    - path: src/meta/schemas/claude-subagent/2.1.json
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /source-of-truth
+        - /risks
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.75
+        /next-steps: 0.9
+        /related-pages: 0.95
+        /source-of-truth: 0.9
+        /risks: 0.95

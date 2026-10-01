@@ -14,3 +14,13 @@ docs/src/content/docs/tracevals/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-24
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /risks
+      confidence:
+        /tags: 0.75
+        /action: 0.95
+        /risks: 0.85

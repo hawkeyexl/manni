@@ -262,7 +262,7 @@ describe("collectCandidates", () => {
     ]) {
       const candidates = collectCandidates(order, {}, []);
       const validate = compileWithFormats(
-        buildEnvelopeSchema(candidates, collectDefs(order)),
+        buildEnvelopeSchema(candidates, collectDefs(order)).full,
       );
       const proposal = (value: string) => ({
         type: { value, confidence: 1, reasoning: "x" },
@@ -292,7 +292,7 @@ describe("collectCandidates", () => {
 
     const candidates = collectCandidates([first, second], {}, []);
     const validate = compileWithFormats(
-      buildEnvelopeSchema(candidates, collectDefs([first, second])),
+      buildEnvelopeSchema(candidates, collectDefs([first, second])).full,
     );
     const proposal = (key: string, value: string) => ({
       [key]: { value, confidence: 1, reasoning: "x" },
@@ -372,7 +372,7 @@ describe("collectCandidates", () => {
     expect(defs.$defs.Slug__1).toEqual({ type: "string", const: "already-here" });
 
     const candidates = collectCandidates([first, second], {}, []);
-    const validate = compileWithFormats(buildEnvelopeSchema(candidates, defs));
+    const validate = compileWithFormats(buildEnvelopeSchema(candidates, defs).full);
     const proposal = (key: string, value: string) => ({
       [key]: { value, confidence: 1, reasoning: "x" },
     });
@@ -512,9 +512,10 @@ describe("runFill — the confidence gate", () => {
 });
 
 describe("runFill — mechanical checks precede confidence", () => {
-  it("rejects a malformed value at the envelope, before the gate is consulted", async () => {
+  it("rejects a malformed value before the gate is consulted", async () => {
     // `timestamp` carries `format: date-time`, so a confidence of 1 cannot get
-    // "still-not-a-date" past the schema-constrained response itself.
+    // "still-not-a-date" past the per-field check. The value is skipped, not
+    // the file.
     const file = await stage("missing-keys.md");
     const before = await readFile(join(dir, file), "utf8");
     const { results } = await runFill({
@@ -534,7 +535,10 @@ describe("runFill — mechanical checks precede confidence", () => {
         },
       ]),
     });
-    expect(results[0]?.error).toMatch(/schema validation/i);
+    expect(results[0]?.error).toBeUndefined();
+    const field = results[0]?.fields.find((f) => f.field === "/timestamp");
+    expect(field?.written).toBe(false);
+    expect(field?.skipReason).toBe("schema-mismatch");
     expect(await readFile(join(dir, file), "utf8")).toBe(before);
   });
 
@@ -578,7 +582,8 @@ describe("runFill — mechanical checks precede confidence", () => {
       fields: ["type"],
       inferenceProvider: propose({ type: { value: "guide", confidence: 1 } }),
     });
-    expect(results[0]?.error).toMatch(/schema validation/i);
+    expect(results[0]?.error).toBeUndefined();
+    expect(results[0]?.fields[0]?.skipReason).toBe("schema-mismatch");
     expect(await readFile(join(dir, file), "utf8")).toBe(before);
   });
 
@@ -760,6 +765,362 @@ describe("runFill — mechanical checks precede confidence", () => {
     expect(await readFile(join(dir, file), "utf8")).toBe(before);
   });
 });
+
+describe("runFill — each value is checked on its own", () => {
+  /** One scripted response per request, in order. */
+  const script = (
+    ...sets: Record<string, { value: unknown; confidence: number }>[]
+  ): MockProvider =>
+    new MockProvider(
+      sets.map((set) => ({
+        json: Object.fromEntries(
+          Object.entries(set).map(([k, v]) => [k, { ...v, reasoning: "stated in the page" }]),
+        ),
+      })),
+    );
+
+  /** The candidate keys a request asked about. */
+  const asked = (provider: MockProvider, index: number): string[] => {
+    const properties = provider.requests[index]?.schema.properties;
+    return typeof properties === "object" && properties !== null
+      ? Object.keys(properties)
+      : [];
+  };
+
+  const coercion = join(here, "fixtures", "fill", "coercion.schema.json");
+
+  it("asks once more for a failed value alone, naming the rule it broke", async () => {
+    const file = await stage("missing-keys.md");
+    const provider = script(
+      {
+        description: { value: "A summary.", confidence: 0.9 },
+        resource: { value: "not a uri", confidence: 0.9 },
+      },
+      { resource: { value: "https://example.com/x", confidence: 0.9 } },
+    );
+    const { results, summary } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      fields: ["description", "resource"],
+      inferenceProvider: provider,
+    });
+
+    expect(results[0]?.error).toBeUndefined();
+    expect(summary.written).toBe(2);
+    expect(provider.requests).toHaveLength(2);
+    expect(asked(provider, 1)).toEqual(["resource"]);
+    expect(provider.requests[1]?.user).toContain('/resource: must match format "uri"');
+    const written = await readFile(join(dir, file), "utf8");
+    expect(written).toContain("resource: https://example.com/x");
+    expect(written).toContain("description: A summary.");
+  });
+
+  it("skips a value that fails again, keeps the rest, and asks no third time", async () => {
+    const file = await stage("missing-keys.md");
+    const provider = script(
+      {
+        description: { value: "A summary.", confidence: 0.9 },
+        resource: { value: "not a uri", confidence: 0.8 },
+      },
+      { resource: { value: "still not a uri", confidence: 0.8 } },
+    );
+    const { results, summary } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      fields: ["description", "resource"],
+      inferenceProvider: provider,
+    });
+
+    expect(results[0]?.error).toBeUndefined();
+    expect(provider.requests).toHaveLength(2);
+    expect(summary.written).toBe(1);
+    const resource = results[0]?.fields.find((f) => f.field === "/resource");
+    expect(resource).toEqual({
+      field: "/resource",
+      required: false,
+      confidence: 0.8,
+      reasoning: "stated in the page",
+      written: false,
+      skipReason: "schema-mismatch",
+    });
+  });
+
+  it("treats a retry that answers an unasked key as off-shape, so the first answers stand", async () => {
+    const file = await stage("missing-keys.md");
+    const provider = script(
+      {
+        description: { value: "A summary.", confidence: 0.9 },
+        resource: { value: "not a uri", confidence: 0.8 },
+      },
+      // The retry envelope only asks about "resource" — the one candidate
+      // that failed. This response answers "description" too, a key its own
+      // skeleton (`additionalProperties: false`) never offered.
+      {
+        resource: { value: "still not a uri", confidence: 0.8 },
+        description: { value: "A different summary.", confidence: 0.9 },
+      },
+    );
+    const { results, summary } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      fields: ["description", "resource"],
+      inferenceProvider: provider,
+    });
+
+    expect(results[0]?.error).toBeUndefined();
+    // Off-shape and rejected outright: no third request for either key.
+    expect(provider.requests).toHaveLength(2);
+    expect(asked(provider, 1)).toEqual(["resource"]);
+    expect(summary.written).toBe(1);
+    const resource = results[0]?.fields.find((f) => f.field === "/resource");
+    expect(resource).toEqual({
+      field: "/resource",
+      required: false,
+      confidence: 0.8,
+      reasoning: "stated in the page",
+      written: false,
+      skipReason: "schema-mismatch",
+    });
+    // The first answer for "description" stands — the retry's unasked-for
+    // value for it is never written.
+    const description = results[0]?.fields.find((f) => f.field === "/description");
+    expect(description?.value).toBe("A summary.");
+    const written = await readFile(join(dir, file), "utf8");
+    expect(written).toContain("description: A summary.");
+    expect(written).not.toContain("A different summary.");
+  });
+
+  it("replays the checked set from cache with no request, retry included", async () => {
+    const file = await stage("missing-keys.md");
+    const opts = {
+      cwd: dir,
+      inputs: [file],
+      fields: ["description", "resource"],
+      dryRun: true,
+    };
+    const first = script(
+      {
+        description: { value: "A summary.", confidence: 0.9 },
+        resource: { value: "not a uri", confidence: 0.9 },
+      },
+      { resource: { value: "https://example.com/x", confidence: 0.9 } },
+    );
+    await runFill({ ...opts, inferenceProvider: first });
+    expect(first.requests).toHaveLength(2);
+
+    const second = script({ description: { value: "Other.", confidence: 0.9 } });
+    const replay = await runFill({ ...opts, inferenceProvider: second });
+    expect(second.requests).toHaveLength(0);
+    expect(replay.summary.cached).toBe(1);
+    const values = Object.fromEntries(
+      (replay.results[0]?.fields ?? []).map((f) => [f.field, f.value]),
+    );
+    expect(values).toEqual({
+      "/description": "A summary.",
+      "/resource": "https://example.com/x",
+    });
+  });
+
+  it("coerces a value of the wrong JSON type to the declared one, with no retry", async () => {
+    const file = await stage("no-block.md");
+    const provider = script({
+      weight: { value: "2", confidence: 0.9 },
+      tags: { value: "api", confidence: 0.9 },
+    });
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      cliSchemas: [coercion],
+      fields: ["weight", "tags"],
+      inferenceProvider: provider,
+    });
+
+    expect(provider.requests).toHaveLength(1);
+    const values = Object.fromEntries(
+      (results[0]?.fields ?? []).map((f) => [f.field, f.value]),
+    );
+    expect(values).toEqual({ "/weight": 2, "/tags": ["api"] });
+    const written = await readFile(join(dir, file), "utf8");
+    expect(written).toContain("weight: 2");
+    expect(written).not.toContain('weight: "2"');
+    expect(written).toMatch(/tags:\s*\n\s*- api/);
+  });
+
+  it("retries a value no coercion can fix", async () => {
+    const file = await stage("no-block.md");
+    const provider = script(
+      { owner: { value: { name: "docs" }, confidence: 0.9 } },
+      { owner: { value: "docs", confidence: 0.9 } },
+    );
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      cliSchemas: [coercion],
+      fields: ["owner"],
+      dryRun: true,
+      inferenceProvider: provider,
+    });
+    expect(provider.requests).toHaveLength(2);
+    expect(provider.requests[1]?.user).toContain("/owner: must be string");
+    expect(results[0]?.fields[0]?.value).toBe("docs");
+  });
+
+  it("reads a null value as the model declining", async () => {
+    const file = await stage("missing-keys.md");
+    const provider = script({
+      description: { value: "A summary.", confidence: 0.9 },
+      resource: { value: null, confidence: 0 },
+    });
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      fields: ["description", "resource"],
+      dryRun: true,
+      inferenceProvider: provider,
+    });
+    expect(provider.requests).toHaveLength(1);
+    const resource = results[0]?.fields.find((f) => f.field === "/resource");
+    expect(resource?.skipReason).toBe("no-proposal");
+    expect(results[0]?.fields.find((f) => f.field === "/description")?.written).toBe(true);
+  });
+
+  it("counts a required field whose value fails twice as a required skip", async () => {
+    const file = await stage("no-block.md");
+    const provider = script({ type: { value: "guide", confidence: 1 } });
+    const { results, summary } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      cliSchemas: ["google:okf:0.1", "diataxis:diataxis:1.0"],
+      fields: ["type"],
+      inferenceProvider: provider,
+    });
+    expect(provider.requests).toHaveLength(2);
+    expect(results[0]?.fields[0]?.skipReason).toBe("schema-mismatch");
+    expect(summary.requiredSkipped).toBe(1);
+  });
+
+  it("still fails the file when the response is not the envelope's shape", async () => {
+    const file = await stage("missing-keys.md");
+    for (const json of [
+      { description: { value: "A summary." } },
+      { description: { value: "A.", confidence: 0.9, reasoning: "r" }, invented: {} },
+      ["not", "an", "object"],
+    ]) {
+      const { results } = await runFill({
+        ...base,
+        cwd: dir,
+        inputs: [file],
+        fields: ["description"],
+        dryRun: true,
+        inferenceProvider: new MockProvider([{ json }]),
+      });
+      expect(results[0]?.error).toMatch(/^Response failed schema validation: /);
+    }
+  });
+
+  it("reports a candidate no value can satisfy without asking the model", async () => {
+    const file = await stage("no-block.md");
+    const provider = script({ owner: { value: "docs", confidence: 0.9 } });
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: [file],
+      cliSchemas: [join(here, "fixtures", "fill", "unsatisfiable.schema.json")],
+      dryRun: true,
+      inferenceProvider: provider,
+    });
+    expect(provider.requests).toHaveLength(1);
+    expect(asked(provider, 0)).toEqual(["owner"]);
+    const weight = results[0]?.fields.find((f) => f.field === "/weight");
+    expect(weight?.written).toBe(false);
+    expect(weight?.skipReason).toBe("schema-mismatch");
+  });
+
+  it("prefers a chunk's passing value over another's failing one", async () => {
+    const nl = String.fromCharCode(10);
+    await writeFile(
+      join(dir, "long.md"),
+      fixture("missing-keys.md") + nl + ("filler line" + nl).repeat(60),
+      "utf8",
+    );
+    const provider = script(
+      { resource: { value: "not a uri", confidence: 0.99 } },
+      { resource: { value: "still not", confidence: 0.99 } },
+      { resource: { value: "https://example.com/x", confidence: 0.8 } },
+    );
+    const { results } = await runFill({
+      ...base,
+      cwd: dir,
+      inputs: ["long.md"],
+      fields: ["resource"],
+      dryRun: true,
+      chunkChars: 600,
+      inferenceProvider: provider,
+    });
+    expect(provider.requests).toHaveLength(3);
+    expect(results[0]?.fields[0]?.value).toBe("https://example.com/x");
+  });
+
+  it("shows the model a typed shape for every candidate under the default set", async () => {
+    // node-llama-cpp is not a dependency, so the grammar itself is not built
+    // here. This stands in for it: every node the model is shown has a type,
+    // enum, const or oneOf, and nothing the grammar ignores survives.
+    const file = await stage("no-block.md");
+    const provider = new MockProvider([{ json: {} }]);
+    await runFill({ ...base, cwd: dir, inputs: [file], dryRun: true, inferenceProvider: provider });
+    const properties = provider.requests[0]?.schema.properties;
+    if (!isRecord(properties)) throw new Error("expected candidate properties");
+    expect(Object.keys(properties)).toContain("title");
+
+    const problems: string[] = [];
+    const visit = (node: unknown, at: string): void => {
+      if (!isRecord(node)) {
+        problems.push(`${at}: not a schema object`);
+        return;
+      }
+      if (!("type" in node || "enum" in node || "const" in node || "oneOf" in node)) {
+        problems.push(`${at}: untyped`);
+      }
+      // node-llama-cpp reads `oneOf` and compiles `anyOf` to `null`.
+      for (const banned of ["allOf", "anyOf", "$ref", "if", "not"]) {
+        if (banned in node) problems.push(`${at}: ${banned}`);
+      }
+      const { format, oneOf, items, properties: nested } = node;
+      if (typeof format === "string" && !["date", "date-time", "time"].includes(format)) {
+        problems.push(`${at}: format ${format}`);
+      }
+      if (Array.isArray(oneOf)) {
+        oneOf.forEach((branch: unknown, i) => {
+          visit(branch, `${at}/oneOf/${String(i)}`);
+        });
+      }
+      if (items !== undefined) visit(items, `${at}/items`);
+      if (isRecord(nested)) {
+        for (const [k, v] of Object.entries(nested)) visit(v, `${at}/properties/${k}`);
+      }
+    };
+    const valueOf = (proposal: unknown): unknown =>
+      isRecord(proposal) && isRecord(proposal.properties) ? proposal.properties.value : undefined;
+    for (const [key, proposal] of Object.entries(properties)) {
+      visit(valueOf(proposal), `/${key}`);
+    }
+    expect(problems).toEqual([]);
+    expect(valueOf(properties.title)).toMatchObject({
+      oneOf: [{ type: "string", minLength: 1 }, { type: "null" }],
+    });
+  });
+});
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 describe("runFill — writing", () => {
   it("leaves the file byte-identical under --dry-run", async () => {

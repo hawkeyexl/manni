@@ -78,7 +78,7 @@
   },
   "dependencies": {
     "@axe-core/playwright": "^4.13.0",
-    "@hawkeyexl/inference": "^0.3.1",
+    "@hawkeyexl/inference": "^0.3.2",
     "@xmldom/xmldom": "^0.9.12",
     "ajv": "^8.17.1",
     "ajv-draft-04": "^1.0.0",

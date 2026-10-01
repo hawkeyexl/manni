@@ -243,3 +243,15 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-07
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /prerequisites: 0.75
+        /related-pages: 0.92

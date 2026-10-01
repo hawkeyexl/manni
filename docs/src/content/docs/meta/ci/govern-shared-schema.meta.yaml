@@ -289,3 +289,26 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  source-of-truth:
+    - path: src/meta/commands/schemas.ts
+      kind: implementation
+    - path: src/meta/core/resolve-schema.ts
+      kind: implementation
+    - path: src/meta/core/schema-registry.ts
+      kind: implementation
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /source-of-truth
+        - /risks
+        - /prerequisites
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /source-of-truth: 0.95
+        /risks: 0.85
+        /prerequisites: 0.75
+        /related-pages: 0.7

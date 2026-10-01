@@ -122,3 +122,19 @@ docs/src/content/docs/meta/reference/schemas/google-okf.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /tags: 0.9
+        /action: 0.85
+        /prerequisites: 0.8
+        /next-steps: 0.85
+        /related-pages: 0.85
+        /risks: 0.95

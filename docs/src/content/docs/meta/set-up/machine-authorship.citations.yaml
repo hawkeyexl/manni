@@ -5,25 +5,25 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-1f40d0d2a26f5ed5cb1a5b9e3eded9af7b21084b217a8756eb087b22f90c0e25
       source:
         file: src/meta/commands/fill.ts
-        lines: 1606-1608
+        lines: 1776-1778
         integrity: sha256-e2ad11ef937dd3b5993e7f8317ae793d739f4154dbf341b060a05e4c7d23f89d
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 6d0b1fc689550db9f7d5a351a594d15198311369
     - id: provenance-keys-withheld-from-model
       claim:
         integrity: sha256-1f40d0d2a26f5ed5cb1a5b9e3eded9af7b21084b217a8756eb087b22f90c0e25
       source:
         file: src/meta/commands/fill.ts
-        lines: 928-935
+        lines: 1001-1008
         integrity: sha256-fc4e2c325570ef08944fcb7b52e8327ccf9055be1cad86f56bf8678fc9766e02
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 6d0b1fc689550db9f7d5a351a594d15198311369
     - id: meta-provenance-skipped-on-schema-mismatch
       claim:
         integrity: sha256-1f40d0d2a26f5ed5cb1a5b9e3eded9af7b21084b217a8756eb087b22f90c0e25
       source:
         file: src/meta/commands/fill.ts
-        lines: 1186-1200
-        integrity: sha256-b910b9c9d9f59301c9e0a6ff1a6c7a8415897a6691a64b9c84a1e72889b57f22
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        lines: 1352-1366
+        integrity: sha256-2d7eccb1fc20ef1e53841e645dc1bbb5d5fd3b45891521e02b7993ecca7b9f1e
+        commit-sha: 6d0b1fc689550db9f7d5a351a594d15198311369
     - id: meta-provenance-schema-mismatch-note-text
       claim:
         integrity: sha256-1f40d0d2a26f5ed5cb1a5b9e3eded9af7b21084b217a8756eb087b22f90c0e25
@@ -45,25 +45,25 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-95da7a8b17ea203b6d306692609b29d99a9295b694fb9d98b9d186fd6191a544
       source:
         file: src/meta/commands/fill.ts
-        lines: 1441-1445
+        lines: 1611-1615
         integrity: sha256-c0de2de5d9234ffa87ac58747c9bb9ebbe329bfed2c72aac43d2434ed9124cf4
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 6d0b1fc689550db9f7d5a351a594d15198311369
     - id: meta-provenance-fields-are-json-pointers
       claim:
         integrity: sha256-95da7a8b17ea203b6d306692609b29d99a9295b694fb9d98b9d186fd6191a544
       source:
         file: src/meta/commands/fill-types.ts
-        lines: 72-84
+        lines: 84-96
         integrity: sha256-772b3b743b56478faa27c87f333ad4f6ab6a97b30dd33ea8e4b7e582ed8a0bc1
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
     - id: fill-records-writes-in-meta-provenance
       claim:
         integrity: sha256-98174703da84540c6793ae0b31bb8ffac616839aed2553872a2c32bf2c06dd9c
       source:
         file: src/meta/commands/fill.ts
-        lines: 145-146
+        lines: 163-164
         integrity: sha256-767547931864d72dac68816d93cdcbd7a82f26c9fecdd31403021bde96892010
-        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
+        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
     - id: unfenced-format-refuses-provenance-stamp
       claim:
         integrity: sha256-7039fb1532232cd20ca72b17f50d4499b0e7e596e3ec78392f9cf28affb9a202

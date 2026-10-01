@@ -311,3 +311,24 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  source-of-truth:
+    - path: src/meta/cli.ts
+    - path: src/meta/commands/get.ts
+    - path: src/index.ts
+    - path: src/meta/reporters/index.ts
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /related-pages
+        - /source-of-truth
+        - /risks
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.75
+        /related-pages: 0.9
+        /source-of-truth: 0.85
+        /risks: 0.95

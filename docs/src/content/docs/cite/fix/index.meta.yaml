@@ -292,3 +292,15 @@ docs/src/content/docs/cite/fix/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-11
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+      confidence:
+        /tags: 0.9
+        /action: 0.98
+        /prerequisites: 0.88
+        /next-steps: 0.85

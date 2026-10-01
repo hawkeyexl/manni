@@ -19,3 +19,28 @@ docs/src/content/docs/meta/reference/glossary/json-pointer.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
+  source-of-truth:
+    - url: https://datatracker.ietf.org/doc/html/rfc6901
+      kind: specification
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /source-of-truth
+        - /risks
+        - /scope-note
+        - /next-steps
+        - /related-pages
+        - /related-terms
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /concepts: 0.95
+        /source-of-truth: 0.95
+        /risks: 0.9
+        /scope-note: 0.85
+        /next-steps: 0.75
+        /related-pages: 0.7
+        /related-terms: 0.85

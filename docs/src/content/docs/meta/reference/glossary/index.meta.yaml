@@ -19,3 +19,15 @@ docs/src/content/docs/meta/reference/glossary/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /risks
+        - /next-steps
+      confidence:
+        /tags: 0.85
+        /action: 0.75
+        /risks: 0.95
+        /next-steps: 0.75

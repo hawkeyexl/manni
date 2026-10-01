@@ -159,18 +159,18 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-9b88ec6e8b41adf66ea80f73374cb257ce6db27832a3a8b3b33b60a60cf948ab
       source:
         file: src/meta/core/validator.ts
-        lines: 90
+        lines: 93
         integrity: sha256-13cad13b9da05a87f1d7e4ed101397327ec94367e2c9e0f6eba648bb4109934b
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: schema-key-stripped-before-validating
       claim:
         lines: 127
         integrity: sha256-ba7bfec345f3e42d7f5a289645ec9c70fb5d7cd10900c721e28767a71631eda0
       source:
         file: src/meta/core/validator.ts
-        lines: 670-672
+        lines: 680-682
         integrity: sha256-b8f39d6d21f30a400cabe25059d553fc2d70ec3f6633292881c053d55975c4ca
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: tgdp-25-template-slugs
       claim:
         lines: 210

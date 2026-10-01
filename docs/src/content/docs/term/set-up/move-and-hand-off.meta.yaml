@@ -28,3 +28,15 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.75
+        /related-pages: 0.7

@@ -73,9 +73,9 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         integrity: sha256-8b14d8b84f3e0254a5e59d6e381abc6b840eaa20ae28c71ed7bc84bbb0ebde21
       source:
         file: src/meta/core/validator.ts
-        lines: 676-683
+        lines: 686-693
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: taxonomy-turning-one-on-reports-every-untyped-page
       claim:
         lines: 64-67

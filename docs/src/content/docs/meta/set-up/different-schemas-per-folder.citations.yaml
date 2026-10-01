@@ -74,9 +74,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-b17e582ce426af76cbd8dce5a8f45dbaea373cbf82a3f4f777e3c0b7746d4bcd
       source:
         file: src/meta/core/validator.ts
-        lines: 675-682
+        lines: 685-692
         integrity: sha256-b48ac4d82755fecd8e18db834350064c599086be6c3d1f91c61a07f023cdb60e
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: grouped-files-entry-is-one-override
       claim:
         integrity: sha256-f845c4c3c38113224165a7865c9e25577ec641b989c0b7580bf2731eb252633c

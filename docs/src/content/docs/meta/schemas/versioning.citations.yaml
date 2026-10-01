@@ -6,8 +6,8 @@ docs/src/content/docs/meta/schemas/versioning.mdx:
       source:
         file: src/meta/core/validator.ts
         lines: 79-89
-        integrity: sha256-9d8dd9c571d6d99db7c3e86afe8fdc279640d54119f13657c2da02d32814e07e
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        integrity: sha256-685fa6c1c889916696ea8e1d51a90712b671710fe05fe9f759b92f4d263021d9
+        commit-sha: 3a26816ab6c2bfe9077b58c22c9438a734e4eddc
     - id: versioning-fallback-is-2020-12
       claim:
         lines: 164

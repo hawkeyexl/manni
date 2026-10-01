@@ -116,3 +116,13 @@ docs/src/content/docs/cite/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-11
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /action
+        - /next-steps
+        - /related-pages
+      confidence:
+        /action: 0.9
+        /next-steps: 0.95
+        /related-pages: 0.75

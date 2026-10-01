@@ -16,7 +16,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 9-16
         integrity: sha256-e5e64464d79385e8430dd2d7cd9789e204cb4ca95ab4a645b043b87baa911cf2
-        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
+        commit-sha: bc51f68694df5f2d5aab0e6163d25dafe6d6bd9d
     - id: duplicate-id-entry-invalid
       claim:
         lines: 57
@@ -33,7 +33,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 19-21
         integrity: sha256-2e0149b8fd40d5b1db23162580f0d6610adf5a5517915739b9e489e6721fd9bd
-        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
+        commit-sha: bc51f68694df5f2d5aab0e6163d25dafe6d6bd9d
     - id: reserved-citation-prefix-check
       claim:
         integrity: sha256-da5c214e74e1596d4952487c774e87dae789bc5b5ac2517acfa5d42c98c62d42
@@ -49,7 +49,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 23-28
         integrity: sha256-6a5a0a68dd1fda335a8547a61b60cca1abab7ff963d6ba5f12fb6ea2a769e6bc
-        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
+        commit-sha: bc51f68694df5f2d5aab0e6163d25dafe6d6bd9d
     - id: id-pattern
       claim:
         lines: 75
@@ -58,7 +58,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 31-35
         integrity: sha256-54daa9b1d27b5b9034293f5b1272ecf86f8b96e988dd48abd85ba6e68709129d
-        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
+        commit-sha: bc51f68694df5f2d5aab0e6163d25dafe6d6bd9d
     - id: claim-lines-body
       claim:
         lines: 77
@@ -67,7 +67,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 57-60
         integrity: sha256-11dd5b5acc435125d8f34101e3369d7f092b884f974f2eceedc253e755868867
-        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
+        commit-sha: bc51f68694df5f2d5aab0e6163d25dafe6d6bd9d
     - id: claim-integrity-plain
       claim:
         lines: 78
@@ -76,7 +76,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 61-65
         integrity: sha256-512879c1cb77c9eaa3cb594708c5bcdfa9ef01da195c678e0c5758a9baeda78a
-        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
+        commit-sha: bc51f68694df5f2d5aab0e6163d25dafe6d6bd9d
     - id: source-file-row
       claim:
         lines: 80
@@ -112,7 +112,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 89-93
         integrity: sha256-0e9959511b1ceaa5eb31be7257955d3354ed0b4b8af459eca51a201f8101444f
-        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
+        commit-sha: bc51f68694df5f2d5aab0e6163d25dafe6d6bd9d
     - id: quote-default-false
       claim:
         lines: 84
@@ -121,7 +121,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 42-46
         integrity: sha256-cbee96f0466a755883388f6a2d4dab3fb9d8ba3489c5057bc19fb1fe88be333d
-        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
+        commit-sha: bc51f68694df5f2d5aab0e6163d25dafe6d6bd9d
     - id: body-lines-start
       claim:
         integrity: sha256-f0b31b584b893618fc7ebeef0a6cdbc4ff1bda9b7b0005f45ebb9bcb76f66ee8
@@ -162,7 +162,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 111
         integrity: sha256-df22113e6d0c46a3bcda108c39271d28f4665137b0a3b1c51b55c9ccb69efd77
-        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
+        commit-sha: bc51f68694df5f2d5aab0e6163d25dafe6d6bd9d
     - id: file-pattern-range
       claim:
         lines: 140
@@ -291,7 +291,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 87
         integrity: sha256-935401c75456fa1b1a76dcd6bba9dfe510f81607faaa6981a55e48b2bf20e29a
-        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
+        commit-sha: bc51f68694df5f2d5aab0e6163d25dafe6d6bd9d
     - id: hashing-rule-normalize
       claim:
         integrity: sha256-d8906ad7e29bb2d57fc6d740e86cd60874a4e965c5977024efff5429cf838d5b

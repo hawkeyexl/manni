@@ -16,6 +16,17 @@ risks: ["destructive"]
 sample-questions: ["Should the key live in manni.config.yaml or in MANNI_ENCRYPTION_KEY?", "Who on the team needs the encryption key?", "What does each manni tool do when no key is available?"]
 graph: { label: "Put the key where every tool finds it", type: task }
 last-updated: 2026-09-17
+tags:
+  - encryption
+  - configuration
+  - environment
+  - setup
+action: develop
+prerequisites:
+  - key
+related-pages:
+  - meta-set-up-config
+  - cite-set-up
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

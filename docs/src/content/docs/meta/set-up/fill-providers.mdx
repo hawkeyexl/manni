@@ -31,7 +31,19 @@ sample-questions:
 graph:
   label: Run fill under a data-egress policy
   type: concept
-last-updated: 2026-09-21
+last-updated: 2026-09-29
+tags:
+  - security
+  - privacy
+  - compliance
+  - providers
+  - local
+  - cache
+action: understand
+related-pages:
+  - meta-reference-configuration
+prerequisites:
+  - meta-get-started
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -51,20 +63,21 @@ Per inference call, `fill` transmits:
 | The file path | The path **as it was matched**, interpolated into the prompt. In a docs repo, paths often name products that are not public yet. |
 | The existing metadata | The metadata block already in the file, serialized as JSON. `--fields` narrows what `fill` *proposes*; it does not narrow what is sent. Two keys are removed: `provenance` and `meta-provenance`, the record of what machines wrote. |
 | The document text | The whole file. See [how much of the document](#how-much-of-the-document) below. |
-| One subschema per property being filled | Each candidate property's own subschema, lifted **verbatim** out of your schema. That includes its `description`, which is written for your team and now travels with the request. |
-| Every `$defs` and `definitions` block | From **every schema in the resolved set**, whether or not anything being filled references them. An internal schema's private definitions leave in full. |
+| One shape per property being filled | Each candidate property's type and shape, taken from every schema in the set that defines it. That includes its `description`, which is written for your team and now travels with the request. |
+| The definitions a property reaches | Every `$defs` or `definitions` entry a property's `$ref` leads to, written into that property's shape. Definitions no candidate reaches stay on your machine. |
+| The values offered for a property | Every term label in your glossary, when a property being filled names a glossary term. The `id` of every other page in the page's collections, when one names a page. See [the values `fill` offers](/manni/meta/reference/cli/#the-values-fill-offers). |
 
 Two consequences are worth stating plainly, because neither is what a reader guesses.
 
-{/* cite defs-reproduced-so-refs-resolve */}
-The `$defs` row is the one that surprises people. `fill` reproduces the definition blocks so that a `$ref` inside a lifted subschema still resolves. It has no way to know in advance which ones a given property will reach, so it sends all of them. If your schema set includes an internal schema with definitions unrelated to the properties being filled, those definitions still go.
+{/* cite ref-targets-written-into-shape */}
+The shape row carries more than the property's name. Its `description`, its `enum` values and its `pattern` are all part of it, and so is anything a `$ref` pulls in. An internal schema's definition leaves when a property being filled reaches it.
 
 {/* cite dry-run-only-suppresses-the-write */}
 And `--dry-run` does **not** change any of this. It holds back the write to your files; the inference call has already happened by then. `--dry-run` is a review gate, not an egress control.
 
 <Aside type="note" title="Per call, not per file">
 {/* cite prompt-header-repeats-per-chunk */}
-Everything in the table above is sent on *each* call. A document split across several calls repeats the path, the metadata block, and the property list every time. Only the slice of document text differs.
+Everything in the table above is sent on *each* call. A document split across several calls repeats the path, the metadata block, and the property list every time. Only the slice of document text differs. When a proposed value fails its property's rules, one more call goes out for that slice. It asks for the failed properties alone and names the rule each value broke.
 </Aside>
 
 ## How much of the document
@@ -75,7 +88,7 @@ All of it.
 {/* cite over-budget-file-is-split-into-chunks */}
 {/* cite chunk-proposals-merge-by-highest-confidence */}
 {/* cite chunk-chars-default-is-12000 */}
-A file longer than the chunk budget is split and sent across several calls. The per-chunk proposals are merged by keeping the **most confident value for each property**. `--chunk-chars` sets that budget, defaulting to 12,000 characters per call. Every character of the file reaches the provider; the budget only decides how many calls that takes.
+A file longer than the chunk budget is split and sent across several calls. The per-chunk proposals are merged by keeping the **most confident value for each property** that meets the property's rules. `--chunk-chars` sets that budget, defaulting to 12,000 characters per call. Every character of the file reaches the provider; the budget only decides how many calls that takes.
 
 {/* cite model-content-includes-front-matter */}
 {/* cite provenance-keys-deleted-from-document-copy */}

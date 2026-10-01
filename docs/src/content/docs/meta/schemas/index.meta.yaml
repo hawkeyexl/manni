@@ -247,3 +247,23 @@ docs/src/content/docs/meta/schemas/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  source-of-truth:
+    - path: src/meta/core/schema-registry.ts
+    - path: src/meta/core/resolve-schema.ts
+    - path: src/meta/core/validator.ts
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /related-pages
+        - /source-of-truth
+        - /risks
+        - /prerequisites
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /related-pages: 0.85
+        /source-of-truth: 0.9
+        /risks: 0.85
+        /prerequisites: 0.75

@@ -325,3 +325,26 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  source-of-truth:
+    - path: src/meta/reporters/index.ts
+      kind: implementation
+    - path: src/meta/cli.ts
+      kind: implementation
+    - path: src/shared/run.ts
+      kind: implementation
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /related-pages
+        - /source-of-truth
+        - /risks
+      confidence:
+        /tags: 0.9
+        /action: 0.95
+        /prerequisites: 0.85
+        /related-pages: 0.85
+        /source-of-truth: 0.9
+        /risks: 0.95
