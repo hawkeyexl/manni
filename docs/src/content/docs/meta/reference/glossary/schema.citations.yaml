@@ -7,4 +7,4 @@ docs/src/content/docs/meta/reference/glossary/schema.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 394-405
         integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1

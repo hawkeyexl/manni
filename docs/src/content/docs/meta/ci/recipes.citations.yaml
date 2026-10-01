@@ -39,7 +39,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/cli.ts
         lines: 874
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: validate-judges-the-derived-stamp
       claim:
         integrity: sha256-3219f33ff597c89ce4d5ecf4eae156536902e01c392bc0b3198016462ff8b762
@@ -47,7 +47,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/commands/validate.ts
         lines: 1048-1058
         integrity: sha256-705564be93671f57572066f8b5c65e89e68fc6228453bf1746a821f580d13aa1
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: recipes-operational-error-exits-2
       claim:
         lines: 11-12

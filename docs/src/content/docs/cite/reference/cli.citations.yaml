@@ -614,7 +614,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/core/page.ts
         lines: 235-239
         integrity: sha256-b04799a1055a24a811289a4dde7ed426dc54a5c301a215eae397d6d0fe87bde3
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: check-exit-1-error-rules
       claim:
         lines: 338
@@ -632,7 +632,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/core/range.ts
         lines: 51-53
         integrity: sha256-11321172205637f1e800df81439c810dbcb2ba92b27c50524386e7dfd7618679
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: add-src-untracked
       claim:
         lines: 433

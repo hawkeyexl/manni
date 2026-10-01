@@ -302,7 +302,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/shared/collections.ts
         lines: 568
         integrity: sha256-84ff935c5a5f70ea0feb9816b3d2ce2f5e0aa48128e595fd5ae923f5f6e4f19f
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: seed-rung-config-urls
       claim:
         lines: 98
@@ -1008,7 +1008,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/shared/collections.ts
         lines: 568
         integrity: sha256-84ff935c5a5f70ea0feb9816b3d2ce2f5e0aa48128e595fd5ae923f5f6e4f19f
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: usage-msg-not-http
       claim:
         lines: 525

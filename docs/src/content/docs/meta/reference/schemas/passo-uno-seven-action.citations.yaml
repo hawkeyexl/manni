@@ -7,7 +7,7 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 30-53
         integrity: sha256-0ddb2c4696744ae9aec40deb2142ed6c4f708c011904aa675f18e666b050807e
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: taxonomy-only-the-enum-values-validate
       claim:
         integrity: sha256-d913699491c1be6f76b61428ba514185997dea8fa7c31ce39bc7011af4591347
@@ -32,7 +32,7 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 545-555
         integrity: sha256-b01c18f9e05654a4cfb97c7817650fdabd59e2014546ec6925b09f2c4fd4d0d7
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: taxonomy-a-foreign-action-value-fails
       claim:
         lines: 83-84

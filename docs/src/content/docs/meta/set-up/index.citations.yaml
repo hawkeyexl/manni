@@ -8,7 +8,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/cli.ts
         lines: 874
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: github-format-emits-annotations
       claim:
         lines: 77
@@ -35,7 +35,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 297-301
         integrity: sha256-73d56d153f0de0ed6e64cb6ade7318f324b35250a12838d444586b957050d6c4
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: config-discovered-as-manni-config-yaml
       claim:
         lines: 63
@@ -53,7 +53,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 545-555
         integrity: sha256-b01c18f9e05654a4cfb97c7817650fdabd59e2014546ec6925b09f2c4fd4d0d7
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: bare-validate-reads-every-collection
       claim:
         lines: 53
@@ -62,7 +62,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/config.ts
         lines: 1878-1886
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: 80046d14efa00a13ca2557dbb03a508bd223b934
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: every-file-satisfies-every-schema
       claim:
         lines: 53
@@ -71,7 +71,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/validator.ts
         lines: 686-693
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: explicit-file-bypasses-ext-filter
       claim:
         lines: 32
@@ -98,7 +98,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/schemas/core/1.0.0.json
         lines: 7-10
         integrity: sha256-98fcf79e73fedcae890cf5bd3e046d078dd3d4383a6605e807f275913b625764
-        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: timestamp-must-be-date-time
       claim:
         lines: 9

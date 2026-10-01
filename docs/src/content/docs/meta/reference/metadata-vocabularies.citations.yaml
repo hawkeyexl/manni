@@ -8,7 +8,7 @@ docs/src/content/docs/meta/reference/metadata-vocabularies.mdx:
         file: src/meta/schemas/ogp/1.0.json
         lines: 7
         integrity: sha256-906f942a566ac7e3106a251f28bcb638b9ddd6ae4e3202d09a8844f0208d8711
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: vocab-row-dcmi
       claim:
         lines: 11
@@ -17,7 +17,7 @@ docs/src/content/docs/meta/reference/metadata-vocabularies.mdx:
         file: src/meta/schemas/dcmi/1.1.json
         lines: 6-7
         integrity: sha256-378a494cede2cb04abd922c993975f4aa57e36276ac431f5a17eaa105a538e74
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: vocab-row-microsoft-learn
       claim:
         lines: 12
@@ -26,7 +26,7 @@ docs/src/content/docs/meta/reference/metadata-vocabularies.mdx:
         file: src/meta/schemas/microsoft-learn/1.0.json
         lines: 7
         integrity: sha256-8f608d338e007504cdfe2316e12270d107baedc81e770bc940dbe96f2a56e0e3
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: vocab-row-x-cards
       claim:
         lines: 13
@@ -35,4 +35,4 @@ docs/src/content/docs/meta/reference/metadata-vocabularies.mdx:
         file: src/meta/schemas/x-cards/1.0.json
         lines: 7
         integrity: sha256-0f10ed95718520ed35562386dd8fa0e557894ce3e92e8549238a4e3bd31422b8
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1

@@ -143,7 +143,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/key/commands/rotate.ts
         lines: 636-641
         integrity: sha256-5e9d429885c50bf125fcb5ec3ed862f7337ace9eeaef13d5642ad77027a9488f
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: env-key-replaced-by-you
       claim:
         integrity: sha256-8371aae72036debefa3d6a991bef512665abcd4c5a84416b459b0584e1f4cb96
@@ -151,7 +151,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/key/commands/rotate.ts
         lines: 459
         integrity: sha256-d5e1fc9f01fa9e06e6b5e3685957b987ba7770881d8333f822983a13cccd6dd5
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: maya-no-key-nothing-fails
       claim:
         lines: 131
@@ -160,7 +160,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 902-904
         integrity: sha256-beeb884d4016a47d5cd408fecc74625687215f383f3e39ea7f02a956d976deb6
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotation-needs-key
       claim:
         lines: 134
@@ -169,7 +169,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/key/commands/rotate.ts
         lines: 446
         integrity: sha256-ea09b213d678bc8b0ce802b2d88944e023680d8f3cbdadcb7ea0700dbc61c239
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: no-key-validate-row
       claim:
         lines: 147
@@ -178,7 +178,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 902-904
         integrity: sha256-beeb884d4016a47d5cd408fecc74625687215f383f3e39ea7f02a956d976deb6
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: no-key-write-row-terminal
       claim:
         lines: 149
@@ -214,7 +214,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/key/commands/rotate.ts
         lines: 109-110
         integrity: sha256-599a401053717f92c7ca599bf6ba334a10a730cab799c6cd6876b5fa91bd3a9c
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: no-key-rotate-row-check
       claim:
         lines: 151
@@ -223,7 +223,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/key/commands/rotate.ts
         lines: 446
         integrity: sha256-ea09b213d678bc8b0ce802b2d88944e023680d8f3cbdadcb7ea0700dbc61c239
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: warning-counts-values
       claim:
         integrity: sha256-f4a8a2e924e3f64c26d73d939e06b5df0e1fa04f12c9854daa8b5f9a3550c385
@@ -231,7 +231,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 902-904
         integrity: sha256-beeb884d4016a47d5cd408fecc74625687215f383f3e39ea7f02a956d976deb6
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: unverified-warning-message
       claim:
         lines: 160
@@ -284,7 +284,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/key/commands/rotate.ts
         lines: 446
         integrity: sha256-ea09b213d678bc8b0ce802b2d88944e023680d8f3cbdadcb7ea0700dbc61c239
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: write-offers-on-terminal
       claim:
         integrity: sha256-e40f565920e7f6b46bf45b7b6f233258bea1a8ddaf7e5b2904b1cbf6d51b4ca2
@@ -308,4 +308,4 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/key/commands/rotate.ts
         lines: 446
         integrity: sha256-ea09b213d678bc8b0ce802b2d88944e023680d8f3cbdadcb7ea0700dbc61c239
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1

@@ -15,7 +15,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: src/meta/cli.ts
         lines: 874
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: summary-third-code-operational
       claim:
         integrity: sha256-369507c6dc33f81889b07da8b4d09a206daee4c6e5c97ba18ae13c81b7981e89
@@ -32,7 +32,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 1084
         integrity: sha256-5a747f3719f7b94468316a11359c5c20bec812149e4567499530387997f30763
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: summary-failed-is-files-with-errors
       claim:
         lines: 137
@@ -41,7 +41,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 1075
         integrity: sha256-11e63cff120ee33b4c6ab5973adecba3549f1192bc0c720863f506d6ad9e6777
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: summary-files-is-resolved-count
       claim:
         lines: 135
@@ -50,7 +50,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 1081
         integrity: sha256-d57f0feffc745c09869811b0410b200aed12376a25fb3320e3f7b42090eeec14
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: summary-line-shape
       claim:
         integrity: sha256-82cf14992026f2dda2307208f8892645ab134077755f316a669bdcb85fc8d045
@@ -67,7 +67,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 829-830
         integrity: sha256-3ef67f71b6dd6d13aa8db8c7e567afcb9df863c1d137c5597d3a9fd7de40c6fa
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: error-line-parts
       claim:
         integrity: sha256-cf6f5ea2062c78d9deb2fbb4fb72a66993427ff0b87ff0e64efb2a369bf4c70d

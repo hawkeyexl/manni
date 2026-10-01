@@ -7,4 +7,4 @@ docs/src/content/docs/meta/reference/schemas/tgdp-templates-1-0.mdx:
         file: src/meta/schemas/tgdp/1.0.json
         lines: 8-38
         integrity: sha256-d133d550f15ea9dc5b2cc0b67f8fa46d73609f2272fb88d20d627423d75c61a8
-        commit-sha: bb0ad587be4967e7033b5cfc112708fece1f2fe4
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1

@@ -75,7 +75,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         file: src/meta/core/validator.ts
         lines: 686-693
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: taxonomy-turning-one-on-reports-every-untyped-page
       claim:
         lines: 64-67
@@ -108,7 +108,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 336-347
         integrity: sha256-b609d7a86f241caa53f6c3ab9266149e6c0333c7496005e23ab3d94797659c1c
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: taxonomy-all-three-are-draft-2020-12
       claim:
         integrity: sha256-60affe9aa8ec9b7042306c95db31d5d2aec7e975e4799c3f9d358cc890b2edfc
@@ -132,7 +132,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 79-127
         integrity: sha256-b34b13447649abac27c865e57b62674978e2d0b5f1b1c3bef6380c9c9a1b98df
-        commit-sha: c48fb7666149438e2d63f3213e8beddba66f6758
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: taxonomy-row-diataxis
       claim:
         lines: 13
@@ -141,7 +141,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         file: src/meta/schemas/diataxis/1.0.json
         lines: 3-8
         integrity: sha256-5eb539b006f315ca6415ccb29e9fae8bc50548e46561bd29268532f92dd260dd
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: taxonomy-row-seven-action
       claim:
         lines: 15
@@ -150,7 +150,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         file: src/meta/schemas/seven-action/1.0.json
         lines: 3-7
         integrity: sha256-596728f2c5eeb0576f67ed5cd68a8172a76d9c0d4470c156a1146fe11622a5d5
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: taxonomy-pair-with-okf-for-the-other-fields
       claim:
         integrity: sha256-4231d801530c9f25abf0d0d448cc34bb0d166b9dc3e9188cfc915bec4363635c
@@ -158,7 +158,7 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         file: src/meta/schemas/okf/0.1.json
         lines: 7
         integrity: sha256-0e2f5437eb92e030b655c86a57a2dd15bb2acd051cc9be386ce3f58619f6000b
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: taxonomy-row-tgdp
       claim:
         lines: 14
