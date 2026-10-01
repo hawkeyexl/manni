@@ -14,8 +14,8 @@ docs/src/content/docs/meta/reference/glossary/override.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-11
-      integrity: sha256-308dce06aa5732fbbfbef196f95d6da9733342ad5fdbaab5d9a01c591cb4f913
+      lines: 2-11
+      integrity: sha256-30cd8250a620d5a9be7ef7fed03b96e0bcd2ee2ba057ec8c75667c14d6c4e55f
     - generated-by: Claude Opus 5
       lines: 16
       integrity: sha256-98fbf68ff4090ac9529db81efbce3892c04beec6d1fd5306f972a068c4177156

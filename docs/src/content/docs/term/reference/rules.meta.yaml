@@ -24,8 +24,8 @@ docs/src/content/docs/term/reference/rules.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-73
-      integrity: sha256-3add284c159d2e740ab3a112aacdc32ca4e9f92e197b525689608eb22eeed787
+      lines: 2-73
+      integrity: sha256-9b20ddb4f12bb6d807310cb7f78ef1840b69a511185efc5bba257b115bf74709
     - generated-by: Claude Opus 5.5
       lines: 74
       integrity: sha256-9ecf435064f8764e3b2cd2b53a05a9e9d63e55567eb013b7f5f301dcf6a3a64d
@@ -36,8 +36,8 @@ docs/src/content/docs/term/reference/rules.mdx:
       lines: 78
       integrity: sha256-feaa780067850c77ec3893f7cebb804283c94892535f12a5abef778e6ffc6452
     - generated-by: Claude Opus 5
-      lines: 79-147
-      integrity: sha256-665e95ca2184ad537db04ef1ffe9623544f58ce4eae04a0f6dd53a185be70e99
+      lines: 80-147
+      integrity: sha256-135f64f05a16b7d0d467b6db770111f05f3332b0051bcbc946890c1258b4a56b
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

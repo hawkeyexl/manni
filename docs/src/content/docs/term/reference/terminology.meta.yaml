@@ -24,14 +24,14 @@ docs/src/content/docs/term/reference/terminology.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-6
-      integrity: sha256-a65f323bc6e58ad20f64c71f97e6f0b683ff24481d6466454370d9c68bda217f
+      lines: 2-6
+      integrity: sha256-ddbba214ca39389bbdf022f60763054ee0d58459072afaff631d853e386a24ff
     - generated-by: Claude Opus 5.5
       lines: 7-9
       integrity: sha256-5014adaa85b7aadd289c87f6c644c5bd3f0e742b10b5b0f3e80bfb60b3222779
     - generated-by: Claude Opus 5
-      lines: 10-134
-      integrity: sha256-5d9b7e9c616439c63f0bb94f8f84ce05b0e119d6a936de107435937ea7a1e0e6
+      lines: 11-134
+      integrity: sha256-4c2a56bd2499d291568d1772e3ae73ecd7ff4ecd7ce307758570c130afc6ea8f
     - generated-by: Claude Opus 5.5
       lines: 135-136
       integrity: sha256-3a5143a86515e2d0ab982b0129073c61dc346ae81f7a0519a2be20e2551f046a
@@ -48,8 +48,8 @@ docs/src/content/docs/term/reference/terminology.mdx:
       lines: 143-146
       integrity: sha256-cdbce62cb0e31f69c752ce280caea118ca11f47b2f93fda1772e3c00810dcfb4
     - generated-by: Claude Opus 5
-      lines: 147-149
-      integrity: sha256-de698a01ee162422b9166434e0671d09e0fd9c476b24706c94e9d359cdaa5de8
+      lines: 148-149
+      integrity: sha256-0d55ab652e8aa606d8785e16dce6fa7c5a2d4fae8198b66f9561b4a0cc77c771
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

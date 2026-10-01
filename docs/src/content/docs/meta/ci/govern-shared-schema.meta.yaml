@@ -17,47 +17,26 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 4.8
-      lines: 1-3
-      integrity: sha256-587251d105d141ebc7749c99b77a6c3c014d3dd73288c3c67af7388515938fe8
+      lines: 2
+      integrity: sha256-c61ca7023b31992c03e88ae251e4dca756c12c2e4bc4b6415c475ad1fd642c70
     - generated-by: Claude Fable 5.1
       lines: 4
       integrity: sha256-9e90eb7c6954cc0c9892462e3e89b43f65064d821c8746f37bc7300b7aef69c8
     - generated-by: Claude Opus 5
-      lines: 5-7
-      integrity: sha256-06f77ab15731f7a6e197b0e9b3baab7feb050ffa86c8326de4045617984a233f
-    - generated-by: Claude Opus 4.8
-      lines: 8
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 9
-      integrity: sha256-8f88265755e2f0b1b84419ab145e40412847cc165437658df326e7c2d7044ba8
-    - generated-by: Claude Opus 4.8
-      lines: 10
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      lines: 5-9
+      integrity: sha256-1ae2fb97818b16daaff666bd5aa771c2ac51407950684de98f6aa34723db9448
     - generated-by: Claude Fable 5.1
       lines: 11
       integrity: sha256-4526cf86afa168967888897e79a89b634ee1c2e5edc0fffe6d2883a5a14de2c0
     - generated-by: Claude Opus 5
-      lines: 12-17
-      integrity: sha256-08b42e46195caa4996c29566f39790f7f488db0009a9b202413784c9c6251a9d
-    - generated-by: Claude Opus 4.8
-      lines: 18
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 19-23
-      integrity: sha256-91051d72f1b8c2b7c409f849863a366e92e815ce86349ef70718bd2168bd20ab
-    - generated-by: Claude Opus 4.8
-      lines: 24
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 25-37
-      integrity: sha256-11c88b8fe8d3ef4e65bb8a99fa3cf80cb7169dda43c1594dbab7f5b2178f38ad
+      lines: 12-37
+      integrity: sha256-b1c9a1eea942dc932ef794bb202721eac3e55821e3b9595ac8dce5be46e89761
     - generated-by: Claude Fable 5.1
       lines: 38
       integrity: sha256-d0b96b5402ce9954b1b9ef2feee56b3d66a681ec430774b26dc8490f3e7d5c43
     - generated-by: Claude Opus 5
-      lines: 39-40
-      integrity: sha256-0596f6b933d6ba0188466f40ed9aa069a3ae59a6ca062fa7da4d8c2138c7bc56
+      lines: 39
+      integrity: sha256-a6788eef33b6d1dea3e77b9610dc41fa7ce3c8e344933b9932984d11269ff0e3
     - generated-by: Claude Fable 5.1
       lines: 41
       integrity: sha256-8b55f378aa388f25cc2ef2442d5f89042e10246b610e5dd73c695185fe0bbe13
@@ -68,8 +47,8 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       lines: 48
       integrity: sha256-f1408a5f10072d7c20f2476c439125eedd5b6acfcbfa1c4a303135fe926de4d7
     - generated-by: Claude Opus 5
-      lines: 49-52
-      integrity: sha256-ed053958e53d6a894051133b9657b2c1d6425d004597f7ac1f82549a09c9f87b
+      lines: 49-51
+      integrity: sha256-22f3616ce259af104731c3e03ad45329ea8f1d75a5eed418d309135b7345ab0c
     - generated-by: Claude Fable 5.1
       lines: 53-58
       integrity: sha256-108897aae8bba90e64cf8048a2d8f8598f144bd78cc2bee0f13a2bdba2220c72
@@ -92,26 +71,14 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       lines: 91-92
       integrity: sha256-2b488f574f188f911d29d4bdd68c12c5ae306a97eee312a822b615ab87968d25
     - generated-by: Claude Opus 5
-      lines: 93-103
-      integrity: sha256-d6583d42362a6ea5a2398a120384c14e7f022164abc799ccfc9283488b42df98
+      lines: 94-103
+      integrity: sha256-1ef090b5e8ca0483d05fb0ddfd23d4eb67094596b72881ca66e7c9ec74e13b6e
     - generated-by: Claude Fable 5.1
       lines: 104
       integrity: sha256-3ebfe5d959accd04258c65b5dc15042c2e28f492643782b8110c9b05032575cd
     - generated-by: Claude Opus 5
-      lines: 105-112
-      integrity: sha256-6168bee5cbdf7451896f2c425f742626f1197dfac9c259a3c00260213093286c
-    - generated-by: Claude Opus 4.8
-      lines: 113
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 114-117
-      integrity: sha256-bdf04af38fc07a393a3f733ea106abb8c00dd3e4a7c1846fb850d0f7b0bc4958
-    - generated-by: Claude Opus 4.8
-      lines: 118
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 119
-      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+      lines: 105-119
+      integrity: sha256-dbd48cbec7fe7f5bf48eff271dc07577ee3e35a152c6994b8d21dcf0847618ef
     - generated-by: Claude Fable 5.1
       lines: 120
       integrity: sha256-0c178ef4f30bd148a8f99e719a39e40daa89a207c1f949cc1424ad072df19088
@@ -122,8 +89,8 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       lines: 124
       integrity: sha256-8a66f53bb2136942fe92ecade39d9d3f0065048a51cd78e546a444406e852f28
     - generated-by: Claude Opus 5
-      lines: 125-142
-      integrity: sha256-89ef4d28ba7ca28487b7951fe8db8f6c9dfe56963e698f511124341e525cadc7
+      lines: 125-141
+      integrity: sha256-3bd58aec5c683280cfc3e74dd07f318ea629cf46c0b797e357c8ad32ec470a0d
     - generated-by: Claude Fable 5.1
       lines: 143
       integrity: sha256-544b39c59163a22a8b5c0220cdb162843b034abe8c0bd5a930a70cd40c337f53
@@ -137,14 +104,14 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       lines: 159-173
       integrity: sha256-41bc37d6650d30ce5527c69c38a1d29ba78beda387a6f62efada1736c4feebc8
     - generated-by: Claude Opus 4.8
-      lines: 174-177
-      integrity: sha256-0469475e5a98fd195b6dd3e37973c1757173d1a29e77d51e0c2bd9901790fa62
+      lines: 175-176
+      integrity: sha256-f46e2b492cc25019773fc0759db97dcc9d7664f8bcb298664a594868f111b695
     - generated-by: Claude Opus 5
       lines: 178
       integrity: sha256-3066389d718aa42e89aeeffba90f3ebc5334ae137b2157e569aa98bde478a6d5
     - generated-by: Claude Opus 4.8
-      lines: 179-181
-      integrity: sha256-b9a5deab89d678ed6d9627c72ebc0ca7d3eb2d9286ea58852b9d88f7190dc1fb
+      lines: 180-181
+      integrity: sha256-484364e2545f72f16cfdaf4f3bf6a24dc1f84dc2febfd3535fe4b7ade52c749d
     - generated-by: Claude Opus 5
       lines: 182
       integrity: sha256-eb3f2bf2a674b8800b0bd8eab2d72e2f822f6fb137253c1c5cc5c93245a9f7a7
@@ -152,17 +119,11 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       lines: 183-187
       integrity: sha256-4103444b7a1442b3bc6a74d3ae230c5623efeda6998dfa9ec519182c67119c49
     - generated-by: Claude Fable 5.1
-      lines: 188
-      integrity: sha256-31c7b567c7f972b8f305a954812e6278f68a2492124f1523a8368340b97f3de7
+      lines: 188-193
+      integrity: sha256-7acccb3f6dee5bac0d7a1b898018f77407d3bac19186c6d5161caa53fd85c818
     - generated-by: Claude Opus 4.8
-      lines: 189
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Fable 5.1
-      lines: 190-193
-      integrity: sha256-5af7ff64913d534d8d92d23e7aab5c79568fb0036bcbdebc3bc083f2b5e0eef9
-    - generated-by: Claude Opus 4.8
-      lines: 194-195
-      integrity: sha256-47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d
+      lines: 194
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5
       lines: 196-197
       integrity: sha256-499dc1cd342bc4b2e2593b7c478629ab6bf15bff3720c1694901f113dc46596d
@@ -170,20 +131,20 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       lines: 198
       integrity: sha256-3f467986cb909d5194944d3e36298d245c81f31cec53d4ac08667dc721a4bd6c
     - generated-by: Claude Opus 4.8
-      lines: 199-203
-      integrity: sha256-b403583ff5be4fc53ad80c9cca3082f596e0fb36aaa93821676429d4391b2a6c
+      lines: 200-203
+      integrity: sha256-09a8abfc03ea79cd861c3e56af5e5b8759ef6dc102c53fc2975886e747994537
     - generated-by: Claude Fable 5.1
       lines: 204
       integrity: sha256-b93e9f8dc4b846cb5829274f097a117375c109ec7f47e6b757f30f31d01e8067
     - generated-by: Claude Opus 4.8
-      lines: 205-206
-      integrity: sha256-47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d
+      lines: 205
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5
-      lines: 207-208
-      integrity: sha256-b9946d60611a59511fecc51f407df18bee75d1b9bfbea55c815f5a145ab5f954
+      lines: 207
+      integrity: sha256-b636d40bb7ca330e4f67906e0e168f0d1bb0bd4a4a1b1e510682956b99db4c7e
     - generated-by: Claude Opus 4.8
-      lines: 209-211
-      integrity: sha256-5f308966a4d8b5378adfac930cd5a1d4479b5a2179cdbccde8330c1e713f8aab
+      lines: 209-210
+      integrity: sha256-7b2e2d4658afd9fc1155600455777729c38accfd5b3f67cdd377b83d82b4babc
     - generated-by: Claude Opus 5
       lines: 212-214
       integrity: sha256-8983937b9ca81a70110ab9500b944e230fc357d9f45f2b78b3d26983418f1991
@@ -193,9 +154,6 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
     - generated-by: Claude Fable 5.1
       lines: 217
       integrity: sha256-2b698c7806a14570163bd479ef548fcc0644d1ab9322f92fa87035b59d405762
-    - generated-by: Claude Opus 4.8
-      lines: 218
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
     - generated-by: Claude Opus 5
       lines: 219-224
       integrity: sha256-8c7895f7f8a5dbe6beac1f83a3eca645c21704d18567e9db821e3e9e389b9dea
@@ -203,41 +161,17 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       lines: 225
       integrity: sha256-e36f3f07605e4c64bb5528ebdf8a22f4bae04de34a65e9ebd3f55cbb61249265
     - generated-by: Claude Opus 5
-      lines: 226-227
-      integrity: sha256-d89da962e0bc1e84dcb0e6f1319f2c62bca8ca5744ec08ae1a68135db48f9f7c
-    - generated-by: Claude Opus 4.8
-      lines: 228
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 229
-      integrity: sha256-4c306a80e637cf28b0a44d1446cd6476d5a92e9c4ebe4686863d5a9698de03bc
-    - generated-by: Claude Opus 4.8
-      lines: 230
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 231-234
-      integrity: sha256-44a1c1ba218361c480537655441a4caff58b436f70e686eb5a67bce9dd059579
+      lines: 226-234
+      integrity: sha256-2a17009de18a56b6d31e3ee83b3586b435ad7065e80bbf1e06f1ed1117068fc4
     - generated-by: Claude Fable 5.1
-      lines: 235
-      integrity: sha256-ef5d2d523247df3dcae4383b6e473feb5aee6ebf6cbaec5dd1e9219c39f0c1b9
-    - generated-by: Claude Opus 4.8
-      lines: 236
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Fable 5.1
-      lines: 237
-      integrity: sha256-b3c536a8ff7a87e39ad3a5422915546c8ba250354d727d547d3a279c2a8a8262
+      lines: 235-237
+      integrity: sha256-7c4fae4209c0709c1f975b686451eaa7672992c29aceef1325c80f982ccda024
     - generated-by: Claude Opus 4.8
       lines: 238-242
       integrity: sha256-2778b140127f0cd3e73c981221b7603fda5d2ba33a7f8cc3ecb59f0a613f7d0e
     - generated-by: Claude Opus 5
-      lines: 243
-      integrity: sha256-ea4217ea7b6283d6303ea996de07eb5c48571bc84baf2fb2cbd5f33ecb0a7332
-    - generated-by: Claude Opus 4.8
-      lines: 244
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 245-248
-      integrity: sha256-1af0e394f231cfa8625f4c844a1a1733d5a68047ecac806337af8e81052ced65
+      lines: 243-248
+      integrity: sha256-70ed7a060870f357c33924aad121818229546aef569c90da75ba4c263da9fb0d
     - generated-by: Claude Fable 5.1
       lines: 249-250
       integrity: sha256-73522f83a08d83cedb038aadca0f4178f17a6efb7526443d7086ae369c092157
@@ -245,8 +179,8 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       lines: 251
       integrity: sha256-026c97119014271651b66630d7b46565ed59d4c63fa6399ded5666065fcb4e19
     - generated-by: Claude Opus 4.8
-      lines: 252-253
-      integrity: sha256-583e6c65eba378e74054ca2f5480b3d8cff101abd1a3c08dc60c62b244479c38
+      lines: 253
+      integrity: sha256-651e3bcebdc34cb4aa13d72728bce32d8d5cb6437e0e5de7ee7c1fc2e255e1ae
     - generated-by: Claude Fable 5.1
       lines: 254
       integrity: sha256-15977c03ca24a515cb75025d7c798745d46b62fbbcc269166ae775057c482b51
@@ -254,8 +188,8 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       lines: 255-257
       integrity: sha256-1530f11f25c52d1162a1ef17e0af5f4f13442a30f9222ed173cdf91786ae49f3
     - generated-by: Claude Opus 4.8
-      lines: 258-259
-      integrity: sha256-d83fd2b93c012a30b846d022a2436edfe17175a771a3d01af056b3d13a6886df
+      lines: 258
+      integrity: sha256-e0cd8dd7cf2d8a61c2523ea3b07cea7958ecce605d53b5da1ef22e4b3c372841
     - generated-by: Claude Opus 5
       lines: 260-266
       integrity: sha256-c190137f8ce26fafe04617abdb9f5a6565c6d3500937e7daf77dc8c1d71afb52
@@ -263,35 +197,35 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       lines: 267
       integrity: sha256-261ee621c854817cc79767f3d51d3847af5877f77194a5e9d47e62f9d6edc5a1
     - generated-by: Claude Opus 5
-      lines: 268-295
-      integrity: sha256-aed5d1a6536af4994871fa30dc89e58874a0fbfffd228c769e181c25c07a3f44
+      lines: 268-294
+      integrity: sha256-0162e83333a8e171c0f1379dcc990e0ba744099a380de22c629577704c86b3a0
     - generated-by: Claude Fable 5.1
       lines: 296-303
       integrity: sha256-f756b52b261abbdcb2f8a18ea5ed939e895ce2b2eccd4c6bfb7a7db08246f21a
     - generated-by: Claude Opus 5
-      lines: 304-347
-      integrity: sha256-e302dc5d36584de1f5337193d704e814d05369f1e9317dee9de0f30b3e8da477
+      lines: 304-346
+      integrity: sha256-ee0dea01b79cc5dfc0627fa866ab940803c5a2bc7df941cef093ad5e1dc8a03b
     - generated-by: Claude Opus 4.8
-      lines: 348-349
-      integrity: sha256-31540393536036df85e6a78a337b1b778e39a9574d8273b0e7dfb3babbe67972
+      lines: 348
+      integrity: sha256-f07d5c41ee2e8a442ff956d86aae1dfaddb49cba98e871ed0b30e76725f0af39
     - generated-by: Claude Opus 5
       lines: 350-351
       integrity: sha256-e1861c32b83a8e39fbe4ff5cd776d3195606a13b13778ea209427c32eb60b387
     - generated-by: Claude Opus 4.8
-      lines: 352-353
-      integrity: sha256-768566e692441539cddad8fbbb668c32f1524df61dfad8d9c019b15ce007221b
+      lines: 353
+      integrity: sha256-8af8182ab1e8f509cf81961103ae39b0aa62a55a70dfd31bb9437408df4b7c20
     - generated-by: Claude Fable 5.1
       lines: 354
       integrity: sha256-4b2e3d5e02b2f73aeb91953ae61c54a3e0e9efe62cbf3e6dd37984221676c024
     - generated-by: Claude Opus 4.8
-      lines: 355-356
-      integrity: sha256-47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d
+      lines: 355
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5
       lines: 357-362
       integrity: sha256-414dcedb7972ed57a1bea06f8cd1c0c442208d0d3e88e46d6c77df8ec227517e
     - generated-by: Claude Opus 4.8
-      lines: 363-368
-      integrity: sha256-0aae42fe5e9a6f49a6304b3fae023b934631f9f2745341b43306e2a79541e0f6
+      lines: 364-368
+      integrity: sha256-8abbfa61c0d86d2f89729302932c6fd772fd9be2c130bda57a9d9c5c4e3a094f
     - generated-by: Claude Fable 5.1
       lines: 369
       integrity: sha256-b7882a053bc3314c256bdfceec6939e543082f463e2e205921222711fbfa1f92
@@ -332,8 +266,8 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
       lines: 385-386
       integrity: sha256-27415681413d6999311c83d6f4bc4753b0cc45d8700a9f1e947ffc4969d3ebcb
     - generated-by: Claude Opus 4.8
-      lines: 387-388
-      integrity: sha256-00a92e3d405ab87a1143793d295c7024a1b4c176ec9bc7c834b15cc0e44bf911
+      lines: 387
+      integrity: sha256-582ebf3ded795155d25105b5debae773505eca9fc278cf38d08fe470dff25f81
     - generated-by: Claude Fable 5.1
       lines: 389-390
       integrity: sha256-c10ae34396175d24d43a88e58fe29f3b66ab96cdb283d8af4b6082ee4644dd81

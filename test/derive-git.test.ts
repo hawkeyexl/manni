@@ -435,7 +435,8 @@ describe.each(forms)("deriveFromGit provenance ($name)", ({ opts }) => {
     writeFile(dir, "b.md", doc("title: t", "x\ny"));
     const facts = await factsFor(dir, "b.md", withProvenance(dir, { generatedBy: FABLE }));
     expect(facts.provenance?.value).toEqual([
-      { "generated-by": FABLE, lines: "1-3", integrity: pin("", "x", "y") },
+      // Body 1 is the blank line after the frontmatter, which carries no authorship (0071).
+      { "generated-by": FABLE, lines: "2-3", integrity: pin("x", "y") },
     ]);
   });
 
@@ -602,7 +603,8 @@ describe.each(forms)("deriveFromGit provenance ($name)", ({ opts }) => {
     );
     expect(result.status).toEqual({ available: true });
     expect(result.records.get("docs/b.md")?.provenance?.value).toEqual([
-      { "generated-by": FABLE, lines: "1-2", integrity: pin("", "x") },
+      // Body 1 is the blank line after the frontmatter, which carries no authorship (0071).
+      { "generated-by": FABLE, lines: 2, integrity: pin("x") },
     ]);
     // The other page keeps its facts.
     expect(result.records.get("a.md")?.created?.value).toBe("2020-01-02");

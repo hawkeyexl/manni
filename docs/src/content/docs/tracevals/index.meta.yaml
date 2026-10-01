@@ -9,8 +9,8 @@ docs/src/content/docs/tracevals/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-8
-      integrity: sha256-02e0437594b0698deff7f030c03a882de57300871faa62b6409ec9cfc5a079af
+      lines: 2-8
+      integrity: sha256-32701b284d327e80afd9129ada965e825b861889e699c6d4d76c6b04ce319285
   owner:
     - "@hawkeyexl"
   created: 2026-09-24

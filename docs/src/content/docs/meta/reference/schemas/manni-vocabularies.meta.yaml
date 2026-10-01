@@ -17,29 +17,26 @@ docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-12
-      integrity: sha256-75c6d2bb66287e2689e3aef993696d691bad5f118a2ab5f72bd79ec001701aec
+      lines: 2-12
+      integrity: sha256-d3c0b06c4eee9a7c75b802ee006a4fcf73e939661b20dca5254b32a5d5c224dc
     - generated-by: Claude Opus 5.5
-      lines: 15-41
-      integrity: sha256-8f976ad8c786d4612731e276e4041f75f3301212e0a02589164fa0bd1b244164
+      lines: 15-40
+      integrity: sha256-74df1fa9018fd56cb74c677796e997e962297a72107187c80fd5fa42967b24f6
     - generated-by: Claude Opus 5.5
-      lines: 43
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      lines: 56-57
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
     - generated-by: Claude Opus 5.5
-      lines: 55-57
-      integrity: sha256-87ae72b3e4eb02b2c967bb86b40b728d6db1637c3a4ee75ca289996e975b7a66
-    - generated-by: Claude Opus 5.5
-      lines: 63-64
-      integrity: sha256-47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d
+      lines: 63
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5.5
       lines: 69-78
       integrity: sha256-a9efaa577eff784311b00724c8cf7594fc1d399bb7ac6b6053592459576ff14f
     - generated-by: Claude Opus 5.5
-      lines: 80-103
-      integrity: sha256-789064d442deac6d14772ef48bb1d2fdecb15bdba5624fbcb89f6a04edab7a1e
+      lines: 81-103
+      integrity: sha256-d717e763b92db1edbdb98a3538ae05c4505371429bda58597cd8745eb6587c5b
     - generated-by: Claude Opus 5.5
-      lines: 115-118
-      integrity: sha256-ac2b7781eede3add0e90a15f900c65bd8754e01b9db3a87a206fc39fb881cd50
+      lines: 116-118
+      integrity: sha256-4ef9021fb32a169a48899d263959b826877cee7489aff983f32700dce76bc99c
     - generated-by: Claude Opus 5.5
       lines: 121-308
       integrity: sha256-e72df35ced8def8ff109ba207c144c211439a71b446e24c36a144502bc957fe8

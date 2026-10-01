@@ -23,8 +23,8 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-514
-      integrity: sha256-9696c6438c583d7d298f6d05f695e952a0b63d8e1455464f385ffb9e7be7d96e
+      lines: 2-514
+      integrity: sha256-b675a13e2cdb10812b916cd9678400aa3c1a0eecc234f53c533422ac375ce125
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

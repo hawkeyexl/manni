@@ -19,17 +19,17 @@ docs/src/content/docs/meta/reference/schemas/manni-terminology.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-17
-      integrity: sha256-e9f4250337785c2c307f3983f48e1e7cb72f517e447e9d35d257e11fb4dd58d5
+      lines: 2-16
+      integrity: sha256-549f9f2905915034bb073f2d0367892191662c5759d6bc17d88faef1a7caeb59
     - generated-by: Claude Opus 5.5
-      lines: 25-29
-      integrity: sha256-f156b095ad7908ac0ae896428f6d6aa0bb15311a216f3c82e70d0526888e9452
+      lines: 26-29
+      integrity: sha256-fcd9f3139e4d117301cb23b4288f127507c4bc9b68cd700e8d7ea1295ade8af1
     - generated-by: Claude Opus 5.5
-      lines: 31-187
-      integrity: sha256-d9340f2b5af88e4a4862652d614948eb00289bfc49693165b20e5daae812c906
+      lines: 31-186
+      integrity: sha256-fd128b68cb48b04df402161748f9ffcc13cfc79990630ceba941a2969a8224c5
     - generated-by: Claude Opus 5.5
-      lines: 189-221
-      integrity: sha256-79023e41b275f5370d390feff8b0b7c140e7341e15db8a823a46bf69af9b465e
+      lines: 190-221
+      integrity: sha256-fbcf8c0147f720703a3f754f0de92bed3c56f7de85ea1351250206cf837315b3
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

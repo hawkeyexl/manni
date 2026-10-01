@@ -23,20 +23,20 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 4.8
-      lines: 1-3
-      integrity: sha256-c174d9e3e20c8831c0722589cd8bd47b273c77fdb407a85bd1025d3002f34982
+      lines: 2
+      integrity: sha256-62d0b6539cb0b3a3bb5ac68c9209513cb4133fd220b837f25049ee7dfe76c1d5
     - generated-by: Claude Opus 5
       lines: 4
       integrity: sha256-f4a58b387a97afa79cdc196b95b29d93e71e35eb8bcdb16b5480750c159c3737
     - generated-by: Claude Opus 4.8
-      lines: 5-8
-      integrity: sha256-bb2150a020fb730de9d09c51320e51ff4efadfa067f432945d9aa595f5940d34
+      lines: 6-8
+      integrity: sha256-a7c0d4714d6237cb0aa69b33855459fd3c9bdd8e2dd05af694109ca79f406071
     - generated-by: Claude Opus 5
       lines: 9
       integrity: sha256-5ed93c6a3470c36f7b6da484e202200229d5361ef396cd9e5bc5827bf48a58c8
     - generated-by: Claude Opus 4.8
-      lines: 10-11
-      integrity: sha256-d83fd2b93c012a30b846d022a2436edfe17175a771a3d01af056b3d13a6886df
+      lines: 10
+      integrity: sha256-e0cd8dd7cf2d8a61c2523ea3b07cea7958ecce605d53b5da1ef22e4b3c372841
     - generated-by: Claude Opus 5
       lines: 12-15
       integrity: sha256-714b94e373f815cb564a64992d5c606fd5e8c1a3eeca454b02324592b54deea7
@@ -44,23 +44,14 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
       lines: 16
       integrity: sha256-2988eeaa9dcd6662a159890a99c80d3c0b190cac77e586878b1db3941bf01ca2
     - generated-by: Claude Opus 5
-      lines: 17-18
-      integrity: sha256-768566e692441539cddad8fbbb668c32f1524df61dfad8d9c019b15ce007221b
+      lines: 18
+      integrity: sha256-8af8182ab1e8f509cf81961103ae39b0aa62a55a70dfd31bb9437408df4b7c20
     - generated-by: Claude Fable 5.1
       lines: 19
       integrity: sha256-3b651e2826ed42dc27bdeb657702bcab19d4780cff2102d0c786f0dd3897772c
     - generated-by: Claude Opus 5
-      lines: 20-45
-      integrity: sha256-49b6933ddf8be43e9d2c824e30c78199b98323dc90f784f8f1d56cd583aa3492
-    - generated-by: Claude Opus 4.8
-      lines: 46
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 47
-      integrity: sha256-6bea27e4ad133a058dd28584349e6b9bf66a2423d4e0bfc257b6937ff4768412
-    - generated-by: Claude Opus 4.8
-      lines: 49
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      lines: 20-47
+      integrity: sha256-d45bb974359efab7769b448fdcc76e1aa54f266d73c0833079504c63efc6c446
     - generated-by: Claude Opus 5
       lines: 50-53
       integrity: sha256-d67760019a79a90a22b0ef24862a8ef7848a12307d0ba5af1748fa4382f5ec18
@@ -68,35 +59,23 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
       lines: 54
       integrity: sha256-7a1031000fc8e2d7a2758a905091f6d9c2ab36056dfe9201b75f320b045a303c
     - generated-by: Claude Opus 5
-      lines: 55-59
-      integrity: sha256-e05e7c38d4dd4b5fe09d13edc80d2ff27b8c46181626087100ae90cd5d219f08
+      lines: 55-58
+      integrity: sha256-d577d6f966a577ddc23f67f16c3663f28ccbe70561a711d5f2c25c6c87c04154
     - generated-by: Claude Opus 4.8
-      lines: 60-70
-      integrity: sha256-e61a8029451181aad6ee85c580d86171d6f4cd2f7674297d62959dd0fb056a15
+      lines: 60-69
+      integrity: sha256-ee07f33843cd7145de9b436c6d30c9d02f7dd2ed325dd5354deb3f3e1c6208e4
     - generated-by: Claude Opus 5
       lines: 71
       integrity: sha256-22c5d10c725abadc274afb6d45bff2c795572eae5975cf32a02ae9f317cd3b4d
-    - generated-by: Claude Opus 4.8
-      lines: 73
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
     - generated-by: Claude Opus 5
-      lines: 74-77
-      integrity: sha256-b10fb99ccc234389571f44ad4e3f7e6f0ab48a9d0d5d41ebe63c5511a0123fad
-    - generated-by: Claude Opus 4.8
-      lines: 79
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      lines: 74-76
+      integrity: sha256-20aa051af4cd6ae72b9d57ca5dbc15dd84a376a475947e9e1b57ee088f68306b
     - generated-by: Claude Fable 5.1
       lines: 80
       integrity: sha256-3d982d9bd8884167256d74126d88c175f99f9193f85f7a213254e6272457929e
     - generated-by: Claude Opus 5
-      lines: 81-84
-      integrity: sha256-32492b4f28b0e38b6437c9fcfd5b214fb2541dbed472ea7a39722db197c2ef2e
-    - generated-by: Claude Opus 4.8
-      lines: 85
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 86
-      integrity: sha256-0a69fa04a4467debd9782087c8060134a236e49ae1c7095b1f94f028ab0b249b
+      lines: 81-86
+      integrity: sha256-c242676c21ecb3b4e959a9d2f63289fa2f6c6c0023cc07ef0edb4579b86e177b
     - generated-by: Claude Fable 5.1
       lines: 88-89
       integrity: sha256-e2e976fa0e5f290602e96e06435c27680ba0837ee858a7afafbe2ab562d906c8
@@ -107,68 +86,53 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
       lines: 95
       integrity: sha256-86be597655cf39ec264adaf58c1e465a980ecf96bbbc0f9165ff0b5575656a57
     - generated-by: Claude Opus 4.8
-      lines: 96-97
-      integrity: sha256-47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d
+      lines: 96
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 4.8
-      lines: 99-100
-      integrity: sha256-9b16b7d94d82c749df8c266efc72aecf96f7a806a8f75fdc05ab8220589c05c2
+      lines: 100
+      integrity: sha256-0b8b4bee1d85aff36f5394b90b86b498d9d4a19ac18c913ff70da3c5fbbbdb88
     - generated-by: Claude Opus 5
       lines: 101
       integrity: sha256-da59c96ff70a2697a0fc59ddb956d56bfb63ce8c342ba66732ba15070e980073
     - generated-by: Claude Opus 4.8
-      lines: 102-103
-      integrity: sha256-d83fd2b93c012a30b846d022a2436edfe17175a771a3d01af056b3d13a6886df
+      lines: 102
+      integrity: sha256-e0cd8dd7cf2d8a61c2523ea3b07cea7958ecce605d53b5da1ef22e4b3c372841
     - generated-by: Claude Opus 5
-      lines: 104
-      integrity: sha256-4c49b7512a68abd383b2535659c0ad14f1b6704808e721600b6e2a903b243a3d
-    - generated-by: Claude Opus 4.8
-      lines: 105
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 106
-      integrity: sha256-e69cf53a6faf04c20e469edcf04666b0aca664ae4e4cb5215497bde96fc0fff4
+      lines: 104-106
+      integrity: sha256-884110129ab2ffb79e4569950fb45f362e60ab2492933477a531ef0d7c454e1b
     - generated-by: Claude Fable 5.1
       lines: 107
       integrity: sha256-042a8ed49fb289b8d0e24b1f83aa6e5fbae536533976f7967e5c2c1009a8f7b0
     - generated-by: Claude Opus 4.8
-      lines: 108-109
-      integrity: sha256-5f046190424d41040cd85cb39e9afb65fcf3ed4fbb8f28b446eee59d73c0d8c0
+      lines: 109
+      integrity: sha256-ad332335cfaa348c5bd715c3479844622270d5f7389ae070b81b135d521a221a
     - generated-by: Claude Fable 5.1
       lines: 110
       integrity: sha256-cba30dabfea2d2248f9f7963192c2e8636cfa119921802ee03dcf7b4fb1f76b8
     - generated-by: Claude Opus 4.8
-      lines: 111-112
-      integrity: sha256-47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d
+      lines: 111
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5
       lines: 113
       integrity: sha256-a580043eae0d6989fb45ddff39d267d4893f39b55ebc5a7d24e0f9b704e8ea41
     - generated-by: Claude Opus 4.8
-      lines: 115-117
-      integrity: sha256-7027274eb55a5c6dadd9e8c9e377cde7521fc337558618ffc3928c8f45a5da84
+      lines: 116-117
+      integrity: sha256-986eeb5b520ba92ea1115dbae71ad11ab3911dc7292c6e7b4f8596115d06c372
     - generated-by: Claude Fable 5.1
       lines: 118
       integrity: sha256-d1f1651e9a78e132160979838fd5cec31fadbd8ae470eb6d633561a345f9b509
     - generated-by: Claude Opus 4.8
-      lines: 119-121
-      integrity: sha256-776da5bac5767d9f8c4a94f9c6457693975b2615a7be2a635ecbba0de9ad301f
+      lines: 119-120
+      integrity: sha256-1616100ca687ee0fdf3198ab9b4283fe34a317658ea7ea5e919715b79c15179e
     - generated-by: Claude Opus 5
-      lines: 122
-      integrity: sha256-451706be4eed71b97dcdae796e00a185aabf0e72f5cce78d82bf26678fce6ccf
+      lines: 122-125
+      integrity: sha256-4011ed0eda880a37f23ea95cc50bdc53ddccf704b21b519c735af91d1a06eb1f
     - generated-by: Claude Opus 4.8
-      lines: 123
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 124-125
-      integrity: sha256-1e30a0e8d40a903c98684782c73ca4fe90ca68d5871ce11d197bbaa80dfa32af
-    - generated-by: Claude Opus 4.8
-      lines: 126-128
-      integrity: sha256-cf1fa6e705d20d3aae5b8d0b1c51e480c04a630f1f5bae2f062fedbf7388796d
+      lines: 127
+      integrity: sha256-cd1d5d57cfe45aaf3245e617067245ca124c5b7549983f9336da7337351b8cee
     - generated-by: Claude Opus 5
       lines: 129
       integrity: sha256-5a470798b1a0da03116965bc7fe5d49a92d8a10669c9c0446a12bbda8bbe1d85
-    - generated-by: Claude Opus 4.8
-      lines: 130
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
     - generated-by: Claude Fable 5.1
       lines: 131
       integrity: sha256-544c8b90ad470df7700f12aa0b7051535b85b4ff4f748052dbcf0300a43cff96
@@ -176,14 +140,11 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
       lines: 132-135
       integrity: sha256-36d45cf8310b5c0e9836bafe299dff2ea49c8245b96b7ab3df653415618d8618
     - generated-by: Claude Opus 4.8
-      lines: 136-137
-      integrity: sha256-0596f6b933d6ba0188466f40ed9aa069a3ae59a6ca062fa7da4d8c2138c7bc56
+      lines: 136
+      integrity: sha256-a6788eef33b6d1dea3e77b9610dc41fa7ce3c8e344933b9932984d11269ff0e3
     - generated-by: Claude Opus 5
       lines: 138
       integrity: sha256-34d06175df2d3c4a067c289ab6895666a8773e56f1bd646e1bf68cad76beed95
-    - generated-by: Claude Opus 4.8
-      lines: 139
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
     - generated-by: Claude Fable 5.1
       lines: 140
       integrity: sha256-544c8b90ad470df7700f12aa0b7051535b85b4ff4f748052dbcf0300a43cff96
@@ -191,29 +152,17 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
       lines: 141-147
       integrity: sha256-6dfb859af16dd3f6bfb38dbf88b7d6e2f266482be749a3a38bbc7b20507db1e1
     - generated-by: Claude Opus 4.8
-      lines: 148-151
-      integrity: sha256-d722f60814e6c08f811300725bdbd2b347e0c3f193412909b9d50bcf8c20eb31
-    - generated-by: Claude Opus 4.8
-      lines: 153
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      lines: 148-150
+      integrity: sha256-add12a9eb2e2c243c9af99a6400a8e1a31ac90dc4914825d9402e0c2cf535ad9
     - generated-by: Claude Opus 5
-      lines: 154-158
-      integrity: sha256-ab7a9200c1c165c9f61904ded98541d680ebd7e3a2a6c5a8c3c65c9800669801
-    - generated-by: Claude Opus 4.8
-      lines: 159
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 160-161
-      integrity: sha256-dec644430709574c1c0fd19365a1a366295bea880d37dd460d99e33100f8e3cb
-    - generated-by: Claude Opus 4.8
-      lines: 162
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      lines: 154-161
+      integrity: sha256-14c443f3590ff681bbfb9369422cb74afcc2d4fbd284ed78f012e9e658dacbbe
     - generated-by: Claude Fable 5.1
       lines: 163
       integrity: sha256-3d982d9bd8884167256d74126d88c175f99f9193f85f7a213254e6272457929e
     - generated-by: Claude Opus 5
-      lines: 164-169
-      integrity: sha256-dca65db98c1d93208d5215519cde3f07e44150c03a13798a3f1f51ca50fe77eb
+      lines: 164-168
+      integrity: sha256-16967aed5ed33d0995df115be0840540a28741f1513d70006378be82f18078de
     - generated-by: Claude Fable 5.1
       lines: 170
       integrity: sha256-0a69fa04a4467debd9782087c8060134a236e49ae1c7095b1f94f028ab0b249b
@@ -227,38 +176,26 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
       lines: 179-180
       integrity: sha256-8db39d8084bae7b1dd41802b3becc628bb1c0e690c3e85995d4444bf7f5630f2
     - generated-by: Claude Opus 4.8
-      lines: 181-182
-      integrity: sha256-47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d
+      lines: 181
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5
       lines: 183-185
       integrity: sha256-e5599dc344c2bb36bac3e22428ef2990e2e26cd4603dc833b1a283a678797c6d
     - generated-by: Claude Opus 4.8
-      lines: 186-188
-      integrity: sha256-4d1544154a7cfe3bad4cdc7d9e0b6a1914e6046be57b86b57ea19c4ea765e710
+      lines: 187-188
+      integrity: sha256-0d03ed84246032f6f162ffd62bc1fc22f6b6c167cd4b56188b7df831ceea421a
     - generated-by: Claude Fable 5.1
       lines: 189
       integrity: sha256-e0e806d66e00bcc87255b163e93de1841b9251098a719fa3c17fa7ce1536c389
     - generated-by: Claude Opus 4.8
-      lines: 191-192
-      integrity: sha256-70989784b910780e2437c6e7a9e5086533a848ce1152c0817192c7593fb63268
-    - generated-by: Claude Opus 4.8
-      lines: 192
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      lines: 191
+      integrity: sha256-cc80a2b0dd2322e85a08fc66ebe3e74edad79a9255ef8048fd83fe7d8db48f5c
     - generated-by: Claude Opus 5
-      lines: 193
-      integrity: sha256-ccbbaedf4fefb689547798a8460a191e2445b177a7ebaa28527aeade0926668a
-    - generated-by: Claude Opus 4.8
-      lines: 194
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 5
-      lines: 195-196
-      integrity: sha256-dcdd2b710997771fdbd3948c60d057e1ae9314f22f9604c40d7cf709490b2fb9
+      lines: 193-196
+      integrity: sha256-f7fa5579c70f619afc6f98af49a25e8e80b29ee49a5c0e1314ad16fb965fa24c
     - generated-by: Claude Fable 5.1
       lines: 197
       integrity: sha256-61f43fd19e78d2c217683be680952294579a2039a4ce004f8d5e941eb5963d60
-    - generated-by: Claude Opus 4.8
-      lines: 198
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
     - generated-by: Claude Opus 5
       lines: 199
       integrity: sha256-ad332335cfaa348c5bd715c3479844622270d5f7389ae070b81b135d521a221a
@@ -272,20 +209,14 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
       lines: 204
       integrity: sha256-dc13216070ac4cb25499867a1740ec62dd317b51fbfd67887057b746cffd4bdb
     - generated-by: Claude Opus 5
-      lines: 205-210
-      integrity: sha256-ce255b6ff10a398aabcd53d5ee62e388d3911719392bb5de2190f2e5b742f1cc
+      lines: 205-209
+      integrity: sha256-469d6a74d9d8c42941367bacf83c94be4796a6cd48a52ecbfd14187c24b7e567
     - generated-by: Claude Fable 5.1
       lines: 211-213
       integrity: sha256-0fb35df11f1f72e36963ba17d17ff548ad2f890926a0bd0e81ba0f5ebc426b49
     - generated-by: Claude Opus 5
       lines: 214-217
       integrity: sha256-70f0e0a0a141643f16dbcbb54cc3b18b7b80a85af0b995c1a363baaf100060da
-    - generated-by: Claude Opus 4.8
-      lines: 218
-      integrity: sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-    - generated-by: Claude Opus 4.8
-      lines: 220-222
-      integrity: sha256-109a187ec858be857cb8041317d01178866952e54adb92c5b212a3cca2540de9
     - generated-by: Claude Opus 4.8
       lines: 221-222
       integrity: sha256-0c896f8649d55173ec02d364d3f8f1e2e1fc29d9ce455cdc829709ed23289a98
@@ -296,26 +227,17 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
       lines: 224
       integrity: sha256-caed698d4305334f959dd53f06a7632a97f405d65cd4cd01015887b4720a0aa1
     - generated-by: Claude Opus 4.8
-      lines: 225-226
-      integrity: sha256-70989784b910780e2437c6e7a9e5086533a848ce1152c0817192c7593fb63268
+      lines: 225
+      integrity: sha256-cc80a2b0dd2322e85a08fc66ebe3e74edad79a9255ef8048fd83fe7d8db48f5c
     - generated-by: Claude Opus 5
-      lines: 227
-      integrity: sha256-8e316b3a52ffc7f522b6b97a40b30d177d6292a7c65c58b7a0085e1700397168
-    - generated-by: Claude Opus 5
-      lines: 229
-      integrity: sha256-9758f9da48c13d614536b04d63d32ed117772f2301aea48595c68b902665dccd
-    - generated-by: Claude Opus 5
-      lines: 231-233
-      integrity: sha256-eb07964d73216768784322c3ad56942f65c1ee40b3c178f0a76b525269854ca7
+      lines: 227-233
+      integrity: sha256-f47294e3f03987e20d8c71a10c849dc4c1ac4da2b849c63e3b4354cb1f63f08b
     - generated-by: Claude Fable 5.1
-      lines: 234
-      integrity: sha256-129ba97597f17f735a9cbf31de18de292ee027257dc0824bdbf8a51b419a4fdd
-    - generated-by: Claude Fable 5.1
-      lines: 236
-      integrity: sha256-4581452861824aa157612eb73e5b506a43e99c2a95c31d630667f67e38d4155e
+      lines: 234-236
+      integrity: sha256-44a2876ae9797a7f36534665ea26acf59cbae4a480d7a8d38d504493862ce325
     - generated-by: Claude Opus 5
-      lines: 237-239
-      integrity: sha256-07a10706c8410a4b9fe41e341cdd6bcce9ced33198996c4e87a1abfcc4616443
+      lines: 238-239
+      integrity: sha256-150da28069411872a3c4bc01462b7d90babe4069a468f5f97341faafef2ba087
     - generated-by: Claude Fable 5.1
       lines: 243
       integrity: sha256-547850f13a03ae78128083369159da411763877f7af601ae662f70c71b0d5b01
@@ -341,17 +263,17 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
       lines: 281
       integrity: sha256-0df328c1cc7032d69de4f7e8be1a824cd1622bac9fc126609a1402b64b7df160
     - generated-by: Claude Opus 4.8
-      lines: 283-284
-      integrity: sha256-7355a39c8a8f21e78e8a5e6934bb2bd6009b1a6e6322d2000112b9c7f2eedb64
+      lines: 283
+      integrity: sha256-b3d56a9bc26d132c175a60631b8918a8a4d2d5b0be4c15a9798469759f405d8d
     - generated-by: Claude Opus 5
-      lines: 285-291
-      integrity: sha256-ae172e3ed480aeac2323121c60f627e827f937dd2f0316d2c157bb945814c486
+      lines: 285-290
+      integrity: sha256-3fc86030442f23f2d9f13aa1647d856317670519741da7d6c91b92c4783b4a00
     - generated-by: Claude Fable 5.1
       lines: 292
       integrity: sha256-444ba25a6d75c89fcc81c78302853943ab2c8029748b74790d4b3343b28ad8b7
     - generated-by: Claude Opus 4.8
-      lines: 293-297
-      integrity: sha256-a10042f9fa10d2885330237a9e20787568b7d9da8f97ca08fb877b3e30148025
+      lines: 294-297
+      integrity: sha256-5049533ad8472f87798c23da23e4ec087a9b55e8c201f76a6f2c10970f1db012
     - generated-by: Claude Fable 5.1
       lines: 298-299
       integrity: sha256-233ab4c8cfeafc250ccffba7e0955b984d2fca0548dd9ee2eaed022a47a0aa4e
@@ -365,8 +287,8 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
       lines: 304
       integrity: sha256-ccccb2dbcc3f76f307db4ae4888c5542c6038bd7fd64ba406f641b39d257f303
     - generated-by: Claude Opus 4.8
-      lines: 305-308
-      integrity: sha256-72c0d78932de68b437e5ec67fc927f5911fcde9352b8cc27db812750c73d776c
+      lines: 305-307
+      integrity: sha256-91d6ee59648b413aaf4380dffe0fd1897b8747c8c43ea622cbb895581657f32e
     - generated-by: Claude Fable 5.1
       lines: 309-310
       integrity: sha256-c10ae34396175d24d43a88e58fe29f3b66ab96cdb283d8af4b6082ee4644dd81

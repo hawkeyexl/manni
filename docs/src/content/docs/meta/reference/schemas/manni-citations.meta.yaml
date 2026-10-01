@@ -19,17 +19,17 @@ docs/src/content/docs/meta/reference/schemas/manni-citations.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-22
-      integrity: sha256-fb8f88dfb2fb10a68b51efd87a78a15e9d4dc6dfb6b9ad131124808a53a3d181
+      lines: 2-21
+      integrity: sha256-d449c61e5eae848a249d526a493bd9b9c5ebd3385644e3db28b68f3795803548
     - generated-by: Claude Opus 5.5
-      lines: 28-30
-      integrity: sha256-87ae72b3e4eb02b2c967bb86b40b728d6db1637c3a4ee75ca289996e975b7a66
+      lines: 29-30
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
     - generated-by: Claude Opus 5.5
-      lines: 36-259
-      integrity: sha256-2b75ec326e392d5385b8eb1ff888d193021302cddeda4e5ee7f62c2bd5cd41ab
+      lines: 36-258
+      integrity: sha256-edcbdf1e28799a2ecadfd935729fa94103656081bd3e473f11250e217fefabae
     - generated-by: Claude Opus 5.5
-      lines: 270-307
-      integrity: sha256-1d8b225567140fcc67ee2ba74565238871798c1dd4e2d55e4fc577b2503b8f2e
+      lines: 271-307
+      integrity: sha256-5aad8b819b8089bae13b4733a79356fa88ac8c88ddfa5850608672ab5677974d
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

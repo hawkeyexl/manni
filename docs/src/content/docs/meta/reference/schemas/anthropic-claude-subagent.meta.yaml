@@ -22,11 +22,11 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-3
-      integrity: sha256-0c7abc6321a537fb4c5c9a1e63d254b9d9fff68c3400e067307d76e0121aa6bf
+      lines: 2
+      integrity: sha256-76b2a53f73519706f7f8e310aaf9fa64424820e3ce6b4fb1164c503e20efd9d8
     - generated-by: Claude Opus 5.5
-      lines: 4-7
-      integrity: sha256-1f257876c783582240cc44a5d7c92cb735a3aa5594601eedd8b13bdd5dd3e51d
+      lines: 4-6
+      integrity: sha256-3167acfe8a48895e7274aefd2f8011043a77638d05dbb393eae5d002e3286071
     - generated-by: Claude Opus 5
       lines: 8-13
       integrity: sha256-5146e82c71dafccb642858e0394295265c1ad940100a73a8ee8b68c03efad3ae
@@ -40,17 +40,17 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
       lines: 48
       integrity: sha256-8ba96537e7b7a8ba36ea4b487f02f9117ceeebfd568251b342a82c5088bf5e81
     - generated-by: Claude Opus 5
-      lines: 49-50
-      integrity: sha256-d83fd2b93c012a30b846d022a2436edfe17175a771a3d01af056b3d13a6886df
+      lines: 49
+      integrity: sha256-e0cd8dd7cf2d8a61c2523ea3b07cea7958ecce605d53b5da1ef22e4b3c372841
     - generated-by: Claude Opus 5.5
-      lines: 51-62
-      integrity: sha256-d7e0c3d204eb6dfe4095a35ab02f49e4e3e861baee8d33aa7bbba7f7b5d839f6
+      lines: 51-61
+      integrity: sha256-34ad15d7be15a5c5fcfcdbf6b517bc6517ba27c84d88de8610cb7a5b4f064fb7
     - generated-by: Claude Opus 5
-      lines: 63-91
-      integrity: sha256-9c25ff66798713673a33617be32153d829cd006bf9e683183bb6b8247c3e55de
+      lines: 63-90
+      integrity: sha256-72e538ec11020bda5728c8e9538193a5e2907f1f265368295eb7937e7642ddd1
     - generated-by: Claude Opus 5.5
-      lines: 92-120
-      integrity: sha256-bd5e0436aaa55cf1b67c3c3d1b4b013dae8e742417206fdadd23958244a51981
+      lines: 92-119
+      integrity: sha256-8e8912501341a0e280ec2bcfc7054cc040ea6bd9e4d54b0df5bbea266b72423f
     - generated-by: Claude Opus 5
       lines: 121-152
       integrity: sha256-14f7386b530e0efef54432e610812c191c58b0e1ad7d86c45a7b573f6125f074
@@ -64,20 +64,20 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
       lines: 155
       integrity: sha256-55efe1d59a183247ca707c94345fd46fe40c4f90a534fb9d49ccfbc5b8d4e564
     - generated-by: Claude Opus 5
-      lines: 156-234
-      integrity: sha256-7d3055b3716eeb73e8f37e19be889c578362a422c346675d006db3246f25fa95
+      lines: 156-233
+      integrity: sha256-7527cdb49d29f11765f4d0780156d9ca1cc1ccb0b04baf57f979bcba1841c4c9
     - generated-by: Claude Fable 5.1
       lines: 235
       integrity: sha256-0e9a04ebde341a411bc78b22e7e799f4459242e1e4295adc27bd49d964049a5a
     - generated-by: Claude Opus 5
-      lines: 236-252
-      integrity: sha256-e58820922e7bad7f1c904ba5d6739bf9f49b33b7f0673f16ba378f7bf5db01a9
+      lines: 237-252
+      integrity: sha256-c7df594e05e5403e6f4f16a4511260b783b4584acb5707505ea22fcfc8c5e4b4
     - generated-by: Claude Fable 5.1
       lines: 253
       integrity: sha256-17c63598ac88455b90ab33344c7481929602af3bc49df92851d71b85feb8b497
     - generated-by: Claude Opus 5
-      lines: 254-269
-      integrity: sha256-bba4afdd2260039132a452a05afd07e2aa0a01592ffdac41e73ccae7637c6e43
+      lines: 255-269
+      integrity: sha256-ec4e7e012f0b5d3213d814a56fb8c3e10f215fd32957ee99730b2f76feb83131
     - generated-by: Claude Fable 5.1
       lines: 270-271
       integrity: sha256-cd950fcdef46abfc4ecc1faa37d0bbcb647b4d19fd2eb15b1a1138f8de438938

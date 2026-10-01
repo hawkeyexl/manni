@@ -9,8 +9,8 @@ docs/src/content/docs/lint/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-8
-      integrity: sha256-c344b6b5b4d38a40d8ac7d0abb16f2912da3b77ff6969e3d7f0d406c5156d110
+      lines: 2-8
+      integrity: sha256-dc1d83b1dc0cc9afca50ec8d8bf2f02b3655d3eaf0bd1ed08c335c0d74c918e5
   owner:
     - "@hawkeyexl"
   created: 2026-09-24

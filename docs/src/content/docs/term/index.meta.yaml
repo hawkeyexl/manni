@@ -29,8 +29,8 @@ docs/src/content/docs/term/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-130
-      integrity: sha256-af76ce9217fb11c775b96d3a05ae2268bcf27ca486f9cf2f47fe603f29f45eb5
+      lines: 2-129
+      integrity: sha256-d29ae3944b5eea549e2ba9e7ecc11f0697c59cd04283a4fb354c3d7e3f3ce146
     - generated-by: Claude Opus 5.5
       lines: 131-134
       integrity: sha256-36811e81e9457ec7000794f4890b3849b0fa883a52431d31aa59f1c7ad2fb7b1

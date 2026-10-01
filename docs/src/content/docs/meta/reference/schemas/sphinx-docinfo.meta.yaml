@@ -18,8 +18,8 @@ docs/src/content/docs/meta/reference/schemas/sphinx-docinfo.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-119
-      integrity: sha256-8042b7f5dd7b8dee40a8dba56d4f4620c515bf5743cca81fa1ffe33d036e232d
+      lines: 2-119
+      integrity: sha256-2ef18a80721b18c5bb9bcb192583525b2a447efca4028c403fd3685d9ad42163
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

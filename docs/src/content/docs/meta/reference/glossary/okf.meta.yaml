@@ -14,8 +14,8 @@ docs/src/content/docs/meta/reference/glossary/okf.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-7
-      integrity: sha256-e9a2138e887a53f4919e2f78df839abe39c5e7c37300ede7ebb41ecec6b1ab08
+      lines: 2-7
+      integrity: sha256-920ea334410ae49440fed2a8b39de4848cd83c67491483cf24cb1b94a1336247
     - generated-by: Claude Opus 5.5
       lines: 10
       integrity: sha256-5661ef35877d747bba425cacd84e3e491dfa9f86f484f6a00994aeaa7703b73e

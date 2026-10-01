@@ -23,8 +23,8 @@ docs/src/content/docs/term/fix/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-415
-      integrity: sha256-bd0d66e43d6a6f0c0f4f54722c5a12029161b2973e4c376f7f1b42e676d976d7
+      lines: 2-415
+      integrity: sha256-be19211a9c9bd83d4e0b384a430d4750dd4590edb590a96fcc58be103db34201
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

@@ -1010,17 +1010,17 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-62db5bca580e41b7ecbc387dba1966ed1b56f1cdc447d663750b06bfedc5a1b1
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 480
+        lines: 515
         integrity: sha256-b9df48677e4346781aca47216155b78c26d5ed6e97f080f0ea53d5e5fa1e30be
-        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: derive-provenance-from-on-moved-or-stale
       claim:
         integrity: sha256-62db5bca580e41b7ecbc387dba1966ed1b56f1cdc447d663750b06bfedc5a1b1
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 668
+        lines: 768
         integrity: sha256-731f33be45282b9fe7d97b8a6319358ea8ee05d74b15c493815ffc3376c5348e
-        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
+        commit-sha: 31cf54c1a732dc33be311973296eeaba8a02555a
     - id: derive-summary-counts-ranges
       claim:
         integrity: sha256-7e87bbc3d6650b0aa21256f435767ea8de4ae227867c718c674deedfdba67462
@@ -1125,7 +1125,7 @@ docs/src/content/docs/meta/reference/cli.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: provenance-not-fenced-is-a-per-file-error
       claim:
-        integrity: sha256-2aff4d141f532e4d48146f445e463deeef2aa6c1186cc747d96a3e52440bee21
+        integrity: sha256-483eaf04d4dd779a79ee563f6a5152b636f5208c3600a792479777e30002f1c8
       source:
         file: src/meta/commands/derive.ts
         lines: 982-987
@@ -1133,12 +1133,12 @@ docs/src/content/docs/meta/reference/cli.mdx:
         commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
     - id: provenance-judged-range-by-range
       claim:
-        integrity: sha256-2aff4d141f532e4d48146f445e463deeef2aa6c1186cc747d96a3e52440bee21
+        integrity: sha256-483eaf04d4dd779a79ee563f6a5152b636f5208c3600a792479777e30002f1c8
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 642-651
-        integrity: sha256-b725cc99d1aa83c5902a22e24cde659c16c0eeed15b588c3ac1fddfe672bcad2
-        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
+        lines: 698-747
+        integrity: sha256-bfcc91cc1e5f0b57f4cc7db89cdeb2f79f98263265d569c6b976f943d278c6d6
+        commit-sha: 5fef796eccde2138ddd5c3e0bcf0341de1b2cc9e
     - id: managed-field-written-when-non-null-and-different
       claim:
         integrity: sha256-c7380e6ed1c09acaa9f23460aff9428fcb46ba4a3bd2b2af4ec2a691182fd9d3
@@ -1223,9 +1223,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-b8fc1f95a86e27962d2280bfa36efc3ac0479fe4d8b332aa5438003315848170
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 751-753
+        lines: 862-864
         integrity: sha256-ca0a636ac51279dde536411183c5abfeb21354d081a7f8742a0b5155d1a4b8b8
-        commit-sha: 9a7f46523a042a61d4ad0a6286beaa7bd8fe136e
+        commit-sha: 31cf54c1a732dc33be311973296eeaba8a02555a
     - id: generated-by-falls-back-to-the-env-var
       claim:
         lines: 1007

@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-09-28
 tags:
   - configuration
   - yaml
@@ -2145,7 +2145,7 @@ against the product's own version file.
 | `owner` | codeowners | Owners matching the path, `@` kept. GitHub: last matching line wins, first file found of `.github/CODEOWNERS`, `CODEOWNERS`, `docs/CODEOWNERS`. GitLab adds `.gitlab/CODEOWNERS` and sections: every section applies, last match wins per section, union of owners | `.github/CODEOWNERS:12` |
 | `reviewed-by` | `github` or `gitlab`, then `git` | Logins with an `APPROVED` review on the merged PR/MR containing the newest body-changing commit, `[bot]` suffix stripped for dedupe. Fallback: `Reviewed-by:` trailers on that commit | `github PR #18` / `Reviewed-by trailer in 424f71a` |
 | `last-reviewed` | `github` or `gitlab`, then `git` | Date of the latest `APPROVED` review on that PR/MR. Trailer fallback: the commit's author date | as above |
-| `provenance` | git | A list of pins, one per contiguous range of body lines one machine wrote: `generated-by`, `lines` in body lines, and `integrity`. Read from `git blame` and commit evidence, per line; see [Provenance](#provenance) | `uncommitted` / `blame 9b0e2c1` / `blame 9b0e2c1, 2 commits` |
+| `provenance` | git | A list of pins, one per range of body lines one machine wrote: `generated-by`, `lines` in body lines, and `integrity`. A range never starts or ends on a blank line. Read from `git blame` and commit evidence, per line; see [Provenance](#provenance) | `uncommitted` / `blame 9b0e2c1` / `blame 9b0e2c1, 2 commits` |
 
 #### The review sources
 
@@ -2220,7 +2220,12 @@ appends cannot make a line the branch left unstamped a machine's.
 
 {/* cite trailer-keys-compare-without-case */}
 Trailer keys compare without case. Among several trailers of one kind, the first that names a machine wins.
-Contiguous lines one machine wrote form one entry.
+
+{/* cite blank-lines-carry-no-authorship */}
+Lines one machine wrote in a row form one entry. A blank line, empty or
+whitespace only, carries no authorship. It never starts or ends an entry,
+and blank lines between two of one machine's lines do not split its entry.
+The entry's integrity covers them.
 
 {/* cite provenance-matched-by-integrity-first */}
 Each stamped entry is then matched with what the evidence derives, by
@@ -2231,8 +2236,13 @@ integrity first:
 | `current` | The pin matches at its recorded lines, and no evidence names another machine | none | keeps it |
 | `moved` | The pin matches at other lines | none | rewrites `lines` |
 | `changed` | The pinned text is found nowhere in the body | `derived:stale` | re-derives the range from evidence, and drops it when none remains |
-| `stale` | The evidence names a different machine for the pinned lines | `derived:stale` | re-derives the range |
-| `unset` | The evidence names a machine for lines no entry covers | `derived:stale` | adds an entry |
+| `stale` | The evidence names a different machine for the pinned lines, or the pinned lines start or end on a blank line | `derived:stale` | re-derives the range, or trims its blank lines and drops it when only blank lines remain |
+| `unset` | The evidence names a machine for non-blank lines no entry covers | `derived:stale` | adds an entry |
+
+{/* cite written-range-replaces-kept-entries */}
+An entry `derive` writes replaces every kept entry that lies inside it. A
+kept entry it only partly overlaps keeps its lines outside it. It splits in
+two when the new entry sits in its middle, and each piece is pinned again.
 
 {/* cite nearest-lines-takes-the-match */}
 No evidence is not a contradiction. A pin over lines whose commit names no
@@ -2241,20 +2251,25 @@ attribute lines after the fact. When two ranges hold identical text, the nearest
 takes the match.
 
 {/* cite provenance-findings-are-in-file-lines */}
-The three findings read, in file lines:
+The findings read, in file lines:
 
 ```
 provenance lines 16-18 changed since claude-fable-5 wrote them — run manni meta derive
 provenance lines 29 say claude-sonnet-5; blame says Claude Opus 5 (6683e73) — run manni meta derive
+provenance lines 31-34 say claude-fable-5 but start on a blank line — run manni meta derive
 provenance is unset for lines 26; blame says Claude Opus 5 (ecb9b0a) — run manni meta derive
 ```
+
+An entry of blank lines reads `but hold only blank lines`. The other blank-line
+forms read `but end on a blank line` and `but start and end on blank lines`.
 
 {/* cite generated-by-range-attributes-file-lines */}
 `--generated-by` with a range, `<path>:L1-L2`, attributes those file lines
 whether or not they are committed. It is refused when evidence rules 2 to 4
 name a different machine for any of them. Several ranges of one file each
-attribute their lines. A range must name one file the run reads, never a
-directory or a glob. Without a range it attributes
+attribute their lines. Blank lines at either end of a range are left out,
+and a range of only blank lines writes nothing. A range must name one file
+the run reads, never a directory or a glob. Without a range it attributes
 uncommitted lines only. Every refusal is listed in [exit 2 from a derive
 source](/manni/meta/reference/output-and-exit-codes/#exit-2-from-a-derive-source).
 
