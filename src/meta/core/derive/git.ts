@@ -891,9 +891,10 @@ async function provenanceFor(
     // non-blank lines. Each range is the one attributeRange writes, trimmed
     // of blank edge lines (0071), in file lines: a blank line outside it is
     // not the attribution's, and one of only blank lines attributes nothing.
-    const { bodyLine } = readProvenancePage(input.content, { fenced });
+    const page = readProvenancePage(input.content, { fenced });
+    const { bodyLine } = page;
     const ranges = attribution.targets.flatMap((target) => {
-      const entry = attributeRange({ ...base, blame, target, generatedBy: attribution.generatedBy });
+      const entry = attributeRange({ ...base, blame, target, generatedBy: attribution.generatedBy, page });
       const span = entry === undefined ? undefined : parseLines(entry.lines);
       return span === undefined ? [] : [toFileLines(span, bodyLine)];
     });

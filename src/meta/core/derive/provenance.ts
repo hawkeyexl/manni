@@ -913,6 +913,11 @@ export interface AttributeRangeInput {
   machines?: readonly string[];
   generatedBy: string;
   fenced?: boolean;
+  /**
+   * The page as `readProvenancePage` reads `content`, when the caller has it.
+   * Several ranges on one file then share one read instead of one each.
+   */
+  page?: ProvenancePage;
 }
 
 /**
@@ -930,7 +935,7 @@ export function attributeRange(input: AttributeRangeInput): ProvenanceEntry | un
   const { target } = input;
   const { page: path, lines: range } = parseProvenanceTarget(target);
   if (range === undefined) throw new Error(`provenance: ${target} names no lines`);
-  const page = readProvenancePage(input.content, readOptions(input.fenced));
+  const page = input.page ?? readProvenancePage(input.content, readOptions(input.fenced));
   if (range.end > page.lines.length) {
     throw new DocmetaError(
       `${path} has no lines ${spellLines(range)}: the file ends at line ${page.lines.length}.`,
