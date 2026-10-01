@@ -1,6 +1,41 @@
 ---
 title: The manni vocabularies
 description: "The eleven manni:<family>:1.0.0 built-in vocabularies for maintained, machine-readable docs: what each one answers, how they stack, and their strict overlays."
+type: concept
+id: meta-reference-schemas-manni-vocabularies
+keywords: ["manni vocabularies", "strict overlays", "field location", "quality contracts"]
+language: en
+audiences: ["schema-authors"]
+intent: "Choose which manni vocabularies to stack for a docs set, and when to add their strict overlays."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "override"]
+sample-questions:
+  - "Which manni vocabularies exist and what does each answer?"
+  - "How do the manni vocabularies stack?"
+  - "What does a strict overlay add?"
+graph:
+  label: "The manni vocabularies"
+  type: concept
+last-updated: 2026-09-27
+tags:
+  - vocabularies
+  - schemas
+  - metadata
+  - strict-overlays
+  - quality-contracts
+action: understand
+prerequisites:
+  - schema
+  - frontmatter
+  - override
+next-steps:
+  - /manni/meta/reference/schemas/manni-evals/
+  - /manni/meta/reference/schemas/manni-artifact-evals/
+risks: read-only
+related-pages:
+  - meta-schemas-field-location
+  - meta-reference-schema-resolution
 ---
 
 manni meta's other built-in schemas transcribe contracts other people
@@ -14,8 +49,8 @@ defines those facts, and no standard owns them.
 ## The eleven vocabularies
 
 The eleven form one family. They share the same conventions, and no two of
-them claim the same key. They are split by intent, so each one is a separate
-decision to adopt. Six describe a page. Five carry quality, knowledge-graph,
+them claim the same key. They are split by intent, so each one answers a
+separate question. Six describe a page. Five carry quality, knowledge-graph,
 citation and terminology metadata that any grader, graph builder, drift check,
 glossary tool or CI tool can read.
 
@@ -43,21 +78,32 @@ Each vocabulary is published at
 that names one of these URLs resolves to the bundled copy, with no network
 call.
 
-## Named in config, not on by default
+## Nine on by default
 
-The vocabularies are not in manni meta's
-[default set](/manni/meta/reference/schema-resolution/#precedence). A run with
-no schema configured still uses `google:okf:0.1` and
-`passo-uno:seven-action:1.0`. A vocabulary applies wherever your config, a
-`--schema` flag, or a page's `$schema` names it.
+Nine of the eleven are in manni meta's
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), after
+`google:okf:0.1` and `passo-uno:seven-action:1.0`. They are core, audience,
+structure, stewardship, lifecycle, ai-context, evals, graph and citations. A
+run with no schema configured checks all nine, so every page needs `title`
+and `description`. Config `schemas` add to the default set rather than
+replace it.
+
+Terminology and artifact-evals stay out. A term page and an artifact are
+special kinds of page, and a set of guides has neither. Name them where they
+apply:
 
 ```yaml
 meta:
-  schemas:
-    - manni:core:1.0.0
-    - manni:stewardship:1.0.0
-    - manni:lifecycle:1.0.0
+  overrides:
+    - files: "glossary/*.md"
+      defaults: true
+      schemas:
+        - manni:terminology:1.0.0
 ```
+
+An override replaces the set unless it sets `defaults: true`, as this one
+does. `defaults: false` at the top level turns the default set off, and a
+config that does so lists the vocabularies it wants by id.
 
 ## How they stack
 
@@ -69,14 +115,12 @@ carries them.
 
 Every vocabulary keeps its root open. A generator's keys and the other
 vocabularies' keys pass beside its own, so the family stacks with a
-generator's schema too.
+generator's schema too. This set is the default set, then Starlight:
 
 ```yaml
 meta:
   schemas:
     - astro:starlight:0.41
-    - manni:core:1.0.0
-    - manni:structure:1.0.0
 ```
 
 A house schema reaches a vocabulary through `$ref`. This one requires
@@ -96,13 +140,23 @@ not enforced. `language` recommends BCP 47 and accepts `english_US`, and a
 date may be a year alone.
 
 Each vocabulary has a strict overlay that enforces those standards. An overlay
-holds only what strict adds, and you list it beside its vocabulary.
+holds only what strict adds, and it judges a page beside its vocabulary. No
+overlay is in the default set. `strict: true` stacks the overlay of each
+default right after its base:
+
+```yaml
+meta:
+  strict: true
+```
+
+`strict` reaches only the defaults and registered schemas. For terminology or
+artifact-evals, list the overlay beside its vocabulary:
 
 ```yaml
 meta:
   schemas:
-    - manni:core:1.0.0
-    - manni:core-strict:1.0.0
+    - manni:terminology:1.0.0
+    - manni:terminology-strict:1.0.0
 ```
 
 | Vocabulary | Strict overlay |

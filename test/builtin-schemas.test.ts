@@ -419,8 +419,25 @@ describe("composing the two", () => {
 });
 
 describe("the default schema set", () => {
-  it("is OKF plus Seven-Action", () => {
-    expect([...DEFAULT_SCHEMAS]).toEqual(["google:okf:0.1", SEVEN_ACTION]);
+  // Proposal 0070: OKF and Seven-Action first, then the nine manni
+  // vocabularies. Terminology, artifact-evals and every strict overlay stay
+  // opt-in.
+  const DEFAULT_SET = [
+    "google:okf:0.1",
+    SEVEN_ACTION,
+    "manni:core:1.0.0",
+    "manni:audience:1.0.0",
+    "manni:structure:1.0.0",
+    "manni:stewardship:1.0.0",
+    "manni:lifecycle:1.0.0",
+    "manni:ai-context:1.0.0",
+    "manni:evals:1.0.0",
+    "manni:graph:1.0.0",
+    "manni:citations:1.0.0",
+  ];
+
+  it("is OKF, Seven-Action and the nine manni vocabularies", () => {
+    expect([...DEFAULT_SCHEMAS]).toEqual(DEFAULT_SET);
   });
 
   it("still passes an existing document that carries no action", async () => {
@@ -432,7 +449,7 @@ describe("the default schema set", () => {
       noConfig: true,
     });
     expect(results[0]?.ok).toBe(true);
-    expect(results[0]?.schemas).toEqual(["google:okf:0.1", SEVEN_ACTION]);
+    expect(results[0]?.schemas).toEqual(DEFAULT_SET);
   });
 
   it("fails an out-of-vocabulary action with no flags at all", async () => {

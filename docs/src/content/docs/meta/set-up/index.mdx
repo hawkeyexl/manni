@@ -1,6 +1,48 @@
 ---
 title: Stand up metadata validation for your repo
 description: Go from zero to a working CI gate, by installing manni meta, validate a folder, add a config file and schema, then enforce it on every pull request.
+type: tutorial
+id: meta-set-up
+keywords:
+  - set up
+  - validation
+  - config
+  - CI gate
+language: en
+audiences:
+  - docs-engineers
+intent: Stand up a working manni meta CI gate for a repo, from install through config and schema to pull requests.
+lifecycle: published
+applies-to:
+  - domain:meta
+prerequisites:
+  - meta-reference
+next-steps:
+  - meta-set-up-different-schemas-per-folder
+  - meta-schemas
+concepts:
+  - validation
+  - schema
+  - frontmatter
+sample-questions:
+  - How do I add metadata validation to my docs repo?
+  - How do I make manni meta run on every pull request?
+graph:
+  label: Stand up metadata validation for your repo
+  type: learning
+last-updated: 2026-09-27
+tags:
+  - setup
+  - getting-started
+  - ci
+  - configuration
+  - validation
+action: develop
+risks: open-world
+related-pages:
+  - meta-ci
+  - meta-set-up-config
+  - meta-reference-cli
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -10,7 +52,7 @@ You own a docs repo, and you want every page to carry correct, complete frontmat
 By the end you will have a committed config file and a check that fails the build when a doc is missing required metadata.
 
 <Aside type="note" title="What manni meta checks">
-manni meta validates the **presence and format** of your frontmatter against [JSON Schema](https://json-schema.org/): that `type` exists, that `timestamp` is a real date-time, that `resource` is a URI. It does not review your prose. If a field is required by your schema and missing, the run fails.
+manni meta validates the **presence and format** of your frontmatter against [JSON Schema](https://json-schema.org/): that `title` exists, that `timestamp` is a real date-time, that `resource` is a URI. It does not review your prose. If a field is required by your schema and missing, the run fails.
 </Aside>
 
 ## Before you start
@@ -30,7 +72,7 @@ manni meta validates the **presence and format** of your frontmatter against [JS
    npx @hawkeyexl/manni meta validate docs/
    ```
 
-   manni meta walks `docs/`, finds every supported file, and validates each one against two built-in schemas. [`google:okf:0.1`](/manni/meta/schemas/) requires a `type` field. `passo-uno:seven-action:1.0` constrains `action` and requires nothing. You will see a pass/fail line per file and a summary. A nonzero exit code means at least one file failed.
+   manni meta walks `docs/`, finds every supported file, and validates each one against the built-in default set of eleven schemas. [`google:okf:0.1`](/manni/meta/schemas/) requires a `type` field, and [`manni:core:1.0.0`](/manni/meta/reference/schemas/manni-core/) requires `title` and `description`. The other nine check a field only when a page carries it. You will see a pass/fail line per file and a summary. A nonzero exit code means at least one file failed.
 
    <Aside type="tip">
    To check a single file instead, pass its path: `npx @hawkeyexl/manni meta validate docs/intro.md`. Explicit file arguments are always validated, regardless of extension filters.
@@ -49,12 +91,12 @@ manni meta validates the **presence and format** of your frontmatter against [JS
 
    # How the metadata tool judges them.
    meta:
-     # The schema set every matched file must satisfy.
+     # Added to the built-in default set for every matched file.
      schemas:
-       - google:okf:0.1
+       - tgdp:templates:1.1
    ```
 
-   The file has two halves. A top-level `collections:` list declares your document sets, once, for every tool under `manni`. A bare `manni meta validate` reads them all when you name no files on the command line. `meta.schemas` is the set each file is validated against; every file must satisfy every schema you list.
+   The file has two halves. A top-level `collections:` list declares your document sets, once, for every tool under `manni`. A bare `manni meta validate` reads them all when you name no files on the command line. `meta.schemas` adds to the built-in default set, and every file must satisfy every schema in the result. Set `defaults: false` to judge files by your list alone.
 
    <LinkCard
      title="Create your manni.config.yaml"
@@ -64,7 +106,7 @@ manni meta validates the **presence and format** of your frontmatter against [JS
 
 3. **Run the stored configuration.**
 
-   With the config committed, you no longer pass paths or schemas. manni meta discovers `manni.config.yaml` in the current directory, reads every collection it declares, and applies `meta.schemas`.
+   With the config committed, you no longer pass paths or schemas. manni meta discovers `manni.config.yaml` in the current directory, reads every collection it declares, and applies the default set and `meta.schemas`.
 
    ```bash
    npx @hawkeyexl/manni meta validate

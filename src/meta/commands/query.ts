@@ -25,6 +25,7 @@ import {
   FILE_SCHEMA_KEY,
   overrideGlobs,
   collectSchemaPins,
+  isDefaultSetOnly,
   resolveElements,
   resolveSchemaSetWithSource,
 } from "../core/resolve-schema.js";
@@ -100,8 +101,15 @@ import {
   mentionsResolved,
   RESOLVED_VIEW,
 } from "../core/derive/table.js";
-import { readerManifests, readerPlace } from "../core/derive/provenance-place.js";
-import { derivableFields, PROVENANCE_FIELD, type DeriveInput } from "../core/derive/types.js";
+import { readerManifests, readerPlace, stampManifests } from "../core/derive/provenance-place.js";
+import {
+  derivableFields,
+  deriveCovers,
+  managedFields,
+  PROVENANCE_FIELD,
+  STAMPED_DATE_FIELDS,
+  type DeriveInput,
+} from "../core/derive/types.js";
 import type { FingerprintContext } from "../core/baseline.js";
 import {
   Validator,
@@ -487,6 +495,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
           ttlHours: config?.schemaCache?.ttlHours,
           offline: opts.offline ?? config?.offline,
           pins: collectSchemaPins(config),
+          registered: config?.registered,
         }),
       )),
   };
@@ -602,7 +611,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     collections,
     declaredCollections,
     memberships: membersFor,
-    managed: new Set(config?.derive?.fields ?? []),
+    managed: new Set(managedFields(config?.derive)),
     onNotice: opts.onNotice,
     encryption,
     location,
@@ -923,7 +932,7 @@ async function runSql(
       // evidence rule 2, as `validate` and `get` hand them to the git source.
       // Only when provenance is derived: named, or managed by `derive.fields`.
       const provenanceDerived =
-        fields.includes(PROVENANCE_FIELD) || ctx.config?.derive?.fields.includes(PROVENANCE_FIELD) === true;
+        fields.includes(PROVENANCE_FIELD) || ctx.config?.derive?.fields?.includes(PROVENANCE_FIELD) === true;
       const manifestRoot = ctx.configDir ?? ctx.cwd;
       const manifests = provenanceDerived
         ? readerManifests(ctx.declaredCollections, manifestRoot, ctx.base)
@@ -934,12 +943,18 @@ async function runSql(
           const place = manifests.length === 0
             ? undefined
             : readerPlace(e.label, e.own.data, manifests, ctx.declaredCollections, manifestRoot, ctx.base, e.marked);
+          // Rule 1 of 0069: the manifest that owns a dated field is read at each fact commit.
+          const owned =
+            ctx.declaredCollections.length === 0
+              ? {}
+              : stampManifests(e.label, e.own.data, ctx.declaredCollections, manifestRoot, ctx.base, e.marked, STAMPED_DATE_FIELDS);
           return {
             label: e.label,
             absPath: resolve(ctx.base, e.label),
             content: e.content,
             extracted: e.own,
             ...(place !== undefined ? { provenanceManifest: place } : {}),
+            ...(Object.keys(owned).length > 0 ? { stampManifests: owned } : {}),
           };
         });
       const records = await deriveForTable(
@@ -1901,7 +1916,11 @@ async function loadSetMembers(
   const seenFiles = new Set<string>();
   const seenBuiltins = new Set<string>();
   for (const ref of refs) {
-    const { kind } = classifyRef(ref);
+    // A registered id (proposal 0070) names a local file the config vouches
+    // for, hand-maintained like any path ref, so it is edited in place rather
+    // than forked as a builtin, and a registered URL id is not refused.
+    const registered = ctx.config?.registered?.get(ref);
+    const { kind } = registered !== undefined ? { kind: "file" as const } : classifyRef(ref);
     if (kind === "url" && !isPublishedBuiltinUrl(ref)) {
       throw new DocmetaError(
         `"${ref}" in the resolved schema set is a URL — DDL edits local schemas only. Vendor it first (manni meta schemas vendor), then evolve the local copy.`,
@@ -1922,7 +1941,7 @@ async function loadSetMembers(
       });
       continue;
     }
-    const abs = resolve(ctx.cwd, ref);
+    const abs = registered?.path ?? resolve(ctx.cwd, ref);
     const canon = foldPath(abs);
     if (seenFiles.has(canon)) continue;
     seenFiles.add(canon);
@@ -2009,6 +2028,10 @@ async function planSchemaMutation(
   // path: -s picks the contract, never what the contract says.
   let refs: string[] | undefined;
   const sources = new Set<string>();
+  // Some file runs on the default set alone, which names no schema of the
+  // corpus's own to evolve (proposal 0070 widened the default set, so this is
+  // read off the set rather than off which tier produced it).
+  let defaultOnly = false;
   const groupIndexes = new Set<number>();
   let splitLabel: string | undefined;
   if (ctx.cliSchemas !== undefined) {
@@ -2045,6 +2068,7 @@ async function planSchemaMutation(
         throw new DocmetaError(`"${e.label}": ${errorMessage(err)}`);
       }
       sources.add(resolved.source);
+      if (isDefaultSetOnly(resolved)) defaultOnly = true;
       if (resolved.overrideIndex !== undefined) {
         groupIndexes.add(resolved.overrideIndex);
       }
@@ -2091,7 +2115,7 @@ async function planSchemaMutation(
       `DDL needs the corpus to resolve to one schema set, and this run's is split ("${splitLabel}" resolves differently). ${remedy}`,
     );
   }
-  if (!refs || sources.has("default")) {
+  if (!refs || defaultOnly) {
     throw new DocmetaError(
       "DDL edits the resolved schema, and this corpus runs on the built-in default set. Name a schema to evolve — in the config's `schemas:`, an override group, or the files' own `$schema`. For data-only edits the UPDATE spellings cover every case: `SET k = v` (backfill via `WHERE k IS NULL`), `SET k = NULL` to remove a key, and paired SETs to rename one.",
     );
@@ -2906,6 +2930,8 @@ function refuseManagedWrites(
           : "renamedFrom" in c
             ? [c.key, c.renamedFrom]
             : [c.key];
+    // A file outside `derive.collections` has no managed fields (0070).
+    if (!deriveCovers(ctx.config?.derive, ctx.memberships(c.file))) continue;
     for (const key of keys) if (ctx.managed.has(key)) refuse(key);
   }
 }

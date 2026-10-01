@@ -16,6 +16,7 @@ import {
   fetchSchemaBytes,
   listBuiltins,
   type BuiltinInfo,
+  type RegisteredSchemas,
 } from "../core/schema-registry.js";
 import {
   extractorByName,
@@ -47,8 +48,17 @@ import { toJsonText } from "../core/json-text.js";
 import { writeFileAtomic } from "../core/write-file.js";
 import { lazyKey } from "../core/encrypted.js";
 
+/** One schema `meta.register` loaded: its `$id` and its file. */
+export interface RegisteredInfo {
+  id: string;
+  /** Relative to the config file, with forward slashes. */
+  file: string;
+}
+
 export interface SchemasInfo {
   builtins: BuiltinInfo[];
+  /** The governing config's registered schemas (proposal 0070). */
+  registered: RegisteredInfo[];
   formats: {
     name: string;
     extensions: string[];
@@ -57,8 +67,12 @@ export interface SchemasInfo {
   }[];
 }
 
-export function getSchemasInfo(): SchemasInfo {
-  return { builtins: listBuiltins(), formats: listFormats() };
+export function getSchemasInfo(registered?: RegisteredSchemas): SchemasInfo {
+  return {
+    builtins: listBuiltins(),
+    registered: [...(registered?.values() ?? [])].map(({ id, file }) => ({ id, file })),
+    formats: listFormats(),
+  };
 }
 
 /**

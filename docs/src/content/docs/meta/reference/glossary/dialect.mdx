@@ -9,6 +9,48 @@ abstract: A version of the JSON Schema specification.
 definition: >-
   A version of the JSON Schema specification: Draft 2020-12, 2019-09, draft-07,
   draft-06, or draft-04.
+keywords:
+  - dialect
+  - JSON Schema
+  - Draft 2020-12
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+  - schema-authors
+  - contributors
+intent: Say what dialect means in manni meta and where it is covered in full.
+lifecycle: published
+applies-to:
+  - domain:meta
+related-pages:
+  - meta-reference-schema-resolution
+sample-questions:
+  - What is a JSON Schema dialect?
+  - Which dialect does manni meta fall back to?
+graph:
+  label: dialect
+  type: concept
+last-updated: 2026-09-21
+tags:
+  - json-schema
+  - validation
+  - versioning
+  - meta-schema
+action: understand
+concepts:
+  - schema
+  - meta-schema URI
+prerequisites:
+  - schema
+next-steps:
+  - meta-reference-schema-resolution
+risks: read-only
+alt-labels:
+  - JSON Schema version
+  - specification version
+  - draft
+scope-note: In manni meta, dialect refers specifically to the JSON Schema specification version detected from a schema's meta-schema URI, not other uses of 'dialect' in software contexts.
 ---
 
 <p>{frontmatter.definition}</p>

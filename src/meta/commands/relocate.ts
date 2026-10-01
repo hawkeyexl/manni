@@ -139,6 +139,7 @@ export async function runRelocate(opts: RelocateOptions): Promise<RelocateResult
       ttlHours: config?.schemaCache?.ttlHours,
       offline: config?.offline,
       pins: collectSchemaPins(config),
+      registered: config?.registered,
     }),
   );
   const ctx = relocationContext(run, {

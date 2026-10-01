@@ -3,6 +3,39 @@ title: manni core vocabulary
 description: "The manni:core:1.0.0 schema, the descriptive minimum every page meets: what the page is called, what it is for, and the keys generators share."
 sidebar:
   label: "manni:core:1.0.0"
+type: reference
+id: meta-reference-schemas-manni-core
+keywords: ["core", "manni:core:1.0.0", "id", "keywords", "strict overlay"]
+language: en
+audiences: ["schema-authors"]
+intent: "Give every page the descriptive minimum manni:core:1.0.0 defines."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema"]
+sample-questions:
+  - "Which fields does manni:core:1.0.0 define?"
+  - "What does manni:core:1.0.0 require?"
+  - "What does the core strict overlay narrow?"
+graph:
+  label: "manni core vocabulary"
+  type: reference
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/core/1.0.0.json
+tags:
+  - schema
+  - metadata
+  - core
+  - validation
+action: remember
+next-steps:
+  - /manni/meta/reference/schemas/manni-vocabularies/
+related-pages:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/schemas/manni-stewardship/
+  - /manni/meta/schemas/field-location/
+risks: read-only
+prerequisites:
+  - meta-reference-schema-resolution
 ---
 
 **Built-in id:** `manni:core:1.0.0`
@@ -19,24 +52,29 @@ anything.
 
 ## Use it
 
-Name the id in `manni.config.yaml`. The vocabularies are not in the default
-set, so a run checks core only where the config names it.
+Core is in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it on every page with no config line. A config's own `schemas` add
+to the default set. An override replaces the set, so an entry that should keep
+core sets `defaults: true`:
 
 ```yaml
 meta:
-  schemas:
-    - manni:core:1.0.0
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/guide.json
 ```
 
 Core stacks with the rest of the family and with a generator's own schema. A
-Starlight site that also tracks ownership lists all three.
+Starlight site lists Starlight alone, and the default set brings core and
+stewardship beside it.
 
 ```yaml
 meta:
   schemas:
     - astro:starlight:0.41
-    - manni:core:1.0.0
-    - manni:stewardship:1.0.0
 ```
 
 ## Fields
@@ -149,12 +187,20 @@ still passes it.
 | `keywords` | A list only, so the comma-separated string fails. At least one item, all unique, each one trimmed line |
 | `language` | A well-formed BCP 47 tag, such as `en`, `pt-BR` or `zh-Hant-TW`, or a private-use `x-` tag. `en_US` fails. The shape is checked, not the registry |
 
-List both ids to adopt it:
+`strict: true` stacks it right after the vocabulary, with every other
+default's overlay beside its own base:
+
+```yaml
+meta:
+  strict: true
+```
+
+To adopt this overlay alone, list its id. The default set already carries the
+vocabulary:
 
 ```yaml
 meta:
   schemas:
-    - manni:core:1.0.0
     - manni:core-strict:1.0.0
 ```
 

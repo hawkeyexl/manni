@@ -1,0 +1,43 @@
+docs/src/content/docs/meta/reference/schemas/agentskills-skill.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/agent-skills/1.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on agentskills:skill:1.0 for their SKILL.md files."
+      type: capability
+      grader: ai
+    - id: unknown-keys
+      assertion: "A reader can explain why a SKILL.md key outside the six standard fields fails validation."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-107
+      integrity: sha256-ad3515cbcb84279a4a1985c1b5b360f7afe28dada3ff19ec0c323617f34d7562
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /risks
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+      confidence:
+        /resource: 0.95
+        /tags: 0.75
+        /action: 0.8
+        /risks: 0.9
+        /prerequisites: 0.85
+        /next-steps: 0.9
+        /related-pages: 0.95

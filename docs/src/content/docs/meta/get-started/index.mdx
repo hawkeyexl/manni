@@ -1,6 +1,44 @@
 ---
 title: Get started
 description: Install manni meta and validate your first file in under a minute. Read a passing and a failing result.
+type: quickstart
+id: meta-get-started
+keywords:
+  - get started
+  - install
+  - validate
+  - passing result
+  - failing result
+language: en
+audiences:
+  - docs-engineers
+intent: Install manni meta, validate a first file, and read a passing and a failing result.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-set-up
+  - meta-fix
+concepts:
+  - validation
+  - frontmatter
+  - OKF
+sample-questions:
+  - How do I install manni meta and validate one file?
+  - What does a failing manni meta result look like?
+  - What Node.js version does manni meta need?
+graph:
+  label: Get started
+  type: learning
+last-updated: 2026-09-27
+tags:
+  - quickstart
+  - installation
+  - cli
+  - tutorial
+  - getting-started
+action: practice
+risks: read-only
 ---
 
 import { Steps, Tabs, TabItem, Aside, LinkCard } from '@astrojs/starlight/components';
@@ -52,9 +90,13 @@ If that prints `v24` or higher, you're ready.
 2. **Validate a file.**
 
    Point manni meta at any Markdown file. With no schema configured, it validates
-   the file's YAML frontmatter against two built-in schemas. The [OKF
+   the file's YAML frontmatter against the built-in default set of eleven
+   schemas. The [OKF
    schema](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
-   requires a `type` field, and recommends a handful of others.
+   requires a `type` field, and recommends a handful of others. The
+   [manni core vocabulary](/manni/meta/reference/schemas/manni-core/) requires
+   `title` and `description`. The other manni vocabularies check a field only
+   when the page carries it.
 
    {/* cite seven-action-constrains-action */}
    The Seven-Action schema constrains `action` to seven reader actions, and

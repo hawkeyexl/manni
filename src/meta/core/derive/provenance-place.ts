@@ -21,7 +21,12 @@ import { DocmetaError } from "../../types.js";
 import { memberOf } from "../collections.js";
 import { externalMetadataJoin, outsideRefusal, PATH_JOIN, reportedPath } from "../external-metadata.js";
 import { classifyRef } from "../schema-registry.js";
-import { PROVENANCE_FIELD, type ProvenanceManifestRef } from "./types.js";
+import {
+  PROVENANCE_FIELD,
+  STAMPED_DATE_FIELDS,
+  type ManifestRef,
+  type StampedDateField,
+} from "./types.js";
 
 /** A manifest that owns `provenance` for one collection. */
 export interface ProvenanceManifest {
@@ -49,7 +54,7 @@ export interface ProvenanceManifest {
 }
 
 /** One page's record in a manifest. */
-export interface ProvenancePlace extends ProvenanceManifestRef {
+export interface ProvenancePlace extends ManifestRef {
   manifest: ProvenanceManifest;
 }
 
@@ -66,14 +71,15 @@ export function provenanceManifests(
   collections: readonly CollectionConfig[],
   configDir: string,
   base: string,
+  field: string = PROVENANCE_FIELD,
 ): ProvenanceManifest[] {
   const out: ProvenanceManifest[] = [];
   for (const collection of collections) {
     for (const manifest of collection.externalMetadata) {
       const implied = manifest.keys === undefined;
-      if (!implied && manifest.keys?.includes(PROVENANCE_FIELD) !== true) continue;
+      if (!implied && manifest.keys?.includes(field) !== true) continue;
       const url = classifyRef(manifest.file).kind === "url";
-      if (url && !implied) throw new DocmetaError(urlRefusal(collection.name));
+      if (url && !implied) throw new DocmetaError(urlRefusal(collection.name, field));
       if (url) {
         out.push({
           collection: collection.name,
@@ -102,8 +108,8 @@ export function provenanceManifests(
   return out;
 }
 
-function urlRefusal(collection: string): string {
-  return `collection ${collection}: ${PROVENANCE_FIELD} cannot come from a URL manifest, because manni meta derive writes it.`;
+function urlRefusal(collection: string, field: string): string {
+  return `collection ${collection}: ${field} cannot come from a URL manifest, because manni meta derive writes it.`;
 }
 
 /**
@@ -123,22 +129,23 @@ export function provenancePlace(
   configDir: string,
   base: string,
   marked?: ReadonlySet<string>,
+  field: string = PROVENANCE_FIELD,
 ): ProvenancePlace | undefined {
   if (manifests.length === 0) return undefined;
   const members = new Set(memberOf(collections, configDir, base, label));
   const owning = manifests.filter(
     (m) =>
       members.has(m.collection) &&
-      (m.implied === undefined || ownsKey(m.implied.collection, m.implied.manifest, PROVENANCE_FIELD, marked)),
+      (m.implied === undefined || ownsKey(m.implied.collection, m.implied.manifest, field, marked)),
   );
   const [declared, second] = owning;
   if (declared === undefined) return undefined;
   if (second !== undefined) {
     throw new DocmetaError(
-      `${label} is in collections ${declared.collection} and ${second.collection}, and both keep ${PROVENANCE_FIELD} in a manifest.`,
+      `${label} is in collections ${declared.collection} and ${second.collection}, and both keep ${field} in a manifest.`,
     );
   }
-  if (declared.implied?.url === true) throw new DocmetaError(urlRefusal(declared.collection));
+  if (declared.implied?.url === true) throw new DocmetaError(urlRefusal(declared.collection, field));
   const manifest = declared.perPage ? ownManifest(declared, label, collections, configDir, base) : declared;
   if (manifest.join === PATH_JOIN) {
     const entry = toPosix(relative(configDir, resolve(base, label)));
@@ -147,7 +154,7 @@ export function provenancePlace(
   const value = data[manifest.join];
   if (typeof value !== "string" && typeof value !== "number") {
     throw new DocmetaError(
-      `${label} carries no ${manifest.join}, which ${manifest.file} joins on, so its ${PROVENANCE_FIELD} has no entry there.`,
+      `${label} carries no ${manifest.join}, which ${manifest.file} joins on, so its ${field} has no entry there.`,
     );
   }
   return { manifest, absPath: manifest.absPath, entry: String(value), join: manifest.join };
@@ -186,12 +193,13 @@ export function readerManifests(
   collections: readonly CollectionConfig[],
   configDir: string,
   base: string,
+  field: string = PROVENANCE_FIELD,
 ): ProvenanceManifest[] {
   const local = collections.map((c) => ({
     ...c,
     externalMetadata: c.externalMetadata.filter((m) => classifyRef(m.file).kind !== "url"),
   }));
-  return provenanceManifests(local, configDir, base);
+  return provenanceManifests(local, configDir, base, field);
 }
 
 /**
@@ -207,12 +215,39 @@ export function readerPlace(
   configDir: string,
   base: string,
   marked?: ReadonlySet<string>,
-): ProvenanceManifestRef | undefined {
+  field: string = PROVENANCE_FIELD,
+): ManifestRef | undefined {
   try {
-    const place = provenancePlace(label, data, manifests, collections, configDir, base, marked);
+    const place = provenancePlace(label, data, manifests, collections, configDir, base, marked, field);
     return place === undefined ? undefined : { absPath: place.absPath, entry: place.entry, join: place.join };
   } catch (err) {
     if (err instanceof DocmetaError) return undefined;
     throw err;
   }
+}
+
+/**
+ * The manifests that own a page's `created` and `last-updated`, for the git
+ * source to read the stamp a fact commit carries there (proposal 0069, rule
+ * 1). Read as `readerPlace` reads provenance's: nothing is written through
+ * these, so a page the writer would refuse simply has no manifest to read.
+ * `fields` narrows the reads to the dated fields the run manages.
+ */
+export function stampManifests(
+  label: string,
+  data: Readonly<Record<string, unknown>>,
+  collections: readonly CollectionConfig[],
+  configDir: string,
+  base: string,
+  marked: ReadonlySet<string> | undefined,
+  fields: readonly string[],
+): Partial<Record<StampedDateField, ManifestRef>> {
+  const out: Partial<Record<StampedDateField, ManifestRef>> = {};
+  for (const field of STAMPED_DATE_FIELDS) {
+    if (!fields.includes(field)) continue;
+    const manifests = readerManifests(collections, configDir, base, field);
+    const place = readerPlace(label, data, manifests, collections, configDir, base, marked, field);
+    if (place !== undefined) out[field] = place;
+  }
+  return out;
 }

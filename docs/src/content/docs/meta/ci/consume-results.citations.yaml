@@ -24,63 +24,63 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-b6fce5be90865cb419e8a611ddcb461aa6badeb4048a0233c660f36fcbe15583
       source:
         file: src/meta/core/config.ts
-        lines: 1674-1678
+        lines: 1841-1845
         integrity: sha256-f6e52c1599511310259e1d366365c79a3563e4ca9a5ad654fb0566d26fb21369
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: 80046d14efa00a13ca2557dbb03a508bd223b934
     - id: empty-inputs-fall-back-to-collections
       claim:
         lines: 262-264
         integrity: sha256-d58856eea2d47021e0e5623eb94c4c9be4962c678f4068a6b838f8298c943981
       source:
         file: src/meta/core/config.ts
-        lines: 1711-1719
+        lines: 1878-1886
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: 80046d14efa00a13ca2557dbb03a508bd223b934
     - id: get-quiet-drops-all-unset-files
       claim:
         lines: 223-224
         integrity: sha256-d3ac227998131854e26a4e7ab9a5e3dbdb2972655ef9d58316016f6b16596488
       source:
         file: src/meta/cli.ts
-        lines: 943-946
+        lines: 945-948
         integrity: sha256-3bc74074c8952636df5c6f68b9d559a92e1dda00b46dfa186f5723f16364efa5
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: get-takes-pretty-and-json-only
       claim:
         lines: 217-218
         integrity: sha256-8c64ec05ab7cee4c39c4835c4c6ecbf48d537dbe1d019bc67ccb41e567f4669f
       source:
         file: src/meta/cli.ts
-        lines: 930-934
+        lines: 932-936
         integrity: sha256-b503ccf2d5faf492d3e8eb42a02c2193e9002da4890c9c8dde4774435125333c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
     - id: get-unsupported-format-exits-2
       claim:
         lines: 221
         integrity: sha256-79056c424982b4bf4902984fcea150da19d76356cdb633aab3affbfdaec0350c
       source:
         file: src/meta/cli.ts
-        lines: 1019-1024
+        lines: 1021-1026
         integrity: sha256-ed88e062b2f25e5f5d7be02a925046a075dc66df7cf3d1e6243ba690642c9961
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: dot-notation-or-json-pointer
       claim:
         lines: 190-192
         integrity: sha256-ffc258c2691109dc0b6503d92b9a6fd00e7ba6f6d602092374a282c805c647cb
       source:
         file: src/meta/commands/get.ts
-        lines: 523-536
+        lines: 530-543
         integrity: sha256-3de206ba7b2d15623d6b478a91053a59fae6f997f965d443274221d9761769f6
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: get-json-file-present-values
       claim:
         lines: 173-176
         integrity: sha256-07386cb057c62a0a4ab3e116dc94fc760856568bf8b8de298b248e077dbfef00
       source:
         file: src/meta/commands/get.ts
-        lines: 119-122
+        lines: 120-123
         integrity: sha256-a6c55d99822a9da90fbf1e63657a67f42536e8e1cb0d71d28681ebc26cf6237d
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: pretty-prints-unset
       claim:
         lines: 183-184
@@ -96,9 +96,9 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-3c2434351e0c235257b42b727932a3407933256153739c52ad3cf5d8f63e0212
       source:
         file: src/meta/cli.ts
-        lines: 935-940
+        lines: 937-942
         integrity: sha256-74320011f15b4a953c0496f55ff3d7e3c02bfa5bf49c03a7c8cdcc5568d67630
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 70413a6f1361ae895f340f3fce0e0c7163047582
     - id: json-output-is-never-colorized
       claim:
         lines: 102-103
@@ -132,9 +132,9 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
         integrity: sha256-c72170848ec06cd4904cae2311f37dfcc36eba80bcac65ca8c4730777f014376
       source:
         file: src/meta/core/validator.ts
-        lines: 699-707
+        lines: 754-762
         integrity: sha256-b520a312dafe5a0bbdb25b6de5df4ceffe64f816a6e9201ec180e2a901f3fb1e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: validate-json-is-one-object
       claim:
         integrity: sha256-be3c85c762bffb7f91e0f85e254aae6faf360087e21c454e1dbf305a2150d292

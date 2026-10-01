@@ -3,6 +3,40 @@ title: Microsoft Learn schema
 description: The microsoft:learn:1.0 schema shipped with manni meta, covering the five attributes a Learn article requires, the MM/DD/YYYY date, and the description length range.
 sidebar:
   label: "microsoft:learn:1.0"
+type: reference
+id: meta-reference-schemas-microsoft-learn
+keywords: ["Microsoft Learn", "microsoft:learn:1.0", "ms.date", "description length"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate the attributes a Microsoft Learn article requires, including its MM/DD/YYYY date."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema"]
+sample-questions:
+  - "Which attributes does a Microsoft Learn article require?"
+  - "What date format does ms.date take?"
+  - "How long may a Learn description be?"
+graph:
+  label: "Microsoft Learn schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/microsoft-learn/1.0.json
+tags:
+  - schema
+  - validation
+  - frontmatter
+  - built-in
+  - vocabulary
+action: remember
+related-pages:
+  - /manni/meta/reference/metadata-vocabularies/
+risks: read-only
+prerequisites:
+  - meta-get-started
+  - meta-reference-schemas
+next-steps:
+  - meta-reference-metadata-vocabularies
+  - meta-set-up-config
 ---
 
 import { Aside } from '@astrojs/starlight/components';

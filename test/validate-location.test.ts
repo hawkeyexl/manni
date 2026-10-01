@@ -147,7 +147,7 @@ describe("validate: location findings", () => {
     const { results } = await runValidate({
       inputs: ["-"],
       as: "markdown",
-      stdinContent: "---\nowner: platform\n---\n",
+      stdinContent: "---\nowner: platform\ntype: guide\ntitle: Piped\ndescription: A piped page.\n---\n",
       cwd: dir,
       env: noKey,
     });
@@ -449,7 +449,7 @@ describe("validate: the P2 offer", () => {
     const piped = await runValidate({
       inputs: ["-"],
       as: "markdown",
-      stdinContent: "---\nowner: platform\n---\n",
+      stdinContent: "---\nowner: platform\ntype: guide\ntitle: Piped\ndescription: A piped page.\n---\n",
       cwd: dflt,
       env: noKey,
     });

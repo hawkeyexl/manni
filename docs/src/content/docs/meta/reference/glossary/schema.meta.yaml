@@ -1,0 +1,48 @@
+docs/src/content/docs/meta/reference/glossary/schema.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-schema
+      assertion: A reader can say what schema means in manni meta.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-9
+      integrity: sha256-751d2e0ffa5ae85db2007d561909f283842650ba5124dbb4b6b5c830f189024d
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16
+  source-of-truth:
+    - path: src/meta/core/schema-registry.ts
+      kind: implementation
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /next-steps
+        - /related-pages
+        - /source-of-truth
+        - /risks
+        - /narrower
+        - /prerequisites
+        - /broader
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /concepts: 0.85
+        /next-steps: 0.8
+        /related-pages: 0.9
+        /source-of-truth: 0.85
+        /risks: 0.95
+        /narrower: 0.75
+        /prerequisites: 0.85
+        /broader: 0.9

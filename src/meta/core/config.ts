@@ -23,7 +23,8 @@ import {
   type CollectionConfig,
 } from "../../shared/collections.js";
 import { FILE_SCHEMA_KEY, rebaseConfigSchemaRefs } from "./resolve-schema.js";
-import { classifyRef } from "./schema-registry.js";
+import { classifyRef, type RegisteredSchemas } from "./schema-registry.js";
+import { loadRegisteredSchemas } from "./register.js";
 import { INTEGRITY_SHAPE, isIntegrity } from "./integrity.js";
 import { parseElementPath } from "../extractors/element-key.js";
 import {
@@ -75,6 +76,17 @@ export interface SchemaOverride {
    * trap.
    */
   elements?: string[];
+  /**
+   * Put the default set first, then this entry's `schemas` (proposal 0070).
+   * Absent or `false` means the entry's `schemas` replace the set, as an
+   * override always did. An override never inherits the top-level `schemas`.
+   */
+  defaults?: boolean;
+  /**
+   * Stack the strict version of each default or registered schema in the
+   * entry's set right after its base, where one exists.
+   */
+  strict?: boolean;
 }
 
 /**
@@ -173,7 +185,14 @@ function asElementPaths(
 }
 
 /** The keys one `overrides:` entry may carry. */
-const OVERRIDE_KEYS = ["collection", "files", "schemas", "elements"] as const;
+const OVERRIDE_KEYS = [
+  "collection",
+  "files",
+  "schemas",
+  "elements",
+  "defaults",
+  "strict",
+] as const;
 
 /**
  * One named corpus check (proposal 0026): SQL run over the `docs` projection
@@ -209,8 +228,12 @@ export interface DeriveConfig {
    * The managed fields. Each is one of `DERIVABLE_FIELDS` or a key of
    * `commands`, never `$schema`, and never a key a manifest owns: a value
    * with two authorities has none.
+   *
+   * Absent means the merge-safe fields (`MERGE_SAFE_FIELDS`, proposal 0069),
+   * each managed only on a page whose schemas claim it as a top-level
+   * property. `[]` manages nothing. Read it through `managedFields`.
    */
-  fields: DerivableField[];
+  fields?: DerivableField[];
   /** Which sources to consult; absent means all of `DERIVE_SOURCES`. */
   sources?: DeriveSource[];
   /**
@@ -232,10 +255,23 @@ export interface DeriveConfig {
    * through `machinesOf`.
    */
   machines?: string[];
+  /**
+   * The collections whose members derive manages (proposal 0070). A file in
+   * none of them is neither stamped nor compared. Absent means every
+   * validated file. Read it through `deriveCovers`.
+   */
+  collections?: string[];
 }
 
 /** The keys a `derive:` mapping may carry. */
-const DERIVE_KEYS = ["fields", "sources", "codeowners", "commands", "machines"] as const;
+const DERIVE_KEYS = [
+  "fields",
+  "sources",
+  "codeowners",
+  "commands",
+  "machines",
+  "collections",
+] as const;
 
 /** The keys one `derive.commands` entry may carry. */
 const DERIVE_COMMAND_KEYS = ["run", "timeout"] as const;
@@ -317,6 +353,9 @@ const FILL_KEYS = [
  */
 const CONFIG_KEYS = [
   "schemas",
+  "defaults",
+  "strict",
+  "register",
   "overrides",
   "checks",
   "derive",
@@ -392,10 +431,33 @@ const MAX_TTL_HOURS = 8760;
 
 export interface DocmetaConfig {
   /**
-   * The default schema set. Each entry is either a reference string or a
-   * `{ ref, source?, integrity? }` mapping — see `SchemaEntry`.
+   * The schemas every file no override matches is judged by. Each entry is
+   * either a reference string or a `{ ref, source?, integrity? }` mapping —
+   * see `SchemaEntry`. They join the default set unless `defaults` is false.
    */
   schemas?: SchemaEntry[];
+  /**
+   * Put the default set first, then `schemas`, for the files no override
+   * matches (proposal 0070). Absent means `true`; `false` makes `schemas`
+   * replace the default set.
+   */
+  defaults?: boolean;
+  /**
+   * For those files, stack the strict version of each default or registered
+   * schema in the set right after its base, where one exists. Absent means
+   * `false`.
+   */
+  strict?: boolean;
+  /**
+   * JSON Schema files, or directories of them (`*.json`, recursively),
+   * relative to the config file. Each is loaded once and named by its `$id`.
+   */
+  register?: string[];
+  /**
+   * The schemas `register` names, loaded by `loadConfig` and keyed by `$id`.
+   * Not a key of the file: it is what the file's `register` produced.
+   */
+  registered?: RegisteredSchemas;
   overrides?: SchemaOverride[];
   /**
    * Named corpus checks `validate` runs after the per-file schemas, when the
@@ -635,15 +697,25 @@ export function parseConfigValue(
   // `docmeta.config.yaml` that still says `paths:` is exactly the file whose
   // owner needs to be told where the key went (0041 § discovery).
   assertNoMovedKeys(raw, source);
-  if (section === undefined) return parseConfigDocument(raw, source);
+  let config: DocmetaConfig;
   try {
-    return parseConfigDocument(raw, source);
+    config = parseConfigDocument(raw, source);
   } catch (err) {
-    if (err instanceof DocmetaError) {
+    if (section !== undefined && err instanceof DocmetaError) {
       throw new DocmetaError(withSection(err.message, source, section));
     }
     throw err;
   }
+  // Outside the wrapper: the sentence names two keys, and `withSection`
+  // prefixes only the first.
+  if (config.defaults === false && (config.schemas ?? []).length === 0) {
+    const key = (name: string): string =>
+      section === undefined ? name : `${section}.${name}`;
+    throw new DocmetaError(
+      `${source}: ${key("defaults")}: false with no ${key("schemas")} leaves files with no schema. List schemas, or remove defaults.`,
+    );
+  }
+  return config;
 }
 
 /**
@@ -660,7 +732,7 @@ function withSection(message: string, source: string, section: string): string {
     return `${head}\`${section}:\`${rest.slice("the top level".length)}`;
   }
   if (rest.startsWith('"')) return `${head}"${section}.${rest.slice(1)}`;
-  if (/^[a-zA-Z]+(\[|\.| —)/.test(rest)) return `${head}${section}.${rest}`;
+  if (/^[a-zA-Z]+(\[|\.| —| must |: )/.test(rest)) return `${head}${section}.${rest}`;
   return message;
 }
 
@@ -772,6 +844,29 @@ function assertOverrideCollections(
   }
 }
 
+/**
+ * Refuse a `derive.collections` entry naming a collection nobody declared,
+ * for the reason `assertOverrideCollections` refuses an override's.
+ */
+function assertDeriveCollections(
+  config: DocmetaConfig,
+  collections: readonly CollectionConfig[],
+  source: string,
+  section: string | undefined,
+): void {
+  const names = new Set(collections.map((c) => c.name));
+  for (const name of config.derive?.collections ?? []) {
+    if (names.has(name)) continue;
+    throw new DocmetaError(
+      inSection(
+        `${source}: derive.collections names "${name}", which no collection declares.`,
+        source,
+        section,
+      ),
+    );
+  }
+}
+
 /** Where a key is owned: the manifest, and its place in the family file. */
 export interface ManifestOwner {
   /** Index into `collections:`. */
@@ -865,9 +960,10 @@ function assertManagedFieldsUnowned(
  * A `derive:` must say something: `fields` to manage, or `sources` or
  * `codeowners` to shape the reads (`get --derived`, the `derived` table). A
  * bare `derive:` reads as configured and is not — the same silence
- * `rejectUnknownKeys` exists to end. `fields` defaults to none when the
- * other keys carry the block, so a repository without `gh` can narrow
- * `sources` for its reads without inventing a managed field.
+ * `rejectUnknownKeys` exists to end. When the other keys carry the block,
+ * `fields` stays absent, which is the merge-safe default (proposal 0069).
+ * `fields: []` manages nothing, so a repository without `gh` can narrow
+ * `sources` for its reads without managing a field.
  * A field is refused when it is not derivable (nothing could ever fill it)
  * or repeated. `$schema` falls out of the derivable list, so it never needs a
  * rule of its own there. A field a URL manifest owns is refused as well, by
@@ -895,7 +991,8 @@ function parseDerive(
     e.sources === undefined &&
     e.codeowners === undefined &&
     e.commands === undefined &&
-    e.machines === undefined
+    e.machines === undefined &&
+    e.collections === undefined
   ) {
     throw new DocmetaError(
       `${source}: "derive" sets nothing. Give it \`fields:\` to manage, \`commands:\` to derive from a command, or \`sources:\`, \`codeowners:\` or \`machines:\` to shape the reads.`,
@@ -908,11 +1005,10 @@ function parseDerive(
   if (
     e.fields !== undefined &&
     (!Array.isArray(e.fields) ||
-      e.fields.length === 0 ||
       e.fields.some((f) => typeof f !== "string"))
   ) {
     throw new DocmetaError(
-      `${source}: derive.fields must be a non-empty list of field names. ${DERIVABLE_LIST}`,
+      `${source}: derive.fields must be a list of field names. ${DERIVABLE_LIST}`,
     );
   }
   const fields: DerivableField[] = [];
@@ -927,7 +1023,7 @@ function parseDerive(
     }
     fields.push(f);
   });
-  const derive: DeriveConfig = { fields };
+  const derive: DeriveConfig = e.fields === undefined ? {} : { fields };
 
   if (e.sources !== undefined) {
     if (
@@ -986,6 +1082,19 @@ function parseDerive(
       machines.push(m);
     });
     derive.machines = machines;
+  }
+
+  // Which collections exist is known only to `loadConfig`, which checks each
+  // name against the top-level `collections:`.
+  if (e.collections !== undefined) {
+    const names: unknown[] = Array.isArray(e.collections) ? e.collections : [];
+    const valid = names.filter((c): c is string => typeof c === "string" && c.trim() !== "");
+    if (names.length === 0 || valid.length !== names.length) {
+      throw new DocmetaError(
+        `${source}: derive.collections must be a non-empty list of collection names.`,
+      );
+    }
+    derive.collections = [...new Set(valid)];
   }
 
   return derive;
@@ -1086,6 +1195,33 @@ function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
   if (obj.schemas !== undefined)
     config.schemas = asSchemaList(obj.schemas, "schemas", source);
 
+  if (obj.defaults !== undefined) {
+    if (typeof obj.defaults !== "boolean") {
+      throw new DocmetaError(`${source}: defaults must be true or false.`);
+    }
+    config.defaults = obj.defaults;
+  }
+
+  if (obj.strict !== undefined) {
+    if (typeof obj.strict !== "boolean") {
+      throw new DocmetaError(`${source}: strict must be true or false.`);
+    }
+    config.strict = obj.strict;
+  }
+
+  // The files are read by `loadConfig`, which knows the config's directory.
+  if (obj.register !== undefined) {
+    const register = asStringList(obj.register, "register", source);
+    register.forEach((entry, i) => {
+      if (entry.trim() === "") {
+        throw new DocmetaError(
+          `${source}: register[${i}] must be a non-empty path to a schema file or a directory.`,
+        );
+      }
+    });
+    config.register = register;
+  }
+
   if (obj.overrides !== undefined) {
     if (!Array.isArray(obj.overrides)) {
       throw new DocmetaError(`${source}: "overrides" must be a list.`);
@@ -1141,6 +1277,24 @@ function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
           `${source}: overrides[${i}] sets neither "schemas" nor "elements", so it has no effect.`,
         );
       }
+      for (const key of ["defaults", "strict"] as const) {
+        if (e[key] !== undefined && typeof e[key] !== "boolean") {
+          throw new DocmetaError(
+            `${source}: overrides[${i}].${key} must be true or false.`,
+          );
+        }
+      }
+      // Both shape the entry's schema set, so on an entry with none, one that
+      // only adds `elements`, they would switch nothing.
+      const setKeys = (["defaults", "strict"] as const).filter((key) => e[key] !== undefined);
+      if (schemas.length === 0 && setKeys.length > 0) {
+        const one = setKeys.length === 1 ? setKeys[0] : undefined;
+        throw new DocmetaError(
+          one !== undefined
+            ? `${source}: overrides[${i}] sets ${one}, which applies to the entry's schemas. Add schemas, or remove ${one}.`
+            : `${source}: overrides[${i}] sets defaults and strict, which apply to the entry's schemas. Add schemas, or remove them.`,
+        );
+      }
       // Whether `collection` names a *declared* collection is checked by
       // `loadConfig`, the first place both halves of the family file are
       // known. Every view-name refusal 0027 made here — blank, `docs`,
@@ -1151,6 +1305,8 @@ function parseConfigDocument(raw: unknown, source: string): DocmetaConfig {
         ...(collection !== undefined ? { collection } : {}),
         schemas,
         ...(elements ? { elements } : {}),
+        ...(typeof e.defaults === "boolean" ? { defaults: e.defaults } : {}),
+        ...(typeof e.strict === "boolean" ? { strict: e.strict } : {}),
       };
     });
   }
@@ -1515,6 +1671,17 @@ export async function loadConfig(
   const config = parseConfigValue(file.value, file.source, section);
   assertOverrideCollections(config, file.collections, file.source, section);
   assertManagedFieldsUnowned(config, file.collections, file.source, section);
+  assertDeriveCollections(config, file.collections, file.source, section);
+  if (config.register !== undefined) {
+    try {
+      config.registered = await loadRegisteredSchemas(config.register, file.dir);
+    } catch (err) {
+      if (!(err instanceof DocmetaError)) throw err;
+      throw new DocmetaError(
+        inSection(`${file.source}: ${err.message}`, file.source, section),
+      );
+    }
+  }
   return {
     config,
     path: file.path,

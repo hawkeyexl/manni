@@ -1,6 +1,53 @@
 ---
 title: Keep metadata outside the document
 description: "Keep frontmatter values outside the page and merge them at run time, from a manifest beside the config, from a private repository, or from a URL in another repository."
+type: how-to
+id: meta-set-up-external-metadata
+keywords:
+  - external metadata
+  - manifest
+  - private values
+  - across repositories
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+intent: Keep frontmatter values in a manifest outside the page, beside the config, in a private repository, or behind a URL.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-reference-configuration
+  - meta-ci-query-gates
+concepts:
+  - metadata
+  - frontmatter
+risks:
+  - destructive
+sample-questions:
+  - How do I keep metadata out of the published page?
+  - How do I keep private values for public documents?
+  - What happens when a page is in two collections?
+graph:
+  label: Keep metadata outside the document
+  type: task
+last-updated: 2026-10-01
+tags:
+  - external-metadata
+  - manifest
+  - collections
+  - configuration
+  - private-data
+  - yaml
+  - lean-docs
+action: develop
+prerequisites:
+  - meta-reference-configuration
+related-pages:
+  - /manni/meta/reference/configuration/#external-metadata
+  - /manni/meta/reference/configuration/#collections
+  - /manni/meta/ci/query-gates/
+  - /manni/meta/schemas/field-location/
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -693,8 +740,6 @@ say, because each vocabulary marks where its fields
 manifest owns every field the page's schemas mark `x-manni-location: external`.
 
 ```yaml title="manni.config.yaml"
-meta:
-  schemas: ["manni:stewardship:1.0.0"]
 collections:
   - name: site
     paths: ["docs/**/*.md"]
@@ -708,7 +753,8 @@ docs/install.md:
   last-reviewed: 2026-09-01
 ```
 
-The stewardship vocabulary marks `owner` and `last-reviewed` external, so the
+The stewardship vocabulary is in the built-in default set, so the config
+names no schema. It marks `owner` and `last-reviewed` external, so the
 manifest owns both for `docs/install.md`. The page keeps `title` and the rest
 of what it is about. When a vocabulary gains an external field, the manifest
 owns that one too, with no config edit.

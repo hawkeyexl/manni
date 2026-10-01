@@ -6,15 +6,15 @@ docs/src/content/docs/meta/reference/glossary/override.mdx:
         integrity: sha256-54b0a79d9d2ed68a9e7770ac6a92b66891f06b3f5d1a8155a183f31bb0c33c91
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 227-238
+        lines: 245-256
         integrity: sha256-8076723b61abc464a9c0b625cd2c47b62a561da9389b74064519fa29efdd0796
-        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
     - id: schema-resolution-precedence-chain
       claim:
-        lines: 10-14
-        integrity: sha256-16f0fc418f7585a803abf3f867c545e66da829c707a1bdad28a98d52f0f8eed4
+        lines: 10-15
+        integrity: sha256-b13b3b865c02e45609631afb35681e37106a0098bcc65dca0d2c72bc299f0340
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 411-447
-        integrity: sha256-7738f0118066aff89d7861519004dd3318d14ea1981b9445a59c4ce3fa03cd51
-        commit-sha: 7a6eb280efa865bbed56a3b498f4361c1fc35dfe
+        lines: 503-562
+        integrity: sha256-6fb09f29f342076634fd2a5b5360017ebf8764e897dba65fb192ca2b23584538
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20

@@ -3,6 +3,41 @@ title: manni artifact-evals vocabulary
 description: "The manni:artifact-evals:1.0.0 schema, assertions about the agent sessions that use a skill or agent definition, under the artifact's metadata block."
 sidebar:
   label: "manni:artifact-evals:1.0.0"
+type: reference
+id: meta-reference-schemas-manni-artifact-evals
+keywords: ["artifact-evals", "manni:artifact-evals:1.0.0", "graders", "target", "strict overlay"]
+language: en
+audiences: ["schema-authors"]
+intent: "Write evals about the agent sessions that use a skill or agent definition, with manni:artifact-evals:1.0.0."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "JSON Pointer", "override"]
+sample-questions:
+  - "What does manni:artifact-evals:1.0.0 describe?"
+  - "Which graders can an artifact eval use?"
+  - "What does the artifact-evals strict overlay narrow?"
+graph:
+  label: "manni artifact-evals vocabulary"
+  type: reference
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.0.0.json
+tags:
+  - schema
+  - validation
+  - agent-evals
+  - grading
+  - metadata
+action: remember
+prerequisites:
+  - /manni/meta/reference/schemas/manni-evals/
+next-steps:
+  - /manni/meta/reference/agent-skills-schemas/
+  - /manni/meta/schemas/field-location/
+related-pages:
+  - /manni/meta/reference/schemas/manni-evals/
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/schemas/manni-ai-context/
+risks: read-only
 ---
 
 **Built-in id:** `manni:artifact-evals:1.0.0`
@@ -21,9 +56,10 @@ sessions.
 
 ## Use it
 
-Name the id in `manni.config.yaml`, beside the host's own schema. The
-vocabularies are not in the default set, so a run checks artifact-evals only
-where the config names it.
+Name the id in `manni.config.yaml`, beside the host's own schema.
+Artifact-evals is not in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it only where the config names it.
 
 ```yaml
 collections:
@@ -255,7 +291,7 @@ present and requires no key. A string entry, and every other member of
 | `meta-provenance[].fields` | A well-formed JSON Pointer, in which every `~` begins `~0` or `~1` |
 | `meta-provenance[].confidence` | Each key is a well-formed JSON Pointer or a kebab eval id |
 
-List both ids, beside the host schema, to adopt it:
+`strict: true` does not reach this overlay, because the vocabulary is not in the default set. List both ids, beside the host schema, to adopt it:
 
 ```yaml
 meta:

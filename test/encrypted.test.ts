@@ -598,12 +598,15 @@ describe("meta query writes a marked column encrypted", () => {
   it("with no key and a yes, writes a key and carries on", async () => {
     await configured();
     await page("a.md", { title: "A", owner: "platform" });
+    // Yes to the key only. `owner` is a stewardship field, which prefers
+    // external metadata, so the default set (0070) also offers to move it out
+    // of the page; declining keeps the write on the page this test reads.
     await runQuery({
       sql: "UPDATE docs SET owner = 'billing'",
       inputs: ["a.md"],
       cwd: dir,
       env: noKey,
-      confirm: () => Promise.resolve(true),
+      confirm: (q) => Promise.resolve(q.startsWith("Generate a key")),
     });
     const config = await readFile(join(dir, "manni.config.yaml"), "utf8");
     const key = /encryptionKey: (\S+)/.exec(config)?.[1];

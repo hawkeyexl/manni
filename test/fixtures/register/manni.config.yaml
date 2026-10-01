@@ -1,0 +1,10 @@
+# Proposal 0070: a house schema and its strict version, registered by
+# directory and named by $id. The default set joins house:page:1.0.0, and
+# strict: true stacks each strict version right after its base:
+# house:page-strict:1.0.0 after house:page, manni:core-strict after core.
+meta:
+  register:
+    - ./schemas/
+  schemas:
+    - house:page:1.0.0
+  strict: true

@@ -300,7 +300,7 @@ export async function deriveForTable(
   // `*` does not read `provenance` (its blame per page is paid only when
   // asked for), so a run whose `derive.fields` manages it asks here.
   const managesProvenance =
-    derive?.fields.includes(PROVENANCE_FIELD) === true && !fields.includes(PROVENANCE_FIELD);
+    derive?.fields?.includes(PROVENANCE_FIELD) === true && !fields.includes(PROVENANCE_FIELD);
   const result = await deriveMetadata(inputs, {
     cwd: ctx.cwd,
     base: ctx.base,

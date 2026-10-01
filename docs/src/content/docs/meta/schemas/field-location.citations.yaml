@@ -5,20 +5,20 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         integrity: sha256-65d415eb59e20e3e7e6ba0617020404bdd9d074834ddd81d972e3c2fd4d76a70
       source:
         file: src/meta/core/validator.ts
-        lines: 590-598
+        lines: 622-630
         integrity: sha256-3b7515831639551c487098af7a1bb96164eaba40a87a3839df62c28fdda70092
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: a-mark-covers-a-whole-top-level-key
       claim:
         integrity: sha256-41e35fcd2286e34627ab7e1569437b03f0356f839b2c8edf17c041191c6a54e5
       source:
         file: src/meta/core/validator.ts
-        lines: 156-161
+        lines: 160-165
         integrity: sha256-ffb5f8b6454ea9627588234c4750fa15bf2de9148f17f83bf28fb4a5c7bef61e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
     - id: encrypted-and-external-decrypts-in-the-manifest
       claim:
-        lines: 433-434
+        lines: 437-438
         integrity: sha256-5103fa868d137b1ae86f359fa98f2e775eff1d6954349c489f5ff967682b1c16
       source:
         file: src/meta/core/external-metadata.ts
@@ -27,7 +27,7 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
     - id: no-config-is-not-offered
       claim:
-        lines: 424
+        lines: 428
         integrity: sha256-001f21f041c4d3ad321e799d00ed5ba864afedfea1bc46f3a55595ec3e62f829
       source:
         file: src/meta/commands/relocate.ts
@@ -52,7 +52,7 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: sarif-rule-id-for-location-external
       claim:
-        lines: 139
+        lines: 142
         integrity: sha256-fb384b7d0ccc702b4295f36070cd691385977e0d4e2ae44037c193676ab4918a
       source:
         file: src/meta/reporters/rule-id.ts
@@ -61,7 +61,7 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: junit-warnings-are-not-failures
       claim:
-        lines: 140
+        lines: 143
         integrity: sha256-ddffda1bbf124689ff96c54a72aeffa573db2565b9d6aa12f608cf3be56dfb0d
       source:
         file: src/meta/reporters/junit.ts
@@ -70,30 +70,30 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: location-external-points-at-the-page-line
       claim:
-        lines: 108
+        lines: 111
         integrity: sha256-28ba066f72a33ebfba71c81790006aa129debac4d3b75427391339bd79738cf1
       source:
         file: src/meta/commands/validate.ts
-        lines: 448-453
+        lines: 452-457
         integrity: sha256-f9ebe6cfa4d1fc4869626c0ba763cb224f66eb119244753a5dcb8c1b5284778d
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
     - id: location-page-points-at-the-manifest-line
       claim:
-        lines: 109
+        lines: 112
         integrity: sha256-f2e23d6f70c3854478e5cdea81aaa3c77ca9f73838a00d71a1f4a7f7c5001a23
       source:
         file: src/meta/commands/validate.ts
-        lines: 466-472
+        lines: 470-476
         integrity: sha256-76ea9587ed1a61fda49c35c283c66bf72e189c2cb3e9d472945e24a5429aa1d2
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
     - id: a-misplaced-value-is-a-warning
       claim:
         integrity: sha256-fd378ca047b8b1df4f9ddfebdc384567076c273d27a39ec3f16fd545b57db69f
       source:
         file: src/meta/commands/validate.ts
-        lines: 440-447
+        lines: 444-451
         integrity: sha256-1973f37dd5436ece748c776b24dbfea838d2cad07428841d9036551a77a89caa
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
     - id: where-a-location-mark-counts
       claim:
         integrity: sha256-646dc84ff071894eb3c038c24d258a9f67582ebd61e227bbf0a2d74d234ed3a4
@@ -128,13 +128,13 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
         commit-sha: 0a9a9dc2f64fff23401f08caf20803d8821e463a
     - id: url-manifest-write-is-refused
       claim:
-        lines: 363
+        lines: 367
         integrity: sha256-cdf9f72d15760ddc8ef42a076541221895484de6bf2e8a029006f04553c66b78
       source:
         file: src/meta/commands/query.ts
-        lines: 3119-3123
+        lines: 3145-3149
         integrity: sha256-498f7cd21ff8c8eaa06a5d124edf0e84232822f01e60078f49037a8a18baf7d3
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: 723fd5703a5beae929a9c02840e12a3d38d828a4
     - id: keys-are-per-collection
       claim:
         integrity: sha256-2af7623b88a73d6c3b90872aec898d8f117cdcc3f4b515795866d9a4b5a1425f

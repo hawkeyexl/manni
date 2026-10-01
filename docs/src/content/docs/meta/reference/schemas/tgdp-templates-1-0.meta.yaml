@@ -1,0 +1,41 @@
+docs/src/content/docs/meta/reference/schemas/tgdp-templates-1-0.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/tgdp/1.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on tgdp:templates:1.0 for their pages."
+      type: capability
+      grader: ai
+    - id: versus-1-1
+      assertion: "A reader can choose between tgdp:templates:1.0 and tgdp:templates:1.1 with its strict overlay."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-58
+      integrity: sha256-d9d2f7dce13cb0603acb7968fb68cce28f800f8abd29caa27e5c56cf0275ebb3
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-27
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+      confidence:
+        /resource: 0.95
+        /tags: 0.8
+        /action: 0.85
+        /prerequisites: 0.7
+        /next-steps: 0.85
+        /related-pages: 0.9

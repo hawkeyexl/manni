@@ -1,8 +1,11 @@
 # fill (0047): two collections, and notes/stray.md is in neither.
+# defaults: false keeps fill to steward.schema.json's fields, which are the
+# subject; the default vocabularies would add dozens more to propose.
 collections:
   - name: site
     paths: ["docs/**/*.md"]
   - name: api
     paths: ["api/**/*.md"]
 meta:
+  defaults: false
   schemas: [./steward.schema.json]

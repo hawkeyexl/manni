@@ -3,6 +3,39 @@ title: Docusaurus docs schema
 description: The docusaurus:docs:3.10 schema shipped with manni meta, covering the 25 fields a Docusaurus docs page carries, the finding a quoted sidebar_position produces, and how to turn it on.
 sidebar:
   label: "docusaurus:docs:3.10"
+type: reference
+id: meta-reference-schemas-docusaurus-docs
+keywords: ["Docusaurus", "docs", "docusaurus:docs:3.10", "sidebar_position"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate Docusaurus docs page front matter and fix a quoted sidebar_position."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "dialect"]
+sample-questions:
+  - "Which fields does a Docusaurus docs page carry?"
+  - "What finding does a quoted sidebar_position produce?"
+  - "How do I turn on docusaurus:docs:3.10?"
+graph:
+  label: "Docusaurus docs schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/docusaurus-docs/3.10.json
+tags:
+  - docusaurus
+  - schema
+  - validation
+  - built-in
+action: remember
+prerequisites:
+  - /manni/meta/reference/docusaurus-schemas/
+  - /manni/meta/reference/schema-resolution/
+next-steps:
+  - /manni/meta/reference/docusaurus-schemas/
+related-pages:
+  - /manni/meta/reference/docusaurus-schemas/
+  - /manni/meta/reference/schema-resolution/
+risks: read-only
 ---
 
 **Built-in id:** `docusaurus:docs:3.10`

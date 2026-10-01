@@ -13,6 +13,53 @@ hero:
       link: /manni/meta/fix/
       icon: error
       variant: minimal
+type: overview
+id: meta
+keywords:
+  - manni meta
+  - metadata validation
+  - JSON Schema
+  - CI
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+  - schema-authors
+  - contributors
+intent: Pick the manni meta journey that matches the job, from setting up validation to fixing a failing check.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-get-started
+  - meta-set-up
+  - meta-ci
+  - meta-schemas
+  - meta-fix
+  - meta-reference
+related-pages:
+  - meta-reference-schemas-manni-vocabularies
+  - meta-reference-schemas
+concepts:
+  - metadata
+  - frontmatter
+  - schema
+  - validation
+sample-questions:
+  - What does manni meta check, and what does it not check?
+  - Where do I start with manni meta?
+  - Which built-in schemas does manni meta ship?
+graph:
+  label: manni meta
+  type: concept
+last-updated: 2026-10-01
+tags:
+  - overview
+  - metadata
+  - validation
+  - cli
+action: explore
+risks: read-only
 ---
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -59,10 +106,11 @@ which line, and which schema flagged it:
 ```
 
 That's the whole loop: run it, read the result, fix the field, run it again.
-With no schema configured, manni meta validates against two built-in schemas.
-The [OKF schema](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
-requires only `type`. The Seven-Action schema constrains `action` to seven
-reader actions, and requires nothing.
+With no schema configured, manni meta validates against a built-in default set
+of eleven schemas. The [OKF schema](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+requires `type`. The [manni core vocabulary](/manni/meta/reference/schemas/manni-core/)
+requires `title` and `description`. The Seven-Action schema and the other manni
+vocabularies check a field only when a page carries it.
 
 ## What do you want to do?
 

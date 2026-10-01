@@ -5,17 +5,17 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-291ce93da80cc0dbf7e135aff60d977a7933a3b35252e3f5110f45b7ec56aad5
       source:
         file: src/meta/commands/get.ts
-        lines: 515-521
+        lines: 522-528
         integrity: sha256-495ffdf01f73b7275bfcc4fcf36a79c97478f992ed666a0dc962fa3fbd8edb63
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: element-pointer-and-dot-notation-both-work
       claim:
         integrity: sha256-4a50876d9419354c5c40b89c85df1a13373722cb9b04e69b650eaf654e69ede3
       source:
         file: src/meta/commands/get.ts
-        lines: 505-513
+        lines: 512-520
         integrity: sha256-80a40363a4c3211debea1d799d96c7d19655f448f3c3d1d38f16f30733aa1ab7
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: aa1141e05318cff024548211d9982cb22a3931a8
     - id: element-collision-guard-is-narrow
       claim:
         lines: 229-231
@@ -84,9 +84,9 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-371b5fdd4812bda198c8a2e0886c149db842390a7dd369f77d6849a246b15584
       source:
         file: src/meta/core/config.ts
-        lines: 152-158
+        lines: 164-170
         integrity: sha256-6f6c6ca2da2e0586ecbbe09b93f9bb9a18342ddffd5ec62ed37a1dc1b0df4fcf
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
     - id: element-a-named-path-lifts-an-empty-element
       claim:
         lines: 179-180
@@ -99,12 +99,12 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
     - id: element-paths-accumulate-across-overrides
       claim:
         lines: 175-178
-        integrity: sha256-0906bdafb81c589b13fa06552831ee384642d65ed88f3ac78c9b588c86af4d39
+        integrity: sha256-2c60cbda72930e43b17814fc11e6ec89cb3160402513a7d2d11cb914b28326ab
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 454-462
+        lines: 569-577
         integrity: sha256-83a34b6970a5db3985735ca2d0c158b31b9654dca2f5fc46f9eea9c221f00ec9
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
     - id: element-config-extends-the-convention
       claim:
         lines: 170-174

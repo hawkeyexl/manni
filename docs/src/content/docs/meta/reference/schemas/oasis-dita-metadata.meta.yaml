@@ -1,0 +1,100 @@
+docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/dita/1.3.json
+    - path: src/meta/extractors/dita.ts
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can validate DITA topics and maps with oasis:dita-metadata:1.3."
+      type: capability
+      grader: ai
+    - id: map-keys
+      assertion: "A reader can explain why a map spells five keys under topicmeta."
+      type: capability
+      grader: ai
+    - id: fill-writes
+      assertion: "A reader can predict where fill places an element that is missing from a topic."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2
+      integrity: sha256-76b2a53f73519706f7f8e310aaf9fa64424820e3ce6b4fb1164c503e20efd9d8
+    - generated-by: Claude Opus 5.5
+      lines: 4-6
+      integrity: sha256-6ff4bfcc9a2fd083db8d50bec28bb5d339494cec1b5fa1b0c79f3f9ab81a8e6c
+    - generated-by: Claude Opus 5
+      lines: 8-10
+      integrity: sha256-584edab709a70fd7717c9572f99b2c14104a124b6985780f585a3eb923ab125f
+    - generated-by: Claude Fable 5.1
+      lines: 11-12
+      integrity: sha256-a0b318d7cf495a601f7748b6373e13c6e52267fcefdacc744b3603d55ad53e51
+    - generated-by: Claude Opus 5
+      lines: 14-16
+      integrity: sha256-d906518a0ed3e2449ea0d5555f3c8e8c17a82d07ef1d77e6fb40b4cb16cb18d0
+    - generated-by: Claude Opus 5.5
+      lines: 18-34
+      integrity: sha256-607ae22185494daff64aec04b5d0f86024de6a4e4a5d0c321bc6fa73e40df27c
+    - generated-by: Claude Opus 5
+      lines: 36-66
+      integrity: sha256-f93bff5c28f0e245e054c30691b532430231e7eeb2ab9394d3eee6f048059551
+    - generated-by: Claude Fable 5.1
+      lines: 67
+      integrity: sha256-5e1b7ce926c9ac6767ec5f6b716dac7f67968acc4dd9c7823a8011922c234c09
+    - generated-by: Claude Opus 5
+      lines: 68-88
+      integrity: sha256-aad8ee27235f2d96025753e2f9d15f9dd6c7944c5c71df11ad88d84f127bb648
+    - generated-by: Claude Opus 5.5
+      lines: 90-120
+      integrity: sha256-50803cd02d1d0a510536b2a530c75c053629385b1114a0b6a0637ec672b2f9e3
+    - generated-by: Claude Opus 5
+      lines: 122-144
+      integrity: sha256-4203f0a971440df44837e3c374d258cac122bc5a9d816c157ead6bcfa23930b9
+    - generated-by: Claude Fable 5.1
+      lines: 145
+      integrity: sha256-784bdd8f8668e7aa3411d42e89581b8127f4c42208bf9ac326a78cb66340683f
+    - generated-by: Claude Opus 5
+      lines: 146-156
+      integrity: sha256-d3f1f33869b21141c80baa17b49c4896d7d85f64e8c3ee068b686a520a5747b1
+    - generated-by: Claude Fable 5.1
+      lines: 157
+      integrity: sha256-d24bf73b5558ad5509be56abda0e54ba366d0e35e280ec68456608fa14fd6ea7
+    - generated-by: Claude Opus 5
+      lines: 158-177
+      integrity: sha256-a1ad94b2f0014db0fe3d7a2d74b8212db0067c7e35fe40f07edbd31e34082a5e
+    - generated-by: Claude Fable 5.1
+      lines: 178
+      integrity: sha256-9f500d9478fda27bc80bef579db74faca696fdcd623ac27978caebbe115195c9
+    - generated-by: Claude Opus 5
+      lines: 179-184
+      integrity: sha256-cbe5cb446e1f00772991f137848c7c7d0902b6ac92327429e5e8bcacf5f5d336
+    - generated-by: Claude Opus 5.5
+      lines: 186-188
+      integrity: sha256-697a84de8911813f767e84f77753d573e365b9c31c8321da3ff56fa5143d6de4
+    - generated-by: Claude Opus 5
+      lines: 189-199
+      integrity: sha256-9dbcc66e3ee647967c05ea6aeac27de8681b44779be69c3f06435e293a541a88
+  owner:
+    - "@hawkeyexl"
+  created: 2026-08-23
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+      confidence:
+        /resource: 0.95
+        /tags: 0.75
+        /action: 0.85
+        /prerequisites: 0.7
+        /next-steps: 0.85
+        /related-pages: 0.9
