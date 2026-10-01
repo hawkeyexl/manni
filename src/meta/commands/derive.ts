@@ -541,7 +541,9 @@ export async function runDerive(opts: DeriveOptions): Promise<DeriveRun> {
         claimedBy.set(doc.label, fields.filter((f) => claimed?.has(f) === true));
       }
       const union = fields.filter((f) => [...claimedBy.values()].some((own) => own.includes(f)));
-      if (union.length === 0) throw new DocmetaError(NOTHING_CLAIMED);
+      // With no page read, nothing is known about what the schemas claim; the
+      // parse errors are the diagnosis, and they are reported per file below.
+      if (union.length === 0 && loaded.size > 0) throw new DocmetaError(NOTHING_CLAIMED);
       pageFields = claimedBy;
       runFields = union;
     }

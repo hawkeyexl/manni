@@ -53,6 +53,9 @@ export const DEFAULT_SCHEMAS: readonly string[] = Object.freeze([
 ]);
 export const FILE_SCHEMA_KEY = "$schema";
 
+/** `DEFAULT_SCHEMAS` as a set, for the per-ref lookup in `withStrict`. */
+const DEFAULT_SCHEMA_SET: ReadonlySet<string> = new Set(DEFAULT_SCHEMAS);
+
 /**
  * The reference a `schemas:` entry loads, in either form.
  *
@@ -445,7 +448,7 @@ function withStrict(
     out.push(ref);
     const strictId = strictIdOf(ref);
     if (strictId === undefined) continue;
-    if (DEFAULT_SCHEMAS.includes(ref) && isBuiltinId(strictId)) out.push(strictId);
+    if (DEFAULT_SCHEMA_SET.has(ref) && isBuiltinId(strictId)) out.push(strictId);
     else if (registered?.has(ref) === true && registered.has(strictId)) out.push(strictId);
   }
   return dedupe(out);

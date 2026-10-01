@@ -385,6 +385,16 @@ describe("runDerive", () => {
     );
   });
 
+  it("reports a parse error rather than nothing to derive when no page could be read", async () => {
+    const { dir } = stageCorpus();
+    // Every input fails to parse, so no page's schemas were read and nothing
+    // can be said about what they claim. The parse error is the diagnosis.
+    writeFile(dir, "docs/install.md", "---\ntitle: [unclosed\n---\n\nBody.\n");
+    const run = await runDerive({ inputs: ["docs/install.md"], cwd: dir, noConfig: true });
+    expect(run.summary.errors).toBe(1);
+    expect(run.results[0]?.error).toBeDefined();
+  });
+
   it("is an operational error with no inputs and no collections", async () => {
     const { dir } = stageCorpus();
     const empty = new DocmetaError(
