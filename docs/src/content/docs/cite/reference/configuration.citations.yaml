@@ -29,9 +29,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-dd2b6a80de52f286db6a2841cc0045e09159192ecd68ff35c9d6fbfb3cb22972
       source:
         file: src/cite/core/sidecar.ts
-        lines: 428-432
-        integrity: sha256-9f678f0a57521d703c2bd47694d52ac6e50aceed14ef33d79ed2f8d3fa43688e
-        commit-sha: 0a9449f8fde0c267a46e4f267d8a96b17623015e
+        lines: 428-434
+        integrity: sha256-73b7fc9bbd56ebaa6bec7a55d284fc4478257e2e30dd33034dc40ab03e9ea90c
+        commit-sha: ae455872c550ebd06bcbd77028062d7130e904a8
     - id: no-config-frontmatter-only
       claim:
         integrity: sha256-dd2b6a80de52f286db6a2841cc0045e09159192ecd68ff35c9d6fbfb3cb22972
