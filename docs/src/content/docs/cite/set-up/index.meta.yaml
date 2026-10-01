@@ -7,7 +7,9 @@ docs/src/content/docs/cite/set-up/index.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/cite/core/config.ts
+      kind: implementation
     - path: src/shared/collections.ts
+      kind: implementation
   eval-suite: cite
   evals:
     - id: declare-collection

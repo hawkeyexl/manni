@@ -9,6 +9,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/cite/core/config.ts
+      kind: implementation
   eval-suite: cite
   evals:
     - id: configure-cite

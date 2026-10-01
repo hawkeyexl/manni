@@ -5,7 +5,9 @@ docs/src/content/docs/a11y/ci/index.mdx:
   review-interval: P180D
   source-of-truth:
     - path: "src/a11y/reporters/github.ts"
+      kind: implementation
     - path: "src/a11y/core/config.ts"
+      kind: implementation
   eval-suite: a11y
   evals:
     - id: scheduled-and-pr-jobs

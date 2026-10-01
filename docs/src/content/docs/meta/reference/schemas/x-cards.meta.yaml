@@ -5,7 +5,9 @@ docs/src/content/docs/meta/reference/schemas/x-cards.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/schemas/x-cards/1.0.json
+      kind: implementation
     - path: src/meta/core/schema-registry.ts
+      kind: implementation
   eval-suite: meta
   evals:
     - id: turn-on

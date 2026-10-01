@@ -9,8 +9,11 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/schemas/docusaurus-docs/3.10.json
+      kind: implementation
     - path: src/meta/schemas/docusaurus-blog/3.10.json
+      kind: implementation
     - path: src/meta/schemas/docusaurus-pages/3.10.json
+      kind: implementation
   eval-suite: meta
   evals:
     - id: wire-docusaurus-overrides

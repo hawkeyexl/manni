@@ -7,8 +7,11 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/cite/core/sidecar.ts
+      kind: implementation
     - path: src/cite/core/manifest.ts
+      kind: implementation
     - path: src/meta/core/external-metadata.ts
+      kind: implementation
   eval-suite: cite
   evals:
     - id: declare-manifest

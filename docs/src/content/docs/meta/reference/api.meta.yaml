@@ -7,6 +7,7 @@ docs/src/content/docs/meta/reference/api.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/index.ts
+      kind: implementation
   eval-suite: meta
   evals:
     - id: find-api-export

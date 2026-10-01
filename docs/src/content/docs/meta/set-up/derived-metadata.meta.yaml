@@ -12,7 +12,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/core/derive/
+      kind: implementation
     - path: src/meta/core/config.ts
+      kind: implementation
   eval-suite: meta
   evals:
     - id: configure-derive

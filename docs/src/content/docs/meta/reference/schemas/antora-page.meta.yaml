@@ -5,7 +5,9 @@ docs/src/content/docs/meta/reference/schemas/antora-page.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/schemas/antora/3.1.json
+      kind: implementation
     - path: src/meta/core/schema-registry.ts
+      kind: implementation
   eval-suite: meta
   evals:
     - id: turn-on

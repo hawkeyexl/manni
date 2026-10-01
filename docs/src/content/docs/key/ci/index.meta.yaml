@@ -5,9 +5,13 @@ docs/src/content/docs/key/ci/index.mdx:
   review-interval: P180D
   source-of-truth:
     - path: "src/key/commands/rotate.ts"
+      kind: implementation
     - path: "src/shared/encryption.ts"
+      kind: implementation
     - path: "src/cite/core/reencrypt.ts"
+      kind: implementation
     - path: "src/meta/core/reencrypt.ts"
+      kind: implementation
   eval-suite: key
   evals:
     - id: run-rotation

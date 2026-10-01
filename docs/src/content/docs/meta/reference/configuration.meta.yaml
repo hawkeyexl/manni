@@ -9,7 +9,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/core/config.ts
+      kind: implementation
     - path: src/shared/config-file.ts
+      kind: implementation
   eval-suite: meta
   evals:
     - id: write-config-collections

@@ -7,6 +7,7 @@ docs/src/content/docs/meta/reference/action.mdx:
   review-interval: P180D
   source-of-truth:
     - path: action.yml
+      kind: implementation
   eval-suite: meta
   evals:
     - id: configure-action-inputs

@@ -240,7 +240,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
   created: 2026-06-26
   source-of-truth:
     - path: src/meta/core/resolve-schema.ts
+      kind: implementation
     - path: src/meta/core/config.ts
+      kind: implementation
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

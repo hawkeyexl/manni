@@ -7,9 +7,13 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/core/derive/provenance.ts
+      kind: implementation
     - path: src/meta/core/derive/git.ts
+      kind: implementation
     - path: src/meta/commands/derive.ts
+      kind: implementation
     - path: src/meta/commands/fill.ts
+      kind: implementation
   eval-suite: meta
   evals:
     - id: record-agent-edit

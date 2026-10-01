@@ -5,8 +5,11 @@ docs/src/content/docs/meta/reference/schemas/manni-core.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/schemas/core/1.0.0.json
+      kind: implementation
     - path: src/meta/schemas/core-strict/1.0.0.json
+      kind: implementation
     - path: src/meta/core/schema-registry.ts
+      kind: implementation
   eval-suite: meta
   evals:
     - id: fields

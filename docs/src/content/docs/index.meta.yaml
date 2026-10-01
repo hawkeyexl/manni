@@ -93,7 +93,9 @@ docs/src/content/docs/index.mdx:
   created: 2026-06-26
   source-of-truth:
     - path: package.json
+      kind: implementation
     - path: src/cli.ts
+      kind: implementation
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

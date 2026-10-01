@@ -5,7 +5,9 @@ docs/src/content/docs/meta/reference/schemas/mkdocs-material.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/schemas/mkdocs-material/9.7.json
+      kind: implementation
     - path: src/meta/core/schema-registry.ts
+      kind: implementation
   eval-suite: meta
   evals:
     - id: turn-on

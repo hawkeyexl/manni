@@ -5,8 +5,11 @@ docs/src/content/docs/key/set-up/index.mdx:
   review-interval: P180D
   source-of-truth:
     - path: "src/shared/encryption-key.ts"
+      kind: implementation
     - path: "src/key/commands/set.ts"
+      kind: implementation
     - path: "src/key/core/config.ts"
+      kind: implementation
   eval-suite: key
   evals:
     - id: choose-location
