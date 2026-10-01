@@ -427,6 +427,8 @@ export function sidecarsFor(
 ): Promise<CitationSidecars | null> {
   const declared = run.configFile?.collections ?? [];
   if (run.configDir === undefined || declared.length === 0) return Promise.resolve(null);
+  // A const, so the narrowing below holds inside the closure.
+  const { configPath } = run;
   return loadCitationSidecars({
     // Every declared collection, whatever `--collection` or the paths chose.
     collections: declared,
@@ -438,10 +440,6 @@ export function sidecarsFor(
     ...(over.pages === undefined ? {} : { pages: over.pages }),
     // A keyless manifest (proposal 0068) keeps what a page's schemas mark,
     // read from meta's section of the same file.
-    ...(run.configPath === undefined ? {} : { marks: marksFrom(run.configPath, run.base) }),
+    ...(configPath === undefined ? {} : { marks: () => configMarks(configPath, run.base) }),
   });
-}
-
-function marksFrom(configPath: string, cwd: string): () => Promise<PageMarks | undefined> {
-  return () => configMarks(configPath, cwd);
 }
