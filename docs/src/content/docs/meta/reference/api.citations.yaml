@@ -2,7 +2,7 @@ docs/src/content/docs/meta/reference/api.mdx:
   citations:
     - id: api-sibling-tools-are-namespaces
       claim:
-        lines: 442-443
+        lines: 445-446
         integrity: sha256-237d8490d08014516b8fa17f0d42d5f99d0b7c5eb25b1aafbebc5d1f563e5769
       source:
         file: src/index.ts
