@@ -20,8 +20,8 @@ on:
       - "test/fixtures/**"
       - ".doc-detective.json"
       - ".github/workflows/docs-as-tests.yml"
-      # A dependency bump changes what the CLI does, as @hawkeyexl/inference's
-      # context sizing changed what the fill steps cost.
+      # A dependency bump can change what a documented command does or costs,
+      # so the docs are re-run against it.
       - "package-lock.json"
   workflow_dispatch:
 
