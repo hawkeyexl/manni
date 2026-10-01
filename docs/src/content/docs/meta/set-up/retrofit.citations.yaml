@@ -13,9 +13,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-41593122f94befb57ec4d9d88620053959aabb7d1ced18284efb28756315c068
       source:
         file: src/meta/commands/fill.ts
-        lines: 2029-2036
+        lines: 2031-2038
         integrity: sha256-41bef07e2a42a2f8e3472bc67309bb608695859b813489cda6aea5485599c378
-        commit-sha: 6d0b1fc689550db9f7d5a351a594d15198311369
+        commit-sha: 98955102a676fc6d6915453a1e02f645a66a39a2
     - id: low-confidence-fields-listed-with-scores
       claim:
         integrity: sha256-41593122f94befb57ec4d9d88620053959aabb7d1ced18284efb28756315c068
@@ -37,9 +37,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-88e08c91d8f138cb3243f2f700d7eb4483bfcbfea2b70d65752e5e2139913bcb
       source:
         file: src/meta/commands/fill.ts
-        lines: 1611-1615
+        lines: 1613-1617
         integrity: sha256-c0de2de5d9234ffa87ac58747c9bb9ebbe329bfed2c72aac43d2434ed9124cf4
-        commit-sha: 6d0b1fc689550db9f7d5a351a594d15198311369
+        commit-sha: 98955102a676fc6d6915453a1e02f645a66a39a2
     - id: meta-provenance-skipped-on-schema-mismatch
       claim:
         integrity: sha256-88e08c91d8f138cb3243f2f700d7eb4483bfcbfea2b70d65752e5e2139913bcb
@@ -86,17 +86,17 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-129ba97597f17f735a9cbf31de18de292ee027257dc0824bdbf8a51b419a4fdd
       source:
         file: src/meta/commands/fill.ts
-        lines: 1782-1783
+        lines: 1784-1785
         integrity: sha256-d19e8e456bc7fa207f429c489335bc4b2b40ad51a6852aeaa3a6d7c998d39f5a
-        commit-sha: 6d0b1fc689550db9f7d5a351a594d15198311369
+        commit-sha: 98955102a676fc6d6915453a1e02f645a66a39a2
     - id: fill-candidates-come-from-schema-properties
       claim:
         integrity: sha256-129ba97597f17f735a9cbf31de18de292ee027257dc0824bdbf8a51b419a4fdd
       source:
         file: src/meta/commands/fill.ts
-        lines: 1756-1761
+        lines: 1758-1763
         integrity: sha256-a698aeb66ec58d2b251f3d3d529c83e1417187ab67171c100874e7f6079e9242
-        commit-sha: 6d0b1fc689550db9f7d5a351a594d15198311369
+        commit-sha: 98955102a676fc6d6915453a1e02f645a66a39a2
     - id: baseline-debt-printed-on-every-run
       claim:
         integrity: sha256-17cd8d4365ad9189035a0380e44bdf1612c7599414ff4120277b5998f9a62b47

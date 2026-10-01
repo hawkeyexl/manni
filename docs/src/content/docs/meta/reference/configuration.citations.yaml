@@ -867,9 +867,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-e1825e65cb9fa335d584c7dce8dff48817c66a167aaa2b2664e63d2fff394d2e
       source:
         file: src/meta/commands/fill.ts
-        lines: 1382-1393
+        lines: 1384-1395
         integrity: sha256-7615ea4dd0305ce2ced937074038b8846e5e1d6bd861a3d274453c9ba2e55c33
-        commit-sha: 6d0b1fc689550db9f7d5a351a594d15198311369
+        commit-sha: 98955102a676fc6d6915453a1e02f645a66a39a2
     - id: derive-stamps-an-owned-field-in-the-manifest
       claim:
         lines: 891
@@ -1604,9 +1604,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-146577d502ee8a0eccaa2e4af61b465fbd19f719dded8cde883c0c94bce49432
       source:
         file: src/meta/commands/fill.ts
-        lines: 2284-2290
+        lines: 2286-2292
         integrity: sha256-169454898e3eb462c2beadac7279b4460389cae1c2e14c1c8905b2d5308acf00
-        commit-sha: 6d0b1fc689550db9f7d5a351a594d15198311369
+        commit-sha: 98955102a676fc6d6915453a1e02f645a66a39a2
     - id: fill-confidence-threshold-default
       claim:
         lines: 1698

@@ -45,9 +45,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-557ab945dd0a17f7acc40b727408eb344ffca8e342960ebb989a92a91c17a62b
       source:
         file: src/meta/commands/fill.ts
-        lines: 1611-1615
+        lines: 1613-1617
         integrity: sha256-c0de2de5d9234ffa87ac58747c9bb9ebbe329bfed2c72aac43d2434ed9124cf4
-        commit-sha: 6d0b1fc689550db9f7d5a351a594d15198311369
+        commit-sha: 98955102a676fc6d6915453a1e02f645a66a39a2
     - id: derived-table-one-row-per-page
       claim:
         integrity: sha256-557ab945dd0a17f7acc40b727408eb344ffca8e342960ebb989a92a91c17a62b
