@@ -21,8 +21,10 @@ docs/src/content/docs/meta/reference/glossary/dialect.mdx:
   created: 2026-09-16
   source-of-truth:
     - path: src/meta/core/validator.ts
+      kind: implementation
       lines: 63-77
     - path: src/meta/core/validator.ts
+      kind: implementation
       lines: 461-468
   meta-provenance:
     - generated-by: claude-sonnet-4-5
