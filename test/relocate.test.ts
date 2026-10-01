@@ -80,6 +80,7 @@ describe("relocate: a collection with no manifest yet (rung 1, 2)", () => {
     expect(read(dir, "manni.config.yaml")).toBe(
       [
         "meta:",
+        "  defaults: false",
         "  schemas: [./steward.schema.json]",
         "collections:",
         "  - name: site",
