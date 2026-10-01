@@ -121,9 +121,9 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         integrity: sha256-fd238d22d3a97070e5d72bf6b44b7f425110fabda3bd9b49e1866354c98ebe53
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 128-133
+        lines: 131-136
         integrity: sha256-8bc939dc158ad501c7fcff32e2a1fd4db472554f0bf11e1a944e74764164e3dd
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: finding-names-schema
       claim:
         integrity: sha256-ea6e97c1c85caaa8ee524cbd0d393b225848d4f632a9028eb68da55df8415d8c

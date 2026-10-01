@@ -30,9 +30,9 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         integrity: sha256-2fd82390cabe03949264c38c51c5f7ff1d3900e0ab72763956e520d450328fe5
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 542-552
+        lines: 545-555
         integrity: sha256-b01c18f9e05654a4cfb97c7817650fdabd59e2014546ec6925b09f2c4fd4d0d7
-        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: taxonomy-a-foreign-action-value-fails
       claim:
         lines: 83-84

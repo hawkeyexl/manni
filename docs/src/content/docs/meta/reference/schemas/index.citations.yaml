@@ -21,17 +21,17 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         integrity: sha256-40bec13938a5f36b7d48c28fab3122f0240e8e9215ae80bb8ba9cace74f36262
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 507-521
+        lines: 510-524
         integrity: sha256-f2f0f059fc3071a4b70c5250f321704087ab164b35f97ed69bc2f26c8342f090
-        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: registry-repeat-s-to-build-a-set
       claim:
         integrity: sha256-19b0963019e06c94d43fc69343527c2121fe53e01e4787d5328a362e272d6b7e
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 503-505
+        lines: 506-508
         integrity: sha256-2328dc767a27a79cc7799141a446ded2c9b9aedfacd94022a2d5b8d3e41b66aa
-        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: registry-three-ways-in-precedence-order
       claim:
         integrity: sha256-3b736c00927d4ab8efa1bee00c1c1c9937aa6c009dca18fa37ef1c441f05e654

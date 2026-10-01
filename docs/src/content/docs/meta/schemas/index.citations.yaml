@@ -46,9 +46,9 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-2e9e70750388d767b7562acdee44aca8ea482909e69207e404a25dca04fc9d7b
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 507-521
+        lines: 510-524
         integrity: sha256-f2f0f059fc3071a4b70c5250f321704087ab164b35f97ed69bc2f26c8342f090
-        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: x-manni-location-keyword
       claim:
         integrity: sha256-6f3824dbf475407aa72146239f3a512a039e282999b13a2640f6577607d1ecb2

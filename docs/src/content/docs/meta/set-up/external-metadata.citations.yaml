@@ -144,9 +144,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-756a1eb87c6a14d7fbd92fc09a0b513c213db34ea64626596c3884017ef52bec
       source:
         file: src/meta/commands/derive.ts
-        lines: 959-966
+        lines: 961-968
         integrity: sha256-4cbccdf40615ce1b0edad2a4ae7db89e4b756f927988997be82c0a9335815fb8
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: fill-writes-owned-key-into-manifest
       claim:
         integrity: sha256-756a1eb87c6a14d7fbd92fc09a0b513c213db34ea64626596c3884017ef52bec

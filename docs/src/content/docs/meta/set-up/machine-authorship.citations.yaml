@@ -69,9 +69,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-7039fb1532232cd20ca72b17f50d4499b0e7e596e3ec78392f9cf28affb9a202
       source:
         file: src/meta/commands/derive.ts
-        lines: 980-987
+        lines: 982-989
         integrity: sha256-32ff03c2a90ab2fae6ac3e0e8e9a2c5a8504c082508784c891c757da5f2c4bf2
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: derive-file-error-exits-1
       claim:
         integrity: sha256-7039fb1532232cd20ca72b17f50d4499b0e7e596e3ec78392f9cf28affb9a202
@@ -93,9 +93,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-1a4a97071c2b901d6a4c4ab5d54c8e3356b2c281c47cfcf869202f66a5f52018
       source:
         file: src/meta/commands/derive.ts
-        lines: 1026-1032
+        lines: 1028-1034
         integrity: sha256-63730106799f1bd583ecc95e4e75448d2dafea08a6847a4e5c22683f7dc6ba5a
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: manifest-entry-with-no-keys-is-removed
       claim:
         integrity: sha256-1a4a97071c2b901d6a4c4ab5d54c8e3356b2c281c47cfcf869202f66a5f52018
@@ -237,9 +237,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-9a10f8f6c8089e8b096b4ecbf8ded6e3cb641a8abecc3d1aed02c66933925591
       source:
         file: src/meta/commands/derive.ts
-        lines: 1202-1206
+        lines: 1204-1208
         integrity: sha256-23091d49e18dd2928de54e89dea34b96be8da2b0f377118476b2005e4ffb2467
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: generated-by-attributes-all-uncommitted-lines
       claim:
         lines: 165
@@ -298,9 +298,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-fbee9db97ce3be6c8e17907d789ab2a03e335aa9144a2197024a45b650d7e94d
       source:
         file: src/meta/commands/derive.ts
-        lines: 1216-1226
+        lines: 1218-1228
         integrity: sha256-5cf746e8c301c1b265485e38af387ea6680e7a5ceda8f051e7e742495e2e95ce
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: provenance-is-a-builtin-managed-field
       claim:
         integrity: sha256-92982e12f04c9402446c8dd938e937450b3b3b8ea38ef90848a3732522591286

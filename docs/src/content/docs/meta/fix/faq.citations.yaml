@@ -172,9 +172,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-870e7f7f319c04461f7b4a8ab8deffdefe0b960cbae84284c56cd499c36c0cef
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 496-563
+        lines: 499-566
         integrity: sha256-ee86276fe33cd88ca7f656e8447207eb02a119503cdbc5a2cfa23575ab8d5860
-        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: schema-precedence-chain
       claim:
         integrity: sha256-6b3ac1de2c2e8ba2ef7dc5aa5a2bfc2ff573fd1d670a1172e95af54531cc262b

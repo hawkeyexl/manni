@@ -133,9 +133,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-b667afac154ec987166a592cc959e77a1fe69d60d464710be085fd8fc5d48784
       source:
         file: src/meta/commands/derive.ts
-        lines: 1221-1226
+        lines: 1223-1228
         integrity: sha256-77b27b0712c4c796364fc555f68d55c5a55bdb99460af1efa045a9a389bceedc
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: gitlab-source-uses-glab-cli
       claim:
         integrity: sha256-a399ea787da201cbd5edf1dca1902f1c9dde90bbbe17b920d51c9c56db90f7d7
@@ -578,9 +578,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-5b8f6210b52cc11242e76894f76835f862b64f897ebe868593719a15bcdb29d7
       source:
         file: src/meta/commands/derive.ts
-        lines: 1240-1244
+        lines: 1242-1246
         integrity: sha256-653d473176df9471c4e167769cd167ef1e377d50592459021fa1bf7403fb3421
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: only-derive-fields-are-stamped-and-compared
       claim:
         lines: 70

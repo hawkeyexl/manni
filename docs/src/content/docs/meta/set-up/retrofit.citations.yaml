@@ -134,25 +134,25 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-f61ba3631146687f1ea566adcf0d21bcdad6546ba4c6b3fe0cc83167d1b33a2e
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 527-538
+        lines: 530-541
         integrity: sha256-5f328e6cc2303212f896b16af232a903314fcbd4ed69a009753f9e366a615486
-        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: override-may-select-by-files-glob
       claim:
         integrity: sha256-f61ba3631146687f1ea566adcf0d21bcdad6546ba4c6b3fe0cc83167d1b33a2e
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 250-255
+        lines: 253-258
         integrity: sha256-6d54a39e6a57210172a3b9b1721356ca35aff4089bea6178cdfd6af3c2a7a25f
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: overrides-assign-schema-set-per-area
       claim:
         integrity: sha256-909345e35f9d621395ab694f1859f67d46e956b0be4630fe3688a3241ed1bccb
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 525-538
+        lines: 528-541
         integrity: sha256-3e987f75f3dd7e10e8498274935f6c4173d5b1c36e0556a0191cb1412b07e1f7
-        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
+        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
     - id: config-exclude-does-not-filter-typed-paths
       claim:
         lines: 155
