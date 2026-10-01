@@ -87,3 +87,21 @@ docs/src/content/docs/meta/reference/schemas/anthropic-claude-subagent.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-08-28
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.85
+        /action: 0.85
+        /prerequisites: 0.75
+        /next-steps: 0.9
+        /related-pages: 0.95
+        /risks: 0.95

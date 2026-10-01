@@ -401,3 +401,21 @@ docs/src/content/docs/meta/fix/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  source-of-truth:
+    - path: src/meta/reporters/index.ts
+    - path: src/shared/run.ts
+    - path: src/meta/cli.ts
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /source-of-truth
+      confidence:
+        /tags: 0.9
+        /action: 0.98
+        /prerequisites: 0.75
+        /next-steps: 0.85
+        /source-of-truth: 0.8

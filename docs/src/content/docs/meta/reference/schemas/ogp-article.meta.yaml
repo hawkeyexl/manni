@@ -23,3 +23,19 @@ docs/src/content/docs/meta/reference/schemas/ogp-article.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /action
+        - /next-steps
+        - /related-pages
+        - /risks
+        - /prerequisites
+      confidence:
+        /resource: 0.95
+        /action: 0.8
+        /next-steps: 0.75
+        /related-pages: 0.85
+        /risks: 0.7
+        /prerequisites: 0.75

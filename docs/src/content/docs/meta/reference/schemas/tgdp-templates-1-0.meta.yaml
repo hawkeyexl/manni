@@ -23,3 +23,19 @@ docs/src/content/docs/meta/reference/schemas/tgdp-templates-1-0.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-27
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+      confidence:
+        /resource: 0.95
+        /tags: 0.8
+        /action: 0.85
+        /prerequisites: 0.7
+        /next-steps: 0.85
+        /related-pages: 0.9

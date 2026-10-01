@@ -44,3 +44,17 @@ docs/src/content/docs/meta/reference/metadata-vocabularies.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-08-23
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /tags: 0.8
+        /action: 0.85
+        /next-steps: 0.9
+        /related-pages: 0.9
+        /risks: 0.95

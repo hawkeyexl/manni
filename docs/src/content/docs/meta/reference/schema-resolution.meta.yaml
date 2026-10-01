@@ -325,3 +325,19 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-06-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.75
+        /next-steps: 0.85
+        /related-pages: 0.9
+        /risks: 1

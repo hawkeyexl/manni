@@ -234,3 +234,19 @@ docs/src/content/docs/meta/set-up/config.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-05
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /risks
+        - /prerequisites
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /next-steps: 0.85
+        /related-pages: 0.85
+        /risks: 0.8
+        /prerequisites: 0.85

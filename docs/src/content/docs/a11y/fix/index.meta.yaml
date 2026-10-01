@@ -89,3 +89,13 @@ docs/src/content/docs/a11y/fix/index.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-11
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /prerequisites: 0.8

@@ -23,3 +23,19 @@ docs/src/content/docs/meta/reference/schemas/myst-frontmatter.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /prerequisites
+      confidence:
+        /resource: 0.95
+        /tags: 0.85
+        /action: 0.8
+        /next-steps: 0.7
+        /related-pages: 0.85
+        /prerequisites: 0.85
