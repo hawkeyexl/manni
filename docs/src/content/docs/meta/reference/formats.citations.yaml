@@ -128,7 +128,7 @@ docs/src/content/docs/meta/reference/formats.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: formats-typed-prolog-elements-are-separate-keys
       claim:
-        integrity: sha256-e0530b8c27d1987c806e5b567242085de888c71c1414fddeaeb5a74ebc9f4db6
+        integrity: sha256-2cc11556bced7af37c80afd91ec841cb7d4f1d068440d9b5f49b4404c8023db7
       source:
         file: src/meta/extractors/dita.ts
         lines: 215-227

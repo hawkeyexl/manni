@@ -1,0 +1,51 @@
+docs/src/content/docs/meta/reference/schemas/manni-terminology.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/terminology/1.0.0.json
+    - path: src/meta/schemas/terminology-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: term-entry
+      assertion: "A reader can write a term page with a label and a definition."
+      type: capability
+      grader: ai
+    - id: turn-on
+      assertion: "A reader can point manni:terminology:1.0.0 at the folder that holds the term pages."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-16
+      integrity: sha256-549f9f2905915034bb073f2d0367892191662c5759d6bc17d88faef1a7caeb59
+    - generated-by: Claude Opus 5.5
+      lines: 26-29
+      integrity: sha256-fcd9f3139e4d117301cb23b4288f127507c4bc9b68cd700e8d7ea1295ade8af1
+    - generated-by: Claude Opus 5.5
+      lines: 31-186
+      integrity: sha256-fd128b68cb48b04df402161748f9ffcc13cfc79990630ceba941a2969a8224c5
+    - generated-by: Claude Opus 5.5
+      lines: 190-221
+      integrity: sha256-fbcf8c0147f720703a3f754f0de92bed3c56f7de85ea1351250206cf837315b3
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /action: 0.85
+        /prerequisites: 0.75
+        /next-steps: 0.7
+        /related-pages: 0.8
+        /risks: 0.9

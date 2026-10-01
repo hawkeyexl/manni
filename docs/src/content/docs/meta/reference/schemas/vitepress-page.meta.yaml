@@ -1,0 +1,43 @@
+docs/src/content/docs/meta/reference/schemas/vitepress-page.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/vitepress/1.6.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can scope vitepress:page:1.6 to a VitePress site's pages with an override."
+      type: capability
+      grader: ai
+    - id: outline-value
+      assertion: "A reader can fix the finding an unrecognised outline value produces."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-132
+      integrity: sha256-ce09d48b7adf90264f3f049a2ad4f7bd68b64c6b25702a74f8dd9ecfbcf74828
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /related-pages
+        - /risks
+        - /prerequisites
+        - /next-steps
+      confidence:
+        /resource: 0.95
+        /tags: 0.85
+        /action: 0.85
+        /related-pages: 0.9
+        /risks: 0.85
+        /prerequisites: 0.85
+        /next-steps: 0.75

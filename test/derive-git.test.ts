@@ -435,7 +435,8 @@ describe.each(forms)("deriveFromGit provenance ($name)", ({ opts }) => {
     writeFile(dir, "b.md", doc("title: t", "x\ny"));
     const facts = await factsFor(dir, "b.md", withProvenance(dir, { generatedBy: FABLE }));
     expect(facts.provenance?.value).toEqual([
-      { "generated-by": FABLE, lines: "1-3", integrity: pin("", "x", "y") },
+      // Body 1 is the blank line after the frontmatter, which carries no authorship (0071).
+      { "generated-by": FABLE, lines: "2-3", integrity: pin("x", "y") },
     ]);
   });
 
@@ -602,7 +603,8 @@ describe.each(forms)("deriveFromGit provenance ($name)", ({ opts }) => {
     );
     expect(result.status).toEqual({ available: true });
     expect(result.records.get("docs/b.md")?.provenance?.value).toEqual([
-      { "generated-by": FABLE, lines: "1-2", integrity: pin("", "x") },
+      // Body 1 is the blank line after the frontmatter, which carries no authorship (0071).
+      { "generated-by": FABLE, lines: 2, integrity: pin("x") },
     ]);
     // The other page keeps its facts.
     expect(result.records.get("a.md")?.created?.value).toBe("2020-01-02");
@@ -659,5 +661,36 @@ describe("bodyOf", () => {
     expect(bodyOf(`${BOM}---\r\ntitle: t\r\n---\r\nbody\r\n`, true)).toBe(
       `${BOM}body\r\n`,
     );
+  });
+});
+
+describe.each(forms)("deriveFromGit: the owning manifest (0069, $name)", ({ opts }) => {
+  it("reads created and last-updated from the owning manifest at the fact commits (rule 1)", async () => {
+    const dir = tempRepo({
+      "a.md": doc("title: t", "one"),
+      "meta.yaml": "a.md:\n  created: 1999-09-09\n  last-updated: 1999-09-09\n",
+    });
+    const first = commit(dir, "add", { authorDate: D1 });
+    writeFile(dir, "a.md", doc("title: t", "two"));
+    writeFile(dir, "meta.yaml", "a.md:\n  created: 1999-09-09\n  last-updated: 2001-01-01\n");
+    const second = commit(dir, "edit and stamp", { authorDate: D2 });
+
+    const ref = { absPath: join(dir, "meta.yaml"), entry: "a.md", join: "path" };
+    const result = await deriveFromGit(
+      [{ ...input(dir, "a.md"), stampManifests: { created: ref, "last-updated": ref } }],
+      opts(dir),
+    );
+    expect(result.status).toEqual({ available: true });
+    const facts = result.records.get("a.md");
+    expect(facts?.created).toEqual({
+      value: "1999-09-09",
+      source: "git",
+      evidence: `stamped in ${first.slice(0, 7)}`,
+    });
+    expect(facts?.["last-updated"]).toEqual({
+      value: "2001-01-01",
+      source: "git",
+      evidence: `stamped in ${second.slice(0, 7)}`,
+    });
   });
 });

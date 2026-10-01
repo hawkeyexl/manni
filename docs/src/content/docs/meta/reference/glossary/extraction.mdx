@@ -8,6 +8,47 @@ related-terms: [validation, extractor]
 abstract: Reading metadata out of a document.
 definition: >-
   The operation that reads metadata out of a document.
+keywords:
+  - extraction
+  - get command
+  - metadata
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+  - schema-authors
+  - contributors
+intent: Say what extraction means in manni meta and where it is covered in full.
+lifecycle: published
+applies-to:
+  - domain:meta
+related-pages:
+  - meta-reference-cli
+sample-questions:
+  - What is extraction in manni meta?
+  - How does extraction differ from validation?
+graph:
+  label: extraction
+  type: concept
+last-updated: 2026-09-21
+tags:
+  - extraction
+  - metadata
+  - operations
+  - get-command
+action: understand
+concepts:
+  - validation
+next-steps:
+  - validation
+  - meta-reference-cli
+risks: read-only
+alt-labels:
+  - metadata extraction
+  - extract
+scope-note: In manni meta, extraction specifically means reading metadata from a document without validation. It is performed by the get command and is distinct from the validate command.
+prerequisites:
+  - metadata
 ---
 
 <p>{frontmatter.definition}</p>

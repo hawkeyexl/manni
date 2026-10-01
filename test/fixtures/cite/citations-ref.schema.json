@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/manni/citations-ref.schema.json",
-  "title": "The composition that does not work, kept so the docs can prove it",
-  "description": "docs/src/content/docs/cite/set-up/require-citations.mdx says a house schema cannot reach the citations vocabulary through $ref, because only the bundled built-ins are registered for reference resolution and citations is not one of them. This file is that attempt. Validating anything against it is exit 2 with a compile error, which is the page's evidence.",
+  "title": "A house schema that requires citations and reaches their shape through $ref",
+  "description": "A house schema reaches the citations vocabulary through $ref. It references manni:citations:1.0.0 for the entry shape and requires `citations`, so a page without one fails and a malformed entry fails against the vocabulary.",
   "type": "object",
-  "allOf": [{ "$ref": "manni:citations:1.0.0-proposal.4" }],
+  "allOf": [{ "$ref": "manni:citations:1.0.0" }],
   "required": ["citations"]
 }

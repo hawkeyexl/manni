@@ -1,0 +1,13 @@
+# Proposal 0068 for cite, with a second external field: the keyless manifest
+# owns `citations` and `owner`, which the stewardship vocabulary marks
+# external. cite has to judge ownership over the page with the manifest's
+# values in place, or it refuses `owner`.
+meta:
+  schemas: ["manni:citations:1.0.0", "manni:stewardship:1.0.0"]
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+cite:
+  root: .

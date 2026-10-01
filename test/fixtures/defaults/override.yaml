@@ -1,0 +1,6 @@
+# An override replaces the set, as it always did.
+meta:
+  overrides:
+    - files: "*.md"
+      schemas:
+        - ./house.json

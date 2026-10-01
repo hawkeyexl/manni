@@ -206,6 +206,7 @@ describe("fill: a manifest of a collection --collection leaves out", () => {
         "      - file: ./site-meta.yaml",
         `        keys: [${keys}]`,
         "meta:",
+        "  defaults: false",
         "  schemas: [./steward.schema.json]",
         "",
       ].join("\n"),

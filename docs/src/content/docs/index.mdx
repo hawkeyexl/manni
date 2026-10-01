@@ -13,6 +13,30 @@ hero:
       link: /manni/meta/fix/
       icon: error
       variant: minimal
+id: "home"
+type: "overview"
+keywords: ["manni", "tools", "docmeta", "command line"]
+language: en
+audiences: ["docs-engineers", "ci-engineers", "schema-authors", "contributors"]
+intent: "Pick the manni tool for the job, install the package once, and run the first command."
+lifecycle: published
+applies-to: ["domain:manni"]
+next-steps: ["meta", "a11y", "cite", "key", "term"]
+sample-questions: ["What tools does manni include?", "How do I install manni and run my first command?", "What changed when docmeta became manni meta?"]
+graph: { label: "manni", type: concept }
+last-updated: 2026-09-26
+tags:
+  - overview
+  - installation
+  - cli
+action: explore
+related-pages:
+  - meta
+  - a11y
+  - cite
+  - key
+  - term
+risks: read-only
 ---
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -84,4 +108,4 @@ nothing else did:
 
 Every built-in schema keeps its old published URL as well as its new one, so a
 `$schema` line written before the rename still resolves offline. See the
-[built-in schema registry](/manni/meta/reference/built-in-schemas/).
+[built-in schema registry](/manni/meta/reference/schemas/).

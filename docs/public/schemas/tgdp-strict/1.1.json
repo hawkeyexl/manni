@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tgdp:templates-strict:1.1",
+  "title": "The Good Docs Project templates strict overlay v1.1",
+  "description": "The strict overlay for tgdp:templates:1.1. Stack it beside the open schema, which owns the key and the required rule. It closes `type` to the 25 template slugs and requires no key.",
+  "additionalProperties": true,
+  "type": "object",
+  "properties": {
+    "type": {
+      "enum": [
+        "api-getting-started",
+        "api-reference",
+        "bug-report",
+        "changelog",
+        "code-of-conduct",
+        "code-of-conduct-incident-record",
+        "code-of-conduct-remediation-record",
+        "code-of-conduct-response-plan",
+        "concept",
+        "contact-support",
+        "contributing-guide",
+        "glossary",
+        "how-to",
+        "installation-guide",
+        "our-team",
+        "quickstart",
+        "readme",
+        "reference",
+        "release-notes",
+        "sdk-overview",
+        "style-guide",
+        "terminology-system",
+        "troubleshooting",
+        "tutorial",
+        "user-personas"
+      ],
+      "description": "Stacked beside tgdp:templates:1.1, strict closes `type` to the 25 template slugs. That is the check tgdp:templates:1.0 makes in one file."
+    }
+  }
+}

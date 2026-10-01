@@ -1,0 +1,54 @@
+docs/src/content/docs/meta/reference/metadata-vocabularies.mdx:
+  personas:
+    - sara
+  journeys:
+    - s1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/ogp/1.0.json
+    - path: src/meta/schemas/dcmi/1.1.json
+    - path: src/meta/schemas/microsoft-learn/1.0.json
+    - path: src/meta/schemas/x-cards/1.0.json
+  eval-suite: meta
+  evals:
+    - id: pick-metadata-vocabulary
+      assertion: A reader can pick the built-in vocabulary schema for a social card, a catalogue, or a Microsoft Learn build and name what it requires.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2
+      integrity: sha256-455ec16c59f3161e83ca8b88359e047df580ab56c1f5734d23ee4951cda8878e
+    - generated-by: Claude Fable 5.1
+      lines: 3-4
+      integrity: sha256-11d7c61498850c6ffa90b377f1c41330dd075655b0e9918cb5c693fb4a7fdd2d
+    - generated-by: Claude Opus 5
+      lines: 5-9
+      integrity: sha256-9d9972e09d63e8dcef0789c0c4d020029097a33da461b5d7005a156b574223a4
+    - generated-by: Claude Opus 5.5
+      lines: 10-32
+      integrity: sha256-8acf33da3cae31116899f30c780b8e902bf028a8ef4cd22cf791cc9b0d65d753
+    - generated-by: Claude Opus 5
+      lines: 33
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5.5
+      lines: 35-43
+      integrity: sha256-698ffc030020b0b52958709a77102773e863be9ee728cf4cde241c49ee95f320
+  owner:
+    - "@hawkeyexl"
+  created: 2026-08-23
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /tags: 0.8
+        /action: 0.85
+        /next-steps: 0.9
+        /related-pages: 0.9
+        /risks: 0.95

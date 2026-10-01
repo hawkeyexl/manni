@@ -13,8 +13,8 @@ Schema**, built for CI. It was published as `docmeta` up to 4.13.1; see
 `manni meta` checks the metadata in your documents (Markdown frontmatter and more)
 against one or more JSON Schemas. It verifies that required fields are present
 and correctly formatted: a `type`, an ISO 8601 `timestamp`, a URI `resource`. It
-does not judge prose quality. It ships with 23 [built-in
-schemas](https://hawkeyexl.github.io/manni/meta/reference/built-in-schemas/). They
+does not judge prose quality. It ships with 45 [built-in
+schemas](https://hawkeyexl.github.io/manni/meta/reference/schemas/). They
 cover content vocabularies such as the [Open Knowledge Format
 (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md),
 [Diátaxis](https://diataxis.fr/), [The Good Docs
@@ -22,7 +22,8 @@ Project](https://www.thegooddocsproject.dev/template), and the [Seven-Action
 model](https://passo.uno/seven-action-model/). They also cover the front matter
 contracts of site generators such as
 [Docusaurus](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter)
-3.10, Hugo, Jekyll, and MkDocs Material. Run `manni meta schemas` for the full
+3.10, Hugo, Jekyll, and MkDocs Material. Twenty-two are manni's own metadata
+vocabularies and their strict overlays. Run `manni meta schemas` for the full
 list. It follows [clig.dev](https://clig.dev) conventions and returns a nonzero
 exit code (plus optional GitHub annotations) when validation fails.
 
@@ -50,13 +51,13 @@ The metadata tool used to be the whole package. Three things changed:
   is still read, with a warning.
 - **The GitHub Action.** `uses: hawkeyexl/manni@v2`, same inputs.
 
-Everything else is the same: the exit codes, the output formats, the built-in
-schemas and their published URLs (the old `…/docmeta/schemas/` URLs stay
-served and resolve offline), and the programmatic API.
+The rename changed nothing else. The exit codes, the output formats and the
+programmatic API carry over, and so do the built-in schemas and their published
+URLs. The old `…/docmeta/schemas/` URLs stay served and resolve offline.
 
 ## Quick start
 
-Point `manni meta validate` at a file, a directory (walked recursively), or a glob. With no `--schema`, it validates against the default set: the built-in OKF schema plus `passo-uno:seven-action:1.0`, which constrains an optional `action` field and requires nothing on its own.
+Point `manni meta validate` at a file, a directory (walked recursively), or a glob. With no `--schema`, it validates against the default set of eleven built-in schemas. The OKF schema requires `type`, and the manni core vocabulary requires `title` and `description`. `passo-uno:seven-action:1.0` and the other eight manni vocabularies check a field only when a page carries it.
 
 ```bash
 manni meta validate docs/intro.md
@@ -64,13 +65,16 @@ manni meta validate docs/intro.md
 
 ```text
 ✗ docs/intro.md
-    (root)      must have required property 'type'   (line 1)  [google:okf:0.1]
-    /timestamp  must match format "date-time"        (line 9)  [google:okf:0.1]
+    (root)      must have required property 'type'                  [google:okf:0.1]
+    (root)      must have required property 'description'           [manni:core:1.0.0]
+    /timestamp  must match format "date-time"             (line 9)  [google:okf:0.1]
 
 1 file checked, 0 passed, 1 failed, 0 errors
 ```
 
 A clean run exits `0`; validation failures exit `1`; operational errors (no input, unknown schema, parse error) exit `2`.
+
+A config's `meta.schemas` add to the default set, and `meta.defaults: false` makes them replace it. `meta.register` names your own schemas by their `$id`, and `meta.strict: true` stacks each strict version beside its base. The [configuration reference](https://hawkeyexl.github.io/manni/meta/reference/configuration/) has every key.
 
 ## Run it in CI
 

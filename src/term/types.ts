@@ -17,7 +17,7 @@ import type { ToolsConfig } from "../shared/tools.js";
 // ---------------------------------------------------------------------------
 // The record
 
-/** The ten fields of `manni:terminology:1.0.0-proposal.1`, in the order the reference lists them. */
+/** The ten fields of `manni:terminology:1.0.0`, in the order the reference lists them. */
 export const TERM_FIELDS = [
   "label",
   "definition",

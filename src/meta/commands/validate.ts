@@ -6,7 +6,7 @@
 import { readFile } from "node:fs/promises";
 import {
   loadExternalMetadata,
-  mergeExternalMetadata,
+  mergeWithMarks,
   orphanEntries,
   orphanError,
   orphanJoins,
@@ -23,6 +23,7 @@ import {
   LOCATION_FINDING_KEYWORD,
   LOCATION_PAGE_SCHEMA,
 } from "../core/location.js";
+import { pageMarks } from "../core/page-marks.js";
 import {
   keyHome,
   relocationContext,
@@ -93,7 +94,7 @@ import {
   provenanceEntries,
   provenanceFindings,
 } from "../core/derive/provenance.js";
-import { readerManifests, readerPlace } from "../core/derive/provenance-place.js";
+import { readerManifests, readerPlace, stampManifests } from "../core/derive/provenance-place.js";
 import {
   fieldsForSql,
   mentionsDerived,
@@ -103,7 +104,10 @@ import {
   compareDerived,
   derivableFields,
   DERIVE_SOURCES,
+  deriveCovers,
+  managedFields,
   PROVENANCE_FIELD,
+  STAMPED_DATE_FIELDS,
   staleFindings,
   type DerivedRecord,
   type DeriveInput,
@@ -367,8 +371,17 @@ export async function runValidate(
       // Built from the rebased config, so a pinned local ref is keyed by the
       // same absolute spelling `resolveSchemaSet` will hand to `loadSchema`.
       pins: collectSchemaPins(config),
+      registered: config?.registered,
     }),
   );
+  // What each page's schemas mark external, for a keyless manifest (0068).
+  const marks = pageMarks({
+    validator,
+    config,
+    cwd,
+    trustRoot,
+    ...(opts.cliSchemas !== undefined ? { cliSchemas: opts.cliSchemas } : {}),
+  });
   // Where a misplaced value could go (proposal 0047), asked only to word a
   // `location:external` finding. Built on first use: most runs mark nothing.
   let relocation: RelocationContext | undefined;
@@ -562,12 +575,17 @@ export async function runValidate(
   // and its managed fields are then compared with what the sources say.
   // Stdin is never an input — there is no history behind it.
   const deriveConfig = config?.derive;
-  // A `derive:` carrying only `sources` or `codeowners` shapes the reads and
-  // manages nothing, so there is nothing to compare.
+  // A `derive:` with no `fields` manages the merge-safe fields, each only on
+  // a page whose schemas claim it (0069), so each page's own set is known
+  // once its schemas are resolved. `fields: []` manages nothing.
+  const configuredFields = managedFields(deriveConfig);
+  const defaultedFields = deriveConfig !== undefined && deriveConfig.fields === undefined;
   const deriveWillRun =
     deriveConfig !== undefined &&
-    deriveConfig.fields.length > 0 &&
+    configuredFields.length > 0 &&
     opts.derive !== false;
+  /** Under the merge-safe default, the fields each page's schemas claim. */
+  const pageManaged = new Map<string, readonly string[]>();
   // A corpus check naming the `derived` or `resolved` table needs the same
   // inputs, content included (the git source hashes it to spot an uncommitted
   // body), so the one list serves both — and fills only when something will
@@ -593,13 +611,16 @@ export async function runValidate(
   // The configured commands (0042) are part of both: a command's field is
   // managed like a built-in one, and is a column the checks can read.
   const deriveCommands = commandsOf(deriveConfig);
-  const deriveFields = new Set<string>(deriveWillRun ? deriveConfig.fields : []);
+  // Under the default, each page adds the fields it claims as it is read.
+  const deriveFields = new Set<string>(deriveWillRun && !defaultedFields ? configuredFields : []);
   const readable = derivableFields(deriveCommands);
   for (const c of derivedChecks) for (const f of fieldsForSql(c.query, readable)) deriveFields.add(f);
   // The manifests that hold a page's `provenance` record (0046), for evidence rule 2.
-  const provenanceManifests = keepDeriveInputs && deriveFields.has(PROVENANCE_FIELD)
-    ? readerManifests(declaredCollections, configDir ?? cwd, base)
-    : [];
+  const provenanceManifests =
+    keepDeriveInputs &&
+    (deriveFields.has(PROVENANCE_FIELD) || (deriveWillRun && configuredFields.includes(PROVENANCE_FIELD)))
+      ? readerManifests(declaredCollections, configDir ?? cwd, base)
+      : [];
   const derivedOnce = once(async (): Promise<DeriveResult> => {
     const derived = await deriveMetadata(deriveInputs, {
       cwd,
@@ -674,21 +695,36 @@ export async function runValidate(
     // (0047) is asserted by the manifest, and `merged.locate` points its
     // finding at the manifest's line. `provenance`'s record may live in a
     // manifest too (0046), which the git source then reads at each commit.
-    if (keepDeriveInputs && label !== STDIN_LABEL) {
+    // A manifest with no keys (proposal 0068) owns what this page's schemas
+    // mark external, so those marks are read before the merge.
+    const merged = await mergeWithMarks(label, extracted, externalMetadata, members, base, {
+      encryptionKey,
+      marks,
+    });
+    // A file outside `derive.collections` is derived only when a check
+    // reads the derived table (proposal 0070).
+    if (
+      keepDeriveInputs &&
+      label !== STDIN_LABEL &&
+      (checksNeedDerived || deriveCovers(deriveConfig, members))
+    ) {
       const place = provenanceManifests.length === 0
         ? undefined
-        : readerPlace(label, extracted.data, provenanceManifests, declaredCollections, configDir ?? cwd, base);
+        : readerPlace(label, extracted.data, provenanceManifests, declaredCollections, configDir ?? cwd, base, merged.marked);
+      // Rule 1 of 0069: the manifest that owns a dated field is read at each fact commit.
+      const owned =
+        declaredCollections.length === 0
+          ? {}
+          : stampManifests(label, extracted.data, declaredCollections, configDir ?? cwd, base, merged.marked, STAMPED_DATE_FIELDS);
       deriveInputs.push({
         label,
         absPath: resolve(base, label),
         content,
         extracted,
         ...(place !== undefined ? { provenanceManifest: place } : {}),
+        ...(Object.keys(owned).length > 0 ? { stampManifests: owned } : {}),
       });
     }
-    const merged = mergeExternalMetadata(label, extracted, externalMetadata, members, base, {
-      encryptionKey,
-    });
     // The page's own keys, for telling a value the page holds from one a
     // manifest supplied (proposal 0047).
     const own = extracted.data;
@@ -748,6 +784,24 @@ export async function runValidate(
     }
 
     const schemaSet = resolved.schemas;
+    // The merge-safe default (0069): this page manages what its schemas claim.
+    // A set that fails to load claims nothing, and validation says why.
+    if (
+      deriveWillRun &&
+      defaultedFields &&
+      label !== STDIN_LABEL &&
+      deriveCovers(deriveConfig, members)
+    ) {
+      let claimed: ReadonlySet<string> = new Set();
+      try {
+        claimed = await validator.claimedProperties(schemaSet);
+      } catch (err) {
+        if (!(err instanceof DocmetaError)) throw err;
+      }
+      const own = configuredFields.filter((f) => claimed.has(f));
+      pageManaged.set(label, own);
+      for (const f of own) deriveFields.add(f);
+    }
     let errors: FieldError[];
     try {
       // Proposal 0045: marked values are validated as their plaintext, on a
@@ -957,7 +1011,13 @@ export async function runValidate(
       // uncompared: the run already says so once, and a guess either way
       // would be a false finding or a false green.
       const managed = managedViews.get(input.label);
-      const fields = deriveConfig.fields.filter(
+      // A file outside `derive.collections` is not compared (proposal 0070).
+      const managedHere = !deriveCovers(deriveConfig, membersFor(input.label))
+        ? []
+        : defaultedFields
+          ? (pageManaged.get(input.label) ?? [])
+          : configuredFields;
+      const fields = managedHere.filter(
         (field) => !(managed?.hidden.some((p) => isAtOrUnder(p, pointerOf(field))) ?? false),
       );
       let marked: readonly string[] = [];

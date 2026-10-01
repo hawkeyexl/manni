@@ -1,18 +1,20 @@
 /**
- * The strict overlays: one per proposed vocabulary, stacked beside its open
- * draft. An overlay holds only the constraints strict adds, so it can narrow
- * the open draft and never widen it. Proposal 0066 is the record.
+ * The strict overlays: one per registered manni vocabulary, stacked beside
+ * its open schema. An overlay holds only the constraints strict adds, so it
+ * can narrow the open schema and never widen it. Proposal 0066 is the record.
+ * Both halves are built-ins at 1.0.0: `manni:<family>:1.0.0` and
+ * `manni:<family>-strict:1.0.0`.
  *
  * Every family has a fixture directory, test/fixtures/strict-schema/<family>/:
  *
- * - `ok-*.md` passes the open draft alone and the open draft plus its overlay.
- * - `bad-*.md` passes the open draft alone and fails once the overlay joins.
+ * - `ok-*.md` passes the open schema alone and the open schema plus its overlay.
+ * - `bad-*.md` passes the open schema alone and fails once the overlay joins.
  *   Every finding comes from the overlay. Each of the fixture's
  *   `# expect: <pointer>` lines (`(root)` stands for the empty pointer) is
  *   reported, at that path or below it, and nothing is reported elsewhere.
  *
  * So a bad fixture proves a strict rule fires, on the field it names, and that
- * the open draft would have let the value through.
+ * the open schema would have let the value through.
  */
 import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "node:url";
@@ -20,39 +22,28 @@ import { dirname, join, resolve } from "node:path";
 import { readdir, readFile } from "node:fs/promises";
 import { runValidate } from "../src/meta/commands/validate.js";
 import type { ValidationResult } from "../src/meta/types.js";
+import { loadSchema } from "../src/meta/core/schema-registry.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 
-const V0023 = "./docs/proposals/0023/schemas";
-const V0044 = "./docs/proposals/0044/schemas";
-const STRICT_V = "1.0.0-proposal.1";
+/** Every family with an open vocabulary and a strict overlay. */
+const FAMILIES = [
+  "core",
+  "audience",
+  "lifecycle",
+  "stewardship",
+  "structure",
+  "terminology",
+  "ai-context",
+  "evals",
+  "artifact-evals",
+  "graph",
+  "citations",
+];
 
-/** Each family's open draft, the revision its overlay is stacked on. */
-const FAMILIES: Record<string, { base: string; dir: string }> = {
-  core: { base: "1.0.0-proposal.4", dir: V0023 },
-  audience: { base: "1.0.0-proposal.2", dir: V0023 },
-  lifecycle: { base: "1.0.0-proposal.2", dir: V0023 },
-  stewardship: { base: "1.0.0-proposal.3", dir: V0023 },
-  structure: { base: "1.0.0-proposal.2", dir: V0023 },
-  terminology: { base: "1.0.0-proposal.1", dir: V0023 },
-  "ai-context": { base: "1.0.0-proposal.3", dir: V0023 },
-  evals: { base: "1.0.0-proposal.4", dir: V0023 },
-  "artifact-evals": { base: "1.0.0-proposal.4", dir: V0023 },
-  graph: { base: "1.0.0-proposal.1", dir: V0023 },
-  citations: { base: "1.0.0-proposal.4", dir: V0044 },
-};
-
-const openRef = (family: string): string => {
-  const f = FAMILIES[family];
-  if (!f) throw new Error(`unknown family ${family}`);
-  return `${f.dir}/${family}/${f.base}.json`;
-};
-const strictRef = (family: string): string => {
-  const f = FAMILIES[family];
-  if (!f) throw new Error(`unknown family ${family}`);
-  return `${f.dir}/${family}-strict/${STRICT_V}.json`;
-};
+const openRef = (family: string): string => `manni:${family}:1.0.0`;
+const strictRef = (family: string): string => `manni:${family}-strict:1.0.0`;
 
 const FIXTURES = "test/fixtures/strict-schema";
 
@@ -92,12 +83,9 @@ async function fixturesOf(family: string): Promise<string[]> {
   return names.filter((n) => n.endsWith(".md")).sort();
 }
 
-async function readJson(ref: string): Promise<Record<string, unknown>> {
-  const parsed: unknown = JSON.parse(await readFile(join(root, ref), "utf8"));
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new Error(`${ref} is not a JSON object`);
-  }
-  return parsed as Record<string, unknown>;
+/** A registered schema, by built-in id. */
+function readJson(ref: string): Promise<Record<string, unknown>> {
+  return loadSchema(ref);
 }
 
 /** Every key used anywhere in a JSON value, at any depth. */
@@ -119,29 +107,29 @@ function propertyNames(schema: Record<string, unknown>): string[] {
   return Object.keys(props).sort();
 }
 
-describe.each(Object.keys(FAMILIES))("the %s strict overlay", (family) => {
+describe.each(FAMILIES)("the %s strict overlay", (family) => {
   const open = openRef(family);
   const strict = strictRef(family);
 
   it("is an overlay: named for its family, marking nothing, requiring nothing", async () => {
     const s = await readJson(strict);
     expect(s.$schema).toBe("https://json-schema.org/draft/2020-12/schema");
-    expect(s.$id).toBe(`manni:${family}-strict:${STRICT_V}`);
-    expect(s.title).toBe(`manni ${family} strict (${STRICT_V})`);
+    expect(s.$id).toBe(`manni:${family}-strict:1.0.0`);
+    expect(s.title).toBe(`manni ${family} strict overlay v1.0.0`);
     expect(typeof s.description).toBe("string");
-    // The open draft owns the location marks, and every reader of these
+    // The open schema owns the location marks, and every reader of these
     // schemas must agree, so no mark and no format keyword.
     const keys = keysDeep(s);
     expect(keys.has("x-manni-location")).toBe(false);
     expect(keys.has("format")).toBe(false);
     // Strict constrains a value's form; it never makes a key mandatory, and
-    // it leaves the root as open as the draft beneath it.
+    // it leaves the root as open as the schema beneath it, and says so.
     expect(s.required).toBeUndefined();
-    expect(s.additionalProperties).not.toBe(false);
+    expect(s.additionalProperties).toBe(true);
     expect(s.unevaluatedProperties).toBeUndefined();
   });
 
-  it("constrains only top-level keys its open draft claims", async () => {
+  it("constrains only top-level keys its open schema claims", async () => {
     const o = await readJson(open);
     const s = await readJson(strict);
     const claimed = new Set(propertyNames(o));
@@ -178,9 +166,8 @@ describe.each(Object.keys(FAMILIES))("the %s strict overlay", (family) => {
 
       const both = await check(file, [open, strict]);
       expect({ name, ok: both.ok }).toEqual({ name, ok: false });
-      const strictId = `manni:${family}-strict:${STRICT_V}`;
       for (const e of both.errors) {
-        expect({ name, strict: [strict, strictId].includes(e.schema) }).toEqual(
+        expect({ name, strict: e.schema === strict }).toEqual(
           { name, strict: true },
         );
       }

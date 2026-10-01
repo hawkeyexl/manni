@@ -15,13 +15,17 @@ import {
   externalMetadataJoin,
   loadExternalMetadata,
   mergeExternalMetadata,
+  mergeWithMarks,
+  type PageMarks,
   type ExternalMetadataIndex,
 } from "../core/external-metadata.js";
+import { pageMarks } from "../core/page-marks.js";
 import { dirname, isAbsolute, resolve, extname, sep } from "node:path";
 import {
   FILE_SCHEMA_KEY,
   overrideGlobs,
   collectSchemaPins,
+  isDefaultSetOnly,
   resolveElements,
   resolveSchemaSetWithSource,
 } from "../core/resolve-schema.js";
@@ -97,8 +101,15 @@ import {
   mentionsResolved,
   RESOLVED_VIEW,
 } from "../core/derive/table.js";
-import { readerManifests, readerPlace } from "../core/derive/provenance-place.js";
-import { derivableFields, PROVENANCE_FIELD, type DeriveInput } from "../core/derive/types.js";
+import { readerManifests, readerPlace, stampManifests } from "../core/derive/provenance-place.js";
+import {
+  derivableFields,
+  deriveCovers,
+  managedFields,
+  PROVENANCE_FIELD,
+  STAMPED_DATE_FIELDS,
+  type DeriveInput,
+} from "../core/derive/types.js";
 import type { FingerprintContext } from "../core/baseline.js";
 import {
   Validator,
@@ -484,6 +495,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
           ttlHours: config?.schemaCache?.ttlHours,
           offline: opts.offline ?? config?.offline,
           pins: collectSchemaPins(config),
+          registered: config?.registered,
         }),
       )),
   };
@@ -514,7 +526,17 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     offline: opts.offline ?? config?.offline ?? false,
   };
 
-  const readOne = (label: string, content: string, extension: string): void => {
+  // What each page's schemas mark external, which a manifest with no keys
+  // owns (proposal 0068). The validator is the one a write builds, on first use.
+  const marks = pageMarks({
+    validator: encryption.validator,
+    config,
+    cwd,
+    trustRoot: schemaTrustRoot(cwd, configDir),
+    ...(opts.schemas !== undefined && opts.schemas.length > 0 ? { cliSchemas: opts.schemas } : {}),
+  });
+
+  const readOne = async (label: string, content: string, extension: string): Promise<void> => {
     const extractor = forced ?? extractorForExtension(extension);
     if (!extractor) {
       throw new DocmetaError(
@@ -525,10 +547,18 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     const own = extractor.extract(content, label, {
       elements: resolveElements(label, config, members),
     });
-    const extracted = mergeExternalMetadata(label, own, externalMetadata, members, base, {
+    const merged = await mergeWithMarks(label, own, externalMetadata, members, base, {
       encryptionKey: currentKey,
-    }).extracted;
-    entries.push({ label, extracted, extractor, own, content });
+      marks,
+    });
+    entries.push({
+      label,
+      extracted: merged.extracted,
+      extractor,
+      own,
+      content,
+      ...(merged.marked !== undefined ? { marked: merged.marked } : {}),
+    });
   };
 
   if (usingStdin) {
@@ -546,12 +576,12 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
         `Format "${forced.name}" registers no file extension to read stdin as.`,
       );
     }
-    readOne(STDIN_LABEL, opts.stdinContent ?? "", ext);
+    await readOne(STDIN_LABEL, opts.stdinContent ?? "", ext);
   }
 
   for (const file of files) {
     const content = await readFile(resolve(base, file), "utf8");
-    readOne(file, content, extname(file));
+    await readOne(file, content, extname(file));
   }
 
   // The export path resolves like every positional the user typed: from
@@ -577,10 +607,11 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
     configSection,
     trustRoot: schemaTrustRoot(cwd, configDir),
     externalMetadata,
+    marks,
     collections,
     declaredCollections,
     memberships: membersFor,
-    managed: new Set(config?.derive?.fields ?? []),
+    managed: new Set(managedFields(config?.derive)),
     onNotice: opts.onNotice,
     encryption,
     location,
@@ -604,6 +635,8 @@ interface QueryEntry {
    */
   own: ExtractedMetadata;
   content: string;
+  /** What the page's schemas mark external, when a keyless manifest needed asking (proposal 0068). */
+  marked?: ReadonlySet<string>;
 }
 
 /**
@@ -663,6 +696,8 @@ interface RunContext {
   trustRoot: SchemaTrustRoot;
   /** External metadata of the run (proposal 0037); null when none are configured. */
   externalMetadata: ExternalMetadataIndex | null;
+  /** What a page's schemas mark external, which a manifest with no keys owns (proposal 0068). */
+  marks: PageMarks;
   /** The collections the run covers (proposal 0041); `[]` with no config. */
   collections: readonly CollectionConfig[];
   /**
@@ -897,7 +932,7 @@ async function runSql(
       // evidence rule 2, as `validate` and `get` hand them to the git source.
       // Only when provenance is derived: named, or managed by `derive.fields`.
       const provenanceDerived =
-        fields.includes(PROVENANCE_FIELD) || ctx.config?.derive?.fields.includes(PROVENANCE_FIELD) === true;
+        fields.includes(PROVENANCE_FIELD) || ctx.config?.derive?.fields?.includes(PROVENANCE_FIELD) === true;
       const manifestRoot = ctx.configDir ?? ctx.cwd;
       const manifests = provenanceDerived
         ? readerManifests(ctx.declaredCollections, manifestRoot, ctx.base)
@@ -907,13 +942,19 @@ async function runSql(
         .map((e) => {
           const place = manifests.length === 0
             ? undefined
-            : readerPlace(e.label, e.own.data, manifests, ctx.declaredCollections, manifestRoot, ctx.base);
+            : readerPlace(e.label, e.own.data, manifests, ctx.declaredCollections, manifestRoot, ctx.base, e.marked);
+          // Rule 1 of 0069: the manifest that owns a dated field is read at each fact commit.
+          const owned =
+            ctx.declaredCollections.length === 0
+              ? {}
+              : stampManifests(e.label, e.own.data, ctx.declaredCollections, manifestRoot, ctx.base, e.marked, STAMPED_DATE_FIELDS);
           return {
             label: e.label,
             absPath: resolve(ctx.base, e.label),
             content: e.content,
             extracted: e.own,
             ...(place !== undefined ? { provenanceManifest: place } : {}),
+            ...(Object.keys(owned).length > 0 ? { stampManifests: owned } : {}),
           };
         });
       const records = await deriveForTable(
@@ -1875,7 +1916,11 @@ async function loadSetMembers(
   const seenFiles = new Set<string>();
   const seenBuiltins = new Set<string>();
   for (const ref of refs) {
-    const { kind } = classifyRef(ref);
+    // A registered id (proposal 0070) names a local file the config vouches
+    // for, hand-maintained like any path ref, so it is edited in place rather
+    // than forked as a builtin, and a registered URL id is not refused.
+    const registered = ctx.config?.registered?.get(ref);
+    const { kind } = registered !== undefined ? { kind: "file" as const } : classifyRef(ref);
     if (kind === "url" && !isPublishedBuiltinUrl(ref)) {
       throw new DocmetaError(
         `"${ref}" in the resolved schema set is a URL — DDL edits local schemas only. Vendor it first (manni meta schemas vendor), then evolve the local copy.`,
@@ -1896,7 +1941,7 @@ async function loadSetMembers(
       });
       continue;
     }
-    const abs = resolve(ctx.cwd, ref);
+    const abs = registered?.path ?? resolve(ctx.cwd, ref);
     const canon = foldPath(abs);
     if (seenFiles.has(canon)) continue;
     seenFiles.add(canon);
@@ -1983,6 +2028,10 @@ async function planSchemaMutation(
   // path: -s picks the contract, never what the contract says.
   let refs: string[] | undefined;
   const sources = new Set<string>();
+  // Some file runs on the default set alone, which names no schema of the
+  // corpus's own to evolve (proposal 0070 widened the default set, so this is
+  // read off the set rather than off which tier produced it).
+  let defaultOnly = false;
   const groupIndexes = new Set<number>();
   let splitLabel: string | undefined;
   if (ctx.cliSchemas !== undefined) {
@@ -2019,6 +2068,7 @@ async function planSchemaMutation(
         throw new DocmetaError(`"${e.label}": ${errorMessage(err)}`);
       }
       sources.add(resolved.source);
+      if (isDefaultSetOnly(resolved)) defaultOnly = true;
       if (resolved.overrideIndex !== undefined) {
         groupIndexes.add(resolved.overrideIndex);
       }
@@ -2065,7 +2115,7 @@ async function planSchemaMutation(
       `DDL needs the corpus to resolve to one schema set, and this run's is split ("${splitLabel}" resolves differently). ${remedy}`,
     );
   }
-  if (!refs || sources.has("default")) {
+  if (!refs || defaultOnly) {
     throw new DocmetaError(
       "DDL edits the resolved schema, and this corpus runs on the built-in default set. Name a schema to evolve — in the config's `schemas:`, an override group, or the files' own `$schema`. For data-only edits the UPDATE spellings cover every case: `SET k = v` (backfill via `WHERE k IS NULL`), `SET k = NULL` to remove a key, and paired SETs to rename one.",
     );
@@ -2880,6 +2930,8 @@ function refuseManagedWrites(
           : "renamedFrom" in c
             ? [c.key, c.renamedFrom]
             : [c.key];
+    // A file outside `derive.collections` has no managed fields (0070).
+    if (!deriveCovers(ctx.config?.derive, ctx.memberships(c.file))) continue;
     for (const key of keys) if (ctx.managed.has(key)) refuse(key);
   }
 }
@@ -3732,15 +3784,17 @@ async function applyChanges(
     // The change was computed against load-time data; if the file moved
     // since, applying it would encode a state nobody previewed.
     const members = ctx.memberships(label);
-    const current = mergeExternalMetadata(
-      label,
-      entry.extractor.extract(content, label, {
-        elements: resolveElements(label, ctx.config, members),
-      }),
-      ctx.externalMetadata,
-      members,
-      ctx.base,
-      { encryptionKey: ctx.encryption.key },
+    const current = (
+      await mergeWithMarks(
+        label,
+        entry.extractor.extract(content, label, {
+          elements: resolveElements(label, ctx.config, members),
+        }),
+        ctx.externalMetadata,
+        members,
+        ctx.base,
+        { encryptionKey: ctx.encryption.key, marks: ctx.marks },
+      )
     ).extracted;
 
     if (ops.cleared) {

@@ -202,10 +202,13 @@ describe("parseCollections (0041)", () => {
       );
     });
 
-    it("refuses keys that are missing or empty", () => {
+    it("refuses keys that are empty, and accepts them absent (0068)", () => {
       const expected =
         "manni.config.yaml: collections[0].externalMetadata[0].keys must be a non-empty list of key names.";
-      expect(refusal(base([{ file: "j.yaml" }]))).toBe(expected);
+      expect(parseCollections(base([{ file: "j.yaml" }]), SOURCE, toError)[0]?.externalMetadata).toEqual([
+        { file: "j.yaml" },
+      ]);
+      expect(refusal(base([{ file: "j.yaml", keys: "jira" }]))).toBe(expected);
       expect(refusal(base([{ file: "j.yaml", keys: [] }]))).toBe(expected);
       expect(refusal(base([{ file: "j.yaml", keys: ["jira", ""] }]))).toBe(
         expected,

@@ -1,0 +1,105 @@
+docs/src/content/docs/key/index.mdx:
+  personas: ["sara", "devin"]
+  journeys: ["s4", "d5"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/shared/encryption-key.ts"
+    - path: "src/shared/encryption.ts"
+    - path: "src/shared/prompt.ts"
+    - path: "src/key/"
+  eval-suite: key
+  evals:
+    - id: where-key-lives
+      assertion: "A reader can say where manni reads the key from and which source wins."
+      type: capability
+      grader: ai
+    - id: set-and-rotate
+      assertion: "A reader can set a key with manni key set and rotate it with manni key rotate."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2
+      integrity: sha256-d9a2e4b98362b0fa18334c9d52fcefd24d52e22a5fec4d8ee2fc0b9bcdb577b7
+    - generated-by: Claude Opus 5
+      lines: 4-10
+      integrity: sha256-b75188667349a89e01d119b0af10ae663bfa5fb7e34c34824cef71c6cd75d700
+    - generated-by: Claude Fable 5.1
+      lines: 11-36
+      integrity: sha256-10abc6150416bb3a42cb67e4978f22629e51c63d00d33da4698903486dd7ace4
+    - generated-by: Claude Opus 5
+      lines: 38-39
+      integrity: sha256-51e2357bed2783919c1cf00c2dac2c2256db9168d24a3a17cae16f5fc833153a
+    - generated-by: Claude Fable 5.1
+      lines: 40-47
+      integrity: sha256-341c2c8261af93f0f4a88013f7ec8d3d231356da2e7e1913e8f5428f67598142
+    - generated-by: Claude Opus 5
+      lines: 49-50
+      integrity: sha256-2f8e4ce4f256841e07a3b2e239314ac2b139b0ae2a99c635b7b8fb30d3c5b704
+    - generated-by: Claude Fable 5.1
+      lines: 51-65
+      integrity: sha256-210daf351e2a0cc506733236e8abb20e9a7cb11c9a8f17386f836cd1a4e57f2c
+    - generated-by: Claude Opus 5
+      lines: 67
+      integrity: sha256-6e636ca3ca5440e3ee6cbd7226926c16a1b89915891518f5b93c4765a6630f12
+    - generated-by: Claude Fable 5.1
+      lines: 68-113
+      integrity: sha256-de97bfba779cd655c773b9bd6ab6ebe4da693a8d3403f141c7a02b646a6c475a
+    - generated-by: Claude Opus 5
+      lines: 115-117
+      integrity: sha256-9bfdaafe23a33cb8a896df768282af9a61de62e7a931bd449c69e40a2d1e9759
+    - generated-by: Claude Fable 5.1
+      lines: 118-140
+      integrity: sha256-54a92da1b1208928c1925ccb67218eb3f1611538c910ebd2de327f43f284b772
+    - generated-by: Claude Opus 5
+      lines: 141-142
+      integrity: sha256-2ddbbbe772521f5ae4a7ae0dc6f798a65214d0066eafe83d5ebc9954b911ff39
+    - generated-by: Claude Fable 5.1
+      lines: 144-150
+      integrity: sha256-80e95e73665c393887493410288825c194ec63ee5f7af36a5ecbdbd6fa32c7d4
+    - generated-by: Claude Opus 5
+      lines: 151-153
+      integrity: sha256-a946ebfea33b8a147deaa44fc20671224d242ebe032bb075ac161d06a3fdb2ea
+    - generated-by: Claude Fable 5.1
+      lines: 154-168
+      integrity: sha256-4556d6feeac1fb6ccb570e1b31d3c5dfdafc6bc8b2b6328c3fb4127889b61d95
+    - generated-by: Claude Opus 5
+      lines: 170-171
+      integrity: sha256-9a7fda20887240f2ac6ab71f6972b36612979df66443e4fea426d3cb708cf629
+    - generated-by: Claude Fable 5.1
+      lines: 172-187
+      integrity: sha256-5943a7ea9f6817acb8947a375bd47d5bc5f5bc080738c3d9f1676c50dd5d6fbf
+    - generated-by: Claude Opus 5
+      lines: 189-190
+      integrity: sha256-4145c75f620c31aad4b03932b5b718680af2a6cf8d87da5f2525bddce5f128af
+    - generated-by: Claude Fable 5.1
+      lines: 191-198
+      integrity: sha256-997902ef3ec787a83db74419144bee78014c53b32509a57d6d3346b1184a3c3c
+    - generated-by: Claude Opus 5
+      lines: 200
+      integrity: sha256-c58fb1109e0e2cabfc11773c970b08ee42065a0aee2133d9493d9a9cd1f3c2c2
+    - generated-by: Claude Fable 5.1
+      lines: 201-212
+      integrity: sha256-76651f9b98a88f543e73d43ebd380ca8155e397296c1e95e87927b9155dbb485
+    - generated-by: Claude Opus 5
+      lines: 214-217
+      integrity: sha256-c8d9fd0ccbbcc9dcf110953b5978087c76f99f7f5427076410ccf4745b011158
+    - generated-by: Claude Fable 5.1
+      lines: 218-244
+      integrity: sha256-c68841e27e3b77a68fdce12c40d4db18b73bacbdfe37c944c39faa8f42c32eff
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-11
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /concepts
+      confidence:
+        /tags: 0.8
+        /action: 0.85
+        /prerequisites: 0.75
+        /concepts: 0.75

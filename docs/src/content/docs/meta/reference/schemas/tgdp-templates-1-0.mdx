@@ -1,0 +1,96 @@
+---
+title: The Good Docs Project schema v1.0
+description: The tgdp:templates:1.0 schema shipped with manni meta, which requires a type key and closes it to the 25 Good Docs Project template slugs in one file.
+sidebar:
+  label: "tgdp:templates:1.0"
+type: reference
+id: meta-reference-schemas-tgdp-templates-1-0
+keywords: ["The Good Docs Project", "tgdp:templates:1.0", "type", "template slugs"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Require a type key and close it to the Good Docs Project template slugs with one schema."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema"]
+sample-questions:
+  - "Which type values does tgdp:templates:1.0 accept?"
+  - "How does tgdp:templates:1.0 differ from tgdp:templates:1.1?"
+graph:
+  label: "The Good Docs Project schema v1.0"
+  type: reference
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/tgdp/1.0.json
+tags:
+  - schema
+  - tgdp
+  - validation
+  - templates
+  - built-in
+action: remember
+prerequisites:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/get-started/
+next-steps:
+  - /manni/meta/reference/schemas/tgdp-templates/
+related-pages:
+  - /manni/meta/reference/schemas/tgdp-templates/
+  - /manni/meta/reference/schema-resolution/#precedence
+---
+
+**Built-in id:** `tgdp:templates:1.0`
+
+**Published at:** [`https://hawkeyexl.github.io/manni/schemas/tgdp/1.0.json`](/manni/schemas/tgdp/1.0.json)
+
+{/* cite tgdp-1-0-closes-type */}
+Requires `type` and closes it to the 25 template slugs published by [The Good
+Docs Project](https://www.thegooddocsproject.dev/template). It is the closed
+form in one file.
+[`tgdp:templates:1.1`](/manni/meta/reference/schemas/tgdp-templates/) with its
+strict overlay makes the same check, split in two. The open schema requires
+`type` and recommends the slugs, and the overlay closes `type` to them. The
+[1.1 page](/manni/meta/reference/schemas/tgdp-templates/#fields) lists the 25
+slugs by pack.
+
+## Use it
+
+TGDP is **not** in the [default
+set](/manni/meta/reference/schema-resolution/#precedence).
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas:
+    - tgdp:templates:1.0
+    - google:okf:0.1
+```
+
+## Fields
+
+| Field | Type | Required | Values |
+|---|---|---|---|
+| `type` | string | **Yes** | One of the 25 template slugs |
+
+## Additional properties
+
+Allowed. The schema says nothing about any key but `type`.
+
+## Example
+
+```md
+---
+type: installation-guide
+title: Install the collector
+---
+```
+
+## A common mistake
+
+The enum carries no aliases, so a slug has to match exactly. `howto` is not
+`how-to`, so this page fails.
+
+```text
+$ manni meta validate page.md --no-config -s tgdp:templates:1.0
+✗ page.md
+    /type  must be equal to one of the allowed values  (line 2)  [tgdp:templates:1.0]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "house:page-strict:1.0.0",
+  "title": "House page, strict",
+  "description": "The team is a lowercase slug.",
+  "type": "object",
+  "properties": {
+    "team": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
+  }
+}

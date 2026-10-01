@@ -1,8 +1,11 @@
 # derive (0047): owner prefers external metadata and no manifest owns it.
+# defaults: false keeps the judged set to steward.schema.json, whose marks
+# are the subject; the default stewardship vocabulary marks created too.
 collections:
   - name: site
     paths: ["docs/**/*.md"]
 meta:
+  defaults: false
   schemas: [./steward.schema.json]
   derive:
     fields: [created, owner]

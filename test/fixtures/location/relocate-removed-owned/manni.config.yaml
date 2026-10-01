@@ -1,4 +1,7 @@
+# defaults: false keeps the other pages unmarked; the default set's core
+# vocabulary would mark title page on every page.
 meta:
+  defaults: false
   schemas: [./plain.schema.json]
   overrides:
     - files: "docs/a.md"

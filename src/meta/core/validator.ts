@@ -40,6 +40,7 @@ import {
   loadSchema,
   publishedBuiltins,
   type LoadSchemaOptions,
+  type RegisteredSchemas,
 } from "./schema-registry.js";
 import { FILE_SCHEMA_KEY } from "./resolve-schema.js";
 import { ENCRYPT_KEYWORD } from "./encrypted.js";
@@ -75,9 +76,12 @@ function dialectOf(schema: Record<string, unknown>): Dialect {
   return "2020";
 }
 
-function buildAjv(dialect: Dialect): InstanceType<AjvCtor> {
+function buildAjv(
+  dialect: Dialect,
+  coerceTypes: false | "array" = false,
+): InstanceType<AjvCtor> {
   // strict: false so user-supplied schemas with lax metadata still compile.
-  const opts = { allErrors: true, strict: false } as const;
+  const opts = { allErrors: true, strict: false, coerceTypes } as const;
   const ajv =
     dialect === "2019"
       ? new Ajv2019(opts)
@@ -328,16 +332,43 @@ function registerBuiltins(ajv: InstanceType<AjvCtor>, dialect: Dialect): void {
 }
 
 /**
+ * Add a config's registered schemas (proposal 0070) to one Ajv, before
+ * anything compiles there, as the built-ins are, so any schema can `$ref` one
+ * by id. draft-04 reads `id` rather than `$id`, so there the id is the key.
+ */
+function registerRegistered(
+  ajv: InstanceType<AjvCtor>,
+  dialect: Dialect,
+  registered: RegisteredSchemas | undefined,
+): void {
+  for (const { id, schema } of registered?.values() ?? []) {
+    ajv.addSchema(schema, dialect === "draft4" ? id : undefined, undefined, false);
+  }
+}
+
+/**
  * Compile an ad-hoc 2020-12 schema with docmeta's format support.
  *
  * `fill` needs this for the proposal envelope it builds around a document
  * schema's own property subschemas: those routinely carry `format: "date-time"`
  * / `"uri"`, and an Ajv without `ajv-formats` refuses to compile them outright.
+ * A lifted subschema may `$ref` a registered schema, so the run's registered
+ * schemas join this instance as they join the validator's.
+ *
+ * `coerce` turns on Ajv's `coerceTypes: "array"`, which rewrites a value of the
+ * wrong JSON type into the declared one, in place, before any rule is judged:
+ * `"2"` to `2`, `"true"` to `true`, a lone scalar to a one-item list. `fill`
+ * checks each proposed value this way, on a copy. Off by default, because
+ * everywhere else a value is judged as it stands.
  */
 export function compileWithFormats(
   schema: Record<string, unknown>,
+  registered?: RegisteredSchemas,
+  options: { coerce?: boolean } = {},
 ): ValidateFunction {
-  return buildAjv("2020").compile(schema);
+  const ajv = buildAjv("2020", options.coerce === true ? "array" : false);
+  registerRegistered(ajv, "2020", registered);
+  return ajv.compile(schema);
 }
 
 /**
@@ -431,6 +462,7 @@ export class Validator {
     let ajv = this.ajvByDialect.get(dialect);
     if (!ajv) {
       ajv = buildAjv(dialect);
+      registerRegistered(ajv, dialect, this.schemaOptions.registered);
       this.ajvByDialect.set(dialect, ajv);
     }
     return ajv;
@@ -598,6 +630,29 @@ export class Validator {
       }
     }
     return preferences;
+  }
+
+  /**
+   * The top-level property names the schemas in `refs` claim: the keys of
+   * each schema's own `properties`, each once. What a page's schema set
+   * claims decides which merge-safe fields a `derive:` block with no `fields`
+   * manages on it (proposal 0069). A property reached only through `allOf`,
+   * `$ref` or a conditional is not counted, so a schema that should manage a
+   * field names it in its root `properties`. A schema that fails to load or
+   * compile throws, as it would for `validate`.
+   */
+  async claimedProperties(refs: readonly string[]): Promise<Set<string>> {
+    const claimed = new Set<string>();
+    for (const ref of refs) {
+      // Read from the compiled schema, which the cache already holds, so a
+      // schema the run would refuse is refused here too and none loads twice.
+      const schema: unknown = (await this.compile(ref)).schema;
+      if (typeof schema !== "object" || schema === null) continue;
+      const properties: unknown = (schema as Record<string, unknown>)["properties"];
+      if (typeof properties !== "object" || properties === null || Array.isArray(properties)) continue;
+      for (const key of Object.keys(properties)) claimed.add(key);
+    }
+    return claimed;
   }
 
   /**

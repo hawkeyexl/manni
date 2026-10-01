@@ -1,0 +1,150 @@
+---
+title: Jekyll page schema
+description: The jekyll:page:4.4 schema shipped with manni meta, covering the seven front matter variables Jekyll itself defines, and the finding a quoted published flag produces.
+sidebar:
+  label: "jekyll:page:4.4"
+type: reference
+id: meta-reference-schemas-jekyll-page
+keywords: ["Jekyll", "jekyll:page:4.4", "front matter variables", "published"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate the front matter variables Jekyll defines and fix a quoted published flag."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "dialect", "override"]
+sample-questions:
+  - "Which front matter variables does jekyll:page:4.4 check?"
+  - "What finding does a quoted published flag produce?"
+graph:
+  label: "Jekyll page schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/jekyll/4.4.json
+tags:
+  - jekyll
+  - platform-schema
+  - validation
+  - front-matter
+  - builtin
+action: remember
+prerequisites:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/platform-schemas/
+next-steps:
+  - /manni/meta/reference/platform-schemas/
+related-pages:
+  - /manni/meta/reference/platform-schemas/
+  - /manni/meta/reference/schema-resolution/
+risks: read-only
+---
+
+**Built-in id:** `jekyll:page:4.4`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/jekyll/4.4.json`. A
+`$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+import { Aside } from '@astrojs/starlight/components';
+
+`jekyll:page:4.4` checks the front matter Jekyll 4.4 reads from a `.md` or
+`.markdown` page. It requires nothing. In Jekyll it is the *presence* of the
+`---` block, not its contents, that marks a file for processing. It is one of
+the [platform schemas](/manni/meta/reference/platform-schemas/), which say what
+a generator accepts rather than what your team agreed.
+
+| Property | Value |
+|---|---|
+| Id | `jekyll:page:4.4` |
+| Title | Jekyll front matter v4.4 |
+| Files it fits | `.md`, `.markdown` |
+| Dialect | [Draft 2020-12](/manni/meta/reference/schema-resolution/#dialects) |
+| Required fields | None |
+| Additional properties | Allowed (`additionalProperties: true`) |
+| Reference kind | [builtin](/manni/meta/reference/schema-resolution/#reference-kinds) |
+| On by default | No |
+| Upstream reference | [Front matter](https://jekyllrb.com/docs/front-matter/) |
+| JSON | [`jekyll/4.4.json`](/manni/schemas/jekyll/4.4.json) |
+
+## Use it
+
+Jekyll keeps pages at the repo root, so an override names the directory the
+schema covers:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: "_posts/**"
+      schemas:
+        - jekyll:page:4.4
+```
+
+For a one-off run, pass the id directly:
+
+```bash
+manni meta validate _posts/ -s jekyll:page:4.4
+```
+
+## Fields
+
+{/* cite platform-jekyll-is-the-smallest-builtin */}
+Deliberately the smallest built-in, because Jekyll's own contract is small:
+three global variables and four more for posts.
+
+| Field | Type | Notes |
+|---|---|---|
+| `layout` | string \| null | `null` or `none` suppresses the layout, so null is allowed. |
+| `permalink` | string | Overrides the built URL. |
+| `published` | boolean | `false` keeps the document out of the site. |
+| `date` | string | Overrides the date parsed from the file name. |
+| `category`, `categories`, `tags` | string \| string array | A YAML list or a space-separated string. |
+
+{/* cite platform-jekyll-published-must-be-a-boolean */}
+The check worth having is `published`. `published: "false"` is a string, every
+string is truthy, and the post you meant to hold back goes live.
+
+## Additional properties
+
+Allowed. A key Jekyll does not define passes unchecked.
+
+<Aside type="caution" title="Your `nav_order` is not Jekyll's">
+Most keys in a real Jekyll site come from a theme or a plugin, not from Jekyll:
+`nav_order`, `parent`, `has_children` are just-the-docs; `redirect_from` is
+jekyll-redirect-from. None are described here, and all pass as unknown keys.
+Pair this schema with one of your own if you want them checked.
+</Aside>
+
+## Example page
+
+A post carrying every variable Jekyll defines. This is
+`test/fixtures/platform/jekyll-valid.md`, and it passes.
+
+```markdown title="_posts/2026-06-25-deploy.md"
+---
+layout: post
+permalink: /guides/deploy/
+published: true
+date: 2026-06-25 09:30:00 +0200
+categories: [guides, deploy]
+tags: ci
+---
+```
+
+## A common mistake
+
+A quoted `published` flag is a string, and Jekyll publishes the post anyway:
+
+```markdown title="test/fixtures/platform/jekyll-bad-published.md"
+---
+layout: post
+published: "false"
+---
+```
+
+```text
+✗ test/fixtures/platform/jekyll-bad-published.md
+    /published  must be boolean  (line 3)  [jekyll:page:4.4]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+Drop the quotes, so the value is the boolean `false`.

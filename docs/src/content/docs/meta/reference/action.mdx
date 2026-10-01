@@ -1,6 +1,55 @@
 ---
 title: GitHub Action reference
 description: Every input and output of the hawkeyexl/manni GitHub Action, with defaults, the multi-value input rules, and how it maps onto the CLI.
+type: reference
+id: meta-reference-action
+keywords:
+  - GitHub Action
+  - inputs
+  - outputs
+  - versioning
+language: en
+audiences:
+  - ci-engineers
+intent: Configure every input of the manni GitHub Action and read its outputs.
+lifecycle: published
+applies-to:
+  - domain:meta
+sample-questions:
+  - Which inputs does the manni GitHub Action accept?
+  - How do I pass several globs to the Action?
+  - What does the Action run under the hood?
+graph:
+  label: GitHub Action reference
+  type: reference
+last-updated: 2026-09-24
+resource: https://github.com/hawkeyexl/manni
+tags:
+  - github-actions
+  - ci-cd
+  - npm
+  - validation
+action: develop
+risks:
+  - read-only
+  - idempotent
+  - open-world
+concepts:
+  - validation
+  - schema
+  - metadata
+prerequisites:
+  - meta-get-started
+  - meta-ci
+next-steps:
+  - meta-ci-recipes
+  - meta-ci-exit-codes-and-annotations
+  - meta-reference-configuration
+  - meta-reference-cli
+related-pages:
+  - meta-reference-cli
+  - meta-reference-configuration
+  - meta-ci-consume-results
 ---
 
 import { Aside } from '@astrojs/starlight/components';

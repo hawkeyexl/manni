@@ -8,6 +8,45 @@ related-terms: [extraction, schema set]
 abstract: Checking extracted metadata against its schema set.
 definition: >-
   The operation that checks that extracted metadata satisfies its schema set.
+keywords:
+  - validation
+  - validate command
+  - schema set
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+  - schema-authors
+  - contributors
+intent: Say what validation means in manni meta and where it is covered in full.
+lifecycle: published
+applies-to:
+  - domain:meta
+related-pages:
+  - meta-reference-cli
+sample-questions:
+  - What is validation in manni meta?
+  - How does validation differ from extraction?
+graph:
+  label: validation
+  type: concept
+last-updated: 2026-09-21
+tags:
+  - validation
+  - schema
+  - metadata
+action: understand
+prerequisites:
+  - extraction
+next-steps:
+  - meta-reference-cli
+  - extraction
+  - schema-set
+risks: read-only
+alt-labels:
+  - validate
+  - schema validation
+scope-note: In manni meta, validation specifically means checking extracted metadata against JSON Schema. It is distinct from extraction and is the operation the validate command performs in CI.
 ---
 
 <p>{frontmatter.definition}</p>

@@ -10,8 +10,8 @@
  *
  * Every refusal in this parser is a shape that would otherwise read as
  * configured and do nothing, or do something nobody can see. The manifest
- * rules are 0037's, moved here unchanged in substance: an entry with no keys
- * owns nothing, one key under two manifests of a collection would need a
+ * rules are 0037's, moved here unchanged in substance: an entry with an empty
+ * `keys` list owns nothing, one key under two manifests of a collection would need a
  * tiebreak (0020 refuses tiebreaks), and `$schema` from external metadata
  * would let a private file pick the schema a public document is judged by
  * (0015) with the provenance lost at the merge.
@@ -28,7 +28,12 @@ import {
 /** One external-metadata manifest (proposals 0037, 0038, 0039) joined to a collection. */
 export interface ExternalMetadataConfig {
   file: string;
-  keys: string[];
+  /**
+   * The top-level keys the manifest owns. Absent (proposal 0068), it owns
+   * what each page's schemas mark `x-manni-location: external`, as `ownsKey`
+   * decides.
+   */
+  keys?: string[];
   tokenEnv?: string;
   join?: string;
 }
@@ -274,7 +279,9 @@ function parseExternalMetadata(
 ): ExternalMetadataConfig[] {
   const owners = new Map<string, number>();
   const patterns = new Map<string, number>();
-  return raw.map((entry, i) => {
+  /** The one entry that omits `keys` (proposal 0068), once one does. */
+  let keyless: number | undefined;
+  const parsedEntries = raw.map((entry, i): ExternalMetadataConfig => {
     const where = `${collectionWhere}.externalMetadata[${i}]`;
     if (!isMapping(entry)) {
       throw toError(`${source}: ${where} must be a mapping.`);
@@ -295,14 +302,26 @@ function parseExternalMetadata(
         `${source}: ${where}.file uses ${PAGE_PLACEHOLDER} in an absolute path, so every manifest would sit outside the repository. Make it relative to the config file.`,
       );
     }
+    // Absent keys (proposal 0068) is an ownership rule, not an empty list:
+    // the manifest owns what each page's schemas mark external. Written, the
+    // list still has to name something.
     if (
-      !Array.isArray(entry.keys) ||
-      entry.keys.length === 0 ||
-      entry.keys.some((k) => !isNonEmptyString(k))
+      entry.keys !== undefined &&
+      (!Array.isArray(entry.keys) ||
+        entry.keys.length === 0 ||
+        entry.keys.some((k) => !isNonEmptyString(k)))
     ) {
       throw toError(
         `${source}: ${where}.keys must be a non-empty list of key names.`,
       );
+    }
+    if (entry.keys === undefined) {
+      if (keyless !== undefined) {
+        throw toError(
+          `${source}: ${collectionWhere}.externalMetadata: entries ${String(keyless)} and ${String(i)} both omit keys; at most one manifest may own the external-marked fields`,
+        );
+      }
+      keyless = i;
     }
     const isUrl = isUrlRef(entry.file);
     if (isUrl) {
@@ -328,7 +347,7 @@ function parseExternalMetadata(
         );
       }
     }
-    const keys = entry.keys as string[];
+    const keys = entry.keys === undefined ? undefined : (entry.keys as string[]);
     if (entry.join !== undefined) {
       if (!isNonEmptyString(entry.join)) {
         throw toError(
@@ -338,7 +357,7 @@ function parseExternalMetadata(
       if (entry.join === SCHEMA_KEY) {
         throw toError(`${source}: ${where}.join may not be "${SCHEMA_KEY}".`);
       }
-      if (keys.includes(entry.join)) {
+      if (keys?.includes(entry.join) === true) {
         throw toError(
           `${source}: ${where}.join names "${entry.join}", which the same entry owns — the value that selects an entry cannot come from the entry.`,
         );
@@ -353,7 +372,7 @@ function parseExternalMetadata(
       );
     }
     const seen = new Set<string>();
-    for (const key of keys) {
+    for (const key of keys ?? []) {
       if (key === SCHEMA_KEY) {
         throw toError(
           `${source}: ${where}.keys may not include "${SCHEMA_KEY}" — a manifest never chooses the schema a document is judged by; use "overrides".`,
@@ -386,13 +405,20 @@ function parseExternalMetadata(
     }
     const parsed: ExternalMetadataConfig = {
       file: entry.file,
-      keys,
+      ...(keys === undefined ? {} : { keys }),
       ...(typeof entry.tokenEnv === "string" ? { tokenEnv: entry.tokenEnv } : {}),
       ...(typeof entry.join === "string" ? { join: entry.join } : {}),
     };
     origins.set(parsed, { source, where });
     return parsed;
   });
+  // What each keyless manifest can never own, fixed here against the whole
+  // declaration. A caller that narrows a collection to some of its manifests
+  // still gets the answer the full collection gives.
+  for (const manifest of parsedEntries) {
+    if (manifest.keys === undefined) declaredNever.set(manifest, neverOwnedIn(parsedEntries, manifest));
+  }
+  return parsedEntries;
 }
 
 /**
@@ -437,6 +463,62 @@ export function externalMetadataOrigin(
 ): { source: string; where: string } | undefined {
   return origins.get(entry);
 }
+
+/**
+ * Does `manifest`, one of `collection`'s, own `key` for one page? The one
+ * answer every reader and writer asks for (proposal 0068).
+ *
+ * A manifest with `keys` owns exactly those, for every page. One without owns
+ * what `marked` holds: the top-level keys the page's resolved schema set marks
+ * `x-manni-location: external`. It never owns a key another manifest of the
+ * collection names in its own `keys`, because written keys win. Nor its own
+ * join field, which the page carries to name its entry, nor `$schema`. With
+ * `marked` undefined, because the page's schemas are not known, a keyless
+ * manifest owns nothing.
+ */
+export function ownsKey(
+  collection: Pick<CollectionConfig, "externalMetadata">,
+  manifest: ExternalMetadataConfig,
+  key: string,
+  marked: ReadonlySet<string> | undefined,
+): boolean {
+  if (manifest.keys !== undefined) return manifest.keys.includes(key);
+  if (marked === undefined || !marked.has(key)) return false;
+  return !neverOwned(collection, manifest).has(key);
+}
+
+/**
+ * The keys a keyless manifest never owns, whatever a page marks: the keys
+ * the collection's other manifests name, its join field, and `$schema`. An
+ * entry setting one of them is refused when the manifest is read.
+ */
+export function neverOwned(
+  collection: Pick<CollectionConfig, "externalMetadata">,
+  manifest: ExternalMetadataConfig,
+): ReadonlySet<string> {
+  return declaredNever.get(manifest) ?? neverOwnedIn(collection.externalMetadata, manifest);
+}
+
+function neverOwnedIn(
+  manifests: readonly ExternalMetadataConfig[],
+  manifest: ExternalMetadataConfig,
+): Set<string> {
+  const out = new Set<string>([SCHEMA_KEY]);
+  if (manifest.join !== undefined && manifest.join !== PATH_JOIN) out.add(manifest.join);
+  for (const other of manifests) {
+    if (other === manifest) continue;
+    for (const key of other.keys ?? []) out.add(key);
+  }
+  return out;
+}
+
+/**
+ * `neverOwned` for each keyless manifest `parseCollections` built, computed
+ * over its whole collection. Kept beside the entry, as `origins` is, so a
+ * copy of the collection filtered to some of its manifests does not forget a
+ * key a manifest it left out names.
+ */
+const declaredNever = new WeakMap<ExternalMetadataConfig, ReadonlySet<string>>();
 
 /**
  * The collections a run covers: every one when `names` is undefined, else the

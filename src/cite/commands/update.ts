@@ -1252,7 +1252,7 @@ export async function runUpdate(opts: UpdateOptions): Promise<UpdateRun> {
     content: string,
     path?: string,
   ): Promise<PageCitationReport> => {
-    const setup = prepared.setupFor(label, content);
+    const setup = await prepared.setupFor(label, content);
     if (setup.sidecar !== undefined) hits.record(setup.sidecar, label);
     const report = await checkCitations({ file: label, content, format: forced?.name }, setup.options);
     const { format } = report;

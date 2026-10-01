@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:artifact-evals-strict:1.0.0",
+  "title": "manni artifact-evals strict overlay v1.0.0",
+  "description": "The strict overlay for manni:artifact-evals:1.0.0. Stack it beside the open vocabulary, which owns every key, every required rule and every conditional. Inside `metadata`, it narrows provider and model names, exit codes, companion paths and the assertion hash as manni:evals-strict:1.0.0 does. It also closes `grader` to the named graders and `tool:` integrations.",
+  "additionalProperties": true,
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "description": "Strict narrows the object entries of `metadata.evals`. A string shorthand passes as the open vocabulary reads it, and every other member of `metadata` passes untouched.",
+      "properties": {
+        "evals": {
+          "items": {
+            "$ref": "#/$defs/entry"
+          }
+        },
+        "meta-provenance": {
+          "description": "Strict holds each entry to the rules the ai-context overlay applies to the same shape. `generated-by` is a model id with no spaces, and each pointer is well formed.",
+          "items": {
+            "properties": {
+              "generated-by": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/\\\\@-]*$",
+                "description": "A model id of letters in either case, digits, `.`, `_`, `:`, `/`, `\\`, `@` and `-`, with no spaces. A Windows path to a local model passes."
+              },
+              "fields": {
+                "items": {
+                  "pattern": "^(?:/(?:[^~/]|~[01])*)+$",
+                  "description": "A JSON Pointer in which every `~` begins an RFC 6901 escape, `~0` or `~1`."
+                }
+              },
+              "confidence": {
+                "propertyNames": {
+                  "pattern": "^(?:(?:/(?:[^~/]|~[01])*)+|[a-z0-9][a-z0-9-]*)$",
+                  "description": "A well-formed JSON Pointer, or a kebab eval id."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "description": "The rules strict adds to an object entry.",
+      "properties": {
+        "grader": {
+          "anyOf": [
+            {
+              "enum": [
+                "ai",
+                "human",
+                "command",
+                "tool-usage",
+                "skill-invoked",
+                "file-access",
+                "turn-count",
+                "cost",
+                "regex",
+                "json-output"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^tool:[a-z0-9][a-z0-9-]*$"
+            }
+          ],
+          "description": "One of the ten named graders, or a `tool:<kebab>` integration. Strict accepts no other kebab name."
+        },
+        "provider": {
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "A kebab provider name, such as `anthropic` or `llama-cpp`."
+        },
+        "model": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/\\\\@-]*$",
+          "description": "A model id of letters in either case, digits, `.`, `_`, `:`, `/`, `\\`, `@` and `-`, with no spaces. A Windows path to a local model passes."
+        },
+        "success-exit-codes": {
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "description": "Distinct exit codes, each from 0 to 255, the range a process can return."
+        },
+        "target": {
+          "properties": {
+            "path": {
+              "pattern": "^(?![\\\\/~])(?![A-Za-z]:)(?![A-Za-z][A-Za-z0-9+.-]*://).+$",
+              "description": "A relative path. It starts with no `/`, `\\` or `~`, no drive letter, and no URL scheme."
+            }
+          }
+        },
+        "generated-assertion-hash": {
+          "pattern": "^sha256-[0-9a-f]{64}$",
+          "description": "`sha256-` and sixty-four lowercase hex digits."
+        }
+      }
+    }
+  }
+}

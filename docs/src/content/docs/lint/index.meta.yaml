@@ -1,0 +1,26 @@
+docs/src/content/docs/lint/index.mdx:
+  visibility: public
+  review-interval: P180D
+  eval-suite: lint
+  evals:
+    - id: what-it-does
+      assertion: "A reader can say what manni lint checks and that it is not in the published package."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-8
+      integrity: sha256-dc1d83b1dc0cc9afca50ec8d8bf2f02b3655d3eaf0bd1ed08c335c0d74c918e5
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-24
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /action
+        - /prerequisites
+        - /related-pages
+      confidence:
+        /action: 0.95
+        /prerequisites: 0.75
+        /related-pages: 0.85

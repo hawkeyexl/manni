@@ -1,0 +1,230 @@
+---
+title: manni lifecycle vocabulary
+description: "The manni:lifecycle:1.0.0 schema for where a page is in its life, and what a deprecated page owes its readers."
+sidebar:
+  label: "manni:lifecycle:1.0.0"
+type: reference
+id: meta-reference-schemas-manni-lifecycle
+keywords: ["lifecycle", "manni:lifecycle:1.0.0", "deprecated", "replaced-by", "strict overlay"]
+language: en
+audiences: ["schema-authors"]
+intent: "Record where a page is in its life, and what a deprecated page owes its readers, with manni:lifecycle:1.0.0."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema"]
+sample-questions:
+  - "Which lifecycle stages does manni:lifecycle:1.0.0 accept?"
+  - "What does a deprecated page owe its readers?"
+  - "What does the lifecycle strict overlay narrow?"
+graph:
+  label: "manni lifecycle vocabulary"
+  type: reference
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/lifecycle/1.0.0.json
+tags:
+  - schema
+  - lifecycle
+  - deprecation
+  - metadata
+action: understand
+related-pages:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/schemas/field-location/
+  - /manni/meta/reference/schemas/manni-audience/
+  - /manni/meta/reference/schemas/manni-graph/
+prerequisites:
+  - schema
+  - meta-reference-schema-resolution
+  - meta-schemas-field-location
+next-steps:
+  - meta-reference-schemas-manni-audience
+  - meta-reference-schemas-manni-graph
+  - meta-reference-schemas-manni-vocabularies
+---
+
+**Built-in id:** `manni:lifecycle:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/lifecycle/1.0.0.json`.
+A `$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+**The question it answers: where is this page in its life?** It carries one
+rule. A deprecated page must say what comes next, meaning a successor, a
+removal date, or both. Adopt it when pages retire on a schedule and readers
+need to be sent somewhere else.
+
+## Use it
+
+Lifecycle is in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it on every page with no config line. A config's own `schemas` add
+to the default set. An override replaces the set, so an entry that should keep
+lifecycle sets `defaults: true`:
+
+```yaml
+meta:
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/guide.json
+```
+
+## Fields
+
+| Field | Type | Required | Location | Notes |
+|---|---|---|---|---|
+| `lifecycle` | enum | no | `page` | One of `draft`, `published`, `deprecated`, or `archived` |
+| `replaced-by` | string, non-empty | when deprecated | `page` | The page, id, or URL that supersedes this one |
+| `supersedes` | string or list | no | `external` | Pages this one replaced. The record survives after the old page is deleted |
+| `remove-by` | W3CDTF date | when deprecated | `external` | The date the page should be removed by |
+
+**The conditional.** `lifecycle: deprecated` requires `replaced-by` or
+`remove-by`, or both. A page can reach end of life without a successor, and
+requiring a replacement in every case forces a false value into it. A
+deprecated page with no horizon and no successor is a permanent state, and that
+is what the rule forbids.
+
+The Location column is the `x-manni-location` mark each field carries. `page`
+means the value belongs in the document's own metadata and reaches delivered
+output. `external` means it belongs in the collection's external-metadata
+manifest. A field is `page` when an agent fetching the page acts on it. An
+agent must see `lifecycle: deprecated` and follow `replaced-by`. `supersedes`
+and `remove-by` are the maintainers' side of the same record. See
+[field location](/manni/meta/schemas/field-location/) for how the marks are
+used.
+
+## Additional properties
+
+Allowed. The root is open, so a generator's keys and the other vocabularies'
+keys pass beside lifecycle's. Lifecycle checks only the four keys it claims.
+
+## Example
+
+```yaml
+---
+title: Configure the legacy exporter
+description: The exporter settings for operator releases before 1.4.
+lifecycle: deprecated
+replaced-by: configure-the-collector
+remove-by: 2027-01-01
+---
+```
+
+The valid no-successor form:
+
+```yaml
+lifecycle: deprecated
+remove-by: 2027-01-01     # ends without a replacement; legal
+```
+
+## A common mistake
+
+A page marked deprecated with nothing after it fails the conditional.
+
+```yaml
+---
+title: Configure the legacy exporter
+description: The exporter settings for operator releases before 1.4.
+lifecycle: deprecated
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:lifecycle:1.0.0
+✗ page.md
+    (root)  must have required property 'replaced-by'  (line 1)  [manni:lifecycle:1.0.0]
+    (root)  must have required property 'remove-by'  (line 1)  [manni:lifecycle:1.0.0]
+    (root)  must match a schema in anyOf  (line 1)  [manni:lifecycle:1.0.0]
+    (root)  must match "then" schema  (line 1)  [manni:lifecycle:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 4 errors
+```
+
+The exit code is 1. The four lines are one rule, reported from each branch it
+tried. Adding either key clears all four. A typo such as `lifecycle: depreciated`
+fails too, with `must be equal to one of the allowed values`.
+
+## Design decisions
+
+- **The enum is closed, and the cost is recorded.** The family's default is
+  never to invent an enum. This ladder catches typos such as `depreciated` and
+  makes the deprecation rule enforceable. The cost is that an org with its own
+  stages, such as `experimental` or `retired`, must override the key. Like
+  `visibility`, it is a key downstream tooling branches on.
+- **`remove-by` is a date.** A removal date gives a build something to act on.
+  A boolean flag only says the page goes away someday, and pages flagged that
+  way tend to stay forever. Ansible's deprecation practice, which records a
+  removal date, is the model.
+- **The inverse edges live on two files, and the schema says so.**
+  `replaced-by` points from the old page to the new, and `supersedes` points
+  back. JSON Schema validates one file at a time, so the pair is not
+  cross-checked here. A knowledge graph is where the two edges reconcile. The
+  [graph vocabulary](/manni/meta/reference/schemas/manni-graph/)'s
+  `revision-of` emits the same `prov:wasRevisionOf` predicate. This vocabulary
+  records the fact and states the limit of what it can check.
+- **`lifecycle` is editorial state, and `visibility` is access.** Who may see
+  the page is [`visibility`](/manni/meta/reference/schemas/manni-audience/).
+  The two axes are independent. An unfinished page that is visible inside the
+  org is `lifecycle: draft` with `visibility: internal`, which is legal and
+  common.
+
+## Strict overlay
+
+**Strict overlay id:** `manni:lifecycle-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/lifecycle-strict/1.0.0.json`.
+The overlay holds only what strict adds. It narrows the form of a value that is
+present and requires no key, so a page with no lifecycle fields still passes
+it.
+
+| Field | Strict adds |
+|---|---|
+| `replaced-by` | One id, path or URL on one line with no leading or trailing whitespace. A path may contain spaces |
+| `supersedes` | Each value is one id, path or URL on one line with no surrounding space, in the string form and the list form alike |
+| `remove-by` | An RFC 3339 full date, `YYYY-MM-DD`. A year or month alone fails, and so does a timestamp |
+
+`lifecycle` is the same in both, because its ladder is already closed. The
+deprecation rule is also unchanged.
+
+`strict: true` stacks it right after the vocabulary, with every other
+default's overlay beside its own base:
+
+```yaml
+meta:
+  strict: true
+```
+
+To adopt this overlay alone, list its id. The default set already carries the
+vocabulary:
+
+```yaml
+meta:
+  schemas:
+    - manni:lifecycle-strict:1.0.0
+```
+
+Each schema is checked on its own, and a finding names the one that produced
+it. A strict-only failure reads as one, beside the location warning a run
+without a manifest prints.
+
+```yaml
+---
+title: Configure the legacy exporter
+description: The exporter settings for operator releases before 1.4.
+lifecycle: deprecated
+replaced-by: configure-the-collector
+remove-by: 2027-01
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:lifecycle:1.0.0 -s manni:lifecycle-strict:1.0.0
+✗ page.md
+    /remove-by  must match pattern "^[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$"  (line 6)  [manni:lifecycle-strict:1.0.0]
+    /remove-by  warning "remove-by" is stored in the page; manni:lifecycle:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 6)  [location:external]
+
+1 file checked, 0 passed, 1 failed, 1 error, 1 warning
+```
+
+The open vocabulary accepts a month alone, so the overlay alone fails the page.

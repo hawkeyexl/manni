@@ -1,0 +1,13 @@
+# Proposal 0068 for cite, from a URL: the manifest names no keys, and the
+# citations vocabulary marks citations external, so the URL manifest would
+# own them. cite writes citations, and a fetched file cannot be written, so
+# the page is refused before the URL is ever asked for.
+meta:
+  schemas: ["manni:citations:1.0.0"]
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "https://example.invalid/citations.yaml"
+cite:
+  root: .

@@ -1,0 +1,136 @@
+---
+title: Dublin Core schema
+description: The dcmi:elements:1.1 schema shipped with manni meta, covering the fifteen Dublin Core elements, the W3CDTF date rule, and why type is not enumerated.
+sidebar:
+  label: "dcmi:elements:1.1"
+type: reference
+id: meta-reference-schemas-dcmi-elements
+keywords: ["Dublin Core", "dcmi:elements:1.1", "W3CDTF", "elements"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate the fifteen Dublin Core elements, including the W3CDTF date rule."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema"]
+sample-questions:
+  - "Which Dublin Core elements does dcmi:elements:1.1 check?"
+  - "What date format does the Dublin Core schema accept?"
+  - "Why is type not enumerated?"
+graph:
+  label: "Dublin Core schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/dcmi/1.1.json
+action: understand
+related-pages:
+  - meta-reference-metadata-vocabularies
+risks:
+  - read-only
+  - idempotent
+prerequisites:
+  - meta-reference-schemas
+next-steps:
+  - meta-reference-metadata-vocabularies
+  - meta-set-up-config
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Built-in id:** `dcmi:elements:1.1`
+
+**Published at:** [`https://hawkeyexl.github.io/manni/schemas/dcmi/1.1.json`](/manni/schemas/dcmi/1.1.json)
+
+{/* cite vocab-dcmi-recommendation-2020 */}
+The fifteen elements of the Dublin Core Metadata Element Set, as published in
+the DCMI Recommendation of 2020-01-20. That date is worth noticing: this is a
+frozen specification, so unlike the toolchain pins, `1.1` will stay accurate
+indefinitely.
+
+It is one of the [metadata vocabularies](/manni/meta/reference/metadata-vocabularies/).
+Dublin Core speaks to catalogues, repositories and library systems.
+
+## Use it
+
+{/* cite vocab-dcmi-requires-nothing */}
+DCMI marks **no element mandatory**, so the schema requires nothing. Every
+element is repeatable in Dublin Core, so each accepts a single value or a list:
+
+```markdown
+---
+creator:
+  - Ada Lovelace
+  - Charles Babbage
+date: 2026-08
+---
+```
+
+Turning it on cannot fail a page for what it lacks, only for a value in the
+wrong shape:
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas:
+    - dcmi:elements:1.1
+```
+
+## Fields
+
+`contributor`, `coverage`, `creator`, `date`, `description`, `format`,
+`identifier`, `language`, `publisher`, `relation`, `rights`, `source`,
+`subject`, `title`, `type`.
+
+| Element | Type | Notes |
+|---|---|---|
+| `date` | string \| array | W3CDTF, which permits reduced precision. |
+| every other element | string \| array | No format. |
+
+{/* cite vocab-dcmi-date-is-w3cdtf */}
+`date` is the one element with a format. It is encoded as W3CDTF, which permits
+reduced precision, so `2026`, `2026-08`, and `2026-08-23` are all valid. A full
+datetime carries a timezone. `June 5th` is not.
+
+<Aside type="note" title="`type` is not enumerated, on purpose">
+DCMI publishes a Type Vocabulary (Collection, Dataset, Event, Image,
+InteractiveResource, MovingImage, PhysicalObject, Service, Software, Sound,
+StillImage, Text). It describes using that vocabulary as *recommended best
+practice* rather than requiring it. Enumerating it here would reject conforming
+documents that use a different controlled vocabulary. If your repo has
+standardised on the DCMI Type Vocabulary, write a one-property schema of your
+own. It `$ref`s this built-in and narrows `type`.
+</Aside>
+
+<Aside type="caution" title="Element names are unprefixed">
+This schema uses the bare term names the Recommendation defines, such as
+`title`, `creator`, and `date`. Documents that use the DCMI-HTML profile
+spelling in `<meta name="DC.title">` carry a different set of keys and are not
+covered by this built-in.
+</Aside>
+
+## Additional properties
+
+Allowed. A page may carry keys beyond the fifteen elements.
+
+## Example
+
+```markdown
+---
+title: Release history
+creator: Ada Lovelace
+date: 2026-08-23
+language: en
+subject:
+  - releases
+  - changelog
+---
+```
+
+## A common mistake
+
+A date written the way a person says it fails the W3CDTF pattern. The second
+line names the branch of the schema that raised it:
+
+```text
+✗ docs/history.md
+    /date  must match pattern "^[0-9]{4}(-[0-9]{2}(-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2}(\.[0-9]+)?)?(Z|[+-][0-9]{2}:[0-9]{2}))?)?)?$"  (line 3)  [dcmi:elements:1.1]
+    /date  must match "else" schema  (line 3)  [dcmi:elements:1.1]
+```
