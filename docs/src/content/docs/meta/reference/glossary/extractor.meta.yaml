@@ -14,8 +14,8 @@ docs/src/content/docs/meta/reference/glossary/extractor.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-12
-      integrity: sha256-5e786e6f1f32782e4099ced9531260cfdf23dff44ec6765eb7cdbdda3ad8e02a
+      lines: 2-12
+      integrity: sha256-ea903e6cf9eb1dc54d0a047de27bb8bc0c7356771d0ab4ae70bf57e82e76a032
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

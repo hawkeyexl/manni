@@ -18,8 +18,8 @@ docs/src/content/docs/meta/reference/schemas/microsoft-learn.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 1-94
-      integrity: sha256-50b04e79c606cf082ba42f233c05558b5b80dfbf8daf5a33d37f5c150640de0c
+      lines: 2-94
+      integrity: sha256-f070a4ad8a41d1b101448ccdecc2a69f51cf3b83660ac1e0189fb50632b3ad2c
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

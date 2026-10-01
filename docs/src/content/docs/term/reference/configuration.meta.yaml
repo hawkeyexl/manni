@@ -24,8 +24,8 @@ docs/src/content/docs/term/reference/configuration.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 1-167
-      integrity: sha256-fc7a24c612b0c10a24910047436c6fcb1e447e0b0e31719356c8afe9b1d563cf
+      lines: 2-167
+      integrity: sha256-9786bffa17731a0b5fd3e8bec6da186637313ee6d49cc20710def5746d331698
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

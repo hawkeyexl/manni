@@ -67,7 +67,7 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 10-11
         integrity: sha256-b63c3ebcf6b6c09d01a2b2876b680692fb843ac69e6b7adc0511ffe2b1564032
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
     - id: vocabulary-source-required
       claim:
         integrity: sha256-d2b4af42cddc8e849e035906914a00721c621ee044e6268d38fbfead6fffe07d
@@ -75,7 +75,7 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 26-28
         integrity: sha256-cd8876ddccadd34763cd6605ae3f8b0c881e09b2bbd25ea6021a3f0d9b98660c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
     - id: vocabulary-claim-hash-format
       claim:
         integrity: sha256-d2b4af42cddc8e849e035906914a00721c621ee044e6268d38fbfead6fffe07d
@@ -83,7 +83,7 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 61-64
         integrity: sha256-4912e2436e9a885b69cc4af9a1f44ea0ef29341564f831c693d542d1da169735
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
     - id: vocabulary-source-hash-format
       claim:
         integrity: sha256-d2b4af42cddc8e849e035906914a00721c621ee044e6268d38fbfead6fffe07d
@@ -91,7 +91,7 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 84-87
         integrity: sha256-1f471fc8665b5cb15765447c53b547235d56fe34a0d4e1106c9b7867f3cafa7a
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
     - id: vocabulary-rejects-citation-prefix
       claim:
         integrity: sha256-d2b4af42cddc8e849e035906914a00721c621ee044e6268d38fbfead6fffe07d
@@ -99,7 +99,7 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 19-21
         integrity: sha256-2e0149b8fd40d5b1db23162580f0d6610adf5a5517915739b9e489e6721fd9bd
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
     - id: schema-set-applies-each-member
       claim:
         integrity: sha256-da83722de200fc7b4e3eb846c62aa0e4848cba9325b94c78985ea41ebd85fde9
@@ -147,7 +147,7 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 16
         integrity: sha256-147dd7ce54fb036fa1647c848d7f3c871a1d57c69deefae64f2d0e2f4f71847b
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
     - id: required-sees-merged-view
       claim:
         lines: 140-143
@@ -317,7 +317,7 @@ docs/src/content/docs/cite/set-up/require-citations.mdx:
         file: src/meta/schemas/citations/1.0.0.json
         lines: 101-105
         integrity: sha256-00ed8f2e8dc5661b65dff8d8d98e45962c595d8f3ca7106ff9fb37dd7569128d
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: e51ce3aa73222ff7d51f285dabd261f8ab7b63ee
     - id: range-refused-by-add
       claim:
         lines: 264-265
