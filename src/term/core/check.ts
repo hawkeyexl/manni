@@ -8,6 +8,7 @@
  * only in case collide there silently, so they collide here out loud. Ids
  * compare ignoring case too, because references resolve them that way.
  */
+import { TERM_RELATION_FIELDS } from "../../shared/reference-fields.js";
 import { DEFAULT_ABSTRACT_MAX_LENGTH } from "./config.js";
 import { resolveSeverity, ruleId } from "./severity.js";
 import type { Term, TermField, TermFinding, TermRule, TermSet, TermSeverity } from "../types.js";
@@ -19,7 +20,7 @@ export interface CheckTermSetOptions {
 }
 
 /** The fields whose values name other entries. */
-const REFERENCE_FIELDS = ["broader", "narrower", "related-terms", "see"] as const;
+const REFERENCE_FIELDS = TERM_RELATION_FIELDS;
 type ReferenceField = (typeof REFERENCE_FIELDS)[number];
 
 interface Draft {

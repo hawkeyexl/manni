@@ -29,7 +29,27 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-09-28
+last-updated: 2026-10-01
+tags:
+  - cli
+  - command-reference
+  - query
+  - sql
+  - metadata
+  - fill
+  - inference
+action: remember
+prerequisites:
+  - /manni/meta/get-started/
+  - /manni/meta/reference/configuration/
+next-steps:
+  - /manni/meta/reference/query/
+  - /manni/meta/reference/configuration/
+related-pages:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/formats/
+  - /manni/meta/reference/output-and-exit-codes/
+  - /manni/meta/reference/configuration/
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
@@ -824,6 +844,36 @@ A candidate whose schema prefers external metadata
 and that no manifest owns is written to the page, with one warning on stderr
 naming [`relocate`](#meta-relocate). On a terminal, `fill` first offers to give
 it a manifest, before its first model request.
+
+### The values `fill` offers
+
+Some fields name a glossary term or another page. For those, `fill` shows the
+model the values that fit, beside the field's shape.
+
+| Kind | Fields | What the model is offered |
+|---|---|---|
+| Glossary terms | `concepts`, `graph.concepts`, `broader`, `narrower`, `related-terms`, `see` | The term labels [`manni term check`](/manni/term/reference/cli/#term-check) reads, as the only strings allowed. |
+| Page ids | `related-pages`, `next-steps`, `prerequisites`, `replaced-by`, `supersedes` | The `id` of every other page in the page's collections, beside a free string. |
+
+A term value is checked against the termbase, ignoring case. A `concepts`
+value must be a term's label, and a term relation may also name a term's id.
+A value that names no term fails its check. Its retry names the problem, as
+`/concepts/1: must be a glossary term label`, so a value `fill` writes passes
+`term check`.
+
+A page value is never refused for not being an id. A URL, or a line naming a
+capability, stays valid, as the schema allows. A page in no collection is
+offered no ids, and a page without an `id` is never offered.
+
+An empty list is not offered, and neither is a list of more than 500 values.
+The field is then asked for with no values attached. The term labels come
+from the term domain, so the `manni` bin offers them and the `docmeta` bin
+does not. When the termbase cannot be read, `fill` offers no labels and says
+why on stderr, then carries on:
+
+```
+manni: The termbase could not be read, so fill offers no glossary labels: <reason>
+```
 
 ### The confidence gate
 

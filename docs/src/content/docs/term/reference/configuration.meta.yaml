@@ -29,3 +29,21 @@ docs/src/content/docs/term/reference/configuration.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+        - /concepts
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.75
+        /next-steps: 0.85
+        /related-pages: 0.9
+        /risks: 0.95
+        /concepts: 0.7

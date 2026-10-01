@@ -23,3 +23,21 @@ docs/src/content/docs/meta/reference/schemas/docusaurus-docs.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.8
+        /action: 0.85
+        /prerequisites: 0.75
+        /next-steps: 0.7
+        /related-pages: 0.8
+        /risks: 0.9

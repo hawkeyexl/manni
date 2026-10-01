@@ -34,6 +34,11 @@
  *  7. The projection is wrapped as `oneOf: [<projection>, {type: "null"}]`, so
  *     a model can decline under a grammar that makes every key required.
  *
+ * After projection, `withOffer` puts the values `fill` offers for a field
+ * that names a glossary term or a page (`fill-hints.ts`) on the field's
+ * strings. It works on the emitted schema, so it never changes what a rule
+ * above decides.
+ *
  * Alternatives are written `oneOf`, never `anyOf`, wherever they come from.
  * node-llama-cpp's compiler reads `oneOf` and ignores `anyOf`, which it
  * compiles to `null` as it does an untyped node. Nothing validates against
@@ -557,4 +562,81 @@ function typed(shape: Shape, type: string): Record<string, unknown> {
       break;
   }
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// Offering values on the emitted schema
+// ---------------------------------------------------------------------------
+
+/** The values offered for one field, and whether they are the only ones allowed. */
+export interface ValueOffer {
+  values: readonly string[];
+  /** True replaces the field's strings with the values; false offers them beside a free string. */
+  firm: boolean;
+}
+
+/**
+ * Offer values on the field at `path` below a projected `value` schema. The
+ * path is followed through object `properties`, and every alternative of a
+ * `oneOf` is followed. At the field, each string node, and each list's items,
+ * takes the offer: the values as an `enum` when it is firm, or `oneOf` of that
+ * `enum` and the string as it was when it is not. A string already limited to
+ * an `enum` or a `const` keeps its own values.
+ */
+export function withOffer(
+  schema: Record<string, unknown>,
+  path: readonly string[],
+  offer: ValueOffer,
+): Record<string, unknown> {
+  return single(offerAt(schema, path, offer));
+}
+
+/**
+ * What one node becomes under the offer, as alternatives. A string under a
+ * soft offer becomes two, which a `oneOf` above it takes as two of its own
+ * branches rather than as a nested `oneOf`.
+ */
+function offerAt(
+  node: Record<string, unknown>,
+  path: readonly string[],
+  offer: ValueOffer,
+): Record<string, unknown>[] {
+  const branches = node.oneOf;
+  if (Array.isArray(branches)) {
+    return [
+      {
+        ...node,
+        oneOf: branches.flatMap((branch: unknown) => (isObject(branch) ? offerAt(branch, path, offer) : [branch])),
+      },
+    ];
+  }
+  const [head, ...rest] = path;
+  if (head !== undefined) {
+    const properties = node.properties;
+    const field = isObject(properties) ? properties[head] : undefined;
+    if (node.type !== "object" || !isObject(properties) || !isObject(field)) return [node];
+    return [{ ...node, properties: { ...properties, [head]: single(offerAt(field, rest, offer)) } }];
+  }
+  if (node.type === "array") {
+    // A list with no items is a list of strings here: the reference fields are
+    // string lists whose projection left `items` out. Any other `items`, such
+    // as `true`, is not narrowed, since the offer would over-restrict it.
+    if (node.items === undefined) {
+      return [{ ...node, items: single(offerAt({ type: "string" }, [], offer)) }];
+    }
+    if (!isObject(node.items)) return [node];
+    return [{ ...node, items: single(offerAt(node.items, [], offer)) }];
+  }
+  if (node.type !== "string" || Object.hasOwn(node, "enum") || Object.hasOwn(node, "const")) {
+    return [node];
+  }
+  const listed = { type: "string", enum: [...offer.values] };
+  if (!offer.firm) return [listed, node];
+  return [typeof node.description === "string" ? { ...listed, description: node.description } : listed];
+}
+
+/** One node from alternatives: the only one, or a `oneOf` of them all. */
+function single(alternatives: Record<string, unknown>[]): Record<string, unknown> {
+  const [only] = alternatives;
+  return alternatives.length === 1 && only !== undefined ? only : { oneOf: alternatives };
 }

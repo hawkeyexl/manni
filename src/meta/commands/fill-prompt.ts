@@ -16,14 +16,14 @@
  *   file, which is what lets confidence be the *last* check rather than the
  *   only one.
  */
-import { projectValue, type ProjectionDefs } from "./fill-projection.js";
-import type { Candidate, Proposal, ProposalSet } from "./fill-types.js";
+import { projectValue, withOffer, type ProjectionDefs } from "./fill-projection.js";
+import type { Candidate, FieldHint, Proposal, ProposalSet } from "./fill-types.js";
 
 /**
  * Part of the cache key: bump whenever the prompt wording or the envelope
  * schema construction changes, so stale proposals are not replayed.
  */
-export const FILL_PROMPT_VERSION = 5;
+export const FILL_PROMPT_VERSION = 6;
 
 /**
  * Characters of document sent per inference call.
@@ -206,10 +206,15 @@ export interface Envelope {
  * definitions from the source schemas go with the full view, so any `$ref`
  * inside a lifted subschema still resolves. The sent view needs none: the
  * projection has already followed every `$ref`.
+ *
+ * `hints` are the values offered for the fields that name a glossary term or
+ * a page (`fill-hints.ts`). They change the sent view only: the full view,
+ * which checks each value, is the subschema as written.
  */
 export function buildEnvelopeSchema(
   candidates: Candidate[],
   defs: ProjectionDefs,
+  hints: readonly FieldHint[] = [],
 ): Envelope {
   const asked: Candidate[] = [];
   const unsatisfiable: Candidate[] = [];
@@ -218,7 +223,14 @@ export function buildEnvelopeSchema(
     const projected = projectValue(candidate.subschema, defs);
     if ("schema" in projected) {
       asked.push(candidate);
-      sent.push([candidate.key, proposalSchema(candidate, projected.schema)]);
+      const value = hints
+        .filter((hint) => hint.path[0] === candidate.key)
+        .reduce(
+          (schema, hint) =>
+            withOffer(schema, hint.path.slice(1), { values: hint.values, firm: hint.kind === "term" }),
+          projected.schema,
+        );
+      sent.push([candidate.key, proposalSchema(candidate, value)]);
     } else {
       unsatisfiable.push(candidate);
     }
