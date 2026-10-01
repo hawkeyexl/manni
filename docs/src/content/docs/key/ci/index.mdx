@@ -3,6 +3,31 @@ title: Rotate the key without breaking CI
 description: "Generate a new key, re-encrypt the whole family, update the CI secret, re-record the citation baseline, verify under the new key, and resume a run that stopped part of the way."
 sidebar:
   order: 1
+id: "key-ci"
+type: "how-to"
+keywords: ["key rotation", "CI secret", "runbook", "interrupted rotation"]
+language: en
+audiences: ["ci-engineers"]
+intent: "Rotate the family key, update the CI secret, and resume a rotation that stopped part of the way."
+lifecycle: published
+applies-to: ["domain:key"]
+prerequisites: ["key-set-up"]
+next-steps: ["key-set-up", "key-reference-cli", "cite-ci", "meta-schemas-encrypted-fields"]
+risks: ["destructive", "irreversible"]
+sample-questions: ["How do I rotate the manni encryption key?", "How do I update the CI secret after a rotation?", "How do I resume an interrupted rotation?"]
+graph: { label: "Rotate the key without breaking CI", type: task }
+last-updated: 2026-09-17
+tags:
+  - encryption
+  - key-rotation
+  - ci-cd
+  - runbook
+action: develop
+related-pages:
+  - key-set-up
+  - key-reference-cli
+  - cite-ci
+  - meta-schemas-encrypted-fields
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

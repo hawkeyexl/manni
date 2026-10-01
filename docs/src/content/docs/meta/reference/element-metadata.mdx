@@ -1,6 +1,47 @@
 ---
 title: Element metadata in XML and HTML
 description: How manni meta reads metadata held in elements rather than attributes, the key-naming rule, the elements config key, and what a write will and will not do.
+type: reference
+id: meta-reference-element-metadata
+keywords:
+  - element metadata
+  - XML
+  - HTML
+  - elements
+language: en
+audiences:
+  - schema-authors
+intent: Predict the key manni meta gives a value held in an XML or HTML element, and reach others with elements:.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - Metadata
+  - Extraction
+sample-questions:
+  - What key does manni meta give a value held in an XML element?
+  - How do I read an element the convention does not lift?
+  - Will a write create an element that is missing?
+graph:
+  label: Element metadata in XML and HTML
+  type: reference
+last-updated: 2026-09-27
+tags:
+  - element-metadata
+  - xml
+  - html
+  - dita
+  - extraction
+action: understand
+next-steps:
+  - /manni/meta/reference/schemas/oasis-dita-metadata/
+related-pages:
+  - /manni/meta/reference/schemas/oasis-dita-metadata/
+risks: read-only
+prerequisites:
+  - metadata
+  - extraction
+  - meta-reference-formats
 ---
 
 import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
@@ -107,7 +148,7 @@ schema written against it has to say so.
 {/* cite element-content-model-decides-cardinality */}
 Where a content model *does* state the cardinality, the key follows it.
 `head.title` is a scalar because HTML permits one `<title>`;
-[DITA's keys](/manni/meta/reference/dita-schema/) are typed element by element
+[DITA's keys](/manni/meta/reference/schemas/oasis-dita-metadata/) are typed element by element
 because the OASIS content model says which repeat.
 
 ## Key types
@@ -176,10 +217,10 @@ Four behaviours worth knowing:
   naming `concept/prolog/source` from retyping it out of the scalar its content
   model says it is. A path cannot be used to *override* a key, only to add one
   the convention does not reach.
-- **`elements:` accumulates where `schemas:` replaces.** A schema set is a
-  complete statement about how a file is judged. Element paths are a list of
-  extra places to look, so the repo-wide list and *every* matching override all
-  contribute.
+- **`elements:` accumulates where an override's `schemas:` replaces.** A
+  schema set is a complete statement about how a file is judged, and the first
+  matching override decides it. Element paths are a list of extra places to
+  look, so the repo-wide list and *every* matching override all contribute.
 - **A named path lifts an empty element**, as `[""]`. The convention skips one;
   someone who names it wants "present but empty" checked.
 - **Paths are validated when the config loads.** A typo left to extraction would
@@ -204,7 +245,7 @@ shape. So it works in any dialect, including ones manni meta knows nothing about
 <TabItem label="Creating">
 
 Adding an element that is not there means knowing where the element is legal.
-manni meta does that only for [DITA](/manni/meta/reference/dita-schema/), whose
+manni meta does that only for [DITA](/manni/meta/reference/schemas/oasis-dita-metadata/), whose
 content model can answer. It places the new element, and any containers it
 needs, at the position the model requires.
 

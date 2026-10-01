@@ -3,6 +3,52 @@ title: Terminology fields
 description: "The ten fields of a term entry, their types and SKOS mappings, the type: term and type: term-set markers, how an entry gets its id, the see redirect, and why the kind of label is the status."
 sidebar:
   order: 3
+type: reference
+id: term-reference-terminology
+keywords:
+  - terminology fields
+  - SKOS
+  - "type: term"
+  - see redirect
+  - term id
+language: en
+audiences:
+  - schema-authors
+  - ci-engineers
+intent: Write a term entry with the right fields, and predict its id and how a see redirect behaves.
+lifecycle: published
+applies-to:
+  - domain:term
+concepts:
+  - schema
+  - validation
+sample-questions:
+  - Which fields can a term entry carry?
+  - How does a term entry get its id?
+  - How does the see redirect work?
+graph:
+  label: Terminology fields
+  type: reference
+last-updated: 2026-09-26
+tags:
+  - terminology
+  - skos
+  - metadata
+  - schema
+  - validation
+  - term-entry
+action: understand
+related-pages:
+  - /manni/meta/reference/schemas/manni-terminology/
+  - /manni/term/reference/rules/
+risks: read-only
+prerequisites:
+  - term-get-started
+  - metadata
+next-steps:
+  - term-reference-cli
+  - term-reference-configuration
+  - term-set-up
 ---
 
 {/* cite ten-fields */}
@@ -10,8 +56,9 @@ sidebar:
 A term entry is a record with ten fields. A term page carries it in its
 metadata, and a manifest entry holds the same record. Every reader produces it
 from a body construct too. The fields sit at the root of the page, flat.
-They are drafted as the `manni:terminology:1.0.0-proposal.1` vocabulary, which
-is [under review](/manni/meta/proposals/terminology/).
+They are the built-in
+[`manni:terminology:1.0.0`](/manni/meta/reference/schemas/manni-terminology/)
+vocabulary.
 
 ## Marking a file
 
@@ -137,19 +184,18 @@ into one file per entry names each file after.
 {/* cite schema-requires-label-definition-or-see */}
 {/* cite check-has-no-neither-rule */}
 `manni term check` checks the set. The shape of one page is a schema's job.
-The draft schema is at
-[`docs/proposals/0023/schemas/terminology/1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/terminology/1.0.0-proposal.1.json),
-and `manni meta validate -s` takes a path to a copy of it. It requires
+That schema is the built-in `manni:terminology:1.0.0`, and
+`manni meta validate -s` takes its id. It requires
 `label` on a `type: term` page, and a `definition` or a `see`. `check` does
 not report a page that has neither, so the schema is what catches it:
 
 ```console
-$ manni meta validate --no-config -s terminology/1.0.0-proposal.1.json term-without-definition-or-see.md
+$ manni meta validate --no-config -s manni:terminology:1.0.0 term-without-definition-or-see.md
 ✗ term-without-definition-or-see.md
-    (root)  must have required property 'definition'  (line 1)  [terminology/1.0.0-proposal.1.json]
-    (root)  must have required property 'see'  (line 1)  [terminology/1.0.0-proposal.1.json]
-    (root)  must match a schema in anyOf  (line 1)  [terminology/1.0.0-proposal.1.json]
-    (root)  must match "then" schema  (line 1)  [terminology/1.0.0-proposal.1.json]
+    (root)  must have required property 'definition'  (line 1)  [manni:terminology:1.0.0]
+    (root)  must have required property 'see'  (line 1)  [manni:terminology:1.0.0]
+    (root)  must match a schema in anyOf  (line 1)  [manni:terminology:1.0.0]
+    (root)  must match "then" schema  (line 1)  [manni:terminology:1.0.0]
 
 1 file checked, 0 passed, 1 failed, 4 errors
 ```

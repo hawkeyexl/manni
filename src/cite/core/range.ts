@@ -4,8 +4,9 @@
  * An entry's `source.file` is a path or an encrypted source (`~` and at least
  * 82 base64url characters, proposal 0045), and its `lines` an integer or
  * `"L1-L2"`. `FILE_PATTERN` is the schema's `$defs.fileRef.pattern`, spelled
- * once here and once in `schema/citations.json`; `test/cite/range.test.ts`
- * pins the two equal.
+ * once here and once in the registered `manni:citations:1.0.0` schema
+ * (`src/meta/schemas/citations/1.0.0.json`); `test/cite/range.test.ts` pins
+ * the two equal.
  *
  * The command line spells a source as one string, `path`, `path:L` or
  * `path:L1-L2` (`SRC_PATTERN`), and reports spell it that way too.

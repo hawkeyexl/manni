@@ -1,0 +1,83 @@
+docs/src/content/docs/cite/set-up/index.mdx:
+  personas:
+    - maya
+  journeys:
+    - m5
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/cite/core/config.ts
+    - path: src/shared/collections.ts
+  eval-suite: cite
+  evals:
+    - id: declare-collection
+      assertion: A reader can declare the pages as a collection and let the root default to the git root.
+      type: capability
+      grader: ai
+    - id: first-add-and-check
+      assertion: A reader can mint the first citation with manni cite add and run the first manni cite check.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-68
+      integrity: sha256-1e5ed0bb61ce16d9314308b1915fe2f343463acf356db5b47758ed269c065dbd
+    - generated-by: Claude Opus 5
+      lines: 70-73
+      integrity: sha256-79433410a9da849bfdb56e07fb90a68491cdec00d4285731c235f2e145187d6a
+    - generated-by: Claude Fable 5.1
+      lines: 74-104
+      integrity: sha256-25641f227a5eed1c86deb2a3c91aae4fe54e35eb00beb0d2b0ec763928236251
+    - generated-by: Claude Opus 5
+      lines: 105
+      integrity: sha256-bc3a772c185201f017a635add4a72914bab1b9d469d13034c57d190d45335571
+    - generated-by: Claude Fable 5.1
+      lines: 106-142
+      integrity: sha256-610eb5b3519d129a28c2e11ef4ff13bfc52ba5cf3fead2a816de58175e68b279
+    - generated-by: Claude Opus 5
+      lines: 144-145
+      integrity: sha256-91d3d75dfcab100b1da53ea91e398da109fe1103cc6089be831df979f292171b
+    - generated-by: Claude Fable 5.1
+      lines: 146-155
+      integrity: sha256-c26523fc66d57fbb22262a9f2aea306d44463328e1f2c1eacdd6e9615331cb39
+    - generated-by: Claude Opus 5
+      lines: 157
+      integrity: sha256-acea8d5ca09796e800b68d9a66e1652ac4253746ef57d65119d6df61cc9591d8
+    - generated-by: Claude Fable 5.1
+      lines: 158-161
+      integrity: sha256-a4a2695c74bb953742e111ec6517f844c239e8d1c64e95899339a87a6b68f339
+    - generated-by: Claude Opus 5
+      lines: 163-187
+      integrity: sha256-37d00a5009b83823d103a7f6bb6055b71cded4deb8ac84af811dd3ca8c96fd1b
+    - generated-by: Claude Fable 5.1
+      lines: 189
+      integrity: sha256-88f737604b9703179fa01fec4ede969c9ad38c8ad9298e9c128483a04d23570b
+    - generated-by: Claude Opus 5
+      lines: 191
+      integrity: sha256-aaecc2fa31f785763ecdbfe7eb8824644e1a9ac6daa95f9b77ee5e45ed86c12e
+    - generated-by: Claude Fable 5.1
+      lines: 192-223
+      integrity: sha256-1bae5f3a28e710a0d48ec5b1c920eb32536e88447093e552a9021ea77318a35b
+    - generated-by: Claude Opus 5
+      lines: 224
+      integrity: sha256-c6e0a43739b2b08dd7937381a5a254d628c1b57c5b6f7efe61987b19c53201b8
+    - generated-by: Claude Fable 5.1
+      lines: 225-229
+      integrity: sha256-7ac9eab0ded80d34f636e6f6ba19aa8b219c54c406304b19689b5c8079dccb94
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-11
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /prerequisites: 0.85
+        /next-steps: 0.95
+        /related-pages: 0.85

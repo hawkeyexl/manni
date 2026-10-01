@@ -93,6 +93,8 @@ export {
 export type {
   FetchedSchema,
   LoadSchemaOptions,
+  RegisteredSchema,
+  RegisteredSchemas,
   SchemaPin,
 } from "./core/schema-registry.js";
 export { integrityOf, isIntegrity, INTEGRITY_SHAPE } from "./core/integrity.js";
@@ -121,6 +123,7 @@ export {
   isBuiltinField,
   isDeriveSource,
   DERIVABLE_FIELDS,
+  MERGE_SAFE_FIELDS,
   DERIVE_SOURCES,
   DERIVED_STALE_SCHEMA,
   DERIVED_KEYWORD,

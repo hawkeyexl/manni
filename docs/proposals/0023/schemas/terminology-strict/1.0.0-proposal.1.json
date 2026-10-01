@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:terminology-strict:1.0.0-proposal.1",
+  "title": "manni terminology strict (1.0.0-proposal.1)",
+  "description": "The strict overlay for manni:terminology:1.0.0-proposal.1. Stack it beside the open draft. It narrows the form of values the draft already claims and requires no key. An entry either defines its term or redirects with `see`, so strict rejects a page that carries both. The open draft leaves that case to `manni term check`.",
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string",
+      "pattern": "^\\S(?:.*\\S)?$",
+      "description": "Strict holds the preferred label to one line with no surrounding space."
+    },
+    "see": {
+      "type": "string",
+      "pattern": "^\\S(?:.*\\S)?$",
+      "description": "Strict holds the redirect target to one line with no surrounding space, the form a label takes."
+    }
+  },
+  "not": {
+    "required": ["definition", "see"]
+  }
+}

@@ -612,9 +612,9 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-8b6b9e1867f172c4d00e4ff78ac21b121700e597d11f3e7ca456479f879e4365
       source:
         file: src/cite/core/page.ts
-        lines: 234-238
+        lines: 235-239
         integrity: sha256-b04799a1055a24a811289a4dde7ed426dc54a5c301a215eae397d6d0fe87bde3
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
     - id: check-exit-1-error-rules
       claim:
         lines: 338
@@ -630,9 +630,9 @@ docs/src/content/docs/cite/reference/cli.mdx:
         integrity: sha256-438384352e29206573e0efc3f7b272cabce592c16081c7d272262a2394d4df00
       source:
         file: src/cite/core/range.ts
-        lines: 50-52
+        lines: 51-53
         integrity: sha256-11321172205637f1e800df81439c810dbcb2ba92b27c50524386e7dfd7618679
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
     - id: add-src-untracked
       claim:
         lines: 433

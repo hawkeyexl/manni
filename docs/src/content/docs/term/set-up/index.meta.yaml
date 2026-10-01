@@ -1,0 +1,40 @@
+docs/src/content/docs/term/set-up/index.mdx:
+  personas:
+    - maya
+  journeys:
+    - m9
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/term/commands
+    - path: src/term/core/writers
+    - path: src/term/core/vale.ts
+    - path: src/term/core/writers/vale.ts
+    - path: src/term/reporters
+  eval-suite: term
+  evals:
+    - id: generate-vale-style
+      assertion: A reader can generate the Terms style with manni term write -f vale and add it to BasedOnStyles.
+      type: capability
+      grader: ai
+    - id: lint-definitions
+      assertion: A reader can run manni term lint and map its findings back to the field lines of a term.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-308
+      integrity: sha256-0b5cd1ff88c571518a40dc54e49cb10691a7318d91295ab71f83c9cd8bf407a0
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /related-pages: 0.95

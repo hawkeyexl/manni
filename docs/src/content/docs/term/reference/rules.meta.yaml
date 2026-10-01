@@ -1,0 +1,59 @@
+docs/src/content/docs/term/reference/rules.mdx:
+  personas:
+    - sara
+    - maya
+  journeys:
+    - s6
+    - m9
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/term/core/config.ts
+    - path: src/term/core/severity.ts
+    - path: src/term/core/check.ts
+    - path: src/shared/tools.ts
+  eval-suite: term
+  evals:
+    - id: name-rule-severity
+      assertion: A reader can name each term check rule and its default severity.
+      type: capability
+      grader: ai
+    - id: fix-a-rule
+      assertion: A reader can say what edit clears a finding of any term check rule.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-73
+      integrity: sha256-9b20ddb4f12bb6d807310cb7f78ef1840b69a511185efc5bba257b115bf74709
+    - generated-by: Claude Opus 5.5
+      lines: 74
+      integrity: sha256-9ecf435064f8764e3b2cd2b53a05a9e9d63e55567eb013b7f5f301dcf6a3a64d
+    - generated-by: Claude Opus 5
+      lines: 75-77
+      integrity: sha256-731a4b4c4fa019f975ce498df183acc8d9ec06b5b2e6777d7fd44e716e73e031
+    - generated-by: Claude Opus 5.5
+      lines: 78
+      integrity: sha256-feaa780067850c77ec3893f7cebb804283c94892535f12a5abef778e6ffc6452
+    - generated-by: Claude Opus 5
+      lines: 80-147
+      integrity: sha256-135f64f05a16b7d0d467b6db770111f05f3332b0051bcbc946890c1258b4a56b
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /concepts
+        - /prerequisites
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /next-steps: 0.85
+        /related-pages: 0.85
+        /concepts: 0.85
+        /prerequisites: 0.8

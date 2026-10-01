@@ -1,0 +1,44 @@
+docs/src/content/docs/meta/reference/schemas/myst-frontmatter.mdx:
+  citations:
+    - id: platform-myst-vocabularies-not-transcribed
+      claim:
+        lines: 94-100
+        integrity: sha256-237fc1461b7e6b001b68033d6fc7625e6be0f80c3b01793f84c10f9f6a543431
+      source:
+        file: src/meta/schemas/myst/1.10.json
+        lines: 5
+        integrity: sha256-99c98af59b29f7da83dc9a22b57762eb91c47dec6e0413f6e5e95d4b5e480db0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-myst-project-keys-not-described
+      claim:
+        integrity: sha256-1ce412c8c41dd7f110db822863c0a46e96a9a356404268a8355ec9de4cf93e41
+      source:
+        file: src/meta/schemas/myst/1.10.json
+        lines: 5
+        integrity: sha256-99c98af59b29f7da83dc9a22b57762eb91c47dec6e0413f6e5e95d4b5e480db0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-myst-identity-and-publication-fields
+      claim:
+        integrity: sha256-28c246bc00189fa6346152b8875b27227cb880e5e6de884f95b69dceb24a7027
+      source:
+        file: src/meta/schemas/myst/1.10.json
+        lines: 96-137
+        integrity: sha256-44bdc10dc0a768cf8c0182d691f72023c973c38e7cb96dc7f37ba04f42ba2f84
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-myst-length-caps
+      claim:
+        lines: 59-60
+        integrity: sha256-04dd5ac56a7bd3a4be0422b60970f5672a9384b94f95167447e396d7e25de50d
+      source:
+        file: src/meta/schemas/myst/1.10.json
+        lines: 54-83
+        integrity: sha256-fe6d73bdc44b4d0502bbce0d02b5f4a6d0dcd7cc999174537d7b3e4e3e1f7eca
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-myst-caps-are-the-constraint
+      claim:
+        integrity: sha256-5f773241a2ac823d1520858cac61b3e623452dccc69b057c0bbfc3abb291c98e
+      source:
+        file: src/meta/schemas/myst/1.10.json
+        lines: 5-7
+        integrity: sha256-d4d7438a5f6647252314e03f3b30e540fc2646728bd7d55e47db49c6cb3e4f23
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

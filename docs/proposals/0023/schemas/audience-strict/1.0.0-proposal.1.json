@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:audience-strict:1.0.0-proposal.1",
+  "title": "manni audience strict (1.0.0-proposal.1)",
+  "description": "The strict overlay for manni:audience:1.0.0-proposal.2. Stack it beside the open draft. It narrows the form of values the draft already claims and requires no key.",
+  "type": "object",
+  "properties": {
+    "audiences": {
+      "$ref": "#/$defs/kebabOrList",
+      "description": "Strict holds each audience to kebab case, in the string form and the list form alike."
+    },
+    "personas": {
+      "$ref": "#/$defs/kebabOrList",
+      "description": "Strict holds each persona id to kebab case, in the string form and the list form alike."
+    },
+    "journeys": {
+      "$ref": "#/$defs/kebabOrList",
+      "description": "Strict holds each journey id to kebab case, in the string form and the list form alike."
+    },
+    "intent": {
+      "type": "string",
+      "pattern": "^[^\\r\\n]+$",
+      "description": "Strict holds the intent to a single line."
+    }
+  },
+  "$defs": {
+    "kebabOrList": {
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
+      },
+      "description": "Lowercase letters, digits and hyphens, starting with a letter or digit. It applies to a single string and to each item of a list."
+    }
+  }
+}

@@ -811,6 +811,20 @@ describe("schemaTrustRoot", () => {
  */
 describe("the repository's own manni.config.yaml", () => {
   const repoRoot = resolve(here, "..");
+  /**
+   * The default set with `strict: true` (proposal 0070): OKF and Seven-Action,
+   * which have no strict overlay, then each manni default right before its
+   * strict overlay. Spelled out rather than derived from DEFAULT_SCHEMAS, so a
+   * change to the defaults shows up here as a change to what the site is held to.
+   */
+  const STRICT_DEFAULTS = [
+    "google:okf:0.1",
+    "passo-uno:seven-action:1.0",
+    ...[
+      "core", "audience", "structure", "stewardship", "lifecycle",
+      "ai-context", "evals", "graph", "citations",
+    ].flatMap((family) => [`manni:${family}:1.0.0`, `manni:${family}-strict:1.0.0`]),
+  ];
 
   it("is what discovery finds from the repo root, and names a schema that is there", async () => {
     const loaded = await loadConfig(undefined, repoRoot);
@@ -826,7 +840,12 @@ describe("the repository's own manni.config.yaml", () => {
         // The docs' citations live in a manifest beside each page (0058)
         // rather than in page frontmatter: the house schema marks `citations`
         // as `x-manni-location: external`, and `manni meta relocate` moved them.
-        externalMetadata: [{ file: "{page}.citations.yaml", keys: ["citations"] }],
+        // Every other field the schemas mark external lives in a keyless
+        // manifest beside the page, which owns what the marks say (0068).
+        externalMetadata: [
+          { file: "{page}.citations.yaml", keys: ["citations"] },
+          { file: "{page}.meta.yaml" },
+        ],
         // Where the site is published, so `manni a11y check` needs no `urls:`
         // of its own (0041 rule 12). The local preview, not the deployed site.
         url: "http://127.0.0.1:4321/manni/",
@@ -849,6 +868,15 @@ describe("the repository's own manni.config.yaml", () => {
     // `test/` against the docs frontmatter contract.
     const config = (await loadConfig(undefined, repoRoot))?.config;
     expect(config?.schemas).toBeUndefined();
+    // Both docs overrides take the defaults and close them (0070), which is
+    // what replaced the two hand-copied vocabulary lists the overrides once
+    // carried. An override's `defaults` is false unless it says otherwise, so
+    // dropping either key would silently shrink what the site is held to.
+    expect(config?.overrides).toHaveLength(2);
+    for (const ov of config?.overrides ?? []) {
+      expect(ov.defaults).toBe(true);
+      expect(ov.strict).toBe(true);
+    }
 
     expect(
       resolveSchemaSet({
@@ -859,14 +887,45 @@ describe("the repository's own manni.config.yaml", () => {
         // this per file with `memberOf`.
         memberOf: ["site"],
       }),
-      // Two, and both are load-bearing. The local schema is the house rule
-      // (title + description, neither of which Starlight itself requires); the
-      // built-in is the platform contract the site actually runs on, which
-      // checks everything the house schema leaves unconstrained —
-      // `sidebar.order`, `template`, a `badge` object's `text`.
+      // The defaults, each with its strict overlay, then the house rule
+      // (title + description, neither of which Starlight itself requires), the
+      // platform contract the site runs on, and the page's open TGDP type.
+      // `strict` leaves TGDP open: it is not a default.
     ).toEqual([
+      ...STRICT_DEFAULTS,
       "./docs/doc-frontmatter.schema.json",
       "astro:starlight:0.41",
+      "tgdp:templates:1.1",
+    ]);
+    // A glossary page takes the terminology vocabulary instead of a TGDP
+    // type, because it keeps `type: term` for manni term. The first match
+    // wins, so its override comes before the collection's.
+    expect(
+      resolveSchemaSet({
+        filePath: "docs/src/content/docs/meta/reference/glossary/schema.mdx",
+        config,
+        memberOf: ["site"],
+      }),
+    ).toEqual([
+      ...STRICT_DEFAULTS,
+      "./docs/doc-frontmatter.schema.json",
+      "astro:starlight:0.41",
+      "manni:terminology:1.0.0",
+      "manni:terminology-strict:1.0.0",
+    ]);
+    // The glossary's index is not a term page. It declares a TGDP type, and
+    // the glossary's glob leaves it out, so it takes the site's set.
+    expect(
+      resolveSchemaSet({
+        filePath: "docs/src/content/docs/meta/reference/glossary/index.mdx",
+        config,
+        memberOf: ["site"],
+      }),
+    ).toEqual([
+      ...STRICT_DEFAULTS,
+      "./docs/doc-frontmatter.schema.json",
+      "astro:starlight:0.41",
+      "tgdp:templates:1.1",
     ]);
     // A file outside the collection is a member of nothing, so the override
     // cannot reach it and DEFAULT_SCHEMAS stands.
@@ -943,8 +1002,9 @@ describe("overrides[].files accepts a list of globs", () => {
         "agentskills:skill:1.0",
       ]);
     }
+    // The listed OKF joins the defaults (0070), where it already is.
     expect(resolveSchemaSet({ filePath: "docs/guide.md", config: cfg })).toEqual([
-      "google:okf:0.1",
+      ...DEFAULT_SCHEMAS,
     ]);
   });
 

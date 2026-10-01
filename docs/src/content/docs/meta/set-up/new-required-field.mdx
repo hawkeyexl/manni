@@ -1,6 +1,52 @@
 ---
 title: Roll out a new required field without breaking the build
 description: Make a metadata field required today, record the existing backlog as a baseline so the build stays green, and let the debt shrink from there.
+type: tutorial
+id: meta-set-up-new-required-field
+keywords:
+  - required field
+  - baseline
+  - ratchet
+  - backlog
+language: en
+audiences:
+  - docs-engineers
+intent: Make a new metadata field required today, record the backlog as a baseline, and keep the build green while the debt shrinks.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-set-up-retrofit
+  - meta-set-up-different-schemas-per-folder
+  - meta-reference-cli
+concepts:
+  - schema
+  - validation
+risks:
+  - destructive
+sample-questions:
+  - How do I add a required field without breaking the build?
+  - What does a baseline forgive, and what does it not?
+  - When should I use the one-statement ALTER ratchet?
+graph:
+  label: Roll out a new required field without breaking the build
+  type: learning
+last-updated: 2026-09-27
+tags:
+  - baseline
+  - schema
+  - validation
+  - ratchet
+  - ci
+  - required-field
+  - backlog
+action: develop
+prerequisites:
+  - meta-schemas
+related-pages:
+  - meta-ci-query-gates
+  - meta-reference-query
+  - meta-schemas
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -14,7 +60,7 @@ A baseline is a file of violation fingerprints, keyed by document path. On each 
 </Aside>
 
 {/* cite builtin-schemas-are-immutable */}
-This guide assumes you already have a working `manni.config.yaml` and a schema you control. If you are still using the built-in OKF schema, [author your own schema first](/manni/meta/schemas/) so you have a file to edit. You cannot add fields to a built-in.
+This guide assumes you already have a working `manni.config.yaml` and a schema you control. If you still rely on the built-in default set alone, [author your own schema first](/manni/meta/schemas/) so you have a file to edit. You cannot add fields to a built-in.
 
 ## Step 1: Add the field as required
 

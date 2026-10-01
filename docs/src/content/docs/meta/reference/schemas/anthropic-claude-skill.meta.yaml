@@ -1,0 +1,43 @@
+docs/src/content/docs/meta/reference/schemas/anthropic-claude-skill.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/claude-skill/2.1.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on anthropic:claude-skill:2.1 for their Claude Code skills."
+      type: capability
+      grader: ai
+    - id: booleans
+      assertion: "A reader can write a boolean field that both YAML and Claude Code read the same way."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-135
+      integrity: sha256-bbb8f1c9f23d45a36a6c02cc13d770d0880629fecea497781e4c5c3043903017
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.85
+        /next-steps: 0.8
+        /related-pages: 0.85
+        /risks: 0.95

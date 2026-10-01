@@ -1,0 +1,28 @@
+docs/src/content/docs/graph/index.mdx:
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: what-it-does
+      assertion: "A reader can say what manni graph derives and that it is not in the published package."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-8
+      integrity: sha256-eb16edbbef0e60a1b66c40efa5c1272fc98fe5083ef752e1a860fc66f4eea1fc
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-24
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /related-pages
+      confidence:
+        /tags: 0.75
+        /action: 0.95
+        /concepts: 0.85
+        /related-pages: 0.75

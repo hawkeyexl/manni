@@ -1,0 +1,10 @@
+# Proposal 0068 rule 1: two manifests with no keys would both claim the
+# marked fields, so the config is refused.
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+      - file: "{page}.meta.yaml"
+      - file: ./site-meta.yaml

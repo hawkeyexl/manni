@@ -1,0 +1,53 @@
+docs/src/content/docs/meta/reference/schemas/manni-citations.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/citations/1.0.0.json
+    - path: src/meta/schemas/citations-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: entry-shape
+      assertion: "A reader can write a citation entry with its claim and source blocks."
+      type: capability
+      grader: ai
+    - id: strict-overlay
+      assertion: "A reader can say what the citations strict overlay rejects that the open vocabulary accepts."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-21
+      integrity: sha256-d449c61e5eae848a249d526a493bd9b9c5ebd3385644e3db28b68f3795803548
+    - generated-by: Claude Opus 5.5
+      lines: 29-30
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+    - generated-by: Claude Opus 5.5
+      lines: 36-258
+      integrity: sha256-edcbdf1e28799a2ecadfd935729fa94103656081bd3e473f11250e217fefabae
+    - generated-by: Claude Opus 5.5
+      lines: 271-307
+      integrity: sha256-5aad8b819b8089bae13b4733a79356fa88ac8c88ddfa5850608672ab5677974d
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /next-steps
+        - /related-pages
+        - /risks
+        - /prerequisites
+      confidence:
+        /resource: 0.95
+        /tags: 0.75
+        /action: 0.9
+        /next-steps: 0.85
+        /related-pages: 0.8
+        /risks: 0.95
+        /prerequisites: 0.85

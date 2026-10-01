@@ -94,7 +94,7 @@ export async function runRemove(opts: RemoveOptions): Promise<RemoveRun> {
 
   const planned: Planned[] = [];
   const removeOne = async (label: string, content: string, path?: string): Promise<void> => {
-    const setup = prepared.setupFor(label, content);
+    const setup = await prepared.setupFor(label, content);
     if (setup.sidecar !== undefined) hits.record(setup.sidecar, label);
     const owner = setup.sidecar?.owner;
     const page = readPage(label, content, {

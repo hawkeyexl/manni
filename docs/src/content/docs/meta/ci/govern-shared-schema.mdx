@@ -1,6 +1,52 @@
 ---
 title: Govern a shared schema across repos
 description: Vendor one canonical JSON Schema into each consuming repository with manni meta schemas vendor, so CI validates against a committed, hash-pinned copy instead of a live URL, keep the plain URL form where its tradeoff is acceptable, and stop a contributed document choosing its own schema.
+type: how-to
+id: meta-ci-govern-shared-schema
+keywords:
+  - shared schema
+  - vendor
+  - hash pin
+  - schema URL
+language: en
+audiences:
+  - ci-engineers
+intent: Vendor one canonical schema into each repo as a hash-pinned copy, or keep the URL form where its tradeoff is acceptable.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-reference-schema-resolution
+  - meta-reference-cli
+  - meta-ci-exit-codes-and-annotations
+  - meta-reference-configuration
+concepts:
+  - schema
+  - $schema key
+  - dialect
+sample-questions:
+  - How do I share one schema across many repositories?
+  - What does the hash pin buy, and what does it cost?
+  - How do I stop a contributed document choosing its own schema?
+graph:
+  label: Govern a shared schema across repos
+  type: task
+last-updated: 2026-09-27
+tags:
+  - schema-governance
+  - vendoring
+  - ci
+  - integrity-hash
+  - json-schema
+action: develop
+risks:
+  - open-world
+  - idempotent
+prerequisites:
+  - meta-get-started
+related-pages:
+  - meta-ci-recipes
+  - meta-set-up-different-schemas-per-folder
 ---
 
 import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -216,7 +262,7 @@ npx -y @hawkeyexl/manni meta validate "docs/**/*.md" -s https://schemas.example.
 {/* cite the-precedence-chain */}
 Whichever source supplies it, the schema set for each file is resolved by the
 same precedence chain. That is `--schema` → file `$schema` → config `overrides`
-→ config `schemas` → built-in default. Vendoring does not change that chain; it
+→ config `schemas`, joined to the built-in default set → the default set alone. Vendoring does not change that chain; it
 changes what one reference in it points at. For the full chain, see the [schema
 resolution reference](/manni/meta/reference/schema-resolution/).
 

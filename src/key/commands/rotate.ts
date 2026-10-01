@@ -71,6 +71,7 @@ import {
 import {
   STDIN_TOKEN,
   assertNonEmpty,
+  configMarks,
   extractorByName,
   gitignoreOptions,
   reencryptData,
@@ -206,7 +207,7 @@ async function rotateManifestCitations(
 ): Promise<{ rewritten: RotatedValue[]; skipped: SkippedValue[]; wantsHistory: boolean }> {
   const none = { rewritten: [], skipped: [], wantsHistory: false };
   if (sidecars === null) return none;
-  const sidecar = sidecars.forPage(page.file, page.content, page.format);
+  const sidecar = await sidecars.forPage(page.file, page.content, page.format);
   const owner = sidecar.owner;
   if (owner === undefined || sidecar.citations === undefined) return none;
   // Only a manifest entry that actually holds a ciphertext costs an index.
@@ -531,6 +532,8 @@ export async function runKeyRotate(opts: KeyRotateOptions): Promise<KeyRotateRes
           configSource: file.source,
           key: current,
           toError: toKeyError,
+          // A keyless manifest (proposal 0068) keeps what a page's schemas mark.
+          marks: () => configMarks(file.path, file.dir),
           // A `{page}` manifest (0058) is read for exactly the pages rotated.
           pages: files.map((rel) => resolve(base, rel)),
         });

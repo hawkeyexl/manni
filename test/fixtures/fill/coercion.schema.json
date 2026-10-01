@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "weight": { "type": "integer" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "owner": { "type": "string" }
+  }
+}

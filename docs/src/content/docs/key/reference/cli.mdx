@@ -1,6 +1,35 @@
 ---
 title: CLI reference
 description: "Every manni key command, argument, and flag (set and rotate), with exit codes, how rotation finds encrypted values and survives an interruption, every refusal, and the examples."
+id: "key-reference-cli"
+type: "reference"
+keywords: ["key set", "key rotate", "refusals", "exit codes", "citation baseline"]
+language: en
+audiences: ["schema-authors", "ci-engineers"]
+intent: "Look up every argument, flag, exit code and refusal of manni key set and manni key rotate."
+lifecycle: published
+applies-to: ["domain:key"]
+risks: ["destructive", "irreversible"]
+sample-questions: ["What flags do manni key set and manni key rotate accept?", "How does rotation find encrypted values?", "Why did manni key rotate refuse to start?"]
+graph: { label: "CLI reference", type: reference }
+last-updated: 2026-09-17
+tags:
+  - cli
+  - encryption
+  - key-management
+  - reference
+  - rotation
+action: remember
+prerequisites:
+  - /manni/key/
+  - /manni/meta/reference/configuration/
+next-steps:
+  - key-ci
+related-pages:
+  - key-set-up
+  - meta-schemas-encrypted-fields
+  - cite-reference-configuration
+  - meta-reference-configuration
 ---
 
 import { Aside } from '@astrojs/starlight/components';

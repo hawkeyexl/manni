@@ -1,6 +1,6 @@
 # 0041: `collections:`, the family-level home for document sets and their external metadata
 
-- **Status:** Implemented
+- **Status:** Implemented; superseded in part by 0068
 - **Serves:** Maya · M1, M2 · Devin · D1, D4 · Sara · S1
 - **Depends on:** Four earlier proposals.
   - [0033](0033-manni-monorepo.md) put every tool's config in one file, one

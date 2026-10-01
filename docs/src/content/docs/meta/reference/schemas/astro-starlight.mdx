@@ -1,0 +1,186 @@
+---
+title: Astro Starlight schema
+description: The astro:starlight:0.41 schema shipped with manni meta, covering the 15 front matter fields Starlight reads, why it requires title, and the finding a page without one produces.
+sidebar:
+  label: "astro:starlight:0.41"
+type: reference
+id: meta-reference-schemas-astro-starlight
+keywords: ["Astro Starlight", "astro:starlight:0.41", "front matter fields", "versioning"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate Starlight front matter, including the required title, with astro:starlight:0.41."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "dialect"]
+sample-questions:
+  - "Which front matter fields does Starlight read?"
+  - "Why does astro:starlight:0.41 require title?"
+  - "What finding does a page without a title produce?"
+graph:
+  label: "Astro Starlight schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/starlight/0.41.json
+tags:
+  - schema
+  - starlight
+  - validation
+  - front-matter
+  - platform-schema
+action: remember
+prerequisites:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/get-started/
+next-steps:
+  - /manni/meta/reference/platform-schemas/
+  - /manni/meta/reference/schema-resolution/
+related-pages:
+  - /manni/meta/reference/platform-schemas/
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/configuration/
+risks: read-only
+---
+
+**Built-in id:** `astro:starlight:0.41`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/starlight/0.41.json`. A
+`$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+import { Aside } from '@astrojs/starlight/components';
+
+`astro:starlight:0.41` checks the front matter Astro Starlight 0.41 reads from a
+`.md` or `.mdx` page. It requires `title`, because Starlight refuses to build a
+page without one. Every other field is optional and checked only when present.
+It is one of the [platform schemas](/manni/meta/reference/platform-schemas/),
+which say what a generator accepts rather than what your team agreed.
+
+| Property | Value |
+|---|---|
+| Id | `astro:starlight:0.41` |
+| Title | Astro Starlight front matter v0.41 |
+| Files it fits | `.md`, `.mdx` |
+| Dialect | [Draft 2020-12](/manni/meta/reference/schema-resolution/#dialects) |
+| Required fields | `title` |
+| Additional properties | Allowed (`additionalProperties: true`) |
+| Reference kind | [builtin](/manni/meta/reference/schema-resolution/#reference-kinds) |
+| On by default | No |
+| Upstream reference | [Frontmatter reference](https://starlight.astro.build/reference/frontmatter/) |
+| JSON | [`starlight/0.41.json`](/manni/schemas/starlight/0.41.json) |
+
+## Use it
+
+Name the id in `manni.config.yaml`. A Starlight site usually stacks it with a
+vocabulary, since the two claim different keys:
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas:
+    - astro:starlight:0.41
+    - diataxis:diataxis:1.0
+```
+
+For a one-off run, pass the id directly:
+
+```bash
+manni meta validate src/content/docs/ -s astro:starlight:0.41
+```
+
+## Fields
+
+| Field | Type | Notes |
+|---|---|---|
+| `title` | string | **Required.** Non-empty. |
+| `description` | string | Used for page metadata and SEO. |
+| `slug` | string | Overrides the URL slug taken from the file path. |
+| `editUrl` | string \| boolean | A URL, or `false` to hide the edit link. |
+| `head` | array | Tags injected into `<head>`; each needs a `tag`. |
+| `tableOfContents` | object \| `false` | `minHeadingLevel` and `maxHeadingLevel`, each 1–6. |
+| `template` | `doc` \| `splash` | Anything else is rejected. |
+| `hero` | object | `title`, `tagline`, `image`, `actions`. |
+| `banner` | object | Requires `content`. |
+| `lastUpdated` | date \| boolean | A YAML date, or a flag. |
+| `prev`, `next` | boolean \| string \| object | `false` hides, a string relabels, an object sets `link` and `label`. |
+| `pagefind` | boolean | Search indexing. Defaults to true. |
+| `draft` | boolean | Excluded from production builds. |
+| `sidebar` | object | `label`, `order`, `hidden`, `badge`, `attrs`. |
+
+{/* cite platform-starlight-toc-uses-if-then */}
+`tableOfContents` is written with `if`/`then` rather than `anyOf` so a bad
+heading level is reported against `/tableOfContents/maxHeadingLevel`. An `anyOf`
+collapses every branch failure onto the parent object, which puts the caret on
+the wrong line.
+
+## Additional properties
+
+{/* cite platform-starlight-tolerates-unknown-keys */}
+Starlight defines its front matter as a schema you extend rather than replace,
+so unknown keys are expected and tolerated here too.
+
+## Versioning
+
+<Aside type="caution" title="Starlight is pre-1.0, so this pin moves faster than the others">
+`docusaurus:docs:3.10` has been accurate for a year. Starlight ships a minor
+every few weeks, and each one can add a field. `astro:starlight:0.41` describes
+0.41 and will not be edited once published. A later line ships as a new id.
+Because the schema tolerates unknown keys, running 0.41 against a newer
+Starlight under-checks rather than false-fails. Fields added after 0.41 pass
+unexamined.
+</Aside>
+
+## Example page
+
+A page carrying most of the fields, at legal values. This is
+`test/fixtures/platform/starlight-valid.md`, and it passes.
+
+```markdown title="src/content/docs/guides/sidebar.md"
+---
+title: Configure the sidebar
+description: How to order and label pages in the Starlight sidebar.
+slug: guides/sidebar
+template: doc
+draft: false
+pagefind: true
+lastUpdated: 2026-08-23
+editUrl: https://github.com/example/docs/edit/main/sidebar.md
+tableOfContents:
+  minHeadingLevel: 2
+  maxHeadingLevel: 4
+banner:
+  content: This guide covers Starlight 0.41.
+prev: false
+next:
+  link: /guides/search/
+  label: Search
+sidebar:
+  label: Sidebar
+  order: 3
+  hidden: false
+  badge: New
+head:
+  - tag: meta
+    attrs:
+      name: robots
+      content: noindex
+---
+```
+
+## A common mistake
+
+A page with no `title` does not build. Starlight stops on it, and this schema
+reports it before the build runs:
+
+```markdown title="test/fixtures/platform/starlight-missing-title.md"
+---
+description: A page that forgot the one field Starlight demands.
+---
+```
+
+```text
+✗ test/fixtures/platform/starlight-missing-title.md
+    (root)  must have required property 'title'  (line 1)  [astro:starlight:0.41]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+Add a `title` and the finding clears.

@@ -137,9 +137,21 @@ describe("derive over a managed field marked x-manni-encrypt", () => {
 
 describe("validate's derived comparison over a marked field", () => {
   it("finds an encrypted stamp current by its plaintext", async () => {
-    const dir = stage(`title: Page\n${sealedOwner([OWNER])}`);
+    const dir = stage(`title: Page\ntype: guide\ndescription: A page whose owner is sealed.\n${sealedOwner([OWNER])}`);
     const { results } = await runValidate({ inputs: [], cwd: dir, env: withKey });
-    expect(results[0]?.errors).toEqual([]);
+    // No derived:stale. The one finding is the default stewardship
+    // vocabulary's warning that owner is held on the page.
+    expect(results[0]?.errors).toEqual([
+      {
+        schema: "location:external",
+        keyword: "location",
+        subject: "owner",
+        instancePath: "/owner",
+        message: '"owner" is stored in the page; manni:stewardship:1.0.0 prefers external metadata. Run manni meta relocate.',
+        severity: "warning",
+        line: 5,
+      },
+    ]);
   });
 
   it("files a stale encrypted stamp without printing either value", async () => {

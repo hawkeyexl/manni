@@ -1,0 +1,3 @@
+# strict: true stacks each default's strict version after it.
+meta:
+  strict: true
