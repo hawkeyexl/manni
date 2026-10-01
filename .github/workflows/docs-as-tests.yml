@@ -31,6 +31,9 @@ permissions:
 jobs:
   docs-as-tests:
     runs-on: ubuntu-latest
+    # A healthy run takes about ten minutes. A job that hangs fails at the
+    # limit instead of running until the runner's six-hour cap.
+    timeout-minutes: 30
     # The inline tests run shell commands (manni meta ...), so never run them for
     # pull requests from forks — that would execute untrusted code on the
     # runner. Same-repo branches and manual dispatch only.
