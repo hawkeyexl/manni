@@ -13,7 +13,6 @@ docs/src/content/docs/term/reference/cli.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/term/cli.ts
-      kind: implementation
   eval-suite: term
   evals:
     - id: find-flag

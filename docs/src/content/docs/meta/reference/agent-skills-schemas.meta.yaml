@@ -69,11 +69,8 @@ docs/src/content/docs/meta/reference/agent-skills-schemas.mdx:
   created: 2026-08-25
   source-of-truth:
     - path: src/meta/schemas/agent-skills/1.0.json
-      kind: implementation
     - path: src/meta/schemas/claude-skill/2.1.json
-      kind: implementation
     - path: src/meta/schemas/claude-subagent/2.1.json
-      kind: implementation
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

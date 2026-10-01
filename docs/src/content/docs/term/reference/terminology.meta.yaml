@@ -9,13 +9,9 @@ docs/src/content/docs/term/reference/terminology.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/schemas/terminology/1.0.0.json
-      kind: implementation
     - path: src/term/types.ts
-      kind: implementation
     - path: src/term/core/id.ts
-      kind: implementation
     - path: src/term/core/readers
-      kind: implementation
   eval-suite: term
   evals:
     - id: write-term-fields

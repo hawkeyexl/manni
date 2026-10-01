@@ -322,13 +322,9 @@ docs/src/content/docs/meta/ci/consume-results.mdx:
   created: 2026-06-26
   source-of-truth:
     - path: src/meta/cli.ts
-      kind: implementation
     - path: src/meta/commands/get.ts
-      kind: implementation
     - path: src/index.ts
-      kind: implementation
     - path: src/meta/reporters/index.ts
-      kind: implementation
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

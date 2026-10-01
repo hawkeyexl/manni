@@ -5,7 +5,6 @@ docs/src/content/docs/key/reference/cli.mdx:
   review-interval: P180D
   source-of-truth:
     - path: "src/key/cli.ts"
-      kind: implementation
   eval-suite: key
   evals:
     - id: compose-command

@@ -7,11 +7,8 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/core/encrypted.ts
-      kind: implementation
     - path: src/shared/encryption.ts
-      kind: implementation
     - path: src/shared/encryption-key.ts
-      kind: implementation
   eval-suite: meta
   evals:
     - id: mark-encrypt

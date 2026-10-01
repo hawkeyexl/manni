@@ -8,7 +8,6 @@ docs/src/content/docs/meta/reference/formats.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/extractors
-      kind: implementation
   eval-suite: meta
   evals:
     - id: pick-format-extractor

@@ -9,13 +9,9 @@ docs/src/content/docs/meta/schemas/field-location.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/core/location.ts
-      kind: implementation
     - path: src/meta/core/relocation.ts
-      kind: implementation
     - path: src/meta/commands/relocate.ts
-      kind: implementation
     - path: src/meta/commands/validate-offer.ts
-      kind: implementation
   eval-suite: meta
   evals:
     - id: mark-location

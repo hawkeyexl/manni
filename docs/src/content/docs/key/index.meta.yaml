@@ -5,13 +5,9 @@ docs/src/content/docs/key/index.mdx:
   review-interval: P180D
   source-of-truth:
     - path: "src/shared/encryption-key.ts"
-      kind: implementation
     - path: "src/shared/encryption.ts"
-      kind: implementation
     - path: "src/shared/prompt.ts"
-      kind: implementation
     - path: "src/key/"
-      kind: implementation
   eval-suite: key
   evals:
     - id: where-key-lives

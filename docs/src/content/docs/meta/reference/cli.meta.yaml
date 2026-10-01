@@ -8,7 +8,6 @@ docs/src/content/docs/meta/reference/cli.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/cli.ts
-      kind: implementation
   eval-suite: meta
   evals:
     - id: find-command-flag

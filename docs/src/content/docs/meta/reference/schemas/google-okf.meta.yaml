@@ -5,9 +5,7 @@ docs/src/content/docs/meta/reference/schemas/google-okf.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/schemas/okf/0.1.json
-      kind: implementation
     - path: src/meta/core/schema-registry.ts
-      kind: implementation
   eval-suite: meta
   evals:
     - id: turn-on

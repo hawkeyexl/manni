@@ -7,21 +7,13 @@ docs/src/content/docs/cite/get-started/index.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/cite/commands/check.ts
-      kind: implementation
     - path: src/cite/commands/add.ts
-      kind: implementation
     - path: src/cite/commands/update.ts
-      kind: implementation
     - path: src/cite/core/severity.ts
-      kind: implementation
     - path: src/cite/core/sidecar.ts
-      kind: implementation
     - path: src/cite/core/manifest.ts
-      kind: implementation
     - path: src/cite/reporters/pretty.ts
-      kind: implementation
     - path: test/cite/cli.integration.test.ts
-      kind: implementation
   eval-suite: cite
   evals:
     - id: pin-first-claim

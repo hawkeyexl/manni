@@ -5,11 +5,8 @@ docs/src/content/docs/meta/reference/schemas/manni-graph.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/schemas/graph/1.0.0.json
-      kind: implementation
     - path: src/meta/schemas/graph-strict/1.0.0.json
-      kind: implementation
     - path: src/meta/core/schema-registry.ts
-      kind: implementation
   eval-suite: meta
   evals:
     - id: graph-block

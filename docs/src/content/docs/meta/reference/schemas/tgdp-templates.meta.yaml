@@ -5,11 +5,8 @@ docs/src/content/docs/meta/reference/schemas/tgdp-templates.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/schemas/tgdp/1.1.json
-      kind: implementation
     - path: src/meta/schemas/tgdp-strict/1.1.json
-      kind: implementation
     - path: src/meta/core/schema-registry.ts
-      kind: implementation
   eval-suite: meta
   evals:
     - id: turn-on

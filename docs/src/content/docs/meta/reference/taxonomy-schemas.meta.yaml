@@ -7,13 +7,9 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/schemas/diataxis/1.0.json
-      kind: implementation
     - path: src/meta/schemas/tgdp/1.0.json
-      kind: implementation
     - path: src/meta/schemas/seven-action/1.0.json
-      kind: implementation
     - path: src/meta/core/resolve-schema.ts
-      kind: implementation
   eval-suite: meta
   evals:
     - id: pick-taxonomy-schema

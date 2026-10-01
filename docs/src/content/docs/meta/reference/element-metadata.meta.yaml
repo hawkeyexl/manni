@@ -8,15 +8,10 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/extractors/element-key.ts
-      kind: implementation
     - path: src/meta/extractors/element-write.ts
-      kind: implementation
     - path: src/meta/extractors/xml-read.ts
-      kind: implementation
     - path: src/meta/extractors/html-read.ts
-      kind: implementation
     - path: src/meta/core/config.ts
-      kind: implementation
   eval-suite: meta
   evals:
     - id: name-element-key

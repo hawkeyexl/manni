@@ -9,9 +9,7 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/commands/fill-prompt.ts
-      kind: implementation
     - path: src/meta/commands/fill.ts
-      kind: implementation
   eval-suite: meta
   evals:
     - id: state-egress

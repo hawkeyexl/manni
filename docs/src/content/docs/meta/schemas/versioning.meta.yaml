@@ -283,11 +283,8 @@ docs/src/content/docs/meta/schemas/versioning.mdx:
   created: 2026-06-26
   source-of-truth:
     - path: src/meta/core/validator.ts
-      kind: implementation
     - path: src/meta/commands/query.ts
-      kind: implementation
     - path: src/meta/core/schema-registry.ts
-      kind: implementation
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

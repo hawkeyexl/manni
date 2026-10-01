@@ -9,15 +9,10 @@ docs/src/content/docs/term/ci/index.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/term/commands
-      kind: implementation
     - path: src/term/core/writers
-      kind: implementation
     - path: src/term/core/vale.ts
-      kind: implementation
     - path: src/term/core/writers/vale.ts
-      kind: implementation
     - path: src/term/reporters
-      kind: implementation
   eval-suite: term
   evals:
     - id: write-ci-workflow

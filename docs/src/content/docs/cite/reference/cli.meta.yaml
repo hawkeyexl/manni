@@ -14,9 +14,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/cite/cli.ts
-      kind: implementation
     - path: scripts/check-cli-reference.mjs
-      kind: implementation
   eval-suite: cite
   evals:
     - id: find-flag

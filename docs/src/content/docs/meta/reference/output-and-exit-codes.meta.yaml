@@ -10,9 +10,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/reporters/index.ts
-      kind: implementation
     - path: src/shared/severity.ts
-      kind: implementation
   eval-suite: meta
   evals:
     - id: branch-on-exit-code

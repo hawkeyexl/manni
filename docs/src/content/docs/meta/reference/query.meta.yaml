@@ -12,15 +12,10 @@ docs/src/content/docs/meta/reference/query.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/commands/query.ts
-      kind: implementation
     - path: src/meta/core/projection.ts
-      kind: implementation
     - path: src/meta/core/collections.ts
-      kind: implementation
     - path: src/meta/core/checks.ts
-      kind: implementation
     - path: src/meta/reporters/query.ts
-      kind: implementation
   eval-suite: meta
   evals:
     - id: write-select-query

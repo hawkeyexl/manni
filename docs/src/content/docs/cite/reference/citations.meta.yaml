@@ -10,11 +10,8 @@ docs/src/content/docs/cite/reference/citations.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/schemas/citations/1.0.0.json
-      kind: implementation
     - path: src/cite/core/statements.ts
-      kind: implementation
     - path: src/cite/core/sidecar.ts
-      kind: implementation
   eval-suite: cite
   evals:
     - id: write-entry

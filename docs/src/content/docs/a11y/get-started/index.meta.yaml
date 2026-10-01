@@ -5,11 +5,8 @@ docs/src/content/docs/a11y/get-started/index.mdx:
   review-interval: P180D
   source-of-truth:
     - path: "src/a11y/commands/check.ts"
-      kind: implementation
     - path: "src/a11y/core/analyzer.ts"
-      kind: implementation
     - path: "src/a11y/core/crawl.ts"
-      kind: implementation
   eval-suite: a11y
   evals:
     - id: first-crawl

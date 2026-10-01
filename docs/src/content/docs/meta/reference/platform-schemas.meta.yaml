@@ -9,21 +9,13 @@ docs/src/content/docs/meta/reference/platform-schemas.mdx:
   review-interval: P180D
   source-of-truth:
     - path: src/meta/schemas/starlight/0.41.json
-      kind: implementation
     - path: src/meta/schemas/antora/3.1.json
-      kind: implementation
     - path: src/meta/schemas/sphinx/9.1.json
-      kind: implementation
     - path: src/meta/schemas/myst/1.10.json
-      kind: implementation
     - path: src/meta/schemas/hugo/0.165.json
-      kind: implementation
     - path: src/meta/schemas/jekyll/4.4.json
-      kind: implementation
     - path: src/meta/schemas/vitepress/1.6.json
-      kind: implementation
     - path: src/meta/schemas/mkdocs-material/9.7.json
-      kind: implementation
   eval-suite: meta
   evals:
     - id: pick-platform-schema
