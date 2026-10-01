@@ -8,7 +8,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 829-830
         integrity: sha256-3ef67f71b6dd6d13aa8db8c7e567afcb9df863c1d137c5597d3a9fd7de40c6fa
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: formats-enforced-by-ajv-formats
       claim:
         lines: 95-96
@@ -17,7 +17,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/core/validator.ts
         lines: 93
         integrity: sha256-13cad13b9da05a87f1d7e4ed101397327ec94367e2c9e0f6eba648bb4109934b
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: required-fields-checked-against-metadata-object
       claim:
         lines: 95
@@ -26,7 +26,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/core/validator.ts
         lines: 687-688
         integrity: sha256-b41d2247f4df563b4638532286fcaf90f3105ab234b56e24619fd7f598d68e59
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: forty-five-built-in-schemas
       claim:
         integrity: sha256-f1d6abfbc94bfaaf4918aa31b526fa8b929987ce3b1782bf3cad9946b473e906
@@ -34,7 +34,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 79-127
         integrity: sha256-b34b13447649abac27c865e57b62674978e2d0b5f1b1c3bef6380c9c9a1b98df
-        commit-sha: c48fb7666149438e2d63f3213e8beddba66f6758
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: error-line-names-field-line-and-schema
       claim:
         integrity: sha256-6e24a2751ad70c15d7e6a0c643456d631350f32d19020526786cb196d44968af
@@ -50,7 +50,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/cli.ts
         lines: 874
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: 5825d1a2b318fb50504f294966977e8c1f1b8b20
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: default-run-requires-type
       claim:
         integrity: sha256-5641af1fab3e0ee0ecc5b8ff5a64e87af036426aa1f4a4a06ff340e640e4b38c

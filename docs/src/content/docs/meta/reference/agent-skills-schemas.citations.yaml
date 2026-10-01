@@ -23,7 +23,7 @@ docs/src/content/docs/meta/reference/agent-skills-schemas.mdx:
         file: src/meta/core/validator.ts
         lines: 686-693
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: 49c830c524f953546bd344d788217c14e599b1f7
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: skills-spec-schema-rejects-claude-only-keys
       claim:
         lines: 31-35
@@ -49,7 +49,7 @@ docs/src/content/docs/meta/reference/agent-skills-schemas.mdx:
         file: src/meta/schemas/agent-skills/1.0.json
         lines: 3-8
         integrity: sha256-130fcc995b2c85763e363f319fe4278754c834deb9f140067db8502c84337343
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: skills-row-claude-skill
       claim:
         lines: 11
@@ -58,4 +58,4 @@ docs/src/content/docs/meta/reference/agent-skills-schemas.mdx:
         file: src/meta/schemas/claude-skill/2.1.json
         lines: 3-7
         integrity: sha256-e24ac2bbede0fdfbe959b57f8910bdd1d5f20b6f944cefbee5f056c51a47da1d
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1

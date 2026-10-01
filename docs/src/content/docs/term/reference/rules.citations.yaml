@@ -23,7 +23,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 211-214
         integrity: sha256-ac5c04db385a7e23b10575811dd5dcfe302962265aab018985fe3e78ab43f425
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: severity-levels
       claim:
         integrity: sha256-a73525e325fbccdf136fc02627f4f9801504ae740e8b137592c79057df64e52c
@@ -49,7 +49,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 64-81
         integrity: sha256-17a764445ff56b6819f08226799ce7e19998d16719158f97c7d26aecf54a5593
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: label-collision-fires
       claim:
         lines: 17
@@ -58,7 +58,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 101-113
         integrity: sha256-f357ade3de47522e5444e9f45a8433c5ff70ab424370779590d76691291ff091
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: alt-label-collision-fires
       claim:
         lines: 18
@@ -67,7 +67,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 115-123
         integrity: sha256-8f728db8084d265648857428393a21342e3b1176cc2b35245ff9c23b66538954
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: dangling-reference-fires
       claim:
         lines: 19
@@ -76,7 +76,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 125-132
         integrity: sha256-a83856e184b5fd20094202db589b0043994b7b1d580c800150287b50d5331136
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: broader-cycle-fires
       claim:
         lines: 20
@@ -85,7 +85,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 203-209
         integrity: sha256-4080f474213086ff98b7e6332a4695a7ef7c2df21e684368dc4ae0a592831909
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: see-not-empty-fires
       claim:
         lines: 21
@@ -94,7 +94,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 134-139
         integrity: sha256-0ec82aba94f07a6b593ef06114f291020439e0ce8fae368c78c029312ffb80f3
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: asymmetric-hierarchy-fires
       claim:
         lines: 22
@@ -103,7 +103,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 173-201
         integrity: sha256-7c2b0710a74b715139eab1911b372039c37d4abb5d5236ffa0932c28f5fa4fe2
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: abstract-too-long-fires
       claim:
         lines: 23
@@ -112,7 +112,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 141-152
         integrity: sha256-4ebe32461948bd10173c0231aece486cfd497fbe91c423d5e4ddf47ec2c47076
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: abstract-max-length-default
       claim:
         lines: 23
@@ -130,7 +130,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 154-157
         integrity: sha256-f847edcdc7dd7b7372a612a3915dd051121575508a400301633257186ec9ce85
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: labels-ignore-case
       claim:
         integrity: sha256-a9d558c70c3198eb386529bb0784b45fcc37ec669498a09a4bff09dc09b18b54
@@ -138,7 +138,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 41
         integrity: sha256-ea2c8e2c8132083c033abadd80c85b81fa487a330f1259491e6277282963d5fb
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: vale-keys-lowercased
       claim:
         integrity: sha256-a9d558c70c3198eb386529bb0784b45fcc37ec669498a09a4bff09dc09b18b54
@@ -154,7 +154,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 43-50
         integrity: sha256-c15e664b5d469673982dfc26193ab31b6a727c1e62cb44e7763df296572df4a8
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: sample-summary-line
       claim:
         lines: 64
@@ -180,7 +180,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 66-69
         integrity: sha256-77df2719c82ac8e19c7b3f7bc9796e35ddee644d60686ada384b6b718fccfc4f
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: undefined-term-names-synonym
       claim:
         integrity: sha256-77cedfecf864bf43a2b56beccc95666c9a9e3f9f828a312152d2bbbb7b46103a
@@ -188,7 +188,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 70-74
         integrity: sha256-4299d6bf2633bda6a508a9c61cb174217dc218f32a398ac982d10e4127b34e5a
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: undefined-term-concepts-line
       claim:
         integrity: sha256-77cedfecf864bf43a2b56beccc95666c9a9e3f9f828a312152d2bbbb7b46103a
@@ -196,7 +196,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/load-set.ts
         lines: 70-80
         integrity: sha256-188a0d200627281e4a6591a229e25939f84f88562fcc467ce5d9bffd8059cbf4
-        commit-sha: e996aa2b91cd59854b834e0d65a92d73e869c923
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: graph-concepts-resolved
       claim:
         integrity: sha256-77cedfecf864bf43a2b56beccc95666c9a9e3f9f828a312152d2bbbb7b46103a
@@ -204,7 +204,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/shared/reference-fields.ts
         lines: 15
         integrity: sha256-a8d6ec8e404340085be3c69964bdb5f283411ae9f6ac76b69399b6654d980a4b
-        commit-sha: e996aa2b91cd59854b834e0d65a92d73e869c923
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: duplicate-id-every-entry
       claim:
         integrity: sha256-470aa6d7fb47654c24e305d3d4d0bfa11f0285ed5bc1a2e37e0d64a41005a0e8
@@ -212,7 +212,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 92-97
         integrity: sha256-adcc5b5263141903bc81b61f56a74525d164a4f3b78ee3aa0112694f59831149
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: id-derivation
       claim:
         integrity: sha256-470aa6d7fb47654c24e305d3d4d0bfa11f0285ed5bc1a2e37e0d64a41005a0e8
@@ -244,7 +244,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 101-113
         integrity: sha256-f357ade3de47522e5444e9f45a8433c5ff70ab424370779590d76691291ff091
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: dangling-one-per-value
       claim:
         integrity: sha256-6aab7083bc34dd4283ac3c3505f3d5e9a359b0519e006b8c275094d757644898
@@ -252,7 +252,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 126-131
         integrity: sha256-5bebb88a653b3916334438a32349889dcb65ac07b928be85406e53a34656b242
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: references-resolve-labels-and-ids
       claim:
         integrity: sha256-6aab7083bc34dd4283ac3c3505f3d5e9a359b0519e006b8c275094d757644898
@@ -260,7 +260,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 61-62
         integrity: sha256-4c8e9009b2b63b190fd507d56c1bd1b211d4f8ca79f91fa2eae9b64d64155056
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: broader-cycle-once
       claim:
         integrity: sha256-7eaeb52a5e2122d380522672becbf52a78b69189044d88983ddad124d90727f9
@@ -268,7 +268,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 235-261
         integrity: sha256-c81275e912dde3295ec9fecb600022c2576ee2ad12d6500418b27d046cf52d01
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: broader-cycle-message
       claim:
         integrity: sha256-7eaeb52a5e2122d380522672becbf52a78b69189044d88983ddad124d90727f9
@@ -276,7 +276,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 207-208
         integrity: sha256-7970c8c3a3b83509c5b3c375ae41d3af593b504aea6afd4640319b990f7f7f8e
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: asymmetric-on-missing-half
       claim:
         integrity: sha256-63fcad7a27176df970528c41d3052007187b7c69208e2b40fac121e149b2a166
@@ -284,7 +284,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 173-201
         integrity: sha256-7c2b0710a74b715139eab1911b372039c37d4abb5d5236ffa0932c28f5fa4fe2
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: notice-never-fails
       claim:
         integrity: sha256-3e990c946b95a60b1174f9819a3071cb600c5f54046d1e7d2eb41831f7f5a3a3
@@ -308,7 +308,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 213-214
         integrity: sha256-2f265af85f9d91efeb2ae0c4d46f04963f7dbc82990a636954e00086b5be55ab
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: abstract-max-length-config
       claim:
         integrity: sha256-b8bc14b2a76a91c09bdf855fa8c2a388ce0222d965896693b9b1fbdec55dcf27
@@ -324,7 +324,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/cli.ts
         lines: 138
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: duplicate-id-fires
       claim:
         lines: 16
@@ -333,7 +333,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 83-98
         integrity: sha256-dfc4251401a202c3679d4ab3332765d9c11d7bc6ca46863b43382e90f1454bdc
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: duplicate-id-ignores-case
       claim:
         integrity: sha256-470aa6d7fb47654c24e305d3d4d0bfa11f0285ed5bc1a2e37e0d64a41005a0e8
@@ -341,7 +341,7 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 85-91
         integrity: sha256-121c8f834fe30757fea1a986cd0bb9aa8cc497b0172c30529ea4cedfa5348d57
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: id-references-ignore-case
       claim:
         integrity: sha256-470aa6d7fb47654c24e305d3d4d0bfa11f0285ed5bc1a2e37e0d64a41005a0e8
@@ -349,4 +349,4 @@ docs/src/content/docs/term/reference/rules.mdx:
         file: src/term/core/check.ts
         lines: 58-62
         integrity: sha256-e4bc7eaff3d5ac52320596df329622d7bf6dc33cdfc12f4afbad37ab70c2b55c
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1

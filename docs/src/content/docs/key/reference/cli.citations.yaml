@@ -189,7 +189,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/meta/core/config.ts
         lines: 518-521
         integrity: sha256-2c48e1fac5e85ebd797cef1db8d849c82cf87f357977541d86122864d2eb19e5
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-finds-by-ciphertext
       claim:
         integrity: sha256-98ed81bcf95153b8cf0fe66d98a210953e78858b8afd406faabca420ee06c1ac
@@ -221,7 +221,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 227-229
         integrity: sha256-c452e4f98ee4bc92df13ab339e2c26d837f88cef5f00644b050f7cb0805b5081
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-external-manifests
       claim:
         integrity: sha256-98ed81bcf95153b8cf0fe66d98a210953e78858b8afd406faabca420ee06c1ac
@@ -229,7 +229,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 597-611
         integrity: sha256-923c152460b644b06e5f7f88037ac2cac784ddfa2072a49c9e23153fdacdac4b
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-all-or-nothing
       claim:
         integrity: sha256-98ed81bcf95153b8cf0fe66d98a210953e78858b8afd406faabca420ee06c1ac
@@ -237,7 +237,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 628-632
         integrity: sha256-31ec4c098ad2f4947315ebf3909d0a2b3b28edaebcf334b0a63495569ee1d7c7
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-key-before-pages
       claim:
         integrity: sha256-add8ab906996d2a608231d8c5407329d4014343d9fbc2675723097ce07686852
@@ -245,7 +245,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 636-641
         integrity: sha256-5e9d429885c50bf125fcb5ec3ed862f7337ace9eeaef13d5642ad77027a9488f
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-old-key-removed-last
       claim:
         integrity: sha256-add8ab906996d2a608231d8c5407329d4014343d9fbc2675723097ce07686852
@@ -253,7 +253,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 656-659
         integrity: sha256-455c5aff5cd9c663beaf84c64579238a170b8adf6381637591e9ed9b4a41c0ad
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-rerun-finishes
       claim:
         integrity: sha256-add8ab906996d2a608231d8c5407329d4014343d9fbc2675723097ce07686852
@@ -261,7 +261,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 462-465
         integrity: sha256-accf02ad8c23c08934cae27790209f275f5f91a35f9f07806d4eb28c00dc50e7
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: narrowed-is-paths-or-collection
       claim:
         integrity: sha256-6e188c65549a2a8bbca655314a18fe6ecb19a76a9293726c7122a11701e30741
@@ -269,7 +269,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 447
         integrity: sha256-203fa1545b15b5fcb9a7fe7950caf90c7e9452755b8a36ab63a15312bfc03c21
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: narrowed-requires-to
       claim:
         integrity: sha256-6e188c65549a2a8bbca655314a18fe6ecb19a76a9293726c7122a11701e30741
@@ -277,7 +277,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 460
         integrity: sha256-caf59d284448935f34a87e294a9112d57c6a3007913ceb78802b56bb5598334e
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: narrowed-never-writes-key
       claim:
         integrity: sha256-6e188c65549a2a8bbca655314a18fe6ecb19a76a9293726c7122a11701e30741
@@ -285,7 +285,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 636
         integrity: sha256-8eb964e678ff9bd5a342290f58155c6c9554de139e12eb7d519bc1b3a111090f
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: aside-reads-cited-lines
       claim:
         lines: 155
@@ -294,7 +294,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 568-574
         integrity: sha256-adab4614085390dfc7bedc31f82d701dbc326a20138b16d1cdf6b00b2bd57b13
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-paths-arg
       claim:
         lines: 163
@@ -303,7 +303,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 467-470
         integrity: sha256-9a062ba869e1a142e950a7e0d117f14ab89fca10449d8a8f00d941195b35c8ec
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-to-shape
       claim:
         lines: 169
@@ -312,7 +312,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 434
         integrity: sha256-53c45a0a5da56328ec9c0a12423ab03e6f858d1ba58cb5e73146568723fcb74f
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-to-required-and-default
       claim:
         lines: 169
@@ -321,7 +321,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 452-465
         integrity: sha256-90f3b2571bc19ed575d069465acfba5c5eb181859ea099db42ae09b3a47ade57
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-collection-option
       claim:
         lines: 170
@@ -339,7 +339,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 447
         integrity: sha256-203fa1545b15b5fcb9a7fe7950caf90c7e9452755b8a36ab63a15312bfc03c21
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-ext-comma-list
       claim:
         lines: 171
@@ -366,7 +366,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 476-482
         integrity: sha256-5a1478b4c431981ca0607ab370f0cc4e16ee3c9c5496120b218cf29c7b647df7
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-config-read
       claim:
         lines: 174
@@ -384,7 +384,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 636-641
         integrity: sha256-5e9d429885c50bf125fcb5ec3ed862f7337ace9eeaef13d5642ad77027a9488f
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-allow-empty
       claim:
         lines: 175
@@ -393,7 +393,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 498-507
         integrity: sha256-f66db911f9243497741bbd385cd1ebb7257382af4238d2dffbc61b711fd822b9
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-no-gitignore
       claim:
         lines: 176
@@ -411,7 +411,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 131-147
         integrity: sha256-96ae637d6e920d7849e199a08f061c8264c0d62df0e89de5223571be14be2b1e
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-dry-run-option
       claim:
         lines: 178
@@ -420,7 +420,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 633-634
         integrity: sha256-bcde61a1bf001a470f7569e44ea19e1ff28b44bec54041432d77e0b1775fd8d3
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: rotate-format-option
       claim:
         lines: 179
@@ -445,7 +445,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 435
         integrity: sha256-dd24e2d8cb0fc8f33dae1e687203c631d82ad9f46c08f4d412f2ccf2205a37ef
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: exit-0-set
       claim:
         lines: 191
@@ -463,7 +463,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 680
         integrity: sha256-c2a15612a4779c17c232a85a2711e6fe5cc3727a1f3af5d5f0471f4212b3ccbe
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: exit-1-nothing-written
       claim:
         lines: 192
@@ -472,7 +472,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 628-632
         integrity: sha256-31ec4c098ad2f4947315ebf3909d0a2b3b28edaebcf334b0a63495569ee1d7c7
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: exit-1-rotate
       claim:
         lines: 192
@@ -481,7 +481,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 680
         integrity: sha256-c2a15612a4779c17c232a85a2711e6fe5cc3727a1f3af5d5f0471f4212b3ccbe
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: exit-2-fail
       claim:
         lines: 193
@@ -530,7 +530,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 519-532
         integrity: sha256-62c07898252ed2fe21d917f2d4938dcc65562dcae5f4c093924b885b625a00ce
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: auth-tag-decides
       claim:
         integrity: sha256-69126110e5c77b49cdd7452e95938d6e348af8cd169d3bbf076c126c8b4e4de5
@@ -554,7 +554,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 597-611
         integrity: sha256-923c152460b644b06e5f7f88037ac2cac784ddfa2072a49c9e23153fdacdac4b
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: manifest-same-rule
       claim:
         integrity: sha256-7b037270e9a1c894be0dbf7a564dfe689bb7c8aa0a47b5febb9355ff8b286b7e
@@ -562,7 +562,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 401-407
         integrity: sha256-65993e822cd77e929e202757cf4d92116d0fef473aaff2394fe47a61ac7bb3df
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: manifest-any-depth
       claim:
         integrity: sha256-7b037270e9a1c894be0dbf7a564dfe689bb7c8aa0a47b5febb9355ff8b286b7e
@@ -578,7 +578,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 414-422
         integrity: sha256-fea887d01f4b84c037ebd90d4e2418b2cd6eac86f5d41f5c138fada6cb57be3b
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: url-manifest-never-loaded
       claim:
         lines: 237-238
@@ -587,7 +587,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 321-328
         integrity: sha256-5fe22f76f34b238749e96a2cae87de863af92ca814f2419f7957501e6e1ca903
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: citations-key-left-alone
       claim:
         lines: 240-243
@@ -604,7 +604,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 260-274
         integrity: sha256-47ced07ceb9855c083ba7931f5b0c378eeac22bcd1660ccf08f5b5e8f6419a46
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: skip-under-neither-key
       claim:
         integrity: sha256-6fb096e6c5f3cbe7945b929c46f375dc46dbc852b31f6a05c5d69959e1c8bc04
@@ -620,7 +620,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 628-632
         integrity: sha256-31ec4c098ad2f4947315ebf3909d0a2b3b28edaebcf334b0a63495569ee1d7c7
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: single-skip-exit-1
       claim:
         integrity: sha256-6fb096e6c5f3cbe7945b929c46f375dc46dbc852b31f6a05c5d69959e1c8bc04
@@ -628,7 +628,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 680
         integrity: sha256-c2a15612a4779c17c232a85a2711e6fe5cc3727a1f3af5d5f0471f4212b3ccbe
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: order-whole-config-run
       claim:
         integrity: sha256-17feae84d23d08157eaea2ba067869eff65b7b07fddad0dfa7118aa58273e9f2
@@ -636,7 +636,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 636
         integrity: sha256-8eb964e678ff9bd5a342290f58155c6c9554de139e12eb7d519bc1b3a111090f
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: order-step-1
       claim:
         lines: 267-268
@@ -645,7 +645,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 637-641
         integrity: sha256-08f04024f85d468c7d2ba56c5add067869de4fcbe5fb5b827e07faa00da7c404
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: order-step-2
       claim:
         lines: 269
@@ -654,7 +654,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 642-655
         integrity: sha256-164ed6a3061b0eadee95679f54b5b874f47de026f25093a36129ca17aed4637d
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: order-step-3
       claim:
         lines: 270
@@ -663,7 +663,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 656-659
         integrity: sha256-455c5aff5cd9c663beaf84c64579238a170b8adf6381637591e9ed9b4a41c0ad
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: order-step-1-one-write
       claim:
         lines: 267-268
@@ -680,7 +680,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 639-641
         integrity: sha256-be482a7a958674ecddddb371b734e76212366da5c09406a1281f73488751c643
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: interrupted-finish-direction
       claim:
         integrity: sha256-f06df890b9f57fd8def04761cc02a3f9a30682b6f8b64b336c272e161b185c26
@@ -688,7 +688,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 462-465
         integrity: sha256-accf02ad8c23c08934cae27790209f275f5f91a35f9f07806d4eb28c00dc50e7
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: interrupted-done-values
       claim:
         integrity: sha256-f06df890b9f57fd8def04761cc02a3f9a30682b6f8b64b336c272e161b185c26
@@ -704,7 +704,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 656-659
         integrity: sha256-455c5aff5cd9c663beaf84c64579238a170b8adf6381637591e9ed9b4a41c0ad
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: interrupted-report-before-counts
       claim:
         integrity: sha256-f06df890b9f57fd8def04761cc02a3f9a30682b6f8b64b336c272e161b185c26
@@ -737,7 +737,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 452-458
         integrity: sha256-8f410756a35366454d0bcc711c152053666f3c9a9a33ea5a2cc639bdfd0ef233
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: unfinished-refuses-set
       claim:
         integrity: sha256-68e7683e7344e6f161ee9e41407fa7090e5998eb77427bea48956db41bb6f248
@@ -769,7 +769,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 460
         integrity: sha256-caf59d284448935f34a87e294a9112d57c6a3007913ceb78802b56bb5598334e
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: narrowed-section-no-key
       claim:
         integrity: sha256-e51470294b174ff2d96c948568b8d73629fd1f8a12d3a3568414c1de5b1a5f2f
@@ -777,7 +777,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 636
         integrity: sha256-8eb964e678ff9bd5a342290f58155c6c9554de139e12eb7d519bc1b3a111090f
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: area-runs-compose
       claim:
         integrity: sha256-23d8cebeab9c5483bf0cc044ad94db45a1e9067dd94a90961e32006dc183e494
@@ -793,7 +793,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 459
         integrity: sha256-d5e1fc9f01fa9e06e6b5e3685957b987ba7770881d8333f822983a13cccd6dd5
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: env-config-untouched
       claim:
         integrity: sha256-9230b62a28384a757deade2ece448ce29a577e8ec5950d61522ba1fde8983a6a
@@ -801,7 +801,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 636-641
         integrity: sha256-5e9d429885c50bf125fcb5ec3ed862f7337ace9eeaef13d5642ad77027a9488f
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: env-last-line
       claim:
         integrity: sha256-9230b62a28384a757deade2ece448ce29a577e8ec5950d61522ba1fde8983a6a
@@ -825,7 +825,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 633-634
         integrity: sha256-bcde61a1bf001a470f7569e44ea19e1ff28b44bec54041432d77e0b1775fd8d3
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: dry-run-section-last-line
       claim:
         integrity: sha256-29f818a42f13472efd6e7b65d94dde6e5894c79fda4da630bdc70676d3d30adb
@@ -841,7 +841,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 629-634
         integrity: sha256-9e929cf1542b44b0a60e4a3fbb1339922b18995574c45244130d807ea3e95d34
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: baseline-notice-when-wrote
       claim:
         integrity: sha256-27d517867540ccad0b8b3aca390cd08046f254fafc72a0aafe8d387ab520e25e
@@ -849,7 +849,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 665-669
         integrity: sha256-97b7fc7a6c20d7e375906506ecde8b5587f6577f9f35297c5314711f6f686052
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: baseline-notice-exists
       claim:
         integrity: sha256-27d517867540ccad0b8b3aca390cd08046f254fafc72a0aafe8d387ab520e25e
@@ -857,7 +857,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 679
         integrity: sha256-5c4c3623839fc4c29f900862e0aeebd5026e1caaf63be7b384c3a880d262670e
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: baseline-file-default
       claim:
         integrity: sha256-34dea1ae0ed01dcc39526d476848094036695d64236b08d97f363f913dec938c
@@ -865,7 +865,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 666-669
         integrity: sha256-dfffe82ac861fbb16230eabe8615ffe6df1e43e08d86a6168a945c8613792760
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: baseline-json-stderr
       claim:
         integrity: sha256-34dea1ae0ed01dcc39526d476848094036695d64236b08d97f363f913dec938c
@@ -889,7 +889,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 680
         integrity: sha256-c2a15612a4779c17c232a85a2711e6fe5cc3727a1f3af5d5f0471f4212b3ccbe
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: baseline-notice-text
       claim:
         lines: 387
@@ -952,7 +952,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 109-110
         integrity: sha256-599a401053717f92c7ca599bf6ba334a10a730cab799c6cd6876b5fa91bd3a9c
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: refusal-env-needs-to
       claim:
         lines: 433
@@ -961,7 +961,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 111-112
         integrity: sha256-d3474ac7fb33080c0f6b00365cb6b5d15cbd2b9ac14ecc79c5855392f444a953
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: refusal-narrowed-needs-to
       claim:
         lines: 437
@@ -970,7 +970,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 113
         integrity: sha256-e17668fb97a510aa4eda78cbd1152a0e908490367706d3535ef8e6638abfa39d
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: refusal-bad-to
       claim:
         lines: 445
@@ -979,7 +979,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 103
         integrity: sha256-c106f2124ed56ecd7984dda4f229eba3c6a97439e36cfa4d325ae81eb406fefd
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: refusal-no-stdin
       claim:
         lines: 449
@@ -988,7 +988,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 104-105
         integrity: sha256-9141d693e71a9088cb45e09b0f3e1ba2eb68ed110d8b7c372e7566a54e87ce4b
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: refusal-skipped-row
       claim:
         lines: 453
@@ -1122,7 +1122,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 676
         integrity: sha256-2511501e1442448b8aa51c84e052e4ca2be7b5e0da9e6a4c3f8bb9a650369409
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: pretty-short-ciphertext
       claim:
         integrity: sha256-f95b1e910d37ef33a793a4496cce2055e0a6588c5cc1705b5c375b6d948b9610
@@ -1178,7 +1178,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 321-328
         integrity: sha256-5fe22f76f34b238749e96a2cae87de863af92ca814f2419f7957501e6e1ca903
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: unfinished-message
       claim:
         lines: 318-320
@@ -1254,7 +1254,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 426-428
         integrity: sha256-3710ca9471bd39f058920f99b37044908a50cd678c454af0694544de260f9827
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: order-generated-key-first
       claim:
         integrity: sha256-dd7a4f702d3ee735b503169f7bfa68489afec4725b9f39a4fb89fb6ab66722a7
@@ -1262,7 +1262,7 @@ docs/src/content/docs/key/reference/cli.mdx:
         file: src/key/commands/rotate.ts
         lines: 636-654
         integrity: sha256-3689f114bb539cfde969f9d07501bdea5734923cfffed461deabbbdacf96dfce
-        commit-sha: 5f11380472311a9e56219f0add6d61c6281b6cc3
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: previous-set-refuses-valid
       claim:
         lines: 290

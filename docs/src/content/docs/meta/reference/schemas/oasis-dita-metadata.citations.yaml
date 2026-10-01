@@ -326,4 +326,4 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         file: test/dita-content-model.test.ts
         lines: 9-14
         integrity: sha256-258061aa73e0332bd9870bd10074fb45f69e5f6f90c5e1886800d46fe1f3e14f
-        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1

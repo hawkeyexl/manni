@@ -7,7 +7,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 510-524
         integrity: sha256-f2f0f059fc3071a4b70c5250f321704087ab164b35f97ed69bc2f26c8342f090
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: local-mode-allows-builtin-and-repo-file
       claim:
         integrity: sha256-913d14f41f73caef631c70351decc2c0d2f141e5c1008ad2f52819971646c104
@@ -15,7 +15,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 328-347
         integrity: sha256-b1cc782da0d68dbe31dc05b0901abe51a37ce2d54af341beb3038cfd2ab7fb87
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: refused-document-ref-is-a-failing-file
       claim:
         integrity: sha256-cda2c641978e5f88552dbd492a364786e96ecff9109c34512ba0ff34eff01471
@@ -23,7 +23,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 510-524
         integrity: sha256-f2f0f059fc3071a4b70c5250f321704087ab164b35f97ed69bc2f26c8342f090
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: document-schema-sits-above-config
       claim:
         integrity: sha256-ceba6018d7a657a87df81bff562245ee53be9405664c042402c5062e8e3506ae
@@ -31,7 +31,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 499-566
         integrity: sha256-ee86276fe33cd88ca7f656e8447207eb02a119503cdbc5a2cfa23575ab8d5860
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: fetch-timeout-and-single-retry
       claim:
         integrity: sha256-f997329161cf32a6b54bbc07659f55eb0e15b88ebd58d3e33e42866bd4b46c27
@@ -39,7 +39,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 883-902
         integrity: sha256-53fc393f2a65aebf5f26f9b61503bfd8c430954574ccde51036ebfa842fe5871
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: the-precedence-chain
       claim:
         integrity: sha256-564e14767b7ac51236eea4d0cdd9a1f5253c74606e9043097e2c1a6028165eb6
@@ -47,7 +47,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 499-566
         integrity: sha256-ee86276fe33cd88ca7f656e8447207eb02a119503cdbc5a2cfa23575ab8d5860
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: vendor-replaces-the-url-entry
       claim:
         integrity: sha256-f0d91aee9bf52e2f88c7d3a5c102ff3141869f6dd3c7e53859cfe91f9a34520e
@@ -55,7 +55,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/commands/schemas.ts
         lines: 256-274
         integrity: sha256-8baa3fd59785c989fe60230d0abe1490f66989334a6f065017a9e6d65bf28cd2
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: vendor-default-directory-is-schema
       claim:
         lines: 41-42
@@ -64,7 +64,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/commands/schemas.ts
         lines: 79-86
         integrity: sha256-2d6c72f12d361f58f4ad777a2968ebce3c274c4e7d441ab60f952439d9668241
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: integrity-mismatch-stops-the-run
       claim:
         integrity: sha256-2973c169c742086fe64426492cc18bb77545a9dd9c289594b55ea3b731de380f
@@ -72,7 +72,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 1087-1100
         integrity: sha256-b2e710ab80ce831d8400f54b4f87e73f922ca6071b0db547d4f80534c39cfd5f
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: url-schema-fetch-timeout-is-10s
       claim:
         lines: 14
@@ -81,7 +81,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 468-469
         integrity: sha256-aa333a8e669bd4b424cabd01575e4c0bb18cb0b7837d95668f032f176ddaa95b
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: every-job-waits-on-the-same-timeout
       claim:
         lines: 159-161
@@ -90,7 +90,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 468-469
         integrity: sha256-aa333a8e669bd4b424cabd01575e4c0bb18cb0b7837d95668f032f176ddaa95b
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: vendor-refuses-a-gitignored-target
       claim:
         lines: 89-92
@@ -99,7 +99,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/commands/schemas.ts
         lines: 199-207
         integrity: sha256-d1e100d98877837f95c15711e8dbbc3ec2a64319e419afc24bf09848d544d18e
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: no-git-means-the-check-is-skipped
       claim:
         lines: 94-95
@@ -108,7 +108,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/commands/schemas.ts
         lines: 203-207
         integrity: sha256-79e5f8c927735974ecab1d39cacd59587ddbaa43276078a01bdf9a43f789b41d
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: timeout-message
       claim:
         lines: 239
@@ -117,7 +117,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 888-890
         integrity: sha256-a6e92a1d4c5cfc903c9c74c00ed06289c121d6bb1c8056c37e1dfefdf3a71598
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: non-2xx-message
       claim:
         lines: 240
@@ -126,7 +126,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 851-855
         integrity: sha256-94b28f5e86f3ebb6c86b9318dba0574be1adc58cb384e75d2ec4806ca1bbca79
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: invalid-json-message
       claim:
         lines: 242
@@ -135,7 +135,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 926-929
         integrity: sha256-5f6dcbd310cc97f9a43aaafcee9c4d08cfff4b783102e2c7e712101021f06f39
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: not-a-schema-message
       claim:
         lines: 243
@@ -144,7 +144,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 820-824
         integrity: sha256-2d6980147788d763c4fed591927a520ac0b4f02268078dbf52e6dbe8bd75cb41
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: dialects-detected-from-the-schema-line
       claim:
         lines: 254-256
@@ -153,7 +153,7 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/validator.ts
         lines: 63-76
         integrity: sha256-4a07fce96950db2a207d9610517140bf0949c7772beda9cc4329f1ebd37783c4
-        commit-sha: 857439d0b827d52752664d85ce650a95840e6f7a
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: schema-trust-hosts-is-an-allowlist
       claim:
         lines: 333-335
@@ -162,4 +162,4 @@ docs/src/content/docs/meta/ci/govern-shared-schema.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 348-363
         integrity: sha256-1721b9660ce1863328174fb3753be8a5ce67b97025597ff4380fc0bd79a65429
-        commit-sha: 03920bed1705d1465ff087d1402c41da722aac8d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1

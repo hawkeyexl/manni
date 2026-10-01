@@ -283,7 +283,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/cli.ts
         lines: 138
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: abstract-scope-note-file-names
       claim:
         integrity: sha256-4c9c3a0949a83a2f9217f777f2316ba01270ff873bb562d269e37d03654b1042
@@ -325,7 +325,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/cli.ts
         lines: 289
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: check-would-change-line
       claim:
         lines: 276
@@ -359,7 +359,7 @@ docs/src/content/docs/term/set-up/index.mdx:
         file: src/term/cli.ts
         lines: 289
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: 8c71d9997a119fdc6f7f239e778a62252f5ff426
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: dry-run-names-removed-file
       claim:
         integrity: sha256-780c230b95f1cd816b1ac02ed681acd2bb05a8f43afc74da88fc471c32d12a90

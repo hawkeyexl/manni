@@ -4,6 +4,22 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [3.0.0](https://github.com/hawkeyexl/manni/compare/v2.12.1...v3.0.0) (2026-10-01)
+
+
+* feat(schemas)!: the manni vocabularies at 1.0.0 with strict overlays (0066, 0067) ([#129](https://github.com/hawkeyexl/manni/issues/129)) ([bf72da9](https://github.com/hawkeyexl/manni/commit/bf72da9029a7ad0f3800a37939ab3c91afa944c1))
+
+
+### BREAKING CHANGES
+
+* a derive: block without fields now manages the
+merge-safe fields its pages' schemas claim; write fields: [] for the
+old behaviour. A run with no config requires title and description,
+and meta.schemas adds to the default set (meta.defaults: false
+restores replacing it).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
 ## [2.12.1](https://github.com/hawkeyexl/manni/compare/v2.12.0...v2.12.1) (2026-09-24)
 
 
