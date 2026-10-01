@@ -413,9 +413,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-516ff9cec4e51186358ec822fd7500c32ea804bc15b46f93635e5c5be22878d3
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 1227-1232
+        lines: 1229-1234
         integrity: sha256-18d6e9a25475575ae19a8fed06a29041f7c75a7da3b224dc9729515b3713f577
-        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
+        commit-sha: 6a7b78e6cdb32f8834c5b7453f8ab612ede7b775
     - id: positional-path-run-skips-orphan-check
       claim:
         lines: 191
@@ -591,22 +591,22 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-9ead88eb08e5be260af97472c4dc500b6aff19f6c30e9e8f661542386660f130
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 1262-1267
+        lines: 1264-1269
         integrity: sha256-f72d2cac2a3aed9fa1604762aff6b650eb001d624856ff552361750733a02afb
-        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
+        commit-sha: 6a7b78e6cdb32f8834c5b7453f8ab612ede7b775
     - id: path-entry-orphaned-by-absolute-path-lookup
       claim:
         integrity: sha256-fbaf89eb7558e62999d0f8f8c9a2da2065c7c224f764a11461caf95e8ef3282f
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 1166-1173
+        lines: 1168-1175
         integrity: sha256-dc832fa3c3b73e16c321b828aef1d05a24e6c650ea46a91e9f1506c7544f7e7a
-        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
+        commit-sha: 6a7b78e6cdb32f8834c5b7453f8ab612ede7b775
     - id: orphan-path-entry-message-text
       claim:
         integrity: sha256-6dcf9dc0a8a2adbfbf1d501496f2ea9debace81becfe031c8dc4fd745a01a280
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 1260-1267
+        lines: 1262-1269
         integrity: sha256-740f5f08ff708565c31cee8293b251f119b026a036b47135f4514457a3dd08f6
-        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
+        commit-sha: 6a7b78e6cdb32f8834c5b7453f8ab612ede7b775

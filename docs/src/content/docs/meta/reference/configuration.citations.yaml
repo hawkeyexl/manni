@@ -2673,17 +2673,17 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-1e585217f7108ae740e15f0804ddfc142f68846ff9878eb0affb498d1269e5f9
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 1260-1268
+        lines: 1262-1270
         integrity: sha256-5b9af65789bd887718a72f4329367db1033e64ceb046de5ee4a758601d226240
-        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
+        commit-sha: 6a7b78e6cdb32f8834c5b7453f8ab612ede7b775
     - id: orphan-entry-is-the-rename-case
       claim:
         integrity: sha256-bc15f0ced628ab84e1a41f00ed46eb8ccdc3e642521bce6ca99b3055573137e1
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 1260-1268
+        lines: 1262-1270
         integrity: sha256-5b9af65789bd887718a72f4329367db1033e64ceb046de5ee4a758601d226240
-        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
+        commit-sha: 6a7b78e6cdb32f8834c5b7453f8ab612ede7b775
     - id: page-pattern-spellings-collide
       claim:
         integrity: sha256-90c32b6925988b09c9b297774c55f9131bd985f5dbf2a66c7ad9af57ce8fb575
@@ -2821,9 +2821,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-58b6fd590ad70af6853fc17b3e70530536136903c5b398590a7f6ecbd7767abd
       source:
         file: src/meta/core/external-metadata.ts
-        lines: 1260-1267
+        lines: 1262-1269
         integrity: sha256-740f5f08ff708565c31cee8293b251f119b026a036b47135f4514457a3dd08f6
-        commit-sha: 5bd771d82c7ca1c90b7c7af5bb434039a5dc3bef
+        commit-sha: 6a7b78e6cdb32f8834c5b7453f8ab612ede7b775
     - id: manifest-file-is-required
       claim:
         lines: 334
