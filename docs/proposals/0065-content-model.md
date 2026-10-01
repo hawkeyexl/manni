@@ -1,6 +1,6 @@
 # 0065: One content model for the family, and for Doc Detective
 
-- **Status:** Proposed
+- **Status:** Implemented for lint (#11)
 - **Serves:** No journey of its own. It is the vocabulary three other proposals
   write in, so its readers are the people implementing them.
   - [0061](0061-lint-template-grammar.md) is the first consumer. A template

@@ -1,6 +1,6 @@
 # 0062: DITA-OT answers the structure job
 
-- **Status:** Proposed
+- **Status:** Implemented (#11)
 - **Serves:** Three journeys, for a docset written in DITA.
   - Maya · M10, "Hold every page to the shape its doctype promises". Her pages
     are DITA topics gathered by maps.

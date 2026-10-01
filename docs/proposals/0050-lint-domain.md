@@ -1,6 +1,6 @@
 # 0050: The `lint` domain: `manni lint check`, jobs, and the tools behind them
 
-- **Status:** Proposed
+- **Status:** Implemented (#11)
 - **Serves:** Three journeys. [0052](0052-term-domain.md) landed first and took
   M9, D8 and T4, so these follow it. If [0048](0048-docevals-domain.md) lands
   before this does, they shift up by however many it claims.
