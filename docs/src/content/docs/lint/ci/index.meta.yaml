@@ -1,8 +1,11 @@
 docs/src/content/docs/lint/ci/index.mdx:
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-314
-      integrity: sha256-695080cdd7c5f2396000cfb9cb22dc1ef1cc07af846b0b76eaff9b7a18ba35f5
+      lines: 2-119
+      integrity: sha256-398d2aa07f4b6cc2c07f62c5f63cb327331d99fdb11b15e72b0da7985c540a3d
+    - generated-by: Claude Opus 5
+      lines: 121-314
+      integrity: sha256-290a310d6ef45b091c497817c2083b6075e1342be7380009837200ef4329bf19
   owner:
     - "@hawkeyexl"
   created: 2026-09-15
