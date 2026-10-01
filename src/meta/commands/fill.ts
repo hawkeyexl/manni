@@ -552,9 +552,13 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         ...(opts.noConfig === true ? { noConfig: true } : {}),
       });
       return { labels: terms.map((t) => t.label), ids: terms.map((t) => t.id) };
-    } catch {
+    } catch (err) {
       // A termbase that cannot be read offers nothing, so the field is asked
-      // for as it is where there is no termbase at all.
+      // for as it is where there is no termbase at all. Said once, because
+      // otherwise the run looks like one with no termbase and gives no reason.
+      opts.onNotice?.(
+        `The termbase could not be read, so fill offers no glossary labels: ${errorMessage(err)}`,
+      );
       return undefined;
     }
   };
