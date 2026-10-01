@@ -295,9 +295,11 @@ docs/src/content/docs/meta/schemas/index.mdx:
         - /related-pages
         - /source-of-truth
         - /risks
+        - /prerequisites
       confidence:
         /tags: 0.85
         /action: 0.9
         /related-pages: 0.85
         /source-of-truth: 0.9
         /risks: 0.85
+        /prerequisites: 0.75

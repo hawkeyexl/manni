@@ -508,7 +508,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
       confidence:
         /tags: 0.85
         /action: 0.9
-        /prerequisites: 0.75
-        /next-steps: 0.8
+        /prerequisites: 0.85
+        /next-steps: 0.88
         /related-pages: 0.9
         /risks: 1

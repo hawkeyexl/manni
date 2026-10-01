@@ -34,7 +34,9 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         - /tags
         - /action
         - /prerequisites
+        - /related-pages
       confidence:
         /tags: 0.85
         /action: 0.9
-        /prerequisites: 0.7
+        /prerequisites: 0.75
+        /related-pages: 0.7

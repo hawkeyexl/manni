@@ -292,8 +292,10 @@ docs/src/content/docs/meta/schemas/versioning.mdx:
         - /action
         - /related-pages
         - /source-of-truth
+        - /prerequisites
       confidence:
         /tags: 0.85
         /action: 0.9
         /related-pages: 0.7
         /source-of-truth: 0.9
+        /prerequisites: 0.85

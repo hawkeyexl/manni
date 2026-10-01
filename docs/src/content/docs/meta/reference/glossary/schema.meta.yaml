@@ -32,6 +32,8 @@ docs/src/content/docs/meta/reference/glossary/schema.mdx:
         - /source-of-truth
         - /risks
         - /narrower
+        - /prerequisites
+        - /broader
       confidence:
         /tags: 0.85
         /action: 0.9
@@ -41,3 +43,5 @@ docs/src/content/docs/meta/reference/glossary/schema.mdx:
         /source-of-truth: 0.85
         /risks: 0.95
         /narrower: 0.75
+        /prerequisites: 0.85
+        /broader: 0.9

@@ -427,7 +427,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
       confidence:
         /tags: 0.9
         /action: 0.95
-        /prerequisites: 0.85
-        /next-steps: 0.88
+        /prerequisites: 0.88
+        /next-steps: 0.82
         /related-pages: 0.95
         /risks: 0.95

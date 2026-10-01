@@ -33,6 +33,9 @@ docs/src/content/docs/meta/reference/glossary/extraction.mdx:
         - /risks
         - /alt-labels
         - /scope-note
+        - /prerequisites
+        - /broader
+        - /narrower
       confidence:
         /tags: 0.85
         /action: 0.9
@@ -42,3 +45,6 @@ docs/src/content/docs/meta/reference/glossary/extraction.mdx:
         /risks: 0.95
         /alt-labels: 0.75
         /scope-note: 0.9
+        /prerequisites: 0.85
+        /broader: 0.8
+        /narrower: 0.75

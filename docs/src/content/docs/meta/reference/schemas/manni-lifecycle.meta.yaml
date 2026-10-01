@@ -40,8 +40,12 @@ docs/src/content/docs/meta/reference/schemas/manni-lifecycle.mdx:
         - /tags
         - /action
         - /related-pages
+        - /prerequisites
+        - /next-steps
       confidence:
         /resource: 0.95
         /tags: 0.8
         /action: 0.85
         /related-pages: 0.9
+        /prerequisites: 0.85
+        /next-steps: 0.75

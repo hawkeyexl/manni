@@ -73,7 +73,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         - /tags
         - /action
         - /risks
+        - /related-pages
       confidence:
         /tags: 0.85
         /action: 0.9
         /risks: 0.85
+        /related-pages: 0.85

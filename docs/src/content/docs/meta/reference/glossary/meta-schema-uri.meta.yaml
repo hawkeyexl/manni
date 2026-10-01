@@ -34,6 +34,7 @@ docs/src/content/docs/meta/reference/glossary/meta-schema-uri.mdx:
         - /source-of-truth
         - /risks
         - /scope-note
+        - /broader
       confidence:
         /tags: 0.85
         /action: 0.95
@@ -44,3 +45,4 @@ docs/src/content/docs/meta/reference/glossary/meta-schema-uri.mdx:
         /source-of-truth: 0.85
         /risks: 0.95
         /scope-note: 0.9
+        /broader: 0.85

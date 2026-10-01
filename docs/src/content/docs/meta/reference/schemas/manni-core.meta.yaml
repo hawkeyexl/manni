@@ -45,6 +45,7 @@ docs/src/content/docs/meta/reference/schemas/manni-core.mdx:
         - /next-steps
         - /related-pages
         - /risks
+        - /prerequisites
       confidence:
         /resource: 0.95
         /tags: 0.7
@@ -52,3 +53,4 @@ docs/src/content/docs/meta/reference/schemas/manni-core.mdx:
         /next-steps: 0.75
         /related-pages: 0.9
         /risks: 0.95
+        /prerequisites: 0.8

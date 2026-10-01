@@ -20,7 +20,11 @@ docs/src/content/docs/docevals/index.mdx:
         - /tags
         - /action
         - /risks
+        - /concepts
+        - /related-pages
       confidence:
         /tags: 0.7
         /action: 0.9
         /risks: 0.9
+        /concepts: 0.85
+        /related-pages: 0.75

@@ -97,7 +97,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         - /tags
         - /action
         - /related-pages
+        - /prerequisites
       confidence:
         /tags: 0.75
         /action: 0.9
         /related-pages: 0.98
+        /prerequisites: 0.85

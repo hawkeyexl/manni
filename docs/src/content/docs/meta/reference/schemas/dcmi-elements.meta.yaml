@@ -30,8 +30,12 @@ docs/src/content/docs/meta/reference/schemas/dcmi-elements.mdx:
         - /action
         - /related-pages
         - /risks
+        - /prerequisites
+        - /next-steps
       confidence:
         /resource: 0.95
         /action: 0.8
         /related-pages: 0.75
         /risks: 0.7
+        /prerequisites: 0.75
+        /next-steps: 0.85

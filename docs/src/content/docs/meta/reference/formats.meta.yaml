@@ -318,9 +318,11 @@ docs/src/content/docs/meta/reference/formats.mdx:
         - /next-steps
         - /related-pages
         - /risks
+        - /prerequisites
       confidence:
         /tags: 0.85
         /action: 0.85
         /next-steps: 0.8
         /related-pages: 0.75
         /risks: 0.95
+        /prerequisites: 0.75

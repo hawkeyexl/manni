@@ -36,6 +36,7 @@ docs/src/content/docs/meta/reference/glossary/frontmatter.mdx:
         - /alt-labels
         - /broader
         - /scope-note
+        - /prerequisites
       confidence:
         /tags: 0.85
         /action: 0.95
@@ -46,3 +47,4 @@ docs/src/content/docs/meta/reference/glossary/frontmatter.mdx:
         /alt-labels: 0.85
         /broader: 0.9
         /scope-note: 0.85
+        /prerequisites: 0.95

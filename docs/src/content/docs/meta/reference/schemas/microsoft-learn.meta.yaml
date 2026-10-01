@@ -31,9 +31,13 @@ docs/src/content/docs/meta/reference/schemas/microsoft-learn.mdx:
         - /action
         - /related-pages
         - /risks
+        - /prerequisites
+        - /next-steps
       confidence:
         /resource: 0.95
         /tags: 0.75
         /action: 0.8
         /related-pages: 0.85
         /risks: 0.95
+        /prerequisites: 0.75
+        /next-steps: 0.7

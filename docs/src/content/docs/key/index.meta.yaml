@@ -97,7 +97,9 @@ docs/src/content/docs/key/index.mdx:
         - /tags
         - /action
         - /prerequisites
+        - /concepts
       confidence:
         /tags: 0.8
         /action: 0.85
         /prerequisites: 0.75
+        /concepts: 0.75

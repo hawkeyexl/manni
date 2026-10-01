@@ -120,7 +120,9 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         - /tags
         - /action
         - /risks
+        - /related-pages
       confidence:
         /tags: 0.7
         /action: 0.9
         /risks: 0.75
+        /related-pages: 0.95

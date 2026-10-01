@@ -39,7 +39,11 @@ docs/src/content/docs/meta/reference/schemas/manni-audience.mdx:
         - /resource
         - /action
         - /related-pages
+        - /prerequisites
+        - /next-steps
       confidence:
         /resource: 0.75
         /action: 0.9
         /related-pages: 0.85
+        /prerequisites: 0.85
+        /next-steps: 0.8

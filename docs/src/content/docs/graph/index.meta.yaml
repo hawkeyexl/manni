@@ -19,6 +19,10 @@ docs/src/content/docs/graph/index.mdx:
       fields:
         - /tags
         - /action
+        - /concepts
+        - /related-pages
       confidence:
         /tags: 0.75
         /action: 0.95
+        /concepts: 0.85
+        /related-pages: 0.75

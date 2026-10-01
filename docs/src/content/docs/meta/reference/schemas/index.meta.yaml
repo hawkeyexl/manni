@@ -310,8 +310,10 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         - /action
         - /next-steps
         - /related-pages
+        - /prerequisites
       confidence:
         /tags: 0.9
         /action: 0.9
         /next-steps: 0.95
         /related-pages: 0.9
+        /prerequisites: 0.85

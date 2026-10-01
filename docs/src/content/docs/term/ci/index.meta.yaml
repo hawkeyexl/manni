@@ -36,7 +36,9 @@ docs/src/content/docs/term/ci/index.mdx:
         - /tags
         - /action
         - /related-pages
+        - /prerequisites
       confidence:
         /tags: 0.85
         /action: 0.9
         /related-pages: 0.9
+        /prerequisites: 0.8

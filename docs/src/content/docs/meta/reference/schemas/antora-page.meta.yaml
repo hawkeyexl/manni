@@ -32,6 +32,7 @@ docs/src/content/docs/meta/reference/schemas/antora-page.mdx:
         - /next-steps
         - /related-pages
         - /risks
+        - /prerequisites
       confidence:
         /resource: 0.95
         /tags: 0.7
@@ -39,3 +40,4 @@ docs/src/content/docs/meta/reference/schemas/antora-page.mdx:
         /next-steps: 0.7
         /related-pages: 0.85
         /risks: 0.9
+        /prerequisites: 0.75

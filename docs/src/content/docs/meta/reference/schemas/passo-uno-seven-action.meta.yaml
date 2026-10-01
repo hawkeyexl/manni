@@ -43,9 +43,13 @@ docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
         - /action
         - /related-pages
         - /risks
+        - /prerequisites
+        - /next-steps
       confidence:
         /resource: 0.95
         /tags: 0.7
         /action: 0.85
         /related-pages: 0.85
         /risks: 0.9
+        /prerequisites: 0.75
+        /next-steps: 0.7

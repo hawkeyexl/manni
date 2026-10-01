@@ -18,5 +18,9 @@ docs/src/content/docs/lint/index.mdx:
     - generated-by: claude-sonnet-4-5
       fields:
         - /action
+        - /prerequisites
+        - /related-pages
       confidence:
         /action: 0.95
+        /prerequisites: 0.75
+        /related-pages: 0.85

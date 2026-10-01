@@ -33,6 +33,7 @@ docs/src/content/docs/meta/reference/glossary/schema-key.mdx:
         - /risks
         - /broader
         - /scope-note
+        - /prerequisites
       confidence:
         /tags: 0.85
         /action: 0.9
@@ -42,3 +43,4 @@ docs/src/content/docs/meta/reference/glossary/schema-key.mdx:
         /risks: 0.9
         /broader: 0.75
         /scope-note: 0.9
+        /prerequisites: 0.85

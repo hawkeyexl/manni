@@ -78,6 +78,6 @@ docs/src/content/docs/cite/set-up/index.mdx:
       confidence:
         /tags: 0.85
         /action: 0.95
-        /prerequisites: 0.8
+        /prerequisites: 0.85
         /next-steps: 0.95
         /related-pages: 0.85

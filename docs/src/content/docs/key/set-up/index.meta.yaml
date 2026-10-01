@@ -83,6 +83,10 @@ docs/src/content/docs/key/set-up/index.mdx:
       fields:
         - /tags
         - /action
+        - /prerequisites
+        - /related-pages
       confidence:
         /tags: 0.85
         /action: 0.9
+        /prerequisites: 0.8
+        /related-pages: 0.85

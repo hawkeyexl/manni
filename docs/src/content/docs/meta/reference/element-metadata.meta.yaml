@@ -130,9 +130,11 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         - /next-steps
         - /related-pages
         - /risks
+        - /prerequisites
       confidence:
         /tags: 0.85
         /action: 0.9
         /next-steps: 0.8
         /related-pages: 0.8
         /risks: 0.85
+        /prerequisites: 0.85

@@ -32,6 +32,7 @@ docs/src/content/docs/meta/reference/schemas/hugo-page.mdx:
         - /prerequisites
         - /related-pages
         - /risks
+        - /next-steps
       confidence:
         /resource: 0.95
         /tags: 0.85
@@ -39,3 +40,4 @@ docs/src/content/docs/meta/reference/schemas/hugo-page.mdx:
         /prerequisites: 0.75
         /related-pages: 0.7
         /risks: 0.95
+        /next-steps: 0.85

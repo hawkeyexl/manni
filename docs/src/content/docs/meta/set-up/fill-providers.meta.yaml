@@ -135,7 +135,9 @@ docs/src/content/docs/meta/set-up/fill-providers.mdx:
         - /tags
         - /action
         - /related-pages
+        - /prerequisites
       confidence:
         /tags: 0.85
         /action: 0.9
         /related-pages: 0.75
+        /prerequisites: 0.85

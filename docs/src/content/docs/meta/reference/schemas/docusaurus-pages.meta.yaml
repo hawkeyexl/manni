@@ -31,9 +31,13 @@ docs/src/content/docs/meta/reference/schemas/docusaurus-pages.mdx:
         - /action
         - /related-pages
         - /risks
+        - /prerequisites
+        - /next-steps
       confidence:
         /resource: 0.95
         /tags: 0.7
         /action: 0.75
         /related-pages: 0.85
         /risks: 0.85
+        /prerequisites: 0.8
+        /next-steps: 0.75

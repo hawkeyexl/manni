@@ -31,9 +31,11 @@ docs/src/content/docs/meta/reference/schemas/myst-frontmatter.mdx:
         - /action
         - /next-steps
         - /related-pages
+        - /prerequisites
       confidence:
         /resource: 0.95
         /tags: 0.85
         /action: 0.8
         /next-steps: 0.7
         /related-pages: 0.85
+        /prerequisites: 0.85

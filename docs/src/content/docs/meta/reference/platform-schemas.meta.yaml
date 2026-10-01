@@ -113,9 +113,11 @@ docs/src/content/docs/meta/reference/platform-schemas.mdx:
         - /next-steps
         - /related-pages
         - /risks
+        - /prerequisites
       confidence:
         /tags: 0.85
         /action: 0.8
         /next-steps: 0.9
         /related-pages: 0.85
         /risks: 0.95
+        /prerequisites: 0.75
