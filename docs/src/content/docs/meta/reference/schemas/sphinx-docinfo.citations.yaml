@@ -1,0 +1,36 @@
+docs/src/content/docs/meta/reference/schemas/sphinx-docinfo.mdx:
+  citations:
+    - id: platform-sphinx-nosearch-is-deprecated
+      claim:
+        lines: 73-76
+        integrity: sha256-17c11d4fb0ccb96a9aedc31b51c74aaa132b53901daafe2ebb228aaf0409046f
+      source:
+        file: src/meta/schemas/sphinx/9.1.json
+        lines: 25-29
+        integrity: sha256-97f27eaa4ba17637bd7cbda44494be8fe177ec4e6c60b8deed35b2a5d1face48
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-sphinx-docinfo-values-are-strings
+      claim:
+        integrity: sha256-ea7245e77f2f4951a2f44d9afa152f8c7a4607ff57342e843e6bd8ed57dffe1b
+      source:
+        file: src/meta/schemas/sphinx/9.1.json
+        lines: 5
+        integrity: sha256-9109353cd86d2885e10106da1d2f4d51b0e83cfddb3bb184c4247218a3da7f10
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-sphinx-field-table
+      claim:
+        lines: 61-65
+        integrity: sha256-6ba844bdb03a0027a1074b351a99bb0b15eb0519ef2d0ed4cd0a1a1f58efac93
+      source:
+        file: src/meta/schemas/sphinx/9.1.json
+        lines: 8-30
+        integrity: sha256-7cabcf3a04e0a3713e94cee130321edd17a3393dd75e451ec5b08e46632be3eb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-sphinx-requires-nothing
+      claim:
+        integrity: sha256-382be3e8108ec62c6c2195b54b7d8690dd32e4c9d275a5e8b9b09b53c7155548
+      source:
+        file: src/meta/schemas/sphinx/9.1.json
+        lines: 5-7
+        integrity: sha256-0d1a951e3197b770f6bef1b947f4d982aba3762941f45f010e7c1bc292f2f0ba
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

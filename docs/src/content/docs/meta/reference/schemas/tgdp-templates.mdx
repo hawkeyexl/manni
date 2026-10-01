@@ -1,0 +1,197 @@
+---
+title: The Good Docs Project schema
+description: The tgdp:templates:1.1 schema shipped with manni meta, which requires a type key and recommends the 25 Good Docs Project template slugs.
+sidebar:
+  label: "tgdp:templates:1.1"
+type: reference
+id: meta-reference-schemas-tgdp-templates
+keywords: ["The Good Docs Project", "tgdp:templates:1.1", "type", "strict overlay"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Require a type key on each page, and close it to the Good Docs Project slugs with the strict overlay."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema"]
+sample-questions:
+  - "Which type values does tgdp:templates:1.1 recommend?"
+  - "What does the tgdp strict overlay add?"
+graph:
+  label: "The Good Docs Project schema"
+  type: reference
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/tgdp/1.1.json
+tags:
+  - schema
+  - tgdp
+  - taxonomy
+  - templates
+  - metadata
+action: remember
+prerequisites:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/taxonomy-schemas/
+next-steps:
+  - /manni/meta/reference/taxonomy-schemas/
+  - /manni/meta/reference/schemas/diataxis/
+  - /manni/meta/reference/schemas/tgdp-templates-1-0/
+related-pages:
+  - /manni/meta/reference/schemas/google-okf/
+  - /manni/meta/reference/schemas/diataxis/
+  - /manni/meta/reference/schemas/tgdp-templates-1-0/
+risks:
+  - read-only
+  - idempotent
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Built-in id:** `tgdp:templates:1.1`
+
+**Published at:** [`https://hawkeyexl.github.io/manni/schemas/tgdp/1.1.json`](/manni/schemas/tgdp/1.1.json)
+
+{/* cite taxonomy-tgdp-requires-and-recommends-type */}
+Requires `type` and recommends the template slugs published by [The Good
+Docs Project](https://www.thegooddocsproject.dev/template). Where Diátaxis names
+four abstract forms, TGDP names 25 concrete deliverables. That suits a docs set
+that thinks in deliverables rather than quadrants. Such a set says "we owe this
+product an installation guide and a changelog".
+
+{/* cite taxonomy-tgdp-type-is-open */}
+The vocabulary is open. Any other non-empty string in `type` passes, and names
+a page type TGDP does not publish, such as `faq`. To hold `type` to the 25
+slugs, stack the [strict overlay](#strict-overlay) beside it.
+[`tgdp:templates:1.0`](/manni/meta/reference/schemas/tgdp-templates-1-0/) makes
+that closed check in one file.
+
+It is one of the [taxonomy schemas](/manni/meta/reference/taxonomy-schemas/),
+which fix a classification key to a published set of values.
+
+## Use it
+
+{/* cite taxonomy-tgdp-is-not-in-the-default-set */}
+Like Diátaxis, TGDP is **not** in the [default
+set](/manni/meta/reference/schema-resolution/#precedence). It requires `type`, so
+defaulting it would fail every untyped document in every repo that had not
+opted in.
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas:
+    - tgdp:templates:1.1
+    - google:okf:0.1
+```
+
+To try it once without config:
+
+```bash
+manni meta validate docs/ -s tgdp:templates:1.1
+```
+
+## Fields
+
+| Field | Type | Required | Values |
+|---|---|---|---|
+| `type` | string | **Yes** | Any non-empty string. The 25 template slugs below are the recommended values |
+
+{/* cite taxonomy-all-25-slugs-validate */}
+The recommended values are the template directory slugs from the upstream
+[templates repo](https://gitlab.com/tgdp/templates), grouped here by the pack
+each belongs to. All 25 validate regardless of pack. The grouping is upstream's,
+and is reproduced only to show what you are opting into.
+
+| Pack | Values |
+|---|---|
+| Core | `concept`, `how-to`, `readme`, `reference`, `release-notes`, `troubleshooting`, `tutorial` |
+| Community | `bug-report`, `changelog`, `code-of-conduct`, `code-of-conduct-incident-record`, `code-of-conduct-remediation-record`, `code-of-conduct-response-plan`, `contributing-guide`, `our-team` |
+| Misc | `api-getting-started`, `api-reference`, `contact-support`, `glossary`, `installation-guide`, `quickstart`, `sdk-overview`, `style-guide`, `terminology-system`, `user-personas` |
+
+<Aside type="note" title="TGDP prescribes no frontmatter of its own">
+The upstream templates are body-structure templates. They open at a heading and
+carry no YAML block. The only metadata TGDP publishes is `index.json`, which
+describes the *templates* (`name`, `summary`, `last_updated`, `contributors`,
+`packs`), not documents written from them. So the vocabulary here is lifted from
+the template set, not an implementation of a TGDP metadata spec. Requiring
+`type` is manni meta's choice rather than an upstream rule. It is the same choice
+manni meta makes for Diátaxis, which likewise publishes no frontmatter spec. Pair
+it with [`google:okf:0.1`](/manni/meta/reference/schemas/google-okf/) for the fields TGDP
+leaves unspecified.
+</Aside>
+
+## Additional properties
+
+Allowed. The schema says nothing about any key but `type`.
+
+## Example
+
+```md
+---
+type: installation-guide
+title: Install the collector
+---
+```
+
+## A common mistake
+
+An empty `type` names no page type, so it fails. The value is too short for the
+open branch and matches no slug either, and each check reports its own line.
+
+```text
+$ manni meta validate page.md --no-config -s tgdp:templates:1.1
+✗ page.md
+    /type  must NOT have fewer than 1 characters  (line 2)  [tgdp:templates:1.1]
+    /type  must be equal to one of the allowed values  (line 2)  [tgdp:templates:1.1]
+    /type  must match a schema in anyOf  (line 2)  [tgdp:templates:1.1]
+
+1 file checked, 0 passed, 1 failed, 3 errors
+```
+
+A near-miss spelling such as `howto` passes this schema, because it is a
+non-empty string. The strict overlay catches it.
+
+## Strict overlay
+
+**Strict overlay id:** `tgdp:templates-strict:1.1`
+
+**Published at:** [`https://hawkeyexl.github.io/manni/schemas/tgdp-strict/1.1.json`](/manni/schemas/tgdp-strict/1.1.json)
+
+{/* cite tgdp-strict-closes-type */}
+The overlay holds only what strict adds. It closes `type` to the 25 slugs and
+requires no key. The open schema still owns the required rule.
+
+| Field | Strict adds |
+|---|---|
+| `type` | One of the 25 template slugs. Any other string fails |
+
+Stacked, the two make the check `tgdp:templates:1.0` makes in one file. List
+both ids to adopt it:
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas:
+    - tgdp:templates:1.1
+    - tgdp:templates-strict:1.1
+```
+
+Each schema is checked on its own, and a finding names the one that produced
+it. A page type TGDP does not publish passes the open schema, so the overlay
+alone fails it.
+
+```md
+---
+type: faq
+title: Billing questions
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s tgdp:templates:1.1 -s tgdp:templates-strict:1.1
+✗ page.md
+    /type  must be equal to one of the allowed values  (line 2)  [tgdp:templates-strict:1.1]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+The [taxonomy schemas](/manni/meta/reference/taxonomy-schemas/) overview
+explains why this schema and
+[`diataxis:diataxis:1.0`](/manni/meta/reference/schemas/diataxis/) are
+alternatives, and how to write a vocabulary of your own.

@@ -1,5 +1,7 @@
 ---
 type: reference
+title: Action smoke, clean
+description: The passing half of the Action smoke test's pair.
 ---
 
 The passing half of the Action smoke test's pair. `missing-type.md` is the

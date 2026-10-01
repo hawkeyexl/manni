@@ -1,0 +1,44 @@
+docs/src/content/docs/term/ci/index.mdx:
+  personas:
+    - devin
+    - maya
+  journeys:
+    - d8
+    - m9
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/term/commands
+    - path: src/term/core/writers
+    - path: src/term/core/vale.ts
+    - path: src/term/core/writers/vale.ts
+    - path: src/term/reporters
+  eval-suite: term
+  evals:
+    - id: write-ci-workflow
+      assertion: A reader can write a GitHub Actions workflow that runs term check, term lint and write -f vale --check.
+      type: capability
+      grader: ai
+    - id: ramp-with-baseline
+      assertion: A reader can record a baseline and gate only on findings the baseline does not hold.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-222
+      integrity: sha256-a123de32b0ab798f907c83bd88912169b51c9cb9b6cc090cee5e4bac281488f3
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /related-pages
+        - /prerequisites
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /related-pages: 0.9
+        /prerequisites: 0.8

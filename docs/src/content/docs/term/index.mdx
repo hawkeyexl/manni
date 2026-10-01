@@ -17,6 +17,55 @@ hero:
       link: /manni/term/fix/
       icon: error
       variant: minimal
+type: overview
+id: term
+keywords:
+  - terminology
+  - term
+  - concepts
+  - Vale
+  - termbase
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+  - schema-authors
+  - contributors
+intent: Tell what a term record is, what manni term checks, and which journey page fits the job at hand.
+lifecycle: published
+applies-to:
+  - domain:term
+next-steps:
+  - term-get-started
+  - term-set-up
+  - term-set-up-move-and-hand-off
+  - term-ci
+  - term-fix
+related-pages:
+  - term-reference-cli
+  - term-reference-configuration
+  - term-reference-terminology
+  - term-reference-rules
+  - meta-reference-schemas-manni-terminology
+sample-questions:
+  - What is a term in manni?
+  - What does manni term check, and what does it leave alone?
+  - Which manni term command do I need?
+graph:
+  label: manni term
+  type: concept
+last-updated: 2026-09-26
+tags:
+  - cli-tool
+  - documentation-tools
+  - terminology-management
+  - validation
+  - glossary
+action: explore
+risks: read-only
+concepts:
+  - validation
+  - metadata
 ---
 
 import { Aside, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -148,8 +197,8 @@ checks.
   </Card>
 </CardGrid>
 
-Term entries are written in the `manni:terminology` vocabulary, whose draft is
-[under review](/manni/meta/proposals/terminology/). No built-in schema covers
-it. `manni meta validate` checks one page's shape against the draft when the
-page's schema set includes it, as `-s` with the draft's JSON file does. `manni
+Term entries are written in the built-in
+[`manni:terminology:1.0.0`](/manni/meta/reference/schemas/manni-terminology/)
+vocabulary. `manni meta validate` checks one page's shape against it when the
+page's schema set includes it, as `-s manni:terminology:1.0.0` does. `manni
 term check` checks the set.

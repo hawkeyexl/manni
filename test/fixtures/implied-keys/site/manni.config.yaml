@@ -1,0 +1,15 @@
+# Proposal 0068: {page}.meta.yaml names no keys, so it owns whatever each
+# page's schemas mark x-manni-location: external, less citations, which the
+# citations manifest names.
+meta:
+  schemas: [./page.schema.json]
+  overrides:
+    - files: ["docs/glossary/**"]
+      schemas: [./glossary.schema.json]
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+        keys: [citations]
+      - file: "{page}.meta.yaml"

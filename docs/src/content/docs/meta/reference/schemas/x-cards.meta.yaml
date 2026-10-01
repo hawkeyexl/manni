@@ -1,0 +1,43 @@
+docs/src/content/docs/meta/reference/schemas/x-cards.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/x-cards/1.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on x:cards:1.0 for their pages."
+      type: capability
+      grader: ai
+    - id: fallback
+      assertion: "A reader can explain why every card tag except twitter:card may be left out."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-106
+      integrity: sha256-b3d5b7f3a14223f6167f3e2e0ea2ebe7cc55168fc024cc23a8d3bbc163b04fc8
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.75
+        /next-steps: 0.7
+        /related-pages: 0.9
+        /risks: 0.85

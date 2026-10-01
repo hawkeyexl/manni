@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A local schema whose property refers into a registered one",
+  "type": "object",
+  "required": ["team"],
+  "properties": {
+    "team": { "$ref": "house:page:1.0.0#/properties/team" }
+  }
+}

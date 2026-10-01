@@ -184,21 +184,21 @@ docs/src/content/docs/cite/index.mdx:
         integrity: sha256-0552d50a4df039ffe1807375dd327c659d8dbf2b9353fb2574d7287679454bc6
       source:
         file: src/cite/core/page.ts
-        lines: 402-413
+        lines: 403-414
         integrity: sha256-71ec1f6ed602c908f3c72c22dce660fb03692bc2e26acd4cbaad0b94a6774952
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
     - id: entry-one-anchor
       claim:
         lines: 126-127
         integrity: sha256-d7540fb52257774ad5708ef32724fdc1b9b87a5e398613946c65210fd22afc1b
       source:
         file: src/cite/core/page.ts
-        lines: 467-479
+        lines: 468-480
         integrity: sha256-44e15517046895a8cacb23ce883f38f9b44106ce33befb919a46d63ef0305249
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
     - id: own-config-key
       claim:
-        integrity: sha256-b355926e0b81dc21ea15f22dff5be4df6848d0b26be519e5a8261e7b908026aa
+        integrity: sha256-e96aa481717ef656198fcbc98f3e1348cee4a3ee66f87c8340d00bec782ff418
       source:
         file: src/cite/core/config.ts
         lines: 36
@@ -206,7 +206,7 @@ docs/src/content/docs/cite/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: one-config-file
       claim:
-        integrity: sha256-b355926e0b81dc21ea15f22dff5be4df6848d0b26be519e5a8261e7b908026aa
+        integrity: sha256-e96aa481717ef656198fcbc98f3e1348cee4a3ee66f87c8340d00bec782ff418
       source:
         file: src/cite/core/config.ts
         lines: 308-314
@@ -230,9 +230,9 @@ docs/src/content/docs/cite/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: bundles-citations-schema
       claim:
-        integrity: sha256-b355926e0b81dc21ea15f22dff5be4df6848d0b26be519e5a8261e7b908026aa
+        integrity: sha256-e96aa481717ef656198fcbc98f3e1348cee4a3ee66f87c8340d00bec782ff418
       source:
         file: src/cite/core/page.ts
-        lines: 18
-        integrity: sha256-7bcb52dbb105802ff4ba45a6011bba6a90f98d5f22abea45db2b58e412e0197d
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 19
+        integrity: sha256-5c078a16c90a3eb604768a0d58a3fc5fb36a8f89098e96dcdd8e797737c63376
+        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0

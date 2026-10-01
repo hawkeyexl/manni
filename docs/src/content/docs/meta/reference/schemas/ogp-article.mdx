@@ -1,0 +1,155 @@
+---
+title: Open Graph schema
+description: The ogp:article:1.0 schema shipped with manni meta, covering the four Open Graph properties it requires, the article properties, and the og:locale format.
+sidebar:
+  label: "ogp:article:1.0"
+type: reference
+id: meta-reference-schemas-ogp-article
+keywords: ["Open Graph", "ogp:article:1.0", "og:locale", "article properties"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate the Open Graph properties a page publishes for social cards, including og:locale."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "override"]
+sample-questions:
+  - "Which Open Graph properties does ogp:article:1.0 require?"
+  - "What format does og:locale take?"
+  - "How do I scope the Open Graph schema to some pages?"
+graph:
+  label: "Open Graph schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/ogp/1.0.json
+action: develop
+next-steps:
+  - /manni/meta/reference/schemas/x-cards/
+  - /manni/meta/reference/metadata-vocabularies/
+related-pages:
+  - /manni/meta/reference/schemas/x-cards/
+  - /manni/meta/reference/metadata-vocabularies/
+  - https://ogp.me/
+risks: read-only
+prerequisites:
+  - meta-reference-schemas
+  - meta-reference-configuration
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Built-in id:** `ogp:article:1.0`
+
+**Published at:** [`https://hawkeyexl.github.io/manni/schemas/ogp/1.0.json`](/manni/schemas/ogp/1.0.json)
+
+{/* cite vocab-ogp-requires-four-properties */}
+The [Open Graph protocol](https://ogp.me/) basic properties plus the `article`
+object type. This is the built-in that checks something **no build tool
+checks**. Nothing fails when `og:image` is missing. The page builds and deploys
+perfectly, then renders as a grey box everywhere it is shared.
+
+It is one of the [metadata vocabularies](/manni/meta/reference/metadata-vocabularies/),
+which describe a page to something outside your docs site.
+
+## Use it
+
+Opt in for the pages you publish with social cards. Scope it with an override
+when only part of the site carries Open Graph tags:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: "site/**/*.html"
+      schemas:
+        - ogp:article:1.0
+        - x:cards:1.0
+```
+
+To try it once without config:
+
+```bash
+manni meta validate site/ -s ogp:article:1.0
+```
+
+{/* cite vocab-property-read-alongside-name */}
+In HTML these live on `<meta property="…">`. manni meta reads `property` alongside
+`name`, so an ordinary HTML page needs no special handling:
+
+```html
+<meta property="og:title" content="Validate document metadata in CI" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://example.com/docs/ci" />
+<meta property="og:image" content="https://example.com/img/card.png" />
+```
+
+## Fields
+
+| Property | Type | Notes |
+|---|---|---|
+| `og:title` | string | **Required.** Non-empty. |
+| `og:type` | string | **Required.** Not enumerated, because the protocol allows namespaced and vendor types. |
+| `og:url` | URI | **Required.** Absolute. A site-root path is not a canonical URL. |
+| `og:image` | URI \| array | **Required.** |
+| `og:description` | string | One or two sentences. |
+| `og:site_name` | string | |
+| `og:determiner` | enum | `a`, `an`, `the`, `""`, `auto`. |
+| `og:locale` | string | `language_TERRITORY`, such as `en_US`. |
+| `og:locale:alternate` | string \| array | Same form. |
+| `og:audio`, `og:video` | URI \| array | |
+| `article:published_time` | date-time | ISO 8601. |
+| `article:modified_time` | date-time | ISO 8601. |
+| `article:expiration_time` | date-time | ISO 8601. |
+| `article:author` | string \| array | |
+| `article:section` | string | |
+| `article:tag` | string \| array | |
+
+<Aside type="note" title="Repeated `<meta>` tags collapse">
+Open Graph allows a property to repeat, with several `article:tag` tags or
+several `og:image` tags. manni meta's HTML reader keeps the last occurrence of a
+key, so a repeated property arrives as a single string. The array forms in the
+table are there for front matter, where a real list is possible.
+</Aside>
+
+## Additional properties
+
+Allowed. A page may carry other `og:*` properties, other `article:*`
+properties, and any key of its own.
+
+## Example
+
+{/* cite vocab-og-keys-in-front-matter */}
+In front matter they are ordinary keys, quoted because they contain a colon:
+
+```markdown
+---
+"og:title": Validate document metadata in CI
+"og:type": article
+---
+```
+
+A page that passes carries all four required properties:
+
+```markdown
+---
+"og:title": Validate document metadata in CI
+"og:type": article
+"og:url": https://example.com/docs/ci
+"og:image": https://example.com/img/card.png
+"og:locale": en_US
+---
+```
+
+## A common mistake
+
+<Aside type="caution" title="`en-US` is rejected, and that is the point">
+`og:locale` takes `language_TERRITORY` with an underscore. The hyphenated BCP 47
+spelling `en-US` is correct almost everywhere else in web metadata, and wrong
+here. That is exactly the class of mistake that survives review. The pattern
+accepts `en` and `en_US` and rejects `en-US`.
+</Aside>
+
+```text
+✗ docs/ci.md
+    /og:locale  must match pattern "^[a-z]{2,3}(_[A-Z]{2})?$"  (line 6)  [ogp:article:1.0]
+```
+
+Its companion for X is [`x:cards:1.0`](/manni/meta/reference/schemas/x-cards/).

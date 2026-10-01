@@ -5,5 +5,9 @@ collections:
       - "docs/**/*.md"
 
 meta:
+  # The DDL tests evolve one schema, and DDL refuses a key two schemas in
+  # the set constrain. The default set (proposal 0070) declares `title`,
+  # `tags` and more, so these fixtures keep the exact set they name.
+  defaults: false
   schemas:
     - google:okf:0.1

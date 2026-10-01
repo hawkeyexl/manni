@@ -57,7 +57,8 @@ export async function loadTerms(opts: TermCommandOptions): Promise<LoadedTerms> 
   return { cwd, run, set };
 }
 
-async function loadSet(run: TermRun, opts: TermCommandOptions): Promise<TermSet> {
+/** Load the set a resolved run names, and say the readers' notices. */
+export async function loadSet(run: TermRun, opts: TermCommandOptions): Promise<TermSet> {
   // A collection's `exclude:` shapes the collection, so it applies when the
   // inputs came from the collections and never to a path the operator typed.
   const exclude = [

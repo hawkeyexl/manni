@@ -1,0 +1,97 @@
+docs/src/content/docs/meta/reference/schemas/agentskills-skill.mdx:
+  citations:
+    - id: skills-name-must-match-the-directory
+      claim:
+        integrity: sha256-f22b9e43ce81f6fccbd8e06eed09b18461c459a4e6364e183dbd45d678f336d8
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 10-15
+        integrity: sha256-78f3da415248721f449347ba3f7c7c7d881a3eb757446335c6175baf2cd402ab
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-metadata-takes-strings-only
+      claim:
+        integrity: sha256-96fae2046a58a211c3eac59275516d01c9eedfebca88b21fd608c0b579c6f896
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 34-37
+        integrity: sha256-ecb0e5e9bafbfdfafc3c51b8a3e79835c010d4ddabe4c93a388daedfe76180d3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-allowed-tools
+      claim:
+        lines: 43
+        integrity: sha256-5bf20ad254df67f0185b0edd9c876d3afc9c8dc44cedb2afb9beb5ac7dade4d7
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 39-42
+        integrity: sha256-6039618c291d43c09e9eac2242da9ecea72c8ddc3f68c1937235c8a8d0802645
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-metadata
+      claim:
+        lines: 42
+        integrity: sha256-66544b6de3de0cf24270c868f0b906aad30fd34c3996e6f726bb0d1ecdfecd4b
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 34-37
+        integrity: sha256-ecb0e5e9bafbfdfafc3c51b8a3e79835c010d4ddabe4c93a388daedfe76180d3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-compatibility
+      claim:
+        lines: 41
+        integrity: sha256-19889dfa2cd2a0e0d735bf622c8876c9d2491df69803c6c4728852573debddb3
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 28-32
+        integrity: sha256-f56da9d306d43ac16e3d07f6bfea8fa923a961fe830ecbacb9afded767b08da2
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-license
+      claim:
+        lines: 40
+        integrity: sha256-aa3d121141e0d48e5be562d5d350ca0a9d7098613fba5c774f55a6d0761388e9
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 23-26
+        integrity: sha256-3a3843b2d533dc23e0bb045ea74c706984af741d1cdd91ba3085cee3178929bb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-description
+      claim:
+        lines: 39
+        integrity: sha256-c8fb6c6e71c77a76f0292d7a0eae5a8a505e95b1a61aa71537a7c61a8a14f2bb
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 17-21
+        integrity: sha256-9ddd76e9d09f33e915d2db8e243f3cdacc112ee406551c79d522528046ee7e77
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-spec-name
+      claim:
+        lines: 38
+        integrity: sha256-0c5ad8d686baa181cad4609d40958bb2347d6a1e5fb953b49f279ba8b9e6846f
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 10-15
+        integrity: sha256-78f3da415248721f449347ba3f7c7c7d881a3eb757446335c6175baf2cd402ab
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-six-fields-two-required
+      claim:
+        lines: 34
+        integrity: sha256-d5a98beb01ec355a6e2caba9f99c36f1b487ff2ed0e36e64796485db250b5700
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 7-9
+        integrity: sha256-21fdcd0f3e8365d667f4f9429a4223f4b3fa0398a001eca9576015d03f8535bb
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-strictness-mirrors-the-upload
+      claim:
+        integrity: sha256-2a572d3dd444c79b4dde725099c68e2e1e44caa866fda05e41e0460294c5dedc
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 5
+        integrity: sha256-aa3a1adf720b85a5c4d11227a4c7c80a11817ab56798f8629630f5ff2106347d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: skills-only-builtin-with-additionalproperties-false
+      claim:
+        integrity: sha256-dc038a269bef29153095fbb489f90d4c582b2e04081a4710fdc247d376ec8389
+      source:
+        file: src/meta/schemas/agent-skills/1.0.json
+        lines: 8
+        integrity: sha256-e1b6fd8541ba5542d4a83ba797ad19f93213527609df4f73e3ce1416f8991246
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

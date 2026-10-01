@@ -37,6 +37,12 @@ import {
   renderWritePretty,
 } from "./reporters/pretty.js";
 import { renderFindingsSarif } from "./reporters/sarif.js";
+import { registerTermLabelSource } from "../shared/term-labels.js";
+import { termLabels } from "./commands/labels.js";
+
+// The umbrella loads this module, so under the `manni` bin `meta fill` offers
+// the termbase's labels. The `docmeta` bin never loads it, and offers none.
+registerTermLabelSource(termLabels);
 
 /** What commander hands every verb that reads terms. */
 interface InputCliOptions {

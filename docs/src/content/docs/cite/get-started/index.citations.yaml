@@ -590,17 +590,17 @@ docs/src/content/docs/cite/get-started/index.mdx:
         integrity: sha256-284cc6de94cf60a0d4ec94096930bcf2d6d1f2c4a7441f488d43adbc10d47c4a
       source:
         file: src/cite/core/page.ts
-        lines: 387-394
+        lines: 388-395
         integrity: sha256-7503424f64c5928d6e9106f78070a3c91afadda14af5784c43f5dd8dcd2d752c
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
     - id: marker-json-message
       claim:
         integrity: sha256-284cc6de94cf60a0d4ec94096930bcf2d6d1f2c4a7441f488d43adbc10d47c4a
       source:
         file: src/cite/core/page.ts
-        lines: 52-54
+        lines: 53-55
         integrity: sha256-05146e954f0bf633bd14cc102bb64f0332a84f78beb4fe21c65ab7b4ca00b232
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: cc2b2322be62fcc89544d21f645bd08d790c67b0
     - id: quote-needs-fenced-block
       claim:
         integrity: sha256-b805a21faaee387e59ffb9d278aa9c8b1e4bb20a3e34e9a6c5f5a629eca9bd26

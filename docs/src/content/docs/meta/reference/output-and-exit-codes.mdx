@@ -1,6 +1,55 @@
 ---
 title: Output formats & exit codes
 description: The pretty, json, github, sarif, and junit output formats; the 0/1/2 exit-code contract; and color, stdout/stderr behavior for manni meta validate.
+type: reference
+id: meta-reference-output-and-exit-codes
+keywords:
+  - output formats
+  - exit codes
+  - severity
+  - SARIF
+  - color
+language: en
+audiences:
+  - ci-engineers
+intent: Pick an output format for a consumer and branch on manni meta's exit codes in CI.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - Validation
+sample-questions:
+  - What does exit code 2 mean?
+  - Which output format produces GitHub annotations?
+  - How does severity map onto the exit code?
+graph:
+  label: Output formats & exit codes
+  type: reference
+last-updated: 2026-10-01
+tags:
+  - exit-codes
+  - output-formats
+  - sarif
+  - junit
+  - github-actions
+  - reporting
+  - ci
+action: remember
+related-pages:
+  - /manni/meta/reference/cli/
+  - /manni/meta/reference/configuration/
+  - /manni/meta/fix/
+risks:
+  - read-only
+  - idempotent
+prerequisites:
+  - meta-get-started
+  - meta-reference-cli
+next-steps:
+  - meta-ci-exit-codes-and-annotations
+  - meta-ci-consume-results
+  - meta-reference-configuration
+  - meta-ci
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
@@ -712,7 +761,9 @@ The deliberate opt-outs are `--no-derive` on `validate`, `--no-derived` on
 | Config `derive.fields` names a key a collection's URL [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. A local manifest is where `derive` writes the field. | `manni.config.yaml: meta.derive.fields[3] "owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.` |
 | Config `derive.commands` names a key a collection's URL [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. | `manni.config.yaml: meta.derive.commands.verified-against is owned by manifest https://example.com/versions.yaml, which is fetched and cannot be written; set it in that repository.` |
 | `derive --fields` named a key a collection's URL [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. | `"owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.` |
-| `derive` has no `derive.fields` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
+| `derive` has no `derive.fields` in config and no `--fields`, and no page's schemas claim a merge-safe field. | `nothing to derive: no page's schemas claim a merge-safe field (owner, created, last-updated, provenance); set derive.fields or pass --fields` |
+| The same, but some page's schemas could not be read, so what they claim is unknown. | `nothing to derive: the schemas of <page> could not be read, so what they claim is unknown; fix them or pass --fields` (with `and <n> more` after the page when there are several) |
+| `derive` has `fields: []` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
 | Config `derive.machines` is empty or not a list of strings. | `manni.config.yaml: meta.derive.machines must be a non-empty list of globs, matched against a trailer's name and its email. Default: ["*[bot]"].` |
 | Config `derive.machines` holds a blank entry. | `manni.config.yaml: meta.derive.machines[0] is blank; a glob must name something.` |
 | Config `derive.machines` repeats a glob. | `manni.config.yaml: meta.derive.machines lists "*[bot]" twice.` |

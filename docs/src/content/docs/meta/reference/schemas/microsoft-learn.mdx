@@ -1,0 +1,134 @@
+---
+title: Microsoft Learn schema
+description: The microsoft:learn:1.0 schema shipped with manni meta, covering the five attributes a Learn article requires, the MM/DD/YYYY date, and the description length range.
+sidebar:
+  label: "microsoft:learn:1.0"
+type: reference
+id: meta-reference-schemas-microsoft-learn
+keywords: ["Microsoft Learn", "microsoft:learn:1.0", "ms.date", "description length"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate the attributes a Microsoft Learn article requires, including its MM/DD/YYYY date."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema"]
+sample-questions:
+  - "Which attributes does a Microsoft Learn article require?"
+  - "What date format does ms.date take?"
+  - "How long may a Learn description be?"
+graph:
+  label: "Microsoft Learn schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/microsoft-learn/1.0.json
+tags:
+  - schema
+  - validation
+  - frontmatter
+  - built-in
+  - vocabulary
+action: remember
+related-pages:
+  - /manni/meta/reference/metadata-vocabularies/
+risks: read-only
+prerequisites:
+  - meta-get-started
+  - meta-reference-schemas
+next-steps:
+  - meta-reference-metadata-vocabularies
+  - meta-set-up-config
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Built-in id:** `microsoft:learn:1.0`
+
+**Published at:** [`https://hawkeyexl.github.io/manni/schemas/microsoft-learn/1.0.json`](/manni/schemas/microsoft-learn/1.0.json)
+
+{/* cite vocab-ms-learn-requires-five-attributes */}
+The front matter Microsoft Learn requires and recommends on a documentation
+article. Of every built-in, this is the closest analogue to what manni meta itself
+does: five attributes whose absence fails a real publishing build.
+
+It is one of the [metadata vocabularies](/manni/meta/reference/metadata-vocabularies/).
+Its audience is another publisher's build rather than a reader.
+
+## Use it
+
+Opt in for the repository you publish to Microsoft Learn:
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas:
+    - microsoft:learn:1.0
+```
+
+To try it once without config:
+
+```bash
+manni meta validate articles/ -s microsoft:learn:1.0
+```
+
+## Fields
+
+| Attribute | Type | Notes |
+|---|---|---|
+| `title` | string | **Required.** |
+| `description` | string | **Required.** 75–300 characters. |
+| `author` | string | **Required.** The author's GitHub account ID, not a display name. |
+| `ms.author` | string | **Required.** Microsoft alias, without `@microsoft.com`. |
+| `ms.date` | string | **Required.** `MM/DD/YYYY`. |
+| `ms.topic` | string | The kind of article. Not enumerated. |
+| `ms.service`, `ms.subservice` | string | |
+| `ms.custom`, `ms.collection`, `ms.devlang`, `keywords` | string \| array | |
+| `ms.reviewer` | string | |
+| `ms.prod`, `ms.technology` | string | For repos that use `ms.prod` instead of `ms.service`. |
+| `zone_pivot_groups` | string | |
+
+Three of these encode a rule that a generic check would miss:
+
+- **`ms.date` is `MM/DD/YYYY`, not ISO 8601.** `2026-08-23` is the correct
+  spelling nearly everywhere else and is wrong here; `08/23/2026` is right. A
+  `format: date` check would have passed the wrong one.
+- **`description` has a floor, not just a ceiling.** Microsoft documents the
+  hard range as 75–300 characters and recommends 115–145. Only the hard range is
+  enforced, because the recommendation is guidance and the range is the build
+  rule.
+- **`ms.author` rejects an email address.** The alias goes in bare, and writing
+  the full address is the common error.
+
+<Aside type="note" title="`ms.topic` is a string, because the real list is not public">
+The published docfx-era set (`article`, `get-started-article`, `hero-article`,
+`hub-page`, `landing-page`, `non-content`, `reference`, `search`) and the values
+Microsoft's own repositories use (`conceptual`, `quickstart`, `tutorial`,
+`how-to`, `overview`, `include`) do not agree, and the authoritative taxonomy is
+internal to Microsoft. An enum assembled from those examples would fail correct
+articles, so `ms.topic` is checked for presence and shape only.
+</Aside>
+
+## Additional properties
+
+Allowed. Learn repositories carry many more `ms.*` keys than these, and none of
+them fails the schema.
+
+## Example
+
+```markdown
+---
+title: Configure the agent
+description: Configure the collection agent to forward logs, metrics and traces to your workspace, then verify the pipeline.
+author: adalovelace
+ms.author: adal
+ms.date: 08/23/2026
+ms.topic: how-to
+---
+```
+
+## A common mistake
+
+An ISO date in `ms.date` is the mistake the schema exists to catch:
+
+```text
+✗ docs/configure.md
+    /ms.date  must match pattern "^(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])/[0-9]{4}$"  (line 6)  [microsoft:learn:1.0]
+```

@@ -43,6 +43,30 @@ import agentSkills10 from "../schemas/agent-skills/1.0.json" with { type: "json"
 import claudeSkill21 from "../schemas/claude-skill/2.1.json" with { type: "json" };
 import mkdocsMaterial97 from "../schemas/mkdocs-material/9.7.json" with { type: "json" };
 import claudeSubagent21 from "../schemas/claude-subagent/2.1.json" with { type: "json" };
+import manniCore100 from "../schemas/core/1.0.0.json" with { type: "json" };
+import manniStewardship100 from "../schemas/stewardship/1.0.0.json" with { type: "json" };
+import manniAudience100 from "../schemas/audience/1.0.0.json" with { type: "json" };
+import manniLifecycle100 from "../schemas/lifecycle/1.0.0.json" with { type: "json" };
+import manniStructure100 from "../schemas/structure/1.0.0.json" with { type: "json" };
+import manniTerminology100 from "../schemas/terminology/1.0.0.json" with { type: "json" };
+import manniAiContext100 from "../schemas/ai-context/1.0.0.json" with { type: "json" };
+import manniEvals100 from "../schemas/evals/1.0.0.json" with { type: "json" };
+import manniArtifactEvals100 from "../schemas/artifact-evals/1.0.0.json" with { type: "json" };
+import manniGraph100 from "../schemas/graph/1.0.0.json" with { type: "json" };
+import manniCitations100 from "../schemas/citations/1.0.0.json" with { type: "json" };
+import manniCoreStrict100 from "../schemas/core-strict/1.0.0.json" with { type: "json" };
+import manniStewardshipStrict100 from "../schemas/stewardship-strict/1.0.0.json" with { type: "json" };
+import manniAudienceStrict100 from "../schemas/audience-strict/1.0.0.json" with { type: "json" };
+import manniLifecycleStrict100 from "../schemas/lifecycle-strict/1.0.0.json" with { type: "json" };
+import manniStructureStrict100 from "../schemas/structure-strict/1.0.0.json" with { type: "json" };
+import manniTerminologyStrict100 from "../schemas/terminology-strict/1.0.0.json" with { type: "json" };
+import manniAiContextStrict100 from "../schemas/ai-context-strict/1.0.0.json" with { type: "json" };
+import manniEvalsStrict100 from "../schemas/evals-strict/1.0.0.json" with { type: "json" };
+import manniArtifactEvalsStrict100 from "../schemas/artifact-evals-strict/1.0.0.json" with { type: "json" };
+import manniGraphStrict100 from "../schemas/graph-strict/1.0.0.json" with { type: "json" };
+import manniCitationsStrict100 from "../schemas/citations-strict/1.0.0.json" with { type: "json" };
+import tgdp11 from "../schemas/tgdp/1.1.json" with { type: "json" };
+import tgdpStrict11 from "../schemas/tgdp-strict/1.1.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 
 export interface BuiltinInfo {
@@ -76,6 +100,30 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
   ["anthropic:claude-skill:2.1", claudeSkill21],
   ["mkdocs:material:9.7", mkdocsMaterial97],
   ["anthropic:claude-subagent:2.1", claudeSubagent21],
+  ["manni:core:1.0.0", manniCore100],
+  ["manni:stewardship:1.0.0", manniStewardship100],
+  ["manni:audience:1.0.0", manniAudience100],
+  ["manni:lifecycle:1.0.0", manniLifecycle100],
+  ["manni:structure:1.0.0", manniStructure100],
+  ["manni:terminology:1.0.0", manniTerminology100],
+  ["manni:ai-context:1.0.0", manniAiContext100],
+  ["manni:evals:1.0.0", manniEvals100],
+  ["manni:artifact-evals:1.0.0", manniArtifactEvals100],
+  ["manni:graph:1.0.0", manniGraph100],
+  ["manni:citations:1.0.0", manniCitations100],
+  ["manni:core-strict:1.0.0", manniCoreStrict100],
+  ["manni:stewardship-strict:1.0.0", manniStewardshipStrict100],
+  ["manni:audience-strict:1.0.0", manniAudienceStrict100],
+  ["manni:lifecycle-strict:1.0.0", manniLifecycleStrict100],
+  ["manni:structure-strict:1.0.0", manniStructureStrict100],
+  ["manni:terminology-strict:1.0.0", manniTerminologyStrict100],
+  ["manni:ai-context-strict:1.0.0", manniAiContextStrict100],
+  ["manni:evals-strict:1.0.0", manniEvalsStrict100],
+  ["manni:artifact-evals-strict:1.0.0", manniArtifactEvalsStrict100],
+  ["manni:graph-strict:1.0.0", manniGraphStrict100],
+  ["manni:citations-strict:1.0.0", manniCitationsStrict100],
+  ["tgdp:templates:1.1", tgdp11],
+  ["tgdp:templates-strict:1.1", tgdpStrict11],
 ]);
 
 /**
@@ -120,6 +168,43 @@ export function assertPublishableBuiltinId(id: string): void {
 }
 
 for (const id of BUILTINS.keys()) assertPublishableBuiltinId(id);
+
+/** Is `id` one of the bundled built-in ids? */
+export function isBuiltinId(id: string): boolean {
+  return BUILTINS.has(id);
+}
+
+/**
+ * A schema `meta.register` loaded from a local file (proposal 0070), named
+ * everywhere by its own `$id`, as a built-in is named by its id.
+ */
+export interface RegisteredSchema {
+  /** The schema's `$id`: `vendor:name:version`, or an `https://` URL. */
+  id: string;
+  /** The file, relative to the config file's directory, with forward slashes. */
+  file: string;
+  /** The file's absolute path. */
+  path: string;
+  /** The parsed schema: the object every lookup of `id` returns. */
+  schema: Record<string, unknown>;
+}
+
+/** The registered schemas of one config, keyed by `$id`. */
+export type RegisteredSchemas = ReadonlyMap<string, RegisteredSchema>;
+
+/**
+ * The strict version's id for `id`, by the naming the manni overlays use:
+ * `vendor:name:version` becomes `vendor:name-strict:version`. `undefined`
+ * for anything that is not a three-segment id, a URL included.
+ */
+export function strictIdOf(id: string): string | undefined {
+  if (classifyRef(id).kind !== "builtin") return undefined;
+  const parts = id.split(":");
+  if (parts.length !== 3) return undefined;
+  const [vendor, name, version] = parts;
+  if (vendor === undefined || name === undefined || version === undefined) return undefined;
+  return `${vendor}:${name}-strict:${version}`;
+}
 
 export function listBuiltins(): BuiltinInfo[] {
   return [...BUILTINS.entries()].map(([id, schema]) => ({
@@ -187,6 +272,30 @@ const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
   ["claude-skill/2.1.json", "anthropic:claude-skill:2.1"],
   ["mkdocs-material/9.7.json", "mkdocs:material:9.7"],
   ["claude-subagent/2.1.json", "anthropic:claude-subagent:2.1"],
+  ["core/1.0.0.json", "manni:core:1.0.0"],
+  ["stewardship/1.0.0.json", "manni:stewardship:1.0.0"],
+  ["audience/1.0.0.json", "manni:audience:1.0.0"],
+  ["lifecycle/1.0.0.json", "manni:lifecycle:1.0.0"],
+  ["structure/1.0.0.json", "manni:structure:1.0.0"],
+  ["terminology/1.0.0.json", "manni:terminology:1.0.0"],
+  ["ai-context/1.0.0.json", "manni:ai-context:1.0.0"],
+  ["evals/1.0.0.json", "manni:evals:1.0.0"],
+  ["artifact-evals/1.0.0.json", "manni:artifact-evals:1.0.0"],
+  ["graph/1.0.0.json", "manni:graph:1.0.0"],
+  ["citations/1.0.0.json", "manni:citations:1.0.0"],
+  ["core-strict/1.0.0.json", "manni:core-strict:1.0.0"],
+  ["stewardship-strict/1.0.0.json", "manni:stewardship-strict:1.0.0"],
+  ["audience-strict/1.0.0.json", "manni:audience-strict:1.0.0"],
+  ["lifecycle-strict/1.0.0.json", "manni:lifecycle-strict:1.0.0"],
+  ["structure-strict/1.0.0.json", "manni:structure-strict:1.0.0"],
+  ["terminology-strict/1.0.0.json", "manni:terminology-strict:1.0.0"],
+  ["ai-context-strict/1.0.0.json", "manni:ai-context-strict:1.0.0"],
+  ["evals-strict/1.0.0.json", "manni:evals-strict:1.0.0"],
+  ["artifact-evals-strict/1.0.0.json", "manni:artifact-evals-strict:1.0.0"],
+  ["graph-strict/1.0.0.json", "manni:graph-strict:1.0.0"],
+  ["citations-strict/1.0.0.json", "manni:citations-strict:1.0.0"],
+  ["tgdp/1.1.json", "tgdp:templates:1.1"],
+  ["tgdp-strict/1.1.json", "tgdp:templates-strict:1.1"],
 ];
 
 /** Published URL → built-in id, under the current base. */
@@ -529,6 +638,12 @@ export interface LoadSchemaOptions {
    * runs.
    */
   pins?: ReadonlyMap<string, SchemaPin>;
+  /**
+   * The schemas `meta.register` loaded (proposal 0070), keyed by `$id`. A ref
+   * naming one resolves to its file's schema before anything else is
+   * consulted, so a registered `https://` id is never fetched.
+   */
+  registered?: RegisteredSchemas;
 }
 
 /**
@@ -915,6 +1030,8 @@ export function schemaLoadOptions(args: {
   offline?: boolean;
   /** From `collectSchemaPins(config)`; omitted when the config pins nothing. */
   pins?: ReadonlyMap<string, SchemaPin>;
+  /** The config's registered schemas (`config.registered`), when it has any. */
+  registered?: RegisteredSchemas;
 }): LoadSchemaOptions {
   return {
     cacheDir: schemaCacheDir(args.root),
@@ -925,6 +1042,9 @@ export function schemaLoadOptions(args: {
     // exactly the options object it produced before 0008.
     ...(args.pins !== undefined && args.pins.size > 0
       ? { pins: args.pins }
+      : {}),
+    ...(args.registered !== undefined && args.registered.size > 0
+      ? { registered: args.registered }
       : {}),
   };
 }
@@ -980,11 +1100,30 @@ function assertIntegrity(
   );
 }
 
+/**
+ * The message for an id nothing answers to. It points at `manni meta schemas`
+ * for the built-ins, which are too many to read in one line, and names the
+ * registered ids, because a registered id is typed exactly like a built-in
+ * one and a run with no config registers nothing.
+ */
+export function unknownSchemaMessage(
+  ref: string,
+  registered: RegisteredSchemas | undefined,
+): string {
+  const ids = [...(registered?.keys() ?? [])];
+  return `Unknown schema "${ref}". manni meta schemas lists the built-in ids. Registered by meta.register: ${ids.length > 0 ? ids.join(", ") : "none"}.`;
+}
+
 /** Load and return the JSON Schema object for a reference. */
 export async function loadSchema(
   ref: string,
   options: LoadSchemaOptions = {},
 ): Promise<Record<string, unknown>> {
+  // A registered schema answers for its id before a built-in, a cache or a
+  // request is consulted: the config vouches for the file (proposal 0070).
+  const registered = options.registered?.get(ref);
+  if (registered) return registered.schema;
+
   const { kind } = classifyRef(ref);
   const pin = options.pins?.get(ref);
 
@@ -1002,12 +1141,7 @@ export async function loadSchema(
 
   if (kind === "builtin") {
     const schema = BUILTINS.get(ref);
-    if (!schema) {
-      const available = [...BUILTINS.keys()].join(", ");
-      throw new DocmetaError(
-        `Unknown built-in schema "${ref}". Available: ${available || "(none)"}.`,
-      );
-    }
+    if (!schema) throw new DocmetaError(unknownSchemaMessage(ref, options.registered));
     return schema;
   }
 

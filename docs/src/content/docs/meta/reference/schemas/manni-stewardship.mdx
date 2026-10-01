@@ -1,0 +1,308 @@
+---
+title: manni stewardship vocabulary
+description: "The manni:stewardship:1.0.0 schema for attribution, ownership and review: who wrote a page, who answers for it, its own dates, and what it was verified against."
+sidebar:
+  label: "manni:stewardship:1.0.0"
+type: reference
+id: meta-reference-schemas-manni-stewardship
+keywords: ["stewardship", "manni:stewardship:1.0.0", "owner", "review", "strict overlay"]
+language: en
+audiences: ["schema-authors"]
+intent: "Record who wrote a page, who answers for it, its dates, and what it was verified against, with manni:stewardship:1.0.0."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema"]
+sample-questions:
+  - "Which fields does manni:stewardship:1.0.0 define?"
+  - "Which stewardship fields can derive stamp?"
+  - "What does the stewardship strict overlay narrow?"
+graph:
+  label: "manni stewardship vocabulary"
+  type: reference
+last-updated: 2026-09-27
+tags:
+  - metadata
+  - schema
+  - vocabulary
+  - stewardship
+  - ownership
+  - review
+action: understand
+next-steps:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/set-up/derived-metadata/
+  - /manni/meta/schemas/field-location/
+related-pages:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/set-up/derived-metadata/
+  - /manni/meta/schemas/field-location/
+risks: read-only
+prerequisites:
+  - schema
+  - meta-schemas-field-location
+---
+
+**Built-in id:** `manni:stewardship:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/stewardship/1.0.0.json`.
+A `$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+**The question it answers: is this page cared for?** Every field is a fact a
+person asserts about the document, though version control approximates some of
+them. That covers who wrote the page, who owns it, and who to consult. It also
+covers when the page was written, when it last changed, when it was last
+verified, and against what. Adopt it when a docs set has owners and a review
+habit, and you want both recorded where a check can see them.
+
+## Use it
+
+Stewardship is in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it on every page with no config line. A config's own `schemas` add
+to the default set. An override replaces the set, so an entry that should keep
+stewardship sets `defaults: true`:
+
+```yaml
+meta:
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/guide.json
+```
+
+## Fields
+
+| Field | Type | Location | Notes |
+|---|---|---|---|
+| `authors` | string, object, or list of them | `external` | Who wrote the page. `owner` is who answers for it now |
+| `owner` | string or list | `external` | Who answers for the page, as a name, handle, chat channel, or team slug. Ownership systems such as Backstage make this field mandatory |
+| `stakeholders` | string or list | `external` | Who has a stake in this page being right, such as the feature's engineer, the product owner, or the support lead |
+| `reviewed-by` | string or list | `external` | Who did the last review. The spelling avoids `reviewers`, which MyST uses for scholarly metadata |
+| `created` | W3CDTF date | `external` | When the document was written. The document's date, not the date its path appeared in this repo |
+| `last-updated` | W3CDTF date | `page` | When the content last changed in a way a reader notices. Not every commit that touched the file |
+| `last-reviewed` | W3CDTF date | `external` | When the last review happened. Freshness tooling reads this field |
+| `review-interval` | ISO 8601 duration | `external` | How often review is due, such as `P90D` or `P1Y`. Machines can compare these, unlike `90d` |
+| `verified-against` | string, object, or list of them | `external` | The product version or spec the content was checked against, such as `operator 1.4.2` or `{name: operator, version: 1.4.2}` |
+| `source-of-truth` | string, object, or list of them | `external` | Where the facts live, as a repo path or an API spec. A drift check compares the page against it |
+
+No field is required. Every list field takes one string or a non-empty list
+without duplicates. Three fields also take objects. `authors` accepts the
+person objects that MyST and Docusaurus define. `verified-against` and
+`source-of-truth` accept an object with any keys, so an anchor can be
+structured for a checker instead of written for a reader. Every form still
+refuses to be empty.
+
+The Location column is the `x-manni-location` mark each field carries. `page`
+means the value belongs in the document's own metadata and reaches delivered
+output. `external` means it belongs in the collection's external-metadata
+manifest. A field is `page` when an agent fetching the page acts on it.
+`last-updated` is the one stewardship field an agent uses, to judge whether a
+page is fresh enough to trust. The rest name people and review cadence. See
+[field location](/manni/meta/schemas/field-location/) for how the marks are
+used.
+
+## Additional properties
+
+Allowed. The root is open, so a generator's keys and the other vocabularies'
+keys pass beside stewardship's. Stewardship checks only the ten keys it claims.
+
+## Example
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+authors:
+  - Jane Doe
+  - name: Sam Reviewer          # MyST/Docusaurus person objects are legal
+owner: platform-docs
+stakeholders: [jane.doe, pm-alex]
+reviewed-by: [sam.reviewer]
+created: 2025-11-04
+last-updated: 2026-08-20
+last-reviewed: 2026-08-20
+review-interval: P90D
+verified-against: operator 1.4.2
+source-of-truth: https://github.com/example/operator/tree/main/helm
+---
+```
+
+An anchor can also be structured, or carry more than one entry.
+
+```yaml
+---
+title: Roll out the admission webhook
+description: Enable the operator's admission webhook and confirm it is serving.
+verified-against:
+  - name: operator
+    version: 1.4.2
+  - kubernetes 1.31
+source-of-truth:
+  path: charts/operator/values.yaml
+  kind: helm-values
+---
+```
+
+## A common mistake
+
+A page template that leaves `authors: []` as a placeholder fails, because no
+form of a stewardship field may be empty.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+authors: []
+last-updated: 2026-08-20
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:stewardship:1.0.0
+✗ page.md
+    /authors  must NOT have fewer than 1 items  (line 4)  [manni:stewardship:1.0.0]
+    /authors  warning "authors" is stored in the page; manni:stewardship:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+
+1 file checked, 0 passed, 1 failed, 1 error, 1 warning
+```
+
+The exit code is 1. The warning is the location mark at work, because
+`--no-config` gives an `external` field no manifest to live in. Drop the key
+until someone is named. An empty `""` or `{}` fails too.
+
+## Design decisions
+
+- **`authors` records who wrote the page, and `owner` records who answers for
+  it now.** The two part company the moment an author moves on, which is why
+  both exist. Who wrote a page belongs with the question of whether it is
+  cared for, not with core's question of what it is. It is not a derivable
+  fact either. Git records who committed a change, not who wrote the prose.
+- **`authors` keeps its own shape.** `owner`, `stakeholders`, and
+  `reviewed-by` are a plain name or a list of names. `authors` must also
+  accept every documented MyST and Docusaurus person form, so it cannot share
+  their definition. The cost is that stewardship is not uniform in shape.
+  Normalizing `authors` breaks the family's compatibility rule against
+  two schemas that define the field. It still refuses `""`, `[]`, `{}`, and
+  bare numbers.
+- **The document's own dates are asserted, not derived.** `created` and
+  `last-updated` live here because git answers a neighbouring question.
+  `git log` reports the history of a path in this repo. A page migrated from
+  a CMS, or split out of a longer one, has a path younger than its content. A
+  last commit date also moves for a typo fix, a link sweep, or a bulk
+  frontmatter migration. None of those change what the page says. A published
+  page carries no repo, so a stamped date travels with the document where a
+  derived one cannot.
+- **The cost of stamping a date is real.** A hand-typed `last-updated` goes
+  stale quietly, and no JSON Schema can catch that. [`manni meta derive`
+  stamps managed fields from evidence, and `validate` reports a stamp that has
+  gone stale](/manni/meta/set-up/derived-metadata/). A repository chooses which
+  fields it manages.
+- **`last-updated` is not `last-reviewed`.** An update changes the content. A
+  review confirms it is still true. A page can have either without the other,
+  which is why both dates exist. Both carry the `last-` prefix because both
+  name the most recent instance of a repeating event. `created` needs no
+  prefix, because a document is written once.
+- **The names avoid every neighbour's spelling.** Seven built-ins claim `date`,
+  and the family's compatibility rule holds that key at their loosest
+  definition, which does not require a date at all. Nothing claims a bare
+  `created` or `last-updated`. DITA spells the neighbours `critdates.created`
+  and `critdates.revised`. Hugo uses `lastmod` and Docusaurus `last_update`.
+  Starlight and VitePress use `lastUpdated`, and Open Graph
+  `article:modified_time`.
+- **An anchor can be written for a reader or for a checker.**
+  `verified-against` and `source-of-truth` take a string, an object, or a list
+  of either. `operator 1.4.2` is the short spelling.
+  `{name: operator, version: 1.4.2}` is the one a drift check compares without
+  parsing prose. `verified-against` can be
+  [derived from a command](/manni/meta/set-up/derived-metadata/#derive-a-field-with-a-command)
+  that reads the product's own version, and a stamp that disagrees is a
+  finding. The list form exists because a page is usually anchored to more
+  than one thing. Object keys are open, so `{name, version}` and `{path, kind}`
+  are recommendations. The strict overlay makes them contracts.
+- **The review dates are records only.** JSON Schema cannot compare a date to
+  today, so a `last-reviewed` from 1998 validates. Computing the due date from
+  `last-reviewed` plus `review-interval`, and judging it, belongs to tooling
+  that can read a clock. Any freshness grader can consume these fields.
+- **There is no stored due-date field.** It duplicates a value the two
+  existing fields already give, and a hand-maintained copy of a derived value
+  goes stale.
+- **All three dates use W3CDTF with a field-range check.** Reduced precision
+  is legal, so `2026` and `2026-08` pass. A timestamp requires its timezone,
+  because the W3CDTF profile mandates one. An impossible date such as
+  `2026-13-45` fails here. Without that check it reaches downstream tooling as
+  `Invalid Date`, and the page never comes due. The check is not
+  calendar-exact, so February 31 passes. No date is compared to another
+  either, so a `last-updated` older than its `created` validates.
+- **The field is `stakeholders` rather than `sme`.** It is broader than a
+  subject-matter expert on purpose. The product owner and the support lead
+  have a stake in the page being right, without being its technical
+  authority. Project-wide stakeholder lists stay in project docs. This field
+  is for the people who differ from page to page.
+
+## Strict overlay
+
+**Strict overlay id:** `manni:stewardship-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.0.0.json`.
+The overlay holds only what strict adds. It narrows the form of a value that is
+present and requires no key, so a page with no stewardship fields still passes
+it.
+
+| Field | Strict adds |
+|---|---|
+| `authors` | A list only, with unique entries. A string entry is one line with no leading or trailing whitespace. A person object carries `name`, and its `email` and `url` are well formed |
+| `owner` | Each value is a handle a GitHub or GitLab CODEOWNERS file accepts. That means `@user`, `@org/team`, a GitLab nested group, `@@role`, or an email address |
+| `stakeholders`, `reviewed-by` | Each value is one line with no leading or trailing whitespace |
+| `created`, `last-updated`, `last-reviewed` | An RFC 3339 full date, or a date-time with seconds and an offset. A year or month alone fails |
+| `verified-against` | An object entry carries `name` and `version`, alone or in a list. The version's format stays free, and a string entry is unchanged |
+| `source-of-truth` | An object entry carries `path` or `url`, alone or in a list. A string entry is one id, path or URL on one line with no surrounding space |
+
+`review-interval` is the same in both, because its ISO 8601 pattern is already
+strict.
+
+`strict: true` stacks it right after the vocabulary, with every other
+default's overlay beside its own base:
+
+```yaml
+meta:
+  strict: true
+```
+
+To adopt this overlay alone, list its id. The default set already carries the
+vocabulary:
+
+```yaml
+meta:
+  schemas:
+    - manni:stewardship-strict:1.0.0
+```
+
+Each schema is checked on its own, and a finding names the one that produced
+it. A strict-only failure reads as one, beside the location warning a run
+without a manifest prints.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+authors: Jane Doe
+verified-against:
+  name: operator
+last-updated: 2026-08-20
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:stewardship:1.0.0 -s manni:stewardship-strict:1.0.0
+✗ page.md
+    /authors  must be array  (line 4)  [manni:stewardship-strict:1.0.0]
+    /verified-against  must have required property 'version'  (line 5)  [manni:stewardship-strict:1.0.0]
+    /authors  warning "authors" is stored in the page; manni:stewardship:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+    /verified-against  warning "verified-against" is stored in the page; manni:stewardship:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 5)  [location:external]
+
+1 file checked, 0 passed, 1 failed, 2 errors, 2 warnings
+```
+
+The open vocabulary accepts both values, so the overlay alone fails the page.

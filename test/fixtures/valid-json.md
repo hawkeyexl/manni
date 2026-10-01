@@ -7,7 +7,8 @@
     "a",
     "b"
   ],
-  "timestamp": "2026-06-25T10:00:00Z"
+  "timestamp": "2026-06-25T10:00:00Z",
+  "description": "A JSON-fenced document."
 }
 ;;;
 

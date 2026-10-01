@@ -8,6 +8,44 @@ related-terms: [schema]
 abstract: The schemas resolved for one file, all of which apply.
 definition: >-
   The one-or-more schemas resolved for a single file.
+keywords:
+  - schema set
+  - schemas
+  - schema resolution
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+  - schema-authors
+  - contributors
+intent: Say what schema set means in manni meta and where it is covered in full.
+lifecycle: published
+applies-to:
+  - domain:meta
+related-pages:
+  - meta-reference-schema-resolution
+sample-questions:
+  - What is a schema set?
+  - Must a file satisfy every schema in its set?
+graph:
+  label: schema set
+  type: concept
+last-updated: 2026-09-21
+tags:
+  - validation
+  - metadata
+  - resolution
+action: understand
+concepts:
+  - schema
+prerequisites:
+  - schema
+next-steps:
+  - meta-reference-schema-resolution
+risks: read-only
+broader:
+  - schema
+scope-note: In manni meta, a schema set is the collection of one or more schemas that apply to a single file during validation.
 ---
 
 <p>{frontmatter.definition}</p>

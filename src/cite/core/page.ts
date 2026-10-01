@@ -3,7 +3,8 @@
  *
  * Entries come from the frontmatter (via meta's extractor for the format), or
  * from `CheckPageOptions.citations` when a manifest owns them; either way each
- * one is validated against the bundled draft schema and carries where it sits.
+ * one is validated against the registered `manni:citations:1.0.0` schema and
+ * carries where it sits.
  * Markers are `cite <id> [<id>…]` comments in the body, resolved to the
  * entries they name, so each citation knows what anchors it. Every id one
  * marker names anchors the same text, so every claim under it pins the same
@@ -15,7 +16,7 @@
 import { extname } from "node:path";
 import * as Ajv2020Ns from "ajv/dist/2020.js";
 import type { ValidateFunction } from "ajv/dist/2020.js";
-import citationsSchema from "../schema/citations.json" with { type: "json" };
+import citationsSchema from "../../meta/schemas/citations/1.0.0.json" with { type: "json" };
 import {
   extractorForExtension,
   locateFrontmatter,

@@ -3,6 +3,45 @@ title: Move and hand off a termbase
 description: "Read a glossary from any construct manni reads, render it as term pages, a single glossary file, TBX, SKOS, CSV or JSON, see which fields each target keeps, and hand the set to a translation system."
 sidebar:
   order: 2
+type: how-to
+id: term-set-up-move-and-hand-off
+keywords:
+  - termbase
+  - DocBook
+  - TBX
+  - CSV
+  - glossary
+language: en
+audiences:
+  - ci-engineers
+intent: Move a glossary between constructs and formats, and hand the term set to a translation system as TBX or CSV.
+lifecycle: published
+applies-to:
+  - domain:term
+next-steps:
+  - term-reference-terminology
+  - term-reference-cli
+concepts:
+  - extractor
+risks:
+  - destructive
+sample-questions:
+  - How do I turn a DocBook glossary into term pages?
+  - Which fields does each manni term write format keep?
+  - What does a round trip through manni term write lose?
+graph:
+  label: Move and hand off a termbase
+  type: task
+last-updated: 2026-09-17
+tags:
+  - conversion
+  - translation
+  - interchange
+action: develop
+prerequisites:
+  - term-get-started
+related-pages:
+  - term-ci
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';

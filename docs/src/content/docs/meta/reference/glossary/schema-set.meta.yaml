@@ -1,0 +1,47 @@
+docs/src/content/docs/meta/reference/glossary/schema-set.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-schema-set
+      assertion: A reader can say what schema set means in manni meta.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-9
+      integrity: sha256-ca80b83b70c0b093bf3b96ad3880969217d552802fb5e6e6d59461dd639be194
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16
+  source-of-truth:
+    - path: src/meta/core/validator.ts
+      kind: implementation
+      lines: 685-693
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /broader
+        - /scope-note
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /concepts: 0.9
+        /prerequisites: 0.9
+        /next-steps: 0.95
+        /source-of-truth: 0.9
+        /risks: 0.95
+        /broader: 0.75
+        /scope-note: 0.9

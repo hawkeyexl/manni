@@ -49,6 +49,10 @@ collections:
     externalMetadata:
       - file: "{page}.citations.yaml"
         keys: [citations]
+      # No `keys` (proposal 0068): this manifest owns every other field the
+      # page's schemas mark `x-manni-location: external`, so a page's
+      # bookkeeping sits beside it and never reaches the published site.
+      - file: "{page}.meta.yaml"
 
 # Where Vale's configuration is, for the tools that run Vale. `manni term lint`
 # runs it over the glossary's definitions, and `manni term write -f vale` reads
@@ -62,10 +66,44 @@ tools:
     config: .vale.ini
 
 meta:
-  # Every published page must declare a non-empty title and description. Scoped
-  # to the `site` collection, so it governs the docs and nothing else.
+  # No `fields` (proposal 0069): derive manages the merge-safe fields each
+  # page's schemas claim. Here that is owner, created and last-updated from
+  # stewardship, and provenance from ai-context, stamped into each page's
+  # manifest. They stay current after a squash merge, which this gate needs.
+  # Authors and reviewers would not, so they stay derivable at read time only.
+  derive:
+    # The published pages only. Stewardship is a default schema (proposal
+    # 0070), so every fixture under the repository claims `owner` too, and
+    # this file is ambient for every run beneath it, the test suite included.
+    collections: [site]
+    sources: [git, codeowners]
+    # CODEOWNERS format, at a path GitHub does not search, so it names an
+    # owner without turning on automatic review requests.
+    codeowners: docs/content-strategy/OWNERS
+    machines: ["*[bot]", "noreply@anthropic.com"]
+
+  # The docs site dogfoods the built-in vocabularies. `defaults: true` puts the
+  # default set first, and `strict: true` stacks each default's strict overlay
+  # beside it (proposal 0070). First match wins, so the glossary comes before
+  # the collection it belongs to.
   overrides:
+    # Glossary term pages follow the terminology vocabulary and keep
+    # `type: term`, which `manni term` reads, so they take no TGDP type. The
+    # glossary's index is not a term page, so the glob leaves it to the site.
+    # Terminology is not a default, so its overlay is listed by hand.
+    - files: "docs/src/content/docs/meta/reference/glossary/!(index).mdx"
+      defaults: true
+      strict: true
+      schemas:
+        - ./docs/doc-frontmatter.schema.json
+        - astro:starlight:0.41
+        - manni:terminology:1.0.0
+        - manni:terminology-strict:1.0.0
+    # Every other published page. Each one must declare a non-empty title and
+    # description, which the house schema requires.
     - collection: site
+      defaults: true
+      strict: true
       schemas:
         - ./docs/doc-frontmatter.schema.json
         # The platform contract this site actually runs on. The house schema
@@ -76,6 +114,10 @@ meta:
         # `text`. Before it existed, every Starlight key on every page went
         # unchecked.
         - astro:starlight:0.41
+        # A page's TGDP template, in `type`. Open, because a few pages are
+        # types TGDP does not publish. `strict` leaves it open: it is not a
+        # default schema.
+        - tgdp:templates:1.1
 
 # The accessibility tool reads `a11y:` and nothing else. Same narrowness as
 # above, for the same reason: this file is ambient for every run beneath the

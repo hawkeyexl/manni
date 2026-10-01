@@ -1,0 +1,41 @@
+docs/src/content/docs/meta/reference/schemas/dcmi-elements.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/dcmi/1.1.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: turn-on
+      assertion: "A reader can turn on dcmi:elements:1.1 for their pages."
+      type: capability
+      grader: ai
+    - id: date-rule
+      assertion: "A reader can write a Dublin Core date that passes the W3CDTF rule."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-101
+      integrity: sha256-a68f9afc697bd68a7280c4fa33fde267abb4121b3febd8ea2f16d5a75feff079
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /action
+        - /related-pages
+        - /risks
+        - /prerequisites
+        - /next-steps
+      confidence:
+        /resource: 0.95
+        /action: 0.8
+        /related-pages: 0.75
+        /risks: 0.7
+        /prerequisites: 0.75
+        /next-steps: 0.85

@@ -1,0 +1,347 @@
+---
+title: The manni vocabularies
+description: "The eleven manni:<family>:1.0.0 built-in vocabularies for maintained, machine-readable docs: what each one answers, how they stack, and their strict overlays."
+type: concept
+id: meta-reference-schemas-manni-vocabularies
+keywords: ["manni vocabularies", "strict overlays", "field location", "quality contracts"]
+language: en
+audiences: ["schema-authors"]
+intent: "Choose which manni vocabularies to stack for a docs set, and when to add their strict overlays."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "override"]
+sample-questions:
+  - "Which manni vocabularies exist and what does each answer?"
+  - "How do the manni vocabularies stack?"
+  - "What does a strict overlay add?"
+graph:
+  label: "The manni vocabularies"
+  type: concept
+last-updated: 2026-09-27
+tags:
+  - vocabularies
+  - schemas
+  - metadata
+  - strict-overlays
+  - quality-contracts
+action: understand
+prerequisites:
+  - schema
+  - frontmatter
+  - override
+next-steps:
+  - /manni/meta/reference/schemas/manni-evals/
+  - /manni/meta/reference/schemas/manni-artifact-evals/
+risks: read-only
+related-pages:
+  - meta-schemas-field-location
+  - meta-reference-schema-resolution
+---
+
+manni meta's other built-in schemas transcribe contracts other people
+published, such as Hugo's front matter, DITA's prolog, and Open Graph. The
+manni vocabularies are the schemas manni publishes itself. They cover the facts
+a docs set needs to stay maintained and readable by machines. Those are
+ownership, review, audience, applicability, lifecycle, relationships, AI
+provenance, quality checks, citations and terminology. No site generator
+defines those facts, and no standard owns them.
+
+## The eleven vocabularies
+
+The eleven form one family. They share the same conventions, and no two of
+them claim the same key. They are split by intent, so each one answers a
+separate question. Six describe a page. Five carry quality, knowledge-graph,
+citation and terminology metadata that any grader, graph builder, drift check,
+glossary tool or CI tool can read.
+
+| Id | The question it answers | Fields |
+|---|---|---|
+| [`manni:core:1.0.0`](/manni/meta/reference/schemas/manni-core/) | What is this page? | `title`\* · `description`\* · `id` · `type` · `keywords` · `language` |
+| [`manni:stewardship:1.0.0`](/manni/meta/reference/schemas/manni-stewardship/) | Is it cared for? | `authors` · `owner` · `stakeholders` · `reviewed-by` · `created` · `last-updated` · `last-reviewed` · `review-interval` · `verified-against` · `source-of-truth` |
+| [`manni:audience:1.0.0`](/manni/meta/reference/schemas/manni-audience/) | Who does it serve, and who may see it? | `audiences` · `personas` · `journeys` · `intent` · `visibility` |
+| [`manni:lifecycle:1.0.0`](/manni/meta/reference/schemas/manni-lifecycle/) | Where is it in its life? | `lifecycle` · `replaced-by` · `supersedes` · `remove-by` |
+| [`manni:structure:1.0.0`](/manni/meta/reference/schemas/manni-structure/) | What does it connect to? | `applies-to` · `not-applicable-to` · `concepts` · `prerequisites` · `next-steps` · `related-pages` |
+| [`manni:ai-context:1.0.0`](/manni/meta/reference/schemas/manni-ai-context/) | How did machines make it, and how may they use it? | `provenance` · `meta-provenance` · `risks` · `sample-questions` |
+| [`manni:evals:1.0.0`](/manni/meta/reference/schemas/manni-evals/) | What must be true of this page? | `evals` · `eval-suite` · `eval-skip` |
+| [`manni:graph:1.0.0`](/manni/meta/reference/schemas/manni-graph/) | What does the knowledge graph know about it? | `graph`, one closed block of SKOS concepts, iiRDS typing and PROV provenance |
+| [`manni:artifact-evals:1.0.0`](/manni/meta/reference/schemas/manni-artifact-evals/) | What must a session using this artifact have done? | `metadata.evals` · `metadata.eval-skip` · `metadata.meta-provenance` |
+| [`manni:citations:1.0.0`](/manni/meta/reference/schemas/manni-citations/) | What do its claims rest on? | `citations` |
+| [`manni:terminology:1.0.0`](/manni/meta/reference/schemas/manni-terminology/) | What does this term mean, and what else is it called? | `label` · `definition` · `abstract` · `alt-labels` · `hidden-labels` · `broader` · `narrower` · `related-terms` · `see` · `scope-note` |
+
+\* Required. Core's `title` and `description` are the only fields the family
+requires of every page it applies to. Terminology asks more only of a page
+marked `type: term`, which names its `label` and carries a `definition` or a
+`see`.
+
+Each vocabulary is published at
+`https://hawkeyexl.github.io/manni/schemas/<family>/1.0.0.json`. A `$schema`
+that names one of these URLs resolves to the bundled copy, with no network
+call.
+
+## Nine on by default
+
+Nine of the eleven are in manni meta's
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), after
+`google:okf:0.1` and `passo-uno:seven-action:1.0`. They are core, audience,
+structure, stewardship, lifecycle, ai-context, evals, graph and citations. A
+run with no schema configured checks all nine, so every page needs `title`
+and `description`. Config `schemas` add to the default set rather than
+replace it.
+
+Terminology and artifact-evals stay out. A term page and an artifact are
+special kinds of page, and a set of guides has neither. Name them where they
+apply:
+
+```yaml
+meta:
+  overrides:
+    - files: "glossary/*.md"
+      defaults: true
+      schemas:
+        - manni:terminology:1.0.0
+```
+
+An override replaces the set unless it sets `defaults: true`, as this one
+does. `defaults: false` at the top level turns the default set off, and a
+config that does so lists the vocabularies it wants by id.
+
+## How they stack
+
+Each schema in a set is checked on its own, and a finding from any one of them
+fails the file. The finding names the id that produced it. A page with only
+`title` and `description` passes the whole family, because only core requires
+anything of a page. Each further vocabulary constrains its keys once a page
+carries them.
+
+Every vocabulary keeps its root open. A generator's keys and the other
+vocabularies' keys pass beside its own, so the family stacks with a
+generator's schema too. This set is the default set, then Starlight:
+
+```yaml
+meta:
+  schemas:
+    - astro:starlight:0.41
+```
+
+A house schema reaches a vocabulary through `$ref`. This one requires
+citations on every page it applies to, and leaves the entry shape to the
+vocabulary.
+
+```json
+{ "allOf": [{ "$ref": "manni:citations:1.0.0" }], "required": ["citations"] }
+```
+
+## Strict overlays
+
+The open vocabularies claim each key at the loosest definition any other
+built-in gives it. A page valid for its own generator stays valid when a
+vocabulary joins its set. The cost is that some standards are recommended and
+not enforced. `language` recommends BCP 47 and accepts `english_US`, and a
+date may be a year alone.
+
+Each vocabulary has a strict overlay that enforces those standards. An overlay
+holds only what strict adds, and it judges a page beside its vocabulary. No
+overlay is in the default set. `strict: true` stacks the overlay of each
+default right after its base:
+
+```yaml
+meta:
+  strict: true
+```
+
+`strict` reaches only the defaults and registered schemas. For terminology or
+artifact-evals, list the overlay beside its vocabulary:
+
+```yaml
+meta:
+  schemas:
+    - manni:terminology:1.0.0
+    - manni:terminology-strict:1.0.0
+```
+
+| Vocabulary | Strict overlay |
+|---|---|
+| `manni:core:1.0.0` | [`manni:core-strict:1.0.0`](/manni/meta/reference/schemas/manni-core/#strict-overlay) |
+| `manni:stewardship:1.0.0` | [`manni:stewardship-strict:1.0.0`](/manni/meta/reference/schemas/manni-stewardship/#strict-overlay) |
+| `manni:audience:1.0.0` | [`manni:audience-strict:1.0.0`](/manni/meta/reference/schemas/manni-audience/#strict-overlay) |
+| `manni:lifecycle:1.0.0` | [`manni:lifecycle-strict:1.0.0`](/manni/meta/reference/schemas/manni-lifecycle/#strict-overlay) |
+| `manni:structure:1.0.0` | [`manni:structure-strict:1.0.0`](/manni/meta/reference/schemas/manni-structure/#strict-overlay) |
+| `manni:ai-context:1.0.0` | [`manni:ai-context-strict:1.0.0`](/manni/meta/reference/schemas/manni-ai-context/#strict-overlay) |
+| `manni:evals:1.0.0` | [`manni:evals-strict:1.0.0`](/manni/meta/reference/schemas/manni-evals/#strict-overlay) |
+| `manni:graph:1.0.0` | [`manni:graph-strict:1.0.0`](/manni/meta/reference/schemas/manni-graph/#strict-overlay) |
+| `manni:artifact-evals:1.0.0` | [`manni:artifact-evals-strict:1.0.0`](/manni/meta/reference/schemas/manni-artifact-evals/#strict-overlay) |
+| `manni:citations:1.0.0` | [`manni:citations-strict:1.0.0`](/manni/meta/reference/schemas/manni-citations/#strict-overlay) |
+| `manni:terminology:1.0.0` | [`manni:terminology-strict:1.0.0`](/manni/meta/reference/schemas/manni-terminology/#strict-overlay) |
+
+Every overlay keeps the same rules.
+
+- **It narrows form, and requires no key.** Strict constrains a value that is
+  present. A page that omits a key passes the overlay. Nested entry objects
+  may require their members.
+- **Its root stays open.** A page stacks several vocabularies, so no overlay
+  closes it.
+- **It constrains only its vocabulary's keys.** An overlay claims no key its
+  vocabulary does not.
+- **It carries no location marks.** The vocabulary owns `x-manni-location`.
+- **It uses patterns, never `format`.** Every command that reads the schema
+  gives the same verdict.
+
+Each vocabulary's page lists what its overlay adds, field by field.
+
+## Field location
+
+Every top-level field in the family carries an `x-manni-location` mark, `page`
+or `external`. `page` means the value belongs in the document's own metadata
+and reaches delivered output. `external` means it belongs in the collection's
+external-metadata manifest. A field is `page` when an agent fetching the page
+acts on it, such as `title`, `last-updated` or `risks`. Ownership, review
+cadence, evals and citations are `external`.
+
+`manni meta validate` warns about an `external` field stored in the page. See
+[field location](/manni/meta/schemas/field-location/) for how the marks are
+used and how to override one.
+
+## What a fully annotated page looks like
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+type: how-to
+owner: "@example/platform-docs"
+stakeholders: [jane.doe, pm-alex]
+reviewed-by: [sam.reviewer]
+created: 2025-11-04
+last-updated: 2026-08-20
+last-reviewed: 2026-08-20
+review-interval: P90D
+verified-against: operator 1.4.2
+source-of-truth: https://github.com/example/operator/tree/main/helm
+audiences: [administrators]
+personas: [persona-platform-admin]
+intent: Deploy the operator on a running cluster
+visibility: public
+lifecycle: published
+applies-to: [operator-1.4, kubernetes]
+concepts: [Operator, Helm chart]
+prerequisites: [create-api-token]
+related-pages: [operator-architecture]
+provenance:
+  - generated-by: claude-fable-5
+    lines: 12-31
+    integrity: sha256-5d41402abc4b2a76b9719d911017c592ae2b8f1c6e0d3a4b7c9e8f1a2b3c4d5e
+meta-provenance:
+  - generated-by: claude-fable-5
+    fields: [/intent, /sample-questions]
+    confidence: { /intent: 0.9, /sample-questions: 0.84 }
+risks: [privileged, cost-incurring]
+sample-questions:
+  - How do I install the operator on EKS?
+evals:
+  - id: install-verified
+    assertion: The Helm install steps produce a Ready operator pod.
+    grader: human
+    severity: warning
+citations:
+  - id: chart-version
+    claim:
+      lines: 8
+      integrity: sha256-2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+    source:
+      file: helm/operator/Chart.yaml
+      lines: 3
+      integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f
+      commit-sha: 3f9c2a1e7b0d4c5a6f8e9d0b1a2c3d4e5f607182
+graph:
+  label: Operator installation
+  broader: [Operator]
+  type: task
+---
+```
+
+Every key above is optional except `title` and `description`. A page that
+carries only those two is valid. Each further key is a step you take when you
+are ready for it. The block shows the whole family on one page. It passes
+every page vocabulary and every strict overlay. It also draws a warning for
+each field marked `external`, which a real collection keeps in its manifest.
+
+## The principles behind every field
+
+1. **Weak floors teach bad habits.** A floor that accepts an empty title
+   teaches the habit it exists to prevent. So `title` and `description` are
+   required, every string core defines is non-empty, and `type` and
+   `language` take a single value. This is stricter than the loosest schemas
+   that share those keys. Docusaurus permits an empty title, and Dublin Core
+   allows repeated elements. The family's compatibility rule is that a
+   document valid under another built-in stays valid under these vocabularies.
+   These strictness choices are the only exceptions.
+2. **One value is a string, and many values are a list.** This holds for every
+   field, with no per-field exceptions to remember.
+3. **Claim content, never rendering.** There is no `slug`, `layout`, `image`,
+   `tags`, ordering, or navigation here. The generator owns how a page is
+   displayed and where it sits. These vocabularies only describe what a page
+   is.
+4. **Derivable facts lie.** There is no `date` key and no stored review
+   deadline. `last-reviewed` plus `review-interval` give the due date, so a
+   stored copy could only agree with them or lie. `created` and `last-updated`
+   sit in stewardship, because git's timestamps describe the path rather than
+   the document.
+5. **Facts live at their altitude.** A fact belongs at the level that owns it.
+   Reader expertise belongs in your persona definitions, not on every page.
+   Style guides belong in config. `stakeholders` stays at page level because
+   the right people to consult differ from page to page.
+6. **Enumerate only what is switched on and bounded.** A closed list of values
+   appears only where something downstream branches on each one, as with
+   `visibility` and `lifecycle`. Fields with recommended but open values,
+   such as `risks` and the artifact grader family, use an open list. Any other
+   string stays legal. A consumer that meets an unknown value treats it as a
+   caution rather than as nothing.
+7. **Compose, don't duplicate.** Content classification is three layers, each
+   owned by the schema that published it. Core's `type` says what the page is.
+   Seven-Action's `action` says what the reader is doing, and `intent` names
+   the specific job.
+8. **Deeper wins.** Where the `graph` block and a page field describe the same
+   fact (`type`, `concepts`, `applies-to`), the declaration inside the block
+   wins. The page-level field is the fallback.
+9. **Machines propose, and humans retire the provenance.** A `meta-provenance`
+   entry names the model that proposed some fields or evals and its confidence
+   in each. Humans delete the entry once they have reviewed them. One key
+   covers the whole family, on the page and under an artifact's `metadata`. A
+   surviving entry means machine-written metadata that nobody has checked yet.
+   Prose is different. `provenance` pins the body lines a machine wrote, and
+   `manni meta derive` keeps those pins.
+
+## Quality contracts, on pages and on agent artifacts
+
+One eval vocabulary covers documentation pages and the instruction artifacts,
+such as skills and agent definitions, that agents run with.
+
+```yaml
+# a docs page
+eval-suite: how-to
+evals:
+  - id: install-command-current
+    assertion: The documented install command matches the current package name.
+  - id: links-resolve
+    grader: command
+    command: ["npx", "linkinator", "{file}"]
+```
+
+```yaml
+# a SKILL.md: the host tool owns the top level, so evals nest under metadata
+metadata:
+  evals:
+    - id: used-read
+      assertion: The session read at least one source file before editing.
+      grader: tool-usage
+      options: { tool: Read, expect: used }
+    - Reproduce the bug with a failing test before applying the fix.
+```
+
+Entries share one shape on both sides. The
+[evals](/manni/meta/reference/schemas/manni-evals/) and
+[artifact-evals](/manni/meta/reference/schemas/manni-artifact-evals/) pages
+list every key. The two differ in their grader families and in what `target`
+can select. Pages are graded by `ai`, `command`, `human`, or a `tool:*`
+integration. Sessions are graded by `ai`, `human`, `command` over the trace,
+or a session grader such as `tool-usage` or `cost`.

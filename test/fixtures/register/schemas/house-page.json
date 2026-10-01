@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "house:page:1.0.0",
+  "title": "House page",
+  "description": "Every page names the team that answers for it.",
+  "type": "object",
+  "required": ["team"],
+  "properties": {
+    "team": { "type": "string", "minLength": 1 }
+  }
+}

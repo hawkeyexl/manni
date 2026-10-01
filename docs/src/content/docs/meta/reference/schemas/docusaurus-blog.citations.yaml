@@ -1,0 +1,65 @@
+docs/src/content/docs/meta/reference/schemas/docusaurus-blog.mdx:
+  citations:
+    - id: docusaurus-blog-last-update
+      claim:
+        lines: 72
+        integrity: sha256-f7caf87295285c7527528fccb7c1e7779b16e042a66e0351423eb666d2f017c8
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 105-120
+        integrity: sha256-4a593dbe2a1587985f1beb01e06dedce9c3f016d223567e14b103c3cc65d70a3
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-toc-levels
+      claim:
+        lines: 70-71
+        integrity: sha256-5df92772c6dfbdab12d0cfca8e38f5e5e0396bcdfd9cf313978408f772bd477a
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 75-86
+        integrity: sha256-7024ddeaabb1d3de06962dcc6f126676054b24d92568c0e07ed2e6de8ff6f881
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-draft-and-unlisted
+      claim:
+        lines: 67-68
+        integrity: sha256-d0a4e0ab9d92d217f9d5525fc79482012c9f2d35799f625e43a4612e78525849
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 63-70
+        integrity: sha256-e845434a10f3fe37bb2d6d7bb27f6aefc0124edc537a60a95f010af0b660c6ed
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-tags
+      claim:
+        lines: 66
+        integrity: sha256-b845eba0627b0e05978606c4f4e2ff1c9bac4c73def18b353a8a6045cc43dd20
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 49-62
+        integrity: sha256-37cce282c7d01508c65248302ff205ffc746d081b993cc8a5327e92d18dc2d53
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-deprecated-author-fields
+      claim:
+        lines: 54-57
+        integrity: sha256-4828c2e8c598fa5675f9a3e6f61cc4120a131e58c4163fc20091d043b847e601
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 15-32
+        integrity: sha256-7a232be2417d1abe8f9099217047e1e7745961f1c807e95af4831537211d4a1c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-authors
+      claim:
+        lines: 53
+        integrity: sha256-4bea89f8c22892546126c79825bca5ce8d705a733e6033ebfb7ccbe74a3fe99a
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 129-148
+        integrity: sha256-a10129547e7f8afc63759d62301d97cf12fa6c4fe10da08c648092740a32151c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-blog-other-fields
+      claim:
+        lines: 58-65
+        integrity: sha256-9b868b50e3adde46cc12a2f5bb848d2070ab45ba88bc3c38274df8578251b510
+      source:
+        file: src/meta/schemas/docusaurus-blog/3.10.json
+        lines: 33-48
+        integrity: sha256-8ee9bd8e7e49f558e1222f96fb17e848ff3503caff6f2d2d643606e1d2548b1a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

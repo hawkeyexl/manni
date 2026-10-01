@@ -1,0 +1,62 @@
+docs/src/content/docs/meta/index.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: route-to-journey
+      assertion: "A reader can name the manni meta page that serves their job: setting up, CI, schemas or fixing a check."
+      type: capability
+      grader: ai
+    - id: state-what-meta-checks
+      assertion: A reader can say that manni meta checks metadata presence and format, not prose.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2
+      integrity: sha256-98a3ce9df62ee21de84a2854a832118a0c53a9e8c6efc028860b980a59f2eaf3
+    - generated-by: Claude Opus 5
+      lines: 4-5
+      integrity: sha256-6c8096bf8e33edd0b55b08bfbd132166cd05513b90288f9052cde136b186ecc5
+    - generated-by: Claude Fable 5.1
+      lines: 6-32
+      integrity: sha256-c20c2cd548703c449b518583c43b82c9f51a8333f57991d1c8e1ac1f72c981d6
+    - generated-by: Claude Opus 5
+      lines: 34
+      integrity: sha256-6258b4b443cd6db59cdbe5d28f9ef6bcc8f7d9982d953c6ced6a0a1041670068
+    - generated-by: Claude Fable 5.1
+      lines: 35-45
+      integrity: sha256-06c48751400758f636f2673ae331620a129330b00c85a099217b6cf31e802fac
+    - generated-by: Claude Fable 5.1
+      lines: 52-80
+      integrity: sha256-a8ebb85200e3d1e1d36f725748d2bbec7f7fae7d1a7a081d14e1db973dd28d83
+    - generated-by: Claude Opus 5.5
+      lines: 82-84
+      integrity: sha256-83c76ac07ce43182e188a97f4297519797bd70e111922a3d94bfa840ed1b3a43
+    - generated-by: Claude Fable 5.1
+      lines: 85
+      integrity: sha256-aa17eefa1e5439e9af73778b7fc2270e55e43b3218512c194d803489bd3f2c24
+    - generated-by: Claude Opus 5.5
+      lines: 86-89
+      integrity: sha256-57f90f18ad0d9336dae58c6930621366487b3a91bb183723a928c45bd5ebeeef
+    - generated-by: Claude Fable 5.1
+      lines: 91-115
+      integrity: sha256-1e5a77567ea78f7c019a253c1d99c8063cee127534b78e7d27c478e7132f26fc
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-05
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /risks
+      confidence:
+        /tags: 0.7
+        /action: 0.85
+        /risks: 0.95

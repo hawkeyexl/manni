@@ -1,0 +1,54 @@
+docs/src/content/docs/term/index.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  journeys:
+    - s6
+    - m9
+    - d8
+    - t4
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/term/commands
+    - path: src/term/core/writers
+    - path: src/term/core/vale.ts
+    - path: src/term/core/writers/vale.ts
+    - path: src/term/reporters
+  eval-suite: term
+  evals:
+    - id: explain-term-record
+      assertion: A reader can say what a term record holds and the two shapes a term set can take.
+      type: capability
+      grader: ai
+    - id: route-to-journey
+      assertion: A reader can pick the manni term page that fits their job, from defining terms to fixing a failing check.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-129
+      integrity: sha256-d29ae3944b5eea549e2ba9e7ecc11f0697c59cd04283a4fb354c3d7e3f3ce146
+    - generated-by: Claude Opus 5.5
+      lines: 131-134
+      integrity: sha256-36811e81e9457ec7000794f4890b3849b0fa883a52431d31aa59f1c7ad2fb7b1
+    - generated-by: Claude Opus 5
+      lines: 135
+      integrity: sha256-150ebed8747968d256ef60d06d4be894e155f37aa257147333e406d9f0049fbb
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /risks
+      confidence:
+        /tags: 0.75
+        /action: 0.9
+        /concepts: 0.8
+        /risks: 0.9

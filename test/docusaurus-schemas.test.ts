@@ -384,7 +384,7 @@ describe("the field sets match the Docusaurus 3.10 reference", () => {
 
 describe("the reference page matches the shipped schemas", () => {
   // Source-of-truth guard in the spirit of `docs:check-cli`. The field tables
-  // in reference/docusaurus-schemas.mdx are hand-written, so a type changed in
+  // on each schema's page under reference/schemas/ are hand-written, so a type changed in
   // the JSON and not in the table ships a page that contradicts the tool —
   // which is exactly what happened when these were retyped from `integer` to
   // `number`.
@@ -422,10 +422,16 @@ describe("the reference page matches the shipped schemas", () => {
     return row?.[1]?.trim();
   }
 
+  const PAGE_OF: Record<string, string> = {
+    [DOCS]: "docusaurus-docs",
+    [BLOG]: "docusaurus-blog",
+    [PAGES]: "docusaurus-pages",
+  };
+
   for (const id of [DOCS, BLOG, PAGES]) {
     it(`${id} field types agree with the reference page`, async () => {
       const page = await readFile(
-        resolve(root, "docs/src/content/docs/meta/reference/docusaurus-schemas.mdx"),
+        resolve(root, `docs/src/content/docs/meta/reference/schemas/${PAGE_OF[id] ?? ""}.mdx`),
         "utf8",
       );
       const schema = (await loadSchema(id)) as {

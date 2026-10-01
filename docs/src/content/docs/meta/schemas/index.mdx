@@ -4,6 +4,54 @@ description: Write a JSON Schema that manni meta validates against, covering req
 sidebar:
   label: Author a schema
   order: 1
+type: how-to
+id: meta-schemas
+keywords:
+  - author a schema
+  - required fields
+  - formats
+  - JSON Schema
+language: en
+audiences:
+  - schema-authors
+intent: Write a JSON Schema for a metadata standard, with required and recommended fields and value formats, and point documents at it.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-reference-schemas
+  - meta-schemas-resolution
+  - meta-schemas-versioning
+  - meta-reference-schema-resolution
+  - meta-reference-schemas-google-okf
+concepts:
+  - schema
+  - $schema key
+  - OKF
+  - dialect
+sample-questions:
+  - How do I write a schema manni meta validates against?
+  - How do I make a field recommended rather than required?
+  - How does a document name its own schema?
+graph:
+  label: Author a schema for your metadata standard
+  type: task
+last-updated: 2026-10-01
+tags:
+  - json-schema
+  - metadata
+  - validation
+  - schema-authoring
+action: develop
+related-pages:
+  - meta-reference-schemas
+  - meta-schemas-resolution
+  - meta-schemas-versioning
+  - meta-reference-schema-resolution
+  - meta-reference-schemas-google-okf
+risks: read-only
+prerequisites:
+  - meta-get-started
 ---
 
 import { Steps, Tabs, TabItem, CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';
@@ -137,7 +185,7 @@ Setting `"additionalProperties": false`? A document's own `$schema:` key won't t
 ## The built-in OKF schema, a fuller example
 
 {/* cite default-set-is-okf-and-seven-action */}
-The schema anchoring manni meta's default set is [Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md), addressed as `google:okf:0.1`. Run `manni meta schemas` for the full built-in list. OKF is a useful reference because it combines every technique on this page in a realistic standard. Reading it is the fastest way to see how the pieces fit together. When no other schema applies, manni meta falls back to a *set* rather than to OKF alone. That set is `google:okf:0.1` together with [`passo-uno:seven-action:1.0`](/manni/meta/reference/taxonomy-schemas/), which constrains an optional `action` field and requires nothing of its own.
+The schema anchoring manni meta's default set is [Open Knowledge Format (OKF) v0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md), addressed as `google:okf:0.1`. Run `manni meta schemas` for the full built-in list. OKF is a useful reference because it combines every technique on this page in a realistic standard. Reading it is the fastest way to see how the pieces fit together. When no other schema applies, manni meta falls back to a *set* rather than to OKF alone. That set is eleven built-ins. OKF comes first, then [`passo-uno:seven-action:1.0`](/manni/meta/reference/taxonomy-schemas/), which constrains an optional `action` field and requires nothing. The nine [manni vocabularies](/manni/meta/reference/schemas/manni-vocabularies/) follow, and `manni:core:1.0.0` among them requires `title` and `description`.
 
 ```json title="src/schemas/okf/0.1.json"
 {
@@ -186,14 +234,14 @@ Notice the design choices OKF makes, each one a decision you'll face in your own
 - **Exactly one required field** (`type`). OKF demands the bare minimum, so adopting it rarely breaks existing files.
 - **`additionalProperties: true`**, stated explicitly. Unknown keys are welcome by design, because OKF is meant to be extended.
 - **Recommended fields with real constraints.** `title`, `description`, and `tags` are optional, but if present they're checked. `resource` and `timestamp` carry `uri` and `date-time` formats.
-- **A `$id` and human-readable `title`/`description`.** Validation does not need these, but they document the schema for the humans who read it. `$id` is what gives the *built-in* its `google:okf:0.1` address. Setting a `$id` in a schema file of your own does not register a new built-in id, because built-ins are bundled into manni meta. You reference your own schema by its file path or URL, never by its `$id`. Give it an id of your own, or leave it out; see the warning below before reusing one.
+- **A `$id` and human-readable `title`/`description`.** Validation does not need these, but they document the schema for the humans who read it. `$id` is what gives the *built-in* its `google:okf:0.1` address. A `$id` in a schema file of your own names it only once your config registers the file. Until then you reference it by its file path or URL. [Name your schema and its strict version](#name-your-schema-and-its-strict-version) shows the registered form. Give it an id of your own, or leave it out; see the warning below before reusing one.
 
 <Aside type="note" title="Give a copied built-in your own `$id`">
 The block above is the shipped `google:okf:0.1`, so copying it verbatim leaves you with a *local* file claiming a *built-in's* `$id`.
 
 Your edits still apply. manni meta judges a schema by the file you pointed it at, not by the id it claims. A copy you tightened rejects what you told it to reject, even while a built-in holds the same id. What you lose is legibility. Two different contracts answer to one name in reports and in `$ref`s from other schemas. Any other JSON Schema tool that reads the file sees the same clash.
 
-Change `$id` to something of your own (`acme:docs:1.0`), or delete the line. Then reference the file by path:
+Change `$id` to something of your own (`acme:docs:1.0`), or delete the line. Registering a file whose `$id` is a built-in id is refused outright. Reference the file by path:
 
 ```bash
 manni meta validate docs/ -s ./schemas/metadata.schema.json
@@ -206,15 +254,15 @@ If OKF's field set is close to what you need, copy it into a file and adjust it.
 
 ## Borrow a schema instead of writing one
 
-{/* cite manni-ships-23-builtin-schemas */}
-Everything above assumes you're defining the field set yourself. manni meta ships twenty-three schemas you can adopt without authoring anything. The [built-in schema registry](/manni/meta/reference/built-in-schemas/) lists all of them in one table, with what each constrains and which two are on by default.
+{/* cite manni-ships-45-builtin-schemas */}
+Everything above assumes you're defining the field set yourself. manni meta ships forty-seven schemas you can adopt without authoring anything. The [built-in schema registry](/manni/meta/reference/schemas/) lists all of them in one table, with what each constrains and which eleven are on by default. Twenty-two are the [manni vocabularies](/manni/meta/reference/schemas/manni-vocabularies/), eleven families for maintained docs with a strict overlay each.
 
-If your site is built with Docusaurus, start with [`docusaurus:docs:3.10`](/manni/meta/reference/docusaurus-schemas/) and its blog and pages counterparts. They encode the front matter contract of Docusaurus 3.10 and require nothing. Switching one on cannot fail a page that was already building. It only catches a `sidebar_position: "2"` that your site would have rejected later. They claim none of the `type` or `action` keys below, so they stack with any of the vocabularies. They do share `tags` with OKF, which allows only strings where Docusaurus also allows tag objects. See [the overlap note](/manni/meta/reference/built-in-schemas/#two-kinds-of-built-in) before pairing those two.
+If your site is built with Docusaurus, start with [`docusaurus:docs:3.10`](/manni/meta/reference/docusaurus-schemas/) and its blog and pages counterparts. They encode the front matter contract of Docusaurus 3.10 and require nothing. Switching one on cannot fail a page that was already building. It only catches a `sidebar_position: "2"` that your site would have rejected later. They claim none of the `type` or `action` keys below, so they stack with any of the vocabularies. They do share `tags` with OKF, which allows only strings where Docusaurus also allows tag objects. See [the overlap note](/manni/meta/reference/schemas/#two-kinds-of-built-in) before pairing those two.
 
 If what you need is a *closed list of document types*, three of the built-ins are vocabularies:
 
 - `diataxis:diataxis:1.0` requires `type` and constrains it to the four [Diátaxis](https://diataxis.fr/) forms.
-- `tgdp:templates:1.0` requires `type` and constrains it to the 25 template slugs of [The Good Docs Project](https://www.thegooddocsproject.dev/template).
+- `tgdp:templates:1.1` requires `type` and recommends the 25 template slugs of [The Good Docs Project](https://www.thegooddocsproject.dev/template). Stack `tgdp:templates-strict:1.1` beside it to close `type` to them.
 - `passo-uno:seven-action:1.0` constrains `action` to the seven reader actions of the [Seven-Action model](https://passo.uno/seven-action-model/).
 
 The first two both claim `type`, so they are alternatives; either one pairs with the third.
@@ -285,6 +333,106 @@ A relative file path like `./schemas/metadata.schema.json` resolves from the **w
 Naming the schema inside a document is the most self-contained option. You can also apply a schema to a whole directory from config, or set one from the command line. When several could apply to one file, a fixed precedence order decides which wins. The next guide, [How schema resolution works](/manni/meta/schemas/resolution/), lays out that order and the three kinds of schema reference (built-in, file, and URL).
 </Aside>
 
+## Name your schema and its strict version
+
+A path works everywhere a schema is named, but it has two costs. Every config
+entry repeats the path. Nothing pairs your schema with a stricter version of
+it, the way each manni vocabulary pairs with its `-strict` overlay.
+[`meta.register`](/manni/meta/reference/configuration/#register) fixes both. It
+names your schema by its `$id`, and `strict: true` stacks the strict version
+beside it.
+
+<Steps>
+
+1. **Give each schema an id in your own vendor.** The id is
+   `vendor:name:version`, or an absolute `https://` URL. The strict version
+   carries the same id with `-strict` after the name. It narrows what the base
+   already claims, and the two judge a file together.
+
+   ```json title="schemas/house-page.json"
+   {
+     "$schema": "https://json-schema.org/draft/2020-12/schema",
+     "$id": "house:page:1.0.0",
+     "type": "object",
+     "required": ["team"],
+     "properties": {
+       "team": { "type": "string", "minLength": 1 }
+     }
+   }
+   ```
+
+   ```json title="schemas/house-page-strict.json"
+   {
+     "$schema": "https://json-schema.org/draft/2020-12/schema",
+     "$id": "house:page-strict:1.0.0",
+     "type": "object",
+     "properties": {
+       "team": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
+     }
+   }
+   ```
+
+   The vendors `manni`, `check`, `external`, `encrypted` and `derived` are
+   reserved, and a built-in id cannot be reused.
+
+2. **Register the directory, and name the base id.** Every `*.json` file under
+   a registered directory registers, however deep.
+
+   ```yaml title="manni.config.yaml"
+   meta:
+     register:
+       - ./schemas/
+     strict: true
+     schemas:
+       - house:page:1.0.0
+   ```
+
+   Each page now meets the default set, then `house:page:1.0.0`, then
+   `house:page-strict:1.0.0`. `strict: true` also stacks each `manni:`
+   default's overlay after it.
+
+3. **Check what registered.**
+
+   ```sh
+   npx @hawkeyexl/manni meta schemas
+   ```
+
+   A **Registered schemas** section follows the built-ins, with each id beside the file it came from.
+
+4. **Validate.** A value the base accepts and the strict version refuses is
+   reported against the strict id:
+
+   ```text
+   ✗ docs/install.md
+       /team  must match pattern "^[a-z][a-z0-9-]*$"  (line 5)  [house:page-strict:1.0.0]
+   ```
+
+</Steps>
+
+The id now works anywhere a built-in id does. A page can carry
+`$schema: house:page:1.0.0`, a one-off run can pass `-s house:page:1.0.0`, and
+another schema can `$ref` it. `-s` judges the named schema alone, so it stacks
+no strict version. Registration belongs to the config, so under `--no-config`
+the id is an unknown schema, exit 2.
+
+To roll the strict version out gradually, leave `strict` off at the top level
+and turn it on in one override at a time. An override replaces the set unless
+it asks for the defaults:
+
+```yaml title="manni.config.yaml"
+meta:
+  register:
+    - ./schemas/
+  schemas:
+    - house:page:1.0.0
+  overrides:
+    - collection: guides
+      defaults: true
+      strict: true
+      schemas:
+        - house:page:1.0.0
+```
+
 ## Keep a value encrypted on the page
 
 {/* cite x-manni-encrypt-keyword */}
@@ -325,8 +473,8 @@ through every command.
 <CardGrid>
   <LinkCard
     title="Built-in schemas"
-    href="/manni/meta/reference/built-in-schemas/"
-    description="The registry: every schema manni meta ships, what it constrains, and which two are on by default."
+    href="/manni/meta/reference/schemas/"
+    description="The registry: every schema manni meta ships, what it constrains, and which eleven are on by default."
   />
   <LinkCard
     title="How schema resolution works"
@@ -345,7 +493,7 @@ through every command.
   />
   <LinkCard
     title="Built-in OKF schema, explained"
-    href="/manni/meta/reference/okf-schema/"
+    href="/manni/meta/reference/schemas/google-okf/"
     description="Every field in google:okf:0.1, its dialect, and the upstream spec."
   />
 </CardGrid>
@@ -359,10 +507,15 @@ through every command.
 {/* step {"description":"The minimal title.schema.json shape (the extra.schema.json fixture) passes a doc that has a title.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/valid.md -s ./test/fixtures/extra.schema.json","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* step {"description":"A required field that is absent is a hard failure: a frontmatter-free doc fails the required `title`.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/no-frontmatter.md -s ./test/fixtures/extra.schema.json","exitCodes":[1],"stdio":"must have required property 'title'"}} */}
 {/* step {"description":"The date-time format is enforced: a malformed timestamp fails against OKF.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/bad-timestamp.md","exitCodes":[1],"stdio":"date-time"}} */}
-{/* step {"description":"`schemas` lists the built-in OKF schema the page documents, one of the two the default set falls back to.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"google:okf:0.1"}} */}
+{/* step {"description":"`schemas` lists the built-in OKF schema the page documents, the first of the eleven the default set falls back to.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"google:okf:0.1"}} */}
 {/* step {"description":"`schemas` also lists the Diataxis vocabulary this page points readers at.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"diataxis:diataxis:1.0"}} */}
 {/* step {"description":"Stacking OKF with a taxonomy schema passes a document carrying a canonical Diataxis type.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/taxonomy/diataxis-how-to.md -s google:okf:0.1 -s diataxis:diataxis:1.0","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* step {"description":"The vocabulary is closed: a near-miss spelling fails against the Diataxis schema.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/taxonomy/diataxis-bad-type.md -s diataxis:diataxis:1.0","exitCodes":[1],"stdio":"allowed values"}} */}
+{/* step {"description":"A registered id names the house schema in config, and a page every schema in the set accepts passes.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/register/manni.config.yaml test/fixtures/register/good.md","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"strict: true stacks the registered strict version, which refuses a value the base accepts.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/register/manni.config.yaml test/fixtures/register/loose-team.md","exitCodes":[1],"stdio":"[house:page-strict:1.0.0]"}} */}
+{/* step {"description":"strict: true also stacks each manni default's overlay, so core-strict refuses a malformed language.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/register/manni.config.yaml test/fixtures/register/bad-language.md","exitCodes":[1],"stdio":"[manni:core-strict:1.0.0]"}} */}
+{/* step {"description":"A document's $schema may name a registered id.","runShell":{"command":"npx @hawkeyexl/manni meta validate -c test/fixtures/register/manni.config.yaml test/fixtures/register/self-described.md","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"Registration belongs to the config, so under --no-config the id is an unknown schema (exit 2).","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/register/good.md -s house:page:1.0.0 --no-config","exitCodes":[2],"stdio":"Unknown schema \"house:page:1.0.0\""}} */}
 {/* step {"description":"`schemas` also lists the Good Docs Project vocabulary this page points readers at.","runShell":{"command":"npx @hawkeyexl/manni meta schemas","exitCodes":[0],"stdio":"tgdp:templates:1.0"}} */}
 {/* step {"description":"The TGDP vocabulary accepts a template slug that has no Diataxis equivalent.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/taxonomy/tgdp-installation-guide.md -s tgdp:templates:1.0","exitCodes":[0],"stdio":"1 passed"}} */}
 {/* test end */}

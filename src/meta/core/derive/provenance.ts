@@ -48,6 +48,35 @@ export const DEFAULT_MACHINES: readonly string[] = ["*[bot]"];
 /** The instance path every provenance finding carries. */
 const PROVENANCE_POINTER = "/provenance";
 
+/**
+ * Whether a line is blank: empty, or whitespace only. A blank line carries no
+ * authorship (proposal 0071). It has no evidence, never starts or ends a
+ * range, and never splits one: blank lines between two lines of one machine
+ * sit inside its range, and its pin covers them.
+ */
+export function isBlankLine(line: string | undefined): boolean {
+  return (line ?? "").trim() === "";
+}
+
+/** A span with its blank edge lines trimmed, or undefined when every line is blank. */
+function trimBlank(body: readonly string[], span: PageLines): PageLines | undefined {
+  let { start, end } = span;
+  while (start <= end && isBlankLine(body[start - 1])) start++;
+  while (end >= start && isBlankLine(body[end - 1])) end--;
+  return start > end ? undefined : { start, end };
+}
+
+/** Why a span is not a well-formed range: it holds only blank lines, or its first line, its last, or both are blank. */
+export type BlankEdges = "only" | "start" | "end" | "both";
+
+function blankEdges(body: readonly string[], span: PageLines): BlankEdges | undefined {
+  const first = isBlankLine(body[span.start - 1]);
+  const last = isBlankLine(body[span.end - 1]);
+  if (!first && !last) return undefined;
+  if (trimBlank(body, span) === undefined) return "only";
+  return first && last ? "both" : first ? "start" : "end";
+}
+
 // ---------------------------------------------------------------------------
 // Entries and pages
 // ---------------------------------------------------------------------------
@@ -320,10 +349,47 @@ function stampEvidence(commit: CommitEvidence, origLine: number, fenced: boolean
 }
 
 /**
+ * Whether a commit carries the page's provenance stamp (proposal 0069, rule
+ * 3): at least one entry of its stamp verifies against the page at that
+ * commit. Such a commit is the whole account of the lines it last touched.
+ */
+function carriesStamp(commit: CommitEvidence, fenced: boolean | undefined): boolean {
+  const carried = fenced === false ? carriedUnfenced : carriedFenced;
+  const known = carried.get(commit);
+  if (known !== undefined) return known;
+  let verified = false;
+  if (commit.blob !== undefined) {
+    const page = readProvenancePage(commit.blob, fenced === undefined ? undefined : { fenced });
+    const stamp = commit.stamp === undefined ? page.stamp : provenanceEntries(commit.stamp);
+    verified = stamp.some((entry) => {
+      const span = parseLines(entry.lines);
+      return span !== undefined && pinOfLines(page.body, span) === entry.integrity;
+    });
+  }
+  carried.set(commit, verified);
+  return verified;
+}
+
+/**
+ * `carriesStamp` per commit, since every line a commit last touched asks it.
+ * Keyed by identity: a run builds its CommitEvidence objects fresh, so an
+ * entry never outlives the evidence it describes. A pool of reused objects
+ * would need this cleared between runs. One map per fenced setting, since the
+ * answer reads the commit's blob as fenced or not: a commit shared by a
+ * Markdown page and an HTML page is judged once for each.
+ */
+const carriedFenced = new WeakMap<CommitEvidence, boolean>();
+const carriedUnfenced = new WeakMap<CommitEvidence, boolean>();
+
+/**
  * Rules 2 to 4 for one line. An uncommitted line has no commit, so none of
  * them applies to it; in particular the working tree's own stamp is never
  * evidence for itself. A stamp outranks its own commit's trailers, because
- * the stamp names lines and a trailer names a commit.
+ * the stamp names lines and a trailer names a commit. And a commit that
+ * carries a verified stamp is the whole account of its lines (proposal 0069,
+ * rule 3): a line outside every stamped range has no evidence, so a trailer
+ * a squash appended cannot turn a line the branch left unstamped into a
+ * machine's.
  */
 function recordedEvidence(line: BlameLine, ctx: EvidenceContext): LineEvidence {
   if (line.uncommitted) return { rule: 5, sha: line.sha };
@@ -331,6 +397,7 @@ function recordedEvidence(line: BlameLine, ctx: EvidenceContext): LineEvidence {
   if (commit === undefined) throw new Error(`no commit ${line.sha}`);
   const stamped = stampEvidence(commit, line.origLine, ctx.fenced);
   if (stamped !== undefined) return { machine: stamped, rule: 2, sha: line.sha };
+  if (carriesStamp(commit, ctx.fenced)) return { rule: 5, sha: line.sha };
   const generated = commit.trailers.generatedBy.map((v) => v.trim()).find((v) => v !== "");
   if (generated !== undefined) return { machine: generated, rule: 3, sha: line.sha };
   for (const value of commit.trailers.coAuthoredBy) {
@@ -398,9 +465,11 @@ function readOptions(fenced: boolean | undefined): ReadPageOptions | undefined {
 }
 
 /**
- * Derive a page's `provenance`: resolve every body line, then group
- * contiguous lines resolved to one machine into one entry, pinned over the
- * current body.
+ * Derive a page's `provenance`: resolve every non-blank body line, then group
+ * the lines resolved to one machine into one entry, pinned over the current
+ * body. A blank line has no evidence and neither opens nor closes a group, so
+ * a range starts and ends on a non-blank line and spans the blank lines
+ * between two of its machine's lines (proposal 0071).
  */
 export function deriveProvenance(input: DeriveProvenanceInput): ProvenanceDerivation {
   const page = readProvenancePage(input.content, readOptions(input.fenced));
@@ -409,14 +478,18 @@ export function deriveProvenance(input: DeriveProvenanceInput): ProvenanceDeriva
   for (const line of input.blame) {
     const body = line.finalLine - page.bodyLine + 1;
     if (body < 1) continue; // a frontmatter line
+    if (isBlankLine(page.body[body - 1])) continue;
     evidenceByLine.set(body, resolveLineEvidence(line, ctx));
   }
   const groups: { machine: string; start: number; end: number; first: LineEvidence }[] = [];
   let open: (typeof groups)[number] | undefined;
   for (let n = 1; n <= page.body.length; n++) {
+    if (isBlankLine(page.body[n - 1])) continue;
     const evidence = evidenceByLine.get(n);
     const machine = evidence?.machine;
-    if (open !== undefined && machine === open.machine && n === open.end + 1) {
+    // Only blank lines lie between the open group's end and n: any other
+    // line would have closed it.
+    if (open !== undefined && machine !== undefined && machine === open.machine) {
       open.end = n;
       continue;
     }
@@ -450,7 +523,8 @@ export type ProvenanceStatus = "current" | "moved" | "changed" | "stale" | "unse
  * `unset`. `span` is where its text is now in body lines, and the recorded
  * lines for `changed`. `evidence` is the contradicting line's for `stale` and
  * the range's first line's for `unset`. `noEvidence` marks a current or moved
- * range no line of which names a machine.
+ * range no line of which names a machine. `blank` marks a stale entry whose
+ * text holds, at `span`, but starts or ends on a blank line (proposal 0071).
  */
 export interface ProvenanceComparison {
   status: ProvenanceStatus;
@@ -458,6 +532,7 @@ export interface ProvenanceComparison {
   span: PageLines;
   evidence?: LineEvidence;
   noEvidence?: true;
+  blank?: BlankEdges;
 }
 
 /**
@@ -513,10 +588,15 @@ function scanEvidence(
  * window names a different machine, and current or moved otherwise: lines
  * that name the stamp's machine or no machine are not a contradiction.
  *
- * A derived range is unset when some line of it lies outside every span a
- * result above holds, which for a changed entry is its recorded lines. A
- * person's edit inside an agent's range is therefore one changed finding,
- * not a changed finding and two unset ones.
+ * An entry whose text holds but starts or ends on a blank line, a blank-only
+ * one included, is not a well-formed range (proposal 0071): it is stale where
+ * its text is, and `blank` says why.
+ *
+ * A derived range is unset when some non-blank line of it lies outside every
+ * span a result above holds, which for a changed entry is its recorded lines.
+ * A person's edit inside an agent's range is therefore one changed finding,
+ * not a changed finding and two unset ones. A blank line is never unset, so
+ * entries a derived range spans across a blank line leave it covered.
  */
 export function compareProvenance(
   stamped: readonly ProvenanceEntry[],
@@ -533,6 +613,11 @@ export function compareProvenance(
     const takenHere = [...claimed].some((d) => sameSpan(d.span, recorded));
     if (!takenHere && pinOfLines(page.body, recorded) === entry.integrity) {
       const here = scanEvidence(evidenceByLine, recorded, machine);
+      const blank = blankEdges(page.body, recorded);
+      if (here.contradiction === undefined && blank !== undefined) {
+        results.push({ status: "stale", entry, span: recorded, blank });
+        continue;
+      }
       if (here.contradiction === undefined) {
         const exact = derived.find(
           (d) => !claimed.has(d) && sameSpan(d.span, recorded) && d.entry.integrity === entry.integrity,
@@ -572,6 +657,11 @@ export function compareProvenance(
       results.push({ status: "stale", entry, span: found.span, evidence: contradiction });
       continue;
     }
+    const blank = blankEdges(page.body, found.span);
+    if (blank !== undefined) {
+      results.push({ status: "stale", entry, span: found.span, blank });
+      continue;
+    }
     results.push({
       status: sameSpan(found.span, recorded) ? "current" : "moved",
       entry,
@@ -585,6 +675,7 @@ export function compareProvenance(
     if (claimed.has(d)) continue;
     let uncovered = false;
     for (let n = d.span.start; n <= d.span.end && !uncovered; n++) {
+      if (isBlankLine(page.body[n - 1])) continue;
       uncovered = !covering.some((s) => n >= s.start && n <= s.end);
     }
     if (uncovered) results.push({ status: "unset", entry: d.entry, span: d.span, evidence: d.evidence });
@@ -597,25 +688,72 @@ export function compareProvenance(
  * moved entries stay with `lines` rewritten, and every derived range not
  * already kept is added, which re-derives changed and stale entries and adds
  * unset ones. A changed entry no machine now answers for is dropped (stress
- * test 11: the bytes are gone); an entry nothing contradicts never is. A kept
- * entry keeps any key outside the closed set. Ordered by start line, stably.
+ * test 11: the bytes are gone); an entry nothing contradicts never is. An
+ * entry stale for its blank lines is kept trimmed to its first and last
+ * non-blank line and pinned over those, or dropped when it holds only blank
+ * lines (proposal 0071). A derived range not already kept is the newer
+ * account of its lines, of any machine: a kept entry within it is dropped,
+ * and one it partly overlaps keeps only the lines outside it, split in two
+ * when the range sits in its middle. Each piece is trimmed of blank edges and
+ * pinned over its own lines, or dropped when only blank lines are left. A
+ * kept entry keeps any key outside the closed set. Ordered by start line,
+ * stably.
  */
 export function planProvenanceWrite(
   comparisons: readonly ProvenanceComparison[],
   derivation: ProvenanceDerivation,
 ): ProvenanceEntry[] {
-  const kept: { entry: ProvenanceEntry; start: number }[] = [];
-  for (const r of comparisons) {
-    if (r.status === "current") kept.push({ entry: r.entry, start: r.span.start });
-    else if (r.status === "moved") kept.push({ entry: { ...r.entry, lines: lineSpec(r.span) }, start: r.span.start });
-  }
+  const { body } = derivation.page;
   const same = (a: ProvenanceEntry, b: ProvenanceEntry): boolean =>
     a["generated-by"] === b["generated-by"] && String(a.lines) === String(b.lines) && a.integrity === b.integrity;
-  const out = [...kept];
-  for (const d of derivation.derived) {
-    if (!kept.some((k) => same(k.entry, d.entry))) out.push({ entry: d.entry, start: d.span.start });
+  const kept: Written[] = [];
+  // An entry identical to one already kept is written once: a blank-edged
+  // entry trimmed can land on the lines of another entry the stamp holds.
+  const keep = (entry: ProvenanceEntry, span: PageLines): void => {
+    if (!kept.some((k) => same(k.entry, entry))) kept.push({ entry, span });
+  };
+  for (const r of comparisons) {
+    if (r.status === "current") keep(r.entry, r.span);
+    else if (r.status === "moved") keep({ ...r.entry, lines: lineSpec(r.span) }, r.span);
+    else if (r.status === "stale" && r.blank !== undefined) {
+      const span = trimBlank(body, r.span);
+      if (span !== undefined) keep({ ...r.entry, lines: lineSpec(span), integrity: pinOf(body, span) }, span);
+    }
   }
-  return out.sort((a, b) => a.start - b.start).map((k) => k.entry);
+  /**
+   * What is left of a kept entry beside a derived range: the pieces outside
+   * it, each trimmed of blank edges, pinned over its own lines, and dropped
+   * when only blank lines are left.
+   */
+  const outside = (k: Written, d: PageLines): Written[] => {
+    if (k.span.end < d.start || k.span.start > d.end) return [k];
+    const pieces: PageLines[] = [];
+    if (k.span.start < d.start) pieces.push({ start: k.span.start, end: d.start - 1 });
+    if (k.span.end > d.end) pieces.push({ start: d.end + 1, end: k.span.end });
+    return pieces.flatMap((piece) => {
+      const span = trimBlank(body, piece);
+      if (span === undefined) return [];
+      return [{ entry: { ...k.entry, lines: lineSpec(span), integrity: pinOf(body, span) }, span }];
+    });
+  };
+  let out: Written[] = [...kept];
+  const derived = new Set<Written>();
+  for (const d of derivation.derived) {
+    if (kept.some((k) => same(k.entry, d.entry))) continue;
+    out = out.flatMap((k) => (derived.has(k) ? [k] : outside(k, d.span)));
+    const written = { entry: d.entry, span: d.span };
+    derived.add(written);
+    out.push(written);
+  }
+  const unique: Written[] = [];
+  for (const k of out) if (!unique.some((u) => same(u.entry, k.entry))) unique.push(k);
+  return unique.sort((a, b) => a.span.start - b.span.start).map((k) => k.entry);
+}
+
+/** An entry a write plans, with the body lines it covers. */
+interface Written {
+  entry: ProvenanceEntry;
+  span: PageLines;
 }
 
 // ---------------------------------------------------------------------------
@@ -691,6 +829,14 @@ export function rangeResults(comparisons: readonly ProvenanceComparison[], bodyL
   });
 }
 
+/** How a finding says an entry's blank lines make it malformed. */
+const BLANK_WORDS: Record<BlankEdges, string> = {
+  only: "hold only blank lines",
+  start: "start on a blank line",
+  end: "end on a blank line",
+  both: "start and end on blank lines",
+};
+
 /**
  * The findings `validate` and `derive --check` file for a page's provenance:
  * one per changed, stale or unset range, in 0046's words. `line` is the
@@ -709,7 +855,10 @@ export function provenanceFindings(comparisons: readonly ProvenanceComparison[],
         message = `provenance lines ${lines} changed since ${machine} wrote them`;
         break;
       case "stale":
-        message = `provenance lines ${lines} say ${machine}; blame says ${r.evidence?.machine ?? "another machine"} (${evidenceRef(r.evidence)})`;
+        message =
+          r.blank !== undefined
+            ? `provenance lines ${lines} say ${machine} but ${BLANK_WORDS[r.blank]}`
+            : `provenance lines ${lines} say ${machine}; blame says ${r.evidence?.machine ?? "another machine"} (${evidenceRef(r.evidence)})`;
         break;
       case "unset":
         message = `provenance is unset for lines ${lines}; blame says ${machine} (${evidenceRef(r.evidence)})`;
@@ -768,6 +917,11 @@ export interface AttributeRangeInput {
   machines?: readonly string[];
   generatedBy: string;
   fenced?: boolean;
+  /**
+   * The page as `readProvenancePage` reads `content`, when the caller has it.
+   * Several ranges on one file then share one read instead of one each.
+   */
+  page?: ProvenancePage;
 }
 
 /**
@@ -776,12 +930,16 @@ export interface AttributeRangeInput {
  * them: the first such line in file order is named in the refusal. Evidence
  * that names the same machine, or none, lets the range through. Every
  * refusal is a `DocmetaError` (exit 2) in 0046's words.
+ *
+ * A blank line carries no authorship (proposal 0071): its evidence is never
+ * a refusal, the entry is trimmed to the range's first and last non-blank
+ * line, and a range of only blank lines writes nothing.
  */
-export function attributeRange(input: AttributeRangeInput): ProvenanceEntry {
+export function attributeRange(input: AttributeRangeInput): ProvenanceEntry | undefined {
   const { target } = input;
   const { page: path, lines: range } = parseProvenanceTarget(target);
   if (range === undefined) throw new Error(`provenance: ${target} names no lines`);
-  const page = readProvenancePage(input.content, readOptions(input.fenced));
+  const page = input.page ?? readProvenancePage(input.content, readOptions(input.fenced));
   if (range.end > page.lines.length) {
     throw new DocmetaError(
       `${path} has no lines ${spellLines(range)}: the file ends at line ${page.lines.length}.`,
@@ -795,6 +953,7 @@ export function attributeRange(input: AttributeRangeInput): ProvenanceEntry {
   const ctx = contextOf(input);
   for (const line of input.blame) {
     if (line.finalLine < range.start || line.finalLine > range.end) continue;
+    if (isBlankLine(page.lines[line.finalLine - 1])) continue;
     const evidence = recordedEvidence(line, ctx);
     if (evidence.machine !== undefined && evidence.machine !== input.generatedBy) {
       throw new DocmetaError(
@@ -802,6 +961,7 @@ export function attributeRange(input: AttributeRangeInput): ProvenanceEntry {
       );
     }
   }
-  const span = toBodyLines(range, page.bodyLine);
+  const span = trimBlank(page.body, toBodyLines(range, page.bodyLine));
+  if (span === undefined) return undefined;
   return { "generated-by": input.generatedBy, lines: lineSpec(span), integrity: pinOf(page.body, span) };
 }

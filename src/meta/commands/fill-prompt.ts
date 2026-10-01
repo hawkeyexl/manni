@@ -1,22 +1,29 @@
 /**
  * Prompt and schema construction for `fill`.
  *
- * The central idea is the **envelope schema**: rather than asking the model for
- * free-form values and checking them afterwards, each candidate property's own
- * subschema is lifted verbatim out of the document schema and wrapped in a
- * `{ value, confidence, reasoning }` object. The provider is then constrained to
- * emit something that already satisfies the user's schema, and the response is
- * validated against it before `fill` ever sees it. A malformed `date-time` or a
- * number where a string belongs never reaches the confidence gate at all — which
- * is what lets confidence be the *last* check rather than the only one.
+ * The central idea is the **envelope schema**: each candidate property is asked
+ * for as a `{ value, confidence, reasoning }` object, and the whole response is
+ * one object keyed by property. `buildEnvelopeSchema` builds three views of
+ * that envelope from one candidate list:
+ *
+ * - **sent**, what the provider is given. Each `value` is the projection of the
+ *   property's subschema (`fill-projection.ts`): a plain typed shape a local
+ *   grammar can represent, since a merged `allOf` would compile to `null`.
+ * - **skeleton**, which checks the response's shape and nothing else. A
+ *   response that fails it is a whole-file error.
+ * - **full**, each property's own subschema lifted verbatim, which checks every
+ *   value on its own. A malformed `date-time` fails that one field, never the
+ *   file, which is what lets confidence be the *last* check rather than the
+ *   only one.
  */
-import type { Candidate, ProposalSet } from "./fill-types.js";
+import { projectValue, withOffer, type ProjectionDefs } from "./fill-projection.js";
+import type { Candidate, FieldHint, Proposal, ProposalSet } from "./fill-types.js";
 
 /**
  * Part of the cache key: bump whenever the prompt wording or the envelope
  * schema construction changes, so stale proposals are not replayed.
  */
-export const FILL_PROMPT_VERSION = 4;
+export const FILL_PROMPT_VERSION = 6;
 
 /**
  * Characters of document sent per inference call.
@@ -74,14 +81,31 @@ export function splitBody(body: string, chunkChars: number): string[] {
  * on equal terms with one guessed from its introduction, which is the whole
  * point of reading past the first chunk. Ties keep the earlier chunk —
  * arbitrary, but stable across runs.
+ *
+ * `passes` says whether a value meets its property's rules. A passing value
+ * beats a failing one whatever their confidence, since a failing value is
+ * never written. A `null` value is the model declining and is never kept.
  */
-export function mergeProposals(sets: ProposalSet[]): ProposalSet {
+export function mergeProposals(
+  sets: ProposalSet[],
+  passes: (key: string, proposal: Proposal) => boolean = () => true,
+): ProposalSet {
   const merged: ProposalSet = {};
+  const held = new Map<string, boolean>();
   for (const set of sets) {
     for (const [key, proposal] of Object.entries(set)) {
-      const held = merged[key];
-      if (held === undefined || proposal.confidence > held.confidence) {
+      if (proposal.value === null) continue;
+      const ok = passes(key, proposal);
+      const current = merged[key];
+      const heldOk = held.get(key);
+      if (
+        current === undefined ||
+        heldOk === undefined ||
+        (ok && !heldOk) ||
+        (ok === heldOk && proposal.confidence > current.confidence)
+      ) {
         merged[key] = proposal;
+        held.set(key, ok);
       }
     }
   }
@@ -98,8 +122,8 @@ export const FILL_SYSTEM_PROMPT = [
   "Rules:",
   "- Base every value on evidence in the page. Never invent facts, URLs, dates,",
   "  authors, or identifiers that the page does not support.",
-  "- Omit a property entirely rather than guessing at it. A missing property is a",
-  "  normal, expected outcome.",
+  "- Omit a property, or answer null as its value, rather than guessing at it. A",
+  "  missing property is a normal, expected outcome.",
   "- Report an honest confidence between 0 and 1 that the value is correct and",
   "  that a careful human reviewer would agree with it. Do not inflate it.",
   "  Reserve values above 0.9 for values the page states plainly.",
@@ -107,8 +131,13 @@ export const FILL_SYSTEM_PROMPT = [
   "- Match each property's described purpose, not just its type.",
 ].join("\n");
 
-/** JSON Schema for one proposal, wrapping the target property's own subschema. */
-function proposalSchema(candidate: Candidate): Record<string, unknown> {
+const DIALECT = "https://json-schema.org/draft/2020-12/schema";
+
+/** JSON Schema for one proposal, wrapping `value`, the schema its value takes. */
+function proposalSchema(
+  candidate: Candidate,
+  value: Record<string, unknown>,
+): Record<string, unknown> {
   const described =
     typeof candidate.subschema.description === "string"
       ? candidate.subschema.description
@@ -121,7 +150,7 @@ function proposalSchema(candidate: Candidate): Record<string, unknown> {
       ? `Proposed value for "${candidate.key}": ${described}`
       : `Proposed value for "${candidate.key}".`,
     properties: {
-      value: candidate.subschema,
+      value,
       confidence: {
         type: "number",
         minimum: 0,
@@ -137,41 +166,118 @@ function proposalSchema(candidate: Candidate): Record<string, unknown> {
   };
 }
 
-/**
- * Build the response schema for one file. Every candidate is optional so the
- * model can decline; `additionalProperties: false` means it cannot invent keys.
- * `$defs` from the source schemas are carried along so any `$ref` inside a
- * lifted subschema still resolves.
- */
-export function buildEnvelopeSchema(
-  candidates: Candidate[],
-  defs: { $defs: Record<string, unknown>; definitions: Record<string, unknown> },
+/** One envelope: every candidate optional, and no key nobody asked about. */
+function envelopeOf(
+  properties: [string, Record<string, unknown>][],
+  defs?: ProjectionDefs,
 ): Record<string, unknown> {
   return {
-    $schema: "https://json-schema.org/draft/2020-12/schema",
+    $schema: DIALECT,
     type: "object",
     additionalProperties: false,
     // Both blocks are reproduced under their original names so a lifted
-    // subschema's `$ref` — `#/$defs/X` on 2020-12, `#/definitions/X` on
-    // draft-07 — still resolves against the envelope root.
-    ...(Object.keys(defs.$defs).length > 0 ? { $defs: defs.$defs } : {}),
-    ...(Object.keys(defs.definitions).length > 0
+    // subschema's `$ref` (`#/$defs/X` on 2020-12, `#/definitions/X` on
+    // draft-07) still resolves against the envelope root.
+    ...(defs !== undefined && Object.keys(defs.$defs).length > 0 ? { $defs: defs.$defs } : {}),
+    ...(defs !== undefined && Object.keys(defs.definitions).length > 0
       ? { definitions: defs.definitions }
       : {}),
-    properties: Object.fromEntries(
-      candidates.map((c) => [c.key, proposalSchema(c)]),
-    ),
+    properties: Object.fromEntries(properties),
   };
 }
 
-export function buildUserPrompt(params: {
+/** The three views of one file's envelope. See the module comment. */
+export interface Envelope {
+  /** What the provider is given: each asked candidate's projected `value`. */
+  sent: Record<string, unknown>;
+  /** The response's shape alone. Every `value` is `{}`. */
+  skeleton: Record<string, unknown>;
+  /** Every candidate's full subschema, which checks each value on its own. */
+  full: Record<string, unknown>;
+  /** The candidates the model is asked about. */
+  asked: Candidate[];
+  /** Candidates no value can satisfy. The model is never asked about them. */
+  unsatisfiable: Candidate[];
+}
+
+/**
+ * Build one file's envelope. Every candidate is optional so the model can
+ * decline; `additionalProperties: false` means it cannot invent keys. The
+ * definitions from the source schemas go with the full view, so any `$ref`
+ * inside a lifted subschema still resolves. The sent view needs none: the
+ * projection has already followed every `$ref`.
+ *
+ * `hints` are the values offered for the fields that name a glossary term or
+ * a page (`fill-hints.ts`). They change the sent view only: the full view,
+ * which checks each value, is the subschema as written.
+ */
+export function buildEnvelopeSchema(
+  candidates: Candidate[],
+  defs: ProjectionDefs,
+  hints: readonly FieldHint[] = [],
+): Envelope {
+  const asked: Candidate[] = [];
+  const unsatisfiable: Candidate[] = [];
+  const sent: [string, Record<string, unknown>][] = [];
+  for (const candidate of candidates) {
+    const projected = projectValue(candidate.subschema, defs);
+    if ("schema" in projected) {
+      asked.push(candidate);
+      const value = hints
+        .filter((hint) => hint.path[0] === candidate.key)
+        .reduce(
+          (schema, hint) =>
+            withOffer(schema, hint.path.slice(1), { values: hint.values, firm: hint.kind === "term" }),
+          projected.schema,
+        );
+      sent.push([candidate.key, proposalSchema(candidate, value)]);
+    } else {
+      unsatisfiable.push(candidate);
+    }
+  }
+  return {
+    sent: envelopeOf(sent),
+    skeleton: envelopeOf(asked.map((c) => [c.key, proposalSchema(c, {})])),
+    full: envelopeOf(
+      candidates.map((c) => [c.key, proposalSchema(c, c.subschema)]),
+      defs,
+    ),
+    asked,
+    unsatisfiable,
+  };
+}
+
+export interface UserPromptParams {
   filePath: string;
   existing: Record<string, unknown>;
   candidates: Candidate[];
   body: string;
   /** Set when the document was split, so the model knows it sees a slice. */
   part?: { index: number; total: number };
-}): string {
+}
+
+/**
+ * The second request for values that failed their properties' rules. It asks
+ * only for those properties, and names what each value broke, in Ajv's words:
+ * `/resource: must match format "uri"`.
+ */
+export function buildRetryPrompt(
+  params: UserPromptParams & { rejected: string[] },
+): string {
+  return buildUserPrompt(params, [
+    "# Rejected values",
+    "Each value below broke a rule of its property's schema. Propose it again,",
+    "following the rule, or answer null.",
+    ...params.rejected.map((line) => `- ${line}`),
+    "",
+  ]);
+}
+
+export function buildUserPrompt(
+  params: UserPromptParams,
+  /** Lines placed before the page body. */
+  before: string[] = [],
+): string {
   const { filePath, existing, candidates, body, part } = params;
   const wanted = candidates.map((c) => {
     const description =
@@ -196,6 +302,7 @@ export function buildUserPrompt(params: {
     "# Properties to propose",
     ...wanted,
     "",
+    ...before,
     part === undefined
       ? "# Page body"
       : `# Page body (part ${part.index} of ${part.total})`,

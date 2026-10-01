@@ -1,0 +1,256 @@
+---
+title: manni terminology vocabulary
+description: "The manni:terminology:1.0.0 schema gives a term entry its names, its definition and its place among other terms, flat at the page root and mapped onto SKOS."
+sidebar:
+  label: "manni:terminology:1.0.0"
+type: reference
+id: meta-reference-schemas-manni-terminology
+keywords: ["terminology", "manni:terminology:1.0.0", "SKOS", "term", "strict overlay"]
+language: en
+audiences: ["schema-authors"]
+intent: "Give a term entry its names, definition and place among other terms with manni:terminology:1.0.0."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "override"]
+sample-questions:
+  - "Which fields does manni:terminology:1.0.0 define?"
+  - "How do terminology fields map onto SKOS?"
+  - "What does the terminology strict overlay narrow?"
+graph:
+  label: "manni terminology vocabulary"
+  type: reference
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/terminology/1.0.0.json
+action: understand
+prerequisites:
+  - meta-reference-schemas-manni-core
+next-steps:
+  - term-reference-terminology
+related-pages:
+  - meta-reference-schemas-manni-structure
+  - meta-reference-schemas-manni-core
+  - meta-reference-schemas-manni-graph
+  - meta-schemas-field-location
+risks: read-only
+---
+
+**Built-in id:** `manni:terminology:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/terminology/1.0.0.json`.
+A `$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+**The question it answers: what does this term mean, and what else is it
+called?** [Structure](/manni/meta/reference/schemas/manni-structure/) gives a
+page `concepts`, a list of terms from a glossary. This vocabulary is the
+glossary. A term entry names its term, defines it, lists the other names it
+goes by, and places it among other terms. It is the record
+[`manni term`](/manni/term/) reads, and any glossary tool, graph builder or
+style checker can read it too.
+
+## Use it
+
+Name the id in `manni.config.yaml`. Terminology is not in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it only where the config names it. An override points it at the
+folder that holds the term pages. An override replaces the set, so this one
+sets `defaults: true`. The default set then keeps
+[core](/manni/meta/reference/schemas/manni-core/), which owns `type` and `id`,
+in front of terminology.
+
+```yaml
+meta:
+  overrides:
+    - files: "docs/terms/**"
+      defaults: true
+      schemas:
+        - manni:terminology:1.0.0
+```
+
+`manni term check` checks the set as a whole. The schema checks the shape of
+one page, which `check` leaves to it.
+
+## Fields
+
+The fields sit at the root of the page, flat, as every house vocabulary's do.
+`type`, `id` and `language` belong to core and are not redeclared.
+
+| Field | Type | Required | Location | Notes |
+|---|---|---|---|---|
+| `label` | string, non-empty | on `type: term` | `page` | The one preferred name. `skos:prefLabel` |
+| `definition` | string, non-empty | on `type: term`, unless `see` is set | `page` | What the term means, in full. `skos:definition` |
+| `abstract` | string, non-empty | no | `page` | The short form, one sentence, for a hover card. No SKOS term of its own, and it narrows `skos:definition` |
+| `alt-labels` | string or list | no | `page` | Other admitted names, such as synonyms, abbreviations and spelling variants. `skos:altLabel` |
+| `hidden-labels` | string or list | no | `page` | Names the term must not go by. Search still matches them. `skos:hiddenLabel` |
+| `broader` | string or list | no | `page` | Labels of the parent terms. `skos:broader` |
+| `narrower` | string or list | no | `page` | Labels of the child terms. `skos:narrower` |
+| `related-terms` | string or list | no | `page` | Labels of associated terms. `skos:related` |
+| `see` | string, non-empty | no | `page` | The label of the entry this one redirects to. The inverse of `skos:altLabel` |
+| `scope-note` | string, non-empty | no | `page` | How far the term reaches, and where it stops. `skos:scopeNote` |
+
+Every list takes one non-empty string, or a non-empty list of unique non-empty
+strings.
+
+`type: term` marks an entry, and turns on the `label` and definition
+requirements. `type: term-set` marks a file whose body holds many entries, and
+imposes nothing on the file's own metadata. Files without the vocabulary's
+fields pass. The [terminology fields](/manni/term/reference/terminology/) page
+covers how `manni term` reads each construct.
+
+The Location column is the `x-manni-location` mark each field carries. `page`
+means the value belongs in the document's own metadata and reaches delivered
+output. `external` means it belongs in the collection's external-metadata
+manifest. A term's names and meaning are what a reader or an agent fetching
+the page acts on, so every field is `page`. See
+[field location](/manni/meta/schemas/field-location/) for how the marks are
+used.
+
+## Additional properties
+
+Allowed. The root is open, so a generator's keys and the other vocabularies'
+keys pass beside terminology's. Terminology checks only the ten keys it claims,
+and the entry rule on `type: term`.
+
+## Example
+
+```yaml
+---
+title: Progressive lens
+description: What a progressive lens is, and when a prescription calls for one.
+type: term
+id: progressive-lens
+label: progressive lens
+alt-labels: [PAL, graduated lens]
+hidden-labels: [no-line bifocal]
+broader: [corrective lens]
+related-terms: [bifocal]
+abstract: Lenses that correct presbyopia without a visible line.
+definition: >-
+  Corrective lenses whose optical power increases continuously from the top of
+  the lens to the bottom, correcting presbyopia without the visible boundary a
+  bifocal carries.
+---
+```
+
+A redirect entry names its term and carries `see` in place of a definition.
+
+```yaml
+---
+title: Varifocal
+description: Varifocal is another name for a progressive lens.
+type: term
+id: varifocal
+label: varifocal
+see: progressive-lens
+---
+```
+
+## A common mistake
+
+A term page that relies on `title` for its name fails. `title` names the page,
+and `label` names the term.
+
+```yaml
+---
+title: Progressive lens
+description: What a progressive lens is, and when a prescription calls for one.
+type: term
+id: progressive-lens
+definition: Corrective lenses whose power increases from the top to the bottom.
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:terminology:1.0.0
+✗ page.md
+    (root)  must have required property 'label'  (line 1)  [manni:terminology:1.0.0]
+    (root)  must match "then" schema  (line 1)  [manni:terminology:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 2 errors
+```
+
+The exit code is 1. An entry with neither `definition` nor `see` fails the same
+rule, with `must match a schema in anyOf`.
+
+## Design decisions
+
+- **Flat at the root, not inside `graph`.** The `graph` block is the family's
+  one exception to flat keys. A second exception makes it a pattern. A record
+  that exists only inside another tool's envelope also makes that tool a
+  dependency of writing a definition.
+- **No status field.** The kind of label is the status. `label` is preferred,
+  `alt-labels` are admitted, and `hidden-labels` are deprecated, which is what
+  SKOS documents `hiddenLabel` for. DITA 2.0 removed `<glossStatus>` along
+  with most of its other glossary metadata.
+- **Two lengths of definition.** A rendered entry wants the full text, and a
+  hover card wants a sentence. Kubernetes, mdbook-termlink and GitLab each
+  split the definition independently, so `abstract` is its own field.
+- **`see` is a redirect, not a relation.** An entry with `see` names a term
+  and sends the reader elsewhere. Carrying a definition as well is a
+  contradiction. The open schema leaves it to `manni term check`, which
+  reports it as
+  [`see-not-empty`](/manni/term/reference/rules/#see-not-empty). The strict
+  overlay refuses it.
+- **The id survives a rename.** `id` comes from core. A concept identified by
+  its preferred label changes identity when the label is respelled, and
+  cannot hold synonyms without picking a winner.
+- **`abstract` is not `description`.** `description` says what the page is
+  about. `abstract` says what the term is. They coincide on a well-written
+  term page and diverge on a manifest entry or a definition-list entry, which
+  have no page.
+- **The root fields feed the graph.** On a page with no `graph` block, a
+  graph harvest reads these fields as the fallback of their twins in the
+  [graph vocabulary](/manni/meta/reference/schemas/manni-graph/). `label`,
+  `alt-labels`, `broader`, `narrower`, `definition` and `abstract` map by
+  name, and `related-terms` maps to `graph.related-concepts`. A page that
+  opens a `graph` block keeps the block's values.
+
+## Strict overlay
+
+**Strict overlay id:** `manni:terminology-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/terminology-strict/1.0.0.json`.
+The overlay holds only what strict adds. It narrows the form of a value that is
+present and requires no key. A page with none of the vocabulary's fields
+still passes it.
+
+| Field | Strict adds |
+|---|---|
+| `label` | One line, with no leading or trailing whitespace |
+| `see` | One line, with no leading or trailing whitespace, the form a label takes |
+| the entry | `definition` and `see` never appear together |
+
+`strict: true` does not reach this overlay, because the vocabulary is not in the default set. List both ids to adopt it:
+
+```yaml
+meta:
+  schemas:
+    - manni:terminology:1.0.0
+    - manni:terminology-strict:1.0.0
+```
+
+Each schema is checked on its own, and a finding names the one that produced
+it. A strict-only failure reads as one. This redirect also carries a
+definition.
+
+```yaml
+---
+title: Varifocal
+description: Varifocal is another name for a progressive lens.
+type: term
+id: varifocal
+label: varifocal
+see: progressive-lens
+definition: A progressive lens, under the name opticians in the UK use.
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:terminology:1.0.0 -s manni:terminology-strict:1.0.0
+✗ page.md
+    (root)  must NOT be valid  (line 1)  [manni:terminology-strict:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+The open vocabulary accepts the page, so the overlay alone fails it.

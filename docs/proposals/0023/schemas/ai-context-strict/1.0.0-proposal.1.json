@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:ai-context-strict:1.0.0-proposal.1",
+  "title": "manni ai-context strict (1.0.0-proposal.1)",
+  "description": "The strict overlay for manni:ai-context:1.0.0-proposal.3. Stack it beside the open draft, which still owns every key and every required rule. It narrows the form of `meta-provenance` entries and closes `risks` to its seven named flags. It leaves `provenance` alone, because `manni meta derive` writes commit-trailer names there as git records them.",
+  "type": "object",
+  "properties": {
+    "meta-provenance": {
+      "description": "Strict adds three rules to each entry. `generated-by` is a model id with no spaces. Each of `fields` is a well-formed RFC 6901 pointer. Each `confidence` key is such a pointer or a kebab eval id.",
+      "items": {
+        "properties": {
+          "generated-by": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/\\\\@-]*$",
+            "description": "A model id of letters in either case, digits, `.`, `_`, `:`, `/`, `\\`, `@` and `-`, with no spaces. A Windows path to a local model passes."
+          },
+          "fields": {
+            "items": {
+              "pattern": "^(?:/(?:[^~/]|~[01])*)+$",
+              "description": "A JSON Pointer in which every `~` begins an RFC 6901 escape, `~0` or `~1`."
+            }
+          },
+          "confidence": {
+            "propertyNames": {
+              "pattern": "^(?:(?:/(?:[^~/]|~[01])*)+|[a-z0-9][a-z0-9-]*)$",
+              "description": "A well-formed JSON Pointer, or a kebab eval id."
+            }
+          }
+        }
+      }
+    },
+    "risks": {
+      "description": "Strict closes the flags to the seven the open draft recommends, in both the single-string and the list form.",
+      "if": {
+        "type": "string"
+      },
+      "then": {
+        "$ref": "#/$defs/riskFlag"
+      },
+      "items": {
+        "$ref": "#/$defs/riskFlag"
+      }
+    }
+  },
+  "$defs": {
+    "riskFlag": {
+      "enum": [
+        "cost-incurring",
+        "destructive",
+        "irreversible",
+        "privileged",
+        "open-world",
+        "read-only",
+        "idempotent"
+      ],
+      "description": "One of the seven named flags. Strict accepts no other string."
+    }
+  }
+}

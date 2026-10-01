@@ -1,0 +1,145 @@
+docs/src/content/docs/meta/reference/schemas/microsoft-learn.mdx:
+  citations:
+    - id: vocab-ms-topic-is-not-enumerated
+      claim:
+        lines: 60-66
+        integrity: sha256-8bab14a7595842329ea47a922caa4e613d1257571599ec60524bdb05d4828a30
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 44-47
+        integrity: sha256-06599213ff6ec1e94a1548baea2dfced3ef1c532082c88bd236c33a60c3f722f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-author-rejects-an-email
+      claim:
+        lines: 57-58
+        integrity: sha256-26941e34d5fb85cf0152ff5a55af250b3e649488c6d5c78a70f6b59d838710df
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 33-37
+        integrity: sha256-2dd893fe7af5cfcd03834acb5348361811a961305e74b4fb5d69290f101729c0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-description-has-a-floor
+      claim:
+        lines: 53-56
+        integrity: sha256-6bbf48844a73954d23347fab6dea86d5938725147aef184557f83169a9073f98
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 22-26
+        integrity: sha256-ce2e9bd016f0973c7d9597046077452797607d4ffd6b22b962259dc5381f0c34
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-date-is-mm-dd-yyyy
+      claim:
+        lines: 50-52
+        integrity: sha256-bdabea00becc9ea58f554efd2bd2de6cf3ad7688021e5bd801fd6ac77f669ca8
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 39-42
+        integrity: sha256-0e0ff017e67f297f130d40bd6774b2df4a2957ed94e3f8a5d2c8313222a1b8ba
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-zone-pivot-groups
+      claim:
+        lines: 46
+        integrity: sha256-e5161df1124ed24969728a5c30dbba916afa160a97f377e31fb33d2652d1a56d
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 85-88
+        integrity: sha256-1e79f68124b79d434dc303a023bf059bdfa0d0dbcdf3800984bdcda0ff37c3a8
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-prod-and-technology
+      claim:
+        lines: 45
+        integrity: sha256-cf5182495e9fa66ebb86f04fcf638cc11a1ea9bbff48a023236ba969e2d203e8
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 73-80
+        integrity: sha256-9b492d3ba283db8dad3ad542caeb61b0b3dbe8a8ef61e941233c3b354a5cdfb1
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-reviewer
+      claim:
+        lines: 44
+        integrity: sha256-4ee5d86a2056ac88e5f49bb53aed0b654d3e49568e8d87395f6f869d80b49c61
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 65-67
+        integrity: sha256-6f6e4214c877f1f1acd94e6c08f8bc6f5f604aa631da493c7bf7feb01e7ce270
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-list-valued-fields
+      claim:
+        lines: 43
+        integrity: sha256-92d30e8eeeddb25e881c640a173823d921c11b759dae796c7fedd4422465fdd0
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 57-63
+        integrity: sha256-ab06c6cc0178b6455b3be3fa043b6bb2a04483a5503ceba9f036c68bebaefb03
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-service-and-subservice
+      claim:
+        lines: 42
+        integrity: sha256-90e23fa93327bad354103e914cff6651a5b8b8facbb5a8328f0c051408011ef3
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 49-55
+        integrity: sha256-21672b562dd428df5700ae2b1676bb2ae7c135ca68ad42d63a5ad304b7fcfe6c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-topic
+      claim:
+        lines: 41
+        integrity: sha256-0d2738d3cd06eb82b0070b4435495c9eac6ac45366a9fc18d828562006e89e84
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 44-47
+        integrity: sha256-06599213ff6ec1e94a1548baea2dfced3ef1c532082c88bd236c33a60c3f722f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-date
+      claim:
+        lines: 40
+        integrity: sha256-08c26f72daa4f562132c91692d780375506df954aeb748dea7849684dd6e7740
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 39-42
+        integrity: sha256-0e0ff017e67f297f130d40bd6774b2df4a2957ed94e3f8a5d2c8313222a1b8ba
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-author-alias
+      claim:
+        lines: 39
+        integrity: sha256-98b3a299109b635692f38b0d34c22ca74cbebd4b58e7498d2a541accabcd15d9
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 33-37
+        integrity: sha256-2dd893fe7af5cfcd03834acb5348361811a961305e74b4fb5d69290f101729c0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-author-github-id
+      claim:
+        lines: 38
+        integrity: sha256-f0aa250d4f17d141bf7156f0b94fd11bda8bf074c3f858eb082bf17774870315
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 28-31
+        integrity: sha256-6b00a636fb5378657e1835ec159116bcd585d77f835f01c358b0290e9d661d7d
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-description
+      claim:
+        lines: 37
+        integrity: sha256-2dd4f43f3a1080102aa362dfea4d28007be55c93ff6ceed330bf9102f9df9293
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 22-26
+        integrity: sha256-ce2e9bd016f0973c7d9597046077452797607d4ffd6b22b962259dc5381f0c34
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-title
+      claim:
+        lines: 36
+        integrity: sha256-8a39903a55f902a3cb23354bfac09301327bcde87a8a4d4a8f11d6126873973e
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 17-20
+        integrity: sha256-e9e12299d406cc95b9e147c196c9cca3256b3510d499a369e027bcba2d6a1b8e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-ms-learn-requires-five-attributes
+      claim:
+        integrity: sha256-23ec08e0fc3d2a36cdc5e5c848df512ce9f5e28ba26e9a9121e56b4a51ce6fb4
+      source:
+        file: src/meta/schemas/microsoft-learn/1.0.json
+        lines: 5-7
+        integrity: sha256-e7caab838c5ec2b1b7d8b0b7b73154cb582a59cc1cf03b6ea520cb2a6a99f04f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

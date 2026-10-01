@@ -1,0 +1,200 @@
+---
+title: Docusaurus blog schema
+description: The docusaurus:blog:3.10 schema shipped with manni meta, covering the 20 fields a Docusaurus blog post carries, the finding a numeric authors value produces, and how to turn it on.
+sidebar:
+  label: "docusaurus:blog:3.10"
+type: reference
+id: meta-reference-schemas-docusaurus-blog
+keywords: ["Docusaurus", "blog", "docusaurus:blog:3.10", "authors"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate Docusaurus blog post front matter and fix a numeric authors value."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "dialect", "override"]
+sample-questions:
+  - "Which fields does a Docusaurus blog post carry?"
+  - "What finding does a numeric authors value produce?"
+  - "How do I turn on docusaurus:blog:3.10?"
+graph:
+  label: "Docusaurus blog schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/docusaurus-blog/3.10.json
+tags:
+  - docusaurus
+  - blog
+  - schema
+  - validation
+  - front-matter
+action: develop
+prerequisites:
+  - /manni/meta/reference/docusaurus-schemas/
+  - meta-reference-schema-resolution
+next-steps:
+  - /manni/meta/reference/docusaurus-schemas/
+  - meta-reference-schemas-docusaurus-docs
+  - meta-reference-schemas-docusaurus-pages
+related-pages:
+  - /manni/meta/reference/docusaurus-schemas/
+  - meta-reference-schemas-docusaurus-docs
+  - meta-reference-schemas-docusaurus-pages
+  - meta-reference-schema-resolution
+risks: read-only
+---
+
+**Built-in id:** `docusaurus:blog:3.10`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/docusaurus-blog/3.10.json`.
+A `$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+As of Docusaurus 3.10, `docusaurus:blog:3.10` checks the front matter
+`@docusaurus/plugin-content-blog` reads on a post. Like the docs schema, it
+requires no field and checks the shape of every field it describes. It is one of [three
+Docusaurus schemas](/manni/meta/reference/docusaurus-schemas/), one per content
+plugin. The rules the three share, and what none of them checks, live on that
+page.
+
+| Property | Value |
+|---|---|
+| Id | `docusaurus:blog:3.10` |
+| Title | Docusaurus blog front matter v3.10 |
+| Dialect | [Draft 2020-12](/manni/meta/reference/schema-resolution/#dialects) |
+| Required fields | None |
+| Additional properties | Allowed (`additionalProperties: true`) |
+| Reference kind | [builtin](/manni/meta/reference/schema-resolution/#reference-kinds) |
+| On by default | No |
+| Upstream reference | [Blog front matter](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-blog#markdown-front-matter) |
+| JSON | [`docusaurus-blog/3.10.json`](/manni/schemas/docusaurus-blog/3.10.json) |
+
+## Use it
+
+Posts live under their own root, so the schema reaches them through an override
+rather than the site-wide `schemas:` list:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: "blog/**"
+      schemas:
+        - docusaurus:blog:3.10
+```
+
+For a one-off run, pass the id directly:
+
+```bash
+manni meta validate blog/ -s docusaurus:blog:3.10
+```
+
+[Wire them up](/manni/meta/reference/docusaurus-schemas/#wire-them-up) shows
+the blog beside the docs and pages roots, each declared as a collection.
+
+## Fields
+
+| Field | Type | Constraint |
+|---|---|---|
+| `authors` | string, object, or array | an `authors.yml` key, an inline author, or a list of either |
+| `author` | string | deprecated in favor of `authors` |
+| `author_url` | string | `uri-reference`, deprecated |
+| `author_image_url` | string | `uri-reference`, deprecated |
+| `author_title` | string | deprecated |
+| `title` | string | n/a |
+| `title_meta` | string | n/a |
+| `sidebar_label` | string | n/a |
+| `date` | string | n/a |
+| `description` | string | may be empty |
+| `slug` | string | n/a |
+| `keywords` | array of string | n/a |
+| `image` | string | `uri-reference` |
+| `tags` | array | string, or object with `label` **and** `permalink` |
+| `draft` | boolean | not both with `unlisted` |
+| `unlisted` | boolean | not both with `draft` |
+| `hide_table_of_contents` | boolean | n/a |
+| `toc_min_heading_level` | number | 2–6 |
+| `toc_max_heading_level` | number | 2–6 |
+| `last_update` | object | `author` and/or `date`, at least one, nothing else |
+
+`authors` is loose on purpose. Docusaurus resolves each entry against
+`authors.yml` rather than validating it strictly, so the schema checks the
+shape and not whether the key exists. The single-author `author*` keys are the
+older spelling that `authors` replaces. They still pass when their values have
+the right type.
+
+The cross-field rules behind `draft`, `unlisted`, `tags` and `last_update` are
+the same in all three Docusaurus schemas. [The rules worth
+knowing](/manni/meta/reference/docusaurus-schemas/#the-rules-worth-knowing)
+covers each of them. A post written with TOML front matter has one more trap,
+covered under [Versioning](/manni/meta/reference/docusaurus-schemas/#versioning).
+
+## Additional properties
+
+Allowed. Docusaurus tolerates theme and plugin front matter, and so does this
+schema. The one exception is inside `last_update`, which takes `author` and
+`date` and nothing else.
+
+## Example page
+
+A post carrying the fields the blog plugin documents. This is
+`test/fixtures/docusaurus/blog-valid.md` less its `title_meta` line, and it
+passes.
+
+```markdown title="blog/2026-03-14-shipping-v2.md"
+---
+title: Shipping v2
+sidebar_label: v2
+date: 2026-03-14
+authors:
+  - dana
+  - name: Sam Rivera
+    title: Staff engineer
+    url: https://example.com/sam
+    imageURL: /img/sam.png
+tags:
+  - release
+  - label: Announcements
+    permalink: /tags/announcements
+draft: false
+unlisted: false
+hide_table_of_contents: false
+toc_min_heading_level: 2
+toc_max_heading_level: 3
+keywords:
+  - release
+description: What changed in v2 and how to upgrade.
+image: /img/social/v2.png
+slug: shipping-v2
+last_update:
+  date: 2026-03-20
+---
+```
+
+## A common mistake
+
+An author is a key, an inline object, or a list of either. A bare number is
+none of those:
+
+```markdown title="test/fixtures/docusaurus/blog-bad-authors.md"
+---
+title: Shipping v2
+authors: 42
+---
+```
+
+```text
+✗ test/fixtures/docusaurus/blog-bad-authors.md
+    /authors  must be string,object,array  (line 3)  [docusaurus:blog:3.10]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+Name the author by their `authors.yml` key, or write the author inline.
+
+{/* Doc Detective inline tests: verify this page's documented manni meta behavior
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
+    (see .github/workflows/docs-as-tests.yml), over committed fixtures.
+    Run with `npx doc-detective`. Config: .doc-detective.json. */}
+{/* test {"testId":"docusaurus-blog-schema","description":"The docusaurus:blog:3.10 built-in, demonstrated with the committed fixtures this page describes."} */}
+{/* step {"description":"The blog schema accepts a post carrying every documented field.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/docusaurus/blog-valid.md -s docusaurus:blog:3.10","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"The blog schema rejects a numeric authors value.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/docusaurus/blog-bad-authors.md -s docusaurus:blog:3.10","exitCodes":[1],"stdio":"authors"}} */}
+{/* test end */}

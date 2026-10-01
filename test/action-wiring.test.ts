@@ -14,7 +14,7 @@
  * longer shipped.
  */
 import { describe, it, expect } from "vitest";
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import {
   mkdtempSync,
   writeFileSync,
@@ -28,6 +28,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { spawnText } from "./helpers/spawn.js";
+import { bash, hasBash } from "./helpers/bash.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -51,15 +52,6 @@ function actionScript(): string {
   }
   return step.run;
 }
-
-const hasBash = (() => {
-  try {
-    execFileSync("bash", ["-c", "true"], { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
-})();
 
 interface RunResult {
   /** Each argument the stub `npx` received, boundaries intact. */
@@ -113,7 +105,7 @@ function runAction(env: Record<string, string>, npxExit = 0): RunResult {
 
   const res = spawnText(
     spawnSync(
-      "bash",
+      bash,
       ["--noprofile", "--norc", "-eo", "pipefail", join(dir, "run.sh")],
       {
         encoding: "utf8",

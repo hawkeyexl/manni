@@ -1,0 +1,194 @@
+---
+title: Docusaurus docs schema
+description: The docusaurus:docs:3.10 schema shipped with manni meta, covering the 25 fields a Docusaurus docs page carries, the finding a quoted sidebar_position produces, and how to turn it on.
+sidebar:
+  label: "docusaurus:docs:3.10"
+type: reference
+id: meta-reference-schemas-docusaurus-docs
+keywords: ["Docusaurus", "docs", "docusaurus:docs:3.10", "sidebar_position"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate Docusaurus docs page front matter and fix a quoted sidebar_position."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "dialect"]
+sample-questions:
+  - "Which fields does a Docusaurus docs page carry?"
+  - "What finding does a quoted sidebar_position produce?"
+  - "How do I turn on docusaurus:docs:3.10?"
+graph:
+  label: "Docusaurus docs schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/docusaurus-docs/3.10.json
+tags:
+  - docusaurus
+  - schema
+  - validation
+  - built-in
+action: remember
+prerequisites:
+  - /manni/meta/reference/docusaurus-schemas/
+  - /manni/meta/reference/schema-resolution/
+next-steps:
+  - /manni/meta/reference/docusaurus-schemas/
+related-pages:
+  - /manni/meta/reference/docusaurus-schemas/
+  - /manni/meta/reference/schema-resolution/
+risks: read-only
+---
+
+**Built-in id:** `docusaurus:docs:3.10`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/docusaurus-docs/3.10.json`.
+A `$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+`docusaurus:docs:3.10` checks the front matter `@docusaurus/plugin-content-docs`
+reads, as of Docusaurus 3.10. It is a format check, not a presence check. It
+requires no field, and constrains the shape of every field the plugin documents.
+It is one of [three Docusaurus schemas](/manni/meta/reference/docusaurus-schemas/),
+one per content plugin. The rules the three share, and what none of them
+checks, live on that page.
+
+| Property | Value |
+|---|---|
+| Id | `docusaurus:docs:3.10` |
+| Title | Docusaurus docs front matter v3.10 |
+| Dialect | [Draft 2020-12](/manni/meta/reference/schema-resolution/#dialects) |
+| Required fields | None |
+| Additional properties | Allowed (`additionalProperties: true`) |
+| Reference kind | [builtin](/manni/meta/reference/schema-resolution/#reference-kinds) |
+| On by default | No |
+| Upstream reference | [Docs front matter](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter) |
+| JSON | [`docusaurus-docs/3.10.json`](/manni/schemas/docusaurus-docs/3.10.json) |
+
+## Use it
+
+A repo whose only Docusaurus content is the docs root names the id in
+`manni.config.yaml`:
+
+```yaml title="manni.config.yaml"
+meta:
+  schemas:
+    - docusaurus:docs:3.10
+```
+
+For a one-off run, pass the id directly:
+
+```bash
+manni meta validate docs/ -s docusaurus:docs:3.10
+```
+
+A site with a blog or standalone pages as well gives each content root a schema
+of its own. [Wire them
+up](/manni/meta/reference/docusaurus-schemas/#wire-them-up) shows the config for
+all three roots.
+
+## Fields
+
+| Field | Type | Constraint |
+|---|---|---|
+| `id` | string | n/a |
+| `title` | string | may be empty |
+| `description` | string | may be empty |
+| `slug` | string | n/a |
+| `sidebar_label` | string | n/a |
+| `sidebar_position` | number | n/a |
+| `sidebar_class_name` | string | n/a |
+| `sidebar_key` | string | n/a |
+| `sidebar_custom_props` | object | n/a |
+| `displayed_sidebar` | string or null | n/a |
+| `pagination_label` | string | n/a |
+| `pagination_next` | string or null | n/a |
+| `pagination_prev` | string or null | n/a |
+| `hide_title` | boolean | n/a |
+| `hide_table_of_contents` | boolean | n/a |
+| `toc_min_heading_level` | number | 2–6 |
+| `toc_max_heading_level` | number | 2–6 |
+| `parse_number_prefixes` | boolean | n/a |
+| `custom_edit_url` | string or null | `uri-reference` |
+| `keywords` | array of string | n/a |
+| `image` | string | `uri-reference` |
+| `tags` | array | string, or object with `label` **and** `permalink` |
+| `draft` | boolean | not both with `unlisted` |
+| `unlisted` | boolean | not both with `draft` |
+| `last_update` | object | `author` and/or `date`, at least one, nothing else |
+
+The cross-field rules behind the last few rows are the same in all three
+Docusaurus schemas. [The rules worth
+knowing](/manni/meta/reference/docusaurus-schemas/#the-rules-worth-knowing)
+covers each of them.
+
+## Additional properties
+
+Allowed. Docusaurus tolerates theme and plugin front matter, and so does this
+schema. The one exception is inside `last_update`, which takes `author` and
+`date` and nothing else. A misspelled top-level key passes, so [stack a strict
+overlay](/manni/meta/reference/docusaurus-schemas/#what-these-schemas-do-not-check)
+when your docs set has no plugin front matter of its own.
+
+## Example page
+
+Every field the docs plugin documents, at a legal value. This is
+`test/fixtures/docusaurus/docs-valid.md`, and it passes.
+
+```markdown title="docs/install.md"
+---
+id: install
+title: Install the SDK
+sidebar_label: Install
+sidebar_position: 2
+sidebar_custom_props:
+  badge: new
+displayed_sidebar: apiSidebar
+hide_title: false
+hide_table_of_contents: false
+toc_min_heading_level: 2
+toc_max_heading_level: 4
+pagination_label: Installing
+pagination_prev: null
+pagination_next: getting-started/first-call
+parse_number_prefixes: false
+custom_edit_url: https://github.com/acme/docs/edit/main/docs/install.md
+keywords:
+  - install
+  - sdk
+description: Install the SDK and verify the version.
+image: /img/social/install.png
+slug: /install
+tags:
+  - setup
+  - label: Getting started
+    permalink: /tags/getting-started
+draft: false
+unlisted: false
+last_update:
+  author: Dana
+  date: 2026-03-14
+---
+```
+
+## A common mistake
+
+{/* cite docusaurus-sidebar-position-is-a-number */}
+**`sidebar_position` is a number.** Quoting it makes it a string, and Docusaurus
+rejects it. This is the most common front matter mistake these schemas catch:
+
+```text
+✗ docs/install.md
+    /sidebar_position  must be number  (line 3)  [docusaurus:docs:3.10]
+```
+
+Drop the quotes and the finding clears. A heading level outside 2–6 fails the
+same way, naming `toc_min_heading_level` or `toc_max_heading_level`.
+
+{/* Doc Detective inline tests: verify this page's documented manni meta behavior
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
+    (see .github/workflows/docs-as-tests.yml), over committed fixtures.
+    Run with `npx doc-detective`. Config: .doc-detective.json. */}
+{/* test {"testId":"docusaurus-docs-schema","description":"The docusaurus:docs:3.10 built-in, demonstrated with the committed fixtures this page describes."} */}
+{/* step {"description":"A docs page carrying every documented field passes.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/docusaurus/docs-valid.md -s docusaurus:docs:3.10","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"A quoted sidebar_position is a string, and fails naming the field.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/docusaurus/docs-bad-sidebar-position.md -s docusaurus:docs:3.10","exitCodes":[1],"stdio":"sidebar_position"}} */}
+{/* step {"description":"A heading level past 6 is out of range.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/docusaurus/docs-bad-toc-level.md -s docusaurus:docs:3.10","exitCodes":[1],"stdio":"toc_max_heading_level"}} */}
+{/* test end */}
