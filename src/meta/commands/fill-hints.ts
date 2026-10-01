@@ -103,6 +103,9 @@ export function termValueCheck(
         if (typeof held === "string") {
           return accepted.has(fold(held)) ? [] : [`${pointer}: ${NOT_A_TERM}`];
         }
+        // Anything else, null included, is not this check's to judge: the
+        // full subschema refuses a wrong type, and fill reads a null value as
+        // the model declining before any value is checked.
         if (!Array.isArray(held)) return [];
         const items: unknown[] = held;
         return items.flatMap((item, i) =>

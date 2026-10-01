@@ -638,6 +638,9 @@ function offerAt(
 
 /** One node from alternatives: the only one, or a `oneOf` of them all. */
 function single(alternatives: Record<string, unknown>[]): Record<string, unknown> {
+  // An empty list would emit `{ oneOf: [] }`, which admits nothing.
+  /* c8 ignore next -- offerAt always returns at least the node it was given. */
+  if (alternatives.length === 0) throw new Error("Internal error: an offer produced no alternatives.");
   const [only] = alternatives;
   return alternatives.length === 1 && only !== undefined ? only : { oneOf: alternatives };
 }
