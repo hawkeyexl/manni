@@ -326,6 +326,35 @@ describe("runFill — offered values", () => {
     });
   });
 
+  it("takes labels only for a term relation when termLabels is given", async () => {
+    // termLabels carries no ids, so an id the registered source would accept
+    // is refused here, retried, and the label is written.
+    const provider = script(
+      { broader: { value: ["schema-set"], confidence: 0.9 } },
+      { broader: { value: ["schema set"], confidence: 0.9 } },
+    );
+    const run = await runFill({
+      ...opts(provider, ["broader"]),
+      inputs: ["glossary/extractor.md"],
+      cliSchemas: ["manni:terminology:1.0.0"],
+      termLabels: ["schema set"],
+    });
+    expect(provider.requests).toHaveLength(2);
+    expect(provider.requests[1]?.user).toContain("/broader/0: must be a glossary term label");
+    expect(run.results[0]?.fields[0]).toMatchObject({ written: true, value: ["schema set"] });
+  });
+
+  it("says so when the registered termbase cannot be read, and offers no labels", async () => {
+    registerTermLabelSource(() => Promise.reject(new Error("bad termbase config")));
+    const notices: string[] = [];
+    const provider = script({ concepts: { value: ["anything"], confidence: 0.9 } });
+    await runFill({ ...opts(provider, ["concepts"]), onNotice: (m) => notices.push(m) });
+    expect(enums(sentValue(provider, 0, "concepts"))).toEqual([]);
+    expect(notices).toContain(
+      "The termbase could not be read, so fill offers no glossary labels: bad termbase config",
+    );
+  });
+
   it("writes the retry's label when the second answer is one", async () => {
     const provider = script(
       { concepts: { value: ["not-a-term"], confidence: 0.9 } },

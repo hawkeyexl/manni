@@ -29,7 +29,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-09-29
+last-updated: 2026-10-01
 tags:
   - cli
   - command-reference
@@ -868,7 +868,12 @@ offered no ids, and a page without an `id` is never offered.
 An empty list is not offered, and neither is a list of more than 500 values.
 The field is then asked for with no values attached. The term labels come
 from the term domain, so the `manni` bin offers them and the `docmeta` bin
-does not.
+does not. When the termbase cannot be read, `fill` offers no labels and says
+why on stderr, then carries on:
+
+```
+manni: The termbase could not be read, so fill offers no glossary labels: <reason>
+```
 
 ### The confidence gate
 

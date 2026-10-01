@@ -222,6 +222,11 @@ export interface FillOptions {
    * The glossary term labels offered for the fields that name a term. When
    * given, they are used instead of the registered term label source (see
    * `src/shared/term-labels.ts`). When absent, that source is used, if any.
+   *
+   * Labels only. The registered source also knows each term's id, which a
+   * term relation (`broader`, `narrower`, `related-terms`, `see`) accepts as
+   * `term check` does. With `termLabels`, no ids are known, so a relation
+   * value must be a label; an id is retried and then skipped.
    */
   termLabels?: readonly string[];
   /** Test seam: bypasses `makeProvider`, so no API key is needed. */
