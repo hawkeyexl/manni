@@ -230,7 +230,11 @@ function resolvePointer(ref: string, defs: ProjectionDefs): unknown {
   return at;
 }
 
-/** One JSON Pointer segment, as a URI fragment writes it. */
+/**
+ * One JSON Pointer segment, as a URI fragment writes it. A `$ref` is a URI,
+ * so RFC 6901 section 6 applies: percent-decode the fragment first, then
+ * undo `~1` and `~0`. `%7E1` therefore reads as `/`, exactly as `~1` does.
+ */
 function decodeSegment(raw: string): string {
   let text = raw;
   try {

@@ -1093,6 +1093,8 @@ export async function mergeWithMarks(
   if (marks === undefined || !hasImpliedOwner(index, memberOf)) {
     return mergeWith(label, extracted, index, memberOf, base, encryptionKey, UNKNOWN);
   }
+  // First pass: include the keyless manifests' values, because a schema's
+  // `x-manni-location` marks only fire on keys that are present.
   const probe = mergeWith(label, extracted, index, memberOf, base, encryptionKey, PROBE).extracted.data;
   const marked = await marks(label, probe, memberOf);
   // With the page's schema set unresolvable, the probe was spent for
