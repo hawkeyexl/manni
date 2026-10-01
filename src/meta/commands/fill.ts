@@ -1168,6 +1168,8 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
                   rejected: failed.flatMap((f) => f.errors),
                 }),
                 schema: again.sent,
+                // The skeleton checks the response's shape only; `check`
+                // judges each value, with the registered schemas.
                 validate: compileWithFormats(again.skeleton),
                 attempts: 1,
               });

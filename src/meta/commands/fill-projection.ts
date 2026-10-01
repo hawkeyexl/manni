@@ -26,7 +26,8 @@
  *     `additionalProperties: false`, `description`, `pattern`, the length,
  *     bound and item-count keywords, and a `date`, `date-time` or `time`
  *     format. The strictest bound wins; two different patterns (or formats)
- *     leave neither. Everything else is dropped.
+ *     leave neither. Everything else is dropped, a tuple-form `items` array
+ *     included: the list is sent as a plain array.
  *  5. An untyped node is sent as any non-null JSON value, one branch per type,
  *     each carrying the keywords that constrain it.
  *  6. When no value can pass, the candidate is reported as unsatisfiable and
