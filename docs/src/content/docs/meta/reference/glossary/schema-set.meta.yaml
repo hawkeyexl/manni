@@ -20,8 +20,9 @@ docs/src/content/docs/meta/reference/glossary/schema-set.mdx:
     - "@hawkeyexl"
   created: 2026-09-16
   source-of-truth:
-    path: src/meta/core/validator.ts
-    lines: 685-693
+    - path: src/meta/core/validator.ts
+      kind: implementation
+      lines: 685-693
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:
