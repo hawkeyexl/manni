@@ -376,6 +376,32 @@ describe("registered schemas in loading (0070)", () => {
     }
   });
 
+  it("warns that a directory symlink inside a registered directory is not followed", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-register-dirlink-"));
+    const written: string[] = [];
+    const spy = vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+      written.push(String(chunk));
+      return true;
+    });
+    try {
+      resetWarnings();
+      mkdirSync(join(dir, "real"));
+      mkdirSync(join(dir, "schemas"));
+      cpSync(join(REGISTER, "schemas", "house-page.json"), join(dir, "schemas", "house-page.json"));
+      // A junction on Windows needs no privilege, and Node reads it as a symlink.
+      symlinkSync(join(dir, "real"), join(dir, "schemas", "linked"), "junction");
+      writeFileSync(join(dir, "manni.config.yaml"), "meta:\n  register: [./schemas/]\n");
+      const loaded = await loadConfig(undefined, dir);
+      expect([...(loaded?.config.registered?.keys() ?? [])]).toEqual(["house:page:1.0.0"]);
+      expect(written.join("")).toContain(
+        "meta.register: schemas/linked is a symlink to a directory, which is not followed.",
+      );
+    } finally {
+      spy.mockRestore();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it.skipIf(process.platform === "win32")(
     "refuses a register path that is neither a file nor a directory",
     async () => {

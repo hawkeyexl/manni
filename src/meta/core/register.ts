@@ -10,6 +10,7 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import type { Stats } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { DocmetaError } from "../types.js";
+import { warn } from "../../shared/warn.js";
 import { stripBom } from "./json-text.js";
 import {
   isBuiltinId,
@@ -58,21 +59,33 @@ function isRegistrableId(id: string): boolean {
  * A symlink is followed to a file, as the top-level `stat` in
  * `loadRegisteredSchemas` follows one, so a directory of linked schemas
  * registers them. A symlink to a directory is not descended, so a link cycle
- * cannot loop the walk.
+ * cannot loop the walk; it is named on stderr, so its schemas are not missed
+ * in silence.
  */
-async function jsonFilesUnder(dir: string): Promise<string[]> {
+async function jsonFilesUnder(dir: string, configDir: string): Promise<string[]> {
   const out: string[] = [];
   const entries = await readdir(dir, { withFileTypes: true });
   entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   for (const entry of entries) {
     const path = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await jsonFilesUnder(path)));
-    else if (!entry.name.toLowerCase().endsWith(".json")) continue;
+    if (entry.isDirectory()) out.push(...(await jsonFilesUnder(path, configDir)));
+    else if (entry.isSymbolicLink() && (await isDirectoryTarget(path))) {
+      warn(`meta.register: ${shown(configDir, path)} is a symlink to a directory, which is not followed.`);
+    } else if (!entry.name.toLowerCase().endsWith(".json")) continue;
     else if (entry.isFile() || (entry.isSymbolicLink() && (await isFileTarget(path)))) {
       out.push(path);
     }
   }
   return out;
+}
+
+/** Does the symlink at `path` resolve to a directory? A dangling link does not. */
+async function isDirectoryTarget(path: string): Promise<boolean> {
+  try {
+    return (await stat(path)).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 /** Does the symlink at `path` resolve to a file? A dangling link does not. */
@@ -119,7 +132,7 @@ export async function loadRegisteredSchemas(
       files.push(path);
       continue;
     }
-    const found = await jsonFilesUnder(path);
+    const found = await jsonFilesUnder(path, configDir);
     if (found.length === 0) {
       throw new DocmetaError(`register[${i}] names a directory with no .json files.`);
     }
