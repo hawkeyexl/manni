@@ -172,7 +172,7 @@ describe("manni meta derive (built bin)", { timeout: 60_000 }, () => {
       "docs/install.md",
       readFileSync(join(dir, "docs/install.md"), "utf8").replace(
         "title: Install\n",
-        "title: Install\n$schema: ../permissive.schema.json\n",
+        "title: Install\n$schema: ./permissive.schema.json\n",
       ),
     );
     const r = run(["derive", "--no-config", "docs/install.md"], dir);
