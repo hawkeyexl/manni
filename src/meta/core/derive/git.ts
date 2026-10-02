@@ -243,20 +243,25 @@ export async function deriveFromGit(
     }
 
     try {
-      const histories =
-        bucket.length <= threshold
-          ? await perFileHistories(run, bucket)
-          : await bulkHistories(run, bucket);
-      if (histories === null) {
+      const found = await histories(
+        run,
+        bucket.map((e) => e.rel),
+        threshold,
+      );
+      if (found === null) {
         reasons.push(`git could not read the history at ${root}`);
         continue;
       }
-      await readOtherParentBlobs(run, histories);
-      const blobs = await fetchBlobs(run, neededBlobs(histories));
-      const manifestStamps = await stampsInManifests(run, root, bucket, histories, blobs);
+      await readOtherParentBlobs(run, found);
+      const blobs = await fetchBlobs(run, neededBlobs(found));
+      if (!(await followTakenBodies(run, bucket, found, blobs, threshold))) {
+        reasons.push(`git could not read the history at ${root}`);
+        continue;
+      }
+      const manifestStamps = await stampsInManifests(run, root, bucket, found, blobs);
 
       for (const entry of bucket) {
-        const history = histories.get(entry.rel) ?? [];
+        const history = found.get(entry.rel) ?? [];
         const facts = judge(
           entry.input,
           root,
@@ -370,42 +375,120 @@ const LOG_ARGS = [
   RECORD_FORMAT,
 ];
 
+/** Either walk form, by how many paths it reads. */
+function histories(
+  run: GitRun,
+  rels: readonly string[],
+  threshold: number,
+  rev = "HEAD",
+): Promise<Map<string, FileHistory[]> | null> {
+  return rels.length <= threshold
+    ? perFileHistories(run, rels, rev)
+    : bulkHistories(run, rels, rev);
+}
+
 /** The per-file form: `--follow` carries the path across renames itself. */
 async function perFileHistories(
   run: GitRun,
-  bucket: RootEntry[],
+  rels: readonly string[],
+  rev: string,
 ): Promise<Map<string, FileHistory[]> | null> {
-  const histories = new Map<string, FileHistory[]>();
-  for (const entry of bucket) {
-    const out = await run([...LOG_ARGS, "--follow", "--", pathspec(entry.rel)]);
+  const found = new Map<string, FileHistory[]>();
+  for (const rel of rels) {
+    const out = await run([...LOG_ARGS, rev, "--follow", "--", pathspec(rel)]);
     if (out.tooLarge) throw new HistoryTooLarge();
     if (out.code !== 0) {
-      if (await isUnbornHead(run)) return histories;
+      if (await isUnbornHead(run)) return found;
       return null;
     }
     // `--follow` already walked the rename; `attribute` still applies so the
     // rename commit's own raw line is read the same way the bulk form reads it.
-    const attributed = attribute(parseLog(text(out)), [entry.rel]);
-    histories.set(entry.rel, attributed.get(entry.rel) ?? []);
+    const attributed = attribute(parseLog(text(out)), [rel]);
+    found.set(rel, attributed.get(rel) ?? []);
   }
-  return histories;
+  return found;
 }
 
 /** The bulk form: one walk, every path attributed and followed here. */
 async function bulkHistories(
   run: GitRun,
-  bucket: RootEntry[],
+  rels: readonly string[],
+  rev: string,
 ): Promise<Map<string, FileHistory[]> | null> {
-  const out = await run(LOG_ARGS);
+  const out = await run([...LOG_ARGS, rev]);
   if (out.tooLarge) throw new HistoryTooLarge();
   if (out.code !== 0) {
     if (await isUnbornHead(run)) return new Map();
     return null;
   }
-  return attribute(
-    parseLog(text(out)),
-    bucket.map((e) => e.rel),
-  );
+  return attribute(parseLog(text(out)), [...rels]);
+}
+
+/**
+ * A page whose newest body change is a merge that took the body whole from
+ * another parent is read as that parent reads it. Its history from that
+ * parent replaces the merge and everything older, so the commit that wrote
+ * the body dates it, under whatever path it had on that side. The commits
+ * newer than the merge are kept: none of them changed the body. Pages that
+ * share a parent are walked together, and the walk repeats while the newest
+ * body change on the new side is itself such a merge. Each round walks
+ * strictly older commits, so it ends.
+ */
+async function followTakenBodies(
+  run: GitRun,
+  bucket: readonly RootEntry[],
+  found: Map<string, FileHistory[]>,
+  blobs: Map<string, string>,
+  threshold: number,
+): Promise<boolean> {
+  for (;;) {
+    const byParent = new Map<string, { rel: string; keep: FileHistory[]; path: string }[]>();
+    for (const entry of bucket) {
+      const history = found.get(entry.rel) ?? [];
+      const taken = takenMerge(entry.input.extracted.fenced, history, blobs);
+      if (taken === undefined) continue;
+      const group = byParent.get(taken.parent) ?? [];
+      group.push({ rel: entry.rel, keep: history.slice(0, taken.index), path: taken.path });
+      byParent.set(taken.parent, group);
+    }
+    if (byParent.size === 0) return true;
+
+    const walked = new Map<string, FileHistory[]>();
+    for (const [parent, group] of byParent) {
+      const paths = [...new Set(group.map((g) => g.path))];
+      const side = await histories(run, paths, threshold, parent);
+      if (side === null) return false;
+      for (const g of group) {
+        const tail = side.get(g.path) ?? [];
+        walked.set(g.rel, tail);
+        found.set(g.rel, [...g.keep, ...tail]);
+      }
+    }
+    await readOtherParentBlobs(run, walked);
+    const missing = new Set([...neededBlobs(walked)].filter((sha) => !blobs.has(sha)));
+    for (const [sha, content] of await fetchBlobs(run, missing)) blobs.set(sha, content);
+  }
+}
+
+/**
+ * The newest body change in `history`, when it is a merge whose body another
+ * parent already held: its position, that parent, and the page's path there.
+ */
+function takenMerge(
+  fenced: boolean | undefined,
+  history: readonly FileHistory[],
+  blobs: ReadonlyMap<string, string>,
+): { index: number; parent: string; path: string } | undefined {
+  const blobBody = (sha: string | null): string | null =>
+    sha === null ? null : bodyOf(blobs.get(sha) ?? "", fenced);
+  const index = history.findIndex((h) => !sameBody(blobBody(h.newBlob), blobBody(h.oldBlob)));
+  const newest = history[index];
+  if (newest === undefined) return undefined;
+  const body = blobBody(newest.newBlob);
+  const k = newest.otherParentBlobs.findIndex((b) => b !== null && sameBody(body, blobBody(b)));
+  const parent = newest.otherParents[k];
+  if (k === -1 || parent === undefined) return undefined;
+  return { index, parent, path: newest.pathAtCommit };
 }
 
 /** A path with glob characters is named literally, as `gitignore.ts` does. */
