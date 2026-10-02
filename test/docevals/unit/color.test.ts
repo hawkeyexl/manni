@@ -10,6 +10,13 @@ import { render, REPORT_FORMATS } from "../../../src/docevals/reporters/index.js
 import { renderPretty } from "../../../src/docevals/reporters/pretty.js";
 import { renderList, runList } from "../../../src/docevals/commands/list.js";
 import type { EngineReport } from "../../../src/docevals/core/engine.js";
+import {
+  renderCalibration,
+  type CalibrationReport,
+} from "../../../src/docevals/commands/calibrate.js";
+import { renderFill, type FillReport } from "../../../src/docevals/commands/fill.js";
+import { renderReviews } from "../../../src/docevals/commands/review.js";
+import type { ReviewEntry } from "../../../src/docevals/core/reviews.js";
 
 const PAGES = resolve(import.meta.dirname, "../fixtures/pages");
 const ESC = "\u001b[";
@@ -81,5 +88,71 @@ describe("docevals colour is passed in, not detected", () => {
     expect(renderList(run, "pretty", { color: false })).not.toContain(ESC);
     expect(renderList(run, "pretty", { color: true })).toContain(ESC);
     expect(renderList(run, "json", { color: true })).not.toContain(ESC);
+  });
+
+  it("renderCalibration follows the colour it is given", () => {
+    const report: CalibrationReport = {
+      cases: [
+        {
+          file: "docs/goTo.mdx",
+          eval: "no-future-promises",
+          expected: "pass",
+          reviewed: true,
+          judged: "pass",
+          agrees: true,
+        },
+      ],
+      total: 1,
+      agreements: 1,
+      agreementRate: 1,
+      falsePositives: 0,
+      falsePositiveRate: 0,
+      falseNegatives: 0,
+      meetsThreshold: true,
+      expectedPass: 1,
+      expectedFail: 0,
+      balanced: false,
+      fpAlert: false,
+      unreviewed: 0,
+      stale: 0,
+      budgetSkipped: 0,
+      unjudged: 0,
+    };
+    expect(renderCalibration(report, { color: false })).not.toContain(ESC);
+    expect(renderCalibration(report, { color: true })).toContain(ESC);
+  });
+
+  it("renderFill follows the colour it is given", () => {
+    const report: FillReport = {
+      results: [
+        {
+          file: "docs/goTo.mdx",
+          status: "nothing-proposed",
+          written: [],
+          belowThreshold: [],
+          capped: [],
+          duplicates: [],
+          cached: false,
+        },
+      ],
+      threshold: 0.7,
+      turns: 1,
+      exitCode: 0,
+    };
+    expect(renderFill(report, "pretty", { color: false })).not.toContain(ESC);
+    expect(renderFill(report, "pretty", { color: true })).toContain(ESC);
+  });
+
+  it("renderReviews follows the colour it is given", () => {
+    const reviews: ReviewEntry[] = [
+      {
+        file: "docs/goTo.mdx",
+        evalName: "no-future-promises",
+        contentHash: "0".repeat(64),
+        verdict: "pass",
+      },
+    ];
+    expect(renderReviews(reviews, { color: false })).not.toContain(ESC);
+    expect(renderReviews(reviews, { color: true })).toContain(ESC);
   });
 });

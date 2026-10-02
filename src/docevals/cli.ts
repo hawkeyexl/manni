@@ -561,7 +561,8 @@ export function buildProgram(): Command {
         cache?: boolean;
       }, command: Command) => {
         try {
-          const pc = palette(colorFor(command, process.stdout.isTTY));
+          const color = colorFor(command, process.stdout.isTTY);
+          const pc = palette(color);
           if (opts.seed) {
             // No `config`: reviews.yaml and the golden directory both resolve
             // against the working directory, not the config's, so passing it
@@ -603,11 +604,7 @@ export function buildProgram(): Command {
             maxTurns: opts.maxTurns,
             noCache: opts.cache === false,
           });
-          console.log(
-            renderCalibration(report, {
-              color: colorFor(command, process.stdout.isTTY),
-            }),
-          );
+          console.log(renderCalibration(report, { color }));
           // Both conditions: the judge has to agree enough, AND the set has to
           // have been measured. A stale golden file whose pages were renamed
           // used to certify on whatever still resolved.
