@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE task PUBLIC "-//OASIS//DTD DITA Task//EN" "task.dtd">
+<!-- rotate-a-key.dita with one defect: the conref names an id warnings.dita
+     has not got. DITA-OT reports DOTX010E; nothing else can see it. -->
+<task id="broken-conref">
+  <title>Rotate an API key</title>
+  <shortdesc>Replace a live secret without interrupting traffic.</shortdesc>
+  <taskbody>
+    <context>
+      <note conref="warnings.dita#warnings/no-such-note"/>
+    </context>
+    <steps>
+      <step><cmd>Create a replacement key.</cmd></step>
+      <step><cmd>Revoke the old key.</cmd></step>
+    </steps>
+  </taskbody>
+</task>

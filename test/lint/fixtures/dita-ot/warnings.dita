@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<!-- Holds the one reusable note every conref case below points at. -->
+<topic id="warnings">
+  <title>Shared warnings</title>
+  <body>
+    <note id="rotate" type="caution">Rotating a key revokes the old secret.</note>
+  </body>
+</topic>

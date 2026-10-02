@@ -119,8 +119,11 @@ docs/src/content/docs/cite/ci/index.mdx:
       lines: 166-180
       integrity: sha256-112c0f756ecfff959a1a4162b5c0e81e5b92d37456c25c319c167a8a2722d205
     - generated-by: Claude Opus 5
-      lines: 181-215
-      integrity: sha256-2912b60129ac1f695a2f581910c2d40e65b538fae19d3eb9d84d4a7fce5d643b
+      lines: 181
+      integrity: sha256-377cad358410af56af775106cb45381ce3b6b1bce285622e32cac05f458c7873
+    - generated-by: Claude Opus 5
+      lines: 183-215
+      integrity: sha256-db712015fcc5ae4a9ff8e950d59c19beaf00c9afec36142186e6c79784f52ed0
     - generated-by: Claude Opus 5
       lines: 217-250
       integrity: sha256-78600974cd7602c5e67d4e637a49df9cd58fbc9091f83d936f9e8e19872d4789

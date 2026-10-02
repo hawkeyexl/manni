@@ -1,0 +1,19 @@
+# Two document sets, declared once for every tool (proposal 0041), and a
+# `lint:` section carrying only what is still a lint key.
+#
+# `guides` excludes its drafts, which would fail the built-in how-to template:
+# a run that lints `half-written.md` is a run whose `exclude:` stopped being
+# applied, which is the quietest failure the collection machinery has.
+collections:
+  - name: guides
+    paths:
+      - "guides/**/*.md"
+    exclude:
+      - "**/drafts/**"
+  - name: api
+    paths:
+      - "api/**/*.md"
+
+lint:
+  structure:
+    tool: manni

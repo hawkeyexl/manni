@@ -78,18 +78,18 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-afd83372c654d12b38041a076d67122d4c8faedfd948fd30f6e288425b62517e
       source:
         file: src/meta/core/load-files.ts
-        lines: 166-169
+        lines: 269-272
         integrity: sha256-4599d601ad8068f93a532f63eb18d8e223706720fc069d02d27c2a17f0a63699
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: node-24-floor
       claim:
         lines: 14
         integrity: sha256-70b11580b3b79d5a7044d2b616dcd08dfd6b81ff96941036950f9eac496b306e
       source:
         file: package.json
-        lines: 34-36
+        lines: 36-38
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: okf-requires-type
       claim:
         lines: 9

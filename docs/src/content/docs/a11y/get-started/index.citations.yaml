@@ -5,17 +5,17 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         integrity: sha256-565a1ba3633d6fd1dff04bccb403ed197d963c5c1b4479d840d8d735146ead89
       source:
         file: package.json
-        lines: 34-36
+        lines: 36-38
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: browser-not-bundled
       claim:
         integrity: sha256-396e8d96921572f27d6b6f58c61c2222b61b688b7096e5c3c890292aed962853
       source:
         file: package.json
-        lines: 92
+        lines: 99
         integrity: sha256-6506e0dbde439aea4f024722a85dcca168ede911a3173a80b2efe2367dfd3740
-        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: browser-launch-order
       claim:
         lines: 32-35

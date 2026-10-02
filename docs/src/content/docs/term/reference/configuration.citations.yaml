@@ -13,9 +13,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-7d0655d425264f026c5f5d326f212ee791e1abffd5be4c9c1888551df0e07087
       source:
         file: src/shared/tools.ts
-        lines: 104-108
+        lines: 143-147
         integrity: sha256-e031656b7d919f957129e2cb6d1848230e626368ce9b7ab0878bdd22a7114185
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: empty-term-section-no-keys
       claim:
         integrity: sha256-7d0655d425264f026c5f5d326f212ee791e1abffd5be4c9c1888551df0e07087
@@ -77,17 +77,17 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-9c5cab61e3f16882afd2267e1200f1bd9637a91a3c7fb08d64925d17f8e48a07
       source:
         file: src/shared/tools.ts
-        lines: 88-95
+        lines: 106-113
         integrity: sha256-89a62db24651e4ff0d7e68e1a4eb8ff708197e112d44c4befc89a9e6bef9b3f7
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: vale-finds-own-config
       claim:
         integrity: sha256-9c5cab61e3f16882afd2267e1200f1bd9637a91a3c7fb08d64925d17f8e48a07
       source:
         file: src/shared/tools.ts
-        lines: 99-108
+        lines: 138-147
         integrity: sha256-6aff5155a3feb38d23abf880bb71b1217811969f279e30e8827145c91bd18ba5
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: manifests-list-of-paths
       claim:
         lines: 65
@@ -175,9 +175,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-31a0f0677ce0c33c466b7d6770d3274086cfa3684bf486277b2eac20571c2780
       source:
         file: src/meta/core/load-files.ts
-        lines: 110
+        lines: 211
         integrity: sha256-ee02e578540932639c3aa659c0568d487c6d8a4293633f28b18dd4ff557ad7f9
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: respect-gitignore-no-gitignore
       claim:
         lines: 70
@@ -438,18 +438,18 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-e3fddc012ce5bb146ba5bd067310adbaab7a06782d884e4ffbca13ca5adb8d11
       source:
         file: src/meta/core/load-files.ts
-        lines: 200
+        lines: 305
         integrity: sha256-e875231ef845ad664fc8dde395cd7cae437ab1a0eda11a486fcd2cbd153fabc5
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: allow-empty-no-matched-files
       claim:
         lines: 69
         integrity: sha256-e3fddc012ce5bb146ba5bd067310adbaab7a06782d884e4ffbca13ca5adb8d11
       source:
         file: src/meta/core/load-files.ts
-        lines: 258
+        lines: 363
         integrity: sha256-da70dbb9bcc1db6c1d1532237399e11fa14a9f72563d7fca972d0bb400e2e69f
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: duplicate-id-on-every-entry
       claim:
         integrity: sha256-44ef57a62c574467369a2141e4e556b88bba96ee6875dd0337e0ae01896c92b1

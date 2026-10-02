@@ -8,12 +8,12 @@ docs/src/content/docs/lint/index.mdx:
       type: capability
       grader: ai
   provenance:
-    - generated-by: Claude Opus 5.5
-      lines: 2-8
-      integrity: sha256-dc1d83b1dc0cc9afca50ec8d8bf2f02b3655d3eaf0bd1ed08c335c0d74c918e5
+    - generated-by: Claude Opus 5
+      lines: 2-153
+      integrity: sha256-cb74396e76b6f5d706ff853f820e0548141eb99502f97aecd8895f064d454567
   owner:
     - "@hawkeyexl"
-  created: 2026-09-24
+  created: 2026-09-15
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

@@ -1,0 +1,78 @@
+# Hugo-Markdown-shaped doctypes, worked in the v2 template grammar (proposal
+# 0061) over the shared content model (0065). nginx's own docs are Hugo
+# Markdown with a heavy diet of include files; nothing here is nginx's text -
+# it is a synthetic docset shaped like that split, so the fixtures that lint
+# against it are original pages.
+info:
+  title: Hugo-Markdown-shaped doctypes (worked example)
+
+templates:
+  # An include file: the host page owns the title, so the fragment carries
+  # none of its own. `heading: false` is the one way to say that - omitting
+  # `heading` would accept any title *or* none, which is not what a fragment
+  # is. All that is asked of it is a body.
+  fragment:
+    heading: false
+    contains:
+      paragraphs:
+        min: 1
+
+  # A how-to: an overview, prerequisites under one of several real spellings,
+  # a wildcard run of task sections (however many the task takes, each named
+  # by the author), optional troubleshooting, and a closer - nginx's own docs
+  # use eight spellings of this one, so the list here is a sample of them
+  # rather than the whole set.
+  how-to:
+    sections:
+      - id: overview
+        heading: Overview
+        max: 1
+      - id: prerequisites
+        heading:
+          - Prerequisites
+          - Before you begin
+          - What you need
+        min: 0
+        max: 1
+      - id: task
+        description: However many sections the task itself takes, each named by the author.
+        min: 1
+      - id: troubleshooting
+        heading: Troubleshooting
+        min: 0
+        max: 1
+      - id: closer
+        heading:
+          - See also
+          - Further reading
+          - Related topics
+          - More information
+          - Additional resources
+        max: 1
+
+  # Release notes: one repeated group per version - a heading that is just
+  # the version number, `What's new` required, then several categories that
+  # a given release may not need at all.
+  release-notes:
+    sections:
+      - id: versions
+        repeat:
+          - id: version
+            heading:
+              pattern: '^\d+\.\d+\.\d+$'
+            sections:
+              - id: whats-new
+                heading: What's new
+                max: 1
+              - id: known-issues
+                heading: Known issues
+                min: 0
+                max: 1
+              - id: security
+                heading: Security
+                min: 0
+                max: 1
+              - id: bugfixes
+                heading: Bugfixes
+                min: 0
+                max: 1

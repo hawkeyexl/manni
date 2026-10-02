@@ -33,7 +33,7 @@ jobs:
           reporter: github-pr-review
           filter_mode: added
           fail_on_error: true
-          # The fixture tree is test data, not prose. Two things follow from
+          # The fixture trees are test data, not prose. Two things follow from
           # that. Some fixtures carry deliberately broken frontmatter (that is
           # what manni tests), which Vale cannot parse; it aborts the whole
           # run on the first one (E201), and no level setting downgrades it.
@@ -42,6 +42,15 @@ jobs:
           # dedicated fixture CLAUDE.md asks for with every feature. Excluding
           # the tree covers both, and never needs updating as fixtures are
           # added. Every other file in the repo is linted.
-          vale_flags: "--glob=!test/fixtures/**"
+          #
+          # `test/**`, not `test/fixtures/**`: each folded-in tool brings its
+          # own tree one level down, and `test/lint/fixtures/tgdp/` is the case
+          # that forces the point — those files are The Good Docs Project's own
+          # templates vendored verbatim, and `src/lint/CLAUDE.md` forbids
+          # editing one to quiet an alert, because the test that lints them
+          # against our derived templates reads them as the authority. There is
+          # no authored prose anywhere under `test/`, so the whole directory is
+          # the honest boundary.
+          vale_flags: "--glob=!test/**"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

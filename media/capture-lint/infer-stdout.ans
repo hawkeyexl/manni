@@ -1,0 +1,24 @@
+Using manni.config.yaml (.)
+templates:
+  how-to:
+    heading: Rotate an API key
+    sections:
+      - heading: Overview
+        contains:
+          paragraphs:
+            min: 1
+      - heading: Before you start
+        contains:
+          paragraphs:
+            min: 1
+      - heading: Rotate the key
+        contains:
+          paragraphs:
+            min: 1
+          codeBlocks:
+            min: 1
+            language: bash
+      - heading: See also
+        contains:
+          paragraphs:
+            min: 1

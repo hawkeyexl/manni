@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Shaped after DITA-OT's reference/glossary.ditamap, which nests every entry in
+  <glossref> rather than <topicref>. A glossref carrying @keys is a key
+  definition and a navigation entry at once, and @toc says which one wins.
+-->
+<map>
+  <title>Glossary entries</title>
+  <topicref keyref="glossary" chunk="to-content">
+    <glossref href="gloss-argument.dita" keys="gloss-argument" toc="yes"/>
+    <glossref href="gloss-option.dita" keys="gloss-option" toc="yes"/>
+  </topicref>
+</map>
