@@ -492,9 +492,9 @@ docs/src/content/docs/meta/set-up/derived-metadata.mdx:
         integrity: sha256-10302a55cf381ce6e8e22122d02862a17e3f7982d40205a4ed50407394ce4d8a
       source:
         file: src/meta/core/derive/git.ts
-        lines: 803-808
+        lines: 811-816
         integrity: sha256-d6b036393c62868ef39b252948062ac3b1a77abaf199b3d621af5a7fd74af860
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 6a8da8ba7e1df8b1dacc45447ff2499dbaebcf58
     - id: codeowners-evidence-is-file-and-line
       claim:
         integrity: sha256-10302a55cf381ce6e8e22122d02862a17e3f7982d40205a4ed50407394ce4d8a
