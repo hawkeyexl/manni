@@ -48,7 +48,7 @@ describe("a baseline never forgives the absence of a verdict", () => {
     return {
       evalName: "lint",
       type: "regression",
-      grader: "tool:markdownlint",
+      grader: "tool:regex",
       file: "docs/a.md",
       outcome: "fail",
       findings,
@@ -66,7 +66,7 @@ describe("a baseline never forgives the absence of a verdict", () => {
     const diagnostic = {
       evalName: "lint",
       file: "docs/a.md",
-      ruleId: "markdownlint/unreadable",
+      ruleId: "regex/unreadable-target",
       message: "could not parse tool output",
       severity: "warning" as const,
       diagnostic: true,
@@ -74,7 +74,7 @@ describe("a baseline never forgives the absence of a verdict", () => {
     const real = {
       evalName: "lint",
       file: "docs/a.md",
-      ruleId: "MD040",
+      ruleId: "regex/found",
       message: "fenced code language",
       severity: "error" as const,
     };
@@ -89,7 +89,7 @@ describe("a baseline never forgives the absence of a verdict", () => {
     const diagnostic = {
       evalName: "lint",
       file: "docs/a.md",
-      ruleId: "markdownlint/unreadable",
+      ruleId: "regex/unreadable-target",
       message: "could not parse tool output",
       severity: "warning" as const,
       diagnostic: true,
@@ -97,7 +97,7 @@ describe("a baseline never forgives the absence of a verdict", () => {
     const real = {
       evalName: "lint",
       file: "docs/a.md",
-      ruleId: "MD040",
+      ruleId: "regex/found",
       message: "fenced code language",
       severity: "error" as const,
     };

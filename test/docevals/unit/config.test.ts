@@ -593,7 +593,7 @@ describe("parseConfig camelCase guard", () => {
           "evals:",
           "  e:",
           "    assertion: x",
-          "    grader: tool:freshness",
+          "    grader: tool:regex",
           "    options:",
           "      maxAgeDays: 30",
         ),

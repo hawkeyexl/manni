@@ -14,25 +14,25 @@ import type { EngineReport } from "../../../src/docevals/core/engine.js";
 import type { EvalResult, Finding } from "../../../src/docevals/types.js";
 
 /** The one finding in REPORT, which the variants below restyle. */
-const STALE: Finding = {
-  evalName: "fresh-enough",
+const FOUND: Finding = {
+  evalName: "no-todo-markers",
   file: "docs/goTo.mdx",
-  ruleId: "freshness/stale",
-  message: "Reviewed 900 days ago",
+  ruleId: "regex/found",
+  message: "Pattern /TODO/ found in body, expected absent",
   severity: "error",
   line: 4,
   col: 1,
 };
 
-/** The failing result in REPORT that carries STALE. */
+/** The failing result in REPORT that carries FOUND. */
 const FAILING: EvalResult = {
-  evalName: "fresh-enough",
+  evalName: "no-todo-markers",
   suite: "reference",
   type: "regression",
-  grader: "tool:freshness",
+  grader: "tool:regex",
   file: "docs/goTo.mdx",
   outcome: "fail",
-  findings: [STALE],
+  findings: [FOUND],
   durationMs: 3,
 };
 
@@ -41,10 +41,10 @@ const REPORT: EngineReport = {
   evalResults: [
     FAILING,
     {
-      evalName: "readable",
+      evalName: "names-an-action",
       suite: "reference",
       type: "regression",
-      grader: "tool:reading-level",
+      grader: "tool:regex",
       file: "docs/concepts.md",
       outcome: "pass",
       durationMs: 2,
@@ -125,9 +125,9 @@ describe("sarif reporter", () => {
     // Repo-relative, forward-slashed: an absolute or backslashed path does not
     // match anything GitHub can annotate.
     const result = sarif().runs[0]?.results[0];
-    expect(result?.ruleId).toBe("freshness/stale");
+    expect(result?.ruleId).toBe("regex/found");
     expect(result?.level).toBe("error");
-    expect(result?.message.text).toBe("Reviewed 900 days ago");
+    expect(result?.message.text).toBe("Pattern /TODO/ found in body, expected absent");
     const loc = result?.locations[0]?.physicalLocation;
     expect(loc?.artifactLocation.uri).toBe("docs/goTo.mdx");
     expect(loc?.region?.startLine).toBe(4);
@@ -148,8 +148,8 @@ describe("sarif reporter", () => {
         {
           ...FAILING,
           findings: [
-            { ...STALE, severity: "warning" },
-            { ...STALE, severity: "notice" },
+            { ...FOUND, severity: "warning" },
+            { ...FOUND, severity: "notice" },
           ],
         },
       ],
@@ -176,7 +176,7 @@ describe("junit reporter", () => {
 
   it("marks a failing eval as a failure and a skipped one as skipped", () => {
     const xml = junit();
-    expect(xml).toMatch(/<testcase [^>]*name="fresh-enough"[\s\S]*?<failure/);
+    expect(xml).toMatch(/<testcase [^>]*name="no-todo-markers"[\s\S]*?<failure/);
     expect(xml).toMatch(/<testcase [^>]*name="skipped-one"[\s\S]*?<skipped/);
   });
 
@@ -190,7 +190,7 @@ describe("junit reporter", () => {
           ...FAILING,
           findings: [
             {
-              ...STALE,
+              ...FOUND,
               message: 'Expected <h1> & got "h2" \'x\'',
             },
           ],
@@ -215,7 +215,7 @@ describe("junit reporter: hostile characters", () => {
     evalResults: [
       {
         ...FAILING,
-        findings: [{ ...STALE, message }],
+        findings: [{ ...FOUND, message }],
       },
     ],
   });
