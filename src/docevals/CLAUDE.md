@@ -14,7 +14,7 @@ at 670e62b. Its sources live under `src/docevals/`, its tests under
 (closed at 01045) under `docs/proposals/docevals/`, and its site under
 `docs/src/content/docs/docevals/`. Its content strategy is the family's, in
 `docs/content-strategy/`. It ships no schema file: pages validate against the
-evals draft in `docs/proposals/0023/schemas/`, bundled into the build. The metadata tool is a sibling in this
+shipped `manni:evals:1.0.0` in `src/meta/schemas/evals/`, bundled into the build. The metadata tool is a sibling in this
 repository, imported by relative path (`../meta/index.js`), not a dependency.
 
 ## Fixtures (required)
@@ -35,27 +35,31 @@ can take, not just the happy path:
 with docevals frontmatter. It is deliberately **not** all-passing, because it
 encodes both outcomes so the gate is meaningful:
 
-- `goTo.mdx` fails freshness at error severity (drives the expected non-zero exit).
-- `concepts.md` is stale at *warning* severity, so it reports a finding but still passes.
+- `goTo.mdx` carries a `TBD` line that fails `no-todo-markers` at error
+  severity on line 14, which drives the expected exit 1.
+- `concepts.md` matches the same pattern under its own page-level eval at
+  *warning* severity, on line 21, so it reports a finding but still passes.
 - `installation.mdx` has a command eval with no command, which is the script-generation target.
 - `find.mdx` has a pre-generated script in `test/docevals/fixtures/pages/docs/actions/manni-docevals/`.
 - `index.mdx` is skipped at the page level.
 
-The repository's own `manni.config.yaml` carries the `docevals:` section that
-runs this corpus. The inline Doc Detective steps on the docs pages assert
-specific outcomes against it. A fixture change that flips one of those must
-update the page in the same commit.
+The corpus's config sits beside it, in
+`test/docevals/fixtures/pages/manni.config.yaml`, so a run started in that
+directory discovers it. The integration tests run from there, and so do the
+inline Doc Detective steps on the docs pages, through
+`runShell.workingDirectory`. `.doc-detective.json` sets
+`relativePathBase: cwd`, so that path resolves from the repository root. The
+steps assert specific outcomes against the corpus. A fixture change that
+flips one of those must update the page in the same commit.
 
-The docs section (`docs/src/content/docs/docevals/**`) is a **second** corpus,
-required to be all-green. `npm run docs:check-docevals` runs the tool over it
-through `docs/manni.docevals.yaml`, reached by `-c` only. That file says what
-it checks and what it leaves to the docs-as-tests workflow.
+The docs site is a **second** corpus, required to be all-green. The root
+`manni.config.yaml` `docevals:` section is its gate. It defines a suite per
+domain, each running `no-todo-markers`, and `npm run docs:check-docevals`
+runs it with `--deterministic-only --no-generate`.
 
 The suite must stay **offline and hermetic**. Judge providers are mocked
-(`MockProvider`), process execution is injected (`ExecFn`), and grader
-adapters are tested against captured tool output in
-`test/docevals/fixtures/tool-output/`. A test that reaches the network or
-shells out to a real binary is a defect. The one exception is
+(`MockProvider`), and process execution is injected (`ExecFn`). A test that
+reaches the network or shells out to a real binary is a defect. The one exception is
 `test/docevals/integration/live.test.ts`, gated behind `MANNI_DOCEVALS_LIVE=1`
 and skipped by default.
 
@@ -121,21 +125,22 @@ and Node touch.
 
 ## Commands
 
-- `node dist/cli.js docevals run test/docevals/fixtures/pages --deterministic-only`,
-  a dogfood run against the fixture corpus through the repository's
-  `manni.config.yaml`. The corpus is named as a path, not declared as a
-  collection, because a bare `manni meta validate` reads every collection.
-- `npm run docs:check-docevals`, the tool over its own docs section
+- `node ../../../../dist/cli.js docevals run --deterministic-only`, run from
+  `test/docevals/fixtures/pages/`, a run over the fixture corpus through the
+  config beside it.
+- `npm run docs:check-docevals`, the root site gate over the docs site
 - `MANNI_DOCEVALS_LIVE=1 npm test`, adding the live smoke test via the Claude CLI
 - The root `CLAUDE.md` lists the rest: build, test, typecheck, lint, the docs
   drift checks and the site build.
 
 ## Architecture
 
-- One concept, the **eval**. Graders are `ai`, `command`, `tool:<name>`, and
-  `human`. There are no "runners". The AI grader is spelled `ai` everywhere a
+- One concept, the **eval**. Four graders are registered: `ai`, `command`,
+  `human` and `tool:regex` (proposal 0073). There are no "runners". An eval
+  naming any other grader is exit 2 before a page is read, from `run`, `list`,
+  `generate` and `promote` alike. The AI grader is spelled `ai` everywhere a
   user or the code can see it: `GraderKind` in `src/docevals/types.ts`, the
-  evals draft, and every docs page.
+  evals vocabulary, and every docs page.
 - `src/docevals/core/engine.ts` holds the pipeline. It runs discover → resolve →
   **empty-plan check** → generation pass → deterministic graders → LLM judge →
   reviews → aggregate. Deterministic graders go cheapest first, one `grade()`
@@ -151,9 +156,9 @@ and Node touch.
   with `suite`/`skip`. Page wins on name collision. `type` defaults to
   `regression`, `grader` to `ai`.
 - `src/docevals/graders/` is the grader registry, mirroring the metadata tool's
-  schema-registry pattern. Tool adapters parse each tool's output into
-  `Finding[]`. Unit tests use captured output plus a fake `exec`, never real
-  binaries.
+  schema-registry pattern. Checks another domain owns run in that domain, not
+  as a docevals grader: frontmatter in `manni meta validate`, structure in
+  `manni lint`. Unit tests use a fake `exec`, never real binaries.
 - `src/docevals/judge/` is the judge stage, built on
   [`@hawkeyexl/inference`](https://github.com/hawkeyexl/inference) (ADR 01002).
   The providers, the N-run ensemble, consensus (`partial` counts as fail),
@@ -180,7 +185,7 @@ and Node touch.
   cache, or price table here. Three copies of that code drifted apart once
   already, and a fix belongs upstream.
 - `src/docevals/graders/exec.ts` re-exports the library's `realExec`, so the
-  subprocess provider and the command/tool graders share one cross-spawn
+  subprocess provider and the `command` grader share one cross-spawn
   wrapper. That wrapper owns npm `.cmd` shim resolution, stdin piping past the
   ~32K command-line limit, and StringDecoder-backed output. `outputTail` stays
   local.
@@ -237,11 +242,9 @@ and Node touch.
   vanishing from the results, and exit 0. The upstream fix is a mutex inside
   `LlamaCppProvider`; it is owed to `@hawkeyexl/inference`, not reimplemented here.
 - **`--since <ref>` scopes what is *graded*, never what is *diagnosed***
-  (ADR 01040). Corpus-mode graders are exempt. `GraderContext` carries targets
-  rather than a page list, so narrowing a corpus grader's input converts the
-  check into a pass instead of shrinking it. `applySinceScope` drops only `ai`
-  and `human` evals on unchanged pages. An unrecognised `tool:` kind is
-  deliberately kept, so a typo cannot surface on a changed page and vanish on
+  (ADR 01040). `applySinceScope` empties the plan of every unchanged page,
+  after every page has been resolved and diagnosed. An unregistered grader is
+  rejected at load, so a typo cannot surface on a changed page and vanish on
   an unchanged one. `partial` is derived from `pagesSelected < plans.length`,
   not from the flag's presence.
 - **Grader failures are isolated per eval group, in the engine** (ADR 01042).
@@ -288,36 +291,37 @@ and Node touch.
   rather than matching its text; do the same for any new writer. It must also
   **attach** what it defines (ADR 01041): the guard is a bare page run through
   `runList`/`runEvals`, not an assertion about the file's text.
-- Content files drive arbitrary code execution by **two** paths. Both are
-  default-deny behind one operator grant, `docevals.execution.allow` (CLI
-  `--allow-execution`, `--no-execution`). (1) `frontmatter-commands` covers
-  `command` evals declared in page frontmatter. (2) `page-embedded-steps`
-  covers the `tool:doc-detective` grader executing steps written in page
-  *bodies*. Any change near command graders, script generation or the
-  doc-detective adapter must preserve both gates. **The grant is defense in
-  depth, never sufficient on its own.** A grant says "this corpus is trusted
+- Content files drive arbitrary code execution by **one** path: `command`
+  evals declared in page frontmatter or a manifest. It is default-deny behind
+  one operator grant, `docevals.execution.allow: [frontmatter-commands]` (CLI
+  `--allow-execution`, `--no-execution`). The gate is on the eval's source
+  being the page, not on the grader, so any page-authored argv is covered.
+  Any change near command graders or script generation must preserve it.
+  **The grant is defense in depth, never sufficient on its own.** A grant says "this corpus is trusted
   to execute", and a fork's pages are not this corpus. The only complete
   control is restricting the job to same-repo pull requests; the
   docs-as-tests workflow carries that gate. Never remove it.
-- The page vocabulary is **`manni:evals:1.0.0-proposal.4`**, proposed by the
-  metadata tool (proposal 0023) and implemented here (ADRs 01009 and 01045).
-  `src/docevals/schema.ts` imports the draft from
-  `docs/proposals/0023/schemas/evals/` and tsup bundles it, so `dist` never
-  reads `docs/`. **Never ship a copy or patch it in memory**: the copies this
-  tool used to publish drifted from the draft twice. Three flat page keys:
-  `evals`, `eval-suite` and `eval-skip`, plus a reserved `eval-` prefix, so an
-  unrecognized `eval-*` key, `eval-provenance` included, is a page error.
-  proposal.4 marks all three `x-manni-location: external`, which is why the
-  Ajv instance compiles with `strict: false`, as `src/cite/core/page.ts` does.
+- The page vocabulary is the shipped **`manni:evals:1.0.0`**, published by the
+  metadata tool (proposal 0023) and implemented here (ADR 01009, proposal
+  0073). `src/docevals/schema.ts` imports it from
+  `src/meta/schemas/evals/1.0.0.json` and tsup bundles it, so docevals and
+  `manni meta validate` read the same bytes. **Never ship a copy or patch it
+  in memory**: the copies this tool used to publish drifted twice. Three flat
+  page keys: `evals`, `eval-suite` and `eval-skip`, plus a reserved `eval-`
+  prefix, so an unrecognized `eval-*` key, `eval-provenance` included, is a
+  page error. The schema marks all three `x-manni-location: external`, which
+  is why the Ajv instance compiles with `strict: false`, as
+  `src/cite/core/page.ts` does. The vocabulary still allows `severity-map` on
+  an eval; docevals warns that no registered grader reads it.
 - **A page's metadata is its frontmatter plus its manifests.** Those three
-  keys, ai-context's `provenance` and `meta-provenance`, and stewardship's
-  `last-reviewed` may all live in a collection's external-metadata manifest
-  (proposal 0037, 0041). `src/docevals/core/external.ts` merges them in
-  through meta's own `loadExternalMetadata` / `mergeExternalMetadata`, once
-  per run, and hands each `PageFile` back with the merged values as its
-  `frontmatter`. So resolution, the freshness grader, the self-preference
-  check and `target: frontmatter` read them without knowing a manifest
-  exists, and `target: raw` stays the file verbatim. Never grow a second
+  keys, and ai-context's `provenance` and `meta-provenance`, may all live in a
+  collection's external-metadata manifest (proposal 0037, 0041).
+  `src/docevals/core/external.ts` merges them in through meta's own
+  `loadExternalMetadata` / `mergeExternalMetadata`, once per run, and hands
+  each `PageFile` back with the merged values as its `frontmatter`. So
+  resolution, the self-preference check and `target: frontmatter` read them
+  without knowing a manifest exists, and `target: raw` stays the file
+  verbatim. Never grow a second
   loader. Membership is decided by **every declared collection**, not by the
   ones `--collection` or the positional paths selected. Two refusals are
   docevals' own, because docevals *writes* eval keys where meta reads them. A
@@ -340,8 +344,8 @@ and Node touch.
   `src/meta/internal.ts` (`keyHome`, `offerExternalHomes`,
   `externalWriteWarnings`, `spliceManifestValue`); never grow a docevals copy.
   Two things are docevals' own. The preference is read from the bundled evals
-  draft rather than from a resolved schema set, because every page is
-  validated against that draft anyway. The `RelocationContext` is built from
+  vocabulary rather than from a resolved schema set, because every page is
+  validated against that vocabulary anyway. The `RelocationContext` is built from
   the config this tool already loaded. A `manni.config.yaml` holding only a
   `docevals:` key is a single-tool file the metadata tool refuses. Where evals
   go cannot depend on whether a sibling can read the same file.
@@ -371,11 +375,6 @@ and Node touch.
   proposal 0048. The one boundary between that spelling and TypeScript's is
   `normalizeEvalDef` in `src/docevals/core/config.ts`. For any camelCase key
   in an entry, `parseConfig` names the kebab spelling it should have.
-- **`tool:docmeta` requires `options.schemas`** (ADR 01013). Passing
-  `cliSchemas: undefined` would inherit the metadata tool's own
-  `DEFAULT_SCHEMAS`, and a bare eval's meaning would then change whenever that
-  set widens. Never restore the inherited default. The grader keeps its name;
-  it runs the sibling's `runValidate` in-process.
 
 ## Config ↔ CLI flags (required pattern)
 
@@ -427,14 +426,14 @@ The ADR is the record; these are the map.
 - **One unified concept, the eval** ([ADR 00001](../../docs/proposals/docevals/00001-one-unified-concept-the-eval.md)).
 - **Generated check scripts are files, not inline code** ([ADR 00002](../../docs/proposals/docevals/00002-generated-scripts-are-files-not-inline-code.md)).
 - **`type` defaults to `regression`, not `capability`** ([ADR 00003](../../docs/proposals/docevals/00003-type-defaults-to-regression.md)).
-- **Level 1 orchestrates, it does not reimplement** ([ADR 00004](../../docs/proposals/docevals/00004-level-1-orchestrates-rather-than-reimplements.md)).
-  Deterministic checks wrap existing tools. Native graders exist only where
-  nothing else covers the gap: freshness, reading level, and cross-page
-  differentiation. This repository's own corpora lint with `tool:remark`, not
-  `tool:markdownlint`, because they are MDX (ADR 01024).
+- **docevals grades only what no other domain owns** ([proposal 0073](../../docs/proposals/0073-docevals-grades-what-no-other-domain-owns.md)).
+  The registry is `ai`, `command`, `human` and `tool:regex`. A check another
+  domain answers runs there: frontmatter in `meta`, structure, prose and
+  format in `lint`. Do not wrap a sibling or an outside linter as a grader.
+  `command` covers any other CLI check in one line.
 - **The metadata tool publishes the vocabulary; this tool implements the
-  behavior** (ADR 01009). The field names and the schema both come from
-  proposal 0023's draft, which pages validate against directly (ADR 01045).
+  behavior** (ADR 01009). The field names and the schema both come from the
+  shipped `manni:evals:1.0.0`, which pages validate against directly.
 - **Conceptual source.** The *Docs as Tests with AI* manuscript (draft 4). The
   grader hierarchy, eval sketch fields, 3-run ensemble, confidence zones, 70%
   calibration threshold, and 15% false-positive alert all come from it.
