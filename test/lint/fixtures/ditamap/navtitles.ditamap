@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Both spellings of a navigation title, plus a <title> whose own text is broken
+  by an inline key reference - DITA-OT's root map writes its release number
+  that way. The literal text is what a reader sees, so it is what the title is.
+  The <shortdesc> inside <topicmeta> is a map's only prose.
+-->
+<map>
+  <title>DITA Open Toolkit <keyword keyref="release"/></title>
+  <topicref navtitle="Attribute form" href="a.dita"/>
+  <topicref href="b.dita">
+    <topicmeta>
+      <navtitle>Element form</navtitle>
+      <shortdesc>A map entry can carry prose.</shortdesc>
+    </topicmeta>
+  </topicref>
+</map>

@@ -24,13 +24,28 @@ export interface ValeToolConfig {
   config?: string;
 }
 
+/** DITA Open Toolkit's settings under `tools.dita-ot`. */
+export interface DitaOtToolConfig {
+  /**
+   * DITA-OT's installation directory, as written, relative to
+   * `manni.config.yaml`. Unset means the `dita` on PATH.
+   *
+   * A directory rather than a path to the launcher, because that is the unit
+   * DITA-OT is distributed and documented as: the download unpacks to one
+   * directory, and `bin/dita` inside it will not run from anywhere else.
+   */
+  home?: string;
+}
+
 /** The document's top-level `tools:`, one namespace per outside tool. */
 export interface ToolsConfig {
   vale?: ValeToolConfig;
+  "dita-ot"?: DitaOtToolConfig;
 }
 
-const TOOL_KEYS = ["vale"] as const;
+const TOOL_KEYS = ["vale", "dita-ot"] as const;
 const VALE_KEYS = ["config"] as const;
+const DITA_OT_KEYS = ["home"] as const;
 
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -72,6 +87,9 @@ export function parseTools(
   if (Object.hasOwn(raw, "vale")) {
     tools.vale = parseVale(raw["vale"], source, toError);
   }
+  if (Object.hasOwn(raw, "dita-ot")) {
+    tools["dita-ot"] = parseDitaOt(raw["dita-ot"], source, toError);
+  }
   return tools;
 }
 
@@ -96,6 +114,27 @@ function parseVale(
   return vale;
 }
 
+function parseDitaOt(
+  raw: unknown,
+  source: string,
+  toError: (message: string) => Error,
+): DitaOtToolConfig {
+  if (!isMapping(raw)) {
+    throw toError(`${source}: tools.dita-ot must be a mapping.`);
+  }
+  rejectUnknownKeys(raw, DITA_OT_KEYS, "tools.dita-ot", source, toError);
+
+  const ditaOt: DitaOtToolConfig = {};
+  if (Object.hasOwn(raw, "home")) {
+    const home = raw["home"];
+    if (typeof home !== "string" || home.trim() === "") {
+      throw toError(`${source}: tools.dita-ot.home must be a non-empty string.`);
+    }
+    ditaOt.home = home;
+  }
+  return ditaOt;
+}
+
 /**
  * The absolute path of Vale's config file, resolved against the directory of
  * the config file that declared it. `undefined` when none is set, which means
@@ -105,4 +144,15 @@ export function valeConfigPath(tools: ToolsConfig, configDir: string): string | 
   const config = tools.vale?.config;
   if (config === undefined) return undefined;
   return isAbsolute(config) ? config : resolve(configDir, config);
+}
+
+/**
+ * The absolute path of DITA-OT's installation directory, resolved against the
+ * directory of the config file that declared it. `undefined` when none is set,
+ * which means the `dita` on PATH, as when a person runs it.
+ */
+export function ditaOtHome(tools: ToolsConfig, configDir: string): string | undefined {
+  const home = tools["dita-ot"]?.home;
+  if (home === undefined) return undefined;
+  return isAbsolute(home) ? home : resolve(configDir, home);
 }

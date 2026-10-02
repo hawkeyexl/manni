@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Shaped after DITA-OT's own resources/common-toc.ditamap: every entry points
+  by @keyref and carries no navtitle anywhere, so the referenced topic supplies
+  the title at build time. Nesting is the only structure the map itself has,
+  and each entry must still be a section for that nesting to survive.
+-->
+<map>
+  <topicref keyref="installing">
+    <mapref href="installing.ditamap"/>
+    <topicref keyref="installing-client"/>
+  </topicref>
+  <topicref keyref="reference"/>
+</map>

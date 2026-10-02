@@ -53,11 +53,12 @@ describe("manni (built bin)", () => {
     }
   }, 180000);
 
-  it("lists meta, cite and key as subcommands", () => {
+  it("lists meta, lint, cite and key as subcommands", () => {
     const r = run(manni, ["--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni /m);
     expect(r.stdout).toMatch(/^\s+meta\b/m);
+    expect(r.stdout).toMatch(/^\s+lint\b/m);
     expect(r.stdout).toMatch(/^\s+cite\b/m);
     expect(r.stdout).toMatch(/^\s+key\b/m);
   });
@@ -99,6 +100,51 @@ describe("manni (built bin)", () => {
     const r = run(manni, ["a11y", "check", "--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni a11y check /m);
+  });
+
+  it("mounts the lint tool under lint, with no default command", () => {
+    expect(run(manni, ["lint", "structure", "--help"]).stdout).toMatch(
+      /^Usage: manni lint structure /m,
+    );
+    // Proposal 0034: `lint` has verbs and nothing else, so a bare `manni lint`
+    // is a usage error that shows them. `manni lint docs/` used to be the
+    // default `lint` command; it is a usage error now.
+    const bare = run(manni, ["lint"]);
+    expect(bare.status).toBe(2);
+    expect(bare.stdout).toBe("");
+    expect(bare.stderr).toMatch(/^Usage: manni lint /m);
+    expect(bare.stderr).toMatch(/^\s+check\b/m);
+    expect(bare.stderr).toMatch(/^\s+structure\b/m);
+  });
+
+  it("runs lint under its name", () => {
+    expect(run(manni, ["lint", "--help"]).stdout).toMatch(/^Usage: manni lint /m);
+    // A built-in template lints the upstream document it was derived from
+    // clean: exit 0, and the run is counted.
+    const ok = run(manni, [
+      "lint",
+      "structure",
+      "test/lint/fixtures/tgdp/template_how-to.md",
+      "-t",
+      "tgdp:how-to:1.6",
+    ]);
+    expect(ok.status).toBe(0);
+    expect(ok.stdout).toContain("1 passed");
+    // The other half of the exit-code contract: findings are 1, not 2.
+    const bad = run(manni, [
+      "lint",
+      "structure",
+      "test/lint/fixtures/formats/how-to-broken.md",
+      "-t",
+      "tgdp:how-to:1.6",
+    ]);
+    expect(bad.status).toBe(1);
+  });
+
+  it("prefixes lint diagnostics with the bin that ran", () => {
+    const r = run(manni, ["lint", "structure", "-c", "does-not-exist.yaml"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/^manni: Config file not found/);
   });
 
   it("with no command is a usage error that points at the subcommands", () => {

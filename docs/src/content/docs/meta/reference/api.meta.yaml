@@ -262,10 +262,10 @@ docs/src/content/docs/meta/reference/api.mdx:
       lines: 438-443
       integrity: sha256-c90d2c166fe8fc4513f6adfbb134da27a3bb9a17321015bb382159519e33d50c
     - generated-by: Claude Opus 5
-      lines: 444
-      integrity: sha256-21885606a0ab7e6e5ad2332de8edfe1aa555653382a7fc2832ee1b76d81855da
+      lines: 444-445
+      integrity: sha256-fddbbdae10a30e5e6bdbac01e672a36ff1ca967b82d4056ec10c33c77b7c5352
     - generated-by: Claude Fable 5.1
-      lines: 445
+      lines: 446
       integrity: sha256-52b106cd6bd95fa8c9bfe79c0f52a1c2efced785484dc36bda868926b96f4d42
   owner:
     - "@hawkeyexl"

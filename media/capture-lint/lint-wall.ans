@@ -1,0 +1,7 @@
+Using manni.config.yaml (.)
+[31m✗[39m docs/rotate-key.md
+    [2m11:1[22m  [36mmanni:lint/structure/unexpected-section[39m  Before you start: Unexpected section "Before you start". Add a trailing rule with min: 0 to allow sections the template does not describe.
+    [2m15:1[22m  [36mmanni:lint/structure/unexpected-section[39m  Rotate the key: Unexpected section "Rotate the key". Add a trailing rule with min: 0 to allow sections the template does not describe.
+    [2m23:1[22m  [36mmanni:lint/structure/unexpected-section[39m  See also: Unexpected section "See also". Add a trailing rule with min: 0 to allow sections the template does not describe.
+
+[31m1 file checked, 0 passed, 1 failed, 0 skipped[39m

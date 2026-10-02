@@ -5,9 +5,9 @@ docs/src/content/docs/meta/get-started/index.mdx:
         integrity: sha256-406e5875f4673b04cb939611bfaf8879c1ed1178c555a79559352e6e8e01ce64
       source:
         file: package.json
-        lines: 35
+        lines: 37
         integrity: sha256-3f1eeebc0910c73dfab1013efd6c1309935f09b9ec2dc222b904e3c2432b4064
-        commit-sha: 1f2128e838c0dbefac9878def5e544ab59058e13
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: summary-green-follows-exit-code
       claim:
         integrity: sha256-369507c6dc33f81889b07da8b4d09a206daee4c6e5c97ba18ae13c81b7981e89

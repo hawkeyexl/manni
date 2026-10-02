@@ -1,0 +1,25 @@
+# The `extends` merge runs on templates that have been through Ajv. If the
+# schema declared a JSON Schema `default` for `min` or `max`, Ajv's
+# `useDefaults` would write one into `child`'s partial `task` override, and that
+# written-in value would then beat the parent's real one. `child` states
+# neither, so both must be inherited.
+templates:
+  base:
+    sections:
+      - id: task
+        min: 0
+        max: 3
+        sections:
+          - id: steps
+            contains:
+              lists:
+                min: 1
+  child:
+    extends: inherit-unstated.yaml#base
+    sections:
+      - id: task
+        sections:
+          - id: steps
+            contains:
+              lists:
+                min: 2

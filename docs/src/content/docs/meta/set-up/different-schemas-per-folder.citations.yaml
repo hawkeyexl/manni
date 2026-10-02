@@ -108,18 +108,18 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-8ef158887c0342d376ac5675a9777bb3b95a54ff9833be27e322455d7e02cc2a
       source:
         file: src/meta/core/load-files.ts
-        lines: 166-169
+        lines: 269-272
         integrity: sha256-4599d601ad8068f93a532f63eb18d8e223706720fc069d02d27c2a17f0a63699
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: directory-walk-skips-dot-entries
       claim:
         lines: 104
         integrity: sha256-bc936dc954459bbedd45b77656574fb1b1dcbefa1c61273a764f02100214f1a6
       source:
         file: src/meta/core/load-files.ts
-        lines: 172-177
-        integrity: sha256-a7655cf5d98fd46df65eace0486760278757a3011d2d93db6b7aba8dcebaf358
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        lines: 122-131
+        integrity: sha256-2494e1f08546e9c1cadb0355550e2537d2ed316eec1b92c36b68e5d9e3df5c05
+        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
     - id: overrides-do-not-affect-file-discovery
       claim:
         lines: 104

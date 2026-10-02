@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A bookmap's own division elements are navigation too, and <frontmatter> is a
+  wrapper around them rather than a level of its own. The title is spelled the
+  way a real bookmap spells it: <mainbooktitle> inside <booktitle>, with the
+  optional <booklibrary> naming the series rather than the book.
+-->
+<bookmap>
+  <booktitle>
+    <booklibrary>DITA Open Toolkit</booklibrary>
+    <mainbooktitle>Toolkit Guide</mainbooktitle>
+  </booktitle>
+  <frontmatter>
+    <preface navtitle="About this guide" href="about.dita"/>
+  </frontmatter>
+  <part navtitle="Getting started">
+    <chapter navtitle="Install" href="install.dita"/>
+  </part>
+  <appendix navtitle="Reference" href="reference.dita"/>
+</bookmap>

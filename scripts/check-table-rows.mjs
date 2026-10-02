@@ -24,8 +24,8 @@
  *
  * Usage:
  *   node scripts/check-table-rows.mjs [path...]
- * With no arguments it scans the tracked `*.md` and `*.mdx` corpus, minus
- * `test/fixtures/**` (deliberately malformed test data) and `CHANGELOG.md`
+ * With no arguments it scans the tracked `*.md` and `*.mdx` corpus, minus every
+ * `fixtures/` tree (deliberately malformed test data) and `CHANGELOG.md`
  * (semantic-release writes it). Explicit paths are scanned as given, so a test
  * can point it at a fixture.
  * Exit 0 = every row is on one line, 1 = split rows found, 2 = setup error.
@@ -38,7 +38,18 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const rel = (p) => path.relative(ROOT, p).replace(/\\/g, "/");
 
-const EXCLUDED = (p) => p.startsWith("test/fixtures/") || p === "CHANGELOG.md";
+/**
+ * Every fixture tree, not just the metadata tool's.
+ *
+ * `test/fixtures/` was the whole corpus when the metadata tool was the whole
+ * package. Each folded-in tool brings its own tree one level down —
+ * `test/lint/fixtures/` is the first — carrying deliberately malformed
+ * documents and, under `test/lint/fixtures/tgdp/`, templates vendored verbatim
+ * from upstream that this repo is forbidden to edit. Matching the segment
+ * rather than the prefix covers the next tool's tree without another edit.
+ */
+const EXCLUDED = (p) =>
+  /(^|\/)fixtures\//.test(p) || p === "CHANGELOG.md";
 
 /** Every tracked Markdown file this repo authors. */
 function trackedCorpus() {
