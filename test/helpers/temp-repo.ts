@@ -153,6 +153,8 @@ export function commit(dir: string, message: string, opts: CommitOptions = {}): 
 /**
  * Merge `branch` into the checked-out branch with a real merge commit, dated
  * `authorDate` for author and committer alike. The merge must apply cleanly.
+ * The checked-out branch stays checked out and gains the merge, so its tip
+ * is the returned sha and `branch` is the merge's second parent.
  */
 export function mergeBranch(dir: string, branch: string, authorDate: string): string {
   const env = { ...process.env, GIT_AUTHOR_DATE: authorDate, GIT_COMMITTER_DATE: authorDate };
