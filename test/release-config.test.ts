@@ -123,6 +123,30 @@ describe("the release commit guard", () => {
   });
 });
 
+describe("re-stamping derived fields during the release", () => {
+  // The version sync rewrites install pins in the docs, a body change to each
+  // page it touches. Derive has to see those edits, so it runs after the sync,
+  // and before the citation update, because a stamp written into frontmatter
+  // can move the lines a citation pins.
+  it("runs after the version sync and before the citation update", () => {
+    const sync = pluginIndex("./scripts/release-sync-versions.mjs");
+    const derive = pluginIndex("./scripts/release-derive.mjs");
+    const cite = pluginIndex("./scripts/release-cite-update.mjs");
+    expect(sync, "no ./scripts/release-sync-versions.mjs plugin").toBeGreaterThanOrEqual(0);
+    expect(derive, "no ./scripts/release-derive.mjs plugin").toBeGreaterThanOrEqual(0);
+    expect(derive).toBeGreaterThan(sync);
+    expect(derive).toBeLessThan(cite);
+  });
+
+  it("commits the manifests the stamps live in", () => {
+    // Derived fields the vocabularies place externally live in a manifest
+    // beside each page, which the `*.md` and `*.mdx` globs do not reach.
+    const committed = picomatch(gitAssets());
+    expect(committed("docs/src/content/docs/index.meta.yaml")).toBe(true);
+    expect(committed("docs/src/content/docs/meta/ci/recipes.meta.yaml")).toBe(true);
+  });
+});
+
 describe("re-anchoring citations during the release", () => {
   // Two pages cite CHANGELOG.md, and @semantic-release/changelog prepends to
   // it on every release, so every release moves both pins. Re-anchoring inside
