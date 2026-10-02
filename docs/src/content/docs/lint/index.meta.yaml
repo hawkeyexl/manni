@@ -9,11 +9,17 @@ docs/src/content/docs/lint/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-153
-      integrity: sha256-cb74396e76b6f5d706ff853f820e0548141eb99502f97aecd8895f064d454567
+      lines: 2-6
+      integrity: sha256-33981d5c4f89ff70ae4632f986dc81bcc7df1859a311a906979091c92be79cf0
+    - generated-by: Claude Opus 5.5
+      lines: 7
+      integrity: sha256-e0cd8dd7cf2d8a61c2523ea3b07cea7958ecce605d53b5da1ef22e4b3c372841
+    - generated-by: Claude Opus 5
+      lines: 9-153
+      integrity: sha256-6bce74d580a8c84fb0f72cf90c9e9f2070c5a3d4506e5ac55bda4d3bd12eea39
   owner:
     - "@hawkeyexl"
-  created: 2026-09-15
+  created: 2026-09-24
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:
