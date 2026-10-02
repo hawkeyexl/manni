@@ -13,9 +13,8 @@ import { runEvals } from "../../../src/docevals/core/engine.js";
 import { DEFAULT_BASELINE_PATH } from "../../../src/docevals/core/baseline.js";
 
 /**
- * A page that is stale by a century, checked by a freshness eval at error
- * severity — a real finding, from a real grader, with no provider and no
- * subprocess.
+ * A page carrying a TODO marker, checked by a regex eval at error severity —
+ * a real finding, from a real grader, with no provider and no subprocess.
  */
 function scaffold(extraConfig: string[] = []): string {
   const root = mkdtempSync(join(tmpdir(), "manni-docevals-ratchet-"));
@@ -25,14 +24,13 @@ function scaffold(extraConfig: string[] = []): string {
     [
       "---",
       "title: Legacy",
-      "last-reviewed: 1999-01-01",
       "evals:",
-      "  - use: fresh-enough",
+      "  - use: no-todo-markers",
       "---",
       "",
       "# Legacy",
       "",
-      "Old content.",
+      "Old content. TODO: rewrite.",
       "",
     ].join("\n"),
   );
@@ -45,12 +43,12 @@ function scaffold(extraConfig: string[] = []): string {
       "docevals:",
       ...extraConfig,
       "  evals:",
-      "    fresh-enough:",
-      "      assertion: The page was reviewed in the last year.",
-      "      grader: tool:freshness",
+      "    no-todo-markers:",
+      "      assertion: The page carries no TODO markers.",
+      "      grader: tool:regex",
       "      options:",
-      "        field: last-reviewed",
-      "        max-age-days: 365",
+      "        pattern: TODO",
+      "        match: not-contains",
       "      severity: error",
       "",
     ].join("\n"),
@@ -85,19 +83,18 @@ describe("the baseline ratchet", () => {
     const root = scaffold();
     await run(root, { writeBaseline: true });
 
-    // A second page, stale in exactly the same way — but the baseline is keyed
+    // A second page, marked in exactly the same way — but the baseline is keyed
     // by file, so this one is new.
     writeFileSync(
       join(root, "docs", "fresh-page.md"),
       [
         "---",
         "title: New",
-        "last-reviewed: 1999-01-01",
         "evals:",
-        "  - use: fresh-enough",
+        "  - use: no-todo-markers",
         "---",
         "",
-        "New page, old date.",
+        "New page, TODO: finish.",
         "",
       ].join("\n"),
     );
@@ -189,7 +186,7 @@ describe("--write-baseline is a recording action, not a gate", () => {
     await run(root, { writeBaseline: true });
     writeFileSync(
       join(root, "docs", "second.md"),
-      ["---", "title: Second", "last-reviewed: 1999-01-01", "evals:", "  - use: fresh-enough", "---", "", "New.", ""].join("\n"),
+      ["---", "title: Second", "evals:", "  - use: no-todo-markers", "---", "", "New. TODO.", ""].join("\n"),
     );
     // The next ordinary run sees the new page's finding as new.
     expect((await run(root)).exitCode).toBe(1);
@@ -202,7 +199,7 @@ describe("baseline: paths, filters, and recovery", () => {
   it("refuses to record from a filtered run", async () => {
     const root = scaffold();
     await expect(
-      run(root, { writeBaseline: true, evalNames: ["fresh-enough"] }),
+      run(root, { writeBaseline: true, evalNames: ["no-todo-markers"] }),
     ).rejects.toThrow(/cannot be combined with --eval, --suite or --since/);
     // `--suite` is symmetric; the scaffold defines no suites, so a suite name
     // would be rejected by the earlier undefined-suite guard instead.
@@ -260,8 +257,8 @@ describe("baseline: the removed count must be measured against what is overwritt
     writeFileSync(
       join(root, "docs", "legacy.md"),
       readFileSync(join(root, "docs", "legacy.md"), "utf8").replace(
-        "last-reviewed: 1999-01-01",
-        "last-reviewed: 2026-08-01",
+        "TODO: rewrite.",
+        "Rewritten.",
       ),
     );
     const re = await run(root, { baseline: false, writeBaseline: true });
