@@ -7,7 +7,8 @@
  */
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import pc from "picocolors";
+import { palette } from "../../shared/color.js";
+import type { ColorOptions } from "../reporters/pretty.js";
 import type { Severity } from "../types.js";
 import { loadRunConfig } from "../core/config.js";
 import {
@@ -587,10 +588,12 @@ const STATUS_LABELS: Record<FillStatus, string> = {
 export function renderFill(
   report: FillReport,
   format: SummaryFormat,
+  opts: ColorOptions = {},
 ): string {
   // See renderList — same reasoning, same public exposure via src/index.ts.
   parseFormat(format, SUMMARY_FORMATS, "format");
   if (format === "json") return JSON.stringify(report, null, 2);
+  const pc = palette(opts.color === true);
   const lines: string[] = [];
   const names = (evals: ProposedEval[]) =>
     evals.map((p) => `${p.id} ${p.confidence.toFixed(2)}`).join(", ");

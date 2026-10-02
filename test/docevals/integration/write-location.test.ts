@@ -15,7 +15,6 @@ import { describe, expect, it, beforeEach } from "vitest";
 import { cpSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import pc from "picocolors";
 import { MockProvider } from "@hawkeyexl/inference";
 import { runFill, renderFill } from "../../../src/docevals/commands/fill.js";
 import { runGenerate } from "../../../src/docevals/commands/generate.js";
@@ -106,10 +105,9 @@ describe("fill, where a manifest owns the evals", () => {
       noCache: true,
       providerInstance: new MockProvider(proposals(2)),
     });
-    // picocolors decides for itself whether this process gets escapes, so the
-    // expectation is built the way the line is.
+    // Colour is the caller's to turn on, and this caller does not.
     expect(renderFill(report, "pretty")).toContain(
-      `    ${pc.cyan("evals")} → site.metadata.yaml`,
+      "    evals → site.metadata.yaml",
     );
   });
 

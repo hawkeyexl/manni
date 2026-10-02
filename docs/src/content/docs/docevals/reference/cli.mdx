@@ -68,8 +68,14 @@ The evals tool. Every command on this page lives under it. `docevals` accepts
 its own `-V, --version`, which reports the manni version, and `-h, --help`.
 
 ```sh
-manni docevals [command] [command options] [arguments]
+manni docevals [options] [command] [command options] [arguments]
 ```
+
+### Options
+
+| Option | Description |
+|---|---|
+| `--no-color` | Disable colored output. Color applies to `pretty` output only, on a TTY, and never under `NO_COLOR`; the same [rules](/manni/meta/reference/output-and-exit-codes/#color-behavior) as the metadata tool. |
 
 ## `docevals run`
 

@@ -167,7 +167,8 @@ Suites
   reference: 1/2 passed — 0% vs target 100% below target (1 skipped)
 ```
 
-The finding line is `severity:line [ruleId] message`. Colour is applied only on a TTY.
+The finding line is `severity:line [ruleId] message`. Colour is applied only on a TTY, and never
+under `NO_COLOR` or `--no-color`. The other formats carry no colour.
 
 A finding may also carry `"diagnostic": true`, which appears in `--format json` and `sarif`. It
 means a `command` eval could not reach a verdict. It had no command yet, its command failed to
