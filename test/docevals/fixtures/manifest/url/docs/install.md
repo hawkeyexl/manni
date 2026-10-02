@@ -1,6 +1,5 @@
 ---
 title: Install
-last-reviewed: 2026-01-01
 ---
 
 # Install

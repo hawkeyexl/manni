@@ -1,8 +1,7 @@
 ---
 title: Install
-last-reviewed: 2026-01-01
 evals:
-  - use: fresh-enough
+  - use: no-todo-markers
 ---
 
 # Install

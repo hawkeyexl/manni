@@ -1,7 +1,6 @@
 ---
 title: Other
 doc-id: other-page
-last-reviewed: 2026-01-01
 ---
 
 # Other

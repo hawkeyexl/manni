@@ -53,7 +53,7 @@ describe("evals kept in a manifest", () => {
     const plan = planFor(await plansOf("external"), "docs/install.md");
     expect(plan.problems).toEqual([]);
     expect(plan.suite).toBe("reference");
-    expect(plan.evals.map((e) => e.name)).toEqual(["fresh-enough"]);
+    expect(plan.evals.map((e) => e.name)).toEqual(["no-todo-markers"]);
   });
 
   it("takes eval-skip from the manifest too", async () => {
@@ -132,7 +132,7 @@ describe("a field-joined manifest", () => {
   it("matches the page on its own value of the join field", async () => {
     const plans = await plansOf("join");
     expect(planFor(plans, "docs/install.md").evals.map((e) => e.name)).toEqual([
-      "fresh-enough",
+      "no-todo-markers",
     ]);
   });
 
@@ -163,7 +163,7 @@ describe("refusals", () => {
         message:
           '"evals" is owned by manifest site.metadata.yaml (collection site); remove it from the document',
         level: "error",
-        line: 4,
+        line: 3,
       },
     ]);
   });
@@ -190,7 +190,7 @@ describe("a manifest per page", () => {
     const plan = planFor(await plansOf("per-page"), "docs/install.md");
     expect(plan.problems).toEqual([]);
     expect(plan.suite).toBe("reference");
-    expect(plan.evals.map((e) => e.name)).toEqual(["fresh-enough"]);
+    expect(plan.evals.map((e) => e.name)).toEqual(["no-todo-markers"]);
   });
 
   it("points a problem at the page's own manifest", async () => {
@@ -228,7 +228,7 @@ describe("a manifest with no keys", () => {
     const plan = planFor(await plansOf("keyless"), "docs/install.md");
     expect(plan.problems).toEqual([]);
     expect(plan.suite).toBe("reference");
-    expect(plan.evals.map((e) => e.name)).toEqual(["fresh-enough"]);
+    expect(plan.evals.map((e) => e.name)).toEqual(["no-todo-markers"]);
   });
 
   it("reads a page with no manifest of its own as declaring nothing", async () => {

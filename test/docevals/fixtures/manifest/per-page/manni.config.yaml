@@ -6,19 +6,19 @@ collections:
       - "docs/**/*.md"
     externalMetadata:
       - file: "{page}.evals.yaml"
-        keys: [evals, eval-suite, eval-skip, last-reviewed]
+        keys: [evals, eval-suite, eval-skip]
 
 docevals:
   evals:
-    fresh-enough:
-      assertion: The page was reviewed this century.
-      grader: tool:freshness
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
       options:
-        field: last-reviewed
-        max-age-days: 36500
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
       severity: error
 
   suites:
     reference:
       target-pass-rate: 1.0
-      evals: [fresh-enough]
+      evals: [no-todo-markers]

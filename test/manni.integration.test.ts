@@ -108,12 +108,13 @@ describe("manni (built bin)", () => {
       /^Usage: manni docevals /m,
     );
     // `list` resolves the eval plan from the repository's own manni.config.yaml
-    // (the `docevals:` section) without running anything. The corpus is named,
-    // as that section's comment says: the `site` collection is the docs pages,
-    // whose suites are not this section's.
-    const r = run(manni, ["docevals", "list", "test/docevals/fixtures/pages"]);
+    // (the `docevals:` section) without running anything. That section grades
+    // this site, so a bare `list` reads the `site` collection and every suite
+    // its pages name resolves.
+    const r = run(manni, ["docevals", "list"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/\d+ pages, \d+ evals resolved/);
+    expect(r.stdout).not.toContain("Unknown suite");
   });
 
   it("prefixes docevals diagnostics with the bin that ran", () => {

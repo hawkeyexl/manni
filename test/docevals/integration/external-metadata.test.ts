@@ -17,10 +17,9 @@ import { describe, expect, it } from "vitest";
 const ROOT = resolve(import.meta.dirname, "../../..");
 const MANNI = join(ROOT, "dist", "cli.js");
 const FIXTURES = join(ROOT, "test", "docevals", "fixtures", "manifest");
-const DRAFT = join(
-  ROOT,
-  "docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json",
-);
+// The shipped vocabulary docevals validates page evals against. It marks the
+// eval keys `x-manni-location: external`, which is what relocate moves.
+const EVALS_SCHEMA = "manni:evals:1.0.0";
 
 interface Run {
   stdout: string;
@@ -63,12 +62,12 @@ describe("relocating eval keys does not change what is checked", () => {
     const before = manni(RUN, cwd);
     expect(before.status).toBe(1);
     expect(verdicts(before)).toEqual([
-      "docs/install.md fresh-enough pass",
-      "docs/stale.md long-overdue fail",
+      "docs/install.md no-todo-markers pass",
+      "docs/stale.md no-todo-markers fail",
     ]);
 
     const moved = manni(
-      ["meta", "relocate", "--fields", "evals,eval-suite", "-s", DRAFT],
+      ["meta", "relocate", "--fields", "evals,eval-suite", "-s", EVALS_SCHEMA],
       cwd,
     );
     expect(moved.status).toBe(0);
@@ -77,7 +76,7 @@ describe("relocating eval keys does not change what is checked", () => {
       "eval-suite",
     );
     expect(readFileSync(join(cwd, "site.metadata.yaml"), "utf8")).toContain(
-      "use: fresh-enough",
+      "use: no-todo-markers",
     );
 
     const after = manni(RUN, cwd);
@@ -88,7 +87,7 @@ describe("relocating eval keys does not change what is checked", () => {
   it("lists the same plan from the manifest as from the pages", () => {
     const cwd = copyOf("roundtrip");
     const before = manni(["docevals", "list", "-f", "json"], cwd);
-    manni(["meta", "relocate", "--fields", "evals,eval-suite", "-s", DRAFT], cwd);
+    manni(["meta", "relocate", "--fields", "evals,eval-suite", "-s", EVALS_SCHEMA], cwd);
     const after = manni(["docevals", "list", "-f", "json"], cwd);
     expect(after.status).toBe(0);
     expect(after.stdout).toBe(before.stdout);
@@ -100,7 +99,7 @@ describe("the refusals", () => {
     const run = manni(["docevals", "run", "--deterministic-only"], join(FIXTURES, "collision"));
     expect(run.status).toBe(1);
     expect(run.stdout).toContain(
-      'docs/install.md:4 "evals" is owned by manifest site.metadata.yaml (collection site); remove it from the document',
+      'docs/install.md:3 "evals" is owned by manifest site.metadata.yaml (collection site); remove it from the document',
     );
   }, 60000);
 

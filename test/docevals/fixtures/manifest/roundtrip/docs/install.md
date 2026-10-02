@@ -1,9 +1,8 @@
 ---
 title: Install
-last-reviewed: 2026-01-01
 eval-suite: reference
 evals:
-  - use: fresh-enough
+  - use: no-todo-markers
 ---
 
 # Install

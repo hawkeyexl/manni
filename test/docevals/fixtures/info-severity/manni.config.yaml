@@ -2,10 +2,10 @@
 # family scale is notice | warning | error, so this is a schema error.
 docevals:
   evals:
-    fresh-enough:
-      assertion: Page was reviewed within the last year.
-      grader: tool:freshness
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
       options:
-        field: last-reviewed
-        max-age-days: 365
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
       severity: info

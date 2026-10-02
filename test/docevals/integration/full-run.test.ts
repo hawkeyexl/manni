@@ -12,26 +12,26 @@ import { MockProvider, mockVerdict } from "@hawkeyexl/inference";
 import { parseConfig } from "../../../src/docevals/core/config.js";
 import { readFileSync } from "node:fs";
 
-const ROOT = resolve(import.meta.dirname, "../../..");
+// The showcase config sits beside the corpus, and its paths resolve from there.
+const PAGES = resolve(import.meta.dirname, "../fixtures/pages");
 
 describe("full run with mock judge", () => {
   it("judges ai evals, keeps deterministic outcomes, and reports usage", async () => {
     // Cache dir isolated per test run.
     const cacheRoot = mkdtempSync(join(tmpdir(), "manni docevals-e2e-"));
-    const configText = readFileSync(join(ROOT, "manni.config.yaml"), "utf8");
-    // The repo's own config file is already a complete manni config, so it
-    // parses as-is rather than through the nesting helper.
+    const configText = readFileSync(join(PAGES, "manni.config.yaml"), "utf8");
+    // The showcase config is already a complete manni config, so it parses
+    // as-is rather than through the nesting helper.
     const config = parseConfig(
       configText.replace("cacheDir: .manni/docevals/cache", `cacheDir: ${JSON.stringify(join(cacheRoot, "cache"))}`),
-      join(ROOT, "manni.config.yaml"),
+      join(PAGES, "manni.config.yaml"),
     );
 
     const provider = new MockProvider([mockVerdict("pass", 0.95)]);
-    const judge = makeJudge({ provider, root: ROOT });
+    const judge = makeJudge({ provider, root: PAGES });
 
     const report = await runEvals({
-      cwd: ROOT,
-      paths: ["test/docevals/fixtures/pages"],
+      cwd: PAGES,
       generate: false,
       judge: async (targets, _config, options) =>
         judge(targets, config, options),
@@ -42,17 +42,13 @@ describe("full run with mock judge", () => {
     );
 
     // AI evals judged with consensus attached.
-    const judged = byKey.get(
-      "test/docevals/fixtures/pages/docs/get-started/concepts.md defines-core-terms",
-    );
+    const judged = byKey.get("docs/get-started/concepts.md defines-core-terms");
     expect(judged?.outcome).toBe("pass");
     expect(judged?.consensus?.zone).toBe("auto-pass");
     expect(judged?.consensus?.runs).toHaveLength(3);
 
     // Deterministic outcomes unchanged.
-    expect(
-      byKey.get("test/docevals/fixtures/pages/docs/actions/goTo.mdx fresh-enough")?.outcome,
-    ).toBe("fail");
+    expect(byKey.get("docs/actions/goTo.mdx no-todo-markers")?.outcome).toBe("fail");
 
     // Token accounting present (mock usage tokens counted).
     expect(report.usage.judgedEvals).toBeGreaterThan(5);

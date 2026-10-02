@@ -1,7 +1,6 @@
 ---
 title: Install
 doc-id: install-page
-last-reviewed: 2026-01-01
 ---
 
 # Install
