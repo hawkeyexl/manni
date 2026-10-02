@@ -4,7 +4,7 @@ docs/src/content/docs/docevals/index.mdx:
   eval-suite: docevals
   evals:
     - id: what-it-does
-      assertion: "A reader can say what manni docevals evaluates and that it is not in the published package."
+      assertion: "A reader can say what manni docevals evaluates and which checks belong to other domains."
       type: capability
       grader: ai
     # This page shows the markers the check looks for, as its example.
