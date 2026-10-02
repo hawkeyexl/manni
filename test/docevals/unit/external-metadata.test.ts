@@ -226,3 +226,22 @@ describe("a manifest per page", () => {
     expect(plan.evals).toEqual([]);
   });
 });
+
+describe("a manifest with no keys", () => {
+  // Proposal 0068: a keyless manifest owns what the vocabularies mark
+  // external. The evals draft marks its three keys, so the plan is the same as
+  // the one a manifest naming them resolves.
+  it("resolves the suite and the evals it supplies", async () => {
+    const plan = planFor(await plansOf("keyless"), "docs/install.md");
+    expect(plan.problems).toEqual([]);
+    expect(plan.suite).toBe("reference");
+    expect(plan.evals.map((e) => e.name)).toEqual(["fresh-enough"]);
+  });
+
+  it("reads a page with no manifest of its own as declaring nothing", async () => {
+    const plan = planFor(await plansOf("keyless"), "docs/uncovered.md");
+    expect(plan.problems).toEqual([]);
+    expect(plan.suite).toBeNull();
+    expect(plan.evals).toEqual([]);
+  });
+});

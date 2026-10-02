@@ -346,7 +346,7 @@ export async function runCalibrate(
       continue;
     }
     const read = readPage(absPath, cwd);
-    const page = external === null ? read : external.forPage(read);
+    const page = external === null ? read : await external.forPage(read);
     const plan = resolvePage(page, config);
     const ev = plan.evals.find(
       (e) => e.name === goldenCase.eval && e.grader === "ai",

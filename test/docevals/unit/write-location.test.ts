@@ -236,3 +236,27 @@ describe("a manifest per page", () => {
     rmSync(cwd, { recursive: true, force: true });
   });
 });
+
+describe("a manifest with no keys", () => {
+  // Proposal 0068: it owns what the vocabularies mark external, less the keys
+  // a sibling manifest names.
+  it("takes the eval keys", async () => {
+    const home = await homeIn("keyless-write", "docs/install.md", { title: "Install" });
+    expect(home.kind).toBe("manifest");
+    if (home.kind !== "manifest") return;
+    expect(home.file).toBe("docs/install.meta.yaml");
+    expect(home.perPage).toBe(true);
+  });
+
+  it("leaves a key a sibling manifest names to that sibling", async () => {
+    const home = await homeIn(
+      "keyless-write",
+      "docs/install.md",
+      { title: "Install" },
+      META_PROVENANCE_KEY,
+    );
+    expect(home.kind).toBe("manifest");
+    if (home.kind !== "manifest") return;
+    expect(home.file).toBe("docs/install.provenance.yaml");
+  });
+});

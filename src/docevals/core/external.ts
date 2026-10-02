@@ -34,11 +34,20 @@
  * `--no-config` never reaches here: with no config there are no collections,
  * so a page's evals are its frontmatter's.
  */
+import { ownsKey } from "../../shared/collections.js";
+import {
+  configMarks,
+  marksValidator,
+  mergeWithMarks,
+  pageMarks,
+  schemaTrustRoot,
+  type PageMarks,
+} from "../../meta/internal.js";
 import {
   classifyRef,
+  DocmetaError,
   loadExternalMetadata,
   memberOf,
-  mergeExternalMetadata,
   type CollectionConfig,
   type ExternalMetadataCollision,
   type ExternalMetadataConfig,
@@ -104,15 +113,36 @@ export function twoManifestsRefusal(
   return `${label} is in collections ${a} and ${b}, and both keep ${key} in a manifest.`;
 }
 
+/**
+ * What the vocabularies docevals reads mark `x-manni-location: external`:
+ * every key in `EXTERNAL_KEYS`. A manifest with no `keys` (proposal 0068)
+ * may own these, less the ones a sibling manifest of its collection names,
+ * which is what decides the manifests a run loads and the refusals. The merge
+ * itself reads each page's own marks, as meta's does.
+ */
+const MARKED: ReadonlySet<string> = new Set(EXTERNAL_KEYS);
+
+/** Whether one manifest declaration of `collection` owns `key`. */
+function owns(
+  collection: Pick<CollectionConfig, "externalMetadata">,
+  manifest: ExternalMetadataConfig,
+  key: string,
+): boolean {
+  return ownsKey(collection, manifest, key, MARKED);
+}
+
 /** The eval keys one manifest declaration owns, in vocabulary order. */
-function evalKeysOf(manifest: ExternalMetadataConfig): string[] {
-  return EVAL_KEYS.filter((k) => manifest.keys.includes(k));
+function evalKeysOf(
+  collection: Pick<CollectionConfig, "externalMetadata">,
+  manifest: ExternalMetadataConfig,
+): string[] {
+  return EVAL_KEYS.filter((k) => owns(collection, manifest, k));
 }
 
 /** The pages of a run, with every manifest-supplied key merged into each. */
 export interface ExternalMetadataReader {
   /** The page as its metadata reads once the manifests are applied. */
-  forPage(page: PageFile): PageFile;
+  forPage(page: PageFile): Promise<PageFile>;
 }
 
 /**
@@ -135,12 +165,12 @@ export async function loadExternalReader(
   const source = config.configSource ?? config.configPath;
   for (const collection of config.collections) {
     const owning = collection.externalMetadata.filter((m) =>
-      m.keys.some((k) => EXTERNAL_KEYS.includes(k)),
+      EXTERNAL_KEYS.some((k) => owns(collection, m, k)),
     );
     if (owning.length === 0) continue;
     for (const manifest of owning) {
       if (classifyRef(manifest.file).kind !== "url") continue;
-      const [owned] = evalKeysOf(manifest);
+      const [owned] = evalKeysOf(collection, manifest);
       if (owned !== undefined) {
         throw new DocevalsError(
           urlManifestRefusal(source, collection.name, owned),
@@ -161,7 +191,36 @@ export async function loadExternalReader(
     ...(pages === undefined ? {} : { pages }),
   });
   if (index === null) return null;
-  return reader(index, collections, config.configDir, base);
+  return reader(index, collections, config.configDir, base, marksFor(config, base));
+}
+
+/**
+ * What a page's schemas mark external, for a keyless manifest (proposal
+ * 0068): read from meta's section of the same file, the way `cite` reads
+ * them, or over meta's default set when that file has none for meta. The
+ * default set carries the evals vocabulary, so the eval keys are marked
+ * either way. Built once, on the first page that has a keyless manifest.
+ */
+function marksFor(config: DocevalsConfig, base: string): () => Promise<PageMarks> {
+  let built: Promise<PageMarks> | undefined;
+  const defaults = (): PageMarks =>
+    pageMarks({
+      validator: marksValidator({ config: null, cwd: base, configDir: config.configDir }),
+      config: null,
+      cwd: base,
+      trustRoot: schemaTrustRoot(base, config.configDir),
+    });
+  return () =>
+    (built ??= (async () => {
+      try {
+        return (await configMarks(config.configPath, base)) ?? defaults();
+      } catch (err) {
+        // A family file whose other sections meta cannot read as its own is
+        // still docevals' file; the default set decides the marks then.
+        if (err instanceof DocmetaError) return defaults();
+        throw err;
+      }
+    })());
 }
 
 /**
@@ -178,7 +237,7 @@ function ownersOf(
     .filter(
       (c) =>
         members.includes(c.name) &&
-        c.externalMetadata.some((m) => m.keys.includes(key)),
+        c.externalMetadata.some((m) => owns(c, m, key)),
     )
     .map((c) => c.name);
 }
@@ -188,9 +247,10 @@ function reader(
   collections: readonly CollectionConfig[],
   configDir: string,
   base: string,
+  marks: () => Promise<PageMarks>,
 ): ExternalMetadataReader {
   return {
-    forPage(page: PageFile): PageFile {
+    async forPage(page: PageFile): Promise<PageFile> {
       if (page.extractError !== undefined) return page;
       const members = memberOf(collections, configDir, base, page.file);
       if (members.length === 0) return page;
@@ -202,12 +262,13 @@ function reader(
         }
       }
 
-      const merged = mergeExternalMetadata(
+      const merged = await mergeWithMarks(
         page.file,
         page.frontmatter,
         index,
         members,
         base,
+        { marks: await marks() },
       );
       return {
         ...page,
@@ -245,5 +306,5 @@ export async function withExternalMetadata(
     pages.map((p) => p.absPath),
   );
   if (merge === null) return pages;
-  return pages.map((p) => merge.forPage(p));
+  return Promise.all(pages.map((p) => merge.forPage(p)));
 }

@@ -1,0 +1,24 @@
+# Proposal 0068: the page's own manifest names no `keys`, so it owns what the
+# vocabularies mark external. The evals draft marks all three eval keys, and
+# stewardship marks `last-reviewed`. `uncovered.md` has no manifest.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+
+docevals:
+  evals:
+    fresh-enough:
+      assertion: The page was reviewed this century.
+      grader: tool:freshness
+      options:
+        field: last-reviewed
+        max-age-days: 36500
+      severity: error
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [fresh-enough]

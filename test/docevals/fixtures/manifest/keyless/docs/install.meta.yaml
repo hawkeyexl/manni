@@ -1,0 +1,5 @@
+docs/install.md:
+  eval-suite: reference
+  last-reviewed: 2026-02-03
+  evals:
+    - use: fresh-enough
