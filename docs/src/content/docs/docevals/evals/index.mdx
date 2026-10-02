@@ -52,10 +52,10 @@ evals:
   - The install command names the current package.
 ```
 
-:::caution[This changed in 1.0.0]
-A bare string used to *reference* a config-defined eval. It is an assertion now, so `- fresh-enough`
-sends those two words to the judge instead of running the freshness grader. manni docevals warns
-when a string matches a defined eval id; write `use:` to reference one.
+:::caution[A string is never a reference]
+`- no-todo-markers` sends those words to the judge as an assertion. It does not run the eval of
+that name. manni docevals warns when a string matches a defined eval id. Write `use:` to reference
+one.
 :::
 
 **Reference a named eval** from `manni.config.yaml` with `use:`:
@@ -69,9 +69,9 @@ evals:
 
 ```yaml
 evals:
-  - use: fresh-enough
-    severity: warning
-    options: { max-age-days: 180 }
+  - use: names-an-action
+    severity: error
+    options: { flags: i }
 ```
 
 `options` **merges** over the base rather than replacing it, so you can change one setting without
@@ -103,7 +103,7 @@ So a collection can keep them in one
 docs/install.md:
   eval-suite: reference
   evals:
-    - use: fresh-enough
+    - use: no-todo-markers
 ```
 
 ```yaml title="manni.config.yaml"
@@ -121,7 +121,7 @@ as though it sat on the page:
 ```console
 $ npx @hawkeyexl/manni docevals list
 docs/install.md (suite: reference)
-  - fresh-enough [tool:freshness, regression, config]
+  - no-todo-markers [tool:regex, regression, config]
 
 1 pages, 1 evals resolved
 ```
@@ -148,19 +148,16 @@ That is the correct default and completely invisible until it surprises you, so 
 guess:
 
 ```bash
-npx @hawkeyexl/manni docevals list docs/installation.mdx
+npx @hawkeyexl/manni docevals list docs/actions/goTo.mdx
 ```
 
 ```console
-test/docevals/fixtures/pages/docs/actions/goTo.mdx (suite: reference)
+docs/actions/goTo.mdx (suite: reference)
   - no-future-promises [ai, regression, config]
-  - fresh-enough [tool:freshness, regression, config]
-  - readable [tool:reading-level, regression, config]
-  - frontmatter-valid [tool:docmeta, regression, config]
   - names-an-action [tool:regex, regression, config]
-  - ships-a-schema [tool:file-exists, regression, config]
+  - no-todo-markers [tool:regex, regression, config]
 
-1 pages, 6 evals resolved
+1 pages, 3 evals resolved
 ```
 
 Each line is `name [grader, type, source]`. `source` tells you whether the definition came from the
@@ -173,8 +170,9 @@ A malformed page does not stop the run. Unknown suite names, unknown eval refere
 schema-invalid frontmatter are reported as page errors with a source line. Duplicate names and
 inline ai evals missing `examples` are warnings.
 
-Validate the declarations themselves as an eval, so bad frontmatter fails like any other check.
-See [Frontmatter reference](/manni/docevals/reference/frontmatter/#validating-the-frontmatter-itself).
+Validate the declarations themselves with [`manni meta validate`](/manni/meta/). It checks them
+against the shipped [`manni:evals:1.0.0`](/manni/meta/reference/schemas/manni-evals/) vocabulary, so
+bad frontmatter fails in the metadata gate.
 
 ## Next
 
@@ -185,8 +183,8 @@ See [Frontmatter reference](/manni/docevals/reference/frontmatter/#validating-th
 
 {/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
 
-{/* step {"description":"`list` prints name, grader, type, and source for each resolved eval.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/goTo.mdx","exitCodes":[0],"stdio":", regression, config]"}} */}
+{/* step {"description":"`list` prints name, grader, type, and source for each resolved eval.","runShell":{"command":"manni docevals list docs/actions/goTo.mdx","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0],"stdio":"3 evals resolved"}} */}
 
-{/* step {"description":"A page-level skip is honored.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/index.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}
+{/* step {"description":"A page-level skip is honored.","runShell":{"command":"manni docevals run index.mdx --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0],"stdio":"Every discovered page was skipped"}} */}
 
 {/* step {"description":"A collection's manifest supplies the eval keys, and the pages carry none.","runShell":{"command":"manni docevals list -c test/docevals/fixtures/manifest/external/manni.config.yaml","exitCodes":[0],"stdio":"(suite: reference)"}} */}

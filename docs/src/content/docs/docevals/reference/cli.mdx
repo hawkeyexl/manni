@@ -95,9 +95,9 @@ manni docevals run [paths...] [options]
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. See [Common conventions](#common-conventions). |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `-f, --format` | `<pretty\|json\|markdown\|github\|sarif\|junit\|html>` | `pretty` | Output format. An unknown value is a usage error (exit 2). |
-| `--deterministic-only` | n/a | off | Run only `command` and `tool:*` graders. AI-graded evals report as `skipped`. No provider needed. This is the offline path. |
+| `--deterministic-only` | n/a | off | Run only `command` and `tool:regex` graders. AI-graded evals report as `skipped`. No provider needed. This is the offline path. |
 | `--ai-only` | n/a | off | Run only AI-judged evals; skip deterministic graders. |
-| `--allow-execution` | `<kind>` | n/a | Grant content-authored execution for this run: `frontmatter-commands` or `page-embedded-steps`. Repeat the flag to grant both. Adds to `execution.allow`. |
+| `--allow-execution` | `<kind>` | n/a | Grant content-authored execution: `frontmatter-commands`. That lets `command` evals declared in page frontmatter run. Adds to `execution.allow` for this run. Any other kind is a usage error (exit 2). |
 | `--no-execution` | n/a | off | Clear every execution grant for this run, whatever the config says. |
 | `--no-generate` | n/a | off | Do not generate scripts for command evals that lack a `command`. |
 | `--no-cache` | n/a | off | Bypass the judge response cache. |
@@ -109,7 +109,7 @@ manni docevals run [paths...] [options]
 | `--chunk-chars` | `<n>` | config `judge.chunkChars` | Characters of page per judge call. A longer page is read in parts and judged once against the collected evidence. The config default is 12000. |
 | `--eval` | `<name>` | n/a | Run only this eval. Repeat the flag for more than one (`--eval a --eval b`). Names are **not** space-separated, because a variadic flag would swallow the following glob. **Suite targets are not evaluated while a filter is active**; see below. A name that matches nothing is a usage error: **exit 2**. |
 | `--suite` | `<name>` | n/a | Run only the evals that report under the named suite. Same suspension of suite targets. A suite the config does not define is **exit 2**, with the defined names in the message. |
-| `--since` | `<ref>` | n/a | Evaluate only the pages that differ between `<ref>` and `HEAD`. Corpus-wide graders still see every page. Suite targets are suspended **when the scope leaves pages out**. Nothing changed is **exit 0**, not an error; see below. |
+| `--since` | `<ref>` | n/a | Evaluate only pages that changed between this git ref and `HEAD`. Suite targets are suspended **when the scope leaves pages out**. Nothing changed is **exit 0**, not an error; see below. |
 | `--max-turns` | `<n>` | config `judge.maxTurns` | Stop judging after this many uncached **ensemble runs**. One ai eval spends `judge.ensembleRuns` turns; a cached ensemble spends none. A run may make a second provider call when the first response fails schema validation. This is therefore a floor on API calls rather than an exact count. Unbounded by default. |
 | `--baseline` | `[path]` | n/a | Fail only on findings a recorded baseline does not already hold. With no path, the configured `baseline:`, then `.manni-docevals-baseline.json`. |
 | `--no-baseline` | n/a | off | Ignore the configured `baseline:` for this run, so the full backlog reports again. |
@@ -118,7 +118,7 @@ manni docevals run [paths...] [options]
 ### The findings baseline
 
 A baseline records today's findings so a run fails only on new ones. It covers
-**findings**, which means `command` and `tool:*` graders. It does not cover
+**findings**, which means `command` and `tool:regex` graders. It does not cover
 judged verdicts, an eval that errored, or a suite target. Full behavior in
 [Retrofit a legacy corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/#the-ratchet);
 the file itself in
@@ -161,12 +161,16 @@ either flag is active, suite targets are reported but not enforced**. Each
 summary carries the numbers it measured and withholds the verdict:
 
 ```console
-$ manni docevals run --deterministic-only --no-generate --eval readable
+$ manni docevals run --deterministic-only --no-generate --eval no-todo-markers
 ...
 Suites
+  default: 1/1 passed — 100% vs target 100% partial — filtered run, target not evaluated
   how-to: 2/2 passed — 100% vs target 100% partial — filtered run, target not evaluated
-  reference: 4/4 passed — 100% vs target 100% partial — filtered run, target not evaluated (1 skipped)
+  reference: 3/4 passed — 75% vs target 100% partial — filtered run, target not evaluated (1 skipped)
 ```
+
+That run still exits **1**, because `no-todo-markers` fails on one page. The
+`reference` suite at 75% does not add a second reason.
 
 What still holds:
 
@@ -199,18 +203,9 @@ means **uncommitted working-tree edits are not included**, which is right for
 CI and surprising locally. Edit a page, run `--since main`, and that page is
 not graded until the edit is committed.
 
-Two things the scope does **not** narrow:
-
-- **Corpus-wide graders.** `tool:differentiation` compares related pages
-  against each other, so its input set *is* its subject. Hand it one page and
-  it has nothing to compare against, reports no findings, and the eval records
-  a **pass**. Scoping it would delete the check rather than shrink it. Corpus
-  graders therefore keep the whole corpus. The visible consequence is that a
-  scoped run can report a finding on a page you did not touch. The message
-  names the other page.
-- **Resolution.** Every page is still read and resolved. A bad `eval-*` key or
-  an unknown grader on a page outside the scope still reports, and still exits
-  `1`.
+The scope does **not** narrow resolution. Every page is still read and
+resolved. A bad `eval-*` key on a page outside the scope still reports, and
+still exits `1`. An unknown grader anywhere is still **exit 2**.
 
 Three things it does change:
 
@@ -267,16 +262,13 @@ manni docevals list [paths...] [options]
 ```
 
 ```console
-$ manni docevals list test/docevals/fixtures/pages/docs/actions/goTo.mdx
-test/docevals/fixtures/pages/docs/actions/goTo.mdx (suite: reference)
+$ manni docevals list docs/actions/goTo.mdx
+docs/actions/goTo.mdx (suite: reference)
   - no-future-promises [ai, regression, config]
-  - fresh-enough [tool:freshness, regression, config]
-  - readable [tool:reading-level, regression, config]
-  - frontmatter-valid [tool:docmeta, regression, config]
   - names-an-action [tool:regex, regression, config]
-  - ships-a-schema [tool:file-exists, regression, config]
+  - no-todo-markers [tool:regex, regression, config]
 
-1 pages, 6 evals resolved
+1 pages, 3 evals resolved
 ```
 
 Each line is `name [grader, type, source]`, where source is `config` or
@@ -564,43 +556,43 @@ Full detail in
 
 {/* step {"description":"--seed with nothing recorded names the command that records one, and exits 0 without a provider.","runShell":{"command":"manni docevals calibrate --seed","exitCodes":[0],"stdio":"No recorded reviews to seed from"}} */}
 
-{/* step {"description":"An unknown --provider is a usage error before anything runs (exit 2).","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --provider gemini","exitCodes":[2],"stdio":"Unknown provider \"gemini\""}} */}
+{/* step {"description":"An unknown --provider is a usage error before anything runs (exit 2).","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run --deterministic-only --no-generate --provider gemini","exitCodes":[2],"stdio":"Unknown provider \"gemini\""}} */}
 
-{/* step {"description":"A model under auto names no provider to own it (exit 2).","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --provider auto --model some-model","exitCodes":[2],"stdio":"docevals.provider"}} */}
+{/* step {"description":"A model under auto names no provider to own it (exit 2).","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run --deterministic-only --no-generate --provider auto --model some-model","exitCodes":[2],"stdio":"docevals.provider"}} */}
 
-{/* step {"description":"`list` prints the resolved plan with grader, type, and source, and runs nothing.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/goTo.mdx","exitCodes":[0],"stdio":", regression, config]"}} */}
+{/* step {"description":"`list` prints the resolved plan with grader, type, and source, and runs nothing.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals list docs/actions/goTo.mdx","exitCodes":[0],"stdio":", regression, config]"}} */}
 
-{/* step {"description":"Exit 0 when every eval passes.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}
+{/* step {"description":"Exit 0 when every eval passes.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run docs/actions/find.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}
 
-{/* step {"description":"Exit 1 when an eval fails.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1]}} */}
+{/* step {"description":"Exit 1 when an eval fails.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1]}} */}
 
 {/* step {"description":"Exit 2 for an operational error, distinct from a finding.","runShell":{"command":"manni docevals run -c does-not-exist.yaml","exitCodes":[2]}} */}
 
 {/* step {"description":"--confidence above 1 is a usage error.","runShell":{"command":"manni docevals fill --confidence 5 --dry-run","exitCodes":[2]}} */}
 
-{/* step {"description":"An unknown --format is a usage error on run, and the message names the allowed set.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --format xml","exitCodes":[2],"stdio":"/must be one of pretty \\| json \\| markdown \\| github/"}} */}
+{/* step {"description":"An unknown --format is a usage error on run, and the message names the allowed set.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run docs/actions/find.mdx --deterministic-only --format xml","exitCodes":[2],"stdio":"/must be one of pretty \\| json \\| markdown \\| github/"}} */}
 
-{/* step {"description":"list rejects an unknown --format the same way, with its own narrower set.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/find.mdx --format xml","exitCodes":[2],"stdio":"/must be one of pretty \\| json/"}} */}
+{/* step {"description":"list rejects an unknown --format the same way, with its own narrower set.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals list docs/actions/find.mdx --format xml","exitCodes":[2],"stdio":"/must be one of pretty \\| json/"}} */}
 
-{/* step {"description":"list rejects a format that is valid only for run, rather than falling back to pretty.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/find.mdx --format markdown","exitCodes":[2]}} */}
+{/* step {"description":"list rejects a format that is valid only for run, rather than falling back to pretty.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals list docs/actions/find.mdx --format markdown","exitCodes":[2]}} */}
 
 {/* step {"description":"fill rejects an unknown --format before doing any work.","runShell":{"command":"manni docevals fill --dry-run --format xml","exitCodes":[2]}} */}
 
-{/* step {"description":"A filtered run reports its suites as partial instead of passing their targets.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --eval readable","exitCodes":[0],"stdio":"filtered run, target not evaluated"}} */}
+{/* step {"description":"A filtered run reports its suites as partial instead of passing their targets; the failing eval still exits 1.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run --deterministic-only --no-generate --eval no-todo-markers","exitCodes":[1],"stdio":"filtered run, target not evaluated"}} */}
 
-{/* step {"description":"An --eval name that matches nothing is a usage error, not a green run over zero evals.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --eval no-such-eval","exitCodes":[2],"stdio":"matched no evals"}} */}
+{/* step {"description":"An --eval name that matches nothing is a usage error, not a green run over zero evals.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run --deterministic-only --eval no-such-eval","exitCodes":[2],"stdio":"matched no evals"}} */}
 
-{/* step {"description":"An undefined --suite is a usage error, and the message names the suites that are defined.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --suite no-such-suite","exitCodes":[2],"stdio":"is not a defined suite"}} */}
+{/* step {"description":"An undefined --suite is a usage error, and the message names the suites that are defined.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run --deterministic-only --suite no-such-suite","exitCodes":[2],"stdio":"is not a defined suite"}} */}
 
-{/* step {"description":"list takes the same filters and rejects an unmatched name the same way.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages --eval no-such-eval","exitCodes":[2]}} */}
+{/* step {"description":"list takes the same filters and rejects an unmatched name the same way.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals list --eval no-such-eval","exitCodes":[2]}} */}
 
 {/* step {"description":"run exposes --since.","runShell":{"command":"manni docevals run --help","exitCodes":[0],"stdio":"--since <ref>"}} */}
 
-{/* step {"description":"Nothing changed since HEAD, so the run exits 0 and says nothing was evaluated, not a usage error.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --since HEAD","exitCodes":[0],"stdio":"nothing was evaluated"}} */}
+{/* step {"description":"Nothing changed since HEAD, so the run exits 0 and says nothing was evaluated, not a usage error.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run --deterministic-only --no-generate --since HEAD","exitCodes":[0],"stdio":"nothing was evaluated"}} */}
 
-{/* step {"description":"A ref git cannot resolve is exit 2, and the message names the shallow clone that causes it in CI.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --since no/such/ref","exitCodes":[2],"stdio":"shallow clone"}} */}
+{/* step {"description":"A ref git cannot resolve is exit 2, and the message names the shallow clone that causes it in CI.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run --deterministic-only --since no/such/ref","exitCodes":[2],"stdio":"shallow clone"}} */}
 
-{/* step {"description":"--since cannot be combined with --write-baseline: the re-record would forgive every finding the scope excluded.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --since HEAD --write-baseline","exitCodes":[2],"stdio":"cannot be combined"}} */}
+{/* step {"description":"--since cannot be combined with --write-baseline: the re-record would forgive every finding the scope excluded.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run --deterministic-only --since HEAD --write-baseline","exitCodes":[2],"stdio":"cannot be combined"}} */}
 
 {/* step {"description":"--collection cannot be combined with positional paths.","runShell":{"command":"manni docevals list --collection site test/docevals/fixtures/pages","exitCodes":[2],"stdio":"cannot be combined with paths"}} */}
 

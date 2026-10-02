@@ -6,12 +6,12 @@ last-updated: 2026-10-02
 ---
 
 Eval declarations live in page frontmatter under three keys, validated against
-[`manni:evals:1.0.0-proposal.4`](/manni/meta/reference/schemas/manni-evals/), the common vocabulary manni meta
-proposes for per-page quality assertions. manni docevals validates against that draft itself,
+[`manni:evals:1.0.0`](/manni/meta/reference/schemas/manni-evals/), the built-in vocabulary manni meta
+ships for per-page quality assertions. manni docevals validates every page against that schema,
 bundled into the CLI, and implements the graders behind it. Which machines wrote the page and
 proposed its evals is recorded in two keys from
-[`manni:ai-context:1.0.0-proposal.3`](/manni/meta/reference/schemas/manni-ai-context/), described
-[below](#provenance-and-meta-provenance). Verified against those drafts,
+[`manni:ai-context:1.0.0`](/manni/meta/reference/schemas/manni-ai-context/), described
+[below](#provenance-and-meta-provenance). Verified against those schemas,
 `src/docevals/core/resolve.ts` and `src/docevals/core/external.ts`.
 
 ## The three page keys
@@ -33,10 +33,9 @@ exist:
 error docs/limits.md:3 frontmatter/eval-provenance: unknown key "eval-provenance". The "eval-" prefix is reserved, and the only settings under it are eval-suite, eval-skip — so a typo is an error here rather than a key nothing reads.
 ```
 
-:::caution[`eval-provenance` is gone]
-An earlier draft had a fourth key, `eval-provenance`, for the evals a machine proposed. That record
-is now `meta-provenance`, and a page that still carries `eval-provenance` gets the error above.
-Rename the key; each entry keeps its `generated-by`, `evals` and `confidence`.
+:::note[Machine-proposed evals]
+The evals a machine proposed are recorded in `meta-provenance`, from `manni:ai-context:1.0.0`.
+Each entry carries its `generated-by`, `evals` and `confidence`.
 :::
 
 ```yaml
@@ -62,7 +61,7 @@ evals:
 
 ## Where evals live
 
-The draft marks all three keys `x-manni-location: external`. The mark says they serve maintainers
+The vocabulary marks all three keys `x-manni-location: external`. The mark says they serve maintainers
 and CI rather than whoever fetches the page, so their home is the collection's
 [external-metadata manifest](/manni/meta/set-up/external-metadata/). A page keeps them until a
 manifest claims them, and [`manni meta relocate`](/manni/meta/schemas/field-location/) is the move.
@@ -82,7 +81,7 @@ collections:
 docs/install.md:
   eval-suite: reference
   evals:
-    - use: fresh-enough
+    - use: no-todo-markers
 ```
 
 **The owning manifest wins.** Every command reads a page's metadata as its frontmatter plus the keys
@@ -90,9 +89,8 @@ its manifests own. The resolved plan is therefore the same before and after the 
 every collection the config declares, whatever `--collection` or the positional paths selected.
 `--no-config`, a config with no collections, and a page in no collection each mean frontmatter alone.
 
-Two other vocabularies mark keys this tool reads. `provenance` and `meta-provenance` are
-`external` in ai-context's draft, and `last-reviewed`, the freshness grader's default field, is
-`external` in stewardship's. A manifest may hold those without holding the eval keys.
+Another vocabulary marks keys this tool reads. `provenance` and `meta-provenance` are
+`external` in ai-context. A manifest may hold those without holding the eval keys.
 
 Writers follow the same rule. `fill`, `generate` and `promote --write` put each key where its
 location says, so the page and the manifest never both hold it. See
@@ -148,20 +146,19 @@ A single assertion needs no list at all:
 evals: The documented install command matches the current package name.
 ```
 
-:::caution[This changed]
-In the 0.1 schema a bare string *referenced* a config-defined eval. It is an assertion now, so a
-page that still says `- fresh-enough` no longer runs the freshness grader. It sends those words to
-the judge. manni docevals warns when a string shorthand matches a defined eval id, but the fix is
-yours: write `use:`.
+:::caution[A bare string is never a reference]
+A bare string that matches a config eval id is still an assertion. A page that says
+`- no-todo-markers` sends those words to the judge rather than running the regex. manni docevals
+warns when a string shorthand matches a defined eval id, but the fix is yours: write `use:`.
 :::
 
 **A reference with overrides** narrows a named eval for this page only:
 
 ```yaml
 evals:
-  - use: fresh-enough
+  - use: no-todo-markers
     severity: warning
-    options: { max-age-days: 180 }
+    options: { flags: i }
 ```
 
 | Override | Effect |
@@ -219,12 +216,11 @@ from position, because a position-derived name orphans every cached verdict as s
 | `examples.pass` / `examples.fail` | string or string[] | none | Pins the boundary; one anchor or several. An inline ai eval without them raises a warning. |
 | `command` | string[] | none | For `command` graders. `{file}` expands to the page's absolute path. |
 | `success-exit-codes` | integer[] | `[0]` | Exit codes treated as a pass. |
-| `timeout-ms` | integer ≥ 1 | grader-specific | |
+| `timeout-ms` | integer ≥ 1 | `scripts.timeoutMs` | For `command` graders. |
 | `generated-assertion-hash` | string | none | Written by script generation, always beside `command`; a mismatch means the script is stale. |
 | `options` | object | `{}` | Grader-specific. See [Graders](/manni/docevals/reference/graders/). |
 | `severity` | `error` \| `warning` \| `notice` | `error` | Only `error` findings fail the build. |
 | `weight` | number > 0 | `1` | How much this eval moves its suite's pass rate. It does **not** change the eval's own pass/fail. Zero is rejected, because a weightless eval is a silent disable, and `skip` already means that, loudly. |
-| `severity-map` | object | none | Maps a tool's own severities onto manni docevals severities. |
 
 ## Resolution order
 
@@ -254,6 +250,13 @@ These are reported per page rather than thrown, so one bad page does not stop th
 | A page key an owning manifest also holds | error |
 | String shorthand matching a config eval id | warning |
 | Inline ai eval with no `examples` | warning |
+
+An inline eval may carry `severity-map`, because the shared vocabulary allows it. No registered
+grader reads it, so manni docevals warns on stderr once per eval and grades as if it were absent:
+
+```text
+manni: <page>: eval "<name>" sets severity-map, which no registered grader reads; it has no effect.
+```
 
 Errors carry the source line, resolved through manni meta's JSON-Pointer line map. A problem about a
 value a manifest supplied names that manifest and its line there, because the page has nothing at
@@ -300,45 +303,30 @@ evals:
 the ids it wrote after the entry's own and sets their confidence. Everything else in that entry, and
 every other entry, is kept. Without an entry for the model, it appends one. That is the merge
 `manni meta fill` does for `fields`, so a page has one entry per model whichever command proposed
-what. The field definitions themselves are the
-[ai-context draft's](/manni/meta/reference/schemas/manni-ai-context/).
+what. The field definitions themselves are
+[ai-context's](/manni/meta/reference/schemas/manni-ai-context/).
 
-Both keys are marked `external` in that draft, so the entry goes wherever
+Both keys are marked `external` in that vocabulary, so the entry goes wherever
 [its location puts it](#where-evals-live). A manifest that owns `meta-provenance` holds the entry,
 and the page then carries none.
 
 ## Validating the frontmatter itself
 
-No copy of the evals draft ships in the package, and no URL serves it while it is
-[open for review](/manni/meta/reference/schemas/manni-evals/). To check declarations with `manni meta validate`,
-copy
-[`1.0.0-proposal.4.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json)
-into your repository beside your own schemas, and commit it:
+`manni docevals run` validates every page against
+[`manni:evals:1.0.0`](/manni/meta/reference/schemas/manni-evals/) before it grades anything, and
+reports a declaration the schema rejects as a page error.
+
+The schema is built into manni meta too, so `manni meta validate` checks the same declarations
+without grading them:
 
 ```bash
-manni meta validate --schema schema/evals-1.0.0-proposal.4.json docs/
+manni meta validate --schema manni:evals:1.0.0 docs/
 ```
 
-Or wire it in as an eval, so bad declarations fail the run like any other check:
-
-```yaml
-docevals:
-  evals:
-    frontmatter-valid:
-      assertion: Page frontmatter matches the evals vocabulary.
-      grader: tool:docmeta
-      options:
-        schemas: ["schema/evals-1.0.0-proposal.4.json"]
-      severity: error
-```
-
-`manni docevals run` needs neither. It validates every page against the same draft before it
-grades anything, and reports a declaration the draft rejects as a page error.
-
-Programmatic consumers can import the draft as an object:
+Programmatic consumers can import the schema as an object:
 
 ```js
 import { docevals } from "@hawkeyexl/manni";
 const { frontmatterSchema, FRONTMATTER_SCHEMA_ID } = docevals;
-// FRONTMATTER_SCHEMA_ID is "manni:evals:1.0.0-proposal.4"
+// FRONTMATTER_SCHEMA_ID is "manni:evals:1.0.0"
 ```

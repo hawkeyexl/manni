@@ -19,11 +19,11 @@ Record what the corpus reports now. That is the thing the move has to preserve:
 
 ```console
 $ npx @hawkeyexl/manni docevals run --deterministic-only
+docs/draft.md
+  FAIL no-todo-markers
+       error:9 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
 docs/install.md
-  pass fresh-enough
-docs/stale.md
-  FAIL long-overdue
-       error:3 [freshness/stale] Page last reviewed 2455 days ago (max 1)
+  pass no-todo-markers
 
 Suites
   default: 0/1 passed — 0% vs target 100% below target
@@ -34,17 +34,18 @@ One page passes, one fails. Both numbers have to survive.
 
 ## See what would move
 
-`manni meta relocate` moves a value to where its schema says it belongs, and the evals draft marks
-all three eval keys `external`. Ask it first, and write nothing:
+`manni meta relocate` moves a value to where its schema says it belongs. The
+[evals vocabulary](/manni/meta/reference/schemas/manni-evals/) marks all three eval keys
+`external`. Ask it first, and write nothing:
 
 ```console
-$ npx @hawkeyexl/manni meta relocate --dry-run --fields evals,eval-suite -s schema/evals-1.0.0-proposal.4.json
+$ npx @hawkeyexl/manni meta relocate --dry-run --fields evals,eval-suite -s manni:evals:1.0.0
 Using manni.config.yaml (.)
-Would create site.metadata.yaml; collections[site].externalMetadata[0] would own eval-suite, evals.
+Would create site.metadata.yaml; collections[site].externalMetadata[0] would own evals, eval-suite.
+docs/draft.md
+    evals       → site.metadata.yaml
 docs/install.md
     eval-suite  → site.metadata.yaml
-    evals       → site.metadata.yaml
-docs/stale.md
     evals       → site.metadata.yaml
 2 files, 3 values would move to 1 manifest
 ```
@@ -57,20 +58,19 @@ place to catch a manifest landing somewhere you did not want it.
 uses it. Without the flag relocate moves every marked value it finds. That is the right call for a
 corpus adopting a whole standard and the wrong one for a first pass.
 
-`-s` points at your copy of the draft, because no URL serves it while it is
-[open for review](/manni/meta/reference/schemas/manni-evals/). Drop the flag once your own schema composes the
-vocabulary.
+`-s manni:evals:1.0.0` names the built-in vocabulary, so no copy of the schema is needed. Drop the
+flag once your own schema composes the vocabulary.
 
 ## Move them
 
 ```console
-$ npx @hawkeyexl/manni meta relocate --fields evals,eval-suite -s schema/evals-1.0.0-proposal.4.json
+$ npx @hawkeyexl/manni meta relocate --fields evals,eval-suite -s manni:evals:1.0.0
 Using manni.config.yaml (.)
-Created site.metadata.yaml; collections[site].externalMetadata[0] owns eval-suite, evals.
+Created site.metadata.yaml; collections[site].externalMetadata[0] owns evals, eval-suite.
+docs/draft.md
+    evals       → site.metadata.yaml:2
 docs/install.md
-    eval-suite  → site.metadata.yaml:2
-    evals       → site.metadata.yaml:3
-docs/stale.md
+    eval-suite  → site.metadata.yaml:5
     evals       → site.metadata.yaml:6
 2 files, 3 values moved to 1 manifest
 ```
@@ -80,20 +80,19 @@ Three files changed. The pages lost their eval keys and kept everything else:
 ```yaml title="docs/install.md"
 ---
 title: Install
-last-reviewed: 2026-01-01
 ---
 ```
 
 The manifest holds them, keyed by the page's path:
 
 ```yaml title="site.metadata.yaml"
+docs/draft.md:
+  evals:
+    - use: no-todo-markers
 docs/install.md:
   eval-suite: reference
   evals:
-    - use: fresh-enough
-docs/stale.md:
-  evals:
-    - use: long-overdue
+    - use: no-todo-markers
 ```
 
 And the collection declares which keys that manifest owns, which is what every manni tool reads:
@@ -105,7 +104,7 @@ collections:
       - "docs/**/*.md"
     externalMetadata:
       - file: ./site.metadata.yaml
-        keys: [eval-suite, evals]
+        keys: [evals, eval-suite]
 ```
 
 Commit all three together. A manifest without the `externalMetadata:` entry declaring it is a file
@@ -115,20 +114,20 @@ nothing reads, and pages stripped of evals with no manifest to supply them resol
 
 ```console
 $ npx @hawkeyexl/manni docevals run --deterministic-only
+docs/draft.md
+  FAIL no-todo-markers
+       error:7 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
 docs/install.md
-  pass fresh-enough
-docs/stale.md
-  FAIL long-overdue
-       error:3 [freshness/stale] Page last reviewed 2455 days ago (max 1)
+  pass no-todo-markers
 
 Suites
   default: 0/1 passed — 0% vs target 100% below target
   reference: 1/1 passed — 100% vs target 100% ok
 ```
 
-Identical, down to the failing page. That is the whole claim of the move: relocation changes where
-a value is stored, never what it means. `manni docevals list` is the same comparison one step
-earlier, and it costs no grading.
+The same verdicts, down to the failing page. Only the finding's line moved, because the page's
+frontmatter is two lines shorter. Relocation changes where a value is stored, never what it means.
+`manni docevals list` is the same comparison one step earlier, and it costs no grading.
 
 Findings still point at the page, because the page is what the grader read. A problem with a
 *declaration* now points at the manifest and its line there, since that is the file to edit.

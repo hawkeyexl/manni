@@ -88,8 +88,11 @@ You do not need a provider to get value on day one:
       - run: npx @hawkeyexl/manni docevals run --deterministic-only --format github
 ```
 
-No secret, no cost, no model in the critical path. Freshness, structure, lint, and generated
-checks all still run. This is also the correct job for forks.
+No secret, no cost, no model in the critical path. Every `tool:regex` eval and every `command`
+eval still runs. This is also the correct job for forks.
+
+Frontmatter and structure are checked in their own steps, by
+[`manni meta validate`](/manni/meta/) and [`manni lint`](/manni/lint/).
 
 ## Exit codes route to different people
 
@@ -110,6 +113,6 @@ shown to work.
 
 {/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
 
-{/* step {"description":"A clean run exits 0 so the job stays green.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --no-generate --format github","exitCodes":[0]}} */}
+{/* step {"description":"A clean run exits 0 so the job stays green.","runShell":{"command":"manni docevals run docs/actions/find.mdx --deterministic-only --no-generate --format github","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0]}} */}
 
-{/* step {"description":"A failure exits 1 and emits an ::error workflow command pinned to file and line.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate --format github","exitCodes":[1],"stdio":"/::error file=.*line=/"}} */}
+{/* step {"description":"A failure exits 1 and emits an ::error workflow command pinned to file and line.","runShell":{"command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate --format github","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[1],"stdio":"/::error file=docs/actions/goTo.mdx,line=14,/"}} */}

@@ -46,13 +46,13 @@ docevals:
   suites:
     reference:
       target-pass-rate: 1.0
-      evals: [no-future-promises, fresh-enough, readable, frontmatter-valid]
+      evals: [no-future-promises, names-an-action, no-todo-markers]
     tutorial:
       target-pass-rate: 0.7
       evals: [explains-why-before-how, no-future-promises]
     how-to:
       target-pass-rate: 1.0
-      evals: [no-future-promises, readable]
+      evals: [no-future-promises, no-todo-markers]
 ```
 
 ```yaml
@@ -77,7 +77,7 @@ Individual verdicts are binary. The nuance lives in the **rate across a suite**:
 
 ```console
 Suites
-  reference: 4/5 passed — 60% vs target 100% below target (1 skipped)
+  reference: 1/2 passed — 0% vs target 100% below target (1 skipped)
 ```
 
 A suite below target fails the run. Leaving a capability suite at the default 1.0 turns every
@@ -85,7 +85,8 @@ capability finding into a build break. That is the most common way to conclude t
 
 Skipped evals are excluded from the rate entirely, and so are evals awaiting human review. The
 rate is computed over the **graded** set, which is pass, fail, and error. The rate is weighted and
-the count is not, which is why `4/5` above reads `60%`. Weights and criteria come next.
+the count is not, which is why `1/2` above reads `0%`. Both graded evals belong to one failing
+criterion, scored once. Weights and criteria come next.
 
 ### Not every eval has to count the same
 
@@ -95,11 +96,11 @@ nothing else. The eval still passes or fails on its own terms, and the counts st
 ```yaml
 docevals:
   evals:
-    install-command-is-current:
-      assertion: The page shows the current global install command.
-    house-style-heading-case:
+    names-an-action:
+      assertion: The page documents at least one Doc Detective action.
       grader: tool:regex
-      options: { pattern: "^## [A-Z][a-z]" }
+      options:
+        pattern: "(goTo|find|click|checkLink|httpRequest)"
       severity: warning
       weight: 0.5      # secondary: it reports, it does not dominate
 ```
@@ -115,14 +116,14 @@ Sometimes two checks only mean something together. A `criterion` groups them and
 ```yaml
 docevals:
   criteria:
-    install-path-is-complete:
-      evals: [has-prereqs, has-verify-step]
+    action-page-is-trustworthy:
+      evals: [names-an-action, no-todo-markers]
       combine: all      # or `any`
       weight: 2
   suites:
     reference:
-      evals: [fresh-enough]
-      criteria: [install-path-is-complete]
+      evals: [no-future-promises, names-an-action, no-todo-markers]
+      criteria: [action-page-is-trustworthy]
 ```
 
 Members keep their own results, so a report still says which one failed. A criterion whose members
@@ -149,10 +150,10 @@ the corpus, so the summary comes back `partial`, printing its numbers and withho
 
 ```console
 Suites
-  reference: 24/25 passed — 92% vs target 100% partial — filtered run, target not evaluated (6 skipped)
+  reference: 9/10 passed — 79% vs target 100% partial — filtered run, target not evaluated (6 skipped)
 ```
 
-That run still exits `1`, because one of the twenty-five genuinely failed. Suspending the *target* does
+That run still exits `1`, because one of the ten genuinely failed. Suspending the *target* does
 not suspend the findings. A filtered run stops claiming that the suite as a whole is in good
 standing. It does not stop reporting that something it looked at was wrong.
 
@@ -174,13 +175,12 @@ When one page needs a variant, override at the reference rather than defining a 
 
 ```yaml
 evals:
-  - use: fresh-enough
+  - use: no-todo-markers
     severity: warning
-    options: { max-age-days: 180 }
 ```
 
 `options` merges over the base; `type`, `severity`, and `skip` replace. A second eval with the id
-`fresh-enough-but-stricter` is how a library rots.
+`no-todo-markers-but-softer` is how a library rots.
 
 ## Check what resolved
 
@@ -188,19 +188,17 @@ Suites, references, and inline definitions can all contribute the same name, and
 on collision**. Do not guess:
 
 ```bash
-npx @hawkeyexl/manni docevals list docs/
+npx @hawkeyexl/manni docevals list docs/actions/find.mdx
 ```
 
 ```console
-test/docevals/fixtures/pages/docs/actions/goTo.mdx (suite: reference)
+docs/actions/find.mdx (suite: reference)
   - no-future-promises [ai, regression, config]
-  - fresh-enough [tool:freshness, regression, config]
-  - readable [tool:reading-level, regression, config]
-  - frontmatter-valid [tool:docmeta, regression, config]
   - names-an-action [tool:regex, regression, config]
-  - ships-a-schema [tool:file-exists, regression, config]
+  - no-todo-markers [tool:regex, regression, config]
+  - has-examples-heading [command, regression, page]
 
-1 pages, 6 evals resolved
+1 pages, 4 evals resolved
 ```
 
 `source`, the third item, is `config` or `page`, which is exactly what you need when one page
@@ -208,10 +206,10 @@ behaves unlike its neighbours.
 
 {/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
 
-{/* step {"description":"`list` reports the suite a page resolved to and the source of each eval.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/goTo.mdx","exitCodes":[0],"stdio":"/suite: reference/"}} */}
+{/* step {"description":"`list` reports the suite a page resolved to and the source of each eval.","runShell":{"command":"manni docevals list docs/actions/find.mdx","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0],"stdio":"/suite: reference/"}} */}
 
-{/* step {"description":"A suite below its target pass rate fails the run.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1],"stdio":"below target"}} */}
+{/* step {"description":"A suite below its target pass rate fails the run.","runShell":{"command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[1],"stdio":"below target"}} */}
 
-{/* step {"description":"--suite narrows `list` to the evals that suite is composed of.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages --suite reference","exitCodes":[0],"stdio":"evals resolved"}} */}
+{/* step {"description":"--suite narrows `list` to the evals that suite is composed of.","runShell":{"command":"manni docevals list --suite reference","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0],"stdio":"evals resolved"}} */}
 
-{/* step {"description":"A --suite run reports the suite as partial rather than measuring its target, and a real failure inside the filter still exits 1.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --no-generate --suite reference","exitCodes":[1],"stdio":"filtered run, target not evaluated"}} */}
+{/* step {"description":"A --suite run reports the suite as partial rather than measuring its target, and a real failure inside the filter still exits 1.","runShell":{"command":"manni docevals run --deterministic-only --no-generate --suite reference","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[1],"stdio":"filtered run, target not evaluated"}} */}

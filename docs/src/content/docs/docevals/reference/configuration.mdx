@@ -101,7 +101,7 @@ writing alike. Three rules follow, and the
 - **Membership comes from every declared collection**, whatever `--collection` or the positional
   paths selected. A page named by path is still a member of whatever contains it.
 - **Only a manifest owning a key this tool reads is loaded.** Besides the three keys above, that is
-  `provenance`, `meta-provenance` and `last-reviewed`. A manifest owning a sibling tool's keys
+  `provenance` and `meta-provenance`. A manifest owning a sibling tool's keys
   alone costs a run nothing.
 - **`--no-config` means frontmatter alone.** With no config there are no collections, so there is
   no manifest to read.
@@ -229,13 +229,13 @@ Anything between the two zone thresholds lands in human review. See
 
 ## `execution` controls what content is allowed to run
 
-Two things in a content file can reach a shell: a `command` eval declared in page frontmatter, and
-`tool:doc-detective` running steps written in a page **body**. Both are code whoever edits the page
-controls, so both are **denied until you grant them**.
+One thing in a content file can reach a shell, and that is a `command` eval declared in page
+frontmatter. Its argv is code that whoever edits the page controls, so it is **denied until you
+grant it**. A page eval that is denied reports as skipped.
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
-| `execution.allow` | list | `[]` | `frontmatter-commands`, `page-embedded-steps`, or both. |
+| `execution.allow` | list | `[]` | `frontmatter-commands` is the one value. It lets `command` evals declared in page frontmatter run. Any other value is **exit 2**, `unknown execution grant`. |
 
 ```yaml
 docevals:
@@ -243,16 +243,18 @@ docevals:
     allow: [frontmatter-commands]
 ```
 
-Grant only what the corpus needs. Granting `frontmatter-commands` does not grant
-`page-embedded-steps`: trusting a repo's frontmatter is not the same as trusting arbitrary steps in
-its prose.
+A `command` eval defined in this file is the operator's own code and needs no grant.
 
-`--allow-execution <kind>` adds a grant for one run, one kind per flag; `--no-execution` clears every
-grant for one run.
+`--allow-execution frontmatter-commands` adds the grant for one run; `--no-execution` clears every
+grant for one run. Any other value is a usage error, **exit 2**:
+
+```text
+manni: --allow-execution must be one of frontmatter-commands, got "shell-steps"
+```
 
 :::caution[A grant is not a fork defence]
-A grant says *this corpus* is trusted to execute. A fork's pages are not this corpus, so no
-combination of grants makes a run over untrusted contributions safe. Restrict the job to same-repo
+A grant says *this corpus* is trusted to execute. A fork's pages are not this corpus, so the
+grant does not make a run over untrusted contributions safe. Restrict the job to same-repo
 pull requests instead. See [Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/).
 :::
 
@@ -303,7 +305,7 @@ docevals:
   suites:
     reference:
       target-pass-rate: 1.0
-      evals: [no-future-promises, fresh-enough, readable, frontmatter-valid]
+      evals: [no-future-promises, names-an-action, no-todo-markers]
     tutorial:
       target-pass-rate: 0.7
       evals: [explains-why-before-how, no-future-promises]
@@ -331,7 +333,7 @@ docevals:
       weight: 2
   suites:
     reference:
-      evals: [fresh-enough]
+      evals: [no-todo-markers]
       criteria: [install-path-is-complete]
 ```
 

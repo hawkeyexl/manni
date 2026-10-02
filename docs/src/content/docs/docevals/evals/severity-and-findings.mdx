@@ -22,14 +22,15 @@ in the report and in PR annotations, and pass.
 ```yaml
 docevals:
   evals:
-    markdownlint:
-      assertion: Page passes markdownlint rules.
-      grader: tool:markdownlint
+    names-an-action:
+      assertion: The page documents at least one Doc Detective action.
+      grader: tool:regex
+      options: { pattern: "(goTo|find|click|checkLink|httpRequest)" }
       severity: warning        # reports, does not block
-    frontmatter-valid:
-      assertion: Page frontmatter validates.
-      grader: tool:docmeta
-      options: { schemas: ["schemas/page.json"] }
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options: { pattern: "\\b(TODO|TBD|FIXME)\\b", match: not-contains }
       severity: error          # blocks
 ```
 
@@ -54,7 +55,7 @@ On an existing corpus, prefer a **[findings
 baseline](/manni/docevals/adopt/retrofit-a-legacy-corpus/#the-ratchet)** to this sequence. It lets you
 turn the check on at `error` today and fail only on *new* findings. Nothing waits on a burndown
 somebody has to schedule. Severity is the right lever for a finding class you never intend to gate
-on. Reading level on generated reference and line length in machine-written tables are the examples.
+on. A house-style pattern over machine-written reference tables is the example.
 Full sequencing in
 [Retrofit a legacy corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/).
 :::
@@ -63,7 +64,7 @@ You can ratchet per page while you work, using an override:
 
 ```yaml
 evals:
-  - use: readable
+  - use: names-an-action
     severity: error          # this section is done; hold the line here
 ```
 
@@ -79,43 +80,32 @@ A check lifted from a style rule is usually both. Use `severity: warning` so it 
 build, and a `weight` below 1 so it does not swing the rate either. Reaching for `severity` alone
 to say "this matters less" overstates the claim. It says the failure does not count at all.
 
-## Mapping a tool's own severities
-
-Tools have their own vocabulary. `severity-map` translates it:
-
-```yaml
-  style:
-    grader: tool:vale
-    severity-map:
-      error: error
-      warning: warning
-      suggestion: notice     # Vale suggestions report but never block
-```
-
-Vale defaults to exactly that mapping. Any tool severity you do not map falls back to `warning`.
-
 ## What a finding carries
 
 ```console
-  FAIL fresh-enough
-       error:4 [freshness/stale] Page last reviewed 977 days ago (max 365)
+  FAIL no-todo-markers
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
 ```
 
 `severity:line [ruleId] message`. In JSON:
 
 ```json
 {
-  "evalName": "fresh-enough",
+  "evalName": "no-todo-markers",
   "file": "docs/actions/goTo.mdx",
-  "ruleId": "freshness/stale",
-  "message": "Page last reviewed 977 days ago (max 365)",
+  "ruleId": "regex/found",
+  "message": "Pattern /\\b(TODO|TBD|FIXME)\\b/ found in body, expected absent",
   "severity": "error",
-  "line": 4
+  "line": 14
 }
 ```
 
-`ruleId`, `line`, and `col` are present when the grader can supply them. Most tool graders can,
-which is what makes `--format github` able to annotate the exact line.
+`ruleId`, `line`, and `col` are present when the grader can supply them. `tool:regex` names the
+line in the file, which is what makes `--format github` able to annotate the exact line.
+
+The same eval at `warning` reports and passes. `docs/get-started/concepts.md` overrides
+`no-todo-markers` to `severity: warning`, so its TODO shows as `warning:21 [regex/found]` under a
+`pass`.
 
 Severity also maps onto annotation levels: `error` → `::error`, `warning` → `::warning`, `notice` →
 `::notice`. See [Output and exit codes](/manni/docevals/reference/output-and-exit-codes/).
@@ -129,6 +119,6 @@ the judged analog of the ratchet; see
 
 {/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
 
-{/* step {"description":"A warning-severity finding reports without failing the page.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/get-started/concepts.md --deterministic-only --no-generate","exitCodes":[0]}} */}
+{/* step {"description":"A warning-severity finding reports without failing the page.","runShell":{"command":"manni docevals run docs/get-started/concepts.md --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0],"stdio":"/regex\\/found/"}} */}
 
-{/* step {"description":"The same check at error severity fails, and the finding carries severity, line, and rule id.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1],"stdio":"[freshness/stale]"}} */}
+{/* step {"description":"The same check at error severity fails, and the finding carries severity, line, and rule id.","runShell":{"command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[1],"stdio":"/regex\\/found/"}} */}

@@ -18,7 +18,7 @@ type: "overview"
 keywords: ["evals", "LLM-as-judge", "graders", "frontmatter"]
 language: en
 intent: "Learn that manni docevals runs evals over documentation pages, driven by their frontmatter."
-lifecycle: draft
+lifecycle: published
 applies-to: ["domain:docevals"]
 sample-questions: ["What is manni docevals?", "In what order do its graders run?"]
 graph: { label: "manni docevals", type: concept }
@@ -47,40 +47,43 @@ second, a human last.
 
 ## The 60-second version
 
-Declare an assertion in a page's frontmatter:
+Name the evals a page must meet in its frontmatter. `no-todo-markers` is one that
+`manni docevals init` writes into `manni.config.yaml`, a pattern check for `TODO`, `TBD` and
+`FIXME`.
 
-```yaml
+```mdx
 ---
-title: Installation
-last-reviewed: 2026-06-01
+title: goTo
+description: Navigate to a specified URL.
+eval-suite: reference
 evals:
-  - use: no-future-promises
-  - id: install-command-present
-    assertion: The page contains a bash code block with `npm i -g doc-detective`.
-    grader: command
+  - use: no-todo-markers
+    severity: error
 ---
+
+The `goTo` action navigates the browser to a specified URL.
+
+TBD: say which page `goTo` waits for before the next step runs.
 ```
 
 Run it:
 
 ```console
-$ npx @hawkeyexl/manni docevals run docs/ --deterministic-only
+$ npx @hawkeyexl/manni docevals run docs/actions/goTo.mdx --deterministic-only
 docs/actions/goTo.mdx
   skip no-future-promises
        judge skipped (--deterministic-only)
-  FAIL fresh-enough
-       error:4 [freshness/stale] Page last reviewed 977 days ago (max 365)
-  pass readable
-  pass frontmatter-valid
   pass names-an-action
-  pass ships-a-schema
+  FAIL no-todo-markers
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
 
 Suites
-  reference: 4/5 passed — 60% vs target 100% below target (1 skipped)
+  reference: 1/2 passed — 0% vs target 100% below target (1 skipped)
 ```
 
-Exit `1`. That's a docs regression, caught the way a test would catch a code one. This run
-needed no API key.
+Exit `1`. That's a docs regression, caught the way a test would catch a code one. The finding
+names line 14 of the page, and this run needed no API key. The `reference` suite added the other
+two evals.
 
 ## What are you trying to do?
 
@@ -97,10 +100,12 @@ needed no API key.
 
 ## What makes it different
 
-**It orchestrates; it doesn't reimplement.** remark, markdownlint, Vale, manni meta,
-doc-structure-lint, and Doc Detective keep doing their jobs. Their findings arrive as named evals
-with severities, in one report with one exit code. Native checks fill the gaps nothing else
-covers, such as freshness, reading level, and cross-page differentiation.
+**It grades what no other check can.** Four graders do the work. `ai` judges an assertion
+against the page, `command` runs a script you can review, `human` records a person's verdict, and
+`tool:regex` matches a pattern. Checks with a home elsewhere in manni run there. Frontmatter is
+validated by [`manni meta validate`](/manni/meta/), and page structure by
+[`manni lint`](/manni/lint/). Every domain reports on one severity scale with one set of exit
+codes, so the steps compose in one pipeline.
 
 **The judge is the last resort, not the pitch.** If a criterion can be expressed as code, it should be.
 `manni docevals promote` finds ai evals that could be deterministic, and `manni docevals generate` writes the
