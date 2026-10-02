@@ -88,7 +88,7 @@ docs/src/content/docs/a11y/fix/index.mdx:
       integrity: sha256-68300d1e5c0f9d8cb0ec2752859c1a37f5ec86d94d75dfe5316bdccca926c9d5
   owner:
     - "@hawkeyexl"
-  created: 2026-09-11
+  created: 2026-09-12
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

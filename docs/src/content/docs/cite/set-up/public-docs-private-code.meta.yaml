@@ -180,7 +180,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
       integrity: sha256-a97b8496585c3995621a3879ce28e3edf8aab2053dab3ac5a2234135392d1a61
   owner:
     - "@hawkeyexl"
-  created: 2026-09-11
+  created: 2026-09-12
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

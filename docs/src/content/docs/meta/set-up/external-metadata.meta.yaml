@@ -236,7 +236,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
       integrity: sha256-074c48a184fb27c46c185f4d4bd6e8441bdebf8a265122171112e0b3a8b5fe42
   owner:
     - "@hawkeyexl"
-  created: 2026-09-07
+  created: 2026-09-08
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

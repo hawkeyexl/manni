@@ -37,7 +37,7 @@ docs/src/content/docs/meta/reference/metadata-vocabularies.mdx:
       integrity: sha256-698ffc030020b0b52958709a77102773e863be9ee728cf4cde241c49ee95f320
   owner:
     - "@hawkeyexl"
-  created: 2026-08-23
+  created: 2026-08-24
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:
