@@ -35,7 +35,7 @@ export function renderMarkdown(report: EngineReport): string {
       sc.pagesSelected === 0
         ? `> **No pages changed since \`${sc.ref}\` — nothing was evaluated.**`
         : `_Scoped to ${sc.pagesSelected} of ${sc.pagesTotal} page(s) changed since ` +
-          `\`${sc.ref}\`. Corpus-wide graders still saw every page._`,
+          `\`${sc.ref}\`._`,
     );
   }
 

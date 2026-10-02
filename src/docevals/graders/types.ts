@@ -53,16 +53,15 @@ export interface Grader {
   targets?: readonly string[];
   /**
    * batch: one external invocation covers all targets;
-   * per-file: one invocation per target;
-   * corpus: needs every page at once (cross-page checks).
+   * per-file: one invocation per target.
    */
-  mode: "batch" | "per-file" | "corpus";
+  mode: "batch" | "per-file";
   grade(ctx: GraderContext): Promise<Finding[]>;
 }
 
 /**
- * Split targets into groups that share an eval configuration. Batch and
- * corpus graders run one invocation per group so that (a) two same-kind evals
+ * Split targets into groups that share an eval configuration. A batch
+ * grader runs one invocation per group so that (a) two same-kind evals
  * on one page each get their own run and correct finding attribution, and
  * (b) per-page option overrides are honored instead of the first target's
  * options being applied to everyone.
@@ -92,10 +91,9 @@ export function groupTargetsByEval(targets: GraderTarget[]): GraderTarget[][] {
       // Key order, not just content: `resolve.ts` rebuilds `options` per page
       // by spread, so insertion order follows each page's own YAML. Two pages
       // declaring the same options in a different order used to hash
-      // differently and land in separate groups — which for a corpus grader
-      // means each group holds one target, `gradeGroup` returns [] below two,
-      // and no findings is recorded as a pass. Sorting makes the key describe
-      // the configuration rather than how it happened to be typed.
+      // differently and land in separate groups, so a batch grader made one
+      // invocation per page instead of one per configuration. Sorting makes
+      // the key describe the configuration rather than how it was typed.
       sortedForKey(t.eval.options),
       t.eval.timeoutMs ?? null,
       t.eval.severity,

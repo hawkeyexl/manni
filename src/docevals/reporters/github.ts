@@ -60,8 +60,7 @@ export function renderGithub(report: EngineReport): string {
       `::notice title=manni docevals::${escapeData(
         sc.pagesSelected === 0
           ? `No pages changed since ${sc.ref} — nothing was evaluated.`
-          : `Scoped to ${sc.pagesSelected} of ${sc.pagesTotal} page(s) changed since ${sc.ref}. ` +
-              `Corpus-wide graders still saw every page.`,
+          : `Scoped to ${sc.pagesSelected} of ${sc.pagesTotal} page(s) changed since ${sc.ref}.`,
       )}`,
     );
   }

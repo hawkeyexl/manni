@@ -559,6 +559,27 @@ describe("--since: the CI reporters say what was scoped", () => {
     expect(gh).toContain("No pages changed since origin/main");
   });
 
+  // Every grader is scoped now, so the scope line is the whole story. A
+  // sentence about graders that still saw every page would name none.
+  it("states the scope in one sentence in every format", () => {
+    const scoped = {
+      ...base,
+      since: { ref: "origin/main", pagesSelected: 2, pagesTotal: 40 },
+    };
+    expect(renderMarkdown(scoped)).toContain(
+      "_Scoped to 2 of 40 page(s) changed since `origin/main`._",
+    );
+    expect(renderGithub(scoped)).toContain(
+      "::notice title=manni docevals::Scoped to 2 of 40 page(s) changed since origin/main.",
+    );
+    expect(renderPretty(scoped)).toContain(
+      "Scoped to 2 of 40 page(s) changed since origin/main.",
+    );
+    for (const out of [renderMarkdown(scoped), renderGithub(scoped), renderPretty(scoped)]) {
+      expect(out).not.toContain("Corpus-wide");
+    }
+  });
+
   it("says nothing at all when --since was not used", () => {
     expect(renderMarkdown(base)).not.toContain("changed since");
     expect(renderGithub(base)).not.toContain("::notice");

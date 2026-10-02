@@ -107,8 +107,7 @@ export function renderPretty(report: EngineReport): string {
       sc.pagesSelected === 0
         ? pc.yellow(`No pages changed since ${sc.ref} — nothing was evaluated.`)
         : pc.dim(
-            `Scoped to ${sc.pagesSelected} of ${sc.pagesTotal} page(s) changed since ${sc.ref}. ` +
-              `Corpus-wide graders still saw every page.`,
+            `Scoped to ${sc.pagesSelected} of ${sc.pagesTotal} page(s) changed since ${sc.ref}.`,
           ),
     );
   }

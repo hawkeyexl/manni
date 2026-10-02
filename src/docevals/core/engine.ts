@@ -53,11 +53,8 @@ export interface EngineReport extends RunReport {
   /**
    * Present only under `--since` (ADR 01040). `pagesTotal` is the whole
    * discovered corpus — `pages` above stays that number too — and
-   * `pagesSelected` is the count of pages that **changed since the ref**.
-   *
-   * It is deliberately not "pages this run evaluated", which would be a
-   * different and larger number: corpus-wide graders keep every page in scope,
-   * so an unchanged page can still be graded. Consumers reading this from
+   * `pagesSelected` is the count of pages that **changed since the ref**,
+   * which are the only pages this run graded. Consumers reading this from
    * `--format json` should treat it as the size of the change set, matching
    * what the reporters print.
    */
@@ -471,18 +468,16 @@ export function applySelection(
 }
 
 /**
- * Narrow each plan to the pages that changed, in place, leaving corpus graders
- * alone (ADR 01040).
+ * Narrow each plan to the pages that changed, in place (ADR 01040).
  *
- * **The corpus exemption is the subtle half.** `GraderContext` carries
- * `targets`, not a page list, so `tool:differentiation` builds its comparison
- * population out of whatever it is handed. `gradeGroup` returns `[]` below two
- * targets, and an eval with no findings is recorded as a **pass** — so
- * narrowing a corpus grader's input does not narrow the check, it silently
- * converts it into a pass. Corpus evals therefore survive on unchanged pages,
- * which costs no subprocess and no tokens because the only corpus grader is
- * native. The visible consequence is that a scoped run can report a finding on
- * a page nobody touched; the message already names the other page.
+ * An unchanged page keeps none of its graded evals. Every grader grades one
+ * page at a time or one group of pages per call, so dropping a page's targets
+ * shrinks the check rather than changing what it means.
+ *
+ * An unrecognised `tool:` kind is kept. The grading loop is what reports an
+ * unknown kind, so dropping it here would hide a misconfiguration on every
+ * page the branch did not touch: a typo would surface on a changed page and
+ * vanish on an unchanged one.
  *
  * An empty result is **not** a usage error, which is where this parts company
  * with `applySelection`. "No page changed" is a correct answer to a correct
@@ -498,18 +493,9 @@ export function applySinceScope(
       pagesSelected += 1;
       continue;
     }
-    plan.evals = plan.evals.filter((ev) => {
-      const grader = graderFor(ev.grader);
-      if (grader) return grader.mode === "corpus";
-      // `graderFor` returns undefined for `ai` and `human` — which is exactly
-      // what scoping should drop, since not paying the judge is the point — and
-      // *also* for an unrecognised `tool:` kind. Dropping those too would hide a
-      // misconfiguration on every page the branch did not touch: the grading
-      // loop is what reports an unknown kind, so an eval removed here never
-      // errors. A typo would surface on a changed page and vanish on an
-      // unchanged one, which is the least predictable behaviour available.
-      return ev.grader !== "ai" && ev.grader !== "human";
-    });
+    plan.evals = plan.evals.filter(
+      (ev) => graderFor(ev.grader) === undefined && ev.grader !== "ai" && ev.grader !== "human",
+    );
   }
   return { pagesSelected };
 }
