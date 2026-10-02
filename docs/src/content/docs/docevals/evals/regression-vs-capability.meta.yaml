@@ -1,0 +1,14 @@
+docs/src/content/docs/docevals/evals/regression-vs-capability.mdx:
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-3
+      integrity: sha256-bcf7b25fc272ee5d27e3049c9e2832cf583a1f7d9888f4ef1efdb8d009a8b257
+    - generated-by: Claude Opus 5
+      lines: 5
+      integrity: sha256-7e100e7162cfac9fc1a4425cf94021b195fd2d009223733f30ef6ef32000c741
+    - generated-by: Claude Fable 5.1
+      lines: 6-77
+      integrity: sha256-56b59d77d185f4d137ad33b8e096c9c526e323322793be769e74674f207101de
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

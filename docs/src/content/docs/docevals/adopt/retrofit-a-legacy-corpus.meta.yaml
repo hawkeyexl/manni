@@ -1,0 +1,44 @@
+docs/src/content/docs/docevals/adopt/retrofit-a-legacy-corpus.mdx:
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-29
+      integrity: sha256-78a718369775c1217c249ad0ec5204d34fbab06de9bf1833c131434b7c617f90
+    - generated-by: Claude Opus 5
+      lines: 30-32
+      integrity: sha256-bfedbfca9558c11f43b2c16764eda23b6faaa8302392cfa9856ebf87f7feff43
+    - generated-by: Claude Fable 5.1
+      lines: 33-126
+      integrity: sha256-3a24987ef08b9c7428ec83a4666bff5da043a17ac2b25aab76c71838259aac33
+    - generated-by: Claude Opus 5
+      lines: 127
+      integrity: sha256-4ed9cf8de1aef1b5d8acffe9d5ad2127606454ae4da3ae1abc2876311d4ec5ff
+    - generated-by: Claude Fable 5.1
+      lines: 128-137
+      integrity: sha256-cba3bc27ccfefc81f79fa1a1f8ffb35c19831604c339519bf7b96cd83571fd6a
+    - generated-by: Claude Opus 5
+      lines: 138
+      integrity: sha256-0adb496eaefe82269fce86c3f22b39472ca1db2423e4d309e42b108020d5e5d0
+    - generated-by: Claude Fable 5.1
+      lines: 139-153
+      integrity: sha256-0f1afd1ab2769afefd0299f1000be2dfede609f709706044dde0188653aa6c9d
+    - generated-by: Claude Opus 5
+      lines: 155-156
+      integrity: sha256-98f727a2bbe8de7fccaae5bdfe20b1b2157e8362ab99103d638fdfe61f934988
+    - generated-by: Claude Fable 5.1
+      lines: 158
+      integrity: sha256-8f8e0b1e2de94ab6346f8c33cb1a442a1b6209fe8a34e5a3a38d2b2209a84fc6
+    - generated-by: Claude Opus 5
+      lines: 159-161
+      integrity: sha256-2132587a0defefd9fe5e97d35adf1ed45955e3bdf0500e4ab8d0c84bafb52527
+    - generated-by: Claude Fable 5.1
+      lines: 162-243
+      integrity: sha256-8d9911005724f1be9c66b114997e43596f3b8f7a301c7e3372411628b8703670
+    - generated-by: Claude Opus 5
+      lines: 244
+      integrity: sha256-262e8f8fde0a8cdeabf685dd7a76dc7e66e86b7a40aa1b065f0f68948170e294
+    - generated-by: Claude Fable 5.1
+      lines: 245-274
+      integrity: sha256-7071d1ed6f3fc0bc71cd7cc4f36e9809f8ba42680c26bc7ec57ef5055efb8d51
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

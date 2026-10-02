@@ -8,12 +8,48 @@ docs/src/content/docs/docevals/index.mdx:
       type: capability
       grader: ai
   provenance:
-    - generated-by: Claude Opus 5.5
-      lines: 2-8
-      integrity: sha256-2a8645e0a19de99ff15201298cb8ad7f54c501760358bd1a4ed6f6eda4342477
+    - generated-by: Claude Fable 5.1
+      lines: 2-26
+      integrity: sha256-b3348e8d1e4e534b8ed3057a0094e44a5a187c0701d991464b64d5b305e0ed9c
+    - generated-by: Claude Opus 5
+      lines: 27-28
+      integrity: sha256-36e621cc3461eff5bfa090683d05338df5d0da87a2a16348d01243d7933e846d
+    - generated-by: Claude Fable 5.1
+      lines: 29
+      integrity: sha256-2417ffd81a9d415ff6e321d9fb9d025fcf2e5f6ee16482b974cebae832216998
+    - generated-by: Claude Opus 5
+      lines: 30
+      integrity: sha256-ef2818a332a32124cddb5a6e593391dd521136d7c4219d0e3d834eed79988ed2
+    - generated-by: Claude Fable 5.1
+      lines: 31-32
+      integrity: sha256-6b77dedb3277e92664deb2fbbf5ff78078f05b084cd7abedddd1c12fc3d6e21b
+    - generated-by: Claude Opus 5
+      lines: 33-34
+      integrity: sha256-b7c0a0e79387ed90308988494b4e20d66c1051b2cb7ecd970e4e728a83208266
+    - generated-by: Claude Fable 5.1
+      lines: 36
+      integrity: sha256-a354308f46639d25595ec4fb0ad89d31f7345a09d6ce3732edc5f5778774e00c
+    - generated-by: Claude Opus 5
+      lines: 37
+      integrity: sha256-70ebed420305fcaf18f0cf553323c194d899bfdb21bd88fbcef9ebd987398253
+    - generated-by: Claude Fable 5.1
+      lines: 38-59
+      integrity: sha256-94a3b93b5ac2f025bff3cdb737ae114ace877b9dd5385f871b6c264b7d853817
+    - generated-by: Claude Opus 5
+      lines: 60-61
+      integrity: sha256-bce642e593693b411e58c14ecce757c71a84745c8fef8a0f1946f7ce5d4d19c1
+    - generated-by: Claude Fable 5.1
+      lines: 63-65
+      integrity: sha256-5b69641daf1f3c11a21a0f0162eb74ad1dd3f96550a40560c00fb94ce55c823c
+    - generated-by: Claude Opus 5
+      lines: 67-68
+      integrity: sha256-daa79ed32bfa7b35b40fe2071d972d26191297fe6abf8853b5279525be0f11c3
+    - generated-by: Claude Fable 5.1
+      lines: 69-83
+      integrity: sha256-c0a471da114943db65f4b920035f923e066fb9456d1ab9b8404497ca7fd0d24a
   owner:
     - "@hawkeyexl"
-  created: 2026-09-24
+  created: 2026-09-06
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

@@ -1,0 +1,32 @@
+docs/src/content/docs/docevals/judge/index.mdx:
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-11
+      integrity: sha256-f161261662b77dd605655376423208de40dec939b0ffa82fdbd35477f46398bf
+    - generated-by: Claude Opus 5
+      lines: 12-14
+      integrity: sha256-5d14a4c5d700063b157decf7dd4a759bbdbbefeddc9f2d3314106ba9e3e5296b
+    - generated-by: Claude Fable 5.1
+      lines: 15-21
+      integrity: sha256-712f2eec5103051164ee3f2c7b01df91ed523652027e8ee936ab38e15c91f8bc
+    - generated-by: Claude Opus 5
+      lines: 23
+      integrity: sha256-7306c9344d4f5ebccd6e823463979742a14dc0085338bfe88d0a0ee217a81449
+    - generated-by: Claude Fable 5.1
+      lines: 24-40
+      integrity: sha256-a961b66c88854ba341a92886888ce1b34ac0751a89aee467ace94373e3951a7c
+    - generated-by: Claude Opus 5
+      lines: 41-42
+      integrity: sha256-398f5090b169ce86a6e5308b5898073cd97ca7498fd928457bb86e88a81be6f8
+    - generated-by: Claude Fable 5.1
+      lines: 43-70
+      integrity: sha256-92a3fdf508b4d92ce94ae77ade54a142461c4aa48291d74889c83d8e2f15f3f3
+    - generated-by: Claude Opus 5
+      lines: 72-111
+      integrity: sha256-bb52937a411672fa33b0a0b1402e57e20b7d19d05f515be7c1f6055ce9af16e5
+    - generated-by: Claude Fable 5.1
+      lines: 113-127
+      integrity: sha256-9d4c7baa710a4d4c8529db7f90bbdfc8336534b7d3404f29ea15f8c407a7399c
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

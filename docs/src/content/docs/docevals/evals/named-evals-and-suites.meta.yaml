@@ -1,0 +1,47 @@
+docs/src/content/docs/docevals/evals/named-evals-and-suites.mdx:
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-73
+      integrity: sha256-bd90df73d55a7be83754933f1a5d4f7de272135ad06a24274c1737c1529aa771
+    - generated-by: Claude Opus 5
+      lines: 74
+      integrity: sha256-70ebed420305fcaf18f0cf553323c194d899bfdb21bd88fbcef9ebd987398253
+    - generated-by: Claude Fable 5.1
+      lines: 75-80
+      integrity: sha256-2c92cbc66627ca47bb37fcf47fde3072e2603a0fcb04260d276e05a5cf6df1ac
+    - generated-by: Claude Opus 5
+      lines: 81-82
+      integrity: sha256-693f60ea12115257e7f72f50238449f12cf4ba27ffe505adc44c55ff666f0446
+    - generated-by: Claude Fable 5.1
+      lines: 84-126
+      integrity: sha256-e4d082e507ccfc50bbd7e4a3fdd2a09e3e5f9cd1ee16bc6ba1db754b844768b8
+    - generated-by: Claude Opus 5
+      lines: 128
+      integrity: sha256-c3b37dfef5dca304e1a0eaeaf63bf60d976e347d5e2ebde6778c15122a34b6a6
+    - generated-by: Claude Fable 5.1
+      lines: 130-145
+      integrity: sha256-e64757cd5bf628e5ff5577c3955a8cf9d61bdd5679c9da391088878fc7288915
+    - generated-by: Claude Opus 5
+      lines: 146
+      integrity: sha256-ce43b95bfab3712cc35578616f2d7307eb0951210303c4fc714c53f315a38a21
+    - generated-by: Claude Fable 5.1
+      lines: 147
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 149
+      integrity: sha256-148fa4b12e2e5060e7b825a69fa53ef4c3b4f3501b23761fe3fb4b66a06cd8e9
+    - generated-by: Claude Fable 5.1
+      lines: 150-193
+      integrity: sha256-7505e8caa3a84539fde8587d8c7b16b98110eebc87f3072b86832c3b93911d83
+    - generated-by: Claude Opus 5
+      lines: 194-197
+      integrity: sha256-7d0ef2ceb698cde3a59115e36657b5241698ee0c55a8a075ea097f765959526c
+    - generated-by: Claude Fable 5.1
+      lines: 198-207
+      integrity: sha256-d3a7cbcf405b04f03066443b69ae493face335d01bc8b38c372670521b96dbe8
+    - generated-by: Claude Opus 5
+      lines: 209-211
+      integrity: sha256-5c86f67400354b992f06d0a370cc1ea9f985f351f6a82730d298f7a60a520483
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

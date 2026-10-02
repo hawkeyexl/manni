@@ -1,0 +1,26 @@
+docs/src/content/docs/docevals/evals/test-your-commands.mdx:
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-42
+      integrity: sha256-195b47b298eea4b0c9e87bb9ff429c2a67aff91cf9d05a107bc5b6d73dd1258f
+    - generated-by: Claude Opus 5
+      lines: 43
+      integrity: sha256-86ee09d9dc99bbbcad3765538922a5b2ba9e8ad3833359a1bb7bb984e2a698eb
+    - generated-by: Claude Fable 5.1
+      lines: 45-77
+      integrity: sha256-52b9429e55c7ab4d6f5139f1a2e252bb52645aec3ecdc647b4217d2df85ed3ea
+    - generated-by: Claude Opus 5
+      lines: 79
+      integrity: sha256-b6fa1e4a6e6949adb0743450ca945370e4aeb391fbd7c30ac5ae048e6fefadc6
+    - generated-by: Claude Fable 5.1
+      lines: 80-93
+      integrity: sha256-fe1e51f595dd27d902b17134b705e8c11847804fe753d60093b75b0d331f1aef
+    - generated-by: Claude Opus 5
+      lines: 94
+      integrity: sha256-96ed8e81b348d99ee0414e8fd0b22388926e3e40ad47d2891fbe2cf146e6ac63
+    - generated-by: Claude Fable 5.1
+      lines: 95-125
+      integrity: sha256-cf57909c9c9441951705cc0bbbbe6b05c6a35eac3ef994a9496b40b058b27d46
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

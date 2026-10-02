@@ -1,0 +1,32 @@
+docs/src/content/docs/docevals/ci/untrusted-pull-requests.mdx:
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-31
+      integrity: sha256-4665c9cad61e610bd6250fad1031f99a100a4be37f5b8f83a51ac20a1db1cbfd
+    - generated-by: Claude Opus 5
+      lines: 33
+      integrity: sha256-a2b42dddf8a14b5dd99b7355b3778d6dc747a6c231aef34f7aca1f4a10eec070
+    - generated-by: Claude Fable 5.1
+      lines: 34-57
+      integrity: sha256-78b2e07e0da7cac68ead60ec80ed3d6401797233feb9cc58fac80894823883b6
+    - generated-by: Claude Opus 5
+      lines: 58
+      integrity: sha256-58f00e46fdbbb68a75f1437f9f5dfcade0928cfd0a7553c1b8ab4520a4c96642
+    - generated-by: Claude Fable 5.1
+      lines: 59-70
+      integrity: sha256-99f9fbc799cff3ef1ca675bea8c36cffd45d56c9e4f22dad88875d6bc0fe1480
+    - generated-by: Claude Opus 5
+      lines: 71-72
+      integrity: sha256-02da42da10010f0fe8da04bebdff8b7ac66c204c1b4c2e09898563e9e82bf577
+    - generated-by: Claude Fable 5.1
+      lines: 73-95
+      integrity: sha256-54c17d676bec19df5e4f1602e5df8894c0c5d4688c9657cfe7a8822a33d7dd37
+    - generated-by: Claude Opus 5
+      lines: 97-103
+      integrity: sha256-3f1f813c4b96ea2573f52ba5daf17bf1c13d2240f7019e2b30b6c65c6177e02a
+    - generated-by: Claude Fable 5.1
+      lines: 105-110
+      integrity: sha256-dd67617dbd460505e7f3a9e982cbb28b25c911300c61d63de944d81f1337a3ef
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

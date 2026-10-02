@@ -304,7 +304,7 @@ docs/src/content/docs/meta/fix/index.mdx:
       integrity: sha256-96dadc6094d8425ee955a0a3ade1737f6102b3b3a34abc86b8ab72ab079e66bd
     - generated-by: Claude Opus 5
       lines: 362-367
-      integrity: sha256-4add96fa1670d9b05059c6378736701ff9f1aa8dc503eeb19e97dbc0292c91b2
+      integrity: sha256-7c484ebff3729e3d5090a2164eb42e19763110b0a152eeac8e506ff3a59ba30e
     - generated-by: Claude Opus 5
       lines: 369-371
       integrity: sha256-880230ef605127159e040ceedb63814223f41ea98baca947933998be5d41d833

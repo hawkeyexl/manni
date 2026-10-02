@@ -1,0 +1,32 @@
+docs/src/content/docs/docevals/reference/glossary.mdx:
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-11
+      integrity: sha256-3f1218685f208d25b4c07a77371ef5c1becce06d6cca609111f51eed5556f70a
+    - generated-by: Claude Opus 5
+      lines: 12-13
+      integrity: sha256-45583bf19f8ef3e1454b113a795d4bc165d2e20b9f8d2a564d13987ee9b9cf22
+    - generated-by: Claude Fable 5.1
+      lines: 14-22
+      integrity: sha256-84f6fd19b5a21e96bc46589f470f162ab3e1ecb792baa0ecce43cf4fc132d495
+    - generated-by: Claude Opus 5
+      lines: 23
+      integrity: sha256-add632a38e441ae488f1526a64019b348b5973f6b8e31b0bbbbdf57447cff4d8
+    - generated-by: Claude Fable 5.1
+      lines: 24-56
+      integrity: sha256-6e2fcbb5571bfc71a2efcbf9ad17c231d0982dc2bd79e4c236e4ca82fd031a23
+    - generated-by: Claude Opus 5
+      lines: 57-58
+      integrity: sha256-f76d90c9ecacfd00f0a5118fac1de76b94bb7c5b5b6ff0e4ac7272f748c941ea
+    - generated-by: Claude Fable 5.1
+      lines: 59-65
+      integrity: sha256-7e111e9666474a13bc24069c37eee044d8af43127d3f510608599076b93ab05f
+    - generated-by: Claude Opus 5
+      lines: 66
+      integrity: sha256-c4640297fe6d72e3939bf2e97a133e104cf0f020ae400af19fc32a7849e6a8ce
+    - generated-by: Claude Fable 5.1
+      lines: 67-71
+      integrity: sha256-b6f7e93b5f4f8e28fe38c2ccf503a2b5cc9c0a12b6b8c9dc52e24ca3f8164669
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

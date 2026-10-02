@@ -1,0 +1,44 @@
+docs/src/content/docs/docevals/evals/deterministic-checks.mdx:
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2
+      integrity: sha256-519592d6b4e56f1e54bd58a0679b03813c580fa2564e710cb554d46eaaff4418
+    - generated-by: Claude Opus 5
+      lines: 3
+      integrity: sha256-b0d329704f5f15e07b9b55b405d24c89a5c7e10ae23b613b6ee94cc94321fa96
+    - generated-by: Claude Fable 5.1
+      lines: 4-26
+      integrity: sha256-96506f840dffeaed3bc3a0c510cf910bbf1c6855918171b2ec39ba2fed0e6abc
+    - generated-by: Claude Opus 5
+      lines: 27
+      integrity: sha256-d7eeb8901ce40a650401da72f6144ba7e67915066cc7597921159c44d4630c50
+    - generated-by: Claude Fable 5.1
+      lines: 28-44
+      integrity: sha256-e347ff580e21745e4f5a5242010e26b97accca8ae6c1b394c5e2fa1f676f40de
+    - generated-by: Claude Opus 5
+      lines: 45
+      integrity: sha256-2730b5b84f2f893c5576a6297218873781b57f11e77c628d4005214b68f8d92f
+    - generated-by: Claude Fable 5.1
+      lines: 47
+      integrity: sha256-52ccf7a73c5669f6d00151a447c8da34b5a0b9245c7d8b6cbc1c1526c2052818
+    - generated-by: Claude Opus 5
+      lines: 49-51
+      integrity: sha256-8db014ddf393db2c54771ac4ddd60e040fbc11934c67ed06dd7ff5b34ecc68be
+    - generated-by: Claude Fable 5.1
+      lines: 53-103
+      integrity: sha256-ece18aabd707ff2285bcef4be0e7dba1ce4598d66be3dca8a56179f76416dc37
+    - generated-by: Claude Opus 5
+      lines: 104
+      integrity: sha256-9d3041b694c18f0fa3349daa97e8bc2de30d0556b4007bfe57e3df836d52ac67
+    - generated-by: Claude Fable 5.1
+      lines: 105-114
+      integrity: sha256-0b63de9fcfde1a9d95f503a7b944a1c264909a8cfc6444177509d8e3f8af03be
+    - generated-by: Claude Opus 5
+      lines: 115
+      integrity: sha256-1e55695333224ffe4c6f4b8db711bdc216da9d15ebfd1d6cd13a29a7002ce4c5
+    - generated-by: Claude Fable 5.1
+      lines: 116-133
+      integrity: sha256-3ad8bde3e0693404fcdbafe47647572fe96b6359d5917940f480eb1e2b5446d6
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

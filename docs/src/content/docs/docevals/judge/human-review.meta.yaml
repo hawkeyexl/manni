@@ -1,0 +1,20 @@
+docs/src/content/docs/docevals/judge/human-review.mdx:
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-81
+      integrity: sha256-83360d9db459787b73b8f470f49c4813961780985fd85913b84623839c75dd38
+    - generated-by: Claude Opus 5
+      lines: 83
+      integrity: sha256-93618acba4a99f559a86d73d5c254ec956da8d5e14bffef0f4cb7dfd27e065ce
+    - generated-by: Claude Fable 5.1
+      lines: 84-116
+      integrity: sha256-d11df564ca3d12f0c958fa19046d8dec5f55518739ec4de573f12c2ae1d08f2e
+    - generated-by: Claude Opus 5
+      lines: 118
+      integrity: sha256-8644f016e855cf9f968aa41d69c48d11a09a061c4b35de73f52a46d7eae979c8
+    - generated-by: Claude Fable 5.1
+      lines: 119-122
+      integrity: sha256-3f29596f11bf42bb6d1678deab7fa8f6e91dfbc2ab8e7eab1b5c6425c8dbd17a
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06
