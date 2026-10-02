@@ -18,7 +18,7 @@ docs/src/content/docs/meta/reference/glossary/dialect.mdx:
       integrity: sha256-3e283f91e521c677878fedded0c8221f2ebefab885e6be32e48437e653035470
   owner:
     - "@hawkeyexl"
-  created: 2026-09-16
+  created: 2026-09-17
   source-of-truth:
     - path: src/meta/core/validator.ts
       kind: implementation

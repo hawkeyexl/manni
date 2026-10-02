@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-10-01
+last-updated: 2026-10-02
 tags:
   - configuration
   - yaml
@@ -2279,12 +2279,12 @@ against the product's own version file.
 
 | Field | Source | Derived value | Evidence string |
 |---|---|---|---|
-| `created` | git | The stamp set by the commit that added the path (rename-followed), if it set one. It is read from the page at that commit, and from the manifest that owns `created` there. Otherwise that commit's author date as `YYYY-MM-DD` in the author's offset | `added in 7a0d424 (2026-08-26)` / `stamped in 7a0d424` |
-| `last-updated` | git | The stamp the newest body-changing commit carries, read from the page and from the manifest that owns `last-updated`. It counts only if the commit changed it; else the commit's author date. With an uncommitted body change: the working value if it differs from HEAD's, else today (the one place derive reads a clock) | `body changed in 424f71a (2026-09-07)` / `stamped in 424f71a` / `uncommitted body change` |
+| `created` | git | The stamp set by the commit that added the path (rename-followed), if it set one. It is read from the page at that commit, and from the manifest that owns `created` there. Otherwise that commit's author date as a UTC day, `YYYY-MM-DD` | `added in 7a0d424 (2026-08-26)` / `stamped in 7a0d424` |
+| `last-updated` | git | The stamp the newest body-changing commit carries, read from the page and from the manifest that owns `last-updated`. It counts only if the commit changed it; else the commit's author date as a UTC day. With an uncommitted body change: the working value if it differs from HEAD's, else today in UTC (the one place derive reads a clock) | `body changed in 424f71a (2026-09-07)` / `stamped in 424f71a` / `uncommitted body change` |
 | `authors` | git | Names of authors of body-changing commits plus their `Co-authored-by` trailers, oldest first, deduplicated by email. An identity [`machines`](#derive) matches is excluded, which by default is a name ending `[bot]` | `4 body-changing commits` |
 | `owner` | codeowners | Owners matching the path, `@` kept. GitHub: last matching line wins, first file found of `.github/CODEOWNERS`, `CODEOWNERS`, `docs/CODEOWNERS`. GitLab adds `.gitlab/CODEOWNERS` and sections: every section applies, last match wins per section, union of owners | `.github/CODEOWNERS:12` |
 | `reviewed-by` | `github` or `gitlab`, then `git` | Logins with an `APPROVED` review on the merged PR/MR containing the newest body-changing commit, `[bot]` suffix stripped for dedupe. Fallback: `Reviewed-by:` trailers on that commit | `github PR #18` / `Reviewed-by trailer in 424f71a` |
-| `last-reviewed` | `github` or `gitlab`, then `git` | Date of the latest `APPROVED` review on that PR/MR. Trailer fallback: the commit's author date | as above |
+| `last-reviewed` | `github` or `gitlab`, then `git` | Date of the latest `APPROVED` review on that PR/MR. Trailer fallback: the commit's author date as a UTC day | as above |
 | `provenance` | git | A list of pins, one per range of body lines one machine wrote: `generated-by`, `lines` in body lines, and `integrity`. A range never starts or ends on a blank line. Read from `git blame` and commit evidence, per line; see [Provenance](#provenance) | `uncommitted` / `blame 9b0e2c1` / `blame 9b0e2c1, 2 commits` |
 
 #### The review sources

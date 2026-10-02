@@ -1,8 +1,14 @@
 docs/src/content/docs/docevals/reference/frontmatter.mdx:
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-11
-      integrity: sha256-e8641c179d4d1b374b42659c07d7929d2f442790b0dd971ca1fdbc6de97a7868
+      lines: 2
+      integrity: sha256-42fd8762d56b0becbedbac24585692c3efeaf913ca7a9f38340de702f336e0e5
+    - generated-by: Claude Opus 5
+      lines: 4-6
+      integrity: sha256-e68c2132264e76a3c5dc1821b3d5177b005d36d2642e9b65a22679cf20ffda9b
+    - generated-by: Claude Opus 5
+      lines: 8-11
+      integrity: sha256-6102b22ee3befd0a4e0fe302e5be31a7c518f1e88ee4b5c4f9a825f0225d4011
     - generated-by: Claude Fable 5.1
       lines: 13-21
       integrity: sha256-9a667dfcaa7b084630b08390dfdfbeb8b358d8e370b22b004e453fe17e4ebdfa
@@ -79,14 +85,20 @@ docs/src/content/docs/docevals/reference/frontmatter.mdx:
       lines: 278-287
       integrity: sha256-1881507bc57c2e3e8f3a9ad5407c68f7ecb169248cea00d40f8114e7a48085ce
     - generated-by: Claude Opus 5
-      lines: 288-302
-      integrity: sha256-cea4b9ef9983f061f599ee15156be7ba5fbf6c27a516537f28390a6e4c5e7381
+      lines: 288-297
+      integrity: sha256-0408403921f28ed06100b77507091aa17b9dbc641fe1c3bc5bea2906c2d5b27f
+    - generated-by: Claude Opus 5
+      lines: 300-302
+      integrity: sha256-390e581f97e8df9adcf0e0e6c57c18f1c7446a4548767b2c308700ee77c47224
     - generated-by: Claude Fable 5.1
       lines: 304
       integrity: sha256-c984cab2b72905582695c8ec74531d6e5530ae5dbdb6beb834c98f8bf5530b05
     - generated-by: Claude Opus 5
-      lines: 306-310
-      integrity: sha256-751baf3a35b4726264383db72ab6f662979152e202fc8dfa27ab773517c28cb7
+      lines: 306
+      integrity: sha256-55e61741e07c9a3360b2032e7d1277b05325ee87324027d7e7ce319c08ebdbf1
+    - generated-by: Claude Opus 5
+      lines: 308-310
+      integrity: sha256-8fa6f80bceff0a6f12cbf3cd6b4fbf205a27682174f1f9970f04b0395fd768f9
     - generated-by: Claude Fable 5.1
       lines: 312
       integrity: sha256-ad332335cfaa348c5bd715c3479844622270d5f7389ae070b81b135d521a221a

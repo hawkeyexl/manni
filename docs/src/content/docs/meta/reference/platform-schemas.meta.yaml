@@ -101,7 +101,7 @@ docs/src/content/docs/meta/reference/platform-schemas.mdx:
       integrity: sha256-119e725ffcc770670068df6288d3f3961a4d280f1b4d416e290556bffad594da
   owner:
     - "@hawkeyexl"
-  created: 2026-08-23
+  created: 2026-08-24
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

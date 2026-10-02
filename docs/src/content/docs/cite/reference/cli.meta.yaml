@@ -378,7 +378,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
       integrity: sha256-9ace84fc62b445805f857b4d7c8914668dc1b25374cc4805a1ec56d1d67bb04b
   owner:
     - "@hawkeyexl"
-  created: 2026-09-11
+  created: 2026-09-12
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

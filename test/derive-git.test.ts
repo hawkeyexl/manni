@@ -26,6 +26,7 @@ import {
   commit,
   git,
   makeTempRepo,
+  mergeBranch,
   removeTempRepo,
   writeFile,
 } from "./helpers/temp-repo.js";
@@ -40,7 +41,7 @@ const D2 = "2020-02-03T03:04:05+02:00";
 const D3 = "2020-03-04T03:04:05+02:00";
 const D4 = "2020-04-05T03:04:05+02:00";
 
-const NOW = new Date(2026, 8, 7, 12, 0, 0); // 2026-09-07, local time
+const NOW = new Date(Date.UTC(2026, 8, 7, 12, 0, 0)); // 2026-09-07 in UTC, the day derive names (0072)
 const BOM = String.fromCharCode(0xfeff);
 
 const doc = (fm: string, body: string): string => `---\n${fm}\n---\n\n${body}\n`;
@@ -156,6 +157,120 @@ describe.each(forms)("deriveFromGit ($name)", ({ opts }) => {
       value: "2001-01-01",
       source: "git",
       evidence: `stamped in ${sha.slice(0, 7)}`,
+    });
+  });
+
+  // A body both sides edited exists only in the merge that combined them.
+  // Read without merge diffs, history never shows that blob, and the
+  // committed body was taken for uncommitted and dated by the clock.
+  it("dates a body only a merge produced by that merge", async () => {
+    const lines = (first: string, last: string): string =>
+      [first, "b", "c", "d", "e", "f", last].join("\n");
+    const dir = tempRepo({ "a.md": doc("title: t", lines("one", "seven")) });
+    commit(dir, "add", { authorDate: D1 });
+    const base = git(dir, ["rev-parse", "--abbrev-ref", "HEAD"]);
+    git(dir, ["checkout", "-q", "-b", "side"]);
+    writeFile(dir, "a.md", doc("title: t", lines("ONE", "seven")));
+    commit(dir, "side edit", { authorDate: D2 });
+    git(dir, ["checkout", "-q", base]);
+    writeFile(dir, "a.md", doc("title: t", lines("one", "SEVEN")));
+    commit(dir, "base edit", { authorDate: D3 });
+    git(dir, ["checkout", "-q", "side"]);
+    const merge = mergeBranch(dir, base, D4);
+
+    const facts = await factsFor(dir, "a.md", opts(dir));
+    expect(facts["last-updated"]).toEqual({
+      value: "2020-04-05",
+      source: "git",
+      evidence: `body changed in ${merge.slice(0, 7)} (2020-04-05)`,
+    });
+    expect(facts.lastBodyCommit).toBe(merge);
+  });
+
+  // A pull request's merge ref has the base as first parent and the branch
+  // as second, so every page the branch edited differs from the first
+  // parent. The branch commit wrote that body, and the merge only took it.
+  it("dates a body a merge took from its second parent by the commit that wrote it", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one"), "other.md": doc("title: o", "x") });
+    commit(dir, "add", { authorDate: D1 });
+    const base = git(dir, ["rev-parse", "--abbrev-ref", "HEAD"]);
+    git(dir, ["checkout", "-q", "-b", "branch"]);
+    writeFile(dir, "a.md", doc("title: t", "two"));
+    const edit = commit(dir, "branch edit", { authorDate: D2 });
+    git(dir, ["checkout", "-q", base]);
+    writeFile(dir, "other.md", doc("title: o", "y"));
+    commit(dir, "base moves on", { authorDate: D3 });
+    const merge = mergeBranch(dir, "branch", D4);
+    expect(git(dir, ["rev-parse", `${merge}^2`])).toBe(edit);
+
+    const facts = await factsFor(dir, "a.md", opts(dir));
+    expect(facts["last-updated"]).toEqual({
+      value: "2020-02-03",
+      source: "git",
+      evidence: `body changed in ${edit.slice(0, 7)} (2020-02-03)`,
+    });
+    expect(facts.lastBodyCommit).toBe(edit);
+  });
+
+  // The merge's first-parent diff reads as a rename from the branch's old
+  // path, but the body came from the base, under the new path. The date is
+  // the base commit that wrote it, found by walking the base's history.
+  it("follows a body a merge took from a parent that renamed the page", async () => {
+    const lines = (last: string): string => ["a", "b", "c", "d", "e", "f", last].join("\n");
+    const dir = tempRepo({ "old.md": doc("title: t", lines("g")) });
+    commit(dir, "add", { authorDate: D1 });
+    const base = git(dir, ["rev-parse", "--abbrev-ref", "HEAD"]);
+    git(dir, ["checkout", "-q", "-b", "side"]);
+    writeFile(dir, "other.md", doc("title: o", "x"));
+    commit(dir, "side work", { authorDate: D2 });
+    git(dir, ["checkout", "-q", base]);
+    git(dir, ["mv", "old.md", "new.md"]);
+    writeFile(dir, "new.md", doc("title: t", lines("G")));
+    const rename = commit(dir, "rename and edit", { authorDate: D3 });
+    git(dir, ["checkout", "-q", "side"]);
+    mergeBranch(dir, base, D4);
+
+    const facts = await factsFor(dir, "new.md", opts(dir));
+    expect(facts["last-updated"]).toEqual({
+      value: "2020-03-04",
+      source: "git",
+      evidence: `body changed in ${rename.slice(0, 7)} (2020-03-04)`,
+    });
+    expect(facts.lastBodyCommit).toBe(rename);
+  });
+
+  // Proposal 0072: a derived date is a UTC day. 23:30 at -07:00 is already
+  // the next day in UTC, so the author's own offset and UTC disagree here.
+  it("dates a commit by its UTC day, not the author's", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one") });
+    const sha = commit(dir, "add", { authorDate: "2020-01-01T23:30:00-07:00" });
+
+    const facts = await factsFor(dir, "a.md", opts(dir));
+    expect(facts.created).toEqual({
+      value: "2020-01-02",
+      source: "git",
+      evidence: `added in ${sha.slice(0, 7)} (2020-01-02)`,
+    });
+    expect(facts["last-updated"]).toEqual({
+      value: "2020-01-02",
+      source: "git",
+      evidence: `body changed in ${sha.slice(0, 7)} (2020-01-02)`,
+    });
+  });
+
+  // 01:00 UTC on 8 Sep is still 7 Sep west of Greenwich, where a machine's
+  // local day would have dated it.
+  it("dates an uncommitted body change by today's UTC day", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one") });
+    commit(dir, "add", { authorDate: D1 });
+    writeFile(dir, "a.md", doc("title: t", "two"));
+
+    const now = new Date(Date.UTC(2026, 8, 8, 1, 0, 0));
+    const facts = await factsFor(dir, "a.md", { ...opts(dir), now: () => now });
+    expect(facts["last-updated"]).toEqual({
+      value: "2026-09-08",
+      source: "git",
+      evidence: "uncommitted body change",
     });
   });
 

@@ -28,7 +28,7 @@ docs/src/content/docs/term/reference/configuration.mdx:
       integrity: sha256-9786bffa17731a0b5fd3e8bec6da186637313ee6d49cc20710def5746d331698
   owner:
     - "@hawkeyexl"
-  created: 2026-09-16
+  created: 2026-09-17
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

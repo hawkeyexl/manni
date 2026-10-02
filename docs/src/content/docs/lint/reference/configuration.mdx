@@ -6,7 +6,7 @@ id: lint-reference-configuration
 language: en
 lifecycle: published
 action: remember
-last-updated: 2026-10-01
+last-updated: 2026-10-02
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -123,7 +123,7 @@ refused. Name the collection for what it holds: `guides`, `site`, `pages`,
 |---|---|---|---|---|
 | `allowEmpty` | boolean | `false` | no | Treat a run that matched zero files as success rather than an operational error. For a shared CI template or a pre-commit hook whose file list may legitimately be empty. The same key, with the same meaning, as `cite.allowEmpty`. `--allow-empty` sets it for one run. |
 | `structure` | object | absent | no | The structure job. Declaring it with no keys is how a repository says the job applies. |
-| `structure.tool` | string, `manni` or `dita-ot` | `manni` | no | Which tool performs the job. `manni` is this package's own engine. `dita-ot` is DITA Open Toolkit, which you install yourself and which settles references across files. Anything else is refused by name. `--tool <name>` names the same thing for one run. See [Choose a structure tool](/lint/set-up/choose-a-structure-tool/). |
+| `structure.tool` | string, `manni` or `dita-ot` | `manni` | no | Which tool performs the job. `manni` is this package's own engine. `dita-ot` is DITA Open Toolkit, which you install yourself and which settles references across files. Anything else is refused by name. `--tool <name>` names the same thing for one run. See [Choose a structure tool](/manni/lint/set-up/choose-a-structure-tool/). |
 | `templates` | string[] | none | no | Template files to load. Their templates' `types:` join the doctype routing table and outrank the built-ins. Adopting a repository's own how-to shape is one entry here and no flag. Each entry is a [template ref](/manni/lint/reference/templates/#template-refs). `--templates <path>` adds more. |
 | `template` | string | none | no | Template ref applied to a page that declares no doctype and matches no override. The **last** rung of the chain, not an override. |
 | `types` | object | none | no | Explicit doctype → template ref map, for a doctype no template file claims with its own `types:`. Keys are the vocabulary your pages' `type:` frontmatter is written in, so they are your names rather than the tool's. |

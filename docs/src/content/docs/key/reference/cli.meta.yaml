@@ -237,7 +237,7 @@ docs/src/content/docs/key/reference/cli.mdx:
       integrity: sha256-742279a4c60e3f8d353eabf1c9e0ae79524162932c946b0c130d6cfd6316b7ec
   owner:
     - "@hawkeyexl"
-  created: 2026-09-11
+  created: 2026-09-12
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

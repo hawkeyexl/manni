@@ -18,7 +18,7 @@ docs/src/content/docs/meta/reference/glossary/meta-schema-uri.mdx:
       integrity: sha256-8b4bc01969cb484c516e2f61905f8a0ed45f8c9bf810631948838283291bf6ed
   owner:
     - "@hawkeyexl"
-  created: 2026-09-16
+  created: 2026-09-17
   source-of-truth:
     - path: src/meta/core/validator.ts
       kind: implementation

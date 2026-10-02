@@ -1172,15 +1172,6 @@ docs/src/content/docs/meta/reference/cli.mdx:
         lines: 211
         integrity: sha256-ee02e578540932639c3aa659c0568d487c6d8a4293633f28b18dd4ff557ad7f9
         commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
-    - id: derive-no-config-requires-fields
-      claim:
-        lines: 1015
-        integrity: sha256-53837e5960b3a92c098ce32462fdbeadc7340918027540ea7779811fbfe9c89d
-      source:
-        file: src/meta/commands/derive.ts
-        lines: 327-330
-        integrity: sha256-17c6cffed9b9b19e2018e26f45ac6953b6c9f03669a8e20fb3c5344a1ba477df
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: derive-review-cache-dir
       claim:
         lines: 1013
@@ -1289,42 +1280,6 @@ docs/src/content/docs/meta/reference/cli.mdx:
         lines: 247-256
         integrity: sha256-d831c4367edaa0412609ff9482cb26ff1fed17bfbe921da77c901d47be27bafa
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
-    - id: derive-fields-must-be-derivable
-      claim:
-        lines: 1003
-        integrity: sha256-438bdbad539de664bc91cdcd4c6317937520cc464952b41e26e617d206255f55
-      source:
-        file: src/meta/commands/derive.ts
-        lines: 1243-1246
-        integrity: sha256-f3c1b94a7b898b59325810bd56c1b8c262df7b6d6650fbab201eefc5a29e6cf8
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
-    - id: the-seven-derivable-fields
-      claim:
-        lines: 1003
-        integrity: sha256-438bdbad539de664bc91cdcd4c6317937520cc464952b41e26e617d206255f55
-      source:
-        file: src/meta/core/derive/types.ts
-        lines: 19-27
-        integrity: sha256-924b08d8243d1dbb1eff6b021941e6370882f8063e4a1b1d6f9b998b71b43b24
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
-    - id: derive-url-manifest-field-refused
-      claim:
-        lines: 1003
-        integrity: sha256-438bdbad539de664bc91cdcd4c6317937520cc464952b41e26e617d206255f55
-      source:
-        file: src/meta/commands/derive.ts
-        lines: 353-357
-        integrity: sha256-a543fd80e4bd14fa9e3cf5aacb77f98988e72a9c4497e87afd007cba19688825
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
-    - id: nothing-to-derive-is-exit-2
-      claim:
-        lines: 1003
-        integrity: sha256-438bdbad539de664bc91cdcd4c6317937520cc464952b41e26e617d206255f55
-      source:
-        file: src/meta/commands/derive.ts
-        lines: 1236-1239
-        integrity: sha256-2ea364edc3a89c343c159d458d62f3380edb5fc0e28a0f8230f9515437d8aa21
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: derive-refuses-stdin-outright
       claim:
         lines: 1001
@@ -2707,3 +2662,48 @@ docs/src/content/docs/meta/reference/cli.mdx:
         lines: 1749-1752
         integrity: sha256-ac197c29baf45b085f6826a96d06688bd9bab7564d40aec04f0ad734bbe4e61b
         commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+    - id: derive-fields-must-be-derivable
+      claim:
+        lines: 1007
+        integrity: sha256-2a544753f35463c7535df024c1625419f0c32d47b268c4000555c8bf37fdd042
+      source:
+        file: src/meta/commands/derive.ts
+        lines: 1243-1246
+        integrity: sha256-f3c1b94a7b898b59325810bd56c1b8c262df7b6d6650fbab201eefc5a29e6cf8
+        commit-sha: dbbfadbc512ef3d9d8e66e47fade6ada4ce72b60
+    - id: the-seven-derivable-fields
+      claim:
+        lines: 1007
+        integrity: sha256-2a544753f35463c7535df024c1625419f0c32d47b268c4000555c8bf37fdd042
+      source:
+        file: src/meta/core/derive/types.ts
+        lines: 19-27
+        integrity: sha256-924b08d8243d1dbb1eff6b021941e6370882f8063e4a1b1d6f9b998b71b43b24
+        commit-sha: dbbfadbc512ef3d9d8e66e47fade6ada4ce72b60
+    - id: derive-url-manifest-field-refused
+      claim:
+        lines: 1007
+        integrity: sha256-2a544753f35463c7535df024c1625419f0c32d47b268c4000555c8bf37fdd042
+      source:
+        file: src/meta/commands/derive.ts
+        lines: 353-357
+        integrity: sha256-a543fd80e4bd14fa9e3cf5aacb77f98988e72a9c4497e87afd007cba19688825
+        commit-sha: dbbfadbc512ef3d9d8e66e47fade6ada4ce72b60
+    - id: nothing-to-derive-is-exit-2
+      claim:
+        lines: 1007
+        integrity: sha256-2a544753f35463c7535df024c1625419f0c32d47b268c4000555c8bf37fdd042
+      source:
+        file: src/meta/commands/derive.ts
+        lines: 1236-1239
+        integrity: sha256-2ea364edc3a89c343c159d458d62f3380edb5fc0e28a0f8230f9515437d8aa21
+        commit-sha: dbbfadbc512ef3d9d8e66e47fade6ada4ce72b60
+    - id: derive-no-config-requires-fields
+      claim:
+        lines: 1019
+        integrity: sha256-0c6a403fcf860ce98fea5aff8dcd96e7a81f554a7dcf75356d8711ccf9853fbc
+      source:
+        file: src/meta/commands/derive.ts
+        lines: 327-330
+        integrity: sha256-17c6cffed9b9b19e2018e26f45ac6953b6c9f03669a8e20fb3c5344a1ba477df
+        commit-sha: dbbfadbc512ef3d9d8e66e47fade6ada4ce72b60

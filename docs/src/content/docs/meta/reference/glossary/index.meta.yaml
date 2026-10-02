@@ -18,7 +18,7 @@ docs/src/content/docs/meta/reference/glossary/index.mdx:
       integrity: sha256-53b848a0bb982cb0d6c132ccfd65c170d107d4d825f66989efc2073f33dab30b
   owner:
     - "@hawkeyexl"
-  created: 2026-09-16
+  created: 2026-09-17
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:
