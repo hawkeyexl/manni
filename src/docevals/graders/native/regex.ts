@@ -131,14 +131,14 @@ export const regexGrader: Grader = {
             severity: ev.severity,
             line: 1,
           });
-        } else if (match === "not-contains" && all.length > 0) {
+        } else if (match === "not-contains" && first !== undefined) {
           findings.push({
             evalName: ev.name,
             file: plan.page.file,
             ruleId: "regex/found",
             message: `Pattern /${pattern}/${flags} found in ${selected.label}, expected absent`,
             severity: ev.severity,
-            line: offset + lineAt(text, first?.index ?? 0),
+            line: offset + lineAt(text, first.index),
           });
         } else if (match.startsWith("count:")) {
           const want = Number(match.slice("count:".length));
@@ -149,7 +149,7 @@ export const regexGrader: Grader = {
               ruleId: "regex/count",
               message: `Pattern /${pattern}/${flags} matched ${String(all.length)} time(s) in ${selected.label}, expected ${String(want)}`,
               severity: ev.severity,
-              line: all.length > 0 ? offset + lineAt(text, first?.index ?? 0) : 1,
+              line: first === undefined ? 1 : offset + lineAt(text, first.index),
             });
           }
         }

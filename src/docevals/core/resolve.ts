@@ -30,6 +30,7 @@ import {
 import type { PageFile } from "./discover.js";
 import type { EvalTarget } from "./target.js";
 import { warn } from "../../shared/warn.js";
+import { isRegisteredGrader } from "../graders/registry.js";
 
 export interface ResolvedEval {
   /** Kebab-case id, unique per page. */
@@ -376,7 +377,9 @@ export function resolvePage(
     // one is valid. It mapped a wrapped tool's own scale, and no registered
     // grader has one, so the key is read by nothing. Said once per eval:
     // `warn` deduplicates on the text, which names the page and the eval.
-    if ("severity-map" in inline) {
+    // An eval naming an unregistered grader is a usage error a moment
+    // later, so the warning would only bury it.
+    if ("severity-map" in inline && isRegisteredGrader(ev.grader)) {
       warn(
         `${page.file}: eval "${inline.id}" sets severity-map, which no registered ` +
           `grader reads; it has no effect.`,

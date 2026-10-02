@@ -110,6 +110,11 @@ describe("severity-map on a page", () => {
     ]);
   });
 
+  it("leaves an unregistered grader's eval to the usage error", () => {
+    resolvePage(page(MAPPED.replace("tool:regex", "tool:freshness")), EMPTY);
+    expect(stderr).not.toHaveBeenCalled();
+  });
+
   it("says nothing for an eval that does not set it", () => {
     resolvePage(page("evals:\n  - id: plain\n    grader: tool:regex"), EMPTY);
     expect(stderr).not.toHaveBeenCalled();
