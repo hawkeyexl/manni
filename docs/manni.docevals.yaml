@@ -78,8 +78,17 @@ docevals:
     frontmatter-valid:
       assertion: Page frontmatter validates against the docevals frontmatter schema.
       grader: tool:docmeta
+      # The site keeps each page's bookkeeping in a `{page}.meta.yaml` manifest
+      # with no `keys` (proposal 0068), which owns what the page's schemas mark
+      # external. The three vocabularies after the evals draft are the ones
+      # whose fields those manifests hold, so the run reads them rather than
+      # refusing them.
       options:
-        schemas: ["docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json"]
+        schemas:
+          - "docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json"
+          - "manni:ai-context:1.0.0"
+          - "manni:stewardship:1.0.0"
+          - "manni:audience:1.0.0"
       severity: error
 
     # --- LLM-graded. Defined and named, but NOT in the docs-page suite. ---
