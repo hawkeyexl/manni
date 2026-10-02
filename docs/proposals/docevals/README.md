@@ -21,13 +21,13 @@ Numbering starts at `01000`. The `00001`–`00999` range holds decisions that pr
 | [00001](00001-one-unified-concept-the-eval.md) | One unified concept, the eval, with the grader as the only axis of difference | accepted |
 | [00002](00002-generated-scripts-are-files-not-inline-code.md) | Generated check scripts are files referenced as commands, never inline in frontmatter | accepted |
 | [00003](00003-type-defaults-to-regression.md) | `type` defaults to `regression`, not `capability` | accepted |
-| [00004](00004-level-1-orchestrates-rather-than-reimplements.md) | Deterministic checks orchestrate existing tools rather than reimplementing them | accepted |
+| [00004](00004-level-1-orchestrates-rather-than-reimplements.md) | Deterministic checks orchestrate existing tools rather than reimplementing them | superseded by [0073](../0073-docevals-grades-what-no-other-domain-owns.md) |
 | [01000](01000-publish-the-frontmatter-schema-from-this-repo.md) | Publish the frontmatter schema from this repo | superseded by [01009](01009-implement-the-docmeta-evals-vocabulary.md) |
 | [01001](01001-fill-proposes-llm-evals-with-confidence-gating.md) | `fill` proposes llm-graded evals with a confidence gate | superseded by [01011](01011-fill-writes-a-durable-provenance-trail.md) |
 | [01002](01002-take-inference-from-the-shared-library.md) | Take the inference layer from `@hawkeyexl/inference` | accepted |
 | [01003](01003-cuj-first-docs-site-and-content-strategy.md) | A CUJ-first documentation site, driven by a co-located content strategy | superseded by [0048](../0048-docevals-domain.md) |
 | [01004](01004-test-the-docs-through-moose-docevals-itself.md) | Test the docs site through moose-docevals itself, with committed cache fixtures | accepted |
-| [01005](01005-fix-the-doc-detective-adapter-invocation-and-finding-granularity.md) | Fix the Doc Detective adapter's invocation, failure detection, and finding granularity | accepted |
+| [01005](01005-fix-the-doc-detective-adapter-invocation-and-finding-granularity.md) | Fix the Doc Detective adapter's invocation, failure detection, and finding granularity | superseded by [0073](../0073-docevals-grades-what-no-other-domain-owns.md) |
 | [01006](01006-publish-the-docs-site-to-github-pages.md) | Publish the docs site to GitHub Pages, gated on moose-docevals evaluating itself | accepted |
 | [01007](01007-validate-format-centrally-as-a-usage-error.md) | Validate `--format` centrally, and reject an unknown value as a usage error | accepted |
 | [01008](01008-rename-to-moose-docevals-and-share-one-family-config.md) | Rename to `moose-docevals`, and read config from a shared `moose.config.yaml` | accepted |
@@ -35,7 +35,7 @@ Numbering starts at `01000`. The `00001`–`00999` range holds decisions that pr
 | [01010](01010-kebab-case-is-the-file-vocabulary.md) | Kebab-case is the file vocabulary, frontmatter, config, and grader options alike | accepted |
 | [01011](01011-fill-writes-a-durable-provenance-trail.md) | `fill` writes a durable `eval-provenance` trail | superseded by [01045](01045-validate-pages-against-the-evals-draft-and-attribute-in-meta-provenance.md) |
 | [01012](01012-config-discovery-walks-up-to-the-repository-root.md) | Config discovery walks up to the repository root | accepted |
-| [01013](01013-track-docmeta-4x-and-name-the-schema-set.md) | Track docmeta 4.x, and make `tool:docmeta` name its own schema set | accepted |
+| [01013](01013-track-docmeta-4x-and-name-the-schema-set.md) | Track docmeta 4.x, and make `tool:docmeta` name its own schema set | superseded by [0073](../0073-docevals-grades-what-no-other-domain-owns.md) |
 | [01014](01014-sarif-and-junit-reporters.md) | SARIF and JUnit reporters, and a suite stamped on every result | accepted |
 | [01015](01015-ship-a-composite-action-after-the-first-publish.md) | Ship a composite Action and pre-commit hook, after the first npm publish | accepted (nothing to ship yet) |
 | [01016](01016-golden-cases-are-seeded-from-reviews-and-gated-on-human-confirmation.md) | Golden cases are seeded from reviews, and gated on human confirmation | accepted |
@@ -46,7 +46,7 @@ Numbering starts at `01000`. The `00001`–`00999` range holds decisions that pr
 | [01021](01021-a-config-eval-is-one-generation-target.md) | A config-defined eval is one generation target, however many pages use it | accepted |
 | [01022](01022-a-grader-that-reached-no-verdict-fails-the-eval.md) | A grader that reached no verdict fails the eval, at any severity | accepted |
 | [01023](01023-the-diagnostic-invariant-is-enforced-by-enumeration.md) | The diagnostic invariant is enforced by enumeration, not by inspection | accepted |
-| [01024](01024-remark-lints-mdx-where-markdownlint-cannot.md) | remark lints this repo's MDX; markdownlint stays for Markdown | accepted |
+| [01024](01024-remark-lints-mdx-where-markdownlint-cannot.md) | remark lints this repo's MDX; markdownlint stays for Markdown | superseded by [0073](../0073-docevals-grades-what-no-other-domain-owns.md) |
 | [01025](01025-an-operator-grant-replaces-the-frontmatter-commands-boolean.md) | An operator grant replaces the frontmatter-commands boolean | accepted |
 | [01026](01026-split-long-content-never-truncate-it.md) | Split long content for inference; never truncate it | accepted |
 | [01027](01027-calibration-requires-both-expected-classes.md) | Calibration requires both expected classes | accepted |

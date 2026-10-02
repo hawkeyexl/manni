@@ -1,5 +1,5 @@
 ---
-status: "accepted"
+status: "superseded by 0073"
 date: 2026-08-31
 decision-makers: [hawkeyexl]
 ---
