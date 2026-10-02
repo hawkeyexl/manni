@@ -1,8 +1,14 @@
 docs/src/content/docs/docevals/adopt/move-evals-to-a-manifest.mdx:
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-178
-      integrity: sha256-7875ccd5470b7d3596e4cb8889ceac0b1271068b1eb12db2928c87d0cede3cd3
+      lines: 2-54
+      integrity: sha256-1562803ddc315222064abdabd4fa19ef8c4ed280e5ea59a8c8f14de5ec5f96fd
+    - generated-by: Claude Opus 5.5
+      lines: 55
+      integrity: sha256-95c7039b9a3da1069aef7585fa4162a8d5229104ffa3a26a4ed5790cef78899c
+    - generated-by: Claude Opus 5
+      lines: 56-178
+      integrity: sha256-0b6f6fcabceb42fb43115437752e8d46a226553f4429fa840d9c6f8408aa8ba7
   owner:
     - "@hawkeyexl"
   created: 2026-09-21
