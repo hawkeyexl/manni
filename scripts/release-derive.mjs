@@ -92,7 +92,8 @@ export function verdict(status, timedOut = false) {
 
 /**
  * The line this step leaves in the release log, taken from derive's own
- * summary, its last line: `N files, M changed, K fields written`.
+ * summary, its last line: `N files, M changed, K fields written`, with
+ * `, R ranges written` after it when R is not zero.
  */
 export function summarize(stdout) {
   const lines = (stdout ?? "")
