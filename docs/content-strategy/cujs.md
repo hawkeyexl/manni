@@ -108,18 +108,6 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 ---
 
-### M13 · Report the linters we already run through one gate
-
-**Outcome.** Vale, markdownlint, manni meta and a structure linter report through one `manni docevals run`, as evals with names and severities in one output format. Their separate CI steps are gone.
-
-**Steps.** She sees why code comes first in the grader hierarchy. She wraps each existing linter as a `tool:*` eval and looks up its options. She adds the native checks nothing else covers: freshness, reading level and cross-page differentiation. She runs any other CLI check as a `command` eval. She decides per eval what fails the build and what only reports, entering a newly wrapped linter at `warning`. Last, she makes the commands her pages present testable through `tool:doc-detective`.
-
-The claim this journey carries is that docevals orchestrates and does not reimplement. A reader who expects it to replace Vale is judging it against the wrong tools.
-
-**What success looks like.** One report, one exit code, and a pipeline where most evals are code and only a handful are judged.
-
----
-
 ### M14 · Propose evals for a corpus nobody annotated
 
 **Outcome.** Every page in a directory carries evals nobody hand-wrote. Maya knew how much work the pass would do before it ran, and she reviewed what landed rather than assuming it is right.
@@ -230,11 +218,11 @@ Per-file schema validation cannot see a dangling cross-reference, a duplicate sl
 
 **Outcome.** A fork pull request cannot execute its author's code on a runner or reach a provider credential. No run makes more inference calls than a budget set in config.
 
-**Steps.** He learns the two paths from a content file to code on the runner. Frontmatter-declared commands are granted by `execution.allow: [frontmatter-commands]`, and steps embedded in page bodies, run by `tool:doc-detective`, by `page-embedded-steps`. He learns that no grant makes a run over a fork safe. So he gates the job that executes anything to same-repo pull requests, and gives forks a separate `--deterministic-only --no-execution` job with no secret. He sets `judge.maxTurns` and `fill.maxTurns`. A turn is an uncached call, one ai eval spends `judge.ensembleRuns` of them, and a cache hit spends none. He knows that exhausting the budget skips the remaining evals and still exits `0`. The tool reports no dollar figure, so the conversion is his provider's rate card. He looks up the flags and keys on the reference shelf.
+**Steps.** He learns the one path from a content file to code on the runner. A `command` eval declared in page frontmatter runs only under `execution.allow: [frontmatter-commands]`. He learns that no grant makes a run over a fork safe. So he gates the job that executes anything to same-repo pull requests, and gives forks a separate `--deterministic-only --no-execution` job with no secret. He sets `judge.maxTurns` and `fill.maxTurns`. A turn is an uncached call, one ai eval spends `judge.ensembleRuns` of them, and a cache hit spends none. He knows that exhausting the budget skips the remaining evals and still exits `0`. The tool reports no dollar figure, so the conversion is his provider's rate card. He looks up the flags and keys on the reference shelf.
 
 This is the highest-stakes journey in the section. It is the only one where a plausible wrong answer causes real harm. Any page presenting a grant as sufficient is worse than no page.
 
-**What success looks like.** A fork gets freshness, lint and frontmatter checks with nothing executed. A finance question gets answered with a call count.
+**What success looks like.** A fork gets its deterministic checks with nothing executed. A finance question gets answered with a call count.
 
 ---
 
