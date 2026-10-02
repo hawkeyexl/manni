@@ -79,7 +79,7 @@ docevals:
       assertion: The page carries no TODO, TBD or FIXME markers.
       grader: tool:regex
       options:
-        pattern: "\b(TODO|TBD|FIXME)\b"
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
         match: not-contains
       severity: error
 

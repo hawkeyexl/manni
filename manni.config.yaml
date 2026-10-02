@@ -147,8 +147,9 @@ a11y:
 # test/docevals/fixtures/pages/manni.config.yaml.
 docevals:
   defaults:
-    # Pages name their own suite. A page with none runs only its own evals.
-    suite: null
+    # A page that names no suite still gets the site-wide check. A page that
+    # names its domain's suite gets that one instead.
+    suite: site
     failFast: false
     concurrency: 4
 
@@ -186,7 +187,7 @@ docevals:
       assertion: The page carries no TODO, TBD or FIXME markers.
       grader: tool:regex
       options:
-        pattern: "\b(TODO|TBD|FIXME)\b"
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
         match: not-contains
       severity: error
     # Judged, so a deterministic run skips it. Named for `--eval` and for
@@ -205,6 +206,7 @@ docevals:
   # skipped eval does not count toward the rate, so a deterministic run
   # measures the regex alone.
   suites:
+    site: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     a11y: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     cite: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     docevals: { target-pass-rate: 1.0, evals: [no-todo-markers] }
