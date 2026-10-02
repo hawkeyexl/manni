@@ -1246,7 +1246,12 @@ const short = (sha: string): string => sha.slice(0, 7);
  * stamped on a branch read stale on main once a squash put another commit's
  * offset in its place.
  */
-const datePart = (iso: string): string => utcDate(new Date(iso));
+const datePart = (iso: string): string => {
+  const d = new Date(iso);
+  // A malformed record parses to an empty author date; keep it empty rather
+  // than throw, as slicing the string did.
+  return Number.isNaN(d.getTime()) ? "" : utcDate(d);
+};
 
 /** Today, or any instant, as a UTC day: the same answer on every machine. */
 function utcDate(d: Date): string {

@@ -41,7 +41,7 @@ const D2 = "2020-02-03T03:04:05+02:00";
 const D3 = "2020-03-04T03:04:05+02:00";
 const D4 = "2020-04-05T03:04:05+02:00";
 
-const NOW = new Date(2026, 8, 7, 12, 0, 0); // 2026-09-07, local time
+const NOW = new Date(Date.UTC(2026, 8, 7, 12, 0, 0)); // 2026-09-07 in UTC, the day derive names (0072)
 const BOM = String.fromCharCode(0xfeff);
 
 const doc = (fm: string, body: string): string => `---\n${fm}\n---\n\n${body}\n`;
