@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.0.3](https://github.com/hawkeyexl/manni/compare/v4.0.2...v4.0.3) (2026-10-02)
+
+
+### Bug Fixes
+
+* **meta:** date a merge's body by the parent that held it ([#148](https://github.com/hawkeyexl/manni/issues/148)) ([c30b37e](https://github.com/hawkeyexl/manni/commit/c30b37e5f50c6a92760d0ac5b221fd30aff39f28)), closes [#144](https://github.com/hawkeyexl/manni/issues/144) [#144](https://github.com/hawkeyexl/manni/issues/144)
+
 ## [4.0.2](https://github.com/hawkeyexl/manni/compare/v4.0.1...v4.0.2) (2026-10-02)
 
 
