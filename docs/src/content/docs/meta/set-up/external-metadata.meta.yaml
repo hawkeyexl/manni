@@ -115,14 +115,11 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
       lines: 303-304
       integrity: sha256-9653cd2fd1989f028244793588d2670b1564ddbfe4d7e2ed4d11ddc498f73d7a
     - generated-by: Claude Opus 5
-      lines: 313-314
-      integrity: sha256-886c764d604f55c5bed1206124a218f4a93dc357736166ba37a53124cea1dde6
+      lines: 313
+      integrity: sha256-58f00e46fdbbb68a75f1437f9f5dfcade0928cfd0a7553c1b8ab4520a4c96642
     - generated-by: Claude Opus 5
       lines: 329
       integrity: sha256-58f00e46fdbbb68a75f1437f9f5dfcade0928cfd0a7553c1b8ab4520a4c96642
-    - generated-by: Claude Opus 5
-      lines: 333
-      integrity: sha256-a2be08c8cdb235e68d0e3d635addb58ad783fccbb8e8a081ee7e6a08ab749166
     - generated-by: Claude Opus 5
       lines: 336-339
       integrity: sha256-71547568d7a0d8eb672f580a68bd8c4bba2d4762d75c68fe2ca821d811800d3c
@@ -153,9 +150,6 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
     - generated-by: Claude Opus 5
       lines: 411
       integrity: sha256-58f00e46fdbbb68a75f1437f9f5dfcade0928cfd0a7553c1b8ab4520a4c96642
-    - generated-by: Claude Opus 5
-      lines: 415
-      integrity: sha256-a2be08c8cdb235e68d0e3d635addb58ad783fccbb8e8a081ee7e6a08ab749166
     - generated-by: Claude Opus 5
       lines: 441-443
       integrity: sha256-4956ca4738d3dfa4d97638e51b310bba00710c701991191c450c3492cb688541
