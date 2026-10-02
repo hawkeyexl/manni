@@ -43,7 +43,6 @@ function scaffold(opts: Options = {}): string {
     [
       "---",
       "title: Install",
-      "last-reviewed: 2020-01-01",
       "evals:",
       "  - use: member-passes",
       "  - use: member-fails",
@@ -52,12 +51,14 @@ function scaffold(opts: Options = {}): string {
       BODY,
     ].join("\n"),
   );
-  const freshness = (name: string, days: number) => [
+  // The page says "installer", so `contains` passes and `not-contains` fails.
+  const regex = (name: string, passes: boolean) => [
     `    ${name}:`,
-    "      assertion: A freshness check.",
-    "      grader: tool:freshness",
+    "      assertion: A regex check.",
+    "      grader: tool:regex",
     "      options:",
-    `        max-age-days: ${String(days)}`,
+    "        pattern: installer",
+    `        match: ${passes ? "contains" : "not-contains"}`,
     "      severity: error",
   ];
   writeFileSync(
@@ -70,9 +71,9 @@ function scaffold(opts: Options = {}): string {
       "  defaults:",
       "    suite: reference",
       "  evals:",
-      ...freshness("member-passes", 100000),
-      ...freshness("member-fails", 1),
-      ...freshness("standalone-passes", 100000),
+      ...regex("member-passes", true),
+      ...regex("member-fails", false),
+      ...regex("standalone-passes", true),
       "  criteria:",
       "    install-path-is-complete:",
       "      evals: [member-passes, member-fails]",

@@ -29,7 +29,7 @@ export interface GraderContext {
 }
 
 export interface Grader {
-  /** Registry kind, e.g. "command", "tool:markdownlint", "tool:freshness". */
+  /** Registry kind, e.g. "command", "tool:regex". */
   kind: string;
   /**
    * Reject option sets this grader cannot honour, before anything runs.

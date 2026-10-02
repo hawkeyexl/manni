@@ -311,8 +311,8 @@ export function resolvePage(
       // String shorthand: an ai-judged assertion at error severity.
       //
       // In 0.1 a bare string was a *reference* to a config-defined eval, so a
-      // page that still says `- fresh-enough` silently stops running the
-      // freshness grader and sends the words "fresh-enough" to the judge
+      // page that still says `- no-todo-markers` silently stops running the
+      // regex grader and sends the words "no-todo-markers" to the judge
       // instead. Nothing errors; the eval simply disappears. Guessing the
       // author's intent would make a second, invisible spelling of `use:`, so
       // name the shape of the mistake and let them fix the page.

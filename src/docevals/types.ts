@@ -41,7 +41,7 @@ export type EvalType = "capability" | "regression";
  */
 export type { Severity };
 
-/** How an eval is graded. `tool:*` kinds are built-in adapters for external tools. */
+/** How an eval is graded. `tool:regex` is the built-in `tool:*` kind; `registerGrader` adds others. */
 export type GraderKind = "ai" | "command" | "human" | `tool:${string}`;
 
 /** A normalized finding from a deterministically graded eval (command or tool). */
@@ -50,7 +50,7 @@ export interface Finding {
   evalName: string;
   /** Repo-relative path of the page the finding applies to. */
   file: string;
-  /** Tool-specific rule id (e.g. "MD013", "Vale.Spelling"), when available. */
+  /** Grader-specific rule id (e.g. "regex/found"), when available. */
   ruleId?: string;
   message: string;
   severity: Severity;

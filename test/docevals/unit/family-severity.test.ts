@@ -13,8 +13,6 @@ import { resolvePage } from "../../../src/docevals/core/resolve.js";
 import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core/discover.js";
 import { extractFrontmatter } from "../../../src/meta/index.js";
 import { isValidProposal } from "../../../src/docevals/fill/prompt.js";
-import { valeGrader } from "../../../src/docevals/graders/tools/vale.js";
-import type { ExecFn } from "../../../src/docevals/graders/types.js";
 import { render } from "../../../src/docevals/reporters/index.js";
 import type { EngineReport } from "../../../src/docevals/core/engine.js";
 import { DocevalsError } from "../../../src/docevals/types.js";
@@ -38,7 +36,7 @@ describe("severity in the config", () => {
       [
         "evals:",
         "  style:",
-        "    grader: tool:vale",
+        "    grader: tool:regex",
         "    severity: notice",
         "    severity-map: { suggestion: notice }",
       ].join("\n"),
@@ -50,7 +48,7 @@ describe("severity in the config", () => {
   it("rejects info on an eval as an ordinary schema error", () => {
     expect(() =>
       parseDocevalsConfig(
-        ["evals:", "  style:", "    grader: tool:vale", "    severity: info"].join(
+        ["evals:", "  style:", "    grader: tool:regex", "    severity: info"].join(
           "\n",
         ),
       ),
@@ -68,7 +66,7 @@ describe("severity in the config", () => {
         [
           "evals:",
           "  style:",
-          "    grader: tool:vale",
+          "    grader: tool:regex",
           "    severity-map: { suggestion: info }",
         ].join("\n"),
       ),
@@ -79,7 +77,7 @@ describe("severity in the config", () => {
 describe("severity on a page", () => {
   it("accepts notice on an inline eval", () => {
     const plan = resolvePage(
-      page("evals:\n  - id: quiet\n    grader: tool:freshness\n    severity: notice"),
+      page("evals:\n  - id: quiet\n    grader: tool:regex\n    severity: notice"),
       EMPTY,
     );
     expect(plan.problems).toEqual([]);
@@ -88,7 +86,7 @@ describe("severity on a page", () => {
 
   it("reports info as a schema error on the page", () => {
     const plan = resolvePage(
-      page("evals:\n  - id: quiet\n    grader: tool:freshness\n    severity: info"),
+      page("evals:\n  - id: quiet\n    grader: tool:regex\n    severity: info"),
       EMPTY,
     );
     expect(plan.evals).toEqual([]);
@@ -111,36 +109,6 @@ describe("severity fill proposes", () => {
   });
 });
 
-describe("vale's default severity map", () => {
-  it("maps a suggestion to notice", async () => {
-    const config = parseDocevalsConfig(
-      ["evals:", "  style:", "    grader: tool:vale", "suites:", "  s: { evals: [style] }"].join(
-        "\n",
-      ),
-    );
-    const plan = resolvePage(page("eval-suite: s"), config);
-    const style = plan.evals[0];
-    if (style === undefined) throw new Error("the suite resolved no eval");
-    const exec: ExecFn = () =>
-      Promise.resolve({
-        code: 1,
-        stdout: JSON.stringify({
-          "docs/page.md": [{ Check: "Style.Wordy", Message: "Too wordy", Line: 7, Severity: "suggestion" }],
-        }),
-        stderr: "",
-        timedOut: false,
-      });
-    const findings = await valeGrader.grade({
-      targets: [{ plan, eval: style }],
-      config,
-      root: "/fake",
-      exec,
-    });
-    expect(findings).toHaveLength(1);
-    expect(findings[0]).toMatchObject({ severity: "notice" });
-  });
-});
-
 describe("reporters", () => {
   const REPORT: EngineReport = {
     pages: 1,
@@ -148,7 +116,7 @@ describe("reporters", () => {
       {
         evalName: "style",
         type: "regression",
-        grader: "tool:vale",
+        grader: "tool:regex",
         file: "docs/page.md",
         outcome: "fail",
         findings: [

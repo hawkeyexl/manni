@@ -26,11 +26,6 @@ import { parseDocevalsConfig } from "../helpers/config.js";
 import { resolvePage, type ResolvedPagePlan } from "../../../src/docevals/core/resolve.js";
 import type { PageFile } from "../../../src/docevals/core/discover.js";
 import { commandGrader } from "../../../src/docevals/graders/command.js";
-import { docDetectiveGrader } from "../../../src/docevals/graders/tools/doc-detective.js";
-import { docStructureLintGrader } from "../../../src/docevals/graders/tools/doc-structure-lint.js";
-import { markdownlintGrader } from "../../../src/docevals/graders/tools/markdownlint.js";
-import { remarkGrader } from "../../../src/docevals/graders/tools/remark.js";
-import { valeGrader } from "../../../src/docevals/graders/tools/vale.js";
 import type { Grader, ExecFn, ExecResult, GraderTarget } from "../../../src/docevals/graders/types.js";
 
 /** An eval at warning severity, so only the flag can fail it. */
@@ -89,48 +84,12 @@ async function findingsFrom(
   });
 }
 
-const TEMPLATE = ["    options:", '      template: "how-to"'];
-
 // Each row: the grader, the shape of the tool's non-answer, and a label.
 const NO_VERDICT: [string, Grader, string, Partial<ExecResult>, string[]][] = [
   ["command: spawn failure", commandGrader, "command", { spawnError: "ENOENT", code: null },
     ["    command: [does-not-exist]"]],
   ["command: timeout", commandGrader, "command", { timedOut: true, code: null },
     ["    command: [sleep, \"99\"]"]],
-
-  ["doc-detective: spawn failure", docDetectiveGrader, "tool:doc-detective",
-    { spawnError: "ENOENT", code: null }, []],
-  ["doc-detective: timeout", docDetectiveGrader, "tool:doc-detective",
-    { timedOut: true, code: null, stderr: "partial" }, []],
-  ["doc-detective: non-zero exit with nothing readable", docDetectiveGrader,
-    "tool:doc-detective", { code: 2, stdout: "", stderr: "Unknown argument: run" }, []],
-
-  ["doc-structure-lint: no options.template", docStructureLintGrader,
-    "tool:doc-structure-lint", { code: 0, stdout: "[]" }, []],
-  ["doc-structure-lint: spawn failure", docStructureLintGrader,
-    "tool:doc-structure-lint", { spawnError: "ENOENT", code: null }, TEMPLATE],
-  ["doc-structure-lint: unreadable stdout at exit 0", docStructureLintGrader,
-    "tool:doc-structure-lint", { code: 0, stdout: "Structure OK!" }, TEMPLATE],
-
-  ["markdownlint: spawn failure", markdownlintGrader, "tool:markdownlint",
-    { spawnError: "ENOENT", code: null }, []],
-  ["markdownlint: timeout", markdownlintGrader, "tool:markdownlint",
-    { timedOut: true, code: null, stderr: "partial" }, []],
-  ["markdownlint: non-zero exit with nothing parseable", markdownlintGrader,
-    "tool:markdownlint", { code: 2, stderr: "Cannot read config" }, []],
-
-  ["remark: spawn failure", remarkGrader, "tool:remark",
-    { spawnError: "ENOENT", code: null }, []],
-  ["remark: timeout", remarkGrader, "tool:remark",
-    { timedOut: true, code: null, stderr: "partial" }, []],
-  ["remark: no JSON report", remarkGrader, "tool:remark",
-    { code: 1, stderr: "Error: cannot find plugin remark-mdx" }, []],
-  ["remark: report is not a list of files", remarkGrader, "tool:remark",
-    { code: 0, stderr: '{"ok":true}' }, []],
-
-  ["vale: spawn failure", valeGrader, "tool:vale", { spawnError: "ENOENT", code: null }, []],
-  ["vale: no JSON output", valeGrader, "tool:vale",
-    { code: 2, stdout: "", stderr: "config error" }, []],
 ];
 
 describe("a grader that reached no verdict marks it", () => {
@@ -149,16 +108,6 @@ describe("a grader that reached no verdict marks it", () => {
 // The complement. Without it, `diagnostic: true` on every finding would pass
 // the block above while destroying what severity means.
 describe("a real page problem is not a diagnostic", () => {
-  it("markdownlint lint output", async () => {
-    const findings = await findingsFrom(markdownlintGrader, "tool:markdownlint", {
-      code: 1,
-      stdout: "docs/page.md:1 MD041/first-line-heading First line in a file should be a top-level heading",
-    });
-    expect(findings).toHaveLength(1);
-    expect(findings[0]?.diagnostic).toBeUndefined();
-    expect(findings[0]?.severity).toBe("warning");
-  });
-
   it("a command that simply exits non-zero", async () => {
     const findings = await findingsFrom(commandGrader, "command", { code: 1, stdout: "nope" }, [
       '    command: ["false"]',

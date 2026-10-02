@@ -18,13 +18,11 @@
  * failure came from the flag rather than from severity handling.
  */
 import { describe, it, expect } from "vitest";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runEvals } from "../../../src/docevals/core/engine.js";
 import type { ExecFn, ExecResult } from "../../../src/docevals/graders/types.js";
-
-const FIXTURES = join(import.meta.dirname, "..", "fixtures", "tool-output");
 
 /** Deliberately at `severity: warning` — the setting the rule is about. */
 const PAGE = `---
@@ -32,8 +30,8 @@ title: Guide
 evals:
   - id: well-structured
     assertion: The page follows the how-to template.
-    grader: tool:doc-structure-lint
-    options: { template: "how-to" }
+    grader: command
+    command: [check-guide, "{file}"]
     severity: warning
 ---
 
@@ -62,11 +60,19 @@ const fakeExec =
   () =>
     Promise.resolve({ code: 0, stdout: "", stderr: "", timedOut: false, ...result });
 
-const run = (root: string, exec: ExecFn) => runEvals({ cwd: root, generate: false, exec });
+// The command is page-declared, so the run grants it. The grant is not what
+// is under test here.
+const run = (root: string, exec: ExecFn) =>
+  runEvals({
+    cwd: root,
+    generate: false,
+    exec,
+    allowExecution: ["frontmatter-commands"],
+  });
 
 describe("a diagnostic finding fails its eval at warning severity", () => {
-  it("fails when the tool's output could not be read", async () => {
-    const report = await run(scaffold(), fakeExec({ code: 0, stdout: "Structure OK!" }));
+  it("fails when the command could not be run", async () => {
+    const report = await run(scaffold(), fakeExec({ code: null, spawnError: "ENOENT" }));
 
     const result = report.evalResults[0];
     expect(result?.evalName).toBe("well-structured");
@@ -79,8 +85,7 @@ describe("a diagnostic finding fails its eval at warning severity", () => {
   });
 
   it("still passes on an ordinary warning-severity finding", async () => {
-    const captured = readFileSync(join(FIXTURES, "doc-structure-lint-fail.json"), "utf8");
-    const report = await run(scaffold(), fakeExec({ code: 1, stdout: captured }));
+    const report = await run(scaffold(), fakeExec({ code: 1, stdout: "missing a Prerequisites section" }));
 
     const result = report.evalResults[0];
     expect(result?.findings?.[0]?.severity).toBe("warning");

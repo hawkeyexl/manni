@@ -1,9 +1,8 @@
 /**
- * `tool:regex` and `tool:file-exists` — the deterministic rungs below the
- * judge.
+ * `tool:regex` — the deterministic rung below the judge.
  *
- * Every distinct shape gets a case, per the fixtures rule: each `match` mode,
- * both `exists` values, and each `target` the regex grader can be pointed at.
+ * Every distinct shape gets a case, per the fixtures rule: each `match` mode
+ * and each `target` the regex grader can be pointed at.
  */
 import { describe, it, expect } from "vitest";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -139,55 +138,5 @@ describe("tool:regex", () => {
     expect(await outcomeOf({ evalLines: regexEval(["match: contains"]) })).toContain(
       "options.pattern is required",
     );
-  });
-});
-
-describe("tool:file-exists", () => {
-  const fe = (opts: string[]) => [
-    "      grader: tool:file-exists",
-    "      options:",
-    ...opts.map((o) => `        ${o}`),
-  ];
-
-  it("passes when the companion file is there", async () => {
-    expect(
-      await outcomeOf({
-        evalLines: fe(['path: "examples/quickstart.ts"']),
-        files: [["examples/quickstart.ts", "export const x = 1;\n"]],
-      }),
-    ).toBe("pass");
-  });
-
-  it("fails when it is not", async () => {
-    expect(await outcomeOf({ evalLines: fe(['path: "examples/quickstart.ts"']) })).toBe(
-      "fail",
-    );
-  });
-
-  it("matches a glob, so a page can require some example without naming one", async () => {
-    expect(
-      await outcomeOf({
-        evalLines: fe(['path: "examples/*.ts"']),
-        files: [["examples/anything.ts", "export const x = 1;\n"]],
-      }),
-    ).toBe("pass");
-  });
-
-  it("exists: false fails while the file is still shipped", async () => {
-    expect(
-      await outcomeOf({
-        evalLines: fe(['path: "legacy.md"', "exists: false"]),
-        files: [["legacy.md", "old\n"]],
-      }),
-    ).toBe("fail");
-    expect(
-      await outcomeOf({ evalLines: fe(['path: "legacy.md"', "exists: false"]) }),
-    ).toBe("pass");
-  });
-
-  it("refuses a path that climbs out of the page's directory", async () => {
-    expect(
-      await outcomeOf({ evalLines: fe(['path: "../../etc/passwd"']) }),
-    ).toBe("fail");
   });
 });

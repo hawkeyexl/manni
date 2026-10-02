@@ -44,11 +44,12 @@ const CONFIG = [
   "  defaults:",
   "    suite: null",
   "  evals:",
-  "    fresh-enough:",
-  "      assertion: The page was reviewed within the last century.",
-  "      grader: tool:freshness",
+  "    no-todo-markers:",
+  "      assertion: The page carries no TODO markers.",
+  "      grader: tool:regex",
   "      options:",
-  "        max-age-days: 100000",
+  "        pattern: TODO",
+  "        match: not-contains",
   "      severity: error",
   "    no-future-promises:",
   "      assertion: The page makes no claims about unreleased functionality.",
@@ -56,7 +57,7 @@ const CONFIG = [
   "  suites:",
   "    default:",
   "      target-pass-rate: 1.0",
-  "      evals: [fresh-enough]",
+  "      evals: [no-todo-markers]",
   "    judged:",
   "      target-pass-rate: 1.0",
   "      evals: [no-future-promises]",
@@ -74,9 +75,9 @@ function scaffold(pages: PageSpec[], config: string[] = CONFIG): string {
   for (const p of pages) {
     writeFileSync(
       join(root, "docs", p.name),
-      // A review date on every page, so `fresh-enough` passes wherever it
+      // No page carries a TODO, so `no-todo-markers` passes wherever it
       // resolves — these tests are about what ran, not about what it found.
-      ["---", "last-reviewed: 2026-08-01", ...p.frontmatter, "---", BODY].join(
+      ["---", ...p.frontmatter, "---", BODY].join(
         "\n",
       ),
     );
@@ -215,7 +216,7 @@ describe("evals resolved, but none of them graded", () => {
   it("stays quiet when the only results need human review", async () => {
     const root = scaffold(
       [{ name: "a.md", frontmatter: ["title: A", "eval-suite: default"] }],
-      CONFIG.map((l) => l.replace("grader: tool:freshness", "grader: human")),
+      CONFIG.map((l) => l.replace("grader: tool:regex", "grader: human")),
     );
     const report = await run(root);
     expect(report.evalResults.every((r) => r.outcome === "needs-review")).toBe(

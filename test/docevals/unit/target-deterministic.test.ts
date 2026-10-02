@@ -3,9 +3,9 @@
  *
  * ADR 01033 promises that "a grader that cannot serve a requested target says
  * so as an options error rather than quietly grading something else". No
- * deterministic grader reads `target` yet — the judge does, and `tool:regex`
- * will — so until one does, asking `tool:remark` for `target: frontmatter`
- * has to fail loudly rather than lint the whole file and report a verdict
+ * built-in deterministic grader but `tool:regex` reads `target`. A grader
+ * that does not declare one, like the body-only grader registered below, has
+ * to fail loudly when asked for `target: frontmatter` rather than lint the whole file and report a verdict
  * about bytes nobody asked about. That is the ADR 01022 rule one level down:
  * a verdict about the wrong bytes is worse than no verdict.
  */
@@ -22,6 +22,15 @@ import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core
 import { readTarget } from "../../../src/docevals/core/target.js";
 import { parseDocevalsConfig } from "../helpers/config.js";
 import { resetWarnings } from "../../../src/shared/warn.js";
+import { registerGrader } from "../../../src/docevals/graders/registry.js";
+
+// A third-party grader that reads only the page body, which is every grader
+// that declares no `targets`. It finds nothing, so an eval it grades passes.
+registerGrader({
+  kind: "tool:body-only",
+  mode: "per-file",
+  grade: () => Promise.resolve([]),
+});
 
 const judgeConfig = parseDocevalsConfig(
   ["judge:", "  ensembleRuns: 1"].join("\n"),
@@ -39,14 +48,11 @@ function scaffold(extra: string[], configExtra: string[] = []): string {
     [
       "---",
       "title: Install",
-      "last-reviewed: 2020-01-01",
       ...configExtra,
       "evals:",
-      "  - id: freshness-check",
-      "    assertion: The page was reviewed recently.",
-      "    grader: tool:freshness",
-      "    options:",
-      "      max-age-days: 100000",
+      "  - id: body-check",
+      "    assertion: The body holds up.",
+      "    grader: tool:body-only",
       ...extra,
       "---",
       BODY,
@@ -68,7 +74,7 @@ function scaffold(extra: string[], configExtra: string[] = []): string {
 const run = (root: string) => runEvals({ cwd: root, generate: false });
 const only = async (root: string) => {
   const report = await run(root);
-  const r = report.evalResults.find((e) => e.evalName === "freshness-check");
+  const r = report.evalResults.find((e) => e.evalName === "body-check");
   if (!r) throw new Error("eval did not resolve");
   return r;
 };
@@ -90,7 +96,7 @@ describe("target on a deterministic grader", () => {
   it("errors rather than grading the whole page for an unsupported target", async () => {
     const r = await only(scaffold(["    target: frontmatter"]));
     expect(r.outcome).toBe("error");
-    expect(r.skipReason).toContain("tool:freshness");
+    expect(r.skipReason).toContain("tool:body-only");
     expect(r.skipReason).toContain("frontmatter");
   });
 
@@ -109,7 +115,7 @@ describe("target on a deterministic grader", () => {
   it("lets a grader that declares the target through", async () => {
     // `tool:regex` calls readTarget itself, so the guard must not stand
     // between it and the feature it implements. Without the declaration this
-    // errors exactly like tool:freshness above.
+    // errors exactly like tool:body-only above.
     const root = mkdtempSync(join(tmpdir(), "manni-docevals-dettarget-ok-"));
     mkdirSync(join(root, "docs"), { recursive: true });
     writeFileSync(

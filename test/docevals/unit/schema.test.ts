@@ -54,20 +54,6 @@ describe("the page schema", () => {
     expect(failures).toEqual([]);
   }, 30000);
 
-  it("full deterministic run validates fixtures via the tool:docmeta eval", async () => {
-    const { runEvals } = await import("../../../src/docevals/core/engine.js");
-    const report = await runEvals({
-      cwd: ROOT,
-      paths: ["test/docevals/fixtures/pages"],
-      deterministicOnly: true,
-      generate: false,
-    });
-    const docmetaResults = report.evalResults.filter(
-      (r) => r.evalName === "frontmatter-valid",
-    );
-    expect(docmetaResults.length).toBeGreaterThan(0);
-    for (const r of docmetaResults) expect(r.outcome).toBe("pass");
-  }, 60000);
 });
 
 /**
