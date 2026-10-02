@@ -1,8 +1,11 @@
 docs/src/content/docs/docevals/fix/faq.mdx:
   provenance:
     - generated-by: Claude Fable 5.1
-      lines: 2-50
-      integrity: sha256-1797840e40f9fed7062e2a83c0698ae87dfd570a137a3f24aa0761fa4bab49c3
+      lines: 2-19
+      integrity: sha256-1116deb4199519574fea311919acd539992c1f8b6f57554650c80e330ed5e8be
+    - generated-by: Claude Fable 5.1
+      lines: 23-50
+      integrity: sha256-ec2479962b34056e91bfca0a6c2a58b8f553fd80e8e62c9a83fac71dd7c421a1
     - generated-by: Claude Opus 5
       lines: 52-65
       integrity: sha256-f571943cd2a27a6fe51166dfae7992ab0260e42ae26cec972a1a56e22e0f59fd

@@ -13,8 +13,11 @@ docs/src/content/docs/docevals/reference/glossary.mdx:
       lines: 23
       integrity: sha256-add632a38e441ae488f1526a64019b348b5973f6b8e31b0bbbbdf57447cff4d8
     - generated-by: Claude Fable 5.1
-      lines: 24-56
-      integrity: sha256-6e2fcbb5571bfc71a2efcbf9ad17c231d0982dc2bd79e4c236e4ca82fd031a23
+      lines: 24-43
+      integrity: sha256-b732efa86863f3af0c36ffcfa9a431c0994911783b7df4da6790b5b94b580785
+    - generated-by: Claude Fable 5.1
+      lines: 45-56
+      integrity: sha256-b75b59d25f402b041a8440a5e44bcca35e7d9902799f8ca0af75cf2ca29a0a77
     - generated-by: Claude Opus 5
       lines: 57-58
       integrity: sha256-f76d90c9ecacfd00f0a5118fac1de76b94bb7c5b5b6ff0e4ac7272f748c941ea

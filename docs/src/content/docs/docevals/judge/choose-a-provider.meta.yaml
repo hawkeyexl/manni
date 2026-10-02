@@ -121,8 +121,11 @@ docs/src/content/docs/docevals/judge/choose-a-provider.mdx:
       lines: 219-221
       integrity: sha256-afbe6c98af7c7c6fdc14b829da99cd4b9215f1b587c78f1f43533b7cf06edadc
     - generated-by: Claude Fable 5.1
-      lines: 223-236
-      integrity: sha256-fb18e88f47602c2c27cdd14bfa981ca25d2ecfa813d6e7a70f783a3375e16550
+      lines: 223-229
+      integrity: sha256-b088739039a46ed9805c225f05364005fa59afdfe25feb6c17fdab6b12ca71bb
+    - generated-by: Claude Fable 5.1
+      lines: 234-236
+      integrity: sha256-bce93d683aeab63cde3d531a6882988e5df66d4ec985dd8632d1232c22e91318
   owner:
     - "@hawkeyexl"
   created: 2026-09-06

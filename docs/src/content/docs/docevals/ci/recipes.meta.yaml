@@ -13,8 +13,11 @@ docs/src/content/docs/docevals/ci/recipes.mdx:
       lines: 92
       integrity: sha256-3b6f00aa3b55d0fd86889a911bddedd9ff583f8b0b34ce7666eca73230ef58f2
     - generated-by: Claude Fable 5.1
-      lines: 93-104
-      integrity: sha256-d5847a5a9910897c907b41b8cb812fa3935890582a0514c0160061a65aa9129a
+      lines: 93-94
+      integrity: sha256-9e100178efb471634fce2b46ad139f674b99d040bc596076e68ab654e1e7d837
+    - generated-by: Claude Fable 5.1
+      lines: 99-104
+      integrity: sha256-38baee021eaf732e6416f768c58a5ab90926bf75fbc684e5c6b9b94fad7314f3
   owner:
     - "@hawkeyexl"
   created: 2026-09-06
