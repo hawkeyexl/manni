@@ -72,7 +72,37 @@ const regexEval = (opts: string[]) => [
   ...opts.map((o) => `        ${o}`),
 ];
 
+/** The line the eval's first finding names, after a run over the scaffold. */
+const findingLineOf = async (c: Case) => {
+  const report = await runEvals({ cwd: scaffold(c), generate: false });
+  return report.evalResults[0]?.findings?.[0]?.line;
+};
+
 describe("tool:regex", () => {
+  // The github format writes `line=` from this, and the docs send readers to
+  // that line. A line counted within the body alone points above the match by
+  // the height of the frontmatter block.
+  it("names the line in the file, not in the body, for the default target", async () => {
+    // "npm i -g" is on line 10 of the file, line 4 of the body.
+    expect(
+      await findingLineOf({ evalLines: regexEval(['pattern: "npm i -g"', "match: not-contains"]) }),
+    ).toBe(10);
+    expect(
+      await findingLineOf({ evalLines: regexEval(['pattern: "Install"', "match: count:1"]) }),
+    ).toBe(8);
+  });
+
+  it("names the same line for target: raw", async () => {
+    expect(
+      await findingLineOf({
+        evalLines: [
+          ...regexEval(['pattern: "npm i -g"', "match: not-contains"]),
+          "      target: raw",
+        ],
+      }),
+    ).toBe(10);
+  });
+
   it("passes when the pattern is present (contains is the default)", async () => {
     expect(await outcomeOf({ evalLines: regexEval(['pattern: "npm i -g"']) })).toBe(
       "pass",

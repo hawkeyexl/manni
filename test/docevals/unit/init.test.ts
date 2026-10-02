@@ -111,15 +111,20 @@ describe("runInit", () => {
   });
 
   // The free first finding get-started promises: a marker in the page fails
-  // the regex eval, at error severity.
-  it("fails a page carrying a TBD marker", async () => {
+  // the regex eval, at error severity, on the line in the file that holds it.
+  it("fails a page carrying a TBD marker, on its line", async () => {
     const root = dir();
     runInit(root);
     page(root, "sample.md", "Body text. TBD: the rest.");
     const report = await runEvals({ cwd: root, generate: false });
     const result = report.evalResults.find((r) => r.evalName === "no-todo-markers");
     expect(result?.outcome).toBe("fail");
-    expect(result?.findings?.[0]).toMatchObject({ ruleId: "regex/found", severity: "error" });
+    // Line 7 of the file: the marker is in the body, below the frontmatter.
+    expect(result?.findings?.[0]).toMatchObject({
+      ruleId: "regex/found",
+      severity: "error",
+      line: 7,
+    });
     expect(report.exitCode).toBe(1);
   });
 
