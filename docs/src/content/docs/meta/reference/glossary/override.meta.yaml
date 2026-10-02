@@ -21,7 +21,7 @@ docs/src/content/docs/meta/reference/glossary/override.mdx:
       integrity: sha256-98fbf68ff4090ac9529db81efbce3892c04beec6d1fd5306f972a068c4177156
   owner:
     - "@hawkeyexl"
-  created: 2026-09-16
+  created: 2026-09-17
   source-of-truth:
     - path: src/meta/core/resolve-schema.ts
       kind: implementation

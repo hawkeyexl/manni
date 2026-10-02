@@ -313,12 +313,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
     - generated-by: Claude Opus 5
       lines: 2092-2099
       integrity: sha256-3a1e7a7dcd5c182f2f15667f59a7e64ce411c50841cb37501ca47ac95a630c08
-    - generated-by: Claude Opus 5.5
-      lines: 2100-2101
-      integrity: sha256-2f66ae912c001bf5e4b78e14b7496621e578a3ba90153ea7164f88ef63d4595b
     - generated-by: Claude Opus 5
-      lines: 2102-2105
-      integrity: sha256-4f06ba081c166a92a7464a70f590ee74ab944d501bdfdf43ad1e6d127675832b
+      lines: 2102-2104
+      integrity: sha256-b58ef86c64e30db8c255a394f6195756dd34869265025bf014a891d5741f3ce3
     - generated-by: Claude Opus 5
       lines: 2108-2140
       integrity: sha256-3e9ebea692c67002d58e08cc7dfb94f760beb310834c8341deb869a05d04e372

@@ -1985,7 +1985,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
     - id: last-reviewed-derived-from-the-latest-approval
       claim:
         lines: 2105
-        integrity: sha256-9ea72f1cde6a773c7aad325a4f3464f968537b952e0750f8861fac2e02c8f003
+        integrity: sha256-049c3159294979a7c3dd370b8936838c4bd3aee89ed4829ef6eb3c0d179b216d
       source:
         file: src/meta/core/derive/reviews.ts
         lines: 593-597

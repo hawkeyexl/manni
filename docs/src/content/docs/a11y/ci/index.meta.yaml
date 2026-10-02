@@ -118,7 +118,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
       integrity: sha256-1ccd5afc51f20b5a0a7a59b00f7e8ec5ed4792040c0a0ab0c0cf4e7bd8d71919
   owner:
     - "@hawkeyexl"
-  created: 2026-09-11
+  created: 2026-09-12
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

@@ -18,7 +18,7 @@ docs/src/content/docs/meta/reference/glossary/json-pointer.mdx:
       integrity: sha256-1cea4e2c4bbb9a758d91d7a74be937e514b20629a878a9a9754189003b29ce04
   owner:
     - "@hawkeyexl"
-  created: 2026-09-16
+  created: 2026-09-17
   source-of-truth:
     - url: https://datatracker.ietf.org/doc/html/rfc6901
       kind: specification

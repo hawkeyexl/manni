@@ -113,7 +113,7 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
       integrity: sha256-c2baa8c9127bf9374d3254f7ff91a4af5d44a5c103d7181d1f45e000a09129fe
   owner:
     - "@hawkeyexl"
-  created: 2026-09-11
+  created: 2026-09-12
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

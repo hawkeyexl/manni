@@ -163,7 +163,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
       integrity: sha256-9c44e6b49bcf56530713301172eae0d2e87b7d7434ba3eb2a5f5369da407675d
   owner:
     - "@hawkeyexl"
-  created: 2026-09-11
+  created: 2026-09-12
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:
