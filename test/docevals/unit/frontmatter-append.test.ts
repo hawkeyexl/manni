@@ -28,7 +28,7 @@ const SECOND: NewEvalEntry = {
   examples: { pass: "Links resolve.", fail: "A link 404s." },
 };
 
-// `strict: false`, as the tool itself compiles the draft: proposal.4 annotates
+// `strict: false`, as the tool itself compiles the vocabulary: it annotates
 // its three keys with `x-manni-location`, which Ajv's strict mode refuses.
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 const validateFrontmatter = ajv.compile(frontmatterSchema);

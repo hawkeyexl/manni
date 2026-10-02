@@ -4,10 +4,10 @@
  * (proposal 0041).
  *
  * The evals vocabulary marks `evals`, `eval-suite` and `eval-skip`
- * `x-manni-location: external` from `1.0.0-proposal.4`, and ai-context
- * marks `provenance` and `meta-provenance`. A corpus that took `manni meta relocate` up on that keeps those values in a
- * manifest, and a tool that read frontmatter alone would report every page as
- * declaring nothing.
+ * `x-manni-location: external` in `manni:evals:1.0.0`, and ai-context marks
+ * `provenance` and `meta-provenance`. A corpus that took `manni meta
+ * relocate` up on that keeps those values in a manifest, and a tool that read
+ * frontmatter alone would report every page as declaring nothing.
  *
  * Reading is meta's merge, not a second loader, exactly as `cite`'s sidecars
  * are. `loadExternalMetadata` reads each manifest once per run, behind the

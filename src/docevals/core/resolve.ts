@@ -4,7 +4,7 @@
  * them (with overrides) or define inline evals. Page entries win on id
  * collision.
  *
- * The page vocabulary is `manni:evals:1.0.0-proposal.4` — three flat
+ * The page vocabulary is `manni:evals:1.0.0` — three flat
  * page-level keys (`evals`, `eval-suite`, `eval-skip`) and a reserved `eval-`
  * prefix, rather than the closed `evals:` object 0.1 used. The
  * whole frontmatter object is validated, not a synthetic `{evals}`: the prefix
@@ -87,12 +87,12 @@ export interface ResolvedPagePlan {
   problems: PageProblem[];
 }
 
-// `strict: false`, as `src/cite/core/page.ts` compiles its own draft: from
-// `1.0.0-proposal.4` the vocabulary annotates its three keys with
-// `x-manni-location: external`, and Ajv's strict mode throws on a keyword it
-// does not know rather than ignoring the annotation.
+// `strict: false`, as `src/cite/core/page.ts` compiles its own schema: the
+// vocabulary annotates its three keys with `x-manni-location: external`, and
+// Ajv's strict mode throws on a keyword it does not know rather than ignoring
+// the annotation.
 const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true, strict: false });
-// The draft as published: its severity is the family scale, so nothing is
+// The vocabulary as shipped: its severity is the family scale, so nothing is
 // patched in memory.
 const validateFrontmatter = ajv.compile(frontmatterSchema);
 

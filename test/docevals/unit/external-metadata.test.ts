@@ -4,7 +4,7 @@
  * the page's collections owns (proposal 0037, 0041).
  *
  * The evals vocabulary marks `evals`, `eval-suite` and `eval-skip`
- * `x-manni-location: external` from `1.0.0-proposal.4`, so a corpus that ran
+ * `x-manni-location: external` in `manni:evals:1.0.0`, so a corpus that ran
  * `manni meta relocate` keeps them in a manifest. Reading them there is not a
  * feature of its own: the plan a page resolves has to be the same before and
  * after the move, and everything downstream — the self-preference check and
