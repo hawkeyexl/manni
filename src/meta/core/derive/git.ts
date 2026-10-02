@@ -170,6 +170,13 @@ interface FileHistory {
   oldBlob: string | null;
   newBlob: string | null;
   pathAtCommit: string;
+  /** A merge's parents after the first; empty for any other commit. */
+  otherParents: string[];
+  /**
+   * The document's blob at each of `otherParents`, null where that parent
+   * did not hold it. Read after the walk, by `readOtherParentBlobs`.
+   */
+  otherParentBlobs: (string | null)[];
 }
 
 /**
@@ -244,6 +251,7 @@ export async function deriveFromGit(
         reasons.push(`git could not read the history at ${root}`);
         continue;
       }
+      await readOtherParentBlobs(run, histories);
       const blobs = await fetchBlobs(run, neededBlobs(histories));
       const manifestStamps = await stampsInManifests(run, root, bucket, histories, blobs);
 
@@ -338,14 +346,18 @@ const RECORD_FORMAT =
   "--format=%x1e%H%x00%aI%x00%an%x00%ae%x00" +
   "%(trailers:key=Co-authored-by,valueonly,unfold,separator=%x1f)%x00" +
   "%(trailers:key=Reviewed-by,valueonly,unfold,separator=%x1f)%x00" +
-  "%(trailers:key=Generated-by,valueonly,unfold,separator=%x1f)";
+  "%(trailers:key=Generated-by,valueonly,unfold,separator=%x1f)%x00" +
+  "%P";
 
 /**
  * `--diff-merges=first-parent` because `--raw` prints nothing for a merge by
  * default. A body two branches both edited exists only in the merge that
  * combined them, so without the merge's own diff no commit in the history
  * holds that blob, and the committed body reads as uncommitted. First parent
- * is also how a commit's prior state is read here (`<sha>^`).
+ * is also how a commit's prior state is read here (`<sha>^`). A merge whose
+ * body another parent already held did not produce it, so the judge passes
+ * over it, and the commit that wrote the body on that side dates it. A pull
+ * request's merge ref is the common case: the base is its first parent.
  */
 const LOG_ARGS = [
   "-c",
@@ -423,6 +435,8 @@ interface LogRecord {
   coAuthors: string[];
   reviewedBy: string[];
   generatedBy: string[];
+  /** `%P`: the commit's parents, first parent first. */
+  parents: string[];
   raw: RawEntry[];
 }
 
@@ -450,6 +464,7 @@ function parseLog(text: string): LogRecord[] {
       coAuthors: splitTrailers(fields[4]),
       reviewedBy: splitTrailers(fields[5]),
       generatedBy: splitTrailers(fields[6]),
+      parents: (fields[7] ?? "").trim().split(" ").filter((p) => p !== ""),
       raw,
     });
   }
@@ -558,6 +573,8 @@ function attribute(
         oldBlob: entry.oldBlob === NULL_SHA ? null : entry.oldBlob,
         newBlob: entry.newBlob === NULL_SHA ? null : entry.newBlob,
         pathAtCommit: entry.newPath,
+        otherParents: record.parents.slice(1),
+        otherParentBlobs: [],
       });
       if (entry.oldPath !== entry.newPath) tracked.set(rel, entry.oldPath);
     }
@@ -574,9 +591,47 @@ function neededBlobs(histories: Map<string, FileHistory[]>): Set<string> {
     for (const h of history) {
       if (h.oldBlob !== null) shas.add(h.oldBlob);
       if (h.newBlob !== null) shas.add(h.newBlob);
+      for (const b of h.otherParentBlobs) if (b !== null) shas.add(b);
     }
   }
   return shas;
+}
+
+/**
+ * Fill each merge's `otherParentBlobs`: the document's blob at every parent
+ * after the first, by `<parent>:<path>`. One `git cat-file --batch-check`
+ * per root, which answers one line per spec in input order:
+ * `<sha> <type> <size>`, or `<spec> missing` where the parent lacks the path.
+ */
+async function readOtherParentBlobs(
+  run: GitRun,
+  histories: ReadonlyMap<string, FileHistory[]>,
+): Promise<void> {
+  const merges: FileHistory[] = [];
+  const specs: string[] = [];
+  for (const history of histories.values()) {
+    for (const h of history) {
+      if (h.otherParents.length === 0) continue;
+      merges.push(h);
+      for (const parent of h.otherParents) specs.push(`${parent}:${h.pathAtCommit}`);
+    }
+  }
+  if (specs.length === 0) return;
+  const out = await run(["cat-file", "--batch-check"], `${specs.join("\n")}\n`);
+  if (out.tooLarge) throw new HistoryTooLarge();
+  if (out.code !== 0) throw new BlobsUnreadable(`exit ${String(out.code)}`);
+  const lines = text(out).split("\n");
+  let i = 0;
+  for (const h of merges) {
+    h.otherParentBlobs = h.otherParents.map(() => blobOfCheckLine(lines[i++]));
+  }
+}
+
+/** The blob sha a `--batch-check` line names, or null for anything else. */
+function blobOfCheckLine(line: string | undefined): string | null {
+  const [sha, kind] = (line ?? "").split(" ");
+  if (sha === undefined || kind !== "blob" || !/^[0-9a-f]{40,64}$/.test(sha)) return null;
+  return sha;
 }
 
 /**
@@ -642,7 +697,12 @@ function factCommits(
     sha === null ? null : bodyOf(blobs.get(sha) ?? "", fenced);
   const bodyChanging = [...history]
     .reverse()
-    .filter((h) => !sameBody(blobBody(h.newBlob), blobBody(h.oldBlob)));
+    .filter((h) => {
+      const body = blobBody(h.newBlob);
+      if (sameBody(body, blobBody(h.oldBlob))) return false;
+      // A merge that took the body whole from another parent did not write it.
+      return !h.otherParentBlobs.some((b) => b !== null && sameBody(body, blobBody(b)));
+    });
   return {
     bodyChanging,
     oldest: history[history.length - 1],

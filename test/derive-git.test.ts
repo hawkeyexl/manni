@@ -187,6 +187,31 @@ describe.each(forms)("deriveFromGit ($name)", ({ opts }) => {
     expect(facts.lastBodyCommit).toBe(merge);
   });
 
+  // A pull request's merge ref has the base as first parent and the branch
+  // as second, so every page the branch edited differs from the first
+  // parent. The branch commit wrote that body, and the merge only took it.
+  it("dates a body a merge took from its second parent by the commit that wrote it", async () => {
+    const dir = tempRepo({ "a.md": doc("title: t", "one"), "other.md": doc("title: o", "x") });
+    commit(dir, "add", { authorDate: D1 });
+    const base = git(dir, ["rev-parse", "--abbrev-ref", "HEAD"]);
+    git(dir, ["checkout", "-q", "-b", "branch"]);
+    writeFile(dir, "a.md", doc("title: t", "two"));
+    const edit = commit(dir, "branch edit", { authorDate: D2 });
+    git(dir, ["checkout", "-q", base]);
+    writeFile(dir, "other.md", doc("title: o", "y"));
+    commit(dir, "base moves on", { authorDate: D3 });
+    const merge = mergeBranch(dir, "branch", D4);
+    expect(git(dir, ["rev-parse", `${merge}^2`])).toBe(edit);
+
+    const facts = await factsFor(dir, "a.md", opts(dir));
+    expect(facts["last-updated"]).toEqual({
+      value: "2020-02-03",
+      source: "git",
+      evidence: `body changed in ${edit.slice(0, 7)} (2020-02-03)`,
+    });
+    expect(facts.lastBodyCommit).toBe(edit);
+  });
+
   // Proposal 0072: a derived date is a UTC day. 23:30 at -07:00 is already
   // the next day in UTC, so the author's own offset and UTC disagree here.
   it("dates a commit by its UTC day, not the author's", async () => {
