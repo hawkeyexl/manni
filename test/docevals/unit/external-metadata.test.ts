@@ -11,11 +11,16 @@
  * `target: frontmatter` — has to see the same values.
  */
 import { describe, it, expect } from "vitest";
-import { resolve } from "node:path";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { stringify as stringifyYaml } from "yaml";
 import { loadConfig } from "../../../src/docevals/core/config.js";
 import { discoverPages } from "../../../src/docevals/core/discover.js";
-import { withExternalMetadata } from "../../../src/docevals/core/external.js";
+import {
+  loadExternalReader,
+  withExternalMetadata,
+} from "../../../src/docevals/core/external.js";
 import { resolvePages } from "../../../src/docevals/core/resolve.js";
 import type { ResolvedPagePlan } from "../../../src/docevals/core/resolve.js";
 import { readTarget } from "../../../src/docevals/core/target.js";
@@ -95,6 +100,31 @@ describe("evals kept in a manifest", () => {
         line: 2,
       },
     ]);
+  });
+});
+
+describe("a manifest docevals has no key in", () => {
+  // `last-reviewed` was read only by the freshness grader, which is gone. A
+  // manifest owning nothing else is meta's to read, so docevals leaves it
+  // alone: this one would not even parse.
+  it("is not loaded when it owns only last-reviewed", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "manni-docevals-reviewed-only-"));
+    mkdirSync(join(cwd, "docs"), { recursive: true });
+    writeFileSync(join(cwd, "docs", "page.md"), "---\ntitle: Page\n---\nBody.\n");
+    writeFileSync(join(cwd, "reviews.yaml"), "docs/page.md: [unclosed\n");
+    writeFileSync(
+      join(cwd, "manni.config.yaml"),
+      [
+        "collections:",
+        "  - name: site",
+        '    paths: ["docs/**/*.md"]',
+        "    externalMetadata:",
+        "      - file: ./reviews.yaml",
+        "        keys: [last-reviewed]",
+        "",
+      ].join("\n"),
+    );
+    await expect(loadExternalReader(loadConfig(undefined, cwd), cwd)).resolves.toBeNull();
   });
 });
 
