@@ -73,8 +73,8 @@ run exits `2`. `--no-config` ignores any discovered one.
 `doc-structure-lint.config.yaml`, the standalone tool's own file, is not
 discovered at all. See [Coming from
 `doc-structure-lint`](#coming-from-doc-structure-lint) for why, and what to do
-with one. `moose.config.yaml` is still read, with a warning saying to rename
-it: that is the family file's pre-rename name rather than this tool's.
+with one. `moose.config.yaml` is not discovered either: that is the family
+file's pre-rename name, and discovery walks past it.
 
 In `pretty` output the run says which file governed it, on stderr:
 
@@ -227,7 +227,7 @@ changes are these:
 |---|---|
 | `npx doc-structure-lint docs/` | `manni lint check docs/`, or `manni lint structure docs/` for that one job |
 | `doc-structure-lint.config.yaml` | The `lint:` key of `manni.config.yaml`. The old name is not read at all, not even to warn about it. Its whole document was the `lint:` section, written in keys the section no longer takes. |
-| `moose.config.yaml` | Still discovered, with a warning on stderr: it is the family file's pre-rename name, not this tool's. Rename it to `manni.config.yaml`. |
+| `moose.config.yaml` | Not discovered: it is the family file's pre-rename name, not this tool's. Rename it to `manni.config.yaml`. |
 | `paths:` under the tool's config | A collection's `paths:` under the top-level `collections:` |
 | `exclude:` under the tool's config | The same collection's `exclude:` |
 | `doc-structure-lint lint` as a default subcommand | No default subcommand. `manni lint` alone lists the four verbs and exits `2`. |
