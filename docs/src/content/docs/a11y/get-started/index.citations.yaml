@@ -13,9 +13,9 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         integrity: sha256-396e8d96921572f27d6b6f58c61c2222b61b688b7096e5c3c890292aed962853
       source:
         file: package.json
-        lines: 99
+        lines: 100
         integrity: sha256-6506e0dbde439aea4f024722a85dcca168ede911a3173a80b2efe2367dfd3740
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
     - id: browser-launch-order
       claim:
         lines: 32-35
