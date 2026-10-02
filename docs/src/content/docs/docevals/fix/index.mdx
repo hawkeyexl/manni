@@ -2,7 +2,7 @@
 title: Fix a failing eval
 description: Your pull request went red on a manni docevals check. Work out which one, fix it, and move on.
 type: troubleshooting
-last-updated: 2026-09-13
+last-updated: 2026-10-02
 ---
 
 You did not configure this check and you do not need to learn the tool. Start with the table.
@@ -16,7 +16,7 @@ Find your CI output in the left column.
 
 | What you see | What it is | What to do |
 |---|---|---|
-| A message with a **file and line**, like `error:4 [freshness/stale] …` | A script-based check | [Fix the line](#a-finding-with-a-line) |
+| A message with a **file and line**, like `error:14 [regex/found] …` | A script-based check | [Fix the line](#a-finding-with-a-line) |
 | A message with **reasoning but no line**, mentioning "AI judge" | An AI verdict | [Read the assertion](#an-ai-verdict) |
 | **`needs-review`** | Waiting on a person | [Not yours to fix](#needs-review) |
 | An **assertion changed since its script was generated** | A generated script is out of date | [Not yours to fix](#stale-generated-script) |
@@ -31,18 +31,25 @@ If you are looking at exit 2, stop and tell whoever owns CI.
 
 ```text
 docs/actions/goTo.mdx
-  FAIL fresh-enough
-       error:4 [freshness/stale] Page last reviewed 977 days ago (max 365)
+  FAIL no-todo-markers
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
 ```
 
-Read it as `severity:line [rule] message`. A script found something specific at line 4.
+Read it as `severity:line [rule] message`. A script found something specific at line 14.
 
 - Go to that line and make the change the message describes, then
   [re-run that one eval locally](#re-run-only-the-eval-that-failed) before you push.
-- `freshness/stale` means the page's review date is too old. Update `last-reviewed` in the
-  frontmatter, **after** checking the page is actually still accurate.
-- Rules starting `MD…` are markdownlint; ones like `remark-lint/no-undefined-references` are remark;
-  rules with a dot like `Vale.Spelling` are Vale.
+- The rule says what the pattern check wanted:
+
+  | Rule | Meaning |
+  |---|---|
+  | `regex/found` | The page contains text it must not. The line is the first match. |
+  | `regex/not-found` | The page lacks text it must contain. |
+  | `regex/count` | The text appears a different number of times than required. |
+  | `regex/unreadable-target` | The check could not read the part of the page it targets. Ask whoever owns the eval. |
+
+- A message starting `Exit code` has no rule. It comes from a command check, and the rest of the
+  message is that command's own output.
 
 Only `error` fails the build. If your message says `warning` or `notice`, that check is not what turned
 the build red. Keep reading the log.
@@ -140,7 +147,7 @@ No API key needed, no cost. This covers everything except AI verdicts.
 Your CI output names the eval. Hand that name to `--eval` and nothing else runs:
 
 ```bash
-npx @hawkeyexl/manni docevals run docs/your-page.mdx --deterministic-only --eval fresh-enough
+npx @hawkeyexl/manni docevals run docs/your-page.mdx --deterministic-only --eval no-todo-markers
 ```
 
 Seconds instead of a whole pass, and the output is the one check you are trying to fix. Repeat after
@@ -175,10 +182,10 @@ Exit `0` means clean.
 
 {/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
 
-{/* step {"description":"The local reproduction command runs with no API key and exits 0 on a clean page.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}
+{/* step {"description":"The local reproduction command runs with no API key and exits 0 on a clean page.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run docs/actions/find.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}
 
-{/* step {"description":"`list` shows which evals apply to a page without running them.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/goTo.mdx","exitCodes":[0],"stdio":"evals resolved"}} */}
+{/* step {"description":"`list` shows which evals apply to a page without running them.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals list docs/actions/goTo.mdx","exitCodes":[0],"stdio":"evals resolved"}} */}
 
-{/* step {"description":"--eval re-runs one named eval, still exits 1 when it genuinely fails, and marks the suite partial.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate --eval fresh-enough","exitCodes":[1],"stdio":"filtered run, target not evaluated"}} */}
+{/* step {"description":"--eval re-runs one named eval, still exits 1 when it genuinely fails, and marks the suite partial.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate --eval no-todo-markers","exitCodes":[1],"stdio":"filtered run, target not evaluated"}} */}
 
-{/* step {"description":"A mistyped eval name is exit 2, not a clean run over nothing.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --eval fresh-enuogh","exitCodes":[2],"stdio":"matched no evals"}} */}
+{/* step {"description":"A mistyped eval name is exit 2, not a clean run over nothing.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --eval no-todo-markres","exitCodes":[2],"stdio":"matched no evals"}} */}

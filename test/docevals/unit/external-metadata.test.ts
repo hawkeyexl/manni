@@ -4,23 +4,27 @@
  * the page's collections owns (proposal 0037, 0041).
  *
  * The evals vocabulary marks `evals`, `eval-suite` and `eval-skip`
- * `x-manni-location: external` from `1.0.0-proposal.4`, so a corpus that ran
+ * `x-manni-location: external` in `manni:evals:1.0.0`, so a corpus that ran
  * `manni meta relocate` keeps them in a manifest. Reading them there is not a
  * feature of its own: the plan a page resolves has to be the same before and
- * after the move, and everything downstream — the freshness grader, the
- * self-preference check, `target: frontmatter` — has to see the same values.
+ * after the move, and everything downstream — the self-preference check and
+ * `target: frontmatter` — has to see the same values.
  */
 import { describe, it, expect } from "vitest";
-import { resolve } from "node:path";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { stringify as stringifyYaml } from "yaml";
 import { loadConfig } from "../../../src/docevals/core/config.js";
 import { discoverPages } from "../../../src/docevals/core/discover.js";
-import { withExternalMetadata } from "../../../src/docevals/core/external.js";
+import {
+  loadExternalReader,
+  withExternalMetadata,
+} from "../../../src/docevals/core/external.js";
 import { resolvePages } from "../../../src/docevals/core/resolve.js";
 import type { ResolvedPagePlan } from "../../../src/docevals/core/resolve.js";
 import { readTarget } from "../../../src/docevals/core/target.js";
 import { selfPreferenceOf } from "../../../src/docevals/judge/self-preference.js";
-import { freshnessGrader } from "../../../src/docevals/graders/native/freshness.js";
 import { DocevalsError } from "../../../src/docevals/types.js";
 
 const FIXTURES = resolve(import.meta.dirname, "../fixtures/manifest");
@@ -49,7 +53,7 @@ describe("evals kept in a manifest", () => {
     const plan = planFor(await plansOf("external"), "docs/install.md");
     expect(plan.problems).toEqual([]);
     expect(plan.suite).toBe("reference");
-    expect(plan.evals.map((e) => e.name)).toEqual(["fresh-enough"]);
+    expect(plan.evals.map((e) => e.name)).toEqual(["no-todo-markers"]);
   });
 
   it("takes eval-skip from the manifest too", async () => {
@@ -61,25 +65,6 @@ describe("evals kept in a manifest", () => {
     // the merge is what decides that, not the reader.
     const plan = planFor(await plansOf("external"), "docs/dated.md");
     expect(plan.page.frontmatter.data.title).toBe("Dated");
-  });
-
-  it("hands the freshness grader the date the manifest holds", async () => {
-    const cwd = dir("external");
-    const config = loadConfig(undefined, cwd);
-    const plan = planFor(await plansOf("external"), "docs/dated.md");
-    const ev = plan.evals.find((e) => e.name === "fresh-enough");
-    if (!ev) throw new Error("fresh-enough did not resolve");
-    const findings = await freshnessGrader.grade({
-      targets: [{ plan, eval: ev }],
-      config,
-      root: cwd,
-      exec: () => {
-        throw new Error("the freshness grader shells out to nothing");
-      },
-    });
-    // Without the merge there is no `last-reviewed` on this page at all, and
-    // the grader reports `freshness/missing`.
-    expect(findings).toEqual([]);
   });
 
   it("serializes the merged metadata for target: frontmatter", async () => {
@@ -118,11 +103,36 @@ describe("evals kept in a manifest", () => {
   });
 });
 
+describe("a manifest docevals has no key in", () => {
+  // `last-reviewed` was read only by the freshness grader, which is gone. A
+  // manifest owning nothing else is meta's to read, so docevals leaves it
+  // alone: this one would not even parse.
+  it("is not loaded when it owns only last-reviewed", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "manni-docevals-reviewed-only-"));
+    mkdirSync(join(cwd, "docs"), { recursive: true });
+    writeFileSync(join(cwd, "docs", "page.md"), "---\ntitle: Page\n---\nBody.\n");
+    writeFileSync(join(cwd, "reviews.yaml"), "docs/page.md: [unclosed\n");
+    writeFileSync(
+      join(cwd, "manni.config.yaml"),
+      [
+        "collections:",
+        "  - name: site",
+        '    paths: ["docs/**/*.md"]',
+        "    externalMetadata:",
+        "      - file: ./reviews.yaml",
+        "        keys: [last-reviewed]",
+        "",
+      ].join("\n"),
+    );
+    await expect(loadExternalReader(loadConfig(undefined, cwd), cwd)).resolves.toBeNull();
+  });
+});
+
 describe("a field-joined manifest", () => {
   it("matches the page on its own value of the join field", async () => {
     const plans = await plansOf("join");
     expect(planFor(plans, "docs/install.md").evals.map((e) => e.name)).toEqual([
-      "fresh-enough",
+      "no-todo-markers",
     ]);
   });
 
@@ -153,7 +163,7 @@ describe("refusals", () => {
         message:
           '"evals" is owned by manifest site.metadata.yaml (collection site); remove it from the document',
         level: "error",
-        line: 4,
+        line: 3,
       },
     ]);
   });
@@ -180,24 +190,7 @@ describe("a manifest per page", () => {
     const plan = planFor(await plansOf("per-page"), "docs/install.md");
     expect(plan.problems).toEqual([]);
     expect(plan.suite).toBe("reference");
-    expect(plan.evals.map((e) => e.name)).toEqual(["fresh-enough"]);
-  });
-
-  it("hands the freshness grader the date that manifest holds", async () => {
-    const cwd = dir("per-page");
-    const config = loadConfig(undefined, cwd);
-    const plan = planFor(await plansOf("per-page"), "docs/install.md");
-    const ev = plan.evals.find((e) => e.name === "fresh-enough");
-    if (!ev) throw new Error("fresh-enough did not resolve");
-    const findings = await freshnessGrader.grade({
-      targets: [{ plan, eval: ev }],
-      config,
-      root: cwd,
-      exec: () => {
-        throw new Error("the freshness grader shells out to nothing");
-      },
-    });
-    expect(findings).toEqual([]);
+    expect(plan.evals.map((e) => e.name)).toEqual(["no-todo-markers"]);
   });
 
   it("points a problem at the page's own manifest", async () => {
@@ -235,7 +228,7 @@ describe("a manifest with no keys", () => {
     const plan = planFor(await plansOf("keyless"), "docs/install.md");
     expect(plan.problems).toEqual([]);
     expect(plan.suite).toBe("reference");
-    expect(plan.evals.map((e) => e.name)).toEqual(["fresh-enough"]);
+    expect(plan.evals.map((e) => e.name)).toEqual(["no-todo-markers"]);
   });
 
   it("reads a page with no manifest of its own as declaring nothing", async () => {

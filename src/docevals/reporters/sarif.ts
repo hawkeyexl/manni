@@ -12,7 +12,7 @@
  *     Windows path with backslashes, uploads successfully and then matches no
  *     file, so every finding lands on nothing.
  *   - **Every reported rule is declared** in `tool.driver.rules`. A dashboard
- *     showing a bare `freshness/stale` with no name or description is the
+ *     showing a bare `regex/found` with no name or description is the
  *     difference between a finding someone acts on and one they dismiss.
  */
 import type { EngineReport } from "../core/engine.js";
@@ -41,7 +41,7 @@ function uriFor(file: string): string {
 /**
  * A finding's rule id.
  *
- * Tool graders supply their own (`MD013`, `Vale.Spelling`); native ones and
+ * `tool:regex` supplies its own (`regex/found`); `command` and
  * the judge do not, so the eval name stands in. Either way a result must carry
  * *some* stable id, or the dashboard groups every finding under one heading.
  */

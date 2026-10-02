@@ -69,24 +69,24 @@ export function canonicalFilePath(file: string, ctx?: FingerprintContext): strin
  * A finding's stable identity: 16 hex characters of
  * `sha256(evalName NUL ruleId)`.
  *
- * `ruleId` is the tool's own rule (`MD013`, `Vale.Spelling`, `freshness/stale`).
+ * `ruleId` is the grader's own rule (`regex/found`, `regex/count`).
  * Unlike `ruleIdFor` in the SARIF reporter it is *not* defaulted to the eval
  * name when absent — `evalName` is already the first component, so an empty
- * second one is unambiguous, and `doc-detective` (the one adapter that leaves
- * `ruleId` undefined) would otherwise hash its eval name twice.
+ * second one is unambiguous, and a grader that leaves `ruleId` undefined (the
+ * `command` grader does) would otherwise hash its eval name twice.
  *
  * Deliberately excludes:
  *
  * - **the line number** — adding one line shifts every finding below it, and a
  *   fingerprint that moved with it would present a pure reordering as a wall of
  *   new findings;
- * - **the message prose** — markdownlint and Vale generate it, so an upstream
+ * - **the message prose** — a command or a registered grader writes it, so an upstream
  *   reword would invalidate every affected entry in every consuming repo at
  *   once, presenting as "manni docevals broke our build";
  * - **the file path** — it is already the entry key.
  *
  * The consequence, and it is a real one: identity is per rule per file, **not
- * per occurrence**. A file baselined for three `MD013` findings will not fail
+ * per occurrence**. A file baselined for three `regex/found` findings will not fail
  * when a fourth appears. Prose has no stable per-occurrence anchor — a text
  * snippet churns on every edit, an ordinal renumbers on every insertion, which
  * is the line-number problem again.

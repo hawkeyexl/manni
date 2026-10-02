@@ -29,7 +29,7 @@ import {
 } from "./baseline.js";
 import { changedFilesSince, changedKey } from "./since.js";
 import { graderFor } from "../graders/registry.js";
-import { checkFeasibility } from "./feasibility.js";
+import { assertRegisteredGraders, checkFeasibility } from "./feasibility.js";
 import { realExec } from "../graders/exec.js";
 import { groupTargetsByEval, type ExecFn, type GraderTarget } from "../graders/types.js";
 import { sha256 } from "../judge/cache.js";
@@ -53,11 +53,8 @@ export interface EngineReport extends RunReport {
   /**
    * Present only under `--since` (ADR 01040). `pagesTotal` is the whole
    * discovered corpus — `pages` above stays that number too — and
-   * `pagesSelected` is the count of pages that **changed since the ref**.
-   *
-   * It is deliberately not "pages this run evaluated", which would be a
-   * different and larger number: corpus-wide graders keep every page in scope,
-   * so an unchanged page can still be graded. Consumers reading this from
+   * `pagesSelected` is the count of pages that **changed since the ref**,
+   * which are the only pages this run graded. Consumers reading this from
    * `--format json` should treat it as the size of the change set, matching
    * what the reporters print.
    */
@@ -471,18 +468,13 @@ export function applySelection(
 }
 
 /**
- * Narrow each plan to the pages that changed, in place, leaving corpus graders
- * alone (ADR 01040).
+ * Narrow each plan to the pages that changed, in place (ADR 01040).
  *
- * **The corpus exemption is the subtle half.** `GraderContext` carries
- * `targets`, not a page list, so `tool:differentiation` builds its comparison
- * population out of whatever it is handed. `gradeGroup` returns `[]` below two
- * targets, and an eval with no findings is recorded as a **pass** — so
- * narrowing a corpus grader's input does not narrow the check, it silently
- * converts it into a pass. Corpus evals therefore survive on unchanged pages,
- * which costs no subprocess and no tokens because the only corpus grader is
- * native. The visible consequence is that a scoped run can report a finding on
- * a page nobody touched; the message already names the other page.
+ * An unchanged page keeps no eval. Every grader grades one page at a time or
+ * one group of pages per call, so dropping a page's targets shrinks the check
+ * rather than changing what it means. An eval naming an unregistered grader
+ * never reaches here: `assertRegisteredGraders` refuses the run first, so a
+ * typo cannot surface on a changed page and vanish on an unchanged one.
  *
  * An empty result is **not** a usage error, which is where this parts company
  * with `applySelection`. "No page changed" is a correct answer to a correct
@@ -498,18 +490,7 @@ export function applySinceScope(
       pagesSelected += 1;
       continue;
     }
-    plan.evals = plan.evals.filter((ev) => {
-      const grader = graderFor(ev.grader);
-      if (grader) return grader.mode === "corpus";
-      // `graderFor` returns undefined for `ai` and `human` — which is exactly
-      // what scoping should drop, since not paying the judge is the point — and
-      // *also* for an unrecognised `tool:` kind. Dropping those too would hide a
-      // misconfiguration on every page the branch did not touch: the grading
-      // loop is what reports an unknown kind, so an eval removed here never
-      // errors. A typo would surface on a changed page and vanish on an
-      // unchanged one, which is the least predictable behaviour available.
-      return ev.grader !== "ai" && ev.grader !== "human";
-    });
+    plan.evals = [];
   }
   return { pagesSelected };
 }
@@ -715,6 +696,9 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
     sinceRef === undefined ? null : await changedFilesSince(sinceRef, cwd, exec);
 
   const plans = resolvePages(pages, config);
+  // A grader nothing registered is the configuration's bug, so it is a usage
+  // error before anything else is said about the plan.
+  assertRegisteredGraders(plans, config);
   // A run that resolved no evals at all checked nothing, and exited 0 saying
   // so in about seventeen bytes. The identical condition reached through
   // `--eval no-such-eval` is already exit 2 with a careful message
@@ -793,7 +777,6 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
   ]);
   if (options.execution === false) granted.clear();
   const allowFrontmatterCommands = granted.has("frontmatter-commands");
-  const allowPageEmbeddedSteps = granted.has("page-embedded-steps");
 
   // Before anything is dispatched: an eval that cannot reach a verdict as
   // configured is a configuration error, and saying so now costs nothing where
@@ -855,11 +838,11 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
         continue;
       }
       // Page-authored argv, whatever grader carries it. `command` evals name
-      // it in `command`; every `tool:*` adapter also accepts an
-      // `options.command` override and hands it to the same `exec`. Gating
+      // it in `command`; a registered grader may also accept an
+      // `options.command` override and hand it to the same `exec`. Gating
       // only the grader left a second spelling of "run this" that reached a
       // shell ungated, which made default-deny decorative — a page that cannot
-      // say `grader: command` could say `grader: tool:vale` with the same argv.
+      // say `grader: command` could name such a grader with the same argv.
       // Config-authored argv is the operator's own and is not content, so the
       // gate is on `source === "page"` rather than on the key's presence.
       const pageAuthoredArgv =
@@ -871,20 +854,6 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
             plan,
             ev,
             "frontmatter commands not granted (execution.allow: [frontmatter-commands])",
-          ),
-        );
-        continue;
-      }
-      // The second path from content to a shell: doc-detective executes steps
-      // written in the page *body*, which no flag covered before. Same grant
-      // model, different capability — an operator who trusts a repo's
-      // frontmatter has not thereby trusted arbitrary steps in its prose.
-      if (ev.grader === "tool:doc-detective" && !allowPageEmbeddedSteps) {
-        results.push(
-          skippedResult(
-            plan,
-            ev,
-            "page-embedded steps not granted (execution.allow: [page-embedded-steps])",
           ),
         );
         continue;
@@ -1010,6 +979,8 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
 
   for (const [kind, targets] of byKind) {
     const grader = graderFor(kind);
+    // `assertRegisteredGraders` already refused an unregistered kind. Kept so
+    // that a gap between the two checks reads as an error, never a pass.
     if (!grader) {
       for (const t of targets) {
         results.push({

@@ -12,10 +12,13 @@ evals:
     examples:
       pass: Each concept has a heading with a definition, and relationships are stated.
       fail: A core concept is missing or relationships are never explained.
-  - use: fresh-enough
+  - use: no-todo-markers
+    severity: warning
 ---
 
 Learn the key concepts that form the foundation of Doc Detective.
+
+TODO: add a diagram of how specs, tests and steps nest.
 
 ## Test specification
 

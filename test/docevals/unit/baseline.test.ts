@@ -27,9 +27,9 @@ import {
 import { DocevalsError, type EvalResult, type Finding } from "../../../src/docevals/types.js";
 
 const finding = (over: Partial<Finding> = {}): Finding => ({
-  evalName: "markdownlint",
+  evalName: "no-todo-markers",
   file: "docs/legacy.md",
-  ruleId: "MD013",
+  ruleId: "regex/found",
   message: "Line length",
   severity: "error",
   line: 12,
@@ -37,9 +37,9 @@ const finding = (over: Partial<Finding> = {}): Finding => ({
 });
 
 const result = (findings: Finding[], over: Partial<EvalResult> = {}): EvalResult => ({
-  evalName: findings[0]?.evalName ?? "markdownlint",
+  evalName: findings[0]?.evalName ?? "no-todo-markers",
   type: "regression",
-  grader: "tool:markdownlint",
+  grader: "tool:regex",
   file: findings[0]?.file ?? "docs/legacy.md",
   outcome: findings.some((f) => f.severity === "error") ? "fail" : "pass",
   findings,
@@ -54,7 +54,7 @@ describe("fingerprint: what it ignores", () => {
     expect(fingerprint(finding({ line: 12 }))).toBe(fingerprint(finding({ line: 400 })));
   });
 
-  // markdownlint and Vale generate these strings. If a fingerprint moved with
+  // Graders write these strings. If a fingerprint moved with
   // the wording, an upstream release would invalidate every consuming repo's
   // baseline at once.
   it("is stable when the tool rewords its message", () => {
@@ -64,8 +64,8 @@ describe("fingerprint: what it ignores", () => {
   });
 
   it("distinguishes different rules within one eval", () => {
-    expect(fingerprint(finding({ ruleId: "MD013" }))).not.toBe(
-      fingerprint(finding({ ruleId: "MD041" })),
+    expect(fingerprint(finding({ ruleId: "regex/found" }))).not.toBe(
+      fingerprint(finding({ ruleId: "regex/count" })),
     );
   });
 
@@ -132,14 +132,14 @@ describe("applyBaseline", () => {
   });
 
   it("still fails on a finding the baseline does not hold", () => {
-    const applied = applyBaseline([result([finding({ ruleId: "MD041" })])], baselined);
+    const applied = applyBaseline([result([finding({ ruleId: "regex/count" })])], baselined);
     expect(applied.suppressed).toBe(0);
     expect(applied.results[0]?.outcome).toBe("fail");
   });
 
   it("fails when only some of a file's findings are baselined", () => {
     const applied = applyBaseline(
-      [result([finding(), finding({ ruleId: "MD041" })])],
+      [result([finding(), finding({ ruleId: "regex/count" })])],
       baselined,
     );
     expect(applied.suppressed).toBe(1);
@@ -154,7 +154,7 @@ describe("applyBaseline", () => {
   });
 
   it("reports a recorded fingerprint that no longer occurs as stale", () => {
-    const applied = applyBaseline([result([finding({ ruleId: "MD041" })])], baselined);
+    const applied = applyBaseline([result([finding({ ruleId: "regex/count" })])], baselined);
     expect(applied.recorded).toBe(1);
     expect(applied.stale).toBe(1);
   });
@@ -295,7 +295,7 @@ describe("diffBaselines", () => {
   it("counts a genuinely new finding as added", () => {
     const before = buildBaseline([result([finding()])], "0.1.0");
     const after = buildBaseline(
-      [result([finding(), finding({ ruleId: "MD041" })])],
+      [result([finding(), finding({ ruleId: "regex/count" })])],
       "0.1.0",
     );
     expect(diffBaselines(before, after)).toEqual({ added: 1, removed: 0 });

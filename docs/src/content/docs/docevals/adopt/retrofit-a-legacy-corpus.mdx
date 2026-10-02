@@ -2,7 +2,7 @@
 title: Retrofit a legacy corpus
 description: Get thousands of unmeasured pages onto a ratchet without a day-one wall of red.
 type: how-to
-last-updated: 2026-09-13
+last-updated: 2026-10-02
 ---
 
 Point an honest quality bar at a corpus that has never been measured and nearly everything fails at
@@ -87,10 +87,10 @@ Read this before you rely on it. The gate a baseline gives you is real but weake
 A finding's identity is `(file, eval name, rule id)`. The line number and the message text are
 deliberately excluded. A fingerprint that moved with the line would present a pure reordering as a
 wall of new findings. One that included the message would be invalidated for every consuming repo
-the next time markdownlint or Vale rewords a string.
+the next time a grader rewords a string.
 
-**The consequence: a file baselined for three `MD013` findings will not fail when a fourth
-appears.** That is not an oversight waiting on a fix. Per-occurrence identity needs a stable anchor,
+**The consequence: a file baselined for a `no-todo-markers` finding will not fail when a second
+`TODO` appears.** That is not an oversight waiting on a fix. Per-occurrence identity needs a stable anchor,
 and prose has none. A text snippet churns on every edit, and an ordinal renumbers on every insertion.
 
 Plan around it. A baseline stops a *new kind* of problem entering a file; it does not stop more of a
@@ -98,7 +98,7 @@ problem that file already has. Where you need the stricter guarantee, fix the fi
 
 ### It covers findings, which means deterministic graders
 
-`command` and `tool:*` graders produce findings, so those are what a baseline records. An ai-graded
+`command` and `tool:regex` graders produce findings, so those are what a baseline records. An ai-graded
 eval's verdict carries no rule identity to fingerprint. Freezing a judge verdict in a backlog file
 is not what you want anyway. [Human review](/manni/docevals/judge/human-review/) is the mechanism
 for those.
@@ -114,8 +114,8 @@ Two more things a baseline does not touch:
 
 ### Renaming an eval invalidates its fingerprints
 
-The eval name is part of the identity, so the tool cannot tell `readable` and `reading-level` are the
-same check. Rename one and the next run reports that eval's whole backlog as fresh. The remedy is a
+The eval name is part of the identity, so the tool cannot tell `no-todo` and `no-todo-markers` are
+the same check. Rename one and the next run reports that eval's whole backlog as fresh. The remedy is a
 re-record; the surprise is worth knowing before it happens in CI.
 
 ## Watch the `removed` count
@@ -233,13 +233,12 @@ construction. Before the recurring cost becomes the story, push them down the hi
 
 ## When severity inversion is still the answer
 
-Dropping an eval to `severity: warning` reports everywhere and blocks nowhere. Before baselines it
-was the only lever, and this page used to lead with it. It is now the **narrower** tool, for one
-specific case:
+Dropping an eval to `severity: warning` reports everywhere and blocks nowhere. It is the
+**narrower** tool, for one specific case:
 
 > A finding class you do not intend to fix, on pages you do not intend to exclude.
 
-Reading level on an API reference, line length in generated tables: these are checks worth *seeing*
+A banned word inside quoted error messages, or a `TODO` in vendored reference, is worth *seeing*
 and not worth gating. Say that with severity, which is honest about the class, rather than with a baseline,
 which claims you will come back.
 
@@ -255,7 +254,7 @@ to a corpus-wide baseline:
 
 ```yaml
 evals:
-  - use: readable
+  - use: no-todo-markers
     severity: error          # this section is done; hold the line
 ```
 

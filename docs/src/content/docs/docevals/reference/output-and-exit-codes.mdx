@@ -2,11 +2,11 @@
 title: Output and exit codes
 description: The pretty, json, markdown, github, sarif, junit, and html report shapes, and what each exit code means.
 type: reference
-last-updated: 2026-09-21
+last-updated: 2026-10-02
 ---
 
 Verified against `src/docevals/reporters/` and `src/docevals/types.ts`, with samples captured from real runs against
-the fixture corpus.
+the fixture corpus in `test/docevals/fixtures/pages`, run from that directory.
 
 ## Exit codes
 
@@ -155,31 +155,28 @@ Under `--dry-run` the same line reads `would write` and nothing is offered.
 The default. Per page, one line per eval; then per-suite aggregates.
 
 ```console
-$ manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate
-test/docevals/fixtures/pages/docs/actions/goTo.mdx
+$ manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate
+docs/actions/goTo.mdx
   skip no-future-promises
        judge skipped (--deterministic-only)
-  FAIL fresh-enough
-       error:4 [freshness/stale] Page last reviewed 977 days ago (max 365)
-  pass readable
-  pass frontmatter-valid
   pass names-an-action
-  pass ships-a-schema
+  FAIL no-todo-markers
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
 
 Suites
-  reference: 4/5 passed — 60% vs target 100% below target (1 skipped)
+  reference: 1/2 passed — 0% vs target 100% below target (1 skipped)
 ```
 
 The finding line is `severity:line [ruleId] message`. Colour is applied only on a TTY.
 
 A finding may also carry `"diagnostic": true`, which appears in `--format json` and `sarif`. It
-means the grader could not reach a verdict, because its tool was missing, timed out, or returned
-output it could not read. The eval fails whatever its severity says. Consumers that gate on
+means a `command` eval could not reach a verdict. It had no command yet, its command failed to
+start, or it timed out. The eval fails whatever its severity says. Consumers that gate on
 severity alone will miss these; read the eval's `outcome` instead.
 
-Note the suite line. The skipped eval is excluded, so the count is 4/5 rather than 4/6. The rate is
-weighted and the count is not. `fresh-enough` and `names-an-action` form a failing criterion of
-weight 2, so 3 of 5 weight passed, which is 60%.
+Note the suite line. The skipped eval is excluded, so the count is 1/2 rather than 1/3. The rate is
+weighted and the count is not. `names-an-action` and `no-todo-markers` form a failing criterion of
+weight 2, scored in place of its members. So 0 of 2 weight passed, which is 0%.
 
 ## `--format json`
 
@@ -190,22 +187,22 @@ One object, for programmatic consumers.
   "pages": 1,
   "evalResults": [
     {
-      "evalName": "fresh-enough",
+      "evalName": "no-todo-markers",
       "type": "regression",
-      "grader": "tool:freshness",
-      "file": "test/docevals/fixtures/pages/docs/actions/goTo.mdx",
+      "grader": "tool:regex",
+      "file": "docs/actions/goTo.mdx",
       "outcome": "fail",
       "findings": [
         {
-          "evalName": "fresh-enough",
-          "file": "test/docevals/fixtures/pages/docs/actions/goTo.mdx",
-          "ruleId": "freshness/stale",
-          "message": "Page last reviewed 977 days ago (max 365)",
+          "evalName": "no-todo-markers",
+          "file": "docs/actions/goTo.mdx",
+          "ruleId": "regex/found",
+          "message": "Pattern /\\b(TODO|TBD|FIXME)\\b/ found in body, expected absent",
           "severity": "error",
-          "line": 4
+          "line": 14
         }
       ],
-      "durationMs": 1,
+      "durationMs": 0,
       "suite": "reference",
       "weight": 1
     }
@@ -213,13 +210,13 @@ One object, for programmatic consumers.
   "suites": [
     {
       "suite": "reference",
-      "total": 6,
-      "passed": 4,
+      "total": 3,
+      "passed": 1,
       "failed": 1,
       "needsReview": 0,
       "skipped": 1,
       "errored": 0,
-      "passRate": 0.6,
+      "passRate": 0,
       "targetPassRate": 1,
       "meetsTarget": false,
       "criteria": { "total": 1, "passed": 0, "failed": 1, "suspended": 0 }
@@ -231,6 +228,9 @@ One object, for programmatic consumers.
   "problems": []
 }
 ```
+
+The sample shows one of the three `evalResults`. The other two are the skipped ai eval and the
+passing `names-an-action`.
 
 ### `evalResults[]`
 
@@ -261,18 +261,21 @@ measured part of the suite, so the summary carries numbers but no verdict:
 {
   "suite": "reference",
   "total": 5,
-  "passed": 4,
+  "passed": 5,
   "failed": 0,
   "needsReview": 0,
-  "skipped": 1,
+  "skipped": 0,
   "errored": 0,
   "passRate": 1,
   "targetPassRate": 1,
   "meetsTarget": false,
   "partial": true,
-  "criteria": { "total": 0, "passed": 0, "failed": 0, "suspended": 0 }
+  "criteria": { "total": 5, "passed": 0, "failed": 0, "suspended": 5 }
 }
 ```
+
+That is the `reference` suite from `manni docevals run --deterministic-only --no-generate --eval names-an-action`.
+Each criterion is suspended, because the filter left one of its two members ungraded.
 
 - `meetsTarget` is `false` on every partial summary, including this one, where `passRate` clears
   the target. It is not a claim that the suite failed.
@@ -355,18 +358,18 @@ Workflow commands for inline annotations, followed by the markdown summary. The 
 both annotates the diff and works as `$GITHUB_STEP_SUMMARY`.
 
 ```text
-::error file=test/docevals/fixtures/pages/docs/actions/goTo.mdx,line=4,title=manni docevals%3A fresh-enough::Page last reviewed 977 days ago (max 365)
+::error file=docs/actions/goTo.mdx,line=14,title=manni docevals%3A no-todo-markers::Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
 
 ## manni docevals results
 
 | Suite | Passed | Failed | Review | Pass rate | Target | |
 |---|---|---|---|---|---|---|
-| reference | 4 | 1 | 0 | 60% | 100% | ❌ |
+| reference | 1 | 1 | 0 | 0% | 100% | ❌ |
 
 ### Findings
 
-- ❌ **fresh-enough** — `test/docevals/fixtures/pages/docs/actions/goTo.mdx`
-  - error:4: Page last reviewed 977 days ago (max 365)
+- ❌ **no-todo-markers** — `docs/actions/goTo.mdx`
+  - error:14: Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
 ```
 
 Severity maps to the annotation level: `error` → `::error`, `warning` → `::warning`, `notice` →

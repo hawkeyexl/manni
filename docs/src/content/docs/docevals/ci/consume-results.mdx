@@ -2,7 +2,7 @@
 title: Consume results programmatically
 description: JSON output and the TypeScript API, for dashboards and custom tooling.
 type: how-to
-last-updated: 2026-09-21
+last-updated: 2026-10-02
 ---
 
 Sometimes the report needs to feed something other than a human: a dashboard, a PR bot, a quality
@@ -20,8 +20,8 @@ npx @hawkeyexl/manni docevals run --format json > docevals.json
 ```json
 {
   "pages": 1,
-  "evalResults": [ { "evalName": "fresh-enough", "outcome": "fail", "findings": [ … ] } ],
-  "suites": [ { "suite": "reference", "passRate": 0.6, "targetPassRate": 1, "meetsTarget": false } ],
+  "evalResults": [ { "evalName": "no-todo-markers", "outcome": "fail", "findings": [ … ] } ],
+  "suites": [ { "suite": "reference", "passRate": 0, "targetPassRate": 1, "meetsTarget": false } ],
   "usage": { "totalTokens": 0, "cachedEvals": 0, "judgedEvals": 0 },
   "generated": [],
   "exitCode": 1
@@ -84,8 +84,9 @@ import { docevals } from "@hawkeyexl/manni";
 const { frontmatterSchema, FRONTMATTER_SCHEMA_ID } = docevals;
 ```
 
-`frontmatterSchema` is the parsed schema object, the evals draft `manni docevals run` validates
-every page against. `FRONTMATTER_SCHEMA_ID` is its `$id`, `manni:evals:1.0.0-proposal.4`. No file
+`frontmatterSchema` is the parsed schema object, the
+[evals vocabulary](/manni/meta/reference/schemas/manni-evals/) `manni docevals run` validates every
+page against. `FRONTMATTER_SCHEMA_ID` is its `$id`, `manni:evals:1.0.0`. No file
 copy ships; see
 [Validating the frontmatter itself](/manni/docevals/reference/frontmatter/#validating-the-frontmatter-itself).
 
@@ -113,6 +114,6 @@ code rather than re-deriving pass/fail from the report. Keep `1` and `2` distinc
 
 {/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
 
-{/* step {"description":"--format json emits a parseable object carrying summary counts and the exit code.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate --format json","exitCodes":[1],"stdio":"/\"exitCode\": 1/"}} */}
+{/* step {"description":"--format json emits a parseable object carrying summary counts and the exit code.","runShell":{"command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate --format json","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[1],"stdio":"/\"exitCode\": 1/"}} */}
 
-{/* step {"description":"The documented import specifier resolves and exports both schema symbols.","runShell":{"command":"node --input-type=module -e \"import('@hawkeyexl/manni').then(({docevals:m})=>{if(!m.frontmatterSchema||m.FRONTMATTER_SCHEMA_ID!=='manni:evals:1.0.0-proposal.4')throw new Error('missing export');console.log('exports ok')}).catch(e=>{console.error(e);process.exit(2)})\"","exitCodes":[0],"stdio":"exports ok"}} */}
+{/* step {"description":"The documented import specifier resolves and exports both schema symbols.","runShell":{"command":"node --input-type=module -e \"import('@hawkeyexl/manni').then(({docevals:m})=>{if(!m.frontmatterSchema||m.FRONTMATTER_SCHEMA_ID!=='manni:evals:1.0.0')throw new Error('missing export');console.log('exports ok')}).catch(e=>{console.error(e);process.exit(2)})\"","exitCodes":[0],"stdio":"exports ok"}} */}

@@ -1,6 +1,6 @@
 # 0048: the `docevals` domain: evals join the family
 
-- **Status:** Proposed
+- **Status:** Proposed; superseded in part by 0073
 - **Serves:** Devin · D10, D11 · Sara · S8–S11 · Maya · M11–M16 · Theo · T6
 - **Depends on:** [0033](0033-manni-monorepo.md), the umbrella this domain
   mounts on and the import recipe it follows. [0034](0034-command-grammar.md),

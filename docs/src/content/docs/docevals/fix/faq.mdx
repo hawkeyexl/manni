@@ -2,7 +2,7 @@
 title: FAQ
 description: Recurring questions from contributors who hit a manni docevals check.
 type: faq
-last-updated: 2026-09-13
+last-updated: 2026-10-02
 ---
 
 Short answers for people who just want their pull request green. The triage table is on
@@ -23,8 +23,8 @@ Usually one of:
 
 - Someone edited the **assertion**, so every page using it was re-judged.
 - The **model was changed**, which invalidates every cached verdict.
-- A **freshness** check crossed its threshold. `max-age-days` is measured from the page's
-  `last-reviewed` date, so a page can go stale while nobody touches it.
+- A **`command`** eval checks something besides the page, such as a file or a tool it calls. That
+  can change while nobody touches the page.
 
 The last one is not a bug. It is the check doing its job.
 

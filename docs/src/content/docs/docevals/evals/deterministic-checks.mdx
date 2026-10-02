@@ -1,84 +1,77 @@
 ---
 title: Deterministic checks
-description: Wrap the linters you already run, add the native checks, and let manni docevals write scripts for plain-language rules.
+description: Match a pattern with tool:regex, run any script as a command eval, and let manni docevals write scripts for plain-language rules.
 type: how-to
-last-updated: 2026-09-13
+last-updated: 2026-10-02
 ---
 
-Deterministic graders are free, fast, and arguable in a pull request. Prefer them. This page covers
-folding in the tools you already run, the native checks, and arbitrary `command` evals,
-including the ones manni docevals writes for you.
+Deterministic graders are free, fast, and arguable in a pull request. Prefer them. Reach for the
+judge only when no pattern or script can express the assertion. This page covers the two
+deterministic graders, `tool:regex` and `command`, including the scripts manni docevals writes for
+you.
 
-## manni docevals orchestrates; it does not reimplement
+## Checks other domains own
 
-If you expect manni docevals to replace Vale, you will evaluate it against the wrong competitors. Vale
-keeps doing what Vale does. Its findings arrive as a named eval with a severity, alongside a
-freshness check and an AI verdict, in one report with one exit code.
+Some checks already have a home in manni, and they run there rather than as evals.
+
+- Frontmatter against a schema is [`manni meta validate`](/manni/meta/).
+- Page structure is [`manni lint`](/manni/lint/).
+
+Any other CLI tool you run becomes a `command` eval, described below.
+
+## Match a pattern with `tool:regex`
+
+`tool:regex` is the cheapest rung below the judge. An assertion like "the page carries no TODO
+markers" is a verifiable fact. Matching it is faster and more trustworthy than asking a model three
+times.
 
 ```yaml
 docevals:
   evals:
-    style:
-      assertion: Page passes our Vale style rules.
-      grader: tool:vale
-      severity: warning
-    markdownlint:
-      assertion: Page passes markdownlint rules.
-      grader: tool:markdownlint
-      severity: warning
-    frontmatter-valid:
-      assertion: Page frontmatter validates against our schema.
-      grader: tool:docmeta
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
       options:
-        schemas: ["schema/page.schema.json"]
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
       severity: error
-    structure:
-      assertion: How-to pages follow the how-to template.
-      grader: tool:doc-structure-lint
-      options:
-        template: how-to
 ```
 
-Five CI steps and five output formats become one. Full option tables in
-[Graders](/manni/docevals/reference/graders/).
+| Option | Default | What it does |
+|---|---|---|
+| `pattern` | none | Required. A JavaScript regular expression. |
+| `flags` | `""` | JS RegExp flags (`d g i m s u v y`). |
+| `match` | `contains` | `contains`, `not-contains`, or `count:N` for exactly _n_ matches. |
 
-### Severity is what makes consolidation safe
+`count:N` catches a heading that a bad merge duplicated. A pattern that does not compile is a
+configuration error, not a page failure.
 
-A newly wrapped linter enters at `severity: warning`, where it reports without failing, and gets
-promoted to `error` once its findings are clean. Only `error` findings fail the build.
-
-Vale's own severities map through `severity-map`, defaulting to `error`→`error`,
-`warning`→`warning`, `suggestion`→`notice`.
-
-## The native checks
-
-These checks exist natively because nothing else covers them. They are not the start of a homegrown
-linter. Two more, `tool:regex` and `tool:file-exists`, are in
-[Graders](/manni/docevals/reference/graders/#toolregex).
+The eval's [`target`](/manni/docevals/reference/frontmatter/) picks the bytes the pattern runs
+against. The default is the page `body`. Set `raw` for the whole file, `frontmatter` for the
+metadata, or a companion file.
 
 ```yaml
-  fresh-enough:
-    assertion: Page was reviewed within the last year.
-    grader: tool:freshness
-    options: { field: last-reviewed, max-age-days: 365 }
-    severity: warning
-  readable:
-    assertion: Page prose reads below grade 12.
-    grader: tool:reading-level
-    options: { max-grade: 12 }
-    severity: warning
-  distinct-action-pages:
-    assertion: Action reference pages are distinct from one another.
-    grader: tool:differentiation
+evals:
+  - id: has-an-owner
+    grader: tool:regex
+    target: frontmatter
     options:
-      scope: "docs/actions/**"
-      max-similarity: 0.85
+      pattern: "^owner:"
 ```
 
-**Freshness** is a frontmatter-driven staleness contract, and no linter reads your review dates.
-**Reading level** is Flesch–Kincaid over the prose with code and markup stripped (English only).
-**Differentiation** catches the copy-paste drift that makes per-endpoint reference pages 90%
-identical. That is the failure nobody notices, because each page looks fine alone.
+A finding names its rule and the line in the file:
+
+```
+docs/actions/goTo.mdx
+  skip no-future-promises
+       judge skipped (--deterministic-only)
+  pass names-an-action
+  FAIL no-todo-markers
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+```
+
+The rule ids are `regex/not-found`, `regex/found` and `regex/count`. Full option tables are in
+[Graders](/manni/docevals/reference/graders/#toolregex).
 
 ## Arbitrary `command` evals
 
@@ -92,15 +85,31 @@ Any executable. `{file}` expands to the page's absolute path.
   success-exit-codes: [0]
 ```
 
-Exit code decides: `0` (or anything in `success-exit-codes`) passes; anything else fails with the
+Exit code decides. `0`, or anything in `success-exit-codes`, passes. Anything else fails with the
 output tail as the message. Timeouts are reported distinctly.
+
+### Commands declared in page frontmatter need a grant
+
+A `command` eval defined in `manni.config.yaml` runs without a grant, because the config is yours.
+A page that declares one in its own frontmatter is content asking to run code. That command runs
+only under `execution.allow: [frontmatter-commands]` or `--allow-execution frontmatter-commands`.
+Without the grant it reports as skipped, and the run goes on.
+
+```yaml
+docevals:
+  execution:
+    allow: [frontmatter-commands]
+```
+
+Grant it only to a corpus whose editors you trust.
+[Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/) covers the risk.
 
 ## Plain-language checks manni docevals writes for you
 
 A `command` eval with an assertion and **no** `command` is a deterministic check you have described
-but not implemented. `manni docevals run`, or `manni docevals generate`, has your configured LLM write a small
-Node script for it. It saves the script beside the doc and records the command back into
-frontmatter:
+but not implemented. `manni docevals run`, or `manni docevals generate`, has your configured LLM
+write a small Node script for it. It saves the script beside the doc and records the command back
+into frontmatter:
 
 ```yaml
     - id: install-command-present
@@ -110,30 +119,25 @@ frontmatter:
       generated-assertion-hash: aefaa89e…
 ```
 
-The model is used **once**, at generation time. After that the check is fully deterministic, with no model
-in the loop and no per-run cost.
+The model is used **once**, at generation time. After that the check is fully deterministic, with
+no model in the loop and no per-run cost. The recorded command lives in page frontmatter, so it
+runs under the `frontmatter-commands` grant like any other.
 
 Three consequences worth internalising:
 
-- **The script is ordinary source.** It lands in the repo beside the page, shows up in pull requests,
-  and you can edit it by hand. Review it. A generated script that passes for the wrong reason is
-  worse than the ai eval it replaced, because it is now silent and cheap.
-- **`generated-assertion-hash` keeps them honest.** Edit the assertion and the hash no longer matches, so the
-  script regenerates rather than quietly checking the old thing.
-- **`--no-generate` turns it off**, which is what you want in CI where generation should not happen
-  implicitly.
+- **The script is ordinary source.** It lands in the repo beside the page, shows up in pull
+  requests, and you can edit it by hand. Review it. A generated script that passes for the wrong
+  reason is worse than the ai eval it replaced, because it is now silent and cheap.
+- **`generated-assertion-hash` keeps them honest.** Edit the assertion and the hash stops
+  matching, so the script regenerates rather than quietly checking the old thing.
+- **`--no-generate` turns it off**, which is what you want in CI where generation should not
+  happen implicitly.
 
 Already have ai evals that should have been code? [`promote`](/manni/docevals/adopt/promote-to-deterministic/)
 finds them.
 
-## Test the commands your docs present
-
-`tool:doc-detective` runs procedure tests embedded in a page, so a documented command that drifts
-from the code fails the build. That is how this site checks itself. See
-[Test your commands](/manni/docevals/evals/test-your-commands/).
-
 {/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
 
-{/* step {"description":"A page with a pre-generated check script passes deterministically.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}
+{/* step {"description":"A page with a pre-generated check script passes deterministically.","runShell":{"command":"manni docevals run docs/actions/find.mdx --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0],"stdio":"has-examples-heading"}} */}
 
-{/* step {"description":"A stale review date fails at error severity with a rule id and line.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1],"stdio":"/freshness\\/stale/"}} */}
+{/* step {"description":"A TODO marker fails at error severity with a rule id and line.","runShell":{"command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[1],"stdio":"/regex\\/found/"}} */}

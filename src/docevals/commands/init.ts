@@ -58,10 +58,9 @@ docevals:
     cacheDir: .manni/docevals/cache
 
   execution:
-    # Default deny. Grant only what this corpus needs, and only if you trust
-    # whoever can edit its pages:
-    #   frontmatter-commands  - command evals declared in page frontmatter
-    #   page-embedded-steps   - tool:doc-detective running steps in page bodies
+    # Default deny. Grant frontmatter-commands only if you trust whoever can
+    # edit this corpus's pages: it lets command evals declared in page
+    # frontmatter run.
     allow: []
 
   scripts:
@@ -77,18 +76,18 @@ docevals:
       examples:
         pass: Describes only shipped behavior.
         fail: Says "coming soon" or references an unreleased version.
-    fresh-enough:
-      assertion: Page was reviewed within the last year.
-      grader: tool:freshness
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
       options:
-        field: last-reviewed
-        max-age-days: 365
-      severity: warning
+        pattern: "\\\\b(TODO|TBD|FIXME)\\\\b"
+        match: not-contains
+      severity: error
 
   suites:
     default:
       target-pass-rate: 1.0 # regression suites target ~100%
-      evals: [no-future-promises, fresh-enough]
+      evals: [no-future-promises, no-todo-markers]
 `;
 
 export function runInit(cwd = process.cwd()): string {

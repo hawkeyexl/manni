@@ -1,25 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { resolve } from "node:path";
 import { extractJson } from "@hawkeyexl/inference";
-import {
-  collectFailures,
-  lastJsonBlob,
-} from "../../../src/docevals/graders/tools/doc-detective.js";
-import {
-  cosineSimilarity,
-  differentiationGrader,
-  wordFrequencies,
-} from "../../../src/docevals/graders/native/differentiation.js";
-import { valeGrader } from "../../../src/docevals/graders/tools/vale.js";
 import { renderMarkdown } from "../../../src/docevals/reporters/markdown.js";
 import { renderGithub } from "../../../src/docevals/reporters/github.js";
 import { runCalibrate, loadGoldenCases } from "../../../src/docevals/commands/calibrate.js";
-import { parseDocevalsConfig } from "../helpers/config.js";
-import { extractFrontmatter } from "../../../src/meta/index.js";
-import { resolvePage } from "../../../src/docevals/core/resolve.js";
-import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core/discover.js";
 import type { EngineReport } from "../../../src/docevals/core/engine.js";
-import type { ExecFn, GraderTarget } from "../../../src/docevals/graders/types.js";
+import type { GraderTarget } from "../../../src/docevals/graders/types.js";
 import type { EvalResult } from "../../../src/docevals/types.js";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
@@ -39,150 +25,22 @@ describe("extractJson", () => {
   });
 });
 
-describe("doc-detective output parsing", () => {
-  it("collects FAIL entries recursively", () => {
-    const blob = {
-      specs: [
-        {
-          tests: [
-            {
-              steps: [
-                { stepId: "a", result: "PASS" },
-                { stepId: "b", result: "FAIL", resultDescription: "link broken" },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-    const failures = collectFailures(blob);
-    expect(failures).toHaveLength(1);
-    expect(failures[0]).toEqual({ description: "b", detail: "link broken" });
-  });
-
-  it("finds the trailing JSON blob in mixed stdout", () => {
-    const stdout = 'Running tests...\nDone.\n{"summary": {"passed": 3}}';
-    expect(lastJsonBlob(stdout)).toEqual({ summary: { passed: 3 } });
-  });
-});
-
-describe("differentiation", () => {
-  it("cosine similarity behaves", () => {
-    const a = wordFrequencies("the quick brown fox");
-    expect(cosineSimilarity(a, a)).toBeCloseTo(1);
-    expect(cosineSimilarity(a, wordFrequencies("completely unrelated words entirely"))).toBe(0);
-  });
-
-  function target(file: string, body: string, config = DIFF_CONFIG): GraderTarget {
-    const content = `---\ntitle: x\neval-suite: s\n---\n${body}`;
-    const page: PageFile = {
-      file,
-      absPath: `/fake/${file}`,
-      content,
-      body,
-      frontmatter: extractFrontmatter(content, "markdown"),
-    };
-    const plan = resolvePage(page, config);
-    const ev = plan.evals[0];
-    if (ev === undefined) throw new Error("fixture resolved no evals");
-    return { plan, eval: ev };
-  }
-
-  const DIFF_CONFIG = parseDocevalsConfig(
-    [
-      "evals:",
-      "  distinct:",
-      "    grader: tool:differentiation",
-      "    options: { max-similarity: 0.9 }",
-      "suites:",
-      "  s: { evals: [distinct] }",
-    ].join("\n"),
-    "/fake/manni.config.yaml",
-  );
-
-  it("flags near-duplicate pages, passes distinct ones", async () => {
-    const same =
-      "The click action clicks an element on the page found by selector or display text.";
-    const findings = await differentiationGrader.grade({
-      targets: [
-        target("docs/a.md", same),
-        target("docs/b.md", same + " Extra word."),
-        target(
-          "docs/c.md",
-          "Completely different content about configuring continuous integration pipelines for scheduled runs.",
-        ),
-      ],
-      config: DIFF_CONFIG,
-      root: "/fake",
-      exec: () => {
-        throw new Error("differentiation must not exec");
-      },
-    });
-    const files = findings.map((f) => f.file).sort();
-    expect(files).toEqual(["docs/a.md", "docs/b.md"]);
-  });
-});
-
-describe("valeGrader", () => {
-  it("parses vale JSON and applies the severity map", async () => {
-    const config = parseDocevalsConfig(
-      [
-        "evals:",
-        "  style:",
-        "    grader: tool:vale",
-        "    severity-map: { error: warning, suggestion: notice }",
-        "suites:",
-        "  s: { evals: [style] }",
-      ].join("\n"),
-      "/fake/manni.config.yaml",
-    );
-    const content = "---\ntitle: x\neval-suite: s\n---\nBody.";
-    const page: PageFile = {
-      file: "docs/page.md",
-      absPath: "/fake/docs/page.md",
-      content,
-      body: stripFrontmatterBlock(content),
-      frontmatter: extractFrontmatter(content, "markdown"),
-    };
-    const plan = resolvePage(page, config);
-    const valeOutput = JSON.stringify({
-      "docs/page.md": [
-        { Check: "Vale.Spelling", Message: "Did you mean 'docs'?", Line: 3, Span: [5, 8], Severity: "error" },
-        { Check: "Style.Wordy", Message: "Too wordy", Line: 7, Severity: "suggestion" },
-      ],
-    });
-    const exec: ExecFn = () =>
-      Promise.resolve({ code: 1, stdout: valeOutput, stderr: "", timedOut: false });
-    const ev = plan.evals[0];
-    if (ev === undefined) throw new Error("fixture resolved no evals");
-    const findings = await valeGrader.grade({
-      targets: [{ plan, eval: ev }],
-      config,
-      root: "/fake",
-      exec,
-    });
-    expect(findings).toHaveLength(2);
-    expect(findings[0]).toMatchObject({ ruleId: "Vale.Spelling", severity: "warning", line: 3 });
-    expect(findings[1]).toMatchObject({ severity: "notice" });
-  });
-});
-
 describe("reporters", () => {
   const report: EngineReport = {
     pages: 1,
     evalResults: [
       {
-        evalName: "fresh-enough",
+        evalName: "no-todo-markers",
         type: "regression",
-        grader: "tool:freshness",
+        grader: "tool:regex",
         file: "docs/a.md",
         outcome: "fail",
         findings: [
           {
-            evalName: "fresh-enough",
+            evalName: "no-todo-markers",
             file: "docs/a.md",
-            ruleId: "freshness/stale",
-            message: "Page last reviewed 900 days ago (max 365)",
+            ruleId: "regex/found",
+            message: "Pattern /TODO/ found in body, expected absent",
             severity: "error",
             line: 4,
           },
@@ -213,14 +71,14 @@ describe("reporters", () => {
   it("markdown includes the suite table and findings", () => {
     const md = renderMarkdown(report);
     expect(md).toContain("| reference | 0 | 1 | 0 | 0% | 100% | ❌ |");
-    expect(md).toContain("**fresh-enough**");
-    expect(md).toContain("error:4: Page last reviewed");
+    expect(md).toContain("**no-todo-markers**");
+    expect(md).toContain("error:4: Pattern /TODO/ found");
   });
 
   it("github emits workflow annotations with escaped properties", () => {
     const gh = renderGithub(report);
     expect(gh).toContain(
-      "::error file=docs/a.md,line=4,title=manni docevals%3A fresh-enough::Page last reviewed 900 days ago (max 365)",
+      "::error file=docs/a.md,line=4,title=manni docevals%3A no-todo-markers::Pattern /TODO/ found in body, expected absent",
     );
     expect(gh).toContain("## manni docevals results");
   });

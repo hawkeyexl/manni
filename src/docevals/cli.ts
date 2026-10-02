@@ -215,7 +215,7 @@ export function buildProgram(): Command {
       // frontmatter-commands docs/**` would silently swallow the glob and run
       // over the default file set instead. Repeat the flag to grant twice.
       "--allow-execution <kind>",
-      "Grant content-authored execution: frontmatter-commands | page-embedded-steps (repeat to grant both)",
+      "Grant content-authored execution: frontmatter-commands",
       collectGrant,
       [],
     )
@@ -241,7 +241,7 @@ export function buildProgram(): Command {
     .option("--suite <name>", "Run only evals in this suite")
     .option(
       "--since <ref>",
-      "Evaluate only pages that changed between this git ref and HEAD; corpus-wide graders still see every page",
+      "Evaluate only pages that changed between this git ref and HEAD",
     )
     .option(
       "--max-turns <n>",

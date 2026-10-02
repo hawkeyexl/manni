@@ -24,7 +24,7 @@
  * The rule is meta's, and so is every helper that decides it: `keyHome`,
  * `offerExternalHomes`, `externalWriteWarnings` and `spliceManifestValue`,
  * all reached through `src/meta/internal.ts`. What is docevals' own is the
- * preference, which comes from the evals draft rather than from a validator:
+ * preference, which comes from the evals vocabulary rather than a validator:
  * the vocabulary this tool implements marks its three keys, so the answer is
  * in the schema docevals already bundles.
  */
@@ -61,13 +61,13 @@ export const EVALS_KEY = "evals";
 export const META_PROVENANCE_KEY = "meta-provenance";
 
 /**
- * Whether the evals draft marks `key` as belonging in external metadata.
+ * Whether `manni:evals:1.0.0` marks `key` as belonging in external metadata.
  *
- * Read from the bundled draft rather than from a resolved schema set. Every
- * docevals page is validated against that draft (`core/resolve.ts`), so it is
+ * Read from the bundled vocabulary rather than from a resolved schema set.
+ * Every docevals page is validated against it (`core/resolve.ts`), so it is
  * the schema that governs these keys, and a preference read from it cannot
- * disagree with the one `meta validate` reads. A key the draft does not mark
- * stays on the page with no warning.
+ * disagree with the one `meta validate` reads. A key it does not mark stays
+ * on the page with no warning.
  */
 export function prefersExternal(key: string): boolean {
   const properties = frontmatterSchema.properties;

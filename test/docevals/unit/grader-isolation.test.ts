@@ -230,11 +230,11 @@ describe("the engine's invocation boundary", () => {
     expect(calls[0]).toEqual(["alpha", "alpha"]);
   });
 
-  // A corpus grader's population is every page carrying that eval, and the
-  // exemption ADR 01040 depends on. Grouping must not have narrowed it.
-  it("hands a corpus grader every page carrying its eval at once", async () => {
+  // A batch grader is one invocation per configuration, so it sees every page
+  // carrying that eval. Grouping must not have narrowed it to one page.
+  it("hands a batch grader every page carrying its eval at once", async () => {
     const kind = "tool:isolation-h";
-    const { calls } = fakeGrader(kind, [], "corpus");
+    const { calls } = fakeGrader(kind, [], "batch");
     const root = scaffold(kind, ["alpha"]);
     writeFileSync(
       join(root, "docs", "second.md"),
@@ -246,6 +246,6 @@ describe("the engine's invocation boundary", () => {
 
     expect(calls).toHaveLength(1);
     expect(calls[0]).toHaveLength(2);
-    expect(graderFor(kind)?.mode).toBe("corpus");
+    expect(graderFor(kind)?.mode).toBe("batch");
   });
 });

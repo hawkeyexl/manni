@@ -236,9 +236,10 @@ describe("runPromote", () => {
   it("needs no provider when nothing is ai-graded", async () => {
     const root = scaffold({
       pageEvals: [
-        "  - id: fresh-enough",
-        "    assertion: The page was reviewed recently.",
-        "    grader: tool:freshness",
+        "  - id: no-todo-markers",
+        "    assertion: The page carries no TODO markers.",
+        "    grader: tool:regex",
+        "    options: { pattern: TODO, match: not-contains }",
       ],
     });
     delete process.env.ANTHROPIC_API_KEY;

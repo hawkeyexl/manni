@@ -21,7 +21,8 @@ import {
   type OptionCheck,
   type Options,
 } from "../options.js";
-import { readTarget } from "../../core/target.js";
+import { readTarget, type EvalTarget } from "../../core/target.js";
+import type { PageFile } from "../../core/discover.js";
 import { errorMessage } from "../../../shared/errors.js";
 
 interface RegexOptions {
@@ -40,6 +41,22 @@ function lineAt(text: string, index: number): number {
     if (text[i] === "\n") line++;
   }
   return line;
+}
+
+/**
+ * Lines of the file above the text `target` selects, so a finding names the
+ * line in the file rather than in the selection. The github format writes
+ * `line=` from it.
+ *
+ * The body is the file with its frontmatter block cut off the front, so it
+ * starts that block's height down. `raw` is the file itself. The serialized
+ * frontmatter and a companion file have no place in the page to count from,
+ * so their lines stay their own.
+ */
+function linesAbove(target: EvalTarget | undefined, page: PageFile): number {
+  if (target !== undefined && target !== "body") return 0;
+  if (!page.content.endsWith(page.body)) return 0;
+  return lineAt(page.content, page.content.length - page.body.length) - 1;
 }
 
 export const regexGrader: Grader = {
@@ -99,6 +116,7 @@ export const regexGrader: Grader = {
         }
 
         const text = selected.text;
+        const offset = linesAbove(ev.target, plan.page);
         // Always count with /g so `count:N` is a count and not a boolean, then
         // read the first match's offset for the line number.
         const all = [...text.matchAll(new RegExp(pattern, flags.includes("g") ? flags : `${flags}g`))];
@@ -113,14 +131,14 @@ export const regexGrader: Grader = {
             severity: ev.severity,
             line: 1,
           });
-        } else if (match === "not-contains" && all.length > 0) {
+        } else if (match === "not-contains" && first !== undefined) {
           findings.push({
             evalName: ev.name,
             file: plan.page.file,
             ruleId: "regex/found",
             message: `Pattern /${pattern}/${flags} found in ${selected.label}, expected absent`,
             severity: ev.severity,
-            line: lineAt(text, first?.index ?? 0),
+            line: offset + lineAt(text, first.index),
           });
         } else if (match.startsWith("count:")) {
           const want = Number(match.slice("count:".length));
@@ -131,7 +149,7 @@ export const regexGrader: Grader = {
               ruleId: "regex/count",
               message: `Pattern /${pattern}/${flags} matched ${String(all.length)} time(s) in ${selected.label}, expected ${String(want)}`,
               severity: ev.severity,
-              line: all.length > 0 ? lineAt(text, first?.index ?? 0) : 1,
+              line: first === undefined ? 1 : offset + lineAt(text, first.index),
             });
           }
         }

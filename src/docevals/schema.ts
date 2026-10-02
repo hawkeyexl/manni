@@ -1,20 +1,20 @@
 /**
- * The page vocabulary manni docevals implements: `manni:evals:1.0.0-proposal.4`,
- * the evals draft proposal 0023 publishes for review. Pages are validated
- * against the draft itself, imported from `docs/proposals/` and bundled into
- * the build, so the built CLI never reads `docs/` at runtime.
+ * The page vocabulary manni docevals implements: `manni:evals:1.0.0`, the
+ * built-in schema the metadata tool publishes under `src/meta/schemas/`.
+ * Pages are validated against that schema itself, imported and bundled into
+ * the build, so docevals and `manni meta validate` read the same bytes.
  *
  * docevals ships no copy of the schema. A copy is a second artifact to keep in
- * step with the draft, and the copies it used to publish drifted from it: they
- * kept `eval-provenance` and the `info` severity after proposal 0046 removed
- * both. A consumer who wants to validate pages with `manni meta validate`
- * copies the draft into their repository, as the citations vocabulary's
- * consumers do, or validates programmatically against the object below.
+ * step, and the copies it used to publish drifted from the draft they copied:
+ * they kept `eval-provenance` and the `info` severity after proposal 0046
+ * removed both. A consumer who wants to validate pages names
+ * `manni:evals:1.0.0` to `manni meta validate`, or validates programmatically
+ * against the object below.
  */
-import schema from "../../docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json" with { type: "json" };
+import schema from "../meta/schemas/evals/1.0.0.json" with { type: "json" };
 
-/** The evals draft, for validators that accept an inline schema. */
+/** The evals vocabulary, for validators that accept an inline schema. */
 export const frontmatterSchema = schema as Record<string, unknown>;
 
-/** The draft's `$id`: `manni:evals:1.0.0-proposal.4`. */
+/** The vocabulary's `$id`: `manni:evals:1.0.0`. */
 export const FRONTMATTER_SCHEMA_ID: string = schema.$id;

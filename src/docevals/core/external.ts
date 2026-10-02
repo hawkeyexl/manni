@@ -4,11 +4,10 @@
  * (proposal 0041).
  *
  * The evals vocabulary marks `evals`, `eval-suite` and `eval-skip`
- * `x-manni-location: external` from `1.0.0-proposal.4`, ai-context marks
- * `provenance` and `meta-provenance`, and stewardship marks `last-reviewed`.
- * A corpus that took `manni meta relocate` up on that keeps those values in a
- * manifest, and a tool that read frontmatter alone would report every page as
- * declaring nothing.
+ * `x-manni-location: external` in `manni:evals:1.0.0`, and ai-context marks
+ * `provenance` and `meta-provenance`. A corpus that took `manni meta
+ * relocate` up on that keeps those values in a manifest, and a tool that read
+ * frontmatter alone would report every page as declaring nothing.
  *
  * Reading is meta's merge, not a second loader, exactly as `cite`'s sidecars
  * are. `loadExternalMetadata` reads each manifest once per run, behind the
@@ -16,9 +15,9 @@
  * what a manifest supplies. So the join rules, the ownership rules and the
  * per-item lines are the ones `meta validate` already applies, and the merged
  * result is handed back as the page's own `frontmatter`: every reader
- * downstream — resolution, the freshness grader, the self-preference check,
- * `target: frontmatter` — sees the values where their location puts them,
- * without knowing a manifest exists.
+ * downstream — resolution, the self-preference check, `target: frontmatter` —
+ * sees the values where their location puts them, without knowing a manifest
+ * exists.
  *
  * Two things are docevals' own, because docevals *writes* eval keys where
  * meta only reads them:
@@ -60,16 +59,15 @@ import type { PageFile } from "./discover.js";
 
 /**
  * The three page keys the evals vocabulary claims, and the only ones these
- * refusals govern. A manifest owning `last-reviewed` or `provenance` is
- * nobody's problem here: docevals reads those and writes neither.
+ * refusals govern. A manifest owning `provenance` is nobody's problem here:
+ * docevals reads it and never writes it.
  */
 export const EVAL_KEYS = ["evals", "eval-suite", "eval-skip"] as const;
 
 /**
  * Every key docevals reads that a manifest may own, and so the only manifests
- * this tool loads: the evals vocabulary's three, ai-context's machine
- * attribution (proposal 0046), and stewardship's review date, which is the
- * freshness grader's default field.
+ * this tool loads: the evals vocabulary's three and ai-context's machine
+ * attribution (proposal 0046).
  *
  * A manifest owning none of them is a sibling tool's business. Loading it
  * anyway would make a corpus fail on a manifest docevals has no use for, and
@@ -80,7 +78,6 @@ export const EXTERNAL_KEYS: readonly string[] = [
   ...EVAL_KEYS,
   "provenance",
   "meta-provenance",
-  "last-reviewed",
 ];
 
 /** Where a value a manifest supplied lives, and what the page duplicates. */

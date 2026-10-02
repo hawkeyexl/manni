@@ -19,8 +19,8 @@ const BODY = "\n# Install\n\nRun the installer.\n";
 
 /**
  * A corpus with one page in a suite of two deterministic evals: one that
- * always passes and one that always fails. Both are freshness checks against
- * fixed dates, so nothing here needs a provider or a subprocess.
+ * always passes and one that always fails. Both are regex checks against a
+ * fixed body, so nothing here needs a provider or a subprocess.
  */
 function scaffold(): string {
   const root = mkdtempSync(join(tmpdir(), "manni-docevals-select-"));
@@ -30,7 +30,6 @@ function scaffold(): string {
     [
       "---",
       "title: Install",
-      "last-reviewed: 2020-01-01",
       "evals:",
       "  - use: always-passes",
       "  - use: always-fails",
@@ -49,16 +48,17 @@ function scaffold(): string {
       "    suite: reference",
       "  evals:",
       "    always-passes:",
-      "      assertion: The page was reviewed within the last century.",
-      "      grader: tool:freshness",
+      "      assertion: The page names the installer.",
+      "      grader: tool:regex",
       "      options:",
-      "        max-age-days: 100000",
+      "        pattern: installer",
       "      severity: error",
       "    always-fails:",
-      "      assertion: The page was reviewed in the last day.",
-      "      grader: tool:freshness",
+      "      assertion: The page never names the installer.",
+      "      grader: tool:regex",
       "      options:",
-      "        max-age-days: 1",
+      "        pattern: installer",
+      "        match: not-contains",
       "      severity: error",
       "  suites:",
       "    reference:",

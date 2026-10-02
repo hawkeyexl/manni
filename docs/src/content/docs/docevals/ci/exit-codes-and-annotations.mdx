@@ -2,7 +2,7 @@
 title: Exit codes and annotations
 description: What 0, 1, and 2 mean, who each routes to, and how failures land on the right line.
 type: how-to
-last-updated: 2026-09-13
+last-updated: 2026-10-02
 ---
 
 Three exit codes, and the distinction between two of them is the difference between a check people
@@ -111,7 +111,7 @@ converts a rotting queue into blocked contributors. See
 annotates the diff and produces a job summary.
 
 ```text
-::error file=docs/actions/goTo.mdx,line=4,title=manni docevals%3A fresh-enough::Page last reviewed 977 days ago (max 365)
+::error file=docs/actions/goTo.mdx,line=14,title=manni docevals%3A no-todo-markers::Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
 ```
 
 Severity maps to the annotation level:
@@ -123,7 +123,7 @@ Severity maps to the annotation level:
 | `notice` | `::notice` |
 
 Values are escaped per GitHub's rules. That covers `%`, CR and LF in data, plus `:` and `,` in
-properties, which is why the title renders as `manni docevals%3A fresh-enough`.
+properties, which is why the title renders as `manni docevals%3A no-todo-markers`.
 
 ### Judged failures annotate the file
 
@@ -141,7 +141,7 @@ That reasoning is what a contributor acts on. It is only as good as the assertio
 
 ```console
 Suites
-  reference: 4/5 passed — 60% vs target 100% below target (1 skipped)
+  reference: 1/2 passed — 0% vs target 100% below target (1 skipped)
 ```
 
 Exit `1`, even if no individual eval errored. A capability suite left at the default target of `1.0`
@@ -155,7 +155,7 @@ a CI invocation: **while either is active, suite targets are reported but not en
 
 ```console
 Suites
-  reference: 4/4 passed — 100% vs target 100% partial — filtered run, target not evaluated (1 skipped)
+  reference: 1/1 passed — 100% vs target 100% partial — filtered run, target not evaluated
 ```
 
 That is deliberate. A run narrowed to one passing eval out of a suite of twelve would otherwise
@@ -178,12 +178,12 @@ Full behavior in
 
 {/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
 
-{/* step {"description":"Exit 0: every eval passes.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/find.mdx --deterministic-only --no-generate","exitCodes":[0]}} */}
+{/* step {"description":"Exit 0: every eval passes.","runShell":{"command":"manni docevals run docs/actions/find.mdx --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0]}} */}
 
-{/* step {"description":"Exit 1: a finding, or a suite below its target.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1],"stdio":"below target"}} */}
+{/* step {"description":"Exit 1: a finding, or a suite below its target.","runShell":{"command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[1],"stdio":"below target"}} */}
 
 {/* step {"description":"Exit 2: an operational error, distinct from a finding.","runShell":{"command":"manni docevals run -c does-not-exist.yaml","exitCodes":[2]}} */}
 
-{/* step {"description":"github format emits an ::error with file and line for a finding with a known line.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate --format github","exitCodes":[1],"stdio":"/::error file=.*,line=4,/"}} */}
+{/* step {"description":"github format emits an ::error with file and line for a finding with a known line.","runShell":{"command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate --format github","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[1],"stdio":"/::error file=docs/actions/goTo.mdx,line=14,/"}} */}
 
-{/* step {"description":"An eval renamed out from under a pipeline exits 2, so the job stops rather than passing over nothing.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages --deterministic-only --eval renamed-away","exitCodes":[2],"stdio":"matched no evals"}} */}
+{/* step {"description":"An eval renamed out from under a pipeline exits 2, so the job stops rather than passing over nothing.","runShell":{"command":"manni docevals run . --deterministic-only --no-generate --eval renamed-away","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[2],"stdio":"matched no evals"}} */}

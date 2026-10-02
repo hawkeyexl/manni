@@ -1,12 +1,12 @@
 /**
- * Pages are validated against the evals draft proposal 0023 publishes for
- * review, `manni:evals:1.0.0-proposal.4`, read from `docs/proposals/` and
- * bundled into the build. docevals ships no schema copy of its own: a copy
- * would be a second artifact to keep in step with the draft, and it drifted
- * once (its severity scale and its `eval-provenance` outlived the draft).
+ * Pages are validated against the shipped evals vocabulary,
+ * `manni:evals:1.0.0`, the built-in schema the metadata tool publishes and
+ * docevals imports. docevals ships no schema copy of its own: a copy would be
+ * a second artifact to keep in step, and it drifted once (its severity scale
+ * and its `eval-provenance` outlived the draft it copied).
  *
  * These tests also pin the *vocabulary*, so the ladder below is ported from
- * that proposal's own `ladders/evals-examples.cjs`. The negatives are the
+ * proposal 0023's own `ladders/evals-examples.cjs`. The negatives are the
  * migration guard: every 0.1 spelling has to fail loudly, because a page that
  * silently resolves to defaults is the failure mode this whole rename exists
  * to avoid.
@@ -23,12 +23,26 @@ import {
 } from "../../../src/docevals/schema.js";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
-const DRAFT = "docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json";
+const SHIPPED = "src/meta/schemas/evals/1.0.0.json";
 
 describe("the page schema", () => {
-  it("is the evals draft, byte for byte", () => {
-    expect(frontmatterSchema).toEqual(JSON.parse(readFileSync(resolve(ROOT, DRAFT), "utf8")));
-    expect(FRONTMATTER_SCHEMA_ID).toBe("manni:evals:1.0.0-proposal.4");
+  it("is the shipped evals vocabulary, byte for byte", () => {
+    expect(frontmatterSchema).toEqual(JSON.parse(readFileSync(resolve(ROOT, SHIPPED), "utf8")));
+    expect(FRONTMATTER_SCHEMA_ID).toBe("manni:evals:1.0.0");
+  });
+
+  // `resolve.ts` and `external.ts` rely on exactly these three keys living
+  // in external metadata. A vocabulary that moved one would change where
+  // docevals reads and writes it.
+  it("marks the three eval keys, and only those, external", () => {
+    const properties = frontmatterSchema.properties as Record<
+      string,
+      Record<string, unknown>
+    >;
+    const external = Object.entries(properties)
+      .filter(([, def]) => def["x-manni-location"] === "external")
+      .map(([key]) => key);
+    expect(external).toEqual(["evals", "eval-suite", "eval-skip"]);
   });
 
   it("ships no copy of its own", () => {
@@ -44,7 +58,7 @@ describe("the page schema", () => {
   it("validates the fixture corpus when passed to manni meta as a file path", async () => {
     const run = await runValidate({
       inputs: ["test/docevals/fixtures/pages/**/*.{md,mdx}"],
-      cliSchemas: [resolve(ROOT, DRAFT)],
+      cliSchemas: [resolve(ROOT, SHIPPED)],
       cwd: ROOT,
     });
     expect(run.results.length).toBeGreaterThan(0);
@@ -54,20 +68,6 @@ describe("the page schema", () => {
     expect(failures).toEqual([]);
   }, 30000);
 
-  it("full deterministic run validates fixtures via the tool:docmeta eval", async () => {
-    const { runEvals } = await import("../../../src/docevals/core/engine.js");
-    const report = await runEvals({
-      cwd: ROOT,
-      paths: ["test/docevals/fixtures/pages"],
-      deterministicOnly: true,
-      generate: false,
-    });
-    const docmetaResults = report.evalResults.filter(
-      (r) => r.evalName === "frontmatter-valid",
-    );
-    expect(docmetaResults.length).toBeGreaterThan(0);
-    for (const r of docmetaResults) expect(r.outcome).toBe("pass");
-  }, 60000);
 });
 
 /**

@@ -4,4 +4,4 @@ title: Dated
 
 # Dated
 
-Its review date lives in the collection's manifest.
+Its suite lives in the collection's manifest.

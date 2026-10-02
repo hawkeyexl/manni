@@ -3,21 +3,26 @@
  * from `src/shared/severity.ts`. A flag or key two domains both have carries
  * the same name and the same values, so `info` (the scale docevals was
  * imported with) is an unknown value everywhere a user can write one: an eval
- * in the config, a `severity-map`, and an eval on a page.
+ * in the config and an eval on a page.
+ *
+ * `severity-map` mapped a wrapped tool's own scale onto this one. No
+ * registered grader has a scale of its own, so the key is gone from the
+ * config, and on a page, where the shared vocabulary still allows it, it is a
+ * warning that it does nothing.
  */
 import { stripVTControlCharacters } from "node:util";
-import { describe, it, expect } from "vitest";
+import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 import { SEVERITIES } from "../../../src/shared/severity.js";
 import { parseDocevalsConfig } from "../helpers/config.js";
 import { resolvePage } from "../../../src/docevals/core/resolve.js";
 import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core/discover.js";
 import { extractFrontmatter } from "../../../src/meta/index.js";
 import { isValidProposal } from "../../../src/docevals/fill/prompt.js";
-import { valeGrader } from "../../../src/docevals/graders/tools/vale.js";
-import type { ExecFn } from "../../../src/docevals/graders/types.js";
 import { render } from "../../../src/docevals/reporters/index.js";
 import type { EngineReport } from "../../../src/docevals/core/engine.js";
 import { DocevalsError } from "../../../src/docevals/types.js";
+import { resetWarnings } from "../../../src/shared/warn.js";
+import { programName } from "../../../src/shared/program-name.js";
 
 function page(frontmatterYaml: string): PageFile {
   const content = `---\n${frontmatterYaml}\n---\nBody.`;
@@ -33,24 +38,17 @@ function page(frontmatterYaml: string): PageFile {
 const EMPTY = parseDocevalsConfig("");
 
 describe("severity in the config", () => {
-  it("accepts notice on an eval and in a severity-map", () => {
+  it("accepts notice on an eval", () => {
     const config = parseDocevalsConfig(
-      [
-        "evals:",
-        "  style:",
-        "    grader: tool:vale",
-        "    severity: notice",
-        "    severity-map: { suggestion: notice }",
-      ].join("\n"),
+      ["evals:", "  style:", "    grader: tool:regex", "    severity: notice"].join("\n"),
     );
     expect(config.evals.style?.severity).toBe("notice");
-    expect(config.evals.style?.severityMap).toEqual({ suggestion: "notice" });
   });
 
   it("rejects info on an eval as an ordinary schema error", () => {
     expect(() =>
       parseDocevalsConfig(
-        ["evals:", "  style:", "    grader: tool:vale", "    severity: info"].join(
+        ["evals:", "  style:", "    grader: tool:regex", "    severity: info"].join(
           "\n",
         ),
       ),
@@ -62,24 +60,71 @@ describe("severity in the config", () => {
     );
   });
 
-  it("rejects info in a severity-map", () => {
+  it("refuses severity-map as an unknown key, naming where it is", () => {
     expect(() =>
       parseDocevalsConfig(
         [
           "evals:",
           "  style:",
-          "    grader: tool:vale",
-          "    severity-map: { suggestion: info }",
+          "    grader: tool:regex",
+          "    severity-map: { suggestion: notice }",
         ].join("\n"),
       ),
-    ).toThrow(/\/docevals\/evals\/style\/severity-map\/suggestion: must be equal to one of the allowed values/);
+    ).toThrow(
+      new DocevalsError(
+        "Invalid config in /fake/manni.config.yaml:\n" +
+          '  /docevals/evals/style: unknown key "severity-map"',
+      ),
+    );
+  });
+});
+
+describe("severity-map on a page", () => {
+  let stderr: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    resetWarnings();
+    stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+  });
+  afterEach(() => {
+    stderr.mockRestore();
+  });
+
+  const MAPPED = [
+    "evals:",
+    "  - id: quiet",
+    "    grader: tool:regex",
+    "    options: { pattern: Body }",
+    "    severity-map: { suggestion: notice }",
+  ].join("\n");
+
+  it("warns once that it has no effect, and still resolves the eval", () => {
+    const first = resolvePage(page(MAPPED), EMPTY);
+    resolvePage(page(MAPPED), EMPTY);
+    expect(first.problems).toEqual([]);
+    expect(first.evals.map((e) => e.name)).toEqual(["quiet"]);
+    expect(stderr.mock.calls).toEqual([
+      [
+        `${programName()}: docs/page.md: eval "quiet" sets severity-map, ` +
+          "which no registered grader reads; it has no effect.\n",
+      ],
+    ]);
+  });
+
+  it("leaves an unregistered grader's eval to the usage error", () => {
+    resolvePage(page(MAPPED.replace("tool:regex", "tool:freshness")), EMPTY);
+    expect(stderr).not.toHaveBeenCalled();
+  });
+
+  it("says nothing for an eval that does not set it", () => {
+    resolvePage(page("evals:\n  - id: plain\n    grader: tool:regex"), EMPTY);
+    expect(stderr).not.toHaveBeenCalled();
   });
 });
 
 describe("severity on a page", () => {
   it("accepts notice on an inline eval", () => {
     const plan = resolvePage(
-      page("evals:\n  - id: quiet\n    grader: tool:freshness\n    severity: notice"),
+      page("evals:\n  - id: quiet\n    grader: tool:regex\n    severity: notice"),
       EMPTY,
     );
     expect(plan.problems).toEqual([]);
@@ -88,7 +133,7 @@ describe("severity on a page", () => {
 
   it("reports info as a schema error on the page", () => {
     const plan = resolvePage(
-      page("evals:\n  - id: quiet\n    grader: tool:freshness\n    severity: info"),
+      page("evals:\n  - id: quiet\n    grader: tool:regex\n    severity: info"),
       EMPTY,
     );
     expect(plan.evals).toEqual([]);
@@ -111,36 +156,6 @@ describe("severity fill proposes", () => {
   });
 });
 
-describe("vale's default severity map", () => {
-  it("maps a suggestion to notice", async () => {
-    const config = parseDocevalsConfig(
-      ["evals:", "  style:", "    grader: tool:vale", "suites:", "  s: { evals: [style] }"].join(
-        "\n",
-      ),
-    );
-    const plan = resolvePage(page("eval-suite: s"), config);
-    const style = plan.evals[0];
-    if (style === undefined) throw new Error("the suite resolved no eval");
-    const exec: ExecFn = () =>
-      Promise.resolve({
-        code: 1,
-        stdout: JSON.stringify({
-          "docs/page.md": [{ Check: "Style.Wordy", Message: "Too wordy", Line: 7, Severity: "suggestion" }],
-        }),
-        stderr: "",
-        timedOut: false,
-      });
-    const findings = await valeGrader.grade({
-      targets: [{ plan, eval: style }],
-      config,
-      root: "/fake",
-      exec,
-    });
-    expect(findings).toHaveLength(1);
-    expect(findings[0]).toMatchObject({ severity: "notice" });
-  });
-});
-
 describe("reporters", () => {
   const REPORT: EngineReport = {
     pages: 1,
@@ -148,7 +163,7 @@ describe("reporters", () => {
       {
         evalName: "style",
         type: "regression",
-        grader: "tool:vale",
+        grader: "tool:regex",
         file: "docs/page.md",
         outcome: "fail",
         findings: [

@@ -1,7 +1,7 @@
 /**
  * `--since <ref>` scoping (ADR 01040).
  *
- * Three ways this feature fails without saying so, and every test here exists
+ * Two ways this feature fails without saying so, and every test here exists
  * for one of them.
  *
  * 1. **Path reconciliation.** `git diff --name-only` prints paths relative to
@@ -9,12 +9,7 @@
  *    They differ the moment the config lives in a subdirectory — and comparing
  *    them anyway does not throw, it just matches nothing, so every page reads
  *    as unchanged and the run exits 0 having evaluated nothing.
- * 2. **Corpus graders.** `GraderContext` carries targets, not a page list, so
- *    `tool:differentiation` builds its comparison population from what it is
- *    handed. `gradeGroup` returns `[]` below two targets, and no findings is a
- *    *pass* — so narrowing a corpus grader's input silently converts the check
- *    into a pass, by default, in CI. Corpus graders are therefore exempt.
- * 3. **Quoting.** Without `-z`, `core.quotePath` C-escapes non-ASCII paths and
+ * 2. **Quoting.** Without `-z`, `core.quotePath` C-escapes non-ASCII paths and
  *    they stop matching, silently.
  *
  * Everything is driven through the injected `ExecFn`; no test here runs git.
@@ -237,16 +232,17 @@ describe("changedFilesSince: failure triage", () => {
 const CONFIG_EVALS = [
   "  evals:",
   "    always-passes:",
-  "      assertion: The page was reviewed within the last century.",
-  "      grader: tool:freshness",
+  "      assertion: The page has body text.",
+  "      grader: tool:regex",
   "      options:",
-  "        max-age-days: 100000",
+  "        pattern: Body text",
   "      severity: error",
   "    always-fails:",
-  "      assertion: The page was reviewed in the last day.",
-  "      grader: tool:freshness",
+  "      assertion: The page has no body text.",
+  "      grader: tool:regex",
   "      options:",
-  "        max-age-days: 1",
+  "        pattern: Body text",
+  "        match: not-contains",
   "      severity: error",
   "  suites:",
   "    reference:",
@@ -263,7 +259,6 @@ function page(evals: string[], extra: string[] = []): string {
   return [
     "---",
     "title: A page",
-    "last-reviewed: 2020-01-01",
     ...extra,
     "evals:",
     ...evals.map((e) => `  - use: ${e}`),
@@ -309,69 +304,6 @@ function scaffold(configDir = ""): { root: string; cwd: string } {
     ].join("\n"),
   );
   return { root, cwd };
-}
-
-/** Three near-identical pages, so `tool:differentiation` has something to say. */
-function corpusScaffold(): string {
-  const root = mkdtempSync(join(tmpdir(), "manni-docevals-since-corpus-"));
-  mkdirSync(join(root, "docs"), { recursive: true });
-  const body = [
-    "",
-    "# Endpoint",
-    "",
-    "This endpoint accepts a request and returns a response.",
-    "Send the request with the required headers and read the response body.",
-    "",
-  ].join("\n");
-  const pages: [string, string[]][] = [
-    ["a.md", ["distinct"]],
-    ["b.md", ["distinct", "always-passes"]],
-    ["c.md", ["distinct"]],
-  ];
-  for (const [name, evals] of pages) {
-    writeFileSync(
-      join(root, "docs", name),
-      [
-        "---",
-        "title: Endpoint",
-        "last-reviewed: 2020-01-01",
-        "evals:",
-        ...evals.map((e) => `  - use: ${e}`),
-        "---",
-        body,
-      ].join("\n"),
-    );
-  }
-  writeFileSync(
-    join(root, "manni.config.yaml"),
-    [
-      "collections:",
-      "  - name: pages",
-      '    paths: ["docs/**/*.md"]',
-      "docevals:",
-      "  defaults:",
-      "    suite: reference",
-      "  evals:",
-      "    distinct:",
-      "      assertion: Sibling pages describe different things.",
-      "      grader: tool:differentiation",
-      "      options:",
-      "        max-similarity: 0.5",
-      "      severity: error",
-      "    always-passes:",
-      "      assertion: The page was reviewed within the last century.",
-      "      grader: tool:freshness",
-      "      options:",
-      "        max-age-days: 100000",
-      "      severity: error",
-      "  suites:",
-      "    reference:",
-      "      target-pass-rate: 1.0",
-      "      evals: [distinct, always-passes]",
-      "",
-    ].join("\n"),
-  );
-  return root;
 }
 
 /** A run wired to a fake git that reports exactly `changed` (repo-relative). */
@@ -483,47 +415,6 @@ describe("--since: suite enforcement", () => {
     expect(report.since).toBeUndefined();
     expect(report.suites[0]?.partial).toBeUndefined();
     expect(report.exitCode).toBe(1);
-  });
-});
-
-describe("--since: corpus graders are exempt", () => {
-  // `GraderContext` carries targets, not pages, so narrowing the targets
-  // narrows the comparison population. `gradeGroup` bails below two targets
-  // and returns no findings — and no findings is a *pass*. Scoping would
-  // therefore turn this check green by default, in CI, silently.
-  it("compares a changed page against unchanged siblings", async () => {
-    const root = corpusScaffold();
-    const report = await run(root, ["docs/a.md"]).report;
-
-    const a = report.evalResults.find(
-      (r) => r.file === "docs/a.md" && r.evalName === "distinct",
-    );
-    expect(a?.outcome).toBe("fail");
-    expect(a?.findings?.[0]?.message).toMatch(/similar to docs\/(b|c)\.md/);
-    expect(report.exitCode).toBe(1);
-  });
-
-  it("keeps a corpus eval on an unchanged page, but drops its other evals", async () => {
-    const root = corpusScaffold();
-    const report = await run(root, ["docs/a.md"]).report;
-
-    // b.md did not change: its corpus eval survives, its freshness eval does not.
-    const onB = report.evalResults.filter((r) => r.file === "docs/b.md");
-    expect(onB.map((r) => r.evalName)).toEqual(["distinct"]);
-  });
-
-  it("produces the same verdicts as the unscoped run", async () => {
-    const root = corpusScaffold();
-    const scoped = await run(root, ["docs/a.md"]).report;
-    const whole = await runEvals({ cwd: root, generate: false });
-
-    const distinct = (r: EngineReport) =>
-      r.evalResults
-        .filter((x) => x.evalName === "distinct")
-        .map((x) => `${x.file} ${x.outcome}`)
-        .sort();
-    expect(distinct(scoped)).toEqual(distinct(whole));
-    expect(distinct(scoped)).toHaveLength(3);
   });
 });
 
@@ -666,6 +557,27 @@ describe("--since: the CI reporters say what was scoped", () => {
     });
     expect(gh).toContain("::notice title=manni docevals::");
     expect(gh).toContain("No pages changed since origin/main");
+  });
+
+  // Every grader is scoped now, so the scope line is the whole story. A
+  // sentence about graders that still saw every page would name none.
+  it("states the scope in one sentence in every format", () => {
+    const scoped = {
+      ...base,
+      since: { ref: "origin/main", pagesSelected: 2, pagesTotal: 40 },
+    };
+    expect(renderMarkdown(scoped)).toContain(
+      "_Scoped to 2 of 40 page(s) changed since `origin/main`._",
+    );
+    expect(renderGithub(scoped)).toContain(
+      "::notice title=manni docevals::Scoped to 2 of 40 page(s) changed since origin/main.",
+    );
+    expect(renderPretty(scoped)).toContain(
+      "Scoped to 2 of 40 page(s) changed since origin/main.",
+    );
+    for (const out of [renderMarkdown(scoped), renderGithub(scoped), renderPretty(scoped)]) {
+      expect(out).not.toContain("Corpus-wide");
+    }
   });
 
   it("says nothing at all when --since was not used", () => {

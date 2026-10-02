@@ -4,12 +4,14 @@ description: Navigate to a specified URL.
 last-reviewed: 2024-01-10
 eval-suite: reference
 evals:
-  - use: fresh-enough
+  - use: no-todo-markers
     severity: error
 ---
 
 
 The `goTo` action navigates the browser to a specified URL. This is typically used to start a test at a specific page or navigate between pages during a test.
+
+TBD: say which page `goTo` waits for before the next step runs.
 
 You can specify the target URL directly as a string, or use an object for more options:
 

@@ -2,7 +2,7 @@
 title: Regression vs capability
 description: Which type an eval should be, and why the default is regression.
 type: concept
-last-updated: 2026-09-13
+last-updated: 2026-10-02
 ---
 
 Every eval has a `type`. It changes how strictly to phrase the assertion, what target pass rate the
@@ -41,7 +41,7 @@ docevals:
       evals: [explains-why-before-how, no-future-promises]
     reference:
       target-pass-rate: 1.0          # regression: these must hold
-      evals: [no-future-promises, fresh-enough, frontmatter-valid]
+      evals: [no-future-promises, names-an-action, no-todo-markers]
 ```
 
 Put a capability eval in a suite left at the default `1.0` and every page short of the goal fails the

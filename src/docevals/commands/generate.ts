@@ -12,6 +12,7 @@ import {
 } from "../core/discover.js";
 import { withExternalMetadata } from "../core/external.js";
 import { resolvePages } from "../core/resolve.js";
+import { assertRegisteredGraders } from "../core/feasibility.js";
 import { makeGenerateScripts } from "../graders/scriptgen.js";
 import {
   assertProviderSelection,
@@ -61,6 +62,7 @@ export async function runGenerate(
     cwd,
   );
   const plans = resolvePages(pages, config);
+  assertRegisteredGraders(plans, config);
 
   const targets: GraderTarget[] = [];
   // A config-defined eval is one eval however many pages reference it, and

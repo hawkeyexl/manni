@@ -7,9 +7,9 @@
  * is knowable for free.
  *
  * The headline case is a misspelled grader option. `options` is open in the
- * published vocabulary by design, so before this `max-age-day: 30` fell
- * straight through to the default of 365 and the eval quietly checked
- * something its author never wrote.
+ * published vocabulary by design, so before this `mach: not-contains` fell
+ * straight through to the default of `contains` and the eval quietly checked
+ * the opposite of what its author wrote.
  */
 import { describe, it, expect } from "vitest";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -28,7 +28,6 @@ function scaffold(evalLines: string[]): string {
     [
       "---",
       "title: Install",
-      "last-reviewed: 2020-01-01",
       "evals:",
       "  - use: subject",
       "---",
@@ -60,10 +59,10 @@ describe("feasibility", () => {
   it("passes a correctly configured eval", async () => {
     const errors = await errorsOf(
       scaffold([
-        "      assertion: Reviewed recently.",
-        "      grader: tool:freshness",
+        "      assertion: Names the installer.",
+        "      grader: tool:regex",
         "      options:",
-        "        max-age-days: 100000",
+        "        pattern: installer",
       ]),
     );
     expect(errors).toEqual([]);
@@ -71,17 +70,18 @@ describe("feasibility", () => {
 
   it("names a misspelled option instead of silently defaulting", async () => {
     const root = scaffold([
-      "      assertion: Reviewed recently.",
-      "      grader: tool:freshness",
+      "      assertion: Names the installer.",
+      "      grader: tool:regex",
       "      options:",
-      "        max-age-day: 30",
+      "        pattern: installer",
+      "        mach: not-contains",
     ]);
     const errors = await errorsOf(root);
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('unknown option "max-age-day"');
+    expect(errors[0]).toContain('unknown option "mach"');
     // The message has to say what *is* accepted, or the author is left
     // guessing which of two plausible spellings was wrong.
-    expect(errors[0]).toContain("max-age-days");
+    expect(errors[0]).toContain("match");
     // And it must fail the run, not merely mention it.
     const report = await runEvals({ cwd: root, generate: false });
     expect(report.exitCode).toBe(1);
@@ -90,25 +90,25 @@ describe("feasibility", () => {
   it("rejects an out-of-range option value", async () => {
     const errors = await errorsOf(
       scaffold([
-        "      assertion: Distinct enough.",
-        "      grader: tool:differentiation",
+        "      assertion: Names the installer.",
+        "      grader: tool:regex",
         "      options:",
-        "        max-similarity: 4",
+        "        pattern: installer",
+        "        match: sometimes",
       ]),
     );
-    expect(errors[0]).toContain("max-similarity");
-    expect(errors[0]).toContain("at most 1");
+    expect(errors[0]).toContain("options.match must be contains, not-contains, or count:N");
   });
 
-  it("requires tool:docmeta to name its schema set (ADR 01013)", async () => {
+  it("requires tool:regex to name its pattern", async () => {
     const errors = await errorsOf(
       scaffold([
-        "      assertion: Frontmatter validates.",
-        "      grader: tool:docmeta",
+        "      assertion: Names the installer.",
+        "      grader: tool:regex",
       ]),
     );
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain("options.schemas is required");
+    expect(errors[0]).toContain("options.pattern is required");
   });
 
   // Not a feasibility check: both schemas already require an assertion on an

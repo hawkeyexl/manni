@@ -10,7 +10,7 @@
  * The denominator is the graded set — pass + fail + error — exactly as it was
  * before weights existed. `needs-review` and `skipped` stay out of both halves.
  *
- * Two freshness evals against fixed dates, so nothing needs a provider or a
+ * Two regex evals against a fixed body, so nothing needs a provider or a
  * subprocess.
  */
 import { describe, it, expect } from "vitest";
@@ -34,7 +34,6 @@ function scaffold(weights: { passes?: number; fails?: number } = {}): string {
     [
       "---",
       "title: Install",
-      "last-reviewed: 2020-01-01",
       "evals:",
       "  - use: always-passes",
       "  - use: always-fails",
@@ -55,17 +54,18 @@ function scaffold(weights: { passes?: number; fails?: number } = {}): string {
       "    suite: reference",
       "  evals:",
       "    always-passes:",
-      "      assertion: The page was reviewed within the last century.",
-      "      grader: tool:freshness",
+      "      assertion: The page names the installer.",
+      "      grader: tool:regex",
       "      options:",
-      "        max-age-days: 100000",
+      "        pattern: installer",
       "      severity: error",
       ...weightLine(weights.passes),
       "    always-fails:",
-      "      assertion: The page was reviewed in the last day.",
-      "      grader: tool:freshness",
+      "      assertion: The page never names the installer.",
+      "      grader: tool:regex",
       "      options:",
-      "        max-age-days: 1",
+      "        pattern: installer",
+      "        match: not-contains",
       "      severity: error",
       ...weightLine(weights.fails),
       "  suites:",

@@ -34,12 +34,23 @@ import type { ProviderSelector } from "@hawkeyexl/inference";
 export type ProviderName = ProviderSelector;
 
 /** One capability the operator can grant to content-authored code. */
-export type ExecutionGrant = "frontmatter-commands" | "page-embedded-steps";
+export type ExecutionGrant = "frontmatter-commands";
 
 export const EXECUTION_GRANTS: readonly ExecutionGrant[] = [
   "frontmatter-commands",
-  "page-embedded-steps",
 ] as const;
+
+/**
+ * The sentence for grants nobody recognizes, shared by the config key and the
+ * programmatic `allowExecution` so both name the values that do exist.
+ */
+export function unknownGrantsMessage(unknown: readonly string[]): string {
+  return (
+    `unknown execution grant${unknown.length > 1 ? "s" : ""} ` +
+    `${unknown.map((u) => `"${u}"`).join(", ")}; ` +
+    `expected one of ${EXECUTION_GRANTS.join(" | ")}`
+  );
+}
 
 /**
  * One eval definition, as the rest of the codebase sees it.
@@ -69,7 +80,6 @@ export interface EvalDef {
   generatedAssertionHash?: string;
   options?: Record<string, unknown>;
   severity?: Severity;
-  severityMap?: Record<string, Severity>;
   /** Relative contribution to the suite pass rate. Never changes the outcome. */
   weight?: number;
   /** Which bytes the grader receives. Defaults to the page body. */
@@ -94,7 +104,6 @@ export interface RawEvalDef {
   "generated-assertion-hash"?: string;
   options?: Record<string, unknown>;
   severity?: Severity;
-  "severity-map"?: Record<string, Severity>;
   target?: EvalTarget;
   model?: string;
   runs?: number;
@@ -140,7 +149,6 @@ export function normalizeEvalDef(raw: RawEvalDef): EvalDef {
     generatedAssertionHash: raw["generated-assertion-hash"],
     options: raw.options,
     severity: raw.severity,
-    severityMap: raw["severity-map"],
     weight: raw.weight,
     target: raw.target,
     model: raw.model,
@@ -218,10 +226,10 @@ export interface DocevalsConfig {
   /**
    * What content-authored code this run may execute. Default deny.
    *
-   * Two paths reach a shell from a page: a `command` eval declared in
-   * frontmatter, and `tool:doc-detective` running steps embedded in a page
-   * *body*. The old `scripts.allow-frontmatter-commands` boolean covered the
-   * first and defaulted to true; nothing covered the second at all.
+   * A page reaches a shell through a `command` eval declared in its
+   * frontmatter, or through `options.command` argv it hands a grader. The old
+   * `scripts.allow-frontmatter-commands` boolean covered the first and
+   * defaulted to true.
    */
   execution: { allow: ExecutionGrant[] };
   fill: {
@@ -326,16 +334,6 @@ interface RawSuiteDef {
   criteria?: string[];
 }
 
-/**
- * Object keys whose sub-keys are names chosen by something other than this
- * schema, so a capital letter in them is not a stale spelling:
- *
- *   severity-map — keyed by the *tool's* own severity names
- *   options      — no: grader options are ours, and they kebab with everything
- *                  else (proposal 0023 leaves this call to each tool)
- */
-const FOREIGN_KEY_SPACES = new Set(["severity-map"]);
-
 /** The 0.1 `generated: {assertionHash}` wrapper, as opposed to any other key of that name. */
 function isAssertionHashWrapper(value: unknown): boolean {
   return (
@@ -372,9 +370,7 @@ function findPreKebabKeys(
       found.push({ at: `${path}.generated`, becomes: "generated-assertion-hash" });
       continue;
     }
-    if (!FOREIGN_KEY_SPACES.has(key)) {
-      found.push(...findPreKebabKeys(value, `${path}.${key}`));
-    }
+    found.push(...findPreKebabKeys(value, `${path}.${key}`));
   }
   return found;
 }
@@ -409,6 +405,15 @@ function movedProviderHint(instancePath: string, keyword: string): string {
   return instancePath === `/${NAMESPACE}/provider` && keyword === "type"
     ? `; "provider" is now a provider name; per-provider settings moved to the top-level providers: map`
     : "";
+}
+
+/** The string values under `execution.allow`, before the schema has run. */
+function configuredGrants(ns: unknown): string[] {
+  if (!ns || typeof ns !== "object") return [];
+  const execution = (ns as Record<string, unknown>).execution;
+  if (!execution || typeof execution !== "object") return [];
+  const allow = (execution as Record<string, unknown>).allow;
+  return Array.isArray(allow) ? allow.filter((g): g is string => typeof g === "string") : [];
 }
 
 /** Parse and validate config YAML text. `configPath` is used for messages and path resolution. */
@@ -581,7 +586,18 @@ export function parseConfigSection(
 ` +
         `  Write \`execution: { allow: [frontmatter-commands] }\` to keep running them.
 ` +
-        `The grant is default-deny and also covers page-embedded-steps, which nothing gated before.`,
+        `The grant is default-deny.`,
+    );
+  }
+
+  // Ajv's enum error names neither the value nor the ones allowed, and a
+  // grant is the key where a silent misreading costs the most.
+  const unknownGrants = configuredGrants(ns).filter(
+    (g) => !(EXECUTION_GRANTS as readonly string[]).includes(g),
+  );
+  if (unknownGrants.length > 0) {
+    throw new DocevalsError(
+      `Invalid config in ${configPath}: ${unknownGrantsMessage(unknownGrants)}`,
     );
   }
 

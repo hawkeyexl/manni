@@ -4,7 +4,7 @@
  * them (with overrides) or define inline evals. Page entries win on id
  * collision.
  *
- * The page vocabulary is `manni:evals:1.0.0-proposal.4` — three flat
+ * The page vocabulary is `manni:evals:1.0.0` — three flat
  * page-level keys (`evals`, `eval-suite`, `eval-skip`) and a reserved `eval-`
  * prefix, rather than the closed `evals:` object 0.1 used. The
  * whole frontmatter object is validated, not a synthetic `{evals}`: the prefix
@@ -29,6 +29,8 @@ import {
 } from "./config.js";
 import type { PageFile } from "./discover.js";
 import type { EvalTarget } from "./target.js";
+import { warn } from "../../shared/warn.js";
+import { isRegisteredGrader } from "../graders/registry.js";
 
 export interface ResolvedEval {
   /** Kebab-case id, unique per page. */
@@ -48,7 +50,6 @@ export interface ResolvedEval {
   generatedAssertionHash?: string;
   options: Record<string, unknown>;
   severity: Severity;
-  severityMap?: Record<string, Severity>;
   /**
    * Relative contribution to its suite's pass rate. Defaults to 1, which is
    * what makes weighting inert until someone asks for it: a suite of
@@ -87,12 +88,12 @@ export interface ResolvedPagePlan {
   problems: PageProblem[];
 }
 
-// `strict: false`, as `src/cite/core/page.ts` compiles its own draft: from
-// `1.0.0-proposal.4` the vocabulary annotates its three keys with
-// `x-manni-location: external`, and Ajv's strict mode throws on a keyword it
-// does not know rather than ignoring the annotation.
+// `strict: false`, as `src/cite/core/page.ts` compiles its own schema: the
+// vocabulary annotates its three keys with `x-manni-location: external`, and
+// Ajv's strict mode throws on a keyword it does not know rather than ignoring
+// the annotation.
 const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true, strict: false });
-// The draft as published: its severity is the family scale, so nothing is
+// The vocabulary as shipped: its severity is the family scale, so nothing is
 // patched in memory.
 const validateFrontmatter = ajv.compile(frontmatterSchema);
 
@@ -153,7 +154,6 @@ function fromDef(
     generatedAssertionHash: def.generatedAssertionHash,
     options: def.options ?? {},
     severity: def.severity ?? "error",
-    severityMap: def.severityMap,
     weight: def.weight ?? 1,
     target: def.target,
     model: def.model,
@@ -311,8 +311,8 @@ export function resolvePage(
       // String shorthand: an ai-judged assertion at error severity.
       //
       // In 0.1 a bare string was a *reference* to a config-defined eval, so a
-      // page that still says `- fresh-enough` silently stops running the
-      // freshness grader and sends the words "fresh-enough" to the judge
+      // page that still says `- no-todo-markers` silently stops running the
+      // regex grader and sends the words "no-todo-markers" to the judge
       // instead. Nothing errors; the eval simply disappears. Guessing the
       // author's intent would make a second, invisible spelling of `use:`, so
       // name the shape of the mistake and let them fix the page.
@@ -373,6 +373,18 @@ export function resolvePage(
     const ev = fromDef(inline.id, reportSuite, normalizeEvalDef(inline), "page");
     ev.skip = inline.skip ?? false;
     resolved.set(inline.id, ev);
+    // The shared vocabulary still allows `severity-map`, so a page carrying
+    // one is valid. It mapped a wrapped tool's own scale, and no registered
+    // grader has one, so the key is read by nothing. Said once per eval:
+    // `warn` deduplicates on the text, which names the page and the eval.
+    // An eval naming an unregistered grader is a usage error a moment
+    // later, so the warning would only bury it.
+    if ("severity-map" in inline && isRegisteredGrader(ev.grader)) {
+      warn(
+        `${page.file}: eval "${inline.id}" sets severity-map, which no registered ` +
+          `grader reads; it has no effect.`,
+      );
+    }
     if (ev.grader === "ai" && !inline.examples) {
       problems.push({
         message: `Eval "${inline.id}": ai-graded evals work best with examples.pass/examples.fail`,

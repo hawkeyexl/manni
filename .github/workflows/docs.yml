@@ -87,10 +87,10 @@ jobs:
       # update` rewrites those.
       - name: The docs' citations still reach their sources
         run: node dist/cli.js cite check --format github
-      # The evals tool over its own docs section, through an explicit -c: the
-      # deterministic evals only, so no provider is involved. What it covers
-      # and what it deliberately leaves to docs-as-tests is in the file.
-      - name: Check the docevals docs section (dogfood)
+      # The evals tool over the whole site, from the root manni.config.yaml's
+      # docevals: section: the deterministic evals only, so no provider is
+      # involved. Every page gets no-todo-markers through its domain's suite.
+      - name: Check the site with docevals (dogfood)
         run: npm run docs:check-docevals
 
   # Build the Astro/Starlight static site and upload it as a Pages artifact.

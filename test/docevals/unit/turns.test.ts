@@ -7,9 +7,9 @@
  * several workers are dispatching at once.
  */
 import { describe, it, expect } from "vitest";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { MockProvider, mockVerdict } from "@hawkeyexl/inference";
 import { makeJudge } from "../../../src/docevals/judge/judge.js";
 import {
@@ -18,7 +18,6 @@ import {
 } from "../../../src/docevals/judge/budget.js";
 import { runEvals } from "../../../src/docevals/core/engine.js";
 import { parseDocevalsConfig } from "../helpers/config.js";
-import { parseConfig } from "../../../src/docevals/core/config.js";
 import { resolvePage } from "../../../src/docevals/core/resolve.js";
 import { stripFrontmatterBlock, type PageFile } from "../../../src/docevals/core/discover.js";
 import { extractFrontmatter } from "../../../src/meta/index.js";
@@ -172,22 +171,43 @@ describe("judge turn budget", () => {
  * exhausts its budget would otherwise exit 0 having judged less than it was
  * asked to -- green, with coverage quietly missing.
  *
- * Driven off the repo's own config, like the full-run integration test: a bare
- * config resolves none of the fixture pages' `use:` references, which yields
- * error-level problems of its own and no ai targets to skip.
+ * One page with two ai evals, so the judge has targets to skip and nothing
+ * else in the run raises a problem of its own.
  */
 describe("a run truncated by its turn budget", () => {
-  const REPO = resolve(import.meta.dirname, "../../..");
+  function scaffold(): string {
+    const root = mkdtempSync(join(tmpdir(), "manni-docevals-turns-run-"));
+    mkdirSync(join(root, "docs"), { recursive: true });
+    writeFileSync(
+      join(root, "docs", "page.md"),
+      [
+        "---",
+        "title: Page",
+        "evals:",
+        "  - id: names-the-installer",
+        "    assertion: The page names the installer.",
+        "    examples: { pass: [Run the installer.], fail: [Run it.] }",
+        "  - id: no-future-promises",
+        "    assertion: The page promises nothing unreleased.",
+        "    examples: { pass: [It runs.], fail: [It will run soon.] }",
+        "---",
+        "",
+        "Run the installer.",
+        "",
+      ].join("\n"),
+    );
+    writeFileSync(
+      join(root, "manni.config.yaml"),
+      ["collections:", "  - name: pages", '    paths: ["docs/**/*.md"]', "docevals:", ""].join(
+        "\n",
+      ),
+    );
+    return root;
+  }
 
   async function reportWith(skipReason: string) {
-    const config = parseConfig(
-      readFileSync(join(REPO, "manni.config.yaml"), "utf8"),
-      join(REPO, "manni.config.yaml"),
-    );
     return runEvals({
-      cwd: REPO,
-      config,
-      paths: ["test/docevals/fixtures/pages/docs/actions/goTo.mdx"],
+      cwd: scaffold(),
       generate: false,
       judge: (aiTargets) =>
         Promise.resolve(

@@ -14,8 +14,8 @@ const CONFIG = parseDocevalsConfig(
     "    assertion: Central claim holds.",
     "    examples: { pass: yes, fail: no }",
     "  central-tool:",
-    "    grader: tool:freshness",
-    "    options: { max-age-days: 100 }",
+    "    grader: tool:regex",
+    "    options: { pattern: TODO }",
     "    severity: warning",
     "suites:",
     "  ref:",
@@ -101,7 +101,7 @@ describe("resolvePage", () => {
           "  - use: central-tool",
           "    severity: error",
           "    type: capability",
-          "    options: { max-age-days: 30 }",
+          "    options: { match: not-contains }",
         ].join("\n"),
       ),
       CONFIG,
@@ -110,7 +110,7 @@ describe("resolvePage", () => {
     if (tool === undefined) throw new Error("central-tool did not resolve");
     expect(tool.severity).toBe("error");
     expect(tool.type).toBe("capability");
-    expect(tool.options).toEqual({ "max-age-days": 30 });
+    expect(tool.options).toEqual({ pattern: "TODO", match: "not-contains" });
     // Not duplicated by the reference.
     expect(plan.evals.filter((e) => e.name === "central-tool")).toHaveLength(1);
   });

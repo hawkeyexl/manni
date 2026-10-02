@@ -1,4 +1,4 @@
 install-page:
   eval-suite: reference
   evals:
-    - use: fresh-enough
+    - use: no-todo-markers

@@ -218,7 +218,7 @@ The seventh domain's content set, under `docs/src/content/docs/docevals/`, impor
 Overview — "What are you trying to do?" router + a 60-second proof
 │
 ├─ Get started        (Maya)          → M11
-├─ Write evals        (Maya · Sara)   → M12, M13, S8
+├─ Write evals        (Maya · Sara)   → M12, S8
 ├─ Adopt at scale     (Maya)          → M14, M15, M16, S11
 ├─ Run it in CI       (Devin)         → D10, D11
 ├─ Trust the judge    (Sara)          → S9, S10
@@ -228,7 +228,7 @@ Overview — "What are you trying to do?" router + a 60-second proof
 
 Three placements are deliberate. `adopt/` is apart from `get-started/`, because proposing evals for a corpus is a different journey from a first gate. Burying `fill` in a tutorial loses the reader who needed it most. `judge/` is a section rather than reference, because "can I trust a model to gate my build?" blocks adoption for every persona. `fix/` is shallow and top-level, because its reader arrives from an annotation and never sees the rest of the tree.
 
-Two constraints hold across the section. `fix/index.mdx` has no subject dependencies. Pages that present a command carry inline Doc Detective steps, which the docs-as-tests workflow runs. `npm run docs:check-docevals` runs the section's own `docs-page` suite over every page, deterministically, from `docs/manni.docevals.yaml`. Nothing on a page may print a dollar figure, because the tool counts inference calls and reports none.
+Two constraints hold across the section. `fix/index.mdx` has no subject dependencies. Pages that present a command carry inline Doc Detective steps, which the docs-as-tests workflow runs. `npm run docs:check-docevals` runs the root `manni.config.yaml` site gate over every page, deterministically, with `no-todo-markers` in each domain's suite. Nothing on a page may print a dollar figure, because the tool counts inference calls and reports none.
 
 ★ follows the rule above. The imported strategy's P0 pages carry it, and its P1 and P2 pages do not.
 
@@ -236,14 +236,13 @@ Two constraints hold across the section. `fix/index.mdx` has no subject dependen
 |---|---|---|---|
 | Overview (`docevals/index.mdx`) | All | ★ | Mirrors the sibling overviews' hero. What an eval and a grader are, the 60-second proof from a real `--deterministic-only` run, and a goal router into the seven sections. |
 | Get started (`docevals/get-started/index.mdx`) | M11 | ★ | Install, `init`, one assertion, one run, one real finding, one CI step. Minimum vocabulary: the reader reaches a finding without meeting "capability suite". |
-| How docevals works (`docevals/get-started/how-docevals-works.mdx`) | M11, M13 | ★ | The eval, grader and verdict model and the grader hierarchy. Sits after the quickstart on purpose. |
+| How docevals works (`docevals/get-started/how-docevals-works.mdx`) | M11 | ★ | The eval, grader and verdict model and the four-grader hierarchy. Sits after the quickstart on purpose. |
 | Write evals (`docevals/evals/index.mdx`) | M11, M12, M16 | ★ | The frontmatter contract, with array shorthand and object form, `suite`, skipping, and inline and referenced evals. |
 | Write good assertions (`docevals/evals/write-good-assertions.mdx`) | S8, M14, S10 | ★ | `assertion`, `evidence` and `examples` as one mechanism, and the two-reviewer test. The page that does most for Sara. |
-| Deterministic checks (`docevals/evals/deterministic-checks.mdx`) | M13, S11, M11 | ★ | `command` and `tool:*` graders, wrapping existing linters, and the generate path for a plain-language command eval. |
+| Deterministic checks (`docevals/evals/deterministic-checks.mdx`) | S11, M11 | ★ | The `command` and `tool:regex` graders, the generate path for a plain-language command eval, and where the checks other domains own run instead. |
 | Named evals and suites (`docevals/evals/named-evals-and-suites.mdx`) | M12 | | Named evals, suites, criteria, `target-pass-rate`, resolution order, and `list` as the dry run. |
-| Test your commands (`docevals/evals/test-your-commands.mdx`) | M13 | | The inline Doc Detective convention, and the `page-embedded-steps` grant it needs. |
 | Regression vs capability (`docevals/evals/regression-vs-capability.mdx`) | S8, M12, M15 | | Why `regression` is the default, and how suite targets carry the nuance a binary verdict seems to lose. |
-| Severity and findings (`docevals/evals/severity-and-findings.mdx`) | M13, M15 | | `error` fails, `warning` and `notice` report. `severity-map`, and severity inversion kept for findings nobody will gate on. |
+| Severity and findings (`docevals/evals/severity-and-findings.mdx`) | M15 | | `error` fails, `warning` and `notice` report. Severity inversion kept for findings nobody will gate on. |
 | Adopt at scale (`docevals/adopt/index.mdx`) | M14, M15 | ★ | `fill`, `--dry-run` before write, and proposals cached before the gate, so re-gating is free. |
 | Retrofit a legacy corpus (`docevals/adopt/retrofit-a-legacy-corpus.mdx`) | M15 | | The baseline ratchet. Scope first, `baseline:`, `--write-baseline`, read `removed`, the per-rule-per-file limit. The highest-consequence page in the adopt set. |
 | Promote to deterministic (`docevals/adopt/promote-to-deterministic.mdx`) | S11, M14, M15 | | `promote` reports by default; `--write` is a deliberate act. |
@@ -251,7 +250,7 @@ Two constraints hold across the section. `fix/index.mdx` has no subject dependen
 | Review generated scripts (`docevals/adopt/review-generated-scripts.mdx`) | S11 | | Generated scripts are version-controlled source, and reviewing them is why they are files. |
 | Run it in CI (`docevals/ci/index.mdx`) | D10, M11 | ★ | The GitHub Actions recipe, `-f github`, `paths:` on the trigger, and the cache step. A third-party action in any recipe is pinned to a full SHA, which Devin checks. |
 | Exit codes and annotations (`docevals/ci/exit-codes-and-annotations.mdx`) | D10, S10, M15 | ★ | `0`/`1`/`2` and who each routes to, annotations, `--fail-on-review` as a policy fork, the baseline in CI. |
-| Untrusted pull requests (`docevals/ci/untrusted-pull-requests.mdx`) | D11 | ★ | The highest-consequence page in the section. Two execution paths, two grants, and why neither is a fork defense. The same-repo job gate and the fork job. |
+| Untrusted pull requests (`docevals/ci/untrusted-pull-requests.mdx`) | D11 | ★ | The highest-consequence page in the section. One execution path, one grant, and why it is not a fork defense. The same-repo job gate and the fork job. |
 | CI recipes (`docevals/ci/recipes.mdx`) | D10 | | GitLab CI, Jenkins, pre-commit. |
 | Caching and turn budgets (`docevals/ci/cost-and-caching.mdx`) | D11, D10, M14, S11 | | `judge.maxTurns` and `fill.maxTurns` in turns, which skip rather than abort. Content-addressed caching, what invalidates an entry, and the CI cache key. No dollar figure. |
 | Consume results (`docevals/ci/consume-results.mdx`) | D10 | | `-f json`, `-f html`, and the `docevals` namespace of the TypeScript API. |
@@ -265,7 +264,7 @@ Two constraints hold across the section. `fix/index.mdx` has no subject dependen
 | CLI reference (`docevals/reference/cli.mdx`) | All | ★ | Every command and flag, including `--collection`. Guarded by `npm run docs:check-cli`. Source of truth: `src/docevals/cli.ts`. |
 | Configuration reference (`docevals/reference/configuration.mdx`) | M12, D11, M15 | ★ | Every `docevals:` key with type and default, in camelCase, including `provider`, `model`, `execution.allow` and the turn budgets. How `collections:` supplies the pages, and a pointer to the family's `providers:` map on meta's configuration page. |
 | Frontmatter reference (`docevals/reference/frontmatter.mdx`) | M12, S8, S11 | ★ | Every eval field and the resolution order. |
-| Graders reference (`docevals/reference/graders.mdx`) | M13 | ★ | Every kind in the registry with its options. States that `options.command` is a partial override for `tool:doc-detective`. |
+| Graders reference (`docevals/reference/graders.mdx`) | M11, S11 | ★ | The four kinds in the registry with their options, and the exit `2` for a grader nobody registered. |
 | Output and exit codes (`docevals/reference/output-and-exit-codes.mdx`) | M11, D10 | ★ | The seven formats and the exit codes. |
 | Files and state (`docevals/reference/files-and-state.mdx`) | S10, M15 | | The `.manni/docevals/` layout: caches, reviews, the golden set, generated scripts, and the baseline file. |
 | Glossary (`docevals/reference/glossary.mdx`) | Vocabulary | | eval, grader, assertion, evidence, suite, criterion, ensemble, consensus, confidence zone, calibration, regression and capability. |

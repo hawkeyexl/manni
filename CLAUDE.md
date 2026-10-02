@@ -511,8 +511,8 @@ npm run docs:sync-versions   # rewrite the stale ones; the release runs the same
 npm run docs:check-links  # every internal link and anchor in the built site
                         # resolves. Reads docs/dist, so it needs
                         # `cd docs && npm run build` first.
-npm run docs:check-docevals  # the evals tool over its own docs section,
-                        # deterministic evals only (docs/manni.docevals.yaml)
+npm run docs:check-docevals  # the evals tool over the whole site, deterministic
+                        # evals only, from the root config's docevals: section
 npm run smoke:lint      # build, then exercise lint's built-in templates through
                         # the real dist/cli.js. The templates are YAML files read
                         # by path at runtime, so a path right in src/ can be wrong

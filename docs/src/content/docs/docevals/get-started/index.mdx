@@ -2,7 +2,7 @@
 title: Get started
 description: Install manni docevals, declare one assertion, and get a real finding on a real page.
 type: tutorial
-last-updated: 2026-09-13
+last-updated: 2026-10-02
 ---
 
 Zero to a real finding. No concepts first. Those are on the
@@ -22,9 +22,10 @@ npx @hawkeyexl/manni docevals init
 ```
 
 `init` writes a starter `manni.config.yaml`: a `site` collection covering `docs/**/*.{md,mdx}`,
-`provider: auto`, and two named evals, `no-future-promises` and `fresh-enough`, in a `default`
-suite that `defaults.suite` applies to every page. The collection is the family's `collections:` list, which every manni tool reads,
-so edit its `paths` if your pages live somewhere else.
+`provider: auto`, and two named evals in a `default` suite that `defaults.suite` applies to every
+page. `no-future-promises` is judged by the AI. `no-todo-markers` is a `tool:regex` pattern that
+fails a page carrying `TODO`, `TBD` or `FIXME`. The collection is the family's `collections:` list,
+which every manni tool reads, so edit its `paths` if your pages live somewhere else.
 
 ## 2. Get a finding without spending anything
 
@@ -35,22 +36,19 @@ npx @hawkeyexl/manni docevals run --deterministic-only
 ```
 
 `--deterministic-only` skips the AI judge entirely, so this needs no API key and costs nothing. On
-a corpus that has never been checked, `fresh-enough` alone usually finds something.
+a corpus that has never been checked, `no-todo-markers` alone usually finds something.
 
 ```console
-$ npx @hawkeyexl/manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate
-test/docevals/fixtures/pages/docs/actions/goTo.mdx
+$ npx @hawkeyexl/manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate
+docs/actions/goTo.mdx
   skip no-future-promises
        judge skipped (--deterministic-only)
-  FAIL fresh-enough
-       error:4 [freshness/stale] Page last reviewed 977 days ago (max 365)
-  pass readable
-  pass frontmatter-valid
   pass names-an-action
-  pass ships-a-schema
+  FAIL no-todo-markers
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
 
 Suites
-  reference: 4/5 passed — 60% vs target 100% below target (1 skipped)
+  reference: 1/2 passed — 0% vs target 100% below target (1 skipped)
 ```
 
 Read the finding line as `severity:line [ruleId] message`. The exit code is `1`, a finding rather than an
@@ -64,24 +62,33 @@ Add an `evals` key to a page's frontmatter. The array form is the minimum:
 ```yaml
 ---
 title: Installation
-last-reviewed: 2026-06-01
 evals:
   - use: no-future-promises
   - id: install-command-present
-    assertion: The page contains a bash code block with `npm i -g doc-detective`.
-    grader: command
+    assertion: The page shows the command that installs Doc Detective.
+    grader: tool:regex
+    options:
+      pattern: "npm i -g doc-detective"
 ---
 ```
 
 Two entries, two different things. `no-future-promises` **references** a named eval from your
-config. The second **defines** one inline. Being `command`-graded with an assertion but no
-command, it makes manni docevals write the check script for it.
+config. The second **defines** one inline. It is a pattern match, so it runs under
+`--deterministic-only` and needs no grant.
 
 Check what resolved before running anything:
 
-```bash
-npx @hawkeyexl/manni docevals list docs/installation.mdx
+```console
+$ npx @hawkeyexl/manni docevals list docs/installation.mdx
+docs/installation.mdx (suite: default)
+  - no-future-promises [ai, regression, config]
+  - no-todo-markers [tool:regex, regression, config]
+  - install-command-present [tool:regex, regression, page]
+
+1 pages, 3 evals resolved
 ```
+
+The `default` suite added `no-todo-markers`, and the last column says where each eval came from.
 
 ## 4. Add the judge
 
@@ -124,6 +131,6 @@ contract, and the fork-safety rules are in [Run it in CI](/manni/docevals/ci/).
 
 {/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
 
-{/* step {"description":"The deterministic path runs with no API key and reports a real finding.","runShell":{"command":"manni docevals run test/docevals/fixtures/pages/docs/actions/goTo.mdx --deterministic-only --no-generate","exitCodes":[1],"stdio":"/freshness\\/stale/"}} */}
+{/* step {"description":"The deterministic path runs with no API key and reports a real finding.","runShell":{"command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[1],"stdio":"/regex\\/found/"}} */}
 
-{/* step {"description":"`list` shows the resolved plan without running anything.","runShell":{"command":"manni docevals list test/docevals/fixtures/pages/docs/actions/goTo.mdx","exitCodes":[0],"stdio":"evals resolved"}} */}
+{/* step {"description":"`list` shows the resolved plan without running anything.","runShell":{"command":"manni docevals list docs/actions/goTo.mdx","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0],"stdio":"evals resolved"}} */}
