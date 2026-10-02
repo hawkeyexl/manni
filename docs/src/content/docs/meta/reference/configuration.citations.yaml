@@ -1943,27 +1943,27 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-3c5ca06c9ec4c1ace46f783308b96255a313a25acbf627342163190bb6dc051b
       source:
         file: src/meta/core/derive/git.ts
-        lines: 790-794
+        lines: 798-802
         integrity: sha256-2995af5177c031a75372b407718d5ea19a4c788f50b112b2cb86102d582af5e2
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 6a8da8ba7e1df8b1dacc45447ff2499dbaebcf58
     - id: last-updated-derived-from-the-newest-body-change
       claim:
         lines: 2089-2096
         integrity: sha256-5200b84a526697cce2c030823b1abbf61e993aee44a39afb4ff5dc48d4d00993
       source:
         file: src/meta/core/derive/git.ts
-        lines: 803-808
+        lines: 811-816
         integrity: sha256-d6b036393c62868ef39b252948062ac3b1a77abaf199b3d621af5a7fd74af860
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 6a8da8ba7e1df8b1dacc45447ff2499dbaebcf58
     - id: authors-derived-from-body-changing-commits
       claim:
         lines: 2102
         integrity: sha256-ad819ff5c808457278ed6a373c15ffcdccde68c2d57d46e9cf86567d9cc41c0c
       source:
         file: src/meta/core/derive/git.ts
-        lines: 821-833
+        lines: 829-841
         integrity: sha256-6663a76dd0c88c6d1603c22627fef7a9fdc17e24889b79e063e0e44d859c4022
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 6a8da8ba7e1df8b1dacc45447ff2499dbaebcf58
     - id: owner-derived-from-codeowners
       claim:
         lines: 2103
@@ -2229,9 +2229,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-6bc50ed815358ee528a7600c44530892a1a1708391ed00521c39cb556a9fb3e9
       source:
         file: src/meta/core/derive/git.ts
-        lines: 790-794
+        lines: 798-802
         integrity: sha256-2995af5177c031a75372b407718d5ea19a4c788f50b112b2cb86102d582af5e2
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 6a8da8ba7e1df8b1dacc45447ff2499dbaebcf58
     - id: body-is-everything-outside-the-metadata-block
       claim:
         lines: 2311-2315

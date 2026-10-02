@@ -131,9 +131,9 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-2a92270a056121c9517f9f40032ce7b62e09aacc74668d10a25ea220748cdc48
       source:
         file: src/meta/core/derive/git.ts
-        lines: 882
+        lines: 890
         integrity: sha256-817b6bb2ab7bc4c8c0afb4f11f680e9d7eeb053fea6781fb8bffabdff13331bd
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 6a8da8ba7e1df8b1dacc45447ff2499dbaebcf58
     - id: moved-text-is-never-a-finding
       claim:
         integrity: sha256-2a92270a056121c9517f9f40032ce7b62e09aacc74668d10a25ea220748cdc48

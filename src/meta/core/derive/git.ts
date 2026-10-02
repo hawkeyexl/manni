@@ -340,11 +340,19 @@ const RECORD_FORMAT =
   "%(trailers:key=Reviewed-by,valueonly,unfold,separator=%x1f)%x00" +
   "%(trailers:key=Generated-by,valueonly,unfold,separator=%x1f)";
 
+/**
+ * `--diff-merges=first-parent` because `--raw` prints nothing for a merge by
+ * default. A body two branches both edited exists only in the merge that
+ * combined them, so without the merge's own diff no commit in the history
+ * holds that blob, and the committed body reads as uncommitted. First parent
+ * is also how a commit's prior state is read here (`<sha>^`).
+ */
 const LOG_ARGS = [
   "-c",
   "core.quotePath=false",
   "log",
   "--raw",
+  "--diff-merges=first-parent",
   "-M",
   "--no-abbrev",
   RECORD_FORMAT,

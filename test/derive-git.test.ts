@@ -26,6 +26,7 @@ import {
   commit,
   git,
   makeTempRepo,
+  mergeBranch,
   removeTempRepo,
   writeFile,
 } from "./helpers/temp-repo.js";
@@ -157,6 +158,33 @@ describe.each(forms)("deriveFromGit ($name)", ({ opts }) => {
       source: "git",
       evidence: `stamped in ${sha.slice(0, 7)}`,
     });
+  });
+
+  // A body both sides edited exists only in the merge that combined them.
+  // Read without merge diffs, history never shows that blob, and the
+  // committed body was taken for uncommitted and dated by the clock.
+  it("dates a body only a merge produced by that merge", async () => {
+    const lines = (first: string, last: string): string =>
+      [first, "b", "c", "d", "e", "f", last].join("\n");
+    const dir = tempRepo({ "a.md": doc("title: t", lines("one", "seven")) });
+    commit(dir, "add", { authorDate: D1 });
+    const base = git(dir, ["rev-parse", "--abbrev-ref", "HEAD"]);
+    git(dir, ["checkout", "-q", "-b", "side"]);
+    writeFile(dir, "a.md", doc("title: t", lines("ONE", "seven")));
+    commit(dir, "side edit", { authorDate: D2 });
+    git(dir, ["checkout", "-q", base]);
+    writeFile(dir, "a.md", doc("title: t", lines("one", "SEVEN")));
+    commit(dir, "base edit", { authorDate: D3 });
+    git(dir, ["checkout", "-q", "side"]);
+    const merge = mergeBranch(dir, base, D4);
+
+    const facts = await factsFor(dir, "a.md", opts(dir));
+    expect(facts["last-updated"]).toEqual({
+      value: "2020-04-05",
+      source: "git",
+      evidence: `body changed in ${merge.slice(0, 7)} (2020-04-05)`,
+    });
+    expect(facts.lastBodyCommit).toBe(merge);
   });
 
   it("dates an uncommitted body change today", async () => {
