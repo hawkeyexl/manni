@@ -27,9 +27,6 @@ docs/src/content/docs/term/ci/index.mdx:
     - generated-by: Claude Opus 5
       lines: 2-143
       integrity: sha256-9b206c7fb734c4e9dfc4e4037fe777a01e4b9a72267e09e19dfbfe4c99b0ce48
-    - generated-by: Claude Opus 5.5
-      lines: 144
-      integrity: sha256-355189e1ad365c31b2ec6ce92443b4c226fdf58c64a342707e9d5bb8c5fe8565
     - generated-by: Claude Opus 5
       lines: 145-222
       integrity: sha256-7fde8ec7dc24527018330bab85216b86b081508afe9b62b11b24c29869f3eae0
