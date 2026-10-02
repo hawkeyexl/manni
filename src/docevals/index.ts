@@ -53,7 +53,7 @@ export {
   REPORT_FORMATS,
   SUMMARY_FORMATS,
 } from "./reporters/index.js";
-export type { ReportFormat, SummaryFormat } from "./reporters/index.js";
+export type { ColorOptions, ReportFormat, SummaryFormat } from "./reporters/index.js";
 export {
   listReviews,
   renderReviews,

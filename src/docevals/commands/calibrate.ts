@@ -16,7 +16,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import fg from "fast-glob";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
-import pc from "picocolors";
+import { palette } from "../../shared/color.js";
+import type { ColorOptions } from "../reporters/pretty.js";
 import { DocevalsError } from "../types.js";
 import { loadConfig } from "../core/config.js";
 import { readPage } from "../core/discover.js";
@@ -458,7 +459,11 @@ export async function runCalibrate(
   };
 }
 
-export function renderCalibration(report: CalibrationReport): string {
+export function renderCalibration(
+  report: CalibrationReport,
+  opts: ColorOptions = {},
+): string {
+  const pc = palette(opts.color === true);
   const lines: string[] = [];
   for (const c of report.cases) {
     if (c.error) {

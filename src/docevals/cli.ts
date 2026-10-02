@@ -10,7 +10,7 @@ import { terminalConfirm } from "../shared/prompt.js";
 import { collect, configOption } from "../shared/cli-options.js";
 import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import type { DocumentInputOptions } from "./core/discover.js";
-import pc from "picocolors";
+import { palette, shouldColor } from "../shared/color.js";
 import { DocevalsError } from "./types.js";
 import { EXECUTION_GRANTS } from "./core/config.js";
 import { runList, renderList } from "./commands/list.js";
@@ -34,6 +34,36 @@ import {
   type SummaryFormat,
 } from "./reporters/index.js";
 
+/**
+ * Whether `command`'s output gets colour: this domain's `--no-color` and
+ * `NO_COLOR` turn it off, and otherwise only a TTY turns it on
+ * (`shouldColor`). `isTTY` is passed uncoerced: Node leaves it undefined off
+ * a terminal, never false, and `shouldColor` reads a missing one as "not a
+ * terminal". The same rule as `manni cite`, whose `colorFor` this mirrors.
+ */
+export function colorFor(
+  command: Command,
+  isTTY: boolean | undefined,
+  env?: NodeJS.ProcessEnv,
+): boolean {
+  // commander maps --no-color to opts.color === false, on the command that
+  // declares it.
+  const noColor = colorOwner(command).opts().color === false;
+  return shouldColor({ noColor, isTTY, env });
+}
+
+/**
+ * The nearest command, this one or an ancestor, that declares `--no-color`:
+ * the `docevals` program, wherever it is mounted. Not the root: under the
+ * umbrella that is `manni`, which has no `--no-color` of its own.
+ */
+function colorOwner(command: Command): Command {
+  for (let c: Command | null = command; c !== null; c = c.parent) {
+    if (c.options.some((o) => o.long === "--no-color")) return c;
+  }
+  return command;
+}
+
 export function buildProgram(): Command {
   const program = new Command();
 
@@ -43,6 +73,7 @@ export function buildProgram(): Command {
       "Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter.",
     )
     .version(pkg.version)
+    .option("--no-color", "disable colored output")
     // A pointer, not the whole help screen: the message that precedes it
     // already names the offending flag.
     .showHelpAfterError("(add --help for usage)")
@@ -182,6 +213,7 @@ export function buildProgram(): Command {
           eval?: string[];
           suite?: string;
         },
+        command: Command,
       ) => {
       try {
         const run = await runList(paths, {
@@ -190,7 +222,11 @@ export function buildProgram(): Command {
           evalNames: opts.eval,
           suite: opts.suite,
         });
-        console.log(renderList(run, opts.format));
+        console.log(
+          renderList(run, opts.format, {
+            color: colorFor(command, process.stdout.isTTY),
+          }),
+        );
         process.exitCode = run.exitCode;
       } catch (e) {
         fail(e);
@@ -257,7 +293,7 @@ export function buildProgram(): Command {
       "--write-baseline [path]",
       "Record this run's findings as the baseline; without a path, the configured one",
     )
-    .action(async (paths: string[], opts: Record<string, unknown>) => {
+    .action(async (paths: string[], opts: Record<string, unknown>, command: Command) => {
       try {
         const report = await runRun(paths, {
           ...documentOptions({
@@ -290,7 +326,11 @@ export function buildProgram(): Command {
           writeBaseline: opts.writeBaseline as string | boolean | undefined,
           toolVersion: pkg.version,
         });
-        console.log(render(report, opts.format as ReportFormat));
+        console.log(
+          render(report, opts.format as ReportFormat, {
+            color: colorFor(command, process.stdout.isTTY),
+          }),
+        );
         process.exitCode = report.exitCode;
       } catch (e) {
         fail(e);
@@ -319,8 +359,10 @@ export function buildProgram(): Command {
           model?: string;
           local?: boolean;
         },
+        command: Command,
       ) => {
         try {
+          const pc = palette(colorFor(command, process.stdout.isTTY));
           const result = await runGenerate(paths, {
             ...documentOptions(opts),
             provider: opts.provider,
@@ -380,7 +422,7 @@ export function buildProgram(): Command {
     .option("--provider <name>", "Provider: auto (default) | anthropic | openai | claude-cli | llama-cpp")
     .option("--model <model>", "Model override; needs a named provider, from here or config")
     .option("--local", LOCAL_FLAG_HELP)
-    .action(async (paths: string[], opts: Record<string, unknown>) => {
+    .action(async (paths: string[], opts: Record<string, unknown>, command: Command) => {
       try {
         const confidence = opts.confidence as number | undefined;
         if (confidence !== undefined && confidence > 1) {
@@ -414,7 +456,11 @@ export function buildProgram(): Command {
         // As in `run`: parseFormatArg validated this at parse time, and the cast
         // only re-narrows from the `unknown` the Record-typed options bag erases
         // it to. renderFill guards itself regardless.
-        console.log(renderFill(report, opts.format as SummaryFormat));
+        console.log(
+          renderFill(report, opts.format as SummaryFormat, {
+            color: colorFor(command, process.stdout.isTTY),
+          }),
+        );
         process.exitCode = report.exitCode;
       } catch (e) {
         fail(e);
@@ -445,8 +491,10 @@ export function buildProgram(): Command {
           model?: string;
           local?: boolean;
         },
+        command: Command,
       ) => {
         try {
+          const pc = palette(colorFor(command, process.stdout.isTTY));
           const proposals = await runPromote(paths, {
             ...documentOptions(opts),
             write: opts.write,
@@ -511,8 +559,9 @@ export function buildProgram(): Command {
         runs?: number;
         maxTurns?: number;
         cache?: boolean;
-      }) => {
+      }, command: Command) => {
         try {
+          const pc = palette(colorFor(command, process.stdout.isTTY));
           if (opts.seed) {
             // No `config`: reviews.yaml and the golden directory both resolve
             // against the working directory, not the config's, so passing it
@@ -554,7 +603,11 @@ export function buildProgram(): Command {
             maxTurns: opts.maxTurns,
             noCache: opts.cache === false,
           });
-          console.log(renderCalibration(report));
+          console.log(
+            renderCalibration(report, {
+              color: colorFor(command, process.stdout.isTTY),
+            }),
+          );
           // Both conditions: the judge has to agree enough, AND the set has to
           // have been measured. A stale golden file whose pages were renamed
           // used to certify on whatever still resolved.
@@ -597,10 +650,15 @@ export function buildProgram(): Command {
         evalName: string | undefined,
         verdict: string | undefined,
         opts: { reviewer?: string; note?: string },
+        command: Command,
       ) => {
         try {
           if (!file) {
-            console.log(renderReviews(listReviews()));
+            console.log(
+              renderReviews(listReviews(), {
+                color: colorFor(command, process.stdout.isTTY),
+              }),
+            );
             return;
           }
           if (!evalName || !verdict) {

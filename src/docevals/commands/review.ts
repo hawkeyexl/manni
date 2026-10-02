@@ -8,7 +8,8 @@
  */
 import { existsSync } from "node:fs";
 import { resolve, relative } from "node:path";
-import pc from "picocolors";
+import { palette } from "../../shared/color.js";
+import type { ColorOptions } from "../reporters/pretty.js";
 import { DocevalsError } from "../types.js";
 import { readPage } from "../core/discover.js";
 import {
@@ -28,8 +29,12 @@ export function listReviews(cwd = process.cwd()): ReviewEntry[] {
   return loadReviews(cwd);
 }
 
-export function renderReviews(reviews: ReviewEntry[]): string {
+export function renderReviews(
+  reviews: ReviewEntry[],
+  opts: ColorOptions = {},
+): string {
   if (reviews.length === 0) return "No recorded reviews.";
+  const pc = palette(opts.color === true);
   return reviews
     .map((r) => {
       const verdict =

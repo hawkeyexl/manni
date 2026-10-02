@@ -1,6 +1,6 @@
 /** Reporter dispatch. */
 import type { EngineReport } from "../core/engine.js";
-import { renderPretty } from "./pretty.js";
+import { renderPretty, type ColorOptions } from "./pretty.js";
 import { renderJson } from "./json.js";
 import { renderMarkdown } from "./markdown.js";
 import { renderGithub } from "./github.js";
@@ -9,6 +9,7 @@ import { renderSarif } from "./sarif.js";
 import { renderJunit } from "./junit.js";
 import { renderHtml } from "./html.js";
 
+export type { ColorOptions } from "./pretty.js";
 export {
   REPORT_FORMATS,
   SUMMARY_FORMATS,
@@ -17,7 +18,15 @@ export {
   type SummaryFormat,
 } from "./format.js";
 
-export function render(report: EngineReport, format: ReportFormat): string {
+/**
+ * `opts.color` reaches the pretty reporter alone. Every other format is read
+ * by a machine or a browser, so it never carries terminal escapes.
+ */
+export function render(
+  report: EngineReport,
+  format: ReportFormat,
+  opts: ColorOptions = {},
+): string {
   // Same entry guard as renderList/renderFill, and for the same reason: this is
   // exported from src/index.ts, so library callers arrive with no CLI parser in
   // front. Before this, an unknown format fell off the switch and returned
@@ -29,7 +38,7 @@ export function render(report: EngineReport, format: ReportFormat): string {
   parseFormat(format, REPORT_FORMATS, "format");
   switch (format) {
     case "pretty":
-      return renderPretty(report);
+      return renderPretty(report, opts);
     case "json":
       return renderJson(report);
     case "markdown":

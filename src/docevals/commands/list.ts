@@ -3,7 +3,8 @@
  * page without executing anything. The fastest way to debug suite/frontmatter
  * resolution.
  */
-import pc from "picocolors";
+import { palette } from "../../shared/color.js";
+import type { ColorOptions } from "../reporters/pretty.js";
 import { loadRunConfig } from "../core/config.js";
 import {
   discoverPages,
@@ -64,7 +65,11 @@ export async function runList(
   return { plans, exitCode: hasErrors ? 1 : 0 };
 }
 
-export function renderList(run: ListRun, format: SummaryFormat): string {
+export function renderList(
+  run: ListRun,
+  format: SummaryFormat,
+  opts: ColorOptions = {},
+): string {
   // Exported from src/index.ts, so library callers reach this without the CLI
   // parser in front. Falling through to the pretty renderer is the silent
   // degradation ADR 01007 removes; it is no less silent off the CLI path.
@@ -92,6 +97,7 @@ export function renderList(run: ListRun, format: SummaryFormat): string {
     );
   }
 
+  const pc = palette(opts.color === true);
   const lines: string[] = [];
   for (const plan of run.plans) {
     const suite = plan.suite ? pc.dim(` (suite: ${plan.suite})`) : "";

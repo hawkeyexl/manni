@@ -1,9 +1,9 @@
 /** Pretty (terminal) reporter: `--format pretty`, the default. */
-import pc from "picocolors";
+import { palette, type Colors } from "../../shared/color.js";
 import type { EvalResult } from "../types.js";
 import type { EngineReport } from "../core/engine.js";
 
-function outcomeTag(r: EvalResult): string {
+function outcomeTag(r: EvalResult, pc: Colors): string {
   switch (r.outcome) {
     case "pass":
       return pc.green("pass");
@@ -18,7 +18,16 @@ function outcomeTag(r: EvalResult): string {
   }
 }
 
-export function renderPretty(report: EngineReport): string {
+/** What the caller decided about colour. Off unless the caller turns it on. */
+export interface ColorOptions {
+  color?: boolean;
+}
+
+export function renderPretty(
+  report: EngineReport,
+  opts: ColorOptions = {},
+): string {
+  const pc = palette(opts.color === true);
   const lines: string[] = [];
 
   const byFile = new Map<string, EvalResult[]>();
@@ -34,7 +43,7 @@ export function renderPretty(report: EngineReport): string {
       const zone = r.consensus ? pc.dim(` [${r.consensus.zone}]`) : "";
       const via = r.via ? pc.dim(" (human-reviewed)") : "";
       const gen = r.generated ? pc.cyan(" (generated)") : "";
-      lines.push(`  ${outcomeTag(r)} ${r.evalName}${zone}${via}${gen}`);
+      lines.push(`  ${outcomeTag(r, pc)} ${r.evalName}${zone}${via}${gen}`);
       if (r.skipReason && r.outcome !== "pass") {
         lines.push(pc.dim(`       ${r.skipReason}`));
       }
