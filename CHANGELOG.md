@@ -4,6 +4,219 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.0.0](https://github.com/hawkeyexl/manni/compare/v3.0.0...v4.0.0) (2026-10-02)
+
+
+### Features
+
+* **lint:** fold doc-structure-lint in as `manni lint` (0050) ([#11](https://github.com/hawkeyexl/manni/issues/11)) ([9c50f60](https://github.com/hawkeyexl/manni/commit/9c50f60641f3e5d70caafec7ea270a995285dbc9)), closes [#99](https://github.com/hawkeyexl/manni/issues/99) [#102](https://github.com/hawkeyexl/manni/issues/102) [#99](https://github.com/hawkeyexl/manni/issues/99) [#97](https://github.com/hawkeyexl/manni/issues/97) [#129](https://github.com/hawkeyexl/manni/issues/129)
+
+
+### BREAKING CHANGES
+
+* **lint:** the template format is replaced. manni lint has not shipped,
+so no published template exists to migrate.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* feat(lint): rules for every kind a page is made of
+
+v1 could count paragraphs, code blocks and lists. A reference page is defined
+by its tables, which is why the shipped tgdp:reference template asserts nothing
+about content at all.
+
+Each kind now has a rule, keyed in a template by its plural because the key
+carries a count: tables with their header columns in order, admonitions with a
+variant, images, block quotes, definition lists, and elements with a tag and
+literal attributes. codeBlocks gained language and fenceInfo, lists gained
+ordered.
+
+Two container keys replace v1's split spelling. contains is a map of kind to
+count, in any order. sequence is the ordered form, keeping the maximal-run
+grouping and the bail-on-length-mismatch reasoning v1's sequence had, and its
+several finding types collapse into one content_order_error.
+
+Messages say what a reader would say: "Expected at least 1 table, but found 0"
+rather than v1's "at least 1 paragraphs". heading_error replaces the const and
+pattern pair and gains the one-of and no-heading forms the format now allows.
+
+No parser emits the new kinds yet, so a table rule finds nothing until the
+parser chunk. The rules are tested against constructed sections, as they
+already were.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* feat(lint): align sections to rules by cost, rather than claiming them in order
+
+The v1 matcher walked the rules left to right with no backtracking, and needed
+eight compensating heuristics to do it: a lookahead that asked whether a later
+rule could claim a section, a second flag for whether that later rule was
+required, a bounded forward scan, a check that enough sections remained before
+coercing, and a fast path that had to repeat the lookahead. Each guarded a real
+bug, and each is a way of approximating the question the pass never asked: what
+pairing of sections to rules has the fewest problems?
+
+The rule list is now compiled to an automaton and aligned against the document
+by minimum cost. A match is free, coercing a rule onto a section its heading
+rejects costs 1, a missing required occurrence or an unexpected section costs 2.
+Ties break toward the rule that names its heading, then toward keeping a
+repeating rule's sections adjacent, then toward the earlier rule.
+
+Every v1 behaviour now falls out of those weights or out of the construction,
+and the table in the header says which produces which. A wrong heading still
+reads "expected X, found Y" rather than a missing section plus an unexpected
+one, because coercing costs less than both. A repeating rule still stops at a
+heading a later rule names, because taking it would force that rule to go
+missing. enoughSectionsRemain is gone: it was counting toward the comparison
+the alignment now makes exactly.
+
+The weights and the tie-break order are interface, not implementation. Changing
+them changes which findings appear on documents nobody edited, so they are
+exported, documented and pinned.
+
+A repeat that is absent reports one missing_group rather than one missing
+section per member, and a missing occurrence anchors where the gap is rather
+than at line 1.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* feat(lint): the validator describes the page, and says when a rule cannot run
+
+The validator was a stub that wired the matcher to the rules and left three
+things open.
+
+A template is a rule, so it describes the page: its heading constrains the
+page's own title, its sequence and contains describe what sits before the first
+heading, and its sections are the headings under it. A page with no H1 gets an
+implicit lead section, which is what heading: false matches.
+
+A rule about a kind the file's format cannot emit is now reported once, as a
+warning, and removed before matching. Removing it is the point: left standing,
+a rule counting tables in a format with no tables fails the page while the
+report says the rule was not checked.
+
+The occurrence default was wrong for the one case that matters. max: 0 is how a
+template forbids a kind, and min defaulting to 1 made that unsatisfiable.
+
+Also: a warning never moves the exit code, and the state-cap message now names
+the template a reader wrote rather than a placeholder.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* fix(lint): show a warning instead of swallowing it
+
+lint produced its first warning-severity finding this week, and three reporters
+were written when every finding was an error.
+
+Pretty returned as soon as a file passed, before it printed anything, so a file
+whose only finding was a warning printed a tick and nothing else. It now has a
+mark of its own: the file passed, and there is something to read. The summary
+names the warning count when there is one, as meta and cite do.
+
+The JSON reporter omitted severity entirely, so a consumer saw success: true
+beside a non-empty errors array with no way to tell why. Adding the key is
+additive, which is the half of that contract that is safe.
+
+A template fragment is now spelled the same way in every message lint prints,
+including the one about a template too large to compile.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* feat(lint): the seven built-ins, rewritten as grammars
+
+Each TGDP template wrapped everything in a title section standing for the
+page's H1. A template is the page now, so that wrapper is gone and what sat
+under it is the template's own sections.
+
+Two of them stop apologising. Troubleshooting could not repeat a pair of rules
+in v1, so it matched either the word Cause or the word Solution anywhere,
+losing the order the doctype actually asks for. It now repeats the pair, one
+required cause followed by an optional solution, as many times as a symptom
+needs. Reference carried no content rules at all because the parser could not
+see a table; it asks for one now, and the run stays green with a warning
+saying the rule did not run, which is the honest answer until a parser reports
+tables.
+
+Nothing in the format cries wolf on its own built-ins any more. Ajv's strict
+mode was printing two lines to stderr on every load, and the new ambiguity
+warning fired on two adjacent wildcards that differ in how many sections they
+take. It now fires only when the two are genuinely indistinguishable, which is
+when nothing but their order separates them.
+
+The vendored upstream pages lint clean against every rewritten template, and no
+fixture was edited to make that true.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* docs(lint): proposal 0054, the template format as a grammar
+
+The record for the format the last six commits implement. It states the four
+defects of the v1 map, the decision list, the alignment's cost table and the
+tie-breaks, and the eight stress tests the plan called for, including why an
+element is a block rather than a transparency and what a heading inside one
+costs.
+
+It also records what the DITA survey found, which is that DITA-OT is the wrong
+second structure tool: none of its 162 message codes is about section shape,
+and the rules its DTD cannot state are exactly the ones this format states.
+Two follow-ups fall out of it, each its own proposal.
+
+Sara's S7 joins the CUJ list, since describing a doctype is now a journey the
+tool serves rather than a thing the format half-says.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* docs(proposals): shorten the two index rows Vale failed on
+
+Both new rows in the proposals index ran to 32 words, and 0053's opened with
+a colon reveal. The local run covered the proposal files and not the index
+they are listed in.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* fix(lint): a headless section reports no heading, not an empty one
+
+`sectionContext` handed content rules `section.title` unchanged, so a section
+matched with no heading of its own produced findings with `heading: ""` where
+`match.ts` and `validator.ts` both produce `null`. The JSON reporter's shape is
+an API: `manni docevals` parses that key rather than validating it, so two
+spellings of "no heading" reach it as two different facts.
+
+`loadBuiltin` now applies the same top-level guard `loadTemplateFile` has. A
+built-in should never fail it, which is why it belongs here: if one ever does,
+the error names the file and what it held instead of surfacing as something
+opaque from `dereference`.
+
+A multi-tag element count reads `1 "Note" or "Tip" element` rather than a comma
+list, which parsed as two nouns under a singular verb.
+
+Two comments rather than code. The heap's `?? 0` fallbacks are a concession to
+`noUncheckedIndexedAccess` and would invert the heap order rather than throw
+if one were ever reached, which is worth saying out loud. And `compilePattern`
+now records that it checks syntax and nothing else: a template fetched over
+HTTP can supply a pattern that backtracks catastrophically, and capping the
+input length does not bound that, because the blow-up is exponential in the
+length. The boundary that holds is the one 0015 drew for schemas.
+
+Reported by the review bot on #99.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* docs(lint): the CI page shows where a missing section is annotated
+
+The alignment anchors a gap at the end of a document at the end of the file,
+not on the parent's heading, so a finding about the bottom of a page no longer
+sorts to the top of the report. The page still documented the old position, in
+its example annotation, in its verification checklist, and in the embedded test
+that runs the command.
+
+The example now shows `line=22` and the page says why: a missing section is
+anchored where it would go.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+* fix(lint): one spelling of "no heading", and no rule runs unasked
+
 # [3.0.0](https://github.com/hawkeyexl/manni/compare/v2.12.1...v3.0.0) (2026-10-01)
 
 

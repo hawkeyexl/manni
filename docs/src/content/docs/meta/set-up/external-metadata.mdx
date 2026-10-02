@@ -362,7 +362,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: hawkeyexl/manni@v3
+      - uses: hawkeyexl/manni@v4
 ```
 
 The private repository checks out its submodule and runs from its own root.
@@ -381,7 +381,7 @@ jobs:
         with:
           submodules: true
           token: ${{ secrets.PUBLIC_DOCS_READ_TOKEN }}
-      - uses: hawkeyexl/manni@v3
+      - uses: hawkeyexl/manni@v4
 ```
 
 {/* cite action-paths-default-to-config */}
@@ -463,7 +463,7 @@ jobs:
         with:
           submodules: true
           token: ${{ secrets.PUBLIC_DOCS_READ_TOKEN }}
-      - uses: hawkeyexl/manni@v3
+      - uses: hawkeyexl/manni@v4
         env:
           PRIVATE_DOCS_TOKEN: ${{ secrets.PRIVATE_DOCS_TOKEN }}
 ```

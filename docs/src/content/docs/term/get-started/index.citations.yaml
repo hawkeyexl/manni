@@ -24,7 +24,7 @@ docs/src/content/docs/term/get-started/index.mdx:
         file: package.json
         lines: 36-38
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: term-page-every-format
       claim:
         lines: 17-18
@@ -50,7 +50,7 @@ docs/src/content/docs/term/get-started/index.mdx:
         file: src/cli.ts
         lines: 79-83
         integrity: sha256-179b2e9f01aeb3d14a5a9ee7869a85244286287ad67bb6a54d4faadc3fcb661d
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: type-term-marks-page
       claim:
         lines: 46

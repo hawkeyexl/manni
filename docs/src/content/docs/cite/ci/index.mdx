@@ -229,7 +229,7 @@ an unpacked archive.
 
 <Aside type="note" title="Pin the version for reproducible runs">
   `npx --yes @hawkeyexl/manni@latest` resolves the latest published version
-  each run. Pin the major, as in `npx --yes @hawkeyexl/manni@3 cite check …`,
+  each run. Pin the major, as in `npx --yes @hawkeyexl/manni@4 cite check …`,
   and bump it deliberately.
 </Aside>
 
@@ -263,7 +263,7 @@ two the [metadata tool publishes](/manni/meta/ci/recipes/#pre-commit):
 ```yaml title=".pre-commit-config.yaml"
 repos:
   - repo: https://github.com/hawkeyexl/manni
-    rev: v3.0.0
+    rev: v4.0.0
     hooks:
       - id: manni-cite
 ```

@@ -282,7 +282,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/load-files.ts
         lines: 234
         integrity: sha256-062dfc0e8704a9f5cfab261efdea54ca2e9e82c088fa4257187e47da6a73fc6c
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: excluded-file-is-not-read
       claim:
         lines: 245-248
@@ -300,7 +300,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/load-files.ts
         lines: 16
         integrity: sha256-84752dfdaf912a4e2ffe61f21e2984820d5364e5329ac0d8f36bd8290e6971e4
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: url-is-where-the-collection-is-published
       claim:
         integrity: sha256-4c817dc1da81b7fae1f03ceead41ee7f611e75963d4795b81d6bc964ea9c3444
@@ -1165,7 +1165,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 40-47
         integrity: sha256-2daa9e8de68a5eae1e1f18447739af93820d90e8dec5e594d99b39a63494c78d
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: vale-config-is-resolved-from-the-config-file
       claim:
         lines: 1272
@@ -1174,7 +1174,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 143-147
         integrity: sha256-e031656b7d919f957129e2cb6d1848230e626368ce9b7ab0878bdd22a7114185
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: term-starts-vale-with-the-configured-file
       claim:
         lines: 1274-1276
@@ -1308,7 +1308,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/load-files.ts
         lines: 362-363
         integrity: sha256-fe70e2a6e37e41b892f66e1cb51aa030b785c4dd34ed5c29169ac290c6901a3d
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: unknown-key-rule-applies-to-nested-mappings
       claim:
         integrity: sha256-aeb0a709c72ec2f4b66561390db840eb4bc1d3ca59fa2f91ff025ec1dbbf0fa4
@@ -1403,7 +1403,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/load-files.ts
         lines: 155-161
         integrity: sha256-d2a0081d848b67ea2eab9474d68c60d16c4e91ae4312cfa666fbe60437479583
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: explicit-true-reports-when-git-cannot-answer
       claim:
         integrity: sha256-ef5f6999325c7a41f6cc76e2251bf76be5aa8da733dc663d0b0492b524ae40d6
@@ -2515,7 +2515,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 143-147
         integrity: sha256-e031656b7d919f957129e2cb6d1848230e626368ce9b7ab0878bdd22a7114185
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: override-globs-match-the-config-relative-path
       claim:
         lines: 2602
@@ -2621,7 +2621,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/load-files.ts
         lines: 234
         integrity: sha256-062dfc0e8704a9f5cfab261efdea54ca2e9e82c088fa4257187e47da6a73fc6c
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: allow-empty-flag-overrides-config
       claim:
         lines: 2641
@@ -2630,7 +2630,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/load-files.ts
         lines: 362-363
         integrity: sha256-fe70e2a6e37e41b892f66e1cb51aa030b785c4dd34ed5c29169ac290c6901a3d
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: unknown-tools-key-is-exit-2
       claim:
         lines: 1280-1282
@@ -2639,7 +2639,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/shared/tools.ts
         lines: 75-94
         integrity: sha256-2140d9bcbfd3344729f8511b0494eef8230f652877d48420403d83b4a6ac6ed1
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: missing-vale-config-refused-when-vale-runs
       claim:
         lines: 1290-1291
