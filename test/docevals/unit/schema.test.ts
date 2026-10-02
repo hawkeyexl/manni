@@ -34,8 +34,8 @@ describe("the page schema", () => {
   it("ships no copy of its own", () => {
     const pkg = JSON.parse(
       readFileSync(resolve(ROOT, "package.json"), "utf8"),
-    ) as { files: string[]; exports: Record<string, unknown> };
-    expect(pkg.files).not.toContain("schemas");
+    ) as { exports: Record<string, unknown> };
+    // `schemas/` ships lint's config and template schemas; none is docevals'.
     expect(Object.keys(pkg.exports).filter((k) => k.startsWith("./schemas/"))).toEqual([]);
     expect(existsSync(resolve(ROOT, "schemas/docevals"))).toBe(false);
     expect(existsSync(resolve(ROOT, "docs/public/docevals/schemas"))).toBe(false);
