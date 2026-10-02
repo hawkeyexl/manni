@@ -6,11 +6,11 @@ last-updated: 2026-09-21
 ---
 
 Eval declarations live in page frontmatter under three keys, validated against
-[`manni:evals:1.0.0-proposal.4`](/manni/meta/proposals/evals/), the common vocabulary manni meta
+[`manni:evals:1.0.0-proposal.4`](/manni/meta/reference/schemas/manni-evals/), the common vocabulary manni meta
 proposes for per-page quality assertions. manni docevals validates against that draft itself,
 bundled into the CLI, and implements the graders behind it. Which machines wrote the page and
 proposed its evals is recorded in two keys from
-[`manni:ai-context:1.0.0-proposal.3`](/manni/meta/proposals/ai-context/), described
+[`manni:ai-context:1.0.0-proposal.3`](/manni/meta/reference/schemas/manni-ai-context/), described
 [below](#provenance-and-meta-provenance). Verified against those drafts,
 `src/docevals/core/resolve.ts` and `src/docevals/core/external.ts`.
 
@@ -301,7 +301,7 @@ the ids it wrote after the entry's own and sets their confidence. Everything els
 every other entry, is kept. Without an entry for the model, it appends one. That is the merge
 `manni meta fill` does for `fields`, so a page has one entry per model whichever command proposed
 what. The field definitions themselves are the
-[ai-context draft's](/manni/meta/proposals/ai-context/).
+[ai-context draft's](/manni/meta/reference/schemas/manni-ai-context/).
 
 Both keys are marked `external` in that draft, so the entry goes wherever
 [its location puts it](#where-evals-live). A manifest that owns `meta-provenance` holds the entry,
@@ -310,7 +310,7 @@ and the page then carries none.
 ## Validating the frontmatter itself
 
 No copy of the evals draft ships in the package, and no URL serves it while it is
-[open for review](/manni/meta/proposals/evals/). To check declarations with `manni meta validate`,
+[open for review](/manni/meta/reference/schemas/manni-evals/). To check declarations with `manni meta validate`,
 copy
 [`1.0.0-proposal.4.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/evals/1.0.0-proposal.4.json)
 into your repository beside your own schemas, and commit it:
