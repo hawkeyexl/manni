@@ -92,7 +92,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: package.json
         lines: 36-38
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: cite-hook-checks-staged-pages
       claim:
         integrity: sha256-a0542930798b64c6850202ea0ea7e170a89469a24a7ecb8bd3c00d4e93aa98f4

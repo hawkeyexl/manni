@@ -110,7 +110,7 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         file: src/meta/core/load-files.ts
         lines: 269-272
         integrity: sha256-4599d601ad8068f93a532f63eb18d8e223706720fc069d02d27c2a17f0a63699
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: directory-walk-skips-dot-entries
       claim:
         lines: 104
@@ -119,7 +119,7 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         file: src/meta/core/load-files.ts
         lines: 122-131
         integrity: sha256-2494e1f08546e9c1cadb0355550e2537d2ed316eec1b92c36b68e5d9e3df5c05
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: overrides-do-not-affect-file-discovery
       claim:
         lines: 104

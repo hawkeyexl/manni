@@ -82,7 +82,7 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         file: src/meta/core/load-files.ts
         lines: 211
         integrity: sha256-ee02e578540932639c3aa659c0568d487c6d8a4293633f28b18dd4ff557ad7f9
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: key-baseline
       claim:
         lines: 93

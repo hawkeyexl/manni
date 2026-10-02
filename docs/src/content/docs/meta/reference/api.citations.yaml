@@ -8,7 +8,7 @@ docs/src/content/docs/meta/reference/api.mdx:
         file: src/index.ts
         lines: 3-12
         integrity: sha256-460b7750d5cd204db1025dfaa2b26f2a8112465177e55145e84432ad200a1985
-        commit-sha: 9fa255fc3140d6a52ec504501fa41c453eb9cef2
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: api-namespace-cannot-collide
       claim:
         integrity: sha256-e0357514e8b03e0b6eab0dd59d0bae4d203d732c60be94c3715935295cea6eff
