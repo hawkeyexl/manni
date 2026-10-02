@@ -18,7 +18,7 @@ docs/src/content/docs/meta/reference/glossary/schema.mdx:
       integrity: sha256-751d2e0ffa5ae85db2007d561909f283842650ba5124dbb4b6b5c830f189024d
   owner:
     - "@hawkeyexl"
-  created: 2026-09-16
+  created: 2026-09-17
   source-of-truth:
     - path: src/meta/core/schema-registry.ts
       kind: implementation

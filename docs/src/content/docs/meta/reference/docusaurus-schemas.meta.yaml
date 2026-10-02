@@ -189,7 +189,7 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
       integrity: sha256-0be91bba5e3b6bcb9fefbc975cdaecc70b107aa1e94b5ce78abd699b7c22f5c9
   owner:
     - "@hawkeyexl"
-  created: 2026-08-10
+  created: 2026-08-11
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

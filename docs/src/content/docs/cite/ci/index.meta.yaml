@@ -156,7 +156,7 @@ docs/src/content/docs/cite/ci/index.mdx:
       integrity: sha256-f70d847ee4ca5a522a64d7b376605c019d1c0e4decca0d99465e0d47ebebd7dd
   owner:
     - "@hawkeyexl"
-  created: 2026-09-11
+  created: 2026-09-12
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

@@ -32,7 +32,7 @@ docs/src/content/docs/term/ci/index.mdx:
       integrity: sha256-7fde8ec7dc24527018330bab85216b86b081508afe9b62b11b24c29869f3eae0
   owner:
     - "@hawkeyexl"
-  created: 2026-09-16
+  created: 2026-09-17
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

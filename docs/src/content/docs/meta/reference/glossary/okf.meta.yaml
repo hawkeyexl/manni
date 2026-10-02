@@ -21,7 +21,7 @@ docs/src/content/docs/meta/reference/glossary/okf.mdx:
       integrity: sha256-5661ef35877d747bba425cacd84e3e491dfa9f86f484f6a00994aeaa7703b73e
   owner:
     - "@hawkeyexl"
-  created: 2026-09-16
+  created: 2026-09-17
   source-of-truth:
     - path: src/meta/schemas/okf/0.1.json
       kind: implementation

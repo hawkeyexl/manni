@@ -121,7 +121,7 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
       integrity: sha256-13b6892ab679879800db7fe660a3254878a8399a245c644eea06488d000b5b8d
   owner:
     - "@hawkeyexl"
-  created: 2026-08-23
+  created: 2026-08-24
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:
