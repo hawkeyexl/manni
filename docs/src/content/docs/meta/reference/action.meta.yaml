@@ -89,7 +89,7 @@ docs/src/content/docs/meta/reference/action.mdx:
       integrity: sha256-de864da5d0fc2e2266fe0267ce1ee7627432796b28f0f0bda37940487c230505
   owner:
     - "@hawkeyexl"
-  created: 2026-08-22
+  created: 2026-08-23
   meta-provenance:
     - generated-by: claude-sonnet-4-5
       fields:

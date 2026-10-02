@@ -759,7 +759,7 @@ function judge(
     lastUpdated =
       working !== undefined && working !== null && !sameValue(working, committed)
         ? git(working, "stamped in working tree")
-        : git(localDate(now()), "uncommitted body change");
+        : git(utcDate(now()), "uncommitted body change");
   } else if (newestBody === undefined) {
     lastBodyCommit = null;
     lastUpdated = null;
@@ -1240,12 +1240,22 @@ function sameValue(a: unknown, b: unknown): boolean {
 
 const short = (sha: string): string => sha.slice(0, 7);
 
-/** The `YYYY-MM-DD` of a `%aI` string: the author's own day, no conversion. */
-const datePart = (iso: string): string => iso.slice(0, 10);
+/**
+ * The UTC `YYYY-MM-DD` of a `%aI` string (proposal 0072). The author's own
+ * offset would date one instant differently on two machines, so a page
+ * stamped on a branch read stale on main once a squash put another commit's
+ * offset in its place.
+ */
+const datePart = (iso: string): string => {
+  const d = new Date(iso);
+  // A malformed record parses to an empty author date; keep it empty rather
+  // than throw, as slicing the string did.
+  return Number.isNaN(d.getTime()) ? "" : utcDate(d);
+};
 
-function localDate(d: Date): string {
-  const pad = (n: number): string => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+/** Today, or any instant, as a UTC day: the same answer on every machine. */
+function utcDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
 }
 
 /** `Name <email>` → `Name`; a bare name is returned trimmed. */

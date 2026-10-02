@@ -18,7 +18,7 @@ docs/src/content/docs/meta/reference/glossary/schema-set.mdx:
       integrity: sha256-ca80b83b70c0b093bf3b96ad3880969217d552802fb5e6e6d59461dd639be194
   owner:
     - "@hawkeyexl"
-  created: 2026-09-16
+  created: 2026-09-17
   source-of-truth:
     - path: src/meta/core/validator.ts
       kind: implementation
