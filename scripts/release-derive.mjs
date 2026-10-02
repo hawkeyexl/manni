@@ -101,7 +101,9 @@ export function summarize(stdout) {
     .filter((line) => line !== "");
   const summary = lines.at(-1);
   if (summary === undefined) return "manni meta derive printed no summary";
-  return /^\d+ files?, 0 changed, 0 fields written$/.test(summary)
+  // Derive omits the ranges count when it is zero; accept it anyway, so a
+  // summary that grows a `, 0 ranges written` still reads as quiet.
+  return /^\d+ files?, 0 changed, 0 fields written(, 0 ranges written)?$/.test(summary)
     ? "No page's stamps moved; the docs' derived fields are current"
     : summary;
 }

@@ -86,6 +86,12 @@ describe("the log line", () => {
     );
   });
 
+  it("still reads a quiet run that also reports zero ranges as quiet", () => {
+    expect(plugin.summarize("134 files, 0 changed, 0 fields written, 0 ranges written\n")).toBe(
+      "No page's stamps moved; the docs' derived fields are current",
+    );
+  });
+
   it("passes a run that wrote something through verbatim", () => {
     expect(plugin.summarize("...\n\n134 files, 10 changed, 10 fields written, 2 ranges written\n")).toBe(
       "134 files, 10 changed, 10 fields written, 2 ranges written",
