@@ -9,9 +9,6 @@ docs/src/content/docs/lint/reference/configuration.mdx:
     - generated-by: Claude Opus 5
       lines: 69-219
       integrity: sha256-4a55a0593346a74e4355d2d4c3cbc175d9ea2fd2dab3d1f6c10ca5c15ee2050a
-    - generated-by: Claude Opus 5.5
-      lines: 220
-      integrity: sha256-a8aa7c06275a965da71e799dffb829090879de29840fddb1fe1d1aadcf4b5cac
     - generated-by: Claude Opus 5
       lines: 221-278
       integrity: sha256-66384d50d1b5593ce46b4a9d3069d25ec44988e746d14b5103f9de92d29e00e1
