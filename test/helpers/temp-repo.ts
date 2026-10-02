@@ -150,6 +150,24 @@ export function commit(dir: string, message: string, opts: CommitOptions = {}): 
   return git(dir, ["rev-parse", "HEAD"]);
 }
 
+/**
+ * Merge `branch` into the checked-out branch with a real merge commit, dated
+ * `authorDate` for author and committer alike. The merge must apply cleanly.
+ */
+export function mergeBranch(dir: string, branch: string, authorDate: string): string {
+  const env = { ...process.env, GIT_AUTHOR_DATE: authorDate, GIT_COMMITTER_DATE: authorDate };
+  execFileSync(
+    "git",
+    [
+      "-c", `user.name=${DEFAULT_AUTHOR.name}`,
+      "-c", `user.email=${DEFAULT_AUTHOR.email}`,
+      "merge", "-q", "--no-ff", "--no-verify", "-m", `merge ${branch}`, branch,
+    ],
+    { cwd: dir, stdio: "ignore", env },
+  );
+  return git(dir, ["rev-parse", "HEAD"]);
+}
+
 export interface SquashOptions {
   /** The branch whose tip's tree the squash commits. */
   branch: string;
