@@ -1,0 +1,336 @@
+---
+title: manni evals vocabulary
+description: "The manni:evals:1.0.0 schema, named and testable assertions about a page, each graded by an AI judge, a command, a human, or a tool."
+sidebar:
+  label: "manni:evals:1.0.0"
+type: reference
+id: meta-reference-schemas-manni-evals
+keywords: ["evals", "manni:evals:1.0.0", "graders", "target", "strict overlay"]
+language: en
+audiences: ["schema-authors"]
+intent: "Write named, testable assertions about a page with manni:evals:1.0.0."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter"]
+sample-questions:
+  - "What does a manni:evals:1.0.0 entry contain?"
+  - "Which graders can an eval use?"
+  - "What does the evals strict overlay narrow?"
+graph:
+  label: "manni evals vocabulary"
+  type: reference
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/evals/1.0.0.json
+tags:
+  - evals
+  - schema
+  - validation
+  - assertions
+  - graders
+  - testing
+action: develop
+prerequisites:
+  - schema
+  - frontmatter
+  - meta-reference-schema-resolution
+next-steps:
+  - meta-schemas-field-location
+  - meta-reference-schemas-manni-ai-context
+related-pages:
+  - meta-schemas-field-location
+  - meta-reference-schemas-manni-ai-context
+  - meta-reference-schemas-manni-artifact-evals
+  - meta-reference-schema-resolution
+risks: read-only
+---
+
+**Built-in id:** `manni:evals:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/evals/1.0.0.json`. A
+`$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+**The question it answers: what must be true of this page?** Evals are
+per-page quality assertions, such as "the install command matches the current
+package name." The vocabulary describes the data. Any grader, judge, or CI tool
+can read it, and other schemas can compose on top of it. A docs team adopts it
+when it wants those checks written beside the page they protect. manni meta
+checks that the declarations are well formed. It does not run them.
+
+## Use it
+
+Evals is in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it on every page with no config line. A config's own `schemas` add
+to the default set. An override replaces the set, so an entry that should keep
+evals sets `defaults: true`:
+
+```yaml
+meta:
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/guide.json
+```
+
+## Fields
+
+Three page-level keys. Two carry the reserved `eval-` prefix, and the third is
+`evals` itself.
+
+| Field | Type | Location | Notes |
+|---|---|---|---|
+| `evals` | string, or non-empty list of entries | `external` | One AI-judged assertion as a string, or the list. A page with no evals omits the key, because an empty list fails |
+| `eval-suite` | string, non-empty | `external` | A named suite from the grading tool's config. Its evals apply beside the page's own, and a page entry wins on an id collision |
+| `eval-skip` | boolean, default `false` | `external` | Skip the page's evals. A tool reports the skip rather than ignoring the page |
+
+The Location column is the `x-manni-location` mark each field carries. `page`
+means the value belongs in the document's own metadata and reaches delivered
+output. `external` means it belongs in the collection's external-metadata
+manifest. A field is `page` when an agent fetching the page acts on it. All
+three keys are `external`, because evals belong to CI, and an agent reading
+the page does not act on them. The keys inside an entry carry no mark of their
+own. See [field location](/manni/meta/schemas/field-location/) for how the
+marks are used.
+
+### Entries
+
+An entry takes one of three forms.
+
+- **A string.** An AI-judged assertion at error severity, and the only form
+  with no id.
+- **A `use:` reference.** It joins an eval the grading tool's config defines,
+  by name.
+- **An inline definition.** An object with a required `id`.
+
+Both object forms are closed, so an unknown key inside one fails.
+
+| Key | Type | Form | Notes |
+|---|---|---|---|
+| `use` | string, non-empty | reference | The name of an eval the config defines. Its presence makes the object a reference |
+| `id` | kebab-case string | inline, **required** | Unique within the page. Two entries with one id is an error, which a tool enforces because the schema cannot |
+| `assertion` | string, non-empty | inline | The testable claim, in plain language. Required for `ai` and `human` graders, and when `grader` is absent |
+| `grader` | `ai`, `command`, `human`, or `tool:<kebab>` | inline | How the assertion is checked. Default `ai` |
+| `type` | `capability` or `regression` | both | `capability` probes a boundary and is expected to fail sometimes. `regression`, the default, protects behavior that works |
+| `severity` | `error`, `warning`, or `notice` | both | Only an error-severity failure fails a run. Default `error`. The same scale every manni tool uses |
+| `weight` | number above 0 | both | How much this eval's outcome moves an aggregate score. Default 1 |
+| `options` | object | both | Grader-specific options, which the grader validates |
+| `skip` | boolean | both | Skip this one eval |
+| `target` | `body`, `raw`, `frontmatter`, or a file object | inline | What the grader receives. See [Target](#target) |
+| `evidence` | string, non-empty | inline | A hint scoping where the judge looks within what it receives |
+| `examples` | object with `pass` and `fail` | inline | Anchor examples for the judge. Each member is one string or a non-empty list of unique strings |
+| `provider` | string, non-empty | inline | The inference provider or agent runner that judges an `ai` eval. Omit it for the config default |
+| `model` | string, non-empty | inline | The model that judges an `ai` eval, within `provider` |
+| `runs` | integer, 1 to 50 | inline | Ensemble runs for an `ai` eval, overriding the configured default |
+| `command` | non-empty list of strings | inline | The argv of a `command` eval. `{file}` stands for the page path. Exit 0 passes |
+| `success-exit-codes` | non-empty list of integers | inline | Exit codes that count as a pass. Default `[0]` |
+| `timeout-ms` | integer, 1 or more | inline | The command's wall-clock budget, in milliseconds |
+| `generated-assertion-hash` | string | inline | The hash of the assertion a generated command was built from |
+| `severity-map` | object of severities | inline | Maps a `tool:*` grader's own severities onto the three above |
+
+### Graders
+
+`ai` is the default. It is a model or an agent, chosen per eval with
+`provider`. `command` runs an executable. `human` puts the entry in a review
+queue. `tool:<kebab>` names an integration, and that namespace is open. The
+first three are closed, because the schema's conditionals branch on them.
+
+The conditionals hold these rules:
+
+- `ai` and `human` entries, and entries with no `grader`, require `assertion`.
+- A `command` entry requires `assertion` or `command`.
+- An entry with `command`, `success-exit-codes`, or `timeout-ms` must say
+  `grader: command`.
+- `provider`, `model`, and `runs` are legal only on an `ai` entry.
+- `generated-assertion-hash` is never legal without `command`.
+
+A `command` entry with an assertion and no command is the generation contract.
+A tool generates a check script from the assertion, then writes `command` and
+`generated-assertion-hash` back. A command with a hash that differs from the
+current assertion's is a signal to regenerate it.
+
+### Target
+
+`target` selects the bytes the grader receives.
+
+| Value | The grader receives |
+|---|---|
+| `body` | The page body with the frontmatter stripped. The default |
+| `raw` | The file verbatim, frontmatter included |
+| `frontmatter` | The parsed frontmatter alone |
+| `{ source: file, path: … }` | A companion file, at a `path` relative to the page's directory |
+
+## Additional properties
+
+Allowed at the page root, with one exception. The root is open, so a
+generator's keys and the other vocabularies' keys pass beside these three. The
+`eval-` prefix is reserved, and any `eval-*` key other than `eval-suite` and
+`eval-skip` fails. Entry objects are closed.
+
+## Example
+
+The minimum is one assertion:
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+evals: The documented install command matches the current package name.
+---
+```
+
+A suite plus four entries, one per grader shape:
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+eval-suite: how-to
+evals:
+  - id: install-command-current
+    assertion: The install command matches the current package name.
+  - id: links-resolve
+    grader: command
+    command: [npx, linkinator, "{file}"]
+  - id: install-verified
+    assertion: The Helm install steps produce a Ready operator pod.
+    grader: human
+    severity: warning
+  - id: description-says-what-for
+    assertion: The description says what the reader can do after reading.
+    target: frontmatter
+    weight: 2
+    runs: 3
+---
+```
+
+## A common mistake
+
+A misspelled settings key fails, even though the root is open.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+eval-sute: how-to
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:evals:1.0.0
+✗ page.md
+    /eval-sute  boolean schema is false  (line 4)  [manni:evals:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+The exit code is 1. "Boolean schema is false" is how the reserved prefix
+reports a key it does not know.
+
+## Design decisions
+
+- **Flat, like the rest of the family.** There is no settings object. The list
+  is the value, and the settings are page-level `eval-*` keys. The root stays
+  open, so the schema rejects any unknown `eval-*` key. That gives the root the
+  property a closed container has, meaning a misspelled key fails instead of
+  being ignored.
+- **Ids are required on object entries.** The string shorthand is the only
+  id-less form. Names derived from position orphan cached verdicts whenever
+  entries move.
+- **Errors name the actual fault.** Entries branch with `if`/`then` rather
+  than `oneOf`. A misspelled key inside an object is reported against that
+  key, instead of collapsing to "must be string."
+- **A reference overrides only what the page claims.** A `use:` entry may set
+  `skip`, `type`, `severity`, `options`, and `weight`. It may not set
+  `provider`, `model`, `runs`, or `target`. Those say how the tool executes,
+  and a named eval reads the same bytes on every page that uses it.
+- **`weight` scores. It does not judge.** It changes how much an outcome moves
+  a suite or run total, and never the eval's own pass or fail. SARIF, JUnit and
+  findings baselines consume that binary outcome. Zero is excluded, because a
+  weightless eval is a silent disable, and `skip` already says that openly.
+- **`target` selects the bytes, and `evidence` hints where to look.** A
+  deterministic grader has nothing to focus on, but it can still read the
+  frontmatter or a companion file. So the selector is structural, and every
+  grader honors it. That is why it is named `target` and not `focus`.
+- **`runs` and `model` belong to `ai` evals.** `runs` is capped at 50 because
+  runs multiply cost directly. `model` lets an eval name a judge other than
+  the machines that wrote the page. That makes a self-preference check
+  possible, against the machines that
+  [ai-context](/manni/meta/reference/schemas/manni-ai-context/) records.
+- **Machine-proposed evals go in the family's one trail.** Their ids sit under
+  `evals` in a page-level `meta-provenance` entry, which
+  [ai-context](/manni/meta/reference/schemas/manni-ai-context/) defines. A
+  human deletes the entry after review, so a surviving entry means unreviewed
+  machine-proposed evals.
+- **Artifacts share the entry shape.** Skills and agent definitions carry
+  evals under `metadata`, in
+  [artifact-evals](/manni/meta/reference/schemas/manni-artifact-evals/). The
+  envelope, the `target` values and the grader list differ there, each for a
+  stated reason.
+
+## Strict overlay
+
+**Strict overlay id:** `manni:evals-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/evals-strict/1.0.0.json`.
+The overlay holds only what strict adds. It narrows the form of a value that is
+present and requires no key. A string entry passes it as the open vocabulary
+reads it.
+
+| Field | Strict adds |
+|---|---|
+| `eval-suite`, `use` | Kebab case, meaning lowercase letters, digits and hyphens that start with a letter or digit |
+| `provider` | Kebab case, such as `anthropic` or `llama-cpp` |
+| `model` | A model id with no spaces, of letters, digits, `.`, `_`, `:`, `/`, `\`, `@` and `-`. A Windows path to a local model passes |
+| `success-exit-codes` | Unique, each from 0 to 255, the range a process returns |
+| `target.path` | A relative path, with no leading `/`, `\` or `~`, no drive letter and no URL scheme |
+| `generated-assertion-hash` | `sha256-` and sixty-four lowercase hex digits |
+
+`strict: true` stacks it right after the vocabulary, with every other
+default's overlay beside its own base:
+
+```yaml
+meta:
+  strict: true
+```
+
+To adopt this overlay alone, list its id. The default set already carries the
+vocabulary:
+
+```yaml
+meta:
+  schemas:
+    - manni:evals-strict:1.0.0
+```
+
+Each schema is checked on its own, and a finding names the one that produced
+it. A strict-only failure reads as one.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+eval-suite: How-To
+evals:
+  - id: links-resolve
+    grader: command
+    command: [npx, linkinator, "{file}"]
+    success-exit-codes: [0, 256]
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:evals:1.0.0 -s manni:evals-strict:1.0.0
+✗ page.md
+    /evals/0/success-exit-codes/1  must be <= 255  (line 9)  [manni:evals-strict:1.0.0]
+    /eval-suite  must match pattern "^[a-z0-9][a-z0-9-]*$"  (line 4)  [manni:evals-strict:1.0.0]
+    /eval-suite  warning "eval-suite" is stored in the page; manni:evals:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+    /evals  warning "evals" is stored in the page; manni:evals:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 5)  [location:external]
+
+1 file checked, 0 passed, 1 failed, 2 errors, 2 warnings
+```
+
+The exit code is 1. The two warnings are the `external` location marks at
+work, and they never fail a run. The open vocabulary accepts both values, so
+the overlay alone fails the page.

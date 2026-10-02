@@ -1,0 +1,13 @@
+# Proposal 0068 for cite: the manifest names no keys, and the citations
+# vocabulary marks citations external, so each page keeps its citations in a
+# manifest of its own.
+meta:
+  schemas: ["manni:citations:1.0.0"]
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.citations.yaml"
+cite:
+  # The sources sit beside the pages in this fixture.
+  root: .

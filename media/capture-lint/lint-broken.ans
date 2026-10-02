@@ -1,0 +1,5 @@
+Using manni.config.yaml (.)
+[31m✗[39m docs/rotate-key.md
+    [2m23:1[22m  [36mmanni:lint/structure/missing-section[39m  Rotate an API key: Missing section "See also"
+
+[31m1 file checked, 0 passed, 1 failed, 0 skipped[39m

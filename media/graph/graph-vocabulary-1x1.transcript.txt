@@ -1,0 +1,69 @@
+manni graph vocabulary, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 42.6 s. Every terminal line is real output of cat, sed, echo and of
+`node dist/cli.js ...` (typed as manni), run in a demo repository outside the manni checkout.
+media/graph/capture/capture.sh builds it from test/fixtures/term/ and captures every byte.
+Two files are staged and not shown: manni.config.yaml (one collection, docs/**/*.md), and
+graph-1.0.0-proposal.1.json, a byte copy of docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json.
+
+[0:00-0:13] Title: graph: names the term (1 / 3)
+$ cat docs/terms/progressive-lens.md
+---
+type: term
+id: progressive-lens
+label: progressive lens
+definition: Lenses that correct presbyopia without a visible line.
+---
+$ cat docs/fitting.md
+---
+title: Fitting lenses
+graph:
+  concepts: [progressive lens]
+---
+# Fitting lenses
+$ manni term check
+✓ 1 term, 1 reference, no findings   (check mark in green)
+$ echo $?
+0
+Highlighted rows: lines containing "label: progressive lens", "concepts: [progressive lens]", "1 reference"
+Caption: The guide's graph: block names progressive lens in concepts. manni term check resolves it: exit 0.
+
+[0:13-0:26] Title: kg: no longer counts (2 / 3)
+$ sed -i 's/^graph:/kg:/' docs/fitting.md
+$ cat docs/fitting.md
+---
+title: Fitting lenses
+kg:
+  concepts: [progressive lens]
+---
+# Fitting lenses
+$ manni term check
+docs/terms/progressive-lens.md:1   (bold)
+  notice manni:term/unused-term          no page's concepts: names this term   ("notice" in cyan)
+
+1 notice in 1 term
+$ echo $?
+0
+Highlighted rows: lines containing "kg:", "unused-term"
+Caption: manni term no longer reads kg.concepts. The term is now unused: a notice, so still exit 0.
+
+[0:26-0:43] Title: The block is closed (3 / 3)
+$ sed -i 's/^kg:/graph:/; s/concepts:/concept:/' docs/fitting.md
+$ cat docs/fitting.md
+---
+title: Fitting lenses
+graph:
+  concept: [progressive lens]
+---
+# Fitting lenses
+$ manni meta validate -s graph-1.0.0-proposal.1.json docs/fitting.md
+Using manni.config.yaml (.)
+✗ docs/fitting.md   (cross in red)
+    /graph  must NOT have additional property 'concept'  (line 3)  [graph-1.0.0-proposal.1.json]   ("/graph" in cyan, line and schema tag dimmed)
+
+1 file checked, 0 passed, 1 failed, 1 error   (in red)
+$ echo $?
+1
+Highlighted rows: lines containing "concept: [", "additional property"
+Caption: The draft manni:graph:1.0.0-proposal.1 closes the block, so a typo inside it fails: exit 1.
+

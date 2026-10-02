@@ -1,0 +1,53 @@
+docs/src/content/docs/meta/reference/schemas/dcmi-elements.mdx:
+  citations:
+    - id: vocab-dcmi-names-are-unprefixed
+      claim:
+        lines: 68-71
+        integrity: sha256-9dadef676abc48dba91ab3d7eae79088e3cd4c512027b050558b7c611f3f2670
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 5
+        integrity: sha256-3948fc6e8c348ca3969ecd8a7e4da9f35d76f35131f596ddb98d7429bce7c365
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-dcmi-type-is-not-enumerated
+      claim:
+        lines: 58-64
+        integrity: sha256-8118bf23b6950359c616dc7c94ddceac14ecea3e58c37148de633947c1a82e8b
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 50-53
+        integrity: sha256-f9b56e094185f33735657e51dd290de5727d78ab10c5fe71def1aa3b9af57243
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-dcmi-date-is-w3cdtf
+      claim:
+        integrity: sha256-81cad2ed92398e36fa550c60e4fb236636ffbb849b02bbc393ae3b94e22bf1fe
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 13-18
+        integrity: sha256-5e9442778b5940689853a58a4432a1f37fae351760027c602633a44291439624
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-dcmi-requires-nothing
+      claim:
+        integrity: sha256-4dd50eb05ce3db0da8a38e9f9056a9b207f04064c93988b8d78fec1c5ab502ae
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 6-12
+        integrity: sha256-4f9a1da0606e19442f6034add959748ef5854451d43cc0254c282b61134cb834
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-dcmi-fifteen-elements
+      claim:
+        lines: 43-45
+        integrity: sha256-d17c46a0342c92441b7d2881fd471917d405100dfcaed72d6778c5afa68dcf7f
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 19-81
+        integrity: sha256-b6c47c5b3f2fc76fe26b4f2777bbc0c45fdc45ad3a0f2febe5c5eff8d25940fe
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: vocab-dcmi-recommendation-2020
+      claim:
+        integrity: sha256-0769ff536ed5972fc9113522c9367698a422819cecebc39724ff9c24965f9fc7
+      source:
+        file: src/meta/schemas/dcmi/1.1.json
+        lines: 3-5
+        integrity: sha256-ca15e87245f35499732379ff975fd026558b7cd4b980c303fbbe5079735c9d90
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

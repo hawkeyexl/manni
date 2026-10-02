@@ -36,6 +36,45 @@ export const PROVENANCE_FIELD = "provenance";
 export type BuiltinDerivableField = (typeof DERIVABLE_FIELDS)[number];
 
 /**
+ * The merge-safe fields (proposal 0069), in the order messages list them:
+ * the ones whose stamp, written in a pull request, still reads current after
+ * a squash merge. `derive.fields` absent manages these, and on each page only
+ * the ones its schemas claim.
+ */
+export const MERGE_SAFE_FIELDS = ["owner", "created", "last-updated", "provenance"] as const;
+
+/** The dated fields the git source reads from the stamp a fact commit carries. */
+export const STAMPED_DATE_FIELDS = ["created", "last-updated"] as const;
+
+export type StampedDateField = (typeof STAMPED_DATE_FIELDS)[number];
+
+/**
+ * The fields a `derive:` block manages when a page's schemas claim them:
+ * `fields` as written, or the merge-safe fields when it is absent. None when
+ * there is no `derive:` block at all.
+ */
+export function managedFields(
+  derive: { fields?: readonly DerivableField[] } | undefined,
+): readonly DerivableField[] {
+  if (derive === undefined) return [];
+  return derive.fields ?? MERGE_SAFE_FIELDS;
+}
+
+/**
+ * Does derive manage fields on a file that belongs to `memberOf`? Only a
+ * member of one of `derive.collections` is stamped and compared (proposal
+ * 0070); with no `collections`, every file is.
+ */
+export function deriveCovers(
+  derive: { collections?: readonly string[] } | undefined,
+  memberOf: readonly string[],
+): boolean {
+  const scope = derive?.collections;
+  if (scope === undefined) return true;
+  return memberOf.some((name) => scope.includes(name));
+}
+
+/**
  * A managed field name: one of the seven built-ins, or a key with an entry in
  * `derive.commands`. The config parser guarantees one or the other.
  */
@@ -150,7 +189,14 @@ export interface DeriveInput {
    * (proposal 0046), so evidence rule 2 reads the manifest's blob at each
    * commit rather than the page's frontmatter. Absent: the page's own.
    */
-  provenanceManifest?: ProvenanceManifestRef;
+  provenanceManifest?: ManifestRef;
+  /**
+   * Where the page's `created` and `last-updated` live when a manifest owns
+   * them (proposal 0069, rule 1), so the git source reads the stamp a fact
+   * commit carries from the manifest's blob at that commit as well as from
+   * the page's. A field with no entry: the page's own.
+   */
+  stampManifests?: Partial<Readonly<Record<StampedDateField, ManifestRef>>>;
   /**
    * `manni meta derive <path>:L1-L2 --generated-by <name>`: the file lines
    * each target names go to `generatedBy`, committed or not, unless evidence
@@ -161,8 +207,8 @@ export interface DeriveInput {
   attribution?: { targets: string[]; generatedBy: string };
 }
 
-/** A manifest that holds one page's `provenance`, as the git source reads it at a commit. */
-export interface ProvenanceManifestRef {
+/** A manifest that holds one page's managed field, as the git source reads it at a commit. */
+export interface ManifestRef {
   /** The manifest file, absolute. */
   absPath: string;
   /** The page's key there: its path relative to the config directory, or its join value. */

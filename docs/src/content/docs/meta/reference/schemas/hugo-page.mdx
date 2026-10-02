@@ -1,0 +1,191 @@
+---
+title: Hugo page schema
+description: The hugo:page:0.165 schema shipped with manni meta, covering the 28 front matter fields Hugo itself defines, why its dates are not format-checked, and the finding a quoted weight produces.
+sidebar:
+  label: "hugo:page:0.165"
+type: reference
+id: meta-reference-schemas-hugo-page
+keywords: ["Hugo", "hugo:page:0.165", "front matter", "weight"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate the front matter fields Hugo defines and fix a quoted weight."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "dialect"]
+sample-questions:
+  - "Which front matter fields does hugo:page:0.165 check?"
+  - "Why are Hugo dates not format-checked?"
+  - "What finding does a quoted weight produce?"
+graph:
+  label: "Hugo page schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/hugo/0.165.json
+tags:
+  - hugo
+  - schema
+  - frontmatter
+  - validation
+  - platform-schema
+action: remember
+prerequisites:
+  - /manni/meta/reference/platform-schemas/
+  - /manni/meta/reference/schema-resolution/
+related-pages:
+  - /manni/meta/reference/platform-schemas/
+risks:
+  - read-only
+  - idempotent
+next-steps:
+  - meta-reference-platform-schemas
+  - meta-reference-schemas-jekyll-page
+  - meta-reference-schemas-antora-page
+  - meta-set-up-different-schemas-per-folder
+---
+
+**Built-in id:** `hugo:page:0.165`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/hugo/0.165.json`. A
+`$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+import { Aside } from '@astrojs/starlight/components';
+
+`hugo:page:0.165` checks the front matter Hugo 0.165 reads from a `.md` page. It
+requires nothing, because Hugo builds a page with no front matter at all. That
+makes it a pure shape check. It catches what Hugo accepts without complaint and
+then acts on wrongly. It is one of the [platform
+schemas](/manni/meta/reference/platform-schemas/), which say what a generator
+accepts rather than what your team agreed.
+
+| Property | Value |
+|---|---|
+| Id | `hugo:page:0.165` |
+| Title | Hugo front matter v0.165 |
+| Files it fits | `.md` |
+| Dialect | [Draft 2020-12](/manni/meta/reference/schema-resolution/#dialects) |
+| Required fields | None |
+| Additional properties | Allowed (`additionalProperties: true`) |
+| Reference kind | [builtin](/manni/meta/reference/schema-resolution/#reference-kinds) |
+| On by default | No |
+| Upstream reference | [Front matter](https://gohugo.io/content-management/front-matter/) |
+| JSON | [`hugo/0.165.json`](/manni/schemas/hugo/0.165.json) |
+
+## Use it
+
+Hugo's content root is `content/`, and a docs section usually sits under it:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: "content/**"
+      schemas:
+        - hugo:page:0.165
+```
+
+For a one-off run, pass the id directly:
+
+```bash
+manni meta validate content/ -s hugo:page:0.165
+```
+
+## Fields
+
+{/* cite platform-hugo-defines-28-fields */}
+The 28 fields Hugo itself defines. Everything else you see in a Hugo site is a
+user-configured taxonomy or a custom parameter rather than something Hugo
+defines. It passes as an unknown key. That covers `tags`, `categories`,
+`series`, and whatever your theme reads.
+
+| Field | Type | Notes |
+|---|---|---|
+| `title`, `linkTitle`, `description`, `summary` | string | None required; Hugo derives a title from the file name. |
+| `date`, `lastmod`, `publishDate`, `expiryDate` | string | Typed, not format-checked. See the aside below. |
+| `draft`, `headless`, `isCJKLanguage` | boolean | A quoted `"false"` fails here, which is the point. |
+| `weight` | integer | Lower sorts first. A quoted number sorts as a string. |
+| `aliases`, `keywords`, `outputs` | string array | |
+| `slug`, `url`, `layout`, `markup`, `type`, `translationKey` | string | |
+| `menus` | string \| array \| map | One menu, several, or a map of per-menu options. |
+| `cascade` | map \| array of maps | The array form carries a `_target` filter per entry. |
+| `build` | map | `list`, `render`, `publishResources`. |
+| `sitemap` | map | `changefreq` is enumerated; `priority` is 0–1. |
+| `resources` | array | Each entry needs `src`. |
+| `params`, `sites` | map | |
+
+{/* cite platform-hugo-weight-and-draft */}
+The two checks that pay for this schema are `weight` and `draft`. Both are
+routinely written quoted, both are accepted by Hugo without a word, and both
+then behave wrongly. A string `weight` sorts lexically, so `"10"` lands before
+`"9"`. And `draft: "false"` is a non-empty string, which is truthy, so the page
+does not publish.
+
+<Aside type="note" title="Hugo's dates are typed but not format-checked">
+`date` and its siblings are `string` with no `format`. Hugo parses several
+layouts, including a full timestamp, a bare `2026-06-25`, a bare year, and a
+Unix timestamp. Pinning one format here would fail input Hugo accepts. Asserting
+something untrue about the tool is the thing a platform schema must not do.
+
+TOML is worth a note of its own. Hugo's `+++` fence has a real date type, so
+`date = 2026-06-25` parses to a date rather than a string. Before validating,
+manni meta normalizes it back to the spelling it was written as. The same schema
+then fits both fences, and a local date does not silently become a timestamp.
+</Aside>
+
+## Additional properties
+
+Allowed. Taxonomy terms such as `tags` and `categories` are configured per site
+rather than defined by Hugo, so they pass unchecked, as do custom parameters.
+
+## Example page
+
+A page carrying the common fields, at legal values. This is
+`test/fixtures/platform/hugo-valid.md`, and it passes.
+
+```markdown title="content/docs/cache.md"
+---
+title: Configuring the cache
+linkTitle: Cache
+description: How Hugo's build cache works and when to clear it.
+date: 2026-06-25
+lastmod: 2026-07-01
+draft: false
+weight: 30
+aliases:
+  - /old/cache/
+keywords: [cache, build]
+outputs: [html, json]
+menus: main
+params:
+  team: docs
+build:
+  list: always
+  render: true
+sitemap:
+  changefreq: weekly
+  priority: 0.5
+resources:
+  - src: diagram.png
+    title: Cache diagram
+---
+```
+
+## A common mistake
+
+A quoted `weight` is a string. Hugo accepts it and sorts it lexically:
+
+```markdown title="test/fixtures/platform/hugo-bad-weight.md"
+---
+title: Configuring the cache
+weight: "30"
+---
+```
+
+```text
+✗ test/fixtures/platform/hugo-bad-weight.md
+    /weight  must be integer  (line 3)  [hugo:page:0.165]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+Drop the quotes. A quoted `draft: "false"` fails the same way, with
+`/draft  must be boolean`.

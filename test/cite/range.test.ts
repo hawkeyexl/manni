@@ -21,13 +21,13 @@ import {
 } from "../../src/cite/core/range.js";
 import { CiteError } from "../../src/cite/errors.js";
 import type { SourceRange } from "../../src/cite/types.js";
+import { runValidate } from "../../src/meta/commands/validate.js";
 
 const require = createRequire(import.meta.url);
-const schema = require("../../src/cite/schema/citations.json") as {
+const schema = require("../../src/meta/schemas/citations/1.0.0.json") as {
   $id: string;
   $defs: { fileRef: { pattern: string } };
 };
-const draft = require("../../docs/proposals/0044/schemas/citations/1.0.0-proposal.4.json") as unknown;
 
 /** Ciphertext-shaped: `~` and 84 base64url characters. The grammar checks shape, not keys. */
 const TOKEN = "~" + "AQx7Vb2_Kp-9Qm".repeat(6);
@@ -37,10 +37,33 @@ const SHORTEST = TOKEN.slice(0, 83);
 /** The schema's pattern as the engine compiles it; a JSON string cannot escape `/`. */
 const SCHEMA_FILE_PATTERN = new RegExp(schema.$defs.fileRef.pattern);
 
-describe("the bundled schema", () => {
-  it("is the proposal.4 draft, byte for byte", () => {
-    expect(schema).toEqual(draft);
-    expect(schema.$id).toBe("manni:citations:1.0.0-proposal.4");
+describe("the registered schema", () => {
+  it("is the manni:citations:1.0.0 built-in", () => {
+    expect(schema.$id).toBe("manni:citations:1.0.0");
+  });
+
+  it("is reachable from a house schema through $ref", async () => {
+    const validate = (page: string) =>
+      runValidate({
+        inputs: [`test/fixtures/cite/pages/${page}`],
+        cliSchemas: ["test/fixtures/cite/citations-ref.schema.json"],
+        noConfig: true,
+      });
+    const cited = await validate("current.md");
+    // The vocabulary prefers `citations` in external metadata, so a page
+    // carrying them gets a location warning; that is validate-location's
+    // subject, and this test's is that the $ref resolves.
+    expect(
+      cited.results[0]?.errors.filter((e) => e.keyword !== "location"),
+    ).toEqual([]);
+    expect(cited.results[0]?.ok).toBe(true);
+    const uncited = await validate("no-citations.md");
+    expect(uncited.results[0]?.ok).toBe(false);
+    expect(
+      uncited.results[0]?.errors.some(
+        (e) => e.keyword === "required" && e.subject === "citations",
+      ),
+    ).toBe(true);
   });
 });
 

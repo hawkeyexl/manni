@@ -1,0 +1,165 @@
+---
+title: Docusaurus pages schema
+description: The docusaurus:pages:3.10 schema shipped with manni meta, covering the nine fields a standalone Docusaurus page carries, the finding a non-string wrapperClassName produces, and how to turn it on.
+sidebar:
+  label: "docusaurus:pages:3.10"
+type: reference
+id: meta-reference-schemas-docusaurus-pages
+keywords: ["Docusaurus", "pages", "docusaurus:pages:3.10", "wrapperClassName"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate standalone Docusaurus page front matter and fix a non-string wrapperClassName."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "dialect", "override"]
+sample-questions:
+  - "Which fields does a standalone Docusaurus page carry?"
+  - "What finding does a non-string wrapperClassName produce?"
+  - "How do I turn on docusaurus:pages:3.10?"
+graph:
+  label: "Docusaurus pages schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/docusaurus-pages/3.10.json
+tags:
+  - docusaurus
+  - schema
+  - validation
+  - reference
+action: remember
+related-pages:
+  - /manni/meta/reference/docusaurus-schemas/
+  - /manni/meta/reference/schema-resolution/
+risks: read-only
+prerequisites:
+  - meta-reference-schema-resolution
+  - meta-reference-docusaurus-schemas
+next-steps:
+  - meta-reference-schemas-docusaurus-docs
+  - meta-reference-schemas-docusaurus-blog
+---
+
+**Built-in id:** `docusaurus:pages:3.10`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/docusaurus-pages/3.10.json`.
+A `$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+`docusaurus:pages:3.10` checks the front matter
+`@docusaurus/plugin-content-pages` reads on a Markdown page under `src/pages`,
+as of Docusaurus 3.10. It requires no field and checks the shape of every field
+it describes. It is one of [three Docusaurus
+schemas](/manni/meta/reference/docusaurus-schemas/), one per content plugin. The
+rules the three share, and what none of them checks, live on that page.
+
+| Property | Value |
+|---|---|
+| Id | `docusaurus:pages:3.10` |
+| Title | Docusaurus pages front matter v3.10 |
+| Dialect | [Draft 2020-12](/manni/meta/reference/schema-resolution/#dialects) |
+| Required fields | None |
+| Additional properties | Allowed (`additionalProperties: true`) |
+| Reference kind | [builtin](/manni/meta/reference/schema-resolution/#reference-kinds) |
+| On by default | No |
+| Upstream reference | [Pages front matter](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-pages#markdown-front-matter) |
+| JSON | [`docusaurus-pages/3.10.json`](/manni/schemas/docusaurus-pages/3.10.json) |
+
+## Use it
+
+Standalone pages live under `src/pages`, so the schema reaches them through an
+override rather than the site-wide `schemas:` list:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: "src/pages/**"
+      schemas:
+        - docusaurus:pages:3.10
+```
+
+For a one-off run, pass the id directly:
+
+```bash
+manni meta validate src/pages/ -s docusaurus:pages:3.10
+```
+
+[Wire them up](/manni/meta/reference/docusaurus-schemas/#wire-them-up) shows
+the pages root beside the docs and blog roots, each declared as a collection.
+
+## Fields
+
+| Field | Type | Constraint |
+|---|---|---|
+| `title` | string | may be empty |
+| `description` | string | may be empty |
+| `keywords` | array of string | n/a |
+| `image` | string | `uri-reference` |
+| `slug` | string | n/a |
+| `wrapperClassName` | string | n/a |
+| `hide_table_of_contents` | boolean | n/a |
+| `draft` | boolean | not both with `unlisted` |
+| `unlisted` | boolean | not both with `draft` |
+
+{/* cite docusaurus-pages-set-is-the-smallest */}
+Standalone pages carry no sidebar, pagination, or tag metadata, which is why
+this set is the smallest of the three.
+
+`draft` and `unlisted` are mutually exclusive here as in the other two schemas.
+[The rules worth
+knowing](/manni/meta/reference/docusaurus-schemas/#the-rules-worth-knowing)
+covers that rule and the `uri-reference` typing of `image`.
+
+## Additional properties
+
+Allowed. Docusaurus tolerates theme and plugin front matter, and so does this
+schema.
+
+## Example page
+
+Every field the pages plugin documents, at a legal value. This is
+`test/fixtures/docusaurus/pages-valid.md`, and it passes.
+
+```markdown title="src/pages/about.md"
+---
+title: About Acme
+description: Who we are and what we build.
+keywords:
+  - about
+  - company
+image: /img/social/about.png
+slug: /about
+wrapperClassName: about-page
+hide_table_of_contents: true
+draft: false
+unlisted: false
+---
+```
+
+## A common mistake
+
+`wrapperClassName` is a CSS class name, so a boolean is wrong:
+
+```markdown title="test/fixtures/docusaurus/pages-bad-wrapper-class.md"
+---
+title: About Acme
+wrapperClassName: true
+---
+```
+
+```text
+✗ test/fixtures/docusaurus/pages-bad-wrapper-class.md
+    /wrapperClassName  must be string  (line 3)  [docusaurus:pages:3.10]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+Give it the class name the page's wrapper element should carry.
+
+{/* Doc Detective inline tests: verify this page's documented manni meta behavior
+    against the local build, exposed as `manni meta` / `npx @hawkeyexl/manni meta` via `npm link`
+    (see .github/workflows/docs-as-tests.yml), over committed fixtures.
+    Run with `npx doc-detective`. Config: .doc-detective.json. */}
+{/* test {"testId":"docusaurus-pages-schema","description":"The docusaurus:pages:3.10 built-in, demonstrated with the committed fixtures this page describes."} */}
+{/* step {"description":"The pages schema accepts a page carrying every documented field.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/docusaurus/pages-valid.md -s docusaurus:pages:3.10","exitCodes":[0],"stdio":"1 passed"}} */}
+{/* step {"description":"The pages schema rejects a non-string wrapperClassName.","runShell":{"command":"npx @hawkeyexl/manni meta validate test/fixtures/docusaurus/pages-bad-wrapper-class.md -s docusaurus:pages:3.10","exitCodes":[1],"stdio":"wrapperClassName"}} */}
+{/* test end */}

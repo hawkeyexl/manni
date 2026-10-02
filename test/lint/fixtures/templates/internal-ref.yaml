@@ -1,0 +1,26 @@
+# One rule, written once and pointed at from two templates with an intra-file
+# `$ref`. This is the documented way a template file shares a rule, and it has
+# to keep working with external `$ref` resolution turned off.
+templates:
+  how-to:
+    types: [how-to]
+    sections:
+      - id: overview
+        heading: Overview
+      - $ref: "#/components/rules/next-steps"
+  reference:
+    types: [reference]
+    sections:
+      - id: syntax
+        heading: Syntax
+      - $ref: "#/components/rules/next-steps"
+
+components:
+  rules:
+    next-steps:
+      id: next-steps
+      min: 0
+      heading: Next steps
+      contains:
+        paragraphs:
+          min: 1

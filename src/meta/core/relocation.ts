@@ -45,6 +45,7 @@ import {
 } from "yaml";
 import {
   isMember,
+  ownsKey,
   parseCollections,
   type CollectionConfig,
 } from "../../shared/collections.js";
@@ -61,7 +62,7 @@ import {
   PATH_JOIN,
   externalMetadataJoin,
   loadExternalMetadata,
-  mergeExternalMetadata,
+  mergeWithMarks,
   outsideRefusal as perPageOutsideRefusal,
   type ExternalMetadataIndex,
   type ExternalMetadataValue,
@@ -75,6 +76,7 @@ import { writeFileAtomic } from "./write-file.js";
 import { extractorByName, extractorForExtension } from "../extractors/index.js";
 import { deepEqual } from "../extractors/patch-util.js";
 import type { FieldLocation } from "./location.js";
+import { pageMarks } from "./page-marks.js";
 
 // ---------------------------------------------------------------------------
 // The result: what `manni meta relocate` reports.
@@ -266,6 +268,11 @@ interface ManifestRef {
   /** `file:` holds `{page}`: each page keeps its values in a manifest of its own. */
   perPage: boolean;
   created: boolean;
+  /**
+   * The manifest names no `keys` (proposal 0068): it owns what each page's
+   * schemas mark external, so the plan never adds or removes a key of its.
+   */
+  implied: boolean;
   keysBefore: string[];
   keysAdded: string[];
   keysRemoved: string[];
@@ -288,7 +295,7 @@ function cloneCollection(c: CollectionConfig): CollectionConfig {
     ...c,
     paths: [...c.paths],
     exclude: [...c.exclude],
-    externalMetadata: c.externalMetadata.map((m) => ({ ...m, keys: [...m.keys] })),
+    externalMetadata: c.externalMetadata.map((m) => (m.keys === undefined ? { ...m } : { ...m, keys: [...m.keys] })),
   };
 }
 
@@ -340,7 +347,8 @@ class Model {
           join: externalMetadataJoin(m),
           perPage,
           created: false,
-          keysBefore: [...m.keys],
+          implied: m.keys === undefined,
+          keysBefore: [...(m.keys ?? [])],
           keysAdded: [],
           keysRemoved: [],
         });
@@ -374,17 +382,35 @@ class Model {
       // The loader refuses such a page first, whenever the run names it.
       const declared = this.ctx.declaredCollections.find((c) => c.name === m.collection)?.externalMetadata[m.index];
       throw new DocmetaError(
-        perPageOutsideRefusal(declared ?? { file: m.written, keys: [] }, m.collection, resolved.pageRel),
+        perPageOutsideRefusal(declared ?? { file: m.written }, m.collection, resolved.pageRel),
       );
     }
     return { abs: resolved.abs, file: reported(resolved.abs, this.ctx.base) };
   }
 
-  /** The manifest of one of `members` that owns `key`, in declaration order. */
-  ownerOf(key: string, members: readonly string[]): ManifestRef | undefined {
+  /**
+   * The manifest of one of `members` that owns `key`, in declaration order.
+   * `marked` is what the page's schemas mark external, which is what a
+   * manifest with no `keys` owns (proposal 0068).
+   */
+  ownerOf(key: string, members: readonly string[], marked?: ReadonlySet<string>): ManifestRef | undefined {
     return this.manifests.find(
-      (m) => members.includes(m.collection) && (m.keysBefore.includes(key) || m.keysAdded.includes(key)),
+      (m) =>
+        members.includes(m.collection) &&
+        (m.implied ? this.impliedOwns(m, key, marked) : m.keysBefore.includes(key) || m.keysAdded.includes(key)),
     );
+  }
+
+  /** Does a keyless manifest own `key` for a page whose schemas mark `marked`? */
+  impliedOwns(m: ManifestRef, key: string, marked: ReadonlySet<string> | undefined): boolean {
+    const collection = this.collections.find((c) => c.name === m.collection);
+    const declared = collection?.externalMetadata[m.index];
+    return collection !== undefined && declared !== undefined && ownsKey(collection, declared, key, marked);
+  }
+
+  /** Does one of `members` declare a manifest with no `keys`? */
+  hasImplied(members: readonly string[]): boolean {
+    return this.manifests.some((m) => m.implied && members.includes(m.collection));
   }
 
   /** The page's collection to home a new key in, first by the run's selection. */
@@ -401,6 +427,7 @@ class Model {
   async home(
     label: string,
     commit: boolean,
+    owns: (m: ManifestRef) => boolean = () => false,
   ): Promise<{ manifest: ManifestRef; proposed: ProposedHome } | { proposed: ProposedHome }> {
     if (this.ctx.noConfig) {
       return { proposed: { kind: "none", reason: "no-config", collections: this.collections.length } };
@@ -443,7 +470,9 @@ class Model {
       }
     }
     const name = collection;
-    const local = this.manifestsOf(name).find((m) => !m.url);
+    // A keyless manifest (proposal 0068) is a home only for what it owns: a
+    // key cannot be added to a list it does not have.
+    const local = this.manifestsOf(name).find((m) => !m.url && (!m.implied || owns(m)));
     const proposedOf = (m: { file: string; created: boolean }): ProposedHome => ({
       kind: "collection",
       collection: name,
@@ -474,6 +503,7 @@ class Model {
       join: PATH_JOIN,
       perPage: false,
       created: true,
+      implied: false,
       keysBefore: [],
       keysAdded: [],
       keysRemoved: [],
@@ -484,9 +514,9 @@ class Model {
   }
 
   addKey(m: ManifestRef, key: string): void {
-    if (m.keysBefore.includes(key) || m.keysAdded.includes(key)) return;
+    if (m.implied || m.keysBefore.includes(key) || m.keysAdded.includes(key)) return;
     m.keysAdded.push(key);
-    this.collections.find((c) => c.name === m.collection)?.externalMetadata[m.index]?.keys.push(key);
+    this.collections.find((c) => c.name === m.collection)?.externalMetadata[m.index]?.keys?.push(key);
   }
 
   removeKey(m: ManifestRef, key: string): void {
@@ -505,7 +535,9 @@ class Model {
       ...c,
       externalMetadata: c.externalMetadata.flatMap((em, index) => {
         const ref = this.manifests.find((m) => m.collection === c.name && m.index === index);
-        const keys = ref === undefined ? em.keys : this.finalKeys(ref);
+        // A keyless manifest (proposal 0068) is declared as it was.
+        if (ref?.implied === true || (ref === undefined && em.keys === undefined)) return [em];
+        const keys = ref === undefined ? (em.keys ?? []) : this.finalKeys(ref);
         return keys.length === 0 ? [] : [{ ...em, keys }];
       }),
     }));
@@ -618,7 +650,18 @@ export async function keyHome(
   key: string,
 ): Promise<KeyHome> {
   const model = new Model(ctx, plannedConfigDir(ctx));
-  const owner = model.ownerOf(key, model.members(label));
+  const members = model.members(label);
+  // A keyless manifest (proposal 0068) owns the key when the page's schemas
+  // mark it external, read with the key in place: Ajv evaluates a mark only
+  // where the property is present.
+  const marked = model.hasImplied(members)
+    ? await marksOf(ctx)(
+        label,
+        Object.hasOwn(data, key) ? data : { ...data, [key]: null },
+        memberOf(ctx.declaredCollections, ctx.configDir ?? ctx.cwd, ctx.base, label),
+      )
+    : undefined;
+  const owner = model.ownerOf(key, members, marked);
   if (owner !== undefined) {
     // A `{page}` manifest (proposal 0058) resolves to the page's own file.
     const at = model.fileFor(owner, resolve(ctx.base, label));
@@ -636,6 +679,17 @@ export async function keyHome(
     };
   }
   return { kind: "unowned", home: (await model.home(label, false)).proposed };
+}
+
+/** What a page's schemas mark external, over the context's schemas (proposal 0068). */
+function marksOf(ctx: RelocationContext): ReturnType<typeof pageMarks> {
+  return pageMarks({
+    validator: ctx.validator,
+    config: ctx.config,
+    cwd: ctx.cwd,
+    trustRoot: schemaTrustRoot(ctx.cwd, ctx.configDir),
+    ...(ctx.cliSchemas !== undefined ? { cliSchemas: ctx.cliSchemas } : {}),
+  });
 }
 
 /** A page's entry in a manifest: its path from the config directory, or its join value. */
@@ -799,6 +853,7 @@ export async function planRelocation(
   const configDir = plannedConfigDir(ctx);
   const model = new Model(ctx, configDir);
   const encryptionKey = lazyKey(ctx.configFile, ctx.env);
+  const marks = marksOf(ctx);
   const index = await loadExternalMetadata(ctx.declaredCollections, {
     configDir: ctx.configDir ?? ctx.cwd,
     base: ctx.base,
@@ -939,13 +994,13 @@ export async function planRelocation(
     /* c8 ignore next -- a named page always has an extractor, or `load` threw. */
     if (page === undefined) continue;
     const members = currentMembers(label);
-    const merged = mergeExternalMetadata(
+    const merged = await mergeWithMarks(
       label,
       { data: page.own, present: true, format: page.format, lineFor: () => undefined },
       index,
       members,
       ctx.base,
-      { encryptionKey },
+      { encryptionKey, marks },
     );
     const data = merged.extracted.data;
     const required = request.require?.get(label) ?? [];
@@ -962,9 +1017,12 @@ export async function planRelocation(
     const probe: Record<string, unknown> = { ...data };
     for (const key of required) if (!(key in probe)) probe[key] = null;
     const prefs = new Map<string, FieldLocation>();
+    /** What the schemas mark external, and so what a keyless manifest owns (0068). */
+    const external = new Set<string>();
     for (const [key, p] of await ctx.validator.locationPreferences(probe, resolved.schemas)) {
       prefs.set(key, p.location);
       marked.add(key);
+      if (p.location === "external") external.add(key);
     }
     for (const key of required) if (!prefs.has(key)) prefs.set(key, "external");
     preferencesOf.set(label, prefs);
@@ -981,7 +1039,7 @@ export async function planRelocation(
       if (joins.has(key)) continue;
       const pref = prefs.get(key);
       const inPage = Object.hasOwn(page.own, key);
-      const owner = model.ownerOf(key, model.members(label));
+      const owner = model.ownerOf(key, model.members(label), external);
       if (owner !== undefined) {
         if (pref === "page") {
           if (owner.url) {
@@ -995,8 +1053,13 @@ export async function planRelocation(
         continue;
       }
       if (pref !== "external" || !(inPage || required.includes(key))) continue;
-      const chosen = await model.home(label, true);
+      const chosen = await model.home(label, true, (m) => model.impliedOwns(m, key, external));
       if ("manifest" in chosen) {
+        // A keyless manifest owns the key already, so only this page's value moves.
+        if (chosen.manifest.implied) {
+          if (inPage) planOut(page, chosen.manifest, key, "preferred");
+          continue;
+        }
         model.addKey(chosen.manifest, key);
         continue;
       }
@@ -1161,7 +1224,7 @@ export async function planRelocation(
   const lines = new Map<string, number>();
   for (const m of model.manifests) {
     if (m.url) continue;
-    const undeclared = model.finalKeys(m).length === 0 && !m.created;
+    const undeclared = !m.implied && model.finalKeys(m).length === 0 && !m.created;
     /**
      * The edits, by the file they land in. One file for a concrete manifest;
      * one per page for a `{page}` manifest (proposal 0058), so each page's
@@ -1645,7 +1708,7 @@ function buildResult(input: {
         keysAdded: [...m.keysAdded],
         keysRemoved: [...m.keysRemoved],
         keys,
-        undeclared: keys.length === 0 && !m.created,
+        undeclared: !m.implied && keys.length === 0 && !m.created,
         beyond: pages.filter(
           (p) =>
             p.beyond &&

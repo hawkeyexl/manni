@@ -1,0 +1,36 @@
+docs/src/content/docs/meta/reference/schemas/antora-page.mdx:
+  citations:
+    - id: platform-antora-custom-page-attributes-pass
+      claim:
+        integrity: sha256-9a602f3ed06d0792fc55b54ad006a0df5c8ba28245f5379f109b53ed3b4b4601
+      source:
+        file: src/meta/schemas/antora/3.1.json
+        lines: 5
+        integrity: sha256-8495265de937db9e8c9b670cfd7cb49a4e70b1ccb46de160c4eaf71efbd9ea1f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-antora-attribute-typing
+      claim:
+        lines: 69-74
+        integrity: sha256-0626209192d3afab0e664dcc79c6e3e6fda556775ca2a79f2eb2911fe5423212
+      source:
+        file: src/meta/schemas/antora/3.1.json
+        lines: 19-48
+        integrity: sha256-d07e4303fd225b059e1994c01e6f18005145c27a774c30e9676b5c1468aaf6b5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-antora-field-table
+      claim:
+        lines: 55-64
+        integrity: sha256-5d24dc3096e5a0ef0d4e91240a95d2c4650ea26a45fa8f16691bfc1fc5664396
+      source:
+        file: src/meta/schemas/antora/3.1.json
+        lines: 10-53
+        integrity: sha256-5d10687566dc08b88eda468e6a6a2419e4f2980e5d534e43ddc5740fb4ede97a
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-antora-reads-the-document-header
+      claim:
+        integrity: sha256-7fe0388f01f0a5ade42bcca2b54564e2a367a4cd764a64e150705e0bbfcf5a8b
+      source:
+        file: src/meta/schemas/antora/3.1.json
+        lines: 5-7
+        integrity: sha256-2b559d0fcbf9179bdc03ea3f56da87337a48842333b6865408b5ea3a405bbf6f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

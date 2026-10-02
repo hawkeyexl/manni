@@ -1,6 +1,32 @@
 ---
 title: Gate accessibility in CI
 description: "Run manni a11y check on a schedule against the live site, and on every pull request against the build the branch produces, with GitHub annotations."
+id: "a11y-ci"
+type: "how-to"
+keywords: ["accessibility", "CI", "annotations", "exit codes", "pull request"]
+language: en
+audiences: ["ci-engineers"]
+intent: "Run manni a11y check on a schedule and on every pull request, with GitHub annotations."
+lifecycle: published
+applies-to: ["domain:a11y"]
+next-steps: ["a11y-get-started", "a11y-fix", "a11y-reference-cli"]
+related-pages: ["meta-ci"]
+sample-questions: ["How do I check the deployed site for accessibility on a schedule?", "How do I gate a pull request on accessibility before it deploys?", "What exit codes does manni a11y check return?"]
+graph: { label: "Gate accessibility in CI", type: task }
+last-updated: 2026-09-18
+tags:
+  - github-actions
+  - ci-cd
+  - workflows
+  - exit-codes
+  - annotations
+action: develop
+prerequisites:
+  - a11y-get-started
+risks:
+  - read-only
+  - idempotent
+  - open-world
 ---
 
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';

@@ -1,0 +1,112 @@
+docs/src/content/docs/meta/reference/action.mdx:
+  personas:
+    - devin
+  journeys:
+    - d1
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: action.yml
+  eval-suite: meta
+  evals:
+    - id: configure-action-inputs
+      assertion: A reader can write a workflow step that sets the Action's inputs, including a multi-value input with one item per line.
+      type: capability
+      grader: ai
+    - id: reproduce-action-by-hand
+      assertion: A reader can write the manni meta validate command the Action runs for a given set of inputs.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-5
+      integrity: sha256-c3645f962ff96db2cbea773feea07355a9b490509cb3c0252d22db41680cd138
+    - generated-by: Claude Fable 5.1
+      lines: 6
+      integrity: sha256-00d8e5c62aa317d92a16bf597c3276e3924d826c4721ff018d460eb1165a4769
+    - generated-by: Claude Opus 5
+      lines: 7-11
+      integrity: sha256-e80e36f0da0916e00a84225fa92d26ed6c492b18c4e6975a5c9622f4cc635708
+    - generated-by: Claude Opus 5
+      lines: 13-30
+      integrity: sha256-f13b8139634fc0a216bd7f6b91c18b95bfc27cc33708a5bf698c7da88f50068b
+    - generated-by: Claude Fable 5.1
+      lines: 31
+      integrity: sha256-e25c07014741fc8f1e9b6cde1900e41ed2149cb4f27084e1d4a6ba13f1240d4d
+    - generated-by: Claude Opus 5
+      lines: 33-36
+      integrity: sha256-c14ae3e52a0e8a39d9ef4ab7a8119dfa484d272913148cb23aa64e4c717dc6d4
+    - generated-by: Claude Fable 5.1
+      lines: 37
+      integrity: sha256-f8666fd530c3bdadfd1dcdbfaa3f1488d67feb8fbb33f6e9ef3409b69d3128e8
+    - generated-by: Claude Opus 5
+      lines: 38-43
+      integrity: sha256-58b300d190a98665da6b6a5070bada6f4107d1de4945f4828e0e1832165f4073
+    - generated-by: Claude Opus 5
+      lines: 45-53
+      integrity: sha256-ba95b92cd17b4fdeacff0c6fa0243929eec6898e723cee060ea3b11db7e8404c
+    - generated-by: Claude Fable 5.1
+      lines: 55
+      integrity: sha256-09d28ba265c1a70988554b548c989913bb5912f38d98740529b071cfbe9e0d72
+    - generated-by: Claude Opus 5
+      lines: 57-58
+      integrity: sha256-6e493a5f26eba5bf4ce40e9358204e802c27f7450d469e1407acfc5f5c50168f
+    - generated-by: Claude Fable 5.1
+      lines: 59-60
+      integrity: sha256-3dbedd7c962756551f3a8f2a83f62b600aa4740b28fe04d2324b140147992432
+    - generated-by: Claude Opus 5
+      lines: 61
+      integrity: sha256-d300380f1402b0c46b27502e052179be698b725b603cb6ba589f4374c035f65c
+    - generated-by: Claude Fable 5.1
+      lines: 62
+      integrity: sha256-4bb50c10566d4dc949e890f2cd06f9b54382dfe6406f3e731d77642991fcb66d
+    - generated-by: Claude Opus 5
+      lines: 63-71
+      integrity: sha256-1fb257df5d7d4b8d3b6c223105e928b8250e617f523deaaad635537a28884579
+    - generated-by: Claude Opus 5
+      lines: 73-81
+      integrity: sha256-b3ec09988e7266cd7c133dd39be04946793d47dffe308e438da08c600a87ff48
+    - generated-by: Claude Opus 5
+      lines: 83-98
+      integrity: sha256-13beb8554b7c5d3c890dd5392344e7f726d19808efd6eaf50276709a75e6e4cf
+    - generated-by: Claude Fable 5.1
+      lines: 99
+      integrity: sha256-53f4db7821d350968e1e7387c01b49a6e7a795cd6ba626bbe5e4472f204429f6
+    - generated-by: Claude Opus 5
+      lines: 101-106
+      integrity: sha256-35e3acd9d35c022289479ec59f6a4a1d6db0aeed9df06c6a18e945f75cade3c9
+    - generated-by: Claude Opus 5
+      lines: 108-127
+      integrity: sha256-c1c0706f45fa46988b9682a45f0a17122f12405a096e55c04ef7f66f0bc074ec
+    - generated-by: Claude Opus 5
+      lines: 130-141
+      integrity: sha256-f8d19bc244ac1ba53390b6aacd5cc0124c4e6ef24698d6ad4abf5ff78b5ac441
+    - generated-by: Claude Fable 5.1
+      lines: 142
+      integrity: sha256-798120a6204b3b7fafb2269bdc20dc5696f54c378de790bf1475f056eae29358
+    - generated-by: Claude Opus 5
+      lines: 143-158
+      integrity: sha256-de864da5d0fc2e2266fe0267ce1ee7627432796b28f0f0bda37940487c230505
+  owner:
+    - "@hawkeyexl"
+  created: 2026-08-22
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /risks
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+      confidence:
+        /resource: 0.9
+        /tags: 0.7
+        /action: 0.9
+        /risks: 0.8
+        /concepts: 0.75
+        /prerequisites: 0.85
+        /next-steps: 0.75
+        /related-pages: 0.7

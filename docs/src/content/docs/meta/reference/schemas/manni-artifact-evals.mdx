@@ -1,0 +1,334 @@
+---
+title: manni artifact-evals vocabulary
+description: "The manni:artifact-evals:1.0.0 schema, assertions about the agent sessions that use a skill or agent definition, under the artifact's metadata block."
+sidebar:
+  label: "manni:artifact-evals:1.0.0"
+type: reference
+id: meta-reference-schemas-manni-artifact-evals
+keywords: ["artifact-evals", "manni:artifact-evals:1.0.0", "graders", "target", "strict overlay"]
+language: en
+audiences: ["schema-authors"]
+intent: "Write evals about the agent sessions that use a skill or agent definition, with manni:artifact-evals:1.0.0."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "JSON Pointer", "override"]
+sample-questions:
+  - "What does manni:artifact-evals:1.0.0 describe?"
+  - "Which graders can an artifact eval use?"
+  - "What does the artifact-evals strict overlay narrow?"
+graph:
+  label: "manni artifact-evals vocabulary"
+  type: reference
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.0.0.json
+tags:
+  - schema
+  - validation
+  - agent-evals
+  - grading
+  - metadata
+action: remember
+prerequisites:
+  - /manni/meta/reference/schemas/manni-evals/
+next-steps:
+  - /manni/meta/reference/agent-skills-schemas/
+  - /manni/meta/schemas/field-location/
+related-pages:
+  - /manni/meta/reference/schemas/manni-evals/
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/schemas/manni-ai-context/
+risks: read-only
+---
+
+**Built-in id:** `manni:artifact-evals:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.0.0.json`.
+A `$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+**The question it answers: what must a session that used this artifact have
+done?** Instruction artifacts, such as skills, agent definitions and
+project-rules files, carry evals about the sessions that run with them. The
+vocabulary describes that data, and any session-grading tool can read it.
+Adopt it when you want each artifact's expectations written into the artifact.
+manni meta checks that the declarations are well formed. It does not grade
+sessions.
+
+## Use it
+
+Name the id in `manni.config.yaml`, beside the host's own schema.
+Artifact-evals is not in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it only where the config names it.
+
+```yaml
+collections:
+  - name: skills
+    paths: [".claude/skills/**/SKILL.md"]
+  - name: agents
+    paths: [".claude/agents/*.md"]
+
+meta:
+  overrides:
+    - collection: skills
+      schemas:
+        - anthropic:claude-skill:2.1
+        - manni:artifact-evals:1.0.0
+    - collection: agents
+      schemas:
+        - anthropic:claude-subagent:2.1
+        - manni:artifact-evals:1.0.0
+```
+
+The host schema owns the top level, and artifact-evals owns what it adds
+inside `metadata`. Stack it with `anthropic:claude-skill:2.1` or
+`anthropic:claude-subagent:2.1`, whose `metadata` takes any value. The open
+standard's `agentskills:skill:1.0` takes string values only. Beside it, the
+string shorthand passes and a list of entries fails with `must be string`. See
+[Agent Skills schemas](/manni/meta/reference/agent-skills-schemas/) for the
+difference.
+
+## Fields
+
+The page-side keys of [evals](/manni/meta/reference/schemas/manni-evals/),
+one level down, plus the attribution trail for machine-made metadata.
+
+| Field | Type | Location | Notes |
+|---|---|---|---|
+| `metadata.evals` | string, or non-empty list of entries | `external` | One AI-judged assertion as a string, or the list. An artifact with no evals omits the key, because an empty list fails |
+| `metadata.eval-skip` | boolean, default `false` | `external` | Skip the artifact's evals. A tool reports the skip rather than ignoring the artifact |
+| `metadata.meta-provenance` | non-empty list of unique entries | `external` | Which evals and fields a machine proposed. The page-level `meta-provenance` of [ai-context](/manni/meta/reference/schemas/manni-ai-context/), in the same shape |
+
+The Location column is the `x-manni-location` mark. `page` means the value
+belongs in the document's own metadata and reaches delivered output.
+`external` means it belongs in the collection's external-metadata manifest. A
+field is `page` when an agent fetching the page acts on it. Artifact evals
+belong to CI, so the block is `external`. The one mark sits on `metadata`
+itself, and each row takes its parent's. A location warning therefore names
+the whole `metadata` block. See [field location](/manni/meta/schemas/field-location/) for
+how the marks are used.
+
+### Entries
+
+An entry is a string shorthand or a closed object. The string is an AI-judged
+assertion at error severity, and the only form with no id. There is no `use:`
+reference form. The object form shares its keys with the page side, and three
+of them differ.
+
+| Key | Type | Notes |
+|---|---|---|
+| `id` | kebab-case string, **required** | Unique within the artifact. Two entries with one id is an error, which a tool enforces because the schema cannot |
+| `assertion` | string, non-empty | What must have held in the session. Required for `ai` and `human` graders, and when `grader` is absent |
+| `grader` | kebab-case string, or `tool:<kebab>` | How the assertion is checked. Default `ai`. See [Graders](#graders) |
+| `target` | `transcript`, `last-message`, `files`, `artifact`, or a file object | What the grader receives. See [Target](#target) |
+| `command` | non-empty list of strings | The argv of a `command` eval. `{trace}` stands for the session trace path. Exit 0 passes |
+| `type`, `severity`, `weight`, `options`, `skip` | as on the page side | `severity` is `error`, `warning`, or `notice`, default `error`. `weight` is above 0, default 1 |
+| `evidence`, `examples` | as on the page side | `evidence` hints where in the session to look. `examples` anchors passing and failing behavior |
+| `provider`, `model`, `runs` | as on the page side | Legal only on an `ai` entry. `runs` is 1 to 50 |
+| `success-exit-codes`, `timeout-ms`, `generated-assertion-hash` | as on the page side | The command family, legal only with `grader: command` |
+| `severity-map` | object of severities | Maps a `tool:*` grader's own severities onto the three above |
+
+The page side's conditionals hold here unchanged. `ai` and `human` entries,
+and entries with no grader, require `assertion`. A `command` entry requires
+`assertion` or `command`. A hash is never legal without its command.
+
+A `meta-provenance` entry takes these keys, and needs `fields` or `evals`:
+
+| Key | Type | Notes |
+|---|---|---|
+| `generated-by` | string, non-empty, **required** | The model or agent that proposed them |
+| `evals` | non-empty list of unique kebab ids | The evals it proposed, by id |
+| `fields` | non-empty list of unique JSON Pointers | The metadata values it proposed, such as `/metadata/evals` |
+| `confidence` | object of numbers, 0 to 1 | Keyed by an id from `evals` or a pointer from `fields` |
+
+### Graders
+
+The grader list is open. These are the recommended values:
+
+- `ai`, the default, a model or an agent chosen with `provider`
+- `human`, a review queue
+- `command`, an executable run over the trace
+- `tool-usage`, `skill-invoked`, `file-access`, `turn-count`, `cost`, `regex`,
+  and `json-output`, the deterministic session graders
+- `tool:<kebab>`, the page side's spelling, so one grader name works in both
+  vocabularies
+
+Any kebab-case name passes the open schema. A grading tool validates the name
+against its own registry at run time.
+
+`human` is judged per session, because every trace is new. So a human verdict
+is never cached, unlike on the page side.
+
+### Target
+
+`target` selects the bytes the grader receives.
+
+| Value | The grader receives |
+|---|---|
+| `transcript` | The whole session. The default |
+| `last-message` | The final assistant message |
+| `files` | The list of files the session wrote |
+| `artifact` | The instruction artifact itself |
+| `{ source: file, path: … }` | A named file, at a `path` relative to the session's working directory |
+
+## Additional properties
+
+Allowed, with one exception. The top level belongs to the host schema, and
+`metadata` stays open, so other tools' members pass untouched. The `eval-`
+prefix is reserved inside `metadata`, and any `eval-*` member other than
+`eval-skip` fails. Entry objects are closed.
+
+## Example
+
+```yaml
+---
+name: fix-bug
+description: Fix a reported bug, reproducing it with a failing test first.
+metadata:
+  evals:
+    - id: used-read
+      assertion: The session read at least one source file before editing.
+      grader: tool-usage
+      options: { tool: Read, expect: used }
+    - id: honored-tdd
+      assertion: The session wrote a failing test before the fix.
+      type: capability
+      weight: 2
+      examples:
+        pass:
+          - A test edit lands before the src edit, and the first run fails.
+        fail: The fix lands first and a test is added afterwards.
+    - id: summary-names-the-cause
+      assertion: The final message names the root cause in one sentence.
+      target: last-message
+    - Reproduce the bug with a failing test before applying the fix.
+  meta-provenance:
+    - generated-by: claude-fable-5
+      evals: [used-read, honored-tdd]
+      confidence: { used-read: 0.91, honored-tdd: 0.86 }
+---
+```
+
+## A common mistake
+
+An object entry with no `id` fails, even when the grader needs nothing else.
+
+```yaml
+---
+name: fix-bug
+description: Fix a reported bug, reproducing it with a failing test first.
+metadata:
+  evals:
+    - assertion: The session read at least one source file before editing.
+      grader: tool-usage
+---
+```
+
+```text
+$ manni meta validate SKILL.md --no-config -s anthropic:claude-skill:2.1 -s manni:artifact-evals:1.0.0
+✗ SKILL.md
+    /metadata/evals/0  must have required property 'id'  (line 6)  [manni:artifact-evals:1.0.0]
+    /metadata/evals/0  must match "else" schema  (line 6)  [manni:artifact-evals:1.0.0]
+    /metadata  warning "metadata" is stored in the page; manni:artifact-evals:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+
+1 file checked, 0 passed, 1 failed, 2 errors, 1 warning
+```
+
+The exit code is 1. The warning is the `external` location mark at work, and
+it never fails a run. Give the entry an id, or write it as a string.
+
+## Design decisions
+
+- **The envelope belongs to the host.** This is the one place the family's
+  flat-keys rule cannot reach. A skill's top-level frontmatter belongs to the
+  tool that runs it, and `metadata` is its extension point. There is no
+  container inside `metadata`, because the list is the value.
+- **A misspelled key still fails.** `metadata` stays open, so the schema
+  rejects any unknown `eval-*` member inside it. That is the same guard the
+  page side applies at its root.
+- **Ids are required on object entries.** Names derived from position orphan
+  cached verdicts whenever entries move. An eval that is worth an object is
+  worth a stable name.
+- **`assertion` follows the page side's rule.** A `tool-usage` entry says
+  everything in `options`, just as a page-side `tool:*` entry does. Requiring
+  a sentence there would force authors to write one no grader reads.
+- **The grader list stays open.** The conditionals branch only on `ai`,
+  `human` and `command`, the three names both sides share. Any other kebab
+  name matches none of them and passes, so a new grader never needs a schema
+  version. The cost is that a stale or misspelled name passes too, and only
+  the grading tool rejects it. The strict overlay closes that gap.
+- **One entry vocabulary across pages and artifacts.** `weight`, `target`,
+  `runs` and `model` mean what they mean in
+  [evals](/manni/meta/reference/schemas/manni-evals/). Only the envelope, the
+  `target` values and the grader list differ, because the subject is a session
+  rather than a page.
+- **`model` guards against self-grading.** An eval can name a judge other
+  than the model that produced the session. A model asked whether its own
+  session followed the rules is the sharpest case of self-preference bias.
+- **The attribution trail sits one level down.** `metadata.meta-provenance`
+  repeats the page-level entry shape exactly, because an artifact's top level
+  belongs to its host. A human deletes an entry after review, so a surviving
+  entry means unreviewed machine metadata.
+
+## Strict overlay
+
+**Strict overlay id:** `manni:artifact-evals-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/artifact-evals-strict/1.0.0.json`.
+The overlay holds only what strict adds. It narrows the form of a value that is
+present and requires no key. A string entry, and every other member of
+`metadata`, passes it untouched.
+
+| Field | Strict adds |
+|---|---|
+| `grader` | One of the ten named graders, or `tool:<kebab>`. No other kebab name passes |
+| `provider` | Kebab case, such as `anthropic` or `llama-cpp` |
+| `model` | A model id with no spaces, of letters, digits, `.`, `_`, `:`, `/`, `\`, `@` and `-`. A Windows path to a local model passes |
+| `success-exit-codes` | Unique, each from 0 to 255, the range a process returns |
+| `target.path` | A relative path, with no leading `/`, `\` or `~`, no drive letter and no URL scheme |
+| `generated-assertion-hash` | `sha256-` and sixty-four lowercase hex digits |
+| `meta-provenance[].generated-by` | A model id, in the same form as `model` |
+| `meta-provenance[].fields` | A well-formed JSON Pointer, in which every `~` begins `~0` or `~1` |
+| `meta-provenance[].confidence` | Each key is a well-formed JSON Pointer or a kebab eval id |
+
+`strict: true` does not reach this overlay, because the vocabulary is not in the default set. List both ids, beside the host schema, to adopt it:
+
+```yaml
+meta:
+  overrides:
+    - collection: skills
+      schemas:
+        - anthropic:claude-skill:2.1
+        - manni:artifact-evals:1.0.0
+        - manni:artifact-evals-strict:1.0.0
+```
+
+Each schema is checked on its own, and a finding names the one that produced
+it. A strict-only failure reads as one.
+
+```yaml
+---
+name: fix-bug
+description: Fix a reported bug, reproducing it with a failing test first.
+metadata:
+  evals:
+    - id: used-read
+      assertion: The session read at least one source file before editing.
+      grader: tool-useage
+      options: { tool: Read, expect: used }
+---
+```
+
+```text
+$ manni meta validate SKILL.md --no-config -s anthropic:claude-skill:2.1 -s manni:artifact-evals:1.0.0 -s manni:artifact-evals-strict:1.0.0
+✗ SKILL.md
+    /metadata/evals/0/grader  must be equal to one of the allowed values  (line 8)  [manni:artifact-evals-strict:1.0.0]
+    /metadata/evals/0/grader  must match pattern "^tool:[a-z0-9][a-z0-9-]*$"  (line 8)  [manni:artifact-evals-strict:1.0.0]
+    /metadata/evals/0/grader  must match a schema in anyOf  (line 8)  [manni:artifact-evals-strict:1.0.0]
+    /metadata  warning "metadata" is stored in the page; manni:artifact-evals:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+
+1 file checked, 0 passed, 1 failed, 3 errors, 1 warning
+```
+
+The exit code is 1. The open vocabulary accepts `tool-useage` as a kebab name,
+so the overlay alone catches the typo.

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tgdp:templates:1.1",
+  "title": "The Good Docs Project templates v1.1",
+  "description": "Requires `type` and recommends the 25 template slugs that The Good Docs Project publishes (upstream templates repo, main as of 2026-08-09). Any other non-empty string names a page type TGDP does not publish, and passes. Stack tgdp:templates-strict:1.1 beside it to close `type` to the 25 slugs. Adopting it states that every page has a type, so an untyped page is a gap. Diataxis classifies what a page *is* on the same key, so a page under both has to satisfy both. Pick one. It composes freely with a schema keyed on a different field, such as passo-uno:seven-action:1.0. See https://www.thegooddocsproject.dev/template",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "type"
+  ],
+  "properties": {
+    "type": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "enum": [
+            "api-getting-started",
+            "api-reference",
+            "bug-report",
+            "changelog",
+            "code-of-conduct",
+            "code-of-conduct-incident-record",
+            "code-of-conduct-remediation-record",
+            "code-of-conduct-response-plan",
+            "concept",
+            "contact-support",
+            "contributing-guide",
+            "glossary",
+            "how-to",
+            "installation-guide",
+            "our-team",
+            "quickstart",
+            "readme",
+            "reference",
+            "release-notes",
+            "sdk-overview",
+            "style-guide",
+            "terminology-system",
+            "troubleshooting",
+            "tutorial",
+            "user-personas"
+          ]
+        }
+      ],
+      "description": "Which page type this page is, as a Good Docs Project template slug where one fits. The 25 slugs are the recommended values. The Core pack is `concept`, `how-to`, `readme`, `reference`, `release-notes`, `troubleshooting` and `tutorial`. The rest come from the Community and Misc packs. Any other non-empty string names a page type TGDP does not publish. The enum recommends and rejects nothing; stack tgdp:templates-strict:1.1 to close the list."
+    }
+  }
+}

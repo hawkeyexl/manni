@@ -1,0 +1,259 @@
+---
+title: MkDocs Material schema
+description: The mkdocs:material:9.7 schema shipped with manni meta, covering the 19 front matter keys MkDocs and Material for MkDocs read, the blog plugin's date rule, and the finding an unknown hide value produces.
+sidebar:
+  label: "mkdocs:material:9.7"
+type: reference
+id: meta-reference-schemas-mkdocs-material
+keywords: ["MkDocs", "Material for MkDocs", "mkdocs:material:9.7", "hide", "versioning"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate the front matter keys MkDocs and Material for MkDocs read, and fix an unknown hide value."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "dialect", "override"]
+sample-questions:
+  - "Which front matter keys does mkdocs:material:9.7 check?"
+  - "What date rule does the blog plugin impose?"
+  - "What finding does an unknown hide value produce?"
+graph:
+  label: "MkDocs Material schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/mkdocs-material/9.7.json
+tags:
+  - mkdocs
+  - material-for-mkdocs
+  - schema
+  - frontmatter
+  - platform-schema
+  - validation
+action: remember
+related-pages:
+  - /manni/meta/reference/platform-schemas/
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/schemas/hugo-page/
+risks:
+  - read-only
+  - idempotent
+prerequisites:
+  - meta-reference-platform-schemas
+  - meta-reference-schema-resolution
+next-steps:
+  - meta-reference-schemas
+  - meta-reference-schemas-hugo-page
+  - meta-reference-schemas-vitepress-page
+---
+
+**Built-in id:** `mkdocs:material:9.7`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/mkdocs-material/9.7.json`.
+A `$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+import { Aside } from '@astrojs/starlight/components';
+
+`mkdocs:material:9.7` checks the front matter MkDocs 1.6 and Material for MkDocs
+9.7 read from a `.md` page. It requires nothing, because MkDocs builds a page
+with no front matter at all. It is one of the [platform
+schemas](/manni/meta/reference/platform-schemas/), which say what a generator
+accepts rather than what your team agreed.
+
+| Property | Value |
+|---|---|
+| Id | `mkdocs:material:9.7` |
+| Title | MkDocs Material front matter v9.7 |
+| Files it fits | `.md` |
+| Dialect | [Draft 2020-12](/manni/meta/reference/schema-resolution/#dialects) |
+| Required fields | None |
+| Additional properties | Allowed (`additionalProperties: true`) |
+| Reference kind | [builtin](/manni/meta/reference/schema-resolution/#reference-kinds) |
+| On by default | No |
+| Upstream reference | [Meta-data](https://www.mkdocs.org/user-guide/writing-your-docs/#meta-data) and [Material reference](https://squidfunk.github.io/mkdocs-material/reference/) |
+| JSON | [`mkdocs-material/9.7.json`](/manni/schemas/mkdocs-material/9.7.json) |
+
+## Use it
+
+MkDocs keeps everything under `docs_dir`, so one override covers the site:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: "docs/**"
+      schemas:
+        - mkdocs:material:9.7
+```
+
+For a one-off run, pass the id directly:
+
+```bash
+manni meta validate docs/ -s mkdocs:material:9.7
+```
+
+## Fields
+
+{/* cite platform-mkdocs-covers-both */}
+The two keys MkDocs itself defines, plus the seventeen Material for MkDocs adds
+on top of them. Material is the theme the overwhelming majority of MkDocs sites
+run. It is where nearly all of the front matter surface lives. Core MkDocs reads
+`title` and `template` and nothing else. So one id covers both, the way
+`vitepress:page:1.6` covers VitePress and its default theme in one.
+
+| Field | Type | Notes |
+|---|---|---|
+| `title` | string | MkDocs. Fourth of four title sources, so never required. |
+| `template` | string | MkDocs. The theme template rendering this page. |
+| `description` | string | The `<meta name="description">`, and the social card's text. |
+| `author` | string | The `<meta name="author">`. One name, not a list. |
+| `icon` | string | An icon shortcode, resolved as `.icons/<value>.svg`. |
+| `status` | string | `new` and `deprecated` ship; others come from `theme.extra.status`. |
+| `subtitle` | string | Rendered under the navigation entry. Material 9.6 and later. |
+| `hide` | string array | `navigation`, `toc`, `path`, `tags`, `footer`, `feedback`. |
+| `tags` | string array | Read by the tags plugin and added to the search index. |
+| `search` | object | `exclude` and `boost`. |
+| `social` | object | `cards`, `cards_layout`, `cards_layout_options`. |
+| `date` | date \| object | A post's date, or a mapping requiring `created`. |
+| `authors`, `categories` | string array | A post's authors and categories. |
+| `draft`, `pin` | boolean | Hold a post back; pin it to the top of a view. |
+| `readtime` | integer | Overrides the computed reading time, in minutes. |
+| `slug` | string | Overrides a post's URL segment. |
+| `links` | array | A post's sidebar links, in `nav` shape. |
+
+{/* cite platform-mkdocs-hide-values */}
+`hide` is the field this schema exists for. Material decides what to hide by
+testing membership of the list, with `"navigation" in page.meta.hide`. It says
+nothing at all about an entry it does not recognise, so `hide: [sidebar]` builds
+cleanly and hides nothing. The six values are transcribed from the templates
+that test them, not from a documentation page, so the list is what the theme
+actually honours.
+
+{/* cite platform-mkdocs-blog-typing */}
+The rest of the value is in the typing. `readtime`, `draft` and `pin` go through
+the blog plugin's own configuration validation, which refuses a quoted number or
+a quoted boolean outright. `tags` reaches a search plugin that checks
+`isinstance(tags, list)` and skips a bare string without a word. `boost` is
+copied into the search index exactly as written, so a quoted one ranks nothing.
+
+<Aside type="caution" title="The blog plugin requires `date`, and this schema cannot">
+A post under the blog plugin *must* carry `date`, because "the build fails when
+it's not set". A `date` written as a mapping must carry `created`. That is the
+one thing in the MkDocs toolchain that refuses to build over missing front
+matter. It is deliberately not in `required` here. This schema fits any Material
+page, and the overwhelming majority of them are not posts. Requiring `date`
+would fail every ordinary page in the docs tree.
+
+The shape is still checked, and a `date` mapping with no `created` fails. To
+demand the key itself, point a schema of your own at the posts directory:
+
+```json title="blog-post.schema.json"
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [{ "$ref": "mkdocs:material:9.7" }],
+  "required": ["date"]
+}
+```
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: "docs/blog/posts/**"
+      schemas:
+        - ./blog-post.schema.json
+```
+</Aside>
+
+<Aside type="note" title="Dates are typed but not format-checked">
+`date`, and every value inside the mapping form, is a plain `string`. MkDocs
+parses front matter with PyYAML, which resolves both `2026-06-25` and
+`2026-06-25T12:00:00` to a real date. The manni meta YAML reader hands the
+validator the spelling that was authored. Pinning one format here would fail
+input the plugin accepts, on the same reasoning as [Hugo's dates](/manni/meta/reference/schemas/hugo-page/).
+
+One failure mode this cannot see is a *quoted* date. PyYAML leaves it a string,
+which the plugin rejects. But by the time a schema sees the value the quotes are
+gone, and it is indistinguishable from the unquoted spelling.
+</Aside>
+
+## Additional properties
+
+Allowed. A key neither MkDocs nor Material defines passes unchecked.
+
+<Aside type="note" title="Your plugin's keys are not MkDocs'">
+Most of what appears in a real MkDocs site's front matter comes from a
+third-party plugin, or from a template override you wrote. It does not come from
+MkDocs or Material. `git_revision_date_localized`, `glightbox`, `nav_order` and
+`comments` are examples. None are described here and all pass as unknown keys.
+The `.meta.yml` files the meta plugin merges into a directory's pages are not
+Markdown, so manni meta does not read them either.
+</Aside>
+
+## Versioning
+
+<Aside type="caution" title="Pinned to Material 9.7, which is the end of the line">
+Material 9.7.0 was announced as the last release of Material for MkDocs to
+receive new features. The team is moving on to a separate generator. That makes
+this pin unusually stable for a platform schema. `astro:starlight:0.41`
+describes a pre-1.0 line that adds fields every few weeks. `mkdocs:material:9.7`
+describes a front matter surface that is not expected to grow. Everything that
+was Insiders-only, including navigation paths and custom social card layouts, is
+in 9.7 and so is described here.
+</Aside>
+
+## Example page
+
+A page carrying the Material page keys, at legal values. This is
+`test/fixtures/platform/mkdocs-valid.md`, and it passes.
+
+```markdown title="docs/cache.md"
+---
+title: Configuring the cache
+description: How the build cache works and when to clear it.
+author: Docs team
+icon: material/cached
+status: new
+subtitle: Build performance
+template: reference.html
+hide:
+  - navigation
+  - toc
+  - path
+  - tags
+  - footer
+  - feedback
+tags:
+  - caching
+  - performance
+search:
+  boost: 2
+  exclude: false
+social:
+  cards: true
+  cards_layout: default
+  cards_layout_options:
+    background_color: "#4051b5"
+    title: Cache
+---
+```
+
+## A common mistake
+
+`sidebar` is not a value any Material template tests for, so it hides nothing.
+The build succeeds, and the schema reports the entry:
+
+```markdown title="test/fixtures/platform/mkdocs-bad-hide.md"
+---
+title: Release notes
+hide:
+  - sidebar
+---
+```
+
+```text
+✗ test/fixtures/platform/mkdocs-bad-hide.md
+    /hide/0  must be equal to one of the allowed values  (line 4)  [mkdocs:material:9.7]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+Use `navigation` to hide the navigation sidebar, or `toc` to hide the table of
+contents.

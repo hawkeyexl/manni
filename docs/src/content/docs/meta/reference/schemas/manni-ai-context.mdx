@@ -1,0 +1,267 @@
+---
+title: manni ai-context vocabulary
+description: "The manni:ai-context:1.0.0 schema says how machines made a page, and how they may use it."
+sidebar:
+  label: "manni:ai-context:1.0.0"
+type: reference
+id: meta-reference-schemas-manni-ai-context
+keywords: ["ai-context", "manni:ai-context:1.0.0", "provenance", "risks", "strict overlay"]
+language: en
+audiences: ["schema-authors"]
+intent: "Record how machines made a page and how they may use it, with manni:ai-context:1.0.0."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "JSON Pointer"]
+sample-questions:
+  - "Which fields does manni:ai-context:1.0.0 define?"
+  - "Where does provenance live?"
+  - "What does the ai-context strict overlay narrow?"
+graph:
+  label: "manni ai-context vocabulary"
+  type: reference
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/ai-context/1.0.0.json
+tags:
+  - schema
+  - ai-context
+  - provenance
+  - metadata
+action: remember
+prerequisites:
+  - schema
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/schemas/field-location/
+next-steps:
+  - /manni/meta/set-up/machine-authorship/
+  - /manni/meta/set-up/fill-providers/
+  - /manni/meta/set-up/external-metadata/
+related-pages:
+  - /manni/meta/reference/schemas/manni-graph/
+  - /manni/meta/reference/schemas/manni-evals/
+  - /manni/meta/reference/schemas/manni-artifact-evals/
+  - /manni/meta/reference/schemas/manni-stewardship/
+risks: read-only
+---
+
+**Built-in id:** `manni:ai-context:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/ai-context/1.0.0.json`.
+A `$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+**The question it answers: how did machines make this page, and how may
+they use it?** Two production fields, `provenance` and `meta-provenance`,
+record what a machine wrote. Two consumption fields, `risks` and
+`sample-questions`, speak to the agent that reads the page. Reach for it once
+models write prose or metadata in your docs, or read them to act.
+
+## Use it
+
+AI context is in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it on every page with no config line. A config's own `schemas` add
+to the default set. An override replaces the set, so an entry that should keep
+AI context sets `defaults: true`:
+
+```yaml
+meta:
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/guide.json
+```
+
+## Fields
+
+| Field | Type | Location | Notes |
+|---|---|---|---|
+| `provenance` | list of entries | `external` | Which body lines a machine wrote, one entry per range. Each entry names the machine, the lines, and an integrity hash that pins them. `manni meta derive` manages it |
+| `meta-provenance` | list of entries | `external` | Per-model attribution of machine-proposed metadata, meaning which fields and evals, at what confidence |
+| `risks` | string or list, open | `page` | Pre-flight flags for agents and reviewers. The seven recommended flags are `cost-incurring`, `destructive`, `irreversible`, `privileged`, `open-world`, `read-only` and `idempotent`. Any other non-empty string is valid |
+| `sample-questions` | string or list | `page` | Questions this page should answer. Retrieval evals use them |
+
+No field is required. Both lists of entries need at least one entry, with no
+duplicates. `risks` and `sample-questions` take one non-empty string, or a
+non-empty list of unique ones.
+
+A `provenance` entry requires all three of its keys.
+
+| Key | Type | Notes |
+|---|---|---|
+| `generated-by` | string, non-empty | The model, agent, or tool that wrote the lines |
+| `lines` | integer or string | One body line, or a range such as `"12-30"`. Lines count from the first line after the frontmatter |
+| `integrity` | string | `sha256-` and 64 lowercase hex digits over those lines. It is the entry's identity |
+
+A `meta-provenance` entry requires `generated-by` and at least one of `fields`
+or `evals`.
+
+| Key | Type | Notes |
+|---|---|---|
+| `generated-by` | string, non-empty | The model or agent that proposed the values |
+| `fields` | list of strings | JSON Pointers to the values it proposed, such as `/intent` or `/graph/label` |
+| `evals` | list of strings | Kebab ids of the evals it proposed |
+| `confidence` | mapping | A number from 0 to 1, keyed by a pointer from `fields` or an id from `evals` |
+
+Neither entry takes any other key.
+
+The Location column is the `x-manni-location` mark each field carries. `page`
+means the value belongs in the document's own metadata and reaches delivered
+output. `external` means it belongs in the collection's
+[external-metadata manifest](/manni/meta/set-up/external-metadata/). A field
+is `page` when an agent fetching the page acts on it. `risks` and
+`sample-questions` speak to an agent at read time. Both provenance records
+describe how the page was made. See
+[field location](/manni/meta/schemas/field-location/) for how the marks are
+used.
+
+## Additional properties
+
+Allowed at the root. A generator's keys and the other vocabularies' keys pass
+beside ai-context's, which checks only the four keys it claims. The entries in
+`provenance` and `meta-provenance` are closed, so a misspelled key inside an
+entry fails.
+
+## Example
+
+The example keeps every field in the page to show them together. In a
+collection with a manifest, the two provenance records sit in the manifest.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+provenance:
+  - generated-by: claude-fable-5
+    lines: 4-18
+    integrity: sha256-78af1d3321f9cbb177a7e4c958e39be56fd14cb93c1e441778bc4232e0fe4b1f
+meta-provenance:
+  - generated-by: claude-fable-5
+    fields: [/intent, /sample-questions]
+    confidence: { /intent: 0.9, /sample-questions: 0.84 }
+risks: [privileged, cost-incurring]
+sample-questions:
+  - How do I install the operator on EKS?
+  - Which Helm values enable the webhook?
+---
+```
+
+## A common mistake
+
+A `meta-provenance` entry that names a field by its key, not by a pointer,
+fails.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+meta-provenance:
+  - generated-by: claude-fable-5
+    fields: [intent]
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.0.0
+✗ page.md
+    /meta-provenance/0/fields/0  must match pattern "^/"  (line 6)  [manni:ai-context:1.0.0]
+    /meta-provenance  warning "meta-provenance" is stored in the page; manni:ai-context:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+
+1 file checked, 0 passed, 1 failed, 1 error, 1 warning
+```
+
+The exit code is 1, and `/intent` fixes it. The warning is the `external`
+mark, which fires because `--no-config` gives the page no manifest.
+
+## Design decisions
+
+- **Machines propose, and humans retire the record.** A `meta-provenance`
+  entry is the review trail for machine-filled metadata. A human deletes the
+  entry once its fields are reviewed, so a surviving entry means machine
+  metadata nobody has checked. The same key serves the
+  [graph](/manni/meta/reference/schemas/manni-graph/) block and both eval
+  vocabularies, [evals](/manni/meta/reference/schemas/manni-evals/) and
+  [artifact-evals](/manni/meta/reference/schemas/manni-artifact-evals/). So
+  the whole family has one answer to "which of this metadata did a machine
+  write, and has anyone checked?" [`manni meta fill`](/manni/meta/set-up/fill-providers/)
+  writes an entry for the fields it fills.
+- **`provenance` attributes the prose, and `meta-provenance` attributes the
+  metadata.** They record different facts. `provenance` pins body lines by
+  hash, and [`manni meta derive`](/manni/meta/set-up/machine-authorship/)
+  stamps it from git. `lines` is where the pin was last seen, so a range that
+  moves keeps its entry. A range whose text changes loses it.
+- **The machines that wrote a page are derived.** They are the distinct
+  `generated-by` values across its `provenance` entries, and there is no
+  page-level `generated-by`. Consumers use them for self-preference-bias
+  checks. A judge should know when it is grading its own author.
+- **Humans never appear in `provenance`.** `authors` in
+  [stewardship](/manni/meta/reference/schemas/manni-stewardship/) carries
+  them.
+- **`risks` is an open list.** Seven flags are recommended.
+  `cost-incurring`, `destructive`, `irreversible`, and `privileged` cover
+  operations. `open-world`, `read-only`, and `idempotent` mirror MCP's tool
+  annotations, the published prior art for agent-facing hints. Any other
+  non-empty string is valid. The assurances are worth stating, because an
+  unannotated page has not been assessed, which is different from being safe.
+  For the same reason, a consumer that branches on a flag treats an unknown
+  value as a caution.
+- **`sample-questions` closes the retrieval loop.** Ask them against the
+  corpus and measure whether this page carries the answer. Per-page
+  assertions belong to the evals vocabulary instead.
+
+## Strict overlay
+
+**Strict overlay id:** `manni:ai-context-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/ai-context-strict/1.0.0.json`.
+The overlay holds only what strict adds. It narrows the form of a value that is
+present and requires no key. A page with none of the vocabulary's fields
+still passes it.
+
+| Field | Strict adds |
+|---|---|
+| `meta-provenance[].generated-by` | A model id with no spaces, made of letters in either case, digits, `.`, `_`, `:`, `/`, `\`, `@` and `-`. `GPT-4o` and a Windows path to a local model pass |
+| `meta-provenance[].fields` | Each pointer is well formed under RFC 6901, so every `~` begins `~0` or `~1` |
+| `meta-provenance[].confidence` | Each key is such a pointer or a kebab eval id |
+| `risks` | Closed to the seven recommended flags, in the string form and the list form alike |
+
+`provenance` is the same in both. `manni meta derive` writes a commit
+trailer's name there as git records it, such as `Claude Opus 5.5`.
+
+`strict: true` stacks it right after the vocabulary, with every other
+default's overlay beside its own base:
+
+```yaml
+meta:
+  strict: true
+```
+
+To adopt this overlay alone, list its id. The default set already carries the
+vocabulary:
+
+```yaml
+meta:
+  schemas:
+    - manni:ai-context-strict:1.0.0
+```
+
+Each schema is checked on its own, and a finding names the one that produced
+it. A strict-only failure reads as one.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+risks: [privileged, needs-vpn]
+---
+```
+
+```text
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:ai-context:1.0.0 -s manni:ai-context-strict:1.0.0
+✗ page.md
+    /risks/1  must be equal to one of the allowed values  (line 4)  [manni:ai-context-strict:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+The open vocabulary accepts `needs-vpn`, so the overlay alone fails the page.

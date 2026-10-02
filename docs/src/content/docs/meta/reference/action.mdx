@@ -1,6 +1,55 @@
 ---
 title: GitHub Action reference
 description: Every input and output of the hawkeyexl/manni GitHub Action, with defaults, the multi-value input rules, and how it maps onto the CLI.
+type: reference
+id: meta-reference-action
+keywords:
+  - GitHub Action
+  - inputs
+  - outputs
+  - versioning
+language: en
+audiences:
+  - ci-engineers
+intent: Configure every input of the manni GitHub Action and read its outputs.
+lifecycle: published
+applies-to:
+  - domain:meta
+sample-questions:
+  - Which inputs does the manni GitHub Action accept?
+  - How do I pass several globs to the Action?
+  - What does the Action run under the hood?
+graph:
+  label: GitHub Action reference
+  type: reference
+last-updated: 2026-10-01
+resource: https://github.com/hawkeyexl/manni
+tags:
+  - github-actions
+  - ci-cd
+  - npm
+  - validation
+action: develop
+risks:
+  - read-only
+  - idempotent
+  - open-world
+concepts:
+  - validation
+  - schema
+  - metadata
+prerequisites:
+  - meta-get-started
+  - meta-ci
+next-steps:
+  - meta-ci-recipes
+  - meta-ci-exit-codes-and-annotations
+  - meta-reference-configuration
+  - meta-reference-cli
+related-pages:
+  - meta-reference-cli
+  - meta-reference-configuration
+  - meta-ci-consume-results
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -13,7 +62,7 @@ instead of being copy-pasted into every repository that wants it.
 
 ```yaml
 - uses: actions/checkout@v7
-- uses: hawkeyexl/manni@v2
+- uses: hawkeyexl/manni@v4
   with:
     paths: "docs/**/*.md"
 ```
@@ -45,7 +94,7 @@ Use one item per line whenever a value contains a space. The Action emits a
 workflow warning if it sees a quote character in a single-line value.
 
 ```yaml
-- uses: hawkeyexl/manni@v2
+- uses: hawkeyexl/manni@v4
   with:
     paths: |
       docs/**/*.md
@@ -73,7 +122,7 @@ There is no `collection` input. `--collection` reaches the Action through `args`
 the documented escape hatch for every flag the inputs above do not name:
 
 ```yaml
-- uses: hawkeyexl/manni@v2
+- uses: hawkeyexl/manni@v4
   with:
     args: --collection guides
 ```
@@ -83,7 +132,7 @@ The flag repeats rather than splitting on commas, so two collections are two
 occurrences on the same line:
 
 ```yaml
-- uses: hawkeyexl/manni@v2
+- uses: hawkeyexl/manni@v4
   with:
     args: --collection guides --collection blog
 ```
@@ -108,7 +157,7 @@ non-zero code has already failed the step, so there is nothing left to read:
 
 ```yaml
 - id: manni
-  uses: hawkeyexl/manni@v2
+  uses: hawkeyexl/manni@v4
   continue-on-error: true
   with:
     paths: "docs/**/*.md"
@@ -130,7 +179,7 @@ Action itself.
 `@vN` is a moving tag. On each stable release, the release job moves it to the
 newest release of that major.
 
-Pin a full tag such as `uses: hawkeyexl/manni@v2.11.0` instead when you want an
+Pin a full tag such as `uses: hawkeyexl/manni@v4.0.0` instead when you want an
 immutable Action. That is the usual trade between getting fixes automatically
 and knowing exactly what runs.
 

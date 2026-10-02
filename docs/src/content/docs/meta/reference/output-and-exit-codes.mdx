@@ -1,6 +1,55 @@
 ---
 title: Output formats & exit codes
 description: The pretty, json, github, sarif, and junit output formats; the 0/1/2 exit-code contract; and color, stdout/stderr behavior for manni meta validate.
+type: reference
+id: meta-reference-output-and-exit-codes
+keywords:
+  - output formats
+  - exit codes
+  - severity
+  - SARIF
+  - color
+language: en
+audiences:
+  - ci-engineers
+intent: Pick an output format for a consumer and branch on manni meta's exit codes in CI.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - Validation
+sample-questions:
+  - What does exit code 2 mean?
+  - Which output format produces GitHub annotations?
+  - How does severity map onto the exit code?
+graph:
+  label: Output formats & exit codes
+  type: reference
+last-updated: 2026-10-01
+tags:
+  - exit-codes
+  - output-formats
+  - sarif
+  - junit
+  - github-actions
+  - reporting
+  - ci
+action: remember
+related-pages:
+  - /manni/meta/reference/cli/
+  - /manni/meta/reference/configuration/
+  - /manni/meta/fix/
+risks:
+  - read-only
+  - idempotent
+prerequisites:
+  - meta-get-started
+  - meta-reference-cli
+next-steps:
+  - meta-ci-exit-codes-and-annotations
+  - meta-ci-consume-results
+  - meta-reference-configuration
+  - meta-ci
 ---
 
 import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
@@ -435,6 +484,7 @@ GitHub annotations, ESLint, Vale and pa11y all use exactly these three words.
 | `manni meta validate` | `error` and `warning` | Every finding is an error except `location:external` and `location:page`, the warnings for a value stored on the side its schema's `x-manni-location` does not prefer. The reporters carry `notice` for sibling tools. |
 | `manni cite check` | all three | Per rule. Each rule has a default, and [`cite.severity.<rule>`](/manni/cite/reference/configuration/#severity) moves any of them, or sets it to `off`. |
 | `manni a11y check` | all three | Mapped from axe's `impact` when a page is read. Its [`--severity`](/manni/a11y/reference/cli/) flag then drops everything below a floor. |
+| `manni lint check` | all three | Every finding from manni's own structure check is an error except `unsupported-content-kind`, the warning for a rule the file's format cannot answer. Under DITA-OT, a message keeps its log level: `ERROR` and `FATAL` are errors, `WARN` is a warning and `INFO` is a notice. There is no severity map. [Exit `1`](/manni/lint/reference/cli/#exit-codes) is defined on severity rather than on "any finding", so a warning or a notice never fails a run. |
 | `manni key rotate` | none | It has no findings model. A value either re-encrypts or is skipped, and a skip exits `1`. |
 
 {/* cite output-meta-alone-sees-errors-and-warnings */}
@@ -449,7 +499,8 @@ puts notices on screen.
 | `pretty`, this tool | the word `notice`, dim, before the message | the word `warning`, yellow; a file with warnings and no errors is marked `⚠` | no word; the file line is `✗` |
 | `pretty`, `cite` | `ℹ`, dim | `↕`, yellow | `✗`, red |
 | `pretty`, `a11y` | the word `notice`, dim | the word `warning`, yellow | the word `error`, red |
-| `json` | `"severity": "notice"` | `"severity": "warning"` | the field is absent in `meta`, and `"error"` in `cite` and `a11y` |
+| `pretty`, `lint` | the word `notice`, dim, before the message | the word `warning`, yellow; a file with warnings and no errors is marked `⚠` | no word; the file line is `✗` |
+| `json` | `"severity": "notice"` | `"severity": "warning"` | the field is absent in `meta`, and `"error"` in `cite`, `a11y` and `lint` |
 | `github` | `::notice` | `::warning` | `::error` |
 | `sarif` | `"level": "note"` | `"level": "warning"` | `"level": "error"` |
 | `junit` | not a `<failure>`; the testcase passes | not a `<failure>`; the testcase passes | one `<failure>` element |
@@ -458,8 +509,8 @@ puts notices on screen.
 `sarif` has no level named notice, so `note` is the nearest thing it defines.
 `junit` has no level below failure, and a `<failure>` that did not fail the run
 would make the tab disagree with the exit code. `sarif` and `junit` are emitted
-by this tool and by `manni cite`; `manni a11y check` reports in `pretty`, `json`
-and `github`.
+by this tool, by `manni cite` and by `manni lint`; `manni a11y check` reports in
+`pretty`, `json` and `github`.
 
 {/* cite output-summary-counts-lower-levels-only-when-present */}
 A pretty summary line counts the lower levels only when there are some. This
@@ -474,6 +525,7 @@ notices`, and `manni cite check` prints the counts in parentheses, as
 | `manni meta validate` | A file with at least one error-severity finding. |
 | `manni cite check` | A file with at least one unbaselined error-severity finding. Warnings and notices never move it. |
 | `manni a11y check` | A page that failed to load, or one with any remaining violation. Severity is not consulted, so raising `--severity` is what stops a lower level failing the run. |
+| `manni lint check` | A file with at least one error-severity finding. |
 
 {/* cite output-no-fail-on-flag */}
 There is no `--fail-on` and no `--min-severity` anywhere in the family. A tool
@@ -709,7 +761,9 @@ The deliberate opt-outs are `--no-derive` on `validate`, `--no-derived` on
 | Config `derive.fields` names a key a collection's URL [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. A local manifest is where `derive` writes the field. | `manni.config.yaml: meta.derive.fields[3] "owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.` |
 | Config `derive.commands` names a key a collection's URL [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. The config is refused when it loads. | `manni.config.yaml: meta.derive.commands.verified-against is owned by manifest https://example.com/versions.yaml, which is fetched and cannot be written; set it in that repository.` |
 | `derive --fields` named a key a collection's URL [external-metadata manifest](/manni/meta/reference/configuration/#external-metadata) owns. | `"owner" is owned by manifest https://example.com/owners.yaml, which is fetched and cannot be written; set it in that repository.` |
-| `derive` has no `derive.fields` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
+| `derive` has no `derive.fields` in config and no `--fields`, and no page's schemas claim a merge-safe field. | `nothing to derive: no page's schemas claim a merge-safe field (owner, created, last-updated, provenance); set derive.fields or pass --fields` |
+| The same, but some page's schemas could not be read, so what they claim is unknown. | `nothing to derive: the schemas of <page> could not be read, so what they claim is unknown; fix them or pass --fields` (with `and <n> more` after the page when there are several) |
+| `derive` has `fields: []` in config and no `--fields`. | `nothing to derive: set derive.fields in manni.config.yaml or pass --fields` |
 | Config `derive.machines` is empty or not a list of strings. | `manni.config.yaml: meta.derive.machines must be a non-empty list of globs, matched against a trailer's name and its email. Default: ["*[bot]"].` |
 | Config `derive.machines` holds a blank entry. | `manni.config.yaml: meta.derive.machines[0] is blank; a glob must name something.` |
 | Config `derive.machines` repeats a glob. | `manni.config.yaml: meta.derive.machines lists "*[bot]" twice.` |

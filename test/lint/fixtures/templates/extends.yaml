@@ -1,0 +1,37 @@
+# `child` overrides one rule of `base` by id, inherits the rest, and inherits
+# every template-level key it does not set.
+templates:
+  base:
+    types: [how-to]
+    sections:
+      - id: overview
+        heading: Overview
+        contains:
+          paragraphs:
+            min: 1
+      - id: see-also
+        min: 0
+        heading: See also
+      - id: task
+        sections:
+          - id: steps
+            heading: Steps
+            contains:
+              lists:
+                min: 1
+          - id: caveats
+            min: 0
+  child:
+    extends: extends.yaml#base
+    sections:
+      - id: overview
+        heading: Introduction
+        contains:
+          paragraphs:
+            min: 2
+      # Tightens one nested rule. Its siblings under `task`, and `task`'s own
+      # keys, must survive.
+      - id: task
+        sections:
+          - id: caveats
+            min: 1

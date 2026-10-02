@@ -8,6 +8,49 @@ related-terms: [metadata]
 abstract: The metadata block at the very top of a document.
 definition: >-
   A block of metadata at the very top of a document, set off from the body.
+keywords:
+  - frontmatter
+  - fence
+  - metadata block
+language: en
+audiences:
+  - docs-engineers
+  - ci-engineers
+  - schema-authors
+  - contributors
+intent: Say what frontmatter means in manni meta and where it is covered in full.
+lifecycle: published
+applies-to:
+  - domain:meta
+related-pages:
+  - meta-reference-formats
+sample-questions:
+  - What is frontmatter?
+  - Which frontmatter fences does manni meta read?
+graph:
+  label: frontmatter
+  type: concept
+last-updated: 2026-09-21
+tags:
+  - metadata
+  - yaml
+  - document-formats
+  - fences
+action: understand
+concepts:
+  - metadata
+next-steps:
+  - /manni/meta/reference/formats/
+risks: read-only
+alt-labels:
+  - front matter
+  - fence
+  - metadata block
+broader:
+  - metadata
+scope-note: In manni meta, frontmatter is the metadata block extracted from document formats. The term covers YAML, TOML, and JSON fenced blocks, plus native headers in AsciiDoc and RST. Does not include metadata from XML attributes or HTML head tags, which manni meta handles separately.
+prerequisites:
+  - metadata
 ---
 
 <p>{frontmatter.definition}</p>

@@ -1,0 +1,144 @@
+---
+title: X Cards schema
+description: The x:cards:1.0 schema shipped with manni meta, covering the twitter card tags, why only twitter:card is required, and the HTTPS rule for images.
+sidebar:
+  label: "x:cards:1.0"
+type: reference
+id: meta-reference-schemas-x-cards
+keywords: ["X Cards", "x:cards:1.0", "twitter:card", "images"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate the twitter card tags a page publishes, including the HTTPS rule for images."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter"]
+sample-questions:
+  - "Why is only twitter:card required?"
+  - "Which image URLs does x:cards:1.0 accept?"
+graph:
+  label: "X Cards schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/x-cards/1.0.json
+tags:
+  - social-cards
+  - twitter
+  - metadata
+  - validation
+  - html
+action: develop
+prerequisites:
+  - meta-reference-schemas-ogp-article
+next-steps:
+  - meta-reference-metadata-vocabularies
+related-pages:
+  - meta-reference-schemas-ogp-article
+  - meta-reference-metadata-vocabularies
+risks: read-only
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+**Built-in id:** `x:cards:1.0`
+
+**Published at:** [`https://hawkeyexl.github.io/manni/schemas/x-cards/1.0.json`](/manni/schemas/x-cards/1.0.json)
+
+{/* cite vocab-x-cards-is-the-ogp-companion */}
+The `twitter:*` meta tags that decide how a link renders when someone shares it
+on X. It is the companion to `ogp:article:1.0`, on the same `<meta>` channel and
+through the same extractor. The two normally ship together, which is why a site
+with Open Graph tags and no card tags is the usual half-finished state.
+
+It is one of the [metadata vocabularies](/manni/meta/reference/metadata-vocabularies/).
+
+## Use it
+
+Run it beside [`ogp:article:1.0`](/manni/meta/reference/schemas/ogp-article/)
+on the pages you publish with social cards:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: "site/**/*.html"
+      schemas:
+        - ogp:article:1.0
+        - x:cards:1.0
+```
+
+```html
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@exampledocs" />
+<meta name="twitter:title" content="Validate document metadata in CI" />
+<meta name="twitter:description" content="Fail the build when frontmatter is missing." />
+<meta name="twitter:image" content="https://example.com/img/card.png" />
+```
+
+## Fields
+
+| Field | Type | Notes |
+|---|---|---|
+| `twitter:card` | `summary` \| `summary_large_image` \| `app` \| `player` | **Required.** |
+| `twitter:site`, `twitter:creator` | string | A handle, with or without the `@`. |
+| `twitter:site:id`, `twitter:creator:id` | string \| integer | Numeric account ids. |
+| `twitter:title` | string | 70 characters. |
+| `twitter:description` | string | 200 characters. |
+| `twitter:image` | string | An **HTTPS** URL. |
+| `twitter:image:alt` | string | 420 characters. |
+| `twitter:player`, `twitter:player:stream` | string | HTTPS URLs. Player cards. |
+| `twitter:player:width`, `twitter:player:height` | string \| integer | Pixels. |
+| `twitter:app:*` | string | Name, id, and URL per platform, plus `twitter:app:country`. |
+
+### Why only `twitter:card` is required
+
+{/* cite vocab-other-card-tags-fall-back-to-og */}
+Every other tag on the card has an Open Graph fallback: X reads `og:title`,
+`og:description` and `og:image` when the `twitter:` equivalents are absent. A
+page carrying good Open Graph tags and no `twitter:title` is *correct*, so
+requiring one here would fail it.
+
+{/* cite vocab-twitter-card-has-no-fallback */}
+`twitter:card` is the exception. It has no fallback, and X will not infer a card
+type from Open Graph alone. Without it no card renders at all, however complete
+the rest of the markup is. That is the whole of what this schema insists on.
+
+{/* cite vocab-twitter-image-must-be-https */}
+The length caps are real limits rather than style advice: X truncates past them.
+And `twitter:image` must be HTTPS, because an image served over plain HTTP is
+dropped and the card renders without it.
+
+<Aside type="note" title="A player card carries its own required set">
+Set `twitter:card` to `player` and the schema also demands `twitter:title`,
+`twitter:image`, `twitter:player` and the player's width and height. Without the
+player URL and its dimensions there is nothing to embed, and X falls back to no
+card rather than to a summary. No other card type triggers that rule.
+</Aside>
+
+<Aside type="note" title="Numbers arrive as strings from HTML, and as numbers from front matter">
+`twitter:player:width` and the account ids are typed `string | integer`. An HTML `content=` attribute is always a string, so typing them as integers
+alone would fail every real HTML page. Front matter can carry a genuine number.
+Both spellings are constrained, the string form by a digits pattern and the
+number form by a minimum, so neither channel goes unchecked.
+</Aside>
+
+## Additional properties
+
+Allowed. Open Graph tags and any other key sit beside the card tags.
+
+## Example
+
+```markdown
+---
+"twitter:card": summary_large_image
+"twitter:site": "@exampledocs"
+"twitter:image": https://example.com/img/card.png
+---
+```
+
+## A common mistake
+
+An image URL over plain HTTP fails, because X drops it:
+
+```text
+✗ docs/share.md
+    /twitter:image  must match pattern "^https://"  (line 3)  [x:cards:1.0]
+```

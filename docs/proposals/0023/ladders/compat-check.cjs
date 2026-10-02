@@ -41,7 +41,7 @@ const VERSIONS = {
 const vOf = (family) => VERSIONS[family] ?? DRAFT_V;
 const PROPOSED_DIRS = [
   "core", "stewardship", "audience", "lifecycle", "structure", "ai-context",
-  "evals", "kg", "artifact-evals",
+  "evals", "graph", "artifact-evals",
 ];
 
 let findings = 0;
@@ -232,7 +232,7 @@ const ENVELOPE_VALUES = {
   "eval-suite": "house-suite",
   "eval-skip": true,
   "eval-provenance": [{ "generated-by": "claude-opus-5" }],
-  kg: { label: "Configuration" },
+  graph: { label: "Configuration" },
   metadata: {
     evals: [{ id: "used-the-tool", assertion: "must call the search tool" }],
     "eval-skip": false,

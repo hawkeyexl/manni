@@ -1,0 +1,44 @@
+docs/src/content/docs/term/fix/index.mdx:
+  personas:
+    - theo
+  journeys:
+    - t4
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/term/commands
+    - path: src/term/core/writers
+    - path: src/term/core/vale.ts
+    - path: src/term/core/writers/vale.ts
+    - path: src/term/reporters
+  eval-suite: term
+  evals:
+    - id: decode-annotation
+      assertion: A reader can decode a manni:term annotation and find the rule it names.
+      type: capability
+      grader: ai
+    - id: fix-and-confirm
+      assertion: A reader can make the edit a finding asks for and confirm it with a green local run.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-415
+      integrity: sha256-be19211a9c9bd83d4e0b384a430d4750dd4590edb590a96fcc58be103db34201
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /prerequisites
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /concepts: 0.7
+        /prerequisites: 0.8
+        /related-pages: 0.8

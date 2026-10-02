@@ -1,7 +1,7 @@
 # 0048: the `docevals` domain: evals join the family
 
 - **Status:** Proposed
-- **Serves:** Devin · D9, D10 · Sara · S7–S10 · Maya · M10–M15 · Theo · T5
+- **Serves:** Devin · D10, D11 · Sara · S8–S11 · Maya · M11–M16 · Theo · T6
 - **Depends on:** [0033](0033-manni-monorepo.md), the umbrella this domain
   mounts on and the import recipe it follows. [0034](0034-command-grammar.md),
   the grammar: spelled verbs, no default subcommand, one separator per list.
@@ -364,7 +364,7 @@ set of flat files, and a tool that joins brings no directory of its own
   by name. Their docevals needs are short additions to their entries. Priya,
   Nate and Iris are Maya as a platform lead, as a solo owner and as a
   retrofitter, so they fold into Maya. a11y added no persona either (0035).
-- **CUJs.** The twelve journeys are M10–M14, D9–D10, S7–S10 and T5 in
+- **CUJs.** The twelve journeys are M11–M15, D10–D11, S8–S11 and T6 in
   `docs/content-strategy/cujs.md`.
 - **IA.** `information-architecture.md` gains the `docevals/` content set, with
   each page's CUJs and launch status.
@@ -524,7 +524,7 @@ the config says.
   (`npm run docs:check-docevals`).
 - `package.json` records `node-llama-cpp` as an optional peer dependency.
 - A corpus may keep its eval keys in a collection's manifest, so the content
-  set gains M15 and the page that serves it,
+  set gains M16 and the page that serves it,
   `docevals/adopt/move-evals-to-a-manifest.mdx`.
 - Nothing here was released, so no rename is breaking for anyone: `info`,
   `human`, the kebab section keys, `docevals.files`, `docevals.providers`,

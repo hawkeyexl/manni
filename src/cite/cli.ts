@@ -489,7 +489,7 @@ export function buildProgram(): Command {
     .option("--accept", "re-mint changed and never-true entries at HEAD; prints old and new pins")
     .option(
       "--recommit",
-      "re-record commit-sha where the recorded commit does not contain the pinned lines",
+      "re-record commit-sha where the recorded commit does not contain the pinned lines, or is outside HEAD's history",
     )
     .option("--only <id>", "limit to entries with this id; repeatable", collect, [])
     .option("--dry-run", "print the diffs; write nothing")

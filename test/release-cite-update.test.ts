@@ -33,8 +33,30 @@ const plugin = (await import(pathToFileURL(pluginPath).href)) as {
   prepare: unknown;
   verdict: (status: number | null, timedOut?: boolean) => Verdict;
   summarize: (stdout: string) => string;
+  updateArgs: (branch: { prerelease?: boolean | string } | undefined) => string[];
   TIMEOUT_MS: number;
 };
+
+describe("which update the release runs", () => {
+  // A squash merge orphans the branch commit a pin records. Only a commit on
+  // main lasts, so only main's release re-records those. A prerelease commit
+  // stays on its own branch, and recording it would orphan the pin again.
+  it("re-records commits outside the history on main", () => {
+    expect(plugin.updateArgs({})).toEqual(["cite", "update", "--recommit"]);
+    expect(plugin.updateArgs({ prerelease: false })).toEqual(["cite", "update", "--recommit"]);
+  });
+
+  it("runs a plain update on a prerelease branch", () => {
+    // semantic-release sets `prerelease` to the channel name, `next` or the
+    // `feat/**` branch's own, or to `true`.
+    expect(plugin.updateArgs({ prerelease: "next" })).toEqual(["cite", "update"]);
+    expect(plugin.updateArgs({ prerelease: true })).toEqual(["cite", "update"]);
+  });
+
+  it("runs a plain update when it cannot tell which branch it is on", () => {
+    expect(plugin.updateArgs(undefined)).toEqual(["cite", "update"]);
+  });
+});
 
 describe("the release cite-update plugin", () => {
   it("exports only `prepare` among semantic-release's lifecycle steps", () => {
@@ -91,10 +113,11 @@ describe("the release cite-update plugin", () => {
     // visible nor repeatable. `cite update` talks to git, so a stale index
     // lock is how it stops making progress.
     //
-    // The measured cost over this corpus of 4,143 citations is 2.5s quiet and
-    // 5.0s rewriting two pins. The bound is an order of magnitude above that,
-    // and small enough to leave the release job's budget as it was.
-    expect(plugin.TIMEOUT_MS).toBeGreaterThanOrEqual(30_000);
+    // The measured cost over this corpus of 4,173 citations is 3.7s for a
+    // quiet plain run, 15.2s for a quiet `--recommit`, and 31.1s for the
+    // first `--recommit` on main. The bound stays well above the slowest, and
+    // small enough to leave half of the release job's spare time.
+    expect(plugin.TIMEOUT_MS).toBeGreaterThanOrEqual(90_000);
     expect(plugin.TIMEOUT_MS).toBeLessThanOrEqual(120_000);
   });
 

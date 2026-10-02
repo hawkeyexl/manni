@@ -1,0 +1,49 @@
+docs/src/content/docs/meta/reference/glossary/okf.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: meta
+  evals:
+    - id: define-okf
+      assertion: A reader can say what OKF means in manni meta.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-7
+      integrity: sha256-920ea334410ae49440fed2a8b39de4848cd83c67491483cf24cb1b94a1336247
+    - generated-by: Claude Opus 5.5
+      lines: 10
+      integrity: sha256-5661ef35877d747bba425cacd84e3e491dfa9f86f484f6a00994aeaa7703b73e
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16
+  source-of-truth:
+    - path: src/meta/schemas/okf/0.1.json
+      kind: implementation
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /concepts
+        - /prerequisites
+        - /next-steps
+        - /source-of-truth
+        - /risks
+        - /broader
+        - /scope-note
+      confidence:
+        /tags: 0.75
+        /action: 0.95
+        /concepts: 0.8
+        /prerequisites: 0.7
+        /next-steps: 0.9
+        /source-of-truth: 0.95
+        /risks: 0.95
+        /broader: 0.75
+        /scope-note: 0.85

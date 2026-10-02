@@ -1,0 +1,54 @@
+docs/src/content/docs/term/reference/cli.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  journeys:
+    - s6
+    - m9
+    - d8
+    - t4
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/term/cli.ts
+  eval-suite: term
+  evals:
+    - id: find-flag
+      assertion: A reader can find the flags, output and exit codes of any manni term command.
+      type: capability
+      grader: ai
+    - id: read-usage-error
+      assertion: A reader can match a manni term usage error to the invocation that caused it.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-66
+      integrity: sha256-b70e72862d51ebaa2845195c808fa2a7636a189d1decb0e6a07b03cfb0e421c4
+    - generated-by: Claude Opus 5.5
+      lines: 67
+      integrity: sha256-985a306a308bdbbf9a9c0bd7c0e435574168772cecce80eb0883cf77eb6ffcb5
+    - generated-by: Claude Opus 5
+      lines: 68-656
+      integrity: sha256-e187601fdaebaa628f313ac778cca04c20ab78a763410d5cc449b54b6ef6de55
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /tags: 0.85
+        /action: 0.95
+        /prerequisites: 0.75
+        /next-steps: 0.85
+        /related-pages: 0.9
+        /risks: 0.95

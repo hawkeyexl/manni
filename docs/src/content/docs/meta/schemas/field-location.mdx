@@ -4,6 +4,53 @@ description: "Mark each property x-manni-location page or external, then follow 
 sidebar:
   label: Field location
   order: 5
+type: how-to
+id: meta-schemas-field-location
+keywords:
+  - field location
+  - x-manni-location
+  - relocate
+  - external manifest
+language: en
+audiences:
+  - schema-authors
+  - docs-engineers
+intent: Mark each property page or external and move values to where they belong with manni meta relocate.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-set-up-external-metadata
+  - meta-reference-schema-resolution
+  - meta-reference-cli
+  - meta-schemas-versioning
+concepts:
+  - metadata
+  - schema
+risks:
+  - destructive
+sample-questions:
+  - How do I keep maintainer metadata out of delivered pages?
+  - What does manni meta relocate write?
+  - Which fields should be marked external?
+graph:
+  label: Keep maintainer metadata out of delivered pages
+  type: task
+last-updated: 2026-09-27
+tags:
+  - field-location
+  - x-manni-location
+  - relocate
+  - external-metadata
+  - schema-design
+action: develop
+prerequisites:
+  - meta-set-up-external-metadata
+related-pages:
+  - meta-set-up-external-metadata
+  - meta-reference-schema-resolution
+  - meta-reference-cli
+  - meta-schemas-versioning
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -66,10 +113,13 @@ owner: platform
 ---
 ```
 
-The config declares one collection, with no manifest yet:
+The config declares one collection, with no manifest yet. `defaults: false`
+judges the pages by the house schema alone, so the example shows its marks and
+nothing else:
 
 ```yaml title="manni.config.yaml"
 meta:
+  defaults: false
   schemas: [./steward.schema.json]
 collections:
   - name: site
@@ -204,8 +254,9 @@ docs/install.md:
 
 And the config declares the manifest. The edit keeps comments and key order:
 
-```yaml title="manni.config.yaml" ins={6-8}
+```yaml title="manni.config.yaml" ins={7-9}
 meta:
+  defaults: false
   schemas: [./steward.schema.json]
 collections:
   - name: site
@@ -463,22 +514,26 @@ The mark is a statement a delivery-side tool can read too. A served markdown
 variant can keep the `page` fields and drop the rest, from your schema, rather
 than from an allowlist of its own.
 
-The [proposed vocabularies](/manni/meta/proposals/frontmatter-vocabularies/)
-mark every field this way, in new draft revisions:
+The [manni vocabularies](/manni/meta/reference/schemas/manni-vocabularies/)
+mark every field this way:
 
-| Draft | `page` | `external` |
+| Built-in | `page` | `external` |
 |---|---|---|
-| [`manni:core:1.0.0-proposal.4`](/manni/meta/proposals/core/) | `title`, `description`, `id`, `type`, `keywords`, `language`, `locale` | |
-| [`manni:stewardship:1.0.0-proposal.3`](/manni/meta/proposals/stewardship/) | `last-updated` | `authors`, `owner`, `stakeholders`, `reviewed-by`, `created`, `last-reviewed`, `review-interval`, `verified-against`, `source-of-truth` |
-| [`manni:audience:1.0.0-proposal.2`](/manni/meta/proposals/audience/) | `audiences`, `intent` | `personas`, `journeys`, `visibility` |
-| [`manni:lifecycle:1.0.0-proposal.2`](/manni/meta/proposals/lifecycle/) | `lifecycle`, `replaced-by` | `supersedes`, `remove-by` |
-| [`manni:structure:1.0.0-proposal.2`](/manni/meta/proposals/structure/) | `applies-to`, `not-applicable-to`, `concepts`, `prerequisites`, `next-steps`, `related-pages` | |
-| [`manni:ai-context:1.0.0-proposal.3`](/manni/meta/proposals/ai-context/) | `risks`, `sample-questions` | `provenance`, `meta-provenance` |
-| [`manni:evals:1.0.0-proposal.4`](/manni/meta/proposals/evals/) | | `evals`, `eval-suite`, `eval-skip` |
-| [`manni:kg:1.0.0-proposal.4`](/manni/meta/proposals/kg/) | `kg` | |
-| [`manni:artifact-evals:1.0.0-proposal.4`](/manni/meta/proposals/artifact-evals/) | | `metadata` |
-| [`manni:citations:1.0.0-proposal.4`](/manni/meta/proposals/citations/) | | `citations` |
-| [`manni:terminology:1.0.0-proposal.1`](/manni/meta/proposals/terminology/) | `label`, `definition`, `abstract`, `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `scope-note` | |
+| [`manni:core:1.0.0`](/manni/meta/reference/schemas/manni-core/) | `title`, `description`, `id`, `type`, `keywords`, `language` | |
+| [`manni:stewardship:1.0.0`](/manni/meta/reference/schemas/manni-stewardship/) | `last-updated` | `authors`, `owner`, `stakeholders`, `reviewed-by`, `created`, `last-reviewed`, `review-interval`, `verified-against`, `source-of-truth` |
+| [`manni:audience:1.0.0`](/manni/meta/reference/schemas/manni-audience/) | `audiences`, `intent` | `personas`, `journeys`, `visibility` |
+| [`manni:lifecycle:1.0.0`](/manni/meta/reference/schemas/manni-lifecycle/) | `lifecycle`, `replaced-by` | `supersedes`, `remove-by` |
+| [`manni:structure:1.0.0`](/manni/meta/reference/schemas/manni-structure/) | `applies-to`, `not-applicable-to`, `concepts`, `prerequisites`, `next-steps`, `related-pages` | |
+| [`manni:ai-context:1.0.0`](/manni/meta/reference/schemas/manni-ai-context/) | `risks`, `sample-questions` | `provenance`, `meta-provenance` |
+| [`manni:evals:1.0.0`](/manni/meta/reference/schemas/manni-evals/) | | `evals`, `eval-suite`, `eval-skip` |
+| [`manni:graph:1.0.0`](/manni/meta/reference/schemas/manni-graph/) | `graph` | |
+| [`manni:artifact-evals:1.0.0`](/manni/meta/reference/schemas/manni-artifact-evals/) | | `metadata` |
+| [`manni:citations:1.0.0`](/manni/meta/reference/schemas/manni-citations/) | | `citations` |
+| [`manni:terminology:1.0.0`](/manni/meta/reference/schemas/manni-terminology/) | `label`, `definition`, `abstract`, `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `scope-note` | |
+
+All but terminology and artifact-evals are in the built-in default set. A run
+with no schema configured therefore warns about each `external` field above
+that sits on the page.
 
 {/* cite a-mark-covers-a-whole-top-level-key */}
 A mark covers a whole top-level key. `metadata` is `external`, so an Agent
@@ -495,6 +550,9 @@ vocabulary and mark the property there. The later schema wins:
   }
 }
 ```
+
+Config `schemas` come after the default set, so a house schema listed there is
+already the later one.
 
 ## Where to go next
 

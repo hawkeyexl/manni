@@ -1,0 +1,161 @@
+---
+title: Antora page schema
+description: The antora:page:3.1 schema shipped with manni meta, covering the ten AsciiDoc header attributes Antora reads, how AsciiDoc types their values, and the finding a page without a title produces.
+sidebar:
+  label: "antora:page:3.1"
+type: reference
+id: meta-reference-schemas-antora-page
+keywords: ["Antora", "AsciiDoc", "antora:page:3.1", "header attributes"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate the AsciiDoc header attributes Antora reads, and fix a page without a title."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "dialect", "override"]
+sample-questions:
+  - "Which AsciiDoc header attributes does antora:page:3.1 check?"
+  - "How does AsciiDoc type attribute values?"
+  - "What finding does a page without a title produce?"
+graph:
+  label: "Antora page schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/antora/3.1.json
+tags:
+  - schema
+  - validation
+  - antora
+  - asciidoc
+  - reference
+action: remember
+next-steps:
+  - /manni/meta/reference/platform-schemas/
+related-pages:
+  - /manni/meta/reference/platform-schemas/
+  - /manni/meta/reference/schema-resolution/
+risks: read-only
+prerequisites:
+  - meta-reference-schema-resolution
+---
+
+**Built-in id:** `antora:page:3.1`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/antora/3.1.json`. A
+`$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+`antora:page:3.1` checks the AsciiDoc document header of an Antora 3.1 page. It
+requires `title`, because the page title is the only mandatory header element in
+Antora. It is one of the [platform
+schemas](/manni/meta/reference/platform-schemas/), which say what a generator
+accepts rather than what your team agreed.
+
+{/* cite platform-antora-reads-the-document-header */}
+Antora page metadata lives in the AsciiDoc document header, not in front matter.
+The reader takes the `= Title` line plus every `:name: value` attribute entry
+above the first blank line.
+
+| Property | Value |
+|---|---|
+| Id | `antora:page:3.1` |
+| Title | Antora page header attributes v3.1 |
+| Files it fits | `.adoc`, `.asciidoc` |
+| Dialect | [Draft 2020-12](/manni/meta/reference/schema-resolution/#dialects) |
+| Required fields | `title` |
+| Additional properties | Allowed (`additionalProperties: true`) |
+| Reference kind | [builtin](/manni/meta/reference/schema-resolution/#reference-kinds) |
+| On by default | No |
+| Upstream reference | [Page attributes](https://docs.antora.org/antora/latest/page/page-attributes/) |
+| JSON | [`antora/3.1.json`](/manni/schemas/antora/3.1.json) |
+
+## Use it
+
+Antora content lives in per-component `modules/*/pages` trees, so the override
+is usually a glob rather than a single root:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: "**/modules/*/pages/**"
+      schemas:
+        - antora:page:3.1
+```
+
+For a one-off run, pass the id directly:
+
+```bash
+manni meta validate modules/ROOT/pages/ -s antora:page:3.1
+```
+
+## Fields
+
+| Attribute | Type | Notes |
+|---|---|---|
+| `title` | string | **Required.** The `= Title` line. |
+| `description` | string | AsciiDoc built-in; becomes an HTML meta tag. |
+| `keywords` | string | AsciiDoc built-in. A comma-separated string, never a list. |
+| `navtitle` | string | Link text used by the navigation. |
+| `page-aliases` | string | Comma-separated alternate resource IDs. |
+| `page-layout` | string | Which UI template renders the page. |
+| `page-partial` | boolean | `:page-partial:` is true, `:!page-partial:` is false. |
+| `page-role` | string | Body classes. The default UI reserves `-toc`. |
+| `page-toclevels` | integer | 0–5. |
+| `page-tags` | string | Comma-separated, same typing as `keywords`. |
+
+Two things about AsciiDoc typing catch people out, and the schema is built
+around both:
+
+- **Attribute values are text.** `:keywords: setup, reference` reaches the
+  validator as the single string `"setup, reference"`. Typing it as an array
+  would fail every real Antora page, so it is a string.
+- **A bare attribute is `true`.** `:page-partial:` with no value is the boolean
+  `true`, and the unset form `:!page-partial:` is `false`. Numbers are typed too,
+  so `:page-toclevels: 3` is the number 3 and not `"3"`.
+
+## Additional properties
+
+{/* cite platform-antora-custom-page-attributes-pass */}
+Antora defines only three predefined page attributes: `page-aliases`,
+`page-layout` and `page-partial`. The rest of the `page-*` namespace is yours,
+and custom attributes pass unchecked.
+
+## Example page
+
+A header carrying every described attribute. This is
+`test/fixtures/platform/antora-valid.adoc`, and it passes.
+
+```asciidoc title="modules/ROOT/pages/playbook.adoc"
+= Configure the Playbook
+:description: How to point a playbook at your content sources.
+:keywords: playbook, antora, configuration
+:navtitle: Playbook
+:page-aliases: playbook-setup.adoc, old-playbook.adoc
+:page-layout: default
+:page-role: -toc
+:page-toclevels: 3
+:page-tags: setup, reference
+:!page-partial:
+
+The playbook tells Antora where the content lives.
+```
+
+## A common mistake
+
+Attribute entries with no `= Title` line above them make a page Antora will not
+build:
+
+```asciidoc title="test/fixtures/platform/antora-missing-title.adoc"
+:description: An attribute entry with no page title above it.
+:page-layout: default
+
+Body.
+```
+
+```text
+✗ test/fixtures/platform/antora-missing-title.adoc
+    (root)  must have required property 'title'  (line 1)  [antora:page:3.1]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+Add the `= Title` line as the first line of the header.

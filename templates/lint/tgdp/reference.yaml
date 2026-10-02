@@ -1,0 +1,67 @@
+# Reference, derived from The Good Docs Project's `reference/template_reference.md`
+# at release v1.6.0. The upstream Markdown is vendored at
+# `test/lint/fixtures/tgdp/template_reference.md` and linted against this file, so the
+# two cannot drift.
+#
+# v2: upstream ships the H1 as `# Reference template`, but a real reference
+# names its own subject, so there is nothing to say about the page's own
+# heading. No paragraph minimum either: the published template carries only
+# block quotes under the H1, and a reference that opens straight into its
+# first entry section is well formed.
+info:
+  title: Reference (The Good Docs Project)
+  version: "1.6"
+  source: https://gitlab.com/tgdp/templates/-/blob/v1.6.0/reference/template_reference.md
+
+templates:
+  reference:
+    types:
+      - reference
+
+    sections:
+      - id: reference-description
+        description: >-
+          `## {Reference description}` - a placeholder heading, so a slot.
+          Summarizes what the reference covers and how it relates to the
+          rest of the doc set. Required: the guide makes this the section
+          that "concisely summarizes the reference article's content and
+          purpose".
+        max: 1
+
+      - id: structured-entry
+        description: >-
+          `## {Table name or other structured entry}` - a placeholder
+          heading standing for a repeated section, so a slot with an
+          unbounded `max`. Claims every consecutive section up to
+          `commands`. Optional because it and `reference-description` are
+          both unconstrained placeholders: the matcher cannot tell "the
+          description" from "the first entry", so requiring both would
+          mandate two H2s where the doctype only asks that entries exist.
+          The node model can name a table directly (proposal 0065), so this
+          asks for one. Every parser reports tables now, so the rule runs and
+          upstream's own table satisfies it. Against a format that cannot
+          report them the rule is pruned and reported as an
+          `unsupported_content_kind` warning, rather than silently passing or
+          failing a page for a shape that format cannot show.
+        min: 0
+        contains:
+          tables:
+            min: 1
+
+      - id: commands
+        description: >-
+          `## (Optional) Commands`. The guide calls this "this optional
+          section" outright. The pattern accepts the heading with the
+          `(Optional)` marker still attached, as upstream ships it, and
+          with the marker removed, as an author who keeps the section would
+          write it. A section named anything else - "CLI commands",
+          "Command reference" - simply falls to the entry slot above.
+        min: 0
+        max: 1
+        heading:
+          pattern: '^(?:\(Optional\)\s+)?Commands$'
+
+      # Reference pages routinely end with sections the doctype does not
+      # enumerate - "See also", "Related information", "Notes". The upstream
+      # template does not forbid them, so they are not findings.
+      - min: 0

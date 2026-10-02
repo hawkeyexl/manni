@@ -1,6 +1,50 @@
 ---
 title: CI recipes for code scanning, GitLab CI, Jenkins, and pre-commit
 description: Copy-paste recipes that add a manni meta metadata gate to GitHub code scanning, GitLab CI, Jenkins, and pre-commit, each wired to the exit-code contract.
+type: how-to
+id: meta-ci-recipes
+keywords:
+  - CI recipes
+  - GitLab CI
+  - Jenkins
+  - pre-commit
+  - code scanning
+language: en
+audiences:
+  - ci-engineers
+intent: Wire a manni meta gate into GitHub code scanning, GitLab CI, Jenkins or pre-commit.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-ci-exit-codes-and-annotations
+  - meta-ci
+concepts:
+  - validation
+sample-questions:
+  - How do I run manni meta in GitLab CI or Jenkins?
+  - How do I upload manni meta results to GitHub code scanning?
+  - How do I run manni meta as a pre-commit hook?
+graph:
+  label: CI recipes for code scanning, GitLab CI, Jenkins, and pre-commit
+  type: task
+last-updated: 2026-10-01
+tags:
+  - ci
+  - gitlab-ci
+  - jenkins
+  - pre-commit
+  - code-scanning
+  - sarif
+  - junit
+  - github-actions
+action: develop
+prerequisites:
+  - meta-ci-exit-codes-and-annotations
+related-pages:
+  - meta-ci-exit-codes-and-annotations
+  - meta-ci
+risks: read-only
 ---
 
 import { Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -131,7 +175,7 @@ validate-metadata:
 
 <Aside type="tip" title="Pin the version">
 `npx -y @hawkeyexl/manni meta` resolves the latest published version on each run. Pin a
-major for reproducible pipelines: `npx -y @hawkeyexl/manni@2 meta validate ...`.
+major for reproducible pipelines: `npx -y @hawkeyexl/manni@4 meta validate ...`.
 </Aside>
 
 If you collect machine-readable reports, capture the JSON output as an artifact:
@@ -255,7 +299,7 @@ so the whole configuration is a few lines:
 ```yaml title=".pre-commit-config.yaml"
 repos:
   - repo: https://github.com/hawkeyexl/manni
-    rev: v2.11.0
+    rev: v4.0.0
     hooks:
       - id: manni-meta-derive   # only where manni.config.yaml sets derive.fields
       - id: manni-meta
@@ -279,7 +323,7 @@ it does for any formatter. Re-stage the files and commit again. The second
 attempt passes, because the stamp now reads as current.
 
 `rev` has to be a concrete tag, because pre-commit does not follow a floating
-major the way `uses: hawkeyexl/manni@v2` does. So this is one place a copied
+major the way `uses: hawkeyexl/manni@v4` does. So this is one place a copied
 snippet really will go stale. Take the tag from [the latest
 release](https://github.com/hawkeyexl/manni/releases/latest), and let
 `pre-commit autoupdate` move it for you afterwards.

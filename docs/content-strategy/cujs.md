@@ -76,9 +76,17 @@ Maya's older pages predate the standard, so the fields her gate now requires are
 
 **What success looks like.** A writer who types a deprecated name sees the preferred one in the Vale alert. A term edited without regenerating the style fails CI and names the file that would change.
 
+### M10 · Hold every page to the shape its doctype promises
+
+**Outcome.** A page that says `type: how-to` carries what a how-to carries: an overview, the prerequisites, the steps, and somewhere to go next. Maya finds out when one does not, before a reader does.
+
+**Steps.** The package is the one she already has. She runs `manni lint templates` to see the seven built-in doctype templates, derived from The Good Docs Project, and the `type` values each serves. Those are the same `type` values `manni meta` already validates, so her pages route themselves with no per-page change. `manni lint check docs/` reports each page that is missing a section, with the rule id, the heading, and the line. A page with no `type:` is skipped rather than failed. She can point the tool at the whole tree and gate only what has opted in. Where the built-in shape is not her shape, she writes her own template file, declares `types:` on it, and names it once under `lint.templates`. Its doctypes then outrank the built-ins. When a page routes somewhere she did not expect, `manni lint structure --explain` prints the five rungs of the resolution chain and marks the one that decided.
+
+**What success looks like.** One command over the same collections the metadata gate runs over, out of the same `manni.config.yaml`. No second tool to install, and no second config to keep in step.
+
 ---
 
-### M10 · Stand up a first eval gate
+### M11 · Stand up a first eval gate
 
 **Outcome.** A pull request in Maya's own repo goes red because a page stopped meeting a named, written-down assertion. Its author can see which one and why.
 
@@ -90,7 +98,7 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 ---
 
-### M11 · Keep one eval library the whole corpus shares
+### M12 · Keep one eval library the whole corpus shares
 
 **Outcome.** Pages name a suite and a few evals, the assertions live once in `manni.config.yaml`, and changing one changes every page that uses it.
 
@@ -100,7 +108,7 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 ---
 
-### M12 · Report the linters we already run through one gate
+### M13 · Report the linters we already run through one gate
 
 **Outcome.** Vale, markdownlint, manni meta and a structure linter report through one `manni docevals run`, as evals with names and severities in one output format. Their separate CI steps are gone.
 
@@ -112,27 +120,27 @@ The claim this journey carries is that docevals orchestrates and does not reimpl
 
 ---
 
-### M13 · Propose evals for a corpus nobody annotated
+### M14 · Propose evals for a corpus nobody annotated
 
 **Outcome.** Every page in a directory carries evals nobody hand-wrote. Maya knew how much work the pass would do before it ran, and she reviewed what landed rather than assuming it is right.
 
-**Steps.** She runs `manni docevals fill --dry-run` over one directory and reads the proposals. That dry run is where the inference calls are spent, and the write pass after it is a cache hit. Proposals are cached before the confidence gate, so re-running at a different `--confidence` costs nothing. `fill` spends one call per uncached page, so the page count of a batch is its size, and `--max-turns` caps it before the first call. She writes the proposals, reviews them like any other change, and converts the good ones into cheap deterministic checks (S10).
+**Steps.** She runs `manni docevals fill --dry-run` over one directory and reads the proposals. That dry run is where the inference calls are spent, and the write pass after it is a cache hit. Proposals are cached before the confidence gate, so re-running at a different `--confidence` costs nothing. `fill` spends one call per uncached page, so the page count of a batch is its size, and `--max-turns` caps it before the first call. She writes the proposals, reviews them like any other change, and converts the good ones into cheap deterministic checks (S11).
 
 **What success looks like.** A directory covered in an afternoon, a call count she predicted, and a review step rather than a claim that the corpus is now covered.
 
 ---
 
-### M14 · Get a legacy corpus onto the eval ratchet without a wall of red
+### M15 · Get a legacy corpus onto the eval ratchet without a wall of red
 
 **Outcome.** Every eval is on at `error` from day one. Today's findings are recorded in a committed baseline, and CI fails only on new ones. The recorded count is falling, and no assertion was weakened to get there.
 
-**Steps.** First she decides what should not be evaluated at all, and excludes it from the collection before anything is recorded. Narrowing scope afterwards produces an alarming `removed` count. She sets `baseline:` in the config so a recorded file is actually read. She records today's findings with `manni docevals run --write-baseline` and commits the file. She gates CI on new findings only. On every re-record she reads the `(+added, -removed)` line, `removed` above all. A baseline forgives silently by construction. She learns what it does not cover. A finding's identity is per rule per file, not per occurrence, and it holds deterministic findings only, not judged verdicts. She proposes evals one directory at a time (M13). Judged evals go in a capability suite with a target below 1.0. She burns down one section and re-records so the baseline shrinks. `severity: warning` is kept for a finding class the team will never gate on.
+**Steps.** First she decides what should not be evaluated at all, and excludes it from the collection before anything is recorded. Narrowing scope afterwards produces an alarming `removed` count. She sets `baseline:` in the config so a recorded file is actually read. She records today's findings with `manni docevals run --write-baseline` and commits the file. She gates CI on new findings only. On every re-record she reads the `(+added, -removed)` line, `removed` above all. A baseline forgives silently by construction. She learns what it does not cover. A finding's identity is per rule per file, not per occurrence, and it holds deterministic findings only, not judged verdicts. She proposes evals one directory at a time (M14). Judged evals go in a capability suite with a target below 1.0. She burns down one section and re-records so the baseline shrinks. `severity: warning` is kept for a finding class the team will never gate on.
 
 **What success looks like.** At the end of a quarter, one section is gated at `error` with no baseline entries. The burn-down is going the right way, and nobody weakened the standard.
 
 ---
 
-### M15 · Keep evals out of the delivered page
+### M16 · Keep evals out of the delivered page
 
 **Outcome.** Maya's pages carry prose and a title, not the list of what CI checks about them. Every eval lives in one manifest her collection declares, and the run reports exactly what it reported before the move.
 
@@ -198,19 +206,27 @@ Per-file schema validation cannot see a dangling cross-reference, a duplicate sl
 
 **What success looks like.** One command per handoff, in CI or locally. The report names every field a target could not hold, before anyone finds it missing.
 
+### D9 · Gate document structure in CI
+
+**Outcome.** Every pull request reports which pages lost the shape their doctype promises, as annotations on the line of the heading. It runs in the job that already validates metadata, out of the one config file, over the one document set.
+
+**Steps.** Devin adds `manni lint check -f github` beside the metadata gate, with no paths, because `collections:` supplies them. He puts `if: always()` on the second step, so a metadata failure does not hide every structural finding. He learns the contract. Exit `0` is clean, `1` is at least one `error`-level finding, and `2` is operational. Operational covers a bad flag, an unresolvable template, a config carrying the moved `lint.paths` key, or a run in which every file was skipped. For code scanning he writes `-f sarif` to a file, with `continue-on-error` on the check and `if: always()` on the upload, since the run worth uploading is the failing one. For the tests tab he writes `-f junit`. Ramping in needs no baseline, because a page with no `type:` is skipped. He gates one collection, or one doctype, and reads `manni lint structure --explain` in a report-only step to watch the routed count climb. `manni lint tools` is what he runs when his machine and CI disagree, because it names the tool, its version, and the config file each actually read.
+
+**What success looks like.** One more step in a job he already has, and four CI formats he already consumes. The exit-code contract is identical to the other three domains'.
+
 ---
 
-### D9 · Gate evals in CI
+### D10 · Gate evals in CI
 
 **Outcome.** One parameterized job, identical across repos, blocks a pull request on findings, annotates the offending lines, and routes operational failures somewhere other than the author.
 
-**Steps.** Devin adds the job on his platform, then takes the same recipe for GitLab CI, Jenkins and pre-commit. He routes on the exit code. `0` passes, and `1` is findings and blocks the author. `2` is operational, such as a missing credential, an unreachable provider or a malformed config, and it is his. He runs `-f github` so each finding annotates its line. He supplies the provider credential from a secret, naming `provider` in config rather than leaving it to whatever the runner's environment detects. He persists the response cache between runs, keyed on what invalidates it. A cold cache re-judges the corpus on every push and spends turns a warm one would not. He feeds `-f json` into the tooling he already has. The fork problem first appears at the credential step, and this journey hands it to D10 rather than half-answering it.
+**Steps.** Devin adds the job on his platform, then takes the same recipe for GitLab CI, Jenkins and pre-commit. He routes on the exit code. `0` passes, and `1` is findings and blocks the author. `2` is operational, such as a missing credential, an unreachable provider or a malformed config, and it is his. He runs `-f github` so each finding annotates its line. He supplies the provider credential from a secret, naming `provider` in config rather than leaving it to whatever the runner's environment detects. He persists the response cache between runs, keyed on what invalidates it. A cold cache re-judges the corpus on every push and spends turns a warm one would not. He feeds `-f json` into the tooling he already has. The fork problem first appears at the credential step, and this journey hands it to D11 rather than half-answering it.
 
 **What success looks like.** A recipe he pastes into four repos unchanged, which never wakes him up, and whose inference calls he can point at on a graph.
 
 ---
 
-### D10 · Bound what the eval gate can spend and what it can execute
+### D11 · Bound what the eval gate can spend and what it can execute
 
 **Outcome.** A fork pull request cannot execute its author's code on a runner or reach a provider credential. No run makes more inference calls than a budget set in config.
 
@@ -270,7 +286,14 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 ---
 
-### S7 · Write assertions the judge can decide
+### S7 · Describe a doctype as a template
+
+**Outcome.** The shape Sara's team agreed on for a how-to, a reference page or a release note is written down. `manni lint` holds every page of that doctype to it.
+
+**Steps.** She starts from a page that already has the shape she wants and runs `manni lint templates infer` on it, which writes a first template. Then she loosens it, because one page cannot show what varies. A closer that has four spellings becomes a list of headings. A section that only some pages carry gets `min: 0`. A pair that repeats, such as a symptom and its cause, becomes a `repeat:` group. Where the doctype is defined by its content rather than its headings, she says so. A reference page asks for a table with named columns. A how-to asks for a code block in each step. She routes the template by the page's `type:` frontmatter, or by path in `overrides:` where the corpus carries no doctype. A rule about content a format cannot report becomes a warning that names the rule. She learns which of her assertions the parser never checked.
+
+**What success looks like.** A doctype's shape is one reviewable file, and a page that drifts from it fails at the heading that drifted.
+### S8 · Write assertions the judge can decide
 
 **Outcome.** Two people reading the same page agree on the assertion, and so does the judge. Its failure tells the author which sentence to change.
 
@@ -280,7 +303,7 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 ---
 
-### S8 · Prove the judge is trustworthy enough to gate a build
+### S9 · Prove the judge is trustworthy enough to gate a build
 
 **Outcome.** A calibration report shows agreement above the threshold and a false-positive rate below the alert. Sara can hand it to a skeptic and be believed.
 
@@ -290,17 +313,17 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 ---
 
-### S9 · Clear the human-review queue
+### S10 · Clear the human-review queue
 
 **Outcome.** A recorded verdict with a reviewer and a note unblocks the pull request. It persists for later runs and expires on its own when the page changes.
 
-**Steps.** She lists what is waiting with `manni docevals review`, no arguments. She reads why this eval landed in the review zone. She records a verdict with `manni docevals review <file> <eval> pass|fail --reviewer <name>`. She knows the verdict holds only while the reviewed page body is unchanged, which is what makes persistence safe. She decides, as a policy question rather than a default, whether `--fail-on-review` blocks the build. The deciding question is whether someone owns the queue. An eval that lands in review every run is a diagnosis, and its repair is S7, not answering it faster forever.
+**Steps.** She lists what is waiting with `manni docevals review`, no arguments. She reads why this eval landed in the review zone. She records a verdict with `manni docevals review <file> <eval> pass|fail --reviewer <name>`. She knows the verdict holds only while the reviewed page body is unchanged, which is what makes persistence safe. She decides, as a policy question rather than a default, whether `--fail-on-review` blocks the build. The deciding question is whether someone owns the queue. An eval that lands in review every run is a diagnosis, and its repair is S8, not answering it faster forever.
 
 **What success looks like.** A queue somebody clears, a review zone nobody wants turned off, and Theo told to escalate rather than left to guess.
 
 ---
 
-### S10 · Move evals down the grader hierarchy
+### S11 · Move evals down the grader hierarchy
 
 **Outcome.** Evals that could always have been code are `command` evals with committed, reviewable scripts. The next run makes measurably fewer inference calls with no loss of coverage.
 
@@ -348,9 +371,16 @@ Theo's failure is usually a *missing* field rather than a malformed one, so `fil
 
 **What success looks like.** One rule, one edit, one re-run. He never has to know what a term record is.
 
+### T5 · Read a structure failure and fix it
+
+**Outcome.** Theo's pull request carries a `manni:lint/structure/missing-section` annotation on a page he edited, and he clears it without learning what a template is.
+
+**Steps.** He reads the one line: the file and line, the rule id, the section named by its heading, and one sentence saying what to change. The fix page maps the rule to the change. A section is missing or unexpected, a heading is not the exact text, or there are too few paragraphs, lists or code blocks. Content can also sit in an order the template does not allow. Each of those says what to add or move. Three rules are not about prose at all. `unknown-type` means the page's own `type:` is a typo, and the message suggests the nearest real one. `template` and `parse` mean the page and its template never met, which is usually a repository problem rather than his. Where the finding is right about the template and wrong about his page, `manni lint structure <page> --explain` shows which of the five rungs routed it. He can then say which lever moved it. He reproduces locally with `npx @hawkeyexl/manni lint structure <page>`, sees `✓` and exit `0`, and pushes.
+
+**What success looks like.** One rule id, one change, one re-run. He never has to read a template file.
 ---
 
-### T5 · Fix a failing eval
+### T6 · Fix a failing eval
 
 **Outcome.** Theo's pull request is red on an eval he did not write. He identifies which check failed, makes the smallest correct change or escalates to the right person, and confirms locally, having read one page.
 

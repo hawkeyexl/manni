@@ -1,0 +1,6 @@
+b1-term-check exit=0 604ms
+b2-term-check exit=0 588ms
+b3-validate exit=1 834ms
+timing1 b1-term-check 771ms b2-term-check 750ms b3-validate 803ms
+timing2 b1-term-check 775ms b2-term-check 612ms b3-validate 607ms
+timing3 b1-term-check 941ms b2-term-check 781ms b3-validate 816ms

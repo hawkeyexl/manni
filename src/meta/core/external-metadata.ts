@@ -14,6 +14,12 @@
  *  - **Keys are owned.** Each manifest declares the top-level keys it supplies,
  *    ownership is disjoint across manifests (asserted by the config parser), and
  *    a manifest entry supplying a key it does not own is an operational error.
+ *    A manifest that declares none (proposal 0068) owns, for each page, what
+ *    that page's schemas mark `x-manni-location: external`, less what its
+ *    siblings name. `ownsKey` decides it. A value such a manifest holds for a
+ *    key the page does not mark is the unowned-key refusal, raised at the
+ *    merge because ownership is per page. With the page's marks unknown, the
+ *    manifest owns nothing for it and nothing is judged.
  *    Ownership is what gives a write to an absent key somewhere to go, and it
  *    is what makes a document carrying a private key visible with or without
  *    a manifest entry.
@@ -45,6 +51,8 @@ import {
   externalMetadataOrigin,
   isMember,
   matchesCollectionPaths,
+  neverOwned,
+  ownsKey,
   type CollectionConfig,
   type ExternalMetadataConfig,
 } from "../../shared/collections.js";
@@ -158,6 +166,27 @@ interface ParsedManifest {
  * fresh, and why a stat alone is not enough.
  */
 const parsedManifests = new ManifestCache<ParsedManifest>();
+
+/**
+ * A manifest with no `keys` (proposal 0068), as one index loaded it. What it
+ * owns is decided per page, from the page's marks, so it is kept apart from
+ * `owners`, which holds what the config alone decides.
+ */
+interface ImpliedOwner {
+  /** The whole declared collection, for `ownsKey`. */
+  collection: CollectionConfig;
+  manifest: ExternalMetadataConfig;
+  /** The manifest as a collision names it: its reported path, its URL, or its `{page}` pattern. */
+  file: string;
+  /** Every file its values carry, as the run reports them: one, or one per page. */
+  files: Set<string>;
+}
+
+/**
+ * The keyless manifests each index was loaded with. Kept beside the index, as
+ * `perPageRules` is, so `ExternalMetadataIndex` keeps its shape.
+ */
+const impliedOwners = new WeakMap<ExternalMetadataIndex, readonly ImpliedOwner[]>();
 
 /** One `{page}` entry of a loaded index: what a stray walk needs to find its files. */
 interface PerPageRule {
@@ -328,6 +357,7 @@ export async function loadExternalMetadata(
   /** Every `{page}` manifest resolved so far, and the page that resolved it. */
   const resolvedBy = new Map<string, string>();
   const rules: PerPageRule[] = [];
+  const implied: ImpliedOwner[] = [];
 
   for (const { collection, manifest } of configured) {
     // The whole collection, because a `{page}` entry is read per member page.
@@ -339,7 +369,8 @@ export async function loadExternalMetadata(
       classifyRef(manifest.file).kind !== "url" &&
       hasPagePlaceholder(manifest.file)
     ) {
-      await loadPerPage(declared, manifest, opts, resolvedBy, { owners, byPath, byField, entries });
+      const owner = await loadPerPage(declared, manifest, opts, resolvedBy, { owners, byPath, byField, entries });
+      if (owner !== undefined) implied.push(owner);
       rules.push({ collection: declared, manifest, configDir: opts.configDir });
       continue;
     }
@@ -360,7 +391,7 @@ export async function loadExternalMetadata(
         ...(opts.timeoutMs !== undefined ? { timeoutMs: opts.timeoutMs } : {}),
         ...(opts.env !== undefined ? { env: opts.env } : {}),
       });
-      parsed = parseManifest(manifest, collection, text, file, opts.configDir, join);
+      parsed = parseManifest(manifest, collection, text, file, opts.configDir, join, ownership(declared, manifest));
     } else {
       const abs = isAbsolute(manifest.file)
         ? manifest.file
@@ -373,10 +404,6 @@ export async function loadExternalMetadata(
       // its `mtimeMs` and size.
       parsed = await parsedManifests.parse(
         abs,
-        // The keys are sorted because they reach the variant as an array, and
-        // two declarations that own the same keys in a different order parse
-        // to the same thing.
-        //
         // `label` is deliberately not part of this. It is the manifest as this
         // run reports it, which is a function of the run's base rather than of
         // the bytes, so two runs over one corpus from two directories parse
@@ -388,7 +415,7 @@ export async function loadExternalMetadata(
           collection,
           join,
           opts.configDir,
-          [...manifest.keys].sort(),
+          variantOf(declared, manifest),
         ]),
         async () =>
           parseManifest(
@@ -398,10 +425,14 @@ export async function loadExternalMetadata(
             label,
             opts.configDir,
             join,
+            ownership(declared, manifest),
           ),
       );
     }
-    for (const key of manifest.keys) {
+    if (manifest.keys === undefined && declared !== undefined) {
+      implied.push({ collection: declared, manifest, file, files: new Set([file]) });
+    }
+    for (const key of manifest.keys ?? []) {
       const list = owners.get(key);
       if (list) list.push({ collection, file });
       else owners.set(key, [{ collection, file }]);
@@ -433,7 +464,53 @@ export async function loadExternalMetadata(
   }
   const index: ExternalMetadataIndex = { owners, byPath, byField, entries };
   if (rules.length > 0) perPageRules.set(index, rules);
+  if (implied.length > 0) impliedOwners.set(index, implied);
   return index;
+}
+
+/**
+ * Which keys a manifest's entries may set, as the parse checks it. A manifest
+ * with `keys` may set those. A keyless one (proposal 0068) may set any key
+ * but the ones it can never own, because which of the rest it owns depends
+ * on the page, and is settled at the merge.
+ */
+interface Ownership {
+  may: (key: string) => boolean;
+  /** Why an entry may not set `key`, as the tail of the refusal. */
+  why: (key: string) => string;
+}
+
+function ownership(
+  declared: CollectionConfig | undefined,
+  manifest: ExternalMetadataConfig,
+): Ownership {
+  if (manifest.keys !== undefined) {
+    const owned = new Set(manifest.keys);
+    return {
+      may: (key) => owned.has(key),
+      why: () => `which this manifest does not own. Add it to the manifest's "keys", or remove it from the entry.`,
+    };
+  }
+  const never = neverOwned(declared ?? { externalMetadata: [manifest] }, manifest);
+  return {
+    may: (key) => !never.has(key),
+    why: (key) =>
+      key === manifest.join
+        ? "the field this manifest joins on, which the page carries. Remove it from the entry."
+        : `which another manifest of this collection names in its "keys". Move it to that manifest, or remove it from the entry.`,
+  };
+}
+
+/** What a parse depends on besides the bytes: the keys, or what a keyless manifest may never own. */
+function variantOf(
+  declared: CollectionConfig | undefined,
+  manifest: ExternalMetadataConfig,
+): unknown {
+  // The keys are sorted because they reach the variant as an array, and two
+  // declarations that own the same keys in a different order parse to the
+  // same thing.
+  if (manifest.keys !== undefined) return [...manifest.keys].sort();
+  return { never: [...neverOwned(declared ?? { externalMetadata: [manifest] }, manifest)].sort() };
 }
 
 /** The index `loadExternalMetadata` is building, for a helper that adds to it. */
@@ -460,10 +537,14 @@ async function loadPerPage(
   opts: LoadExternalMetadataOptions,
   resolvedBy: Map<string, string>,
   into: IndexUnderConstruction,
-): Promise<void> {
+): Promise<ImpliedOwner | undefined> {
   const collection = declared.name;
   const join = externalMetadataJoin(manifest);
-  for (const key of manifest.keys) {
+  const implied: ImpliedOwner | undefined =
+    manifest.keys === undefined
+      ? { collection: declared, manifest, file: manifest.file, files: new Set() }
+      : undefined;
+  for (const key of manifest.keys ?? []) {
     const list = into.owners.get(key);
     if (list) list.push({ collection, file: manifest.file });
     else into.owners.set(key, [{ collection, file: manifest.file }]);
@@ -498,7 +579,7 @@ async function loadPerPage(
     // A missing file is never cached, because it cannot be stat'ed.
     const parsed = await parsedManifests.parse(
       resolved.abs,
-      JSON.stringify([collection, join, opts.configDir, [...manifest.keys].sort()]),
+      JSON.stringify([collection, join, opts.configDir, variantOf(declared, manifest)]),
       async () =>
         parseManifest(
           manifest,
@@ -507,8 +588,10 @@ async function loadPerPage(
           label,
           opts.configDir,
           join,
+          ownership(declared, manifest),
         ),
     );
+    implied?.files.add(label);
 
     // Every entry must be this page's own. Compared as files rather than as
     // text (0058 stress test 8): a spelling that differs only in case is one
@@ -538,6 +621,7 @@ async function loadPerPage(
       });
     }
   }
+  return implied;
 }
 
 /** The index a manifest with this join is merged into. */
@@ -604,6 +688,7 @@ function parseManifest(
   file: string,
   configDir: string,
   join: string,
+  owns: Ownership,
 ): ParsedManifest {
   const target = new Map<string, Values>();
   const entries: ExternalMetadataEntry[] = [];
@@ -627,7 +712,6 @@ function parseManifest(
       `Manifest ${file}: the manifest must be a mapping from document ${join === PATH_JOIN ? "path" : `"${join}"`} to owned keys.`,
     );
   }
-  const owned = new Set(manifest.keys);
   const lineAt = (node: unknown): number | undefined => {
     const range = isNode(node) ? node.range : undefined;
     return range ? lc.linePos(range[0]).line : undefined;
@@ -665,10 +749,8 @@ function parseManifest(
           `Manifest ${where}: "${spelled}" sets "${FILE_SCHEMA_KEY}" — a manifest never chooses the schema a document is judged by; use "overrides" in the config.`,
         );
       }
-      if (!owned.has(key)) {
-        throw new DocmetaError(
-          `Manifest ${where}: "${spelled}" sets "${key}", which this manifest does not own. Add it to the manifest's "keys", or remove it from the entry.`,
-        );
+      if (!owns.may(key)) {
+        throw new DocmetaError(`Manifest ${where}: "${spelled}" sets "${key}", ${owns.why(key)}`);
       }
       const value: unknown =
         kv.value === null
@@ -769,7 +851,42 @@ export function mergeExternalMetadata(
   index: ExternalMetadataIndex | null,
   memberOf: readonly string[],
   base: string,
-  options: { encryptionKey?: () => string | undefined } = {},
+  options: {
+    encryptionKey?: () => string | undefined;
+    /**
+     * The top-level keys the document's schemas mark `x-manni-location:
+     * external` (proposal 0068), which is what a manifest with no `keys`
+     * owns. Absent, such a manifest owns nothing for this document.
+     */
+    marked?: ReadonlySet<string>;
+  } = {},
+): MergedMetadata {
+  return mergeWith(label, extracted, index, memberOf, base, options.encryptionKey, options.marked ?? UNKNOWN);
+}
+
+/**
+ * No marks known: a keyless manifest owns nothing, and a value it holds is
+ * skipped rather than refused. Compared by reference, because an explicit
+ * empty set means something else: the marks are known and name nothing, so
+ * every value a keyless manifest holds for the page is refused.
+ */
+const UNKNOWN: ReadonlySet<string> = new Set();
+
+/**
+ * Every value a keyless manifest supplies counts as owned, so the merged data
+ * is the probe a page's marks are read over (see `mergeWithMarks`). Nothing
+ * is refused or filed in this mode.
+ */
+const PROBE = Symbol("probe");
+
+function mergeWith(
+  label: string,
+  extracted: ExtractedMetadata,
+  index: ExternalMetadataIndex | null,
+  memberOf: readonly string[],
+  base: string,
+  encryptionKey: (() => string | undefined) | undefined,
+  marked: ReadonlySet<string> | typeof PROBE,
 ): MergedMetadata {
   const none = (): undefined => undefined;
   // A file that belongs to no collection gets nothing merged, and carries no
@@ -779,21 +896,40 @@ export function mergeExternalMetadata(
     return { extracted, collisions: [], joins: [], locate: none };
   }
   const mine = (collection: string): boolean => memberOf.includes(collection);
+  const probing = marked === PROBE;
+
+  // The keyless manifests of this file's collections (proposal 0068), and
+  // whether one owns a key for this file.
+  const implied = (impliedOwners.get(index) ?? []).filter((o) => mine(o.collection.name));
+  const impliedOwns = (o: ImpliedOwner, key: string): boolean =>
+    probing ? !neverOwned(o.collection, o.manifest).has(key) : ownsKey(o.collection, o.manifest, key, marked);
+  /** Every manifest of this file's collections that owns `key` for it. Not asked while probing. */
+  const ownersOf = (key: string): { collection: string; file: string }[] =>
+    pageOwners(index, key, memberOf, probing ? undefined : marked);
+  /** The keyless manifest a value came from, when one did. */
+  const impliedFrom = (sv: ExternalMetadataValue): ImpliedOwner | undefined =>
+    implied.find((o) => o.collection.name === sv.collection && o.files.has(sv.file));
 
   const collisions: ExternalMetadataCollision[] = [];
-  for (const key of Object.keys(extracted.data)) {
-    for (const owner of index.owners.get(key) ?? []) {
-      if (mine(owner.collection)) {
+  if (!probing) {
+    for (const key of Object.keys(extracted.data)) {
+      for (const owner of ownersOf(key)) {
         collisions.push({ key, file: owner.file, collection: owner.collection });
       }
     }
   }
 
   const sources: ReadonlyMap<string, ExternalMetadataValue>[] = [];
+  /** The manifest entry a source's values came from, for a refusal that names it. */
+  const entryOf = new Map<ReadonlyMap<string, ExternalMetadataValue>, (sv: ExternalMetadataValue) => ExternalMetadataEntry | undefined>();
   const joins: ExternalMetadataJoin[] = [];
   if (label !== STDIN_LABEL) {
     const byPath = index.byPath.get(resolve(base, label));
-    if (byPath) sources.push(byPath);
+    if (byPath) {
+      sources.push(byPath);
+      const abs = resolve(base, label);
+      entryOf.set(byPath, (sv) => index.entries.find((e) => e.file === sv.file && e.abs === abs));
+    }
   }
   for (const [field, byValue] of index.byField) {
     const raw = extracted.data[field];
@@ -804,7 +940,7 @@ export function mergeExternalMetadata(
         [...supplied.values()].some((sv) => mine(sv.collection)),
       );
       if (!joinsHere) continue;
-      const key = options.encryptionKey?.();
+      const key = encryptionKey?.();
       if (key === undefined) {
         throw new EncryptionRefusal(
           `externalMetadata join field "${field}" is encrypted on these pages, and no encryption key is available to match them.`,
@@ -821,6 +957,10 @@ export function mergeExternalMetadata(
     const hit = byValue.get(value);
     if (!hit) continue;
     sources.push(hit);
+    const spelled = value;
+    entryOf.set(hit, (sv) =>
+      index.entries.find((e) => e.file === sv.file && e.join === field && e.spelled === spelled),
+    );
     // Exactly one join per (field, value), whatever the collections behind it.
     // The duplicate-join finding (0039) counts *documents* per value, so a
     // second entry for one document would read as a second document.
@@ -842,12 +982,9 @@ export function mergeExternalMetadata(
   // 0020 and 0037 both refuse (0041 rule 5). The legitimate case — two
   // collections each owning `owner`, with no file in both — is untouched,
   // which is why this is decided per file rather than at parse time.
-  for (const supplied of sources) {
+  for (const supplied of probing ? [] : sources) {
     for (const key of supplied.keys()) {
-      const owners = (index.owners.get(key) ?? []).filter((o) =>
-        mine(o.collection),
-      );
-      const [a, b] = owners;
+      const [a, b] = ownersOf(key);
       if (a && b) {
         throw new DocmetaError(
           `${label}: "${key}" is owned by manifests in two of its collections, ${a.collection} (${a.file}) and ${b.collection} (${b.file}); a key has one manifest per file. Narrow one collection's paths or exclude.`,
@@ -866,6 +1003,16 @@ export function mergeExternalMetadata(
     for (const [key, sv] of supplied) {
       // Only the manifests of collections this file belongs to.
       if (!mine(sv.collection)) continue;
+      // A keyless manifest owns only what this file's schemas mark external
+      // (0068 rule 5). An entry carrying anything else sets a key nothing
+      // owns, which is the refusal a manifest with keys gives for one. With
+      // the marks unknown (the schema set did not resolve, or the caller
+      // passed none), nothing is owned and nothing is judged.
+      const from = impliedFrom(sv);
+      if (from !== undefined && !impliedOwns(from, key)) {
+        if (probing || marked === UNKNOWN) continue;
+        throw unmarkedRefusal(label, key, sv, entryOf.get(supplied)?.(sv));
+      }
       // The document's value stays: the collision is filed by the caller,
       // and the report should show what the public site would publish.
       if (key in extracted.data) continue;
@@ -882,6 +1029,87 @@ export function mergeExternalMetadata(
     return { file: sv.file, ...(line === undefined ? {} : { line }) };
   };
   return { extracted: { ...extracted, data }, collisions, joins, locate };
+}
+
+/**
+ * The refusal for a keyless manifest's entry that sets a field the page's
+ * schemas do not mark external (proposal 0068). It is the unowned-key refusal
+ * a manifest with `keys` gives when it is read, said per page because what a
+ * keyless manifest owns is.
+ */
+function unmarkedRefusal(
+  label: string,
+  key: string,
+  sv: ExternalMetadataValue,
+  entry: ExternalMetadataEntry | undefined,
+): DocmetaError {
+  const line = entry?.line ?? sv.line;
+  const where = line === undefined ? sv.file : `${sv.file}:${String(line)}`;
+  const spelled = entry?.spelled ?? label;
+  return new DocmetaError(
+    `Manifest ${where}: "${spelled}" sets "${key}", which this manifest does not own, because the page's schemas do not mark it x-manni-location: external. Mark it external in the page's schemas, or remove it from the entry.`,
+  );
+}
+
+/**
+ * The top-level keys one document's schemas mark `x-manni-location:
+ * external`, read over `probe`: the document's metadata with everything its
+ * keyless manifests supply for it (proposal 0068). `undefined` when the
+ * document's schemas cannot be resolved or loaded, so the caller reports that
+ * the way it always has and a keyless manifest owns nothing for it.
+ */
+export type PageMarks = (
+  label: string,
+  probe: Readonly<Record<string, unknown>>,
+  memberOf: readonly string[],
+) => Promise<ReadonlySet<string> | undefined>;
+
+/** `mergeExternalMetadata`'s result, with the marks it was merged under. */
+export interface MarkedMerge extends MergedMetadata {
+  /** What the document's schemas mark external, when a keyless manifest needed asking. */
+  marked?: ReadonlySet<string>;
+}
+
+/**
+ * `mergeExternalMetadata`, with a keyless manifest's ownership settled first
+ * (proposal 0068). Every command that merges goes through here, so what such
+ * a manifest owns for a page is decided one way.
+ *
+ * The marks are read only when one of the document's collections declares a
+ * manifest with no `keys`, which no config written before 0068 does, so
+ * those runs never load a schema to merge. They are read over the document
+ * with every value its keyless manifests supply, because a mark counts only
+ * where Ajv evaluates it, and Ajv evaluates a property that is present.
+ */
+export async function mergeWithMarks(
+  label: string,
+  extracted: ExtractedMetadata,
+  index: ExternalMetadataIndex | null,
+  memberOf: readonly string[],
+  base: string,
+  options: { encryptionKey?: () => string | undefined; marks?: PageMarks },
+): Promise<MarkedMerge> {
+  const { encryptionKey, marks } = options;
+  if (marks === undefined || !hasImpliedOwner(index, memberOf)) {
+    return mergeWith(label, extracted, index, memberOf, base, encryptionKey, UNKNOWN);
+  }
+  // First pass: include the keyless manifests' values, because a schema's
+  // `x-manni-location` marks only fire on keys that are present.
+  const probe = mergeWith(label, extracted, index, memberOf, base, encryptionKey, PROBE).extracted.data;
+  const marked = await marks(label, probe, memberOf);
+  // With the page's schema set unresolvable, the probe was spent for
+  // nothing, and the merge below is the one a keyless-free collection gets.
+  const merged = mergeWith(label, extracted, index, memberOf, base, encryptionKey, marked ?? UNKNOWN);
+  return marked === undefined ? merged : { ...merged, marked };
+}
+
+/** Does one of these collections declare a manifest with no `keys` in this index? */
+export function hasImpliedOwner(
+  index: ExternalMetadataIndex | null,
+  memberOf: readonly string[],
+): boolean {
+  if (index === null) return false;
+  return (impliedOwners.get(index) ?? []).some((o) => memberOf.includes(o.collection.name));
 }
 
 /**
@@ -1040,4 +1268,24 @@ export function orphanError(orphans: readonly ExternalMetadataEntry[]): DocmetaE
   return new DocmetaError(
     `Manifest ${where} ${what}${more}. Fix the entry, or remove ${remove}.`,
   );
+}
+
+/**
+ * Every manifest of `memberOf`'s collections that owns `key` for one page:
+ * those whose `keys` name it, and a keyless one (proposal 0068) when `marked`,
+ * the page's external marks, holds it. Empty when none does.
+ */
+export function pageOwners(
+  index: ExternalMetadataIndex | null,
+  key: string,
+  memberOf: readonly string[],
+  marked: ReadonlySet<string> | undefined,
+): { collection: string; file: string }[] {
+  if (index === null) return [];
+  return [
+    ...(index.owners.get(key) ?? []).filter((o) => memberOf.includes(o.collection)),
+    ...(impliedOwners.get(index) ?? [])
+      .filter((o) => memberOf.includes(o.collection.name) && ownsKey(o.collection, o.manifest, key, marked))
+      .map((o) => ({ collection: o.collection.name, file: o.file })),
+  ];
 }

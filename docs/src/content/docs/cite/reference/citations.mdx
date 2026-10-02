@@ -3,6 +3,57 @@ title: Citations reference
 description: "The citations vocabulary as manni cite implements it: the two ends of an entry, body lines against file lines, the file grammar and encrypted sources, the hashing rule, markers, the sidecar manifest, and every status and rule with its default severity."
 sidebar:
   order: 3
+type: reference
+id: cite-reference-citations
+keywords:
+  - citations
+  - hashing rule
+  - markers
+  - sidecar
+  - statuses
+language: en
+audiences:
+  - docs-engineers
+  - contributors
+intent: Look up the citation entry shape, the file grammar, the hashing rule, markers, the sidecar and every status.
+lifecycle: published
+applies-to:
+  - domain:cite
+concepts:
+  - frontmatter
+  - schema
+sample-questions:
+  - What fields does a citation entry have?
+  - How does manni cite hash a range of lines?
+  - Where can a citation marker go?
+graph:
+  label: Citations reference
+  type: reference
+last-updated: 2026-09-26
+tags:
+  - citations
+  - hashing
+  - markers
+  - sidecar
+  - encryption
+  - file-grammar
+  - reference
+action: remember
+prerequisites:
+  - frontmatter
+  - schema
+related-pages:
+  - /manni/meta/reference/schemas/manni-citations/
+  - /manni/cite/reference/cli/
+  - /manni/key/
+risks: read-only
+next-steps:
+  - cite-reference-cli
+  - cite-reference-configuration
+  - cite-set-up-citations-in-a-sidecar
+  - cite-set-up-public-docs-private-code
+  - key
+  - meta-reference-schemas-manni-citations
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -11,14 +62,13 @@ import { Aside } from '@astrojs/starlight/components';
 {/* cite schema-bundled-validates */}
 A citation pins a sentence on a page to the source lines it was written from.
 Both ends are pinned the same way, by a line range and a hash. This page is
-the vocabulary as the tool ships it. The schema it implements is
-`manni:citations:1.0.0-proposal.4`, which pins the claim and encrypts
-`source.file` as a value. Citations is the tenth vocabulary of the family
-whose drafts the metadata tool's docs publish for review. It is not a built-in
-schema, so `manni meta schemas` does not list it. manni cite bundles the draft
-and checks each entry against it. The
-earlier drafts and their design notes are on the
-[proposal page](/manni/meta/proposals/citations/).
+the vocabulary as the tool ships it. The schema it implements is the built-in
+`manni:citations:1.0.0`, which pins the claim and encrypts `source.file` as a
+value. `manni meta schemas` lists it with the family's other vocabularies, and
+manni cite checks each entry against the same file. The vocabulary's own
+reference page is
+[`manni:citations:1.0.0`](/manni/meta/reference/schemas/manni-citations/). It
+also documents the strict overlay, `manni:citations-strict:1.0.0`.
 
 ## Where citations live
 
@@ -67,8 +117,8 @@ at different grains.
 {/* cite reserved-citation-prefix-check */}
 Any other key at the page root that starts with `citation-` is rejected by the
 schema. So a misspelled `citation-comit` fails the way a closed container
-would make it. The root stays open for sibling vocabularies. The page-level
-`citation-commit` of earlier drafts is gone, and each entry records its own
+would make it. The root stays open for sibling vocabularies. A page-level
+`citation-commit` fails the same way, because each entry records its own
 `source.commit-sha`.
 
 ## The two ends
@@ -90,9 +140,9 @@ block is the other end, and both carry a line range and a hash.
 | `source.commit-sha` | 7 to 64 lowercase hex digits | no | The git commit hash the source pin was taken at. Sixty-four covers a SHA-256 repository. With it, `check` tells `source-changed` from `source-never-true` and can show the diff. |
 | `quote` | boolean, default `false` | no | The claim is a fenced block that reproduces the source. See [Quotes](#quotes). |
 
-Earlier drafts spelled the source as one `src` string and kept the pin beside
-it at the entry root. They stored the claim as a copy of the sentence. All
-three are gone. So is `commit`, which `source.commit-sha` replaces.
+An entry is closed. A `src` string, a pin at the entry root, a `commit` key
+and a claim written out as text all fail the schema. The source is an object,
+the pin sits inside each end, and `source.commit-sha` records the commit.
 
 The metadata tool's `validate` checks the shape; it cannot check either pin.
 Whether a hash still holds is a comparison against the page and the source,
@@ -173,9 +223,7 @@ wins. [`manni key`](/manni/key/) sets it and rotates it.
 {/* cite deterministic-aes-gcm */}
 {/* cite cite-src-own-context */}
 The encryption is deterministic AES-256-GCM, so one path under one key always
-gives one ciphertext.
-[Proposal 0045](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0045-family-encryption-key.md)
-states the construction. One thing stays apart from a metadata value, and
+gives one ciphertext. One thing stays apart from a metadata value, and
 only internally. A citation source carries its own encryption context, so a
 metadata tool cannot re-encrypt a source without also re-keying its pin. That
 would break every encrypted citation after a rotation.
@@ -286,7 +334,7 @@ reported once. An id with no entry is different: that is `marker-orphan`, one
 per id, and the other ids on the line still check.
 
 {/* cite marker-json-removed */}
-Earlier drafts let a marker carry a whole entry as JSON. That is removed. An
+A marker never carries a whole entry as JSON. An
 entry lives in frontmatter or the sidecar, so a source is never written into
 the body. A public page never carries a private path twice.
 

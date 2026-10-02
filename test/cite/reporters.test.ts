@@ -995,6 +995,33 @@ describe("rewriteLine", () => {
     );
   });
 
+  it("says why a source's commit was re-recorded", () => {
+    const recommitted = (because: UpdateRewrite["because"]): string =>
+      rewriteLine(
+        rewrite({
+          end: "source",
+          reason: "recommitted",
+          status: "current",
+          from: "61a9f7b1c2d3e4f5061728394a5b6c7d8e9f0a1b",
+          to: "166b5797a1b2c3d4e5f60718293a4b5c6d7e8f90",
+          fromCommit: "61a9f7b1c2d3e4f5061728394a5b6c7d8e9f0a1b",
+          toCommit: "166b5797a1b2c3d4e5f60718293a4b5c6d7e8f90",
+          src: "src/x.ts:10-12",
+          ...(because === undefined ? {} : { because }),
+        }),
+      );
+    expect(recommitted("not-contained")).toBe(
+      "source src/x.ts:10-12 commit 61a9f7b -> 166b579 (did not contain the pinned lines)",
+    );
+    expect(recommitted("not-in-history")).toBe(
+      "source src/x.ts:10-12 commit 61a9f7b -> 166b579 (not in this branch's history)",
+    );
+    // A row with no reason is the containment case, all `--recommit` once knew.
+    expect(recommitted(undefined)).toBe(
+      "source src/x.ts:10-12 commit 61a9f7b -> 166b579 (did not contain the pinned lines)",
+    );
+  });
+
   it("says a claim a marker's move shifted", () => {
     expect(
       rewriteLine(

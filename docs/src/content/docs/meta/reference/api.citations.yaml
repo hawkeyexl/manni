@@ -2,13 +2,13 @@ docs/src/content/docs/meta/reference/api.mdx:
   citations:
     - id: api-sibling-tools-are-namespaces
       claim:
-        lines: 441-443
-        integrity: sha256-e25ec1da603da1f4bc14bfffb6f8c3fcf1094e0323eb210ab7ce59849a950d18
+        lines: 445-446
+        integrity: sha256-237d8490d08014516b8fa17f0d42d5f99d0b7c5eb25b1aafbebc5d1f563e5769
       source:
         file: src/index.ts
-        lines: 3-10
-        integrity: sha256-12315f718c8db92640128c55ed3e16acd1f03a681388f04ea50d9f3a1a5617e8
-        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
+        lines: 3-12
+        integrity: sha256-460b7750d5cd204db1025dfaa2b26f2a8112465177e55145e84432ad200a1985
+        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
     - id: api-namespace-cannot-collide
       claim:
         integrity: sha256-e0357514e8b03e0b6eab0dd59d0bae4d203d732c60be94c3715935295cea6eff
@@ -19,7 +19,7 @@ docs/src/content/docs/meta/reference/api.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: api-docmeta-error
       claim:
-        lines: 430
+        lines: 433
         integrity: sha256-1c640d7315f632f275ea86c9c5ebc1437bfb7104d8afa887066b59ca3a648d80
       source:
         file: src/meta/types.ts
@@ -28,22 +28,22 @@ docs/src/content/docs/meta/reference/api.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: api-write-file-atomic
       claim:
-        lines: 424
+        lines: 427
         integrity: sha256-423101da0e47a0f817fe0f15f7ebc937717e0ce9a35bb84ca92ae15e4cbba1f9
       source:
         file: src/meta/index.ts
-        lines: 251
+        lines: 254
         integrity: sha256-08b67c3e1bb6c93676019ea9101b19fbf7d8c5725fabbad52f64119059de95c2
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-frontmatter-exports
       claim:
-        lines: 412-418
+        lines: 415-421
         integrity: sha256-7e84bfc61624489555fc32a9a4387dd4d6cff30a8a96f0739f3b6db8ac2de6fb
       source:
         file: src/meta/index.ts
-        lines: 244-250
+        lines: 247-253
         integrity: sha256-339b69d20016daf8fba2db1a1fce78904f7a8c5587fa1dfda4b688907c8cde79
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-frontmatter-path-is-shared
       claim:
         integrity: sha256-c0e7f18b6624dd0f939cfa29699c3f3b6ef42b6a458ca0b4a423ded06527ba3a
@@ -54,13 +54,13 @@ docs/src/content/docs/meta/reference/api.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: api-extractor-exports
       claim:
-        lines: 397-401
+        lines: 400-404
         integrity: sha256-59d3850f338c56e1ada867e8265c4a283d21f5266666d6b094a34dc36cf886c4
       source:
         file: src/meta/index.ts
-        lines: 252-255
+        lines: 255-258
         integrity: sha256-b3423fe97636988ec0f1be9d8f71107d1443cebeed7b914cea1c29aff1d48e23
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-extraction-is-a-seam
       claim:
         integrity: sha256-5894276f29bac034ddb4d1be92e9ad4f534e387eaf6b3ffc7f6a4c9262bc4109
@@ -71,13 +71,13 @@ docs/src/content/docs/meta/reference/api.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: api-reporter-exports
       claim:
-        lines: 354-385
+        lines: 357-388
         integrity: sha256-3f595c5367578062a6acfaa686080e03131b3b33b868a199cb4164ba94360746
       source:
         file: src/meta/index.ts
-        lines: 206-243
+        lines: 209-246
         integrity: sha256-e5fd9f5fdf780b3dd4a2752f6e90b496a650c6559a8e1fff6971d16f6246aec4
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-reporters-are-pure-formatting
       claim:
         integrity: sha256-016f9ff2e016967e9744e5d769a9fc1ac0e684aa918634145de9f871e0040dbc
@@ -88,8 +88,8 @@ docs/src/content/docs/meta/reference/api.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: api-config-exports
       claim:
-        lines: 329-345
-        integrity: sha256-0d0f1c57acf3558ac814ba60d8b663d6054f776d93b77c4a3f4c4d8cc2d7c33a
+        lines: 332-348
+        integrity: sha256-fbd8017fa6680e8a5ce1fa01e0226390adbbb0928fc6a78b16ce694032218c5b
       source:
         file: src/meta/index.ts
         lines: 70-85
@@ -105,13 +105,13 @@ docs/src/content/docs/meta/reference/api.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: api-schema-cache-exports
       claim:
-        lines: 311-317
+        lines: 314-320
         integrity: sha256-d91e06c0bfc13f9fc0b6c3c0e3dc0443ed7a0a9fc08cabf20a9b733dc9d459fe
       source:
         file: src/meta/index.ts
-        lines: 198-205
+        lines: 201-208
         integrity: sha256-02829cc666f2bab47a19d19fa2c0604f6c9a5bd8d8e95fad448f3510ddbb77c9
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-schema-cache-is-shared-across-runs
       claim:
         integrity: sha256-0e7d4c8fe6decc6987bf0a11403a7ba02c27f2b94ec4cf13f7943230b82f4f72
@@ -122,17 +122,17 @@ docs/src/content/docs/meta/reference/api.mdx:
         commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
     - id: api-schema-loading-exports
       claim:
-        lines: 292-302
-        integrity: sha256-91a85fe620a5a00acd776972aaf7a04bef3fedb170e2fdc7376b11f231f3595b
+        lines: 293-305
+        integrity: sha256-7a03718053570aff256183e34f4befd233605d4f0f59651188957f68b8affbc4
       source:
         file: src/meta/index.ts
-        lines: 86-98
-        integrity: sha256-36625827815d26c10dfee7022e7bbfea22573f88c1beab003f387616e63a27b6
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        lines: 86-100
+        integrity: sha256-22262f77a0dbe6f37ebf8197f9a715fc26e3ed23aeadd08b4bb6b1fb02c05e85
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-schema-resolution-exports
       claim:
-        lines: 282-286
-        integrity: sha256-700b2bf88850f04edc75e292290ceb4751680691d5a3c2120b4f2bb53afd3045
+        lines: 283-287
+        integrity: sha256-f640763fd4b2ee02f9edc6bf90d07df6a3e7b2158b1da78970b45ec99ea3b317
       source:
         file: src/meta/index.ts
         lines: 47-53
@@ -143,18 +143,18 @@ docs/src/content/docs/meta/reference/api.mdx:
         integrity: sha256-c7d76a2de1d69c9102f98b92876f6c4dc01344766d0445c893ae66154c1f5eca
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 1-8
-        integrity: sha256-3f4cb717e0a632173838fb8f774fc67c329f91a12e9b96b716a39d2f8d4daec6
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        lines: 1-10
+        integrity: sha256-b9200715546d364ab046739b511f84e75a7099f01425729406288040da602d4f
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-derive-exports
       claim:
         lines: 215-271
-        integrity: sha256-258f497b7701bf369b9841361d1555ea3c91c9fefc9111a64c7c064cd7d50166
+        integrity: sha256-1a1646907d70ff2feb1b949061dbda2662d6e23d6a0257fb9b4a9d3bac7590ff
       source:
         file: src/meta/index.ts
-        lines: 118-187
-        integrity: sha256-08806361adbfc9e2e627a1d6655dd16e25e7ef0a339b3f42e2c7c64a5d166906
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        lines: 120-190
+        integrity: sha256-e61c8d55817ef6797baa0e1764bf996958eb2bcfebdf755c6fe5bcb670618762
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-derived-values-never-merge
       claim:
         integrity: sha256-a92bc993513d0f9595ba9ae03fa64b4186573f9f746c60ddd828c13f9f90b389
@@ -183,24 +183,24 @@ docs/src/content/docs/meta/reference/api.mdx:
     - id: api-external-metadata-exports
       claim:
         lines: 136-157
-        integrity: sha256-fc8e1f539d2f720251cd0ca09824fb02f40238d82fbae9d686b5bc05f02f0772
+        integrity: sha256-02e89af6540e9aaedb7aec5d3273a78b88bbe2a0aa9edf720dd1b4f89119e602
       source:
         file: src/meta/index.ts
-        lines: 99-117
+        lines: 101-119
         integrity: sha256-5d9320c9fac4a7ecce25e7063c79373b762632ca51120ec49298efd6a10c2905
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-manifest-joins-at-run-time
       claim:
         integrity: sha256-32d03c243ae19ab92851b4168f20b8aaf2a525e29f42b82bfc6383e5965419b9
       source:
         file: src/meta/core/external-metadata.ts
         lines: 1-20
-        integrity: sha256-449ec86425bb41dd202e5356adab9658329737f994935210585fc7d33ac04c7d
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        integrity: sha256-eda0d46c747ca14a224c3d76b66a9f5f0728b40d02c138274d9601720ac3322b
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-collection-exports
       claim:
         lines: 109-115
-        integrity: sha256-fbe1e10dce2c4255ab2b4141e544a305d8b36d449a64d3f1aa0ca6d6af2a743b
+        integrity: sha256-4f772019c26de9a7914f79a6fde794094bc8d835a1ca6a3aa93a259bfb4f1222
       source:
         file: src/meta/index.ts
         lines: 59-69
@@ -220,12 +220,12 @@ docs/src/content/docs/meta/reference/api.mdx:
       source:
         file: src/shared/collections.ts
         lines: 1-20
-        integrity: sha256-a38de7a733dd60a8ef1cf984fd35c721e779e8034d1479246b47f700a47df6a6
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        integrity: sha256-03cf4847b019f9736421dc9ea5f773cb1a2175d2592ccd0dcf1c0860ab822299
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-validation-engine-exports
       claim:
         lines: 79-88
-        integrity: sha256-5f5ac34d4e08984a0624d8a4c95b856373b9b98bbe1fbec500f0c1b616dd37ab
+        integrity: sha256-57e5d04ec017c19c62d46f3755f112148c1065ca6c4c76c1315460be7dd9b46f
       source:
         file: src/meta/index.ts
         lines: 35-46
@@ -243,7 +243,7 @@ docs/src/content/docs/meta/reference/api.mdx:
     - id: api-command-core-exports
       claim:
         lines: 35-65
-        integrity: sha256-34262d02b75a11c337bd78e4035f87b819d41cdbaa842656f7a5f1ef58905f4b
+        integrity: sha256-493e1cc5fe0090261a52807892206fb4b60b111d8d35be9fc295619244104e79
       source:
         file: src/meta/index.ts
         lines: 2-34
@@ -272,16 +272,16 @@ docs/src/content/docs/meta/reference/api.mdx:
       source:
         file: src/meta/core/external-metadata.ts
         lines: 1-20
-        integrity: sha256-449ec86425bb41dd202e5356adab9658329737f994935210585fc7d33ac04c7d
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        integrity: sha256-eda0d46c747ca14a224c3d76b66a9f5f0728b40d02c138274d9601720ac3322b
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-cores-have-no-cli-plumbing
       claim:
         integrity: sha256-68e9c41fd7d5d06aa7ef5a1556c586a563bde3e033fcf25d80781b053a1f5acc
       source:
         file: src/meta/commands/validate.ts
         lines: 1-12
-        integrity: sha256-bf81eaa637fb1caa32a086701db23bbe605721daeae78ef28d5b7d9912cbb76b
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        integrity: sha256-93ea4728e27eb7e3fe74de5b18835507c1b62d8e528c9f6a4ce77f6609fdaccf
+        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: api-json-format-serializes-these-shapes
       claim:
         integrity: sha256-56d798bce3c337402d8fe93ebf6272b66912b251298351030af5f8278d3cf80e

@@ -1,0 +1,903 @@
+[
+ {
+  "timestamp": "2026-09-21T12:00:15.5178122-07:00",
+  "level": "INFO",
+  "target": "init",
+  "msg": "Started target init"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.5604697-07:00",
+  "level": "INFO",
+  "target": "init-properties",
+  "msg": "Started target init-properties"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.5693728-07:00",
+  "level": "INFO",
+  "target": "init-properties",
+  "task": "init-project",
+  "msg": "Initializing project"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.6673253-07:00",
+  "level": "INFO",
+  "target": "init-properties",
+  "msg": "Finished target init-properties",
+  "duration": 108
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.6683242-07:00",
+  "level": "INFO",
+  "target": "check-arg",
+  "msg": "Started target check-arg: Validate and init input arguments"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.6759171-07:00",
+  "level": "INFO",
+  "target": "check-arg",
+  "task": "mkdir",
+  "msg": "Created dir: tmp\\out"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.6796555-07:00",
+  "level": "INFO",
+  "target": "check-arg",
+  "task": "mkdir",
+  "msg": "Created dir: tmp\\tmp"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.6818138-07:00",
+  "level": "INFO",
+  "target": "check-arg",
+  "msg": "Finished target check-arg: Validate and init input arguments",
+  "duration": 13
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.6818138-07:00",
+  "level": "INFO",
+  "target": "log-arg",
+  "msg": "Started target log-arg"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.6848135-07:00",
+  "level": "INFO",
+  "target": "log-arg",
+  "task": "echo",
+  "msg": "transtype = dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.6848135-07:00",
+  "level": "INFO",
+  "target": "log-arg",
+  "task": "echo",
+  "msg": "tempdir = tmp\\tmp"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.6858153-07:00",
+  "level": "INFO",
+  "target": "log-arg",
+  "task": "echo",
+  "msg": "outputdir = tmp\\out"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.6858153-07:00",
+  "level": "INFO",
+  "target": "log-arg",
+  "task": "echo",
+  "msg": "DITA-OT version = 4.4.1"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.686378-07:00",
+  "level": "INFO",
+  "target": "log-arg",
+  "msg": "Finished target log-arg",
+  "duration": 5
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.686378-07:00",
+  "level": "INFO",
+  "target": "build-init",
+  "msg": "Started target build-init"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.686378-07:00",
+  "level": "INFO",
+  "target": "build-init",
+  "msg": "Finished target build-init",
+  "duration": 0
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.686378-07:00",
+  "level": "INFO",
+  "target": "preprocess2.init",
+  "msg": "Started target preprocess2.init: Initialize map-first preprocessing"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.6979154-07:00",
+  "level": "INFO",
+  "target": "preprocess2.init",
+  "task": "echo",
+  "msg": "input = repo\\broken-conref.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.7075249-07:00",
+  "level": "INFO",
+  "target": "preprocess2.init",
+  "msg": "Finished target preprocess2.init: Initialize map-first preprocessing",
+  "duration": 22
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.7085249-07:00",
+  "level": "INFO",
+  "target": "ditaval-merge",
+  "msg": "Started target ditaval-merge: Merge DITAVAL files into temporary file"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.7085249-07:00",
+  "level": "INFO",
+  "target": "ditaval-merge",
+  "msg": "Finished target ditaval-merge: Merge DITAVAL files into temporary file",
+  "duration": 0
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.7085249-07:00",
+  "level": "INFO",
+  "target": "map-reader",
+  "msg": "Started target map-reader: Read input map files to temporary store"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.7462743-07:00",
+  "level": "INFO",
+  "target": "map-reader",
+  "task": "map-reader",
+  "msg": "Processing file:/repo/broken-conref.ditamap to file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.965975-07:00",
+  "level": "INFO",
+  "target": "map-reader",
+  "task": "map-reader",
+  "msg": "Processing file:/repo/keys.ditamap to file:/tmp/tmp/86e9027169d6840facd255a209de1001d42e0480.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.9846127-07:00",
+  "level": "INFO",
+  "target": "map-reader",
+  "msg": "Finished target map-reader: Read input map files to temporary store",
+  "duration": 276
+ },
+ {
+  "timestamp": "2026-09-21T12:00:15.9846127-07:00",
+  "level": "INFO",
+  "target": "map-mapref",
+  "msg": "Started target map-mapref: Resolve mapref in ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.466871-07:00",
+  "level": "INFO",
+  "target": "map-mapref",
+  "task": "mapref",
+  "msg": "Processing file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.5838595-07:00",
+  "level": "INFO",
+  "target": "map-mapref",
+  "msg": "Finished target map-mapref: Resolve mapref in ditamap",
+  "duration": 599
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.5838595-07:00",
+  "level": "INFO",
+  "target": "map-reader-profile",
+  "msg": "Started target map-reader-profile: Profile input map files"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.5974148-07:00",
+  "level": "INFO",
+  "target": "map-reader-profile",
+  "task": "profile",
+  "msg": "Processing file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6009245-07:00",
+  "level": "INFO",
+  "target": "map-reader-profile",
+  "msg": "Finished target map-reader-profile: Profile input map files",
+  "duration": 17
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6009245-07:00",
+  "level": "INFO",
+  "target": "map-branch-filter",
+  "msg": "Started target map-branch-filter: Resolve input map files branch filtering"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6034386-07:00",
+  "level": "INFO",
+  "target": "map-branch-filter",
+  "task": "branch-filter",
+  "msg": "Processing file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.609981-07:00",
+  "level": "INFO",
+  "target": "map-branch-filter",
+  "msg": "Finished target map-branch-filter: Resolve input map files branch filtering",
+  "duration": 9
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.609981-07:00",
+  "level": "INFO",
+  "target": "map-keyref",
+  "msg": "Started target map-keyref: Resolve input map files keyref"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6576637-07:00",
+  "level": "INFO",
+  "target": "map-keyref",
+  "task": "mapref",
+  "msg": "Processing file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6661792-07:00",
+  "level": "INFO",
+  "target": "map-keyref",
+  "msg": "Finished target map-keyref: Resolve input map files keyref",
+  "duration": 57
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6661792-07:00",
+  "level": "INFO",
+  "target": "map-conrefpush",
+  "msg": "Started target map-conrefpush: Resolve input map files conref push"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6688083-07:00",
+  "level": "INFO",
+  "target": "map-conrefpush",
+  "msg": "Finished target map-conrefpush: Resolve input map files conref push",
+  "duration": 2
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6688083-07:00",
+  "level": "INFO",
+  "target": "map-conref",
+  "msg": "Started target map-conref: Resolve conref in input map files"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6764641-07:00",
+  "level": "INFO",
+  "target": "map-conref",
+  "msg": "Finished target map-conref: Resolve conref in input map files",
+  "duration": 8
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6764641-07:00",
+  "level": "INFO",
+  "target": "map-profile",
+  "msg": "Started target map-profile: Profile input map files"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6764641-07:00",
+  "level": "INFO",
+  "target": "map-profile",
+  "msg": "Finished target map-profile: Profile input map files",
+  "duration": 0
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6764641-07:00",
+  "level": "INFO",
+  "target": "preprocess2.maps",
+  "msg": "Started target preprocess2.maps"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6764641-07:00",
+  "level": "INFO",
+  "target": "preprocess2.maps",
+  "msg": "Finished target preprocess2.maps",
+  "duration": 0
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6764641-07:00",
+  "level": "INFO",
+  "target": "topic-reader",
+  "msg": "Started target topic-reader: Read topic files to temporary store"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.686311-07:00",
+  "level": "INFO",
+  "target": "topic-reader",
+  "task": "topic-reader",
+  "msg": "Reading file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.6913272-07:00",
+  "level": "INFO",
+  "target": "topic-reader",
+  "task": "topic-reader",
+  "msg": "Processing file:/repo/broken-conref.dita to file:/tmp/tmp/290c4e33532aa67ca67602f5a543af74cf501052.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.8107292-07:00",
+  "level": "INFO",
+  "target": "topic-reader",
+  "task": "topic-reader",
+  "msg": "Processing file:/repo/rotate-a-key.dita to file:/tmp/tmp/281572d3fa7b33d5a7e508bf14b6727ad9882ca1.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.8138443-07:00",
+  "level": "INFO",
+  "target": "topic-reader",
+  "task": "topic-reader",
+  "msg": "Processing file:/repo/warnings.dita to file:/tmp/tmp/6aa3bee76342d979753c2996b1498ef2db1de118.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.901008-07:00",
+  "level": "INFO",
+  "target": "topic-reader",
+  "msg": "Finished target topic-reader: Read topic files to temporary store",
+  "duration": 225
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.901008-07:00",
+  "level": "INFO",
+  "target": "topic-branch-filter",
+  "msg": "Started target topic-branch-filter: Topic branch filtering"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.9035153-07:00",
+  "level": "INFO",
+  "target": "topic-branch-filter",
+  "task": "branch-filter",
+  "msg": "Processing file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.9635067-07:00",
+  "level": "INFO",
+  "target": "topic-branch-filter",
+  "msg": "Finished target topic-branch-filter: Topic branch filtering",
+  "duration": 62
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.9645137-07:00",
+  "level": "INFO",
+  "target": "topic-map-conref",
+  "msg": "Started target topic-map-conref: Resolve conref in input map files"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.9650176-07:00",
+  "level": "INFO",
+  "target": "topic-map-conref",
+  "msg": "Finished target topic-map-conref: Resolve conref in input map files",
+  "duration": 1
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.9655285-07:00",
+  "level": "INFO",
+  "target": "topic-keyref",
+  "msg": "Started target topic-keyref: Resolve keyref"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.9655285-07:00",
+  "level": "INFO",
+  "target": "topic-keyref",
+  "msg": "Finished target topic-keyref: Resolve keyref",
+  "duration": 0
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.9655285-07:00",
+  "level": "INFO",
+  "target": "topic-copy-to",
+  "msg": "Started target topic-copy-to"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.9735476-07:00",
+  "level": "INFO",
+  "target": "topic-copy-to",
+  "msg": "Finished target topic-copy-to",
+  "duration": 8
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.9735476-07:00",
+  "level": "INFO",
+  "target": "topic-conrefpush",
+  "msg": "Started target topic-conrefpush: Resolve conref push"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.9750508-07:00",
+  "level": "INFO",
+  "target": "topic-conrefpush",
+  "msg": "Finished target topic-conrefpush: Resolve conref push",
+  "duration": 2
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.9750508-07:00",
+  "level": "INFO",
+  "target": "topic-conref",
+  "msg": "Started target topic-conref: Resolve conref in input files"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:16.9765587-07:00",
+  "level": "INFO",
+  "target": "topic-conref",
+  "task": "conref",
+  "msg": "Loading stylesheet file:/opt/dita-ot/plugins/org.dita.base/xsl/preprocess/conref.xsl"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.0440979-07:00",
+  "level": "INFO",
+  "target": "topic-conref",
+  "task": "conref",
+  "msg": "Loading stylesheet file:/opt/dita-ot/plugins/org.dita.base/xsl/preprocess/conref.xsl"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.0440979-07:00",
+  "level": "INFO",
+  "target": "topic-conref",
+  "task": "conref",
+  "msg": "Processing file:/tmp/tmp/281572d3fa7b33d5a7e508bf14b6727ad9882ca1.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.0936052-07:00",
+  "level": "INFO",
+  "target": "topic-conref",
+  "task": "conref",
+  "msg": "Processing file:/tmp/tmp/290c4e33532aa67ca67602f5a543af74cf501052.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1260892-07:00",
+  "level": "ERROR",
+  "target": "topic-conref",
+  "task": "conref",
+  "location": "file:/repo/broken-conref.dita",
+  "line": 10,
+  "row": 59,
+  "code": "DOTX010E",
+  "msg": "Unable to find the @conref target '6aa3bee76342d979753c2996b1498ef2db1de118.dita#warnings/no-such-note'. Check '6aa3bee76342d979753c2996b1498ef2db1de118.dita#warnings/no-such-note' to see if the target resource exists."
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1298739-07:00",
+  "level": "INFO",
+  "target": "topic-conref",
+  "msg": "Finished target topic-conref: Resolve conref in input files",
+  "duration": 154
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1308757-07:00",
+  "level": "INFO",
+  "target": "topic-profile",
+  "msg": "Started target topic-profile: Profile input files"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1308757-07:00",
+  "level": "INFO",
+  "target": "topic-profile",
+  "msg": "Finished target topic-profile: Profile input files",
+  "duration": 0
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1308757-07:00",
+  "level": "INFO",
+  "target": "preprocess2.topic-fragment",
+  "msg": "Started target preprocess2.topic-fragment: Normalize same topic fragment identifiers and table column names, and resolve coderef"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1419219-07:00",
+  "level": "INFO",
+  "target": "preprocess2.topic-fragment",
+  "task": "preprocess2.topic-fragment",
+  "msg": "Processing file:/tmp/tmp/86e9027169d6840facd255a209de1001d42e0480.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1469224-07:00",
+  "level": "INFO",
+  "target": "preprocess2.topic-fragment",
+  "task": "preprocess2.topic-fragment",
+  "msg": "Processing file:/tmp/tmp/6aa3bee76342d979753c2996b1498ef2db1de118.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1489222-07:00",
+  "level": "INFO",
+  "target": "preprocess2.topic-fragment",
+  "task": "preprocess2.topic-fragment",
+  "msg": "Processing file:/tmp/tmp/281572d3fa7b33d5a7e508bf14b6727ad9882ca1.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1569975-07:00",
+  "level": "INFO",
+  "target": "preprocess2.topic-fragment",
+  "task": "preprocess2.topic-fragment",
+  "msg": "Processing file:/tmp/tmp/290c4e33532aa67ca67602f5a543af74cf501052.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1670772-07:00",
+  "level": "INFO",
+  "target": "preprocess2.topic-fragment",
+  "task": "preprocess2.topic-fragment",
+  "msg": "Processing file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1700916-07:00",
+  "level": "INFO",
+  "target": "preprocess2.topic-fragment",
+  "msg": "Finished target preprocess2.topic-fragment: Normalize same topic fragment identifiers and table column names, and resolve coderef",
+  "duration": 40
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1700916-07:00",
+  "level": "INFO",
+  "target": "topic-chunk",
+  "msg": "Started target topic-chunk: Process chunks"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1740915-07:00",
+  "level": "INFO",
+  "target": "topic-chunk",
+  "task": "chunk",
+  "msg": "Processing file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1795943-07:00",
+  "level": "INFO",
+  "target": "topic-chunk",
+  "msg": "Finished target topic-chunk: Process chunks",
+  "duration": 9
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1795943-07:00",
+  "level": "INFO",
+  "target": "topic-move-meta-entries",
+  "msg": "Started target topic-move-meta-entries: Move metadata entries"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1823821-07:00",
+  "level": "INFO",
+  "target": "topic-move-meta-entries",
+  "task": "move-meta",
+  "msg": "Processing file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.1864517-07:00",
+  "level": "INFO",
+  "target": "topic-move-meta-entries",
+  "task": "move-meta",
+  "msg": "Loading stylesheet opt/dita-ot\\plugins\\org.dita.base\\xsl\\preprocess\\mappull.xsl"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.2698928-07:00",
+  "level": "INFO",
+  "target": "topic-move-meta-entries",
+  "task": "move-meta",
+  "msg": "Processing file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.3191693-07:00",
+  "level": "INFO",
+  "target": "topic-move-meta-entries",
+  "msg": "Finished target topic-move-meta-entries: Move metadata entries",
+  "duration": 140
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.3201762-07:00",
+  "level": "INFO",
+  "target": "topic-maplink",
+  "msg": "Started target topic-maplink: Find and generate related link information"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.3944387-07:00",
+  "level": "INFO",
+  "target": "topic-maplink",
+  "msg": "Finished target topic-maplink: Find and generate related link information",
+  "duration": 74
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.3944387-07:00",
+  "level": "INFO",
+  "target": "topic-topicpull",
+  "msg": "Started target topic-topicpull: Pull metadata for link and xref element"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.3959421-07:00",
+  "level": "INFO",
+  "target": "topic-topicpull",
+  "task": "topicpull",
+  "msg": "Loading stylesheet file:/opt/dita-ot/plugins/org.dita.base/xsl/preprocess/topicpull.xsl"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.4461847-07:00",
+  "level": "INFO",
+  "target": "topic-topicpull",
+  "task": "topicpull",
+  "msg": "Loading stylesheet file:/opt/dita-ot/plugins/org.dita.base/xsl/preprocess/topicpull.xsl"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.4461847-07:00",
+  "level": "INFO",
+  "target": "topic-topicpull",
+  "task": "topicpull",
+  "msg": "Processing file:/tmp/tmp/6aa3bee76342d979753c2996b1498ef2db1de118.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.4517621-07:00",
+  "level": "INFO",
+  "target": "topic-topicpull",
+  "task": "topicpull",
+  "msg": "Processing file:/tmp/tmp/290c4e33532aa67ca67602f5a543af74cf501052.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.4537622-07:00",
+  "level": "INFO",
+  "target": "topic-topicpull",
+  "msg": "Finished target topic-topicpull: Pull metadata for link and xref element",
+  "duration": 59
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.4537622-07:00",
+  "level": "INFO",
+  "target": "preprocess2.topics",
+  "msg": "Started target preprocess2.topics: Map-first preprocessing topic steps"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.4537622-07:00",
+  "level": "INFO",
+  "target": "preprocess2.topics",
+  "msg": "Finished target preprocess2.topics: Map-first preprocessing topic steps",
+  "duration": 0
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.4537622-07:00",
+  "level": "INFO",
+  "target": "map-clean-map",
+  "msg": "Started target map-clean-map: Clean ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.4547611-07:00",
+  "level": "INFO",
+  "target": "map-clean-map",
+  "task": "clean-map",
+  "msg": "Loading stylesheet file:/opt/dita-ot/plugins/org.dita.base/xsl/preprocess/clean-map.xsl"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5145854-07:00",
+  "level": "INFO",
+  "target": "map-clean-map",
+  "task": "clean-map",
+  "msg": "Loading stylesheet file:/opt/dita-ot/plugins/org.dita.base/xsl/preprocess/clean-map.xsl"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5155864-07:00",
+  "level": "INFO",
+  "target": "map-clean-map",
+  "task": "clean-map",
+  "msg": "Processing file:/tmp/tmp/86e9027169d6840facd255a209de1001d42e0480.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5185847-07:00",
+  "level": "INFO",
+  "target": "map-clean-map",
+  "task": "clean-map",
+  "msg": "Processing file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5206339-07:00",
+  "level": "INFO",
+  "target": "map-clean-map",
+  "msg": "Finished target map-clean-map: Clean ditamap",
+  "duration": 67
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5206339-07:00",
+  "level": "INFO",
+  "target": "clean-preprocess",
+  "msg": "Started target clean-preprocess: Clean preprocess"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5323558-07:00",
+  "level": "INFO",
+  "target": "clean-preprocess",
+  "task": "clean-preprocess",
+  "msg": "Processing file:/tmp/tmp/86e9027169d6840facd255a209de1001d42e0480.ditamap to file:/tmp/tmp/keys.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5373548-07:00",
+  "level": "INFO",
+  "target": "clean-preprocess",
+  "task": "clean-preprocess",
+  "msg": "Processing file:/tmp/tmp/6aa3bee76342d979753c2996b1498ef2db1de118.dita to file:/tmp/tmp/warnings.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.545367-07:00",
+  "level": "INFO",
+  "target": "clean-preprocess",
+  "task": "clean-preprocess",
+  "msg": "Processing file:/tmp/tmp/281572d3fa7b33d5a7e508bf14b6727ad9882ca1.dita to file:/tmp/tmp/rotate-a-key.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5479147-07:00",
+  "level": "INFO",
+  "target": "clean-preprocess",
+  "task": "clean-preprocess",
+  "msg": "Processing file:/tmp/tmp/290c4e33532aa67ca67602f5a543af74cf501052.dita to file:/tmp/tmp/broken-conref.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5509325-07:00",
+  "level": "INFO",
+  "target": "clean-preprocess",
+  "task": "clean-preprocess",
+  "msg": "Processing file:/tmp/tmp/0cd1c27a287bb15c5fdf7fce4811084c74fb7d8c.ditamap to file:/tmp/tmp/broken-conref.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5634452-07:00",
+  "level": "INFO",
+  "target": "clean-preprocess",
+  "msg": "Finished target clean-preprocess: Clean preprocess",
+  "duration": 43
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5649488-07:00",
+  "level": "INFO",
+  "target": "copy-image2",
+  "msg": "Started target copy-image2: Copy image files"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5747159-07:00",
+  "level": "INFO",
+  "target": "copy-image2",
+  "msg": "Finished target copy-image2: Copy image files",
+  "duration": 10
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5747159-07:00",
+  "level": "INFO",
+  "target": "copy-html2",
+  "msg": "Started target copy-html2: Copy html files"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5747159-07:00",
+  "level": "INFO",
+  "target": "copy-html2",
+  "msg": "Finished target copy-html2: Copy html files",
+  "duration": 0
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5747159-07:00",
+  "level": "INFO",
+  "target": "copy-flag-check",
+  "msg": "Started target copy-flag-check"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5757163-07:00",
+  "level": "INFO",
+  "target": "copy-flag-check",
+  "msg": "Finished target copy-flag-check",
+  "duration": 1
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5757163-07:00",
+  "level": "INFO",
+  "target": "copy-files2",
+  "msg": "Started target copy-files2"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5757163-07:00",
+  "level": "INFO",
+  "target": "copy-files2",
+  "msg": "Finished target copy-files2",
+  "duration": 0
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5757163-07:00",
+  "level": "INFO",
+  "target": "preprocess2.post",
+  "msg": "Started target preprocess2.post: Preprocess post"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5757163-07:00",
+  "level": "INFO",
+  "target": "preprocess2.post",
+  "msg": "Finished target preprocess2.post: Preprocess post",
+  "duration": 0
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5757163-07:00",
+  "level": "INFO",
+  "target": "preprocess2",
+  "msg": "Started target preprocess2"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5757163-07:00",
+  "level": "INFO",
+  "target": "preprocess2",
+  "msg": "Finished target preprocess2",
+  "duration": 0
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5757163-07:00",
+  "level": "INFO",
+  "target": "dita2dita",
+  "msg": "Started target dita2dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.5767163-07:00",
+  "level": "INFO",
+  "target": "dita2dita",
+  "task": "normalize",
+  "msg": "Loading stylesheet file:/opt/dita-ot/plugins/org.dita.normalize/xsl/normalize.xsl"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.6138274-07:00",
+  "level": "INFO",
+  "target": "dita2dita",
+  "task": "normalize",
+  "msg": "Loading stylesheet file:/opt/dita-ot/plugins/org.dita.normalize/xsl/normalize.xsl"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.6138274-07:00",
+  "level": "INFO",
+  "target": "dita2dita",
+  "task": "normalize",
+  "msg": "Processing file:/tmp/tmp/.job.xml to file:/tmp/tmp/.job.xml.temp"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.6372545-07:00",
+  "level": "INFO",
+  "target": "dita2dita",
+  "task": "normalize",
+  "msg": "Writing file:/tmp/out/broken-conref.ditamap"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.658761-07:00",
+  "level": "INFO",
+  "target": "dita2dita",
+  "task": "normalize",
+  "msg": "Writing file:/tmp/out/broken-conref.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.6699683-07:00",
+  "level": "INFO",
+  "target": "dita2dita",
+  "task": "normalize",
+  "msg": "Writing file:/tmp/out/rotate-a-key.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.6781184-07:00",
+  "level": "INFO",
+  "target": "dita2dita",
+  "task": "normalize",
+  "msg": "Writing file:/tmp/out/warnings.dita"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.6880336-07:00",
+  "level": "INFO",
+  "target": "dita2dita",
+  "msg": "Finished target dita2dita",
+  "duration": 113
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.6880336-07:00",
+  "level": "INFO",
+  "target": "clean-temp",
+  "msg": "Started target clean-temp: Clean temp directory"
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.6935366-07:00",
+  "level": "INFO",
+  "target": "clean-temp",
+  "msg": "Finished target clean-temp: Clean temp directory",
+  "duration": 5
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.6935366-07:00",
+  "level": "INFO",
+  "target": "init",
+  "msg": "Finished target init",
+  "duration": 2177
+ },
+ {
+  "timestamp": "2026-09-21T12:00:17.6935366-07:00",
+  "level": "INFO",
+  "msg": "Build successful",
+  "duration": 2459
+ }
+]

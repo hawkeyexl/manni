@@ -1,0 +1,80 @@
+docs/src/content/docs/meta/reference/schemas/mkdocs-material.mdx:
+  citations:
+    - id: platform-mkdocs-pinned-to-9-7
+      claim:
+        lines: 147-153
+        integrity: sha256-01c2b4dd6f65c27e0e0b9b07433b7b02edd31857c36b7aab24addcc6c10cdb56
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 5
+        integrity: sha256-9beea87a022616ce9e5aad74fe11ab5ecec72587edcb7c415b9e15e6dab58e11
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-dates-are-strings
+      claim:
+        lines: 120-124
+        integrity: sha256-cfa8d09f6caee8e775bfc1e218d26295c784b11f3e910dde5a3d24c26bb57a33
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 90-103
+        integrity: sha256-8619ed665ef4836f224f028219f731e3d47568e0ea99ed60c3d4ba5fc4958470
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-date-mapping-needs-created
+      claim:
+        lines: 99-102
+        integrity: sha256-ec7a5a4a9d5f70034f78ee517bc80684e221ca3c69c177ac9644aa25328efb63
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 90-103
+        integrity: sha256-8619ed665ef4836f224f028219f731e3d47568e0ea99ed60c3d4ba5fc4958470
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-does-not-require-date
+      claim:
+        lines: 92-97
+        integrity: sha256-a06453964c98c38720f4db6e5c852a08c70cd68b90918ca7d32b1c196164aa86
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 6-7
+        integrity: sha256-378a494cede2cb04abd922c993975f4aa57e36276ac431f5a17eaa105a538e74
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-blog-typing
+      claim:
+        integrity: sha256-71f0566d02e9894f59580f21f7a4abd43d44e109257c7e8c97f58aaed218cb7f
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 112-128
+        integrity: sha256-ebba341a60d8800224fd9f1e14b477fce53c8b6d3b9e364b10b92a08d31583af
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-hide-values
+      claim:
+        integrity: sha256-0338487a586701134bf73e2703cca7ed40f64aa452458340618e58864a5c8b11
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 43-50
+        integrity: sha256-bab44648391e5bf7c830d21718ef4fd3aeee78a42012756f4107ab5364eceb52
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-post-fields
+      claim:
+        lines: 69-74
+        integrity: sha256-9fdf0aed6e143f0809c5b59b4a52044bb5bac1651e0061fadb1912e8f7eb171e
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 104-133
+        integrity: sha256-de0ae1fb3050adb88361991db6d4780a9cca76164508f9f78b9dc05ea3128c15
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-field-table
+      claim:
+        lines: 57-68
+        integrity: sha256-3b3b6caa45132548e0680a5e0b3959b5477ff032134858e93d98ee3e52a3e15b
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 15-90
+        integrity: sha256-f01fd6444c6f68235c29fb7be5e112675f6ded601788e2e9e613d4de7b5e6ee2
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-mkdocs-covers-both
+      claim:
+        integrity: sha256-9b783180572f4f737328ebf88dd150abb6ecb3c7b4180848762219f1286d468c
+      source:
+        file: src/meta/schemas/mkdocs-material/9.7.json
+        lines: 3-7
+        integrity: sha256-d0b4a99508e6d16aefba9036191ddb06e1629ce0cfce6cb5a0d94712482daa6c
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

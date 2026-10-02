@@ -1,0 +1,112 @@
+/**
+ * Markdown and MDX parsers.
+ *
+ * They share everything but the unified processor. MDX needs its own, selected
+ * by extension rather than by a flag: `remark-mdx` reads `{` as an expression
+ * delimiter, so ordinary Markdown prose containing a brace is a syntax error
+ * under it. Running one processor for both formats would break either MDX
+ * (without the plugin) or plain Markdown (with it).
+ */
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
+import remarkFrontmatter from "remark-frontmatter";
+import remarkMdx from "remark-mdx";
+import { extractFrontmatter } from "../../meta/index.js";
+import type { ContentKind, DocumentParser, DocumentTree } from "../types.js";
+import { LintError } from "../types.js";
+import { errorMessage } from "../../shared/errors.js";
+import { documentEnd, toFragments } from "./mdast.js";
+import { sectionize } from "./sectionize.js";
+import { fencedPosition as frontmatterPosition, withMetadataTitle as withFrontmatterTitle } from "./metadata.js";
+
+const markdownProcessor = unified()
+  .use(remarkParse)
+  .use(remarkGfm)
+  .use(remarkFrontmatter, ["yaml", "toml"]);
+
+const mdxProcessor = unified()
+  .use(remarkParse)
+  .use(remarkGfm)
+  .use(remarkFrontmatter, ["yaml", "toml"])
+  .use(remarkMdx);
+
+/**
+ * Only `parse` is used, and unified's `Processor` generics differ between the
+ * plain and MDX pipelines (their tree types are not the same), so the narrow
+ * structural type is both sufficient and the one that lets both pass.
+ */
+interface Parseable {
+  parse(content: string): unknown;
+}
+
+function parseWith(
+  processor: Parseable,
+  format: string,
+  content: string,
+  filePath: string,
+): DocumentTree {
+  let root: unknown;
+  try {
+    root = processor.parse(content);
+  } catch (err) {
+    // MDX raises on malformed expressions; a parse failure is the file's
+    // problem, not a crash, so it surfaces as an operational error naming it.
+    throw new LintError(
+      `${filePath}: could not parse as ${format}: ${errorMessage(err)}`,
+    );
+  }
+
+  const meta = extractFrontmatter(content, format);
+  const tree = root as Parameters<typeof toFragments>[0];
+
+  const frontmatter = meta.present ? meta.data : null;
+  const metaPosition = frontmatterPosition(content);
+
+  return {
+    format,
+    filePath,
+    frontmatter,
+    frontmatterPosition: metaPosition,
+    sections: sectionize(
+      withFrontmatterTitle(toFragments(tree), frontmatter, metaPosition),
+      documentEnd(tree),
+    ),
+  };
+}
+
+/**
+ * What both formats emit. `element` is MDX's alone: plain Markdown has no JSX,
+ * so `<Steps>` is raw HTML to it and no tree it produces carries an element.
+ * Declaring one here would report a rule about elements as checked on every
+ * `.md` file it silently could not see.
+ */
+const SHARED_KINDS: ContentKind[] = [
+  "paragraph",
+  "codeBlock",
+  "list",
+  "listItem",
+  "table",
+  "tableRow",
+  "tableCell",
+  "admonition",
+  "image",
+  "blockquote",
+];
+
+export const markdownParser: DocumentParser = {
+  name: "markdown",
+  label: "Markdown",
+  kinds: SHARED_KINDS,
+  extensions: [".md", ".markdown"],
+  parse: (content, filePath) =>
+    parseWith(markdownProcessor, "markdown", content, filePath),
+};
+
+export const mdxParser: DocumentParser = {
+  name: "mdx",
+  label: "MDX",
+  kinds: [...SHARED_KINDS, "element"],
+  extensions: [".mdx"],
+  parse: (content, filePath) => parseWith(mdxProcessor, "mdx", content, filePath),
+};

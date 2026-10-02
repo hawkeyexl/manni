@@ -1,0 +1,16 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:13.300
+graph: names the term: The guide's graph: block names progressive lens in concepts. manni term check resolves it: exit 0.
+
+2
+00:00:13.300 --> 00:00:26.467
+kg: no longer counts: manni term no longer reads kg.concepts. The term is now unused: a notice, so still exit 0.
+
+3
+00:00:26.467 --> 00:00:42.567
+The block is closed: The draft manni:graph:1.0.0-proposal.1 closes the block, so a typo inside it fails: exit 1.
+

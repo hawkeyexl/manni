@@ -1,0 +1,55 @@
+docs/src/content/docs/meta/reference/schemas/passo-uno-seven-action.mdx:
+  personas: ["sara", "maya"]
+  journeys: ["s1", "m3"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/seven-action/1.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: allowed-values
+      assertion: "A reader can write an action value the Seven-Action schema accepts."
+      type: capability
+      grader: ai
+    - id: existing-key
+      assertion: "A reader can opt out of the Seven-Action schema when their pages use action for something else."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-19
+      integrity: sha256-c9a27d048483faa48a63496e86d8840728bf0042454aa35d327f21847d254720
+    - generated-by: Claude Opus 5.5
+      lines: 21-22
+      integrity: sha256-9235e95c50739f3ad90f427e4c7c74a1e9c642115a3705794bb21eb6509c3114
+    - generated-by: Claude Opus 5.5
+      lines: 29-30
+      integrity: sha256-111e28d22ca5b54c74688ce0acda8e4e07cfff8859f0c7560fe8d09cdcefe3bc
+    - generated-by: Claude Opus 5.5
+      lines: 32-88
+      integrity: sha256-97bb0b469fe4d97c4540713d9ab256f21a34fd26436097fd6248c338a26a71b4
+    - generated-by: Claude Opus 5.5
+      lines: 93-96
+      integrity: sha256-0b98c1b56531a7de5fdcecc3c60ee2755d9e6b5a8aa6df67d54df43682987111
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /related-pages
+        - /risks
+        - /prerequisites
+        - /next-steps
+      confidence:
+        /resource: 0.95
+        /tags: 0.7
+        /action: 0.85
+        /related-pages: 0.85
+        /risks: 0.9
+        /prerequisites: 0.75
+        /next-steps: 0.7

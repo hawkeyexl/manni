@@ -1,0 +1,28 @@
+Suggested LinkedIn post. Posting is the author's call; nothing here has been
+published.
+
+---
+
+Structure linting has a blank-page problem.
+
+The template format is strict by default, which is the right default: a section
+the template does not describe is a finding, not a shrug. But it means pointing
+the linter at a docset you already have gives you a wall of "unexpected
+section" before it gives you anything useful. So you go and write the template
+by hand, from nothing, for every doctype you own.
+
+`manni lint templates infer` starts you somewhere else. Point it at one page
+that already has the shape you want. It writes the template that describes that
+page, with the headings in order and the content each section actually carries.
+Save it, and the same lint command that produced the wall now passes.
+
+It is a first draft, and it says so. One page cannot show what varies, so every
+rule it writes is exactly one occurrence. Loosening a heading, marking a
+section optional with `min: 0`, and adding a trailing rule for whatever else
+may follow are your edits to make. That is the point: you are editing a
+template instead of starting one.
+
+43 seconds, no audio needed. Everything in the frame is a real run against the
+repository's own test fixtures.
+
+#documentation #docsascode #technicalwriting #devtools #cli

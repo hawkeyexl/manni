@@ -1,0 +1,6 @@
+# The document set as it used to be written, before proposal 0041 moved it to
+# the family-level `collections:`. Refused by name, so an upgrading repo is
+# told rather than silently linting nothing.
+lint:
+  paths:
+    - "docs/**/*.md"

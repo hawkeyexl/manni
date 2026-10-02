@@ -187,8 +187,10 @@ describe("query on a path-joined manifest", () => {
 
   it("refuses RENAME COLUMN of an owned key with the existing message", async () => {
     const dir = copy("query-path");
-    await expect(q(dir, "ALTER TABLE docs RENAME COLUMN owner TO steward")).rejects.toThrow(
-      '"docs/auth.md": "owner" is owned by manifest docs-meta.yaml; edit the manifest instead.',
+    // team, not owner: the default stewardship vocabulary also constrains
+    // owner, and a column two schemas constrain is refused before ownership.
+    await expect(q(dir, "ALTER TABLE docs RENAME COLUMN team TO squad")).rejects.toThrow(
+      '"docs/auth.md": "team" is owned by manifest docs-meta.yaml; edit the manifest instead.',
     );
     expect(read(dir, "steward.schema.json")).toBe(read(join(fixtures, "query-path"), "steward.schema.json"));
   });

@@ -1,0 +1,170 @@
+---
+title: VitePress page schema
+description: The vitepress:page:1.6 schema shipped with manni meta, covering the 16 front matter options VitePress and its default theme read, and the finding an unrecognised outline value produces.
+sidebar:
+  label: "vitepress:page:1.6"
+type: reference
+id: meta-reference-schemas-vitepress-page
+keywords: ["VitePress", "vitepress:page:1.6", "outline", "versioning"]
+language: en
+audiences: ["schema-authors", "docs-engineers"]
+intent: "Validate the front matter options VitePress and its default theme read, and fix an unrecognised outline value."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema", "frontmatter", "dialect", "override"]
+sample-questions:
+  - "Which front matter options does vitepress:page:1.6 check?"
+  - "What finding does an unrecognised outline value produce?"
+graph:
+  label: "VitePress page schema"
+  type: reference
+last-updated: 2026-09-26
+resource: https://hawkeyexl.github.io/manni/schemas/vitepress/1.6.json
+tags:
+  - schema
+  - vitepress
+  - validation
+  - frontmatter
+  - reference
+action: remember
+related-pages:
+  - /manni/meta/reference/platform-schemas/
+  - /manni/meta/reference/schema-resolution/
+risks: read-only
+prerequisites:
+  - meta-reference-platform-schemas
+next-steps:
+  - meta-set-up-config
+---
+
+**Built-in id:** `vitepress:page:1.6`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/vitepress/1.6.json`. A
+`$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+import { Aside } from '@astrojs/starlight/components';
+
+`vitepress:page:1.6` checks the front matter VitePress 1.6 reads from a `.md`
+page. It requires nothing, because VitePress has a default for every option. It
+is one of the [platform schemas](/manni/meta/reference/platform-schemas/), which
+say what a generator accepts rather than what your team agreed.
+
+| Property | Value |
+|---|---|
+| Id | `vitepress:page:1.6` |
+| Title | VitePress front matter v1.6 |
+| Files it fits | `.md` |
+| Dialect | [Draft 2020-12](/manni/meta/reference/schema-resolution/#dialects) |
+| Required fields | None |
+| Additional properties | Allowed (`additionalProperties: true`) |
+| Reference kind | [builtin](/manni/meta/reference/schema-resolution/#reference-kinds) |
+| On by default | No |
+| Upstream reference | [Frontmatter config](https://vitepress.dev/reference/frontmatter-config) |
+| JSON | [`vitepress/1.6.json`](/manni/schemas/vitepress/1.6.json) |
+
+## Use it
+
+VitePress keeps pages at the repo root, so an override names the directory the
+schema covers:
+
+```yaml title="manni.config.yaml"
+meta:
+  overrides:
+    - files: "docs/**"
+      schemas:
+        - vitepress:page:1.6
+```
+
+For a one-off run, pass the id directly:
+
+```bash
+manni meta validate docs/ -s vitepress:page:1.6
+```
+
+## Fields
+
+{/* cite platform-vitepress-four-options-plus-theme-toggles */}
+The four options every VitePress theme honours, plus the default theme's
+page-level toggles.
+
+| Field | Type | Notes |
+|---|---|---|
+| `title`, `description` | string | Override the site-level values. |
+| `titleTemplate` | string \| boolean | `false` drops the suffix. |
+| `head` | array | `[tag, attrs]` pairs injected into `<head>`. |
+| `layout` | `doc` \| `home` \| `page` | Anything else is rejected. |
+| `hero`, `features` | object, array | Home-layout blocks; typed but not pinned. |
+| `outline` | level \| `[from, to]` \| `deep` \| `false` | 1–6. |
+| `aside` | boolean \| `left` | |
+| `lastUpdated` | boolean \| string | A flag, or a date overriding the stamp. |
+| `navbar`, `sidebar`, `editLink`, `footer`, `isHome` | boolean | Page-level toggles. |
+| `pageClass` | string | |
+
+{/* cite platform-vitepress-outline-takes-four-shapes */}
+`outline` is the field this schema exists for. It takes four different shapes,
+and VitePress ignores a value it does not recognise rather than complaining. So
+`outline: 9` silently gives you the default rather than a deep outline.
+
+<Aside type="note" title="`sidebar: false` hides the sidebar; it does not configure one">
+The page-level `sidebar` is a boolean toggle. A VitePress sidebar's *contents*
+are configured in `.vitepress/config.ts`, not in front matter. A page that sets
+`sidebar:` to an object is doing something VitePress will not read. This schema
+types it as a boolean, which reports that.
+</Aside>
+
+## Additional properties
+
+Allowed. A key VitePress does not define passes unchecked.
+
+## Versioning
+
+<Aside type="note" title="Covers VitePress 1.6">
+The bundled schema describes VitePress 1.6 front matter. Its id,
+`vitepress:page:1.6`, names the version it covers.
+</Aside>
+
+## Example page
+
+A page carrying the common options, at legal values. This is
+`test/fixtures/platform/vitepress-valid.md`, and it passes.
+
+```markdown title="docs/deploying.md"
+---
+title: Deploying
+description: How to deploy a VitePress site.
+layout: doc
+outline: [2, 3]
+aside: left
+lastUpdated: true
+editLink: true
+pageClass: deploy-page
+head:
+  - - meta
+    - name: robots
+      content: noindex
+---
+```
+
+## A common mistake
+
+`outline: 9` is not a heading level VitePress knows. It ignores the value, and
+this schema reports it:
+
+```markdown title="test/fixtures/platform/vitepress-bad-outline.md"
+---
+title: Deploying
+outline: 9
+---
+```
+
+```text
+✗ test/fixtures/platform/vitepress-bad-outline.md
+    /outline  must be equal to one of the allowed values  (line 3)  [vitepress:page:1.6]
+    /outline  must match "else" schema  (line 3)  [vitepress:page:1.6]
+
+1 file checked, 0 passed, 1 failed, 2 errors
+```
+
+Both lines name the one field. Use a level from 1 to 6, a `[from, to]` pair,
+`deep`, or `false`.

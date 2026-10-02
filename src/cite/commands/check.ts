@@ -72,7 +72,7 @@ export interface PreparedRun {
    * What this page's manifest supplies, and the options that carry it. One
    * call per page, so a page named by path still finds its sidecar.
    */
-  setupFor: (label: string, content: string) => PageSetup;
+  setupFor: (label: string, content: string) => Promise<PageSetup>;
   /** Whether a flag reshaped the input set, which turns the corpus checks off. */
   scopedByFlags: boolean;
   /** The collections a `--collection` run narrowed to; `undefined` for a whole corpus. */
@@ -228,8 +228,8 @@ export async function prepareRun(
   // finds the manifest that owns its citations.
   // A `{page}` manifest (0058) is read for exactly the pages this run checks.
   const sidecars = await sidecarsFor(run, { pages: files.map((file) => resolve(base, file)) });
-  const setupFor = (label: string, content: string): PageSetup => {
-    const page = sidecars?.forPage(label, content, forced?.name);
+  const setupFor = async (label: string, content: string): Promise<PageSetup> => {
+    const page = await sidecars?.forPage(label, content, forced?.name);
     if (page?.owner === undefined) return { options: pageOptions };
     return {
       sidecar: page,
@@ -329,7 +329,7 @@ export async function runCheck(opts: CheckOptions): Promise<CheckRun> {
 
   const pages: PageCitationReport[] = [];
   const checkOne = async (label: string, content: string): Promise<void> => {
-    const setup = prepared.setupFor(label, content);
+    const setup = await prepared.setupFor(label, content);
     if (setup.sidecar !== undefined) hits.record(setup.sidecar, label);
     pages.push(await checkCitations({ file: label, content, format: forced?.name }, setup.options));
   };

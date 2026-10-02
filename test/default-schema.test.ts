@@ -1,15 +1,13 @@
 /**
  * Behavior of the six house vocabularies — the intent-scoped split of the
- * docmeta frontmatter vocabulary proposed in docs/proposals/0023 — plus the
- * default-set behavior the nine family ids are intended to join.
+ * manni frontmatter vocabulary proposed in docs/proposals/0023 — plus the
+ * the default set the nine family ids joined under proposal 0070.
  *
- * The drafts are deliberately unregistered while proposal 0023 is under
- * community review, so every case here validates through **file refs** into
- * docs/proposals/0023/schemas — which is exactly what `runValidate` does with
- * a `./x.json` schema entry, so the semantics under test are the shipped
- * pipeline's, not a harness approximation. The one block that genuinely needs
- * registration (default-set membership) is `describe.skip`ped at the bottom;
- * the registration PR swaps the file refs for built-in ids and flips it on.
+ * The vocabularies are registered built-ins at 1.0.0, so every case here
+ * validates through the built-in ids (`manni:core:1.0.0` and its siblings).
+ * The drafts under docs/proposals/0023/schemas stay as the review record.
+ * Default-set membership is pinned at the bottom: proposal 0070 put the
+ * nine family ids into `DEFAULT_SCHEMAS`, after OKF and Seven-Action.
  *
  * Design rules pinned here rather than in prose:
  *
@@ -22,14 +20,14 @@
  *    whose floor accepts "" teaches the habit it exists to prevent.
  *
  * 2. **The house ids are disjoint.** No property name is claimed by two
- *    docmeta house schemas, so a page stacking all six gets every error
+ *    manni house schemas, so a page stacking all six gets every error
  *    attributed to exactly one intent.
  *
- * 3. **Companion namespaces are not claimed.** `evals` (docmeta:evals:1.0.0-proposal.2),
- *    `kg` (docmeta:kg:1.0.0-proposal.1) and `metadata` (docmeta:artifact-evals:1.0.0-proposal.2) are
+ * 3. **Companion namespaces are not claimed.** `evals` (manni:evals:1.0.0),
+ *    `graph` (manni:graph:1.0.0) and `metadata` (manni:artifact-evals:1.0.0) are
  *    common vocabularies validated by their own schemas and implemented by
  *    their own tools; claiming them here — even loosely — would put them on
- *    `docmeta fill`'s menu, and each has its own fill loop.
+ *    `manni meta fill`'s menu, and each has its own fill loop.
  */
 import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "node:url";
@@ -42,40 +40,11 @@ import { loadSchema } from "../src/meta/core/schema-registry.js";
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 
-const DRAFTS = "./docs/proposals/0023/schemas";
 /**
- * The drafts carry a semver **prerelease** version, not build metadata: the
- * hyphen is what makes `1.0.0-proposal.1` sort *below* the `1.0.0` these
- * register as, and what keeps a `manni:core:1` range from ever resolving to
- * a draft. Spelled `+proposal.1` it would compare equal to the release, which
- * is the opposite of what a review draft wants.
- *
- * Revisions are **per family**, not per set. proposal.2 of `evals`,
- * `artifact-evals` and `core` carries scoring, targeting and versioning fields
- * the other six had no part in, core's proposal.3 adds `locale`, and
- * stewardship's proposal.2 adds the editorial dates and widens the two anchor
- * fields; bumping the rest alongside would announce a revision none of them
- * made and leave pairs of byte-identical files to explain. `ref()` keeps the
- * mapping in one table, so a family's next bump is still a one-line edit.
- * Proposal 0047's `x-manni-location` mark is a change every family made, so
- * each one took a revision for it. ai-context's proposal.2 (0046) replaced
- * the page-level `generated-by` with `provenance` line pins and moved field
- * attribution to `meta-provenance`, and proposal.3 is that plus the mark.
+ * The registered id of a family. Each family registers at 1.0.0, the release
+ * its `1.0.0-proposal.N` drafts sort below.
  */
-const DRAFT_V = "1.0.0-proposal.1";
-const VERSIONS: Record<string, string> = {
-  core: "1.0.0-proposal.4",
-  stewardship: "1.0.0-proposal.3",
-  audience: "1.0.0-proposal.2",
-  lifecycle: "1.0.0-proposal.2",
-  structure: "1.0.0-proposal.2",
-  "ai-context": "1.0.0-proposal.3",
-  evals: "1.0.0-proposal.4",
-  kg: "1.0.0-proposal.3",
-  "artifact-evals": "1.0.0-proposal.4",
-};
-const ref = (family: string): string =>
-  `${DRAFTS}/${family}/${VERSIONS[family] ?? DRAFT_V}.json`;
+const ref = (family: string): string => `manni:${family}:1.0.0`;
 
 const CORE = ref("core");
 const STEWARDSHIP = ref("stewardship");
@@ -87,7 +56,7 @@ const HOUSE = [
   ref("structure"),
   ref("ai-context"),
 ];
-const SIBLINGS = [ref("evals"), ref("kg"), ref("artifact-evals")];
+const SIBLINGS = [ref("evals"), ref("graph"), ref("artifact-evals")];
 
 /**
  * Every date the family carries, all three on stewardship and all three
@@ -107,7 +76,6 @@ const FIELDS: Record<string, string[]> = {
     "id",
     "keywords",
     "language",
-    "locale",
     "title",
     "type",
   ],
@@ -136,12 +104,12 @@ const FIELDS: Record<string, string[]> = {
   "ai-context": ["meta-provenance", "provenance", "risks", "sample-questions"],
 };
 
-/** The schema's short name, from its draft path. */
-const nameOf = (ref: string): string => ref.split("/").at(-2) ?? ref;
+/** The schema's short name, from its built-in id. */
+const nameOf = (ref: string): string => ref.split(":")[1] ?? ref;
 
 /**
  * The result without validate's `location:external` and `location:page`
- * warnings (proposal 0047). Every draft marks where each field belongs, so a
+ * warnings (proposal 0047). Every vocabulary marks where each field belongs, so a
  * page exercising a vocabulary carries external-preferring fields by design;
  * those warnings are validate-location.test.ts's subject, and this file's is
  * what the vocabularies accept and refuse.
@@ -204,7 +172,7 @@ describe("the six house vocabularies", () => {
         seen.set(key, ref);
       }
     }
-    expect(seen.size).toBe(36);
+    expect(seen.size).toBe(35);
   });
 
   it("names manni as the vendor in every draft string, across every revision", async () => {
@@ -316,39 +284,18 @@ describe("the six house vocabularies", () => {
     expect(r.errors[0]?.instancePath).toBe("/last-reviewed");
   });
 
-  it("accepts a locale that differs from the language, attributed to nothing", async () => {
-    // LTLI's line: `language` is what the text is written in, `locale` the
-    // international preferences the content follows. An English page whose
-    // dates and amounts are written the German way carries one of each.
-    const r = await checkStdin(
-      "title: T\ndescription: D\nlanguage: en\nlocale: de-DE",
-    );
+  it("does not claim locale, so core passes it through untouched", async () => {
+    // `language` carries region and script where they matter, so core claims
+    // no separate `locale` key. An unclaimed key is open to any other schema.
+    const core = (await loadSchema(CORE)) as {
+      properties: Record<string, unknown>;
+    };
+    expect(core.properties).not.toHaveProperty("locale");
+    const r = await checkStdin("title: T\ndescription: D\nlocale: de-DE", [
+      CORE,
+    ]);
     expect(r.errors).toEqual([]);
     expect(r.ok).toBe(true);
-  });
-
-  it("accepts a locale carrying Unicode -u- extension keywords", async () => {
-    const r = await checkStdin(
-      "title: T\ndescription: D\nlanguage: hi\nlocale: hi-IN-u-nu-deva",
-    );
-    expect(r.errors).toEqual([]);
-    expect(r.ok).toBe(true);
-  });
-
-  it("rejects an empty locale on core's non-empty floor, attributed to core", async () => {
-    const r = await checkStdin('title: T\ndescription: D\nlocale: ""');
-    expect(r.ok).toBe(false);
-    expect(r.errors[0]?.schema).toBe(CORE);
-    expect(r.errors[0]?.instancePath).toBe("/locale");
-  });
-
-  it("holds locale to one string, like language", async () => {
-    const r = await checkStdin(
-      "title: T\ndescription: D\nlocale: [en-GB, en-US]",
-    );
-    expect(r.ok).toBe(false);
-    expect(r.errors[0]?.schema).toBe(CORE);
-    expect(r.errors[0]?.instancePath).toBe("/locale");
   });
 
   it("accepts the reduced W3CDTF precisions on every date field", async () => {
@@ -597,7 +544,7 @@ describe("the six house vocabularies", () => {
 
   it("records machine-proposed metadata in meta-provenance, by pointer and eval id", async () => {
     const ok = await checkStdin(
-      "title: T\ndescription: D\nmeta-provenance:\n  - generated-by: claude-fable-5\n    fields: [/intent, /kg/label]\n    evals: [install-verified]\n    confidence:\n      /intent: 0.9\n      install-verified: 0.7",
+      "title: T\ndescription: D\nmeta-provenance:\n  - generated-by: claude-fable-5\n    fields: [/intent, /graph/label]\n    evals: [install-verified]\n    confidence:\n      /intent: 0.9\n      install-verified: 0.7",
     );
     expect(ok.errors).toEqual([]);
     expect(ok.ok).toBe(true);
@@ -661,7 +608,7 @@ describe("the six house vocabularies", () => {
   });
 
   it("carves an exception out of applies-to, and leaves disjointness to the graph", async () => {
-    // The page-level twin of `kg.not-applicable-to`, added so the negative
+    // The page-level twin of `graph.not-applicable-to`, added so the negative
     // exists at both altitudes rather than only the deeper one.
     const carveOut = await checkStdin(
       "title: T\ndescription: D\napplies-to: [operator-1.4]\nnot-applicable-to: [operator-1.4-fips]",
@@ -693,7 +640,7 @@ describe("the six house vocabularies", () => {
   });
 
   it("rejects empty and duplicated lists — a list that says nothing is not a declaration", async () => {
-    // minItems + uniqueItems on the one-or-list shape, matching kg's
+    // minItems + uniqueItems on the one-or-list shape, matching graph's
     // labelList exactly, so the harvest fallback and the deeper twin accept
     // identical values. `owner: []` must not satisfy an ownership gate.
     const emptyOwner = await checkStdin("title: T\ndescription: D\nowner: []");
@@ -714,7 +661,6 @@ describe("the six house vocabularies", () => {
       'title: T\ndescription: D\nkeywords: ""',
       'title: T\ndescription: D\nkeywords: ["", "beta"]',
       'title: T\ndescription: D\nlanguage: ""',
-      'title: T\ndescription: D\nlocale: ""',
     ]) {
       const r = await checkStdin(yaml, [CORE]);
       expect(r.ok, yaml).toBe(false);
@@ -753,9 +699,9 @@ describe("the six house vocabularies", () => {
     expect(bad.ok).toBe(false);
   });
 
-  it("leaves the companion namespaces alone, and they validate under their own drafts", async () => {
-    // `evals`, `kg` and `metadata.evals` are unclaimed by the house schemas;
-    // stacked with the companion drafts themselves, the fixture's blocks are
+  it("leaves the companion namespaces alone, and they validate under their own schemas", async () => {
+    // `evals`, `graph` and `metadata.evals` are unclaimed by the house schemas;
+    // stacked with the companion schemas themselves, the fixture's blocks are
     // checked by their owners — proving the fixture speaks the current
     // shapes, not the superseded 0.1/0.2/0.8 ones.
     const houseOnly = await check("companion-namespaces.md");
@@ -770,7 +716,7 @@ describe("the six house vocabularies", () => {
       const schema = (await loadSchema(ref)) as {
         properties: Record<string, unknown>;
       };
-      for (const reserved of ["evals", "kg", "metadata"]) {
+      for (const reserved of ["evals", "graph", "metadata"]) {
         expect(schema.properties, `${ref} claims ${reserved}`).not.toHaveProperty(
           reserved,
         );
@@ -834,31 +780,21 @@ describe("the composability law on claimed keys", () => {
 });
 
 /**
- * Default-set membership is the one thing file refs cannot test: it needs
- * the nine family ids registered and appended to `DEFAULT_SCHEMAS`. Skipped
- * until the registration PR that follows the 0023 review; that PR flips this
- * to `describe` and replaces the draft paths above with built-in ids. The
- * expectations inside are written against that future state on purpose.
+ * Default-set membership (proposal 0070). Terminology, artifact-evals and
+ * every `-strict` overlay stay opt-in.
  */
-describe.skip("the default set (flips on registration)", () => {
-  // Derived from the same table `ref()` reads, not repeated as literals. This
-  // block is skipped until the registration PR flips it, so a stale version
-  // here fails nothing in CI and is found only when that PR runs it — which
-  // is exactly when a "no compiled schema" error is most confusing. Four
-  // families have moved past proposal.1 since these strings were written.
-  const idFor = (family: string): string =>
-    `manni:${family}:${VERSIONS[family] ?? DRAFT_V}`;
-  const CORE_ID = idFor("core");
+describe("the default set (proposal 0070)", () => {
+  const CORE_ID = ref("core");
   const FAMILY_IDS = [
     CORE_ID,
-    idFor("stewardship"),
-    idFor("audience"),
-    idFor("lifecycle"),
-    idFor("structure"),
-    idFor("ai-context"),
-    idFor("evals"),
-    idFor("kg"),
-    idFor("artifact-evals"),
+    ref("audience"),
+    ref("structure"),
+    ref("stewardship"),
+    ref("lifecycle"),
+    ref("ai-context"),
+    ref("evals"),
+    ref("graph"),
+    ref("citations"),
   ];
 
   it("appends the whole family after the two existing members", async () => {
@@ -888,7 +824,7 @@ describe.skip("the default set (flips on registration)", () => {
   });
 
   it("validates the companion namespaces on a bare run", async () => {
-    // With evals, kg, and artifact-evals in the default set, a bare run
+    // With evals and graph in the default set, a bare run
     // validates these namespaces rather than passing them through; this
     // fixture carries valid shapes and must stay green.
     const r = await check("companion-namespaces.md", []);

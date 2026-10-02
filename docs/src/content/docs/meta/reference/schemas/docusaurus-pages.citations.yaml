@@ -1,0 +1,19 @@
+docs/src/content/docs/meta/reference/schemas/docusaurus-pages.mdx:
+  citations:
+    - id: docusaurus-pages-set-is-the-smallest
+      claim:
+        integrity: sha256-f135a5954d1610f2921c4a39a1b914c0f44519e8ed9abe8ad5cc35feb5993f71
+      source:
+        file: src/meta/schemas/docusaurus-pages/3.10.json
+        lines: 8-46
+        integrity: sha256-6f270d70c50b933c5343c8e6881e7b4706950106af318a9844acf6079bc958db
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: docusaurus-pages-field-table
+      claim:
+        lines: 53-61
+        integrity: sha256-25403ffba7bdbda8fcaf1331a3ce906ab31c090ee9a2c731ca9697b3b7bfcb6d
+      source:
+        file: src/meta/schemas/docusaurus-pages/3.10.json
+        lines: 8-55
+        integrity: sha256-f636b2b76964e4185b49ec366a9e7c04bdd7793c0620bcf01074c1788e78b90e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

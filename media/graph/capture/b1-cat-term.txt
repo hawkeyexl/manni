@@ -1,0 +1,6 @@
+---
+type: term
+id: progressive-lens
+label: progressive lens
+definition: Lenses that correct presbyopia without a visible line.
+---

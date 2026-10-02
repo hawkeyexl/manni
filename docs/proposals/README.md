@@ -41,7 +41,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0020](0020-element-metadata.md) | Element metadata in XML and HTML, and the DITA schema it unblocks | Sara · S1 / Maya · M1, M4 | Implemented |
 | [0021](0021-frontmatter-as-a-database.md) | The corpus is a database: `docmeta query` | Devin · D1, D3 / Maya · M2 | Implemented (#120) |
 | [0022](0022-sql-write-back.md) | Write-back: an UPDATE against the corpus edits the files | Maya · M2, M4 / Devin · D3 | Implemented (#122) |
-| [0023](0023-metadata-vocabularies.md) | The docmeta metadata vocabularies. Nine ids, drafts and worked examples under [0023/](0023/), reviewed publicly at the site's Proposals page | Sara · S1 / S2 | Proposed |
+| [0023](0023-metadata-vocabularies.md) | The docmeta metadata vocabularies. Nine ids, drafts and worked examples under [0023/](0023/), reviewed publicly at the site's Proposals page | Sara · S1 / S2 | Proposed; superseded in part by [0063](0063-the-graph-vocabulary.md) and [0067](0067-registering-the-vocabularies.md) and [0070](0070-defaults-register-strict.md) |
 | [0024](0024-standard-sql-vocabulary.md) | Standard SQL vocabulary: DML edits the files, DDL edits the schema | Maya · M2, M3 / Sara · S1, S3 / Devin · D3 | Implemented (#125, #126) |
 | [0025](0025-query-dry-run-polarity.md) | query writes by default, `--dry-run` previews | Devin · D4 / Maya · M2 | Implemented |
 | [0026](0026-corpus-checks-are-findings.md) | Corpus checks are findings, as named `checks:` in config, run by `validate` | Devin · D4 / Maya · M2 | Implemented (#132) |
@@ -57,16 +57,17 @@ These came out of a review of the shipped product against the intent recorded in
 | [0037](0037-sidecar-metadata.md) | Sidecar metadata, a private manifest joined to public documents | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented; superseded in part by 0047 |
 | [0038](0038-sidecar-url-manifests.md) | A URL form of `sidecars[].file`, fetched every run with a bearer token from the environment | Devin · D1, D2 / Maya · M1 | Implemented |
 | [0039](0039-sidecar-join.md) | `join`: a sidecar keyed by a frontmatter field, so a rename cannot orphan an entry; two pages sharing a value is a finding on both | Maya · M1, M2 / Devin · D4 / Sara · S3 | Implemented |
-| [0040](0040-derived-metadata.md) | Derived metadata, with managed stewardship fields stamped from git, CODEOWNERS, GitHub and GitLab by `manni meta derive`, and a stale stamp reported by `validate` | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#19); superseded in part by 0047 |
-| [0041](0041-collections.md) | `collections:`, the family-level home for document sets and their external metadata; `sidecars` becomes `externalMetadata` on a collection and `--collection <name>` scopes a run | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented |
+| [0040](0040-derived-metadata.md) | Derived metadata, with managed stewardship fields stamped from git, CODEOWNERS, GitHub and GitLab by `manni meta derive`, and a stale stamp reported by `validate` | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#19); superseded in part by 0047 and [0069](0069-merge-safe-stamps.md) |
+| [0041](0041-collections.md) | `collections:`, the family-level home for document sets and their external metadata; `sidecars` becomes `externalMetadata` on a collection and `--collection <name>` scopes a run | Maya · M1, M2 / Devin · D1, D4 / Sara · S1 | Implemented; superseded in part by [0068](0068-a-manifest-owns-what-the-marks-say.md) |
 | [0042](0042-command-source.md) | The `command` source: a managed field derived by an argv the config names, so `verified-against` can be checked against the product's own version | Maya · M1, M2 / Devin · D4 / Sara · S2 | Implemented (#21); superseded in part by 0047 |
 | [0043](0043-resolved-reads.md) | Resolved reads, where a third read-only view `resolved` holds the asserted value or the derived one, with `_origin` naming which. `get` derives by default | Maya · M1, M2 / Devin · D4 / Theo · T1 | Implemented (#22) |
-| [0044](0044-citations-and-drift.md) | Citations and drift, which pin a claim to source lines so `manni cite` can check the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17); superseded in part by [0056](0056-several-ids-per-marker.md) |
+| [0044](0044-citations-and-drift.md) | Citations and drift, which pin a claim to source lines so `manni cite` can check the pin | Devin · D4 / Theo · T1 / Maya · M2 / Sara · S1 | Implemented (#17); superseded in part by [0056](0056-several-ids-per-marker.md) and [0067](0067-registering-the-vocabularies.md) |
 | [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17); superseded in part by 0047 |
-| [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34) |
-| [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37) |
-| [0048](0048-docevals-domain.md) | The `docevals` domain, where moose-docevals folds in as `manni docevals` and takes the family's collections, severity, formats, providers, the 0023 draft and 0046's records. Its content strategy joins the family's, and its ADR log closes at 01045 | Devin · D9, D10 / Sara · S7–S10 / Maya · M10–M14 / Theo · T5 | Proposed |
-| [0052](0052-term-domain.md) | The `term` domain. A term is a flat record with `type: term`, read from every format in one-per-file and many-per-file shapes. `manni term` checks the set, lints definitions and writes a Vale style. It renders the set to any format | Sara · S6 / Maya · M9 / Devin · D8 | Accepted |
+| [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34); superseded in part by [0063](0063-the-graph-vocabulary.md), [0069](0069-merge-safe-stamps.md) and [0071](0071-blank-lines-carry-no-authorship.md) |
+| [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37); superseded in part by [0063](0063-the-graph-vocabulary.md) and [0068](0068-a-manifest-owns-what-the-marks-say.md) |
+| [0048](0048-docevals-domain.md) | The `docevals` domain, where moose-docevals folds in as `manni docevals` and takes the family's collections, severity, formats, providers, the 0023 draft and 0046's records. Its content strategy joins the family's, and its ADR log closes at 01045 | Devin · D10, D11 / Sara · S8–S11 / Maya · M11–M15 / Theo · T6 | Proposed |
+| [0050](0050-lint-domain.md) | The `lint` domain: `manni lint check` runs every configured job and `manni lint structure` checks a page against its doctype template. Verbs name the job, config names the tool behind it | Maya · M10 / Devin · D9 / Theo · T5 | Implemented (#11) |
+| [0052](0052-term-domain.md) | The `term` domain. A term is a flat record with `type: term`, read from every format in one-per-file and many-per-file shapes. `manni term` checks the set, lints definitions and writes a Vale style. It renders the set to any format | Sara · S6 / Maya · M9 / Devin · D8 | Accepted; superseded in part by [0063](0063-the-graph-vocabulary.md) |
 | [0053](0053-claim-history.md) | Claim history. A claim that no longer holds is read against the page's history, from the newest commit whose page held the pin. `check` says since when, and `claim-reanchored` separates a layout change from an edit | Maya · M5 / Theo · T2 / Devin · D5 | Implemented (#73) |
 | [0054](0054-marker-reanchoring.md) | Re-anchoring misplaced cite markers. A marker line inside a paragraph is `marker-misplaced`, a warning. `update` moves it where `add --marker` writes markers, and re-pins when the old pin still holds | Maya · M5 / Theo · T2 / Devin · D5 | Implemented (#68) |
 | [0055](0055-following-a-source.md) | Following a source across files, and inside a changed range. A pin that holds nowhere in its file is searched for in the files a commit touched, so a rename reads `source-moved` rather than `source-missing`. A changed source carries the span its pinned lines now cover, and `update --accept` re-mints there | Maya · M5 / Devin · D5 / Theo · T2 | Proposed |
@@ -75,6 +76,16 @@ These came out of a review of the shipped product against the intent recorded in
 | [0058](0058-a-manifest-per-page.md) | A manifest per page. `externalMetadata[].file` takes one placeholder, `{page}`, so a collection keeps each page's external metadata in a file named after that page. A concrete `file` keeps today's meaning | Maya · M6 / Devin · D5 | Superseded by [0060](0060-a-manifest-per-page-as-built.md) |
 | [0059](0059-a11y-crawl-exclusions.md) | Keeping the a11y crawl out of part of a site: `--exclude <glob>` repeatable, an `a11y.exclude:` key, globs matched against the URL path, and `summary.excluded` | Devin · D1, D3 | Proposed |
 | [0060](0060-a-manifest-per-page-as-built.md) | A manifest per page, as built. 0058 with its four review questions answered. Two refusal rows dropped, because main had them. Two refusals added, for two pages resolving one file and for a `query` rename of a page whose values live in its per-page manifest | Maya · M6 / Devin · D5 | Implemented (#117) |
+| [0061](0061-lint-template-grammar.md) | The lint template format is an ordered list of rules rather than a map. It gains one occurrence vocabulary, heading alternation and repeating groups. A matcher aligns sections to rules by cost | Sara · S7 / Maya · M10 / Theo · T5 | Implemented (#11) |
+| [0062](0062-dita-ot-answers-structure.md) | DITA Open Toolkit becomes a second tool for the structure job, not a new verb. It catches what lives between files: conref, keyref, xref and image targets. The parser also gains a `.ditamap` vocabulary | Maya · M10 / Devin · D9 / Theo · T5 | Implemented (#11) |
+| [0063](0063-the-graph-vocabulary.md) | The `graph` vocabulary. The page block `kg:` becomes `graph:`, defined by `manni:graph:1.0.0-proposal.1`, which is the kg draft renamed. `manni term` reads `graph.concepts`, and the kg drafts stay as the family's history | Sara · S1 / Maya · M1 | Proposed |
+| [0065](0065-content-model.md) | One content model for the family. It names the block kinds a page is made of, for `manni lint` and Doc Detective alike. It also gives the method for naming the next one | all (the body of a page) | Implemented for lint (#11) |
+| [0066](0066-strict-vocabulary-overlays.md) | Strict overlays for the proposed vocabularies. Each draft gets `manni:<family>-strict:1.0.0-proposal.1`, which holds only the constraints strict adds, such as BCP 47 for `language`. A team stacks it beside the open draft | Sara · S1 | Implemented (#129); superseded in part by [0067](0067-registering-the-vocabularies.md) |
+| [0067](0067-registering-the-vocabularies.md) | Registering the vocabularies. The eleven vocabularies and their strict overlays register as built-ins at `1.0.0`, 22 ids in all. Core drops `locale`, and the default set does not change | Sara · S1 / Maya · M1 | Implemented (#130); superseded in part by [0070](0070-defaults-register-strict.md) |
+| [0068](0068-a-manifest-owns-what-the-marks-say.md) | A manifest owns what the marks say. `externalMetadata[].keys` becomes optional, and a manifest without it owns every field the page's schemas mark `external` | Maya · M6 / Sara · S1 | Implemented (#131) |
+| [0069](0069-merge-safe-stamps.md) | Merge-safe stamps by default. A `derive:` block without `fields` manages owner, created, last-updated and provenance where each page's schemas claim them. Two evidence rules keep such stamps current after a squash merge, and one recorded hole remains | Devin · D5 / Maya · M2 | Implemented (#132) |
+| [0070](0070-defaults-register-strict.md) | The vocabularies by default, registered schemas and `strict`. The default set grows to eleven, `meta.schemas` adds to it unless `defaults: false`, `meta.register` names local schemas by `$id`, and `strict: true` stacks each strict version beside its base | Maya · M1 / Sara · S1 | Implemented (#134) |
+| [0071](0071-blank-lines-carry-no-authorship.md) | Blank lines carry no authorship. A provenance range never starts or ends on a blank line, and a blank-only range is not written. A stamp drawn the old way reads stale once | Maya · M8 / Devin · D4 | Implemented (#135) |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -83,6 +94,17 @@ These came out of a review of the shipped product against the intent recorded in
 0017 is the first proposal written under `CLAUDE.md § Supersede a proposal, never amend it`. It supersedes 0012 rather than correcting it. 0012's evidence grep searched for `sent to` while the docs said `sends`, so it concluded no page documented `fill`'s egress when one had for two weeks. The gap it was reaching for is real, and narrower. The docs say *that* content is sent, never *what*, *how much*, or *what is kept*. 0017 answers it mostly by changing the behavior rather than describing it.
 
 0011 shipped much smaller than it was written, and the reason is worth recording because it is the same lesson as 0017's. By the time it was implemented, most of what it asked for had already been done *incidentally* by the proposals downstream of it. 0017 added the M4 CUJ and the egress page while implementing itself, and 0001 renumbered the retrofit page's steps underneath it. What was left was the part no other proposal had a reason to touch. That is the retrofit row's missing M4 tag, the dangling `fill` source-of-truth row, and the two persona sentences. The proposal was not amended to match. It was implemented as written, and the items already satisfied were verified page by page rather than assumed. That check is what turned up the last published-page gap, which no proposal had named. The T1 fix-it page recommends `fill` without ever linking to the M4 egress page.
+
+## Sibling tools' logs
+
+A folded-in tool brings the decision log it kept as a separate project. Those
+records stay as written, under their own numbering, and the domain's `00NN`
+proposal above is what states how the tool works inside manni.
+
+| Tool | Log | Records |
+|---|---|---|
+| docevals | [docevals/](docevals/README.md) | 00001–00004 and 01000–01045, imported from moose-docevals at 670e62b. Closed at 01045 by [0048](0048-docevals-domain.md); later docevals decisions are in this series |
+| lint | [lint/](lint/README.md) | 01001–01008, imported with the tool. 01007 is superseded by [0050](0050-lint-domain.md) |
 
 ## Dependency order
 
@@ -201,13 +223,3 @@ npm ci && npm run build
 Then follow the transcript in the proposal. Sandboxes are disposable temp dirs;
 nothing in this repo is mutated.
 
-## Sibling tools' logs
-
-Each tool that joins the family brings its own ADR log. It lives in a
-subdirectory named for the tool, numbered as the tool numbered it. The files
-are the record as written in the source repository, cited by SHA in the import
-commit. The supersede-never-amend rule applies to them as it does here.
-
-| Directory | Source |
-|---|---|
-| [`docevals/`](docevals/) | moose-docevals at 670e62b (00001-00004 and 01000-01045). Closed at 01045 by [0048](0048-docevals-domain.md); later docevals decisions are in this series. |

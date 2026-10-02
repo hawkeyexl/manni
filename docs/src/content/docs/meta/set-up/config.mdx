@@ -1,6 +1,52 @@
 ---
 title: Create your manni.config.yaml
 description: Declare your repo's document sets under collections, add the schema set the metadata tool holds them to, and let CI run a bare manni meta validate.
+type: how-to
+id: meta-set-up-config
+keywords:
+  - manni.config.yaml
+  - collections
+  - schemas
+  - overrides
+  - config discovery
+language: en
+audiences:
+  - docs-engineers
+intent: Write a manni.config.yaml that declares the document sets and schemas so a bare manni meta validate runs in CI.
+lifecycle: published
+applies-to:
+  - domain:meta
+concepts:
+  - schema set
+  - override
+  - schema
+sample-questions:
+  - Where does manni meta look for its config file?
+  - What goes under collections and what goes under meta?
+  - How do CLI flags combine with the config?
+graph:
+  label: Create your manni.config.yaml
+  type: task
+last-updated: 2026-09-27
+tags:
+  - configuration
+  - yaml
+  - setup
+  - validation
+  - collections
+  - config-file
+action: develop
+next-steps:
+  - /manni/meta/set-up/external-metadata/
+related-pages:
+  - /manni/meta/reference/configuration/
+  - /manni/meta/schemas/
+  - /manni/meta/reference/schemas/manni-vocabularies/
+risks:
+  - read-only
+  - idempotent
+prerequisites:
+  - meta-get-started
 ---
 
 import { Aside, LinkCard } from '@astrojs/starlight/components';
@@ -23,7 +69,7 @@ collections:
 
 meta:
   schemas:
-    - google:okf:0.1
+    - ./schemas/house.json
 ```
 
 manni meta finds your config in one of two ways:
@@ -137,12 +183,12 @@ Everything under `meta:` is the metadata tool's business: which schemas apply, a
 ### `schemas`
 
 {/* cite every-schema-in-the-set-is-applied */}
-The default schema **set** applied to every matched file. Each file must satisfy **all** schemas in the list: they are validated against the set, not against the first match.
+The schemas every matched file meets, **added** to the built-in default set. Each file must satisfy **all** schemas in the set: they are validated against the set, not against the first match.
 
 ```yaml title="manni.config.yaml"
 meta:
   schemas:
-    - google:okf:0.1
+    - ./schemas/house.json
 ```
 
 A schema reference can be one of three kinds:
@@ -151,7 +197,18 @@ A schema reference can be one of three kinds:
 - A **local file path** to a `.json` schema, such as `./schemas/article.json`.
 - An **`http(s)` URL** to a remotely hosted schema.
 
-If you omit `schemas` entirely, manni meta falls back to two built-in schemas: [`google:okf:0.1`](/manni/meta/schemas/), which requires a `type` field, and `passo-uno:seven-action:1.0`, which constrains `action` and requires nothing.
+The default set is eleven built-in schemas, and it applies whether or not you list any. [`google:okf:0.1`](/manni/meta/schemas/) requires a `type` field. `passo-uno:seven-action:1.0` constrains `action` and requires nothing. The nine [manni vocabularies](/manni/meta/reference/schemas/manni-vocabularies/) follow, and `manni:core:1.0.0` among them requires `title` and `description`. Your `schemas` come after them. Set `defaults: false` to judge files by your `schemas` alone:
+
+```yaml title="manni.config.yaml"
+meta:
+  defaults: false
+  schemas:
+    - ./schemas/house.json
+```
+
+### `strict` and `register`
+
+`strict: true` stacks the strict overlay of each `manni:` default right after it, such as `manni:core-strict:1.0.0` after `manni:core:1.0.0`. `register` names your own schema files by their `$id`, so the config can list `house:page:1.0.0` rather than a path. A registered `house:page-strict:1.0.0` then stacks under `strict: true` too. [Name your schema and its strict version](/manni/meta/schemas/#name-your-schema-and-its-strict-version) walks through both.
 
 ### `overrides`
 
@@ -162,7 +219,7 @@ A list of rules that assign a different schema set to a subset of files. Each en
 - **`files: <glob>`** takes globs, or a list of them. Use it for a one-off subset that only affects schema choice.
 
 {/* cite first-matching-override-wins */}
-The first override whose files match wins, and its schema set replaces the default `schemas` for that file.
+The first override whose files match wins, and its schema set replaces everything below it for that file: the top-level `schemas` and the default set. Set `defaults: true` on the entry to keep the default set in front of its schemas.
 
 ```yaml title="manni.config.yaml"
 collections:
@@ -174,8 +231,8 @@ collections:
 meta:
   overrides:
     - collection: api
+      defaults: true
       schemas:
-        - google:okf:0.1
         - ./schemas/api-reference.json
 ```
 
@@ -190,7 +247,7 @@ Overrides are how you require stricter metadata for one area of the repo without
 
 ## A complete example
 
-This config declares two collections, skips drafts, applies the OKF schema everywhere by default, and layers an extra schema onto the articles.
+This config declares two collections and skips drafts. It adds a house schema to the default set everywhere, and layers an article schema onto the articles.
 
 ```yaml title="manni.config.yaml"
 # Which documents exist. Every manni tool reads this.
@@ -208,15 +265,17 @@ collections:
 
 # How the metadata tool judges them.
 meta:
-  # The schema set every matched file must satisfy by default.
+  # Added to the built-in default set for every matched file.
   schemas:
-    - google:okf:0.1
+    - ./schemas/house.json
 
-  # Per-subset overrides (first match wins).
+  # Per-subset overrides (first match wins). An override replaces the set,
+  # so this one asks for the defaults and names the house schema again.
   overrides:
     - collection: articles
+      defaults: true
       schemas:
-        - google:okf:0.1
+        - ./schemas/house.json
         - ./schemas/article.json
 ```
 
@@ -235,7 +294,7 @@ Some command-line flags layer onto the config; others replace it. Keep the disti
 | positional `[paths...]` | **Replaces** the collections as the run's targets. A typed file is still tested for collection membership, which is what its external metadata attaches to. |
 | `--collection <name>` | **Narrows** the run to the named collections. Cannot be combined with positional paths. |
 | `--exclude <glob>` | **Adds** to the built-in ignores for this run. It is the only exclusion that filters a typed path. |
-| `-s, --schema <ref>` | **Overrides** all schema resolution. Config `schemas`, `overrides`, and file `$schema` are ignored. |
+| `-s, --schema <ref>` | **Overrides** all schema resolution. The default set, config `schemas`, `overrides`, and file `$schema` are ignored. |
 
 <Aside type="tip">
 For the full flag list, see the [CLI reference](/manni/meta/reference/). For the complete schema-resolution precedence chain, see the [Schema resolution reference](/manni/meta/reference/schema-resolution/).

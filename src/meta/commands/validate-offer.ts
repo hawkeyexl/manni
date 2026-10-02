@@ -94,6 +94,7 @@ export async function offerRelocation(opts: ValidateOfferOptions): Promise<Reloc
       ttlHours: run.config?.schemaCache?.ttlHours,
       offline: opts.offline ?? run.config?.offline,
       pins: collectSchemaPins(run.config),
+      registered: run.config?.registered,
     }),
   );
   const ctx: RelocationContext = relocationContext(run, {

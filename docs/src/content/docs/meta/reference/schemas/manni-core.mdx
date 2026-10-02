@@ -1,0 +1,228 @@
+---
+title: manni core vocabulary
+description: "The manni:core:1.0.0 schema, the descriptive minimum every page meets: what the page is called, what it is for, and the keys generators share."
+sidebar:
+  label: "manni:core:1.0.0"
+type: reference
+id: meta-reference-schemas-manni-core
+keywords: ["core", "manni:core:1.0.0", "id", "keywords", "strict overlay"]
+language: en
+audiences: ["schema-authors"]
+intent: "Give every page the descriptive minimum manni:core:1.0.0 defines."
+lifecycle: published
+applies-to: ["domain:meta"]
+concepts: ["schema"]
+sample-questions:
+  - "Which fields does manni:core:1.0.0 define?"
+  - "What does manni:core:1.0.0 require?"
+  - "What does the core strict overlay narrow?"
+graph:
+  label: "manni core vocabulary"
+  type: reference
+last-updated: 2026-09-27
+resource: https://hawkeyexl.github.io/manni/schemas/core/1.0.0.json
+tags:
+  - schema
+  - metadata
+  - core
+  - validation
+action: remember
+next-steps:
+  - /manni/meta/reference/schemas/manni-vocabularies/
+related-pages:
+  - /manni/meta/reference/schema-resolution/
+  - /manni/meta/reference/schemas/manni-stewardship/
+  - /manni/meta/schemas/field-location/
+risks: read-only
+prerequisites:
+  - meta-reference-schema-resolution
+---
+
+**Built-in id:** `manni:core:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/core/1.0.0.json`. A
+`$schema` that names this URL resolves to the bundled copy, with no network
+call.
+
+**The question it answers: what is this page?** Core is the minimum every page
+meets, a title and a sentence. It works in any repo, with no content strategy,
+no review process, and no tooling. It is the one vocabulary in the
+[manni family](/manni/meta/reference/schemas/manni-vocabularies/) that requires
+anything.
+
+## Use it
+
+Core is in the
+[default set](/manni/meta/reference/schema-resolution/#the-default-set), so a
+run checks it on every page with no config line. A config's own `schemas` add
+to the default set. An override replaces the set, so an entry that should keep
+core sets `defaults: true`:
+
+```yaml
+meta:
+  overrides:
+    - collection: guides
+      defaults: true
+      schemas:
+        - ./schemas/guide.json
+```
+
+Core stacks with the rest of the family and with a generator's own schema. A
+Starlight site lists Starlight alone, and the default set brings core and
+stewardship beside it.
+
+```yaml
+meta:
+  schemas:
+    - astro:starlight:0.41
+```
+
+## Fields
+
+| Field | Type | Required | Location | Notes |
+|---|---|---|---|---|
+| `title` | string, non-empty | **yes** | `page` | A single non-empty string. An array fails |
+| `description` | string, non-empty | **yes** | `page` | One full sentence. It becomes the search snippet and is the first thing retrieval reads |
+| `id` | string, non-empty | no | `page` | A stable identifier that does not change when the file moves. `related-pages`, `prerequisites`, and `replaced-by` point at it |
+| `type` | string, non-empty | no | `page` | What kind of content this is. Taxonomy schemas (Diátaxis, TGDP) narrow it, and `graph.type` holds the same fact in iiRDS terms |
+| `keywords` | string or list of non-empty strings | no | `page` | Search words. A comma-separated string is the AsciiDoc form Antora reads |
+| `language` | string, non-empty | no | `page` | The natural language of the text, as one BCP 47 tag with region and script subtags where they matter (`pt-BR`, `zh-Hant-TW`). Recommended, not enforced. The same fact `lang` and `dc:language` carry |
+
+The Location column is the `x-manni-location` mark each field carries. `page`
+means the value belongs in the document's own metadata and reaches delivered
+output. `external` means it belongs in the collection's external-metadata
+manifest. A field is `page` when an agent fetching the page acts on it. Every
+core field passes that test, because each one says what the page is. See
+[field location](/manni/meta/schemas/field-location/) for how the marks are
+used.
+
+## Additional properties
+
+Allowed. The root is open, so a generator's keys and the other vocabularies'
+keys pass beside core's. Core checks only the six keys it claims.
+
+## Example
+
+The minimum:
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+---
+```
+
+Everything core knows about:
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+id: install-operator-k8s
+type: how-to
+keywords: [helm, operator, kubernetes]
+language: en
+---
+```
+
+## A common mistake
+
+A page that carries a title and no description fails on the missing key.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+---
+```
+
+```text
+$ manni meta validate install.md --no-config -s manni:core:1.0.0
+✗ install.md
+    (root)  must have required property 'description'  (line 1)  [manni:core:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 1 error
+```
+
+The exit code is 1. An empty `title: ""` fails the same way, with
+`must NOT have fewer than 1 characters`.
+
+## Design decisions
+
+- **Every string is non-empty, and four fields take one value.** `title`,
+  `description`, `type`, and `language` are single strings, and no string core
+  defines may be empty. This is stricter than the loosest schemas that share
+  these keys. Docusaurus permits an empty title, and Dublin Core allows
+  repeated elements. These are the only exceptions to the family's
+  compatibility rule, under which a page valid under another built-in stays
+  valid here.
+- **Core describes content, never rendering.** There is no `slug`, `layout`,
+  `image`, or `tags` here. Rendering keys stay with your generator.
+- **`language` is the language of the text.** It is the same fact that
+  `lang`, `xml:lang`, `hreflang` and `dc:language` carry. A BCP 47 tag already
+  carries region and script, and a Unicode `-u-` extension carries regional
+  preferences, so one tag says it all. A programming language belongs to the
+  code sample, never here.
+- **No stored copy of a derived value.** There is no `date` key and no stored
+  review deadline. `last-reviewed` plus `review-interval` give that deadline.
+  The document's own dates live in
+  [stewardship](/manni/meta/reference/schemas/manni-stewardship/).
+- **People are in stewardship.** `authors` sits with `owner`, `stakeholders`,
+  and `reviewed-by`. Core answers what the page is. Who wrote it belongs with
+  the question of whether the page is cared for.
+
+## Strict overlay
+
+**Strict overlay id:** `manni:core-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/core-strict/1.0.0.json`.
+The overlay holds only what strict adds. It narrows the form of a value that is
+present and requires no key, so a page with only `title` and `description`
+still passes it.
+
+| Field | Strict adds |
+|---|---|
+| `title` | One line, with no leading or trailing whitespace |
+| `description` | No leading or trailing whitespace. It may still span several lines |
+| `id`, `type` | Kebab case, meaning lowercase letters, digits and hyphens that start with a letter or digit |
+| `keywords` | A list only, so the comma-separated string fails. At least one item, all unique, each one trimmed line |
+| `language` | A well-formed BCP 47 tag, such as `en`, `pt-BR` or `zh-Hant-TW`, or a private-use `x-` tag. `en_US` fails. The shape is checked, not the registry |
+
+`strict: true` stacks it right after the vocabulary, with every other
+default's overlay beside its own base:
+
+```yaml
+meta:
+  strict: true
+```
+
+To adopt this overlay alone, list its id. The default set already carries the
+vocabulary:
+
+```yaml
+meta:
+  schemas:
+    - manni:core-strict:1.0.0
+```
+
+Each schema is checked on its own, and a finding names the one that produced
+it. A strict-only failure reads as one.
+
+```yaml
+---
+title: Install the operator on Kubernetes
+description: Deploy the operator with Helm and verify the rollout.
+id: Install_Operator
+keywords: helm, operator
+---
+```
+
+```text
+$ manni meta validate install.md --no-config -s manni:core:1.0.0 -s manni:core-strict:1.0.0
+✗ install.md
+    /id  must match pattern "^[a-z0-9][a-z0-9-]*$"  (line 4)  [manni:core-strict:1.0.0]
+    /keywords  must be array  (line 5)  [manni:core-strict:1.0.0]
+
+1 file checked, 0 passed, 1 failed, 2 errors
+```
+
+The open vocabulary accepts both values, so the overlay alone fails the page.

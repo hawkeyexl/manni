@@ -1,0 +1,53 @@
+docs/src/content/docs/meta/reference/schemas/manni-evals.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/evals/1.0.0.json
+    - path: src/meta/schemas/evals-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: entries
+      assertion: "A reader can write an inline eval entry with an id, an assertion and a grader."
+      type: capability
+      grader: ai
+    - id: graders
+      assertion: "A reader can pick a grader for an eval."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-15
+      integrity: sha256-954d001e899cc429c8fdd3de0bebbf7f18a4c7a0228071946a310f05809ba3d8
+    - generated-by: Claude Opus 5.5
+      lines: 23-24
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+    - generated-by: Claude Opus 5.5
+      lines: 30-243
+      integrity: sha256-3ac3504b94b92d8f0b380ab4e7d0d36ed506da99409673d486af6a649e2a9329
+    - generated-by: Claude Opus 5.5
+      lines: 256-291
+      integrity: sha256-3664d261081605c733acaf802e6b332a710adaf8f1572c8c48d0b3f395111eb6
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.8
+        /next-steps: 0.85
+        /related-pages: 0.9
+        /risks: 0.95

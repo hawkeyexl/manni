@@ -2,23 +2,26 @@
  * The terminology vocabulary and kg's definition fields (proposal 0052, § 1
  * and § 2).
  *
- * `manni:terminology:1.0.0-proposal.1` is a draft in proposal 0023's family,
- * unregistered like its siblings, so every case validates through a file ref
- * into docs/proposals/0023/schemas. That is what `runValidate` does with a
- * `./x.json` schema entry, so the semantics under test are the shipped
- * pipeline's.
+ * `manni:terminology:1.0.0` is a registered built-in in proposal 0023's
+ * family, so every case validates through its built-in id, as core and graph
+ * do. kg's drafts were never registered: they are history, and the cases that
+ * read them go through file refs into docs/proposals/0023/schemas.
  *
  * Pinned here:
  *
  * 1. The ten fields sit at the root, and none of them is a field another house
- *    schema claims. `type`, `id` and `language` stay with core, and the draft
- *    constrains `type` through `if` without declaring it.
+ *    schema claims. `type`, `id` and `language` stay with core, and the
+ *    vocabulary constrains `type` through `if` without declaring it.
  * 2. A `type: term` page names its label, and either defines the term or
  *    redirects with `see`. Carrying both is a check finding, not a schema
  *    error.
  * 3. kg's proposal.4 is proposal.3 plus `definition` and `abstract`, their
  *    dependencies, and one harvest sentence on each field that has a root
  *    twin. Nothing else moved.
+ * 4. `manni:graph:1.0.0-proposal.1` is kg's proposal.4 with the block renamed
+ *    to `graph` and its prose moved to match (proposal 0063). Every field,
+ *    type and dependency is the same. The registered `manni:graph:1.0.0` is
+ *    that draft with only its id, title and descriptions rewritten.
  */
 import { describe, it, expect } from "vitest";
 import { fileURLToPath } from "node:url";
@@ -26,24 +29,27 @@ import { dirname, resolve } from "node:path";
 import { runValidate } from "../../src/meta/commands/validate.js";
 import type { ValidationResult } from "../../src/meta/types.js";
 import { loadSchema } from "../../src/meta/core/schema-registry.js";
+import { type Json, withoutProse } from "../helpers/json.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
 
 const DRAFTS = "./docs/proposals/0023/schemas";
-const TERMINOLOGY = `${DRAFTS}/terminology/1.0.0-proposal.1.json`;
-const CORE = `${DRAFTS}/core/1.0.0-proposal.4.json`;
+const TERMINOLOGY = "manni:terminology:1.0.0";
+const CORE = "manni:core:1.0.0";
+const GRAPH = "manni:graph:1.0.0";
 const KG_3 = `${DRAFTS}/kg/1.0.0-proposal.3.json`;
 const KG_4 = `${DRAFTS}/kg/1.0.0-proposal.4.json`;
+const GRAPH_1 = `${DRAFTS}/graph/1.0.0-proposal.1.json`;
 
-/** The other house schemas, at the revisions default-schema.test.ts loads. */
+/** The other house schemas, as default-schema.test.ts loads them. */
 const HOUSE = [
   CORE,
-  `${DRAFTS}/stewardship/1.0.0-proposal.3.json`,
-  `${DRAFTS}/audience/1.0.0-proposal.2.json`,
-  `${DRAFTS}/lifecycle/1.0.0-proposal.2.json`,
-  `${DRAFTS}/structure/1.0.0-proposal.2.json`,
-  `${DRAFTS}/ai-context/1.0.0-proposal.3.json`,
+  "manni:stewardship:1.0.0",
+  "manni:audience:1.0.0",
+  "manni:lifecycle:1.0.0",
+  "manni:structure:1.0.0",
+  "manni:ai-context:1.0.0",
 ];
 
 const FIELDS = [
@@ -131,10 +137,10 @@ async function checkStdin(
   return withoutLocation(r);
 }
 
-describe("manni:terminology:1.0.0-proposal.1, the draft", () => {
+describe("manni:terminology:1.0.0, the vocabulary", () => {
   it("declares the ten fields at the root, and only those", async () => {
     const schema = (await loadSchema(TERMINOLOGY)) as Draft;
-    expect(schema.$id).toBe("manni:terminology:1.0.0-proposal.1");
+    expect(schema.$id).toBe("manni:terminology:1.0.0");
     expect(schema.title).toMatch(/^manni /);
     expect(schema.additionalProperties).toBe(true);
     expect(Object.keys(schema.properties).sort()).toEqual(FIELDS);
@@ -171,7 +177,7 @@ describe("manni:terminology:1.0.0-proposal.1, the draft", () => {
   });
 });
 
-describe("manni:terminology:1.0.0-proposal.1, validating pages", () => {
+describe("manni:terminology:1.0.0, validating pages", () => {
   it("accepts a full term page, stacked on core", async () => {
     const r = await check("full-term.md");
     expect(r.errors).toEqual([]);
@@ -363,5 +369,112 @@ describe("manni:kg:1.0.0-proposal.4", () => {
       );
       expect(added, key).not.toContain("—");
     }
+  });
+});
+
+/** The one sentence the graph draft adds to kg's top-level description. */
+const PREDECESSOR =
+  " This is the kg vocabulary renamed, and manni:kg:1.0.0-proposal.4 is its predecessor.";
+
+/**
+ * Undo the prose moves the rename made, and nothing else: the added sentence,
+ * the block's name, its pointers, and the history sentence that names kg's
+ * proposal.1 by id so it cannot read as this draft's own proposal.1.
+ *
+ * These are deliberate, one per edit the rename made to a description, and
+ * each is spelled narrowly enough that it cannot reach a field name. That is
+ * the point. A broad `graph` → `kg` replace would also rewrite a key or a
+ * value, and the deep-equality check below would then pass on a draft that
+ * had drifted. Keep one replacement per rename move rather than simplifying.
+ */
+function asKgProse(text: string): string {
+  return text
+    .replace(PREDECESSOR, "")
+    .replaceAll("`graph`", "`kg`")
+    .replaceAll("/graph/", "/kg/")
+    .replaceAll("graph fields", "kg fields")
+    .replace("manni:kg:1.0.0-proposal.1 carried", "proposal.1 carried");
+}
+
+/** Apply `asKgProse` to every description string, and leave every other value alone. */
+function withKgProse(node: Json, key?: string): Json {
+  if (typeof node === "string") return key === "description" ? asKgProse(node) : node;
+  if (Array.isArray(node)) return node.map((item) => withKgProse(item));
+  if (node !== null && typeof node === "object") {
+    return Object.fromEntries(
+      Object.entries(node).map(([k, v]) => [k, withKgProse(v, k)]),
+    );
+  }
+  return node;
+}
+
+describe("manni:graph:1.0.0", () => {
+  it("accepts graph.definition and graph.abstract once graph.label is present", async () => {
+    const r = await check("graph-definition.md", [GRAPH]);
+    expect(r.errors).toEqual([]);
+    expect(r.ok).toBe(true);
+  });
+
+  it("rejects graph.definition without graph.label", async () => {
+    const r = await check("graph-definition-without-label.md", [GRAPH]);
+    expect(r.ok).toBe(false);
+    expect(r.errors[0]?.schema).toBe(GRAPH);
+    expect(r.errors[0]?.instancePath).toBe("/graph");
+  });
+
+  it("rejects graph.abstract without graph.definition", async () => {
+    const r = await check("graph-abstract-without-definition.md", [GRAPH]);
+    expect(r.ok).toBe(false);
+    expect(r.errors[0]?.schema).toBe(GRAPH);
+    expect(r.errors[0]?.instancePath).toBe("/graph");
+  });
+
+  it("does not read a kg block, which the closed-block rules no longer reach", async () => {
+    const r = await check("kg-definition-without-label.md", [GRAPH]);
+    expect(r.errors).toEqual([]);
+    expect(r.ok).toBe(true);
+  });
+
+  it("is the graph draft with only its id, title and descriptions rewritten", async () => {
+    const draft = (await loadSchema(GRAPH_1)) as unknown as Json;
+    const registered = (await loadSchema(GRAPH)) as unknown as Json;
+    expect(withoutProse(registered)).toEqual(withoutProse(draft));
+    const text = JSON.stringify(registered);
+    expect(text).not.toMatch(/proposal|\bkg\b/);
+  });
+
+  it("was drafted as kg's proposal.4 with only the block renamed and its prose to match", async () => {
+    const kg = (await loadSchema(KG_4)) as Draft;
+    const graph = (await loadSchema(GRAPH_1)) as Draft;
+
+    expect(graph.$id).toBe("manni:graph:1.0.0-proposal.1");
+    expect(graph.title).toBe("manni graph frontmatter (1.0.0-proposal.1)");
+    expect(Object.keys(graph.properties)).toEqual(["graph"]);
+    expect(graph.properties["graph"]?.["x-manni-location"]).toBe("page");
+    expect(graph.description).toContain(PREDECESSOR.trim());
+
+    // No description still names the kg block or points into it.
+    const text = JSON.stringify(graph);
+    expect(text).not.toContain("`kg`");
+    expect(text).not.toContain("/kg/");
+
+    // Rename the block back, undo the prose moves, and restore kg's id and
+    // title: what remains must be kg's proposal.4, value for value.
+    const reverted = withKgProse(graph as unknown as Json);
+    if (reverted === null || typeof reverted !== "object" || Array.isArray(reverted)) {
+      throw new Error("the graph draft is not an object");
+    }
+    const { properties, ...rest } = reverted;
+    if (properties === null || typeof properties !== "object" || Array.isArray(properties)) {
+      throw new Error("the graph draft has no properties");
+    }
+    const { graph: block, ...others } = properties;
+    expect(others).toEqual({});
+    expect({
+      ...rest,
+      $id: kg.$id,
+      title: kg.title,
+      properties: { kg: block },
+    }).toEqual(kg);
   });
 });

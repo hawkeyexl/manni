@@ -1,0 +1,5 @@
+# defaults: false is the old behaviour: meta.schemas replaces the default set.
+meta:
+  defaults: false
+  schemas:
+    - ./house.json

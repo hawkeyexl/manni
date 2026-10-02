@@ -1,6 +1,50 @@
 ---
 title: Add manni meta to CI (GitHub Actions)
 description: Add a document-metadata gate to GitHub Actions, with inline pull request annotations from the github output format.
+type: how-to
+id: meta-ci
+keywords:
+  - CI
+  - GitHub Actions
+  - annotations
+  - workflow
+language: en
+audiences:
+  - ci-engineers
+intent: Add a manni meta metadata gate to GitHub Actions with inline pull request annotations.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-ci-exit-codes-and-annotations
+  - meta-ci-recipes
+concepts:
+  - validation
+sample-questions:
+  - How do I run manni meta in GitHub Actions?
+  - How do I get inline annotations on a pull request?
+  - Can the config file supply the paths in CI?
+graph:
+  label: Add manni meta to CI (GitHub Actions)
+  type: task
+last-updated: 2026-10-01
+tags:
+  - github-actions
+  - ci-cd
+  - pull-request
+  - automation
+  - workflow-integration
+action: develop
+related-pages:
+  - meta-ci-exit-codes-and-annotations
+  - meta-ci-recipes
+  - meta-set-up-config
+risks:
+  - open-world
+  - read-only
+  - idempotent
+prerequisites:
+  - meta-get-started
 ---
 
 import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -21,7 +65,7 @@ defaults to inline PR annotations:
 
 ```yaml
 - uses: actions/checkout@v7
-- uses: hawkeyexl/manni@v2
+- uses: hawkeyexl/manni@v4
   with:
     paths: "docs/**/*.md"
 ```
@@ -32,7 +76,7 @@ is not interpreted, so `args: --exclude "*.draft.md"` would hand manni meta a
 pattern with the quote marks still in it:
 
 ```yaml
-- uses: hawkeyexl/manni@v2
+- uses: hawkeyexl/manni@v4
   with:
     paths: |
       docs/**/*.md
@@ -110,7 +154,7 @@ from [`examples/manni.yml`](https://github.com/hawkeyexl/manni/blob/main/example
 
 <Aside type="note" title="Pin the version for reproducible runs">
 `npx -y @hawkeyexl/manni meta` resolves the latest published version each run. To keep CI
-reproducible, pin the major, as in `npx -y @hawkeyexl/manni@2 meta validate ...`, and bump it
+reproducible, pin the major, as in `npx -y @hawkeyexl/manni@4 meta validate ...`, and bump it
 deliberately.
 </Aside>
 

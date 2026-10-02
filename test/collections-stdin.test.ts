@@ -61,10 +61,15 @@ const SCHEMA = JSON.stringify({
 });
 
 /** The collection's one member: no `owner`, so validate has something to say. */
-const GUIDE = "---\ntitle: auth\nguideonly: g\n---\n\n# auth\n";
+const GUIDE =
+  "---\ntype: guide\ntitle: auth\ndescription: Auth.\nguideonly: g\n---\n\n# auth\n";
 
-/** What is piped in. Valid, so a failure below can only be the guide's. */
-const PIPED = "---\ntitle: piped\nowner: sam\n---\n\n# piped\n";
+/**
+ * What is piped in. Valid against the configured schema and the default set
+ * it joins (0070), so a failure below can only be the guide's.
+ */
+const PIPED =
+  "---\ntype: guide\ntitle: piped\ndescription: Piped.\nowner: sam\n---\n\n# piped\n";
 
 const GUIDE_PATH = "docs/guides/auth.md";
 const STDIN = "<stdin>";

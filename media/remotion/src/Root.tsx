@@ -9,6 +9,8 @@ import { beats as collectionsBeats, totalFrames as collectionsTotalFrames } from
 import { beats as locationBeats, totalFrames as locationTotalFrames, TYPING_MS as locationTypingMs } from "./location/beats";
 import { beats as termBeats, totalFrames as termTotalFrames, TYPING_MS as termTypingMs } from "./term/beats";
 import { beats as a11yBeats, totalFrames as a11yTotalFrames, TYPING_MS as a11yTypingMs } from "./a11y/beats";
+import { beats as lintBeats, totalFrames as lintTotalFrames, TYPING_MS as lintTypingMs } from "./lint/beats";
+import { beats as graphBeats, totalFrames as graphTotalFrames, TYPING_MS as graphTypingMs } from "./graph/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -30,6 +32,20 @@ const DemoTerm: React.FC = () => <DemoView beats={termBeats} fontPx={21} linePx=
 
 /** a11y-exclude-1x1: 32 px / 54 columns, derived in media/a11y-exclude-1x1.script.md (media/capture-a11y/cols.mjs). */
 const DemoA11y: React.FC = () => <DemoView beats={a11yBeats} fontPx={32} linePx={45} cols={54} typingMs={a11yTypingMs} ligatures={false} />;
+
+/**
+ * lint-templates-infer-1x1: 22 px / 78 columns, derived in
+ * media/lint-templates-infer-1x1.script.md
+ * (media/capture-lint/cols.mjs).
+ * Ligatures off: the page's `---` frontmatter fences would draw as one rule.
+ */
+const DemoLint: React.FC = () => <DemoView beats={lintBeats} fontPx={22} linePx={31} cols={78} typingMs={lintTypingMs} ligatures={false} />;
+
+/**
+ * graph-vocabulary-1x1: 22 px / 78 columns, derived in media/graph/graph-vocabulary-1x1.script.md
+ * (media/graph/capture/cols.mjs). Ligatures off: the frontmatter fences are `---`.
+ */
+const DemoGraph: React.FC = () => <DemoView beats={graphBeats} fontPx={22} linePx={31} cols={78} typingMs={graphTypingMs} ligatures={false} />;
 
 export const Root: React.FC = () => (
   <>
@@ -96,6 +112,22 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={a11yTotalFrames}
+    />
+    <Composition
+      id="LintDemo"
+      component={DemoLint}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={lintTotalFrames}
+    />
+    <Composition
+      id="GraphVocabularyDemo"
+      component={DemoGraph}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={graphTotalFrames}
     />
   </>
 );

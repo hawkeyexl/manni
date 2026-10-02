@@ -10,6 +10,7 @@ import {
 import {
   DERIVABLE_FIELDS,
   DERIVE_SOURCES,
+  MERGE_SAFE_FIELDS,
   isBuiltinField,
   isDeriveSource,
 } from "../src/meta/core/derive/types.js";
@@ -48,7 +49,6 @@ describe("derive: config parsing", () => {
       "      run: [./bin/version]",
     ]);
     expect(cfg.derive).toEqual({
-      fields: [],
       commands: { "verified-against": { run: ["./bin/version"] } },
     });
     expect(cfg.derive?.commands?.["verified-against"]).not.toHaveProperty("timeout");
@@ -85,31 +85,31 @@ describe("derive: config parsing", () => {
     );
   });
 
-  it("lets sources or codeowners carry the block with no managed fields", () => {
-    // A repository without gh narrows its reads without inventing a managed
-    // field; `fields` then defaults to none and validate compares nothing.
+  it("lets sources or codeowners carry the block, leaving fields absent (0069)", () => {
+    // Absent `fields` is the merge-safe default, which each page narrows to
+    // what its schemas claim, so the parser keeps it absent rather than empty.
     expect(parse(["derive:", "  sources: [git]"]).derive).toEqual({
-      fields: [],
       sources: ["git"],
     });
     expect(parse(["derive:", "  codeowners: OWNERS"]).derive).toEqual({
-      fields: [],
       codeowners: "OWNERS",
     });
   });
 
-  it("rejects an empty fields list", () => {
-    expect(() => parse(["derive:", "  fields: []"])).toThrow(
-      /derive\.fields must be a non-empty list of field names/,
-    );
+  it("accepts an empty fields list, which manages nothing (0069)", () => {
+    expect(parse(["derive:", "  fields: []"]).derive).toEqual({ fields: [] });
+  });
+
+  it("names the merge-safe fields in the order messages list them (0069)", () => {
+    expect(MERGE_SAFE_FIELDS).toEqual(["owner", "created", "last-updated", "provenance"]);
   });
 
   it("rejects a fields value that is not a list of strings", () => {
     expect(() => parse(["derive:", "  fields: created"])).toThrow(
-      /derive\.fields must be a non-empty list of field names/,
+      /derive\.fields must be a list of field names/,
     );
     expect(() => parse(["derive:", "  fields: [1]"])).toThrow(
-      /derive\.fields must be a non-empty list of field names/,
+      /derive\.fields must be a list of field names/,
     );
   });
 
@@ -189,7 +189,6 @@ describe("derive: config parsing", () => {
 
   it("lets machines alone carry the block, as sources and codeowners can", () => {
     expect(parse(["derive:", '  machines: ["*[bot]"]']).derive).toEqual({
-      fields: [],
       machines: ["*[bot]"],
     });
   });

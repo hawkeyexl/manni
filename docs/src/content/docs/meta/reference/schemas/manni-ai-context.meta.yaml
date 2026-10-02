@@ -1,0 +1,53 @@
+docs/src/content/docs/meta/reference/schemas/manni-ai-context.mdx:
+  personas: ["sara"]
+  journeys: ["s1"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/schemas/ai-context/1.0.0.json
+    - path: src/meta/schemas/ai-context-strict/1.0.0.json
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: fields
+      assertion: "A reader can choose the ai-context field that records which lines a machine wrote."
+      type: capability
+      grader: ai
+    - id: strict-overlay
+      assertion: "A reader can say what the ai-context strict overlay rejects that the open vocabulary accepts."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-14
+      integrity: sha256-83333ba540d021e24e30affb0c87f3b3d6b5dbb86a7dd0ac08130e05a4ab9fb7
+    - generated-by: Claude Opus 5.5
+      lines: 22-23
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+    - generated-by: Claude Opus 5.5
+      lines: 29-185
+      integrity: sha256-b362a91cafbe122f8c503221e294b37c30c529567fb5e44d62d86daa17c34d62
+    - generated-by: Claude Opus 5.5
+      lines: 198-223
+      integrity: sha256-f4bb0d5d393f5a22a4fc87296627f6c759ba9c6249091414452046a28e476c9b
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /resource
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /related-pages
+        - /risks
+      confidence:
+        /resource: 0.95
+        /tags: 0.85
+        /action: 0.8
+        /prerequisites: 0.75
+        /next-steps: 0.8
+        /related-pages: 0.85
+        /risks: 0.95

@@ -1,6 +1,6 @@
 ---
 title: manni
-description: One command line for documentation that is meant to be checked. Today it validates document metadata against JSON Schema, checks that cited source lines still say what the page says, and runs evals over documentation pages; more tools join it as subcommands.
+description: One command line for documentation that is meant to be checked. It validates metadata and page structure, checks citations against their source, runs evals over documentation pages, and checks sites for accessibility.
 tableOfContents: false
 hero:
   tagline: One command line for documentation that is meant to be checked.
@@ -13,6 +13,30 @@ hero:
       link: /manni/meta/fix/
       icon: error
       variant: minimal
+id: "home"
+type: "overview"
+keywords: ["manni", "tools", "docmeta", "command line"]
+language: en
+audiences: ["docs-engineers", "ci-engineers", "schema-authors", "contributors"]
+intent: "Pick the manni tool for the job, install the package once, and run the first command."
+lifecycle: published
+applies-to: ["domain:manni"]
+next-steps: ["meta", "a11y", "cite", "key", "term"]
+sample-questions: ["What tools does manni include?", "How do I install manni and run my first command?", "What changed when docmeta became manni meta?"]
+graph: { label: "manni", type: concept }
+last-updated: 2026-10-01
+tags:
+  - overview
+  - installation
+  - cli
+action: explore
+related-pages:
+  - meta
+  - a11y
+  - cite
+  - key
+  - term
+risks: read-only
 ---
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -49,6 +73,11 @@ npx @hawkeyexl/manni docevals run docs/ --deterministic-only
     description="Pin a sentence to the source lines it rests on, and find out when those lines move or change. From git alone, no model, no network."
   />
   <LinkCard
+    title="lint"
+    href="/manni/lint/"
+    description="Check that every page has the shape its doctype promises: the sections a how-to needs, in order, with the steps and code blocks inside them."
+  />
+  <LinkCard
     title="docevals"
     href="/manni/docevals/"
     description="Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter. Code first, an AI judge second, a human last."
@@ -65,16 +94,16 @@ npx @hawkeyexl/manni docevals run docs/ --deterministic-only
   />
 </CardGrid>
 
-`meta` checks what a page says about itself; `cite` checks that what a page
-says about the code is still true. `docevals` checks that a page still meets
-the quality bar its team wrote down. `key` sets and rotates the one encryption
-key `meta` and `cite` encrypt values with. `term` checks that the terms a page
-names are defined, and carries those terms into Vale and translation. More tools are folded in as they become
-ready to ship. Until one lands, its subcommand does not exist, and
-`manni --help` lists exactly what does.
+`meta` checks what a page says about itself. `lint` checks whether it is shaped
+like what it says it is. `cite` checks that what a page says about the code is
+still true. `docevals` checks that a page still meets the quality bar its team
+wrote down. `term` checks that the terms a page names are defined, and carries
+those terms into Vale and translation. `key` sets and rotates the one encryption
+key that `meta` and `cite` encrypt values with. `manni --help` lists exactly the tools the package
+carries.
 
-`cite`, `docevals`, `key` and `term` are in beta. Their commands, config keys
-and output can change in any release, without notice.
+`cite`, `docevals`, `key`, `term` and `lint` are in beta. Their commands, config keys and output
+can change in any release, without notice.
 
 ## Coming from docmeta?
 
@@ -87,8 +116,8 @@ nothing else did:
 - **The config file.** `manni.config.yaml`, with the metadata tool's keys under
   `meta:`. A `docmeta.config.yaml` is still read, with a warning. See
   [the configuration reference](/manni/meta/reference/configuration/#discovery).
-- **The GitHub Action.** `uses: hawkeyexl/manni@v2`, with the same inputs.
+- **The GitHub Action.** `uses: hawkeyexl/manni@v4`, with the same inputs.
 
 Every built-in schema keeps its old published URL as well as its new one, so a
 `$schema` line written before the rename still resolves offline. See the
-[built-in schema registry](/manni/meta/reference/built-in-schemas/).
+[built-in schema registry](/manni/meta/reference/schemas/).

@@ -1,0 +1,61 @@
+docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
+  personas: ["sara"]
+  journeys: ["s1", "s5", "s6"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/meta/core/schema-registry.ts
+  eval-suite: meta
+  evals:
+    - id: choose-vocabularies
+      assertion: "A reader can name the question each manni vocabulary answers and pick the ones their docs set needs."
+      type: capability
+      grader: ai
+    - id: stack-and-strict
+      assertion: "A reader can stack manni vocabularies in a config with their strict overlays."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-12
+      integrity: sha256-d3c0b06c4eee9a7c75b802ee006a4fcf73e939661b20dca5254b32a5d5c224dc
+    - generated-by: Claude Opus 5.5
+      lines: 15-40
+      integrity: sha256-74df1fa9018fd56cb74c677796e997e962297a72107187c80fd5fa42967b24f6
+    - generated-by: Claude Opus 5.5
+      lines: 56-57
+      integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
+    - generated-by: Claude Opus 5.5
+      lines: 63
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5.5
+      lines: 69-78
+      integrity: sha256-a9efaa577eff784311b00724c8cf7594fc1d399bb7ac6b6053592459576ff14f
+    - generated-by: Claude Opus 5.5
+      lines: 81-103
+      integrity: sha256-d717e763b92db1edbdb98a3538ae05c4505371429bda58597cd8745eb6587c5b
+    - generated-by: Claude Opus 5.5
+      lines: 116-118
+      integrity: sha256-4ef9021fb32a169a48899d263959b826877cee7489aff983f32700dce76bc99c
+    - generated-by: Claude Opus 5.5
+      lines: 121-308
+      integrity: sha256-e72df35ced8def8ff109ba207c144c211439a71b446e24c36a144502bc957fe8
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-26
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /next-steps
+        - /risks
+        - /related-pages
+      confidence:
+        /tags: 0.85
+        /action: 0.9
+        /prerequisites: 0.8
+        /next-steps: 0.85
+        /risks: 0.95
+        /related-pages: 0.85

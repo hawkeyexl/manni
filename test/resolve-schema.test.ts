@@ -49,22 +49,35 @@ describe("resolveSchemaSet", () => {
     expect(set).toEqual(["doc-detective:1.0"]);
   });
 
-  it("falls back to config default schemas", () => {
+  it("falls back to config default schemas, joined to the built-in defaults", () => {
+    // Proposal 0070: `meta.schemas` joins the default set, defaults first.
     const set = resolveSchemaSet({
       filePath: "books/b.md",
       config: {
-        schemas: ["google:okf:0.1"],
+        schemas: ["x:y:1"],
         overrides: [
           { files: "articles/**/*.md", schemas: ["doc-detective:1.0"] },
         ],
       },
     });
-    expect(set).toEqual(["google:okf:0.1"]);
+    expect(set).toEqual([...DEFAULT_SCHEMAS, "x:y:1"]);
   });
 
   it("falls back to the built-in default set", () => {
     const set = resolveSchemaSet({ filePath: "x.md" });
-    expect(set).toEqual(["google:okf:0.1", "passo-uno:seven-action:1.0"]);
+    expect(set).toEqual([
+      "google:okf:0.1",
+      "passo-uno:seven-action:1.0",
+      "manni:core:1.0.0",
+      "manni:audience:1.0.0",
+      "manni:structure:1.0.0",
+      "manni:stewardship:1.0.0",
+      "manni:lifecycle:1.0.0",
+      "manni:ai-context:1.0.0",
+      "manni:evals:1.0.0",
+      "manni:graph:1.0.0",
+      "manni:citations:1.0.0",
+    ]);
   });
 
   it("hands back a fresh array a caller can mutate safely", () => {
@@ -72,10 +85,7 @@ describe("resolveSchemaSet", () => {
     // not be able to poison the default for every later call in the process.
     const set = resolveSchemaSet({ filePath: "x.md" });
     set.push("mutated:by:caller");
-    expect(resolveSchemaSet({ filePath: "y.md" })).toEqual([
-      "google:okf:0.1",
-      "passo-uno:seven-action:1.0",
-    ]);
+    expect(resolveSchemaSet({ filePath: "y.md" })).toEqual([...DEFAULT_SCHEMAS]);
   });
 
   it("freezes the exported default set", () => {
@@ -107,7 +117,8 @@ describe("mapping-form schema entries (0008)", () => {
         ],
       },
     });
-    expect(set).toEqual(["./schema/house.json", "google:okf:0.1"]);
+    // Joined to the defaults (0070), so the listed OKF is the default's copy.
+    expect(set).toEqual([...DEFAULT_SCHEMAS, "./schema/house.json"]);
   });
 
   it("collects pins keyed on the ref, skipping entries that carry none", () => {
@@ -265,7 +276,7 @@ describe("schemaTrust · what a document may name", () => {
           trustRoot: ROOT,
           config: { ...trust("none"), schemas: ["x:y:1"] },
         }),
-      ).toEqual(["x:y:1"]);
+      ).toEqual([...DEFAULT_SCHEMAS, "x:y:1"]);
     }
   });
 
@@ -348,7 +359,7 @@ describe("schemaTrust · what a document may name", () => {
           trustRoot: ROOT,
           config: { ...trust(mode), schemas: [URL_REF, "../outside/x.json"] },
         }),
-      ).toEqual([URL_REF, "../outside/x.json"]);
+      ).toEqual([...DEFAULT_SCHEMAS, URL_REF, "../outside/x.json"]);
 
       expect(
         resolveSchemaSet({
@@ -559,7 +570,7 @@ describe("schemaTrust · a published built-in URL (0009)", () => {
         trustRoot: ROOT,
         config: { ...trust("none"), schemas: ["x:y:1"] },
       }),
-    ).toEqual(["x:y:1"]);
+    ).toEqual([...DEFAULT_SCHEMAS, "x:y:1"]);
   });
 });
 
@@ -620,8 +631,9 @@ describe("an override may carry a list of globs", () => {
   });
 
   it("falls through for a file matching none of them", () => {
+    // The listed OKF joins the defaults (0070), where it already is.
     expect(resolveSchemaSet({ filePath: "docs/guide.md", config })).toEqual([
-      "google:okf:0.1",
+      ...DEFAULT_SCHEMAS,
     ]);
   });
 

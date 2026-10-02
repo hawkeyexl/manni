@@ -18,7 +18,7 @@ import {
   splitList,
 } from "../shared/cli-options.js";
 import { fail } from "../shared/run.js";
-import { notice } from "../shared/warn.js";
+import { notice, warn } from "../shared/warn.js";
 import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import { terminalConfirm } from "../shared/prompt.js";
 import {
@@ -57,6 +57,8 @@ import {
   type QueryFindingsFormat,
 } from "./reporters/index.js";
 import { rowsToFindings } from "./core/checks.js";
+import { loadConfig } from "./core/config.js";
+import type { RegisteredSchemas } from "./core/schema-registry.js";
 import { isParamName } from "./core/projection.js";
 import type { QueryRun } from "./commands/query.js";
 import {
@@ -781,7 +783,7 @@ export function buildProgram(): Command {
     .option("--no-cache", "bypass the GitHub or GitLab review cache")
     .option(
       "--no-derive",
-      "skip the derived-value comparison configured by derive.fields",
+      "skip the derived-value comparison configured by derive:",
     )
     .addHelpText(
       "after",
@@ -1488,7 +1490,7 @@ export function buildProgram(): Command {
     )
     .option(
       "--fields <list>",
-      "comma-separated managed fields to stamp; config derive.fields otherwise",
+      "comma-separated managed fields to stamp; config derive.fields otherwise, else the merge-safe fields each page's schemas claim",
     )
     .option(
       "--generated-by <name>",
@@ -1527,7 +1529,7 @@ export function buildProgram(): Command {
       [
         "",
         "Examples:",
-        "  manni meta derive                                # stamp config derive.fields over every collection",
+        "  manni meta derive                                # stamp the managed fields over every collection",
         "  manni meta derive --collection guides            # stamp one configured collection",
         "  manni meta derive --dry-run docs/install.md      # what would change, nothing written",
         "  manni meta derive --check -f github              # CI: a stale stamp is an annotation, exit 1",
@@ -1702,7 +1704,7 @@ export function buildProgram(): Command {
       `output: ${COMMON_FORMATS.join(" | ")}`,
       "pretty",
     )
-    .action((options: SchemasCliOptions, command: Command) => {
+    .action(async (options: SchemasCliOptions, command: Command) => {
       try {
         // A closed set, checked like every other command's --format. This used
         // to be a bare `=== "json" ? json : pretty`, so `schemas -f github`
@@ -1711,7 +1713,17 @@ export function buildProgram(): Command {
         // case that matters: it is a real docmeta format, just not one this
         // command produces, so nothing about the invocation looked wrong.
         const format = assertCommonFormat(options.format);
-        const info = getSchemasInfo();
+        // The registered schemas come from the config discovery finds. A
+        // broken config does not stop the listing of the built-ins, which
+        // never depended on it; it is named on stderr instead.
+        let registered: RegisteredSchemas | undefined;
+        try {
+          registered = (await loadConfig(undefined, process.cwd()))?.config.registered;
+        } catch (err) {
+          if (!(err instanceof DocmetaError)) throw err;
+          warn(`${err.message} Registered schemas are not listed.`);
+        }
+        const info = getSchemasInfo(registered);
         if (format === "json") {
           process.stdout.write(`${JSON.stringify(info, null, 2)}\n`);
           return;
@@ -1720,6 +1732,12 @@ export function buildProgram(): Command {
         const lines: string[] = [c.bold("Built-in schemas:")];
         for (const b of info.builtins) {
           lines.push(`  ${c.cyan(b.id)}  ${c.dim("—")}  ${b.title}`);
+        }
+        if (info.registered.length > 0) {
+          lines.push("", c.bold("Registered schemas:"));
+          for (const r of info.registered) {
+            lines.push(`  ${c.cyan(r.id)}  ${c.dim("—")}  ${r.file}`);
+          }
         }
         lines.push("", c.bold("Input formats:"));
         for (const f of info.formats) {

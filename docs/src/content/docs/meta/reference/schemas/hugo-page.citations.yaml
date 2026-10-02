@@ -1,0 +1,45 @@
+docs/src/content/docs/meta/reference/schemas/hugo-page.mdx:
+  citations:
+    - id: platform-hugo-toml-dates-normalized
+      claim:
+        lines: 84-87
+        integrity: sha256-fdb417107b7ba6869619d817d80ba4d75ca248c93a7d0a736a40807fdb8c3346
+      source:
+        file: src/meta/extractors/frontmatter.ts
+        lines: 290-299
+        integrity: sha256-8dfe6038d743adc91c9f9ad1950a77de50a09cd5acc96d60fe98075ff22f911e
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-hugo-dates-are-not-format-checked
+      claim:
+        lines: 79-82
+        integrity: sha256-b9e2afcf3b4708722e28f8877f7bcb36f066c7031b5dc1961721e7d69c20c846
+      source:
+        file: src/meta/schemas/hugo/0.165.json
+        lines: 9-13
+        integrity: sha256-5621050cd9cd6e5baeb37c999a8ee9d40420bee30cc6d07283b84aa2be9178e0
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-hugo-weight-and-draft
+      claim:
+        integrity: sha256-9ae100dc690fdff4e375d574f28c76b48431f68445c5da8c87470a9bd1c40757
+      source:
+        file: src/meta/schemas/hugo/0.165.json
+        lines: 60-63
+        integrity: sha256-149db02b212a48063848bae2c2816eb649fc34420a6e95467546f1a524fe78d8
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-hugo-field-table
+      claim:
+        lines: 58-69
+        integrity: sha256-b69c7fe1158c38824e87281995f8ed0d163f2d889ec83ce139f6f272bbc96ef0
+      source:
+        file: src/meta/schemas/hugo/0.165.json
+        lines: 31-188
+        integrity: sha256-3eb63a9e480ad6551636b40d97287e7315b85e28a2ac346f4c3dc5d5af970388
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-hugo-defines-28-fields
+      claim:
+        integrity: sha256-b8427622d758ac9f37c1bd092cfe6dc095f0feefd50e74e5c0dd906ce0a1d289
+      source:
+        file: src/meta/schemas/hugo/0.165.json
+        lines: 5-7
+        integrity: sha256-728490d2e8800520949b9239a5abd24f1eac6e3e34b904fbd4830f53691d74ac
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

@@ -64,6 +64,20 @@ Key layers:
   - `src/cite/reporters/`: output formatting (pretty / json / github).
   - `src/cite/cli.ts`: thin commander wrapper exported as `buildProgram()` and
     mounted by `src/cli.ts`. No entry point of its own.
+- `src/lint/`: the structure tool, `manni lint check` and `manni lint structure`,
+  plus `templates` and `tools` (proposal 0050). A verb names the **job** being
+  checked; the **tool** answering it is named in config, and lint's own engine
+  is `manni`. `check` runs every configured job.
+  - `src/lint/core/`: template resolution and routing, the structure rules, the
+    template registry, and the `lint:` config loader.
+  - `src/lint/parsers/`: per-format document trees behind `DocumentParser`
+    (markdown, mdx, html, asciidoc, rst, xml).
+  - `src/lint/commands/`: the command cores, free of CLI/IO plumbing.
+  - `src/lint/reporters/`: output formatting (pretty / json / github / sarif / junit).
+  - `src/lint/cli.ts`: thin commander wrapper exported as `buildProgram()` and
+    mounted by `src/cli.ts`. No entry point of its own.
+  - `templates/lint/tgdp/`: the built-in TGDP templates, pinned to a release and
+    watched by `npm run check:tgdp-pin`.
 - `src/docevals/`: the evals tool, `manni docevals run`, `list`, `generate`,
   `fill`, `promote`, `calibrate`, `init` and `review` (proposal 0048). It runs
   deterministic and LLM-as-judge evals declared in page frontmatter. Its own
@@ -287,7 +301,7 @@ stdin/parse cases.
 Before any user-facing writing or docs task, consult `docs/content-strategy/`:
 
 1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). See `personas.md`.
-2. Find the matching **CUJ** in `cujs.md` (M1–M14, D1–D10, S1–S10, T1–T5). Structure the content around reaching that outcome, not by document type or Diátaxis category.
+2. Find the matching **CUJ** in `cujs.md` (M1–M16, D1–D11, S1–S11, T1–T6). Structure the content around reaching that outcome, not by document type or Diátaxis category.
 3. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
 4. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
 5. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.
@@ -499,6 +513,14 @@ npm run docs:check-links  # every internal link and anchor in the built site
                         # `cd docs && npm run build` first.
 npm run docs:check-docevals  # the evals tool over its own docs section,
                         # deterministic evals only (docs/manni.docevals.yaml)
+npm run smoke:lint      # build, then exercise lint's built-in templates through
+                        # the real dist/cli.js. The templates are YAML files read
+                        # by path at runtime, so a path right in src/ can be wrong
+                        # in dist/ with every unit test green. Runs in PR CI.
+npm run check:tgdp-pin  # has upstream moved past the TGDP release lint's built-in
+                        # templates are pinned to? A report, not a gate — it hits
+                        # the network, so it runs weekly, not in PR CI. See
+                        # tgdp-pin.yml. Add `-- --strict` to exit 1 when behind.
 npm run schemas:check   # published built-in schemas immutable and in sync (local)
 npm run schemas:check-published  # ...and the live URLs still serve those bytes.
                         # Hits the network, so it runs on a daily schedule

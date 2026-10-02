@@ -16,13 +16,14 @@
  * workflow no longer ships.
  */
 import { describe, it, expect } from "vitest";
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { spawnText } from "./helpers/spawn.js";
+import { bash, hasBash } from "./helpers/bash.js";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -45,15 +46,6 @@ function tagStep(): Step {
   }
   return step;
 }
-
-const hasBash = (() => {
-  try {
-    execFileSync("bash", ["-c", "true"], { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
-})();
 
 interface Scenario {
   /** `steps.before.outputs.version`; empty when that step never ran. */
@@ -135,7 +127,7 @@ function runStep(s: Scenario): Result {
 
     writeFileSync(join(dir, "run.sh"), prelude + (tagStep().run ?? ""), "utf8");
     const res = spawnText(
-      spawnSync("bash", ["--noprofile", "--norc", "-eo", "pipefail", join(dir, "run.sh")], {
+      spawnSync(bash, ["--noprofile", "--norc", "-eo", "pipefail", join(dir, "run.sh")], {
         encoding: "utf8",
         env: {
           ...process.env,

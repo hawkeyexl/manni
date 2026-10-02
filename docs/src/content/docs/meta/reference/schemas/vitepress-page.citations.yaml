@@ -1,0 +1,45 @@
+docs/src/content/docs/meta/reference/schemas/vitepress-page.mdx:
+  citations:
+    - id: platform-vitepress-covers-1-6
+      claim:
+        lines: 85-86
+        integrity: sha256-e170c618310b435c82a6a4789c0a603c9ac0df1994addc5e16837e751736d355
+      source:
+        file: src/meta/schemas/vitepress/1.6.json
+        lines: 3
+        integrity: sha256-a8518b3f92eb27a3d4c79aa3774d8a786c77859827de1879d8e83df7b60c55b5
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-vitepress-sidebar-is-a-boolean
+      claim:
+        lines: 72-75
+        integrity: sha256-be4e407e76d20542a1d1f54e34b71f0a9cad7ce84c6cb6c50ea8b89100689d04
+      source:
+        file: src/meta/schemas/vitepress/1.6.json
+        lines: 55-58
+        integrity: sha256-9e3f017d3076e21863f322239964dc568072d3e5d07664cc705297eb7ed99167
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-vitepress-outline-takes-four-shapes
+      claim:
+        integrity: sha256-9966ab63d17a1ca0450b44013e172c9b6303bdd6641a0a75019fcd6250c76119
+      source:
+        file: src/meta/schemas/vitepress/1.6.json
+        lines: 65-75
+        integrity: sha256-bb12b3e00039fb42118c0f482ddfaa64d629fe77279ca21b24e3207c4b4311d1
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-vitepress-field-table
+      claim:
+        lines: 55-64
+        integrity: sha256-ea1c279646c64480fb7185661ca0425845367ade31b0b77c6cc7412ae000988e
+      source:
+        file: src/meta/schemas/vitepress/1.6.json
+        lines: 15-96
+        integrity: sha256-2b31ff5ca640a02e159229e98eccf8332558418c0762ea5e57daef485782825f
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+    - id: platform-vitepress-four-options-plus-theme-toggles
+      claim:
+        integrity: sha256-ee8a8b01971e02cb848ccefca9f8d6a5f6faf7de9703174c77beda4a7fd87465
+      source:
+        file: src/meta/schemas/vitepress/1.6.json
+        lines: 5-7
+        integrity: sha256-b4fdc015edd75742ec34d3c57997080018497c997b440c1e724bf626c72c9036
+        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d

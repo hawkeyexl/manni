@@ -1,0 +1,316 @@
+docs/src/content/docs/cite/get-started/index.mdx:
+  personas:
+    - maya
+  journeys:
+    - m5
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: src/cite/commands/check.ts
+    - path: src/cite/commands/add.ts
+    - path: src/cite/commands/update.ts
+    - path: src/cite/core/severity.ts
+    - path: src/cite/core/sidecar.ts
+    - path: src/cite/core/manifest.ts
+    - path: src/cite/reporters/pretty.ts
+    - path: test/cite/cli.integration.test.ts
+  eval-suite: cite
+  evals:
+    - id: pin-first-claim
+      assertion: A reader can run manni cite add to pin a page line to a source line and confirm it with manni cite check.
+      type: capability
+      grader: ai
+    - id: repair-move-and-change
+      assertion: A reader can clear a moved end with manni cite update and re-pin a changed end with manni cite update --accept.
+      type: capability
+      grader: ai
+    - id: anchor-marker-quote
+      assertion: A reader can anchor a citation with --marker and pin a fenced code block with --quote.
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-65
+      integrity: sha256-3ce1529c45026369e45336c4189f7136d948108946616f4837c535ab1bdef101
+    - generated-by: Claude Opus 5
+      lines: 67
+      integrity: sha256-400de5a73c03fcbdeb9d477d50df3505db83d0d0148e13333839cd9273861c1e
+    - generated-by: Claude Fable 5.1
+      lines: 68-96
+      integrity: sha256-9777a58bedb819cd2c988f9bc33fcf7f9a679f276970218f0ad22e401bcba9e0
+    - generated-by: Claude Opus 5
+      lines: 98
+      integrity: sha256-473c7ee1cc2bd49ad1b4cd8531a2c43baa5299130254f3157a92416391ef01a3
+    - generated-by: Claude Fable 5.1
+      lines: 99-107
+      integrity: sha256-724b340414f3eb3ca8175509fb59ea0a0ab25a7b4185689eb3eeaddbc1025c1a
+    - generated-by: Claude Opus 5
+      lines: 108
+      integrity: sha256-473c7ee1cc2bd49ad1b4cd8531a2c43baa5299130254f3157a92416391ef01a3
+    - generated-by: Claude Fable 5.1
+      lines: 109-132
+      integrity: sha256-80ec0f4c0ae4dafddea6a78a7893b97af98313af63a5abdbced7ca3e31740082
+    - generated-by: Claude Opus 5
+      lines: 133
+      integrity: sha256-271e9f9444cd33a199235043cd262f3d3efd1e8e2749a0eebaeb3f010585244e
+    - generated-by: Claude Fable 5.1
+      lines: 134-169
+      integrity: sha256-27a86ee4e16f9ba9da59c594e76e96bc2f1c1cfe03a34797e22b7f5bf6cc42ef
+    - generated-by: Claude Opus 5
+      lines: 171
+      integrity: sha256-116a0aa36dcd7ad435357251624aef2f0bb78ff3206011e64a2a62b08c95a1b1
+    - generated-by: Claude Fable 5.1
+      lines: 172-174
+      integrity: sha256-c591e414c95164057ab4c64d52d3e54966c9547bdf5e3a80bce2d757146bc133
+    - generated-by: Claude Opus 5.5
+      lines: 175
+      integrity: sha256-18ef31d20cfa7684a5ceaf5cc97e431c09e47d4719fe40b47eca066d9194e968
+    - generated-by: Claude Fable 5.1
+      lines: 176
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5.5
+      lines: 178-179
+      integrity: sha256-ea02f22b05ec9a2ca0ce72a44ebd3410271e82db87e5835835e32e3e51313de9
+    - generated-by: Claude Fable 5.1
+      lines: 181-184
+      integrity: sha256-85d1786b98404c8cdd3cd01c92a1650b160c8567eadef8d999aeeec2477ec27f
+    - generated-by: Claude Opus 5
+      lines: 185
+      integrity: sha256-c0771ade762ed58208d259b9382ca35349533250eb4d89fa4184447eb40f1d2d
+    - generated-by: Claude Fable 5.1
+      lines: 186
+      integrity: sha256-59e565fed7099103acb9a72eed92448222f11030cb42abcfb946eed086fe556b
+    - generated-by: Claude Opus 5.5
+      lines: 187
+      integrity: sha256-a062c79f62ce04c6e736e20558dd0782bb195acfc4fba3659d8f7c4801d19818
+    - generated-by: Claude Opus 5
+      lines: 189-192
+      integrity: sha256-d44b4da73a3427f82982d625a761195edbb69e30846d02b37979ee19de6a3768
+    - generated-by: Claude Fable 5.1
+      lines: 193-213
+      integrity: sha256-02f2ef58c8b6b854153597d4d53f2dca029c3dd0d01d89dde62da2b1df3e3592
+    - generated-by: Claude Opus 5
+      lines: 215-219
+      integrity: sha256-653f335318519498420b2253dbbce4c8514ef4798a30158348929e9387e9efd7
+    - generated-by: Claude Fable 5.1
+      lines: 220-233
+      integrity: sha256-3c03769a7feedf49924d2958386aecc7e847b6052ea8ffa24d492526379dd4c6
+    - generated-by: Claude Opus 5
+      lines: 234
+      integrity: sha256-5a709b3080a4c580f43f4bcdeef77e69868a5d2bfbbf2b6cec6e5b162a8cdd7d
+    - generated-by: Claude Fable 5.1
+      lines: 235-236
+      integrity: sha256-690b0dd98e5df604bfe35e3a058db2e082947dadfe989e5b4aeb392ca04df082
+    - generated-by: Claude Opus 5
+      lines: 237
+      integrity: sha256-ff4fa775902afecdc9525c97c917240cc539d45d0df726be2cb791083c11997b
+    - generated-by: Claude Fable 5.1
+      lines: 238-244
+      integrity: sha256-22151970a1710dc77d527f295631aeb1129ccd90b809f8e42dda88f33be5d1a8
+    - generated-by: Claude Opus 5
+      lines: 246-248
+      integrity: sha256-267a4943fa32dc932aa4dadc8b30175fb3d79cae84d1a942b01fcaf0eb48e33c
+    - generated-by: Claude Fable 5.1
+      lines: 249-255
+      integrity: sha256-d3755c89521af21c1595cf65fefc694552867190ef3143cf981986e8b9725be3
+    - generated-by: Claude Opus 5
+      lines: 257-258
+      integrity: sha256-607830d5534b033149ff51e1e4cdd04b7157dfda296942e3a983a853a92be833
+    - generated-by: Claude Fable 5.1
+      lines: 259-267
+      integrity: sha256-030000ad4486da952f740c73c02d6049da2b12acb0262d6fb123c78b5b141b34
+    - generated-by: Claude Opus 5
+      lines: 268
+      integrity: sha256-347313ec0acccc9b85a55fd9a253fed46ae40b50dca9c871a8bcd9b4376f6c90
+    - generated-by: Claude Fable 5.1
+      lines: 269-270
+      integrity: sha256-d4af9ef3012fd6f2968cd772c45542e78f6f8048c9facc76928531caac6a1f33
+    - generated-by: Claude Opus 5
+      lines: 272
+      integrity: sha256-ca6fa83034858afd89f3989129beb7d8bdeb301a74ab573b5129ba8b007b9538
+    - generated-by: Claude Fable 5.1
+      lines: 273-282
+      integrity: sha256-72eb947422c7633cd94e08143aeefe5010aa193d91ece49c8b0cb4a79ade8bf7
+    - generated-by: Claude Opus 5
+      lines: 284
+      integrity: sha256-8453e0047d874791088851344fc02d626b44689262f7dc071f9a8bbe2d6774ce
+    - generated-by: Claude Fable 5.1
+      lines: 285-297
+      integrity: sha256-ea57a5a359e1ed8b42e22ad73c4db151c31e1ce7ec919d6d656f5cca5fe9b070
+    - generated-by: Claude Opus 5
+      lines: 299-301
+      integrity: sha256-98e7b6e4d9bd6cdabb5c7bcb85056fd0931290d1df7f00cfc4c9fc1aaaf72595
+    - generated-by: Claude Fable 5.1
+      lines: 302-312
+      integrity: sha256-a40ebc17947a520aa8f701d9f2c68e73cb9c19481af91309c0e9f0b7c9e5897a
+    - generated-by: Claude Opus 5
+      lines: 313
+      integrity: sha256-2a75767e27f83fae22f433c126f7622e5bdfcdd92c1f116e1f3a51c8cf543692
+    - generated-by: Claude Fable 5.1
+      lines: 314-316
+      integrity: sha256-3cdeb6c004b5288181223bc519527041ac7ea684c277bc5a1feda83c9b5b2412
+    - generated-by: Claude Opus 5
+      lines: 317
+      integrity: sha256-7f0ed5fe159b4c81e648bae351c3f69cdaa2336bc5989adb6d0e8a731849d89a
+    - generated-by: Claude Fable 5.1
+      lines: 318-329
+      integrity: sha256-81db4024fa7acfbb4a6c41641029b8b2fde9b673744cf5862da5202996cd9c81
+    - generated-by: Claude Opus 5
+      lines: 331
+      integrity: sha256-abe1365d151b868206f5ff1008c50b2cf4b0428e5550732ef8c281d724c9c8ce
+    - generated-by: Claude Fable 5.1
+      lines: 332-336
+      integrity: sha256-55a239191a183d8c164992c76b82b67da5863ed993de110fbf29df36e80e180b
+    - generated-by: Claude Opus 5
+      lines: 337-342
+      integrity: sha256-266a77216025ab94dbe5f8c42c7bc3628793df4e4006fe0430eb70c44a2e8522
+    - generated-by: Claude Fable 5.1
+      lines: 343-346
+      integrity: sha256-3a491a15cbdb9ec0075d9d2f87f3a41d4d12b32113d85f8f7a0542066131ca05
+    - generated-by: Claude Opus 5
+      lines: 348
+      integrity: sha256-1adb171b7871145e9a7cbad277174cd17f40ee4167e411c8296885220b9689f1
+    - generated-by: Claude Fable 5.1
+      lines: 349
+      integrity: sha256-b33b192a1ae089a9c643206714996b39c8fe27f80ebdb8904c787e54489bcf69
+    - generated-by: Claude Opus 5
+      lines: 351
+      integrity: sha256-773f11cfedb885bd32af7f6bc16edcb42749653c88afff911f6c41d44f9010ad
+    - generated-by: Claude Fable 5.1
+      lines: 352-360
+      integrity: sha256-d70da40de3da9453fde7810aab4697060dd89e9466f45dafc0e1def2c8a09175
+    - generated-by: Claude Opus 5
+      lines: 362-363
+      integrity: sha256-95d8001f227937df074fcc447655db1c849576834133c5c61148d4b86af6c99a
+    - generated-by: Claude Fable 5.1
+      lines: 364-370
+      integrity: sha256-e0883a5e0cbdd42d33abfc246bbd1702991fe8769a7f7019717600a946cfbca3
+    - generated-by: Claude Opus 5
+      lines: 372
+      integrity: sha256-18e9d97729c4513640f252babd0df54fe325eb8264f94469035c1a8f0ec6401b
+    - generated-by: Claude Fable 5.1
+      lines: 373-376
+      integrity: sha256-b35284e4848876c3aef4c479735bb69a9ac1202ff1fe7cf1bb4215d2eedd1db6
+    - generated-by: Claude Opus 5
+      lines: 377
+      integrity: sha256-2a61472d272b3d4c8fa024d871ad97488b13011ad6978f4adc62a5c3cbd0d3e2
+    - generated-by: Claude Fable 5.1
+      lines: 379-380
+      integrity: sha256-bc50ec634c8ee085cda3d6c9ca4f763acb68d87066bdbd2df10f4f43de591de4
+    - generated-by: Claude Opus 5
+      lines: 382-383
+      integrity: sha256-b2b70fff9aa13583c0467d8bb7d5282456a7149e0e952d466697d2d8008bc5b8
+    - generated-by: Claude Fable 5.1
+      lines: 384
+      integrity: sha256-0816ca215b8dd2cd38c295cdc88ad9cc74681b12210730d7788f8e4e69425410
+    - generated-by: Claude Opus 5
+      lines: 385
+      integrity: sha256-b4ddbc0c67a43f44865c6315bca5273cbd72fb9fe54efdd07e8f9b65ebdd3515
+    - generated-by: Claude Fable 5.1
+      lines: 386-393
+      integrity: sha256-93ab9ea6c84a9f6bfe1feac0374c8dfffa9dbd6cdd63847fecdfc7c65d015b4a
+    - generated-by: Claude Opus 5
+      lines: 394
+      integrity: sha256-fa978ef754a52ff5e96ddd3a520778569339774f97b7f1a8921e45e7452d9684
+    - generated-by: Claude Fable 5.1
+      lines: 395-396
+      integrity: sha256-d35d867a35834f135f00bfd97d1b964398f0e3104c50e7c92f4ce6a32e99d185
+    - generated-by: Claude Opus 5
+      lines: 398-408
+      integrity: sha256-7078d96c41e2396e0cd0c3ed3d2a8c1464643cd8573baa41f5bdd84043072298
+    - generated-by: Claude Fable 5.1
+      lines: 409-413
+      integrity: sha256-d1de0c3d7de4aa161438dbbfadf20553bb1e2dd35e0a9fdec35708616ea453a0
+    - generated-by: Claude Opus 5
+      lines: 415-416
+      integrity: sha256-d5008204f90461f3e15ff0c5bfa4ff7bc7dcce4f69bdf98a93091af5224cd3a9
+    - generated-by: Claude Fable 5.1
+      lines: 417-421
+      integrity: sha256-2a6d30e7ec06151ad8e711a6320bd34c173f0cd8f379a3dcf233aa5c0a5ece15
+    - generated-by: Claude Opus 5
+      lines: 422
+      integrity: sha256-cda00da1e12328a8aeddf1654f2f1d8f961760e87bc6cb6079fd1b2b517abc33
+    - generated-by: Claude Fable 5.1
+      lines: 423-425
+      integrity: sha256-be9fee0a93cb20cc7926ef24c91157ad51e233655e52e4a8846d1cc51796148c
+    - generated-by: Claude Opus 5
+      lines: 426
+      integrity: sha256-868ba9c6328fa6532b9916c5cd1ff5da7cc59de27bca54413b2b84c3f22473d8
+    - generated-by: Claude Fable 5.1
+      lines: 427-439
+      integrity: sha256-8cbda535ab2c22a640499b821df929da263cb5c527a82902753930c40027dba9
+    - generated-by: Claude Opus 5
+      lines: 440
+      integrity: sha256-f87756425bafa370172874a0697902fb0f424010a94213c880c3d4140f7bed54
+    - generated-by: Claude Fable 5.1
+      lines: 441-443
+      integrity: sha256-8c4e7d9fef750b27d96a1c762f74dab5f7ed2cb3bd7f2778a7a1142919f8fa29
+    - generated-by: Claude Opus 5
+      lines: 445-446
+      integrity: sha256-2b4ac1c38d78cb9ef595a292107f79ec7c0e358462bae3f657a2fec281930f0f
+    - generated-by: Claude Fable 5.1
+      lines: 447-450
+      integrity: sha256-404c0b4cc6b5cbdbf9da9fe5b3dfe099fb2d05b0b92fd7ded42e18ee6d6426ac
+    - generated-by: Claude Opus 5
+      lines: 452-459
+      integrity: sha256-dab3c20baa4be163c1ec0937c173111ecc2e3e2aa222d9642b5027a0d4164841
+    - generated-by: Claude Fable 5.1
+      lines: 460-463
+      integrity: sha256-bbe45569ec253c9d936529c3ea666b1d58d48454da26bfedb113f4afa3204667
+    - generated-by: Claude Opus 5
+      lines: 464
+      integrity: sha256-1d05743a32f0e74d1514541b956c92942de2369117cca99f3f310cd288127c76
+    - generated-by: Claude Fable 5.1
+      lines: 465-467
+      integrity: sha256-aa7bf895ba6c08a44e3829c1d32e130c7de8796116b22d6934e233647d9297ec
+    - generated-by: Claude Opus 5
+      lines: 469-470
+      integrity: sha256-0400a6fa9140bd51657570567f0ecc62993093ea5a587f03642a650cd0b1e66f
+    - generated-by: Claude Fable 5.1
+      lines: 471-474
+      integrity: sha256-2ef73ee04f78da38522602b43d791440d807dcfa38c00b8dafef96d2209052dd
+    - generated-by: Claude Opus 5
+      lines: 476-477
+      integrity: sha256-02fd5f88cebf08cafb2beba5ecc2a2c72dbdb127b915529ee4f3490d16967228
+    - generated-by: Claude Fable 5.1
+      lines: 478-481
+      integrity: sha256-a6056edad2a471ddc0f3d1ce96d5e973cacbfa90af6546bdbda887e15c3500d2
+    - generated-by: Claude Opus 5
+      lines: 482
+      integrity: sha256-e81a64ef5d96492986086903b90fcae6b6defdddc2b934c837ab57cf1da7121e
+    - generated-by: Claude Fable 5.1
+      lines: 483-485
+      integrity: sha256-be9fee0a93cb20cc7926ef24c91157ad51e233655e52e4a8846d1cc51796148c
+    - generated-by: Claude Opus 5
+      lines: 486
+      integrity: sha256-c8ea9de29b961112262cbf7233dc35338cb487f262ae0001e57c031ccfd82964
+    - generated-by: Claude Fable 5.1
+      lines: 487-495
+      integrity: sha256-281cf7e51f637ce6bd3f252a57cd462c00acb01f2ba281c0aa6b983505dee598
+    - generated-by: Claude Opus 5
+      lines: 497-500
+      integrity: sha256-64e6d2282c7a261f39acd52a55036fc3d1ccbdd7ecc86f6990aa7e5f555954a6
+    - generated-by: Claude Fable 5.1
+      lines: 501-509
+      integrity: sha256-bf32158c9ae187f372c7279629fdc2bb5760035e7ca70c581ed5c97b89aa718d
+    - generated-by: Claude Opus 5
+      lines: 510-512
+      integrity: sha256-fd300b4f2b4eef532d86a0f476c3101d9fed32c8c744c2af968fbe2f4028ccba
+    - generated-by: Claude Fable 5.1
+      lines: 514-564
+      integrity: sha256-db0d0d23eaae629451988299e70a16dfd2c99141d41cbf4bc08ddc7c9f08661a
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-11
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /prerequisites
+        - /related-pages
+      confidence:
+        /tags: 0.9
+        /action: 0.95
+        /prerequisites: 0.75
+        /related-pages: 0.75
