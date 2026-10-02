@@ -80,7 +80,6 @@ export interface EvalDef {
   generatedAssertionHash?: string;
   options?: Record<string, unknown>;
   severity?: Severity;
-  severityMap?: Record<string, Severity>;
   /** Relative contribution to the suite pass rate. Never changes the outcome. */
   weight?: number;
   /** Which bytes the grader receives. Defaults to the page body. */
@@ -105,7 +104,6 @@ export interface RawEvalDef {
   "generated-assertion-hash"?: string;
   options?: Record<string, unknown>;
   severity?: Severity;
-  "severity-map"?: Record<string, Severity>;
   target?: EvalTarget;
   model?: string;
   runs?: number;
@@ -151,7 +149,6 @@ export function normalizeEvalDef(raw: RawEvalDef): EvalDef {
     generatedAssertionHash: raw["generated-assertion-hash"],
     options: raw.options,
     severity: raw.severity,
-    severityMap: raw["severity-map"],
     weight: raw.weight,
     target: raw.target,
     model: raw.model,
@@ -337,16 +334,6 @@ interface RawSuiteDef {
   criteria?: string[];
 }
 
-/**
- * Object keys whose sub-keys are names chosen by something other than this
- * schema, so a capital letter in them is not a stale spelling:
- *
- *   severity-map — keyed by the *tool's* own severity names
- *   options      — no: grader options are ours, and they kebab with everything
- *                  else (proposal 0023 leaves this call to each tool)
- */
-const FOREIGN_KEY_SPACES = new Set(["severity-map"]);
-
 /** The 0.1 `generated: {assertionHash}` wrapper, as opposed to any other key of that name. */
 function isAssertionHashWrapper(value: unknown): boolean {
   return (
@@ -383,9 +370,7 @@ function findPreKebabKeys(
       found.push({ at: `${path}.generated`, becomes: "generated-assertion-hash" });
       continue;
     }
-    if (!FOREIGN_KEY_SPACES.has(key)) {
-      found.push(...findPreKebabKeys(value, `${path}.${key}`));
-    }
+    found.push(...findPreKebabKeys(value, `${path}.${key}`));
   }
   return found;
 }

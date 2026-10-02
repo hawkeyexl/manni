@@ -97,7 +97,6 @@ export function groupTargetsByEval(targets: GraderTarget[]): GraderTarget[][] {
       sortedForKey(t.eval.options),
       t.eval.timeoutMs ?? null,
       t.eval.severity,
-      sortedForKey(t.eval.severityMap) ?? null,
     ]);
     const list = groups.get(key) ?? [];
     list.push(t);

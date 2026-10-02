@@ -29,6 +29,7 @@ import {
 } from "./config.js";
 import type { PageFile } from "./discover.js";
 import type { EvalTarget } from "./target.js";
+import { warn } from "../../shared/warn.js";
 
 export interface ResolvedEval {
   /** Kebab-case id, unique per page. */
@@ -48,7 +49,6 @@ export interface ResolvedEval {
   generatedAssertionHash?: string;
   options: Record<string, unknown>;
   severity: Severity;
-  severityMap?: Record<string, Severity>;
   /**
    * Relative contribution to its suite's pass rate. Defaults to 1, which is
    * what makes weighting inert until someone asks for it: a suite of
@@ -153,7 +153,6 @@ function fromDef(
     generatedAssertionHash: def.generatedAssertionHash,
     options: def.options ?? {},
     severity: def.severity ?? "error",
-    severityMap: def.severityMap,
     weight: def.weight ?? 1,
     target: def.target,
     model: def.model,
@@ -373,6 +372,16 @@ export function resolvePage(
     const ev = fromDef(inline.id, reportSuite, normalizeEvalDef(inline), "page");
     ev.skip = inline.skip ?? false;
     resolved.set(inline.id, ev);
+    // The shared vocabulary still allows `severity-map`, so a page carrying
+    // one is valid. It mapped a wrapped tool's own scale, and no registered
+    // grader has one, so the key is read by nothing. Said once per eval:
+    // `warn` deduplicates on the text, which names the page and the eval.
+    if ("severity-map" in inline) {
+      warn(
+        `${page.file}: eval "${inline.id}" sets severity-map, which no registered ` +
+          `grader reads; it has no effect.`,
+      );
+    }
     if (ev.grader === "ai" && !inline.examples) {
       problems.push({
         message: `Eval "${inline.id}": ai-graded evals work best with examples.pass/examples.fail`,

@@ -706,7 +706,6 @@ describe("parseConfig camelCase section keys", () => {
         '    command: ["node", "check.mjs"]',
         "    success-exit-codes: [0, 3]",
         "    timeout-ms: 900",
-        "    severity-map: { warning: notice }",
         "suites:",
         "  ref:",
         "    target-pass-rate: 0.5",

@@ -320,16 +320,6 @@
           "exclusiveMinimum": 0,
           "default": 1,
           "description": "Relative contribution to its suite's pass rate. Does not change this eval's own pass/fail: the eval still passes or fails on its own terms, and weight only decides how much that outcome moves the suite total against target-pass-rate. Zero is excluded deliberately - a weightless eval is a silent disable, and skip already means that, loudly."
-        },
-        "severity-map": {
-          "type": "object",
-          "additionalProperties": {
-            "enum": [
-              "notice",
-              "warning",
-              "error"
-            ]
-          }
         }
       },
       "additionalProperties": false,
