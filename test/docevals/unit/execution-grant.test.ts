@@ -1,11 +1,11 @@
 /**
  * The execution grant.
  *
- * Content reaches a shell by two paths: a `command` eval declared in page
- * frontmatter, and `tool:doc-detective` running steps written in a page
- * *body*. The old `scripts.allow-frontmatter-commands` boolean covered the
- * first and defaulted to **true**; nothing covered the second at all. Both are
- * now default-deny behind one grant.
+ * Content reaches a shell through a `command` eval declared in page
+ * frontmatter, or through page-authored `options.command` argv handed to a
+ * grader. The old `scripts.allow-frontmatter-commands` boolean covered the
+ * first and defaulted to **true**. Both are now default-deny behind one grant,
+ * `frontmatter-commands`, the only one there is.
  *
  * This is defense in depth, not a replacement for restricting untrusted pull
  * requests — a grant says "this corpus is trusted to execute", and a fork's
@@ -18,8 +18,25 @@ import { join } from "node:path";
 import { runEvals } from "../../../src/docevals/core/engine.js";
 import { parseConfig } from "../../../src/docevals/core/config.js";
 import { runRun } from "../../../src/docevals/commands/run.js";
+import { buildProgram } from "../../../src/docevals/cli.js";
+import { registerGrader } from "../../../src/docevals/graders/registry.js";
+import { DocevalsError } from "../../../src/docevals/types.js";
 
-/** A page carrying a frontmatter command eval and a doc-detective eval. */
+// A registered grader that runs page-supplied argv, the way the wrapped-tool
+// adapters once did. It is what makes `options.command` a path to a shell.
+registerGrader({
+  kind: "tool:argv-runner",
+  mode: "per-file",
+  async grade(ctx) {
+    for (const t of ctx.targets) {
+      const argv = t.eval.options.command;
+      if (Array.isArray(argv)) await ctx.exec(argv.map(String), {});
+    }
+    return [];
+  },
+});
+
+/** A page carrying a frontmatter command eval. */
 function scaffold(allow: string[]): string {
   const root = mkdtempSync(join(tmpdir(), "manni-docevals-grant-"));
   mkdirSync(join(root, "docs"), { recursive: true });
@@ -33,9 +50,6 @@ function scaffold(allow: string[]): string {
       "    assertion: The check passes.",
       "    grader: command",
       "    command: [node, --version]",
-      "  - id: runs-embedded-steps",
-      "    assertion: The embedded steps pass.",
-      "    grader: tool:doc-detective",
       "---",
       "",
       "# Install",
@@ -86,28 +100,14 @@ const skipReasons = async (
 };
 
 describe("execution grant", () => {
-  it("denies both paths by default", async () => {
+  it("denies frontmatter commands by default", async () => {
     const reasons = await skipReasons([]);
     expect(reasons["runs-a-command"]).toContain("frontmatter commands not granted");
-    expect(reasons["runs-embedded-steps"]).toContain(
-      "page-embedded steps not granted",
-    );
   });
 
-  it("grants only what is named — frontmatter commands", async () => {
+  it("runs them once frontmatter-commands is granted", async () => {
     const reasons = await skipReasons(["frontmatter-commands"]);
     expect(reasons["runs-a-command"]).not.toContain("not granted");
-    // The other capability stays denied: trusting a repo's frontmatter is not
-    // thereby trusting arbitrary steps written in its prose.
-    expect(reasons["runs-embedded-steps"]).toContain(
-      "page-embedded steps not granted",
-    );
-  });
-
-  it("grants only what is named — page-embedded steps", async () => {
-    const reasons = await skipReasons(["page-embedded-steps"]);
-    expect(reasons["runs-a-command"]).toContain("frontmatter commands not granted");
-    expect(reasons["runs-embedded-steps"]).not.toContain("not granted");
   });
 
   it("--no-execution clears a configured grant for one run", async () => {
@@ -122,6 +122,30 @@ describe("execution grant", () => {
       allowExecution: ["frontmatter-commands"],
     });
     expect(reasons["runs-a-command"]).not.toContain("not granted");
+  });
+});
+
+describe("the grant's config key", () => {
+  it("refuses a grant that does not exist, naming the one that does", () => {
+    expect(() =>
+      parseConfig(
+        ["docevals:", "  execution:", "    allow: [page-embedded-steps]"].join("\n"),
+        "/fake/manni.config.yaml",
+      ),
+    ).toThrow(
+      new DocevalsError(
+        "Invalid config in /fake/manni.config.yaml: " +
+          'unknown execution grant "page-embedded-steps"; expected one of frontmatter-commands',
+      ),
+    );
+  });
+});
+
+describe("the --allow-execution flag", () => {
+  it("names its one value in its help", () => {
+    const run = buildProgram().commands.find((c) => c.name() === "run");
+    const flag = run?.options.find((o) => o.long === "--allow-execution");
+    expect(flag?.description).toBe("Grant content-authored execution: frontmatter-commands");
   });
 });
 
@@ -146,15 +170,15 @@ describe("the removed boolean", () => {
 
 describe("the options.command bypass", () => {
   /**
-   * Every `tool:*` adapter accepts an `options.command` argv override and
-   * hands it to `exec`. That is a second spelling of "run this command",
+   * A registered grader may accept an `options.command` argv override and
+   * hand it to `exec`. That is a second spelling of "run this command",
    * reached without the `command` grader and so without the grant check that
    * guards it — which makes the default-deny posture decorative: a page that
-   * cannot say `grader: command` can say `grader: tool:vale` with the same
-   * argv and get the same shell.
+   * cannot say `grader: command` could say `grader: tool:argv-runner` with
+   * the same argv and get the same shell.
    *
-   * The gate is on *page-authored argv*, not on the grader, so it covers the
-   * five adapters that read the key today and any added later.
+   * The gate is on *page-authored argv*, not on the grader, so it covers any
+   * grader that reads the key.
    */
   function scaffoldOverride(allow: string[], source: "page" | "config"): string {
     const root = mkdtempSync(join(tmpdir(), "manni-docevals-bypass-"));
@@ -165,7 +189,7 @@ describe("the options.command bypass", () => {
             "evals:",
             "  - id: sneaky",
             "    assertion: The style guide passes.",
-            "    grader: tool:vale",
+            "    grader: tool:argv-runner",
             "    options:",
             "      command: [node, --version]",
           ]
@@ -182,7 +206,7 @@ describe("the options.command bypass", () => {
             "  evals:",
             "    sneaky:",
             "      assertion: The style guide passes.",
-            "      grader: tool:vale",
+            "      grader: tool:argv-runner",
             "      options:",
             "        command: [node, --version]",
           ]
@@ -249,6 +273,21 @@ describe("an unknown grant is refused, not ignored", () => {
     ).rejects.toThrow(/unknown execution grant "frontmatter-comands"/);
   });
 
+  it("refuses the removed page-embedded-steps by the same sentence", async () => {
+    await expect(
+      runRun([], {
+        cwd: scaffold([]),
+        allowExecution: ["page-embedded-steps"],
+        deterministicOnly: true,
+        generate: false,
+      }),
+    ).rejects.toThrow(
+      new DocevalsError(
+        'unknown execution grant "page-embedded-steps"; expected one of frontmatter-commands',
+      ),
+    );
+  });
+
   it("names every unknown value, not just the first", async () => {
     await expect(
       runRun([], {
@@ -266,7 +305,7 @@ describe("an unknown grant is refused, not ignored", () => {
         [],
         {
           cwd: scaffold([]),
-          allowExecution: ["frontmatter-commands", "page-embedded-steps"],
+          allowExecution: ["frontmatter-commands"],
           deterministicOnly: true,
           generate: false,
         },

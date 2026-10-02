@@ -215,7 +215,7 @@ export function buildProgram(): Command {
       // frontmatter-commands docs/**` would silently swallow the glob and run
       // over the default file set instead. Repeat the flag to grant twice.
       "--allow-execution <kind>",
-      "Grant content-authored execution: frontmatter-commands | page-embedded-steps (repeat to grant both)",
+      "Grant content-authored execution: frontmatter-commands",
       collectGrant,
       [],
     )

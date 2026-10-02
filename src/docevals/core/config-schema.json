@@ -125,12 +125,11 @@
               "type": "array",
               "items": {
                 "enum": [
-                  "frontmatter-commands",
-                  "page-embedded-steps"
+                  "frontmatter-commands"
                 ]
               },
               "default": [],
-              "description": "Which content-authored code this corpus may execute. Default deny: frontmatter-commands covers `command` evals declared in page frontmatter; page-embedded-steps covers tool:doc-detective running steps written in page bodies. Both are code a page author controls, so the operator grants them explicitly. This is defense in depth, not a substitute for restricting untrusted pull requests."
+              "description": "Which content-authored code this corpus may execute. Default deny: frontmatter-commands lets `command` evals declared in page frontmatter run. That is code a page author controls, so the operator grants it explicitly. This is defense in depth, not a substitute for restricting untrusted pull requests."
             }
           },
           "description": "Operator grant for executing content-authored code."

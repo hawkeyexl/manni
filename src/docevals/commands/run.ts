@@ -17,7 +17,7 @@ import type { InferenceProvider } from "@hawkeyexl/inference";
 import { makeGenerateScripts } from "../graders/scriptgen.js";
 import type { GenerateFn } from "../core/engine.js";
 import { DocevalsError } from "../types.js";
-import { EXECUTION_GRANTS } from "../core/config.js";
+import { EXECUTION_GRANTS, unknownGrantsMessage } from "../core/config.js";
 import type { ExecutionGrant } from "../core/config.js";
 import { warn } from "../../shared/warn.js";
 
@@ -64,11 +64,7 @@ function asGrants(values: string[] | undefined): ExecutionGrant[] | undefined {
     (v) => !(EXECUTION_GRANTS as readonly string[]).includes(v),
   );
   if (unknown.length > 0) {
-    throw new DocevalsError(
-      `unknown execution grant${unknown.length > 1 ? "s" : ""} ` +
-        `${unknown.map((u) => `"${u}"`).join(", ")}; ` +
-        `expected one of ${EXECUTION_GRANTS.join(" | ")}`,
-    );
+    throw new DocevalsError(unknownGrantsMessage(unknown));
   }
   return values as ExecutionGrant[];
 }

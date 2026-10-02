@@ -779,7 +779,6 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
   ]);
   if (options.execution === false) granted.clear();
   const allowFrontmatterCommands = granted.has("frontmatter-commands");
-  const allowPageEmbeddedSteps = granted.has("page-embedded-steps");
 
   // Before anything is dispatched: an eval that cannot reach a verdict as
   // configured is a configuration error, and saying so now costs nothing where
@@ -841,11 +840,11 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
         continue;
       }
       // Page-authored argv, whatever grader carries it. `command` evals name
-      // it in `command`; every `tool:*` adapter also accepts an
-      // `options.command` override and hands it to the same `exec`. Gating
+      // it in `command`; a registered grader may also accept an
+      // `options.command` override and hand it to the same `exec`. Gating
       // only the grader left a second spelling of "run this" that reached a
       // shell ungated, which made default-deny decorative — a page that cannot
-      // say `grader: command` could say `grader: tool:vale` with the same argv.
+      // say `grader: command` could name such a grader with the same argv.
       // Config-authored argv is the operator's own and is not content, so the
       // gate is on `source === "page"` rather than on the key's presence.
       const pageAuthoredArgv =
@@ -857,20 +856,6 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
             plan,
             ev,
             "frontmatter commands not granted (execution.allow: [frontmatter-commands])",
-          ),
-        );
-        continue;
-      }
-      // The second path from content to a shell: doc-detective executes steps
-      // written in the page *body*, which no flag covered before. Same grant
-      // model, different capability — an operator who trusts a repo's
-      // frontmatter has not thereby trusted arbitrary steps in its prose.
-      if (ev.grader === "tool:doc-detective" && !allowPageEmbeddedSteps) {
-        results.push(
-          skippedResult(
-            plan,
-            ev,
-            "page-embedded steps not granted (execution.allow: [page-embedded-steps])",
           ),
         );
         continue;

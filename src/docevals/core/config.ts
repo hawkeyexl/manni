@@ -34,12 +34,23 @@ import type { ProviderSelector } from "@hawkeyexl/inference";
 export type ProviderName = ProviderSelector;
 
 /** One capability the operator can grant to content-authored code. */
-export type ExecutionGrant = "frontmatter-commands" | "page-embedded-steps";
+export type ExecutionGrant = "frontmatter-commands";
 
 export const EXECUTION_GRANTS: readonly ExecutionGrant[] = [
   "frontmatter-commands",
-  "page-embedded-steps",
 ] as const;
+
+/**
+ * The sentence for grants nobody recognizes, shared by the config key and the
+ * programmatic `allowExecution` so both name the values that do exist.
+ */
+export function unknownGrantsMessage(unknown: readonly string[]): string {
+  return (
+    `unknown execution grant${unknown.length > 1 ? "s" : ""} ` +
+    `${unknown.map((u) => `"${u}"`).join(", ")}; ` +
+    `expected one of ${EXECUTION_GRANTS.join(" | ")}`
+  );
+}
 
 /**
  * One eval definition, as the rest of the codebase sees it.
@@ -218,10 +229,10 @@ export interface DocevalsConfig {
   /**
    * What content-authored code this run may execute. Default deny.
    *
-   * Two paths reach a shell from a page: a `command` eval declared in
-   * frontmatter, and `tool:doc-detective` running steps embedded in a page
-   * *body*. The old `scripts.allow-frontmatter-commands` boolean covered the
-   * first and defaulted to true; nothing covered the second at all.
+   * A page reaches a shell through a `command` eval declared in its
+   * frontmatter, or through `options.command` argv it hands a grader. The old
+   * `scripts.allow-frontmatter-commands` boolean covered the first and
+   * defaulted to true.
    */
   execution: { allow: ExecutionGrant[] };
   fill: {
@@ -411,6 +422,15 @@ function movedProviderHint(instancePath: string, keyword: string): string {
     : "";
 }
 
+/** The string values under `execution.allow`, before the schema has run. */
+function configuredGrants(ns: unknown): string[] {
+  if (!ns || typeof ns !== "object") return [];
+  const execution = (ns as Record<string, unknown>).execution;
+  if (!execution || typeof execution !== "object") return [];
+  const allow = (execution as Record<string, unknown>).allow;
+  return Array.isArray(allow) ? allow.filter((g): g is string => typeof g === "string") : [];
+}
+
 /** Parse and validate config YAML text. `configPath` is used for messages and path resolution. */
 export function parseConfig(text: string, configPath: string): DocevalsConfig {
   let raw: unknown;
@@ -581,7 +601,18 @@ export function parseConfigSection(
 ` +
         `  Write \`execution: { allow: [frontmatter-commands] }\` to keep running them.
 ` +
-        `The grant is default-deny and also covers page-embedded-steps, which nothing gated before.`,
+        `The grant is default-deny.`,
+    );
+  }
+
+  // Ajv's enum error names neither the value nor the ones allowed, and a
+  // grant is the key where a silent misreading costs the most.
+  const unknownGrants = configuredGrants(ns).filter(
+    (g) => !(EXECUTION_GRANTS as readonly string[]).includes(g),
+  );
+  if (unknownGrants.length > 0) {
+    throw new DocevalsError(
+      `Invalid config in ${configPath}: ${unknownGrantsMessage(unknownGrants)}`,
     );
   }
 

@@ -58,10 +58,9 @@ docevals:
     cacheDir: .manni/docevals/cache
 
   execution:
-    # Default deny. Grant only what this corpus needs, and only if you trust
-    # whoever can edit its pages:
-    #   frontmatter-commands  - command evals declared in page frontmatter
-    #   page-embedded-steps   - tool:doc-detective running steps in page bodies
+    # Default deny. Grant frontmatter-commands only if you trust whoever can
+    # edit this corpus's pages: it lets command evals declared in page
+    # frontmatter run.
     allow: []
 
   scripts:
