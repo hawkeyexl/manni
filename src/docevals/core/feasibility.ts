@@ -13,15 +13,55 @@
  * avoid.
  *
  * Scope is deliberately narrow: only what *configuration* makes impossible,
- * and only where nothing already answers it. Whether `vale` is on PATH is a
- * runtime fact ADR 01020 covers; an unknown grader kind is already an errored
- * result in the engine; and an `ai` eval with no assertion is already rejected
- * by both schemas at parse time, with a better message than this could give.
- * A second answer to a settled question is worse than none.
+ * and only where nothing already answers it. Whether a command is on PATH is
+ * a runtime fact ADR 01020 covers, and an `ai` eval with no assertion is
+ * already rejected by both schemas at parse time, with a better message than
+ * this could give. A second answer to a settled question is worse than none.
+ *
+ * An eval naming a grader nothing registered is not a feasibility problem but
+ * a usage error: `assertRegisteredGraders` below refuses the whole command.
  */
-import { graderFor } from "../graders/registry.js";
+import { graderFor, isRegisteredGrader, listGraderKinds } from "../graders/registry.js";
+import { DocevalsError } from "../types.js";
+import type { DocevalsConfig } from "./config.js";
 import type { RunProblem } from "./engine.js";
 import type { ResolvedPagePlan } from "./resolve.js";
+
+function unregistered(where: string, name: string, grader: string): DocevalsError {
+  return new DocevalsError(
+    `${where}: eval "${name}" names grader "${grader}", which is not registered. ` +
+      `Registered graders: ${listGraderKinds().join(", ")}.`,
+  );
+}
+
+/**
+ * Refuse an eval whose grader nothing registered, naming the file that
+ * declared it: the config for a config eval, the page for an inline one.
+ *
+ * A usage error, exit 2, for `run`, `list`, `generate` and `promote`
+ * alike. The configuration's bug is not the page's fault (ADR 01029), so a
+ * per-eval error result, which blamed every page carrying the eval, was the
+ * wrong report. Every config eval is checked, used or not, and every inline
+ * eval on every page, skipped or not: a skip is not a reason to keep a typo.
+ * A grader added through `registerGrader` passes.
+ */
+export function assertRegisteredGraders(
+  plans: ResolvedPagePlan[],
+  config: DocevalsConfig,
+): void {
+  const configFile = config.configSource ?? config.configPath;
+  for (const [name, def] of Object.entries(config.evals)) {
+    const grader = def.grader ?? "ai";
+    if (!isRegisteredGrader(grader)) throw unregistered(configFile, name, grader);
+  }
+  for (const plan of plans) {
+    for (const ev of plan.evals) {
+      if (ev.source === "page" && !isRegisteredGrader(ev.grader)) {
+        throw unregistered(plan.page.file, ev.name, ev.grader);
+      }
+    }
+  }
+}
 
 export interface FeasibilityOptions {
   /** Whether frontmatter-declared commands may run in this invocation. */

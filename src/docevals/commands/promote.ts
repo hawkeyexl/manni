@@ -15,6 +15,7 @@ import {
 } from "../core/discover.js";
 import { withExternalMetadata } from "../core/external.js";
 import { resolvePages } from "../core/resolve.js";
+import { assertRegisteredGraders } from "../core/feasibility.js";
 import {
   hasEditableEval,
   updateConfigEval,
@@ -147,6 +148,7 @@ export async function runPromote(
     cwd,
   );
   const plans = resolvePages(pages, config);
+  assertRegisteredGraders(plans, config);
 
   // Built on first use, not up front. A corpus with no ai-graded evals has
   // nothing to assess, and demanding an API key to be told so is the same

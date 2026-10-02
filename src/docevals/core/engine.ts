@@ -29,7 +29,7 @@ import {
 } from "./baseline.js";
 import { changedFilesSince, changedKey } from "./since.js";
 import { graderFor } from "../graders/registry.js";
-import { checkFeasibility } from "./feasibility.js";
+import { assertRegisteredGraders, checkFeasibility } from "./feasibility.js";
 import { realExec } from "../graders/exec.js";
 import { groupTargetsByEval, type ExecFn, type GraderTarget } from "../graders/types.js";
 import { sha256 } from "../judge/cache.js";
@@ -470,14 +470,11 @@ export function applySelection(
 /**
  * Narrow each plan to the pages that changed, in place (ADR 01040).
  *
- * An unchanged page keeps none of its graded evals. Every grader grades one
- * page at a time or one group of pages per call, so dropping a page's targets
- * shrinks the check rather than changing what it means.
- *
- * An unrecognised `tool:` kind is kept. The grading loop is what reports an
- * unknown kind, so dropping it here would hide a misconfiguration on every
- * page the branch did not touch: a typo would surface on a changed page and
- * vanish on an unchanged one.
+ * An unchanged page keeps no eval. Every grader grades one page at a time or
+ * one group of pages per call, so dropping a page's targets shrinks the check
+ * rather than changing what it means. An eval naming an unregistered grader
+ * never reaches here: `assertRegisteredGraders` refuses the run first, so a
+ * typo cannot surface on a changed page and vanish on an unchanged one.
  *
  * An empty result is **not** a usage error, which is where this parts company
  * with `applySelection`. "No page changed" is a correct answer to a correct
@@ -493,9 +490,7 @@ export function applySinceScope(
       pagesSelected += 1;
       continue;
     }
-    plan.evals = plan.evals.filter(
-      (ev) => graderFor(ev.grader) === undefined && ev.grader !== "ai" && ev.grader !== "human",
-    );
+    plan.evals = [];
   }
   return { pagesSelected };
 }
@@ -701,6 +696,9 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
     sinceRef === undefined ? null : await changedFilesSince(sinceRef, cwd, exec);
 
   const plans = resolvePages(pages, config);
+  // A grader nothing registered is the configuration's bug, so it is a usage
+  // error before anything else is said about the plan.
+  assertRegisteredGraders(plans, config);
   // A run that resolved no evals at all checked nothing, and exited 0 saying
   // so in about seventeen bytes. The identical condition reached through
   // `--eval no-such-eval` is already exit 2 with a careful message
@@ -981,6 +979,8 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
 
   for (const [kind, targets] of byKind) {
     const grader = graderFor(kind);
+    // `assertRegisteredGraders` already refused an unregistered kind. Kept so
+    // that a gap between the two checks reads as an error, never a pass.
     if (!grader) {
       for (const t of targets) {
         results.push({

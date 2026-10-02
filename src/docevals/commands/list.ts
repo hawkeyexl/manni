@@ -14,6 +14,7 @@ import {
 import { withExternalMetadata } from "../core/external.js";
 import { resolvePages, type ResolvedPagePlan } from "../core/resolve.js";
 import { applySelection } from "../core/engine.js";
+import { assertRegisteredGraders } from "../core/feasibility.js";
 import {
   parseFormat,
   SUMMARY_FORMATS,
@@ -52,6 +53,7 @@ export async function runList(
     cwd,
   );
   const plans = resolvePages(pages, config);
+  assertRegisteredGraders(plans, config);
   // `false`: list executes nothing, so an eval that resolves but is skipped is
   // a legitimate answer here — and this is the command `run`'s empty-match
   // error tells the user to reach for.
