@@ -17,20 +17,18 @@ import { DocevalsError } from "../../../src/docevals/types.js";
 const dir = () => mkdtempSync(join(tmpdir(), "manni-docevals-init-"));
 
 /** A page in the shape the scaffold's `site` collection looks for. */
-function page(root: string, name: string, frontmatter: string[] = []): void {
+function page(root: string, name: string, body = "Body text."): void {
   mkdirSync(join(root, "docs"), { recursive: true });
   writeFileSync(
     join(root, "docs", name),
     [
       "---",
       "title: Sample",
-      "last-reviewed: 2026-08-01",
-      ...frontmatter,
       "---",
       "",
       "# Sample",
       "",
-      "Body text.",
+      body,
       "",
     ].join("\n"),
   );
@@ -57,7 +55,15 @@ describe("runInit", () => {
     runInit(root);
     const config = loadConfig(undefined, root);
     expect(Object.keys(config.evals)).toContain("no-future-promises");
-    expect(config.suites.default?.evals).toContain("fresh-enough");
+    expect(config.suites.default?.evals).toEqual(["no-future-promises", "no-todo-markers"]);
+    // Deterministic, needing no grant and no key, so a first run finds
+    // something real.
+    expect(config.evals["no-todo-markers"]).toMatchObject({
+      assertion: "The page carries no TODO, TBD or FIXME markers.",
+      grader: "tool:regex",
+      options: { pattern: "\\b(TODO|TBD|FIXME)\\b", match: "not-contains" },
+      severity: "error",
+    });
     expect(config.judge.ensembleRuns).toBe(3);
     // Detected, and no model pinned: the library picks the provider's default.
     // The choice is the family's, so meta fill reads the same one; docevals
@@ -87,8 +93,8 @@ describe("runInit", () => {
     expect(plans).toHaveLength(1);
     expect(plans[0]?.suite).toBe("default");
     expect(plans[0]?.evals.map((e) => e.name).sort()).toEqual([
-      "fresh-enough",
       "no-future-promises",
+      "no-todo-markers",
     ]);
   });
 
@@ -100,8 +106,21 @@ describe("runInit", () => {
     page(root, "sample.md");
     const report = await runEvals({ cwd: root, generate: false });
     expect(report.evalResults.length).toBeGreaterThan(0);
-    // The ai eval is skipped with no provider; the freshness one is real work.
+    // The ai eval is skipped with no provider; the regex one is real work.
     expect(report.evalResults.some((r) => r.outcome !== "skipped")).toBe(true);
+  });
+
+  // The free first finding get-started promises: a marker in the page fails
+  // the regex eval, at error severity.
+  it("fails a page carrying a TBD marker", async () => {
+    const root = dir();
+    runInit(root);
+    page(root, "sample.md", "Body text. TBD: the rest.");
+    const report = await runEvals({ cwd: root, generate: false });
+    const result = report.evalResults.find((r) => r.evalName === "no-todo-markers");
+    expect(result?.outcome).toBe("fail");
+    expect(result?.findings?.[0]).toMatchObject({ ruleId: "regex/found", severity: "error" });
+    expect(report.exitCode).toBe(1);
   });
 
   it("refuses to overwrite an existing config", () => {
