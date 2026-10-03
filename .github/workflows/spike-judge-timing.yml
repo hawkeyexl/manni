@@ -1,0 +1,60 @@
+name: Spike - judge timing
+
+# Throwaway measurement: how long a GitHub-hosted CPU runner takes to judge
+# the ai evals on the pages a small pull request touches. Not for merging.
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/spike-judge-timing.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  judge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        runs: [3, 1]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Runner
+        run: |
+          {
+            echo "### runs=${{ matrix.runs }}"
+            echo "- CPU: $(nproc) x $(lscpu | sed -n 's/^Model name:\s*//p')"
+            echo "- RAM: $(free -g | awk '/Mem:/{print $2}') GB"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.hawkeyexl-inference
+          key: inference-local-granite-4.1-3b-q2-${{ runner.os }}
+      - name: Fetch the runtime and model
+        run: |
+          start=$SECONDS
+          node dist/cli.js meta fill test/fixtures/fill/no-block.md \
+            --provider llama-cpp --model granite-4.1-3b-q2 \
+            --fields title --dry-run --no-cache
+          echo "- warm-up fill (fetch + load + 1 call): $((SECONDS - start)) s" >> "$GITHUB_STEP_SUMMARY"
+      - name: Judge the pages
+        run: |
+          for page in \
+            docs/src/content/docs/meta/reference/glossary/schema-set.mdx \
+            docs/src/content/docs/meta/reference/schemas/myst-frontmatter.mdx \
+            docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx
+          do
+            start=$SECONDS
+            node dist/cli.js docevals run "$page" --ai-only --no-cache --no-color \
+              --runs ${{ matrix.runs }} --format json > out.json || true
+            secs=$((SECONDS - start))
+            summary=$(node -e 'const r=JSON.parse(require("fs").readFileSync("out.json","utf8"));const ai=r.evalResults.filter(e=>e.grader==="ai");console.log(ai.length+" evals: "+ai.map(e=>e.evalName+"="+e.outcome).join(", ")+"; "+r.usage.totalTokens+" tokens")')
+            echo "- $(basename "$page") ($(wc -c < "$page") bytes): ${secs} s, ${summary}" >> "$GITHUB_STEP_SUMMARY"
+          done
