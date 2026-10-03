@@ -32,7 +32,7 @@ jobs:
             echo "### runs=${{ matrix.runs }}"
             echo "- CPU: $(nproc) x $(lscpu | sed -n 's/^Model name:\s*//p')"
             echo "- RAM: $(free -g | awk '/Mem:/{print $2}') GB"
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/cache@v4
         with:
           path: ~/.hawkeyexl-inference
@@ -43,7 +43,7 @@ jobs:
           node dist/cli.js meta fill test/fixtures/fill/no-block.md \
             --provider llama-cpp --model granite-4.1-3b-q2 \
             --fields title --dry-run --no-cache
-          echo "- warm-up fill (fetch + load + 1 call): $((SECONDS - start)) s" >> "$GITHUB_STEP_SUMMARY"
+          echo "- warm-up fill (fetch + load + 1 call): $((SECONDS - start)) s" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Judge the pages
         run: |
           for page in \
@@ -56,8 +56,5 @@ jobs:
               --runs ${{ matrix.runs }} --format json > out.json || true
             secs=$((SECONDS - start))
             summary=$(node -e 'const r=JSON.parse(require("fs").readFileSync("out.json","utf8"));const ai=r.evalResults.filter(e=>e.grader==="ai");console.log(ai.length+" evals: "+ai.map(e=>e.evalName+"="+e.outcome).join(", ")+"; "+r.usage.totalTokens+" tokens")')
-            echo "- $(basename "$page") ($(wc -c < "$page") bytes): ${secs} s, ${summary}" >> "$GITHUB_STEP_SUMMARY"
+            echo "- $(basename "$page") ($(wc -c < "$page") bytes): ${secs} s, ${summary}" | tee -a "$GITHUB_STEP_SUMMARY"
           done
-      - name: Print the summary
-        if: always()
-        run: cat "$GITHUB_STEP_SUMMARY"
