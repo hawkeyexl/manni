@@ -58,3 +58,6 @@ jobs:
             summary=$(node -e 'const r=JSON.parse(require("fs").readFileSync("out.json","utf8"));const ai=r.evalResults.filter(e=>e.grader==="ai");console.log(ai.length+" evals: "+ai.map(e=>e.evalName+"="+e.outcome).join(", ")+"; "+r.usage.totalTokens+" tokens")')
             echo "- $(basename "$page") ($(wc -c < "$page") bytes): ${secs} s, ${summary}" >> "$GITHUB_STEP_SUMMARY"
           done
+      - name: Print the summary
+        if: always()
+        run: cat "$GITHUB_STEP_SUMMARY"
