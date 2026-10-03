@@ -6,7 +6,7 @@ id: lint-reference-configuration
 language: en
 lifecycle: published
 action: remember
-last-updated: 2026-09-21
+last-updated: 2026-10-02
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -73,8 +73,8 @@ run exits `2`. `--no-config` ignores any discovered one.
 `doc-structure-lint.config.yaml`, the standalone tool's own file, is not
 discovered at all. See [Coming from
 `doc-structure-lint`](#coming-from-doc-structure-lint) for why, and what to do
-with one. `moose.config.yaml` is still read, with a warning saying to rename
-it: that is the family file's pre-rename name rather than this tool's.
+with one. `moose.config.yaml` is not discovered either: that is the family
+file's pre-rename name, and discovery walks past it.
 
 In `pretty` output the run says which file governed it, on stderr:
 
@@ -123,7 +123,7 @@ refused. Name the collection for what it holds: `guides`, `site`, `pages`,
 |---|---|---|---|---|
 | `allowEmpty` | boolean | `false` | no | Treat a run that matched zero files as success rather than an operational error. For a shared CI template or a pre-commit hook whose file list may legitimately be empty. The same key, with the same meaning, as `cite.allowEmpty`. `--allow-empty` sets it for one run. |
 | `structure` | object | absent | no | The structure job. Declaring it with no keys is how a repository says the job applies. |
-| `structure.tool` | string, `manni` or `dita-ot` | `manni` | no | Which tool performs the job. `manni` is this package's own engine. `dita-ot` is DITA Open Toolkit, which you install yourself and which settles references across files. Anything else is refused by name. `--tool <name>` names the same thing for one run. See [Choose a structure tool](/lint/set-up/choose-a-structure-tool/). |
+| `structure.tool` | string, `manni` or `dita-ot` | `manni` | no | Which tool performs the job. `manni` is this package's own engine. `dita-ot` is DITA Open Toolkit, which you install yourself and which settles references across files. Anything else is refused by name. `--tool <name>` names the same thing for one run. See [Choose a structure tool](/manni/lint/set-up/choose-a-structure-tool/). |
 | `templates` | string[] | none | no | Template files to load. Their templates' `types:` join the doctype routing table and outrank the built-ins. Adopting a repository's own how-to shape is one entry here and no flag. Each entry is a [template ref](/manni/lint/reference/templates/#template-refs). `--templates <path>` adds more. |
 | `template` | string | none | no | Template ref applied to a page that declares no doctype and matches no override. The **last** rung of the chain, not an override. |
 | `types` | object | none | no | Explicit doctype → template ref map, for a doctype no template file claims with its own `types:`. Keys are the vocabulary your pages' `type:` frontmatter is written in, so they are your names rather than the tool's. |
@@ -227,7 +227,7 @@ changes are these:
 |---|---|
 | `npx doc-structure-lint docs/` | `manni lint check docs/`, or `manni lint structure docs/` for that one job |
 | `doc-structure-lint.config.yaml` | The `lint:` key of `manni.config.yaml`. The old name is not read at all, not even to warn about it. Its whole document was the `lint:` section, written in keys the section no longer takes. |
-| `moose.config.yaml` | Still discovered, with a warning on stderr: it is the family file's pre-rename name, not this tool's. Rename it to `manni.config.yaml`. |
+| `moose.config.yaml` | Not discovered. It is the family file's pre-rename name, not this tool's. Rename it to `manni.config.yaml`. |
 | `paths:` under the tool's config | A collection's `paths:` under the top-level `collections:` |
 | `exclude:` under the tool's config | The same collection's `exclude:` |
 | `doc-structure-lint lint` as a default subcommand | No default subcommand. `manni lint` alone lists the four verbs and exits `2`. |

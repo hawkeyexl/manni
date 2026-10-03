@@ -1,0 +1,26 @@
+# Evals kept where the shipped manni:evals:1.0.0 says they may live: in the
+# collection's external-metadata manifest rather than in the page. The pages
+# below carry no `evals:` at all, and a run over them has to resolve the same
+# plan a run over pages carrying their own would.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [evals, eval-suite, eval-skip]
+
+docevals:
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
+      severity: error
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [no-todo-markers]

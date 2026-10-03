@@ -1,0 +1,172 @@
+/**
+ * `tool:regex` — the deterministic rung below the judge.
+ *
+ * Every distinct shape gets a case, per the fixtures rule: each `match` mode
+ * and each `target` the regex grader can be pointed at.
+ */
+import { describe, it, expect } from "vitest";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { runEvals } from "../../../src/docevals/core/engine.js";
+
+interface Case {
+  /** Lines under the config eval, e.g. grader + options. */
+  evalLines: string[];
+  /** Extra files to write beside the page, as [relative path, contents]. */
+  files?: [string, string][];
+}
+
+function scaffold({ evalLines, files = [] }: Case): string {
+  const root = mkdtempSync(join(tmpdir(), "manni-docevals-native-"));
+  mkdirSync(join(root, "docs"), { recursive: true });
+  writeFileSync(
+    join(root, "docs", "install.md"),
+    [
+      "---",
+      "title: Install",
+      "owner: docs-team",
+      "evals:",
+      "  - use: subject",
+      "---",
+      "",
+      "# Install",
+      "",
+      "Run `npm i -g manni docevals` to install.",
+      "",
+      "## Install",
+      "",
+    ].join("\n"),
+  );
+  for (const [rel, body] of files) {
+    const abs = join(root, "docs", rel);
+    mkdirSync(join(abs, ".."), { recursive: true });
+    writeFileSync(abs, body);
+  }
+  writeFileSync(
+    join(root, "manni.config.yaml"),
+    [
+      "collections:",
+      "  - name: pages",
+      '    paths: ["docs/**/*.md"]',
+      "docevals:",
+      "  evals:",
+      "    subject:",
+      ...evalLines,
+      "",
+    ].join("\n"),
+  );
+  return root;
+}
+
+const outcomeOf = async (c: Case) => {
+  const report = await runEvals({ cwd: scaffold(c), generate: false });
+  const errors = report.problems.filter((p) => p.level === "error");
+  if (errors.length > 0) return `config-error: ${errors[0]?.message ?? ""}`;
+  return report.evalResults[0]?.outcome ?? "missing";
+};
+
+const regexEval = (opts: string[]) => [
+  "      grader: tool:regex",
+  "      options:",
+  ...opts.map((o) => `        ${o}`),
+];
+
+/** The line the eval's first finding names, after a run over the scaffold. */
+const findingLineOf = async (c: Case) => {
+  const report = await runEvals({ cwd: scaffold(c), generate: false });
+  return report.evalResults[0]?.findings?.[0]?.line;
+};
+
+describe("tool:regex", () => {
+  // The github format writes `line=` from this, and the docs send readers to
+  // that line. A line counted within the body alone points above the match by
+  // the height of the frontmatter block.
+  it("names the line in the file, not in the body, for the default target", async () => {
+    // "npm i -g" is on line 10 of the file, line 4 of the body.
+    expect(
+      await findingLineOf({ evalLines: regexEval(['pattern: "npm i -g"', "match: not-contains"]) }),
+    ).toBe(10);
+    expect(
+      await findingLineOf({ evalLines: regexEval(['pattern: "Install"', "match: count:1"]) }),
+    ).toBe(8);
+  });
+
+  it("names the same line for target: raw", async () => {
+    expect(
+      await findingLineOf({
+        evalLines: [
+          ...regexEval(['pattern: "npm i -g"', "match: not-contains"]),
+          "      target: raw",
+        ],
+      }),
+    ).toBe(10);
+  });
+
+  it("passes when the pattern is present (contains is the default)", async () => {
+    expect(await outcomeOf({ evalLines: regexEval(['pattern: "npm i -g"']) })).toBe(
+      "pass",
+    );
+  });
+
+  it("fails when the pattern is absent", async () => {
+    expect(await outcomeOf({ evalLines: regexEval(['pattern: "yarn global add"']) })).toBe(
+      "fail",
+    );
+  });
+
+  it("not-contains passes when absent and fails when present", async () => {
+    expect(
+      await outcomeOf({
+        evalLines: regexEval(['pattern: "coming soon"', "match: not-contains"]),
+      }),
+    ).toBe("pass");
+    expect(
+      await outcomeOf({
+        evalLines: regexEval(['pattern: "Install"', "match: not-contains"]),
+      }),
+    ).toBe("fail");
+  });
+
+  it("count:N counts every occurrence, not just the first", async () => {
+    // "Install" appears in the title heading and the duplicated one below it.
+    expect(
+      await outcomeOf({ evalLines: regexEval(['pattern: "^## Install"', "match: count:1", 'flags: "m"']) }),
+    ).toBe("pass");
+    expect(
+      await outcomeOf({ evalLines: regexEval(['pattern: "Install"', "match: count:1"]) }),
+    ).toBe("fail");
+  });
+
+  it("honours target: frontmatter, which the body would not match", async () => {
+    expect(
+      await outcomeOf({
+        evalLines: [...regexEval(['pattern: "docs-team"']), "      target: frontmatter"],
+      }),
+    ).toBe("pass");
+    // The same pattern against the default body target finds nothing.
+    expect(await outcomeOf({ evalLines: regexEval(['pattern: "docs-team"']) })).toBe(
+      "fail",
+    );
+  });
+
+  it("honours target: raw, which sees both", async () => {
+    expect(
+      await outcomeOf({
+        evalLines: [...regexEval(['pattern: "docs-team"']), "      target: raw"],
+      }),
+    ).toBe("pass");
+  });
+
+  it("rejects an uncompilable pattern as a config error, not a page failure", async () => {
+    const outcome = await outcomeOf({ evalLines: regexEval(['pattern: "([unclosed"']) });
+    expect(outcome).toContain("config-error");
+    expect(outcome).toContain("not a valid regular expression");
+  });
+
+  it("rejects a missing pattern", async () => {
+    expect(await outcomeOf({ evalLines: regexEval(["match: contains"]) })).toContain(
+      "options.pattern is required",
+    );
+  });
+});

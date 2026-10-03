@@ -1,0 +1,57 @@
+docs/src/content/docs/docevals/get-started/index.mdx:
+  evals:
+    # This page shows the markers the check looks for, as its example.
+    - use: no-todo-markers
+      skip: true
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-16
+      integrity: sha256-163a902270572ab3b4dd21c71baefdaa484f29fbc9d90f9aec34e3cacfa2789e
+    - generated-by: Claude Opus 5
+      lines: 18
+      integrity: sha256-d7152621463dc07fc431035583633a8716968701feb32db085e18cb7e1d10070
+    - generated-by: Claude Fable 5.1
+      lines: 24-32
+      integrity: sha256-de97b5fca53d239cf64a3becedc31a8f969aebdd82deda2a7f4d722e292dac28
+    - generated-by: Claude Fable 5.1
+      lines: 35
+      integrity: sha256-f4626b09b8995c7769298a68b95fbe31d4cd282b9750c28cf538adee257597d2
+    - generated-by: Claude Fable 5.1
+      lines: 38-39
+      integrity: sha256-36e621cc3461eff5bfa090683d05338df5d0da87a2a16348d01243d7933e846d
+    - generated-by: Claude Opus 5
+      lines: 40
+      integrity: sha256-4cab40cb78d6a008b11ab2c8f1525cc8866a6cc13a235d202382354677d21402
+    - generated-by: Claude Fable 5.1
+      lines: 44
+      integrity: sha256-a354308f46639d25595ec4fb0ad89d31f7345a09d6ce3732edc5f5778774e00c
+    - generated-by: Claude Fable 5.1
+      lines: 46-61
+      integrity: sha256-c31a4a169b8ce36d9a070295144481515d744e542feec83198801f1da30374bb
+    - generated-by: Claude Fable 5.1
+      lines: 66-69
+      integrity: sha256-abd93c57ca355af560b8072ca897b61eb54921d44abf803859f90bed1520d87f
+    - generated-by: Claude Fable 5.1
+      lines: 73
+      integrity: sha256-98bb83410840dd2e75e1cdbf92932784eb2ee2520c3626252d6a39e735c0dbd5
+    - generated-by: Claude Fable 5.1
+      lines: 83
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Fable 5.1
+      lines: 87-97
+      integrity: sha256-e9c3ec1c786d55ec5ac37d577adde246a1be7ed3a001e33abed3c92f99ed938b
+    - generated-by: Claude Opus 5
+      lines: 99-102
+      integrity: sha256-5199732427b7252a93cf99db7b08a79d1a4a58d3b47d2e609525df608f43d858
+    - generated-by: Claude Fable 5.1
+      lines: 103-107
+      integrity: sha256-f88ea13fc166b9960e99935b34d56d2d71c018c98bf0f3aeca23f20e69f7503a
+    - generated-by: Claude Opus 5
+      lines: 108
+      integrity: sha256-8763c46cde827e77af23b2de924ae830e9f55402170ddb5a27b534e527db1256
+    - generated-by: Claude Fable 5.1
+      lines: 109-126
+      integrity: sha256-11e510cf374b99ef89dd0bece8d2863923463fedc73e8970cb79b2a9a5cee7a5
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

@@ -1,0 +1,20 @@
+# The manifest owns `evals` and the page keeps a copy. Meta calls that
+# `external:owned`; docevals says the same sentence as a page problem, so the
+# run exits 1 rather than grading one of two declarations.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [evals]
+
+docevals:
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
+      severity: error

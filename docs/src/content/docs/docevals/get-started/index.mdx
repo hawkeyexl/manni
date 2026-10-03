@@ -1,0 +1,136 @@
+---
+title: Get started
+description: Install manni docevals, declare one assertion, and get a real finding on a real page.
+type: tutorial
+last-updated: 2026-10-02
+---
+
+Zero to a real finding. No concepts first. Those are on the
+[next page](/manni/docevals/get-started/how-docevals-works/), and you will understand them faster having
+seen a run.
+
+Requires Node.js 24+.
+
+## 1. Install and scaffold
+
+```bash
+npm i -D @hawkeyexl/manni
+```
+
+```bash
+npx @hawkeyexl/manni docevals init
+```
+
+`init` writes a starter `manni.config.yaml`: a `site` collection covering `docs/**/*.{md,mdx}`,
+`provider: auto`, and two named evals in a `default` suite that `defaults.suite` applies to every
+page. `no-future-promises` is judged by the AI. `no-todo-markers` is a `tool:regex` pattern that
+fails a page carrying `TODO`, `TBD` or `FIXME`. The collection is the family's `collections:` list,
+which every manni tool reads, so edit its `paths` if your pages live somewhere else.
+
+## 2. Get a finding without spending anything
+
+Before touching frontmatter or a provider, run the deterministic graders over your docs:
+
+```bash
+npx @hawkeyexl/manni docevals run --deterministic-only
+```
+
+`--deterministic-only` skips the AI judge entirely, so this needs no API key and costs nothing. On
+a corpus that has never been checked, `no-todo-markers` alone usually finds something.
+
+```console
+$ npx @hawkeyexl/manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate
+docs/actions/goTo.mdx
+  skip no-future-promises
+       judge skipped (--deterministic-only)
+  pass names-an-action
+  FAIL no-todo-markers
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+
+Suites
+  reference: 1/2 passed — 0% vs target 100% below target (1 skipped)
+```
+
+Read the finding line as `severity:line [ruleId] message`. The exit code is `1`, a finding rather than an
+error. [Exit codes](/manni/docevals/reference/output-and-exit-codes/) explains why that distinction
+matters.
+
+## 3. Declare your own eval
+
+Add an `evals` key to a page's frontmatter. The array form is the minimum:
+
+```yaml
+---
+title: Installation
+evals:
+  - use: no-future-promises
+  - id: install-command-present
+    assertion: The page shows the command that installs Doc Detective.
+    grader: tool:regex
+    options:
+      pattern: "npm i -g doc-detective"
+---
+```
+
+Two entries, two different things. `no-future-promises` **references** a named eval from your
+config. The second **defines** one inline. It is a pattern match, so it runs under
+`--deterministic-only` and needs no grant.
+
+Check what resolved before running anything:
+
+```console
+$ npx @hawkeyexl/manni docevals list docs/installation.mdx
+docs/installation.mdx (suite: default)
+  - no-future-promises [ai, regression, config]
+  - no-todo-markers [tool:regex, regression, config]
+  - install-command-present [tool:regex, regression, page]
+
+1 pages, 3 evals resolved
+```
+
+The `default` suite added `no-todo-markers`, and the last column says where each eval came from.
+
+## 4. Add the judge
+
+Set your key and drop `--deterministic-only`:
+
+```bash
+export ANTHROPIC_API_KEY=sk-…
+npx @hawkeyexl/manni docevals run docs/installation.mdx
+```
+
+Each ai eval runs three times independently; agreement decides the verdict, and anything the judge
+is unsure about routes to [human review](/manni/docevals/judge/human-review/) rather than guessing.
+
+With no provider configured, manni docevals detects one: the key above, an OpenAI key, the Claude
+CLI, or a local model, in that order. No API key, or a security review to satisfy? The `claude-cli`
+provider uses local CLI auth and needs no key, and the `openai` provider takes any
+OpenAI-compatible `baseUrl` including a self-hosted one.
+See [Choose a provider](/manni/docevals/judge/choose-a-provider/).
+
+## 5. Gate a pull request
+
+```yaml
+- name: manni docevals
+  run: npx @hawkeyexl/manni docevals run --format github
+  env:
+    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+```
+
+`--format github` annotates the offending lines inline in the diff. Full recipes, the exit-code
+contract, and the fork-safety rules are in [Run it in CI](/manni/docevals/ci/).
+
+## Where to go next
+
+| You want to | Go to |
+|---|---|
+| Understand what just happened | [How manni docevals works](/manni/docevals/get-started/how-docevals-works/) |
+| Write assertions that hold up | [Write good assertions](/manni/docevals/evals/write-good-assertions/) |
+| Cover a corpus you can't annotate by hand | [Adopt at scale](/manni/docevals/adopt/) |
+| Wire this into CI properly | [Run it in CI](/manni/docevals/ci/) |
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"The deterministic path runs with no API key and reports a real finding.","runShell":{"command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[1],"stdio":"/regex\\/found/"}} */}
+
+{/* step {"description":"`list` shows the resolved plan without running anything.","runShell":{"command":"manni docevals list docs/actions/goTo.mdx","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0],"stdio":"evals resolved"}} */}

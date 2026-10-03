@@ -78,6 +78,19 @@ Key layers:
     mounted by `src/cli.ts`. No entry point of its own.
   - `templates/lint/tgdp/`: the built-in TGDP templates, pinned to a release and
     watched by `npm run check:tgdp-pin`.
+- `src/docevals/`: the evals tool, `manni docevals run`, `list`, `generate`,
+  `fill`, `promote`, `calibrate`, `init` and `review` (proposal 0048). It runs
+  deterministic and LLM-as-judge evals declared in page frontmatter. Its own
+  `src/docevals/CLAUDE.md` holds the tool's invariants.
+  - `src/docevals/core/`: discovery, page resolution against the evals draft,
+    the engine pipeline and the `docevals:` config loader.
+  - `src/docevals/graders/` and `src/docevals/judge/`: the deterministic
+    graders and the LLM judge, which takes its providers from
+    `src/shared/providers.ts`.
+  - `src/docevals/commands/` and `src/docevals/reporters/`: the command cores
+    and the output formats.
+  - `src/docevals/cli.ts`: thin commander wrapper exported as `buildProgram()`
+    and mounted by `src/cli.ts`. No entry point of its own.
 - `src/key/`: the family key's domain, `manni key set` and `manni key rotate`
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
   cite's re-encryption, and the one ciphertext format lives in
@@ -288,7 +301,7 @@ stdin/parse cases.
 Before any user-facing writing or docs task, consult `docs/content-strategy/`:
 
 1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). See `personas.md`.
-2. Find the matching **CUJ** in `cujs.md` (M1–M4, D1–D4, S1–S3, T1). Structure the content around reaching that outcome, not by document type or Diátaxis category.
+2. Find the matching **CUJ** in `cujs.md` (M1–M16, D1–D11, S1–S11, T1–T6). Structure the content around reaching that outcome, not by document type or Diátaxis category.
 3. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
 4. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
 5. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.
@@ -498,6 +511,17 @@ npm run docs:sync-versions   # rewrite the stale ones; the release runs the same
 npm run docs:check-links  # every internal link and anchor in the built site
                         # resolves. Reads docs/dist, so it needs
                         # `cd docs && npm run build` first.
+npm run docs:check-docevals  # the evals tool over the whole site, deterministic
+                        # evals only, from the root config's docevals: section
+node dist/cli.js docevals run --ai-only  # the site's judged evals, on this machine
+                        # with llama-cpp and granite-4.1-3b-q2 from the root
+                        # config. Local only: CI never runs it, because a CPU
+                        # runner takes minutes per call. About 20s a page on a
+                        # GPU. Inference runs in a worker process, and a GPU
+                        # backend that crashes falls back to the next one
+                        # (CUDA, Vulkan, CPU) with one warning. Setting
+                        # NODE_LLAMA_CPP_GPU pins a backend and turns that
+                        # fallback off.
 npm run smoke:lint      # build, then exercise lint's built-in templates through
                         # the real dist/cli.js. The templates are YAML files read
                         # by path at runtime, so a path right in src/ can be wrong

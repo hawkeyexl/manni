@@ -53,7 +53,7 @@ describe("manni (built bin)", () => {
     }
   }, 180000);
 
-  it("lists meta, lint, cite and key as subcommands", () => {
+  it("lists meta, lint, cite, key and docevals as subcommands", () => {
     const r = run(manni, ["--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni /m);
@@ -61,6 +61,7 @@ describe("manni (built bin)", () => {
     expect(r.stdout).toMatch(/^\s+lint\b/m);
     expect(r.stdout).toMatch(/^\s+cite\b/m);
     expect(r.stdout).toMatch(/^\s+key\b/m);
+    expect(r.stdout).toMatch(/^\s+docevals\b/m);
   });
 
   it("mounts the key domain under key, with no default command", () => {
@@ -100,6 +101,26 @@ describe("manni (built bin)", () => {
     const r = run(manni, ["a11y", "check", "--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni a11y check /m);
+  });
+
+  it("runs docevals under its name, reading its own key of the family config", () => {
+    expect(run(manni, ["docevals", "--help"]).stdout).toMatch(
+      /^Usage: manni docevals /m,
+    );
+    // `list` resolves the eval plan from the repository's own manni.config.yaml
+    // (the `docevals:` section) without running anything. That section grades
+    // this site, so a bare `list` reads the `site` collection and every suite
+    // its pages name resolves.
+    const r = run(manni, ["docevals", "list"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/\d+ pages, \d+ evals resolved/);
+    expect(r.stdout).not.toContain("Unknown suite");
+  });
+
+  it("prefixes docevals diagnostics with the bin that ran", () => {
+    const r = run(manni, ["docevals", "run", "-c", "does-not-exist.yaml"]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/^manni: Config file not found/);
   });
 
   it("mounts the lint tool under lint, with no default command", () => {

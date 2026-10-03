@@ -1,0 +1,14 @@
+# The collection keeps its evals, and the machine attribution beside them, in
+# one manifest. So `manni docevals fill`, `generate` and `promote --write`
+# write there rather than into the pages (proposal 0047).
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [evals, meta-provenance]
+
+docevals:
+  fill:
+    confidenceThreshold: 0.5

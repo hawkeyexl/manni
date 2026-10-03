@@ -38,9 +38,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-4ad98f541fbbf16ce90e957bd9e2a0c5a770d704b5d89943ffc60c99702920ed
       source:
         file: src/meta/cli.ts
-        lines: 724
+        lines: 725
         integrity: sha256-322dd30e4515bcfac300cfc4973260a660aa6ff29955850d82aea0c0c555181c
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
     - id: default-ignores-are-node-modules-and-git
       claim:
         integrity: sha256-4af1d71090ee4c80c0e4486e655f7d9860a17af1c1e0250d37d2ab7bc47864dd
@@ -81,18 +81,18 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-369a3d5d29f0b671abcebf9249d4b33a9ae1b6894780f14db6c3650acf01432e
       source:
         file: src/meta/cli.ts
-        lines: 874
+        lines: 875
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
     - id: faq-exit-0-all-passed
       claim:
         lines: 114
         integrity: sha256-e7bbf58b0b32d5100b6d2f2e7609a14ba25e57d27688ee56d0977e065da017fd
       source:
         file: src/meta/cli.ts
-        lines: 874
+        lines: 875
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
     - id: explicit-file-always-validated
       claim:
         lines: 104-105

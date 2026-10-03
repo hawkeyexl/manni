@@ -1,0 +1,20 @@
+# ai-context's machine attribution kept in the manifest (proposal 0046, and
+# its proposal.3 marking both keys external). The self-preference check has to
+# see them there, or a judge grades content its own model wrote.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [provenance, meta-provenance]
+
+docevals:
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
+      severity: error

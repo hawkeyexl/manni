@@ -1,0 +1,25 @@
+# A field-joined manifest (proposal 0039): entries are keyed on the page's own
+# `doc-id` rather than on its path, so the evals follow the page when it moves.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: ./site.metadata.yaml
+        keys: [evals, eval-suite]
+        join: doc-id
+
+docevals:
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
+      severity: error
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [no-todo-markers]

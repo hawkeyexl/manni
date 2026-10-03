@@ -1,0 +1,105 @@
+# The docevals fixture showcase: the config the tool's own tests and the
+# docs' inline steps run this corpus under. It sits beside its pages, so a
+# run started in this directory discovers it, and the paths below resolve
+# from here. The repository root's manni.config.yaml grades the docs site
+# instead, and never reads these pages.
+#
+# The corpus is a snapshot of Doc Detective's docs with docevals frontmatter.
+# It is deliberately not all-passing: goTo.mdx carries a TBD marker that
+# fails `no-todo-markers` at error, which drives the run's exit 1.
+collections:
+  - name: pages
+    paths:
+      - "**/*.{md,mdx}"
+
+docevals:
+  defaults:
+    suite: null
+    failFast: false
+    concurrency: 4
+
+  # Named rather than detected, so a run over the fixtures behaves the same on
+  # every machine: without ANTHROPIC_API_KEY it degrades to deterministic evals
+  # instead of picking up whatever this machine happens to have (the Claude CLI,
+  # a local model). No model is pinned; the inference library's default for the
+  # provider is used, and every cache key names the model it resolved to.
+  provider: anthropic
+
+  judge:
+    ensembleRuns: 3
+    temperature: 0
+    zones:
+      autoPass: 0.8
+      autoFail: 0.8
+    falsePositiveAlert: 0.15
+    cacheDir: .manni/docevals/cache
+
+  # The corpus declares command evals in page frontmatter (installation.mdx,
+  # find.mdx), so this run lets them execute. Grant it only to a corpus whose
+  # editors you trust.
+  execution:
+    allow: [frontmatter-commands]
+
+  scripts:
+    dir: "{docDir}/manni-docevals"
+    configDir: manni-docevals-scripts
+    timeoutMs: 30000
+
+  evals:
+    no-future-promises:
+      type: regression
+      assertion: The page makes no claims about unreleased or future functionality.
+      grader: ai
+      evidence: All prose sections
+      examples:
+        pass: Describes only shipped behavior.
+        fail: Says "coming soon" or references an unreleased version.
+    explains-why-before-how:
+      type: capability
+      assertion: >
+        The page explains why a reader would use the feature before explaining
+        how to use it.
+      grader: ai
+      evidence: Introduction and first section
+      examples:
+        pass: Opens with the problem the feature solves, then gives steps.
+        fail: Jumps straight into syntax with no motivation.
+    names-an-action:
+      # The cheap rung below the judge: a verifiable fact, matched rather than
+      # argued about three times.
+      assertion: The page documents at least one Doc Detective action.
+      grader: tool:regex
+      options:
+        pattern: "(goTo|find|click|checkLink|httpRequest)"
+      severity: warning
+      # Secondary to the judged assertions on the same page: it is a spec
+      # literal, so it reports without dominating the suite's rate.
+      weight: 0.5
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
+      severity: error
+
+  criteria:
+    # Two checks that only mean something together: a page claiming to
+    # document an action should both name it and be finished enough to trust.
+    # Scored once, so the pair cannot outvote a standalone eval.
+    action-page-is-trustworthy:
+      evals: [names-an-action, no-todo-markers]
+      combine: all
+      weight: 2
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [no-future-promises, names-an-action, no-todo-markers]
+      criteria: [action-page-is-trustworthy]
+    tutorial:
+      target-pass-rate: 0.7
+      evals: [explains-why-before-how, no-future-promises]
+    how-to:
+      target-pass-rate: 1.0
+      evals: [no-future-promises, no-todo-markers]

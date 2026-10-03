@@ -1,0 +1,14 @@
+# Written by hand. Every comment here, and the second entry, must survive a
+# splice into the first one.
+docs/install.md:
+  # Added when the page was first reviewed.
+  evals:
+    - id: mentions-prerequisites
+      assertion: The page lists prerequisites before the install steps.
+      grader: command
+
+# A second entry, which a write to the first never touches.
+docs/guide.md:
+  evals:
+    - id: has-example
+      assertion: The page shows at least one worked example.

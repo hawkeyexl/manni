@@ -1,0 +1,9 @@
+docs/install.md:
+  eval-suite: reference
+  evals:
+    - use: no-todo-markers
+docs/dated.md:
+  eval-suite: reference
+docs/skipped.md:
+  eval-skip: true
+  eval-suite: reference

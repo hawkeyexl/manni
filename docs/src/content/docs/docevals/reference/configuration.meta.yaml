@@ -1,0 +1,86 @@
+docs/src/content/docs/docevals/reference/configuration.mdx:
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-3
+      integrity: sha256-cbf9b886716efeb96cfe807d786acf32409b225a02c3ca5af1b9bff83caf1f01
+    - generated-by: Claude Fable 5.1
+      lines: 5-12
+      integrity: sha256-284bc3ea17dacf73eed0c50c8fbfeab9157f1659d00809fdbec8c7a2fc8c180b
+    - generated-by: Claude Opus 5
+      lines: 13
+      integrity: sha256-afe12db7382000efd0d3c6091f877db6680b8a37cdec5a53e60f7fd36bbb1dd7
+    - generated-by: Claude Fable 5.1
+      lines: 14
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5
+      lines: 16-28
+      integrity: sha256-e1179d1ef2c2722d7314830a21f4082ce47626606170bd7c333f556f30480231
+    - generated-by: Claude Fable 5.1
+      lines: 30-35
+      integrity: sha256-133d7a6521c1f3039f339eaf7311af30f67fd67feb61129b2d8a9f096980a4e5
+    - generated-by: Claude Opus 5
+      lines: 36-97
+      integrity: sha256-cb9fe1999cf6f08b74f4f767af6fa56f8a081ebf72817d0df7d5dacb6f255f1b
+    - generated-by: Claude Opus 5
+      lines: 99-104
+      integrity: sha256-2a1e10a54ca901e041f2f620cf6bfb10270fb27c807670680ab5e866d5ee35b0
+    - generated-by: Claude Fable 5.1
+      lines: 106-136
+      integrity: sha256-5dd757819c2a5fdf96d15d9b13f9c03a966a73553005628832096ff4474f27d1
+    - generated-by: Claude Opus 5
+      lines: 137
+      integrity: sha256-1d542f6264a682dbd892820fac7bc00f45cd0bfd7bf5b082272511aefbd61873
+    - generated-by: Claude Fable 5.1
+      lines: 138
+      integrity: sha256-036eca0d46557f0c0b06cb71a4063419f83dedeac51dc46049959e79b814913a
+    - generated-by: Claude Opus 5
+      lines: 140-196
+      integrity: sha256-7f38a171226cfbf0e0a0fa65e40750734c9ac8d8f3c980ed3d3e2c0ab6abf687
+    - generated-by: Claude Fable 5.1
+      lines: 197-202
+      integrity: sha256-467a55aea6e343ff18860351d20e464afb77e4e06366cf441eed9018a0aa03ae
+    - generated-by: Claude Opus 5
+      lines: 203
+      integrity: sha256-23638c4ae980d39baedc3455879bf1264dff4249b4c1dd6740643caddb32304d
+    - generated-by: Claude Fable 5.1
+      lines: 204
+      integrity: sha256-1ec8c5646f220d9f41fb1b6e833eceadf35f70629bdf78136eb8d899ca867292
+    - generated-by: Claude Opus 5
+      lines: 205-211
+      integrity: sha256-ac794ef69a10deab229ab4de5e8896dd5df9cb7e1edad86d7c16b09fc6ace2c2
+    - generated-by: Claude Fable 5.1
+      lines: 213-219
+      integrity: sha256-bfcd372657a8438c9d77e3553bb59adc96d899c8e64e07c2f2f5391ff1b22dea
+    - generated-by: Claude Opus 5
+      lines: 220-222
+      integrity: sha256-c24abef01e679791d5c573dc9cdbb114860e142a2ed6880417af5b9f1f79edd9
+    - generated-by: Claude Fable 5.1
+      lines: 224
+      integrity: sha256-9a9f0b8d6c2e10077196973df0eb5b05be70a5c22a2bbfd38f6c58aed031436e
+    - generated-by: Claude Fable 5.1
+      lines: 230-231
+      integrity: sha256-12f7123e0e52299b7b4e7149f1b831faf7012e1901dba08196e126546520b4a0
+    - generated-by: Claude Fable 5.1
+      lines: 234-238
+      integrity: sha256-398c34c10616c7375c6ee6582467916b10c8d8c31169aaf88bf978ef595d91cc
+    - generated-by: Claude Opus 5
+      lines: 249
+      integrity: sha256-2e5ce6ccee2c24e27a2a34fc6d06094da393afafd9ad6b8ba4bad99b9a939a61
+    - generated-by: Claude Fable 5.1
+      lines: 252-255
+      integrity: sha256-eb6482bbe12fca8d3f9423222baeb57daff5c3172d4a092981c2bdc6c5cd841b
+    - generated-by: Claude Opus 5
+      lines: 257-264
+      integrity: sha256-75d0a0ffd19e684cc303c9b993233ebaeae51ad9a0784c7c753058acd6666cfc
+    - generated-by: Claude Fable 5.1
+      lines: 266-301
+      integrity: sha256-2872cf6685a5baf84d5b4b99f42dda1aa9e4cd36a56b1d4f061d8ea938a2cf09
+    - generated-by: Claude Fable 5.1
+      lines: 303-329
+      integrity: sha256-ceec392f3a70e11958fedf7607b02e4dc78410ed04fdb013e8bf42c8a977c5c3
+    - generated-by: Claude Fable 5.1
+      lines: 331-346
+      integrity: sha256-7deb0d1dd1175b271ad9ea455661093802f141e891360eb6283ce45f827f5d77
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

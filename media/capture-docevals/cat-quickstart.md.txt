@@ -1,0 +1,14 @@
+---
+title: Quickstart
+last-reviewed: 2026-09-01
+evals:
+  - id: fresh
+    assertion: Reviewed this year.
+    grader: tool:freshness
+    options:
+      field: last-reviewed
+      max-age-days: 365
+    severity: error
+---
+
+Run `manni docevals run`.

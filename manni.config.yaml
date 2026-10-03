@@ -138,3 +138,87 @@ a11y:
   # site carries no finding at any level. It is a ratchet: lower it as
   # findings are fixed, never raise it.
   severity: notice
+
+# The evals tool grading this site. A bare `manni docevals run` reads the
+# `site` collection above, the same pages a bare `manni meta validate` reads.
+# Each page's evals sit in its `{page}.meta.yaml` manifest, beside an
+# `eval-suite:` naming the domain the page documents. The fixture showcase the
+# tool's own tests run lives beside its fixtures, in
+# test/docevals/fixtures/pages/manni.config.yaml.
+docevals:
+  defaults:
+    # A page that names no suite still gets the site-wide check. A page that
+    # names its domain's suite gets that one instead.
+    suite: site
+    failFast: false
+    concurrency: 4
+
+  # A local model, so a judged run needs no key and sends nothing anywhere.
+  # Named rather than detected, so a judged run behaves the same on every
+  # machine. The model is pinned rather than left to the `auto` tier, which
+  # picks by free memory, and every cache key names it. The Docs judge
+  # workflow caches this alias, so the two move together. Under docevals:
+  # rather than a top-level providers: map, because that map is every tool's
+  # default and the metadata tool's fill tests expect detection.
+  provider: llama-cpp
+  model: granite-4.1-3b-q2
+
+  judge:
+    ensembleRuns: 3
+    temperature: 0
+    zones:
+      autoPass: 0.8
+      autoFail: 0.8
+    falsePositiveAlert: 0.15
+    # Below the family cache directory, which .gitignore excludes.
+    cacheDir: .manni/docevals/cache
+    maxTurns: 600
+    # One local context at a time. Four at once exhausted memory and left 65
+    # of 68 evals unusable (ADR 01039).
+    concurrency: 1
+
+  fill:
+    cacheDir: .manni/docevals/cache/fill
+    maxTurns: 200
+
+  # Nothing on this site runs content-authored commands. The docs-as-tests
+  # workflow runs the pages' inline steps.
+  execution:
+    allow: []
+
+  evals:
+    # Deterministic, so `npm run docs:check-docevals` grades it offline.
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
+      severity: error
+    # Judged, so a deterministic run skips it. Named for `--eval` and for
+    # pages that `use:` it.
+    no-future-promises:
+      type: regression
+      assertion: The page makes no claims about unreleased or future functionality.
+      grader: ai
+      evidence: All prose sections
+      examples:
+        pass: Describes only shipped behavior.
+        fail: Says "coming soon" or references an unreleased version.
+
+  # One suite per domain, named by the pages' `eval-suite:`. Each page's own
+  # capability evals report under its suite beside `no-todo-markers`. A
+  # skipped eval does not count toward the rate, so a deterministic run
+  # measures the regex alone.
+  suites:
+    site: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    a11y: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    cite: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    docevals: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    graph: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    key: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    lint: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    manni: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    meta: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    term: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    tracevals: { target-pass-rate: 1.0, evals: [no-todo-markers] }

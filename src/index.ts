@@ -4,6 +4,7 @@ export * from "./meta/index.js";
 // metadata tool's flat export or with each other's:
 // `import { cite } from "@hawkeyexl/manni"`.
 export * as cite from "./cite/index.js";
+export * as docevals from "./docevals/index.js";
 // The lint domain (proposal 0050): its command cores, the template registry,
 // the parsers and the reporters. `import { lint } from "@hawkeyexl/manni"`.
 export * as lint from "./lint/index.js";
