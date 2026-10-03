@@ -18,6 +18,8 @@ on:
       - "docs/**"
       - "src/**"
       - "test/fixtures/**"
+      # The docevals pages' steps run against this corpus and its config.
+      - "test/docevals/fixtures/**"
       - ".doc-detective.json"
       - ".github/workflows/docs-as-tests.yml"
       # A dependency bump can change what a documented command does or costs,
