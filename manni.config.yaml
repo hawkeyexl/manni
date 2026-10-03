@@ -153,13 +153,15 @@ docevals:
     failFast: false
     concurrency: 4
 
+  # A local model, so a judged run needs no key and sends nothing anywhere.
   # Named rather than detected, so a judged run behaves the same on every
-  # machine. No model is pinned: the inference library's default for the
-  # provider is used, and every cache key names the model it resolved to.
-  # Under docevals: rather than a top-level providers: map, because that map
-  # is every tool's default and the metadata tool's fill tests expect
-  # detection.
-  provider: anthropic
+  # machine. The model is pinned rather than left to the `auto` tier, which
+  # picks by free memory, and every cache key names it. The Docs judge
+  # workflow caches this alias, so the two move together. Under docevals:
+  # rather than a top-level providers: map, because that map is every tool's
+  # default and the metadata tool's fill tests expect detection.
+  provider: llama-cpp
+  model: granite-4.1-3b-q2
 
   judge:
     ensembleRuns: 3
@@ -171,6 +173,9 @@ docevals:
     # Below the family cache directory, which .gitignore excludes.
     cacheDir: .manni/docevals/cache
     maxTurns: 600
+    # One local context at a time. Four at once exhausted memory and left 65
+    # of 68 evals unusable (ADR 01039).
+    concurrency: 1
 
   fill:
     cacheDir: .manni/docevals/cache/fill

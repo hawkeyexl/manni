@@ -513,6 +513,13 @@ npm run docs:check-links  # every internal link and anchor in the built site
                         # `cd docs && npm run build` first.
 npm run docs:check-docevals  # the evals tool over the whole site, deterministic
                         # evals only, from the root config's docevals: section
+node dist/cli.js docevals run --ai-only  # the site's judged evals, on this machine
+                        # with llama-cpp and granite-4.1-3b-q2 from the root
+                        # config. Local only: CI never runs it, because a CPU
+                        # runner takes minutes per call. About 45s a page on a
+                        # GPU. If node-llama-cpp's prebuilt CUDA backend
+                        # crashes (ggml-cuda.cu "CUDA error"), set
+                        # NODE_LLAMA_CPP_GPU=vulkan to use the same GPU.
 npm run smoke:lint      # build, then exercise lint's built-in templates through
                         # the real dist/cli.js. The templates are YAML files read
                         # by path at runtime, so a path right in src/ can be wrong
