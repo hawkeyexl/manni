@@ -92,9 +92,9 @@ jobs:
       # involved. Every page gets no-todo-markers through its domain's suite.
       - name: Check the site with docevals (dogfood)
         run: npm run docs:check-docevals
-      # The graph tool over its own docs section, through an explicit -c. Build
-      # then check, deterministic and offline. Kept identical to the step in
-      # ci.yml.
+      # The graph tool over its own docs section, through the repo-root config.
+      # Build, check, and assert the manifests were read; deterministic and
+      # offline. Kept identical to the step in ci.yml.
       - name: Check the graph docs section (dogfood)
         run: npm run docs:check-graph
 

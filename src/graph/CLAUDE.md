@@ -264,12 +264,14 @@ Corpus-defining settings such as routes and derive sources may be config-only.
 
 ## Commands
 
-- `node dist/cli.js graph build`, a dogfood build over the fixture corpus through
-  the repository's own `manni.config.yaml`. The corpus is named by path in the
-  `graph:` section rather than declared as a collection, because a bare
-  `manni meta validate` reads every collection.
-- `node dist/cli.js graph check`, the shapes gate over that graph.
-- `node dist/cli.js graph stats --check`, which exits 1 on this corpus by design.
+- `npm run docs:check-graph`, the dogfood. It builds the graph of the site's
+  graph section through the repository's own `manni.config.yaml`, whose
+  `graph:` section describes the site, then runs the shapes gate. Last, it
+  asserts that a value only a `{page}.meta.yaml` manifest holds reached the
+  graph.
+- The fixture corpus carries its own config. Run `node dist/cli.js graph build`
+  from `test/graph/fixtures/corpus/`. `graph stats --check` exits 1 there by
+  design.
 - `npm run test:graph:real`, the real-model suite. It needs the optional
   `@huggingface/transformers` peer and, for the fill half, a server on
   `OLLAMA_BASE_URL`. No CI job runs it.

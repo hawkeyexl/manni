@@ -223,30 +223,44 @@ docevals:
     term: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     tracevals: { target-pass-rate: 1.0, evals: [no-todo-markers] }
 
-# The graph tool. Its own key, its own settings; the metadata tool above never
-# reads them. Carried over from moose-kg's `dockg.docs.yaml`, which pointed at
-# that repository's docs site; those pages are not in this repository yet.
+# The graph tool over this site. Its own key, its own settings; the metadata
+# tool above never reads them. It declares no document set of its own: the
+# `site` collection is the one every tool reads, and its `{page}.meta.yaml`
+# manifests reach the graph exactly as they reach `manni meta validate`.
+# `npm run docs:check-graph` names the graph section by path, builds it and
+# checks it, then asserts that a manifest-only value reached the graph.
 #
-# It declares no document set. Document sets are the family's `collections:`
-# now (proposal 0041, 0051 §1), and every tool reads every collection — so a
-# `graph-fixtures` collection here would hand `manni meta validate` and
-# `manni cite check` a corpus of deliberately-broken fixtures (0048 known
-# limit 1, restated as 0051 known limit 1). The fixture corpus is named by
-# path instead, the way docevals names its own:
-# `manni graph build test/graph/fixtures/corpus/docs`.
+# The fixture corpus under test/graph/fixtures/corpus/ carries its own
+# manni.config.yaml, with a deliberately broken link and section reference, so
+# it is never this section's business.
 graph:
-  baseIri: https://example.com/graph/
+  # An example.com base rather than the site's own. These pages are not
+  # published as linked data; the graph is a gate, and a base IRI that promised
+  # to dereference would be a promise nothing keeps.
+  baseIri: https://example.com/manni-docs/
 
   # Under .manni/, which is gitignored: the graph is a gate, not an artifact
   # this repository ships.
   out: .manni/graph/graph.ttl
 
+  # Published routes back to source files, so a link written the way a reader
+  # sees it (/manni/graph/reference/cli/) resolves to the page that serves it.
   routes:
-    - root: test/graph/fixtures/corpus/docs
-      basePath: /
-    - root: test/graph/fixtures/corpus/docs/de
-      basePath: /de
-      language: de
-    - root: test/graph/fixtures/corpus/docs/fr
-      basePath: /fr
-      language: fr
+    - basePath: /manni
+      root: docs/src/content/docs
+      extensions: [".md", ".mdx"]
+      indexFiles: ["index"]
+      language: en
+
+  # No `provenance` source. These pages are written in the same commits as the
+  # code they document, so a per-page git history here measures the branch
+  # rather than the docs, and it would make the gate's output depend on how
+  # the work happened to be committed.
+  build:
+    derive: [frontmatter, sections, links, tags, images, code]
+
+  # The bundled shapes are the contract. Nothing is added: what this job
+  # checks is that the section a reader browses holds together as a graph,
+  # under exactly the rules a reader of these pages would get.
+  check:
+    shapes: []
