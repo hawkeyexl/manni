@@ -85,7 +85,10 @@ describe("a keyless {page} manifest", () => {
   });
 
   it("reaches run through prepareRun", async () => {
-    const context = await prepareRun({ configDir: fixture });
+    // Deterministic only: this is about where metadata is read from, and
+    // building a judge runs provider auto-detection, which takes longer than
+    // the test timeout on macOS runners.
+    const context = await prepareRun({ configDir: fixture, deterministicOnly: true });
     const loader = context.metadataFor;
     if (loader === undefined) throw new Error("the fixture declares a manifest");
     const supplied = await loader(await artifact("write-docs"));
