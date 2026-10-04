@@ -3,15 +3,11 @@
  * followed by the markdown summary (suitable for $GITHUB_STEP_SUMMARY).
  */
 import type { EngineReport } from "../core/engine.js";
+import {
+  escapeWorkflowCommandMessage as escapeData,
+  escapeWorkflowCommandProperty as escapeProperty,
+} from "../../shared/github.js";
 import { renderMarkdown } from "./markdown.js";
-
-function escapeData(s: string): string {
-  return s.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
-}
-
-function escapeProperty(s: string): string {
-  return escapeData(s).replace(/:/g, "%3A").replace(/,/g, "%2C");
-}
 
 export function renderGithub(report: EngineReport): string {
   const lines: string[] = [];
