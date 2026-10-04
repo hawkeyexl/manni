@@ -9,6 +9,6 @@ docs/src/content/docs/docevals/ci/judge-pull-requests-locally.mdx:
     - "@hawkeyexl"
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-171
-      integrity: sha256-172cd5a7eaf4764bc40d9eb4bde1b3df7d097347c02fa580e0c63d7ddca9ba94
+      lines: 2-176
+      integrity: sha256-df3307f432417f90d093b05d4a6cee78336899a1a9d2179453fdddb305c215fa
   created: 2026-10-04
