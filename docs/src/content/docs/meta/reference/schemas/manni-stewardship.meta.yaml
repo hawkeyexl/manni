@@ -30,8 +30,11 @@ docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx:
       lines: 30-234
       integrity: sha256-1a8ae803f5cd078840ddfc9849f4ea366b108b9b9296d07c1dccb0dfafa530fd
     - generated-by: Claude Opus 5.5
-      lines: 247-303
-      integrity: sha256-b53f96504f478023d334b12195c0d700fd1ccbac8d29230646f5b3d3e7991fd2
+      lines: 247-291
+      integrity: sha256-8d6990d14bd666d60a35c2a22700390f48b757a50e8b2ad5cc7396c4909cb793
+    - generated-by: Claude Opus 5.5
+      lines: 298-302
+      integrity: sha256-6a664097b1d85ebdb8f6ed99f1646022638d6b5e138a82030b8afc3075b5a63d
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
