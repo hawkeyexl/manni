@@ -14,6 +14,7 @@ import { renderList, runList } from "./commands/list.js";
 import { runFill } from "./commands/fill.js";
 import { runRun } from "./commands/run.js";
 import { TracevalsError } from "./types.js";
+import { allowExecutionMessage, isExecutionGrant } from "../shared/execution.js";
 import {
   CALIBRATE_FORMATS,
   REPORT_FORMATS,
@@ -62,13 +63,23 @@ interface RunFlags extends ConfigFlags {
   output?: string;
   history?: boolean;
   failOnNeedsReview?: boolean;
-  commands?: boolean;
+  allowExecution?: string[];
+  execution?: boolean;
   require?: string[];
   reportUnusedArtifacts?: boolean;
   manifest?: string;
   allProjects?: boolean;
   newerThan?: string;
   limit?: number;
+}
+
+/**
+ * Repeatable execution grant, validated on the way in. An unknown value is a
+ * usage error rather than a grant that quietly matches nothing.
+ */
+function collectGrant(value: string, previous: string[]): string[] {
+  if (!isExecutionGrant(value)) fail(new TracevalsError(allowExecutionMessage(value)));
+  return [...previous, value];
 }
 
 /**
@@ -162,8 +173,8 @@ function whole(
  * The single mapping from `addRunFlags`' options onto the shared run options.
  *
  * `run` and `calibrate` accept the same flags, and `calibrate` used to
- * hand-copy the list — which is how it came to accept `--no-commands` and drop
- * it on the floor. `addRunFlags`' own docstring says an accepted flag that
+ * hand-copy the list, which is how it came to accept a flag and drop it on
+ * the floor. `addRunFlags`' own docstring says an accepted flag that
  * quietly does nothing is worse than an absent one, so there is now one place
  * to add a flag rather than two places to remember.
  *
@@ -194,7 +205,13 @@ function sharedRunOptions(opts: RunFlags) {
     // defaults a lone `--no-x` to `true`, which makes the config's own value
     // unreachable from the command line.
     failOnNeedsReview: opts.failOnNeedsReview,
-    commands: opts.commands,
+    // Commander's default is `[]`, which is "no flag", not "run nothing": only
+    // a list someone typed narrows the run, and `--no-execution` runs none.
+    ...(opts.execution === false
+      ? { allowExecution: [] }
+      : (opts.allowExecution ?? []).length > 0
+        ? { allowExecution: opts.allowExecution }
+        : {}),
     reportUnusedArtifacts: opts.reportUnusedArtifacts,
     ...(opts.require !== undefined ? { require: opts.require } : {}),
     ...(opts.allProjects !== undefined ? { allProjects: opts.allProjects } : {}),
@@ -308,16 +325,15 @@ function addRunFlags(
     )
     .option("--fail-on-needs-review", "treat needs-review as a failure")
     .option("--no-fail-on-needs-review", "do not fail the run on needs-review")
-    // Declared as a pair. A lone `--no-commands` makes commander default
-    // `opts.commands` to `true`, and the `??` overlay in `prepareRun` then
-    // never sees `undefined` — which left `graders.command.enabled: false`
-    // unreachable from the CLI and ADR 01011's opt-out dead (see
-    // `--fail-on-needs-review`, which has had the pair from the start).
-    .option("--commands", "execute command-graded evals (the default)")
+    // `<kind>`, not `<kind...>`: a variadic option greedily eats the
+    // positional `[traces...]` that follow it. Repeat the flag instead.
     .option(
-      "--no-commands",
-      "do not execute command-graded evals; they report skipped",
+      "--allow-execution <kind>",
+      "Run only these execution grants (repeatable): frontmatter-commands",
+      collectGrant,
+      [],
     )
+    .option("--no-execution", "Clear every execution grant for this run")
     .option(
       "--require <module>",
       "load a grader plugin; repeatable, and added to config plugins",

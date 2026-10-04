@@ -181,7 +181,7 @@ describe("runEvals", () => {
   });
 
   describe("the command opt-out", () => {
-    const disabled = parseConfig({ graders: { command: { enabled: false } } });
+    const disabled = parseConfig({ execution: { allow: [] } });
 
     it("runs command evals by default (ADR 01011 is unchanged)", async () => {
       const report = await run();
@@ -194,7 +194,9 @@ describe("runEvals", () => {
       const report = await run({ config: disabled });
       const cmd = report.evalResults.find((r) => r.evalName === "no-force-push");
       expect(cmd?.outcome).toBe("skipped");
-      expect(cmd?.skipReason).toMatch(/command execution is disabled/);
+      expect(cmd?.skipReason).toBe(
+        "frontmatter commands not granted (execution.allow: [frontmatter-commands])",
+      );
     });
 
     it("changes nothing else about the run", async () => {

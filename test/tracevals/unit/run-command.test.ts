@@ -213,7 +213,7 @@ describe("runRun availability reporting", () => {
   });
 });
 
-describe("runRun command opt-out", () => {
+describe("runRun execution grants", () => {
   const fixtureProject = fileURLToPath(
     new URL("../fixtures/project", import.meta.url),
   );
@@ -241,10 +241,29 @@ describe("runRun command opt-out", () => {
     expect(cmd(report)?.outcome).toBe("pass");
   });
 
-  it("reaches the engine from `--no-commands`", async () => {
-    const { report } = await runCommands({ commands: false });
+  it("reaches the engine from `--no-execution`", async () => {
+    const { report } = await runCommands({ allowExecution: [] });
     expect(cmd(report)?.outcome).toBe("skipped");
-    expect(cmd(report)?.skipReason).toMatch(/command execution is disabled/);
+    expect(cmd(report)?.skipReason).toMatch(/frontmatter commands not granted/);
+  });
+
+  it("keeps a grant the config holds when it is named", async () => {
+    const { report } = await runCommands({ allowExecution: ["frontmatter-commands"] });
+    expect(cmd(report)?.outcome).toBe("pass");
+  });
+
+  it("never widens a config that runs nothing", async () => {
+    const { report } = await runCommands({
+      configDir: noCommandsProject,
+      allowExecution: ["frontmatter-commands"],
+    });
+    expect(cmd(report)?.outcome).toBe("skipped");
+  });
+
+  it("refuses a grant that does not exist rather than running nothing", async () => {
+    await expect(runCommands({ allowExecution: ["frontmatter-comands"] })).rejects.toThrow(
+      'unknown execution grant "frontmatter-comands"; expected one of frontmatter-commands',
+    );
   });
 
   it("leaves the config value in force when the flag is absent", async () => {

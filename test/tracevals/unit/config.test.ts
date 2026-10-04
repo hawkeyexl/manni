@@ -126,23 +126,34 @@ describe("parseConfig", () => {
     });
   });
 
-  describe("graders.command.enabled", () => {
-    it("defaults to enabled — ADR 01011 stands, this is only an opt-out", () => {
-      expect(parseConfig({}).graders.command.enabled).toBe(true);
+  describe("execution.allow", () => {
+    it("holds every grant when absent, so command evals run by default", () => {
+      expect(parseConfig({}).execution.allow).toEqual(["frontmatter-commands"]);
     });
 
-    it("honours an explicit opt-out", () => {
-      const config = parseConfig({ graders: { command: { enabled: false } } });
-      expect(config.graders.command.enabled).toBe(false);
+    it("runs nothing under an empty list", () => {
+      expect(parseConfig({ execution: { allow: [] } }).execution.allow).toEqual([]);
     });
 
-    it("rejects unknown keys under graders", () => {
-      expect(() => parseConfig({ graders: { commands: {} } })).toThrow(
-        TracevalsError,
+    it("refuses a grant that does not exist, naming the one that does", () => {
+      expect(() => parseConfig({ execution: { allow: ["frontmatter-comands"] } })).toThrow(
+        new TracevalsError(
+          'manni.config.yaml: unknown execution grant "frontmatter-comands"; ' +
+            "expected one of frontmatter-commands",
+        ),
       );
-      expect(() =>
-        parseConfig({ graders: { command: { enabled: "no" } } }),
-      ).toThrow(TracevalsError);
+    });
+
+    it("names every unknown grant, in the plural", () => {
+      expect(() => parseConfig({ execution: { allow: ["a", "b"] } })).toThrow(
+        /unknown execution grants "a", "b"/,
+      );
+    });
+
+    it("has replaced graders.command.enabled", () => {
+      expect(() => parseConfig({ graders: { command: { enabled: false } } })).toThrow(
+        /unknown key "graders"/,
+      );
     });
   });
 

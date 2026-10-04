@@ -805,17 +805,13 @@ describe.skipIf(!built)("built CLI", () => {
   });
 
   /**
-   * ADR 01011's safety opt-out, exercised through the CLI rather than around
-   * it.
-   *
-   * `--no-commands` was declared with no positive twin, so commander defaulted
-   * `opts.commands` to `true`; `prepareRun`'s `options.commands ?? config` then
-   * never saw `undefined`, and `graders.command.enabled: false` in a config was
-   * unreachable from the command line. The unit tests hand `commands` straight
-   * to `runRun`, which is exactly why they never caught it — only the built
-   * binary exercises the flag declaration.
+   * The execution grants (proposal 0075), exercised through the CLI rather than
+   * around it. Everything available runs unless the operator narrows it, and
+   * no flag widens what the config narrowed. Only the built binary exercises
+   * the flag declarations, which is where a commander default once hid a
+   * config value from the command line.
    */
-  describe("command execution opt-out", () => {
+  describe("execution grants", () => {
     // A config directory whose only job is to turn command execution off.
     const noCommands = join(root, "test/tracevals/fixtures/no-commands");
     const home = { CLAUDE_CONFIG_DIR: join(root, "test/tracevals/fixtures/home/.claude") };
@@ -839,22 +835,49 @@ describe.skipIf(!built)("built CLI", () => {
     it("lets the config decide when neither flag is passed", async () => {
       const { stdout } = await runCli(args([]), home, noCommands);
       expect(commandEval(stdout)?.outcome).toBe("skipped");
-      expect(commandEval(stdout)?.skipReason).toMatch(
-        /command execution is disabled/,
+      expect(commandEval(stdout)?.skipReason).toBe(
+        "frontmatter commands not granted (execution.allow: [frontmatter-commands])",
       );
     });
 
-    it("--commands overrides a config that disabled them", async () => {
-      const { stdout } = await runCli(args(["--commands"]), home, noCommands);
+    it("--allow-execution never widens a config that runs nothing", async () => {
+      const { stdout } = await runCli(
+        args(["--allow-execution", "frontmatter-commands"]),
+        home,
+        noCommands,
+      );
+      expect(commandEval(stdout)?.outcome).toBe("skipped");
+    });
+
+    it("--allow-execution keeps a grant the default holds", async () => {
+      const { stdout } = await runCli(
+        args(["--allow-execution", "frontmatter-commands"]),
+        home,
+      );
       expect(commandEval(stdout)?.outcome).toBe("pass");
     });
 
-    it("--no-commands still skips, and still states why", async () => {
-      const { stdout } = await runCli(args(["--no-commands"]), home);
+    it("--no-execution skips, and states why", async () => {
+      const { stdout } = await runCli(args(["--no-execution"]), home);
       expect(commandEval(stdout)?.outcome).toBe("skipped");
-      expect(commandEval(stdout)?.skipReason).toMatch(
-        /command execution is disabled/,
+      expect(commandEval(stdout)?.skipReason).toMatch(/frontmatter commands not granted/);
+    });
+
+    it("refuses an --allow-execution value that names no grant", async () => {
+      const { code, stderr } = await runCli(
+        args(["--allow-execution", "page-embedded-steps"]),
+        home,
       );
+      expect(code).toBe(2);
+      expect(stderr).toContain(
+        'manni: --allow-execution must be one of frontmatter-commands, got "page-embedded-steps"',
+      );
+    });
+
+    it("no longer accepts --no-commands", async () => {
+      const { code, stderr } = await runCli(args(["--no-commands"]), home);
+      expect(code).toBe(2);
+      expect(stderr).toMatch(/unknown option '--no-commands'/);
     });
 
     it("runs the command by default against the repo's own config", async () => {
@@ -863,7 +886,7 @@ describe.skipIf(!built)("built CLI", () => {
     });
 
     // `calibrate` shares `run`'s flags, so it must share their behaviour. It
-    // hand-copied the mapping and omitted `commands` entirely: the flag parsed,
+    // once hand-copied the mapping and dropped a flag: the flag parsed,
     // printed in --help, and did nothing.
     it("calibrate acts on the flag it accepts", async () => {
       const { stdout } = await runCli(
@@ -878,7 +901,7 @@ describe.skipIf(!built)("built CLI", () => {
           "--provider",
           "mock",
           "--no-cache",
-          "--no-commands",
+          "--no-execution",
           "--format",
           "json",
         ],
@@ -888,7 +911,7 @@ describe.skipIf(!built)("built CLI", () => {
         (e: { evalName: string }) => e.evalName === "no-force-push",
       );
       expect(row?.skipReasons ?? []).toContainEqual(
-        expect.stringMatching(/command execution is disabled/),
+        expect.stringMatching(/frontmatter commands not granted/),
       );
     });
   });

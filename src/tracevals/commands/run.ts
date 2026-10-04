@@ -28,7 +28,13 @@ import {
 import { makeTraceJudge, type TraceJudge } from "../judge/trace-judge.js";
 import type { InferenceProvider } from "@hawkeyexl/inference";
 import { render, type ReportFormat } from "../reporters/index.js";
-import type { RunReport } from "../types.js";
+import { TracevalsError, type RunReport } from "../types.js";
+import {
+  grantsFor,
+  isExecutionGrant,
+  unknownGrantsMessage,
+  type ExecutionGrant,
+} from "../../shared/execution.js";
 import type { TracevalsConfig } from "../core/config.js";
 
 /**
@@ -53,10 +59,11 @@ export interface RunSharedOptions {
   /** Overrides config.failOnNeedsReview; undefined defers to the config. */
   failOnNeedsReview?: boolean;
   /**
-   * `--no-commands` sets this false. Overrides
-   * `config.graders.command.enabled`; undefined defers to the config.
+   * `--allow-execution`: run only these grants, of those `execution.allow`
+   * holds. Absent keeps them all; `[]` (`--no-execution`) runs none. Never
+   * widens what the config narrowed.
    */
-  commands?: boolean;
+  allowExecution?: string[];
   /** `--require`: grader plugins to load *in addition to* `config.plugins`. */
   require?: string[];
   /** Overrides config.reportUnusedArtifacts; undefined defers to the config. */
@@ -92,6 +99,18 @@ export interface RunCommandResult {
   report: RunReport;
   rendered: string;
   comparison?: HistoryComparison;
+}
+
+/**
+ * Grants, checked rather than asserted. The CLI validates its own flag, but
+ * this is also the programmatic entry point. An unknown grant that silently
+ * matched nothing would narrow the run to no grant at all: every command eval
+ * skipped, which reads as a clean corpus rather than a misspelled grant.
+ */
+function asGrants(values: readonly string[]): ExecutionGrant[] {
+  const unknown = values.filter((v) => !isExecutionGrant(v));
+  if (unknown.length > 0) throw new TracevalsError(unknownGrantsMessage(unknown));
+  return values.filter(isExecutionGrant);
 }
 
 /**
@@ -139,12 +158,14 @@ export async function prepareRun(
   const config = {
     ...loaded,
     failOnNeedsReview: options.failOnNeedsReview ?? loaded.failOnNeedsReview,
-    graders: {
-      ...loaded.graders,
-      command: {
-        ...loaded.graders.command,
-        enabled: options.commands ?? loaded.graders.command.enabled,
-      },
+    execution: {
+      allow: [
+        ...grantsFor(loaded.execution.allow, {
+          ...(options.allowExecution === undefined
+            ? {}
+            : { allowExecution: asGrants(options.allowExecution) }),
+        }),
+      ],
     },
     // A set-valued knob, so `--require` *adds* instead of replacing. A one-off
     // flag must not silently unregister the house graders a repo's config

@@ -317,10 +317,17 @@ trace itself records.
   this tool ships belongs in its next version, as `tool-order` joined 1.1.0. The accepted cost is that a stale name (`llm`, the
   pre-1.0 spelling of `ai`) passes the schema and fails at the registry instead.
 - `command`-graded evals **execute a program named in an artifact**, on by
-  default (ADR 01011). argv is spawned with `shell: false`, and `timeout-ms`
-  always has a finite default. A command that cannot run, times out, or whose
-  `generated-assertion-hash` no longer matches its assertion is an `error`, never
-  a pass.
+  default (ADR 01011, proposal 0075). They sit behind the family's one grant,
+  `frontmatter-commands`, from `src/shared/execution.ts`, the grant docevals
+  reads. Everything available runs unless the operator narrows it.
+  `tracevals.execution.allow` lists fewer grants, `[]` runs none,
+  `--allow-execution` keeps only the named ones the config holds, and
+  `--no-execution` runs none for one run. No flag widens what the config
+  narrowed, and an ungranted eval is `skipped` with a reason, never a pass.
+  argv is spawned with `shell: false` through `src/shared/exec.ts`, and
+  `timeout-ms` always has a finite default. A command that cannot run, times
+  out, or whose `generated-assertion-hash` no longer matches its assertion is an
+  `error`, never a pass.
 - **The self-preference check reads 0046's records** (proposal 0049 §5). It keeps
   both axes. *session* is the trace's model being the judge's model. *criterion*
   is the judge's model appearing in a `meta-provenance` entry that lists the

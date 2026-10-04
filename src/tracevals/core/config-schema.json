@@ -39,20 +39,16 @@
         }
       }
     },
-    "graders": {
+    "execution": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Per-grader settings. Only graders with a knob of their own appear here; every other grader is configured entirely by the eval that names it.",
+      "description": "Operator grant for executing content-authored code.",
       "properties": {
-        "command": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "description": "Run `command`-graded evals. On by default (ADR 01011). Set false — or pass --no-commands — to evaluate a trace without executing anything that trace's project declares; those evals then report `skipped` with a reason, never `pass`."
-            }
-          }
+        "allow": {
+          "type": "array",
+          "items": { "enum": ["frontmatter-commands"] },
+          "default": ["frontmatter-commands"],
+          "description": "Which content-authored code a run may execute. Absent, every grant holds; list fewer to narrow it, or write [] to run none. frontmatter-commands lets `command` evals declared in an artifact's front matter run; without it they report `skipped` with a reason, never `pass`."
         }
       }
     },

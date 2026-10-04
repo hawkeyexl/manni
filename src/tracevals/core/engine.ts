@@ -3,6 +3,7 @@
  * graders → AI judge → aggregate. The judge is injectable so the engine
  * tests fully offline.
  */
+import { NOT_GRANTED_REASON } from "../../shared/execution.js";
 import { parseTraceFile } from "../trace/claude.js";
 import { resolveArtifacts } from "../artifacts/resolve.js";
 import { findManifest, type FoundManifest } from "../capture/manifest.js";
@@ -171,16 +172,17 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
       continue;
     }
 
-    // The one grader that executes something. ADR 01011 keeps it on by
-    // default; ADR 01019 gives the person taking that risk a lever. A disabled
-    // check is `skipped` with a reason, never `pass`: an unrun check has not
-    // been satisfied.
-    if (plan.grader === "command" && !config.graders.command.enabled) {
+    // The one grader that executes something. On by default, and narrowed by
+    // the operator's grants (proposal 0075). An ungranted check is `skipped`
+    // with a reason, never `pass`: an unrun check has not been satisfied.
+    if (
+      plan.grader === "command" &&
+      !config.execution.allow.includes("frontmatter-commands")
+    ) {
       results.push({
         ...base,
         outcome: "skipped",
-        skipReason:
-          "command execution is disabled (--no-commands / graders.command.enabled: false)",
+        skipReason: NOT_GRANTED_REASON,
         durationMs: 0,
       });
       continue;

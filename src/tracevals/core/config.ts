@@ -25,6 +25,13 @@ import { compileRedactPatterns } from "../judge/redact.js";
 import { DEFAULT_CAPTURE_DIR } from "../capture/types.js";
 import { DEFAULT_LABELS_FILE } from "../calibrate/labels.js";
 import { TracevalsError } from "../types.js";
+import {
+  configuredGrants,
+  EXECUTION_GRANTS,
+  isExecutionGrant,
+  unknownGrantsMessage,
+  type ExecutionGrant,
+} from "../../shared/execution.js";
 
 const configSchema = configSchemaJson as Record<string, unknown>;
 
@@ -91,17 +98,12 @@ export interface TracevalsConfig {
     maxTotalChars: number;
   };
   /**
-   * Per-grader settings, for the graders that have a knob outside the eval
-   * entry that names them.
+   * What content-authored code a run may execute: the grants it holds, every
+   * one unless the operator narrows it (proposal 0075). A `command` eval runs
+   * only under `frontmatter-commands`; `[]` runs none and reports them
+   * `skipped`.
    */
-  graders: {
-    /**
-     * `command` runs by default — ADR 01011's reasoning is unchanged. This is
-     * the opt-out that decision never provided, for the person evaluating a
-     * trace whose project they do not trust (ADR 01019).
-     */
-    command: { enabled: boolean };
-  };
+  execution: { allow: ExecutionGrant[] };
   history: {
     file: string;
   };
@@ -208,7 +210,7 @@ interface RawConfig {
     redact?: string[];
   };
   render?: { maxBlockChars?: number; maxTotalChars?: number };
-  graders?: { command?: { enabled?: boolean } };
+  execution?: { allow?: ExecutionGrant[] };
   history?: { file?: string };
   capture?: { dir?: string };
   fill?: {
@@ -243,6 +245,12 @@ export function parseConfig(
   file: ConfigFileContext = {},
 ): TracevalsConfig {
   const source = file.source ?? DEFAULT_CONFIG_FILENAME;
+  // Before the schema: Ajv's enum error names neither the value nor the
+  // grants that exist, and a grant is the key where a misreading costs most.
+  const unknownGrants = configuredGrants(raw).filter((g) => !isExecutionGrant(g));
+  if (unknownGrants.length > 0) {
+    throw new TracevalsError(`${source}: ${unknownGrantsMessage(unknownGrants)}`);
+  }
   if (!validate(raw)) {
     const detail = (validate.errors ?? [])
       .map((e) => {
@@ -298,9 +306,7 @@ export function parseConfig(
       maxBlockChars: r.render?.maxBlockChars ?? 2000,
       maxTotalChars: r.render?.maxTotalChars ?? 150000,
     },
-    graders: {
-      command: { enabled: r.graders?.command?.enabled ?? true },
-    },
+    execution: { allow: [...(r.execution?.allow ?? EXECUTION_GRANTS)] },
     history: {
       file: r.history?.file ?? ".manni/tracevals/history.jsonl",
     },
