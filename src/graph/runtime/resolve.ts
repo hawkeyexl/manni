@@ -101,6 +101,146 @@ function fencedLines(lines: string[]): boolean[] {
   return mask;
 }
 
+/** One heading as the source spells it, located by the line it starts on. */
+interface SourceHeading {
+  /** First line: the `#` line, or a setext heading's first line of text. */
+  start: number;
+  level: number;
+  /** The heading's raw inline text, markdown and all. */
+  text: string;
+}
+
+const ATX = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?[ \t]*$/;
+const SETEXT_UNDERLINE = /^ {0,3}(=+|-+)[ \t]*$/;
+
+/**
+ * Whether a line can be paragraph text, which a setext underline turns into a
+ * heading. A blank line, an ATX heading, a list item, a block quote, a
+ * thematic break and indented code cannot.
+ */
+function isParagraphLine(line: string): boolean {
+  if (line.trim() === "") return false;
+  if (ATX.test(line)) return false;
+  if (/^ {0,3}([-+*]|\d{1,9}[.)])([ \t]|$)/.test(line)) return false;
+  if (/^ {0,3}>/.test(line)) return false;
+  if (/^ {0,3}([-*_])([ \t]*\1){2,}[ \t]*$/.test(line)) return false;
+  return !/^ {4}/.test(line);
+}
+
+/**
+ * How many leading lines a YAML frontmatter block takes, delimiters included.
+ * Its closing `---` follows a line of text, so without this the scan would
+ * read the last frontmatter key as a setext heading.
+ */
+function frontmatterLength(lines: string[]): number {
+  if (lines[0]?.trim() !== "---") return 0;
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i]?.trim();
+    if (line === "---" || line === "...") return i + 1;
+  }
+  return 0;
+}
+
+/**
+ * Every heading in a markdown source, in order. ATX headings may sit up to
+ * three spaces in and lose any closing `#` run. Setext headings are
+ * underlined with `=` or `-`. Fenced code and frontmatter hold none.
+ *
+ * Line-based, so a shape remark reads and this does not is possible. The
+ * common ones are covered, and a miss leaves one section unindexed.
+ */
+function sourceHeadings(lines: string[]): SourceHeading[] {
+  const fenced = fencedLines(lines);
+  const skip = frontmatterLength(lines);
+  const headings: SourceHeading[] = [];
+  /** First line of the paragraph the scan is inside, or -1. */
+  let paragraph = -1;
+  for (const [i, line] of lines.entries()) {
+    if (i < skip || fenced[i]) {
+      paragraph = -1;
+      continue;
+    }
+    const atx = ATX.exec(line);
+    const hashes = atx?.[1];
+    if (hashes !== undefined) {
+      // A closing run is `#`s after whitespace, or the whole content.
+      const text = (atx?.[2] ?? "").replace(/(^|[ \t]+)#+$/, "");
+      headings.push({ start: i, level: hashes.length, text });
+      paragraph = -1;
+      continue;
+    }
+    const underline = SETEXT_UNDERLINE.exec(line)?.[1];
+    if (underline !== undefined && paragraph >= 0) {
+      headings.push({
+        start: paragraph,
+        level: underline.startsWith("=") ? 1 : 2,
+        text: lines.slice(paragraph, i).join("\n"),
+      });
+      paragraph = -1;
+      continue;
+    }
+    if (isParagraphLine(line)) {
+      if (paragraph < 0) paragraph = i;
+    } else {
+      paragraph = -1;
+    }
+  }
+  return headings;
+}
+
+const ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+};
+
+/** Decode the character references a heading is likely to carry. */
+function decodeEntities(text: string): string {
+  return text.replace(
+    /&(#x[0-9a-f]+|#[0-9]+|[a-z]+);/gi,
+    (whole, name: string) => {
+      if (name.startsWith("#")) {
+        const hex = name[1] === "x" || name[1] === "X";
+        const code = Number.parseInt(name.slice(hex ? 2 : 1), hex ? 16 : 10);
+        return Number.isNaN(code) || code > 0x10ffff
+          ? whole
+          : String.fromCodePoint(code);
+      }
+      return ENTITIES[name.toLowerCase()] ?? whole;
+    },
+  );
+}
+
+/**
+ * The key a heading is matched by, from either side. One side is the
+ * plain-text title the build recorded, the other the source text after
+ * `stripInline`. Markup characters go, whitespace collapses, and case folds.
+ * Both sides pass through it, so a character it drops cannot make them differ.
+ */
+export function headingKey(text: string): string {
+  return text
+    .replace(/[`*_~\\[\]]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Raw heading source to the text remark reads from it. Links and images keep
+ * their text, autolinks their target, and character references decode.
+ */
+function stripInline(raw: string): string {
+  return decodeEntities(
+    raw
+      .replace(/!?\[([^\]]*)\]\((?:[^()]|\([^()]*\))*\)/g, "$1")
+      .replace(/!?\[([^\]]*)\]\[[^\]]*\]/g, "$1")
+      .replace(/<((?:https?|mailto):[^>\s]+)>/gi, "$1"),
+  );
+}
+
 /**
  * Sections of a document in true document order, reconstructed from the
  * `dcterms:hasPart` tree ordered by `graph:order` within each parent.
@@ -164,11 +304,11 @@ export function sectionOccurrences(
       occurrences.set(section, 0);
       continue;
     }
-    // Keyed exactly the way `sliceSection` matches headings — trimmed and
-    // case-folded. Keyed by the raw title instead, a document with `## Install`
+    // Keyed exactly the way `sliceSection` matches headings, by `headingKey`.
+    // Keyed by the raw title instead, a document with `## Install`
     // and `## install` gives both sections occurrence 0, and the second one
     // then slices the first heading: wrong content under a confident citation.
-    const title = rawTitle.trim().toLowerCase();
+    const title = headingKey(rawTitle);
     const level = graph.literal(section, GRAPH_LEVEL) ?? "";
     let byLevel = counts.get(title);
     if (!byLevel) {
@@ -207,15 +347,7 @@ export function sectionOccurrence(
  */
 export function documentPreamble(markdown: string): string | undefined {
   const lines = markdown.split(/\r?\n/);
-  const fenced = fencedLines(lines);
-  let end = lines.length;
-  for (const [i, line] of lines.entries()) {
-    if (fenced[i]) continue;
-    if (/^#{1,6}\s+/.test(line)) {
-      end = i;
-      break;
-    }
-  }
+  const end = sourceHeadings(lines)[0]?.start ?? lines.length;
   const text = lines.slice(0, end).join("\n").trim();
   return text === "" ? undefined : text;
 }
@@ -266,44 +398,29 @@ function slice(
   ownTextOnly: boolean,
 ): string | undefined {
   const lines = markdown.split(/\r?\n/);
-  const fenced = fencedLines(lines);
-  const wanted = title.trim().toLowerCase();
-  let start = -1;
-  let startLevel = level ?? 0;
+  const headings = sourceHeadings(lines);
+  const wanted = headingKey(title);
   let remaining = occurrence;
+  let found = -1;
 
-  for (const [i, line] of lines.entries()) {
-    if (fenced[i]) continue;
-    const m = /^(#{1,6})\s+(.*)$/.exec(line);
-    // Both groups are mandatory, so a match carries both; requiring them is
-    // the check that proves it, and it subsumes the `if (!m) continue` this
-    // replaces.
-    const hashes = m?.[1];
-    const heading = m?.[2];
-    if (hashes === undefined || heading === undefined) continue;
-    const hLevel = hashes.length;
-    if (heading.trim().toLowerCase() !== wanted) continue;
-    if (level !== undefined && hLevel !== level) continue;
+  for (const [n, heading] of headings.entries()) {
+    if (level !== undefined && heading.level !== level) continue;
+    if (headingKey(stripInline(heading.text)) !== wanted) continue;
     if (remaining > 0) {
       remaining -= 1;
       continue;
     }
-    start = i;
-    startLevel = hLevel;
+    found = n;
     break;
   }
-  if (start < 0) return undefined;
+  const match = headings[found];
+  if (match === undefined) return undefined;
 
-  let end = lines.length;
-  for (let i = start + 1; i < lines.length; i++) {
-    if (fenced[i]) continue;
-    const hashes = /^(#{1,6})\s+/.exec(lines[i] ?? "")?.[1];
-    if (hashes !== undefined && (ownTextOnly || hashes.length <= startLevel)) {
-      end = i;
-      break;
-    }
-  }
-  return lines.slice(start, end).join("\n").trimEnd();
+  const next = headings
+    .slice(found + 1)
+    .find((h) => ownTextOnly || h.level <= match.level);
+  const end = next?.start ?? lines.length;
+  return lines.slice(match.start, end).join("\n").trimEnd();
 }
 
 /**

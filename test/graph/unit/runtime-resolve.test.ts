@@ -11,6 +11,7 @@ import {
   splitFragment,
 } from "../../../src/graph/runtime/resolve.js";
 import { assemble } from "../../../src/graph/runtime/assemble.js";
+import { analyzeDoc } from "../../../src/graph/core/analyze.js";
 import { createTrace } from "../../../src/graph/runtime/trace.js";
 import { NS } from "../../../src/graph/core/vocab.js";
 
@@ -522,5 +523,66 @@ describe("assemble", () => {
     );
     expect(bundle.context.map((b) => b.iri)).toEqual([DOC]);
     expect(bundle.truncated).toBe(true);
+  });
+});
+
+describe("heading shapes the build titles in plain text", () => {
+  /**
+   * The title a section carries is what `analyzeDoc` reads through remark, so
+   * the slice has to find a heading from that title whatever its source shape.
+   */
+  const ownTextOfEach = (md: string): Array<string | undefined> => {
+    const doc = analyzeDoc(md, "docs/a.md", new Set(["docs/a.md"]));
+    const seen = new Map<string, number>();
+    return doc.sections.map((s) => {
+      const key = `${String(s.level)}:${s.title.toLowerCase()}`;
+      const occurrence = seen.get(key) ?? 0;
+      seen.set(key, occurrence + 1);
+      return sectionOwnText(md, s.title, s.level, occurrence);
+    });
+  };
+
+  it.each([
+    ["inline code", "## The `out` key\n\nBody."],
+    ["a link", "## See [Install](./install.md) first\n\nBody."],
+    ["a reference link", "## See [Install][i]\n\nBody.\n\n[i]: ./install.md"],
+    ["an image", "## Logo ![the logo](logo.png)\n\nBody."],
+    ["emphasis", "## A *very* **bold** _move_ ~~not~~\n\nBody."],
+    ["an escape", "## Price \\*not\\* final\n\nBody."],
+    ["an entity", "## Fish &amp; chips\n\nBody."],
+    ["closing hashes", "## Closed ##\n\nBody."],
+    ["a one-space indent", " ## Indented\n\nBody."],
+    ["a three-space indent", "   ## Indented\n\nBody."],
+    ["setext level 1", "Setext One\n==========\n\nBody."],
+    ["setext level 2", "Setext Two\n---\n\nBody."],
+  ])("finds a heading with %s", (_shape, md) => {
+    const [own] = ownTextOfEach(md);
+    expect(own).toBeDefined();
+    expect(own).toContain("Body.");
+  });
+
+  it("ends a setext section at the next heading, and an ATX one at a setext", () => {
+    const md = "# Top\n\nTop body.\n\nNext\n----\n\nNext body.\n\n## Last\n\nLast body.";
+    expect(ownTextOfEach(md)).toEqual([
+      "# Top\n\nTop body.",
+      "Next\n----\n\nNext body.",
+      "## Last\n\nLast body.",
+    ]);
+  });
+
+  it("does not read frontmatter's closing --- as a setext heading", () => {
+    const md = "---\ntitle: Page\n---\n\n# Real\n\nBody.";
+    expect(sectionOwnText(md, "title: Page", 2)).toBeUndefined();
+    expect(ownTextOfEach(md)).toEqual(["# Real\n\nBody."]);
+  });
+
+  it("does not read a thematic break after a blank line as a heading", () => {
+    const md = "# Top\n\nProse.\n\n---\n\nMore prose.";
+    expect(ownTextOfEach(md)).toEqual([md]);
+  });
+
+  it("ends the preamble at a setext or indented heading", () => {
+    expect(documentPreamble("Intro.\n\nTitle\n=====\n\nBody.")).toBe("Intro.");
+    expect(documentPreamble("Intro.\n\n  # Title\n\nBody.")).toBe("Intro.");
   });
 });
