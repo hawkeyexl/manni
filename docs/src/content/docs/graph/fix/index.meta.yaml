@@ -82,8 +82,11 @@ docs/src/content/docs/graph/fix/index.mdx:
       lines: 149
       integrity: sha256-86a1652f404410ea8c42246063291a4a1bb9dc3999219760b68d07686e4fbf35
     - generated-by: Claude Opus 5.5
-      lines: 150-164
-      integrity: sha256-076c498a3abb0d45e1d3fc243d0360f3197462e7b6bca1120ba5fff5aafc8ea9
+      lines: 150-156
+      integrity: sha256-b43106717ef63d34e3d9f4a331048d626a21e16045ef375bfad9d9ff462813a0
+    - generated-by: Claude Opus 5.5
+      lines: 160-164
+      integrity: sha256-2948124a089f6d63c8f376a27f857507d269c7e94b733a9a764170738bb63714
     - generated-by: Claude Opus 5.5
       lines: 168-170
       integrity: sha256-3f52aa5a2994c65f044bec0edf6047c5af16d1bde6442eb87280a7c1645364c7

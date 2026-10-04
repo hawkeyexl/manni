@@ -9,9 +9,6 @@ docs/src/content/docs/graph/explore/impact.mdx:
     - generated-by: Claude Opus 5
       lines: 8-14
       integrity: sha256-7807adad6f6945cc4839065c952072eca7268f13bfc8c7d159e026e694ae573b
-    - generated-by: Claude Opus 5.5
-      lines: 15-17
-      integrity: sha256-6377fb38955cc47ec00257ba2f69795c1a20a70328684b85d26a19c67d935c0c
     - generated-by: Claude Opus 5
       lines: 18-32
       integrity: sha256-a4c08dffe6d4e9c32f885864da480f55cf84ebae43325bccb1e976d55cac0a8a
@@ -28,8 +25,8 @@ docs/src/content/docs/graph/explore/impact.mdx:
       lines: 61-67
       integrity: sha256-e0716562085cd119cbb498f8e9b7404bc1bf700d5e123aac88d956d2e2018f8a
     - generated-by: Claude Opus 5.5
-      lines: 68-69
-      integrity: sha256-d577e37557ebe76125665e9e70c61d7a81ee861d5589b93b8b21af77f9043e24
+      lines: 68
+      integrity: sha256-cf7904c5d69b9ede3e19f4268c41f2b83f14e46bda472834a2f588c8b4a0d221
     - generated-by: Claude Opus 5
       lines: 70-90
       integrity: sha256-bc5c1070f0c2bba36b1234a73e7aa14a6821ce1ed341730174c5be39d1bf5507
@@ -70,8 +67,8 @@ docs/src/content/docs/graph/explore/impact.mdx:
       lines: 130
       integrity: sha256-f7cb1f3c80ab677f7fd71a426c8ce5706f221c6ee6b6c448c3ae82a2cf868567
     - generated-by: Claude Opus 5.5
-      lines: 132-144
-      integrity: sha256-82d35ca1bf875f41a56931957ef2af5b938f5f3d09906b3433bc1e84ecceeda6
+      lines: 132-134
+      integrity: sha256-711bbb6dd9bea977ea5cc1bd71a748a167505691bcfc2612d419b033ab148455
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

@@ -28,8 +28,8 @@ docs/src/content/docs/graph/ci/index.mdx:
       lines: 55-62
       integrity: sha256-7eed0b40323f1e8e523ffa14e1f39e6b96633aa96848c42a142ca72108e0435d
     - generated-by: Claude Opus 5.5
-      lines: 63-64
-      integrity: sha256-55e744947b44fd0f5d16326693a54eb11992af48c9e4da78868e8e71e2f1a422
+      lines: 63
+      integrity: sha256-8c9f3585d0bd43df1be46c26053422c223c5ff0ad87d008a53798a5343cf3df4
     - generated-by: Claude Opus 5
       lines: 65-82
       integrity: sha256-5f865e890abe7981db91f5ad29813ba4f1333178fb63ce991ba05345c2d1e785
