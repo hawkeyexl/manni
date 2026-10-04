@@ -306,6 +306,8 @@ function suppliers(
   const files = new Set<string>();
   for (const key of EVAL_KEYS) {
     const at = locate(`/${key}`);
+    // `at.file` is a path relative to `base`, never a URL: the reader refuses
+    // a URL manifest that owns an eval key before any page is read.
     if (at !== undefined) files.add(resolve(base, at.file));
   }
   return [...files];

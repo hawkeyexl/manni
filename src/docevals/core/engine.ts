@@ -491,6 +491,9 @@ export function applySinceScope(
 ): { pagesSelected: number } {
   let pagesSelected = 0;
   for (const plan of plans) {
+    // `external` is absent when the run loaded no manifest at all
+    // (`withExternalMetadata` returns such pages untouched). Then only the
+    // page's own file can select it.
     const files = [plan.page.absPath, ...(plan.page.external?.evalManifests ?? [])];
     if (files.some((f) => changed.has(changedKey(f)))) {
       pagesSelected += 1;

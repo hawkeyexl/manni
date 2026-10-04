@@ -409,6 +409,14 @@ describe("--since: a page whose eval manifest changed", () => {
     expect(report.since?.pagesSelected).toBe(1);
   });
 
+  it("selects the page once when both its file and its manifest changed", async () => {
+    const cwd = corpus("per-page");
+    const report = await run(cwd, ["docs/install.md", "docs/install.evals.yaml"]).report;
+
+    expect(report.evalResults.map((r) => r.file)).toEqual(["docs/install.md"]);
+    expect(report.since?.pagesSelected).toBe(1);
+  });
+
   it("selects the page when only its keyless sidecar changed", async () => {
     const cwd = corpus("keyless");
     const report = await run(cwd, ["docs/install.meta.yaml"]).report;

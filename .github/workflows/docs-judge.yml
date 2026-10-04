@@ -41,13 +41,18 @@ jobs:
       - run: npm ci
       - run: npm run build
       # The node-llama-cpp runtime and the weights, about 2.1 GB. Same key as
-      # docs-as-tests, which names the same alias.
+      # docs-as-tests, which names the same alias. This combined step saves
+      # only when the job succeeds, so a run cancelled before the first save
+      # leaves the next push to fetch the weights again.
       - uses: actions/cache@v4
         with:
           path: ~/.hawkeyexl-inference
           key: inference-local-granite-4.1-3b-q2-${{ runner.os }}
       # Verdicts this pull request's earlier runs finished. The cache is keyed
       # on the page text and the eval, so only what changed is judged again.
+      # Restore and save are separate steps, unlike the model cache above, so
+      # the save can run on failure and cancellation too. Each run saves under
+      # its own key, and restore-keys picks up the newest earlier one.
       - uses: actions/cache/restore@v4
         with:
           path: .manni/docevals/cache
