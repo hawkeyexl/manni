@@ -133,25 +133,25 @@ docs/src/content/docs/graph/publish/index.mdx:
       lines: 187-189
       integrity: sha256-f8be9c51e712ace1a0b8ba291d4ec7d0a025f2b7300502b2b01f439c0732248e
     - generated-by: Claude Opus 5.5
-      lines: 190-195
-      integrity: sha256-1681127e5996f69d0db5efffbdcb0956e77ab5248911a64ccd14309276f634a2
+      lines: 193-197
+      integrity: sha256-591f87ae556dc38501e0c067508c981c6febde5beebd4c671b2f047208ebee10
     - generated-by: Claude Opus 5
-      lines: 196-201
+      lines: 198-203
       integrity: sha256-13756d2cbc9a2c750bcdc99f28388de2308079c57a15613cb87b03c0fc68e468
     - generated-by: Claude Opus 5.5
-      lines: 202-206
+      lines: 204-208
       integrity: sha256-80b5bee58817070fccc1c261f84496bf3cee4131d79b629ffd0e46126bdad280
     - generated-by: Claude Opus 5
-      lines: 207-208
+      lines: 209-210
       integrity: sha256-5b6354d0846b87550c8f4232f1ab507aa4a0d8f757100acf8a369de892ee5f73
     - generated-by: Claude Opus 5.5
-      lines: 209-210
+      lines: 211-212
       integrity: sha256-b2e903d15505f5a9da83baae8c6e437712641642c4d86f15d2db2dc087038f45
     - generated-by: Claude Opus 5
-      lines: 211-215
+      lines: 213-217
       integrity: sha256-53c51130ab8458fec187a8ef2fa60b84b85864e82bffd02d1bcfdd6f8c221ffd
     - generated-by: Claude Opus 5.5
-      lines: 217-229
+      lines: 219-231
       integrity: sha256-fc1c98e5913fcca3ce3372e942972a08c1648bc23a30cb62fbf1f14984f478f1
   owner:
     - "@hawkeyexl"

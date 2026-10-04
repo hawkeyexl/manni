@@ -40,8 +40,11 @@ docs/src/content/docs/graph/reference/configuration.mdx:
       lines: 35-37
       integrity: sha256-1498302b6b4196ae794e4cd409c4d109e6384c0bbceb75f0abf77845204f23c5
     - generated-by: Claude Opus 5
-      lines: 39-60
-      integrity: sha256-1f28bb44e309eb92079872d2bb41cda4812085a03a66fdedddc7aaea2dbeb8a9
+      lines: 39-41
+      integrity: sha256-e1bd28b45f5f568052d91749e3a7712115afe08a5429d4121cf36986fb20e0ad
+    - generated-by: Claude Opus 5
+      lines: 43-60
+      integrity: sha256-b5cc5712cea68dfc0d3d0b1c9021bfbd8751e1bb0135acd9d466d8b838b53fbb
     - generated-by: Claude Opus 5.5
       lines: 61
       integrity: sha256-d48d926d92329422c3cdf03acd404a00014ce585cf2239939a108080726de97d
@@ -55,8 +58,8 @@ docs/src/content/docs/graph/reference/configuration.mdx:
       lines: 75-100
       integrity: sha256-055e94edcdb82499512ace5ab80f11735baf141f4b2c83b59af158ebc8bad9e8
     - generated-by: Claude Opus 5.5
-      lines: 101-102
-      integrity: sha256-c72f13b090e838f5ec51c58aaca083a73e610593605d76ad1901eb65b1a41109
+      lines: 101
+      integrity: sha256-c66b7fdffb396fc7a2689df36db77907b34bf85cf304984a38d8cf22d37f5a94
     - generated-by: Claude Opus 5
       lines: 104-110
       integrity: sha256-6c34021c7c585a6866a2a0bbd4164dc31a2806fdc1b6b6952a6e3055c49fe93e
@@ -94,8 +97,11 @@ docs/src/content/docs/graph/reference/configuration.mdx:
       lines: 140-141
       integrity: sha256-2d79831c40e1dba7eb9ba5f02609f6a48d9089fec6323c7ada52a4c264292edd
     - generated-by: Claude Opus 5
-      lines: 143-168
-      integrity: sha256-9a71860ec2f76656269855bb09678273df32204ecb91c362e4c4f1774e1a91ca
+      lines: 143-152
+      integrity: sha256-7ec09581aacddd80f39de305298d47f370486014ac4ee1a219938cdb34fa9477
+    - generated-by: Claude Opus 5
+      lines: 154-168
+      integrity: sha256-e9078c24cf768dd938ccdab2c346b615eb13be422e24a74aef5380f1ab72457e
     - generated-by: Claude Opus 5.5
       lines: 169
       integrity: sha256-2f11b2ff8c66ee96cde14fdab40b72786c1f73d2684716681e044022b905abb7
