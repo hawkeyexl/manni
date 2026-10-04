@@ -11,7 +11,7 @@
  * `target: frontmatter` — has to see the same values.
  */
 import { describe, it, expect } from "vitest";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { stringify as stringifyYaml } from "yaml";
@@ -217,6 +217,26 @@ describe("a manifest per page", () => {
     expect(plan.problems).toEqual([]);
     expect(plan.suite).toBeNull();
     expect(plan.evals).toEqual([]);
+  });
+
+  // `--since` selects a page when one of these manifests changed, so the list
+  // names only files that supplied an eval key: never the page itself, and
+  // nothing for a page that carries its evals in its own frontmatter.
+  it("names the manifest that supplied a page's evals, and none for a page's own", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "manni-docevals-eval-manifests-"));
+    cpSync(dir("per-page"), cwd, { recursive: true });
+    writeFileSync(
+      join(cwd, "docs/uncovered.md"),
+      "---\ntitle: Uncovered\nevals:\n  - use: no-todo-markers\n---\n\n# Uncovered\n",
+    );
+    const plans = await plansOf(cwd);
+
+    expect(planFor(plans, "docs/install.md").page.external?.evalManifests).toEqual([
+      join(cwd, "docs/install.evals.yaml"),
+    ]);
+    const own = planFor(plans, "docs/uncovered.md");
+    expect(own.evals.map((e) => e.name)).toEqual(["no-todo-markers"]);
+    expect(own.page.external?.evalManifests ?? []).toEqual([]);
   });
 });
 
