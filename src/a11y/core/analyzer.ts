@@ -210,6 +210,7 @@ async function analyzePage(
     for (let from = first?.redirectedFrom() ?? null; from !== null; from = from.redirectedFrom()) {
       first = from;
     }
+    // No response means a service worker answered `goto`: its navigation is [0].
     const own = first === null ? 0 : navigations.indexOf(first);
     return own === -1 ? undefined : navigations[own + 1];
   };
@@ -266,6 +267,8 @@ async function analyzePage(
   // The page can navigate between two reads without either rejecting, and
   // then what was read belongs to the destination, not to `url`. Where it
   // went comes from the recorded request, with the frame's URL as fallback.
+  // A script redirect that fires after axe returns is not seen at all: the
+  // page was analyzed as it stood, which is what it was when it was read.
   if (!samePage(page.url(), loaded)) return { redirect: destination() };
   return {
     result: {

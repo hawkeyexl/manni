@@ -182,11 +182,13 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
         redirects.push({ url, to, source });
         progress({ kind: "redirected", index, url, to });
         const outcome = enqueue(to, source);
-        if (source === "seed" && outcome.as === "off-host") {
-          throw new A11yError(`${url} redirects to ${to}, which is on another host. Check ${to} instead.`);
-        }
-        if (source === "seed" && outcome.as === "excluded") {
-          throw new A11yError(`${outcome.pattern.source} excludes ${to}, where the seed ${url} redirects.`);
+        if (source === "seed") {
+          if (outcome.as === "off-host") {
+            throw new A11yError(`${url} redirects to ${to}, which is on another host. Check ${to} instead.`);
+          }
+          if (outcome.as === "excluded") {
+            throw new A11yError(`${outcome.pattern.source} excludes ${to}, where the seed ${url} redirects.`);
+          }
         }
         continue;
       }
