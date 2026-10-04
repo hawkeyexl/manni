@@ -12,7 +12,8 @@ import type {
   RunReport,
   SuiteSummary,
 } from "../types.js";
-import { loadRunConfig, type DocevalsConfig, type ExecutionGrant } from "./config.js";
+import { loadRunConfig, type DocevalsConfig } from "./config.js";
+import type { ExecutionGrant } from "../../shared/execution.js";
 import { discoverPages } from "./discover.js";
 import { withExternalMetadata } from "./external.js";
 import { resolvePages, type ResolvedPagePlan } from "./resolve.js";

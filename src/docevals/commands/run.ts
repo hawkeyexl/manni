@@ -17,8 +17,11 @@ import type { InferenceProvider } from "@hawkeyexl/inference";
 import { makeGenerateScripts } from "../graders/scriptgen.js";
 import type { GenerateFn } from "../core/engine.js";
 import { DocevalsError } from "../types.js";
-import { EXECUTION_GRANTS, unknownGrantsMessage } from "../core/config.js";
-import type { ExecutionGrant } from "../core/config.js";
+import {
+  isExecutionGrant,
+  unknownGrantsMessage,
+  type ExecutionGrant,
+} from "../../shared/execution.js";
 import { warn } from "../../shared/warn.js";
 
 export interface RunCommandOptions extends DocumentInputOptions {
@@ -60,9 +63,7 @@ export interface RunCommandOptions extends DocumentInputOptions {
  */
 function asGrants(values: string[] | undefined): ExecutionGrant[] | undefined {
   if (values === undefined) return undefined;
-  const unknown = values.filter(
-    (v) => !(EXECUTION_GRANTS as readonly string[]).includes(v),
-  );
+  const unknown = values.filter((v) => !isExecutionGrant(v));
   if (unknown.length > 0) {
     throw new DocevalsError(unknownGrantsMessage(unknown));
   }

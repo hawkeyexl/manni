@@ -12,7 +12,7 @@ import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import type { DocumentInputOptions } from "./core/discover.js";
 import { palette, shouldColor } from "../shared/color.js";
 import { DocevalsError } from "./types.js";
-import { EXECUTION_GRANTS } from "./core/config.js";
+import { allowExecutionMessage, isExecutionGrant } from "../shared/execution.js";
 import { runList, renderList } from "./commands/list.js";
 import { runRun } from "./commands/run.js";
 import { runGenerate } from "./commands/generate.js";
@@ -92,12 +92,8 @@ export function buildProgram(): Command {
    * is clean" rather than "you misspelled a flag".
    */
   function collectGrant(value: string, previous: string[]): string[] {
-    if (!(EXECUTION_GRANTS as readonly string[]).includes(value)) {
-      fail(
-        new DocevalsError(
-          `--allow-execution must be one of ${EXECUTION_GRANTS.join(" | ")}, got "${value}"`,
-        ),
-      );
+    if (!isExecutionGrant(value)) {
+      fail(new DocevalsError(allowExecutionMessage(value)));
     }
     return [...previous, value];
   }

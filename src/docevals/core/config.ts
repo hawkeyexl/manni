@@ -29,28 +29,18 @@ import {
   type ProvidersConfig,
 } from "../../shared/providers.js";
 import type { ProviderSelector } from "@hawkeyexl/inference";
+import {
+  configuredGrants,
+  isExecutionGrant,
+  unknownGrantsMessage,
+  type ExecutionGrant,
+} from "../../shared/execution.js";
 
 /** A provider `docevals.provider` or `--provider` may name, `auto` included. */
 export type ProviderName = ProviderSelector;
 
-/** One capability the operator can grant to content-authored code. */
-export type ExecutionGrant = "frontmatter-commands";
-
-export const EXECUTION_GRANTS: readonly ExecutionGrant[] = [
-  "frontmatter-commands",
-] as const;
-
-/**
- * The sentence for grants nobody recognizes, shared by the config key and the
- * programmatic `allowExecution` so both name the values that do exist.
- */
-export function unknownGrantsMessage(unknown: readonly string[]): string {
-  return (
-    `unknown execution grant${unknown.length > 1 ? "s" : ""} ` +
-    `${unknown.map((u) => `"${u}"`).join(", ")}; ` +
-    `expected one of ${EXECUTION_GRANTS.join(" | ")}`
-  );
-}
+/** One capability the operator can grant; the values are the family's. */
+export type { ExecutionGrant } from "../../shared/execution.js";
 
 /**
  * One eval definition, as the rest of the codebase sees it.
@@ -407,15 +397,6 @@ function movedProviderHint(instancePath: string, keyword: string): string {
     : "";
 }
 
-/** The string values under `execution.allow`, before the schema has run. */
-function configuredGrants(ns: unknown): string[] {
-  if (!ns || typeof ns !== "object") return [];
-  const execution = (ns as Record<string, unknown>).execution;
-  if (!execution || typeof execution !== "object") return [];
-  const allow = (execution as Record<string, unknown>).allow;
-  return Array.isArray(allow) ? allow.filter((g): g is string => typeof g === "string") : [];
-}
-
 /** Parse and validate config YAML text. `configPath` is used for messages and path resolution. */
 export function parseConfig(text: string, configPath: string): DocevalsConfig {
   let raw: unknown;
@@ -592,9 +573,7 @@ export function parseConfigSection(
 
   // Ajv's enum error names neither the value nor the ones allowed, and a
   // grant is the key where a silent misreading costs the most.
-  const unknownGrants = configuredGrants(ns).filter(
-    (g) => !(EXECUTION_GRANTS as readonly string[]).includes(g),
-  );
+  const unknownGrants = configuredGrants(ns).filter((g) => !isExecutionGrant(g));
   if (unknownGrants.length > 0) {
     throw new DocevalsError(
       `Invalid config in ${configPath}: ${unknownGrantsMessage(unknownGrants)}`,
