@@ -1,0 +1,26 @@
+docs/src/content/docs/docevals/ci/index.mdx:
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-22
+      integrity: sha256-a98dea6a931437ff0eb697841802ab0256bc7cdacbff9bc14e5d02b9604da103
+    - generated-by: Claude Opus 5
+      lines: 23-24
+      integrity: sha256-02da42da10010f0fe8da04bebdff8b7ac66c204c1b4c2e09898563e9e82bf577
+    - generated-by: Claude Fable 5.1
+      lines: 25-55
+      integrity: sha256-9e3505339a9f8a18987bf947acb50f323b16e79fe1f29a444bfaec4e563de2ca
+    - generated-by: Claude Fable 5.1
+      lines: 60-74
+      integrity: sha256-bbe35b4c337236388f8ec9e5108e2fec7897fef002b4588a4d386ce5191dc76d
+    - generated-by: Claude Opus 5
+      lines: 75-76
+      integrity: sha256-3b50853d92910b29102903ecb479a3a756d15c556ae3fcf1fb77e87a7501622a
+    - generated-by: Claude Fable 5.1
+      lines: 77-86
+      integrity: sha256-cf316e3149cd97bef1c30b4a2834558f1ec0973dca8dbb8fe959c49a59134bd8
+    - generated-by: Claude Fable 5.1
+      lines: 94-111
+      integrity: sha256-46bfed7b58966495b631c4f85e69eb1f244535b4f3a26348717e55504481e8eb
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

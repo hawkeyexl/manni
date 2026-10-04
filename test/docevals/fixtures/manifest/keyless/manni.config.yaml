@@ -1,0 +1,24 @@
+# Proposal 0068: the page's own manifest names no `keys`, so it owns what the
+# vocabularies mark external. manni:evals:1.0.0 marks all three eval keys.
+# `uncovered.md` has no manifest.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+
+docevals:
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
+      severity: error
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [no-todo-markers]

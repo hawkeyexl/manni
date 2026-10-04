@@ -1,0 +1,42 @@
+docs/src/content/docs/docevals/fix/index.mdx:
+  evals:
+    # This page shows the markers the check looks for, as its example.
+    - use: no-todo-markers
+      skip: true
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-12
+      integrity: sha256-6331a58e70ca27b7dbf9a22e14f0c01820f8244e28116cf4436bf0a9b87417cf
+    - generated-by: Claude Fable 5.1
+      lines: 14-15
+      integrity: sha256-fee34bedf98bbadf44b505aa7014d7ac20ec6d242569a41ae5568f3449b95ce7
+    - generated-by: Claude Opus 5
+      lines: 16
+      integrity: sha256-b19a8ec2f1da01c124ac30414a86358be3b5a3df3e33e49e32c8ea8ee4fe7ffd
+    - generated-by: Claude Fable 5.1
+      lines: 17-27
+      integrity: sha256-d780b1e786c82f31b6b1364e134b1d71292688a0ff71b133e7d40da17dfa7fb8
+    - generated-by: Claude Fable 5.1
+      lines: 30
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Fable 5.1
+      lines: 34-35
+      integrity: sha256-c54c5656eff642b6494a320ec60eb1fa8ef6a66af32cdc481fa363fd4bbb13e3
+    - generated-by: Claude Opus 5
+      lines: 48
+      integrity: sha256-6442a009151e548baa9b4afa951e0551a6143c456c7472e7dbcd68992fdcb2d7
+    - generated-by: Claude Fable 5.1
+      lines: 49-55
+      integrity: sha256-639c33196b3c0a546621aa091f9a16b1162fbb74cd8ffdbb66c61bc7a2fe9e2d
+    - generated-by: Claude Opus 5
+      lines: 56
+      integrity: sha256-39ec01399ac0f2e853b5cd30c8b6b40ba879b6414816a66ac6c4592c727186f2
+    - generated-by: Claude Fable 5.1
+      lines: 57-143
+      integrity: sha256-497cdc3819f0a380ca065579ad89fea0c5f1d945b3afa37bc596a9e7b2b577bd
+    - generated-by: Claude Fable 5.1
+      lines: 145-177
+      integrity: sha256-bc763f9089a9e78d02fe8c10d32a6d5ed0bcae33160514bc8f210958242e3e7d
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

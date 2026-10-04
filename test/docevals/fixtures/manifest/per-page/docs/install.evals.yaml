@@ -1,0 +1,4 @@
+docs/install.md:
+  eval-suite: reference
+  evals:
+    - use: no-todo-markers

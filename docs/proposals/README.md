@@ -11,6 +11,7 @@ Internal design docs for changes that are bigger than a single PR's commit messa
 | `Implemented` | Shipped. The doc stays as the rationale record. |
 | `Rejected` | Considered and declined. The doc stays; the reason is the value. |
 | `Superseded by NNNN` | Replaced. |
+| `Superseded in part by NNNN` | Partly replaced. The later proposal names the sections that no longer hold. |
 
 ## The set
 
@@ -34,7 +35,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0014](0014-empty-input-is-not-success.md) | An empty input set is not success | correctness | Implemented |
 | [0015](0015-schema-trust-boundary.md) | A trust boundary for document-supplied schemas | Devin · D2 / Sara · S3 | Implemented |
 | [0016](0016-flag-ownership.md) | Which command owns a flag, and where it may be written | all (CLI surface) | Accepted |
-| [0017](0017-fill-egress-and-bounds.md) | What `fill` sends, and how to bound it | Maya · M4 / Devin · D1 | Implemented (#102) |
+| [0017](0017-fill-egress-and-bounds.md) | What `fill` sends, and how to bound it | Maya · M4 / Devin · D1 | Superseded in part by [0048](0048-docevals-domain.md) |
 | [0018](0018-write-support-shipped-for-all-three.md) | Write support shipped for HTML, XML **and** DITA | Maya · M1, M4 / Theo · T1 | Superseded by [0020](0020-element-metadata.md) |
 | [0019](0019-no-docmeta-init.md) | `docmeta init` is rejected, not deferred | Maya · M1 | Accepted |
 | [0020](0020-element-metadata.md) | Element metadata in XML and HTML, and the DITA schema it unblocks | Sara · S1 / Maya · M1, M4 | Implemented |
@@ -64,6 +65,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0045](0045-family-encryption-key.md) | A family encryption key: `encryptionKey:`, `manni key`, and `x-manni-encrypt` for metadata that must not appear in plain text | Sara · S1 / Devin · D5 / Maya · M5 | Implemented (#17); superseded in part by 0047 |
 | [0046](0046-provenance-pins.md) | Provenance pins, where `provenance` records which machine wrote which body lines as a range and an integrity hash stamped by `manni meta derive`. Field attribution becomes one `meta-provenance` shape across the family | Maya · M8 / Sara · S1 / Devin · D4 | Implemented (#34); superseded in part by [0063](0063-the-graph-vocabulary.md), [0069](0069-merge-safe-stamps.md) and [0071](0071-blank-lines-carry-no-authorship.md) |
 | [0047](0047-field-location.md) | A field's preferred location, `x-manni-location` set to `page` or `external`, marked on every vocabulary field. `manni meta relocate` moves values between the pages and a collection's manifest, and every writer follows the manifest | Sara · S1 / Maya · M4 | Implemented (#37); superseded in part by [0063](0063-the-graph-vocabulary.md) and [0068](0068-a-manifest-owns-what-the-marks-say.md) |
+| [0048](0048-docevals-domain.md) | The `docevals` domain, where moose-docevals folds in as `manni docevals` and takes the family's collections, severity, formats, providers, the 0023 draft and 0046's records. Its content strategy joins the family's, and its ADR log closes at 01045 | Devin · D10, D11 / Sara · S8–S11 / Maya · M11–M15 / Theo · T6 | Proposed; superseded in part by [0073](0073-docevals-grades-what-no-other-domain-owns.md) |
 | [0050](0050-lint-domain.md) | The `lint` domain: `manni lint check` runs every configured job and `manni lint structure` checks a page against its doctype template. Verbs name the job, config names the tool behind it | Maya · M10 / Devin · D9 / Theo · T5 | Implemented (#11) |
 | [0052](0052-term-domain.md) | The `term` domain. A term is a flat record with `type: term`, read from every format in one-per-file and many-per-file shapes. `manni term` checks the set, lints definitions and writes a Vale style. It renders the set to any format | Sara · S6 / Maya · M9 / Devin · D8 | Accepted; superseded in part by [0063](0063-the-graph-vocabulary.md) |
 | [0053](0053-claim-history.md) | Claim history. A claim that no longer holds is read against the page's history, from the newest commit whose page held the pin. `check` says since when, and `claim-reanchored` separates a layout change from an edit | Maya · M5 / Theo · T2 / Devin · D5 | Implemented (#73) |
@@ -85,6 +87,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0070](0070-defaults-register-strict.md) | The vocabularies by default, registered schemas and `strict`. The default set grows to eleven, `meta.schemas` adds to it unless `defaults: false`, `meta.register` names local schemas by `$id`, and `strict: true` stacks each strict version beside its base | Maya · M1 / Sara · S1 | Implemented (#134) |
 | [0071](0071-blank-lines-carry-no-authorship.md) | Blank lines carry no authorship. A provenance range never starts or ends on a blank line, and a blank-only range is not written. A stamp drawn the old way reads stale once | Maya · M8 / Devin · D4 | Implemented (#135) |
 | [0072](0072-derived-dates-are-utc-days.md) | Derived dates are UTC days. A commit's author date names its day in UTC, and today is the UTC day. A stamp derived in the author's offset reads stale once | Devin · D4 / Maya · M2 | Implemented (#147) |
+| [0073](0073-docevals-grades-what-no-other-domain-owns.md) | docevals grades only what no other domain owns. The registry is `ai`, `command`, `human` and `tool:regex`, an unregistered grader is a usage error, and pages validate against the shipped `manni:evals:1.0.0` | Maya · M11 / Devin · D11 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -102,6 +105,7 @@ proposal above is what states how the tool works inside manni.
 
 | Tool | Log | Records |
 |---|---|---|
+| docevals | [docevals/](docevals/README.md) | 00001–00004 and 01000–01045, imported from moose-docevals at 670e62b. Closed at 01045 by [0048](0048-docevals-domain.md); later docevals decisions are in this series |
 | lint | [lint/](lint/README.md) | 01001–01008, imported with the tool. 01007 is superseded by [0050](0050-lint-domain.md) |
 
 ## Dependency order
@@ -170,6 +174,12 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 0045 ──┤                 (a schema keyword Ajv evaluates, and the one prompt the family asks)
 0046 ──┘                 (provenance kept in a manifest, the exception this generalizes)
 
+0033 ──┬─> 0048          (the umbrella and the import recipe docevals follows)
+0034 ──┤                 (eight spelled verbs, no default subcommand)
+0041 ──┤                 (collections: replaces docevals.files)
+0046 ──┤                 (the records the self-preference check reads and fill writes)
+0023 ──┘                 (the evals draft pages validate against, with no copy shipped)
+
 0044 ──> 0053            (the claim pin, read against the page's history as the source
                           end reads its commit-sha)
 0044 ──> 0054            (the rule table, the marker reading and update's repair contract it extends)
@@ -214,3 +224,4 @@ npm ci && npm run build
 
 Then follow the transcript in the proposal. Sandboxes are disposable temp dirs;
 nothing in this repo is mutated.
+

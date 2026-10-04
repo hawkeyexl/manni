@@ -25,3 +25,9 @@ This audience may overlap with docs-as-code teams, often the same person in a sm
 Developers or writers who opened a PR and hit a red metadata check. They did not configure manni meta and don't need to understand it deeply. They need to decode one error, find the field, fix it, and move on.
 
 This is the highest-traffic audience by page visits because every contributor who trips a check lands on the fix-it page. It is secondary in terms of depth: one targeted page (T1) serves the entire journey.
+
+## The same four, for docevals
+
+docevals segmented its adopters on who owns the docs and how mature the company is, and arrived at six segments. They land on these four. A docs platform team, a solo owner and a brownfield corpus are all docs-as-code teams. The solo owner differs by hours available, and the brownfield corpus is a lens on the state of the pages, not a different owner. The other three segments are the platform engineers, the owners of the quality standard (the schema authors' job, in prose), and the contributors.
+
+Three concerns cut across every segment for docevals, which is why they get sections of their own rather than footnotes. Can a model be trusted to gate a build (`judge/`)? Can the cost surprise anyone (`ci/cost-and-caching.mdx`, counted in calls, never dollars)? And what executes when the gate runs on a stranger's pull request (`ci/untrusted-pull-requests.mdx`)? Framework was deliberately not a segment, because docevals reads frontmatter and never touches the site build.

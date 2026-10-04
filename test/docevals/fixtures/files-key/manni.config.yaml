@@ -1,0 +1,6 @@
+# A config written before proposal 0041: the document set declared under
+# `docevals.files`. Refused by name, not reported as an unknown key.
+docevals:
+  files:
+    include:
+      - "docs/**/*.md"

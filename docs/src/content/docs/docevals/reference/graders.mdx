@@ -1,0 +1,103 @@
+---
+title: Graders reference
+description: Every grader kind, its options, and what it reports.
+type: reference
+last-updated: 2026-10-02
+---
+
+A grader decides pass or fail for one eval on one page. Verified against `src/docevals/graders/registry.ts`
+and each adapter.
+
+Graders sit in a preference order. Code first, judge second, human last. Cheapest and most
+explicable wins; see [How manni docevals works](/manni/docevals/get-started/how-docevals-works/).
+
+| Kind | Runs | Needs a provider |
+|---|---|---|
+| `command` | Any CLI check you supply | No |
+| `tool:regex` | A pattern match over the page | No |
+| `ai` | The judge | Yes |
+| `human` | A person | No |
+
+Those four are the registered graders. An eval that names any other grader stops the command
+before anything runs, with exit 2:
+
+```
+manni: <path>: eval "<name>" names grader "<grader>", which is not registered. Registered graders: ai, command, human, tool:regex.
+```
+
+`<path>` is the file that declared the eval: the config for a config eval, the page for an inline one.
+
+Checks that other domains own run there. Frontmatter against a schema is
+[`manni meta validate`](/manni/meta/), and page structure is [`manni lint`](/manni/lint/). Any
+other CLI check runs as a `command` eval.
+
+Deterministic evals fail only on **`error`**-severity findings. Warnings and notices report and pass.
+
+## `command`
+
+Runs any executable. `{file}` in an argument expands to the page's absolute path, and the command
+also receives that path in the `MANNI_DOCEVALS_FILE` environment variable. The exit code decides the
+verdict. Any code outside `success-exit-codes` fails the eval, and the finding message is
+`Exit code N` followed by the tail of the command's output.
+
+| Option | Default | Notes |
+|---|---|---|
+| `command` (eval field) | none | The argv array. |
+| `success-exit-codes` (eval field) | `[0]` | Exit codes that count as a pass. |
+| `timeout-ms` (eval field) | `scripts.timeoutMs` (`30000`) | |
+
+A command declared in page frontmatter runs from the page's directory. A command declared in the
+config runs from the config file's directory. A page-declared command runs only under the
+`frontmatter-commands` [execution grant](/manni/docevals/reference/configuration/). Without it the
+eval is skipped.
+
+A `command` eval with an assertion and **no** command is a plain-language deterministic check, and
+manni docevals generates the script. See [Deterministic checks](/manni/docevals/evals/deterministic-checks/).
+
+A `command` finding marked **`diagnostic`** fails the eval at any severity. The grader emits one
+when it could not reach a verdict. The eval has no command yet, the command failed to start, or it
+timed out. There is nothing to be lenient about. The finding still *displays* at the eval's
+configured severity.
+
+## `tool:regex`
+
+A pattern must appear in whatever [`target`](/manni/docevals/reference/frontmatter/) selects. It can
+instead be required not to appear, or to appear exactly _n_ times. The cheapest grader that can
+express an assertion is the one to reach for; this is the rung below the AI judge.
+
+| Option | Default | Notes |
+|---|---|---|
+| `pattern` | none | Required. A JavaScript regular expression. |
+| `flags` | `""` | JS RegExp flags (`d g i m s u v y`). |
+| `match` | `contains` | `contains`, `not-contains`, or `count:N` for exactly _n_ matches. |
+
+Any other option key is a configuration error.
+
+```yaml
+- id: names-the-package
+  assertion: The install command names the current package.
+  grader: tool:regex
+  options:
+    pattern: "npm i -D @hawkeyexl/manni"
+```
+
+| Rule id | Meaning |
+|---|---|
+| `regex/not-found` | `match: contains`, and the pattern does not appear. |
+| `regex/found` | `match: not-contains`, and the pattern appears. Carries the first match's line. |
+| `regex/count` | `match: count:N`, and the pattern matched some other number of times. |
+| `regex/unreadable-target` | The `target` the eval names could not be read for this page. |
+
+A pattern that does not compile is a **configuration** error, not a page failure. Blaming the page
+for the eval's own bug is how a corpus learns to ignore its findings.
+
+## `ai`
+
+The judge. Needs `assertion`, and works far better with `evidence` and `examples`. See
+[Write good assertions](/manni/docevals/evals/write-good-assertions/). Outcome is `pass`, `fail`, or
+`needs-review`; the mechanics are in [How judging works](/manni/docevals/judge/).
+
+## `human`
+
+Routes to a person. Verdicts persist in `.manni/docevals/reviews.yaml` and self-invalidate when the page
+changes. See [Human review](/manni/docevals/judge/human-review/).

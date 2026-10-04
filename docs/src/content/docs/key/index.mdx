@@ -26,7 +26,7 @@ related-pages: ["meta-reference-configuration", "meta-reference-schema-resolutio
 risks: ["destructive", "irreversible"]
 sample-questions: ["What is the manni encryption key for?", "Where does manni look for the encryption key?", "Why should a shared repository keep the key out of manni.config.yaml?"]
 graph: { label: "manni key", type: concept }
-last-updated: 2026-09-17
+last-updated: 2026-09-21
 tags:
   - encryption
   - security
@@ -190,9 +190,8 @@ collections:
 
 - **A file that holds only a key is still a config file.** Discovery stops at
   the first `manni.config.yaml` that carries the running tool's section,
-  `collections:`, `tools:` or `encryptionKey:`. A `moose.config.yaml`, the
-  file's name before the rename, is found the same way, with a warning to
-  rename it. The next run finds a file the key prompt created.
+  `collections:`, `tools:`, `encryptionKey:` or `providers:`. The next run
+  finds a file the key prompt created.
 - **Strength is yours to provide.** The configured value is used as key
   material as it is. It is expanded, not stretched, so a value picked by hand is
   only as strong as it is random. `manni key set` generates 256 random bits, and

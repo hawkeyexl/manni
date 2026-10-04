@@ -1,0 +1,24 @@
+# Proposal 0058: each page keeps its evals in a manifest of its own, beside
+# it. `uncovered.md` has no manifest, and reads as declaring nothing.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: "{page}.evals.yaml"
+        keys: [evals, eval-suite, eval-skip]
+
+docevals:
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
+      severity: error
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [no-todo-markers]

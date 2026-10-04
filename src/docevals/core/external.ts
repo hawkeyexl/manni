@@ -1,0 +1,336 @@
+/**
+ * A page's metadata as `manni meta validate` reads it: its frontmatter, plus
+ * every key an external-metadata manifest of one of its collections owns
+ * (proposal 0041).
+ *
+ * The evals vocabulary marks `evals`, `eval-suite` and `eval-skip`
+ * `x-manni-location: external` in `manni:evals:1.0.0`, and ai-context marks
+ * `provenance` and `meta-provenance`. A corpus that took `manni meta
+ * relocate` up on that keeps those values in a manifest, and a tool that read
+ * frontmatter alone would report every page as declaring nothing.
+ *
+ * Reading is meta's merge, not a second loader, exactly as `cite`'s sidecars
+ * are. `loadExternalMetadata` reads each manifest once per run, behind the
+ * shared per-process parse cache, and `mergeExternalMetadata` decides per page
+ * what a manifest supplies. So the join rules, the ownership rules and the
+ * per-item lines are the ones `meta validate` already applies, and the merged
+ * result is handed back as the page's own `frontmatter`: every reader
+ * downstream — resolution, the self-preference check, `target: frontmatter` —
+ * sees the values where their location puts them, without knowing a manifest
+ * exists.
+ *
+ * Two things are docevals' own, because docevals *writes* eval keys where
+ * meta only reads them:
+ *
+ *  - **Membership is decided by every declared collection**, not by the ones
+ *    `--collection` or the positional paths selected. A page named by path is
+ *    still a member of the collection that contains it, and its evals are
+ *    still in that collection's manifest.
+ *  - **A URL manifest may not own an eval key** (exit 2), and neither may two
+ *    of one page's collections. Both are refusals rather than tiebreaks, for
+ *    the reason 0020 gives: there is no right answer to pick.
+ *
+ * `--no-config` never reaches here: with no config there are no collections,
+ * so a page's evals are its frontmatter's.
+ */
+import { resolve } from "node:path";
+import { ownsKey } from "../../shared/collections.js";
+import {
+  configMarks,
+  marksValidator,
+  mergeWithMarks,
+  pageMarks,
+  schemaTrustRoot,
+  type PageMarks,
+} from "../../meta/internal.js";
+import {
+  classifyRef,
+  DocmetaError,
+  loadExternalMetadata,
+  memberOf,
+  type CollectionConfig,
+  type ExternalMetadataCollision,
+  type ExternalMetadataConfig,
+  type ExternalMetadataIndex,
+  type SourceLocation,
+} from "../../meta/index.js";
+import { DocevalsError } from "../types.js";
+import type { DocevalsConfig } from "./config.js";
+import type { PageFile } from "./discover.js";
+
+/**
+ * The three page keys the evals vocabulary claims, and the only ones these
+ * refusals govern. A manifest owning `provenance` is nobody's problem here:
+ * docevals reads it and never writes it.
+ */
+export const EVAL_KEYS = ["evals", "eval-suite", "eval-skip"] as const;
+
+/**
+ * Every key docevals reads that a manifest may own, and so the only manifests
+ * this tool loads: the evals vocabulary's three and ai-context's machine
+ * attribution (proposal 0046).
+ *
+ * A manifest owning none of them is a sibling tool's business. Loading it
+ * anyway would make a corpus fail on a manifest docevals has no use for, and
+ * would fetch a URL manifest on every run to read nothing out of it. `cite`
+ * scopes its own load the same way, to its one key.
+ */
+export const EXTERNAL_KEYS: readonly string[] = [
+  ...EVAL_KEYS,
+  "provenance",
+  "meta-provenance",
+];
+
+/** Where a value a manifest supplied lives, and what the page duplicates. */
+export interface PageExternal {
+  /**
+   * The manifest file and line behind a merged JSON Pointer, or `undefined`
+   * for everything the page itself carries — which is what `lineFor` answers.
+   */
+  locate: (pointer: string) => SourceLocation | undefined;
+  /** Eval keys the page carries that an owning manifest also holds. */
+  collisions: readonly ExternalMetadataCollision[];
+  /**
+   * Every manifest file that supplied one of the page's eval keys, as an
+   * absolute path. A change to any of them changes what the page is graded
+   * on, so `--since` selects the page when one changed. A URL manifest never
+   * appears: it may not own an eval key.
+   */
+  evalManifests: readonly string[];
+}
+
+/** `manni.config.yaml: collection site: evals cannot come from a URL manifest, because docevals writes them.` */
+export function urlManifestRefusal(
+  source: string,
+  collection: string,
+  key: string,
+): string {
+  return `${source}: collection ${collection}: ${key} cannot come from a URL manifest, because docevals writes them.`;
+}
+
+/** `docs/install.md is in collections site and guides, and both keep evals in a manifest.` */
+export function twoManifestsRefusal(
+  label: string,
+  a: string,
+  b: string,
+  key: string,
+): string {
+  return `${label} is in collections ${a} and ${b}, and both keep ${key} in a manifest.`;
+}
+
+/**
+ * What the vocabularies docevals reads mark `x-manni-location: external`:
+ * every key in `EXTERNAL_KEYS`. A manifest with no `keys` (proposal 0068)
+ * may own these, less the ones a sibling manifest of its collection names,
+ * which is what decides the manifests a run loads and the refusals. The merge
+ * itself reads each page's own marks, as meta's does.
+ */
+const MARKED: ReadonlySet<string> = new Set(EXTERNAL_KEYS);
+
+/** Whether one manifest declaration of `collection` owns `key`. */
+function owns(
+  collection: Pick<CollectionConfig, "externalMetadata">,
+  manifest: ExternalMetadataConfig,
+  key: string,
+): boolean {
+  return ownsKey(collection, manifest, key, MARKED);
+}
+
+/** The eval keys one manifest declaration owns, in vocabulary order. */
+function evalKeysOf(
+  collection: Pick<CollectionConfig, "externalMetadata">,
+  manifest: ExternalMetadataConfig,
+): string[] {
+  return EVAL_KEYS.filter((k) => owns(collection, manifest, k));
+}
+
+/** The pages of a run, with every manifest-supplied key merged into each. */
+export interface ExternalMetadataReader {
+  /** The page as its metadata reads once the manifests are applied. */
+  forPage(page: PageFile): Promise<PageFile>;
+}
+
+/**
+ * Load every manifest of every declared collection, or `null` when the run has
+ * no config, no collections, or none of them declares a manifest — which is
+ * every corpus that keeps its metadata in its pages, and costs nothing.
+ *
+ * The URL refusal is decided from the config alone, before a byte is fetched.
+ *
+ * `pages` are the run's documents as absolute paths. A collection that keeps
+ * its evals in one manifest per page (proposal 0058) has one file to read per
+ * page, and meta reads those only for the pages it is given.
+ */
+export async function loadExternalReader(
+  config: DocevalsConfig,
+  base: string,
+  pages?: readonly string[],
+): Promise<ExternalMetadataReader | null> {
+  const collections: CollectionConfig[] = [];
+  const source = config.configSource ?? config.configPath;
+  for (const collection of config.collections) {
+    const owning = collection.externalMetadata.filter((m) =>
+      EXTERNAL_KEYS.some((k) => owns(collection, m, k)),
+    );
+    if (owning.length === 0) continue;
+    for (const manifest of owning) {
+      if (classifyRef(manifest.file).kind !== "url") continue;
+      const [owned] = evalKeysOf(collection, manifest);
+      if (owned !== undefined) {
+        throw new DocevalsError(
+          urlManifestRefusal(source, collection.name, owned),
+        );
+      }
+    }
+    collections.push({ ...collection, externalMetadata: owning });
+  }
+  if (collections.length === 0) return null;
+
+  const index = await loadExternalMetadata(collections, {
+    configDir: config.configDir,
+    base,
+    // A `{page}` entry names one manifest per page (proposal 0058), so it
+    // reads a file only for the pages it is handed. Without them it reads
+    // nothing, and every value the corpus keeps beside its pages goes missing
+    // while the ownership that hides the page's own copy stays.
+    ...(pages === undefined ? {} : { pages }),
+  });
+  if (index === null) return null;
+  return reader(index, collections, config.configDir, base, marksFor(config, base));
+}
+
+/**
+ * What a page's schemas mark external, for a keyless manifest (proposal
+ * 0068): read from meta's section of the same file, the way `cite` reads
+ * them, or over meta's default set when that file has none for meta. The
+ * default set carries the evals vocabulary, so the eval keys are marked
+ * either way. Built once, on the first page that has a keyless manifest.
+ */
+function marksFor(config: DocevalsConfig, base: string): () => Promise<PageMarks> {
+  let built: Promise<PageMarks> | undefined;
+  const defaults = (): PageMarks =>
+    pageMarks({
+      validator: marksValidator({ config: null, cwd: base, configDir: config.configDir }),
+      config: null,
+      cwd: base,
+      trustRoot: schemaTrustRoot(base, config.configDir),
+    });
+  return () =>
+    (built ??= (async () => {
+      try {
+        return (await configMarks(config.configPath, base)) ?? defaults();
+      } catch (err) {
+        // A family file whose other sections meta cannot read as its own is
+        // still docevals' file; the default set decides the marks then.
+        if (err instanceof DocmetaError) return defaults();
+        throw err;
+      }
+    })());
+}
+
+/**
+ * Which collections of `members` keep `key` in a manifest. Ownership, not
+ * supply: a writer has to know which file to write to before either manifest
+ * has an entry, so two owners is a refusal even while both are empty.
+ */
+function ownersOf(
+  collections: readonly CollectionConfig[],
+  members: readonly string[],
+  key: string,
+): string[] {
+  return collections
+    .filter(
+      (c) =>
+        members.includes(c.name) &&
+        c.externalMetadata.some((m) => owns(c, m, key)),
+    )
+    .map((c) => c.name);
+}
+
+function reader(
+  index: ExternalMetadataIndex,
+  collections: readonly CollectionConfig[],
+  configDir: string,
+  base: string,
+  marks: () => Promise<PageMarks>,
+): ExternalMetadataReader {
+  return {
+    async forPage(page: PageFile): Promise<PageFile> {
+      if (page.extractError !== undefined) return page;
+      const members = memberOf(collections, configDir, base, page.file);
+      if (members.length === 0) return page;
+
+      for (const key of EVAL_KEYS) {
+        const [a, b] = ownersOf(collections, members, key);
+        if (a !== undefined && b !== undefined) {
+          throw new DocevalsError(twoManifestsRefusal(page.file, a, b, key));
+        }
+      }
+
+      const merged = await mergeWithMarks(
+        page.file,
+        page.frontmatter,
+        index,
+        members,
+        base,
+        { marks: await marks() },
+      );
+      return {
+        ...page,
+        frontmatter: merged.extracted,
+        external: {
+          locate: merged.locate,
+          // Only the keys this tool reads and writes. A manifest owning a
+          // sibling tool's key that the page also carries is `meta validate`'s
+          // finding, and saying it twice would make the same fix look like two.
+          collisions: merged.collisions.filter((c) =>
+            (EVAL_KEYS as readonly string[]).includes(c.key),
+          ),
+          evalManifests: suppliers(merged.locate, base),
+        },
+      };
+    },
+  };
+}
+
+/**
+ * The manifests that supplied the page's eval keys, absolute and deduplicated.
+ * `locate` answers only for a key a manifest supplied, so a key the page
+ * carries itself names no manifest. A manifest's reported path is relative to
+ * `base`, the run's discovery root.
+ */
+function suppliers(
+  locate: PageExternal["locate"],
+  base: string,
+): string[] {
+  const files = new Set<string>();
+  for (const key of EVAL_KEYS) {
+    const at = locate(`/${key}`);
+    // `at.file` is a path relative to `base`, never a URL: the reader refuses
+    // a URL manifest that owns an eval key before any page is read.
+    if (at !== undefined) files.add(resolve(base, at.file));
+  }
+  return [...files];
+}
+
+/**
+ * Every page of a run, read the way `meta validate` reads it. The manifests
+ * are loaded once, whatever the corpus size, and a run with no manifest gets
+ * its pages back untouched.
+ *
+ * `base` is the run's discovery root, so `page.file` and a manifest's reported
+ * path are spelled against the same directory.
+ */
+export async function withExternalMetadata(
+  pages: PageFile[],
+  config: DocevalsConfig,
+  base: string,
+): Promise<PageFile[]> {
+  const merge = await loadExternalReader(
+    config,
+    base,
+    pages.map((p) => p.absPath),
+  );
+  if (merge === null) return pages;
+  return Promise.all(pages.map((p) => merge.forPage(p)));
+}

@@ -163,11 +163,10 @@ describe("findFamilyConfigFile", () => {
     expect(found?.encryptionKey).toBeUndefined();
   });
 
-  it("reads a moose.config.yaml too, with the rename warning, so a new file never shadows it", async () => {
+  it("does not discover a moose.config.yaml: it is an unrelated file", async () => {
     const root = repo({ "moose.config.yaml": "docevals:\n  version: 1\n" });
-    const found = await findFamilyConfigFile(root, toError);
-    expect(found?.kind).toBe("moose");
-    expect(stderr.join("")).toContain('"moose.config.yaml" is the pre-rename name');
+    expect(await findFamilyConfigFile(root, toError)).toBeNull();
+    expect(stderr).toEqual([]);
   });
 
   it("never reads a legacy per-tool file, and is null when there is no family file", async () => {
@@ -226,6 +225,15 @@ describe("writeEncryptionKey", () => {
     });
     expect(read(join(root, "manni.config.yaml"))).toBe(`encryptionKey: ${KEY}\n`);
     expect((await findConfigFile(cwd, CITE))?.encryptionKey).toBe(KEY);
+  });
+
+  it("with only a moose.config.yaml at the git root, creates manni.config.yaml beside it", async () => {
+    const moose = "docevals:\n  version: 1\n";
+    const root = repo({ "moose.config.yaml": moose });
+    const result = await writeEncryptionKey({ file: null, key: KEY, cwd: root, toError });
+    expect(result).toMatchObject({ path: join(root, "manni.config.yaml"), created: true });
+    expect(read(join(root, "manni.config.yaml"))).toBe(`encryptionKey: ${KEY}\n`);
+    expect(read(join(root, "moose.config.yaml"))).toBe(moose);
   });
 
   it("with no file and no git root, creates the file in the working directory", async () => {
@@ -329,6 +337,11 @@ describe("readFamilyConfigFile", () => {
     const root = repo({ "a.yaml": `encryptionKey: ${KEY}\n`, "b.yaml": "" });
     expect((await readFamilyConfigFile("a.yaml", root, toError)).wrapped).toBe(true);
     expect((await readFamilyConfigFile("b.yaml", root, toError)).wrapped).toBe(true);
+  });
+
+  it("reads a moose.config.yaml by what it carries, not by its name", async () => {
+    const root = repo({ "moose.config.yaml": "allowEmpty: true\n" });
+    expect((await readFamilyConfigFile("moose.config.yaml", root, toError)).wrapped).toBe(false);
   });
 
   it("reads a single-tool file whole, so a key write refuses it", async () => {

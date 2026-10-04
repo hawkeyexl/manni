@@ -1,0 +1,260 @@
+/**
+ * docevals reads a page's metadata the way `manni meta validate` does: the
+ * frontmatter block, plus every key an external-metadata manifest of one of
+ * the page's collections owns (proposal 0037, 0041).
+ *
+ * The evals vocabulary marks `evals`, `eval-suite` and `eval-skip`
+ * `x-manni-location: external` in `manni:evals:1.0.0`, so a corpus that ran
+ * `manni meta relocate` keeps them in a manifest. Reading them there is not a
+ * feature of its own: the plan a page resolves has to be the same before and
+ * after the move, and everything downstream — the self-preference check and
+ * `target: frontmatter` — has to see the same values.
+ */
+import { describe, it, expect } from "vitest";
+import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { stringify as stringifyYaml } from "yaml";
+import { loadConfig } from "../../../src/docevals/core/config.js";
+import { discoverPages } from "../../../src/docevals/core/discover.js";
+import {
+  loadExternalReader,
+  withExternalMetadata,
+} from "../../../src/docevals/core/external.js";
+import { resolvePages } from "../../../src/docevals/core/resolve.js";
+import type { ResolvedPagePlan } from "../../../src/docevals/core/resolve.js";
+import { readTarget } from "../../../src/docevals/core/target.js";
+import { selfPreferenceOf } from "../../../src/docevals/judge/self-preference.js";
+import { DocevalsError } from "../../../src/docevals/types.js";
+
+const FIXTURES = resolve(import.meta.dirname, "../fixtures/manifest");
+const dir = (name: string): string => resolve(FIXTURES, name);
+
+/** Every page of a fixture corpus, resolved the way a run resolves it. */
+async function plansOf(fixture: string): Promise<ResolvedPagePlan[]> {
+  const cwd = dir(fixture);
+  const config = loadConfig(undefined, cwd);
+  const pages = await withExternalMetadata(
+    discoverPages(config, { paths: [] }, cwd),
+    config,
+    cwd,
+  );
+  return resolvePages(pages, config);
+}
+
+const planFor = (plans: ResolvedPagePlan[], file: string): ResolvedPagePlan => {
+  const plan = plans.find((p) => p.page.file === file);
+  if (!plan) throw new Error(`no plan for ${file}`);
+  return plan;
+};
+
+describe("evals kept in a manifest", () => {
+  it("resolves the suite and the evals the manifest supplies", async () => {
+    const plan = planFor(await plansOf("external"), "docs/install.md");
+    expect(plan.problems).toEqual([]);
+    expect(plan.suite).toBe("reference");
+    expect(plan.evals.map((e) => e.name)).toEqual(["no-todo-markers"]);
+  });
+
+  it("takes eval-skip from the manifest too", async () => {
+    expect(planFor(await plansOf("external"), "docs/skipped.md").skip).toBe(true);
+  });
+
+  it("leaves a page in no collection on its own frontmatter", async () => {
+    // `dated.md` is a member; the manifest holds nothing for a non-member, and
+    // the merge is what decides that, not the reader.
+    const plan = planFor(await plansOf("external"), "docs/dated.md");
+    expect(plan.page.frontmatter.data.title).toBe("Dated");
+  });
+
+  it("serializes the merged metadata for target: frontmatter", async () => {
+    const plan = planFor(await plansOf("external"), "docs/install.md");
+    const read = readTarget("frontmatter", plan);
+    expect(read.ok).toBe(true);
+    if (!read.ok) return;
+    expect(read.text).toBe(stringifyYaml(plan.page.frontmatter.data));
+    expect(read.text).toContain("eval-suite: reference");
+    // `raw` stays the file verbatim: it is the bytes on disk, manifest or not.
+    const raw = readTarget("raw", plan);
+    expect(raw.ok && raw.text).toBe(plan.page.content);
+    expect(raw.ok && raw.text).not.toContain("eval-suite");
+  });
+
+  it("points a problem at the manifest line, not at the page", async () => {
+    const cwd = dir("external");
+    const config = loadConfig(undefined, cwd);
+    const pages = await withExternalMetadata(
+      discoverPages(config, { paths: [] }, cwd),
+      config,
+      cwd,
+    );
+    // The suite the manifest names is removed from the config, so the only
+    // place the bad value can be shown is the manifest that supplied it.
+    const withoutSuite = { ...config, suites: {} };
+    const plan = planFor(resolvePages(pages, withoutSuite), "docs/install.md");
+    expect(plan.problems).toEqual([
+      {
+        message: expect.stringContaining('Unknown suite "reference"') as string,
+        level: "error",
+        file: "site.metadata.yaml",
+        line: 2,
+      },
+    ]);
+  });
+});
+
+describe("a manifest docevals has no key in", () => {
+  // `last-reviewed` was read only by the freshness grader, which is gone. A
+  // manifest owning nothing else is meta's to read, so docevals leaves it
+  // alone: this one would not even parse.
+  it("is not loaded when it owns only last-reviewed", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "manni-docevals-reviewed-only-"));
+    mkdirSync(join(cwd, "docs"), { recursive: true });
+    writeFileSync(join(cwd, "docs", "page.md"), "---\ntitle: Page\n---\nBody.\n");
+    writeFileSync(join(cwd, "reviews.yaml"), "docs/page.md: [unclosed\n");
+    writeFileSync(
+      join(cwd, "manni.config.yaml"),
+      [
+        "collections:",
+        "  - name: site",
+        '    paths: ["docs/**/*.md"]',
+        "    externalMetadata:",
+        "      - file: ./reviews.yaml",
+        "        keys: [last-reviewed]",
+        "",
+      ].join("\n"),
+    );
+    await expect(loadExternalReader(loadConfig(undefined, cwd), cwd)).resolves.toBeNull();
+  });
+});
+
+describe("a field-joined manifest", () => {
+  it("matches the page on its own value of the join field", async () => {
+    const plans = await plansOf("join");
+    expect(planFor(plans, "docs/install.md").evals.map((e) => e.name)).toEqual([
+      "no-todo-markers",
+    ]);
+  });
+
+  it("leaves a page no entry joins to on its frontmatter", async () => {
+    const plan = planFor(await plansOf("join"), "docs/other.md");
+    expect(plan.evals).toEqual([]);
+    expect(plan.suite).toBeNull();
+  });
+});
+
+describe("provenance kept in a manifest", () => {
+  it("is what the self-preference check reads", async () => {
+    const plan = planFor(await plansOf("provenance"), "docs/install.md");
+    const body = plan.evals.find((e) => e.name === "limits-stated");
+    const fields = plan.evals.find((e) => e.name === "description-matches");
+    if (!body || !fields) throw new Error("the fixture's evals did not resolve");
+    expect(selfPreferenceOf(plan, body, "claude-fable-5")?.axis).toBe("content");
+    expect(selfPreferenceOf(plan, fields, "claude-fable-5")?.axis).toBe("content");
+    expect(selfPreferenceOf(plan, body, "claude-sonnet-5")).toBeUndefined();
+  });
+});
+
+describe("refusals", () => {
+  it("reports a key the page keeps after a manifest took it over", async () => {
+    const plan = planFor(await plansOf("collision"), "docs/install.md");
+    expect(plan.problems).toEqual([
+      {
+        message:
+          '"evals" is owned by manifest site.metadata.yaml (collection site); remove it from the document',
+        level: "error",
+        line: 3,
+      },
+    ]);
+  });
+
+  it("refuses a URL manifest that owns an eval key", async () => {
+    await expect(plansOf("url")).rejects.toThrow(
+      new DocevalsError(
+        "manni.config.yaml: collection site: evals cannot come from a URL manifest, because docevals writes them.",
+      ),
+    );
+  });
+
+  it("refuses a page whose collections both keep evals in a manifest", async () => {
+    await expect(plansOf("two-collections")).rejects.toThrow(
+      new DocevalsError(
+        "docs/install.md is in collections site and guides, and both keep evals in a manifest.",
+      ),
+    );
+  });
+});
+
+describe("a manifest per page", () => {
+  it("resolves the suite and the evals the page's own manifest supplies", async () => {
+    const plan = planFor(await plansOf("per-page"), "docs/install.md");
+    expect(plan.problems).toEqual([]);
+    expect(plan.suite).toBe("reference");
+    expect(plan.evals.map((e) => e.name)).toEqual(["no-todo-markers"]);
+  });
+
+  it("points a problem at the page's own manifest", async () => {
+    const cwd = dir("per-page");
+    const config = loadConfig(undefined, cwd);
+    const pages = await withExternalMetadata(
+      discoverPages(config, { paths: [] }, cwd),
+      config,
+      cwd,
+    );
+    const plan = planFor(resolvePages(pages, { ...config, suites: {} }), "docs/install.md");
+    expect(plan.problems).toEqual([
+      {
+        message: expect.stringContaining('Unknown suite "reference"') as string,
+        level: "error",
+        file: "docs/install.evals.yaml",
+        line: 2,
+      },
+    ]);
+  });
+
+  it("reads a page with no manifest of its own as declaring nothing", async () => {
+    const plan = planFor(await plansOf("per-page"), "docs/uncovered.md");
+    expect(plan.problems).toEqual([]);
+    expect(plan.suite).toBeNull();
+    expect(plan.evals).toEqual([]);
+  });
+
+  // `--since` selects a page when one of these manifests changed, so the list
+  // names only files that supplied an eval key: never the page itself, and
+  // nothing for a page that carries its evals in its own frontmatter.
+  it("names the manifest that supplied a page's evals, and none for a page's own", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "manni-docevals-eval-manifests-"));
+    cpSync(dir("per-page"), cwd, { recursive: true });
+    writeFileSync(
+      join(cwd, "docs/uncovered.md"),
+      "---\ntitle: Uncovered\nevals:\n  - use: no-todo-markers\n---\n\n# Uncovered\n",
+    );
+    const plans = await plansOf(cwd);
+
+    expect(planFor(plans, "docs/install.md").page.external?.evalManifests).toEqual([
+      join(cwd, "docs/install.evals.yaml"),
+    ]);
+    const own = planFor(plans, "docs/uncovered.md");
+    expect(own.evals.map((e) => e.name)).toEqual(["no-todo-markers"]);
+    expect(own.page.external?.evalManifests ?? []).toEqual([]);
+  });
+});
+
+describe("a manifest with no keys", () => {
+  // Proposal 0068: a keyless manifest owns what the vocabularies mark
+  // external. The evals draft marks its three keys, so the plan is the same as
+  // the one a manifest naming them resolves.
+  it("resolves the suite and the evals it supplies", async () => {
+    const plan = planFor(await plansOf("keyless"), "docs/install.md");
+    expect(plan.problems).toEqual([]);
+    expect(plan.suite).toBe("reference");
+    expect(plan.evals.map((e) => e.name)).toEqual(["no-todo-markers"]);
+  });
+
+  it("reads a page with no manifest of its own as declaring nothing", async () => {
+    const plan = planFor(await plansOf("keyless"), "docs/uncovered.md");
+    expect(plan.problems).toEqual([]);
+    expect(plan.suite).toBeNull();
+    expect(plan.evals).toEqual([]);
+  });
+});

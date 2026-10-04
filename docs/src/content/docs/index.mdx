@@ -1,6 +1,6 @@
 ---
 title: manni
-description: One command line for documentation that is meant to be checked. It validates metadata and page structure, checks citations against their source, and checks sites for accessibility.
+description: One command line for documentation that is meant to be checked. It validates metadata and page structure, checks citations against their source, runs evals over documentation pages, and checks sites for accessibility.
 tableOfContents: false
 hero:
   tagline: One command line for documentation that is meant to be checked.
@@ -24,7 +24,7 @@ applies-to: ["domain:manni"]
 next-steps: ["meta", "a11y", "cite", "key", "term"]
 sample-questions: ["What tools does manni include?", "How do I install manni and run my first command?", "What changed when docmeta became manni meta?"]
 graph: { label: "manni", type: concept }
-last-updated: 2026-10-02
+last-updated: 2026-10-01
 tags:
   - overview
   - installation
@@ -51,6 +51,7 @@ the package once and every tool is there.
 ```sh
 npm install -D @hawkeyexl/manni
 npx @hawkeyexl/manni meta validate docs/
+npx @hawkeyexl/manni docevals run docs/ --deterministic-only
 ```
 
 ## The tools
@@ -77,6 +78,11 @@ npx @hawkeyexl/manni meta validate docs/
     description="Check that every page has the shape its doctype promises: the sections a how-to needs, in order, with the steps and code blocks inside them."
   />
   <LinkCard
+    title="docevals"
+    href="/manni/docevals/"
+    description="Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter. Code first, an AI judge second, a human last."
+  />
+  <LinkCard
     title="key"
     href="/manni/key/"
     description="Set and rotate the family encryption key, so a required field or a private source path is on the page without being readable there."
@@ -90,12 +96,13 @@ npx @hawkeyexl/manni meta validate docs/
 
 `meta` checks what a page says about itself. `lint` checks whether it is shaped
 like what it says it is. `cite` checks that what a page says about the code is
-still true. `term` checks that the terms a page names are defined, and carries
+still true. `docevals` checks that a page still meets the quality bar its team
+wrote down. `term` checks that the terms a page names are defined, and carries
 those terms into Vale and translation. `key` sets and rotates the one encryption
 key that `meta` and `cite` encrypt values with. `manni --help` lists exactly the tools the package
 carries.
 
-`cite`, `key`, `term` and `lint` are in beta. Their commands, config keys and output
+`cite`, `docevals`, `key`, `term` and `lint` are in beta. Their commands, config keys and output
 can change in any release, without notice.
 
 ## Coming from docmeta?

@@ -1,0 +1,124 @@
+---
+title: Severity and findings
+description: What fails the build, what only reports, and how to ratchet a check up over time.
+type: concept
+last-updated: 2026-10-02
+---
+
+Deterministic graders produce **findings**. Severity decides which of them fail the build. It is
+the mechanism behind adopting a new check without breaking everyone.
+
+## Only `error` fails
+
+| Severity | Reported | Fails the eval |
+|---|---|---|
+| `error` | Yes | **Yes** |
+| `warning` | Yes | No |
+| `notice` | Yes | No |
+
+An eval fails only if it produced at least one `error`-severity finding. `warning` and `notice` show up
+in the report and in PR annotations, and pass.
+
+```yaml
+docevals:
+  evals:
+    names-an-action:
+      assertion: The page documents at least one Doc Detective action.
+      grader: tool:regex
+      options: { pattern: "(goTo|find|click|checkLink|httpRequest)" }
+      severity: warning        # reports, does not block
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options: { pattern: "\\b(TODO|TBD|FIXME)\\b", match: not-contains }
+      severity: error          # blocks
+```
+
+`severity` defaults to `error`.
+
+## The ratchet
+
+This is what severity is *for*. Adding an honest check to an existing corpus fails a lot of pages at
+once, which is accurate and useless, since nobody can merge it.
+
+The move is **not** to weaken the assertion. It is to lower the severity:
+
+1. Add the check at `severity: warning`. It reports on every page; nothing blocks.
+2. Burn down the findings, section by section.
+3. Flip to `severity: error`. Now it holds.
+
+Weakening the assertion instead permanently encodes the corpus's current state as your standard, and
+nobody ever tightens it back.
+
+:::note[A baseline usually beats the ratchet]
+On an existing corpus, prefer a **[findings
+baseline](/manni/docevals/adopt/retrofit-a-legacy-corpus/#the-ratchet)** to this sequence. It lets you
+turn the check on at `error` today and fail only on *new* findings. Nothing waits on a burndown
+somebody has to schedule. Severity is the right lever for a finding class you never intend to gate
+on. A house-style pattern over machine-written reference tables is the example.
+Full sequencing in
+[Retrofit a legacy corpus](/manni/docevals/adopt/retrofit-a-legacy-corpus/).
+:::
+
+You can ratchet per page while you work, using an override:
+
+```yaml
+evals:
+  - use: names-an-action
+    severity: error          # this section is done; hold the line here
+```
+
+## Severity is not weight
+
+They answer different questions and it is worth keeping them apart.
+
+- **`severity`** decides whether a failure *fails the run*. Only `error` does.
+- **`weight`** decides how much an outcome moves its **suite's pass rate**. It never changes the
+  eval's own pass/fail.
+
+A check lifted from a style rule is usually both. Use `severity: warning` so it does not break the
+build, and a `weight` below 1 so it does not swing the rate either. Reaching for `severity` alone
+to say "this matters less" overstates the claim. It says the failure does not count at all.
+
+## What a finding carries
+
+```console
+  FAIL no-todo-markers
+       error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
+```
+
+`severity:line [ruleId] message`. In JSON:
+
+```json
+{
+  "evalName": "no-todo-markers",
+  "file": "docs/actions/goTo.mdx",
+  "ruleId": "regex/found",
+  "message": "Pattern /\\b(TODO|TBD|FIXME)\\b/ found in body, expected absent",
+  "severity": "error",
+  "line": 14
+}
+```
+
+`ruleId`, `line`, and `col` are present when the grader can supply them. `tool:regex` names the
+line in the file, which is what makes `--format github` able to annotate the exact line.
+
+The same eval at `warning` reports and passes. `docs/get-started/concepts.md` overrides
+`no-todo-markers` to `severity: warning`, so its TODO shows as `warning:21 [regex/found]` under a
+`pass`.
+
+Severity also maps onto annotation levels: `error` → `::error`, `warning` → `::warning`, `notice` →
+`::notice`. See [Output and exit codes](/manni/docevals/reference/output-and-exit-codes/).
+
+## Severity is not the judge's
+
+Severity applies to deterministic graders. A judged eval's outcome comes from consensus and
+confidence zones instead. See [How judging works](/manni/docevals/judge/). The capability suite target is
+the judged analog of the ratchet; see
+[Regression vs capability](/manni/docevals/evals/regression-vs-capability/).
+
+{/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml). Config: .doc-detective.json. */}
+
+{/* step {"description":"A warning-severity finding reports without failing the page.","runShell":{"command":"manni docevals run docs/get-started/concepts.md --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[0],"stdio":"/regex\\/found/"}} */}
+
+{/* step {"description":"The same check at error severity fails, and the finding carries severity, line, and rule id.","runShell":{"command":"manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate","workingDirectory":"test/docevals/fixtures/pages","exitCodes":[1],"stdio":"/regex\\/found/"}} */}

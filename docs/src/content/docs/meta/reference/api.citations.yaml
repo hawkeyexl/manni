@@ -3,12 +3,12 @@ docs/src/content/docs/meta/reference/api.mdx:
     - id: api-sibling-tools-are-namespaces
       claim:
         lines: 445-446
-        integrity: sha256-237d8490d08014516b8fa17f0d42d5f99d0b7c5eb25b1aafbebc5d1f563e5769
+        integrity: sha256-c26e055f043e9d82acabb65c768f65a542ea0a87d89ed0b1fe65320c1f2e16ce
       source:
         file: src/index.ts
-        lines: 3-12
-        integrity: sha256-460b7750d5cd204db1025dfaa2b26f2a8112465177e55145e84432ad200a1985
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        lines: 3-13
+        integrity: sha256-67b4f04be99f1d6df152fce34a6b0b1c596e83e652f2327c69084411b890d849
+        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
     - id: api-namespace-cannot-collide
       claim:
         integrity: sha256-e0357514e8b03e0b6eab0dd59d0bae4d203d732c60be94c3715935295cea6eff

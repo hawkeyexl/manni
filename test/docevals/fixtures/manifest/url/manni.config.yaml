@@ -1,0 +1,20 @@
+# A URL manifest may supply plenty of keys, but not an eval key: docevals
+# writes those, and a URL is not somewhere to write. The refusal lands before
+# anything is fetched, so this host is never resolved.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: https://example.invalid/site.metadata.yaml
+        keys: [evals]
+
+docevals:
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
+      severity: error

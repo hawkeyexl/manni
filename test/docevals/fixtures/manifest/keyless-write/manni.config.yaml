@@ -1,0 +1,15 @@
+# Proposal 0068 on the write side: a keyless manifest owns the eval keys the
+# vocabulary marks external, unless a sibling names them. Here the sibling
+# names `meta-provenance`, so the keyless one owns `evals` and not that.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+    externalMetadata:
+      - file: "{page}.provenance.yaml"
+        keys: [meta-provenance]
+      - file: "{page}.meta.yaml"
+
+docevals:
+  fill:
+    confidenceThreshold: 0.5

@@ -1,0 +1,3 @@
+# Pages that record who wrote them, for the self-preference check and the
+# reserved `eval-` prefix. No evals are defined here; each page carries its own.
+docevals: {}

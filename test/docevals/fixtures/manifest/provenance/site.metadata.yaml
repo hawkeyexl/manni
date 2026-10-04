@@ -1,0 +1,10 @@
+docs/install.md:
+  provenance:
+    - generated-by: claude-fable-5
+      lines: 1-2
+      integrity: sha256-10da811a04e33fe95f73331ef9cfdf4e54b052e3197fb9005562bd0e29bc799d
+  meta-provenance:
+    - generated-by: claude-fable-5
+      fields: [/description]
+      confidence:
+        /description: 0.9

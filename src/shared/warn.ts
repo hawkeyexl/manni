@@ -27,7 +27,21 @@ export function notice(message: string): void {
 `);
 }
 
+const noticed = new Set<string>();
+
+/**
+ * A notice about something a run meets many times, said the first time. What
+ * `--local` replaced is the case: an eval naming a hosted provider is selected
+ * once per ensemble, but the user needs to read it once per eval.
+ */
+export function noticeOnce(message: string): void {
+  if (noticed.has(message)) return;
+  noticed.add(message);
+  notice(message);
+}
+
 /** Forget what has been said, so a test can assert a warning fires again. */
 export function resetWarnings(): void {
   said.clear();
+  noticed.clear();
 }

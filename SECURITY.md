@@ -97,11 +97,13 @@ retains, which is the proposal set *before* confidence gating.
 
 Note that provider auto-detection is deliberately permissive: a stray
 `OPENAI_API_KEY` in the environment redirects egress, by design. `--local`
-is the opt-in that refuses every hosted provider.
+is the opt-in that runs inference on this machine, over any provider a config
+or a page names.
 
 In scope here:
 
-- Content leaving the machine despite `--local`.
+- Content leaving the machine despite `--local`, on `manni meta fill` or on a
+  `manni docevals` command.
 - A remote schema being fetched despite `--offline`.
 - The cache writing outside its documented location, or provider credentials
   appearing in output, in the cache, or in an error message.

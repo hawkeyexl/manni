@@ -1,0 +1,22 @@
+# A corpus whose evals still live in its pages. `manni meta relocate` moves
+# them into a manifest and rewrites this file to declare it, and the same
+# `manni docevals run` has to report the same verdicts afterwards.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+docevals:
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: "\\b(TODO|TBD|FIXME)\\b"
+        match: not-contains
+      severity: error
+
+  suites:
+    reference:
+      target-pass-rate: 1.0
+      evals: [no-todo-markers]

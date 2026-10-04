@@ -1,0 +1,14 @@
+docs/src/content/docs/docevals/adopt/promote-to-deterministic.mdx:
+  provenance:
+    - generated-by: Claude Fable 5.1
+      lines: 2-44
+      integrity: sha256-b73a66dede81cf6a1b5d345ebc6f1f46800034ec2955995592d442dbb1ff3e77
+    - generated-by: Claude Opus 5
+      lines: 45
+      integrity: sha256-9d3041b694c18f0fa3349daa97e8bc2de30d0556b4007bfe57e3df836d52ac67
+    - generated-by: Claude Fable 5.1
+      lines: 46-84
+      integrity: sha256-da7f1c31d108c73af922fc83666592ed3a76f20e0adb8ac476ee5b89174f42ed
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-06

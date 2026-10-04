@@ -364,15 +364,12 @@ describe("loadConfig", () => {
     expect(found?.path).toBe(join(dir, "manni.config.yaml"));
   });
 
-  it("still reads the pre-rename family file, with a warning", async () => {
+  it("does not discover the pre-rename family file, and says nothing about it", async () => {
     await write("moose.config.yaml", "lint:\n  template: tgdp:how-to:1.6\n");
     const stderr = captureStderr();
     try {
-      const found = await loadConfig(undefined, dir);
-      expect(found?.config).toEqual({ template: "tgdp:how-to:1.6" });
-      expect(found?.path).toBe(join(dir, "moose.config.yaml"));
-      expect(stderr.text()).toContain("moose.config.yaml");
-      expect(stderr.text()).toContain("manni.config.yaml");
+      expect(await loadConfig(undefined, dir)).toBeNull();
+      expect(stderr.text()).toBe("");
     } finally {
       stderr.restore();
     }
