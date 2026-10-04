@@ -1,0 +1,102 @@
+docs/src/content/docs/docevals/ci/judge-pull-requests-locally.mdx:
+  citations:
+    - id: workflow
+      claim:
+        lines: 21-94
+        integrity: sha256-b25fe626ad15504a79818570944948dcc79c895ed88b4c491c753b539467c0eb
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 1-72
+        integrity: sha256-92f70be735e73a9b1f3e7a3e0c87b1a43f8406e8046faa635dbf73e2177addd3
+        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
+      quote: true
+    - id: one-judge-per-pull-request
+      claim:
+        lines: 106-109
+        integrity: sha256-e3dad013c8e410773242c7525c048d059a54ffb4be4b591852df157ffca737d2
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 20-24
+        integrity: sha256-994d778b267682f350ae26df255ae7d43c4ce279a8679294fec0c878148cf56f
+        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
+    - id: save-on-cancel
+      claim:
+        lines: 111-113
+        integrity: sha256-34c5a194b59072f1566a09271417daa631eb5677f2e0525eb02fea647bc5dfab
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 65-72
+        integrity: sha256-43d616d30d0b1fa4399242e293523c7d3cd72c7599d83b6db052bc128a0f33a2
+        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
+    - id: restore-earlier-verdicts
+      claim:
+        lines: 111-113
+        integrity: sha256-34c5a194b59072f1566a09271417daa631eb5677f2e0525eb02fea647bc5dfab
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 49-55
+        integrity: sha256-22a117652dd01e13ffedbeae8b03eb07011f076b75d3202b8d3568f6d0815dd9
+        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
+    - id: since-base-branch
+      claim:
+        lines: 122-125
+        integrity: sha256-c6300c280673f731c4adbfa60b1c067a219cdb62f166cb5bc712ad021a337d13
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 60-64
+        integrity: sha256-747439e861658145f187f79367e937d89be80a544379162f06169765c79b3fd2
+        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
+    - id: full-history
+      claim:
+        lines: 127
+        integrity: sha256-3bcfe96ea37fada3684f8f4169f08c19ce720cbccb33193ebce2bc923fdf0396
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 33-36
+        integrity: sha256-854098193b69c76cd69f6f0d41fac88241dfc22ef899052f4d043f21fbe7ee82
+        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
+    - id: max-turns-240
+      claim:
+        lines: 146-148
+        integrity: sha256-7b6876189b85f18d33ca479a4668ab00e2c6772fd536e5e144a56723930391b1
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 58-64
+        integrity: sha256-a987e74545923dcd83d4a5b92ee6e508e283d4ddd8e4e9bb13810faabd758a3c
+        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
+    - id: timeout-180
+      claim:
+        lines: 148-150
+        integrity: sha256-77511daf3e90ae2c049d6f84d1d0ccd9714019c6a22214d6dde6a6f8b28da895
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 31
+        integrity: sha256-c44ef41458433fff1a39b8ab1f5f850220add86444f3a0751d5e4bd668dfdda6
+        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
+    - id: ai-only
+      claim:
+        lines: 100-101
+        integrity: sha256-46b4c0d6bf3ebb7cb8b6ff6a3d6d8f40d63925c6b4c0d3da21fc19a8f995ce03
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 56-57
+        integrity: sha256-64e5a8c4a51166c478ec5315c048d973996f885b1bcc7a063699c099d1d46c62
+        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
+    - id: runtime-cache
+      claim:
+        lines: 165-166
+        integrity: sha256-2de3ebd14463ed5493d267e5b42265e21369d5b4f9c639aab63fdb41d6d69032
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 43-48
+        integrity: sha256-c6d9ca1aee422bc789cbd3394ba239483ae132ec8ac84a57b1d77de86270e043
+        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
+    - id: config-provider-model
+      claim:
+        lines: 10-17
+        integrity: sha256-add5b2918563e8e0cd90e97535d737e37039033cccf03ee2b3f20900fdb3a7c5
+      source:
+        file: manni.config.yaml
+        lines: 163-164
+        integrity: sha256-41f9435c4470cdba81446faf1ae82c9875fe255870858c3482d64fd04296e950
+        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21

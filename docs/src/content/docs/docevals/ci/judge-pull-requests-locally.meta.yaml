@@ -1,0 +1,14 @@
+docs/src/content/docs/docevals/ci/judge-pull-requests-locally.mdx:
+  eval-suite: docevals
+  evals:
+    - id: judge-pull-requests
+      assertion: "A reader can add a GitHub Actions job that judges a pull request's changed pages with a local model, where a newer push cancels the running judge and keeps its verdicts."
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-170
+      integrity: sha256-ad21b56029cdeeeb2aef512e532546791f4698949d905dfed72b19bc95ebbd0e
+  created: 2026-10-04
