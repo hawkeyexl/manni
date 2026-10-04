@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { defined } from "../helpers/defined.js";
-import { analyzeDoc } from "../../../src/graph/core/analyze.js";
+import { analyzeDoc, resolveRelative } from "../../../src/graph/core/analyze.js";
 import { GraphError } from "../../../src/graph/types.js";
 
 const ALL = new Set(["docs/intro.md", "docs/config.md", "docs/sub/deep.md"]);
@@ -538,5 +538,26 @@ describe("analyzeDoc — content hash (ADR 01036)", () => {
     const a = analyzeDoc("# T\n\nBody.\n", "a.md", ALL).contentHash;
     const b = analyzeDoc("# T\n\nBody!\n", "a.md", ALL).contentHash;
     expect(a).not.toBe(b);
+  });
+});
+
+describe("resolveRelative", () => {
+  it("resolves against the linking page's directory", () => {
+    expect(resolveRelative("docs/a.md", "b.md")).toBe("docs/b.md");
+    expect(resolveRelative("docs/sub/a.md", "../b.md")).toBe("docs/b.md");
+    expect(resolveRelative("docs/a.md", "./x/../c.md")).toBe("docs/c.md");
+  });
+
+  it("refuses a target that climbs above the root", () => {
+    expect(resolveRelative("a.md", "../b.md")).toBeNull();
+    expect(resolveRelative("docs/a.md", "../../b.md")).toBeNull();
+  });
+
+  it("keeps climbing from a page that sits above the root", () => {
+    // A leading `..` is not a directory to pop: it names the parent already.
+    expect(resolveRelative("../docs/a.md", "b.md")).toBe("../docs/b.md");
+    expect(resolveRelative("../docs/a.md", "../b.md")).toBe("../b.md");
+    expect(resolveRelative("../docs/a.md", "../../b.md")).toBe("../../b.md");
+    expect(resolveRelative("../a.md", "../b.md")).toBe("../../b.md");
   });
 });

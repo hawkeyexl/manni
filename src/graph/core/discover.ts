@@ -21,6 +21,7 @@ import {
   assertCollectionWithoutPaths,
   DEFAULT_CONFIG_FILENAME,
   type GraphConfig,
+  type RouteMapping,
 } from "./config.js";
 import { byCodeUnit } from "./sort.js";
 
@@ -185,8 +186,9 @@ function normalizeExtensions(exts: readonly string[]): Set<string> {
  * resolved from `cwd`. Without them the run reads the selected collections,
  * each collection's `paths:` resolved from the config file's directory and
  * narrowed by its own `exclude:`. The family-wide exclusions and `--exclude`
- * apply to both. Labels stay relative to `cwd` either way, because a graph
- * node's IRI is derived from the path the build was asked about.
+ * apply to both. Labels are relative to `base`, which `documentBase` picks
+ * the way `manni meta validate` does, so a collection page's IRI does not
+ * depend on where the run started.
  *
  * `-` is not a file, so it is left out of what this returns: the caller reads
  * stdin itself. It still counts as a positional path, so a run given only `-`
@@ -197,6 +199,7 @@ export function resolveDocumentSet(
   options: DocumentSetOptions = {},
   verb: DocumentVerb = "build",
   cwd = process.cwd(),
+  base = documentBase(config, options, cwd),
 ): string[] {
   const paths = options.paths ?? [];
   const wanted = options.collection ?? [];
@@ -246,10 +249,39 @@ export function resolveDocumentSet(
   return [
     ...new Set(
       [...named.filter(keepNamed), ...walked.filter(keepWalked)].map((p) =>
-        relative(cwd, p).replace(/\\/g, "/"),
+        relative(base, p).replace(/\\/g, "/"),
       ),
     ),
   ].sort(byCodeUnit);
+}
+
+/**
+ * The directory a run's document labels are relative to, decided as
+ * `manni meta validate` decides it. Positional paths are what the operator
+ * typed, so they are labelled from the working directory. Collection pages are
+ * labelled from the config file's directory, so one collection builds one graph
+ * from anywhere beneath it. A config that declares no collection has no pages
+ * of its own, so the base is then `cwd`.
+ */
+export function documentBase(
+  config: GraphConfig,
+  options: Pick<DocumentSetOptions, "paths"> = {},
+  cwd = process.cwd(),
+): string {
+  const typed = (options.paths ?? []).length > 0;
+  return typed || config.collections.length === 0 ? cwd : config.configDir;
+}
+
+/**
+ * The configured route mappings, each `root` rebased from the config file's
+ * directory onto `base`. A route then resolves to the label its page carries,
+ * whichever directory the labels are relative to.
+ */
+export function routesFrom(config: GraphConfig, base: string): RouteMapping[] {
+  return config.routes.map((m) => ({
+    ...m,
+    root: relative(base, resolve(config.configDir, m.root)).replace(/\\/g, "/"),
+  }));
 }
 
 /** The patterns a run asked about, for the empty-match message. */

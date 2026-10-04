@@ -214,7 +214,7 @@ and a review nobody does is the same as no record at all.
 
 {/* Verified by Doc Detective in docs-as-tests, against test/graph/fixtures/dd/. */}
 
-{/* step {"description":"A dry run reports per page and writes nothing.","runShell":{"command":"manni graph fill --dry-run -c test/graph/fixtures/dd/unpriced.config.yaml","exitCodes":[0],"stdio":"test/graph/fixtures/dd/unpriced/guide.md"}} */}
+{/* step {"description":"A dry run reports per page and writes nothing.","runShell":{"command":"manni graph fill --dry-run -c test/graph/fixtures/dd/unpriced.config.yaml","exitCodes":[0],"stdio":"unpriced/guide.md"}} */}
 
 {/* step {"description":"--confidence is a probability, so above 1 is a usage error.","runShell":{"command":"manni graph fill --dry-run -c test/graph/fixtures/dd/unpriced.config.yaml --confidence 5","exitCodes":[2],"stdio":"--confidence must be 0..1"}} */}
 

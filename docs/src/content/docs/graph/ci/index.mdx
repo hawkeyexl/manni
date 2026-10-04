@@ -75,7 +75,7 @@ it:
 
 ```console
 $ manni graph check -c test/graph/fixtures/dd/violations.config.yaml -f github
-::error file=test/graph/fixtures/dd/violations/alpha.md::skos:broader cycle through https://example.com/dd/concept/alpha, https://example.com/dd/concept/beta (https://example.com/dd/concept/alpha → https://example.com/dd/concept/beta) — a concept cannot be its own ancestor (https://example.com/dd/concept/alpha)
+::error file=violations/alpha.md::skos:broader cycle through https://example.com/dd/concept/alpha, https://example.com/dd/concept/beta (https://example.com/dd/concept/alpha → https://example.com/dd/concept/beta) — a concept cannot be its own ancestor (https://example.com/dd/concept/alpha)
 ```
 
 A graph finding has a focus node rather than a line, so the annotation lands on

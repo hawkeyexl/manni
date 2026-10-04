@@ -32,7 +32,9 @@ which are files, directories, or globs relative to the working directory. With
 none given they read every
 [collection](/manni/meta/reference/configuration/#collections) the config
 declares, or the ones `--collection` names. A collection's `paths` resolve from
-the config file's directory, wherever the command runs. Nothing matching is
+the config file's directory, wherever the command runs. A document's
+`graph:path` and node IRI count from the working directory for a typed path, and
+from the config file's directory for a collection. Nothing matching is
 **exit 2**, not an empty successful build, unless `--allow-empty` is given.
 
 `-` reads one more document from stdin, alongside any named paths and never
@@ -168,7 +170,7 @@ manni graph check [options]
 
 ```console
 $ manni graph check -c test/graph/fixtures/dd/violations.config.yaml
-error: https://example.com/dd/concept/alpha skos:broader — skos:broader cycle through https://example.com/dd/concept/alpha, https://example.com/dd/concept/beta (https://example.com/dd/concept/alpha → https://example.com/dd/concept/beta) — a concept cannot be its own ancestor [test/graph/fixtures/dd/violations/alpha.md, test/graph/fixtures/dd/violations/beta.md, test/graph/fixtures/dd/violations/gamma.md]
+error: https://example.com/dd/concept/alpha skos:broader — skos:broader cycle through https://example.com/dd/concept/alpha, https://example.com/dd/concept/beta (https://example.com/dd/concept/alpha → https://example.com/dd/concept/beta) — a concept cannot be its own ancestor [violations/alpha.md, violations/beta.md, violations/gamma.md]
 
 2 errors, 0 warnings, 0 notices
 ```
@@ -290,8 +292,8 @@ manni graph query [options]
 
 ```console
 $ manni graph query -c test/graph/fixtures/dd/docs.config.yaml --predicate dcterms:subject
-<https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md> dcterms:subject <https://example.com/dd/concept/reference>
-<https://example.com/dd/doc/test/graph/fixtures/dd/docs/getting-started.md> dcterms:subject <https://example.com/dd/concept/onboarding>
+<https://example.com/dd/doc/docs/configuration.md> dcterms:subject <https://example.com/dd/concept/reference>
+<https://example.com/dd/doc/docs/getting-started.md> dcterms:subject <https://example.com/dd/concept/onboarding>
 
 2 match(es)
 ```
@@ -334,14 +336,14 @@ Concepts:   3
 References: 2
 
 Most connected:
-  test/graph/fixtures/dd/docs/configuration.md (2)
-  test/graph/fixtures/dd/docs/getting-started.md (2)
+  docs/configuration.md (2)
+  docs/getting-started.md (2)
 
 Orphan docs (1):
-  test/graph/fixtures/dd/docs/troubleshooting.md
+  docs/troubleshooting.md
 
 Broken internal links (1):
-  test/graph/fixtures/dd/docs/troubleshooting.md -> missing.md
+  docs/troubleshooting.md -> missing.md
 ```
 
 ### Options
@@ -405,8 +407,8 @@ manni graph traverse <node> [options]
 
 ```console
 $ manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml \
-    https://example.com/dd/doc/test/graph/fixtures/dd/docs/getting-started.md --impact
-  https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md — Configuration
+    https://example.com/dd/doc/docs/getting-started.md --impact
+  https://example.com/dd/doc/docs/configuration.md — Configuration
   https://example.com/dd/activity/build
     https://example.com/dd/graph
 
@@ -532,7 +534,7 @@ An unknown target is **exit 2**, with the allowed set named.
 
 {/* step {"description":"check names the focus node and the documents it came from.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"2 errors, 0 warnings, 0 notices"}} */}
 
-{/* step {"description":"-f github annotates the documents behind the finding.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml -f github","exitCodes":[1],"stdio":"::error file=test/graph/fixtures/dd/violations/alpha.md::"}} */}
+{/* step {"description":"-f github annotates the documents behind the finding.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml -f github","exitCodes":[1],"stdio":"::error file=violations/alpha.md::"}} */}
 
 {/* step {"description":"An unknown --format is refused while the options are parsed.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/docs.config.yaml -f xml","exitCodes":[2],"stdio":"/Unknown --format \"xml\". Use pretty \\| json \\| github./"}} */}
 
@@ -542,11 +544,11 @@ An unknown target is **exit 2**, with the allowed set named.
 
 {/* step {"description":"graph validate is gone, and gets no softer treatment than any other unknown verb.","runShell":{"command":"manni graph validate docs/","exitCodes":[2],"stdio":"unknown command 'validate'"}} */}
 
-{/* step {"description":"traverse --impact walks inbound reach from a node.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/graph/fixtures/dd/docs/getting-started.md --impact","exitCodes":[0],"stdio":"nodes,"}} */}
+{/* step {"description":"traverse --impact walks inbound reach from a node.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/docs/getting-started.md --impact","exitCodes":[0],"stdio":"nodes,"}} */}
 
-{/* step {"description":"--depth 0 is allowed and means the node itself.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/graph/fixtures/dd/docs/getting-started.md --depth 0","exitCodes":[0]}} */}
+{/* step {"description":"--depth 0 is allowed and means the node itself.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/docs/getting-started.md --depth 0","exitCodes":[0]}} */}
 
-{/* step {"description":"A non-numeric count is a usage error naming the flag.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/graph/fixtures/dd/docs/getting-started.md --limit abc","exitCodes":[2],"stdio":"--limit expects a number"}} */}
+{/* step {"description":"A non-numeric count is a usage error naming the flag.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/docs/getting-started.md --limit abc","exitCodes":[2],"stdio":"--limit expects a number"}} */}
 
 {/* step {"description":"--coverage-threshold is a percentage, so 0..100.","runShell":{"command":"manni graph stats -c test/graph/fixtures/dd/docs.config.yaml --coverage-threshold 150","exitCodes":[2],"stdio":"--coverage-threshold must be 0..100"}} */}
 

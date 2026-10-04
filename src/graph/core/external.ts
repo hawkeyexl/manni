@@ -36,20 +36,25 @@ export interface MetaViewSource {
 
 /**
  * Meta's view of the run's pages. `paths` are the run's documents relative
- * to `cwd`; a `{page}` manifest is read for exactly these. A manifest meta
- * refuses is refused here in meta's sentence, as an operational error.
+ * to `base` (`documentBase`), and the view's labels are too. `-c` stays
+ * relative to `cwd`, where it was typed. A `{page}` manifest is read for
+ * exactly these. A manifest meta refuses is refused here in meta's sentence,
+ * as an operational error.
  */
 export async function openMetaView(
   source: MetaViewSource,
   cwd: string,
   paths: readonly string[],
+  base = cwd,
 ): Promise<MetaPageView> {
   try {
     return await metaPageView({
-      cwd,
-      ...(source.configPath === undefined ? {} : { configPath: source.configPath }),
+      cwd: base,
+      ...(source.configPath === undefined
+        ? {}
+        : { configPath: resolve(cwd, source.configPath) }),
       ...(source.noConfig === undefined ? {} : { noConfig: source.noConfig }),
-      pages: paths.filter((p) => p !== STDIN_PATH).map((p) => resolve(cwd, p)),
+      pages: paths.filter((p) => p !== STDIN_PATH).map((p) => resolve(base, p)),
     });
   } catch (e) {
     throw new GraphError(errorMessage(e));

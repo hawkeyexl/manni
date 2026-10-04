@@ -14,8 +14,10 @@ import { loadRunConfig, type FillField } from "../core/config.js";
 import type { DocModel } from "../types.js";
 import {
   assertInputFormat,
+  documentBase,
   documentSetPatterns,
   resolveDocumentSet,
+  routesFrom,
   STDIN,
   type DocumentInputOptions,
 } from "../core/discover.js";
@@ -243,7 +245,9 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   assertProviderSelection(selection);
 
   const format = assertInputFormat(opts.paths ?? [], opts.as);
-  const files = resolveDocumentSet(config, opts, "fill", cwd);
+  // Labels and reads share one base, the one `build` uses (`documentBase`).
+  const base = documentBase(config, opts, cwd);
+  const files = resolveDocumentSet(config, opts, "fill", cwd, base);
   const usingStdin = (opts.paths ?? []).includes(STDIN);
   if (files.length === 0 && !usingStdin) {
     if (opts.allowEmpty) {
@@ -264,7 +268,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   }
   const stdinContent = usingStdin ? opts.stdinContent : undefined;
   const analyzeOptions = {
-    routes: config.routes,
+    routes: routesFrom(config, base),
     ...(format === undefined ? {} : { format }),
   };
 
@@ -357,7 +361,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   const guardFiles = [
     ...new Set([
       ...(config.collections.length > 0
-        ? resolveDocumentSet(config, {}, "fill", cwd)
+        ? resolveDocumentSet(config, {}, "fill", cwd, base)
         : []),
       ...files,
     ]),
@@ -383,6 +387,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     },
     cwd,
     guardFiles,
+    base,
     mergeErrors,
   );
   // Each page's merged text, computed once. `fillOne` reads it from here, so
@@ -396,7 +401,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     if (mergeErrors.has(path)) continue;
     let text: string;
     try {
-      text = readFileSync(resolve(cwd, path), "utf8");
+      text = readFileSync(resolve(base, path), "utf8");
     } catch (e) {
       // A named page that cannot be read aborts the run below, as it always
       // has. One read only for context is left out of the guard.
@@ -423,8 +428,8 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     !opts.noValidateGraph && config.fill.validateGraph
       ? FillGuard.create(
           guardFiles.filter((path) => !mergeErrors.has(path)),
-          cwd,
-          config,
+          base,
+          { ...config, routes: routesFrom(config, base) },
           shapesPaths,
           opts.force ?? false,
           {
@@ -450,7 +455,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   for (const path of files) {
     // Read failures are operational (deleted file, permissions) — abort the
     // whole run with exit 2 rather than burning LLM budget on the rest.
-    const absPath = resolve(cwd, path);
+    const absPath = resolve(base, path);
     let content: string;
     try {
       content = readFileSync(absPath, "utf8");
@@ -1039,23 +1044,24 @@ async function openMetaViewPerPage(
   source: Parameters<typeof openMetaView>[0],
   cwd: string,
   paths: readonly string[],
+  base: string,
   failures: Map<string, unknown>,
 ): Promise<MetaPageView> {
   try {
-    return await openMetaView(source, cwd, paths);
+    return await openMetaView(source, cwd, paths, base);
   } catch (whole) {
-    await openMetaView(source, cwd, []);
+    await openMetaView(source, cwd, [], base);
     const readable: string[] = [];
     for (const path of paths) {
       try {
-        await openMetaView(source, cwd, [path]);
+        await openMetaView(source, cwd, [path], base);
         readable.push(path);
       } catch (e) {
         failures.set(path, e);
       }
     }
     if (readable.length === paths.length) throw whole;
-    return openMetaView(source, cwd, readable);
+    return openMetaView(source, cwd, readable, base);
   }
 }
 

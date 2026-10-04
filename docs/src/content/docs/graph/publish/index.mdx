@@ -87,10 +87,10 @@ refused. `1.2` and `1.3` are the two accepted.
 ### Build from a directory that contains the corpus
 
 A package has one root, and every document has to sit under it. `manni graph
-build` labels each document by its path relative to where it ran. A corpus
-above that directory is therefore labelled `../external/page.md`. That happens
-with `manni graph build ../external/*.md`, and with a collection whose `paths:`
-climb past the config file.
+build` labels a typed path from where it ran, and a collection page from the
+config file's directory. A corpus above that directory is therefore labelled
+`../external/page.md`. That happens with `manni graph build ../external/*.md`,
+and with a collection whose `paths:` climb past the config file.
 
 Only `export iirds` minds. `build`, `query` and the rest work on those paths as
 they always have. A container cannot hold a path that points outside itself, so
@@ -103,7 +103,8 @@ $ echo $?
 2
 ```
 
-Rebuild from the directory that holds every document, and export again.
+Rebuild from the directory that holds every document, and export again. For a
+collection, keep its `paths:` beneath the config file instead.
 
 ## Search in the browser
 

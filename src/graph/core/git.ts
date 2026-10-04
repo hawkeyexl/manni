@@ -10,6 +10,7 @@
  */
 import { GraphError } from "../types.js";
 import { realExec, type ExecFn } from "@hawkeyexl/inference";
+import { posix } from "node:path";
 import { normalizeDocPath } from "./iri.js";
 
 export interface GitFileHistory {
@@ -96,39 +97,51 @@ export async function collectGitHistory(
   cwd: string,
   exec: ExecFn = realExec,
 ): Promise<GitHistory> {
-  const result = await exec(
-    [
-      "git",
-      "-c",
-      "core.quotepath=off",
-      "log",
-      `--format=${RECORD}%H%x09%an%x09%cI`,
-      "--name-status",
-      "-M",
-      // Paths relative to cwd, matching discoverFiles output — without this,
-      // git emits repo-root-relative paths and every corpus lookup misses
-      // when the build runs in a subdirectory of the repo.
-      "--relative",
-    ],
-    { cwd, timeoutMs: 60000, env: clearedGitEnv() },
-  );
-  // Messages stay neutral about *why* git provenance was requested; the caller
-  // knows whether it was demanded (`provenance.git: true`) or inherited
-  // (`"auto"`) and frames the failure as an error or a warning accordingly.
-  if (result.spawnError) {
+  const git = async (args: string[]): Promise<string> => {
+    const result = await exec(["git", ...args], {
+      cwd,
+      timeoutMs: 60000,
+      env: clearedGitEnv(),
+    });
+    // Messages stay neutral about *why* git provenance was requested; the
+    // caller frames the failure as an error or a warning.
+    if (result.spawnError) {
+      throw new GraphError(
+        `git could not be run: ${result.spawnError} (is git installed and on PATH?)`,
+      );
+    }
+    if (result.timedOut) {
+      throw new GraphError(
+        "`git log` timed out after 60s — the repo history may be too large for whole-history provenance",
+      );
+    }
+    if (result.code !== 0) {
+      const detail = result.stderr.trim().slice(-300);
+      throw new GraphError(
+        `git history could not be read (is ${cwd} a git repo with at least one commit?)${detail ? ` — git said: ${detail}` : ""}`,
+      );
+    }
+    return result.stdout;
+  };
+  // Keys are relative to `cwd`, the directory the caller's labels count from
+  // (`documentBase`). git reports paths from the repository root, so each is
+  // rebased by `cwd`'s own place in the repository. `--relative` would do that
+  // too, but it drops every path outside `cwd`: a page labelled `../x.md`, and
+  // a rename from outside, whose fold into the current name is the point.
+  const prefix = `/${(await git(["rev-parse", "--show-prefix"])).trim()}`;
+  const label = (raw: string): string =>
+    posix.relative(prefix, `/${normalizeDocPath(unquoteGitPath(raw))}`);
+  const stdout = await git([
+    "-c",
+    "core.quotepath=off",
+    "log",
+    `--format=${RECORD}%H%x09%an%x09%cI`,
+    "--name-status",
+    "-M",
+  ]);
+  if (stdout.trim() === "") {
     throw new GraphError(
-      `git could not be run: ${result.spawnError} (is git installed and on PATH?)`,
-    );
-  }
-  if (result.timedOut) {
-    throw new GraphError(
-      "`git log` timed out after 60s — the repo history may be too large for whole-history provenance",
-    );
-  }
-  if (result.code !== 0 || result.stdout.trim() === "") {
-    const detail = result.stderr.trim().slice(-300);
-    throw new GraphError(
-      `git history could not be read (is ${cwd} a git repo with at least one commit?)${detail ? ` — git said: ${detail}` : ""}`,
+      `git history could not be read (is ${cwd} a git repo with at least one commit?)`,
     );
   }
 
@@ -150,7 +163,7 @@ export async function collectGitHistory(
 
   /** Register that the commit being parsed touched `path` (as known at that time). */
   const touch = (pathThen: string): GitFileHistory => {
-    const path = normalizeDocPath(unquoteGitPath(pathThen));
+    const path = label(pathThen);
     const current = currentName.get(path) ?? path;
     const file = entry(current);
     // Walking newest→oldest: first touch wins `modified`, every touch pushes
@@ -161,7 +174,7 @@ export async function collectGitHistory(
     return file;
   };
 
-  for (const line of result.stdout.split("\n")) {
+  for (const line of stdout.split("\n")) {
     if (line.startsWith(RECORD)) {
       const [, author = "", time = ""] = line.slice(1).split("\t");
       commitAuthor = author;
@@ -185,10 +198,10 @@ export async function collectGitHistory(
         continue;
       }
       const file = touch(newPath);
-      const normalizedOld = normalizeDocPath(unquoteGitPath(oldPath));
+      const normalizedOld = label(oldPath);
       file.renamedFrom.push(normalizedOld);
       // Older commits refer to the pre-rename path; fold them into this file.
-      const normalizedNew = normalizeDocPath(unquoteGitPath(newPath));
+      const normalizedNew = label(newPath);
       currentName.set(
         normalizedOld,
         currentName.get(normalizedNew) ?? normalizedNew,

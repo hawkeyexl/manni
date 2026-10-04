@@ -206,6 +206,13 @@ Corpus-defining settings such as routes and derive sources may be config-only.
   it, and the source word stays in `shaclSeverity`, the way a11y keeps axe's
   `impact`. Findings are built through `finding()` in `src/graph/core/shacl.ts` so
   the translation happens in one place and no caller re-derives it.
+- **A label counts from where its input resolves, as meta's do.** A typed path
+  is labelled from the working directory, and a collection page from the config
+  file's directory (`documentBase` in `src/graph/core/discover.ts`). Reads, git
+  history, the meta view, route `root`s and `export` all use that one base. A
+  collection therefore builds one graph from any subdirectory. git reports
+  repo-root paths, and `collectGitHistory` rebases them onto the base with
+  `rev-parse --show-prefix`. `--relative` would drop renames from outside it.
 - **`-` reads one more page from stdin**, beside the named paths and never
   instead of them, and `--as` is required with it. Its display path is
   `<stdin>` (`STDIN_PATH` in `src/graph/core/iri.ts`) and its node is

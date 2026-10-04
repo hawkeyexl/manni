@@ -86,8 +86,37 @@ describe("collectGitHistory (real repo)", () => {
     const history = await collectGitHistory(join(dir, "site"));
     expect(history.files.has("guide.md")).toBe(true);
     expect(history.files.has("site/guide.md")).toBe(false);
-    // out-of-scope files don't leak in
+    // a file outside the directory keeps its place above it, never its root name
     expect(history.files.has("root.md")).toBe(false);
+  });
+
+  it("folds a rename from outside the directory and keeps paths above it", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-graph-gitout-"));
+    git(dir, "init", "-q");
+    git(dir, "config", "user.name", "Test Author");
+    git(dir, "config", "user.email", "test@example.com");
+    git(dir, "config", "commit.gpgsign", "false");
+    const commit = (date: string, message: string): void => {
+      const env = { GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date };
+      execFileSync("git", ["add", "-A"], { cwd: dir, env: hermeticEnv(env) });
+      execFileSync("git", ["commit", "-q", "-m", message], {
+        cwd: dir,
+        env: hermeticEnv(env),
+      });
+    };
+    mkdirSync(join(dir, "old"));
+    mkdirSync(join(dir, "site"));
+    writeFileSync(join(dir, "old", "guide.md"), "# Guide\n\nA body long enough to rename.\n");
+    writeFileSync(join(dir, "root.md"), "# R\n");
+    commit("2026-01-01T10:00:00Z", "add");
+    renameSync(join(dir, "old", "guide.md"), join(dir, "site", "guide.md"));
+    commit("2026-02-01T10:00:00Z", "move");
+
+    const history = await collectGitHistory(join(dir, "site"));
+    const guide = defined(history.files.get("guide.md"));
+    expect(guide.created).toContain("2026-01-01");
+    expect(guide.renamedFrom).toEqual(["../old/guide.md"]);
+    expect(history.files.has("../root.md")).toBe(true);
   });
 
   it("is deterministic: two collections are deep-equal", async () => {

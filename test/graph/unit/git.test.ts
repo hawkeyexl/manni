@@ -4,9 +4,15 @@ import { collectGitHistory } from "../../../src/graph/core/git.js";
 import { GraphError } from "../../../src/graph/types.js";
 import type { ExecFn, ExecResult } from "@hawkeyexl/inference";
 
-function mockExec(stdout: string, code = 0): ExecFn {
-  return () =>
-    Promise.resolve<ExecResult>({ code, stdout, stderr: "", timedOut: false });
+/** `stdout` answers `git log`; `prefix` answers `rev-parse --show-prefix`. */
+function mockExec(stdout: string, code = 0, prefix = ""): ExecFn {
+  return (cmd) =>
+    Promise.resolve<ExecResult>({
+      code,
+      stdout: cmd.includes("rev-parse") ? `${prefix}\n` : stdout,
+      stderr: "",
+      timedOut: false,
+    });
 }
 
 const SOH = "\u0001";
@@ -29,6 +35,18 @@ const LOG = [
 ].join("\n");
 
 describe("collectGitHistory", () => {
+  it("keys repo-root paths relative to the run's directory in the repository", async () => {
+    const log = [
+      `${SOH}c1\tA\t2026-01-01T00:00:00+00:00`,
+      "",
+      "A\tsite/a.md",
+      "A\troot.md",
+      "",
+    ].join("\n");
+    const history = await collectGitHistory("/repo/site", mockExec(log, 0, "site/"));
+    expect([...history.files.keys()].sort()).toEqual(["../root.md", "a.md"]);
+  });
+
   it("parses one pass into per-file created/modified/authors", async () => {
     const history = await collectGitHistory("/repo", mockExec(LOG));
     expect(history.headTime).toBe("2026-03-03T10:00:00+00:00");

@@ -108,7 +108,9 @@ export function hasScheme(target: string): boolean {
 /**
  * Resolve a relative link target against the linking doc's directory using
  * pure string math (posix, OS-independent). Returns null when the target
- * escapes the corpus root.
+ * escapes the corpus root. A page labelled above the root (`../docs/a.md`)
+ * already climbs, so its leading `..` segments are kept, never popped as if
+ * they were directories, and its links may climb further.
  */
 export function resolveRelative(
   docPath: string,
@@ -120,7 +122,8 @@ export function resolveRelative(
     if (part === "" || part === ".") continue;
     if (part === "..") {
       if (segments.length === 0) return null;
-      segments.pop();
+      if (segments[segments.length - 1] === "..") segments.push("..");
+      else segments.pop();
     } else {
       segments.push(part);
     }

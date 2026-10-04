@@ -26,9 +26,9 @@ This is Maya's page, M19.
 ## What reaches this page
 
 ```console
-$ manni graph traverse https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md --reverse
-https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md — Configuration
-  https://example.com/dd/doc/test/graph/fixtures/dd/docs/getting-started.md — Getting started
+$ manni graph traverse https://example.com/dd/doc/docs/configuration.md --reverse
+https://example.com/dd/doc/docs/configuration.md — Configuration
+  https://example.com/dd/doc/docs/getting-started.md — Getting started
   https://example.com/dd/activity/build
 
 3 nodes, 2 hops, 0 excluded
@@ -80,7 +80,7 @@ That is the whole neighbourhood, which is rarely the question. Narrow it:
 
 ```console
 $ manni graph traverse <page IRI> --predicates dcterms:subject
-https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md — Configuration
+https://example.com/dd/doc/docs/configuration.md — Configuration
   https://example.com/dd/concept/reference
 
 2 nodes, 1 hop, 0 excluded
@@ -147,12 +147,12 @@ arrives before the change, from your own terminal. Two habits:
 
 {/* step {"description":"Traversal needs a built graph.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
 
-{/* step {"description":"--reverse reports what points at a page.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md --reverse","exitCodes":[0],"stdio":"getting-started.md"}} */}
+{/* step {"description":"--reverse reports what points at a page.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/docs/configuration.md --reverse","exitCodes":[0],"stdio":"getting-started.md"}} */}
 
-{/* step {"description":"--impact walks transitive inbound reach.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/graph/fixtures/dd/docs/getting-started.md --impact","exitCodes":[0],"stdio":"excluded"}} */}
+{/* step {"description":"--impact walks transitive inbound reach.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/docs/getting-started.md --impact","exitCodes":[0],"stdio":"excluded"}} */}
 
-{/* step {"description":"--depth 0 means the node itself.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md --depth 0","exitCodes":[0],"stdio":"1 node, 0 hops"}} */}
+{/* step {"description":"--depth 0 means the node itself.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/docs/configuration.md --depth 0","exitCodes":[0],"stdio":"1 node, 0 hops"}} */}
 
-{/* step {"description":"--predicates narrows the walk to one edge kind.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md --predicates dcterms:subject","exitCodes":[0],"stdio":"2 nodes, 1 hop, 0 excluded"}} */}
+{/* step {"description":"--predicates narrows the walk to one edge kind.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/docs/configuration.md --predicates dcterms:subject","exitCodes":[0],"stdio":"2 nodes, 1 hop, 0 excluded"}} */}
 
-{/* step {"description":"--limit stops the walk.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md --depth 2 --limit 3","exitCodes":[0]}} */}
+{/* step {"description":"--limit stops the walk.","runShell":{"command":"manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml https://example.com/dd/doc/docs/configuration.md --depth 2 --limit 3","exitCodes":[0]}} */}

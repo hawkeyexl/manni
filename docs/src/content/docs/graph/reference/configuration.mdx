@@ -163,7 +163,7 @@ sees it resolves to the page that serves it. Each entry is an object; only
 | Key | Type | Default | What it does |
 |---|---|---|---|
 | `basePath` | string | `/` | The site prefix this route serves. Normalized to a leading `/` and no trailing one; `/` means the site root. |
-| `root` | string | required | The repository directory that prefix resolves into. |
+| `root` | string | required | The directory that prefix resolves into, relative to the config file. |
 | `extensions` | list of strings | `[".md", ".mdx", ".markdown"]` | Extensions to try when a route names a page without one. Each must start with a dot. |
 | `indexFiles` | list of strings | `["index", "README"]` | Basenames to try for a directory route such as `/guides/`. |
 | `language` | BCP-47 tag | unset | The language of every document under `root`. A page's own `lang` or `language` frontmatter wins; absent that, the nearest enclosing route that declares one applies. Unset, the route says nothing about language. |

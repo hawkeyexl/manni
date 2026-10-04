@@ -59,17 +59,17 @@ Concepts:   3
 References: 2
 
 Most connected:
-  test/graph/fixtures/dd/docs/configuration.md (2)
-  test/graph/fixtures/dd/docs/getting-started.md (2)
+  docs/configuration.md (2)
+  docs/getting-started.md (2)
 
 Orphan docs (1):
-  test/graph/fixtures/dd/docs/troubleshooting.md
+  docs/troubleshooting.md
 
 Broken internal links (1):
-  test/graph/fixtures/dd/docs/troubleshooting.md -> missing.md
+  docs/troubleshooting.md -> missing.md
 
 Broken section refs (1):
-  test/graph/fixtures/dd/docs/getting-started.md -> #renamed-heading
+  docs/getting-started.md -> #renamed-heading
 ```
 
 The orphan is a page nothing links to. The broken section ref is a link to an
@@ -82,8 +82,8 @@ Neither is visible from any single file.
 
 ```console
 $ npx @hawkeyexl/manni graph query --predicate dcterms:subject
-<https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md> dcterms:subject <https://example.com/dd/concept/reference>
-<https://example.com/dd/doc/test/graph/fixtures/dd/docs/getting-started.md> dcterms:subject <https://example.com/dd/concept/onboarding>
+<https://example.com/dd/doc/docs/configuration.md> dcterms:subject <https://example.com/dd/concept/reference>
+<https://example.com/dd/doc/docs/getting-started.md> dcterms:subject <https://example.com/dd/concept/onboarding>
 
 2 match(es)
 ```
@@ -95,7 +95,7 @@ about subject". `--subject` and `--object` narrow the other two positions.
 
 ```console
 $ npx @hawkeyexl/manni graph check
-warning: https://example.com/dd/concept/installation skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [test/graph/fixtures/dd/docs/configuration.md, test/graph/fixtures/dd/docs/getting-started.md]
+warning: https://example.com/dd/concept/installation skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [docs/configuration.md, docs/getting-started.md]
 
 0 errors, 1 warning, 0 notices
 ```

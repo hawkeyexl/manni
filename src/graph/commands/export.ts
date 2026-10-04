@@ -10,6 +10,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { GraphError } from "../types.js";
 import { loadRunConfig } from "../core/config.js";
+import { documentBase } from "../core/discover.js";
 import { emitJsonLd } from "../core/emit-jsonld.js";
 import { emitRdfXml } from "../core/emit-rdfxml.js";
 import { projectPackage } from "../core/iirds-package.js";
@@ -88,6 +89,7 @@ function runJsonLd(cwd: string, graphPath: string, out?: string): ExportResult {
 
 function runIirds(
   cwd: string,
+  sources: string,
   graphPath: string,
   iirds: { title?: string; creator?: string; version: "1.2" | "1.3" },
   baseIri: string,
@@ -102,7 +104,7 @@ function runIirds(
       title: iirds.title,
       creator: iirds.creator,
     },
-    cwd,
+    sources,
   );
   const metadata = emitRdfXml(projection.quads, projection.prefixes);
 
@@ -151,6 +153,7 @@ function searchIndexDigest(raw: string): string {
  */
 function runSearchIndex(
   cwd: string,
+  sources: string,
   graphPath: string,
   out?: string,
 ): ExportResult {
@@ -160,7 +163,7 @@ function runSearchIndex(
     Object.fromEntries(PREFIXES),
   );
   const warnings: string[] = [];
-  const index = buildSearchIndex(graph, cwd, { warnings });
+  const index = buildSearchIndex(graph, sources, { warnings });
   const byLanguage = partitionByLanguage(graph, index);
   const docCounts = documentsByLanguage(graph);
 
@@ -243,13 +246,17 @@ function exportOnce(opts: ExportOptions): ExportResult {
     cwd,
   );
   const graphPath = resolve(cwd, opts.graph ?? config.out);
+  // A page's `graph:path` is read from where a bare `build` labels it from:
+  // the config's directory when it declares collections, else the working one.
+  const sources = documentBase(config, {}, cwd);
 
   if (opts.format === "jsonld") return runJsonLd(cwd, graphPath, opts.out);
   if (opts.format === "search") {
-    return runSearchIndex(cwd, graphPath, opts.out);
+    return runSearchIndex(cwd, sources, graphPath, opts.out);
   }
   return runIirds(
     cwd,
+    sources,
     graphPath,
     config.export.iirds,
     config.baseIri,

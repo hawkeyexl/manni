@@ -11,8 +11,10 @@ import { loadRunConfig } from "../core/config.js";
 import { deriveGraph } from "../core/derive.js";
 import {
   assertInputFormat,
+  documentBase,
   documentSetPatterns,
   resolveDocumentSet,
+  routesFrom,
   STDIN,
   type DocumentInputOptions,
 } from "../core/discover.js";
@@ -82,7 +84,10 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
   );
 
   const format = assertInputFormat(opts.paths ?? [], opts.as);
-  const files = resolveDocumentSet(config, opts, "build", cwd);
+  // Collection pages are labelled from the config's directory and typed paths
+  // from cwd, as meta labels them. Every read below resolves from `base`.
+  const base = documentBase(config, opts, cwd);
+  const files = resolveDocumentSet(config, opts, "build", cwd, base);
   const usingStdin = (opts.paths ?? []).includes(STDIN);
   const outPath = resolve(cwd, opts.out ?? config.out);
   if (files.length === 0 && !usingStdin) {
@@ -103,11 +108,11 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
 
   const allPaths = new Set(usingStdin ? [...files, STDIN_PATH] : files);
   const analyzeOptions = {
-    routes: config.routes,
+    routes: routesFrom(config, base),
     ...(format === undefined ? {} : { format }),
   };
   const read = files.map((path) =>
-    analyzeDoc(readFileSync(resolve(cwd, path), "utf8"), path, allPaths, analyzeOptions),
+    analyzeDoc(readFileSync(resolve(base, path), "utf8"), path, allPaths, analyzeOptions),
   );
   if (usingStdin && opts.stdinContent !== undefined) {
     read.push(analyzeDoc(opts.stdinContent, STDIN_PATH, allPaths, analyzeOptions));
@@ -124,6 +129,7 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
     },
     cwd,
     files,
+    base,
   );
   const merged = await withExternalMetadata(read, view);
 
@@ -149,7 +155,7 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
   let gitHistory: Awaited<ReturnType<typeof collectGitHistory>> | undefined;
   if (config.build.derive.includes("provenance")) {
     try {
-      gitHistory = await collectGitHistory(cwd);
+      gitHistory = await collectGitHistory(base);
     } catch (e) {
       warnings.push(gitAbsentWarning(errorMessage(e)));
     }

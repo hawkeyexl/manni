@@ -68,20 +68,20 @@ Ask it what nothing links to:
 ```console
 $ npx @hawkeyexl/manni graph stats
 Orphan docs (1):
-  test/graph/fixtures/dd/docs/troubleshooting.md
+  docs/troubleshooting.md
 
 Broken internal links (1):
-  test/graph/fixtures/dd/docs/troubleshooting.md -> missing.md
+  docs/troubleshooting.md -> missing.md
 
 Broken section refs (1):
-  test/graph/fixtures/dd/docs/getting-started.md -> #renamed-heading
+  docs/getting-started.md -> #renamed-heading
 ```
 
 Check it as a whole:
 
 ```console
 $ npx @hawkeyexl/manni graph check
-warning: https://example.com/dd/concept/installation skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [test/graph/fixtures/dd/docs/configuration.md, test/graph/fixtures/dd/docs/getting-started.md]
+warning: https://example.com/dd/concept/installation skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [docs/configuration.md, docs/getting-started.md]
 
 0 errors, 1 warning, 0 notices
 ```

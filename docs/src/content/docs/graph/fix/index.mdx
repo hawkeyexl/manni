@@ -171,7 +171,7 @@ unknown flag value. None of those is about your page.
 
 {/* step {"description":"Reproducing locally is build then check.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[0]}} */}
 
-{/* step {"description":"The finding names the focus node and the documents behind it.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"test/graph/fixtures/dd/violations/alpha.md"}} */}
+{/* step {"description":"The finding names the focus node and the documents behind it.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/violations.config.yaml","exitCodes":[1],"stdio":"violations/alpha.md"}} */}
 
 {/* step {"description":"Two spellings of one concept collide on a single node.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
 

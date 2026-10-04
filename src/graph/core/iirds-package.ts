@@ -128,9 +128,10 @@ export function projectPackage(
 
     const path = firstObject(store, doc, `${NS.graph}path`);
     if (path) {
-      // `graph:path` is `relative(cwd, file)` as the build saw it, so a corpus
-      // above the working directory (`manni graph build ../external/*.md`, or a
-      // collection whose `paths:` climb past the config file) is labelled
+      // `graph:path` is relative to the directory the build labelled from: the
+      // working directory for typed paths, the config's for a collection. A
+      // corpus above it (`manni graph build ../external/*.md`, or a collection
+      // whose `paths:` climb past the config file) is labelled
       // `../external/page.md`. Every other verb is happy with that — only a
       // container minds, because a container has a root and that path names
       // somewhere outside it. Refused here rather than in `resolveDocumentSet`
