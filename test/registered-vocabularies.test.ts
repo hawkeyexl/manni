@@ -152,6 +152,6 @@ describe("manni:artifact-evals:1.1.0 and its strict overlay", () => {
       expect(text).toContain("tool-order");
     }
     const strict = await load("manni:artifact-evals-strict:1.1.0");
-    expect(String(strict.description)).toContain("manni:artifact-evals:1.1.0");
+    expect(strict.description).toEqual(expect.stringContaining("manni:artifact-evals:1.1.0"));
   });
 });
