@@ -136,7 +136,7 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** A reader fetching the markdown sees prose. The verdicts, the failing page and the suite rates are identical either side of the move.
 
-### M14 · Grade a real past session against the instructions it ran on
+### M17 · Grade a real past session against the instructions it ran on
 
 **Outcome.** Maya points `manni tracevals` at a Claude Code session that already happened and can say, artifact by artifact, which of her instructions held and which did not. No API key, no instrumentation, no work re-run.
 
@@ -144,7 +144,7 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** One real finding on a real session inside ten minutes. A reader who can now choose between declaring a specific eval and putting the gate in CI.
 
-### M15 · Turn one instruction into a testable eval
+### M18 · Turn one instruction into a testable eval
 
 **Outcome.** A named check lives in the frontmatter of the same `SKILL.md` a person edits when the instruction changes. It is picked up on the next run, and it fails when the session violates it.
 
@@ -152,7 +152,7 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** An eval that sits next to the instruction it checks, so the two cannot drift. A failure whose finding names what the session actually did.
 
-### M16 · Propose evals across a project's agent artifacts and review the diff
+### M19 · Propose evals across a project's agent artifacts and review the diff
 
 **Outcome.** Every instruction artifact in the project has been offered evals, Maya has reviewed a real diff, and only the evals she accepted were written.
 
@@ -160,7 +160,7 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** A project whose artifacts are covered, a diff a reviewer can read, and no hand-tuned instruction file edited without permission.
 
-### M17 · Account for every artifact a session used
+### M20 · Account for every artifact a session used
 
 **Outcome.** Maya can name every skill, agent definition, slash command and project-rules file the session touched, including the ones that could not be found. She knows how to close each gap.
 
@@ -258,7 +258,7 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 
 ---
 
-### D10 · Gate agent work in CI, offline
+### D12 · Gate agent work in CI, offline
 
 **Outcome.** A pipeline step grades the agent sessions behind a change, makes no network call, and exits on a contract Devin can branch on.
 
@@ -266,7 +266,7 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 
 **What success looks like.** A green pipeline with no secret in it, and a red one whose exit code says whose problem it is.
 
-### D11 · Feed session results into your own tooling
+### D13 · Feed session results into your own tooling
 
 **Outcome.** Devin can answer whether adherence is getting better or worse, and be told when it regresses, without anyone reading a terminal.
 
@@ -371,7 +371,7 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 ---
 
-### S10 · Prove the trace judge is trustworthy, then tune it
+### S12 · Prove the trace judge is trustworthy, then tune it
 
 **Outcome.** A calibration report gives Sara a number rather than an opinion. She can say which eval disagreed and what a different threshold would have done.
 
@@ -379,7 +379,7 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 **What success looks like.** An agreement figure she can hand to a skeptic, and a knob she changed for a reason she can state.
 
-### S11 · Change the artifact-evals standard without breaking what exists
+### S13 · Change the artifact-evals standard without breaking what exists
 
 **Outcome.** A change to the evals block lands across repositories that do not all move at the same speed, and nothing breaks silently.
 
@@ -448,7 +448,7 @@ This is the highest-traffic journey in the section and the shallowest. The fix p
 
 ---
 
-### T5 · Read a failing session eval and decide what to do
+### T7 · Read a failing session eval and decide what to do
 
 **Outcome.** Theo's build is red on a session eval. He works out what failed, whether the verdict is trustworthy, and what to do about it, from one page he reached cold.
 

@@ -1,9 +1,9 @@
 # 0074: artifact-evals 1.1.0 names `tool-order`
 
 - **Status:** Proposed
-- **Serves:** Sara · S11, "Change the artifact-evals standard without
+- **Serves:** Sara · S13, "Change the artifact-evals standard without
   breaking what exists", and S3, "Version and evolve the schema safely".
-  Maya · M15, "Turn one instruction into a testable eval", when the
+  Maya · M18, "Turn one instruction into a testable eval", when the
   instruction is about order.
 - **Depends on:** [0067](0067-registering-the-vocabularies.md), which
   registered `manni:artifact-evals:1.0.0` and its strict overlay. It said a

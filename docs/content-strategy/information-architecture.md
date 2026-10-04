@@ -18,7 +18,7 @@ The `term/` section serves four journeys. Sara defines the terms (S6), Maya keep
 
 The `docevals/` section arrived with a strategy of its own, six personas and twelve journeys. Three of those personas were already these people by name, Devin, Sara and Theo. The other three were Priya, Nate and Iris. They are Maya as a platform lead, as the only person writing the docs, and as the one handed a corpus she did not write. They were folded into her entry in `personas.md` rather than added, for the same reason a11y added no persona. The journeys became M11–M15, D10–D11, S8–S11 and T6. M16 was added later, when the eval keys gained a home outside the page. Its content set is below, after `term/`.
 
-The `tracevals/` section arrived the same way, with five audiences of its own. They were artifact authors, an eval-standard owner, platform and CI, run triagers, and a toolsmith named Rin. Rin wants the library rather than the binary. Four of the five were already these people by name. Rin was the only genuinely new shape. He is Devin reading the JSON report and calling the namespace export. So he folded into D11 and the API reference rather than becoming a sixth persona. Upstream's nine journeys became M14–M17, D10–D11, S10–S11 and T5. Its content set is last, after `docevals/`. No per-tool strategy directory came over: `cujs.md`, `personas.md` and this file carry the whole family.
+The `tracevals/` section arrived the same way, with five audiences of its own. They were artifact authors, an eval-standard owner, platform and CI, run triagers, and a toolsmith named Rin. Rin wants the library rather than the binary. Four of the five were already these people by name. Rin was the only genuinely new shape. He is Devin reading the JSON report and calling the namespace export. So he folded into D11 and the API reference rather than becoming a sixth persona. Upstream's nine journeys became M17–M20, D12–D13, S12–S13 and T7. They took the next free ids, because docevals and lint already held the lower ones. Its content set is last, after `docevals/`. No per-tool strategy directory came over: `cujs.md`, `personas.md` and this file carry the whole family.
 
 ---
 
@@ -279,12 +279,12 @@ The sixth domain's content set, under `docs/src/content/docs/tracevals/`, import
 ```
 Overview — "What do you want to do?" router + a 30-second proof
 │
-├─ Get started           (Maya)    → M14
-├─ Declare what to check (Maya)    → M15, M16, M17
-├─ Run it in CI          (Devin)   → D10, D11
-├─ Trust the judge       (Sara)    → S10, S11
-├─ Read a failing eval   (Theo)    → T5   (highest traffic; no prerequisites)
-├─ Build on tracevals    (Devin)   → D11
+├─ Get started           (Maya)    → M17
+├─ Declare what to check (Maya)    → M18, M19, M20
+├─ Run it in CI          (Devin)   → D12, D13
+├─ Trust the judge       (Sara)    → S12, S13
+├─ Read a failing eval   (Theo)    → T7   (highest traffic; no prerequisites)
+├─ Build on tracevals    (Devin)   → D13
 └─ Reference             (lookup shelf)
 ```
 
@@ -297,28 +297,28 @@ Four constraints hold across the section. No page prints a dollar figure for wha
 | Page | CUJ | ★ | Notes |
 |---|---|---|---|
 | Overview (`tracevals/index.mdx`) | All | ★ | Mirrors the sibling overviews' hero. What a trace, an artifact and an eval are, the 30-second proof from a real `--deterministic-only` run, and a router into the six sections. |
-| Get started (`tracevals/get-started/index.mdx`) | M14 | ★ | The backbone. Install, `list` a real session, one offline run, a line-by-line read of the report including artifact coverage, and the exit code. Ends in a fork rather than one next step, because Maya leaves toward `declare/` and Devin toward `ci/`. |
-| Declare what to check (`tracevals/declare/index.mdx`) | M15 | ★ | The `metadata.evals` block, colocated with the instruction it checks. The judged-or-deterministic decision, the third answer (not testable at all), and severity as a deliberate choice, since only `error` fails. |
-| Propose evals with `fill` (`tracevals/declare/fill.mdx`) | M16 | ★ | The one write path, so trust is the whole page. `--dry-run` first, the gate in order with confidence last, the needs-sharpening notes as a to-do list. `--max-turns` in inference calls, and why project rules are proposed but never written. `fill` records what it wrote in `metadata.meta-provenance`. |
-| Artifact coverage (`tracevals/declare/coverage.mdx`) | M17 | ★ | The six states a coverage row can be in, and the resolution order for skills, agents, slash commands and project rules. How to diagnose an unresolved reference from the `tried` list. Coverage is the honest answer to "what did you not check?". |
-| Run it in CI (`tracevals/ci/index.mdx`) | D10 | ★ | Leads with the offline answer rather than arriving at it. `--deterministic-only` as a complete mode, `--local` for runs that must not leave the runner, and `CLAUDE_CONFIG_DIR` pinned on a shared runner. Recipes with every third-party action pinned to a full SHA. |
-| Exit codes and reports (`tracevals/ci/exit-codes-and-reports.mdx`) | D10, T5 | ★ | The exit-code contract as the API, `1` against `2`, and `needs-review` as a policy decision taken up front rather than met as an unexplained red build. |
-| Consume results (`tracevals/ci/consume-results.mdx`) | D11 | | `-f json`, `-o`, the history file, and a regression as a defined event: a check that passed before and does not now. Carries the caveat that history is local, so an ephemeral runner starts empty. Hands off to `extend/`. |
-| Trust the judge (`tracevals/judge/index.mdx`) | S10 | ★ | The arithmetic, not adjectives: ensemble, consensus, zones, and a worked example. The invariant that an errored run counts against consensus and can never round into a silent pass. Provider choice through the family `providers:` map, with `--local`. The self-preference check's two axes, `session` and `criterion`, the second reading `meta-provenance`. |
-| Calibrate (`tracevals/judge/calibrate.mdx`) | S10 | | The labels file, the numbers, and which eval disagreed. `--sweep` re-scores cached verdicts for free. Disagreement exits `0`; an eval that never armed stays out of the denominator. `--max-turns` replaces the price table, so no ceiling can be silently disabled by unknown pricing. The stale-cache trap and the prompt version in the cache key. |
-| Schema versioning (`tracevals/judge/schema-versioning.mdx`) | S11 | | The evals block as a published contract at `manni:artifact-evals:1.0.0-proposal.3`. What proposal.3 changed and why (`notice` for `info`, `meta-provenance` for `eval-provenance`, the `^eval-(?!skip$)` guard). `capability` against `regression`, and why enforcement deliberately does not change. The staged ratchet. |
-| Read a failing eval (`tracevals/triage/index.mdx`) | T5 | ★ | Complete in one page, with no subject dependencies. The five outcomes kept distinct, and the several unrelated causes of `SKIP` kept apart. A coverage row named as not an outcome, and "the eval is wrong" named beside "fix the behavior" and "escalate". |
-| FAQ (`tracevals/triage/faq.mdx`) | T5 | | The follow-up shelf, deliberately a second page so the first keeps its length discipline. |
-| Build on tracevals (`tracevals/extend/index.mdx`) | D11 | | The `tracevals` namespace export from `@hawkeyexl/manni`, and the plugin seam. |
-| Custom graders (`tracevals/extend/custom-graders.mdx`) | D11 | | Writing a grader, registering it through the namespace import, and loading it with `--require <module>`, repeatable, one module per occurrence. |
+| Get started (`tracevals/get-started/index.mdx`) | M17 | ★ | The backbone. Install, `list` a real session, one offline run, a line-by-line read of the report including artifact coverage, and the exit code. Ends in a fork rather than one next step, because Maya leaves toward `declare/` and Devin toward `ci/`. |
+| Declare what to check (`tracevals/declare/index.mdx`) | M18 | ★ | The `metadata.evals` block, colocated with the instruction it checks. The judged-or-deterministic decision, the third answer (not testable at all), and severity as a deliberate choice, since only `error` fails. |
+| Propose evals with `fill` (`tracevals/declare/fill.mdx`) | M19 | ★ | The one write path, so trust is the whole page. `--dry-run` first, the gate in order with confidence last, the needs-sharpening notes as a to-do list. `--max-turns` in inference calls, and why project rules are proposed but never written. `fill` records what it wrote in `metadata.meta-provenance`. |
+| Artifact coverage (`tracevals/declare/coverage.mdx`) | M20 | ★ | The six states a coverage row can be in, and the resolution order for skills, agents, slash commands and project rules. How to diagnose an unresolved reference from the `tried` list. Coverage is the honest answer to "what did you not check?". |
+| Run it in CI (`tracevals/ci/index.mdx`) | D12 | ★ | Leads with the offline answer rather than arriving at it. `--deterministic-only` as a complete mode, `--local` for runs that must not leave the runner, and `CLAUDE_CONFIG_DIR` pinned on a shared runner. Recipes with every third-party action pinned to a full SHA. |
+| Exit codes and reports (`tracevals/ci/exit-codes-and-reports.mdx`) | D12, T7 | ★ | The exit-code contract as the API, `1` against `2`, and `needs-review` as a policy decision taken up front rather than met as an unexplained red build. |
+| Consume results (`tracevals/ci/consume-results.mdx`) | D13 | | `-f json`, `-o`, the history file, and a regression as a defined event: a check that passed before and does not now. Carries the caveat that history is local, so an ephemeral runner starts empty. Hands off to `extend/`. |
+| Trust the judge (`tracevals/judge/index.mdx`) | S12 | ★ | The arithmetic, not adjectives: ensemble, consensus, zones, and a worked example. The invariant that an errored run counts against consensus and can never round into a silent pass. Provider choice through the family `providers:` map, with `--local`. The self-preference check's two axes, `session` and `criterion`, the second reading `meta-provenance`. |
+| Calibrate (`tracevals/judge/calibrate.mdx`) | S12 | | The labels file, the numbers, and which eval disagreed. `--sweep` re-scores cached verdicts for free. Disagreement exits `0`; an eval that never armed stays out of the denominator. `--max-turns` replaces the price table, so no ceiling can be silently disabled by unknown pricing. The stale-cache trap and the prompt version in the cache key. |
+| Schema versioning (`tracevals/judge/schema-versioning.mdx`) | S13 | | The evals block as a published contract at `manni:artifact-evals:1.0.0-proposal.3`. What proposal.3 changed and why (`notice` for `info`, `meta-provenance` for `eval-provenance`, the `^eval-(?!skip$)` guard). `capability` against `regression`, and why enforcement deliberately does not change. The staged ratchet. |
+| Read a failing eval (`tracevals/triage/index.mdx`) | T7 | ★ | Complete in one page, with no subject dependencies. The five outcomes kept distinct, and the several unrelated causes of `SKIP` kept apart. A coverage row named as not an outcome, and "the eval is wrong" named beside "fix the behavior" and "escalate". |
+| FAQ (`tracevals/triage/faq.mdx`) | T7 | | The follow-up shelf, deliberately a second page so the first keeps its length discipline. |
+| Build on tracevals (`tracevals/extend/index.mdx`) | D13 | | The `tracevals` namespace export from `@hawkeyexl/manni`, and the plugin seam. |
+| Custom graders (`tracevals/extend/custom-graders.mdx`) | D13 | | Writing a grader, registering it through the namespace import, and loading it with `--require <module>`, repeatable, one module per occurrence. |
 | Reference (`tracevals/reference/index.mdx`) | Navigation | ★ | The shelf index. |
 | CLI reference (`tracevals/reference/cli.mdx`) | All | ★ | Every command and flag. Guarded by `npm run docs:check-cli`. Source of truth: `src/tracevals/cli.ts`. |
-| Configuration reference (`tracevals/reference/configuration.mdx`) | M15, D10, S10 | ★ | Every `tracevals:` key with type and default, in camelCase, including `provider`, `model`, `judge.maxTurns` and `fill.maxTurns`. Points at meta's configuration page for the family `providers:` map rather than duplicating it. Carries the two config error hints: the old `provider:` object, and a kebab-case key. |
-| Evals schema (`tracevals/reference/evals-schema.mdx`) | M15, S11 | ★ | The full `metadata.evals` block shape at proposal.3, `severity` as `error \| warning \| notice`, `metadata.eval-skip`, and the reserved `eval-` prefix. No schema copy ships in the package. |
-| Graders reference (`tracevals/reference/graders.mdx`) | M15, D10 | ★ | Every grader kind with its options, including the deterministic set decidable from the trace alone, the `command` grader behind `graders.command.enabled`, and `cost` with `maxUsd` and `maxTokens`. |
-| Report and exit codes (`tracevals/reference/report-and-exit-codes.mdx`) | D10, D11, T5 | ★ | The three formats (`pretty`, `json`, `markdown`), the JSON shape field by field, turn counts in telemetry, `reason: "turn budget"` on a skip, and the exit codes. |
-| Traces (`tracevals/reference/traces.mdx`) | M14, D10 | | Where a session store lives, `CLAUDE_CONFIG_DIR` and the `~/.claude` fallback, what `list` and `capture` do, and how artifacts are resolved from a trace. |
-| API reference (`tracevals/reference/api.mdx`) | D11 | | The `tracevals` namespace export. Where upstream's toolsmith lands. Guarded by `npm run docs:check-api`. |
+| Configuration reference (`tracevals/reference/configuration.mdx`) | M18, D12, S12 | ★ | Every `tracevals:` key with type and default, in camelCase, including `provider`, `model`, `judge.maxTurns` and `fill.maxTurns`. Points at meta's configuration page for the family `providers:` map rather than duplicating it. Carries the two config error hints: the old `provider:` object, and a kebab-case key. |
+| Evals schema (`tracevals/reference/evals-schema.mdx`) | M18, S13 | ★ | The full `metadata.evals` block shape at proposal.3, `severity` as `error \| warning \| notice`, `metadata.eval-skip`, and the reserved `eval-` prefix. No schema copy ships in the package. |
+| Graders reference (`tracevals/reference/graders.mdx`) | M18, D12 | ★ | Every grader kind with its options, including the deterministic set decidable from the trace alone, the `command` grader behind `graders.command.enabled`, and `cost` with `maxUsd` and `maxTokens`. |
+| Report and exit codes (`tracevals/reference/report-and-exit-codes.mdx`) | D12, D13, T7 | ★ | The three formats (`pretty`, `json`, `markdown`), the JSON shape field by field, turn counts in telemetry, `reason: "turn budget"` on a skip, and the exit codes. |
+| Traces (`tracevals/reference/traces.mdx`) | M17, D12 | | Where a session store lives, `CLAUDE_CONFIG_DIR` and the `~/.claude` fallback, what `list` and `capture` do, and how artifacts are resolved from a trace. |
+| API reference (`tracevals/reference/api.mdx`) | D13 | | The `tracevals` namespace export. Where upstream's toolsmith lands. Guarded by `npm run docs:check-api`. |
 | Glossary (`tracevals/reference/glossary.mdx`) | Vocabulary | | trace, artifact, eval, grader, finding, outcome, implicit eval, coverage, ensemble, consensus, confidence zone, turn budget, capability and regression. |
 
 ### Supporting / project

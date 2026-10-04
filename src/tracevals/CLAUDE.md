@@ -63,9 +63,9 @@ Before drafting or editing any page under
 
 - `docs/content-strategy/personas.md`, the four personas. tracevals folded its
   own five into them. Priya became Maya, Sam became Sara, and its Devin and Theo
-  became the family's. Rin, the toolsmith, is D11 and the API reference.
-- `docs/content-strategy/cujs.md`, the journeys. tracevals's are M14–M17, D10,
-  D11, S10, S11 and T5.
+  became the family's. Rin, the toolsmith, is D13 and the API reference.
+- `docs/content-strategy/cujs.md`, the journeys. tracevals's are M17–M20, D12,
+  D13, S12, S13 and T7.
 - `docs/content-strategy/information-architecture.md`, the content set, with the
   `tracevals/` section's tree and its source-of-truth mapping.
 
@@ -182,8 +182,8 @@ evals → plan evals → deterministic graders → AI judge → aggregate → re
   `loadExternalEvals` keeps every manifest that may own `metadata`, and
   `forArtifact` merges one artifact through `mergeWithMarks`. A manifest with
   no `keys` owns `metadata` when the artifact's schemas mark it external
-  (proposal 0068), and a `{page}` manifest is read per artifact (proposal
-  0058), so `forArtifact` is async. `fill` writes through `write-location.ts`,
+  (proposal 0068). A `{page}` manifest is read per artifact (proposal 0058),
+  so `forArtifact` is async. `fill` writes through `write-location.ts`,
   which asks meta's `keyHome` where the block goes and offers a home (P1) on a
   terminal when nothing owns it. Membership
   is decided by **every declared collection**, not the ones a run selected, because
