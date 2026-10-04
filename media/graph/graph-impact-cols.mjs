@@ -41,12 +41,12 @@ for (let px = 30; px >= 18; px--) {
 }
 // The loop above derives the widest cols a font size *allows*. It is an upper
 // bound, not the answer: the wrapper fills every long row to exactly `cols`, so
-// the chosen cols is what sets the right margin, whatever the font size. Passing
-// cols explicitly is how this video lands 66 px of right margin instead of 25.
-// 72 is the floor here — the two `graph query` rows are 72 characters, and wrapping
+// the chosen cols is what sets the right margin, whatever the font size. At 23 px, 75 cols
+// leaves 25 px of right margin; dropping to 22 px at 75 cols leaves 70 px.
+// 75 is the floor here — the two `graph query` rows are 75 characters, and wrapping
 // either one orphans a bare `"missing.md"` onto its own row.
 // Usage: node graph/graph-impact-cols.mjs [px] [cols]
-const pick = Number(process.argv[2] ?? 23);
+const pick = Number(process.argv[2] ?? 22);
 const cols = Number(process.argv[3] ?? Math.floor(1040 / (0.6 * pick)));
 const inset = 20;
 const right = 1080 - inset - cols * 0.6 * pick;

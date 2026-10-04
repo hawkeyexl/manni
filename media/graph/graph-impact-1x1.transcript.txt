@@ -1,7 +1,7 @@
 manni graph, demo video transcript (silent video; text describes what is on screen)
 
-Frame: 1080x1080, 30 fps, 32.2 s. Every terminal line is real output of grep and of
-`node dist/cli.js graph ...` (typed as manni) run inside C:\kgdemo, a git repository
+Frame: 1080x1080, 30 fps, 33.8 s. Every terminal line is real output of grep and of
+`node dist/cli.js graph ...` (typed as manni) run inside C:\graphdemo, a git repository
 built from test/graph/fixtures/corpus/ by media/graph/graph-impact-capture.sh.
 
 [0:00-0:05] Title: Two pages mention it (1 / 3)
@@ -13,7 +13,7 @@ Caption: grep finds the pages that name configuration.md. It cannot find the pag
 
 [0:05-0:20] Title: manni graph finds three (2 / 3)
 $ manni graph build docs/
-Wrote C:\kgdemo\graph.ttl (8 docs, 292 triples)
+Wrote C:\graphdemo\graph.ttl (8 docs, 292 triples)
 $ manni graph traverse https://acme.dev/doc/docs/configuration.md --predicates dcterms:references --impact -d 2
   https://acme.dev/doc/docs/getting-started.md — Getting Started
   https://acme.dev/doc/docs/windows-notes.md — Windows Notes
@@ -23,7 +23,7 @@ $ manni graph traverse https://acme.dev/doc/docs/configuration.md --predicates d
 Highlighted rows: lines containing "harvest.md", "3 nodes"
 Caption: harvest.md is reached through windows-notes.md. Two hops out, where grep never looked.
 
-[0:20-0:32] Title: The build fails on it (3 / 3)
+[0:20-0:34] Title: The build fails on it (3 / 3)
 $ manni graph query --predicate graph:brokenLink
 <https://acme.dev/doc/docs/de/regional.md> graph:brokenLink "../missing.md"
 <https://acme.dev/doc/docs/no-frontmatter.md> graph:brokenLink "missing.md"

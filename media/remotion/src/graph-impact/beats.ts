@@ -4,20 +4,20 @@ import { FPS, timeline, type Beat } from "../beats";
 export { FPS };
 
 // Typing speed for this video (design.md: 35-70 ms). The quick end of the range:
-// the traverse invocation is 108 characters, and at 45 ms it alone would eat
+// the traverse invocation is 111 characters, and at 45 ms it alone would eat
 // five seconds of a forty-five second budget.
 export const TYPING_MS = 35;
 
-// Measured wall-clock latency on this machine, in C:\kgdemo
+// Measured wall-clock latency on this machine, in C:\graphdemo
 // (media/graph/graph-impact-capture/latency.txt: the capture run plus three timing runs):
-// build 823-864 ms, traverse 757-793 ms, query 754-794 ms, stats --check
-// 754-855 ms, grep 27-29 ms. Held to the slowest of each, so output never
+// build 1086-1166 ms, traverse 957-975 ms, query 947-964 ms, stats --check
+// 957-972 ms, grep 30-36 ms. Held to the slowest of each, so output never
 // appears sooner than the real command produced it.
 export const latency = {
-  build: Math.round(0.86 * FPS),
-  traverse: Math.round(0.79 * FPS),
-  query: Math.round(0.79 * FPS),
-  statsCheck: Math.round(0.86 * FPS),
+  build: Math.round(1.17 * FPS),
+  traverse: Math.round(0.98 * FPS),
+  query: Math.round(0.97 * FPS),
+  statsCheck: Math.round(0.98 * FPS),
   grep: 2,
 };
 

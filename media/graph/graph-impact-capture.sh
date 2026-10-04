@@ -14,7 +14,7 @@
 #
 # 2. The path is short on purpose. `graph build` prints the absolute path it wrote
 #    (src/graph/cli.ts:282), and a temp directory would put a 120-character line in
-#    a 1080px frame. C:\kgdemo keeps that line at 46 characters.
+#    a 1080px frame. C:\graphdemo keeps that line at 49 characters.
 #
 # The documents are test/graph/fixtures/corpus/ verbatim — the eight the graph
 # determinism tests run against. The only edit to the staged copy is
@@ -26,11 +26,12 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO="$(cd .. && pwd)"
 C="$(pwd)/graph/graph-impact-capture"
-S="${KGDEMO:-/c/kgdemo}"
+S="${GRAPHDEMO:-/c/graphdemo}"
 
 mkdir -p "$C"
-rm -rf "$S"
-mkdir -p "$S"
+# The script never deletes: it stages into a directory that must not exist yet.
+if [ -e "$S" ]; then echo "graph-impact-capture: $S exists; remove it and rerun" >&2; exit 2; fi
+mkdir "$S"
 cp -r "$REPO/test/graph/fixtures/corpus/." "$S/"
 
 cd "$S"

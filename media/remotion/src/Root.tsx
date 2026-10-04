@@ -49,7 +49,7 @@ const DemoLint: React.FC = () => <DemoView beats={lintBeats} fontPx={22} linePx=
 const DemoGraph: React.FC = () => <DemoView beats={graphBeats} fontPx={22} linePx={31} cols={78} typingMs={graphTypingMs} ligatures={false} />;
 
 /** graph-impact-1x1: 23 px / 72 columns, derived in media/graph/graph-impact-1x1.script.md (media/graph/graph-impact-cols.mjs). */
-const DemoGraphImpact: React.FC = () => <DemoView beats={graphImpactBeats} fontPx={23} linePx={32} cols={72} typingMs={graphImpactTypingMs} />;
+const DemoGraphImpact: React.FC = () => <DemoView beats={graphImpactBeats} fontPx={22} linePx={31} cols={75} typingMs={graphImpactTypingMs} />;
 
 export const Root: React.FC = () => (
   <>

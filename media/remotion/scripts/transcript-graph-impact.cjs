@@ -12,7 +12,7 @@ const total = (b.totalFrames / fps).toFixed(1);
 let out = `manni graph, demo video transcript (silent video; text describes what is on screen)
 
 Frame: 1080x1080, 30 fps, ${total} s. Every terminal line is real output of grep and of
-\`node dist/cli.js graph ...\` (typed as manni) run inside C:\\kgdemo, a git repository
+\`node dist/cli.js graph ...\` (typed as manni) run inside C:\\graphdemo, a git repository
 built from test/graph/fixtures/corpus/ by media/graph/graph-impact-capture.sh.
 
 `;

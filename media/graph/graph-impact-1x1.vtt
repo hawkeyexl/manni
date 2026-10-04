@@ -7,10 +7,10 @@ NOTE Silent video. Cues are the on-screen step captions; the terminal text is in
 Two pages mention it: grep finds the pages that name configuration.md. It cannot find the pages that depend on those.
 
 2
-00:00:05.433 --> 00:00:19.767
+00:00:05.433 --> 00:00:20.467
 manni graph finds three: harvest.md is reached through windows-notes.md. Two hops out, where grep never looked.
 
 3
-00:00:19.767 --> 00:00:32.233
+00:00:20.467 --> 00:00:33.800
 The build fails on it: The same graph carries every dead link, and stats --check exits 1. CI has something to fail on.
 

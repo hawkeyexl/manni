@@ -8,19 +8,19 @@ const captures_json_1 = __importDefault(require("./captures.json"));
 const beats_1 = require("../beats");
 Object.defineProperty(exports, "FPS", { enumerable: true, get: function () { return beats_1.FPS; } });
 // Typing speed for this video (design.md: 35-70 ms). The quick end of the range:
-// the traverse invocation is 108 characters, and at 45 ms it alone would eat
+// the traverse invocation is 111 characters, and at 45 ms it alone would eat
 // five seconds of a forty-five second budget.
 exports.TYPING_MS = 35;
-// Measured wall-clock latency on this machine, in C:\kgdemo
+// Measured wall-clock latency on this machine, in C:\graphdemo
 // (media/graph/graph-impact-capture/latency.txt: the capture run plus three timing runs):
-// build 823-864 ms, traverse 757-793 ms, query 754-794 ms, stats --check
-// 754-855 ms, grep 27-29 ms. Held to the slowest of each, so output never
+// build 1086-1166 ms, traverse 957-975 ms, query 947-964 ms, stats --check
+// 957-972 ms, grep 30-36 ms. Held to the slowest of each, so output never
 // appears sooner than the real command produced it.
 exports.latency = {
-    build: Math.round(0.86 * beats_1.FPS),
-    traverse: Math.round(0.79 * beats_1.FPS),
-    query: Math.round(0.79 * beats_1.FPS),
-    statsCheck: Math.round(0.86 * beats_1.FPS),
+    build: Math.round(1.17 * beats_1.FPS),
+    traverse: Math.round(0.98 * beats_1.FPS),
+    query: Math.round(0.97 * beats_1.FPS),
+    statsCheck: Math.round(0.98 * beats_1.FPS),
     grep: 2,
 };
 const IRI = "https://acme.dev/doc/docs/configuration.md";

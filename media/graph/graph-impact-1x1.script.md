@@ -9,10 +9,10 @@ every dead link, and `graph stats --check` exits 1 on them, so CI has something 
 fail on.
 
 **Format:** 1080x1080, 30 fps, silent, captions burned in (LinkedIn autoplays muted).
-**Duration:** 32.2 s (spec: 20-45 s).
+**Duration:** 33.8 s (spec: 20-45 s).
 **Audience:** docs engineers who own a docset and fear editing its hub pages
 (Maya), and CI engineers who want a gate for structural rot (Devin).
-**Feature:** `manni graph`, the knowledge-graph domain, on `kg/reimport`.
+**Feature:** `manni graph`, the knowledge-graph domain, on `tool/kg`.
 
 Visual spec: `docs/content-strategy/design.md`. Accent `#58a6ff` (blue), never
 red, green, yellow or cyan. Terminal `#171717`, bands `#0d0d0d`, JetBrains Mono
@@ -29,7 +29,7 @@ the transcript has no colour annotations.
 ## How it was made, and what is staged
 
 Everything printed in the terminal is a real run of `grep` or of
-`node dist/cli.js graph ...`, built from `kg/reimport` at `48d087e`. The typed
+`node dist/cli.js graph ...`, built from `tool/kg` at `1fc8bd2`. The typed
 command reads `manni`, the name `media/bin/manni` gives the built CLI.
 
 - **A Remotion replay of real bytes**, as in the location, provenance,
@@ -42,7 +42,9 @@ command reads `manni`, the name `media/bin/manni` gives the built CLI.
   **measured** latency. No output byte is edited.
 - **One script stages the repository and takes every capture:**
   `media/graph/graph-impact-capture.sh`. It is the record of the staging.
-- **The demo repository is `C:\kgdemo`, outside this checkout.** Two reasons,
+  It never deletes. When `C:\graphdemo` already exists it stops with exit 2,
+  and the person rerunning it removes the old copy.
+- **The demo repository is `C:\graphdemo`, outside this checkout.** Two reasons,
   both about what would otherwise be on screen. `graph build` reads git history,
   so a corpus sitting inside the manni worktree stamps *manni's* commits into
   the graph. A corpus with no git at all makes `build` print
@@ -59,8 +61,8 @@ command reads `manni`, the name `media/bin/manni` gives the built CLI.
   rows run 75 characters before the title even starts.
 - **Latency is disclosed, not trimmed.** `beats.ts` holds each output for the
   slowest of four measured runs (`media/graph/graph-impact-capture/latency.txt`). Those are
-  build 823-864 ms, traverse 757-793 ms, query 754-794 ms, `stats --check`
-  754-855 ms, grep 27-29 ms. Nothing is sped up; there is no speed-up factor
+  build 1086-1166 ms, traverse 957-975 ms, query 947-964 ms, `stats --check`
+  957-972 ms, grep 30-36 ms. Nothing is sped up; there is no speed-up factor
   in this video at all.
 
 ### What is *not* claimed
@@ -73,25 +75,25 @@ exits 1.
 
 ## Type and geometry
 
-Derived with `node graph/graph-impact-cols.mjs 23 72`, run from `media/`.
+Derived with `node graph/graph-impact-cols.mjs 22 75`, run from `media/`.
 
 | Property | Value | Why |
 |---|---|---|
-| Font size | **23 px** | line height 32 px |
-| Columns | **72** | the floor, not the ceiling. See below |
-| Tallest beat | 13 rows, 416 px of 878 | fits without a crop |
-| Filled row | 994 px wide, **66 px** from the frame edge | design check 2 |
+| Font size | **22 px** | line height 31 px |
+| Columns | **75** | the floor, not the ceiling. See below |
+| Tallest beat | 10 rows, 310 px of 878 | fits without a crop |
+| Filled row | 990 px wide, **70 px** from the frame edge | design check 2 |
 
 The column count is the interesting number. The font-size sweep in `cols.mjs`
-says 23 px *allows* 75 columns, and the first cut used that. But the wrapper
-fills every long row to exactly `cols`, so `cols` is what sets the right margin
-whatever the font size. At 75 the wrapped `traverse` command ended 25 px from
-the frame edge. 72 is the floor: the two `graph query` rows are 72 characters
-each. Wrapping either one orphans a bare `"missing.md"` onto its own row,
-which reads as a broken renderer. 72 exactly is therefore both the minimum and
-the choice, and it buys 66 px of margin for free.
+says 23 px *allows* 75 columns. But the wrapper fills every long row to exactly
+`cols`, so `cols` is what sets the right margin whatever the font size. 75 is
+the floor: the two `graph query` rows are 75 characters each, three more than
+under the old `kg:` prefix. Wrapping either one orphans a bare `"missing.md"`
+onto its own row, which reads as a broken renderer. At 23 px, 75 columns end
+25 px from the frame edge. At 22 px they end 70 px from it, so the re-shoot
+drops one pixel of type and keeps the margin.
 
-Wrapping at 72 also fixed the `traverse` invocation, which is 106 characters.
+Wrapping at 75 also fixes the `traverse` invocation, which is 111 characters.
 `--predicates dcterms:references --impact -d 2` is the same command as
 `--impact -d 2 --predicates dcterms:references`, but only the first order wraps
 onto a row boundary that leaves the whole flag set intact on row two. The
@@ -122,7 +124,7 @@ pages that depend on those.
 VISUAL: build, then the impact walk.
 ```
 $ manni graph build docs/
-Wrote C:\kgdemo\graph.ttl (8 docs, 292 triples)
+Wrote C:\graphdemo\graph.ttl (8 docs, 292 triples)
 $ manni graph traverse https://acme.dev/doc/docs/configuration.md --predicates dcterms:references --impact -d 2
   https://acme.dev/doc/docs/getting-started.md — Getting Started
   https://acme.dev/doc/docs/windows-notes.md — Windows Notes
@@ -141,7 +143,7 @@ found, and the third is one hop further. It is reachable only because
 Without it the walk also follows the `prov:used` edges from the build activity,
 which touch every document in the corpus and drown the answer.
 
-### 3. The build fails on it (0:20-0:32)
+### 3. The build fails on it (0:20-0:34)
 
 VISUAL: the same graph, queried for dead links, then the exit code.
 ```
@@ -168,13 +170,13 @@ From the repo root, with `npm run build` already done:
 
 ```bash
 cd media
-bash graph/graph-impact-capture.sh                    # stages C:\kgdemo, writes graph/graph-impact-capture/
-node graph/graph-impact-cols.mjs 23 72                # re-check the geometry
+bash graph/graph-impact-capture.sh                    # stages C:\graphdemo, writes graph/graph-impact-capture/
+node graph/graph-impact-cols.mjs 22 75                # re-check the geometry
 cd remotion
 npm ci
 node scripts/captures-graph-impact.mjs          # capture bytes -> src/graph-impact/captures.json
 npx remotion render src/index.ts GraphImpactDemo out/graph-impact-1x1.mp4
-npx tsc src/graph-impact/beats.ts src/beats.ts --ignoreConfig --outDir scripts/out-graph-impact \
+npx tsc src/graph-impact/beats.ts src/beats.ts --outDir scripts/out-graph-impact \
   --module commonjs --target es2020 --resolveJsonModule --esModuleInterop --skipLibCheck
 cd scripts && node vtt-graph-impact.cjs && node transcript-graph-impact.cjs
 ```
@@ -190,13 +192,13 @@ ffmpeg -y -ss 18.5 -i "$M" -frames:v 1 graph/graph-impact-1x1.thumb.png
 
 ## Shipping checks (design.md)
 
-1. **Longest line measured against the font size.** `node graph/graph-impact-cols.mjs 23 72`
-   prints every row; no token is split and no row exceeds 72 columns.
-2. **No text touching the frame edge.** A filled row ends 66 px short of it;
+1. **Longest line measured against the font size.** `node graph/graph-impact-cols.mjs 22 75`
+   prints every row; no token is split and no row exceeds 75 columns.
+2. **No text touching the frame edge.** A filled row ends 70 px short of it;
    the caption keeps every token whole (the nowrap change above).
 3. **Captions present on every beat.** Three beats, three captions, burned in,
    plus `graph-impact-1x1.vtt`.
-4. **`ffprobe` confirms the frame and duration.** 1080x1080, 30 fps, 32.28 s.
+4. **`ffprobe` confirms the frame and duration.** 1080x1080, 30 fps, 33.86 s.
 5. **Loudness.** Not applicable: the video is silent. Remotion writes an empty
    AAC track; there is no mix to normalise.
 6. **Accent is not red, green, yellow or cyan.** `#58a6ff`. And in this video
