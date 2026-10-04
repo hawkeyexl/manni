@@ -93,12 +93,17 @@ Key layers:
     and mounted by `src/cli.ts`. No entry point of its own.
 - `src/tracevals/`: the session-adherence tool, `manni tracevals run`,
   `calibrate`, `fill`, `capture` and `list` (proposal 0049). It grades a
-  Claude Code session against the artifacts that governed it, using the 0023
-  artifact-evals draft. Those artifacts are `CLAUDE.md`, skills, subagents and
-  slash commands.
+  Claude Code session against the artifacts that governed it. Those artifacts
+  are `CLAUDE.md`, skills, subagents and slash commands, and they declare their
+  evals in the registered `manni:artifact-evals` vocabulary.
   Its own `src/tracevals/CLAUDE.md` holds the tool's invariants.
   - `src/tracevals/trace/` and `src/tracevals/artifacts/`: reading a session
     transcript and finding the artifacts it ran under.
+  - `src/tracevals/evals/` and `src/tracevals/core/`: reading each artifact's
+    `metadata.evals` block, planning the evals, the engine and the
+    `tracevals:` config loader.
+  - `src/tracevals/capture/` and `src/tracevals/fill/`: the session manifest
+    the hook writes, and the authoring path that proposes evals.
   - `src/tracevals/graders/` and `src/tracevals/judge/`: the deterministic
     graders and the LLM judge, which takes its providers from
     `src/shared/providers.ts`, as docevals does.
@@ -318,7 +323,7 @@ stdin/parse cases.
 Before any user-facing writing or docs task, consult `docs/content-strategy/`:
 
 1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). See `personas.md`.
-2. Find the matching **CUJ** in `cujs.md` (M1–M17, D1–D11, S1–S11, T1–T6). Structure the content around reaching that outcome, not by document type or Diátaxis category.
+2. Find the matching **CUJ** in `cujs.md` (M1–M20, D1–D13, S1–S13, T1–T7). Structure the content around reaching that outcome, not by document type or Diátaxis category.
 3. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
 4. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
 5. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.
