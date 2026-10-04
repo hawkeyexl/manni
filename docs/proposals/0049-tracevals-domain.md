@@ -17,7 +17,7 @@
   says where that holds and where it bends.
   [0045](0045-family-encryption-key.md), the precedent that a shared concept
   is defined once under `src/shared/`
-- **Supersedes:** tracevals [ADR 01007](tracevals/01007-ship-a-cuj-first-documentation-site.md),
+- **Supersedes:** Tracevals [ADR 01007](tracevals/01007-ship-a-cuj-first-documentation-site.md),
   the co-located content strategy. [ADR 01008](tracevals/01008-rename-the-project-to-moose-tracevals.md)
   and [ADR 01009](tracevals/01009-share-one-moose-config-file-across-the-family.md),
   the moose names and the moose config file.

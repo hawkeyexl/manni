@@ -18,7 +18,7 @@
   Never red / green / yellow / cyan: the report's own `PASS`, `FAIL`,
   `⚠`/`○` and dim detail use those in the same frame, and the accent sits
   directly above them.
-- **Material:** every message in both traces is a line of
+- **Material:** Every message in both traces is a line of
   `test/tracevals/fixtures/traces/claude-session.jsonl`; the eval shapes are
   `test/tracevals/fixtures/project/CLAUDE.md`'s `skill-invoked` and
   `tool-usage` graders. `media/capture-tracevals/make-demo.mjs` subtracts what
