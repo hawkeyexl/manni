@@ -10,7 +10,7 @@ import { terminalConfirm } from "../shared/prompt.js";
 import { collect, configOption } from "../shared/cli-options.js";
 import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import type { DocumentInputOptions } from "./core/discover.js";
-import { palette, shouldColor } from "../shared/color.js";
+import { colorFor, palette } from "../shared/color.js";
 import { DocevalsError } from "./types.js";
 import { allowExecutionMessage, isExecutionGrant } from "../shared/execution.js";
 import { runList, renderList } from "./commands/list.js";
@@ -35,34 +35,10 @@ import {
 } from "./reporters/index.js";
 
 /**
- * Whether `command`'s output gets colour: this domain's `--no-color` and
- * `NO_COLOR` turn it off, and otherwise only a TTY turns it on
- * (`shouldColor`). `isTTY` is passed uncoerced: Node leaves it undefined off
- * a terminal, never false, and `shouldColor` reads a missing one as "not a
- * terminal". The same rule as `manni cite`, whose `colorFor` this mirrors.
+ * Whether `command`'s output gets colour: the family's rule, read off this
+ * domain's `--no-color`. Exported for the tests that pin it.
  */
-export function colorFor(
-  command: Command,
-  isTTY: boolean | undefined,
-  env?: NodeJS.ProcessEnv,
-): boolean {
-  // commander maps --no-color to opts.color === false, on the command that
-  // declares it.
-  const noColor = colorOwner(command).opts().color === false;
-  return shouldColor({ noColor, isTTY, env });
-}
-
-/**
- * The nearest command, this one or an ancestor, that declares `--no-color`:
- * the `docevals` program, wherever it is mounted. Not the root: under the
- * umbrella that is `manni`, which has no `--no-color` of its own.
- */
-function colorOwner(command: Command): Command {
-  for (let c: Command | null = command; c !== null; c = c.parent) {
-    if (c.options.some((o) => o.long === "--no-color")) return c;
-  }
-  return command;
-}
+export { colorFor };
 
 export function buildProgram(): Command {
   const program = new Command();
