@@ -1,0 +1,86 @@
+docs/src/content/docs/graph/fix/index.mdx:
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2
+      integrity: sha256-f6dd25162a24258b950143680916d1e8a14e343d3cbb7dee6e0a55393b6875e3
+    - generated-by: Claude Opus 5
+      lines: 3-8
+      integrity: sha256-d204e073ba8178a6872b2714f5bfb0ba131b771c1c9be83a17492037821394e8
+    - generated-by: Claude Opus 5.5
+      lines: 9
+      integrity: sha256-8abfa63a9683deb86adf7058d34e340e90c1a783c6ae7a621ff6ab2376d4b1a0
+    - generated-by: Claude Opus 5
+      lines: 10-16
+      integrity: sha256-109d8399a702ca16ec39953322f4768a9221b72503389191ba901fa3fab955b9
+    - generated-by: Claude Opus 5.5
+      lines: 17
+      integrity: sha256-9dd5e521fd63f872e2d3f258264f9bc0468d2e56b9e8b50da62f1957b29cd084
+    - generated-by: Claude Opus 5
+      lines: 18-30
+      integrity: sha256-283c0239e9238d3ed2783f1df3d5acd02a4aa7e8329921ddb6e028bd02e7dc18
+    - generated-by: Claude Opus 5.5
+      lines: 31-32
+      integrity: sha256-bbd0518a537cafc8534a9beb332642a370dacc1680a1be335cb9d308792a9a51
+    - generated-by: Claude Opus 5
+      lines: 33-37
+      integrity: sha256-730718119dc9cb3ebd4af5a6f6cf0f50844caa0d9c43c4678b542f2bc71c2964
+    - generated-by: Claude Opus 5.5
+      lines: 39
+      integrity: sha256-b309af664bc9d671f5a4a0d4883303093b790206d09eec7acf0a6d73c97304b8
+    - generated-by: Claude Opus 5
+      lines: 41-65
+      integrity: sha256-9f5d6dd8b4788495a1d40f044664c0ad136fffcae35218c75bd8ca5882a4aaed
+    - generated-by: Claude Opus 5.5
+      lines: 66
+      integrity: sha256-319dbc172d7a4f04f328b75de61372c4c98b2285195d1c34726343e2edb26a1e
+    - generated-by: Claude Opus 5
+      lines: 67-81
+      integrity: sha256-2862fb7536179bf8c339b0a613d602ad4cdc80c91e081c4c86d29f741f980a82
+    - generated-by: Claude Opus 5.5
+      lines: 83
+      integrity: sha256-6c8efbcbe8f7325c0a8a390e706a26f88e22cf8c0e814e4dd78955b6e5c85d67
+    - generated-by: Claude Opus 5
+      lines: 85-106
+      integrity: sha256-9fb9d2bbfcc4e184365ff7ea7a0c257ec51d93698711efca4bdc8fca853fd16d
+    - generated-by: Claude Opus 5.5
+      lines: 107
+      integrity: sha256-dcea74f9db4a21dabf3a793d56beff2753d4f6e41252ce7f08f27edab3cb26ae
+    - generated-by: Claude Opus 5
+      lines: 109
+      integrity: sha256-6cec045b9b4ed6912d6e268606e5aeff35a691cf8cabb97f0dc4840a39f70f8c
+    - generated-by: Claude Opus 5.5
+      lines: 111
+      integrity: sha256-6a5dde2e5a079bdbd0ba76329a01157f0b0e834fc24aaea388525490a353cbed
+    - generated-by: Claude Opus 5
+      lines: 112-121
+      integrity: sha256-c75209c0531d27fb54cb14b2905beea8bd95dbeaa959a10755ba6992166d8366
+    - generated-by: Claude Opus 5.5
+      lines: 122
+      integrity: sha256-d37bed347ee9400de8852e424c7bfb9984bac078a308b1286a76c4f8a78403d4
+    - generated-by: Claude Opus 5
+      lines: 124-126
+      integrity: sha256-aee6a075513a78cb9e07c905aa109c387873b6833416170829596622a9a27ef8
+    - generated-by: Claude Opus 5.5
+      lines: 127
+      integrity: sha256-132ac1a5bd2ea5da76b16a0fc1071f41f1b5772cc1573f30f7b48a0472334255
+    - generated-by: Claude Opus 5
+      lines: 128-139
+      integrity: sha256-9f9b369955085a81d26ea258c40e7a0ba1af9ecc9f5782e848a894a5302161bb
+    - generated-by: Claude Opus 5.5
+      lines: 140
+      integrity: sha256-f9f1dd781b2748de46c6c5eabe7ddb114e18dd9279bfb77345de83aa1959589f
+    - generated-by: Claude Opus 5
+      lines: 142-147
+      integrity: sha256-0c60d1a41cdc572a984a574fd46dc8c4461ddec08276eb29cc29ccccb4217fe7
+    - generated-by: Claude Opus 5.5
+      lines: 148
+      integrity: sha256-b32be95c93571d52f67ebeb9ce3d0b152a1c6bf80a8659d9a4b1db3e67c6bbed
+    - generated-by: Claude Opus 5
+      lines: 149
+      integrity: sha256-86a1652f404410ea8c42246063291a4a1bb9dc3999219760b68d07686e4fbf35
+    - generated-by: Claude Opus 5.5
+      lines: 150-170
+      integrity: sha256-ebf07a999b904a4605e35573bce900d3a860e5536e3ed5533902b3b9dec86f28
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/hub.mdx:
       assertion: "A reader can say what hub means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-4
+      integrity: sha256-9190b91818b619bd893528ba9f9930bdd509aa94b5b0cca10cc9b67587ed5109
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

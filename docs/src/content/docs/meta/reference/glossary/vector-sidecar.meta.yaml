@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/vector-sidecar.mdx:
       assertion: "A reader can say what vector sidecar means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-4
+      integrity: sha256-5fe7adc03b269f87a84d51eca9aa19f63bdadc0f95b56705609e19df09026b3e
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

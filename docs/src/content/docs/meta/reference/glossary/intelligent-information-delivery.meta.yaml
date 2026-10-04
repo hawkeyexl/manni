@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/intelligent-information-delivery.m
       assertion: "A reader can say what iiRDS means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-5
+      integrity: sha256-f21299a41bbac958e6697fe20c32f579c2cf8c290821836507d9a9b56d8735db
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

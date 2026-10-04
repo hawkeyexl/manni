@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/json-ld.mdx:
       assertion: "A reader can say what JSON-LD means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-6
+      integrity: sha256-bb2c34f76b7e46b1e70e8c41614a4e84ae30d226e8166c2c46d0c994ffe2f53a
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

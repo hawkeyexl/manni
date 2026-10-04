@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/confidence.mdx:
       assertion: "A reader can say what confidence means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-5
+      integrity: sha256-a765437f2ac9abc838582203d0784c7b728dc68f5284737c78b4cf6705b5d7ee
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

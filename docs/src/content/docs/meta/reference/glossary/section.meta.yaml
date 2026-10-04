@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/section.mdx:
       assertion: "A reader can say what section means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-6
+      integrity: sha256-a4a05d12399683ca2657de34a796e301030498765f05691a08e2065763b8fc8a
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

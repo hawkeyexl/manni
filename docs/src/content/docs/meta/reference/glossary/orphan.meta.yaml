@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/orphan.mdx:
       assertion: "A reader can say what orphan means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-5
+      integrity: sha256-7c6cc16b13ed2a01c0cb0eaa439992302c7e1b0407f4704c84cf78fb3db4dc6b
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

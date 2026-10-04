@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/triple.mdx:
       assertion: "A reader can say what triple means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-6
+      integrity: sha256-2ff47ba3f40ca5f29842338dc467972eda98828f8778a9406c163c19878196a2
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

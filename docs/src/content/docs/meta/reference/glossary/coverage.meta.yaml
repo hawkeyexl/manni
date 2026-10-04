@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/coverage.mdx:
       assertion: "A reader can say what coverage means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-5
+      integrity: sha256-e668313a1bfb83e8f999c9a6f11c3a95aa555b8aefa43bc140af046f33776adc
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

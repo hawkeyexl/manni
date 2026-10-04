@@ -13,9 +13,15 @@ docs/src/content/docs/meta/reference/glossary/index.mdx:
       type: capability
       grader: ai
   provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-5
+      integrity: sha256-78af1005cd473a05d3524425a1039ce35889bb6ed89f2e5e5cd1a630fb9428bc
     - generated-by: Claude Opus 5
-      lines: 2-20
-      integrity: sha256-53b848a0bb982cb0d6c132ccfd65c170d107d4d825f66989efc2073f33dab30b
+      lines: 7-22
+      integrity: sha256-17be007a54295bd2f09c4e975e5d94b78cf4c37773d653ab31a6dde625c5df8c
+    - generated-by: Claude Opus 5.5
+      lines: 24-58
+      integrity: sha256-2842e3341d34c1c49dcb2dbaac138c35f145db0ad541b787941504fc0510208b
   owner:
     - "@hawkeyexl"
   created: 2026-09-17

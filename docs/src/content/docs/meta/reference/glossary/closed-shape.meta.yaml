@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/closed-shape.mdx:
       assertion: "A reader can say what closed shape means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-6
+      integrity: sha256-df599a901e53041c1dc547872e742d6248f866702006103357001912e62cc41f
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

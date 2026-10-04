@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/base-iri.mdx:
       assertion: "A reader can say what base IRI means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-7
+      integrity: sha256-8d8906d7d08ec0f8c92e69705e70d61c987e85f43180f10592f3c8970e061d5b
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

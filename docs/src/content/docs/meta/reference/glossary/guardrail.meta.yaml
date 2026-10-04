@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/guardrail.mdx:
       assertion: "A reader can say what guardrail means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-5
+      integrity: sha256-edc3cd2bb0ebf9770e012e7789d053b9fd40117b4b90ca24c00634cb38fa2ec1
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

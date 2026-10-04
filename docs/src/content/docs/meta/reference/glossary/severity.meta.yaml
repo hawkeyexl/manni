@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/severity.mdx:
       assertion: "A reader can say what severity means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-6
+      integrity: sha256-54ab51e43d02496f0b07a1e6bd96c6ef1eaa5b1939b609bbd27967621f4b427b
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

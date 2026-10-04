@@ -20,3 +20,7 @@ docs/src/content/docs/graph/index.mdx:
         /tags: 0.75
         /action: 0.95
         /related-pages: 0.75
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-92
+      integrity: sha256-6ab80c7cdde0cf6587e46a0dabbe48e9d26970e881efb5c8fa332829870af825

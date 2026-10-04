@@ -12,3 +12,10 @@ docs/src/content/docs/meta/reference/glossary/near-miss.mdx:
       assertion: "A reader can say what near miss means in manni graph."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-6
+      integrity: sha256-edaf07b62253a4b514f06b96b2fb9c8533805a0a26609eb5fd11f3d7b03a593c
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04
