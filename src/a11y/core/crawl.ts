@@ -6,11 +6,14 @@
  * order it listed them. A page enters the frontier once, under its `dedupeKey`
  * (so `/a` and `/a/` are one page), keeping the spelling that arrived first.
  * Pages run one at a time so a site sees one request at a time.
+ *
+ * A page that redirects in the browser is not a page the run checks. Its
+ * destination joins the frontier in its place, under the same rules.
  */
 import type { AnalyzeOptions, PageAnalyzer } from "./analyzer.js";
-import type { PageResult, ProgressListener } from "../types.js";
-import type { ExcludeFilter } from "./exclude.js";
-import { dedupeKey, isPageLink, normalizeUrl, sameHost } from "./url.js";
+import { A11yError, type PageResult, type ProgressListener, type Redirect } from "../types.js";
+import type { ExcludeFilter, ExcludeGlob } from "./exclude.js";
+import { dedupeKey, isHttpUrl, isPageLink, normalizeUrl, sameHost } from "./url.js";
 
 export interface CrawlOptions {
   /** Normalized http(s) seeds; each seed's host is in scope. */
@@ -40,10 +43,12 @@ export interface CrawlOutcome {
   skipped: number;
   /**
    * Dequeued and dropped unloaded, because the browser had already landed on
-   * that page under another spelling. `checked + skipped + duplicates` is
-   * `discovered`.
+   * that page under another spelling.
+   * `checked + skipped + duplicates + redirects.length` is `discovered`.
    */
   duplicates: number;
+  /** Pages that redirected in the browser, in visit order. Never in `pages`. */
+  redirects: Redirect[];
   /**
    * Distinct URLs (by `dedupeKey`) an `exclude` pattern kept out. Never part
    * of `discovered`: an excluded URL is dropped where an off-host URL and a
@@ -53,6 +58,11 @@ export interface CrawlOutcome {
 }
 
 type Source = PageResult["source"];
+
+/** What `enqueue` did with a URL, and the pattern when one excluded it. */
+type Enqueued =
+  | { as: "queued" | "seen" | "invalid" | "asset" | "off-host" }
+  | { as: "excluded"; pattern: ExcludeGlob };
 
 interface Candidate {
   url: string;
@@ -78,9 +88,16 @@ interface Candidate {
  *   never fetched and never counted in `discovered`; `excluded` counts those,
  *   once per key. `onProgress` hears one `excluded` event before `browser`
  *   when the count is not zero.
+ * - A page that redirects in the browser is recorded in `redirects`, not in
+ *   `pages`, and does not count toward `maxPages`. Its destination is
+ *   enqueued with the page's own `source`, under `crawl: false` too, since it
+ *   is the same page under a new address. A seed whose destination is not
+ *   http(s), is on another host, or is excluded, rethrows: otherwise nothing
+ *   would be checked.
  * - `onProgress` hears `browser` once before the first analyze (that is where
- *   the lazy launch happens), `page` before each analyze, `checked` after
- *   each, and `done` at the end. A failing seed rethrows before `checked`.
+ *   the lazy launch happens), `page` before each analyze, `checked` (or
+ *   `redirected`) after each, and `done` at the end. A failing seed rethrows
+ *   before `checked`.
  */
 export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise<CrawlOutcome> {
   const frontier: Candidate[] = [];
@@ -92,29 +109,31 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
   const excluded = new Set<string>();
   const progress = opts.onProgress ?? (() => undefined);
 
-  const enqueue = (raw: string, source: Source): void => {
+  const enqueue = (raw: string, source: Source): Enqueued => {
     let url: string;
     let key: string;
     try {
       url = normalizeUrl(raw);
       key = dedupeKey(url);
     } catch {
-      return;
+      return { as: "invalid" };
     }
     // A seed is what the user asked for, so it is never filtered as an asset;
     // it still has to be on its own host, which it is by definition.
-    if (source !== "seed" && !isPageLink(url)) return;
-    if (!opts.seeds.some((seed) => sameHost(seed, url))) return;
+    if (source !== "seed" && !isPageLink(url)) return { as: "asset" };
+    if (!opts.seeds.some((seed) => sameHost(seed, url))) return { as: "off-host" };
     // After the scope checks, so an off-host or asset URL is not also counted
     // as excluded; the two filters answer different questions and a URL that
     // was never in scope was not kept out by a pattern.
-    if (opts.exclude?.matches(url) === true) {
+    const pattern = opts.exclude?.match(url) ?? null;
+    if (pattern !== null) {
       excluded.add(key);
-      return;
+      return { as: "excluded", pattern };
     }
-    if (seen.has(key)) return;
+    if (seen.has(key)) return { as: "seen" };
     seen.add(key);
     frontier.push({ url, key, source });
+    return { as: "queued" };
   };
 
   /** Where the browser landed is a page the run has now checked, whatever it was asked for. */
@@ -139,6 +158,7 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
   }
 
   const pages: CrawlOutcome["pages"] = [];
+  const redirects: Redirect[] = [];
   let duplicates = 0;
   const capped = (): boolean => opts.maxPages !== undefined && pages.length >= opts.maxPages;
   for (let next = 0; next < frontier.length && !capped(); next++) {
@@ -151,10 +171,32 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
     }
     visited.add(key);
     const index = pages.length + 1;
-    if (index === 1) progress({ kind: "browser" });
+    // Not `index === 1`: a redirect pushes no page, so the next one reuses that index.
+    if (pages.length + redirects.length === 0) progress({ kind: "browser" });
     progress({ kind: "page", index, queued: frontier.length, url });
     try {
       const analyzed = await analyzer.analyze(url, opts.analyze);
+      if ("redirect" in analyzed) {
+        const to = normalized(analyzed.redirect);
+        // Recorded and narrated before the seed checks below on purpose: the
+        // `↪` line then precedes the fatal message that explains it, and a
+        // throw discards `redirects` anyway.
+        redirects.push({ url, to, source });
+        progress({ kind: "redirected", index, url, to });
+        const outcome = enqueue(to, source);
+        if (source === "seed") {
+          if (!isHttpUrl(to)) {
+            throw new A11yError(`${url} redirects to ${to}, which is not an http(s) URL.`);
+          }
+          if (outcome.as === "off-host") {
+            throw new A11yError(`${url} redirects to ${to}, which is on another host. Check ${to} instead.`);
+          }
+          if (outcome.as === "excluded") {
+            throw new A11yError(`${outcome.pattern.source} excludes ${to}, where the seed ${url} redirects.`);
+          }
+        }
+        continue;
+      }
       pages.push({ ...analyzed.result, url, source });
       landed(analyzed.finalUrl);
       if (opts.crawl) for (const link of analyzed.links) enqueue(link, "link");
@@ -167,7 +209,23 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
     }
   }
 
-  const skipped = frontier.length - pages.length - duplicates;
+  const skipped = frontier.length - pages.length - duplicates - redirects.length;
   progress({ kind: "done", checked: pages.length, skipped });
-  return { pages, discovered: frontier.length, skipped, duplicates, excluded: excluded.size };
+  return {
+    pages,
+    discovered: frontier.length,
+    skipped,
+    duplicates,
+    redirects,
+    excluded: excluded.size,
+  };
+}
+
+/** `normalizeUrl`, or the string as it came when it is not a URL. */
+function normalized(url: string): string {
+  try {
+    return normalizeUrl(url);
+  } catch {
+    return url;
+  }
 }

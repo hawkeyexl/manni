@@ -464,6 +464,7 @@ describe("runCheck summary", () => {
       checked: 2,
       skipped: 0,
       duplicates: 0,
+      redirects: 0,
       excluded: 0,
       failed: 2,
       violations: 4,
@@ -588,5 +589,37 @@ describe("runCheck progress", () => {
       fetcher: noSitemap(),
     });
     expect(run.summary.checked).toBe(1);
+  });
+});
+
+describe("runCheck and pages that redirect in the browser", () => {
+  it("lists the redirects and counts them in the summary", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/old`, `${S}/new`] },
+      [`${S}/old`]: { redirect: `${S}/new` },
+      [`${S}/new`]: {},
+    };
+    const run = await runCheck(opts({}), { analyzer: fakeAnalyzer(site), fetcher: noSitemap() });
+    expect(run.results.map((r) => r.url)).toEqual([`${S}/`, `${S}/new`]);
+    expect(run.redirects).toEqual([{ url: `${S}/old`, to: `${S}/new`, source: "link" }]);
+    expect(run.summary).toMatchObject({ discovered: 3, checked: 2, duplicates: 0, redirects: 1 });
+  });
+
+  it("orders the run results, redirects, summary, with redirects after duplicates", async () => {
+    const run = await runCheck(opts({}), {
+      analyzer: fakeAnalyzer({ [`${S}/`]: {} }),
+      fetcher: noSitemap(),
+    });
+    expect(Object.keys(run)).toEqual(["results", "redirects", "summary"]);
+    expect(run.redirects).toEqual([]);
+    const keys = Object.keys(run.summary);
+    expect(keys.slice(0, 6)).toEqual([
+      "discovered",
+      "checked",
+      "skipped",
+      "duplicates",
+      "redirects",
+      "excluded",
+    ]);
   });
 });

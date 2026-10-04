@@ -8,6 +8,7 @@
 import { describe, expect, it } from "vitest";
 import { createProgressReporter } from "../../src/a11y/reporters/progress.js";
 import type { ProgressEvent } from "../../src/a11y/types.js";
+import { palette } from "../../src/shared/color.js";
 
 const CLEAR = "\r\x1b[2K";
 const S = "https://site.example";
@@ -212,5 +213,39 @@ describe("progress reporter off a terminal", () => {
     const report = createProgressReporter({ stream: s, color: true, tty: false });
     report({ kind: "page", index: 1, queued: 1, url: `${S}/` });
     expect(s.out[0]).not.toContain("\x1b");
+  });
+});
+
+describe("progress reporter and a page that redirects in the browser", () => {
+  it("shows the redirect in place on a terminal, under the page's counter", () => {
+    const s = stream(120);
+    const report = createProgressReporter({ stream: s, color: false, tty: true });
+    report({ kind: "page", index: 3, queued: 52, url: `${S}/old/` });
+    report({ kind: "redirected", index: 3, url: `${S}/old/`, to: `${S}/new/` });
+    expect(s.out[1]).toBe(`${CLEAR}[3/52] ↪ redirects to ${S}/new/`);
+  });
+
+  it("paints the counter and the arrow dim and the URL cyan on a terminal", () => {
+    const s = stream(120);
+    const report = createProgressReporter({ stream: s, color: true, tty: true });
+    report({ kind: "page", index: 3, queued: 52, url: `${S}/old/` });
+    report({ kind: "redirected", index: 3, url: `${S}/old/`, to: `${S}/new/` });
+    const c = palette(true);
+    expect(s.out[1]).toBe(
+      `${CLEAR}${c.dim("[3/52]")} ${c.dim("↪")} redirects to ${c.cyan(`${S}/new/`)}`,
+    );
+  });
+
+  it("writes one plain line off a terminal", () => {
+    const s = stream();
+    const report = createProgressReporter({ stream: s, color: false, tty: false });
+    report({ kind: "page", index: 3, queued: 52, url: `${S}/old/` });
+    report({ kind: "redirected", index: 3, url: `${S}/old/`, to: `${S}/new/` });
+    report({ kind: "page", index: 3, queued: 53, url: `${S}/new/` });
+    expect(s.out).toEqual([
+      `manni: [3/52] ${S}/old/\n`,
+      `manni: [3/52] ↪ redirects to ${S}/new/\n`,
+      `manni: [3/53] ${S}/new/\n`,
+    ]);
   });
 });

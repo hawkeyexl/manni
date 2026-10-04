@@ -18,6 +18,7 @@ export {
 export type {
   AnalyzeOptions,
   AnalyzedPage,
+  RedirectedPage,
   PageAnalyzer,
   BrowserChannel,
 } from "./core/analyzer.js";
@@ -57,4 +58,5 @@ export type {
   PageResult,
   CheckSummary,
   CheckRun,
+  Redirect,
 } from "./types.js";

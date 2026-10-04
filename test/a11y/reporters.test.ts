@@ -16,8 +16,10 @@ import type {
   CheckSummary,
   Severity,
   PageResult,
+  Redirect,
   Violation,
 } from "../../src/a11y/types.js";
+import { palette } from "../../src/shared/color.js";
 import { violation } from "../helpers/fake-analyzer.js";
 
 const S = "https://site.example";
@@ -54,6 +56,7 @@ function summarize(
     checked: results.length,
     skipped: 0,
     duplicates: 0,
+    redirects: 0,
     excluded: 0,
     failed,
     violations,
@@ -65,8 +68,12 @@ function summarize(
   };
 }
 
-function checkRun(results: PageResult[], over: Partial<CheckSummary> = {}): CheckRun {
-  return { results, summary: summarize(results, over) };
+function checkRun(
+  results: PageResult[],
+  over: Partial<CheckSummary> = {},
+  redirects: Redirect[] = [],
+): CheckRun {
+  return { results, redirects, summary: summarize(results, { redirects: redirects.length, ...over }) };
 }
 
 const imageAlt: Violation = {
@@ -439,6 +446,78 @@ describe("render github", () => {
 
   it("says nothing when the run is clean", () => {
     const run = checkRun([page({ url: `${S}/` })], { sitemap: SITEMAP });
+    expect(render("github", run, off)).toBe("");
+  });
+});
+
+describe("render and pages that redirect in the browser", () => {
+  const off = { color: false, quiet: false };
+  const redirects: Redirect[] = [
+    { url: `${S}/old`, to: `${S}/new`, source: "link" },
+    { url: `${S}/script`, to: `${S}/new`, source: "link" },
+  ];
+  const pages = [page({ url: `${S}/` }), page({ url: `${S}/new` })];
+
+  it("lists each redirect after the pages, before the footer, and counts them", () => {
+    const run = checkRun(pages, { discovered: 4 }, redirects);
+    expect(render("pretty", run, off).split("\n")).toEqual([
+      "Checked 2 of 4 pages (no sitemap; followed links)",
+      `✓ ${S}/  score 100`,
+      `✓ ${S}/new  score 100`,
+      `↪ ${S}/old  redirects to ${S}/new`,
+      `↪ ${S}/script  redirects to ${S}/new`,
+      "",
+      "0 violations on 0 of 2 pages; 2 redirects",
+    ]);
+  });
+
+  it("uses the singular for one redirect, and says nothing for none", () => {
+    const one = checkRun(pages, { discovered: 3 }, redirects.slice(0, 1));
+    expect(render("pretty", one, off).split("\n").at(-1)).toBe(
+      "0 violations on 0 of 2 pages; 1 redirect",
+    );
+    const none = render("pretty", checkRun(pages), off);
+    expect(none).not.toContain("redirect");
+  });
+
+  it("puts the redirect clause after duplicates and before excluded", () => {
+    const run = checkRun(pages, { discovered: 6, duplicates: 1, excluded: 3 }, redirects);
+    expect(render("pretty", run, off).split("\n").at(-1)).toBe(
+      "0 violations on 0 of 2 pages; 1 duplicate dropped; 2 redirects; 3 excluded",
+    );
+  });
+
+  it("hides the redirect lines under quiet, keeping the footer clause", () => {
+    const run = checkRun(pages, { discovered: 4 }, redirects);
+    const text = render("pretty", run, { color: false, quiet: true });
+    expect(text).not.toContain("↪");
+    expect(text.split("\n").at(-1)).toBe("0 violations on 0 of 2 pages; 2 redirects");
+  });
+
+  it("paints the arrow dim and both URLs cyan", () => {
+    const run = checkRun(pages, { discovered: 3 }, redirects.slice(0, 1));
+    const line = render("pretty", run, { color: true, quiet: false })
+      .split("\n")
+      .find((l) => l.includes("↪"));
+    const c = palette(true);
+    expect(line).toBe(`${c.dim("↪")} ${c.cyan(`${S}/old`)}  redirects to ${c.cyan(`${S}/new`)}`);
+  });
+
+  it("carries the redirects array and count in json, between results and summary", () => {
+    const run = checkRun(pages, { discovered: 4 }, redirects);
+    const text = render("json", run, off);
+    const parsed = JSON.parse(text) as Record<string, unknown> & {
+      summary: { discovered: number; checked: number; skipped: number; duplicates: number; redirects: number };
+    };
+    expect(Object.keys(parsed)).toEqual(["results", "redirects", "summary"]);
+    expect(parsed.redirects).toEqual(redirects);
+    expect(parsed.summary.redirects).toBe(2);
+    const { checked, skipped, duplicates, discovered } = parsed.summary;
+    expect(checked + skipped + duplicates + parsed.summary.redirects).toBe(discovered);
+  });
+
+  it("emits no github annotation for a redirect", () => {
+    const run = checkRun(pages, { discovered: 4 }, redirects);
     expect(render("github", run, off)).toBe("");
   });
 });

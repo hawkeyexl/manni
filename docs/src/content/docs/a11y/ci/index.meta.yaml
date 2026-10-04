@@ -54,8 +54,11 @@ docs/src/content/docs/a11y/ci/index.mdx:
       lines: 145-146
       integrity: sha256-8ebdfd7a271da8ebb31522306994695113896e6f4e8175a8850314d775a2d045
     - generated-by: Claude Fable 5.1
-      lines: 147-162
-      integrity: sha256-bff648e9a0a40a373ee574d28fdf9c7933143698dcc562ceb06709cd963b52fa
+      lines: 147-156
+      integrity: sha256-076ae3e1d2495223f625bb29eb6aff957790d7021b564895cbc205d2d6751cb1
+    - generated-by: Claude Fable 5.1
+      lines: 159-162
+      integrity: sha256-46ed9b589ab7b9670dc6eb72b799b36ac004bf6650ac0eb7c6838ad1f33cac98
     - generated-by: Claude Opus 5
       lines: 164-165
       integrity: sha256-9ae3c8fc53aadfeb46ceeda03235e60dfcbbef8aef99989785f7c55adc36a494
