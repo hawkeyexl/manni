@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { defined } from "../helpers/defined.js";
 import {
   buildSearchIndex,
+  documentsByLanguage,
   emitSearchIndex,
   partitionByLanguage,
   type SearchEntry,
@@ -231,6 +232,20 @@ describe("partitionByLanguage", () => {
     const buckets = index(graph(true));
     expect([...buckets.keys()]).toEqual(["de"]);
     expect(buckets.get("de")?.entries.some((e) => e.id === CONCEPT)).toBe(true);
+  });
+
+  it("files tags that differ only in case into one bucket", () => {
+    // BCP-47 tags are case-insensitive, so a graph written by hand with `DE`
+    // on one page and `de` on another still holds one localization.
+    const g = GraphIndex.fromQuads([
+      { s: DE, p: RDF_TYPE, o: iri(`${NS.graph}Document`) },
+      { s: DE, p: LANGUAGE, o: lit("de-at") },
+      { s: DOC, p: RDF_TYPE, o: iri(`${NS.graph}Document`) },
+      { s: DOC, p: LANGUAGE, o: lit("DE-AT") },
+    ]);
+    const buckets = index(g);
+    expect([...buckets.keys()]).toEqual(["de-AT"]);
+    expect(documentsByLanguage(g)).toEqual(new Map([["de-AT", 2]]));
   });
 
   it("keeps every bucket sorted by IRI", () => {

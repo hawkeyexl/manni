@@ -1,4 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { spawnText } from "../../helpers/spawn.js";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -67,6 +68,35 @@ function prepare(withVectors = true): {
     );
   }
   return { dir, graph, vectors };
+}
+
+/**
+ * Add a page to the `und` index and record its new digest in the manifest, as
+ * a fresh `export search` would. The sidecar is left as it was, so it is
+ * stale against an index the manifest still vouches for.
+ */
+function reexportWithNewPage(graph: string): void {
+  const index = join(dirname(graph), "search.und.json");
+  const doc = JSON.parse(readFileSync(index, "utf8")) as {
+    entries: Array<Record<string, string>>;
+  };
+  doc.entries.push({
+    id: "https://example.com/graph/doc/docs/brand-new.md",
+    type: "graph:Document",
+    title: "Brand new",
+    text: "content that did not exist when the vectors were built",
+  });
+  const edited = JSON.stringify(doc);
+  writeFileSync(index, edited, "utf8");
+  const manifestPath = join(dirname(graph), "localizations.json");
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+    languages: Array<{ language: string; search: { digest: string } }>;
+  };
+  for (const entry of manifest.languages) {
+    if (entry.language !== "und") continue;
+    entry.search.digest = `sha256:${createHash("sha256").update(edited, "utf8").digest("hex")}`;
+  }
+  writeFileSync(manifestPath, JSON.stringify(manifest), "utf8");
 }
 
 interface SearchJson {
@@ -355,17 +385,7 @@ describe("manni graph search with vectors (integration)", () => {
     // yesterday's vectors — stale hits point at IRIs that may be gone, and
     // everything added since is unreachable (ADR 01020).
     const { graph, vectors } = prepare();
-    const index = join(dirname(graph), "search.und.json");
-    const doc = JSON.parse(readFileSync(index, "utf8")) as {
-      entries: Array<Record<string, string>>;
-    };
-    doc.entries.push({
-      id: "https://example.com/graph/doc/docs/brand-new.md",
-      type: "graph:Document",
-      title: "Brand new",
-      text: "content that did not exist when the vectors were built",
-    });
-    writeFileSync(index, JSON.stringify(doc), "utf8");
+    reexportWithNewPage(graph);
 
     const { status, output } = run(
       [
@@ -390,17 +410,7 @@ describe("manni graph search with vectors (integration)", () => {
     // not turn a working lexical search into exit 2 — the leg is additive
     // (ADR 01009). Warned on stderr, so the user learns why it went lexical.
     const { graph, vectors } = prepare();
-    const index = join(dirname(graph), "search.und.json");
-    const doc = JSON.parse(readFileSync(index, "utf8")) as {
-      entries: Array<Record<string, string>>;
-    };
-    doc.entries.push({
-      id: "https://example.com/graph/doc/docs/brand-new.md",
-      type: "graph:Document",
-      title: "Brand new",
-      text: "content that did not exist when the vectors were built",
-    });
-    writeFileSync(index, JSON.stringify(doc), "utf8");
+    reexportWithNewPage(graph);
 
     // The sidecar has to be at the *configured default* location for this to be
     // the discovered case — passing `--vectors` would make it explicitly

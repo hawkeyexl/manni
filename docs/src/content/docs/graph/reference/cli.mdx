@@ -381,7 +381,7 @@ $ manni graph search "installation" -c test/graph/fixtures/dd/docs.config.yaml
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file the index sits beside. |
 | `-i, --index` | `<dir>` | beside the graph | Directory holding the indexes and the manifest. |
-| `--lang` | `<tag>` | the only localization | Which localization to search. Required when the corpus has more than one. |
+| `--lang` | `<tag>` | the only localization | Which localization to search, matched in any case. Required when the corpus has more than one. |
 | `--limit` | `<n>` | 10 | Maximum results. A whole number, at least 1. |
 | `--vectors` | `<path>` | from the manifest | Vector sidecar path. |
 | `--mode` | `<mode>` | `hybrid` when vectors exist, else lexical | Which legs to run. An unknown mode is a usage error naming the allowed set. |

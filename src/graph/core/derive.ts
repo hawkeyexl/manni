@@ -22,6 +22,7 @@ import {
   normalizeDocPath,
 } from "./iri.js";
 import { byCodeUnit } from "./sort.js";
+import { canonicalLanguageTag } from "./localizations.js";
 import { NS, RDF_TYPE, ROLE } from "./vocab.js";
 import {
   GRAPH_NOT_APPLICABLE_TO_VARIANT,
@@ -457,9 +458,15 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       // The page's own key outranks the route it sits under (ADR 01037): a
       // single English page inside a translated tree can correct its label,
       // and a corpus that declares nothing keeps deriving nothing.
+      //
+      // Written in its canonical spelling: tags are case-insensitive, and
+      // `en-us` beside `en-US` would otherwise split one locale into two
+      // indexes and miss a `--lang` filter typed the other way.
       const language =
         asString(fmValue(fm, ["lang", "language"])) ?? doc.routeLanguage;
-      if (language) add(docIri, `${NS.dcterms}language`, lit(language));
+      if (language) {
+        add(docIri, `${NS.dcterms}language`, lit(canonicalLanguageTag(language)));
+      }
 
       // Page-level only: the `graph` block is closed and carries no
       // translation key, so this fact lives at the altitude `lang` already

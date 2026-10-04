@@ -1286,6 +1286,23 @@ describe("deriveGraph — localization (ADR 01037)", () => {
     expect(has(g, DE_DOC, `${NS.dcterms}language`, lit("de"))).toBe(false);
   });
 
+  it("writes the canonical spelling of a tag, so en-us and en-US are one locale", () => {
+    const g = localized(
+      {
+        "docs/de/a.md": "# A\n",
+        "docs/a.md": "---\nlang: en-us\n---\n\n# A\n",
+      },
+      [route("docs/de", "/de", "DE-at"), route("docs", "")],
+    );
+    expect(has(g, EN_DOC, `${NS.dcterms}language`, lit("en-US"))).toBe(true);
+    expect(has(g, DE_DOC, `${NS.dcterms}language`, lit("de-AT"))).toBe(true);
+  });
+
+  it("keeps a tag Intl cannot read as written, for the tag check to report", () => {
+    const g = localized({ "docs/a.md": "---\nlang: en_US\n---\n\n# A\n" }, []);
+    expect(has(g, EN_DOC, `${NS.dcterms}language`, lit("en_US"))).toBe(true);
+  });
+
   it("inherits the nearest enclosing route that declares a language", () => {
     const g = localized({ "docs/api/a.md": "# A\n" }, [
       route("docs/api", "/api"),

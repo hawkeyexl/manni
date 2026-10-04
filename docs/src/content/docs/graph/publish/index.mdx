@@ -133,7 +133,8 @@ locale. One file each, named from the tag. A corpus that ships several locales
 and one index serves the wrong one to most of its readers.
 
 The digest is what the runtime checks a sidecar against, so a stale vector file
-is refused rather than silently mismatched.
+is refused rather than silently mismatched. `manni graph search` checks the
+index against it too, and an index edited since the export is exit 2.
 
 ## Semantic search
 

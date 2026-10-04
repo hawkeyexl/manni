@@ -15,6 +15,7 @@ import { loadRunConfig } from "../core/config.js";
 import { compactIri } from "../core/load.js";
 import { type SearchIndexDoc } from "../core/search-index.js";
 import {
+  canonicalLanguageTag,
   LOCALIZATIONS_FILENAME,
   parseLocalizations,
   type LocalizationEntry,
@@ -61,7 +62,7 @@ export interface SearchOptions {
   lang?: string;
   query: string;
   limit?: number;
-  /** Vector sidecar path (default: config `embed.out` when it exists). */
+  /** Vector sidecar path (default: the sidecar the manifest records). */
   vectors?: string;
   /**
    * Which legs to run. "lexical" is always available; "vector"/"hybrid" need an
@@ -156,7 +157,11 @@ function resolveLocalization(
   }
   const available = manifest.languages.map((l) => l.language);
   if (lang !== undefined) {
-    const hit = manifest.languages.find((l) => l.language === lang);
+    // Tags are case-insensitive: `--lang en-us` names the `en-US` index.
+    const wanted = canonicalLanguageTag(lang);
+    const hit = manifest.languages.find(
+      (l) => canonicalLanguageTag(l.language) === wanted,
+    );
     if (!hit) {
       throw new GraphError(
         `No index for language "${lang}" — this corpus has ${available.join(", ") || "none"}.`,
@@ -199,6 +204,14 @@ export async function runSearch(opts: SearchOptions): Promise<SearchReport> {
   }
 
   const { doc, source } = loadSearchIndex(indexPath);
+  // The manifest records the digest of the index it wrote, and embed refuses a
+  // pair that has drifted. Searching one anyway answers from bytes the
+  // manifest does not describe, with a confident ranking.
+  if (localization.search.digest !== source) {
+    throw new GraphError(
+      `Stale manifest: ${localization.search.path} does not match the digest recorded for "${localization.language}". Re-run \`manni graph export search\`.`,
+    );
+  }
   const lexical = createLexicalIndex(doc);
 
   // The vector leg is opt-in by availability: a sidecar plus an embedder. Asked

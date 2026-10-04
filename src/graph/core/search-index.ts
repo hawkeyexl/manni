@@ -27,7 +27,7 @@ import { resolve } from "node:path";
 import { compactIri } from "./load.js";
 import { byCodeUnit } from "./sort.js";
 import { NS } from "./vocab.js";
-import { UNDETERMINED } from "./localizations.js";
+import { canonicalLanguageTag, UNDETERMINED } from "./localizations.js";
 import type { GraphIndex } from "../runtime/graph.js";
 import {
   documentPreamble,
@@ -266,7 +266,7 @@ export function partitionByLanguage(
     }
     const hash = entry.id.indexOf("#");
     const doc = hash === -1 ? entry.id : entry.id.slice(0, hash);
-    return graph.literal(doc, DCTERMS_LANGUAGE) ?? UNDETERMINED;
+    return languageOfDocument(graph, doc);
   };
 
   const out = new Map<string, SearchIndexDoc>();
@@ -293,11 +293,21 @@ export function partitionByLanguage(
   return out;
 }
 
+/**
+ * A document's language, canonically spelled, or `und`. `derive` already
+ * writes the canonical tag, so this matters for a graph written by hand: one
+ * locale in two spellings would otherwise become two indexes.
+ */
+function languageOfDocument(graph: GraphIndex, doc: string): string {
+  const tag = graph.literal(doc, DCTERMS_LANGUAGE);
+  return tag === undefined ? UNDETERMINED : canonicalLanguageTag(tag);
+}
+
 /** Documents (not sections) per language, for the manifest's counts. */
 export function documentsByLanguage(graph: GraphIndex): Map<string, number> {
   const out = new Map<string, number>();
   for (const doc of graph.instancesOf(GRAPH_DOCUMENT)) {
-    const language = graph.literal(doc, DCTERMS_LANGUAGE) ?? UNDETERMINED;
+    const language = languageOfDocument(graph, doc);
     out.set(language, (out.get(language) ?? 0) + 1);
   }
   return out;
