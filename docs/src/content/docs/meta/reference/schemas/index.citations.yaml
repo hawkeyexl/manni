@@ -202,9 +202,9 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         integrity: sha256-ac63f186dfd0d93000e2e59569020f3f3211f31ea8b8d480997f0141107f7dac
       source:
         file: src/meta/commands/schemas.ts
-        lines: 70-76
+        lines: 71-77
         integrity: sha256-65980050ab2961529a3ffd02ce41ae76560b73e592a9311854c2b99437e44d9e
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: registry-forty-five-bundled-schemas
       claim:
         integrity: sha256-3d3beeff43514a733e6dec573c5e352897de1dc4818d78c24c5236d6a3e5aab9

@@ -33,9 +33,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-0a46ee5ce50526220582cbb1b40c4e9cfb1cb51b4b85ca7ee52b68094f53fe1b
       source:
         file: src/meta/commands/validate.ts
-        lines: 297-301
+        lines: 298-302
         integrity: sha256-73d56d153f0de0ed6e64cb6ade7318f324b35250a12838d444586b957050d6c4
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: config-discovered-as-manni-config-yaml
       claim:
         lines: 63
@@ -60,18 +60,18 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-23b4200b127b40399a05997509b2db106f4feb482deb936ab5721c1c27671f3d
       source:
         file: src/meta/core/config.ts
-        lines: 1878-1886
+        lines: 1897-1905
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: every-file-satisfies-every-schema
       claim:
         lines: 53
         integrity: sha256-23b4200b127b40399a05997509b2db106f4feb482deb936ab5721c1c27671f3d
       source:
         file: src/meta/core/validator.ts
-        lines: 686-693
+        lines: 781-788
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: explicit-file-bypasses-ext-filter
       claim:
         lines: 32
@@ -87,9 +87,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-70b11580b3b79d5a7044d2b616dcd08dfd6b81ff96941036950f9eac496b306e
       source:
         file: package.json
-        lines: 36-38
+        lines: 45-47
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: okf-requires-type
       claim:
         lines: 9

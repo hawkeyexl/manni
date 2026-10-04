@@ -126,9 +126,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-bc936dc954459bbedd45b77656574fb1b1dcbefa1c61273a764f02100214f1a6
       source:
         file: src/meta/commands/validate.ts
-        lines: 320-325
+        lines: 321-326
         integrity: sha256-b9909f90ce53a01707f10cda095ef0087f97d534b1f34fd343a25db300a03bf9
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: files-list-matches-any-glob
       claim:
         integrity: sha256-5016b54663c9c20a6570cafba73c2ddf8523598a8384b88d8b51bd55ac882754
@@ -212,9 +212,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-33b7d220fbb317999d1bc6c7e5cae7c21e9697b66f9048d2354997007c74ad80
       source:
         file: src/meta/commands/query.ts
-        lines: 900-907
+        lines: 901-908
         integrity: sha256-90378bbac350e5d84bde1556a1ff841a6bda832f689a1f352d09b1c81940eff6
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: overrides-map-subsets-to-schema-sets
       claim:
         integrity: sha256-c086334f56dd9720988769337b78525574929fb7b4ec1043b13a16b071e08219

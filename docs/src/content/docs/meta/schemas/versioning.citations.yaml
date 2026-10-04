@@ -66,18 +66,18 @@ docs/src/content/docs/meta/schemas/versioning.mdx:
         integrity: sha256-2aab9dd250b24d486ec98a0fee299a6c822d8d6ce54afc42f5058b7a3bfdd0bf
       source:
         file: src/meta/commands/query.ts
-        lines: 1762-1770
+        lines: 1763-1771
         integrity: sha256-c97fce02ffcf99dbfe3aecb6a9dc4601db8ba40984cae02bcfcc9c8219ed1d65
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: dash-s-names-the-schema-ddl-evolves
       claim:
         lines: 128
         integrity: sha256-90ff8ecb405dfb3da3099ecdf390108beb756e3e43d72499e8a559a81eec8e7d
       source:
         file: src/meta/commands/query.ts
-        lines: 1134-1142
+        lines: 1135-1143
         integrity: sha256-64bd175749d20be50623600aec873966e3b12bdcd225e2e0d9d19b06665c47af
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: builtin-id-carries-its-version
       claim:
         integrity: sha256-8d4b7b7cfd020313de01f1ed856cbc929ad665e5c342a0186293651320621f29
@@ -91,17 +91,17 @@ docs/src/content/docs/meta/schemas/versioning.mdx:
         integrity: sha256-7888cd94054ec3a216d12730105adcf31bd6554656a19299f1d93869a7938395
       source:
         file: src/meta/commands/query.ts
-        lines: 1837-1842
+        lines: 1838-1843
         integrity: sha256-33a4a493d745b9c29bba10592722f9cc1e871e391b163d5cba085040480546e4
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: declared-type-maps-to-a-format
       claim:
         integrity: sha256-fc3e4ac9d34653c700bf688200690da862b04e203a0f9f8006144bc4a390067b
       source:
         file: src/meta/commands/query.ts
-        lines: 1501-1510
+        lines: 1502-1511
         integrity: sha256-6750c5da321ca3bb6d81c75995e9ec719a6324aa14bec517398da951777864e0
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: builtin-versions-are-decided-by-manni
       claim:
         integrity: sha256-a411f26526e82221c19b6812a11d0e064fa4cdc98f9e3afe8e35814a5895ad66
@@ -116,14 +116,14 @@ docs/src/content/docs/meta/schemas/versioning.mdx:
         integrity: sha256-90ff8ecb405dfb3da3099ecdf390108beb756e3e43d72499e8a559a81eec8e7d
       source:
         file: src/meta/commands/query.ts
-        lines: 1342-1346
+        lines: 1343-1347
         integrity: sha256-cb17e1c1e2ad5923a214481c54d4318be3a8e8699cae8afeb813c30ac9e3514e
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: alter-table-edits-the-resolved-schema
       claim:
         integrity: sha256-d26aa74760d981fb311e7bc2b8c01448d77478e8d8ca6a5fbc356f15b66a6494
       source:
         file: src/meta/commands/query.ts
-        lines: 1184-1189
+        lines: 1185-1190
         integrity: sha256-0f2900ed7ae33d44db2239cec51553abf93c31d2e4bba566cb68175b2edecb25
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8

@@ -45,9 +45,9 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         integrity: sha256-3219f33ff597c89ce4d5ecf4eae156536902e01c392bc0b3198016462ff8b762
       source:
         file: src/meta/commands/validate.ts
-        lines: 1048-1058
+        lines: 1049-1059
         integrity: sha256-705564be93671f57572066f8b5c65e89e68fc6228453bf1746a821f580d13aa1
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: recipes-operational-error-exits-2
       claim:
         lines: 11-12
@@ -90,9 +90,9 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         integrity: sha256-7586e9ec2cbcc07983fac21ddfb24918a8b187dc1fd1297d476a9100ca3e83cd
       source:
         file: package.json
-        lines: 36-38
+        lines: 45-47
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: cite-hook-checks-staged-pages
       claim:
         integrity: sha256-a0542930798b64c6850202ea0ea7e170a89469a24a7ecb8bd3c00d4e93aa98f4
