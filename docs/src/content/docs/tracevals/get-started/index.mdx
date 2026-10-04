@@ -10,7 +10,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How do I evaluate my first agent session?", "How do I find a session to evaluate?"]
 graph: { label: "Get started", type: learning }
-last-updated: 2026-09-16
+last-updated: 2026-10-04
 ---
 
 import { Steps, Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -31,7 +31,7 @@ Everything on this page runs **offline**, with no API key.
 
 <Steps>
 
-1. ### Install
+1. ## Install
 
    manni needs **Node.js 24 or newer**.
 
@@ -64,7 +64,7 @@ Everything on this page runs **offline**, with no API key.
    {/* step {"description":"The installed binary responds to --version.","runShell":{"command":"manni tracevals --version","exitCodes":[0]}} */}
    {/* test end */}
 
-2. ### Find a session
+2. ## Find a session
 
    tracevals evaluates a **trace**: a record of a session that already happened, sitting on disk.
    You do not instrument anything and you do not re-run any work.
@@ -93,7 +93,7 @@ Everything on this page runs **offline**, with no API key.
    {/* step {"description":"Listing every project finds the fixture sessions and exits 0.","runShell":{"command":"manni tracevals list --all-projects --limit 5","exitCodes":[0],"stdio":"demo-project"}} */}
    {/* test end */}
 
-3. ### Run your first evaluation
+3. ## Run your first evaluation
 
    Start with the mode that makes no model call at all:
 
@@ -127,7 +127,7 @@ Everything on this page runs **offline**, with no API key.
      already use the Claude CLI.
    </Aside>
 
-4. ### Read the report
+4. ## Read the report
 
    A deterministic-only run against a project with one skill, one subagent, and two rules files
    looks like this:
@@ -191,7 +191,7 @@ Everything on this page runs **offline**, with no API key.
    {/* step {"description":"Judged evals are skipped, not failed, under --deterministic-only.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"ai evals skipped (deterministic-only run)"}} */}
    {/* test end */}
 
-5. ### Check the exit code
+5. ## Check the exit code
 
    | Code | Meaning |
    |---|---|

@@ -14,8 +14,38 @@ docs/src/content/docs/tracevals/get-started/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-209
-      integrity: sha256-cff344adb7c0173a702c72f34fbe46244357d5ee3894d3a26bb3449303a4ea01
+      lines: 2-18
+      integrity: sha256-b92e4d4040b57c703684ae2f9ad7d58888748d79036c8a571fa01a59dcb67b9b
+    - generated-by: Claude Opus 5.5
+      lines: 20
+      integrity: sha256-f031a297034828d2e00cb93f7740ad54c2c70c5dbe25274d4a72506b86e3d0ce
+    - generated-by: Claude Opus 5
+      lines: 22-51
+      integrity: sha256-cf355addf5e3c8f57161a48b7c94f32e604dc15c20dc4121732c43fb29dd3dcc
+    - generated-by: Claude Opus 5.5
+      lines: 53
+      integrity: sha256-0adb60208f1923ab6c3f0b0bf92c8d4d132ffeaa391cd500cd5fdbab8cc1b2b4
+    - generated-by: Claude Opus 5
+      lines: 55-80
+      integrity: sha256-59208ef0474ad23261ce90a4ae14ce0626857fe75a7931cf282f95a76d86425c
+    - generated-by: Claude Opus 5.5
+      lines: 82
+      integrity: sha256-b624404d46d05578ddf42650903496ebf5142b1295e02c3ebed2609f3dc37e90
+    - generated-by: Claude Opus 5
+      lines: 84-114
+      integrity: sha256-351d83063b9bc277770c12cd0db6258305d4fbffc416782dd3c9abc45ec8825b
+    - generated-by: Claude Opus 5.5
+      lines: 116
+      integrity: sha256-12aa59cc82733222171558e0a34c917431abc9abf83a6b307959bd23cc56dd36
+    - generated-by: Claude Opus 5
+      lines: 118-178
+      integrity: sha256-79a84f22326a183aa4ca07a809863eaae32dd0b7a6acb8193e9cfb91066665c9
+    - generated-by: Claude Opus 5.5
+      lines: 180
+      integrity: sha256-9e9fcaf2d944b935588501c97b6815218e4564a5593c7d35712ee682d3ec54b7
+    - generated-by: Claude Opus 5
+      lines: 182-209
+      integrity: sha256-e9d9f416cfe6e7560558d6c02f58b0caaadd4caee7747a5f760e64fce793bc2e
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
