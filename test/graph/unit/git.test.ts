@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defined } from "../helpers/defined.js";
-import { collectGitHistory } from "../../../src/graph/core/git.js";
+import { canonicalGitTime, collectGitHistory } from "../../../src/graph/core/git.js";
 import { GraphError } from "../../../src/graph/types.js";
 import type { ExecFn, ExecResult } from "@hawkeyexl/inference";
 
@@ -49,19 +49,19 @@ describe("collectGitHistory", () => {
 
   it("parses one pass into per-file created/modified/authors", async () => {
     const history = await collectGitHistory("/repo", mockExec(LOG));
-    expect(history.headTime).toBe("2026-03-03T10:00:00+00:00");
+    expect(history.headTime).toBe("2026-03-03T10:00:00Z");
 
     const keep = defined(history.files.get("docs/keep.md"));
-    expect(keep.created).toBe("2026-01-01T10:00:00+00:00");
-    expect(keep.modified).toBe("2026-01-01T10:00:00+00:00");
+    expect(keep.created).toBe("2026-01-01T10:00:00Z");
+    expect(keep.modified).toBe("2026-01-01T10:00:00Z");
     expect(keep.authors).toEqual(["Jane Doe"]);
   });
 
   it("follows renames backward so history accrues to the current path", async () => {
     const history = await collectGitHistory("/repo", mockExec(LOG));
     const b = defined(history.files.get("b.md"));
-    expect(b.created).toBe("2026-01-01T10:00:00+00:00"); // a.md's birth
-    expect(b.modified).toBe("2026-03-03T10:00:00+00:00");
+    expect(b.created).toBe("2026-01-01T10:00:00Z"); // a.md's birth
+    expect(b.modified).toBe("2026-03-03T10:00:00Z");
     expect(b.authors).toEqual(["Casey Editor", "Jane Doe"]); // newest first, deduped
     expect(b.renamedFrom).toEqual(["a.md"]);
     expect(history.files.has("a.md")).toBe(false); // folded into b.md
@@ -85,7 +85,7 @@ describe("collectGitHistory", () => {
     const history = await collectGitHistory("/repo", mockExec(log));
     const file = defined(history.files.get("new.md"));
     expect(file.renamedFrom).toEqual(["mid.md", "old.md"]);
-    expect(file.created).toBe("2026-01-01T00:00:00+00:00");
+    expect(file.created).toBe("2026-01-01T00:00:00Z");
   });
 
   it("throws GraphError outside a git repo, surfacing git's stderr", async () => {
@@ -190,5 +190,17 @@ describe("collectGitHistory", () => {
       delete process.env.GIT_DIR;
       delete process.env.GIT_INDEX_FILE;
     }
+  });
+});
+
+describe("canonicalGitTime", () => {
+  it("spells a UTC offset as Z, whichever form git printed", () => {
+    expect(canonicalGitTime("2026-01-01T10:00:00+00:00")).toBe("2026-01-01T10:00:00Z");
+    expect(canonicalGitTime("2026-01-01T10:00:00-00:00")).toBe("2026-01-01T10:00:00Z");
+    expect(canonicalGitTime("2026-01-01T10:00:00Z")).toBe("2026-01-01T10:00:00Z");
+  });
+
+  it("leaves a non-zero offset as git wrote it", () => {
+    expect(canonicalGitTime("2026-01-01T10:00:00+02:00")).toBe("2026-01-01T10:00:00+02:00");
   });
 });

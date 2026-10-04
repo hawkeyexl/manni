@@ -30,6 +30,15 @@ export interface GitHistory {
   files: Map<string, GitFileHistory>;
 }
 
+/**
+ * Git versions print a UTC committer date from `%cI` as either `+00:00` or
+ * `Z`. Both name the same instant, so one spelling keeps the graph identical
+ * whichever git wrote it. Other offsets pass through unchanged.
+ */
+export function canonicalGitTime(time: string): string {
+  return time.replace(/[+-]00:00$/, "Z");
+}
+
 /** Record line marker: %x01 keeps commit headers unambiguous in the stream. */
 const RECORD = "\u0001";
 const STATUS_LINE = /^([AMDRC])\d*\t(.+)$/;
@@ -176,7 +185,8 @@ export async function collectGitHistory(
 
   for (const line of stdout.split("\n")) {
     if (line.startsWith(RECORD)) {
-      const [, author = "", time = ""] = line.slice(1).split("\t");
+      const [, author = "", rawTime = ""] = line.slice(1).split("\t");
+      const time = canonicalGitTime(rawTime);
       commitAuthor = author;
       commitTime = time;
       headTime ??= time;

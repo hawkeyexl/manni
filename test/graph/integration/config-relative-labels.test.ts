@@ -83,7 +83,7 @@ describe("collection pages are labelled relative to the config", () => {
     expect(fromRoot).toContain('"docs/a.md"');
     expect(fromRoot).not.toContain("../");
     // Git provenance reached the pages: the commit's date and author.
-    expect(fromRoot).toContain("2026-01-01T10:00:00+00:00");
+    expect(fromRoot).toContain("2026-01-01T10:00:00Z");
     expect(fromRoot).toContain("Test Author");
     expect(viaFlag).toBe(fromRoot);
     expect(viaDiscovery).toBe(fromRoot);
