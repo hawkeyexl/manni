@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "manni:stewardship:1.0.0-proposal.4",
   "title": "manni stewardship vocabulary (1.0.0-proposal.4)",
-  "description": "Is this page cared for: attribution, ownership, review, the document's own dates, and the anchors that make drift detectable. Every field records a fact a person asserts about the document, rather than one a tool reads off the file. `created` and `last-updated` are here on that line, and proposal.1 left them out on the other one. Git's timestamps answer a neighbouring question: when this path first appeared in this repo, and when any byte of it last moved. That parts company with the document's own history at every migration, split, squashed import, typo fix and bulk frontmatter sweep. It is the same reason `authors` sits here — git records who committed a change, not who wrote the prose. A published page carries no repo, so a stamped date travels with the document where a derived one cannot. The cost is the one proposal.1 named: a hand-typed `last-updated` goes stale quietly, and no JSON Schema can catch that. The review dates are records, not freshness gates: JSON Schema cannot compare a date to today, and deriving the due date from `last-reviewed` + `review-interval` belongs to tooling that can read a clock (any freshness grader reads `last-reviewed`). proposal.3's location marks all stand; what this revision adds is `x-manni-kg-output: false` on `owner`, `stakeholders` and `reviewed-by`. Those three name people, and a published graph — Turtle, JSON-LD, iiRDS, a search index — should not carry them. The mark is the field's own property rather than a rule inside a graph builder, for the reason `x-manni-location` is one: what a delivered artifact carries is decided where the field is defined. The two marks answer different questions, which is why this is not folded into the other — a field can be stored externally and still belong in the graph.",
+  "description": "Is this page cared for: attribution, ownership, review, the document's own dates, and the anchors that make drift detectable. Every field records a fact a person asserts about the document, rather than one a tool reads off the file. `created` and `last-updated` are here on that line, and proposal.1 left them out on the other one. Git's timestamps answer a neighbouring question: when this path first appeared in this repo, and when any byte of it last moved. That parts company with the document's own history at every migration, split, squashed import, typo fix and bulk frontmatter sweep. It is the same reason `authors` sits here — git records who committed a change, not who wrote the prose. A published page carries no repo, so a stamped date travels with the document where a derived one cannot. The cost is the one proposal.1 named: a hand-typed `last-updated` goes stale quietly, and no JSON Schema can catch that. The review dates are records, not freshness gates: JSON Schema cannot compare a date to today, and deriving the due date from `last-reviewed` + `review-interval` belongs to tooling that can read a clock (any freshness grader reads `last-reviewed`). proposal.3's location marks all stand; what this revision adds is `x-manni-graph-output: false` on `owner`, `stakeholders` and `reviewed-by`. Those three name people, and a published graph — Turtle, JSON-LD, iiRDS, a search index — should not carry them. The mark is the field's own property rather than a rule inside a graph builder, for the reason `x-manni-location` is one: what a delivered artifact carries is decided where the field is defined. The two marks answer different questions, which is why this is not folded into the other — a field can be stored externally and still belong in the graph.",
   "type": "object",
   "additionalProperties": true,
   "properties": {
@@ -28,19 +28,19 @@
       "$ref": "#/$defs/stringList",
       "description": "The person or team answerable for this page — the one required field of every docs-ownership system from Backstage to GitLab. A name, a handle, a chat channel, a team slug, or a list of them; write the spelling people can actually reach.",
       "x-manni-location": "external",
-      "x-manni-kg-output": false
+      "x-manni-graph-output": false
     },
     "stakeholders": {
       "$ref": "#/$defs/stringList",
       "description": "Who has a stake in this page being right: the feature's engineer, the product owner, the support lead who fields its tickets. The standing parties to consult before changing the page — where `reviewed-by` records who actually did the last pass. Page-level on purpose: the right stakeholders differ page by page, and project-wide ones belong in your project docs, not in every file's frontmatter.",
       "x-manni-location": "external",
-      "x-manni-kg-output": false
+      "x-manni-graph-output": false
     },
     "reviewed-by": {
       "$ref": "#/$defs/stringList",
       "description": "Who last reviewed the page. Named `reviewed-by` rather than `reviewers` because MyST already defines `reviewers` as scholarly person objects.",
       "x-manni-location": "external",
-      "x-manni-kg-output": false
+      "x-manni-graph-output": false
     },
     "created": {
       "$ref": "#/$defs/w3cdtf",

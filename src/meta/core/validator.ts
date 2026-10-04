@@ -50,7 +50,7 @@ import {
   type FieldLocation,
   type LocationPreference,
 } from "./location.js";
-import { KG_OUTPUT_KEYWORD } from "./kg-output.js";
+import { GRAPH_OUTPUT_KEYWORD } from "./graph-output.js";
 import { errorMessage } from "../../shared/errors.js";
 
 type Dialect = "2020" | "2019" | "draft7" | "draft4";
@@ -97,7 +97,7 @@ function buildAjv(
   if (dialect === "draft7") ajv.addMetaSchema(draft06MetaSchema);
   registerEncryptKeyword(ajv);
   registerLocationKeyword(ajv);
-  registerKgOutputKeyword(ajv);
+  registerGraphOutputKeyword(ajv);
   registerBuiltins(ajv, dialect);
   return ajv;
 }
@@ -204,15 +204,15 @@ function isLocationShapeError(err: unknown): boolean {
 }
 
 /**
- * Where `x-manni-kg-output` records what it says for each top-level key it is
- * evaluated at, while `kgOutputPreferences` is running: key name to the set of
+ * Where `x-manni-graph-output` records what it says for each top-level key it is
+ * evaluated at, while `graphOutputPreferences` is running: key name to the set of
  * values seen, so one schema saying both is detectable. `undefined` the rest of
  * the time, for the same reason and with the same safety as `markRecorder`.
  */
-let kgOutputRecorder: Map<string, Set<boolean>> | undefined;
+let graphOutputRecorder: Map<string, Set<boolean>> | undefined;
 
 /**
- * `x-manni-kg-output` (proposal 0051 §5), on every Ajv meta builds. Like
+ * `x-manni-graph-output` (proposal 0051 §5), on every Ajv meta builds. Like
  * `x-manni-location`, it never fails a value; it says where it was evaluated,
  * so a mark counts wherever Ajv's resolution takes the validator. Only a mark
  * evaluated at a top-level property is recorded; one nested inside `graph` is
@@ -220,9 +220,9 @@ let kgOutputRecorder: Map<string, Set<boolean>> | undefined;
  * compile time, and `compileUncached` turns Ajv's wording into the plan's
  * message.
  */
-function registerKgOutputKeyword(ajv: InstanceType<AjvCtor>): void {
+function registerGraphOutputKeyword(ajv: InstanceType<AjvCtor>): void {
   ajv.addKeyword({
-    keyword: KG_OUTPUT_KEYWORD,
+    keyword: GRAPH_OUTPUT_KEYWORD,
     metaSchema: { type: "boolean" },
     errors: false,
     validate: (
@@ -231,12 +231,12 @@ function registerKgOutputKeyword(ajv: InstanceType<AjvCtor>): void {
       _parent?: unknown,
       cxt?: { instancePath: string },
     ): boolean => {
-      if (kgOutputRecorder !== undefined && typeof schema === "boolean") {
+      if (graphOutputRecorder !== undefined && typeof schema === "boolean") {
         const key = topLevelKey(cxt?.instancePath ?? "");
         if (key !== undefined) {
-          const seen = kgOutputRecorder.get(key);
+          const seen = graphOutputRecorder.get(key);
           if (seen) seen.add(schema);
-          else kgOutputRecorder.set(key, new Set([schema]));
+          else graphOutputRecorder.set(key, new Set([schema]));
         }
       }
       return true;
@@ -245,8 +245,8 @@ function registerKgOutputKeyword(ajv: InstanceType<AjvCtor>): void {
 }
 
 /** Ajv's compile error for a non-boolean mark names the keyword. */
-function isKgOutputShapeError(err: unknown): boolean {
-  return err instanceof Error && err.message.includes(`"${KG_OUTPUT_KEYWORD}"`);
+function isGraphOutputShapeError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes(`"${GRAPH_OUTPUT_KEYWORD}"`);
 }
 
 /** Does this schema mark its own top-level `$schema` property external? */
@@ -598,9 +598,9 @@ export class Validator {
           `${ref}: "${LOCATION_KEYWORD}" must be "page" or "external".`,
         );
       }
-      if (isKgOutputShapeError(err)) {
+      if (isGraphOutputShapeError(err)) {
         throw new DocmetaError(
-          `${ref}: "${KG_OUTPUT_KEYWORD}" must be true or false.`,
+          `${ref}: "${GRAPH_OUTPUT_KEYWORD}" must be true or false.`,
         );
       }
       throw new DocmetaError(
@@ -710,7 +710,7 @@ export class Validator {
 
   /**
    * Whether each top-level key of `data` belongs in a published graph under
-   * `refs`, as its `x-manni-kg-output` mark says. A key no schema marks has no
+   * `refs`, as its `x-manni-graph-output` mark says. A key no schema marks has no
    * entry, which the caller reads as `true`: absent means harvested.
    *
    * A first pass with the recording keyword, as `locationPreferences` runs, so
@@ -725,7 +725,7 @@ export class Validator {
    * evaluates failing branches too, so neither value is that ref's answer and
    * an earlier ref's stands.
    */
-  async kgOutputPreferences(
+  async graphOutputPreferences(
     data: Record<string, unknown>,
     refs: string[],
   ): Promise<Map<string, boolean>> {
@@ -735,11 +735,11 @@ export class Validator {
     for (const ref of refs) {
       const fn = await this.compile(ref);
       const seen = new Map<string, Set<boolean>>();
-      kgOutputRecorder = seen;
+      graphOutputRecorder = seen;
       try {
         fn(subject);
       } finally {
-        kgOutputRecorder = undefined;
+        graphOutputRecorder = undefined;
       }
       for (const [key, values] of seen) {
         const [value, ...others] = [...values];

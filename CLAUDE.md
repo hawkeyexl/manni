@@ -6,7 +6,7 @@ Guidance for agents working in this repository.
 
 One npm package, `@hawkeyexl/manni`, and one bin, `manni`, with one subcommand per tool in the
 family. Today that is `manni meta`, the metadata tool, published as `docmeta`
-until 4.13.1. The other tools (docevals, lint, tracevals, kg) are folded in
+until 4.13.1. The other tools (docevals, lint, tracevals, graph) are folded in
 one at a time, each on its own branch, merged only when production-ready.
 Proposal 0033 is the record.
 
@@ -91,19 +91,19 @@ Key layers:
     and the output formats.
   - `src/docevals/cli.ts`: thin commander wrapper exported as `buildProgram()`
     and mounted by `src/cli.ts`. No entry point of its own.
-- `src/kg/`: the knowledge-graph tool, `manni kg build`, `check`, `fill`,
+- `src/graph/`: the knowledge-graph tool, `manni graph build`, `check`, `fill`,
   `query`, `stats`, `search`, `traverse`, `embed`, `export` and `init`
   (proposal 0051). It derives RDF from frontmatter, links, headings, code
   blocks and git history, and checks the result against SHACL shapes. Its own
-  `src/kg/CLAUDE.md` holds the tool's invariants.
-  - `src/kg/core/`: the harvest and derivation, the SHACL check, the graph
-    store, git history, and the `kg:` config loader.
-  - `src/kg/commands/`: the command cores, free of CLI/IO plumbing.
-  - `src/kg/runtime/` and `src/kg/embed/`: the two `platform: neutral` entry
-    points published as `@hawkeyexl/manni/kg/runtime` and `/kg/embed`. They run
+  `src/graph/CLAUDE.md` holds the tool's invariants.
+  - `src/graph/core/`: the harvest and derivation, the SHACL check, the graph
+    store, git history, and the `graph:` config loader.
+  - `src/graph/commands/`: the command cores, free of CLI/IO plumbing.
+  - `src/graph/runtime/` and `src/graph/embed/`: the two `platform: neutral` entry
+    points published as `@hawkeyexl/manni/graph/runtime` and `/graph/embed`. They run
     in a browser, so a `node:` import reaching either is a bug the
     bundle-purity test catches.
-  - `src/kg/cli.ts`: thin commander wrapper exported as `buildProgram()` and
+  - `src/graph/cli.ts`: thin commander wrapper exported as `buildProgram()` and
     mounted by `src/cli.ts`. No entry point of its own.
 - `src/key/`: the family key's domain, `manni key set` and `manni key rotate`
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and

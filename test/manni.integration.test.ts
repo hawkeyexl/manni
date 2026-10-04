@@ -54,7 +54,7 @@ describe("manni (built bin)", () => {
     }
   }, 180000);
 
-  it("lists meta, lint, cite, key, docevals and kg as subcommands", () => {
+  it("lists meta, lint, cite, key, docevals and graph as subcommands", () => {
     const r = run(manni, ["--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni /m);
@@ -63,22 +63,22 @@ describe("manni (built bin)", () => {
     expect(r.stdout).toMatch(/^\s+cite\b/m);
     expect(r.stdout).toMatch(/^\s+key\b/m);
     expect(r.stdout).toMatch(/^\s+docevals\b/m);
-    expect(r.stdout).toMatch(/^\s+kg\b/m);
+    expect(r.stdout).toMatch(/^\s+graph\b/m);
   });
 
-  it("runs kg under its name, reading its own key of the family config", () => {
-    expect(run(manni, ["kg", "--help"]).stdout).toMatch(/^Usage: manni kg /m);
-    expect(run(manni, ["kg", "--version"]).stdout.trim()).toBe(version);
+  it("runs graph under its name, reading its own key of the family config", () => {
+    expect(run(manni, ["graph", "--help"]).stdout).toMatch(/^Usage: manni graph /m);
+    expect(run(manni, ["graph", "--version"]).stdout.trim()).toBe(version);
     // The fixture corpus is named by path, not declared as a collection: every
-    // tool reads every collection, so a `kg-fixtures` collection would hand
+    // tool reads every collection, so a `graph-fixtures` collection would hand
     // `manni meta validate` and `manni cite check` a corpus of deliberately
     // broken fixtures (0051 known limit 1). Everything else — the base IRI,
-    // the routes — comes from the repository's own `kg:` section.
-    const out = mkdtempSync(join(tmpdir(), "manni-umbrella-kg-"));
+    // the routes — comes from the repository's own `graph:` section.
+    const out = mkdtempSync(join(tmpdir(), "manni-umbrella-graph-"));
     const r = run(manni, [
-      "kg",
+      "graph",
       "build",
-      "test/kg/fixtures/corpus/docs",
+      "test/graph/fixtures/corpus/docs",
       "--out",
       join(out, "graph.ttl"),
     ]);
@@ -86,28 +86,28 @@ describe("manni (built bin)", () => {
     expect(r.stdout).toMatch(/8 docs/);
   });
 
-  it("prefixes kg diagnostics with the bin that ran", () => {
-    const r = run(manni, ["kg", "build", "-c", "does-not-exist.yaml"]);
+  it("prefixes graph diagnostics with the bin that ran", () => {
+    const r = run(manni, ["graph", "build", "-c", "does-not-exist.yaml"]);
     expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/^manni: Config file not found/);
   });
 
-  it("gives kg the family's usage contract: bare and unknown are exit 2", () => {
+  it("gives graph the family's usage contract: bare and unknown are exit 2", () => {
     // 0034's grammar, and 0051 §2's plumbing: a domain with verbs has no
     // default subcommand, and a usage error is operational (2), never a
     // finding (1). Without the domain's own `exitOverride()` commander
     // exits 1 here, which reads as "there were findings".
-    const bare = run(manni, ["kg"]);
+    const bare = run(manni, ["graph"]);
     expect(bare.status).toBe(2);
     expect(bare.stdout).toBe("");
-    expect(bare.stderr).toMatch(/^Usage: manni kg /m);
+    expect(bare.stderr).toMatch(/^Usage: manni graph /m);
     expect(bare.stderr).toMatch(/^\s+build\b/m);
 
-    const unknown = run(manni, ["kg", "check", "--nope"]);
+    const unknown = run(manni, ["graph", "check", "--nope"]);
     expect(unknown.status).toBe(2);
     expect(unknown.stderr).toContain("unknown option");
 
-    const missing = run(manni, ["kg", "export"]);
+    const missing = run(manni, ["graph", "export"]);
     expect(missing.status).toBe(2);
     expect(missing.stderr).toContain("missing required argument");
   });

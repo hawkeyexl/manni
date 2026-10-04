@@ -83,7 +83,7 @@ export default tseslint.config(
       // not covered by this repo's tsconfig and must not be by its lint either.
       "docs/",
       ".doc-detective/",
-      // Scratch output: the kg packaged test extracts the `npm pack` tarball
+      // Scratch output: the graph packaged test extracts the `npm pack` tarball
       // here, and a built bundle is not source.
       ".tmp/",
     ],
@@ -110,7 +110,7 @@ export default tseslint.config(
     // change to a sibling, and would let a sibling depend on something the
     // package never promised. `docevals` is named so the rule is already in
     // place when that branch merges; the glob is harmless while it is absent.
-    files: ["src/{cite,docevals,key,kg,lint}/**/*.ts"],
+    files: ["src/{cite,docevals,key,graph,lint}/**/*.ts"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -177,7 +177,7 @@ export default tseslint.config(
   },
 
   {
-    // One file, one rule, one reason — what is left of the block kg came in
+    // One file, one rule, one reason — what is left of the block the graph tool came in
     // with. moose-kg linted at typescript-eslint's plain `recommended`, so the
     // import carried a backlog at `strictTypeChecked`: 184 non-null
     // assertions, plus `any` at the Ajv and transformers.js boundaries, plus
@@ -191,7 +191,7 @@ export default tseslint.config(
     // with TS2578 ("unused directive") for everyone who follows the README and
     // installs it, which is exactly how this was found. `@ts-ignore` with a
     // description is the only spelling that is correct in both worlds.
-    files: ["src/kg/embed/local.ts"],
+    files: ["src/graph/embed/local.ts"],
     rules: {
       "@typescript-eslint/ban-ts-comment": [
         "error",

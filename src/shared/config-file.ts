@@ -3,7 +3,7 @@
  *
  * One file per repository, `manni.config.yaml`, with one top-level key per
  * tool: `meta:` for the metadata tool, `docevals:`, `tracevals:`, `lint:`,
- * `kg:` as each lands. A tool reads its own key and leaves its siblings alone,
+ * `graph:` as each lands. A tool reads its own key and leaves its siblings alone,
  * so adding a tool never invalidates a config that predates it.
  *
  * This module only finds the file and hands a tool its slice. What the slice

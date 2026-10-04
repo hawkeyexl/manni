@@ -2,8 +2,8 @@
 * text=auto eol=lf
 *.png binary
 
-# CRLF on purpose, and exempt from the rule above: kg's corpus carries one
+# CRLF on purpose, and exempt from the rule above: graph's corpus carries one
 # document with Windows line endings so the parser, the content hash and the
 # iiRDS rendition are exercised against bytes a Windows author would commit.
 # The last matching rule wins, so this must stay below the `*` line.
-test/kg/fixtures/corpus/docs/windows-notes.md -text
+test/graph/fixtures/corpus/docs/windows-notes.md -text

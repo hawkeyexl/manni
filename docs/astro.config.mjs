@@ -244,62 +244,52 @@ export default defineConfig({
             },
           ],
         },
-        // Each IN_DEV group (graph, tracevals) is a tool still on its
-        // `tool/<name>` branch, so main carries only an overview page. The
-        // branch brings the rest of the section, and the badge, when it
-        // merges.
+        // The knowledge-graph tool. Section order and labels follow its content
+        // set in docs/content-strategy/information-architecture.md (`graph/`).
         {
           label: "graph",
           collapsed: true,
-          badge: IN_DEV,
-          items: [{ label: "Overview", link: "/graph/" }],
-        },
-        // The knowledge-graph tool. Section order and labels follow its content
-        // set in docs/content-strategy/information-architecture.md (`kg/`).
-        {
-          label: "kg",
-          collapsed: true,
           items: [
-            { label: "Overview", link: "/kg/" },
+            { label: "Overview", link: "/graph/" },
             {
               label: "Get started",
               collapsed: true,
-              items: [{ autogenerate: { directory: "kg/get-started" } }],
+              items: [{ autogenerate: { directory: "graph/get-started" } }],
             },
             {
               label: "Explore the graph",
               collapsed: true,
-              items: [{ autogenerate: { directory: "kg/explore" } }],
+              items: [{ autogenerate: { directory: "graph/explore" } }],
             },
             {
               label: "Fill the vocabulary",
               collapsed: true,
-              items: [{ autogenerate: { directory: "kg/fill" } }],
+              items: [{ autogenerate: { directory: "graph/fill" } }],
             },
             {
               label: "Run it in CI",
               collapsed: true,
-              items: [{ autogenerate: { directory: "kg/ci" } }],
+              items: [{ autogenerate: { directory: "graph/ci" } }],
             },
             {
               label: "Publish the graph",
               collapsed: true,
-              items: [{ autogenerate: { directory: "kg/publish" } }],
+              items: [{ autogenerate: { directory: "graph/publish" } }],
             },
             {
               label: "Govern the graph",
               collapsed: true,
-              items: [{ autogenerate: { directory: "kg/govern" } }],
+              items: [{ autogenerate: { directory: "graph/govern" } }],
             },
             {
               label: "Fix a failing check",
               collapsed: true,
-              items: [{ autogenerate: { directory: "kg/fix" } }],
+              items: [{ autogenerate: { directory: "graph/fix" } }],
             },
             {
               label: "Reference",
               collapsed: true,
-              items: [{ autogenerate: { directory: "kg/reference" } }],
+              items: [{ autogenerate: { directory: "graph/reference" } }],
             },
           ],
         },
@@ -438,6 +428,9 @@ export default defineConfig({
             },
           ],
         },
+        // An IN_DEV group is a tool still on its `tool/<name>` branch, so main
+        // carries only an overview page. The branch brings the rest of the
+        // section, and the badge, when it merges.
         {
           label: "tracevals",
           collapsed: true,

@@ -184,7 +184,7 @@ export type ContentNode =
 /**
  * One section of a document, demarcated by a heading.
  *
- * `slug`/`title`/`level`/`order`/`parentSlug` intentionally match manni kg's
+ * `slug`/`title`/`level`/`order`/`parentSlug` intentionally match manni graph's
  * `Section` (dockg/src/types.ts), so its graph can be built from this tree.
  *
  * `children` is in document order and is the single source of truth: the

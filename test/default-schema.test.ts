@@ -653,7 +653,7 @@ describe("the six house vocabularies", () => {
 
   it("holds every string core claims non-empty", async () => {
     // The weak-floor exception, extended past the required pair: an empty
-    // `type` reaches the kg type derivation and template selection as a falsy
+    // `type` reaches the graph type derivation and template selection as a falsy
     // key instead of failing loudly here.
     for (const yaml of [
       'title: T\ndescription: D\ntype: ""',

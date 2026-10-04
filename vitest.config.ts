@@ -3,11 +3,11 @@ import { configDefaults, defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     include: ["test/**/*.test.ts"],
-    // The kg tool's real-model tests need network and model weights, which
-    // this suite must never do (kg ADR 01025). Extend, not replace: a bare
+    // The graph tool's real-model tests need network and model weights, which
+    // this suite must never do (graph ADR 01025). Extend, not replace: a bare
     // list drops vitest's defaults (node_modules, dist, .git), so anything
     // vendored under test/ would start being collected.
-    exclude: [...configDefaults.exclude, "test/kg/real/**"],
+    exclude: [...configDefaults.exclude, "test/graph/real/**"],
     environment: "node",
     // vitest's default is 5000ms, and this suite does not fit inside it on a
     // Windows runner. Much of `cli.integration.test.ts` spawns the built bin
@@ -20,7 +20,7 @@ export default defineConfig({
     // run, a different one on the next, all of them passing everywhere else.
     // 20s was chosen to sit well clear of that ceiling while still failing a
     // genuinely hung test in a bounded time, rather than holding a job open
-    // for the runner's own timeout. kg raises it to 30s for the same reason
+    // for the runner's own timeout. graph raises it to 30s for the same reason
     // one notch further out: a determinism gate builds the same corpus twice
     // by definition, which is two `dist/cli.js` spawns inside one test.
     testTimeout: 30_000,
