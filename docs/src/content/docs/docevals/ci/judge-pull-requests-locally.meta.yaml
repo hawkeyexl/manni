@@ -5,6 +5,9 @@ docs/src/content/docs/docevals/ci/judge-pull-requests-locally.mdx:
       assertion: "A reader can add a GitHub Actions job that judges a pull request's changed pages with a local model, where a newer push cancels the running judge and keeps its verdicts."
       type: capability
       grader: ai
+      examples:
+        pass: "Gives the workflow, keys its concurrency group on the pull request with cancel-in-progress, and saves the verdict cache with if: always() so the next run restores it."
+        fail: "Describes judging pull requests but never shows how a newer push cancels the running job, or how the verdicts it finished survive the cancel."
   owner:
     - "@hawkeyexl"
   provenance:
