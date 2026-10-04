@@ -516,8 +516,10 @@ npm run docs:check-docevals  # the evals tool over the whole site, deterministic
 node dist/cli.js docevals run --ai-only  # the site's judged evals, on this machine
                         # with llama-cpp and granite-4.1-3b-q2 from the root
                         # config. Local only: CI never runs it, because a CPU
-                        # runner takes minutes per call. About 20s a page on a
-                        # GPU. Inference runs in a worker process, and a GPU
+                        # runner takes minutes per judge call and its verdicts
+                        # vary between runs. About 20s a page on a GPU. Add
+                        # --since origin/<base> to judge only what a branch
+                        # changed. Inference runs in a worker process, and a GPU
                         # backend that crashes falls back to the next one
                         # (CUDA, Vulkan, CPU) with one warning. Setting
                         # NODE_LLAMA_CPP_GPU pins a backend and turns that

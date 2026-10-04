@@ -393,6 +393,67 @@ describe("--since: the config lives in a subdirectory", () => {
   });
 });
 
+// A corpus that keeps its evals in manifests changes an eval by changing the
+// manifest, and leaves the page file alone. Keying on the page file alone
+// scopes that change out and judges nothing, which is the silent green this
+// flag must never produce.
+describe("--since: a page whose eval manifest changed", () => {
+  const MANIFESTS = resolve(import.meta.dirname, "../fixtures/manifest");
+  const corpus = (name: string): string => resolve(MANIFESTS, name);
+
+  it("selects the page when only its per-page manifest changed", async () => {
+    const cwd = corpus("per-page");
+    const report = await run(cwd, ["docs/install.evals.yaml"]).report;
+
+    expect(report.evalResults.map((r) => r.file)).toEqual(["docs/install.md"]);
+    expect(report.since?.pagesSelected).toBe(1);
+  });
+
+  it("selects the page once when both its file and its manifest changed", async () => {
+    const cwd = corpus("per-page");
+    const report = await run(cwd, ["docs/install.md", "docs/install.evals.yaml"]).report;
+
+    expect(report.evalResults.map((r) => r.file)).toEqual(["docs/install.md"]);
+    expect(report.since?.pagesSelected).toBe(1);
+  });
+
+  it("selects the page when only its keyless sidecar changed", async () => {
+    const cwd = corpus("keyless");
+    const report = await run(cwd, ["docs/install.meta.yaml"]).report;
+
+    expect(report.evalResults.map((r) => r.file)).toEqual(["docs/install.md"]);
+    expect(report.since?.pagesSelected).toBe(1);
+  });
+
+  it("selects every page a changed collection manifest supplied eval keys to", async () => {
+    const cwd = corpus("external");
+    const report = await run(cwd, ["site.metadata.yaml"]).report;
+
+    // install.md takes evals from it, dated.md a suite, skipped.md a skip.
+    expect(report.since?.pagesSelected).toBe(3);
+    expect(new Set(report.evalResults.map((r) => r.file))).toEqual(
+      new Set(["docs/dated.md", "docs/install.md", "docs/skipped.md"]),
+    );
+  });
+
+  it("selects nothing when the changed file supplied no page", async () => {
+    const cwd = corpus("external");
+    const report = await run(cwd, ["README.md", "docs/other.metadata.yaml"]).report;
+
+    expect(report.evalResults).toHaveLength(0);
+    expect(report.since?.pagesSelected).toBe(0);
+    expect(report.exitCode).toBe(0);
+  });
+
+  it("still selects a page whose own file changed", async () => {
+    const cwd = corpus("external");
+    const report = await run(cwd, ["docs/install.md"]).report;
+
+    expect(report.evalResults.map((r) => r.file)).toEqual(["docs/install.md"]);
+    expect(report.since?.pagesSelected).toBe(1);
+  });
+});
+
 describe("--since: suite enforcement", () => {
   // The ADR 01018 hazard, reached by a different route: `gamma.md` carries
   // only the passing eval, so a scoped run computes 1/1 = 100% against a

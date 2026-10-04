@@ -29,7 +29,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-01
+last-updated: 2026-10-04
 tags:
   - cli
   - command-reference
@@ -787,7 +787,9 @@ which provider and model it used, in both output formats.
 
   Set `INFERENCE_NO_AUTO_INSTALL=1` to refuse the binding install, or pass an
   explicit `--provider` to avoid the local model entirely. In CI, pin
-  `--provider` (or set a key) so a build agent never pays for this.
+  `--provider` (or set a key) so a build agent never pays for this. A local
+  model on a CPU runner is also slow, so run `--local` in CI only on a runner
+  with a GPU. See [Local models and CI](/manni/docevals/ci/local-models/).
 </Aside>
 
 ### Arguments

@@ -31,7 +31,7 @@ sample-questions:
 graph:
   label: Run fill under a data-egress policy
   type: concept
-last-updated: 2026-09-29
+last-updated: 2026-10-04
 tags:
   - security
   - privacy
@@ -223,6 +223,8 @@ providers:
 ```
 
 A relative `modelsDir` resolves from the config file's directory. Set `INFERENCE_NO_AUTO_INSTALL=1` to refuse the binding install if a native install needs approval in your environment. On a CI runner, either pin a provider or expect that download on every fresh agent.
+
+The download is not the only cost in CI. A local model on a CPU runner is slow. Run `--local` in CI only on a runner with a GPU. [Local models and CI](/manni/docevals/ci/local-models/) has the measurements, taken with the docevals judge on the same provider.
 
 ## Bounding a large run
 

@@ -2,7 +2,7 @@
 title: CLI reference
 description: Every manni docevals command, argument, and flag, with the exit code each produces.
 type: reference
-last-updated: 2026-10-02
+last-updated: 2026-10-04
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -115,7 +115,7 @@ manni docevals run [paths...] [options]
 | `--chunk-chars` | `<n>` | config `judge.chunkChars` | Characters of page per judge call. A longer page is read in parts and judged once against the collected evidence. The config default is 12000. |
 | `--eval` | `<name>` | n/a | Run only this eval. Repeat the flag for more than one (`--eval a --eval b`). Names are **not** space-separated, because a variadic flag would swallow the following glob. **Suite targets are not evaluated while a filter is active**; see below. A name that matches nothing is a usage error: **exit 2**. |
 | `--suite` | `<name>` | n/a | Run only the evals that report under the named suite. Same suspension of suite targets. A suite the config does not define is **exit 2**, with the defined names in the message. |
-| `--since` | `<ref>` | n/a | Evaluate only pages that changed between this git ref and `HEAD`. Suite targets are suspended **when the scope leaves pages out**. Nothing changed is **exit 0**, not an error; see below. |
+| `--since` | `<ref>` | n/a | Evaluate only pages whose file or eval manifest changed between this git ref and `HEAD`. Suite targets are suspended **when the scope leaves pages out**. Nothing changed is **exit 0**, not an error; see below. |
 | `--max-turns` | `<n>` | config `judge.maxTurns` | Stop judging after this many uncached **ensemble runs**. One ai eval spends `judge.ensembleRuns` turns; a cached ensemble spends none. A run may make a second provider call when the first response fails schema validation. This is therefore a floor on API calls rather than an exact count. Unbounded by default. |
 | `--baseline` | `[path]` | n/a | Fail only on findings a recorded baseline does not already hold. With no path, the configured `baseline:`, then `.manni-docevals-baseline.json`. |
 | `--no-baseline` | n/a | off | Ignore the configured `baseline:` for this run, so the full backlog reports again. |
@@ -197,6 +197,14 @@ and the `partial` field in
 
 `--since <ref>` grades only the pages that differ between `<ref>` and `HEAD`,
 so a job on a pull request does not re-judge a corpus nobody touched.
+
+A page differs when its own file changed, or when a manifest that supplies
+its `evals`, `eval-suite` or `eval-skip` changed. That covers a page's own
+sidecar, such as `install.meta.yaml`, and a collection's shared manifest. An
+edit to one eval's assertion therefore grades the page it belongs to. Any
+change to such a manifest counts, including one to a key that is not an eval
+key. A changed collection manifest selects every page it supplies eval keys
+to.
 
 ```console
 $ manni docevals run --since origin/main --format github

@@ -100,31 +100,34 @@ docs/src/content/docs/docevals/judge/choose-a-provider.mdx:
       lines: 138-141
       integrity: sha256-3295cf9accb3d151e9bbfed504f2e57532f85813d4f944cae81fc9a5c1db7e1d
     - generated-by: Claude Opus 5
-      lines: 143-182
-      integrity: sha256-c620f8db41b08efe901d25f44ee7b5f213201f7b93c231bf995e8bd2e79d8a59
+      lines: 143-180
+      integrity: sha256-3468c2ff4beb64f880702018336a595cc65795e3b8d76d9ff1d301d22be8424f
+    - generated-by: Claude Opus 5
+      lines: 188
+      integrity: sha256-575fd4ce17b280da8c9b415ebbc82552d9f8de646f75dd57135aefc165cb14a9
     - generated-by: Claude Fable 5.1
-      lines: 184
+      lines: 190
       integrity: sha256-8f8e0b1e2de94ab6346f8c33cb1a442a1b6209fe8a34e5a3a38d2b2209a84fc6
     - generated-by: Claude Opus 5
-      lines: 185-187
+      lines: 191-193
       integrity: sha256-31b40e9fdfba2142053f5df4d95bd1dd6f59f5479d3329a007632bd16ad94bc1
     - generated-by: Claude Fable 5.1
-      lines: 188
+      lines: 194
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5
-      lines: 190-199
+      lines: 196-205
       integrity: sha256-29bfcaa50b63a106cc5248c3eb9868d8b4cb954550fd6490ec699146036289e9
     - generated-by: Claude Fable 5.1
-      lines: 201-217
+      lines: 207-223
       integrity: sha256-410e7ec2e0b5f8206814ae260400c737b49e1bbbce21949580ef8374042bad66
     - generated-by: Claude Opus 5
-      lines: 219-221
+      lines: 225-227
       integrity: sha256-afbe6c98af7c7c6fdc14b829da99cd4b9215f1b587c78f1f43533b7cf06edadc
     - generated-by: Claude Fable 5.1
-      lines: 223-229
+      lines: 229-235
       integrity: sha256-b088739039a46ed9805c225f05364005fa59afdfe25feb6c17fdab6b12ca71bb
     - generated-by: Claude Fable 5.1
-      lines: 234-236
+      lines: 240-242
       integrity: sha256-bce93d683aeab63cde3d531a6882988e5df66d4ec985dd8632d1232c22e91318
   owner:
     - "@hawkeyexl"

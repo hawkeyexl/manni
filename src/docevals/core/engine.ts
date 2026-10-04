@@ -470,6 +470,11 @@ export function applySelection(
 /**
  * Narrow each plan to the pages that changed, in place (ADR 01040).
  *
+ * A page changed when its own file did, or when a manifest that supplied one
+ * of its eval keys did. A corpus that keeps its evals in manifests edits an
+ * eval without touching the page, and keying on the page file alone would
+ * scope that edit out and grade nothing.
+ *
  * An unchanged page keeps no eval. Every grader grades one page at a time or
  * one group of pages per call, so dropping a page's targets shrinks the check
  * rather than changing what it means. An eval naming an unregistered grader
@@ -486,7 +491,11 @@ export function applySinceScope(
 ): { pagesSelected: number } {
   let pagesSelected = 0;
   for (const plan of plans) {
-    if (changed.has(changedKey(plan.page.absPath))) {
+    // `external` is absent when the run loaded no manifest at all
+    // (`withExternalMetadata` returns such pages untouched). Then only the
+    // page's own file can select it.
+    const files = [plan.page.absPath, ...(plan.page.external?.evalManifests ?? [])];
+    if (files.some((f) => changed.has(changedKey(f)))) {
       pagesSelected += 1;
       continue;
     }

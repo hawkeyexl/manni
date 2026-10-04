@@ -2,7 +2,7 @@
 title: Choose a provider
 description: Four ways to reach a judge, including ones that need no API key and ones that keep pages on your own infrastructure.
 type: how-to
-last-updated: 2026-10-02
+last-updated: 2026-10-04
 ---
 
 Four providers. The differences that matter are where your page content goes and what credential CI
@@ -184,6 +184,12 @@ The runner still needs `node-llama-cpp` and the weights, as
 [`llama-cpp`](#llama-cpp-keeps-everything-on-the-machine) describes. Point
 `providers.llama-cpp.modelsDir` at a directory your CI cache restores, and a fresh job skips the
 download.
+
+:::caution[Use a runner with a GPU]
+On a CPU runner, a local judge takes minutes per page, and its verdicts vary between runs. Run
+`--local` in CI only on a runner with a GPU. [Local models and CI](/manni/docevals/ci/local-models/)
+has the measurements and what to run instead.
+:::
 
 ## Pin the model in a gate
 

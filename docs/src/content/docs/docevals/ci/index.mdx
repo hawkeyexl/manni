@@ -2,7 +2,7 @@
 title: Run it in CI
 description: Add the eval gate to GitHub Actions, with inline annotations and a bounded amount of model work.
 type: how-to
-last-updated: 2026-10-02
+last-updated: 2026-10-04
 ---
 
 A gate that is not in CI is a linter someone runs sometimes. This page is the GitHub Actions recipe;
@@ -59,6 +59,9 @@ assertion legitimately invalidates verdicts. See
 [Caching and turn budgets](/manni/docevals/ci/cost-and-caching/).
 
 **`paths:`** keeps the job off pull requests that cannot affect the docs.
+
+A local `llama-cpp` judge belongs in CI only on a runner with a GPU. See
+[Local models and CI](/manni/docevals/ci/local-models/).
 
 ## Post the summary
 
