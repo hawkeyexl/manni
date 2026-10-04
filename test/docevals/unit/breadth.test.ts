@@ -82,6 +82,58 @@ describe("reporters", () => {
     );
     expect(gh).toContain("## manni docevals results");
   });
+
+  it("github annotates an errored eval at the entry that declares it", () => {
+    const errored: EngineReport = {
+      ...report,
+      evalResults: [
+        {
+          evalName: "build-passes",
+          type: "regression",
+          grader: "command",
+          file: "docs/a.md",
+          location: { file: "docs/a.meta.yaml", line: 7 },
+          outcome: "error",
+          skipReason: "command exited before producing output",
+          durationMs: 1,
+        } satisfies EvalResult,
+      ],
+    };
+    expect(renderGithub(errored)).toContain(
+      "::error file=docs/a.meta.yaml,line=7,title=manni docevals%3A build-passes::command exited before producing output",
+    );
+  });
+
+  it("github does not repeat an errored eval whose findings already say why", () => {
+    const withFinding: EngineReport = {
+      ...report,
+      evalResults: [
+        {
+          evalName: "lints-clean",
+          type: "regression",
+          grader: "tool:vale",
+          file: "docs/a.md",
+          outcome: "error",
+          skipReason: "vale could not run",
+          findings: [
+            {
+              evalName: "lints-clean",
+              file: "docs/a.md",
+              ruleId: "vale/unavailable",
+              message: "vale could not run",
+              severity: "error",
+              diagnostic: true,
+            },
+          ],
+          durationMs: 1,
+        } satisfies EvalResult,
+      ],
+    };
+    const annotations = renderGithub(withFinding)
+      .split("\n")
+      .filter((l) => l.startsWith("::error"));
+    expect(annotations).toHaveLength(1);
+  });
 });
 
 describe("calibrate", () => {

@@ -53,19 +53,19 @@ docs/src/content/docs/docevals/ci/exit-codes-and-annotations.mdx:
       lines: 130
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5.5
-      lines: 132-133
-      integrity: sha256-9cfe77b96e9b7699f9d2501c38408006465ec65dc63be5ec63e73dd9656f27da
+      lines: 132-134
+      integrity: sha256-dd4f1892983b85dce339435aff71960f16cf4c2db3f701f268ba70413cdbbc18
     - generated-by: Claude Fable 5.1
-      lines: 135-141
+      lines: 136-142
       integrity: sha256-9ed252249df11cc69ab593dfc790c4b16ffecaff1d76da2bbb7060c9850f8191
     - generated-by: Claude Fable 5.1
-      lines: 143-155
+      lines: 144-156
       integrity: sha256-59c51e60b8ef4129c0929b0d8252b4cd88cd2df9a49f32abc30f7c1b633c7fdf
     - generated-by: Claude Fable 5.1
-      lines: 157-177
+      lines: 158-178
       integrity: sha256-2bc4cc9c78e4587ee5edf830f38db4ca2db2b7760cb1507d26de03fe141f6243
     - generated-by: Claude Fable 5.1
-      lines: 183
+      lines: 184
       integrity: sha256-30b7ad4d273ef165c204160bda42503f671a85fece8f8d0690a41ccc651ba603
   owner:
     - "@hawkeyexl"

@@ -47,6 +47,15 @@ export function renderGithub(report: EngineReport): string {
         )}`,
       );
     }
+    // An errored eval with no findings has nothing above to say it ran.
+    // Left out, it shows only in the summary table, which a collapsed step
+    // hides. SARIF reports it the same way; one with findings already did.
+    if (r.outcome === "error" && (r.findings ?? []).length === 0) {
+      const props = [...entryProps, `title=${escapeProperty(`manni docevals: ${r.evalName}`)}`]
+        .filter(Boolean)
+        .join(",");
+      lines.push(`::error ${props}::${escapeData(r.skipReason ?? "eval errored")}`);
+    }
   }
   for (const p of report.problems) {
     const level = p.level === "error" ? "error" : "warning";
