@@ -22,7 +22,7 @@ Project](https://www.thegooddocsproject.dev/template), and the [Seven-Action
 model](https://passo.uno/seven-action-model/). They also cover the front matter
 contracts of site generators such as
 [Docusaurus](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter)
-3.10, Hugo, Jekyll, and MkDocs Material. Twenty-two are manni's own metadata
+3.10, Hugo, Jekyll, and MkDocs Material. Twenty-four are manni's own metadata
 vocabularies and their strict overlays. Run `manni meta schemas` for the full
 list. It follows [clig.dev](https://clig.dev) conventions and returns a nonzero
 exit code (plus optional GitHub annotations) when validation fails.

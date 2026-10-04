@@ -1,26 +1,27 @@
 ---
 title: manni artifact-evals vocabulary
-description: "The manni:artifact-evals:1.0.0 schema, assertions about the agent sessions that use a skill or agent definition, under the artifact's metadata block."
+description: "The manni:artifact-evals:1.1.0 schema, assertions about the agent sessions that use a skill or agent definition, under the artifact's metadata block."
 sidebar:
-  label: "manni:artifact-evals:1.0.0"
+  label: "manni:artifact-evals:1.1.0"
 type: reference
 id: meta-reference-schemas-manni-artifact-evals
-keywords: ["artifact-evals", "manni:artifact-evals:1.0.0", "graders", "target", "strict overlay"]
+keywords: ["artifact-evals", "manni:artifact-evals:1.1.0", "manni:artifact-evals:1.0.0", "graders", "tool-order", "target", "strict overlay"]
 language: en
 audiences: ["schema-authors"]
-intent: "Write evals about the agent sessions that use a skill or agent definition, with manni:artifact-evals:1.0.0."
+intent: "Write evals about the agent sessions that use a skill or agent definition, with manni:artifact-evals:1.1.0."
 lifecycle: published
 applies-to: ["domain:meta"]
 concepts: ["schema", "frontmatter", "JSON Pointer", "override"]
 sample-questions:
-  - "What does manni:artifact-evals:1.0.0 describe?"
+  - "What does manni:artifact-evals:1.1.0 describe?"
+  - "What changed between artifact-evals 1.0.0 and 1.1.0?"
   - "Which graders can an artifact eval use?"
   - "What does the artifact-evals strict overlay narrow?"
 graph:
   label: "manni artifact-evals vocabulary"
   type: reference
 last-updated: 2026-09-27
-resource: https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.0.0.json
+resource: https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.1.0.json
 tags:
   - schema
   - validation
@@ -40,9 +41,9 @@ related-pages:
 risks: read-only
 ---
 
-**Built-in id:** `manni:artifact-evals:1.0.0`
+**Built-in id:** `manni:artifact-evals:1.1.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.0.0.json`.
+Published at `https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.1.0.json`.
 A `$schema` that names this URL resolves to the bundled copy, with no network
 call.
 
@@ -73,11 +74,11 @@ meta:
     - collection: skills
       schemas:
         - anthropic:claude-skill:2.1
-        - manni:artifact-evals:1.0.0
+        - manni:artifact-evals:1.1.0
     - collection: agents
       schemas:
         - anthropic:claude-subagent:2.1
-        - manni:artifact-evals:1.0.0
+        - manni:artifact-evals:1.1.0
 ```
 
 The host schema owns the top level, and artifact-evals owns what it adds
@@ -148,8 +149,8 @@ The grader list is open. These are the recommended values:
 - `ai`, the default, a model or an agent chosen with `provider`
 - `human`, a review queue
 - `command`, an executable run over the trace
-- `tool-usage`, `skill-invoked`, `file-access`, `turn-count`, `cost`, `regex`,
-  and `json-output`, the deterministic session graders
+- `tool-usage`, `tool-order`, `skill-invoked`, `file-access`, `turn-count`,
+  `cost`, `regex`, and `json-output`, the deterministic session graders
 - `tool:<kebab>`, the page side's spelling, so one grader name works in both
   vocabularies
 
@@ -190,6 +191,10 @@ metadata:
       assertion: The session read at least one source file before editing.
       grader: tool-usage
       options: { tool: Read, expect: used }
+    - id: read-before-write
+      assertion: The session read a source file before it wrote one.
+      grader: tool-order
+      options: { before: Read, after: Write, afterInputMatch: "src/" }
     - id: honored-tdd
       assertion: The session wrote a failing test before the fix.
       type: capability
@@ -225,11 +230,11 @@ metadata:
 ```
 
 ```text
-$ manni meta validate SKILL.md --no-config -s anthropic:claude-skill:2.1 -s manni:artifact-evals:1.0.0
+$ manni meta validate SKILL.md --no-config -s anthropic:claude-skill:2.1 -s manni:artifact-evals:1.1.0
 ✗ SKILL.md
-    /metadata/evals/0  must have required property 'id'  (line 6)  [manni:artifact-evals:1.0.0]
-    /metadata/evals/0  must match "else" schema  (line 6)  [manni:artifact-evals:1.0.0]
-    /metadata  warning "metadata" is stored in the page; manni:artifact-evals:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+    /metadata/evals/0  must have required property 'id'  (line 6)  [manni:artifact-evals:1.1.0]
+    /metadata/evals/0  must match "else" schema  (line 6)  [manni:artifact-evals:1.1.0]
+    /metadata  warning "metadata" is stored in the page; manni:artifact-evals:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
 
 1 file checked, 0 passed, 1 failed, 2 errors, 1 warning
 ```
@@ -272,16 +277,16 @@ it never fails a run. Give the entry an id, or write it as a string.
 
 ## Strict overlay
 
-**Strict overlay id:** `manni:artifact-evals-strict:1.0.0`
+**Strict overlay id:** `manni:artifact-evals-strict:1.1.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/artifact-evals-strict/1.0.0.json`.
+Published at `https://hawkeyexl.github.io/manni/schemas/artifact-evals-strict/1.1.0.json`.
 The overlay holds only what strict adds. It narrows the form of a value that is
 present and requires no key. A string entry, and every other member of
 `metadata`, passes it untouched.
 
 | Field | Strict adds |
 |---|---|
-| `grader` | One of the ten named graders, or `tool:<kebab>`. No other kebab name passes |
+| `grader` | One of the eleven named graders, or `tool:<kebab>`. No other kebab name passes |
 | `provider` | Kebab case, such as `anthropic` or `llama-cpp` |
 | `model` | A model id with no spaces, of letters, digits, `.`, `_`, `:`, `/`, `\`, `@` and `-`. A Windows path to a local model passes |
 | `success-exit-codes` | Unique, each from 0 to 255, the range a process returns |
@@ -299,8 +304,8 @@ meta:
     - collection: skills
       schemas:
         - anthropic:claude-skill:2.1
-        - manni:artifact-evals:1.0.0
-        - manni:artifact-evals-strict:1.0.0
+        - manni:artifact-evals:1.1.0
+        - manni:artifact-evals-strict:1.1.0
 ```
 
 Each schema is checked on its own, and a finding names the one that produced
@@ -320,15 +325,38 @@ metadata:
 ```
 
 ```text
-$ manni meta validate SKILL.md --no-config -s anthropic:claude-skill:2.1 -s manni:artifact-evals:1.0.0 -s manni:artifact-evals-strict:1.0.0
+$ manni meta validate SKILL.md --no-config -s anthropic:claude-skill:2.1 -s manni:artifact-evals:1.1.0 -s manni:artifact-evals-strict:1.1.0
 ✗ SKILL.md
-    /metadata/evals/0/grader  must be equal to one of the allowed values  (line 8)  [manni:artifact-evals-strict:1.0.0]
-    /metadata/evals/0/grader  must match pattern "^tool:[a-z0-9][a-z0-9-]*$"  (line 8)  [manni:artifact-evals-strict:1.0.0]
-    /metadata/evals/0/grader  must match a schema in anyOf  (line 8)  [manni:artifact-evals-strict:1.0.0]
-    /metadata  warning "metadata" is stored in the page; manni:artifact-evals:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+    /metadata/evals/0/grader  must be equal to one of the allowed values  (line 8)  [manni:artifact-evals-strict:1.1.0]
+    /metadata/evals/0/grader  must match pattern "^tool:[a-z0-9][a-z0-9-]*$"  (line 8)  [manni:artifact-evals-strict:1.1.0]
+    /metadata/evals/0/grader  must match a schema in anyOf  (line 8)  [manni:artifact-evals-strict:1.1.0]
+    /metadata  warning "metadata" is stored in the page; manni:artifact-evals:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
 
 1 file checked, 0 passed, 1 failed, 3 errors, 1 warning
 ```
 
 The exit code is 1. The open vocabulary accepts `tool-useage` as a kebab name,
 so the overlay alone catches the typo.
+
+## Versions
+
+Each version is its own built-in, and its published file never changes. A
+config names one by its exact id, so a new version reaches no run until the
+config names it.
+
+| Version | What changed |
+|---|---|
+| `1.1.0` | Names `tool-order` among the graders. The strict overlay accepts eleven names |
+| `1.0.0` | The first registered version, with ten named graders |
+
+The open vocabulary accepts the same artifacts at both versions, because any
+kebab grader name passes it. The strict overlays differ. Strict `1.0.0`
+rejects `grader: tool-order`, and strict `1.1.0` accepts it. Stack an
+overlay with the vocabulary of its own version.
+
+**Built-in id:** `manni:artifact-evals:1.0.0`
+
+**Strict overlay id:** `manni:artifact-evals-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.0.0.json`
+and `https://hawkeyexl.github.io/manni/schemas/artifact-evals-strict/1.0.0.json`.

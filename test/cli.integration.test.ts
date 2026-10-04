@@ -202,6 +202,8 @@ describe("docmeta CLI (built bin)", () => {
       "manni:citations-strict:1.0.0",
       "tgdp:templates:1.1",
       "tgdp:templates-strict:1.1",
+      "manni:artifact-evals:1.1.0",
+      "manni:artifact-evals-strict:1.1.0",
     ]);
   });
 

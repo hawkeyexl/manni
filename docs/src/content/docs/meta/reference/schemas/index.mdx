@@ -44,7 +44,7 @@ prerequisites:
 import { Aside, Tabs, TabItem, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 {/* cite registry-forty-five-bundled-schemas */}
-manni meta bundles forty-seven schemas. You reference any of them by id, with no file
+manni meta bundles forty-nine schemas. You reference any of them by id, with no file
 to write, no URL to host, and no network call at validation time. This page is
 the registry: what each one constrains, whether it requires anything, and which
 are applied when you pass no flags at all. Each id links to its own page, with
@@ -99,21 +99,23 @@ installed.
 | [`manni:ai-context-strict:1.0.0`](/manni/meta/reference/schemas/manni-ai-context/#strict-overlay) | the form of `meta-provenance`, `risks` | nothing | No | [`ai-context-strict/1.0.0.json`](/manni/schemas/ai-context-strict/1.0.0.json) |
 | [`manni:evals:1.0.0`](/manni/meta/reference/schemas/manni-evals/) | `evals`, `eval-suite`, `eval-skip` | nothing | **Yes** | [`evals/1.0.0.json`](/manni/schemas/evals/1.0.0.json) |
 | [`manni:evals-strict:1.0.0`](/manni/meta/reference/schemas/manni-evals/#strict-overlay) | the form of `evals`, `eval-suite` | nothing | No | [`evals-strict/1.0.0.json`](/manni/schemas/evals-strict/1.0.0.json) |
-| [`manni:artifact-evals:1.0.0`](/manni/meta/reference/schemas/manni-artifact-evals/) | `metadata` | nothing | No | [`artifact-evals/1.0.0.json`](/manni/schemas/artifact-evals/1.0.0.json) |
-| [`manni:artifact-evals-strict:1.0.0`](/manni/meta/reference/schemas/manni-artifact-evals/#strict-overlay) | the form of `metadata` | nothing | No | [`artifact-evals-strict/1.0.0.json`](/manni/schemas/artifact-evals-strict/1.0.0.json) |
+| [`manni:artifact-evals:1.0.0`](/manni/meta/reference/schemas/manni-artifact-evals/#versions) | `metadata` | nothing | No | [`artifact-evals/1.0.0.json`](/manni/schemas/artifact-evals/1.0.0.json) |
+| [`manni:artifact-evals-strict:1.0.0`](/manni/meta/reference/schemas/manni-artifact-evals/#versions) | the form of `metadata` | nothing | No | [`artifact-evals-strict/1.0.0.json`](/manni/schemas/artifact-evals-strict/1.0.0.json) |
+| [`manni:artifact-evals:1.1.0`](/manni/meta/reference/schemas/manni-artifact-evals/) | `metadata` | nothing | No | [`artifact-evals/1.1.0.json`](/manni/schemas/artifact-evals/1.1.0.json) |
+| [`manni:artifact-evals-strict:1.1.0`](/manni/meta/reference/schemas/manni-artifact-evals/#strict-overlay) | the form of `metadata` | nothing | No | [`artifact-evals-strict/1.1.0.json`](/manni/schemas/artifact-evals-strict/1.1.0.json) |
 | [`manni:graph:1.0.0`](/manni/meta/reference/schemas/manni-graph/) | `graph` | nothing | **Yes** | [`graph/1.0.0.json`](/manni/schemas/graph/1.0.0.json) |
 | [`manni:graph-strict:1.0.0`](/manni/meta/reference/schemas/manni-graph/#strict-overlay) | the form of `graph` | nothing | No | [`graph-strict/1.0.0.json`](/manni/schemas/graph-strict/1.0.0.json) |
 | [`manni:citations:1.0.0`](/manni/meta/reference/schemas/manni-citations/) | `citations` | nothing | **Yes** | [`citations/1.0.0.json`](/manni/schemas/citations/1.0.0.json) |
 | [`manni:citations-strict:1.0.0`](/manni/meta/reference/schemas/manni-citations/#strict-overlay) | the form of `citations` | nothing | No | [`citations-strict/1.0.0.json`](/manni/schemas/citations-strict/1.0.0.json) |
 
 {/* cite registry-all-draft-2020-12-and-builtin-refs */}
-All forty-seven use [Draft
+All forty-nine use [Draft
 2020-12](/manni/meta/reference/schema-resolution/#dialects) and are [built-in
 references](/manni/meta/reference/schema-resolution/#reference-kinds). A typo in an
 id is reported as an unknown schema rather than a missing file.
 
 {/* cite registry-forty-four-allow-additional-properties */}
-Forty-six of them allow additional properties. `agentskills:skill:1.0` is the
+Forty-eight of them allow additional properties. `agentskills:skill:1.0` is the
 one exception, and not out of strictness. The tooling that packages a skill for
 distribution *hard-errors* on a key outside the standard's six rather than
 ignoring it. A schema that tolerated unknown keys would pass exactly the file
@@ -178,6 +180,8 @@ https://hawkeyexl.github.io/manni/schemas/citations/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/citations-strict/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/tgdp/1.1.json
 https://hawkeyexl.github.io/manni/schemas/tgdp-strict/1.1.json
+https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.1.0.json
+https://hawkeyexl.github.io/manni/schemas/artifact-evals-strict/1.1.0.json
 ```
 
 {/* cite registry-published-urls-have-three-jobs */}
@@ -346,7 +350,7 @@ compose](/manni/meta/reference/taxonomy-schemas/#which-ones-compose).
 ## What runs when you pass no flags
 
 {/* cite registry-only-two-in-the-default-set */}
-Eleven of the forty-seven are in the default set, in this order:
+Eleven of the forty-nine are in the default set, in this order:
 
 ```text
 google:okf:0.1

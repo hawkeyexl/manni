@@ -82,3 +82,76 @@ describe.each(Object.keys(DRAFTS))("manni:%s:1.0.0", (family) => {
     }
   });
 });
+
+/**
+ * artifact-evals 1.1.0 (proposal 0074) registers beside 1.0.0 and adds one
+ * grader name, `tool-order`. The open vocabulary already accepted any kebab
+ * name, so it gains the name in its recommended list and nothing else. The
+ * strict overlay's closed list grows from ten names to eleven.
+ */
+describe("manni:artifact-evals:1.1.0 and its strict overlay", () => {
+  /** The `enum` branch of the grader's `anyOf`, found along `path`. */
+  function graderEnum(schema: JsonObject, path: readonly string[]): Json[] {
+    let node: Json = schema;
+    for (const key of path) {
+      if (node === null || typeof node !== "object" || Array.isArray(node)) {
+        throw new Error(`no ${key} on the way to grader`);
+      }
+      node = node[key] ?? null;
+    }
+    if (node === null || typeof node !== "object" || Array.isArray(node)) {
+      throw new Error("grader is not an object");
+    }
+    const anyOf = node.anyOf;
+    if (!Array.isArray(anyOf)) throw new Error("grader has no anyOf");
+    for (const branch of anyOf) {
+      if (branch !== null && typeof branch === "object" && !Array.isArray(branch)) {
+        const values = branch.enum;
+        if (Array.isArray(values)) return values;
+      }
+    }
+    throw new Error("grader has no enum branch");
+  }
+
+  /** A copy, so a test never edits the bundled object the registry serves. */
+  async function copy(ref: string): Promise<JsonObject> {
+    return structuredClone(await load(ref));
+  }
+
+  const OPEN_GRADER = ["$defs", "grader"] as const;
+  const STRICT_GRADER = ["$defs", "entry", "properties", "grader"] as const;
+
+  it("is 1.0.0 with tool-order added to the recommended graders", async () => {
+    const v100 = await copy("manni:artifact-evals:1.0.0");
+    const v110 = await copy("manni:artifact-evals:1.1.0");
+    const before = graderEnum(v100, OPEN_GRADER);
+    expect(graderEnum(v110, OPEN_GRADER)).toEqual([...before, "tool-order"]);
+    before.push("tool-order");
+    expect(withoutProse(v110)).toEqual(withoutProse(v100));
+  });
+
+  it("is the 1.0.0 overlay with tool-order the eleventh named grader", async () => {
+    const v100 = await copy("manni:artifact-evals-strict:1.0.0");
+    const v110 = await copy("manni:artifact-evals-strict:1.1.0");
+    const before = graderEnum(v100, STRICT_GRADER);
+    expect(graderEnum(v110, STRICT_GRADER)).toEqual([...before, "tool-order"]);
+    expect(graderEnum(v110, STRICT_GRADER)).toHaveLength(11);
+    before.push("tool-order");
+    expect(withoutProse(v110)).toEqual(withoutProse(v100));
+  });
+
+  it("names its neighbours at 1.1.0, and no draft", async () => {
+    for (const ref of ["manni:artifact-evals:1.1.0", "manni:artifact-evals-strict:1.1.0"]) {
+      const schema = await load(ref);
+      expect(schema.$id).toBe(ref);
+      const text = JSON.stringify(schema);
+      expect({ ref, draft: /-proposal\.\d|docmeta:|:1\.0\.0"/.test(text) }).toEqual({
+        ref,
+        draft: false,
+      });
+      expect(text).toContain("tool-order");
+    }
+    const strict = await load("manni:artifact-evals-strict:1.1.0");
+    expect(String(strict.description)).toContain("manni:artifact-evals:1.1.0");
+  });
+});
