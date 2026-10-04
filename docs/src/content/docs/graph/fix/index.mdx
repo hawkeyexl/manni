@@ -1,6 +1,17 @@
 ---
 title: Fix a failing check
 description: Read a manni graph finding, work out which page produced it, make the smallest correct change, and confirm locally.
+type: troubleshooting
+id: graph-fix
+language: en
+lifecycle: published
+action: troubleshoot
+concepts:
+  - focus node
+  - emergent failure
+  - concept
+  - closed shape
+  - near miss
 ---
 
 Your pull request is red on `manni graph check` and you did not write the rule.
@@ -18,7 +29,7 @@ Four parts, in order:
 | Part | What it is |
 |---|---|
 | `error` | The severity. `error` fails the build; `warning` and `notice` report and exit `0`. |
-| `https://example.com/graph/concept/installation` | The **focus node**: the graph's name for the thing that failed. |
+| `https://example.com/graph/concept/installation` | The **focus node**, the graph's name for the thing that failed. |
 | `skos:prefLabel` | The property the rule is about. |
 | `[docs/install.md, docs/setup.md]` | The documents the node came from. **This is where you edit.** |
 
@@ -141,7 +152,7 @@ may carry any key it likes. Rename it to the spelling in the message.
 |---|---|
 | `0` | Clean. Warnings and notices still exit `0`. |
 | `1` | Findings. Yours to fix, or the page author's. |
-| `2` | Operational: manni graph could not run at all. Not your problem. Hand it to the platform team. |
+| `2` | Operational. manni graph could not run at all. Not your problem. Hand it to the platform team. |
 
 An exit `2` reads as `No input files matched`, `Invalid config in …`, or an
 unknown flag value. None of those is about your page.
@@ -153,7 +164,7 @@ unknown flag value. None of those is about your page.
 - Ask what reaches the page you edited:
   `npx @hawkeyexl/manni graph traverse <page IRI> --reverse`
 - Read what the rule is for in [Govern the graph](/manni/graph/govern/), and the
-  words in the [glossary](/manni/graph/reference/glossary/).
+  words in the [glossary](/manni/meta/reference/glossary/#manni-graph).
 
 {/* Verified by Doc Detective in docs-as-tests, against test/graph/fixtures/dd/. */}
 

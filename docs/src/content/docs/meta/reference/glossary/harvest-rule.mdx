@@ -1,0 +1,43 @@
+---
+title: "Harvest rule"
+description: "What harvest rule means in manni graph, and where the tool uses it."
+type: term
+id: harvest-rule
+label: "harvest rule"
+alt-labels:
+  - "harvest"
+abstract: "Deeper wins, per fact, when a page says it twice."
+definition: "The rule for a fact a page can state twice. The deeper statement wins, and the page level is the fallback, per fact."
+keywords:
+  - "harvest rule"
+  - "harvest"
+  - "graph block"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what harvest rule means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is the harvest rule?"
+  - "Which wins, the graph block or the page-level key?"
+graph:
+  label: "harvest rule"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "graph-block"
+  - "near-miss"
+---
+
+<p>{frontmatter.definition}</p>
+
+Some facts can be stated inside the [`graph` block](/manni/meta/reference/glossary/graph-block/) and
+also as a plain page-level key. A `graph` block that speaks to a fact owns it
+outright. Where the block is silent, the page-level twin feeds the graph. The
+rule applies per fact rather than per page.

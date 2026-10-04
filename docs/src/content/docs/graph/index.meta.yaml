@@ -1,0 +1,22 @@
+docs/src/content/docs/graph/index.mdx:
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: what-it-does
+      assertion: "A reader can say what manni graph derives a graph from, and that nothing in it is inferred from prose."
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-24
+  meta-provenance:
+    - generated-by: claude-sonnet-4-5
+      fields:
+        - /tags
+        - /action
+        - /related-pages
+      confidence:
+        /tags: 0.75
+        /action: 0.95
+        /related-pages: 0.75

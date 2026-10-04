@@ -1,6 +1,6 @@
 ---
 title: Glossary
-description: Definitions of the terms manni meta uses, one page per term, each listed here with its short form.
+description: Definitions of the terms manni meta and manni graph use, one page per term, each listed here with its short form.
 sidebar:
   label: Overview
 type: glossary
@@ -15,10 +15,11 @@ audiences:
   - ci-engineers
   - schema-authors
   - contributors
-intent: Look up the short form of each term manni meta uses and open its full definition.
+intent: Look up the short form of each term manni meta and manni graph use, and open its full definition.
 lifecycle: published
 applies-to:
   - domain:meta
+  - domain:graph
 concepts:
   - frontmatter
   - metadata
@@ -34,9 +35,41 @@ concepts:
   - override
   - validation
   - extraction
+  - triple
+  - quad
+  - IRI
+  - base IRI
+  - CURIE
+  - namespace
+  - graph block
+  - derivation
+  - concept
+  - section
+  - orphan
+  - hub
+  - harvest rule
+  - near miss
+  - SHACL
+  - focus node
+  - closed shape
+  - emergent failure
+  - severity
+  - coverage
+  - turn
+  - confidence
+  - guardrail
+  - meta-provenance
+  - curated pointer
+  - JSON-LD
+  - iiRDS
+  - search index
+  - vector sidecar
+  - localization manifest
+  - x-manni-graph-output
 sample-questions:
   - What terms does manni meta use?
   - What is a schema set in manni meta?
+  - What is a focus node in manni graph?
 graph:
   label: Glossary
   type: reference
@@ -55,8 +88,10 @@ next-steps:
   - validation
 ---
 
-The terms below are defined as manni meta uses them. Where a concept has a fuller
-reference page, the entry links to it.
+Each term below has a page of its own, defined as the tool that uses it
+means it. Where a concept has a fuller reference page, the entry links to it.
+
+## manni meta
 
 | Term | In short |
 |---|---|
@@ -74,3 +109,39 @@ reference page, the entry links to it.
 | [override](/manni/meta/reference/glossary/override/) | A source that outranks another in schema resolution. |
 | [validation](/manni/meta/reference/glossary/validation/) | Checking extracted metadata against its schema set. |
 | [extraction](/manni/meta/reference/glossary/extraction/) | Reading metadata out of a document. |
+
+## manni graph
+
+| Term | In short |
+|---|---|
+| [triple](/manni/meta/reference/glossary/triple/) | One statement in the graph. |
+| [quad](/manni/meta/reference/glossary/quad/) | A triple plus the graph it belongs to. |
+| [IRI](/manni/meta/reference/glossary/iri/) | The identifier of a node in the graph. |
+| [base IRI](/manni/meta/reference/glossary/base-iri/) | The prefix every minted IRI hangs off. |
+| [CURIE](/manni/meta/reference/glossary/curie/) | A compact IRI, written prefix:local. |
+| [namespace](/manni/meta/reference/glossary/namespace/) | A set of RDF terms under one IRI prefix. |
+| [graph block](/manni/meta/reference/glossary/graph-block/) | The frontmatter key that says what a page is about. |
+| [derivation](/manni/meta/reference/glossary/derivation/) | Turning documents into triples. |
+| [concept](/manni/meta/reference/glossary/concept/) | A SKOS node a subject or a tag names. |
+| [section](/manni/meta/reference/glossary/section/) | A heading, as a node in the graph. |
+| [orphan](/manni/meta/reference/glossary/orphan/) | A document no other document links to. |
+| [hub](/manni/meta/reference/glossary/hub/) | One of the most-connected documents. |
+| [harvest rule](/manni/meta/reference/glossary/harvest-rule/) | Deeper wins, per fact, when a page says it twice. |
+| [near miss](/manni/meta/reference/glossary/near-miss/) | An unread key that looks like a read one. |
+| [SHACL](/manni/meta/reference/glossary/shacl/) | The shapes language the graph is checked against. |
+| [focus node](/manni/meta/reference/glossary/focus-node/) | The node a SHACL finding is about. |
+| [closed shape](/manni/meta/reference/glossary/closed-shape/) | A shape that rejects any predicate it does not list. |
+| [emergent failure](/manni/meta/reference/glossary/emergent-failure/) | A failure only the merged graph can show. |
+| [severity](/manni/meta/reference/glossary/severity/) | The family's scale, notice, warning or error. |
+| [coverage](/manni/meta/reference/glossary/coverage/) | The share of documents carrying each measured field. |
+| [turn](/manni/meta/reference/glossary/turn/) | One inference call. |
+| [confidence](/manni/meta/reference/glossary/confidence/) | A model's own score for a value it proposes. |
+| [guardrail](/manni/meta/reference/glossary/guardrail/) | The check that drops a proposal the shapes reject. |
+| [meta-provenance](/manni/meta/reference/glossary/meta-provenance/) | The record of which fields a machine wrote. |
+| [curated pointer](/manni/meta/reference/glossary/curated-pointer/) | A graph field only a person may write. |
+| [JSON-LD](/manni/meta/reference/glossary/json-ld/) | RDF written as JSON. |
+| [iiRDS](/manni/meta/reference/glossary/intelligent-information-delivery/) | The tekom standard for information delivery. |
+| [search index](/manni/meta/reference/glossary/search-index/) | The lexical index the browser runtime reads. |
+| [vector sidecar](/manni/meta/reference/glossary/vector-sidecar/) | The embeddings graph embed computes. |
+| [localization manifest](/manni/meta/reference/glossary/localization-manifest/) | The file listing each locale and its artifacts. |
+| [x-manni-graph-output](/manni/meta/reference/glossary/x-manni-graph-output/) | Whether a published graph may carry a field. |

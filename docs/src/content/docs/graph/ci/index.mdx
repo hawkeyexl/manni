@@ -1,6 +1,15 @@
 ---
 title: Run it in CI
 description: Gate the docset's structure on every pull request with one build step and one check step.
+type: how-to
+id: graph-ci
+language: en
+lifecycle: published
+action: develop
+concepts:
+  - severity
+  - focus node
+  - coverage
 ---
 
 A pull request that breaks the docset's structure should be red before review.
@@ -84,8 +93,8 @@ The family's contract, with nothing added:
 | Code | Meaning | Whose problem |
 |---|---|---|
 | `0` | Clean. A `warning` or `notice` finding is still `0`. | Nobody's. |
-| `1` | Findings: a SHACL `error`, a broken link or coverage below floor under `stats --check`, a `validate` failure. | The author's. |
-| `2` | Operational: no input files matched, a bad config, an unknown flag value. | Yours. |
+| `1` | Findings. A SHACL `error`, a broken link or coverage below floor under `stats --check`, or a `validate` failure. | The author's. |
+| `2` | Operational. No input files matched, a bad config, or an unknown flag value. | Yours. |
 
 A recipe that treats any non-zero exit as "the docs are bad" is wrong, and it
 routes your own failures to contributors. Split them:

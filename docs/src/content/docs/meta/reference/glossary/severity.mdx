@@ -1,0 +1,40 @@
+---
+title: "Severity"
+description: "What severity means in manni graph, and where the tool uses it."
+type: term
+id: severity
+label: "severity"
+abstract: "The family's scale, notice, warning or error."
+definition: "The three-level scale every manni tool reports a finding on, `notice`, `warning` or `error`."
+keywords:
+  - "severity"
+  - "notice"
+  - "warning"
+  - "error"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what severity means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What severities does manni graph report?"
+  - "How do SHACL severities map onto manni's?"
+graph:
+  label: "severity"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "shacl"
+---
+
+<p>{frontmatter.definition}</p>
+
+An `error` exits `1`, and the other two report. In `manni graph check`,
+SHACL's `Violation`, `Warning` and `Info` map onto the scale, and the source
+word stays in `shaclSeverity`.

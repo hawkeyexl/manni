@@ -1,0 +1,14 @@
+docs/src/content/docs/meta/reference/glossary/curated-pointer.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-curated-pointer
+      assertion: "A reader can say what curated pointer means in manni graph."
+      type: capability
+      grader: ai

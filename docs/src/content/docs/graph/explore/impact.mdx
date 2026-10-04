@@ -1,6 +1,15 @@
 ---
 title: See what a change affects
 description: Walk the graph outward from a page to find what depends on it, before you edit it.
+type: how-to
+id: graph-explore-impact
+language: en
+lifecycle: published
+action: develop
+concepts:
+  - IRI
+  - CURIE
+  - concept
 ---
 
 Before editing a page, the question is what depends on it. Grep answers part of
@@ -108,7 +117,7 @@ $ manni graph search "configuration" --limit 5
 $ manni graph query --object "Configuration"
 ```
 
-Or read it off the pattern: a document node is the base IRI plus `doc/` plus
+Or read it off the pattern. A document node is the base IRI plus `doc/` plus
 the repository-relative path. With `graph.baseIri: https://example.com/dd/`, the
 page `docs/configuration.md` is
 `https://example.com/dd/doc/docs/configuration.md`.

@@ -1,0 +1,39 @@
+---
+title: "Section"
+description: "What section means in manni graph, and where the tool uses it."
+type: term
+id: section
+label: "section"
+abstract: "A heading, as a node in the graph."
+definition: "A heading, as a node in its own right, with its level, its order in the page and its slug."
+keywords:
+  - "section"
+  - "heading"
+  - "slug"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what section means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a section in manni graph?"
+  - "How does manni graph check a link to a heading?"
+graph:
+  label: "section"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "orphan"
+---
+
+<p>{frontmatter.definition}</p>
+
+Because a heading is a node, a link to `page.md#heading` can be checked
+rather than merely counted. `graph stats` lists the section links that no
+longer resolve.

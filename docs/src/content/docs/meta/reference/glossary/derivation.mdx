@@ -1,0 +1,40 @@
+---
+title: "Derivation"
+description: "What derivation means in manni graph, and where the tool uses it."
+type: term
+id: derivation
+label: "derivation"
+abstract: "Turning documents into triples."
+definition: "Turning documents into triples, from what the documents state and never from their prose."
+keywords:
+  - "derivation"
+  - "derive"
+  - "triples"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what derivation means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What does manni graph derive triples from?"
+  - "Does manni graph infer anything from prose?"
+graph:
+  label: "derivation"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "triple"
+  - "harvest-rule"
+---
+
+<p>{frontmatter.definition}</p>
+
+A triple exists because frontmatter, a link, a heading, an image, a code
+block or git history put it there. Nothing is inferred from prose.
+`build.derive` names which of those sources run.

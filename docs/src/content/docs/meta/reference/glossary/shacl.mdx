@@ -1,0 +1,41 @@
+---
+title: "SHACL"
+description: "What SHACL means in manni graph, and where the tool uses it."
+type: term
+id: shacl
+label: "SHACL"
+abstract: "The shapes language the graph is checked against."
+definition: "The shapes language `manni graph check` validates the built graph against."
+keywords:
+  - "SHACL"
+  - "shapes"
+  - "check"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what SHACL means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is SHACL?"
+  - "What does manni graph check validate against?"
+graph:
+  label: "SHACL"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "closed-shape"
+  - "focus-node"
+  - "emergent-failure"
+---
+
+<p>{frontmatter.definition}</p>
+
+A shape says what a node of a given kind must look like. manni graph bundles
+its shapes as a floor. [Govern the graph](/manni/graph/govern/) covers extending
+them with house rules.

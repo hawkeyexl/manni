@@ -1,6 +1,11 @@
 ---
 title: CLI reference
 description: Every manni graph command, argument, and flag, with the exit code each produces.
+type: reference
+id: graph-reference-cli
+language: en
+lifecycle: published
+action: remember
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -284,9 +289,9 @@ the letters it saves.
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
-| `--subject` | `<term>` | wildcard | Subject: a full IRI or a `prefix:local` name. |
-| `--predicate` | `<term>` | wildcard | Predicate: a full IRI or a `prefix:local` name. |
-| `--object` | `<term>` | wildcard | Object: a full IRI, a `prefix:local` name, or a literal value. |
+| `--subject` | `<term>` | wildcard | The subject, as a full IRI or a `prefix:local` name. |
+| `--predicate` | `<term>` | wildcard | The predicate, as a full IRI or a `prefix:local` name. |
+| `--object` | `<term>` | wildcard | The object, as a full IRI, a `prefix:local` name, or a literal value. |
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
@@ -297,7 +302,7 @@ question and gets no answer has not failed.
 
 ## `graph stats`
 
-Summarizes the graph: node counts, the most connected documents, orphans,
+Summarizes the graph. It reports node counts, the most connected documents, orphans,
 broken internal links and section references, and per-field metadata coverage.
 
 ```sh
@@ -396,7 +401,7 @@ $ manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml \
 
 | Argument | Description |
 |---|---|
-| `<node>` | Where to start: a full IRI, or a `prefix:local` CURIE. Required. |
+| `<node>` | Where to start, as a full IRI or a `prefix:local` CURIE. Required. |
 
 ### Options
 
@@ -407,11 +412,11 @@ $ manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml \
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
 | `-d, --depth` | `<n>` | 1; 3 under `--impact` | Maximum hops from the node. A whole number, and `0` is allowed: it means the node itself, which is a real answer. |
 | `--predicates` | `<list>` | every predicate | Only follow these predicates, comma-separated and given once. A CURIE holds no comma, so one separator is enough. |
-| `--reverse` | n/a | off | Follow inbound edges: who points at this node. |
-| `--impact` | n/a | off | Transitive inbound reach: what a change here affects. |
-| `--variant` | `<variant>` | no filter | Scope filter: a product variant IRI, title, or slug. |
-| `--software-subject` | `<subject>` | no filter | Scope filter: a software subject. An unknown one is **exit 2**. |
-| `--lang` | `<tag>` | no filter | Scope filter: a BCP-47 language tag, matched exactly. |
+| `--reverse` | n/a | off | Follow inbound edges, to find who points at this node. |
+| `--impact` | n/a | off | Transitive inbound reach, to find what a change here affects. |
+| `--variant` | `<variant>` | no filter | Scope filter on a product variant IRI, title, or slug. |
+| `--software-subject` | `<subject>` | no filter | Scope filter on a software subject. An unknown one is **exit 2**. |
+| `--lang` | `<tag>` | no filter | Scope filter on a BCP-47 language tag, matched exactly. |
 | `--limit` | `<n>` | unbounded | Stop after this many nodes. A whole number, at least 1. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 
@@ -483,7 +488,7 @@ An unknown target is **exit 2**, with the allowed set named.
 |---|---|
 | `0` | Everything passed. A warning or a notice is still `0`. |
 | `1` | Findings. A SHACL `error`, a `stats --check` failure, or a `fill` error. The author's problem. |
-| `2` | Operational or usage error: no input files matched, a bad config, an unknown flag value, a missing provider. Not the author's problem. |
+| `2` | Operational or usage error. No input files matched, a bad config, an unknown flag value, a missing provider. Not the author's problem. |
 
 {/* Verified by Doc Detective in docs-as-tests (.github/workflows/docs-as-tests.yml),
     against the committed fixture corpus under test/graph/fixtures/dd/.

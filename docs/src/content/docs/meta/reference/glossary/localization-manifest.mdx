@@ -1,0 +1,38 @@
+---
+title: "Localization manifest"
+description: "What localization manifest means in manni graph, and where the tool uses it."
+type: term
+id: localization-manifest
+label: "localization manifest"
+abstract: "The file listing each locale and its artifacts."
+definition: "The file that says which locales exist and which artifacts each one has."
+keywords:
+  - "localization manifest"
+  - "locale"
+  - "export"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what localization manifest means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is the localization manifest?"
+  - "How does a browser learn which locales exist?"
+graph:
+  label: "localization manifest"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "search-index"
+  - "vector-sidecar"
+---
+
+<p>{frontmatter.definition}</p>
+
+A browser reads it to learn what is available before it fetches any of it.

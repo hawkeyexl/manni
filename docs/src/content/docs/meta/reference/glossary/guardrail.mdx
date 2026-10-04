@@ -1,0 +1,40 @@
+---
+title: "Guardrail"
+description: "What guardrail means in manni graph, and where the tool uses it."
+type: term
+id: guardrail
+label: "guardrail"
+abstract: "The check that drops a proposal the shapes reject."
+definition: "The check that tries each proposed value in the derived graph and drops any that would violate the shapes."
+keywords:
+  - "guardrail"
+  - "fill"
+  - "SHACL"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what guardrail means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is the fill guardrail?"
+  - "Can two pages in one fill run corrupt the graph together?"
+graph:
+  label: "guardrail"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "shacl"
+  - "confidence"
+  - "turn"
+---
+
+<p>{frontmatter.definition}</p>
+
+Accepted proposals fold into its state, so two pages in one run cannot
+jointly corrupt the graph.

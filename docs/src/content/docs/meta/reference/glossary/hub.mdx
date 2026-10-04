@@ -1,0 +1,37 @@
+---
+title: "Hub"
+description: "What hub means in manni graph, and where the tool uses it."
+type: term
+id: hub
+label: "hub"
+abstract: "One of the most-connected documents."
+definition: "One of the most-connected documents, ranked by edge count."
+keywords:
+  - "hub"
+  - "links"
+  - "stats"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what hub means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a hub in manni graph?"
+  - "How do I list more hubs?"
+graph:
+  label: "hub"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "orphan"
+---
+
+<p>{frontmatter.definition}</p>
+
+`graph stats` lists them, and `--top` sets how many.

@@ -1,0 +1,42 @@
+---
+title: "Graph block"
+description: "What graph block means in manni graph, and where the tool uses it."
+type: term
+id: graph-block
+label: "graph block"
+abstract: "The frontmatter key that says what a page is about."
+definition: "The `graph:` frontmatter key a page writes to say what it is about."
+keywords:
+  - "graph block"
+  - "frontmatter"
+  - "manni:graph"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what graph block means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is the graph block?"
+  - "Which vocabulary defines the graph frontmatter key?"
+graph:
+  label: "graph block"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "namespace"
+  - "harvest-rule"
+  - "near-miss"
+---
+
+<p>{frontmatter.definition}</p>
+
+The page vocabulary `manni:graph:1.0.0` defines it, and a JSON Pointer into
+it starts `/graph/`, as in `/graph/label`. The block is closed, so a
+misspelled key inside it fails validation. The RDF prefix `graph:` is spelled
+the same way and is a different thing. See [namespace](/manni/meta/reference/glossary/namespace/).

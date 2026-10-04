@@ -1,0 +1,40 @@
+---
+title: "Concept"
+description: "What concept means in manni graph, and where the tool uses it."
+type: term
+id: concept
+label: "concept"
+abstract: "A SKOS node a subject or a tag names."
+definition: "A SKOS node minted from a subject, a tag or a `graph` concept reference."
+keywords:
+  - "concept"
+  - "SKOS"
+  - "subject"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what concept means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a concept in manni graph?"
+  - "Why do two spellings of one concept collide?"
+graph:
+  label: "concept"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "emergent-failure"
+  - "graph-block"
+---
+
+<p>{frontmatter.definition}</p>
+
+Two pages that name a concept the same way land on the same node. That is
+what lets a graph answer questions no single page can. Two spellings of one
+concept collide on that node, and `graph check` reports the collision.

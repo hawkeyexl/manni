@@ -1,0 +1,14 @@
+docs/src/content/docs/meta/reference/glossary/intelligent-information-delivery.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-intelligent-information-delivery
+      assertion: "A reader can say what iiRDS means in manni graph."
+      type: capability
+      grader: ai

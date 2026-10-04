@@ -1,0 +1,40 @@
+---
+title: "Near miss"
+description: "What near miss means in manni graph, and where the tool uses it."
+type: term
+id: near-miss
+label: "near miss"
+abstract: "An unread key that looks like a read one."
+definition: "A page-level key that is not read and looks like one that is, such as `applies_to` beside `applies-to`."
+keywords:
+  - "near miss"
+  - "typo"
+  - "warning"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what near miss means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a near miss in manni graph?"
+  - "Why is a near miss a warning and not an error?"
+graph:
+  label: "near miss"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "graph-block"
+  - "harvest-rule"
+---
+
+<p>{frontmatter.definition}</p>
+
+The `graph` block is closed, so a typo inside it is a schema error. The same
+typo at the page level would derive nothing, silently. So manni graph warns
+instead, and a suspicion never fails a build.

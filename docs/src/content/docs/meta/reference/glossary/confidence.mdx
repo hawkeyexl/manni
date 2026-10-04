@@ -1,0 +1,40 @@
+---
+title: "Confidence"
+description: "What confidence means in manni graph, and where the tool uses it."
+type: term
+id: confidence
+label: "confidence"
+abstract: "A model's own score for a value it proposes."
+definition: "A model's self-reported score for a value it proposes, from 0 to 1."
+keywords:
+  - "confidence"
+  - "fill"
+  - "threshold"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what confidence means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is confidence in manni graph fill?"
+  - "What does fill.confidenceThreshold do?"
+graph:
+  label: "confidence"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "turn"
+  - "guardrail"
+  - "meta-provenance"
+---
+
+<p>{frontmatter.definition}</p>
+
+`fill.confidenceThreshold` is the bar a proposal must clear to be written.
+Raw proposals are cached before the bar applies, so changing it costs nothing.

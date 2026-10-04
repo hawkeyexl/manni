@@ -1,0 +1,41 @@
+---
+title: "meta-provenance"
+description: "What meta-provenance means in manni graph, and where the tool uses it."
+type: term
+id: meta-provenance
+label: "meta-provenance"
+abstract: "The record of which fields a machine wrote."
+definition: "The page-level record of which metadata fields a machine wrote, naming the model and each field by JSON Pointer."
+keywords:
+  - "meta-provenance"
+  - "fill"
+  - "review"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what meta-provenance means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is meta-provenance?"
+  - "How do I sign off on fields a model wrote?"
+graph:
+  label: "meta-provenance"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "json-pointer"
+  - "curated-pointer"
+  - "confidence"
+---
+
+<p>{frontmatter.definition}</p>
+
+It belongs to the metadata tool, and `manni graph fill` writes the same
+record rather than one of its own. A surviving entry means unreviewed machine
+metadata. Deleting the entry is how a reviewer signs off.

@@ -9,7 +9,7 @@ docs/src/content/docs/meta/reference/glossary/index.mdx:
   eval-suite: meta
   evals:
     - id: find-term
-      assertion: A reader can find the short definition of any term manni meta uses and open its page.
+      assertion: A reader can find the short definition of any term manni meta or manni graph uses and open its page.
       type: capability
       grader: ai
   provenance:

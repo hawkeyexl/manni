@@ -1,0 +1,40 @@
+---
+title: "JSON-LD"
+description: "What JSON-LD means in manni graph, and where the tool uses it."
+type: term
+id: json-ld
+label: "JSON-LD"
+abstract: "RDF written as JSON."
+definition: "RDF written as JSON."
+keywords:
+  - "JSON-LD"
+  - "export"
+  - "linked data"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what JSON-LD means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is JSON-LD?"
+  - "How do I export the graph as JSON-LD?"
+graph:
+  label: "JSON-LD"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "intelligent-information-delivery"
+  - "search-index"
+---
+
+<p>{frontmatter.definition}</p>
+
+`graph export jsonld` writes the whole graph in it, which is what a
+linked-data ingester reads. [Publish the graph](/manni/graph/publish/) covers
+the export.

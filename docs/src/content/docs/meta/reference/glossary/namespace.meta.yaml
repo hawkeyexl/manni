@@ -1,0 +1,14 @@
+docs/src/content/docs/meta/reference/glossary/namespace.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-namespace
+      assertion: "A reader can say what namespace means in manni graph."
+      type: capability
+      grader: ai

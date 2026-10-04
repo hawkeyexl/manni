@@ -18,6 +18,8 @@ The `term/` section serves four journeys. Sara defines the terms (S6), Maya keep
 
 The `docevals/` section arrived with a strategy of its own, six personas and twelve journeys. Three of those personas were already these people by name, Devin, Sara and Theo. The other three were Priya, Nate and Iris. They are Maya as a platform lead, as the only person writing the docs, and as the one handed a corpus she did not write. They were folded into her entry in `personas.md` rather than added, for the same reason a11y added no persona. The journeys became M11–M15, D10–D11, S8–S11 and T6. M16 was added later, when the eval keys gained a home outside the page. Its content set is below, after `term/`.
 
+The `graph/` section is the eighth. It serves Maya (M18–M20), Devin (D12–D13), Sara (S12) and Theo (T7). Maya sees the docset as a graph, walks what a change affects, and fills the categorization nobody wrote. Devin gates the graph and publishes it. Sara extends the shapes it is checked against, and Theo fixes a red `graph check`. Proposal 0051 folded the domain in. Its content set is below, after `docevals/`.
+
 ---
 
 ## Navigation tree
@@ -135,7 +137,7 @@ The tree above is the `meta` group. The nav gains a `cite` group beside it, a si
 | Output formats & exit codes | D1, D3, D5, D7 | ★ | `pretty`/`json`/`github` shapes; `NO_COLOR`/TTY behavior. Also carries the `## Severity across the family` section, the one shared concept with no other home. That covers the three levels, which tool emits which, how each renders per format, and how a domain maps its own scale onto them. The a11y and cite configuration pages link here rather than restating it. Source of truth: `src/meta/reporters/index.ts`, `src/shared/severity.ts`. |
 | GitHub Action reference | D1 | ★ | Every input and output of `hawkeyexl/manni@v0`, with defaults, the one-item-per-line rule for multi-value inputs, and why globs reach manni meta unexpanded. Source of truth: `action.yml`, guarded by `npm run docs:check-action`. |
 | TypeScript API reference | D3 | | Every symbol the programmatic entry point publishes, with a purpose per export. That covers command cores, schema resolution, config, cache, reporters, extractors, and result types. Drift-checked against the built `dist/index.d.ts` by `npm run docs:check-api`, so a new export cannot ship undocumented. Source of truth: `src/index.ts`. |
-| Glossary | All | | frontmatter, extractor, schema set, dialect, `$schema`, OKF. |
+| Glossary | All | | One `type: term` page per term under `meta/reference/glossary/`, which `manni term` reads. The meta terms, then the graph terms. |
 
 ### `cite/` (citations and drift)
 
@@ -288,7 +290,7 @@ Overview — "What are you trying to do?" router + a 60-second proof
 ├─ Run it in CI         (Devin)  → D12
 ├─ Publish the graph    (Devin)  → D13
 ├─ Govern the graph     (Sara)   → S12
-├─ Fix a failing check  (Theo)   → T6   (highest traffic; no prerequisites)
+├─ Fix a failing check  (Theo)   → T7   (highest traffic; no prerequisites)
 └─ Reference            (lookup shelf)
 ```
 
@@ -317,9 +319,11 @@ the section rather than reading it. `docs/public/graph/ns.ttl` must be
 byte-identical to the newest `ns/graph/ns-<version>.ttl`, because that file is
 what the namespace IRI dereferences to.
 
+The section has no glossary page of its own. `manni term` owns the glossary (proposals 0052 and 0073), so each graph term is a `type: term` page in the family termbase under `meta/reference/glossary/`. The reference shelf links there, and each journey page names the terms it covers in `concepts:`.
+
 | Page | CUJ | ★ | Notes |
 |---|---|---|---|
-| Overview (`graph/index.mdx`) | All | ★ | `template: splash` hero, mirroring the sibling overviews. What is already a graph in a docset. A 60-second proof from a real `build` / `stats` / `check` run. A goal router into the eight sections. Carries the load-bearing claim that nothing is inferred from prose. |
+| Overview (`graph/index.mdx`) | All | ★ | A hero with two actions, mirroring the sibling overviews. What is already a graph in a docset. A 60-second proof from a real `build` / `stats` / `check` run. A goal router into the eight sections. Carries the load-bearing claim that nothing is inferred from prose. |
 | Get started (`graph/get-started/index.mdx`) | M18 | ★ | Build, read `stats`, ask one `query`, run `check`, write the config with `graph init`. Minimum vocabulary: the reader reaches an orphan and a concept collision without meeting "SHACL". Source of truth: `src/graph/commands/{build,stats,query,check,init}.ts`. |
 | How manni graph works (`graph/get-started/how-graph-works.mdx`) | M18 | ★ | What becomes a node and an edge, and the fifteen `graph:` keys. The harvest rule (deeper wins, per fact), near-miss warnings, determinism, and git as a detected fact. Sits after the quickstart on purpose. Source of truth: `src/graph/core/{analyze,derive,harvest}.ts`, `src/graph/schema.ts`. |
 | Explore the graph (`graph/explore/index.mdx`) | M18 | ★ | `stats` read in order, `query`'s three patterns, and `search`. The questions prose cannot answer. Source of truth: `src/graph/commands/{stats,query,search}.ts`. |
@@ -329,12 +333,11 @@ what the namespace IRI dereferences to.
 | Publish the graph (`graph/publish/index.mdx`) | D13 | ★ | The three export targets, the localization manifest, and `embed` per language. Then the browser runtime that never generates, and `x-manni-graph-output` as the decision about what ships. Publish on the run that gated it. Source of truth: `src/graph/commands/{export,embed}.ts`, `src/graph/core/{iirds-package,search-index,localizations}.ts`, `src/graph/runtime/`. |
 | Govern the graph (`graph/govern/index.mdx`) | S12 | ★ | Why emergent failures need a graph, and the bundled shapes as a floor. Extending them, and that naming shapes replaces rather than adds. The `sh:severity` mapping onto the family scale, `x-manni-graph-output`, and the three curated pointers a machine may never claim. Source of truth: `shapes/graph/shapes-1.0.0.ttl`, `src/graph/core/{shacl,graph-output}.ts`. |
 | Coverage (`graph/govern/coverage.mdx`) | M18, D12, S12 | ★ | The twelve measured document rows with what fills each. The two negative predicates left unmeasured on purpose. The section table that is reported and never gated, and the per-field threshold map. Ratchet, do not set. Guarded by the field-count drift test. Source of truth: `src/graph/core/coverage.ts`, `src/graph/commands/stats.ts`. |
-| Fix a failing check (`graph/fix/index.mdx`) | T6 | ★ | The four parts of a finding line, on the first screen. Then the common findings, rule by rule, with what to change. No subject dependencies. Source of truth: `src/graph/core/shacl.ts`, `src/graph/reporters/`, `test/graph/fixtures/dd/`. |
+| Fix a failing check (`graph/fix/index.mdx`) | T7 | ★ | The four parts of a finding line, on the first screen. Then the common findings, rule by rule, with what to change. No subject dependencies. Source of truth: `src/graph/core/shacl.ts`, `src/graph/reporters/`, `test/graph/fixtures/dd/`. |
 | Reference (`graph/reference/index.mdx`) | Navigation | ★ | The shelf index, plus the three versioned contracts: the page vocabulary, the shapes, and the namespace document. |
 | CLI reference (`graph/reference/cli.mdx`) | All | ★ | Ten commands. Every argument, flag and value-default, and the exit codes. Guarded by `npm run docs:check-cli`. Source of truth: `src/graph/cli.ts`. |
 | Configuration reference (`graph/reference/configuration.mdx`) | All | ★ | Every `graph:` key with type and default, in camelCase. Then how the family's `collections:` and `providers:` reach this tool, and the keys that moved or went. Guarded by two drift tests. Source of truth: `src/graph/core/{config,config-schema.json}`, `src/shared/{collections,providers}.ts`. |
 | Library API reference (`graph/reference/library-api.mdx`) | D13 | ★ | The `graph` namespace, and the dependency-free browser runtime published beside it. Guarded by the coverage-symbol drift test. That is why the entry point re-exports `SECTION_COVERAGE_FIELDS`. Source of truth: `src/graph/index.ts`, `src/graph/runtime/index.ts`, `src/graph/embed/index.ts`. |
-| Glossary (`graph/reference/glossary.mdx`) | Vocabulary | | triple, IRI, CURIE, focus node, closed shapes, emergent failure, harvest rule, near miss, turn, guardrail, curated pointers, localization manifest. |
 
 ### Supporting / project
 

@@ -1,6 +1,23 @@
 ---
 title: How manni graph works
 description: What becomes a triple, what never does, and the one rule for facts a page can state twice.
+type: concept
+id: graph-get-started-how-graph-works
+language: en
+lifecycle: published
+action: understand
+concepts:
+  - triple
+  - quad
+  - IRI
+  - base IRI
+  - namespace
+  - graph block
+  - derivation
+  - concept
+  - section
+  - harvest rule
+  - near miss
 ---
 
 You have built a graph and asked it a question. This page is the model behind
@@ -123,7 +140,7 @@ Two spellings are deliberate and different. Config keys are camelCase
 
 ## The harvest rule
 
-Some facts can be stated twice: inside the `graph` block, and as a plain
+Some facts can be stated twice, inside the `graph` block and as a plain
 page-level key your site already uses. The rule is:
 
 > **Deeper wins, and the page level is the fallback. Per fact, not per page.**

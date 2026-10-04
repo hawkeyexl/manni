@@ -440,7 +440,7 @@ This is the highest-traffic journey in the section and the shallowest. The fix p
 
 ---
 
-### T6 · Fix a red `graph check`
+### T7 · Fix a red `graph check`
 
 **Outcome.** Theo's pull request is red on a graph finding he did not cause directly. He works out which of his pages produced it, makes the smallest correct change, and confirms locally.
 

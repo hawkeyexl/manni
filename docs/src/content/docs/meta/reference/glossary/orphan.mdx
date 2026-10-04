@@ -1,0 +1,39 @@
+---
+title: "Orphan"
+description: "What orphan means in manni graph, and where the tool uses it."
+type: term
+id: orphan
+label: "orphan"
+abstract: "A document no other document links to."
+definition: "A document no other document links to."
+keywords:
+  - "orphan"
+  - "links"
+  - "stats"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what orphan means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is an orphan in manni graph?"
+  - "Is an orphan page an error?"
+graph:
+  label: "orphan"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "hub"
+  - "section"
+---
+
+<p>{frontmatter.definition}</p>
+
+`graph stats` lists them. An orphan is a finding about the docset, not an
+error. A landing page reached only from navigation is legitimately an orphan.

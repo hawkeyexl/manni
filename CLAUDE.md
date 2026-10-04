@@ -98,13 +98,19 @@ Key layers:
   `src/graph/CLAUDE.md` holds the tool's invariants.
   - `src/graph/core/`: the harvest and derivation, the SHACL check, the graph
     store, git history, and the `graph:` config loader.
-  - `src/graph/commands/`: the command cores, free of CLI/IO plumbing.
+  - `src/graph/commands/` and `src/graph/reporters/`: the command cores, free
+    of CLI/IO plumbing, and the output formats.
+  - `src/graph/llm/`: the provider seam, prompt and cache `manni graph fill`
+    uses. It takes its providers from `src/shared/providers.ts`.
   - `src/graph/runtime/` and `src/graph/embed/`: the two `platform: neutral` entry
     points published as `@hawkeyexl/manni/graph/runtime` and `/graph/embed`. They run
     in a browser, so a `node:` import reaching either is a bug the
     bundle-purity test catches.
   - `src/graph/cli.ts`: thin commander wrapper exported as `buildProgram()` and
     mounted by `src/cli.ts`. No entry point of its own.
+  - `shapes/graph/`: the bundled SHACL shapes `graph check` validates against,
+    shipped in the package. `ns/graph/`: the namespace document each version of
+    the `graph:` prefix dereferences to, copied to `docs/public/graph/ns.ttl`.
 - `src/key/`: the family key's domain, `manni key set` and `manni key rotate`
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
   cite's re-encryption, and the one ciphertext format lives in
@@ -112,7 +118,9 @@ Key layers:
 - `src/index.ts`: the programmatic API, re-exporting `src/meta/index.ts`.
 
 The metadata tool's tests stay flat under `test/`; each later tool adds
-`test/<tool>/`, and `test/a11y/` is the first of those.
+`test/<tool>/`, and `test/a11y/` is the first of those. `test/graph/` splits
+into `unit/`, `integration/`, `real/` (run by `npm run test:graph:real`) and
+`fixtures/`.
 
 ### Folding a tool in
 
@@ -315,7 +323,7 @@ stdin/parse cases.
 Before any user-facing writing or docs task, consult `docs/content-strategy/`:
 
 1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). See `personas.md`.
-2. Find the matching **CUJ** in `cujs.md` (M1–M16 and M18–M20, D1–D13, S1–S12, T1–T6). Structure the content around reaching that outcome, not by document type or Diátaxis category.
+2. Find the matching **CUJ** in `cujs.md` (M1–M16 and M18–M20, D1–D13, S1–S12, T1–T7). Structure the content around reaching that outcome, not by document type or Diátaxis category.
 3. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
 4. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
 5. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.
@@ -527,6 +535,9 @@ npm run docs:check-links  # every internal link and anchor in the built site
                         # `cd docs && npm run build` first.
 npm run docs:check-docevals  # the evals tool over the whole site, deterministic
                         # evals only, from the root config's docevals: section
+npm run docs:check-graph  # build a graph of docs/src/content/docs/graph/ and
+                        # check it against the bundled shapes, from
+                        # docs/manni.graph.yaml
 node dist/cli.js docevals run --ai-only  # the site's judged evals, on this machine
                         # with llama-cpp and granite-4.1-3b-q2 from the root
                         # config. Local only: CI never runs it, because a CPU

@@ -1,0 +1,40 @@
+---
+title: "Base IRI"
+description: "What base IRI means in manni graph, and where the tool uses it."
+type: term
+id: base-iri
+label: "base IRI"
+abstract: "The prefix every minted IRI hangs off."
+definition: "The prefix every IRI that manni graph mints hangs off, set by `graph.baseIri`."
+keywords:
+  - "base IRI"
+  - "baseIri"
+  - "IRI"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what base IRI means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is the base IRI in manni graph?"
+  - "What does graph.baseIri default to?"
+graph:
+  label: "base IRI"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "iri"
+---
+
+<p>{frontmatter.definition}</p>
+
+It defaults to `urn:manni:graph:`, which identifies a node without promising
+to resolve it. Set it to an HTTP base when you publish the graph and its nodes
+should dereference. The [configuration reference](/manni/graph/reference/configuration/)
+lists the key.

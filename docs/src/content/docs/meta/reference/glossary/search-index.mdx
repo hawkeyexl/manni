@@ -1,0 +1,39 @@
+---
+title: "Search index"
+description: "What search index means in manni graph, and where the tool uses it."
+type: term
+id: search-index
+label: "search index"
+abstract: "The lexical index the browser runtime reads."
+definition: "The lexical index `graph export search` writes, which the browser runtime reads client-side."
+keywords:
+  - "search index"
+  - "export"
+  - "runtime"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what search index means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is the graph search index?"
+  - "What reads the search index?"
+graph:
+  label: "search index"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "vector-sidecar"
+  - "localization-manifest"
+---
+
+<p>{frontmatter.definition}</p>
+
+The runtime is published as `@hawkeyexl/manni/graph/runtime` and has no
+dependencies.
