@@ -604,6 +604,20 @@ describe("crawl and pages that redirect in the browser", () => {
     ).rejects.toThrow(/excludes .*, where the seed/);
   });
 
+  it("refuses a seed that redirects to a URL that is not http(s)", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/old`]: { redirect: "javascript:void(0)" } });
+    await expect(crawl(options({ seeds: [`${S}/old`] }), analyzer)).rejects.toThrow(
+      new A11yError(`${S}/old redirects to javascript:void(0), which is not an http(s) URL.`),
+    );
+  });
+
+  it("announces the browser once when the first page redirects", async () => {
+    const site: FakeSite = { [`${S}/old`]: { redirect: `${S}/new` }, [`${S}/new`]: {} };
+    const events: ProgressEvent[] = [];
+    await crawl(options({ seeds: [`${S}/old`], onProgress: (e) => events.push(e) }), fakeAnalyzer(site));
+    expect(events.filter((e) => e.kind === "browser")).toHaveLength(1);
+  });
+
   it("counts a crawled page that redirects off-host, and checks nothing there", async () => {
     const site: FakeSite = {
       [`${S}/`]: { links: [`${S}/out`] },

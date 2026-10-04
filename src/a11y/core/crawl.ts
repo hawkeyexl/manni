@@ -13,7 +13,7 @@
 import type { AnalyzeOptions, PageAnalyzer } from "./analyzer.js";
 import { A11yError, type PageResult, type ProgressListener, type Redirect } from "../types.js";
 import type { ExcludeFilter, ExcludeGlob } from "./exclude.js";
-import { dedupeKey, isPageLink, normalizeUrl, sameHost } from "./url.js";
+import { dedupeKey, isHttpUrl, isPageLink, normalizeUrl, sameHost } from "./url.js";
 
 export interface CrawlOptions {
   /** Normalized http(s) seeds; each seed's host is in scope. */
@@ -91,8 +91,9 @@ interface Candidate {
  * - A page that redirects in the browser is recorded in `redirects`, not in
  *   `pages`, and does not count toward `maxPages`. Its destination is
  *   enqueued with the page's own `source`, under `crawl: false` too, since it
- *   is the same page under a new address. A seed whose destination is on
- *   another host, or excluded, rethrows: otherwise nothing would be checked.
+ *   is the same page under a new address. A seed whose destination is not
+ *   http(s), is on another host, or is excluded, rethrows: otherwise nothing
+ *   would be checked.
  * - `onProgress` hears `browser` once before the first analyze (that is where
  *   the lazy launch happens), `page` before each analyze, `checked` (or
  *   `redirected`) after each, and `done` at the end. A failing seed rethrows
@@ -170,7 +171,8 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
     }
     visited.add(key);
     const index = pages.length + 1;
-    if (index === 1) progress({ kind: "browser" });
+    // Not `index === 1`: a redirect pushes no page, so the next one reuses that index.
+    if (pages.length + redirects.length === 0) progress({ kind: "browser" });
     progress({ kind: "page", index, queued: frontier.length, url });
     try {
       const analyzed = await analyzer.analyze(url, opts.analyze);
@@ -183,6 +185,9 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
         progress({ kind: "redirected", index, url, to });
         const outcome = enqueue(to, source);
         if (source === "seed") {
+          if (!isHttpUrl(to)) {
+            throw new A11yError(`${url} redirects to ${to}, which is not an http(s) URL.`);
+          }
           if (outcome.as === "off-host") {
             throw new A11yError(`${url} redirects to ${to}, which is on another host. Check ${to} instead.`);
           }
