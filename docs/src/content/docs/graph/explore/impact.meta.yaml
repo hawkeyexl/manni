@@ -37,8 +37,8 @@ docs/src/content/docs/graph/explore/impact.mdx:
       lines: 91
       integrity: sha256-ee7e1b0d5292b390a2ed27abce9894cd2e43ab558940368be388b9ffa1ba67d5
     - generated-by: Claude Opus 5
-      lines: 92-102
-      integrity: sha256-b7a2d755f637a297c66ddc9dc1023e0f8623a51032c60385389f1643ea19c4db
+      lines: 94-102
+      integrity: sha256-a998e7e46a841398a0222a0d2f8500acfbbad9bbec9abaffbc3ae9572a5831ef
     - generated-by: Claude Opus 5.5
       lines: 103-104
       integrity: sha256-03bfa1a127f01c1c971606a2c873cfd7d9fa7093c700f4fb3987747c81f9818c
