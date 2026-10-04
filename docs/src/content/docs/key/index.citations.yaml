@@ -56,7 +56,7 @@ docs/src/content/docs/key/index.mdx:
         file: src/shared/encryption-key.ts
         lines: 228-239
         integrity: sha256-e2820b422e0c5bc6a8aefba1ef4edc1cb3beb56b48222b093bf9f2ba88ae0103
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: set-row-generates-256-bits
       claim:
         lines: 64
@@ -145,7 +145,7 @@ docs/src/content/docs/key/index.mdx:
         file: src/shared/encryption-key.ts
         lines: 259-261
         integrity: sha256-24d7e5654c456855164c214ddf73c7e254c891845b755fd672eb809d6cc8b5c6
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: write-order-key-first
       claim:
         integrity: sha256-edee819facc090b259aff68c49ffc9cde876a19b6e63d2d2f7501c7cf909f81f
@@ -178,7 +178,7 @@ docs/src/content/docs/key/index.mdx:
         file: src/shared/encryption-key.ts
         lines: 57-69
         integrity: sha256-af2bad28497a46d44e3fd25f32d68e5b73c21d6b7b14d63192ca1a7ff1ddaa1c
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: key-shape-config
       claim:
         lines: 140-142
@@ -187,7 +187,7 @@ docs/src/content/docs/key/index.mdx:
         file: src/shared/config-file.ts
         lines: 253-260
         integrity: sha256-638ee344aaa62fb7b43eeb937589be88dac17f49d213a48e5eb37fe46fee679a
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: key-shape-env
       claim:
         lines: 140-142
@@ -196,7 +196,7 @@ docs/src/content/docs/key/index.mdx:
         file: src/shared/encryption-key.ts
         lines: 59-64
         integrity: sha256-9b2b2f43f95570f2bca61377c00eb15134ecfd902b97e521fc7e12405e3b3899
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: key-shape-config-message
       claim:
         lines: 145
@@ -205,7 +205,7 @@ docs/src/content/docs/key/index.mdx:
         file: src/shared/config-file.ts
         lines: 255-258
         integrity: sha256-4c64498f39288a7c9fb6e2e525da2101ac16dff316efd4c56ffbb2a0ecd99306
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: key-shape-env-message
       claim:
         lines: 146
@@ -214,7 +214,7 @@ docs/src/content/docs/key/index.mdx:
         file: src/shared/encryption-key.ts
         lines: 59-64
         integrity: sha256-9b2b2f43f95570f2bca61377c00eb15134ecfd902b97e521fc7e12405e3b3899
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: key-expanded-not-stretched
       claim:
         lines: 153-156
@@ -340,7 +340,7 @@ docs/src/content/docs/key/index.mdx:
         file: src/shared/config-file.ts
         lines: 187-212
         integrity: sha256-0a8fc75efc94aa7bb472f6e0b571e0c247ef9f1d6aeafe5948d7c4e07899d8b1
-        commit-sha: 48e7689754f551d70bf1141dca4e0738b6602d12
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: key-set-exception
       claim:
         lines: 141-142
@@ -349,4 +349,4 @@ docs/src/content/docs/key/index.mdx:
         file: src/shared/config-file.ts
         lines: 292-306
         integrity: sha256-2c6970bb7b86e4eef02c6c906bdafdcfe1aff8931d4f0d78760320620c622f50
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d

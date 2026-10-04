@@ -7,7 +7,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: src/meta/cli.ts
         lines: 727-731
         integrity: sha256-d9459f031fc83234358aaa2e641df4733c5699d2b056031ac59e5f00f9384e98
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: scoped-run-skips-corpus-checks
       claim:
         integrity: sha256-0cd301c79f776f15eafb0ef08236fdf158c5107697a27f3a8cfc2b14fe1624c4
@@ -23,7 +23,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: src/meta/cli.ts
         lines: 732-737
         integrity: sha256-74320011f15b4a953c0496f55ff3d7e3c02bfa5bf49c03a7c8cdcc5568d67630
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: no-paths-falls-back-to-collections
       claim:
         integrity: sha256-2dc6043a0612dda896bb5b2ce6c0fc0e61b42413aceadb872a995906684fa629
@@ -49,7 +49,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: src/meta/cli.ts
         lines: 875
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: operational-error-exits-2
       claim:
         lines: 52-53

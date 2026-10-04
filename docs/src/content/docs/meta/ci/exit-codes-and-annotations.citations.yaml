@@ -88,7 +88,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/cli.ts
         lines: 740
         integrity: sha256-58a708f05f13aa4fe06d41bdf01be4d7402ebb2827cf9a45d2f8e9db9e9872bc
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: exit-0-and-1-are-the-verdict
       claim:
         lines: 16-17
@@ -97,7 +97,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/cli.ts
         lines: 875
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: usage-error-is-exit-2
       claim:
         lines: 18
@@ -124,7 +124,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/cli.ts
         lines: 712
         integrity: sha256-acfbcd05b68a38e547947c6a99174315f5424335fc8a4675c3575c08448d2f90
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: empty-input-set-exits-2
       claim:
         lines: 38-39
@@ -142,7 +142,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/cli.ts
         lines: 741
         integrity: sha256-d3193ea73c651302f9efdcdc00ad7740a4e53ace5348aead05f004c333832cdc
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: get-and-schemas-take-pretty-and-json
       claim:
         lines: 55-56
@@ -178,7 +178,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/cli.ts
         lines: 808-813
         integrity: sha256-46599de1ce1425457120418eae4827dbc71a81c288714d0481a6003c7f6613b7
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: parse-and-schema-keywords
       claim:
         lines: 161-163
@@ -259,7 +259,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/cli.ts
         lines: 1407-1410
         integrity: sha256-5b35adb6e1ccb372d54eea232330ed547eec1eadaf66be511b1dfcfffa0f8dd7
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: sarif-paths-rebased-on-git-root
       claim:
         lines: 301-303
@@ -286,4 +286,4 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/cli.ts
         lines: 699
         integrity: sha256-9643d77dbe68988c0b2f6cab13ce7427419c75ae34ba4fdc70b42a0e2a0f699b
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d

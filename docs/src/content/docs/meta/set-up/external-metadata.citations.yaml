@@ -154,7 +154,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/commands/fill.ts
         lines: 854-861
         integrity: sha256-8f25f70238b0f937a411e472485286c894e20f83830eecd701ba73a80a7fbfd9
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: query-change-line-names-manifest
       claim:
         integrity: sha256-756a1eb87c6a14d7fbd92fc09a0b513c213db34ea64626596c3884017ef52bec
@@ -448,7 +448,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/cli.ts
         lines: 875
         integrity: sha256-b900d16ea81ba54da695ee6ec4f8e9c3d17f1700d0b307ed74045692b603e056
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: validate-summary-line-format
       claim:
         integrity: sha256-b703fb189e7b60d9d5e33c0c7a1508869101ab61fb8f444b79b2d85f005a5332

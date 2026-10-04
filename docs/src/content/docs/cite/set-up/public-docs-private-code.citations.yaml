@@ -31,7 +31,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         file: src/shared/encryption-key.ts
         lines: 57-69
         integrity: sha256-af2bad28497a46d44e3fd25f32d68e5b73c21d6b7b14d63192ca1a7ff1ddaa1c
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: decrypt-then-tracked
       claim:
         integrity: sha256-a584cb8f38343bb9035516da440060c85f945385029785a8166bf29d6ad9076a
@@ -97,7 +97,7 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         file: src/shared/encryption-key.ts
         lines: 260-261
         integrity: sha256-64650b48c4fdee9ba4f6322da6a277e73338664510c5e2c3da6fd48dfc19674f
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: key-set-refuses-env
       claim:
         integrity: sha256-6374d9dad8403d22e5442e8cf10a11e6fdcc74140e2521dd3d852785116a57f8

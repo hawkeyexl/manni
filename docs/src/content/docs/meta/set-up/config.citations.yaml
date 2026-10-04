@@ -155,9 +155,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-6db4d5d084e63d6301555a29399627c768a89ea90219446ce59f29e70f534908
       source:
         file: CHANGELOG.md
-        lines: 956-959
+        lines: 963-966
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: c30b37e5f50c6a92760d0ac5b221fd30aff39f28
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: collection-flag-refuses-positional-paths
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
@@ -198,7 +198,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/shared/config-file.ts
         lines: 182-183
         integrity: sha256-af94ed52dbb272ac789ea321e4aa9fb971f14cff43bbeceb14f2b9e2c597c806
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: collection-flag-needs-a-config
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
@@ -362,7 +362,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/shared/config-file.ts
         lines: 220-228
         integrity: sha256-6f57c384d5a5a8f84e8747112f0507f2229f11653725cac6c04b850059427be1
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: collection-paths-resolve-from-config-dir
       claim:
         lines: 43
@@ -429,7 +429,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/shared/config-file.ts
         lines: 358-359
         integrity: sha256-986539f40464f4e109d5c33931d4476a5208993e8572e799980ded3ff15b48c5
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: collections-only-file-is-metas-config
       claim:
         integrity: sha256-1fd2da588ebc850d336b70d59570375cb29bb737955af0e8033d4350b932b944
@@ -437,7 +437,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/shared/config-file.ts
         lines: 210-212
         integrity: sha256-f02b1b061de7040599d1723484857e099dc7c606fc60c91f303ee092abead242
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: config-flag-spellings
       claim:
         lines: 28
@@ -446,7 +446,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/cli.ts
         lines: 738-739
         integrity: sha256-9610c35fd394038b93a4e731325748a2728483d7c051fb4d4f8b3e9a127caf94
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: explicit-config-missing-is-an-error
       claim:
         lines: 28
@@ -455,7 +455,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/shared/config-file.ts
         lines: 367-369
         integrity: sha256-5e17e4ff25b3a8ee58a5bd0454614f01c22883f4c08539bb949156a08a2025e2
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: discovery-walks-cwd-then-parents
       claim:
         lines: 27
@@ -464,7 +464,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/shared/config-file.ts
         lines: 306-312
         integrity: sha256-9bc2ff2b7c6670f3861b09fd3fc6412ffc60e2bac57fa156889d9c1919eac384
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: manni-yaml-tried-before-yml
       claim:
         lines: 27
@@ -473,7 +473,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/shared/config-file.ts
         lines: 51-55
         integrity: sha256-6667b3b66a8f9f4789df5eb19546fa2f212465ab532996ae90ec45f8ed02eb71
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: family-key-or-section-ends-discovery
       claim:
         lines: 27
@@ -482,7 +482,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/shared/config-file.ts
         lines: 200-211
         integrity: sha256-77661ff026a9c0ea64d8292d964fa2576feed70843c186dc9e17472a60dd6dd5
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: discovery-stops-at-the-repo-root
       claim:
         lines: 27
@@ -525,4 +525,4 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/shared/config-file.ts
         lines: 290-296
         integrity: sha256-e5ad51dc293c20aaeb79c2fc64603212c43ad5bc7dae984ab1cb9f37e4a1e63b
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d

@@ -44,7 +44,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/shared/config-file.ts
         lines: 324
         integrity: sha256-718e1b331ff4627c6a86aaeb745be2e216eb6cd6acbc8b81d7a0d8674a9bfc7f
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: collection-paths-config-relative
       claim:
         lines: 37
@@ -107,7 +107,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/shared/config-file.ts
         lines: 193-201
         integrity: sha256-a0977fdaef182d48c35eb7885ef089f697029ed2bfe7ef7dfb4f715266b35a26
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: root-is-git-root-above-cwd
       claim:
         lines: 54-58

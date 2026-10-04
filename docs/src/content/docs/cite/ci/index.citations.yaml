@@ -451,7 +451,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/shared/encryption-key.ts
         lines: 33
         integrity: sha256-9b7acb2b1501361f96248373f12a91598a29e1e2985fc255aeb65287130ad879
-        commit-sha: f8278cf96c163826dce009a13eb2467fd1ddaf83
+        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
     - id: fingerprint-rule-and-id
       claim:
         lines: 310-312
