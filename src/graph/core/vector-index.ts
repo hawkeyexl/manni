@@ -2,7 +2,8 @@
  * The vector sidecar (ADR 01020) — `graph/vectors.<lang>.bin`, embeddings for the
  * same text that language's lexical index covers (ADR 01038).
  *
- * Layout, fixed and little-endian throughout:
+ * Layout, fixed. The magic is four ASCII bytes in file order; every number
+ * after it is little-endian:
  *
  * ```
  *   0  magic "MGRV"            4 bytes
@@ -27,11 +28,12 @@
 import { byCodeUnit } from "./sort.js";
 
 /**
- * "MGRV", manni graph vectors. It read "DKGV" while the tool was dockg and
- * "MKGV" while it was manni kg. Nothing was published under either name, so no
- * sidecar in the wild carries the old bytes.
+ * "MGRV", manni graph vectors, as the bytes a hex dump shows first. It read
+ * "DKGV" while the tool was dockg and "MKGV" while it was manni kg. Nothing was
+ * published under either name, so no sidecar in the wild carries the old bytes.
+ * Raw bytes rather than a little-endian u32: a u32 lands on disk reversed.
  */
-const MAGIC = 0x4d_47_52_56;
+const MAGIC = new Uint8Array([0x4d, 0x47, 0x52, 0x56]);
 // 2 since ADR 01038: the header names the language its vectors cover, so a
 // consumer cannot pair a sidecar with the wrong locale's index. A version-1
 // file is refused by `decodeVectorIndex` rather than read as if it had one.
@@ -123,7 +125,7 @@ export function encodeVectorIndex(
   const payloadBytes = sorted.length * dims * 4;
   const out = new Uint8Array(HEADER_OFFSET + headerBytes.length + payloadBytes);
   const view = new DataView(out.buffer);
-  view.setUint32(0, MAGIC, true);
+  out.set(MAGIC, 0);
   view.setUint32(4, FORMAT_VERSION, true);
   view.setUint32(8, headerBytes.length, true);
   out.set(headerBytes, HEADER_OFFSET);
@@ -148,7 +150,7 @@ export function decodeVectorIndex(bytes: Uint8Array): VectorIndexDoc {
     throw new VectorIndexError("Not a manni graph vector index: file is too short.");
   }
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  if (view.getUint32(0, true) !== MAGIC) {
+  if (!MAGIC.every((byte, i) => bytes[i] === byte)) {
     throw new VectorIndexError(
       "Not a manni graph vector index: bad magic — is this the right file?",
     );

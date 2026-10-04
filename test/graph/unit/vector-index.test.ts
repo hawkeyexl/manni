@@ -112,6 +112,17 @@ describe("decodeVectorIndex rejects malformed input", () => {
     );
   });
 
+  it("writes the magic as the ASCII bytes MGRV, the order the layout names", () => {
+    const head = new TextDecoder().decode(encoded().subarray(0, 4));
+    expect(head).toBe("MGRV");
+  });
+
+  it("rejects the byte-swapped magic an earlier build wrote", () => {
+    const bytes = encoded();
+    bytes.set(new TextEncoder().encode("VRGM"), 0);
+    expect(() => decodeVectorIndex(bytes)).toThrow(/bad magic/);
+  });
+
   it("rejects the wrong file entirely", () => {
     const notOurs = new TextEncoder().encode('{ "@graph": [] }        ');
     expect(() => decodeVectorIndex(notOurs)).toThrow(/bad magic/);
