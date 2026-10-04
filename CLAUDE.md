@@ -515,9 +515,12 @@ npm run docs:check-docevals  # the evals tool over the whole site, deterministic
                         # evals only, from the root config's docevals: section
 node dist/cli.js docevals run --ai-only  # the site's judged evals, on this machine
                         # with llama-cpp and granite-4.1-3b-q2 from the root
-                        # config. Local only: CI never runs it, because a CPU
-                        # runner takes minutes per call. About 20s a page on a
-                        # GPU. Inference runs in a worker process, and a GPU
+                        # config. The Docs judge workflow (docs-judge.yml)
+                        # judges a pull request's changed pages, at 3 runs per
+                        # eval. A newer push cancels the running judge, and a
+                        # judged fail blocks. A full-site run is local, because
+                        # a CPU runner takes minutes per page. About 20s a page
+                        # on a GPU. Inference runs in a worker process, and a GPU
                         # backend that crashes falls back to the next one
                         # (CUDA, Vulkan, CPU) with one warning. Setting
                         # NODE_LLAMA_CPP_GPU pins a backend and turns that
