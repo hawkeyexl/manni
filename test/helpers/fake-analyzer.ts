@@ -23,6 +23,11 @@ export interface FakePage {
   incomplete?: number;
   /** Where the browser landed, when the page redirects. Absent means it stayed put. */
   finalUrl?: string;
+  /**
+   * Where the page sends the browser once loaded (a meta refresh, a script).
+   * Set, the analyzer reports a redirect and nothing else about the page.
+   */
+  redirect?: string;
 }
 
 export type FakeSite = Record<string, FakePage | Error>;
@@ -46,6 +51,7 @@ export function fakeAnalyzer(site: FakeSite): FakeAnalyzer {
         return Promise.reject(new A11yError(`Could not load ${url}: net::ERR_NAME_NOT_RESOLVED`));
       }
       if (page instanceof Error) return Promise.reject(page);
+      if (page.redirect !== undefined) return Promise.resolve({ redirect: page.redirect });
       const analyzed: AnalyzedPage = {
         result: {
           url,

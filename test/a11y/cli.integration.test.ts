@@ -24,6 +24,8 @@ const manni = resolve(root, "dist", "cli.js");
 const site = resolve(root, "test", "fixtures", "a11y", "site");
 /** A site whose sitemap parses and names only another host's pages (#77). */
 const offhostSite = resolve(root, "test", "fixtures", "a11y", "offhost-sitemap");
+/** Pages that send the browser elsewhere once loaded: a meta refresh and a script. */
+const redirectSite = resolve(root, "test", "fixtures", "a11y", "redirect-site");
 const a11yConfig = resolve(root, "test", "fixtures", "a11y", "config");
 /** `a11y.crawl: false`, so only `--crawl` can crawl a run that reads it. */
 const crawlFalse = resolve(a11yConfig, "crawl-false.yaml");
@@ -158,7 +160,20 @@ function serveOffhostSite(): Promise<SchemaServer> {
   return serveFixture(offhostSite, OFFHOST_FILES);
 }
 
+const REDIRECT_FILES: Record<string, string> = {
+  "/index.html": "text/html; charset=utf-8",
+  "/old.html": "text/html; charset=utf-8",
+  "/script.html": "text/html; charset=utf-8",
+  "/new.html": "text/html; charset=utf-8",
+  "/offhost.html": "text/html; charset=utf-8",
+};
+
+function serveRedirectSite(): Promise<SchemaServer> {
+  return serveFixture(redirectSite, REDIRECT_FILES);
+}
+
 interface JsonRun {
+  redirects: { url: string; to: string; source: string }[];
   results: {
     url: string;
     source: string;
@@ -171,6 +186,7 @@ interface JsonRun {
     discovered: number;
     skipped: number;
     duplicates: number;
+    redirects: number;
     excluded: number;
     failed: number;
     bySeverity: Record<string, number>;
@@ -848,5 +864,88 @@ describe.skipIf(browser === null)("a sitemap that supplied no pages (built bin, 
     expect(json.summary.sitemapPages).toBe(0);
     // The contradiction in #77: every page carries `link`, never `sitemap`.
     expect(json.results.map((p) => p.source)).toEqual(["seed", "link"]);
+  }, 120_000);
+});
+
+describe.skipIf(browser === null)("pages that redirect in the browser (built bin, real browser)", () => {
+  let server: SchemaServer;
+
+  beforeAll(async () => {
+    if (!existsSync(manni)) execSync("npm run build", { cwd: root, stdio: "ignore" });
+    server = await serveRedirectSite();
+  }, 180_000);
+
+  afterAll(async () => {
+    await server.close();
+  });
+
+  it("follows a meta refresh and a scripted redirect, checking the destination once", async () => {
+    const u = server.url;
+    const r = await run(["check", `${u}/index.html`]);
+    expect(r.stderr).toBe("");
+    expect(r.status).toBe(0);
+    expect(r.stdout.trimEnd().split("\n")).toEqual([
+      "Checked 2 of 4 pages (no sitemap; followed links)",
+      `✓ ${u}/index.html  score 100`,
+      `✓ ${u}/new.html  score 100`,
+      `↪ ${u}/old.html  redirects to ${u}/new.html`,
+      `↪ ${u}/script.html  redirects to ${u}/new.html`,
+      "",
+      "0 violations on 0 of 2 pages; 2 redirects",
+    ]);
+    expect(server.hits("/new.html")).toBeGreaterThanOrEqual(1);
+  }, 120_000);
+
+  it("reports the redirects in json, and the identity holds", async () => {
+    const u = server.url;
+    const json = parseJsonRun(await run(["check", `${u}/index.html`, "-f", "json"]));
+    expect(json.results.map((p) => p.url)).toEqual([`${u}/index.html`, `${u}/new.html`]);
+    expect(json.redirects).toEqual([
+      { url: `${u}/old.html`, to: `${u}/new.html`, source: "link" },
+      { url: `${u}/script.html`, to: `${u}/new.html`, source: "link" },
+    ]);
+    const { checked, skipped, duplicates, redirects, discovered } = json.summary;
+    expect({ checked, skipped, duplicates, redirects, discovered }).toEqual({
+      checked: 2,
+      skipped: 0,
+      duplicates: 0,
+      redirects: 2,
+      discovered: 4,
+    });
+  }, 120_000);
+
+  it("follows a seed's redirect under --no-crawl, giving the destination the seed's source", async () => {
+    const u = server.url;
+    const r = await run(["check", `${u}/old.html`, "--no-crawl"]);
+    expect(r.status).toBe(0);
+    expect(r.stdout.trimEnd().split("\n")).toEqual([
+      "Checked 1 of 2 pages (no crawl)",
+      `✓ ${u}/new.html  score 100`,
+      `↪ ${u}/old.html  redirects to ${u}/new.html`,
+      "",
+      "0 violations on 0 of 1 pages; 1 redirect",
+    ]);
+    const json = parseJsonRun(await run(["check", `${u}/old.html`, "--no-crawl", "-f", "json"]));
+    expect(json.results.map((p) => [p.url, p.source])).toEqual([[`${u}/new.html`, "seed"]]);
+  }, 240_000);
+
+  it("refuses a seed that redirects to another host", async () => {
+    const u = server.url;
+    const r = await run(["check", `${u}/offhost.html`]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr.trimEnd()).toBe(
+      `manni: ${u}/offhost.html redirects to http://example.invalid/, which is on another host. Check http://example.invalid/ instead.`,
+    );
+  }, 120_000);
+
+  it("refuses a seed that redirects to an excluded path", async () => {
+    const u = server.url;
+    const r = await run(["check", `${u}/old.html`, "--exclude", "/new.html"]);
+    expect(r.status).toBe(2);
+    expect(r.stdout).toBe("");
+    expect(r.stderr.trimEnd()).toBe(
+      `manni: --exclude "/new.html" excludes ${u}/new.html, where the seed ${u}/old.html redirects.`,
+    );
   }, 120_000);
 });

@@ -82,6 +82,9 @@ function terminalReporter(opts: ProgressOptions): ProgressListener {
       case "checked":
         showUrl(`${c.dim(counter(event.index, queued))} ${outcome(event, c)}`, event.url);
         return;
+      case "redirected":
+        showUrl(`${c.dim(counter(event.index, queued))} ${c.dim("↪")} redirects to `, event.to);
+        return;
       case "done":
         stream.write(CLEAR_LINE);
         return;
@@ -125,6 +128,9 @@ function plainReporter(stream: ProgressOptions["stream"]): ProgressListener {
         else say(`${head} ✗ ${plural(event.violations, "violation")}`);
         return;
       }
+      case "redirected":
+        say(`${counter(event.index, queued)} ↪ redirects to ${event.to}`);
+        return;
       case "done":
         say(`checked ${plural(event.checked, "page")}, ${event.skipped} skipped`);
         return;

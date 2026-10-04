@@ -127,6 +127,7 @@ export async function runCheck(opts: CheckOptions, deps: CheckDeps): Promise<Che
     const results = outcome.pages.map((page) => finishPage(page, opts.severity));
     return {
       results,
+      redirects: outcome.redirects,
       summary: summarize(results, outcome, sitemap, opts.crawl),
     };
   } finally {
@@ -145,7 +146,7 @@ function finishPage(page: Omit<PageResult, "score">, floor: Severity): PageResul
 
 function summarize(
   results: PageResult[],
-  { discovered, skipped, duplicates, excluded }: CrawlOutcome,
+  { discovered, skipped, duplicates, redirects, excluded }: CrawlOutcome,
   sitemap: SitemapDiscovery,
   crawl: boolean,
 ): CheckSummary {
@@ -165,6 +166,7 @@ function summarize(
     checked: results.length,
     skipped,
     duplicates,
+    redirects: redirects.length,
     excluded,
     failed,
     violations,

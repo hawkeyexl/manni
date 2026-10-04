@@ -4,7 +4,9 @@
  * One line per page, and under a failing page one line per rule followed by
  * the first three elements that failed it, each with axe's own statement of
  * which condition was not met. That per-element line is the deterministic
- * remediation: which rule, which selector, what to change.
+ * remediation: which rule, which selector, what to change. After the pages,
+ * one `↪` line per page that redirected in the browser, hidden by `--quiet`
+ * as a passing page is.
  *
  * Colors carry the meanings meta already gave them: ✓ green, ✗ red, URLs
  * cyan, and severity from dim (notice) through yellow (warning) to red
@@ -50,12 +52,21 @@ export function renderPretty(run: CheckRun, opts: RenderOptions): string {
     for (const v of page.violations) lines.push(...violationLines(v, c));
   }
 
+  if (!opts.quiet) {
+    for (const r of run.redirects) {
+      lines.push(`${c.dim("↪")} ${c.cyan(r.url)}  redirects to ${c.cyan(r.to)}`);
+    }
+  }
+
   const failed = summary.failed;
   const footer =
     `${summary.violations} violation${summary.violations === 1 ? "" : "s"} on ${failed} of ${summary.checked} pages` +
     (summary.skipped > 0 ? `; ${summary.skipped} skipped (--max-pages)` : "") +
     (summary.duplicates > 0
       ? `; ${summary.duplicates} duplicate${summary.duplicates === 1 ? "" : "s"} dropped`
+      : "") +
+    (summary.redirects > 0
+      ? `; ${summary.redirects} redirect${summary.redirects === 1 ? "" : "s"}`
       : "") +
     (summary.excluded > 0 ? `; ${summary.excluded} excluded` : "");
   lines.push("");
