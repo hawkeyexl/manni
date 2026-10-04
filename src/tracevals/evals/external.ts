@@ -128,7 +128,7 @@ export function urlManifestRefusal(label: string, manifest: ArtifactManifest): s
 }
 
 function ownsMetadata(manifest: ExternalMetadataConfig): boolean {
-  return manifest.keys.includes(METADATA_KEY);
+  return manifest.keys?.includes(METADATA_KEY) === true;
 }
 
 /**
