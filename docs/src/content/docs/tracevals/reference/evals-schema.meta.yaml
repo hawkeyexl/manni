@@ -50,8 +50,14 @@ docs/src/content/docs/tracevals/reference/evals-schema.mdx:
       lines: 177
       integrity: sha256-f284ea918ac1a02e2bd76e49e87c265c6cb4fe0cbaca9db4c8d8fc559b64ce66
     - generated-by: Claude Opus 5
-      lines: 178-236
-      integrity: sha256-cb481bbee8473df63816a061ce5fcdc483a90fd1969423a623b0b4a11fd1af5f
+      lines: 178-200
+      integrity: sha256-3927e56b75dbf2ffefecc18d98703b72b8d4f72698235cb2f73f29e5ac75aeb9
+    - generated-by: Claude Opus 5.5
+      lines: 201
+      integrity: sha256-bc41a5536d8a31de41e650c0e256edc03423137c6c2a60bdceb1823197e49f47
+    - generated-by: Claude Opus 5
+      lines: 203-236
+      integrity: sha256-afdd41bf2efc358c285a251c238c9f2e75b24167fc64eaa1d96288aa12ab13c1
     - generated-by: Claude Opus 5.5
       lines: 238-242
       integrity: sha256-df79f7046c53f7ec81d57274172ec2d5b4b3f3835aa871e9caa491af35d8b587
