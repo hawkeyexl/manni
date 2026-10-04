@@ -18,6 +18,8 @@ const COMPOSED = join(fixtures, "composed.schema.json");
 const OWNER_HARVESTED = join(fixtures, "owner-harvested.schema.json");
 const ANYOF = join(fixtures, "anyof.schema.json");
 const BAD_VALUE = join(fixtures, "bad-value.schema.json");
+const CONFLICT = join(fixtures, "conflict.schema.json");
+const CONFLICT_REF = join(fixtures, "conflict-ref.schema.json");
 
 /** The map as a plain object, for readable equality. */
 async function prefs(
@@ -123,6 +125,25 @@ describe("x-manni-graph-output: the keyword", () => {
     await expect(
       new Validator().validate({ owner: "o" }, [BAD_VALUE], () => undefined),
     ).rejects.toThrow(`${BAD_VALUE}: "x-manni-graph-output" must be true or false.`);
+  });
+
+  it("refuses one schema that says both values for one key through allOf, exit 2", async () => {
+    const message = `${CONFLICT}: "x-manni-graph-output" says both true and false for "owner".`;
+    const run = new Validator().graphOutputPreferences({ owner: "o" }, [CONFLICT]);
+    await expect(run).rejects.toThrow(DocmetaError);
+    await expect(run).rejects.toThrow(message);
+    await expect(run).rejects.toMatchObject({ exitCode: 2 });
+    // Refused when the schema compiles, whatever the document holds.
+    await expect(new Validator().graphOutputPreferences({}, [CONFLICT])).rejects.toThrow(message);
+    await expect(
+      new Validator().validate({ title: "t" }, [CONFLICT], () => undefined),
+    ).rejects.toThrow(message);
+  });
+
+  it("refuses a contradiction reached through a local $ref and its allOf", async () => {
+    await expect(new Validator().graphOutputPreferences({}, [CONFLICT_REF])).rejects.toThrow(
+      `${CONFLICT_REF}: "x-manni-graph-output" says both true and false for "owner".`,
+    );
   });
 
   it("leaves markedPointers and locationPreferences untouched", async () => {

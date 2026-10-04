@@ -263,8 +263,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * The first top-level key this schema marks both `page` and `external` on
- * paths every document takes; else undefined.
+ * The first top-level key this schema gives two different values of the mark
+ * `keyword` on paths every document takes; else undefined. `isMark` says
+ * which values count, so a malformed one is left to the keyword's own check.
  *
  * Unconditional means the schema's own `properties`, its `allOf` entries, and
  * a local `$ref` reached from those, applied again inside a property's
@@ -273,8 +274,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * is not chased, and neither is a local one inside an embedded `$id`, whose
  * `#` names another resource.
  */
-function definiteLocationConflict(root: Record<string, unknown>): string | undefined {
-  const marks = new Map<string, Set<FieldLocation>>();
+function definiteMarkConflict(
+  root: Record<string, unknown>,
+  keyword: string,
+  isMark: (value: unknown) => boolean,
+): string | undefined {
+  const marks = new Map<string, Set<unknown>>();
   /** The target of a `#/...` pointer from the root, if it resolves. */
   const localRef = (node: Record<string, unknown>, embedded: boolean): unknown => {
     const ref = node["$ref"];
@@ -305,8 +310,8 @@ function definiteLocationConflict(root: Record<string, unknown>): string | undef
     if (!isRecord(node) || visited.has(node)) return;
     visited.add(node);
     const inner = isEmbedded(node, embedded);
-    const mark = node[LOCATION_KEYWORD];
-    if (isFieldLocation(mark)) {
+    const mark = node[keyword];
+    if (isMark(mark)) {
       const seen = marks.get(key);
       if (seen) seen.add(mark);
       else marks.set(key, new Set([mark]));
@@ -544,10 +549,20 @@ export class Validator {
         `${ref}: "${FILE_SCHEMA_KEY}" cannot be stored in external metadata.`,
       );
     }
-    const contradicted = definiteLocationConflict(schema);
+    const contradicted = definiteMarkConflict(schema, LOCATION_KEYWORD, isFieldLocation);
     if (contradicted !== undefined) {
       throw new DocmetaError(
         `${ref}: "${LOCATION_KEYWORD}" says both "page" and "external" for "${contradicted}".`,
+      );
+    }
+    const graphContradicted = definiteMarkConflict(
+      schema,
+      GRAPH_OUTPUT_KEYWORD,
+      (value) => typeof value === "boolean",
+    );
+    if (graphContradicted !== undefined) {
+      throw new DocmetaError(
+        `${ref}: "${GRAPH_OUTPUT_KEYWORD}" says both true and false for "${graphContradicted}".`,
       );
     }
     try {
@@ -720,10 +735,11 @@ export class Validator {
    * first, as validation does.
    *
    * Refs are evaluated in order and a later ref's mark wins, so a house schema
-   * listed after a vocabulary refines it. A ref whose evaluated branches say
-   * both `true` and `false` gives that key no preference: with `allErrors`, Ajv
-   * evaluates failing branches too, so neither value is that ref's answer and
-   * an earlier ref's stands.
+   * listed after a vocabulary refines it. A schema that says both on paths
+   * every document takes is refused when it compiles. A ref whose conditional
+   * branches say both `true` and `false` gives that key no preference: with
+   * `allErrors`, Ajv evaluates failing branches too, so neither value is that
+   * ref's answer and an earlier ref's stands.
    */
   async graphOutputPreferences(
     data: Record<string, unknown>,

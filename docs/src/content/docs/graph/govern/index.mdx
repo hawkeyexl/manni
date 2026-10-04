@@ -163,6 +163,18 @@ does. An `owner` kept in a `{page}.meta.yaml` is left out like one on the page.
 A mark nested inside the `graph` block is ignored. The mark governs a top-level
 key, and `graph` is the top-level key.
 
+One schema that marks a key both `true` and `false` on paths every page takes
+is refused when it compiles, exit 2:
+
+```
+steward.schema.json: "x-manni-graph-output" says both true and false for "owner".
+```
+
+Those paths are the schema's own `properties`, its `allOf` entries, and a local
+`$ref` reached from them. Marks that differ across `anyOf`, `oneOf` or
+`if`/`then` branches are not an error. When the validator evaluates both, that
+schema has no preference for the key, and an earlier schema's mark applies.
+
 ## Three pointers a machine may never claim
 
 `/graph/sections`, `/graph/revision-of` and `/graph/derived-from` are hand-curated. A

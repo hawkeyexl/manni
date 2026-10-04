@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "allOf": [
+    { "properties": { "owner": { "x-manni-graph-output": true } } },
+    { "properties": { "owner": { "x-manni-graph-output": false } } }
+  ]
+}
