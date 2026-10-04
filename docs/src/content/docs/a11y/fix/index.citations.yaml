@@ -39,18 +39,18 @@ docs/src/content/docs/a11y/fix/index.mdx:
         integrity: sha256-176098031d3628e28f002ee0ca9a460b5b8b1a3689b7a5300e88cc29f27df3f4
       source:
         file: src/a11y/core/crawl.ts
-        lines: 197
+        lines: 202
         integrity: sha256-49bfcd2caf112e0e75f4574d7c872745f7ed18cce309f623e60cf67b1c8cba57
-        commit-sha: cd1dee76155c57cd5356893302a30b1a93cd16fe
+        commit-sha: 99f6129cb8fdae7e4375dd55bacff75b3d766a75
     - id: no-crawl-skips-sitemap
       claim:
         lines: 38-39
         integrity: sha256-176098031d3628e28f002ee0ca9a460b5b8b1a3689b7a5300e88cc29f27df3f4
       source:
         file: src/a11y/core/crawl.ts
-        lines: 150-151
+        lines: 151-152
         integrity: sha256-d13a114682b09aba27c9651f0026dbb8504dde5627d9c143aedb0f90430507e6
-        commit-sha: f0c617a65230e141b73778b3dd2ac2687caf4fc3
+        commit-sha: 99f6129cb8fdae7e4375dd55bacff75b3d766a75
     - id: no-crawl-no-sitemap-discovery
       claim:
         lines: 38-39

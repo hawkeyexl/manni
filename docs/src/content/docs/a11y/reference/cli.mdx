@@ -212,16 +212,17 @@ recorded with an `error` on that page, the crawl continues, and the page counts
 as failed for the exit code.
 
 {/* cite seed-redirect-exit-2 */}
-A seed that redirects in the browser to another host, or to an excluded path,
-also stops the run with exit `2`. Nothing on the seed's host would be checked,
+A seed can also redirect in the browser to a URL that is not `http(s)`, to
+another host, or to an excluded path. That stops the run with exit `2` too. Nothing on the seed's host would be checked,
 and the message names the destination.
 
 ```
+manni: http://127.0.0.1:4321/old/ redirects to javascript:void(0), which is not an http(s) URL.
 manni: http://127.0.0.1:4321/old/ redirects to https://example.com/new/, which is on another host. Check https://example.com/new/ instead.
 manni: --exclude "/legacy/**" excludes http://127.0.0.1:4321/legacy/new/, where the seed http://127.0.0.1:4321/old/ redirects.
 ```
 
-The second message names where its pattern came from, as the
+The last message names where its pattern came from, as the
 [seed exclusion message](#what-a-pattern-matches) does.
 
 ### What a pattern matches
@@ -537,7 +538,7 @@ finished run.
 |---|---|
 | `0` | Every page loaded and none has a violation at or above the severity floor. |
 | `1` | At least one page has a remaining violation, or a crawled page failed to load. `summary.failed` is greater than zero. |
-| `2` | Usage or operational error. The causes are an unknown flag value, a non-`http(s)` URL, or no URLs and no config. They also include a seed that could not be loaded, a seed that redirects to another host or an excluded path, or no browser found. Most print one line on stderr prefixed `manni: `. A missing or unknown subcommand prints the help or commander's own message instead. |
+| `2` | Usage or operational error. The causes are an unknown flag value, a non-`http(s)` URL, or no URLs and no config. They also include a seed that could not be loaded, or no browser found. So is a seed that redirects to a non-`http(s)` URL, another host or an excluded path. Most print one line on stderr prefixed `manni: `. A missing or unknown subcommand prints the help or commander's own message instead. |
 
 ### Examples
 

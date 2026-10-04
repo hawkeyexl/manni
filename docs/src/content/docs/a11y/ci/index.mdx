@@ -184,7 +184,7 @@ every failing element, and a `summary` object with the counts.
 |---|---|
 | `0` | Every page loaded and none has a violation at or above the severity floor. |
 | `1` | At least one page keeps a violation, or a crawled page failed to load. |
-| `2` | The run could not happen. A bad flag value, a URL that is not `http(s)`, no URLs and no config, or no browser. So is a seed that would not load, or that redirects off its host or to an excluded path. |
+| `2` | The run could not happen. A bad flag value, a URL that is not `http(s)`, no URLs and no config, or no browser. So is a seed that would not load, or that redirects to a URL that is not `http(s)`, off its host, or to an excluded path. |
 
 Wire `1` to the gate and `2` to a loud failure. That is the same split
 [`manni meta validate`](/manni/meta/ci/exit-codes-and-annotations/) uses. Keep

@@ -81,18 +81,18 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         integrity: sha256-1c8dafab2b6c8ba25a2df5b25688672e9d41a020bc4afccb44de475c6ce22b6e
       source:
         file: src/a11y/core/crawl.ts
-        lines: 122-123
+        lines: 123-124
         integrity: sha256-ac9e729a3e66dc7e44cf40da4ebbf131ba0c8e2c7452c44366ba8f152defd6f4
-        commit-sha: 8b1569af77538e03cea6c2c370b66f87f66e9e36
+        commit-sha: 99f6129cb8fdae7e4375dd55bacff75b3d766a75
     - id: bare-run-follow-links
       claim:
         lines: 76-77
         integrity: sha256-1c8dafab2b6c8ba25a2df5b25688672e9d41a020bc4afccb44de475c6ce22b6e
       source:
         file: src/a11y/core/crawl.ts
-        lines: 197
+        lines: 202
         integrity: sha256-49bfcd2caf112e0e75f4574d7c872745f7ed18cce309f623e60cf67b1c8cba57
-        commit-sha: cd1dee76155c57cd5356893302a30b1a93cd16fe
+        commit-sha: 99f6129cb8fdae7e4375dd55bacff75b3d766a75
     - id: findings-exit-1
       claim:
         integrity: sha256-b7bb54562f95f271a30eee660f1937a3babba1a434a96c6bca7fc727c13b3b62
@@ -203,18 +203,18 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         integrity: sha256-85448681ec11ced77cb19913c8104dd55b34d09abc73c24171d3b99ad31cd41c
       source:
         file: src/a11y/core/crawl.ts
-        lines: 151
+        lines: 152
         integrity: sha256-1ff50f94c9678c57e2ba8d3a93ea40d4f2b2daf18a8a3eda14c82f8abe84dc33
-        commit-sha: f0c617a65230e141b73778b3dd2ac2687caf4fc3
+        commit-sha: 99f6129cb8fdae7e4375dd55bacff75b3d766a75
     - id: no-crawl-no-links
       claim:
         lines: 171-172
         integrity: sha256-85448681ec11ced77cb19913c8104dd55b34d09abc73c24171d3b99ad31cd41c
       source:
         file: src/a11y/core/crawl.ts
-        lines: 197
+        lines: 202
         integrity: sha256-49bfcd2caf112e0e75f4574d7c872745f7ed18cce309f623e60cf67b1c8cba57
-        commit-sha: cd1dee76155c57cd5356893302a30b1a93cd16fe
+        commit-sha: 99f6129cb8fdae7e4375dd55bacff75b3d766a75
     - id: single-page-exit-0
       claim:
         integrity: sha256-8a465d2ac2f6bbccddd9ae7274e4b138c0bc5abbe7c85d389831bbf9adb98ba5
