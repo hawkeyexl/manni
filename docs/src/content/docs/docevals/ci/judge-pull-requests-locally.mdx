@@ -82,13 +82,14 @@ jobs:
           restore-keys: docs-judge-${{ github.event.pull_request.number }}-
       # --ai-only: a model that cannot start is exit 2, not a quiet
       # deterministic pass. ci.yml and docs.yml run the deterministic evals.
-      # --max-turns: about 80 evals at three runs. Past it, the rest are
-      # skipped and reported, and the next push continues from the cache.
+      # --max-turns: about 25 evals at three runs, under the timeout at the
+      # slowest rate measured. Past it, the rest are skipped and reported,
+      # and the next push continues from the cache.
       - name: Judge the changed pages
         run: >-
           node dist/cli.js docevals run --ai-only
           --since origin/${{ github.base_ref }}
-          --max-turns 240 --format github
+          --max-turns 75 --format github
       # Saved on success, failure and cancellation alike, so a run replaced
       # by a newer push keeps the verdicts it reached.
       - name: Save the verdicts
@@ -149,11 +150,11 @@ That is about 2 to 13 minutes per page. The same three pages took 775 s in total
 runner, so the runner's CPU swings the time by about two times. With the model cache warm,
 fetching and loading the model adds about 20 to 45 seconds.
 
-Two limits bound a large pull request. `--max-turns 240` caps the judge at 240 model calls, which
-is 80 evals at three runs each. Past the cap, the remaining evals are skipped and reported, the
-run still exits `0`, and the next push continues from the cache. `timeout-minutes: 180` caps the
-job's wall-clock time. At the rates above, 80 evals take longer than 180 minutes, so a pull
-request that changes many judged pages meets the timeout first.
+Two limits bound a large pull request. `--max-turns 75` caps the judge at 75 model calls, which
+is 25 evals at three runs each. At the slowest rate above, that fits inside
+`timeout-minutes: 180`, so a large pull request ends on the turn budget, not the runner's limit.
+Past the cap, the remaining evals are skipped and reported, and the run still exits `0`. The next
+push restores the verdicts this run reached and judges the rest.
 
 ## Blocking, and the judge's consistency
 

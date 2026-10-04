@@ -1,18 +1,8 @@
 docs/src/content/docs/docevals/ci/judge-pull-requests-locally.mdx:
   citations:
-    - id: workflow
-      claim:
-        lines: 21-94
-        integrity: sha256-b25fe626ad15504a79818570944948dcc79c895ed88b4c491c753b539467c0eb
-      source:
-        file: .github/workflows/docs-judge.yml
-        lines: 1-72
-        integrity: sha256-92f70be735e73a9b1f3e7a3e0c87b1a43f8406e8046faa635dbf73e2177addd3
-        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
-      quote: true
     - id: one-judge-per-pull-request
       claim:
-        lines: 106-109
+        lines: 107-110
         integrity: sha256-e3dad013c8e410773242c7525c048d059a54ffb4be4b591852df157ffca737d2
       source:
         file: .github/workflows/docs-judge.yml
@@ -21,53 +11,35 @@ docs/src/content/docs/docevals/ci/judge-pull-requests-locally.mdx:
         commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
     - id: save-on-cancel
       claim:
-        lines: 111-113
+        lines: 112-114
         integrity: sha256-34c5a194b59072f1566a09271417daa631eb5677f2e0525eb02fea647bc5dfab
       source:
         file: .github/workflows/docs-judge.yml
-        lines: 65-72
+        lines: 66-73
         integrity: sha256-43d616d30d0b1fa4399242e293523c7d3cd72c7599d83b6db052bc128a0f33a2
-        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
+        commit-sha: 53627e663b98893ecc54eb3718be31ac080f108c
     - id: restore-earlier-verdicts
       claim:
-        lines: 111-113
+        lines: 112-114
         integrity: sha256-34c5a194b59072f1566a09271417daa631eb5677f2e0525eb02fea647bc5dfab
       source:
         file: .github/workflows/docs-judge.yml
         lines: 49-55
         integrity: sha256-22a117652dd01e13ffedbeae8b03eb07011f076b75d3202b8d3568f6d0815dd9
         commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
-    - id: since-base-branch
-      claim:
-        lines: 122-125
-        integrity: sha256-c6300c280673f731c4adbfa60b1c067a219cdb62f166cb5bc712ad021a337d13
-      source:
-        file: .github/workflows/docs-judge.yml
-        lines: 60-64
-        integrity: sha256-747439e861658145f187f79367e937d89be80a544379162f06169765c79b3fd2
-        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
     - id: full-history
       claim:
-        lines: 127
+        lines: 128
         integrity: sha256-3bcfe96ea37fada3684f8f4169f08c19ce720cbccb33193ebce2bc923fdf0396
       source:
         file: .github/workflows/docs-judge.yml
         lines: 33-36
         integrity: sha256-854098193b69c76cd69f6f0d41fac88241dfc22ef899052f4d043f21fbe7ee82
         commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
-    - id: max-turns-240
-      claim:
-        lines: 146-148
-        integrity: sha256-7b6876189b85f18d33ca479a4668ab00e2c6772fd536e5e144a56723930391b1
-      source:
-        file: .github/workflows/docs-judge.yml
-        lines: 58-64
-        integrity: sha256-a987e74545923dcd83d4a5b92ee6e508e283d4ddd8e4e9bb13810faabd758a3c
-        commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
     - id: timeout-180
       claim:
-        lines: 148-150
-        integrity: sha256-77511daf3e90ae2c049d6f84d1d0ccd9714019c6a22214d6dde6a6f8b28da895
+        lines: 148-151
+        integrity: sha256-da77871c780e9b97a4190fb09b7effcda73c548e5711d33e02847de990e5fa56
       source:
         file: .github/workflows/docs-judge.yml
         lines: 31
@@ -75,7 +47,7 @@ docs/src/content/docs/docevals/ci/judge-pull-requests-locally.mdx:
         commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
     - id: ai-only
       claim:
-        lines: 100-101
+        lines: 101-102
         integrity: sha256-46b4c0d6bf3ebb7cb8b6ff6a3d6d8f40d63925c6b4c0d3da21fc19a8f995ce03
       source:
         file: .github/workflows/docs-judge.yml
@@ -84,7 +56,7 @@ docs/src/content/docs/docevals/ci/judge-pull-requests-locally.mdx:
         commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
     - id: runtime-cache
       claim:
-        lines: 165-166
+        lines: 166-167
         integrity: sha256-2de3ebd14463ed5493d267e5b42265e21369d5b4f9c639aab63fdb41d6d69032
       source:
         file: .github/workflows/docs-judge.yml
@@ -100,3 +72,31 @@ docs/src/content/docs/docevals/ci/judge-pull-requests-locally.mdx:
         lines: 163-164
         integrity: sha256-41f9435c4470cdba81446faf1ae82c9875fe255870858c3482d64fd04296e950
         commit-sha: 6abf3fd1faeb87df17456e45cd4e49fbbd5bda21
+    - id: workflow
+      claim:
+        lines: 21-95
+        integrity: sha256-e6c0dcbea820395b1d1b9d508bd0c4e37a722a22de43d415ed5980a662ac808e
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 1-73
+        integrity: sha256-9e86c3211c58d05dfe71c9de1715e2b86d69b77bfdcbace14661bfaee8b50834
+        commit-sha: 5264cc728c7be90afec610ac6eab523bb2757463
+      quote: true
+    - id: since-base-branch
+      claim:
+        lines: 123-126
+        integrity: sha256-c6300c280673f731c4adbfa60b1c067a219cdb62f166cb5bc712ad021a337d13
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 63-64
+        integrity: sha256-643ddb58f52b9b71c14a7b9968f5a2a98d77bf51896939c2974f867a252b05d4
+        commit-sha: 5264cc728c7be90afec610ac6eab523bb2757463
+    - id: max-turns-75
+      claim:
+        lines: 147-151
+        integrity: sha256-a653e6f8d1ab5cd20cce67b12566133259bd2f48f8299a53131496015d54504f
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 58-65
+        integrity: sha256-7cd39594702577be8c1d039883e9e5f6043b94544935c3dbf81a91cb645ff820
+        commit-sha: 5264cc728c7be90afec610ac6eab523bb2757463
