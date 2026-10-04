@@ -1,0 +1,13 @@
+docs/src/content/docs/docevals/ci/local-models.mdx:
+  eval-suite: docevals
+  evals:
+    - id: local-models-in-ci
+      assertion: "A reader learns to run a llama-cpp judge in CI only on a runner with a GPU, and what to run instead on a CPU runner."
+      type: capability
+      grader: ai
+      examples:
+        pass: "Recommends a GPU runner for a llama-cpp judge in CI, gives the measured CPU times, and offers deterministic CI, judging locally on a GPU, or a hosted provider instead."
+        fail: "Shows a llama-cpp judge running on a CPU runner as the normal setup, or never says what to run in CI instead."
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

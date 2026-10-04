@@ -224,6 +224,8 @@ providers:
 
 A relative `modelsDir` resolves from the config file's directory. Set `INFERENCE_NO_AUTO_INSTALL=1` to refuse the binding install if a native install needs approval in your environment. On a CI runner, either pin a provider or expect that download on every fresh agent.
 
+The download is not the only cost in CI. A local model on a CPU runner is slow. Run `--local` in CI only on a runner with a GPU. [Local models and CI](/manni/docevals/ci/local-models/) has the measurements, taken with the docevals judge on the same provider.
+
 ## Bounding a large run
 
 A whole-docset `fill` is many calls, and chunking means it is more calls than it is files. `--max-turns` caps them:

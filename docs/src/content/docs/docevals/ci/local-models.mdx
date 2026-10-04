@@ -1,0 +1,120 @@
+---
+title: Local models and CI
+description: Run a llama-cpp judge in CI only on a runner with a GPU. On a CPU runner, keep CI deterministic and judge somewhere faster.
+type: how-to
+last-updated: 2026-10-04
+---
+
+A `llama-cpp` judge needs no secret and sends no page text anywhere. That makes it tempting for CI.
+Run it there only on a runner with a GPU. On a CPU runner, a judged page takes minutes, and the
+verdicts are less stable than the same model gives on a GPU.
+
+## What a CPU runner costs
+
+These times were measured on a GitHub-hosted `ubuntu-latest` runner, with 4 vCPUs, 15 GB of memory
+and no GPU. The judge was `granite-4.1-3b-q2` through `llama-cpp`, with no verdict cache:
+
+| Page size | Evals | Three runs per eval | `--runs 1` |
+|---|---|---|---|
+| 1.6 KB | 1 | 138 s | 28 s |
+| 6.9 KB | 2 | 772 s | 120 s |
+| 14 KB, read in chunks | 2 | 706 s | 260 s |
+
+That is about 2 to 13 minutes per page at three runs. The same pages took about twice as long on
+some runners as on others, because the runner's CPU varies. On a GPU, an RTX 4090, the same model
+judges a full page of three evals at three runs each in about 20 seconds.
+
+A pull request that touches ten pages can therefore hold a CPU runner for an hour or more.
+
+## Why the verdicts vary
+
+A small quantized model on a CPU does not always agree with itself. In the measurements above, the
+same eval on the same text got different verdicts on different runs. One page's eval passed at one
+setting and failed at another. Another page failed on three `partial` votes until its eval gained
+`examples.pass` and `examples.fail`.
+
+A required check that flips on unchanged text teaches contributors to re-run it until it passes.
+[Calibrate the judge](/manni/docevals/judge/calibrate/) before you trust any model in a gate.
+
+## What to run instead
+
+### Keep CI deterministic
+
+Run the deterministic evals on every pull request. They need no model and finish in seconds:
+
+```yaml
+- run: npx @hawkeyexl/manni docevals run --deterministic-only --format github
+```
+
+[Run it in CI](/manni/docevals/ci/) has the full job.
+
+### Judge on your own GPU before you push
+
+Run the judged evals on the pages your branch changed, on a machine with a GPU:
+
+```bash
+npx @hawkeyexl/manni docevals run --ai-only --since origin/main
+```
+
+`--ai-only` runs only the judged evals. A model that cannot start then exits `2`, instead of
+passing on the deterministic evals alone. `--since` selects a page when its own file changed. It
+also selects a page when a manifest that supplies its `evals`, `eval-suite` or `eval-skip` changed.
+The [CLI reference](/manni/docevals/reference/cli/#scoping-a-run-to-what-changed) has the rule.
+
+### Use a hosted provider in CI
+
+An `anthropic` or `openai` provider, or `claude-cli`, puts no inference load on the runner. It
+costs tokens instead and needs a secret. Pull requests from forks get no secrets, so a fork's run
+judges nothing. [Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/) covers the
+job a fork gets. [Choose a provider](/manni/docevals/judge/choose-a-provider/) compares the four.
+
+### Use a GPU runner
+
+With a runner that has a GPU, `llama-cpp` in CI is reasonable. Name the provider and pin the model
+in config, so every run judges with the same one:
+
+```yaml title="manni.config.yaml"
+docevals:
+  provider: llama-cpp
+  model: balanced
+```
+
+A config that names a hosted provider can keep it, and the CI job passes `--local` instead. Either
+way, the runner needs `node-llama-cpp` and the weights, as
+[Choose a provider](/manni/docevals/judge/choose-a-provider/#llama-cpp-keeps-everything-on-the-machine)
+describes.
+
+Two settings keep a GPU job cheap. Persist the verdict cache, so a page that has not changed is
+not judged again. And give each pull request one `concurrency` group with `cancel-in-progress`, so
+a newer push replaces the run in progress:
+
+```yaml
+concurrency:
+  group: docs-judge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  judge:
+    runs-on: your-gpu-runner   # your own runner's label
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0       # --since diffs against the base branch
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: actions/cache@v4
+        with:
+          path: .manni/docevals/cache
+          key: manni-docevals-${{ github.event.pull_request.number }}-${{ github.sha }}
+          restore-keys: manni-docevals-${{ github.event.pull_request.number }}-
+      - run: >-
+          npx @hawkeyexl/manni docevals run --ai-only
+          --since origin/${{ github.base_ref }} --format github
+```
+
+`your-gpu-runner` stands for the label of a runner you provide. GitHub's standard hosted runners
+have no GPU. [Caching and turn budgets](/manni/docevals/ci/cost-and-caching/) covers what the cache
+key must include and how `judge.maxTurns` bounds a large pull request.

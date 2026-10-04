@@ -37,28 +37,25 @@ docs/src/content/docs/docevals/ci/cost-and-caching.mdx:
       lines: 72
       integrity: sha256-6a472966e77522f5dcf84550508cca160b760f739813feadafc80f2e8b0a1069
     - generated-by: Claude Fable 5.1
-      lines: 73-87
-      integrity: sha256-cd1177a5a52af9a70a2a7f4fc5f0b932b066cc75d4a372d19816c849c81f8545
-    - generated-by: Claude Fable 5.1
-      lines: 95-99
-      integrity: sha256-7ad9ceb9692651b054251b3eda814f61a5912c0dea06ff70c135b04f34948dc2
+      lines: 73-93
+      integrity: sha256-100d942f5003e5e87f586891970954ae37e74b358a7642c04646e7d159dc0a8b
     - generated-by: Claude Opus 5
-      lines: 100-101
+      lines: 94-95
       integrity: sha256-6ea127190cbc5071d304fad56021069b1693e75c8f30c628aa84149d09028f39
     - generated-by: Claude Fable 5.1
-      lines: 103-126
+      lines: 97-120
       integrity: sha256-d7daecefaba3b2f500d5cc765d720368581caef9ead3823299c354ff29285df4
     - generated-by: Claude Opus 5
-      lines: 127
+      lines: 121
       integrity: sha256-a67065d402a8181c5d74a23ebb1623adbff68fb9124ad3f2a9a2e4744109096d
     - generated-by: Claude Fable 5.1
-      lines: 128-154
+      lines: 122-148
       integrity: sha256-1d8a8a00585aca8ed34cdf9e54ed6f7237e2085bbb742d7a27090673d70faae7
     - generated-by: Claude Opus 5
-      lines: 156
+      lines: 150
       integrity: sha256-3041984a6e464575ae292eb554b44ac3d84a379254d8f62e8cff7dacb268fd6a
     - generated-by: Claude Fable 5.1
-      lines: 157-164
+      lines: 151-158
       integrity: sha256-1cd55ae306f095d77048100eb15f683f39730124790b5a6aaaf14969e78abfb3
   owner:
     - "@hawkeyexl"

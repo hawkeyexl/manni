@@ -2,7 +2,7 @@
 title: Caching and turn budgets
 description: What invalidates a cached verdict, why cache persistence is a correctness concern, and how to bound the inference calls a run makes.
 type: how-to
-last-updated: 2026-10-04
+last-updated: 2026-09-13
 ---
 
 Model calls are per-invocation, so the risk is not one large bill. The risk is an *unpredictable* amount
@@ -91,12 +91,6 @@ among other things:
 So the cache invalidates exactly when a verdict could legitimately differ, and not otherwise. Edit
 prose and that page re-judges; edit an assertion and every page using it re-judges; pin a new model
 and everything re-judges.
-
-That is also why a cancelled run's verdicts are worth keeping. Save the cache even when a newer
-push cancels the job. The replacing run then judges only what changed or what the first run never
-reached.
-[Judge pull requests with a local model](/manni/docevals/ci/judge-pull-requests-locally/) does
-this with `if: always()` on the save step.
 
 `fill` caches raw proposals **before** the confidence gate, keyed with `FILL_PROMPT_VERSION`. That
 is why re-running at a different `--confidence` spends no turns.
