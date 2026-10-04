@@ -1610,7 +1610,8 @@ meta:
 
 Each file then meets the eleven defaults and `./schemas/house.json`, in that
 order. A duplicate keeps its first place, so listing a default again changes
-nothing.
+nothing. Listing another version of a default replaces it, so
+`manni:stewardship:1.0.0` takes the place of `manni:stewardship:1.1.0`.
 
 To judge files by the listed schemas alone, turn the defaults off:
 
@@ -1622,7 +1623,9 @@ meta:
 ```
 
 With `strict: true`, each `manni:` default gets its overlay after it, such as
-`manni:core-strict:1.0.0` after `manni:core:1.0.0`. A registered
+`manni:core-strict:1.0.0` after `manni:core:1.0.0`. A listed version of a
+default vocabulary gets its own overlay, such as
+`manni:stewardship-strict:1.0.0` after `manni:stewardship:1.0.0`. A registered
 `vendor:name-strict:version` follows its registered `vendor:name:version` the
 same way. A listed built-in outside the default set stays as listed, so
 `tgdp:templates:1.1` stays open. List `tgdp:templates-strict:1.1` to close it.

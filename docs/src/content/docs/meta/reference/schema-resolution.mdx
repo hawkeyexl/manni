@@ -71,6 +71,10 @@ Once a level produces a set, lower levels are not consulted for that file.
 Within a resolved set, duplicate references are removed, and the first one
 keeps its place.
 
+A listed version of a default vocabulary replaces the default's version. With
+the defaults on, listing `manni:stewardship:1.0.0` drops
+`manni:stewardship:1.1.0`, so each stewardship field is judged once.
+
 An override never inherits config `schemas`. `defaults: true` on an entry
 asks for the default set, and nothing else from the levels below it.
 
@@ -110,7 +114,9 @@ It applies at levels 3 to 5, through `meta.strict` or an entry's own
 
 - **A default.** Each of the nine `manni:` defaults gets its overlay, such
   as `manni:core-strict:1.0.0` after `manni:core:1.0.0`. OKF and
-  Seven-Action have none.
+  Seven-Action have none. Another version of a default vocabulary counts
+  too, so a listed `manni:stewardship:1.0.0` gets
+  `manni:stewardship-strict:1.0.0`.
 - **A registered schema.** A [registered](#registered-references)
   `vendor:name-strict:version` is the strict version of a registered
   `vendor:name:version`.

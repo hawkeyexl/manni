@@ -334,13 +334,12 @@ does. It carries no `x-manni-graph-output` mark, so a published graph built
 under it keeps `owner`, `stakeholders` and `reviewed-by`.
 
 Both ids still resolve, and a page that names one keeps it. The default set
-carries 1.1.0, so a set that should mark nothing names 1.0.0 without the
-defaults:
+carries 1.1.0. A set that should mark nothing lists 1.0.0, which replaces
+1.1.0 in the default set. Under `strict: true`, the 1.0.0 overlay replaces the
+1.1.0 overlay too.
 
 ```yaml
 meta:
-  defaults: false
   schemas:
-    - manni:core:1.0.0
     - manni:stewardship:1.0.0
 ```

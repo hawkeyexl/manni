@@ -47,6 +47,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const DEFAULTS = resolve(here, "fixtures", "defaults");
 const REGISTER = resolve(here, "fixtures", "register");
 const DERIVE_SCOPE = resolve(here, "fixtures", "derive-scope");
+const PINNED_STEWARDSHIP = resolve(here, "fixtures", "pinned-stewardship");
 
 const STRICT_DEFAULTS = [
   "google:okf:0.1",
@@ -176,6 +177,32 @@ describe("precedence after 0070", () => {
     expect(r.schemas).toEqual(["house:page:1.0.0", "house:page-strict:1.0.0", "house:other:1.0.0"]);
   });
 
+  it("strict pairs a pinned older version of a default vocabulary with its overlay", () => {
+    const r = resolveFor({ defaults: false, strict: true, schemas: ["manni:stewardship:1.0.0"] });
+    expect(r.schemas).toEqual(["manni:stewardship:1.0.0", "manni:stewardship-strict:1.0.0"]);
+  });
+
+  it("strict still leaves a listed manni built-in outside the default set alone", () => {
+    const r = resolveFor({ defaults: false, strict: true, schemas: ["manni:terminology:1.0.0"] });
+    expect(r.schemas).toEqual(["manni:terminology:1.0.0"]);
+  });
+
+  it("a listed version of a default vocabulary replaces the default's version", () => {
+    const r = resolveFor({ schemas: ["manni:stewardship:1.0.0"] });
+    expect(r.schemas).toContain("manni:stewardship:1.0.0");
+    expect(r.schemas).not.toContain("manni:stewardship:1.1.0");
+    expect(r.schemas).toHaveLength(DEFAULT_SCHEMAS.length);
+  });
+
+  it("with strict, the listed version's overlay replaces the default's overlay", () => {
+    const r = resolveFor({ strict: true, schemas: ["manni:stewardship:1.0.0"] });
+    expect(r.schemas).toContain("manni:stewardship:1.0.0");
+    expect(r.schemas).toContain("manni:stewardship-strict:1.0.0");
+    expect(r.schemas).not.toContain("manni:stewardship:1.1.0");
+    expect(r.schemas).not.toContain("manni:stewardship-strict:1.1.0");
+    expect(r.schemas).toHaveLength(STRICT_DEFAULTS.length);
+  });
+
   it("isDefaultSetOnly reads the default set, strict or not, and nothing more", () => {
     expect(isDefaultSetOnly(resolveFor({}))).toBe(true);
     expect(isDefaultSetOnly(resolveFor({ strict: true }))).toBe(true);
@@ -265,6 +292,17 @@ describe("the ladder (0070)", () => {
     expect(new Set(failing(strict).map((f) => f.split(" ")[0]))).toEqual(
       new Set(["manni:core-strict:1.0.0"]),
     );
+  });
+
+  it("5. a pinned stewardship 1.0.0 reports each stewardship error once", async () => {
+    const { results } = await runValidate({ inputs: ["bad-owner.md"], cwd: PINNED_STEWARDSHIP });
+    const r = results[0];
+    expect(r?.schemas).not.toContain("manni:stewardship:1.1.0");
+    const errors = failing(r);
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.every((e) => e.startsWith("manni:stewardship:1.0.0 "))).toBe(true);
+    const messages = (r?.errors ?? []).map((e) => `${e.keyword} ${e.instancePath} ${e.message}`);
+    expect(new Set(messages).size).toBe(messages.length);
   });
 
   it("8. a registered schema and its strict version both judge, through the config", async () => {
