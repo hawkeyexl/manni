@@ -6,9 +6,9 @@ docs/src/content/docs/cite/get-started/index.mdx:
         integrity: sha256-70b11580b3b79d5a7044d2b616dcd08dfd6b81ff96941036950f9eac496b306e
       source:
         file: package.json
-        lines: 36-38
+        lines: 37-39
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        commit-sha: d1cee1c05e9237e34c393656a14b7281b4b409c2
     - id: shallow-clone-history-unavailable
       claim:
         lines: 17-18

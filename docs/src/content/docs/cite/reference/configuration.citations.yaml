@@ -612,9 +612,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-b106b076e141f208eef8d8bc229bb773f3b5a03316755de2a01b86779d286f84
       source:
         file: src/meta/reporters/junit.ts
-        lines: 138-143
+        lines: 87-92
         integrity: sha256-00a1a3b23e6af764fa3b7adef5cd982f9c2c930a98ba18caeef6e168ba1fc48b
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: d1cee1c05e9237e34c393656a14b7281b4b409c2
     - id: default-claim-changed
       claim:
         lines: 277-285
