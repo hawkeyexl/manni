@@ -15,7 +15,8 @@ import {
   type BatchOutcome,
   type BatchReportWithBudget,
 } from "../aggregate.js";
-import { discoverTraces } from "../trace/discover.js";
+import { parseDuration } from "../../shared/duration.js";
+import { discoverTraces, type TraceListing } from "../trace/discover.js";
 import { renderBatch, type ReportFormat } from "../reporters/index.js";
 import { TracevalsError, type RunReport } from "../types.js";
 import type { HistoryComparison } from "../history.js";
@@ -30,8 +31,8 @@ export interface BatchCommandOptions extends RunSharedOptions {
   traces?: string[];
   /** Discover every project in the session store instead of naming traces. */
   allProjects?: boolean;
-  /** Keep only traces modified within this duration, e.g. `7d`. */
-  since?: string;
+  /** `--newer-than`: keep only traces modified within this duration, e.g. `7d`. */
+  newerThan?: string;
   /** Maximum traces to evaluate, applied after newest-first sorting. */
   limit?: number;
   format?: ReportFormat;
@@ -55,34 +56,33 @@ export interface BatchCommandResult {
   comparisons: HistoryComparison[];
 }
 
-const UNITS: Record<string, number> = {
-  m: 60_000,
-  h: 60 * 60_000,
-  d: 24 * 60 * 60_000,
-  w: 7 * 24 * 60 * 60_000,
-};
+/**
+ * `--newer-than 7d` to milliseconds, through the family's one parser so the
+ * grammar and the refusal match `manni docevals run --newer-than`.
+ */
+export function parseNewerThan(text: string): number {
+  return parseDuration(text, (message) => new TracevalsError(message));
+}
 
 /**
- * `--since 7d` → milliseconds. Deliberately strict: a duration this rejects is
- * an operational error, because the alternative — treating `7y` as zero, or as
- * "everything" — silently changes which sessions a gate looked at.
+ * The listings modified inside the `--newer-than` window, or all of them
+ * without one. `list` and `run` share it, so a reader sees the selection a run
+ * would evaluate.
  */
-export function parseSince(text: string): number {
-  const match = /^(\d+(?:\.\d+)?)([mhdw])$/.exec(text.trim());
-  const unit = match?.[2];
-  if (match === null || unit === undefined) {
-    throw new TracevalsError(
-      `--since must be a duration like 30m, 24h, 7d, or 2w, got "${text}"`,
-    );
-  }
-  return Number(match[1]) * (UNITS[unit] as number);
+export function keepNewerThan<T extends Pick<TraceListing, "mtimeMs">>(
+  listings: T[],
+  newerThan: string | undefined,
+): T[] {
+  if (newerThan === undefined) return listings;
+  const floor = Date.now() - parseNewerThan(newerThan);
+  return listings.filter((l) => l.mtimeMs >= floor);
 }
 
 /** True when any flag asks the session store to choose the traces. */
 function usesDiscovery(options: BatchCommandOptions): boolean {
   return (
     options.allProjects === true ||
-    options.since !== undefined ||
+    options.newerThan !== undefined ||
     options.limit !== undefined
   );
 }
@@ -102,7 +102,7 @@ export async function resolveBatchTraces(
     // Silently ignoring one or the other is the failure mode here: a
     // `--limit 5` that did nothing, or a named trace that was quietly dropped.
     throw new TracevalsError(
-      "name traces or select them with --all-projects/--since/--limit, not both",
+      "name traces or select them with --all-projects/--newer-than/--limit, not both",
     );
   }
   if (named.length > 0) return named;
@@ -116,13 +116,7 @@ export async function resolveBatchTraces(
     ...(options.env !== undefined ? { env: options.env } : {}),
   });
 
-  const kept =
-    options.since === undefined
-      ? listings
-      : (() => {
-          const floor = Date.now() - parseSince(options.since);
-          return listings.filter((l) => l.mtimeMs >= floor);
-        })();
+  const kept = keepNewerThan(listings, options.newerThan);
 
   if (kept.length === 0) {
     // Never exit 0 here. A gate that goes green because its selector matched
@@ -130,7 +124,7 @@ export async function resolveBatchTraces(
     // indistinguishable from a clean corpus in every downstream consumer.
     const how = [
       options.allProjects === true ? "--all-projects" : `project ${options.project ?? process.cwd()}`,
-      options.since !== undefined ? `--since ${options.since}` : undefined,
+      options.newerThan !== undefined ? `--newer-than ${options.newerThan}` : undefined,
       options.limit !== undefined ? `--limit ${options.limit}` : undefined,
     ]
       .filter((s) => s !== undefined)

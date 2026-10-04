@@ -110,7 +110,7 @@ export async function runCalibrate(
     ...options,
     traces: corpus,
     allProjects: undefined,
-    since: undefined,
+    newerThan: undefined,
     limit: undefined,
     runs: depth,
     // The calibration report is the deliverable; rendering the batch as well

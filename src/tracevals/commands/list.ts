@@ -5,15 +5,22 @@ import {
   type DiscoverOptions,
   type TraceListing,
 } from "../trace/discover.js";
+import { keepNewerThan, parseNewerThan } from "./batch.js";
 
-export type ListOptions = DiscoverOptions;
+export interface ListOptions extends DiscoverOptions {
+  /** `--newer-than`: keep only traces modified within this duration, e.g. `7d`. */
+  newerThan?: string;
+}
 
 export interface ListRun {
   traces: TraceListing[];
 }
 
 export async function runList(options: ListOptions = {}): Promise<ListRun> {
-  return { traces: await discoverTraces(options) };
+  // Parsed before the store is read, so a bad duration costs no scan.
+  if (options.newerThan !== undefined) parseNewerThan(options.newerThan);
+  const { newerThan, ...discover } = options;
+  return { traces: keepNewerThan(await discoverTraces(discover), newerThan) };
 }
 
 export function renderList(

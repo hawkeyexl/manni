@@ -12,7 +12,7 @@ import { mkdir, mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { MockProvider, mockVerdict } from "@hawkeyexl/inference";
-import { runBatch, parseSince, resolveBatchTraces } from "../../../src/tracevals/commands/batch.js";
+import { runBatch, parseNewerThan, resolveBatchTraces } from "../../../src/tracevals/commands/batch.js";
 import { aggregate, type BatchOutcome } from "../../../src/tracevals/aggregate.js";
 import { makeTraceJudge } from "../../../src/tracevals/judge/trace-judge.js";
 import { turnBudgetSkipReason } from "../../../src/docevals/judge/budget.js";
@@ -44,18 +44,24 @@ function batch(overrides: Record<string, unknown> = {}) {
   });
 }
 
-describe("parseSince", () => {
+describe("parseNewerThan", () => {
   it("accepts minutes, hours, days, and weeks", () => {
-    expect(parseSince("30m")).toBe(30 * 60_000);
-    expect(parseSince("24h")).toBe(24 * 60 * 60_000);
-    expect(parseSince("7d")).toBe(7 * 24 * 60 * 60_000);
-    expect(parseSince("2w")).toBe(14 * 24 * 60 * 60_000);
+    expect(parseNewerThan("30m")).toBe(30 * 60_000);
+    expect(parseNewerThan("24h")).toBe(24 * 60 * 60_000);
+    expect(parseNewerThan("7d")).toBe(7 * 24 * 60 * 60_000);
+    expect(parseNewerThan("2w")).toBe(14 * 24 * 60 * 60_000);
   });
 
   it("rejects anything else as an operational error", () => {
     for (const bad of ["", "7", "d", "-1d", "7y", "1.5.2d", "seven days"]) {
-      expect(() => parseSince(bad)).toThrow(TracevalsError);
+      expect(() => parseNewerThan(bad)).toThrow(TracevalsError);
     }
+  });
+
+  it("names the flag it refuses, in the family's sentence", () => {
+    expect(() => parseNewerThan("yesterday")).toThrow(
+      '--newer-than must be a duration such as 30m, 24h, 7d or 2w, got "yesterday"',
+    );
   });
 });
 
@@ -349,7 +355,7 @@ describe("runBatch", () => {
 });
 
 /**
- * `--limit` is applied inside `discoverTraces`, before the `--since` filter,
+ * `--limit` is applied inside `discoverTraces`, before the `--newer-than` filter,
  * which reads like "5 newest overall, then narrowed to 7d" rather than
  * "5 newest within 7d". Those are the same set, and this pins why.
  *
@@ -359,10 +365,10 @@ describe("runBatch", () => {
  * `t1..t min(N,K)`. Limiting early is also the cheaper half: a store holding
  * thousands of sessions never materialises them to answer `--limit 5`.
  *
- * If either property ever changes — a different sort key, or a `--since` that
+ * If either property ever changes — a different sort key, or a `--newer-than` that
  * is not a pure recency floor — the sets diverge and this test is what says so.
  */
-describe("--limit combined with --since", () => {
+describe("--limit combined with --newer-than", () => {
   let storeRoot: string;
   const DAY = 86_400_000;
 
@@ -395,7 +401,7 @@ describe("--limit combined with --since", () => {
   it("a limit wider than the window yields every in-window trace, not fewer", async () => {
     const got = await resolveBatchTraces({
       allProjects: true,
-      since: "7d",
+      newerThan: "7d",
       limit: 5,
       env: { CLAUDE_CONFIG_DIR: join(storeRoot, ".claude") },
     });
@@ -405,7 +411,7 @@ describe("--limit combined with --since", () => {
   it("a limit narrower than the window yields the newest of the window", async () => {
     const got = await resolveBatchTraces({
       allProjects: true,
-      since: "7d",
+      newerThan: "7d",
       limit: 2,
       env: { CLAUDE_CONFIG_DIR: join(storeRoot, ".claude") },
     });

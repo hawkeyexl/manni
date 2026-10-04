@@ -67,7 +67,7 @@ interface RunFlags extends ConfigFlags {
   reportUnusedArtifacts?: boolean;
   manifest?: string;
   allProjects?: boolean;
-  since?: string;
+  newerThan?: string;
   limit?: number;
 }
 
@@ -198,7 +198,7 @@ function sharedRunOptions(opts: RunFlags) {
     reportUnusedArtifacts: opts.reportUnusedArtifacts,
     ...(opts.require !== undefined ? { require: opts.require } : {}),
     ...(opts.allProjects !== undefined ? { allProjects: opts.allProjects } : {}),
-    ...(opts.since !== undefined ? { since: opts.since } : {}),
+    ...(opts.newerThan !== undefined ? { newerThan: opts.newerThan } : {}),
     ...(opts.limit !== undefined ? { limit: opts.limit } : {}),
   };
 }
@@ -218,7 +218,7 @@ async function executeRun(traces: string[], opts: RunFlags) {
   // a script piping `--format json` gets a stable shape (ADR 01018).
   const selecting =
     opts.allProjects === true ||
-    opts.since !== undefined ||
+    opts.newerThan !== undefined ||
     opts.limit !== undefined;
 
   if (traces.length > 1 || selecting) {
@@ -325,7 +325,10 @@ function addRunFlags(
       [],
     )
     .option("--all-projects", "evaluate every project's traces in the session store")
-    .option("--since <duration>", "only traces newer than e.g. 30m, 24h, 7d, 2w")
+    .option(
+      "--newer-than <duration>",
+      "only traces modified within this window, such as 30m, 24h, 7d or 2w",
+    )
     .option("--limit <n>", "maximum traces to evaluate", (v) => Number(v));
   return withHistory
     ? base.option(
@@ -596,6 +599,10 @@ program
     "project directory to scope to (default: current directory)",
   )
   .option("--all-projects", "scan every project in the session store")
+  .option(
+    "--newer-than <duration>",
+    "only traces modified within this window, such as 30m, 24h, 7d or 2w",
+  )
   .option("--limit <n>", "maximum traces to list", (v) => Number(v))
   .option(
     "-f, --format <format>",
@@ -609,6 +616,7 @@ program
   .action(async (opts: {
     project?: string;
     allProjects?: boolean;
+    newerThan?: string;
     limit?: number;
     format?: SummaryFormat;
   }) => {
@@ -619,6 +627,7 @@ program
       const run = await runList({
         project: opts.project,
         allProjects: opts.allProjects,
+        ...(opts.newerThan !== undefined ? { newerThan: opts.newerThan } : {}),
         limit: opts.limit,
       });
       console.log(

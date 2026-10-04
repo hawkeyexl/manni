@@ -548,13 +548,24 @@ describe.skipIf(!built)("built CLI", () => {
       expect(stderr).toMatch(/not both/);
     });
 
-    it("rejects a --since that is not a duration", async () => {
+    it("rejects a --newer-than that is not a duration", async () => {
       const { code, stderr } = await runCli(
-        ["run", "--since", "yesterday", "--deterministic-only"],
+        ["run", "--newer-than", "yesterday", "--deterministic-only"],
         home,
       );
       expect(code).toBe(2);
-      expect(stderr).toMatch(/--since must be a duration/);
+      expect(stderr).toContain(
+        'manni: --newer-than must be a duration such as 30m, 24h, 7d or 2w, got "yesterday"',
+      );
+    });
+
+    it("no longer accepts --since as a duration", async () => {
+      const { code, stderr } = await runCli(
+        ["run", "--since", "7d", "--deterministic-only"],
+        home,
+      );
+      expect(code).toBe(2);
+      expect(stderr).toMatch(/unknown option '--since'/);
     });
   });
 
@@ -948,6 +959,14 @@ describe.skipIf(!built)("built CLI", () => {
       );
       expect(code).toBe(2);
       expect(stderr).toMatch(/--runs/);
+    });
+
+    it("guards `list --newer-than` with run's sentence", async () => {
+      const { code, stderr } = await runCli(["list", "--newer-than", "7y"], home);
+      expect(code).toBe(2);
+      expect(stderr).toContain(
+        'manni: --newer-than must be a duration such as 30m, 24h, 7d or 2w, got "7y"',
+      );
     });
 
     it("guards `list --limit` too", async () => {

@@ -149,7 +149,8 @@ export {
   type RunSharedOptions,
 } from "./commands/run.js";
 export {
-  parseSince,
+  keepNewerThan,
+  parseNewerThan,
   resolveBatchTraces,
   runBatch,
   type BatchCommandOptions,

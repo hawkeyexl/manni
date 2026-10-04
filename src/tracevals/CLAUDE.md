@@ -283,7 +283,7 @@ trace itself records.
   which extends the family's `ToolError`).
 - **What decides the report shape is how traces were selected, not how many came
   back.** One named trace is a `RunReport`. A discovery selector
-  (`--all-projects`, `--since`, `--limit`) is a `BatchReport` even when it
+  (`--all-projects`, `--newer-than`, `--limit`) is a `BatchReport` even when it
   matches exactly one, so a script piping `--format json` gets a stable shape
   (ADR 01018). Naming traces and selecting them is exit 2.
 - Bump `PROMPT_VERSION` (`src/tracevals/judge/prompt.ts`) whenever judge prompts
