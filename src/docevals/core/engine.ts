@@ -30,7 +30,7 @@ import {
 import { changedFilesSince, changedKey } from "./since.js";
 import { graderFor } from "../graders/registry.js";
 import { assertRegisteredGraders, checkFeasibility } from "./feasibility.js";
-import { realExec } from "../graders/exec.js";
+import { realExec } from "../../shared/exec.js";
 import { groupTargetsByEval, type ExecFn, type GraderTarget } from "../graders/types.js";
 import { sha256 } from "../judge/cache.js";
 import { isTurnBudgetSkip } from "../judge/budget.js";

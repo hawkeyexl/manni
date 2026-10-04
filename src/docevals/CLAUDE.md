@@ -184,11 +184,11 @@ and Node touch.
   under concurrency (ADR 01019). Never reimplement a provider, ensemble,
   cache, or price table here. Three copies of that code drifted apart once
   already, and a fix belongs upstream.
-- `src/docevals/graders/exec.ts` re-exports the library's `realExec`, so the
+- `src/shared/exec.ts` re-exports the library's `realExec`, so the
   subprocess provider and the `command` grader share one cross-spawn
   wrapper. That wrapper owns npm `.cmd` shim resolution, stdin piping past the
-  ~32K command-line limit, and StringDecoder-backed output. `outputTail` stays
-  local.
+  ~32K command-line limit, and StringDecoder-backed output. `outputTail` lives
+  beside it.
 - `src/docevals/graders/scriptgen.ts` + `src/docevals/core/frontmatter-edit.ts`
   write LLM-generated check scripts to `{docDir}/manni-docevals/`, with the
   command reference persisted via surgical YAML edits.

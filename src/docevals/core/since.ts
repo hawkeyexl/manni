@@ -16,7 +16,7 @@
  */
 import { resolve } from "node:path";
 import { DocevalsError } from "../types.js";
-import { outputTail } from "../graders/exec.js";
+import { outputTail } from "../../shared/exec.js";
 import type { ExecFn, ExecResult } from "../graders/types.js";
 
 /** git can be slow on a cold index, but not this slow. */

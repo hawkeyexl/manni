@@ -9,7 +9,7 @@
  */
 import { dirname } from "node:path";
 import type { Finding } from "../types.js";
-import { outputTail } from "./exec.js";
+import { outputTail } from "../../shared/exec.js";
 import type { Grader, GraderContext, GraderTarget } from "./types.js";
 
 function substitute(cmd: string[], file: string): string[] {

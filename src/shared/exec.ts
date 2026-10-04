@@ -1,14 +1,14 @@
 /**
- * Process execution for graders. The implementation now lives in
- * `@hawkeyexl/inference`: the judge's subprocess provider and the
- * command/tool graders were running two copies of the same cross-spawn
- * wrapper, and the Windows-specific parts — npm `.cmd` shim resolution
- * without `shell: true`, stdin piping past the ~32K command-line limit, and
- * StringDecoder-backed output so multi-byte UTF-8 survives chunk boundaries —
- * are exactly the parts worth having in one place.
+ * Process execution for every grader in the family that runs a program. The
+ * implementation lives in `@hawkeyexl/inference`: the judge's subprocess
+ * provider and the command graders were running copies of the same
+ * cross-spawn wrapper, and the Windows-specific parts (npm `.cmd` shim
+ * resolution without `shell: true`, stdin piping past the ~32K command-line
+ * limit, and StringDecoder-backed output so multi-byte UTF-8 survives chunk
+ * boundaries) are exactly the parts worth having in one place.
  *
- * Re-exported rather than repointed at every call site, so existing
- * `graders/exec.js` imports keep working unchanged.
+ * Shared rather than per domain: `manni docevals` and `manni tracevals` both
+ * run `command` evals, and both reach the OS through this one wrapper.
  */
 import type { ExecResult } from "@hawkeyexl/inference";
 
