@@ -50,7 +50,7 @@ docs/src/content/docs/meta/reference/schemas/index.mdx:
         commit-sha: 7aa9a5632411b78d43c793baf6f8f48f0b9db79f
     - id: registry-only-two-in-the-default-set
       claim:
-        integrity: sha256-936629610c61943b10ab99b3ababfa2d38619cd633a8a5f7d222491a14d9fcd1
+        integrity: sha256-37989c6320592208ea08872d84086ff154ec6f9f3b44da00b4714338a01e0bec
       source:
         file: src/meta/core/resolve-schema.ts
         lines: 41-53
