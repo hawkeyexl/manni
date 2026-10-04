@@ -16,8 +16,8 @@ its imported ADR log (closed at 01033) under `docs/proposals/tracevals/`, its
 `SessionStart` hook under `plugin/tracevals/hooks/`, and its site under
 `docs/src/content/docs/tracevals/`. Its content strategy is the family's, in
 `docs/content-strategy/`. It ships no schema file: artifacts validate against
-the draft in `docs/proposals/0023/schemas/artifact-evals/`, bundled into the
-build. The metadata tool is a sibling in this repository, imported by relative
+the registered `manni:artifact-evals:1.1.0` in `src/meta/schemas/`, bundled
+into the build. The metadata tool is a sibling in this repository, imported by relative
 path (`../meta/index.js`), not a dependency. Proposal 0049 is the record of the
 fold-in.
 
@@ -166,17 +166,16 @@ evals → plan evals → deterministic graders → AI judge → aggregate → re
   Unresolved refs go to the report's coverage table, never crash the run.
 - `src/tracevals/evals/` reads the `metadata.evals` block from artifacts through
   the metadata tool's `extractFrontmatter`. It validates the **whole front
-  matter** against
-  `docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json`, imported
-  directly by `schema.ts` and inlined by the bundler, so the built CLI never
-  reads `docs/`. The schema is document-rooted, and `metadata` stays open so
+  matter** against `src/meta/schemas/artifact-evals/1.1.0.json`, imported
+  directly by `schema.ts` and inlined by the bundler, so tracevals and
+  `manni meta validate` read the same bytes. The schema is document-rooted, and `metadata` stays open so
   other tools' members pass untouched. A schema cannot reject unknown members of
   an open bag, so `extract.ts` reserves the `eval-` prefix at run time, as
   `^eval-(?!skip$)`. An unrecognized `metadata.eval-*` key is an error, not an
   inert typo. Artifacts without declared evals get one implicit whole-artifact
   adherence eval (ADR 01002).
 - `src/tracevals/evals/external.ts` reads the block back when `manni meta
-  relocate` moved it. proposal.4 marks the whole top-level `metadata` key
+  relocate` moved it. The vocabulary marks the whole top-level `metadata` key
   `x-manni-location: external` (proposal 0047). So `evals`, `eval-skip` and
   `meta-provenance` relocate as one block, and cannot be split across an
   artifact and a manifest. Reading is meta's merge, not a second loader:
@@ -296,20 +295,21 @@ trace itself records.
   lookup, with no LLM guessing. Unresolved or absent artifacts degrade to
   warnings and coverage notes, never a crash; zero artifacts means skipped evals
   and exit 0.
-- The vocabulary is `manni:artifact-evals:1.0.0-proposal.4`, **imported from
-  `docs/proposals/0023/schemas/` rather than copied**. Don't re-fork it and don't
-  vendor a copy. Two copies used to ship under `schemas/tracevals/`, held still
-  by a sha256 pin, and had drifted from the draft anyway (proposal 0049 §4). Behavior is ours, meaning the graders, the runtime and the
-  reports. The shape is not, and a change to the shape is a change to the
-  draft.
+- The vocabulary is `manni:artifact-evals:1.1.0`, **imported from
+  `src/meta/schemas/` rather than copied**. Don't re-fork it and don't vendor a
+  copy. Two copies used to ship under `schemas/tracevals/`, held still by a
+  sha256 pin, and had drifted from the draft anyway (proposal 0049 §4).
+  Behavior is ours, meaning the graders, the runtime and the reports. The shape
+  is not. A registered file never changes (`npm run schemas:check`). A change
+  to the shape is a new version beside the old one, as 1.1.0 sits beside
+  1.0.0 (proposal 0074).
   `test/tracevals/unit/schema.test.ts` is a case-for-case port of the draft's own
-  ladder, so drift between the draft and what this tool accepts fails there. The
-  `-proposal.N` suffix is a semver **prerelease** and the hyphen is load-bearing.
-  A `+proposal.4` suffix would be build metadata, and would compare *equal* to
-  the 1.0.0 release.
+  ladder, so drift between the vocabulary and what this tool accepts fails
+  there.
 - The grader vocabulary is an **open enum**, so any kebab name validates and the
-  registry is the authority that rejects one. Adding a grader therefore never
-  needs a schema version. The accepted cost is that a stale name (`llm`, the
+  registry is the authority that rejects one. Adding a grader never needs a
+  version of the open schema. The strict overlay closes the list, so a grader
+  this tool ships belongs in its next version, as `tool-order` joined 1.1.0. The accepted cost is that a stale name (`llm`, the
   pre-1.0 spelling of `ai`) passes the schema and fails at the registry instead.
 - `command`-graded evals **execute a program named in an artifact**, on by
   default (ADR 01011). argv is spawned with `shell: false`, and `timeout-ms`

@@ -1,16 +1,16 @@
 /**
- * Pins the `manni:artifact-evals:1.0.0-proposal.4` vocabulary this tool
- * bundles.
+ * Pins the `manni:artifact-evals:1.1.0` vocabulary this tool validates
+ * against.
  *
  * The cases are a port of the repository's own verification ladder
  * (`docs/proposals/0023/ladders/artifact-evals-examples.cjs`), kept
- * case-for-case so a drift between the draft and what this tool accepts shows
- * up here rather than in the field.
+ * case-for-case so a drift between the vocabulary and what this tool accepts
+ * shows up here rather than in the field.
  *
- * There is no copy to pin any more. tracevals imports
- * `docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json` directly
- * and the bundler inlines it, so the bytes under test *are* the draft's — the
- * sha256 pin that used to guard a vendored copy has nothing left to guard.
+ * There is no copy to pin. tracevals imports the registered
+ * `src/meta/schemas/artifact-evals/1.1.0.json` directly and the bundler
+ * inlines it, so the bytes under test *are* the ones `manni meta` serves, and
+ * `npm run schemas:check` already guards those.
  *
  * Cases are written as YAML because that is how artifacts are authored — a
  * JSON-literal port would not catch a shape that only YAML can express.
@@ -114,6 +114,21 @@ metadata:
         fail: The fix lands first and a test is added afterwards.`,
   ],
   ["8 artifact skipped", true, `metadata:\n  eval-skip: true`],
+  [
+    // 1.1.0's one addition (proposal 0074). The open vocabulary passed any
+    // kebab name before, so this pins that it still does for this one.
+    "8b tool-order, a sequence claim",
+    true,
+    `metadata:
+  evals:
+    - id: read-before-write
+      assertion: The session read the file before writing it.
+      grader: tool-order
+      options:
+        before: Read
+        after: Write
+        afterInputMatch: src/`,
+  ],
   [
     "9 meta-provenance, the family pattern one level down",
     true,
@@ -307,23 +322,23 @@ metadata:
   ],
 ];
 
-describe("manni:artifact-evals:1.0.0-proposal.4", () => {
-  it("carries the repository's id, not one of ours", () => {
+describe("manni:artifact-evals:1.1.0", () => {
+  it("carries the registered id, not one of ours", () => {
     expect(artifactEvalsSchema.$id).toBe(ARTIFACT_EVALS_SCHEMA_ID);
-    // A vocabulary proposal 0023 publishes; this tool implements behavior
+    // A vocabulary the metadata tool registers; this tool implements behavior
     // against it (ADR 01010). The pre-1.0 URL `$id` said we owned the shape.
-    expect(ARTIFACT_EVALS_SCHEMA_ID).toBe(
-      "manni:artifact-evals:1.0.0-proposal.4",
-    );
+    expect(ARTIFACT_EVALS_SCHEMA_ID).toBe("manni:artifact-evals:1.1.0");
   });
 
-  it("keeps the prerelease hyphen, which sorts below the 1.0.0 it registers as", () => {
-    // `+proposal.4` would be build metadata and compare *equal* to the release.
-    expect(ARTIFACT_EVALS_SCHEMA_ID).toContain("-proposal.4");
+  it("is the very object the registry serves, not a copy", async () => {
+    // `manni meta validate -s manni:artifact-evals:1.1.0` and this tool must
+    // read the same bytes, or the two can disagree about one artifact.
+    const { loadSchema } = await import("../../../src/meta/core/schema-registry.js");
+    expect(await loadSchema(ARTIFACT_EVALS_SCHEMA_ID)).toBe(artifactEvalsSchema);
   });
 
   it("marks metadata external, so a trail can live outside the artifact (0047)", () => {
-    // proposal.4's one addition. tracevals does not move it — `manni meta
+    // The draft's proposal.4 added the mark. tracevals does not move it — `manni meta
     // relocate` does — but the mark has to survive the bundling, or the two
     // tools would disagree about where the block belongs.
     const properties = artifactEvalsSchema.properties as Record<

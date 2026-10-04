@@ -1,16 +1,19 @@
 /**
  * The artifact vocabulary `manni tracevals` implements:
- * `manni:artifact-evals:1.0.0-proposal.4`, the draft proposal 0023 publishes
- * for review. Artifacts are validated against the draft itself, imported from
- * `docs/proposals/` and bundled into the build, so the built CLI never reads
- * `docs/` — or any `schemas/` directory — at runtime.
+ * `manni:artifact-evals:1.1.0`, the built-in the metadata tool registers
+ * under `src/meta/schemas/` (proposal 0074). Artifacts are validated against
+ * that schema itself, imported and bundled into the build, so tracevals and
+ * `manni meta validate` read the same bytes and the built CLI never reads a
+ * `schemas/` directory at runtime.
+ *
+ * 1.1.0 rather than 1.0.0 because it names `tool-order`, a grader this tool
+ * ships. The open vocabulary accepts any kebab grader name at either version.
  *
  * tracevals ships no copy of the schema. A copy is a second artifact to keep
- * in step with the draft, and the two it used to publish had already drifted
- * from it: they kept `eval-provenance` and the `info` severity after 0046
- * removed both. A consumer who wants to validate artifacts with
- * `manni meta validate` copies the draft into their repository, as the
- * citations vocabulary's consumers do, or validates against the object below.
+ * in step, and the two it used to publish had drifted: they kept
+ * `eval-provenance` and the `info` severity after 0046 removed both. A
+ * consumer who wants to validate artifacts names `manni:artifact-evals:1.1.0`
+ * to `manni meta validate`, or validates against the object below.
  *
  * The validator is this tool's own Ajv rather than meta's `Validator`, which
  * takes refs it can load rather than a schema object. Violations are converted
@@ -20,19 +23,19 @@
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { DefinedError, ErrorObject } from "ajv";
 import type { FieldError } from "../../meta/index.js";
-import schema from "../../../docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json" with { type: "json" };
+import schema from "../../meta/schemas/artifact-evals/1.1.0.json" with { type: "json" };
 
-/** The artifact-evals draft, for validators that accept an inline schema. */
+/** The artifact-evals vocabulary, for validators that accept an inline schema. */
 export const artifactEvalsSchema = schema as unknown as Record<string, unknown>;
 
-/** The draft's `$id`: `manni:artifact-evals:1.0.0-proposal.4`. */
+/** The vocabulary's `$id`: `manni:artifact-evals:1.1.0`. */
 export const ARTIFACT_EVALS_SCHEMA_ID: string = schema.$id;
 
 const ajv = new Ajv2020({ allErrors: true, allowUnionTypes: true });
-// proposal.4 marks `metadata` `x-manni-location: external` (0047). The mark is
-// an annotation for `manni meta relocate`, not a constraint, so it is
+// The vocabulary marks `metadata` `x-manni-location: external` (0047). The
+// mark is an annotation for `manni meta relocate`, not a constraint, so it is
 // registered rather than validated — but it has to be registered, or Ajv's
-// strict mode refuses to compile the draft at all.
+// strict mode refuses to compile the schema at all.
 ajv.addKeyword({ keyword: "x-manni-location" });
 const validateArtifact = ajv.compile(artifactEvalsSchema);
 
@@ -58,7 +61,7 @@ function subjectOf(e: DefinedError): string | undefined {
 }
 
 /**
- * Validate an artifact's whole front matter against the draft. The schema is
+ * Validate an artifact's whole front matter against the vocabulary. The schema is
  * document-rooted — `metadata` stays open so other tools' members pass
  * untouched — which is why it is handed the entire object rather than the
  * `evals` value alone.

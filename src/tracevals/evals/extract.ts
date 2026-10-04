@@ -1,13 +1,14 @@
 /**
  * Eval extraction: read the `metadata.evals` block from an artifact via the
  * metadata library and validate the artifact's whole front matter against
- * `manni:artifact-evals:1.0.0-proposal.4`. Invalid blocks are reported as
- * errors with source line numbers, never silently ignored (ADR 01002).
+ * `manni:artifact-evals:1.1.0`. Invalid blocks are reported as errors with
+ * source line numbers, never silently ignored (ADR 01002).
  *
- * The vocabulary is the repository's draft; this tool implements behavior
- * against it (ADR 01010) and bundles it rather than shipping a copy — see
- * `schema.ts`. The schema is document-rooted, which is why validation is
- * handed the entire front matter object rather than the `evals` value alone.
+ * The vocabulary is the metadata tool's registered built-in; this tool
+ * implements behavior against it (ADR 01010) and bundles it rather than
+ * shipping a copy — see `schema.ts`. The schema is document-rooted, which is
+ * why validation is handed the entire front matter object rather than the
+ * `evals` value alone.
  */
 import {
   extractFrontmatter,
