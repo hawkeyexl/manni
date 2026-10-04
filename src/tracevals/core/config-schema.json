@@ -57,7 +57,11 @@
       "additionalProperties": false,
       "properties": {
         "maxBlockChars": { "type": "integer", "minimum": 100 },
-        "maxTotalChars": { "type": "integer", "minimum": 1000 }
+        "maxTotalChars": {
+          "type": "integer",
+          "minimum": 1000,
+          "description": "Upper bound on the rendered digest, in characters. The timeline always keeps at least 200 characters, so a very long header can push the digest past this bound by up to 200."
+        }
       }
     },
     "history": {

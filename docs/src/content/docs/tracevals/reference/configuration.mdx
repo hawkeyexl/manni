@@ -411,7 +411,8 @@ Controls how much of the session transcript is given to the judge.
 
 When a transcript exceeds `maxTotalChars`, a head-and-tail window is kept and the middle is replaced
 with a truncation marker. Raise it for long sessions where the relevant behavior sits in the middle,
-at the cost of a larger prompt.
+at the cost of a larger prompt. The transcript always keeps at least 200 characters, so a very long
+header can push the digest past `maxTotalChars` by up to 200.
 
 ## `history`
 

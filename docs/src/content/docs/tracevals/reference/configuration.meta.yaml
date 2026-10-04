@@ -68,19 +68,25 @@ docs/src/content/docs/tracevals/reference/configuration.mdx:
       lines: 375-385
       integrity: sha256-2f1e39414d75e18ac131d211bdae2ee046ad4a5c4ad5220ac24ea5db93406632
     - generated-by: Claude Opus 5
-      lines: 387-470
-      integrity: sha256-cf2a28b140bded22fb729e3793eb0edb669308e3db571bf0ffdd0177ee7522f5
+      lines: 387-397
+      integrity: sha256-a2dfa6f53fd6962ff80c746f37856ce7d08391f8f87498aa9594f2df0e8c42dd
     - generated-by: Claude Opus 5.5
-      lines: 472
+      lines: 398-399
+      integrity: sha256-631559a9b65225d0fdf41abcd45af98085ac48aacaa3498aa3c8175240317cde
+    - generated-by: Claude Opus 5
+      lines: 401-471
+      integrity: sha256-ea46aa00bf6583b9811fa0c01e97b58ecb36700a5798ffafb811ede98bfee070
+    - generated-by: Claude Opus 5.5
+      lines: 473
       integrity: sha256-00daa2e9d9d7299009283e2b52792ee946c88a91ecba421d1c0a0be24cad8f7f
     - generated-by: Claude Opus 5
-      lines: 474-475
+      lines: 475-476
       integrity: sha256-bfe258204bf3ade867ccb3f5b26fbafcffc565fcc20c35fe454b527571932165
     - generated-by: Claude Opus 5.5
-      lines: 476
+      lines: 477
       integrity: sha256-0ef0e4b8d6bcb6179ca63a521baaeb30753e9aa64f92aa4fb8ca90f7f1a1bc48
     - generated-by: Claude Opus 5
-      lines: 478-556
+      lines: 479-557
       integrity: sha256-186e9e48ae0e2e3673d117594d243566e14602230dd7bf1aeab1f92deea7b258
   owner:
     - "@hawkeyexl"
