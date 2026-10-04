@@ -246,7 +246,11 @@ and Node touch.
   after every page has been resolved and diagnosed. An unregistered grader is
   rejected at load, so a typo cannot surface on a changed page and vanish on
   an unchanged one. `partial` is derived from `pagesSelected < plans.length`,
-  not from the flag's presence.
+  not from the flag's presence. A page counts as changed when its file did,
+  or when a manifest that supplied one of its eval keys did. `external.ts`
+  records those manifests on the page as `external.evalManifests`, read off
+  the merge's `locate`, so the scope never re-derives a manifest path. Any
+  change to such a file selects the page; nothing diffs the YAML by key.
 - **Grader failures are isolated per eval group, in the engine** (ADR 01042).
   `runEvals` drives `groupTargetsByEval` and calls `grader.grade()` once per
   group with the `try`/`catch` around each call. Do not move that boundary

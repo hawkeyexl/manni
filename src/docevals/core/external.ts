@@ -33,6 +33,7 @@
  * `--no-config` never reaches here: with no config there are no collections,
  * so a page's evals are its frontmatter's.
  */
+import { resolve } from "node:path";
 import { ownsKey } from "../../shared/collections.js";
 import {
   configMarks,
@@ -89,6 +90,13 @@ export interface PageExternal {
   locate: (pointer: string) => SourceLocation | undefined;
   /** Eval keys the page carries that an owning manifest also holds. */
   collisions: readonly ExternalMetadataCollision[];
+  /**
+   * Every manifest file that supplied one of the page's eval keys, as an
+   * absolute path. A change to any of them changes what the page is graded
+   * on, so `--since` selects the page when one changed. A URL manifest never
+   * appears: it may not own an eval key.
+   */
+  evalManifests: readonly string[];
 }
 
 /** `manni.config.yaml: collection site: evals cannot come from a URL manifest, because docevals writes them.` */
@@ -278,10 +286,29 @@ function reader(
           collisions: merged.collisions.filter((c) =>
             (EVAL_KEYS as readonly string[]).includes(c.key),
           ),
+          evalManifests: suppliers(merged.locate, base),
         },
       };
     },
   };
+}
+
+/**
+ * The manifests that supplied the page's eval keys, absolute and deduplicated.
+ * `locate` answers only for a key a manifest supplied, so a key the page
+ * carries itself names no manifest. A manifest's reported path is relative to
+ * `base`, the run's discovery root.
+ */
+function suppliers(
+  locate: PageExternal["locate"],
+  base: string,
+): string[] {
+  const files = new Set<string>();
+  for (const key of EVAL_KEYS) {
+    const at = locate(`/${key}`);
+    if (at !== undefined) files.add(resolve(base, at.file));
+  }
+  return [...files];
 }
 
 /**

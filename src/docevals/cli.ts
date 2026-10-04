@@ -277,7 +277,7 @@ export function buildProgram(): Command {
     .option("--suite <name>", "Run only evals in this suite")
     .option(
       "--since <ref>",
-      "Evaluate only pages that changed between this git ref and HEAD",
+      "Evaluate only pages whose file or eval manifest changed between this git ref and HEAD",
     )
     .option(
       "--max-turns <n>",
