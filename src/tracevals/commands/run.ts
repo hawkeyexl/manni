@@ -9,7 +9,7 @@ import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { discoverConfig } from "../core/config.js";
 import { runEvals } from "../core/engine.js";
-import type { ArtifactMetadataFor } from "../core/plan.js";
+import type { ArtifactMetadataLoader } from "../core/plan.js";
 import { loadExternalEvals } from "../evals/external.js";
 import { loadGraderPlugins } from "../graders/plugins.js";
 import {
@@ -116,13 +116,18 @@ export interface RunContext {
    * rather than per trace: the manifests are the config's, not the trace's, and
    * a URL one would otherwise be fetched once per trace in a corpus.
    */
-  metadataFor?: ArtifactMetadataFor;
+  metadataFor?: ArtifactMetadataLoader;
 }
 
 export async function prepareRun(
   options: RunSharedOptions,
 ): Promise<RunContext> {
-  const { config: loaded, dir: configDir, collections } = await discoverConfig(
+  const {
+    config: loaded,
+    dir: configDir,
+    collections,
+    path: configPath,
+  } = await discoverConfig(
     options.configDir ?? process.cwd(),
     {
       ...(options.config === undefined ? {} : { configPath: options.config }),
@@ -231,6 +236,7 @@ export async function prepareRun(
   const external = await loadExternalEvals({
     collections,
     configDir,
+    ...(configPath === undefined ? {} : { configPath }),
     ...(options.offline === undefined ? {} : { offline: options.offline }),
   });
 
@@ -241,7 +247,10 @@ export async function prepareRun(
     ...(judge !== undefined ? { judge } : {}),
     ...(external === null
       ? {}
-      : { metadataFor: (artifact) => external.forArtifact(artifact).extracted }),
+      : {
+          metadataFor: async (artifact) =>
+            (await external.forArtifact(artifact)).extracted,
+        }),
   };
 }
 

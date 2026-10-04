@@ -375,6 +375,12 @@ export interface LoadedConfig {
    * carries inline (proposals 0047 and 0049 §1).
    */
   collections: CollectionConfig[];
+  /**
+   * The config file's absolute path; absent when there is none. A keyless
+   * manifest owns what an artifact's schemas mark external (proposal 0068),
+   * and those schemas are read from meta's section of this same file.
+   */
+  path?: string;
 }
 
 /** How a command was told to find its config: `-c` and `--no-config`. */
@@ -418,6 +424,7 @@ export async function discoverConfig(
     }),
     dir: file.dir,
     collections: file.collections,
+    path: file.path,
   };
 }
 

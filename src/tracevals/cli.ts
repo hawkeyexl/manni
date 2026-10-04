@@ -8,6 +8,7 @@ import pkg from "../../package.json" with { type: "json" };
 import { collect, configOption } from "../shared/cli-options.js";
 import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import { fail } from "../shared/run.js";
+import { terminalConfirm } from "../shared/prompt.js";
 import { notice } from "../shared/warn.js";
 import { renderList, runList } from "./commands/list.js";
 import { runFill } from "./commands/fill.js";
@@ -513,6 +514,15 @@ addConfigFlags(
         ...(opts.local !== undefined ? { local: opts.local } : {}),
         ...(opts.offline === true ? { offline: true } : {}),
         ...(opts.require !== undefined ? { require: opts.require } : {}),
+        // P1 (proposal 0047): offered only on a terminal, where there is
+        // someone to answer. Off one the block goes to the artifact and the
+        // W1 line says so.
+        confirm: terminalConfirm(),
+        onNotice: notice,
+        onRelocated: (result) => {
+          const manifests = result.manifests.map((m) => m.file).join(", ");
+          notice(`moved ${String(result.summary.moved)} value(s) into ${manifests}.`);
+        },
       });
       console.log(
         opts.format === "json" ? JSON.stringify(report, null, 2) : rendered,

@@ -179,8 +179,13 @@ evals → plan evals → deterministic graders → AI judge → aggregate → re
   `x-manni-location: external` (proposal 0047). So `evals`, `eval-skip` and
   `meta-provenance` relocate as one block, and cannot be split across an
   artifact and a manifest. Reading is meta's merge, not a second loader:
-  `loadExternalEvals` loads every manifest that owns `metadata`, and
-  `forArtifact` merges one artifact through `mergeExternalMetadata`. Membership
+  `loadExternalEvals` keeps every manifest that may own `metadata`, and
+  `forArtifact` merges one artifact through `mergeWithMarks`. A manifest with
+  no `keys` owns `metadata` when the artifact's schemas mark it external
+  (proposal 0068), and a `{page}` manifest is read per artifact (proposal
+  0058), so `forArtifact` is async. `fill` writes through `write-location.ts`,
+  which asks meta's `keyHome` where the block goes and offers a home (P1) on a
+  terminal when nothing owns it. Membership
   is decided by **every declared collection**, not the ones a run selected, because
   no collection ever chooses tracevals' inputs (proposal 0049 §1). A URL manifest
   is readable here, unlike in `manni cite`, since `run` and `calibrate` only

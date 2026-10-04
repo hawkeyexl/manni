@@ -7,15 +7,16 @@
  * rules are proposed but never written — evals inside a file the agent
  * reads before acting would be teaching to the test (ADR 01005).
  */
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { relative, resolve } from "node:path";
 import pc from "picocolors";
-import { memberOf } from "../../meta/index.js";
+import { extractFrontmatter } from "../../meta/index.js";
 import {
   externalWriteWarnings,
-  spliceManifestValue,
   type ExternalWrite,
+  type RelocateResult,
 } from "../../meta/internal.js";
+import type { Confirm } from "../../shared/prompt.js";
 import { discoverArtifacts, type DiscoveredArtifact } from "../artifacts/discover.js";
 import {
   appendArtifactEvals,
@@ -25,9 +26,13 @@ import {
 import {
   METADATA_KEY,
   loadExternalEvals,
-  writableOwner,
-  type ArtifactMetadata,
+  urlManifestRefusal,
 } from "../evals/external.js";
+import {
+  MetadataWriter,
+  noEntryRefusal,
+  type MetadataHome,
+} from "../evals/write-location.js";
 import { discoverConfig } from "../core/config.js";
 import { loadGraderPlugins } from "../graders/plugins.js";
 import { TracevalsError } from "../types.js";
@@ -92,6 +97,17 @@ export interface FillOptions {
   require?: string[];
   /** Test seam: bypasses provider construction entirely. */
   providerInstance?: InferenceProvider;
+  /**
+   * P1 (proposal 0047): asked once per collection when a `metadata` block
+   * would land on an artifact because no manifest owns it. The CLI passes
+   * `terminalConfirm()`, so off a terminal there is no question and the
+   * warning is the only output.
+   */
+  confirm?: Confirm;
+  /** A stderr diagnostic; the caller adds the `manni tracevals: ` prefix. */
+  onNotice?: (message: string) => void;
+  /** What an accepted relocation moved, for the caller to report. */
+  onRelocated?: (result: RelocateResult) => void;
 }
 
 export type FillStatus =
@@ -143,6 +159,11 @@ export interface FillRun {
   rendered: string;
 }
 
+/** The artifact's own front matter, which names its entry in a joined manifest. */
+function ownData(content: string): Record<string, unknown> {
+  return extractFrontmatter(content, "markdown").data;
+}
+
 /** Proposals become inline evals; confidence and rationale stay report-only. */
 function toEvalEntry(proposed: ProposedEval): NewEvalEntry {
   const entry: NewEvalEntry = {
@@ -164,13 +185,15 @@ function toEvalEntry(proposed: ProposedEval): NewEvalEntry {
 export async function runFill(options: FillOptions = {}): Promise<FillRun> {
   const cwd = options.cwd ?? process.cwd();
   const root = resolve(options.project ?? cwd);
-  const { config: loaded, dir: configDir, collections } = await discoverConfig(
-    options.configDir ?? cwd,
-    {
-      ...(options.config === undefined ? {} : { configPath: options.config }),
-      ...(options.noConfig === undefined ? {} : { noConfig: options.noConfig }),
-    },
-  );
+  const lookup = {
+    ...(options.config === undefined ? {} : { configPath: options.config }),
+    ...(options.noConfig === undefined ? {} : { noConfig: options.noConfig }),
+  };
+  const {
+    config: loaded,
+    dir: configDir,
+    path: configPath,
+  } = await discoverConfig(options.configDir ?? cwd, lookup);
   // `--require` is folded into the resolved config, the same way `run` does it,
   // rather than merged inline at the load call. Downstream code reads one
   // fully-resolved `config.plugins`; two commands disagreeing about whether it
@@ -216,25 +239,63 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
   // is no `--collection` (0049 §1). What they say is where a relocated block
   // lives, both for reading what an artifact already declares and for writing
   // what this run proposes.
-  const external = await loadExternalEvals({
-    collections,
-    configDir,
-    ...(options.offline === undefined ? {} : { offline: options.offline }),
-  });
-  const metadataOf = (artifact: {
-    path: string;
-    content: string;
-  }): ArtifactMetadata | undefined => external?.forArtifact(artifact);
+  const load = async () => {
+    // Read fresh each time: an accepted offer edits the config file.
+    const { collections } = await discoverConfig(options.configDir ?? cwd, lookup);
+    const external = await loadExternalEvals({
+      collections,
+      configDir,
+      ...(configPath === undefined ? {} : { configPath }),
+      ...(options.offline === undefined ? {} : { offline: options.offline }),
+    });
+    const discovery = await discoverArtifacts({
+      root,
+      cwd,
+      ...(options.paths !== undefined ? { paths: options.paths } : {}),
+      ...(options.exclude !== undefined ? { exclude: options.exclude } : {}),
+      ...(external === null
+        ? {}
+        : {
+            metadataFor: async (artifact) =>
+              (await external.forArtifact(artifact)).extracted,
+          }),
+    });
+    const writer = await MetadataWriter.for({
+      collections,
+      configDir,
+      configPath,
+      cwd,
+      targets: options.paths ?? [],
+    });
+    return { collections, discovery, writer };
+  };
+  let { collections, discovery, writer } = await load();
 
-  const discovery = await discoverArtifacts({
-    root,
-    cwd,
-    ...(options.paths !== undefined ? { paths: options.paths } : {}),
-    ...(options.exclude !== undefined ? { exclude: options.exclude } : {}),
-    ...(external === null
-      ? {}
-      : { metadataFor: (artifact) => external.forArtifact(artifact).extracted }),
-  });
+  // P1 (proposal 0047): asked before the first model request, so an accepted
+  // relocation is applied while nothing has been proposed yet. Only where a
+  // collection is declared, the same condition the W1 and W2 lines keep.
+  if (
+    options.confirm !== undefined &&
+    options.dryRun !== true &&
+    collections.length > 0
+  ) {
+    const flagged: ExternalWrite[] = [];
+    for (const { artifact, status, skip } of discovery.artifacts) {
+      if (status !== "ok" || skip || artifact.type === "project-rules") continue;
+      const home = await writer.homeFor(artifact.path, ownData(artifact.content));
+      if (home.kind === "page") {
+        flagged.push({ label: artifact.path, key: METADATA_KEY, home: home.proposed });
+      }
+    }
+    const applied = await writer.offer(flagged, {
+      confirm: options.confirm,
+      ...(options.onNotice === undefined ? {} : { onNotice: options.onNotice }),
+      ...(options.onRelocated === undefined ? {} : { onRelocated: options.onRelocated }),
+    });
+    // The config now declares a manifest, the artifacts no longer carry what
+    // it owns, and this writer's context predates both.
+    if (applied) ({ collections, discovery, writer } = await load());
+  }
   const vocabulary = buildVocabulary(discovery.artifacts);
   const knownSkills = [...vocabulary.skills].sort();
 
@@ -393,20 +454,19 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
     }
 
     // Where the block lives decides where it is written. A URL manifest is
-    // readable and not writable, and `writableOwner` refuses one — before the
-    // dry-run check would have, so `--dry-run` still reports against a hosted
+    // readable and not writable, and a dry run still reports against a hosted
     // trail rather than refusing a run that writes nothing.
-    const metadata = metadataOf(artifact);
-    const target =
-      options.dryRun === true
-        ? metadata?.owner === undefined || metadata.entry === undefined
-          ? undefined
-          : { manifest: metadata.owner, entry: metadata.entry }
-        : writableOwner(artifact.path, metadata);
+    const home = await writer.homeFor(artifact.path, ownData(artifact.content));
+    if (options.dryRun !== true) {
+      if (home.kind === "url") {
+        throw new TracevalsError(urlManifestRefusal(artifact.path, home.file));
+      }
+      if (home.kind === "no-entry") {
+        throw new TracevalsError(noEntryRefusal(artifact.path, home.join, home.file));
+      }
+    }
     const landed: FillArtifactResult =
-      target === undefined
-        ? result
-        : { ...result, manifest: target.manifest.file };
+      home.kind === "page" ? result : { ...result, manifest: home.file };
 
     if (options.dryRun === true) return { ...landed, status: "proposed" };
 
@@ -426,23 +486,17 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
     };
 
     try {
-      if (target !== undefined) {
+      if (home.kind === "manifest") {
         // Through meta's own splice writer: one value of one entry is replaced
         // and no other byte of the manifest moves, comments included.
-        const text = await readFile(target.manifest.path, "utf-8");
-        const spliced = spliceManifestValue(text, {
-          entry: target.entry,
-          key: METADATA_KEY,
-          value: appendMetadataEvals(
-            metadata?.extracted.data[METADATA_KEY],
+        await writer.write(home, (current) =>
+          appendMetadataEvals(
+            current,
             artifact.path,
             gated.accepted.map(toEvalEntry),
             provenance,
           ),
-          join: target.manifest.join,
-          file: target.manifest.file,
-        });
-        await writeFile(target.manifest.path, spliced.text);
+        );
       } else {
         const updated = appendArtifactEvals(
           artifact.content,
@@ -451,7 +505,7 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
           provenance,
         );
         await writeFile(artifact.path, updated);
-        noteHomeless(artifact.path);
+        if (home.kind === "page") noteHomeless(artifact.path, home);
       }
     } catch (err) {
       return {
@@ -473,27 +527,15 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
    * into and no 0047 story to tell, and a repository that has never heard of
    * collections would otherwise be warned on every fill.
    */
-  function noteHomeless(label: string): void {
+  function noteHomeless(
+    label: string,
+    home: Extract<MetadataHome, { kind: "page" }>,
+  ): void {
     if (collections.length === 0) return;
-    // Against every declared collection, not only the ones that own
-    // `metadata`: an artifact in a collection with no manifest is the W1 case,
-    // and one in no collection at all is W2.
-    const collection = memberOf(collections, configDir, configDir, label)[0];
-    homeless.push({
-      label,
-      key: METADATA_KEY,
-      home:
-        collection === undefined
-          ? { kind: "none", reason: "collections", collections: collections.length }
-          : {
-              kind: "collection",
-              collection,
-              // Read by `relocate`'s planner, never by the warning's wording.
-              manifest: "",
-              createsManifest: true,
-              createsCollection: false,
-            },
-    });
+    // The home relocation would give it, from every declared collection: an
+    // artifact in a collection with no manifest is the W1 case, and one in no
+    // collection at all is W2.
+    homeless.push({ label, key: METADATA_KEY, home: home.proposed });
   }
 }
 

@@ -72,7 +72,7 @@ export interface DiscoverOptions {
    * it a relocated artifact looks empty here, and `fill` would propose evals it
    * already declares. Absent when no collection declares such a manifest.
    */
-  metadataFor?: (artifact: ResolvedArtifact) => ExtractedMetadata | undefined;
+  metadataFor?: (artifact: ResolvedArtifact) => Promise<ExtractedMetadata | undefined>;
 }
 
 /**
@@ -214,7 +214,7 @@ async function readOne(
   };
 
   try {
-    const extracted = extractEvals(artifact, metadataFor?.(artifact));
+    const extracted = extractEvals(artifact, await metadataFor?.(artifact));
     if (extracted.errors.length > 0) {
       const first = extracted.errors[0];
       return {
@@ -232,6 +232,9 @@ async function readOne(
       skip: extracted.skip,
     };
   } catch (err) {
+    // A manifest that cannot be read, or an artifact two collections both keep
+    // `metadata` for, is the run's problem rather than this artifact's.
+    if (err instanceof TracevalsError) throw err;
     // docmeta throws on malformed YAML. A half-written artifact must not take
     // down a scan of the whole project.
     return {

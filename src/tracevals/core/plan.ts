@@ -69,6 +69,15 @@ export type ArtifactMetadataFor = (
   artifact: ResolvedArtifact,
 ) => ExtractedMetadata | undefined;
 
+/**
+ * `ArtifactMetadataFor`, before the manifests are read. Reading is async: a
+ * `{page}` manifest (proposal 0058) is read for the artifact that names it,
+ * and a keyless one (proposal 0068) asks the artifact's schemas what it owns.
+ */
+export type ArtifactMetadataLoader = (
+  artifact: ResolvedArtifact,
+) => Promise<ExtractedMetadata | undefined>;
+
 export function planEvals(
   artifacts: ResolvedArtifact[],
   metadataFor?: ArtifactMetadataFor,

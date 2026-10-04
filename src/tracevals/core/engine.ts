@@ -7,9 +7,10 @@ import { parseTraceFile } from "../trace/claude.js";
 import { resolveArtifacts } from "../artifacts/resolve.js";
 import { findManifest, type FoundManifest } from "../capture/manifest.js";
 import { TracevalsError } from "../types.js";
-import type { CoverageEntry } from "../artifacts/types.js";
+import type { CoverageEntry, ResolvedArtifact } from "../artifacts/types.js";
+import type { ExtractedMetadata } from "../../meta/index.js";
 import type { ManifestReport } from "../capture/types.js";
-import { planEvals, type ArtifactMetadataFor, type EvalPlan } from "./plan.js";
+import { planEvals, type ArtifactMetadataLoader, type EvalPlan } from "./plan.js";
 import { MAX_ARTIFACT_CHARS, artifactWasTruncated } from "../judge/prompt.js";
 import { graderFor, listGraderKinds } from "../graders/registry.js";
 import { windowFor } from "../graders/util.js";
@@ -46,7 +47,7 @@ export interface EngineOptions {
    * would grade it as declaring nothing at all. Absent when no collection
    * declares a manifest that owns `metadata`.
    */
-  metadataFor?: ArtifactMetadataFor;
+  metadataFor?: ArtifactMetadataLoader;
 }
 
 export async function runEvals(options: EngineOptions): Promise<RunReport> {
@@ -95,7 +96,19 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
     reportUnusedArtifacts: config.reportUnusedArtifacts,
     ...(found !== null ? { manifest: found.manifest } : {}),
   });
-  const plans = planEvals(resolved.artifacts, options.metadataFor);
+  // Read before planning, because planning is synchronous and reading a
+  // manifest is not.
+  const loader = options.metadataFor;
+  const metadata = new Map<ResolvedArtifact, ExtractedMetadata | undefined>();
+  if (loader !== undefined) {
+    for (const artifact of resolved.artifacts) {
+      metadata.set(artifact, await loader(artifact));
+    }
+  }
+  const plans = planEvals(
+    resolved.artifacts,
+    loader === undefined ? undefined : (artifact) => metadata.get(artifact),
+  );
 
   const results: EvalResult[] = [];
   const aiPlans: EvalPlan[] = [];

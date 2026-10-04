@@ -50,7 +50,7 @@ describe("loadExternalEvals", () => {
 
   it("merges the manifest's metadata block into the artifact's front matter", async () => {
     const { external, artifact } = await loadFixture();
-    const merged = external.forArtifact(artifact);
+    const merged = await external.forArtifact(artifact);
 
     // The page itself carries no `metadata:` at all.
     expect(artifact.content).not.toContain("metadata:");
@@ -65,7 +65,7 @@ describe("loadExternalEvals", () => {
 
   it("gives an artifact in no collection nothing, and no owner", async () => {
     const { external } = await loadFixture();
-    const outsider = external.forArtifact({
+    const outsider = await external.forArtifact({
       path: join(fixture, "notes", "README.md"),
       content: "---\nname: notes\n---\n",
     });
@@ -77,6 +77,7 @@ describe("loadExternalEvals", () => {
 describe("a relocated artifact's evals", () => {
   it("are invisible without the manifest, and read with it", async () => {
     const { external, artifact } = await loadFixture();
+    const merged = await external.forArtifact(artifact);
 
     // The contract this change replaced: front matter alone sees no block, so
     // the artifact falls through to the implicit whole-artifact eval.
@@ -85,7 +86,7 @@ describe("a relocated artifact's evals", () => {
 
     const plans = planEvals(
       [artifact],
-      (a) => external.forArtifact(a).extracted,
+      () => merged.extracted,
     );
     expect(plans.map((p) => p.evalName)).toEqual([
       "used-read",
@@ -134,9 +135,10 @@ describe("self-preference, criterion axis, on a relocated artifact", () => {
     // model wrote the assertion, and a judge grading a criterion it proposed
     // is biased however the block reached the run.
     const { external, artifact } = await loadFixture();
+    const merged = await external.forArtifact(artifact);
     const plans = planEvals(
       [artifact],
-      (a) => external.forArtifact(a).extracted,
+      () => merged.extracted,
     );
     const ai = plans.find((p) => p.evalName === "followed-the-skill");
     if (ai === undefined) throw new Error("the manifest declares an ai eval");

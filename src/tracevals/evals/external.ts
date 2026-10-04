@@ -9,10 +9,13 @@
  * therefore graded a relocated artifact as if it declared nothing: no evals, no
  * trail, no error, a clean gate. This module is why that is no longer true.
  *
- * Reading is meta's merge, not a second loader. `loadExternalEvals` loads every
- * manifest that owns `metadata`, and `forArtifact` merges one artifact through
- * `mergeExternalMetadata`, so the join rules, the ownership rules and the
- * per-item lines are the ones `meta validate` already applies.
+ * Reading is meta's merge, not a second loader. `loadExternalEvals` keeps every
+ * manifest that may own `metadata`, and `forArtifact` merges one artifact
+ * through `mergeWithMarks`. So the join rules, the ownership rules and the
+ * per-item lines are the ones `meta validate` already applies. That includes a
+ * manifest with no `keys` (proposal 0068), which owns what the artifact's
+ * schemas mark external. It also includes a `{page}` manifest (proposal 0058),
+ * which is read for the artifact it names and no other.
  *
  * Two things follow `manni cite`'s sidecar, for cite's reasons:
  *
@@ -23,26 +26,28 @@
  *    member of the collection that contains it, and its evals are still in that
  *    collection's manifest. A run that read frontmatter instead would report
  *    the artifact as declaring nothing and then write a second copy.
- *  - **A page whose collections own `metadata` twice is refused** by the
- *    writer, because picking one would be the tiebreak 0020 refuses. Reading
- *    two is meta's duplicate finding, not ours.
+ *  - **A page whose collections own `metadata` twice is refused**, because
+ *    picking one would be the tiebreak 0020 refuses.
  *
  * Where tracevals differs from cite: a URL manifest is *readable* here. cite
  * writes citations, so a URL is nowhere to write and is refused at load. `run`
  * and `calibrate` only read, so a hosted trail grades fine; `fill` refuses to
- * write into one at the point of writing (`writableOwner`).
+ * write into one at the point of writing (`write-location.ts`).
  *
  * `--no-config` never reaches here: with no config there are no collections, so
  * an artifact's evals are its frontmatter's.
  */
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { relative, resolve, sep } from "node:path";
+import { ownsKey } from "../../shared/collections.js";
+import { hasPagePlaceholder } from "../../shared/page-manifest.js";
+import { familyMarks, mergeWithMarks } from "../../meta/internal.js";
 import {
   classifyRef,
+  DocmetaError,
   externalMetadataJoin,
   extractFrontmatter,
   loadExternalMetadata,
   memberOf,
-  mergeExternalMetadata,
   PATH_JOIN,
   type CollectionConfig,
   type ExternalMetadataConfig,
@@ -60,15 +65,18 @@ import type { ResolvedArtifact } from "../artifacts/types.js";
  */
 export const METADATA_KEY = "metadata";
 
+/**
+ * What the vocabulary tracevals reads marks `x-manni-location: external`. A
+ * manifest with no `keys` may own it, less what a sibling manifest of its
+ * collection names. That decides which manifests a run reads and the
+ * two-collection refusal. The merge itself reads each artifact's own marks,
+ * as meta's does.
+ */
+const MARKED: ReadonlySet<string> = new Set([METADATA_KEY]);
+
 const toPosix = (path: string): string => path.split(sep).join("/");
 
-/** How a run spells a manifest: relative to its base, posix, like every file label. */
-function reportedPath(abs: string, base: string): string {
-  const rel = relative(base, abs);
-  return rel === "" ? "." : toPosix(rel);
-}
-
-/** A manifest that owns `metadata` for one collection. */
+/** The manifest that supplied one artifact's `metadata` block. */
 export interface ArtifactManifest {
   /** The collection that declares it. */
   collection: string;
@@ -91,26 +99,29 @@ export interface ArtifactMetadata {
   /**
    * The key under which this artifact is written in `owner`: its path relative
    * to the config directory, or its value of the join field. Undefined when the
-   * manifest joins on a field the artifact does not carry, so a writer refuses
-   * rather than inventing a key.
+   * manifest joins on a field the artifact does not carry.
    */
   entry?: string;
 }
 
 export interface ExternalEvals {
-  /** The manifests that own `metadata`, by collection. */
-  manifests: readonly ArtifactManifest[];
   /** Directory manifest paths and manifest keys resolve from. */
   configDir: string;
   /** The artifact's metadata, merged with whatever a manifest supplies. */
-  forArtifact(artifact: Pick<ResolvedArtifact, "path" | "content">): ArtifactMetadata;
+  forArtifact(artifact: Pick<ResolvedArtifact, "path" | "content">): Promise<ArtifactMetadata>;
 }
 
 export interface LoadExternalEvalsOptions {
   /** Every collection the config declares, not only the ones the run selected. */
   collections: readonly CollectionConfig[];
-  /** The config file's directory; `null`/absent when there is no config. */
+  /** The config file's directory. */
   configDir: string;
+  /**
+   * The config file itself. A manifest with no `keys` owns what an artifact's
+   * schemas mark external, and those schemas are meta's section of this file.
+   * Without it, meta's default set decides.
+   */
+  configPath?: string;
   /** `--offline`: refuse a remote manifest rather than fetch it (0038). */
   offline?: boolean;
   /** The family encryption key, for a join field an artifact holds encrypted. */
@@ -123,110 +134,129 @@ export function twoManifestsRefusal(label: string, a: string, b: string): string
 }
 
 /** `manni tracevals fill` cannot write into a hosted manifest. */
-export function urlManifestRefusal(label: string, manifest: ArtifactManifest): string {
-  return `${label}: ${METADATA_KEY} is owned by ${manifest.file}, and a URL manifest cannot be written. Vendor it to a path, or run fill with --dry-run.`;
+export function urlManifestRefusal(label: string, file: string): string {
+  return `${label}: ${METADATA_KEY} is owned by ${file}, and a URL manifest cannot be written. Vendor it to a path, or run fill with --dry-run.`;
 }
 
-function ownsMetadata(manifest: ExternalMetadataConfig): boolean {
-  return manifest.keys?.includes(METADATA_KEY) === true;
+/** Whether one manifest declaration of `collection` may own `metadata`. */
+function ownsMetadata(
+  collection: Pick<CollectionConfig, "externalMetadata">,
+  manifest: ExternalMetadataConfig,
+): boolean {
+  return ownsKey(collection, manifest, METADATA_KEY, MARKED);
 }
 
 /**
- * Load every manifest that owns `metadata`, or `null` when none does — which is
- * every setup that keeps its evals in front matter, and costs nothing.
+ * Every manifest that may own `metadata`, or `null` when none does. That is
+ * every setup that keeps its evals in front matter, and it costs nothing.
  *
- * Only the metadata-owning manifests are loaded. A sibling manifest of the same
+ * Only the metadata-owning manifests are read. A sibling manifest of the same
  * collection, supplying meta's own keys from a URL, is none of tracevals'
  * business and is never fetched here.
+ *
+ * Nothing is read until an artifact asks. A `{page}` manifest (proposal 0058)
+ * names one file per artifact, and meta reads one only for the pages it is
+ * handed, so the artifacts have to be known first. `run` learns them from a
+ * trace, and `fill` from its scan.
  */
-export async function loadExternalEvals(
+export function loadExternalEvals(
   opts: LoadExternalEvalsOptions,
 ): Promise<ExternalEvals | null> {
-  const manifests: ArtifactManifest[] = [];
   const scoped: CollectionConfig[] = [];
-  const base = opts.configDir;
   for (const collection of opts.collections) {
-    const owning = collection.externalMetadata.filter(ownsMetadata);
+    const owning = collection.externalMetadata.filter((m) => ownsMetadata(collection, m));
     if (owning.length === 0) continue;
-    for (const manifest of owning) {
-      const url = classifyRef(manifest.file).kind === "url";
-      const path = url
-        ? manifest.file
-        : isAbsolute(manifest.file)
-          ? manifest.file
-          : resolve(opts.configDir, manifest.file);
-      manifests.push({
-        collection: collection.name,
-        path,
-        file: url ? manifest.file : reportedPath(path, base),
-        join: externalMetadataJoin(manifest),
-        url,
-      });
-    }
     scoped.push({ ...collection, externalMetadata: owning });
   }
-  if (manifests.length === 0) return null;
-
-  const index = await loadExternalMetadata(scoped, {
-    configDir: opts.configDir,
-    base,
-    ...(opts.offline === undefined ? {} : { offline: opts.offline }),
-  });
-  if (index === null) return null;
-  return reader(index, manifests, scoped, opts);
+  return Promise.resolve(scoped.length === 0 ? null : reader(scoped, opts));
 }
 
 function reader(
-  index: ExternalMetadataIndex,
-  manifests: readonly ArtifactManifest[],
   scoped: readonly CollectionConfig[],
   opts: LoadExternalEvalsOptions,
 ): ExternalEvals {
   const { configDir } = opts;
   const base = configDir;
   const declared = opts.collections;
+  const marks = familyMarks({ configPath: opts.configPath, configDir, cwd: base });
 
-  // Membership is answered against every declared collection, so an artifact
-  // `fill` was handed by path is still a member of the collection that holds
-  // its manifest. Ownership is then narrowed to the manifests that own
-  // `metadata`, which is what `scoped` is.
-  const membersOf = (artifactPath: string): string[] =>
-    memberOf(declared, configDir, base, artifactPath);
+  // A concrete manifest is the same file for every artifact, so it is read
+  // once per invocation, and a URL one is fetched once. A `{page}` manifest is
+  // read per artifact, and the concrete ones beside it come back out of meta's
+  // per-process parse cache.
+  const perPage = scoped.some((c) =>
+    c.externalMetadata.some((m) => hasPagePlaceholder(m.file)),
+  );
+  // A manifest that cannot be read is the run's problem, not one artifact's,
+  // so it surfaces as this tool's operational error (exit 2) wherever it is
+  // first read.
+  const load = async (pages?: readonly string[]): Promise<ExternalMetadataIndex | null> => {
+    try {
+      return await loadExternalMetadata(scoped, {
+        configDir,
+        base,
+        ...(opts.offline === undefined ? {} : { offline: opts.offline }),
+        ...(pages === undefined ? {} : { pages }),
+      });
+    } catch (err) {
+      if (err instanceof DocmetaError) throw new TracevalsError(err.message);
+      throw err;
+    }
+  };
+  let shared: Promise<ExternalMetadataIndex | null> | undefined;
+  const own = new Map<string, Promise<ExternalMetadataIndex | null>>();
+  const indexFor = (abs: string): Promise<ExternalMetadataIndex | null> => {
+    if (!perPage) return (shared ??= load());
+    let index = own.get(abs);
+    if (index === undefined) {
+      index = load([abs]);
+      own.set(abs, index);
+    }
+    return index;
+  };
 
-  const forArtifact = (
+  const forArtifact = async (
     artifact: Pick<ResolvedArtifact, "path" | "content">,
-  ): ArtifactMetadata => {
+  ): Promise<ArtifactMetadata> => {
     const label = artifact.path;
     const extracted = extractFrontmatter(artifact.content, "markdown");
-    const members = membersOf(label);
-    if (members.length === 0) return { extracted };
-
-    const mine = manifests.filter((m) => members.includes(m.collection));
-    const [owner, second] = mine;
-    if (owner === undefined) return { extracted };
+    // Membership is answered against every declared collection, so an
+    // artifact `fill` was handed by path is still a member of the collection
+    // that holds its manifest. Ownership is then narrowed to the collections
+    // whose manifests may own `metadata`, which is what `scoped` is.
+    const members = memberOf(declared, configDir, base, label);
+    const [first, second] = scoped.filter((c) => members.includes(c.name));
+    if (first === undefined) return { extracted };
     if (second !== undefined) {
-      throw new TracevalsError(
-        twoManifestsRefusal(label, owner.collection, second.collection),
-      );
+      throw new TracevalsError(twoManifestsRefusal(label, first.name, second.name));
     }
 
-    const merged = mergeExternalMetadata(
+    const merged = await mergeWithMarks(
       label,
       extracted,
-      index,
-      // Only the collections whose manifest owns `metadata` supply anything, so
-      // the merge is handed those. Membership above was the whole declaration.
-      members.filter((name) => scoped.some((c) => c.name === name)),
+      await indexFor(resolve(base, label)),
+      [first.name],
       base,
-      { encryptionKey: () => opts.key },
+      { encryptionKey: () => opts.key, marks: await marks() },
     );
 
     // The manifest supplied the block exactly when `locate` answers for it; an
     // artifact carrying its own `metadata:` keeps it (the collision is meta's
     // finding, not a tiebreak), and `locate` then answers `undefined`.
-    const supplied = merged.locate(`/${METADATA_KEY}`) !== undefined;
-    if (!supplied) return { extracted: merged.extracted };
+    const at = merged.locate(`/${METADATA_KEY}`);
+    const [declaration] = first.externalMetadata;
+    if (at === undefined || declaration === undefined) {
+      return { extracted: merged.extracted };
+    }
 
+    const url = classifyRef(at.file).kind === "url";
+    const owner: ArtifactManifest = {
+      collection: first.name,
+      path: url ? at.file : resolve(base, at.file),
+      file: at.file,
+      join: externalMetadataJoin(declaration),
+      url,
+    };
     const out: ArtifactMetadata = { extracted: merged.extracted, owner };
     if (owner.join === PATH_JOIN) {
       out.entry = toPosix(relative(configDir, resolve(base, label)));
@@ -242,25 +272,5 @@ function reader(
     return out;
   };
 
-  return { manifests, configDir, forArtifact };
-}
-
-/**
- * The manifest `fill` may write this artifact's block into, or `undefined` when
- * the block belongs on the page. Throws when the owner is a URL: a hosted
- * manifest is readable, and writing one is not a thing a CLI can do.
- */
-export function writableOwner(
-  label: string,
-  metadata: ArtifactMetadata | undefined,
-): { manifest: ArtifactManifest; entry: string } | undefined {
-  const owner = metadata?.owner;
-  if (owner === undefined) return undefined;
-  if (owner.url) throw new TracevalsError(urlManifestRefusal(label, owner));
-  if (metadata?.entry === undefined) {
-    throw new TracevalsError(
-      `${label}: ${METADATA_KEY} is owned by ${owner.file}, which joins on "${owner.join}", and this artifact carries no ${owner.join}.`,
-    );
-  }
-  return { manifest: owner, entry: metadata.entry };
+  return { configDir, forArtifact };
 }

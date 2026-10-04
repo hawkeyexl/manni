@@ -1,0 +1,10 @@
+# write-docs's own manifest, a different file from fix-bug's.
+.claude/skills/write-docs/SKILL.md:
+  metadata:
+    evals:
+      - id: read-the-page
+        assertion: The session read the page before editing it.
+        grader: tool-usage
+        options:
+          tool: Read
+          expect: used

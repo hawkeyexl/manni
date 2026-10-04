@@ -100,7 +100,7 @@ describe("fill against a relocated artifact", () => {
     await run();
     const { collections } = await discoverConfig(project);
     const external = await loadExternalEvals({ collections, configDir: project });
-    const merged = external?.forArtifact({
+    const merged = await external?.forArtifact({
       path: skill,
       content: await readFile(skill, "utf-8"),
     });
