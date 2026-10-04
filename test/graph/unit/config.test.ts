@@ -345,7 +345,7 @@ describe("parseConfig", () => {
       {
         basePath: "/docs",
         root: "docs/pages",
-        extensions: [".md", ".mdx"],
+        extensions: [".md", ".mdx", ".markdown"],
         indexFiles: ["index", "README"],
       },
     ]);

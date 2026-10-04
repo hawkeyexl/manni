@@ -186,6 +186,14 @@ describe("analyzeDoc — links", () => {
     ]);
   });
 
+  it("resolves a relative extensionless link to a .markdown page", () => {
+    const paths = new Set(["docs/a.md", "docs/legacy.markdown"]);
+    const doc = analyzeDoc("[l](legacy)\n", "docs/a.md", paths);
+    expect(doc.links).toEqual([
+      { raw: "legacy", kind: "internal", resolvedPath: "docs/legacy.markdown" },
+    ]);
+  });
+
   it("does not crash on malformed percent-encodings (stray %)", () => {
     const doc = analyzeDoc(
       "[sale](50%-off.md) [also](file%zz.md)\n",

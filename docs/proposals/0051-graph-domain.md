@@ -102,7 +102,7 @@ commander's 1, through `.exitOverride()` and
 | `[paths...]` | Files, directories and globs, space-separated. |
 | `-` | One more page, read from stdin, beside any named paths. Needs `--as`. |
 | `--as <format>` | Parse every input as `markdown` or `mdx`. |
-| `--ext <list>` | Comma-separated extensions a directory walk or glob keeps, given once. Default `.md,.mdx`. A file named outright is not filtered. |
+| `--ext <list>` | Comma-separated extensions a directory walk or glob keeps, given once. Default `.md,.mdx,.markdown`. A file named outright is not filtered. |
 | `--allow-empty` | Zero matched files is success. `build` writes an empty graph, and `fill` an empty report. |
 | `--collection <name>` | A configured collection to read. Repeatable, one name per occurrence. |
 | `--exclude <glob>` | A glob to leave out. Repeatable, one glob per occurrence. |

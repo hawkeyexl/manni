@@ -69,12 +69,15 @@ describe("graph document set: collections", () => {
     const dir = mkdtempSync(join(tmpdir(), "manni-graph-mixed-"));
     writeFileSync(join(dir, "a.md"), "# A\n");
     writeFileSync(join(dir, "b.mdx"), "# B\n");
+    writeFileSync(join(dir, "c.markdown"), "# C\n");
     writeFileSync(join(dir, "logo.png"), "not-really-a-png");
     writeFileSync(join(dir, "data.csv"), "x,y\n1,2\n");
     const config = defaultConfig(dir);
+    // `.markdown` is markdown, and graph reads it, so the default walk keeps it.
     expect(resolveDocumentSet(config, { paths: ["."] }, "build", dir)).toEqual([
       "a.md",
       "b.mdx",
+      "c.markdown",
     ]);
   });
 });

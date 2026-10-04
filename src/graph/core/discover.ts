@@ -62,7 +62,7 @@ const SUPPORTED_EXTENSIONS = new Set([".md", ".markdown", ".mdx"]);
  * graph node for every image and data file in the tree, and a node's IRI is
  * the part of the output a consumer stores.
  */
-export const DEFAULT_EXTENSIONS = [".md", ".mdx"];
+export const DEFAULT_EXTENSIONS = [".md", ".mdx", ".markdown"];
 
 /** The positional that reads stdin. One more input, never instead of the rest. */
 export const STDIN = "-";
@@ -106,7 +106,7 @@ export interface DocumentSetOptions {
   exclude?: string[];
   /**
    * `--ext <list>`: what a directory walk or a glob keeps. Absent means
-   * `.md,.mdx`. A file named outright is never filtered by it.
+   * `.md,.mdx,.markdown`. A file named outright is never filtered by it.
    */
   ext?: string[];
   /** `--as <format>`: parse every input as this format. Required with `-`. */

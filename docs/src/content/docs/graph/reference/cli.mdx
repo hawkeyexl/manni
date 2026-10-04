@@ -145,7 +145,7 @@ changes the exit code.
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--as` | `<format>` | by extension | Parse every input as `markdown` or `mdx`. Required with `-`. |
-| `--ext` | `<list>` | `.md,.mdx` | Extensions for directory walks and globs, comma-separated. |
+| `--ext` | `<list>` | `.md,.mdx,.markdown` | Extensions for directory walks and globs, comma-separated. |
 | `--allow-empty` | n/a | off | Zero matched files writes an empty graph and exits 0. |
 | `-o, --out` | `<path>` | config `out`, else `graph/graph.ttl` | Where to write the Turtle. The directory is created if it does not exist. |
 
@@ -249,7 +249,7 @@ model and the fields. See
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
 | `--as` | `<format>` | by extension | Parse every input as `markdown` or `mdx`. Required with `-`. |
-| `--ext` | `<list>` | `.md,.mdx` | Extensions for directory walks and globs, comma-separated. |
+| `--ext` | `<list>` | `.md,.mdx,.markdown` | Extensions for directory walks and globs, comma-separated. |
 | `--allow-empty` | n/a | off | Zero matched files is an empty report and exit 0. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 | `--dry-run` | n/a | off | Report proposals without writing files. |

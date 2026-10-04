@@ -250,7 +250,7 @@ export const ALL_DERIVE_SOURCES: DeriveSource[] = [
 ];
 
 /** Default candidates for extensionless link targets (routes AND relative links). */
-export const DEFAULT_LINK_EXTENSIONS = [".md", ".mdx"];
+export const DEFAULT_LINK_EXTENSIONS = [".md", ".mdx", ".markdown"];
 export const DEFAULT_INDEX_FILES = ["index", "README"];
 
 /** `/docs/` -> `/docs`; `/` or `` -> `` (site root). */

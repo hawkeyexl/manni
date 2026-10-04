@@ -40,7 +40,7 @@ out: graph/graph.ttl
 # routes:
 #   - basePath: /docs
 #     root: docs
-#     extensions: [.md, .mdx]
+#     extensions: [.md, .mdx, .markdown]
 #     indexFiles: [index, README]
 #   - basePath: /docs/de
 #     root: docs/de
