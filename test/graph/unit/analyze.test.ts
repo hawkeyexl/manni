@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { defined } from "../helpers/defined.js";
 import { analyzeDoc } from "../../../src/graph/core/analyze.js";
+import { GraphError } from "../../../src/graph/types.js";
 
 const ALL = new Set(["docs/intro.md", "docs/config.md", "docs/sub/deep.md"]);
 
@@ -30,6 +31,13 @@ describe("analyzeDoc — frontmatter", () => {
     );
     expect(doc.frontmatter).toEqual({ title: "Win" });
     expect(doc.sections).toHaveLength(1);
+  });
+
+  it("names the file when its frontmatter is not valid YAML", () => {
+    const run = () =>
+      analyzeDoc("---\ntitle: [unclosed\n---\n\n# Hi\n", "docs/intro.md", ALL);
+    expect(run).toThrow(GraphError);
+    expect(run).toThrow(/^docs\/intro\.md: /);
   });
 });
 

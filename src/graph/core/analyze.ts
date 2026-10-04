@@ -391,7 +391,14 @@ export function analyzeDoc(
 ): DocModel {
   const routes = options.routes ?? [];
   const path = normalizeDocPath(relPath);
-  const meta = extractFrontmatter(content, "markdown");
+  let meta: ReturnType<typeof extractFrontmatter>;
+  try {
+    meta = extractFrontmatter(content, "markdown");
+  } catch (error) {
+    // The extractor knows the bytes, not the file. Left as it is, build and
+    // fill would report a YAML error with no hint of which page carries it.
+    throw new GraphError(`${path}: ${errorMessage(error)}`);
+  }
   const format = formatOf(path, options.format);
   const isMdx = format === "mdx";
   let tree: Root;
