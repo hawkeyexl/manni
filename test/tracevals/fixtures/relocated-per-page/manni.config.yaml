@@ -13,4 +13,4 @@ meta:
       schemas: ["manni:artifact-evals:1.0.0"]
 
 tracevals:
-  failOnNeedsReview: false
+  failOnReview: false
