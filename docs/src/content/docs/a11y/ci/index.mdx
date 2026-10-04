@@ -13,7 +13,7 @@ next-steps: ["a11y-get-started", "a11y-fix", "a11y-reference-cli"]
 related-pages: ["meta-ci"]
 sample-questions: ["How do I check the deployed site for accessibility on a schedule?", "How do I gate a pull request on accessibility before it deploys?", "What exit codes does manni a11y check return?"]
 graph: { label: "Gate accessibility in CI", type: task }
-last-updated: 2026-09-18
+last-updated: 2026-10-04
 tags:
   - github-actions
   - ci-cd
@@ -184,7 +184,7 @@ every failing element, and a `summary` object with the counts.
 |---|---|
 | `0` | Every page loaded and none has a violation at or above the severity floor. |
 | `1` | At least one page keeps a violation, or a crawled page failed to load. |
-| `2` | The run could not happen. A bad flag value, a URL that is not `http(s)`, no URLs and no config, a seed that would not load, or no browser. |
+| `2` | The run could not happen. A bad flag value, a URL that is not `http(s)`, no URLs and no config, or no browser. So is a seed that would not load, or that redirects off its host or to an excluded path. |
 
 Wire `1` to the gate and `2` to a loud failure. That is the same split
 [`manni meta validate`](/manni/meta/ci/exit-codes-and-annotations/) uses. Keep
