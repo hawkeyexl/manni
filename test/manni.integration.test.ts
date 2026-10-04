@@ -227,12 +227,12 @@ describe("manni (built bin)", () => {
     const r = run(manni, [
       "tracevals",
       "run",
-      "--since",
+      "--newer-than",
       "yesterday",
       "--deterministic-only",
     ]);
     expect(r.status).toBe(2);
-    expect(r.stderr).toMatch(/^manni: --since must be a duration/);
+    expect(r.stderr).toMatch(/^manni: --newer-than must be a duration/);
   });
 
   it("with no command is a usage error that points at the subcommands", () => {
