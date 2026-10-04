@@ -46,6 +46,13 @@ related-pages:
 last-updated: 2026-10-04
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Beta">
+`manni graph` is in beta. Its commands, config keys and output can change in
+any release, without notice.
+</Aside>
+
 Your docset is already a graph. Pages link to pages, headings nest, tags repeat
 across sections, and git knows who wrote what. `manni graph` reads all of that and
 writes it down as one file you can query, check, and hand to a retrieval

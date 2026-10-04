@@ -249,6 +249,7 @@ export default defineConfig({
         {
           label: "graph",
           collapsed: true,
+          badge: BETA,
           items: [
             { label: "Overview", link: "/graph/" },
             {
