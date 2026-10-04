@@ -11,3 +11,7 @@ docs/src/content/docs/docevals/ci/local-models.mdx:
   owner:
     - "@hawkeyexl"
   created: 2026-10-04
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-114
+      integrity: sha256-851f5f6b9c64141e89056558db66d1b85995de4f3c47a66db2503ae7a07452f0
