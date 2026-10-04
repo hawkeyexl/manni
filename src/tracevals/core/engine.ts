@@ -298,6 +298,9 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
             : {}),
         },
       );
+      // One result per plan, in order: that is the TraceJudge contract. The
+      // `?? "skill"` below satisfies noUncheckedIndexedAccess; it is not a
+      // fallback for a judge that returned a different count.
       judged.forEach((j, i) => {
         const plan = aiPlans[i];
         results.push({

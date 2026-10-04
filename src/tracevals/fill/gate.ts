@@ -71,6 +71,10 @@ export interface GateResult {
  * A slash command carries the skill list unchanged: both are an injected
  * procedure graded over the span they governed (ADR 01023), so the same
  * graders make sense and the same whole-session ones do not.
+ *
+ * `tool-order` is never proposed. An order is the instruction's intent, not
+ * something a tool list shows, and grounding below checks one named tool,
+ * not a pair. It is written by hand.
  */
 export const ALLOWED_GRADERS: Record<ArtifactType, readonly string[]> = {
   skill: ["ai", "tool-usage", "file-access", "regex"],
