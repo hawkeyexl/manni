@@ -2,7 +2,7 @@
 title: Deterministic checks
 description: Match a pattern with tool:regex, run any script as a command eval, and let manni docevals write scripts for plain-language rules.
 type: how-to
-last-updated: 2026-10-02
+last-updated: 2026-10-04
 ---
 
 Deterministic graders are free, fast, and arguable in a pull request. Prefer them. Reach for the
@@ -88,21 +88,36 @@ Any executable. `{file}` expands to the page's absolute path.
 Exit code decides. `0`, or anything in `success-exit-codes`, passes. Anything else fails with the
 output tail as the message. Timeouts are reported distinctly.
 
-### Commands declared in page frontmatter need a grant
+### Commands declared in page frontmatter run by default
 
-A `command` eval defined in `manni.config.yaml` runs without a grant, because the config is yours.
-A page that declares one in its own frontmatter is content asking to run code. That command runs
-only under `execution.allow: [frontmatter-commands]` or `--allow-execution frontmatter-commands`.
-Without the grant it reports as skipped, and the run goes on.
+A page that declares a `command` eval in its own frontmatter is content asking to run code. It runs
+by default, like a `command` eval defined in `manni.config.yaml`. The operator narrows that, and
+nothing else widens it:
+
+- `execution.allow: []` in the config runs no page-declared command.
+- `--no-execution` runs none for one run.
+
+A command the run does not grant reports as `skipped` with a reason, and the run goes on.
 
 ```yaml
 docevals:
   execution:
-    allow: [frontmatter-commands]
+    allow: []
 ```
 
-Grant it only to a corpus whose editors you trust.
+A job that reads pages from people you do not trust passes `--no-execution`.
 [Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/) covers the risk.
+
+### Check what you just edited
+
+`--newer-than` scopes a run to the pages that changed inside a window, uncommitted edits included.
+Run it while you write a check, and only the pages you touched are graded:
+
+```bash
+manni docevals run --deterministic-only --no-generate --newer-than 30m
+```
+
+A page with no change in the window is left out. When none changed, the run says so and exits `0`.
 
 ## Plain-language checks manni docevals writes for you
 
@@ -120,8 +135,8 @@ into frontmatter:
 ```
 
 The model is used **once**, at generation time. After that the check is fully deterministic, with
-no model in the loop and no per-run cost. The recorded command lives in page frontmatter, so it
-runs under the `frontmatter-commands` grant like any other.
+no model in the loop and no per-run cost. The recorded command lives in page frontmatter, so the
+same `execution.allow` and `--no-execution` narrow it as any other.
 
 Three consequences worth internalising:
 

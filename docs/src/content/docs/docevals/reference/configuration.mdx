@@ -2,7 +2,7 @@
 title: Configuration reference
 description: Every manni.config.yaml key, its type, and its default.
 type: reference
-last-updated: 2026-10-02
+last-updated: 2026-10-04
 ---
 
 Every key, verified against `src/docevals/core/config-schema.json` and the defaults applied in
@@ -227,35 +227,49 @@ Anything between the two zone thresholds lands in human review. See
 | `scripts.configDir` | string | `manni-docevals-scripts` | Used when `scripts.dir` has no `{docDir}`; resolved relative to the config file. |
 | `scripts.timeoutMs` | integer ≥ 1 | `30000` | |
 
-## `execution` controls what content is allowed to run
+## `execution` narrows what content may run
 
 One thing in a content file can reach a shell, and that is a `command` eval declared in page
-frontmatter. Its argv is code that whoever edits the page controls, so it is **denied until you
-grant it**. A page eval that is denied reports as skipped.
+frontmatter. Its argv is code that whoever edits the page controls. It runs by default, and this
+key narrows that. A page eval the run does not grant reports as `skipped`, never `pass`, with
+this reason:
+
+```text
+frontmatter commands not granted (execution.allow: [frontmatter-commands])
+```
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
-| `execution.allow` | list | `[]` | `frontmatter-commands` is the one value. It lets `command` evals declared in page frontmatter run. Any other value is **exit 2**, `unknown execution grant`. |
+| `execution.allow` | list | every grant | The grants a run holds. `frontmatter-commands` is the one value, and it lets `command` evals declared in page frontmatter run. `[]` runs none of them. Any other value is **exit 2**. |
 
 ```yaml
 docevals:
   execution:
-    allow: [frontmatter-commands]
+    allow: []
 ```
 
-A `command` eval defined in this file is the operator's own code and needs no grant.
+An unknown grant names the values that exist:
 
-`--allow-execution frontmatter-commands` adds the grant for one run; `--no-execution` clears every
-grant for one run. Any other value is a usage error, **exit 2**:
+```text
+Invalid config in manni.config.yaml: unknown execution grant "shell-steps"; expected one of frontmatter-commands
+```
+
+A `command` eval defined in this file is the operator's own code. No grant gates it.
+
+Two flags narrow the config for one run, and neither widens it.
+`--allow-execution frontmatter-commands` keeps only that grant, if the config holds it. So under
+`allow: []` the flag still runs nothing. `--no-execution` runs no page-declared command at all.
+An unknown kind on the command line is a usage error, **exit 2**:
 
 ```text
 manni: --allow-execution must be one of frontmatter-commands, got "shell-steps"
 ```
 
-:::caution[A grant is not a fork defence]
-A grant says *this corpus* is trusted to execute. A fork's pages are not this corpus, so the
-grant does not make a run over untrusted contributions safe. Restrict the job to same-repo
-pull requests instead. See [Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/).
+:::caution[Narrowing is not a fork defence]
+A fork rewrites the pages a run reads. So by default, a job over its pull request runs the fork
+author's code. Pass `--no-execution` on any job that reads a fork's pages. Then restrict execution to
+same-repo pull requests, because that trigger is the complete control. See
+[Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/).
 :::
 
 ## `fill`

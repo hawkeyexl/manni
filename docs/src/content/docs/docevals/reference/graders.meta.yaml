@@ -24,6 +24,9 @@ docs/src/content/docs/docevals/reference/graders.mdx:
     - generated-by: Claude Opus 5
       lines: 41
       integrity: sha256-0577c75a381de1b0861d36e43d41f40f10f99aa971b7b814519e9fb09e7a48e8
+    - generated-by: Claude Opus 5.5
+      lines: 44-46
+      integrity: sha256-b928bb2a0e1930eae950cb30f19dc5c5526ed840a38abff8f29e7e4480e49ee6
     - generated-by: Claude Fable 5.1
       lines: 48-49
       integrity: sha256-dd73b49fc4a2ec5fc371e6a85124b04689ee5f00d99d49e29a8ab58f4c9077fd

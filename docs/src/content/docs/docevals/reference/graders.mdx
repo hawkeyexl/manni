@@ -2,7 +2,7 @@
 title: Graders reference
 description: Every grader kind, its options, and what it reports.
 type: reference
-last-updated: 2026-10-02
+last-updated: 2026-10-04
 ---
 
 A grader decides pass or fail for one eval on one page. Verified against `src/docevals/graders/registry.ts`
@@ -47,9 +47,9 @@ verdict. Any code outside `success-exit-codes` fails the eval, and the finding m
 | `timeout-ms` (eval field) | `scripts.timeoutMs` (`30000`) | |
 
 A command declared in page frontmatter runs from the page's directory. A command declared in the
-config runs from the config file's directory. A page-declared command runs only under the
-`frontmatter-commands` [execution grant](/manni/docevals/reference/configuration/). Without it the
-eval is skipped.
+config runs from the config file's directory. A page-declared command runs under the
+`frontmatter-commands` [execution grant](/manni/docevals/reference/configuration/). A run holds it
+unless `execution.allow` leaves it out or `--no-execution` is given. Without it the eval is skipped.
 
 A `command` eval with an assertion and **no** command is a plain-language deterministic check, and
 manni docevals generates the script. See [Deterministic checks](/manni/docevals/evals/deterministic-checks/).

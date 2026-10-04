@@ -2,7 +2,7 @@
 title: Output and exit codes
 description: The pretty, json, markdown, github, sarif, junit, and html report shapes, and what each exit code means.
 type: reference
-last-updated: 2026-10-02
+last-updated: 2026-10-04
 ---
 
 Verified against `src/docevals/reporters/` and `src/docevals/types.ts`, with samples captured from real runs against
@@ -39,7 +39,7 @@ checked" through a config file rather than a flag does not make it a passing bui
 Two empty runs are **not** errors, because both are choices rather than misconfigurations:
 
 - Every page carrying `eval-skip`. Pages you skipped are not counted.
-- A `--since` scope that selects no pages (see [Scoping a run to what
+- A `--since` or `--newer-than` scope that selects no pages (see [Scoping a run to what
   changed](/manni/docevals/reference/cli/#scoping-a-run-to-what-changed)).
 
 Neither passes in silence. Whenever no eval reaches a verdict, the report carries a warning saying
@@ -255,7 +255,7 @@ nothing was graded. A scored criterion counts once, by its own weight, in place 
 when the suite lists criteria.
 
 `partial` is present, and `true`, only when `--eval` or `--suite` filtered the run, or `--since`
-left pages out. It says the run
+or `--newer-than` left pages out. It says the run
 measured part of the suite, so the summary carries numbers but no verdict:
 
 ```json
@@ -286,6 +286,24 @@ Each criterion is suspended, because the filter left one of its two members ungr
 a failing suite. An unfiltered run omits the key entirely, so `partial !== true` is the test for
 "this verdict is real". See
 [Selecting evals suspends suite enforcement](/manni/docevals/reference/cli/#selecting-evals-suspends-suite-enforcement).
+
+### `since` and `newerThan`
+
+A scoped run carries one block per scoping flag. Each is absent when its flag was not given.
+
+```json
+"since": { "ref": "origin/main", "pagesSelected": 2, "pagesTotal": 40 },
+"newerThan": { "duration": "7d", "pagesSelected": 2, "pagesTotal": 40 }
+```
+
+`pagesSelected` counts the pages the run evaluated, out of `pagesTotal` discovered. With both
+flags, both blocks carry the one combined count, the pages that satisfied both. The `pretty`,
+`markdown` and `github` formats print the scope as one line:
+
+```text
+Scoped to 2 of 40 page(s) changed since origin/main and in the last 7d.
+No pages changed in the last 7d — nothing was evaluated.
+```
 
 ### `problems[]`
 

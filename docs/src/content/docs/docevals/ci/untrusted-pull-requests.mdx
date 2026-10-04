@@ -1,8 +1,8 @@
 ---
 title: Untrusted pull requests
-description: What a content file can cause to execute, why one flag is not enough, and how to gate the job.
+description: What a content file can cause to execute, the flag every fork-facing job passes, and how to gate the job.
 type: how-to
-last-updated: 2026-10-02
+last-updated: 2026-10-04
 ---
 
 manni docevals runs code that content files ask it to run. On a pull request from a fork, the person
@@ -21,28 +21,39 @@ evals:
     command: [node, scripts/whatever.mjs, "{file}"]
 ```
 
-That command runs only under `execution.allow: [frontmatter-commands]` (config) or
-`--allow-execution frontmatter-commands` (CLI). It is denied unless you grant it, and a denied command
-eval reports as skipped.
+**That command runs by default.** The `frontmatter-commands` grant is on unless
+`execution.allow` in the config leaves it out. On a fork's pull request, the fork wrote the page,
+so a default run executes the fork's code on your runner.
 
-A `command` eval defined in `manni.config.yaml` needs no grant, because the config is yours, not
-the content's. On a pull request, though, the config is part of the change too.
+`--no-execution` is the step that stops it. Every job that reads a fork's pages passes it:
 
-:::danger[Grants do not make a fork safe]
-**No grant makes a run over untrusted contributions safe.**
+```sh
+manni docevals run --since origin/main --no-execution
+```
 
-A grant says *this corpus* is trusted to execute. A fork's pages are not this corpus. A fork
-rewrites the pages, and if the job runs with a grant, it runs the fork's code. Denying the grant
-does protect the runner from page-declared commands. But a reader who grants it and concludes they
-are safe against a hostile fork is wrong, and confidently so.
+With it, every page-declared command eval reports as `skipped` with a reason, never as a pass.
+Writing `execution: { allow: [] }` in the config does the same for every run, but a fork can edit
+the config too. The flag lives in your workflow.
 
-The control is the job trigger, not the flag. Restrict execution to same-repo pull requests.
+A `command` eval defined in `manni.config.yaml` is not gated, because the config is the operator's
+own code. On a pull request, though, the config is part of the change too, and `--no-execution`
+does not stop it.
+
+:::danger[The flag does not make a fork safe]
+**No flag makes a run over untrusted contributions safe.**
+
+`--no-execution` keeps page-declared commands off the runner. It does not stop a command the fork
+adds to `manni.config.yaml`, or a step it adds to the workflow. A reader who passes the flag and
+concludes they are safe against a hostile fork is wrong, and confidently so.
+
+The control is the job trigger. Restrict execution to same-repo pull requests, and pass
+`--no-execution` as well.
 :::
 
 ## The complete answer is to gate the job
 
-Flags are not sufficient. Restrict the job that can execute content-driven code to **same-repo**
-pull requests:
+A flag is not sufficient on its own. Restrict the job that can execute content-driven code to
+**same-repo** pull requests:
 
 ```yaml
 jobs:
@@ -73,9 +84,11 @@ Then give forks a separate job that runs no page-declared command and needs no s
       - run: npx @hawkeyexl/manni docevals run --deterministic-only --no-execution --format github
 ```
 
-Fork contributors still get every `tool:regex` check with no credential in reach. A `command` eval
-in the fork's `manni.config.yaml` still runs there, as anything in the fork's workflow would. That
-job holds no secret and gets a read-only token, so it has nothing worth stealing.
+Fork contributors still get every `tool:regex` check with no credential in reach.
+`--no-execution` is the required part of that command. Leave it out and the fork's page-declared
+commands run on the fork job. A `command` eval in the fork's `manni.config.yaml` still runs there,
+as anything in the fork's workflow would. That job holds no secret and gets a read-only token, so
+it has nothing worth stealing.
 
 Frontmatter and structure are checked by their own domains. Add `manni meta validate` and
 `manni lint structure` as steps in the same job. Neither runs content-authored code.
@@ -97,9 +110,10 @@ tempted toward the unsafe workaround above.
 ## A checklist before going public
 
 - The job that can execute content code is gated to same-repo pull requests.
-- Forks run a separate `--deterministic-only` job with no secrets.
-- `execution.allow` grants only what the corpus needs, and nothing on a fork-facing job.
-  That is defence in depth, not the defence.
+- Forks run a separate `--deterministic-only --no-execution` job with no secrets.
+- Every job that reads a fork's pages passes `--no-execution`. That is defence in depth, not the
+  defence.
+- `execution.allow` lists only the grants the corpus needs, if it needs fewer than all of them.
 - Third-party actions pinned to a full commit SHA, not a tag.
 - `permissions:` set to least privilege (`contents: read` for a check job).
 - A turn budget set (`judge.maxTurns`), so a malicious or accidental change cannot run up a bill.
@@ -108,5 +122,5 @@ tempted toward the unsafe workaround above.
 
 A pull request that edits the workflow is asking for a change to what runs with your credentials.
 Review those with the same care as a change to authentication code. Remember too that a contributor
-who can add a `command` eval to `manni.config.yaml`, or a grant to `execution.allow`, has changed
-what the whole job runs. That holds even if the workflow file is untouched.
+who can add a `command` eval to `manni.config.yaml` has changed what the whole job runs. That holds
+even if the workflow file is untouched.

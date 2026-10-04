@@ -2,7 +2,7 @@
 title: CI recipes
 description: GitLab CI, Jenkins, and pre-commit, running the same gate on other platforms.
 type: how-to
-last-updated: 2026-10-02
+last-updated: 2026-10-04
 ---
 
 The shape is the same everywhere. Install, restore the cache, run, and route on the exit code. The
@@ -79,8 +79,9 @@ repos:
         pass_filenames: true
 ```
 
-`--no-generate` matters here: a commit hook should never quietly write new script files into the
-working tree.
+`--no-generate` matters here, because a commit hook should never quietly write new script files
+into the working tree. The hook still runs the `command` evals your pages declare. Add
+`--no-execution` if a commit should not wait on them.
 
 ## Any CI system
 
@@ -99,8 +100,9 @@ Then branch on the exit code: `0` pass, `1` docs, `2` pipeline.
 config file. Without it, every run re-judges everything. See
 [Caching and turn budgets](/manni/docevals/ci/cost-and-caching/).
 
-**Forks and untrusted contributions** need a job that runs no page-declared command. On any
-platform, that is a separate `--deterministic-only --no-execution` job with no credentials. On
+**Forks and untrusted contributions** need a job that runs no page-declared command. A `command`
+eval declared in page frontmatter runs by default, so `--no-execution` is required on that job. On
+any platform, that is a separate `--deterministic-only --no-execution` job with no credentials. On
 GitHub, add a same-repo condition on the job that can run frontmatter-declared commands. See
 [Untrusted pull requests](/manni/docevals/ci/untrusted-pull-requests/).
 
