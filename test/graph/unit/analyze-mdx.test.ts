@@ -143,3 +143,16 @@ describe("analyzeDoc over .md is unaffected", () => {
     expect(doc.links.map((l) => l.raw)).toEqual(["other.md"]);
   });
 });
+
+describe("analyzeDoc's format", () => {
+  it("is mdx for a .mdx path and markdown for a .md path", () => {
+    expect(analyzeDoc("# A\n", "docs/guide.mdx", corpus).format).toBe("mdx");
+    expect(analyzeDoc("# A\n", "docs/guide.md", corpus).format).toBe("markdown");
+  });
+
+  it("is what --as names, whatever the path says", () => {
+    expect(
+      analyzeDoc("# A\n", "docs/guide.md", corpus, { format: "mdx" }).format,
+    ).toBe("mdx");
+  });
+});

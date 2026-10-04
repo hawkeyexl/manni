@@ -23,6 +23,7 @@ import { extractFrontmatter } from "../../meta/index.js";
 import { metaPageView, type MetaPageView } from "../../meta/internal.js";
 import { errorMessage } from "../../shared/errors.js";
 import { GraphError, type DocModel } from "../types.js";
+import type { DocFormat } from "./analyze.js";
 import { STDIN_PATH } from "./iri.js";
 
 /** Which config a run reads meta's section of, as its flags said. */
@@ -70,20 +71,21 @@ function pointerOf(key: string): string {
 
 /**
  * Merge one page's frontmatter with its manifests. `present` is whether the
- * page has a frontmatter block at all.
+ * page has a frontmatter block at all, and `format` is what graph parsed it as.
  */
 export async function mergePage(
   view: MetaPageView,
   path: string,
   frontmatter: Record<string, unknown>,
   present: boolean,
+  format: DocFormat,
 ): Promise<MergedPage> {
   let merged;
   try {
     merged = await view.merge(path, {
       data: frontmatter,
       present,
-      format: "markdown",
+      format,
       lineFor: () => undefined,
     });
   } catch (e) {
@@ -109,6 +111,7 @@ export async function withExternalMetadata(
       doc.path,
       doc.frontmatter,
       doc.frontmatterPresent,
+      doc.format,
     );
     // A run with no manifest hands the page's own object back, so the common
     // case allocates nothing.

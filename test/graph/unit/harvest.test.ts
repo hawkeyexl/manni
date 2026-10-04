@@ -18,6 +18,7 @@ function doc(
     path,
     frontmatter,
     frontmatterPresent: true,
+    format: "markdown",
     sections: [],
     links: [],
     images: [],

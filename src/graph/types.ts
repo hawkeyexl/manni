@@ -1,5 +1,6 @@
 /** Shared types for manni graph. */
 import { ToolError } from "../shared/errors.js";
+import type { DocFormat } from "./core/analyze.js";
 
 /** Operational error: expected failure reported to the user, exit code 2. */
 export class GraphError extends ToolError {
@@ -58,6 +59,8 @@ export interface DocModel {
   frontmatter: Record<string, unknown>;
   /** Whether a frontmatter block was present. */
   frontmatterPresent: boolean;
+  /** The format the page was parsed as: `--as`, else its extension. */
+  format: DocFormat;
   /** First H1 text, if any (used as title fallback). */
   firstH1?: string;
   sections: Section[];

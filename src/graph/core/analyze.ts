@@ -29,6 +29,11 @@ import { normalizeDocPath } from "./iri.js";
 export const DOC_FORMATS = ["markdown", "mdx"] as const;
 export type DocFormat = (typeof DOC_FORMATS)[number];
 
+/** The format a page parses as: `format` (`--as`) when given, else its extension. */
+export function formatOf(path: string, format?: DocFormat): DocFormat {
+  return format ?? (path.endsWith(".mdx") ? "mdx" : "markdown");
+}
+
 export interface AnalyzeOptions {
   /** Site-route mappings for resolving root-absolute links. */
   routes?: RouteMapping[];
@@ -387,10 +392,8 @@ export function analyzeDoc(
   const routes = options.routes ?? [];
   const path = normalizeDocPath(relPath);
   const meta = extractFrontmatter(content, "markdown");
-  const isMdx =
-    options.format === undefined
-      ? path.endsWith(".mdx")
-      : options.format === "mdx";
+  const format = formatOf(path, options.format);
+  const isMdx = format === "mdx";
   let tree: Root;
   try {
     tree = (isMdx ? mdxProcessor : processor).parse(content);
@@ -512,6 +515,7 @@ export function analyzeDoc(
     path,
     frontmatter: meta.data,
     frontmatterPresent: meta.present,
+    format,
     firstH1,
     sections,
     links,

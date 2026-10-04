@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { analyzeDoc } from "../core/analyze.js";
+import { analyzeDoc, formatOf, type DocFormat } from "../core/analyze.js";
 import { loadRunConfig, type FillField } from "../core/config.js";
 import type { DocModel } from "../types.js";
 import {
@@ -372,24 +372,28 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     cwd,
     guardFiles,
   );
-  /** Each page's merged text, for the pages whose manifests supply a key. */
+  // Each page's merged text, computed once. `fillOne` reads it from here, so
+  // no page is merged twice.
   const mergedTexts = new Map<string, string>();
+  // A page whose frontmatter or manifest will not read is that page's error,
+  // reported by `fillOne`, not the run's.
+  const mergeErrors = new Map<string, unknown>();
+  // The stdin page joins the guard's corpus from memory: it has no file. A
+  // page whose manifests supply a key joins it as merged, so the simulation
+  // sees what `graph build` would.
+  const inline = new Map<string, string>();
   for (const path of guardFiles) {
     const text = readFileSync(resolve(cwd, path), "utf8");
     let asMetaReadsIt: string;
     try {
-      asMetaReadsIt = await mergedText(view, path, text);
-    } catch {
-      // A page whose frontmatter or manifest will not read is that page's
-      // error, reported by `fillOne` as it always was, not the run's.
+      asMetaReadsIt = await mergedText(view, path, text, formatOf(path, format));
+    } catch (e) {
+      mergeErrors.set(path, e);
       continue;
     }
-    if (asMetaReadsIt !== text) mergedTexts.set(path, asMetaReadsIt);
+    mergedTexts.set(path, asMetaReadsIt);
+    if (asMetaReadsIt !== text) inline.set(path, asMetaReadsIt);
   }
-  // The stdin page joins the guard's corpus from memory: it has no file. A
-  // page whose manifests supply a key joins it as merged, so the simulation
-  // sees what `graph build` would.
-  const inline = new Map<string, string>(mergedTexts);
   if (stdinContent !== undefined) inline.set(STDIN_PATH, stdinContent);
   const guard =
     !opts.noValidateGraph && config.fill.validateGraph
@@ -487,9 +491,13 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
 
     // The page as meta reads it. Identical to `content` unless a manifest
     // supplies one of its keys, which is every page in a corpus with none.
-    const effective =
-      mergedTexts.get(path) ??
-      (absPath === undefined ? content : await mergedText(view, path, content));
+    const effective = absPath === undefined ? content : mergedTexts.get(path);
+    if (effective === undefined) {
+      const failure = mergeErrors.get(path);
+      throw failure instanceof Error
+        ? failure
+        : new GraphError(errorMessage(failure));
+    }
     const present = new Set(existingGraphFields(effective));
     const missing = opts.force ? fields : fields.filter((f) => !present.has(f));
     // With --sections, a document whose own fields are complete may still have
@@ -810,6 +818,10 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     ).content;
 
     const manifestWrites: ManifestWrite[] = [];
+    // A manifest that owns `graph:` gets the whole block as meta reads it,
+    // merged and then filled. A `graph:` block the page still carries is left
+    // as it is: `build` merges the two with the manifest winning, as
+    // `manni meta fill` does.
     if (graphTarget !== null) {
       manifestWrites.push({
         home: graphTarget,
@@ -946,10 +958,11 @@ async function mergedText(
   view: MetaPageView,
   path: string,
   content: string,
+  format: DocFormat,
 ): Promise<string> {
   if (frontmatterKind(content) === "unsupported") return content;
   const own = ownMetadata(content);
-  const { supplied } = await mergePage(view, path, own.data, own.present);
+  const { supplied } = await mergePage(view, path, own.data, own.present, format);
   if (Object.keys(supplied).length === 0) return content;
   return applyGraphFields(content, path, {}, { page: supplied }).content;
 }
