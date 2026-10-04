@@ -106,9 +106,9 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         integrity: sha256-0fba5f6acc323527366b1b58c24fe23c0f265ef62fb151a7abde3cf5a328f253
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 336-347
+        lines: 342-353
         integrity: sha256-b609d7a86f241caa53f6c3ab9266149e6c0333c7496005e23ab3d94797659c1c
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 80630b85776701d17caa29822d40d6b5ea91c47b
     - id: taxonomy-all-three-are-draft-2020-12
       claim:
         integrity: sha256-60affe9aa8ec9b7042306c95db31d5d2aec7e975e4799c3f9d358cc890b2edfc
@@ -130,9 +130,9 @@ docs/src/content/docs/meta/reference/taxonomy-schemas.mdx:
         integrity: sha256-0cdd8c4fbd179b8ad8ecf46310a26d19a3aabe7ab0dac347f94711663bb70d27
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 79-127
-        integrity: sha256-b34b13447649abac27c865e57b62674978e2d0b5f1b1c3bef6380c9c9a1b98df
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        lines: 81-131
+        integrity: sha256-ef801a2216afc4c240a123d88c60bf6c14cddef2579cac66e8a142fb8bc28a97
+        commit-sha: 80630b85776701d17caa29822d40d6b5ea91c47b
     - id: taxonomy-row-diataxis
       claim:
         lines: 13

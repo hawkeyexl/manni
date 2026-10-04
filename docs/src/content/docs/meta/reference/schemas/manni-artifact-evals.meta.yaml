@@ -22,13 +22,13 @@ docs/src/content/docs/meta/reference/schemas/manni-artifact-evals.mdx:
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2-16
-      integrity: sha256-de4ba29d6c2b391cbf9ba1f2d2a060fdf1d32a0165ee2f7704d2c2312d7bea7a
+      integrity: sha256-628fa205c6c8f1cfd24e0087384518eeafe917de07dd1dbf32c3e07e97a0ebfb
     - generated-by: Claude Opus 5.5
-      lines: 23-251
-      integrity: sha256-f63b4f8b8f9786772e6f6250cdfbff2306d2ac69e9c98ff12922db723e50c3cb
+      lines: 23-255
+      integrity: sha256-bbd9e7692405e72c9864d59f536cfdeecfcd6016b0f0f5ed15f424623d8917d9
     - generated-by: Claude Opus 5.5
-      lines: 255-293
-      integrity: sha256-6798cfacdbb3977accd08e0fb80b9de8faf489db9f754137ee61a087ae31da70
+      lines: 259-320
+      integrity: sha256-cc5cade37789422e7224a5b42383418e815e46fc7bf1a7e9ee0ecc017f37754b
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
