@@ -1,21 +1,26 @@
 # 0051: the `graph` domain: the knowledge graph joins the family
 
 - **Status:** Proposed
-- **Serves:** Maya · M18–M20 · Devin · D12, D13 · Sara · S12 · Theo · T6
+- **Serves:** Maya · M18–M20 · Devin · D12, D13 · Sara · S12 · Theo · T7
 - **Depends on:** [0033](0033-manni-monorepo.md), the umbrella this domain
   mounts on and the import recipe it follows. [0034](0034-command-grammar.md),
   the grammar: spelled verbs, no default subcommand, one separator per list.
   [0041](0041-collections.md), the document set. [0046](0046-provenance-pins.md),
-  whose `meta-provenance` replaces `graph.provenance` and whose stress test 13
+  whose `meta-provenance` replaces `kg.provenance` and whose stress test 13
   moves a guard into this tool. [0047](0047-field-location.md), the schema
-  annotation this one is modelled on. [0023](0023-metadata-vocabularies.md),
-  whose graph draft the page vocabulary `manni:graph` succeeds
+  annotation this one is modelled on. [0063](0063-the-graph-vocabulary.md),
+  which renamed the page block `graph:`. [0067](0067-registering-the-vocabularies.md),
+  which registered `manni:graph:1.0.0` and its strict overlay.
+  [0070](0070-defaults-register-strict.md), which put it in the default set
 - **Relates to:** [0048](0048-docevals-domain.md), the domain folded in before
   this one. Its choices are copied here: `collections:`, `providers:`,
   `--local`, the turn budget, camelCase section keys and a closed ADR log.
   [0035](0035-a11y-domain.md), the precedent for mapping a source's own
   severity scale onto the family's. The source value stays in a field of its
-  own
+  own. [0052](0052-term-domain.md) and [0073](0073-docevals-grades-what-no-other-domain-owns.md),
+  for the line §11 draws with `manni term`. [0074](0074-stewardship-graph-output.md),
+  which puts the first marks of §5 in the default set and removes
+  `graph.schemas`
 - **Supersedes, in part:** graph [ADR 01010](graph/01010-provenance-defaults-and-degradation.md),
   for the tri-state `provenance.git` key only. Git is detected now, and its
   warnings channel stands. graph [ADR 01027](graph/01027-unenforceable-cost-caps.md),
@@ -24,36 +29,35 @@
   [ADR 01030](graph/01030-the-dockg-vocabulary-document.md), for the namespace
   host only. Its rule, that the namespace IRI must dereference, is why the IRIs
   move to the site that will serve them. graph
-  [ADR 01006](graph/01006-shacl-graph-validation.md), for `graph validate`, which
-  `manni meta validate` does. Its `graph check` half stands. None of the four is
-  edited, as 0048 left the ADRs it superseded in part.
-  [0023](0023-metadata-vocabularies.md), for `manni:graph` in its set of ids and
-  for `graph` among the companion keys no house id may claim. Both now read
-  `graph`. [0046](0046-provenance-pins.md), for its `/graph/label` examples.
-  [0047](0047-field-location.md), for its table row
-  `manni:kg:1.0.0-proposal.3 | graph`. The Status line is the only edit to each
+  [ADR 01006](graph/01006-shacl-graph-validation.md), for the imported
+  `validate` verb, which `manni meta validate` does. Its `check` half stands.
+  None of the four is edited, as 0048 left the ADRs it superseded in part.
+  [0047](0047-field-location.md), for its claim that `x-manni-location` is the
+  one statement a delivery-side tool reads. A published graph reads
+  `x-manni-graph-output` instead (§5). The Status line is its only edit
 - **Touches:** `src/graph/**` (new), `src/cli.ts`, `src/index.ts`,
-  `src/meta/core/validator.ts`, `src/meta/core/meta-provenance.ts`,
-  `package.json`, `package-lock.json`, `manni.config.yaml`, `tsup.config.ts`,
-  `vitest.config.ts`, `eslint.config.js`, `scripts/check-cli-reference.mjs`,
+  `src/shared/cli-options.ts`, `src/meta/core/{validator,graph-output}.ts`,
+  `src/meta/commands/{validate,get,query,fill,schemas}.ts`,
+  `src/cite/commands/{add,check}.ts`, `package.json`, `package-lock.json`,
+  `manni.config.yaml`, `tsup.config.ts`, `vitest.config.ts`,
+  `eslint.config.js`, `scripts/check-cli-reference.mjs`,
   `scripts/clean-dist.mjs` (new), `test/graph/**` (new),
   `docs/src/content/docs/graph/**` (new), `docs/public/graph/ns.ttl` (new),
-  `docs/manni.graph.yaml` (new), `docs/proposals/0023/schemas/graph/**` (new),
-  `docs/proposals/0023/ladders/**`, `docs/src/content/docs/meta/**`,
-  `docs/content-strategy/{personas,audiences,cujs,information-architecture}.md`,
-  `docs/proposals/graph/**` (new), `docs/astro.config.mjs`, `CLAUDE.md`
+  `docs/manni.graph.yaml` (new), `docs/src/content/docs/meta/**`,
+  `docs/content-strategy/*.md`, `docs/proposals/graph/**` (new),
+  `docs/astro.config.mjs`, `CLAUDE.md`
 - **Verdict:** Fold moose-kg in as `manni graph`, ten spelled verbs and no
   default. Make it speak the family's values rather than its own. Document sets
-  come from `collections:`, and severities from the `notice | warning | error`
-  scale. Format names are validated, providers are declared once in
-  `providers:` alongside `--local`, and a turn budget replaces the dollar cap.
-  Its page block is `graph:`, defined by `manni:graph:1.0.0-proposal.1`, which
-  is the 0023 kg draft renamed and bundled at build. `meta-provenance` replaces
-  `kg.provenance`. What a field
-  publishes is the schema's call, through a new `x-manni-graph-output`. `graph
-  validate` goes, because `manni meta validate` is that command. The `dockg`
-  identity goes with it. Its ADR log closes at 01040, and later graph decisions go
-  in this series.
+  come from `collections:`, and `build` and `fill` take meta's input surface.
+  Severities come from the `notice | warning | error` scale. Format names are
+  validated, providers are declared once in `providers:` alongside `--local`,
+  and a turn budget replaces the dollar cap. Its page block is `graph:`,
+  defined by the built-in `manni:graph:1.0.0` and its strict overlay.
+  `meta-provenance` replaces `kg.provenance`. What a field publishes is the
+  schema's call, through a new `x-manni-graph-output` read from the schema set
+  meta resolves. The imported `validate` verb goes, because
+  `manni meta validate` is that command. The `dockg` identity goes with it. Its
+  ADR log closes at 01040, and later graph decisions go in this series.
 
 ## Problem
 
@@ -90,16 +94,41 @@ commander's 1, through `.exitOverride()` and
 
 ### 1. Document sets come from `collections:`
 
-`build` and `fill` read documents, so they take 0048 §1's surface exactly:
-`[paths...]`, `--collection <name>` (repeatable), `--exclude <glob>`
-(repeatable), `-c, --config <path>` and `--no-config`. With no paths they read
-the selected collections. `graph.inputs` and `graph.exclude` are refused by name,
-with meta's and cite's sentences, exit 2. No paths and no collections is exit 2
-(0014), not a silent walk of `**/*.md`.
+`build` and `fill` read documents. They take the input surface
+`manni meta validate` takes, with 0048 §1's collections:
+
+| Argument or option | What it does |
+|---|---|
+| `[paths...]` | Files, directories and globs, space-separated. |
+| `-` | One more page, read from stdin, beside any named paths. Needs `--as`. |
+| `--as <format>` | Parse every input as `markdown` or `mdx`. |
+| `--ext <list>` | Comma-separated extensions a directory walk or glob keeps, given once. Default `.md,.mdx`. A file named outright is not filtered. |
+| `--allow-empty` | Zero matched files is success. `build` writes an empty graph, and `fill` an empty report. |
+| `--collection <name>` | A configured collection to read. Repeatable, one name per occurrence. |
+| `--exclude <glob>` | A glob to leave out. Repeatable, one glob per occurrence. |
+| `-c, --config <path>`, `--no-config` | The config file, or none. |
+
+With no paths they read the selected collections. A page from stdin shows as
+`<stdin>` in a report and has no git history. `graph fill -` prints the filled
+page to stdout and its report to stderr.
+
+Each refusal exits 2:
+
+| Case | stderr |
+|---|---|
+| `-` without `--as` | ``Reading from stdin (`-`) requires --as <format> to choose an extractor.`` |
+| `--as html` | `Unknown format "html". Known formats: markdown, mdx.` |
+| No paths and no collections | ``No files to build. Pass paths/globs, or declare a collection under `collections:` in manni.config.yaml.`` `fill` says `fill`. |
+| `graph.inputs` in the config | `manni.config.yaml: "inputs" is no longer a graph key. Document sets are declared once for every tool, under a top-level collections: list.`, then a link to the configuration reference. `graph.exclude` reads the same. |
+
+The stdin sentence is one constant in `src/shared/cli-options.ts`, which
+meta and cite read too. No paths and no collections is exit 2 (0014), not a
+silent walk of `**/*.md`.
 
 The read verbs (`check`, `query`, `stats`, `search`, `traverse`, `embed`,
-`export`) take a built graph, not a document set, so they take `-g, --graph`
-and the config flags and nothing else.
+`export`) take a built graph, not a document set. They take `-g, --graph`
+and the config flags in place of the document-set surface. `init` takes no
+options.
 
 ### 2. The family's values
 
@@ -111,11 +140,18 @@ and the config flags and nothing else.
 - **Formats** are validated. Each verb names its list. An unknown `-f` is
   exit 2 with the family's sentence, `Unknown --format "x". Use a | b.`, the
   way a11y and cite each spell it against their own list. `check` adds
-  `github`, because it is a CI gate; everything else stays `pretty | json`,
-  with `pretty` the default.
+  `github`, because it is a CI gate. `fill`, `query`, `stats`, `search`,
+  `traverse` and `embed` take `pretty | json`, with `pretty` the default.
+  `init`, `build` and `export` write files rather than a report, and take no
+  `-f`.
 - **`-f` means the output format everywhere.** `graph export` took its target
   there; the target becomes a positional, `manni graph export <jsonld | iirds |
   search>`.
+- **Flags say what they mean.** `query` matches on `--subject`, `--predicate`
+  and `--object`. `traverse` filters by product subject with
+  `--software-subject`, so `--subject` keeps one meaning in the domain.
+  `embed` names its model with `--embedding-model`, so it does not read as
+  `fill --model`, a provider's model. Its config key stays `graph.embed.model`.
 - **One separator per list.** `--shapes` is repeatable, one path per
   occurrence. `--predicates` is a comma-separated list given once. Neither is a
   variadic option any more.
@@ -147,47 +183,37 @@ A page left unfilled by the budget is `skipped` with reason `turn budget`.
 `--min-confidence` and `fill.minConfidence` become `--confidence` and
 `fill.confidenceThreshold`, the names `meta fill`, docevals and tracevals use.
 
-`graph embed --model` is a local embedding model id, not a provider, and does not
-change.
+`graph embed --embedding-model` is a local embedding model id, not a
+provider's model. It is named apart from `fill --model` for that reason (§2).
 
-### 4. The page vocabulary is `manni:graph`
+### 4. The page vocabulary is `manni:graph:1.0.0`
 
-The page block is `graph:`, and the vocabulary that defines it is
-`manni:graph:1.0.0-proposal.1`. It is `manni:kg:1.0.0-proposal.3` with its root
-property renamed. Every field inside the block keeps its name, its type and the
-block's closed `additionalProperties: false`. `x-manni-location: page` moves
-onto `graph`.
+The page block is `graph:`, and the vocabulary that defines it is the
+built-in `manni:graph:1.0.0`. 0063 renamed the block from `kg:` and the draft
+family from `manni:kg` to `manni:graph`. 0067 registered it at `1.0.0`, with
+its strict overlay `manni:graph-strict:1.0.0`. 0070 put it in the default set,
+and `strict: true` stacks the overlay beside it. The block is closed with
+`additionalProperties: false`, and `x-manni-location: page` sits on `graph`.
 
 The tool takes the same name. `manni graph`, the `graph:` section of
-`manni.config.yaml`, the RDF prefix `graph:` and `x-manni-graph-output` all name
-the tool. Until this change the page block and the RDF prefix were both spelled
-`kg:`, and the tool was `kg` too.
+`manni.config.yaml` and the RDF prefix `graph:` all name the tool, as does
+`x-manni-graph-output`.
 
-This is a new vocabulary family rather than a revision. A draft's id names the
-vocabulary, and renaming the vocabulary means a new id. The `kg` drafts,
-proposal.1 through proposal.3, stay byte for byte as the family's history.
-Nothing registered either id, so no page depends on the old one. A page still
-carrying `kg:` has an unknown page key, which validates and derives nothing.
+graph ships no copy of the vocabulary. It imports
+`src/meta/schemas/graph/1.0.0.json`, the file meta registers, and tsup bundles
+it. One file is therefore both the schema `manni meta validate` checks a page
+against and the one graph reads. A page still carrying `kg:` has an unknown
+page key, which validates and derives nothing. The `manni:kg` drafts stay byte
+for byte as the family's history, and only they still name `kg`.
 
-The shipped copy under `schemas/kg/` and its hash pin go. The draft is bundled
-at build from `docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json`, the
-way docevals bundles the evals draft (0048 §5). One file is therefore both the
-draft under review and the schema the tool enforces.
-
-The draft is 0046's shape. `graph.provenance` is gone. A machine attribution is
-page-level `meta-provenance` with JSON Pointers into the block, such as
-`/graph/label`, and `fill` writes it through `src/meta/core/meta-provenance.ts`,
-the merge `meta fill` uses. The schema guard that kept machines off `sections`,
-`revision-of` and `derived-from` could not survive free pointers, so 0046
-stress test 13 moved it here. The harvest reports a `meta-provenance` pointer
-under `/graph/sections`, `/graph/revision-of` or `/graph/derived-from` as a
-`check` finding at `error`.
-
-Four other drafts still name the old block in description prose. Ai-context
-proposal.3 and artifact-evals proposal.4 use `/graph/label` as an example. Core
-proposal.4 mentions `graph.type`, and structure proposal.1 mentions `graph` twins.
-Published drafts are immutable, and a new revision of each for example text is
-out of proportion. Each one's next revision carries the new name.
+The vocabulary is 0046's shape. `graph.provenance` is gone. A machine
+attribution is page-level `meta-provenance` with JSON Pointers into the block,
+such as `/graph/label`, and `fill` writes it through
+`src/meta/core/meta-provenance.ts`, the merge `meta fill` uses. The schema
+guard that kept machines off `sections`, `revision-of` and `derived-from` could
+not survive free pointers, so 0046 stress test 13 moved it here. The harvest
+reports a `meta-provenance` pointer under `/graph/sections`,
+`/graph/revision-of` or `/graph/derived-from` as a `check` finding at `error`.
 
 ### 5. What the graph carries is the schema's call
 
@@ -206,10 +232,23 @@ defined:
 
 `x-manni-graph-output` is a boolean annotation beside a top-level property. It is
 registered with `ajv.addKeyword` in `src/meta/core/validator.ts`, where
-`x-manni-location` is registered. graph's harvest reads it from the schema set
-meta already resolves for the page. Absent means `true`: every field is
+`x-manni-location` is registered. Absent means `true`: every field is
 harvested. A mark nested inside `graph` is ignored, as 0047 rule 2 ignores one
 nested inside a block.
+
+graph reads the marks from the schema set meta resolves for each page. That
+set is the page's `$schema`, then meta's overrides, `schemas:`, `register`,
+`strict` and the default set. They come from the `meta:` section of the config
+the build runs under. graph keeps no schema set of its own, so one config
+decides what a page is checked against and what its published graph carries.
+
+There is no `graph.schemas` key. A config that sets one fails the config
+schema with `/graph: unknown key "schemas"`, exit 2, as any unknown key does.
+
+The mark lives in the vocabulary that defines the field. The default set
+carries `manni:stewardship:1.1.0` (0074), which marks `owner`, `stakeholders`
+and `reviewed-by` `false`. A default run therefore keeps the three fields that
+name people out of every published output.
 
 Encrypted values (0045) are harvested like any other value. graph never decrypts,
 so what lands in the graph is the `~…` token, which says a value exists and
@@ -250,15 +289,16 @@ document for it. The document is what moves: it is served at
 dockg host never served anything. Nothing was published under the old IRIs, so
 this is a rename and not a migration; the golden graph is regenerated once.
 
-### 8. `graph validate` goes
+### 8. The imported `validate` verb goes
 
-`graph validate` checked a page's frontmatter against the graph vocabulary with
-meta's own validator and meta's own reporters. That is `manni meta validate`
-with the graph draft in `meta.schemas` or an override, which is also how every
-other vocabulary in the family is checked. Two names for one command is what
+The imported `validate` checked a page's frontmatter against the graph
+vocabulary with meta's own validator and meta's own reporters. That is
+`manni meta validate`, which is also how every other vocabulary in the family
+is checked. `manni:graph:1.0.0` is in the default set, so it checks the
+`graph:` block with no config at all. Two names for one command is what
 "commands must have parallel behaviors" exists to prevent. Removing a verb is
-cheap now and breaking after the first release. The docs say so on the page
-where `validate` used to be documented.
+cheap now and breaking after the first release. The graph CLI reference says
+so beside `check`.
 
 `graph check`, which validates the *built graph* against SHACL shapes, is not
 affected: it is the half of ADR 01006 that meta cannot do.
@@ -268,7 +308,12 @@ affected: it is the half of ADR 01006 that meta cannot do.
 Upstream's `docs/content_strategy/` does not come across. As 0048 §7 settled,
 a joining tool brings no strategy directory and adds no persona unless no
 existing one fits. graph's journeys fold into Maya, Devin, Sara and Theo, and the
-CUJs are M18–M20, D12, D13, S12 and T6.
+CUJs are M18–M20, D12, D13, S12 and T7. T6 is docevals' "Fix a failing eval",
+so Theo's graph journey, "Fix a red `graph check`", is T7.
+
+graph's terms join the family termbase. Each is a `type: term` page under
+`docs/src/content/docs/meta/reference/glossary/`, and the section keeps no
+glossary page of its own.
 
 ### 10. The imported ADR log closes at 01040
 
@@ -276,6 +321,20 @@ CUJs are M18–M20, D12, D13, S12 and T6.
 is edited beyond a Status line. They are the record of decisions made in
 another repository, on the evidence available there. Later graph decisions go in
 this `00NN` series, and `docs/proposals/README.md` gains a row for the log.
+
+### 11. Concepts belong to `manni term`
+
+0073 narrowed docevals to what no other domain owns. The same rule draws the
+line between graph and `manni term`, since both touch concepts.
+
+`manni term` owns the concepts. It owns the glossary, its `type: term` pages,
+and the SKOS concept scheme that `manni term write -f skos` renders as JSON-LD.
+A team that wants its terminology as SKOS runs that command.
+
+graph mints a `skos:Concept` from a page's `graph:` block, as one node among
+the pages, links, sections and provenance around it. `graph export jsonld`
+emits the whole graph. It is a reserialization of what `build` derived, not a
+second writer of the termbase.
 
 ## Known limits
 
@@ -304,7 +363,7 @@ this `00NN` series, and `docs/proposals/README.md` gains a row for the log.
 
 ## Stress test
 
-### 1. Why not keep `graph validate` as an alias?
+### 1. Why not keep `validate` as an alias?
 
 Because an alias is a permanent second surface for one command, and that is the
 thing the parallel-behaviors rule exists to prevent. The cost of removing it
@@ -361,7 +420,8 @@ name.
 **Changed as a result:** the block is `graph:` and its pointers are
 `/graph/…`. Keeping the id `manni:kg` while the block became `graph` was
 possible, since `manni:artifact-evals` already claims `metadata`. It would have
-reintroduced the mismatch one level up, so the vocabulary is renamed too.
+reintroduced the mismatch one level up, so the vocabulary is renamed too. 0063
+made that change on main, and this domain takes it.
 
 The rename is a draft diff, not a migration, because nothing registered either
 id and the tool is unpublished. The one live URL it moves, the vocabulary's
@@ -373,14 +433,40 @@ review page on the site, gets a redirect.
   `manni graph build` next to `manni meta validate`.
 - A graph built by 2.x carries `manni` IRIs. Anything built by dockg does not,
   and the two are not mergeable without rewriting subjects.
-- Vocabulary drafts gain one keyword, which every schema author may set and
-  only graph reads.
+- Vocabularies gain one keyword, which every schema author may set and only
+  graph reads.
 - The page block is `graph:`. A page still carrying `kg:` validates and
   contributes nothing to the graph.
 - `docs:check-cli` gains a `graph` row, `docs:check-graph` becomes a docs gate, and
   the site gains a `graph` section.
 - moose-kg is archived with a README pointing here. There is no npm
   deprecation, because nothing was published.
+
+## History
+
+This proposal was drafted as the `kg` domain, `manni kg`, in
+`0051-kg-domain.md`. That draft named the keyword `x-manni-kg-output`, the
+config section `kg:` and the RDF prefix `kg:`. It bundled the page vocabulary
+from the `manni:graph:1.0.0-proposal.1` draft. It also gave the tool a schema
+set of its own, `kg.schemas`.
+
+Four changes followed before the domain merged.
+
+- 0063 renamed the page block `graph:`, and the tool took the same name. The
+  domain, its config section, its RDF prefix and its keyword became `graph`.
+  `kg.schemas` became `graph.schemas`.
+- 0067 and 0070 registered the vocabulary as `manni:graph:1.0.0` and put it in
+  the default set. graph now reads the registered file instead of the draft.
+- 0074 published `manni:stewardship:1.1.0` with the first marks. It removed
+  `graph.schemas`, so graph reads the set meta resolves.
+- Three flags were renamed with no alias. `query --s`, `--p` and `--o` became
+  `--subject`, `--predicate` and `--object`. `traverse --subject` became
+  `--software-subject`. `embed --model` became `--embedding-model`. `build`
+  and `fill` gained `-`, `--as`, `--ext` and `--allow-empty` in the same
+  change.
+
+Theo's graph journey was numbered T6 in the draft. docevals took T6 first, so
+the journey is T7.
 
 ## Release
 
