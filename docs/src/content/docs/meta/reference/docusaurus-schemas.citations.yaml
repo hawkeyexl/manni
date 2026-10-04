@@ -31,18 +31,18 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         integrity: sha256-c092029daccd4f4fd85924ed2cbb04e52f1b67f9a6c187c8fada066fc939647e
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 526-543
+        lines: 571-588
         integrity: sha256-89b0306867d74134682c6435a02c3d0d7c427c2f9c32ce96b4a14819826e0433
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
     - id: docusaurus-each-schema-in-a-set-applies-in-full
       claim:
         lines: 146-151
         integrity: sha256-8172fafffc6de7f79aa21fb094ec19b183be3bceccf52f81f00bde1efb7f6ec9
       source:
         file: src/meta/core/validator.ts
-        lines: 781-788
+        lines: 797-804
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: 7aa9a5632411b78d43c793baf6f8f48f0b9db79f
+        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
     - id: docusaurus-misspelled-key-passes
       claim:
         lines: 120-123

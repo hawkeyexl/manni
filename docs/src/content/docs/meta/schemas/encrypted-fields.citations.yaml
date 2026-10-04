@@ -146,6 +146,6 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         integrity: sha256-0a26d7764884f1fc0966984da29d05c4af59706b6f16521878f0cd07f98eb28b
       source:
         file: src/meta/core/validator.ts
-        lines: 590-595
+        lines: 605-610
         integrity: sha256-32ae7c90403fd1cddb487dfc93579f272e5dbfa59abee2f8f2d13b8f46e11be6
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441

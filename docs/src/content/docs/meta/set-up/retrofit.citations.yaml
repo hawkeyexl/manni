@@ -134,25 +134,25 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-f61ba3631146687f1ea566adcf0d21bcdad6546ba4c6b3fe0cc83167d1b33a2e
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 530-541
+        lines: 575-586
         integrity: sha256-5f328e6cc2303212f896b16af232a903314fcbd4ed69a009753f9e366a615486
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
     - id: override-may-select-by-files-glob
       claim:
         integrity: sha256-f61ba3631146687f1ea566adcf0d21bcdad6546ba4c6b3fe0cc83167d1b33a2e
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 253-258
+        lines: 269-274
         integrity: sha256-6d54a39e6a57210172a3b9b1721356ca35aff4089bea6178cdfd6af3c2a7a25f
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
     - id: overrides-assign-schema-set-per-area
       claim:
         integrity: sha256-909345e35f9d621395ab694f1859f67d46e956b0be4630fe3688a3241ed1bccb
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 528-541
+        lines: 573-586
         integrity: sha256-3e987f75f3dd7e10e8498274935f6c4173d5b1c36e0556a0191cb1412b07e1f7
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
     - id: config-exclude-does-not-filter-typed-paths
       claim:
         lines: 155
@@ -264,9 +264,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-da59c96ff70a2697a0fc59ddb956d56bfb63ce8c342ba66732ba15070e980073
       source:
         file: src/meta/core/validator.ts
-        lines: 780-787
+        lines: 796-803
         integrity: sha256-b48ac4d82755fecd8e18db834350064c599086be6c3d1f91c61a07f023cdb60e
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
     - id: infer-out-refuses-to-overwrite
       claim:
         integrity: sha256-3746e1c609dd5cd8b56b88ec468eed1740a4bcc53e67a6b39f9520954e144f3c

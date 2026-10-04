@@ -46,9 +46,9 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-2e9e70750388d767b7562acdee44aca8ea482909e69207e404a25dca04fc9d7b
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 510-524
+        lines: 555-569
         integrity: sha256-f2f0f059fc3071a4b70c5250f321704087ab164b35f97ed69bc2f26c8342f090
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
     - id: x-manni-location-keyword
       claim:
         integrity: sha256-6f3824dbf475407aa72146239f3a512a039e282999b13a2640f6577607d1ecb2
@@ -168,9 +168,9 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-ba7bfec345f3e42d7f5a289645ec9c70fb5d7cd10900c721e28767a71631eda0
       source:
         file: src/meta/core/validator.ts
-        lines: 775-777
+        lines: 791-793
         integrity: sha256-b8f39d6d21f30a400cabe25059d553fc2d70ec3f6633292881c053d55975c4ca
-        commit-sha: 7aa9a5632411b78d43c793baf6f8f48f0b9db79f
+        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
     - id: tgdp-25-template-slugs
       claim:
         lines: 210
