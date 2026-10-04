@@ -39,6 +39,7 @@ the config file's directory, wherever the command runs. Nothing matching is
 instead of them. It needs `--as`, because stdin has no file name to choose a
 parser by. Its display path is `<stdin>`, its node is `<baseIri>stdin`, and its
 relative links resolve from the working directory. It has no git history.
+It belongs to no collection, so no external-metadata manifest supplies its fields.
 
 The other verbs read the **built graph** rather than the documents: `check`,
 `query`, `stats`, `search`, `traverse`, `embed` and `export` all load the
@@ -108,6 +109,11 @@ Reads the documents, derives the graph, and writes canonically sorted Turtle.
 Two runs over unchanged inputs are byte-identical. Dates come from
 frontmatter and then from git committer times, never from the clock. Every
 node gets a deterministic IRI rather than a blank node.
+
+A page's frontmatter is its metadata as `manni meta validate` reads it. A field
+kept in a collection's
+[external-metadata manifest](/manni/meta/set-up/external-metadata/) derives
+exactly as one written on the page.
 
 ```sh
 manni graph build [paths...] [options]
@@ -229,6 +235,10 @@ budget stopped at is reported `skipped` with the reason `turn budget`.
 
 With `-`, the page from stdin is filled in memory and printed to stdout, as
 `meta fill -` does. The report goes to stderr in either format.
+
+A field already held in an external-metadata manifest counts as filled. Each
+key is written where `meta fill` would write it. A key a manifest owns goes to
+the page's entry there, and every other key goes to the page.
 
 Every written value is recorded in the page's `meta-provenance`, naming the
 model and the fields. See

@@ -21,18 +21,10 @@
  * of the output", rather than one rule for encryption and another for
  * everything else (0051 stress test 4).
  */
-import { metaSchemaSets } from "../../meta/internal.js";
+import type { MetaPageView } from "../../meta/internal.js";
 import { errorMessage } from "../../shared/errors.js";
 import { GraphError } from "../types.js";
 import type { DocModel } from "../types.js";
-
-/** Which config a build runs under, as its flags said. */
-export interface GraphOutputSource {
-  /** `-c/--config`. */
-  configPath?: string;
-  /** `--no-config`. */
-  noConfig?: boolean;
-}
 
 /**
  * `docs`, with every top-level frontmatter key its schemas mark
@@ -44,25 +36,17 @@ export interface GraphOutputSource {
  * no schema set of its own, so one config answers both what a page is checked
  * against and what its published graph may carry.
  *
+ * The docs arrive with their manifests' values already merged
+ * (`withExternalMetadata`), so a field kept beside the page is filtered by
+ * the same mark as one kept on it.
+ *
  * A document whose schemas mark nothing is returned as it came in, so the
  * common case allocates nothing.
  */
 export async function suppressGraphOutput(
   docs: readonly DocModel[],
-  source: GraphOutputSource,
-  cwd: string,
+  sets: Pick<MetaPageView, "validator" | "refsFor">,
 ): Promise<DocModel[]> {
-  let sets: Awaited<ReturnType<typeof metaSchemaSets>>;
-  try {
-    sets = await metaSchemaSets({
-      cwd,
-      ...(source.configPath === undefined ? {} : { configPath: source.configPath }),
-      ...(source.noConfig === undefined ? {} : { noConfig: source.noConfig }),
-    });
-  } catch (e) {
-    throw new GraphError(`cannot read which fields the graph may carry: ${errorMessage(e)}`);
-  }
-
   const out: DocModel[] = [];
   for (const doc of docs) {
     let preferences: Map<string, boolean>;

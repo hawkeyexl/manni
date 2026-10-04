@@ -116,10 +116,12 @@ export type { ProvenanceEntry } from "./core/derive/provenance.js";
 export { hasFrontmatterFence } from "./extractors/frontmatter.js";
 // A manifest with no `keys` (proposal 0068) owns what a page's schemas mark
 // external, so `cite` and `key rotate` read those marks the way meta does.
-// `manni graph build` reads `x-manni-graph-output` from the schema set meta
-// resolves for each page (proposal 0074), through `metaSchemaSets`.
-export { configMarks, marksValidator, metaSchemaSets, pageMarks } from "./core/page-marks.js";
-export type { PageSchemaSets } from "./core/page-marks.js";
-export { schemaTrustRoot } from "./core/config.js";
+export { configMarks, marksValidator, pageMarks } from "./core/page-marks.js";
+// `manni graph` reads each page the way `meta validate` does: its schema set,
+// where `x-manni-graph-output` is read from (proposal 0074), its metadata with
+// every manifest's values merged in, and where `graph fill` writes a key.
+export { metaPageView } from "./core/page-view.js";
+export type { MetaPageView } from "./core/page-view.js";
+export { schemaTrustRoot, urlManifestMessage } from "./core/config.js";
 export { mergeWithMarks } from "./core/external-metadata.js";
 export type { PageMarks } from "./core/external-metadata.js";

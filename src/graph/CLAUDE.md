@@ -55,7 +55,7 @@ A suspicion must never fail a build.
 `manni meta` and read back through `Validator.graphOutputPreferences`
 (`src/graph/core/graph-output.ts`). Absent means `true`. The schemas are the
 set `manni meta validate` resolves for each page, read from meta's section of
-the same config through `metaSchemaSets` (proposal 0074). graph keeps no schema
+the same config through `metaPageView` (proposal 0074). graph keeps no schema
 set of its own, so there is no `graph.schemas` key. The default set carries
 `manni:stewardship:1.1.0`, which marks the three people fields. The filter runs **once**,
 before `deriveGraph`. All four published outputs descend from what derivation
@@ -65,6 +65,18 @@ key and `graph` is the top-level key.
 
 Encrypted values are harvested like any other. graph never decrypts, so the graph
 carries the `~…` token, which says a value exists and nothing about what it is.
+
+**A page's metadata is what `manni meta validate` reads**: its frontmatter
+merged with every key an external-metadata manifest of its collections owns
+(proposals 0047, 0058, 0068). `src/graph/core/external.ts` reads it through
+`metaPageView` from `src/meta/internal.ts`, which wraps meta's own
+`loadExternalMetadata`, `mergeWithMarks` and `keyHome`. Never grow a loader or
+a merge of graph's own. `build` merges before the output filter, so a mark
+governs a manifest's field too. `fill` reads what a page already holds, the
+guard's corpus and the `meta-provenance` list through the same merge, and
+writes each key where `keyHome` puts it: a manifest that owns it, else the
+page. `--no-config` declares no collection and stdin is in none, so neither
+reads a manifest, which is meta's behaviour.
 
 ## The namespace and the shapes
 

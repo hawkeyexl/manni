@@ -16,6 +16,7 @@ import { describe, expect, it } from "vitest";
 import { analyzeDoc } from "../../../src/graph/core/analyze.js";
 import { loadRunConfig } from "../../../src/graph/core/config.js";
 import { suppressGraphOutput } from "../../../src/graph/core/graph-output.js";
+import { openMetaView } from "../../../src/graph/core/external.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = join(here, "..", "fixtures", "stewardship-output");
@@ -33,11 +34,12 @@ async function harvested(configFile: string | undefined): Promise<string[]> {
     new Set([PAGE]),
     { routes: config.routes },
   );
-  const [out] = await suppressGraphOutput(
-    [doc],
+  const view = await openMetaView(
     configFile === undefined ? { noConfig: true } : { configPath: configFile },
     fixture,
+    [PAGE],
   );
+  const [out] = await suppressGraphOutput([doc], view);
   return Object.keys(out?.frontmatter ?? {});
 }
 

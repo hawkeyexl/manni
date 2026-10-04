@@ -113,7 +113,7 @@ for its full shape.
 | `paths` | list of globs | required | Members, resolved from the **config file's** directory rather than from where the command runs. |
 | `exclude` | list of globs | `[]` | Non-members. It decides membership, so an excluded file is not in the collection even when a positional path names it. |
 | `url` | string | none | Where those pages are published. `manni a11y check` reads it; graph does not. |
-| `externalMetadata` | list | `[]` | Frontmatter kept outside the document. graph sees the merged result, so an external `graph` block derives exactly as an inline one does. |
+| `externalMetadata` | list | `[]` | Frontmatter kept outside the document. `build` reads each page merged with it, as `manni meta validate` does, so an external `graph` block derives exactly as an inline one does. `fill` writes a key a manifest owns to that manifest. |
 
 A `build` or `fill` run with no positional paths reads every
 declared collection. `--collection` narrows that to one, and cannot be combined

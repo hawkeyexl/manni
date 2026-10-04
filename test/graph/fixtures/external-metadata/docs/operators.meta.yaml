@@ -1,0 +1,7 @@
+docs/operators.md:
+  description: Boolean operators in a search.
+  graph:
+    label: Search Operators
+    alt-labels: [boolean operators]
+    related-concepts: [Query Syntax]
+    concepts: [search]

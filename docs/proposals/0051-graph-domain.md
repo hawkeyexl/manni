@@ -242,6 +242,17 @@ set is the page's `$schema`, then meta's overrides, `schemas:`, `register`,
 the build runs under. graph keeps no schema set of its own, so one config
 decides what a page is checked against and what its published graph carries.
 
+graph reads a page the way meta reads it. Its metadata is the frontmatter
+merged with every key an external-metadata manifest of its collections owns
+(0047, 0058, 0068). The merge is meta's `mergeWithMarks`, reached through
+`src/meta/internal.ts`, so the join, ownership and refusal rules are meta's. A
+manifest meta refuses exits 2 in meta's words. The marks apply to the merged
+page, so a field kept in a `{page}.meta.yaml` is filtered like one on the page.
+`graph fill` writes each key where `meta fill` would. A key a local manifest
+owns goes to the page's entry there, and the rest go to the page. Under
+`--no-config` no collection is declared, so no manifest is read, as in meta. A
+page from stdin is in no collection, so no manifest supplies it.
+
 There is no `graph.schemas` key. A config that sets one fails the config
 schema with `/graph: unknown key "schemas"`, exit 2, as any unknown key does.
 

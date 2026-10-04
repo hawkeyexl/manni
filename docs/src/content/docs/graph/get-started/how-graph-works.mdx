@@ -77,6 +77,12 @@ section reference.
 Narrowing the list makes a smaller graph, not a wrong one. A predicate nothing
 derives simply has no triples, and `graph stats` will show the row at zero.
 
+**Frontmatter means the page's metadata as `manni meta validate` reads it.** A
+field kept in an [external-metadata manifest](/manni/meta/set-up/external-metadata/)
+derives exactly as one written on the page. That covers a `{page}.meta.yaml`
+beside each page and a manifest a collection shares. Under `--no-config` no
+collection is declared, so no manifest is read.
+
 **Links are resolved, not matched.** An extensionless link, a directory route,
 and a published site path all resolve to the file that serves them, through the
 `routes` config. That is why a broken internal link means the target does not

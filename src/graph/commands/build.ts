@@ -21,6 +21,7 @@ import { emitTurtle } from "../core/emit.js";
 import { harvestWarnings } from "../core/harvest.js";
 import { collectGitHistory } from "../core/git.js";
 import { suppressGraphOutput } from "../core/graph-output.js";
+import { openMetaView, withExternalMetadata } from "../core/external.js";
 import { errorMessage } from "../../shared/errors.js";
 import pkg from "../../../package.json" with { type: "json" };
 
@@ -112,21 +113,29 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
     read.push(analyzeDoc(opts.stdinContent, STDIN_PATH, allPaths, analyzeOptions));
   }
 
+  // A page's metadata is what `manni meta validate` reads: its frontmatter
+  // plus every key a manifest of its collections owns (proposal 0047), merged
+  // through meta's own merge. Read from meta's section of the same config the
+  // output marks come from, so one file answers both.
+  const view = await openMetaView(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    },
+    cwd,
+    files,
+  );
+  const merged = await withExternalMetadata(read, view);
+
   // What the graph carries is the schema's call (proposal 0051 §5): a top-level
   // field marked `x-manni-graph-output: false` is dropped here, before derivation,
   // and the schemas are the set `manni meta validate` resolves (proposal 0074),
   // so it reaches none of Turtle, JSON-LD, iiRDS or the search index. All four
   // read what `deriveGraph` produces, so one filter at the fan-in is the whole
   // mechanism; suppressing a field downstream would be triple surgery in four
-  // places.
-  const docs = await suppressGraphOutput(
-    read,
-    {
-      ...(opts.config === undefined ? {} : { configPath: opts.config }),
-      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
-    },
-    cwd,
-  );
+  // places. It runs after the merge, so a field kept in a manifest is filtered
+  // by the same mark as one kept on the page.
+  const docs = await suppressGraphOutput(merged, view);
 
   // Page-level keys that look like harvest inputs but are not. The graph block
   // is schema-strict, so a typo there is a hard error; at the page level

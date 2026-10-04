@@ -6,6 +6,7 @@
  * is recorded as a result, never aborts the run.
  */
 import { readFileSync, writeFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { analyzeDoc } from "../core/analyze.js";
@@ -25,7 +26,16 @@ import {
   existingMetaProvenance,
   frontmatterKind,
 } from "../core/frontmatter-edit.js";
-import { mergeMetaProvenance } from "../../meta/internal.js";
+import { writeFileAtomic } from "../../meta/index.js";
+import {
+  mergeMetaProvenance,
+  spliceManifestValue,
+  urlManifestMessage,
+  type KeyHome,
+  type MetaPageView,
+} from "../../meta/internal.js";
+import { isMissing } from "../../shared/manifest-cas.js";
+import { mergePage, openMetaView, ownMetadata } from "../core/external.js";
 import { FillGuard } from "../core/fill-guard.js";
 import { bundledShapesPath } from "../core/pkg.js";
 import { errorMessage } from "../../shared/errors.js";
@@ -350,10 +360,37 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       ...files,
     ]),
   ];
-  // The stdin page joins the guard's corpus from memory: it has no file.
-  const inline = new Map<string, string>(
-    stdinContent === undefined ? [] : [[STDIN_PATH, stdinContent]],
+  // Each page as `manni meta validate` reads it (proposal 0047): its own
+  // frontmatter plus every key a manifest of its collections owns. What a page
+  // already holds, the guard's corpus and the `meta-provenance` list a fill
+  // extends are all read through it, so a value kept beside the page counts.
+  const view = await openMetaView(
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    },
+    cwd,
+    guardFiles,
   );
+  /** Each page's merged text, for the pages whose manifests supply a key. */
+  const mergedTexts = new Map<string, string>();
+  for (const path of guardFiles) {
+    const text = readFileSync(resolve(cwd, path), "utf8");
+    let asMetaReadsIt: string;
+    try {
+      asMetaReadsIt = await mergedText(view, path, text);
+    } catch {
+      // A page whose frontmatter or manifest will not read is that page's
+      // error, reported by `fillOne` as it always was, not the run's.
+      continue;
+    }
+    if (asMetaReadsIt !== text) mergedTexts.set(path, asMetaReadsIt);
+  }
+  // The stdin page joins the guard's corpus from memory: it has no file. A
+  // page whose manifests supply a key joins it as merged, so the simulation
+  // sees what `graph build` would.
+  const inline = new Map<string, string>(mergedTexts);
+  if (stdinContent !== undefined) inline.set(STDIN_PATH, stdinContent);
   const guard =
     !opts.noValidateGraph && config.fill.validateGraph
       ? FillGuard.create(
@@ -448,7 +485,12 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       );
     }
 
-    const present = new Set(existingGraphFields(content));
+    // The page as meta reads it. Identical to `content` unless a manifest
+    // supplies one of its keys, which is every page in a corpus with none.
+    const effective =
+      mergedTexts.get(path) ??
+      (absPath === undefined ? content : await mergedText(view, path, content));
+    const present = new Set(existingGraphFields(effective));
     const missing = opts.force ? fields : fields.filter((f) => !present.has(f));
     // With --sections, a document whose own fields are complete may still have
     // unfilled sections, so completeness at document level is not completeness
@@ -483,7 +525,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // the cache should not pay for a full markdown parse it never reads.
     let docModel: DocModel | undefined;
     const doc = (): DocModel =>
-      (docModel ??= analyzeDoc(content, path, allPaths, analyzeOptions));
+      (docModel ??= analyzeDoc(effective, path, allPaths, analyzeOptions));
 
     if (proposal === undefined) {
       // The budget is claimed here rather than at the top of the page, so a
@@ -621,7 +663,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // a proposal without re-asking the LLM.
     let rejected: string[] | undefined;
     if (guard) {
-      const vetted = await guard.vet(path, content, narrowed);
+      const vetted = await guard.vet(path, effective, narrowed);
       if (vetted.rejected.length > 0) {
         rejected = vetted.rejected.map((r) => r.field);
         for (const field of rejected) Reflect.deleteProperty(narrowed, field);
@@ -655,7 +697,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // meta's own merge: one entry per model, this model's entry gaining the
     // pointers this run wrote, and every other entry — including the ones
     // `manni docevals fill` wrote — carried through untouched.
-    let page: Record<string, unknown> | undefined;
+    let provenanceList: unknown[] | undefined;
     if (config.fill.writeProvenance) {
       // Document-level names only. `sections.<slug>.<field>` is a pointer
       // under `/graph/sections`, and `sections` is one of the three fields
@@ -669,7 +711,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       // Only record a score the model actually gave. `?? 0` stamped a
       // confidence of 0.00 the model never asserted whenever it omitted one,
       // which `fill.confidenceThreshold: 0` makes reachable.
-      const held = existingMetaProvenance(content);
+      const held = existingMetaProvenance(effective);
       const priorEntry = Array.isArray(held)
         ? (held as unknown[]).find(
             (e): e is Record<string, unknown> =>
@@ -710,13 +752,14 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         // nobody has ever scored keeps none.
         for (const name of unscored)
           Reflect.deleteProperty(merged.entry.confidence, name);
-        page = { [META_PROVENANCE_KEY]: merged.list };
+        provenanceList = merged.list;
       }
     }
 
-    const applied = applyGraphFields(content, path, narrowed, {
+    // Applied to the page as meta reads it, so a value a manifest holds is
+    // preserved exactly as one on the page would be.
+    const applied = applyGraphFields(effective, path, narrowed, {
       force: opts.force,
-      ...(page ? { page } : {}),
     });
     const reportedFields = applied.applied;
 
@@ -733,8 +776,65 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       };
     }
 
+    // Where each key is written is meta's rule (proposal 0047), the one
+    // `manni meta fill` follows: a key a local manifest owns goes to the page's
+    // entry there, and every other key stays on the page. A page from stdin
+    // has no manifest, so everything it gets is in the text printed back.
+    const own = ownMetadata(content).data;
+    const graphHome =
+      absPath === undefined ? undefined : await view.home(path, own, GRAPH_KEY);
+    const provenanceHome =
+      absPath === undefined || provenanceList === undefined
+        ? undefined
+        : await view.home(path, own, META_PROVENANCE_KEY);
+    const graphTarget = writeTarget(path, graphHome, GRAPH_KEY);
+    if (typeof graphTarget === "string") throw new GraphError(graphTarget);
+    let provenanceTarget = writeTarget(path, provenanceHome, META_PROVENANCE_KEY);
+    if (typeof provenanceTarget === "string") {
+      // A side record that could block filling would be worse than none, so
+      // the fields are written and the record is not, and the run says so.
+      warnings.push(`${provenanceTarget} The fill of ${path} is not recorded.`);
+      provenanceList = undefined;
+      provenanceTarget = null;
+    }
+
+    const pageKeys: Record<string, unknown> = {};
+    if (provenanceList !== undefined && provenanceTarget === null) {
+      pageKeys[META_PROVENANCE_KEY] = provenanceList;
+    }
+    const pageContent = applyGraphFields(
+      content,
+      path,
+      graphTarget === null ? narrowed : {},
+      { force: opts.force, page: pageKeys },
+    ).content;
+
+    const manifestWrites: ManifestWrite[] = [];
+    if (graphTarget !== null) {
+      manifestWrites.push({
+        home: graphTarget,
+        key: GRAPH_KEY,
+        value: ownMetadata(applied.content).data[GRAPH_KEY],
+      });
+    }
+    if (provenanceList !== undefined && provenanceTarget !== null) {
+      manifestWrites.push({
+        home: provenanceTarget,
+        key: META_PROVENANCE_KEY,
+        value: provenanceList,
+      });
+    }
+    // Every splice is made before anything is written, so a manifest meta
+    // refuses leaves the page untouched too.
+    const manifests = await spliceAll(manifestWrites);
+
     if (!opts.dryRun && absPath !== undefined) {
-      writeFileSync(absPath, applied.content, "utf8");
+      if (pageContent !== content) writeFileSync(absPath, pageContent, "utf8");
+      for (const m of manifests) {
+        if (m.text !== m.before) {
+          await writeFileAtomic(m.absPath, m.text, { createParents: true });
+        }
+      }
     }
     // Fold the accepted result into the guard even on --dry-run, so the dry
     // run predicts exactly what a real run would accept and reject.
@@ -749,10 +849,109 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       ...lowConf,
       cached,
       ...(absPath === undefined && !opts.dryRun
-        ? { filledContent: applied.content }
+        ? { filledContent: pageContent }
         : {}),
     };
   }
+}
+
+/** The page key holding the graph block. */
+const GRAPH_KEY = "graph";
+
+/** A manifest a key is written to, with the page's entry there. */
+interface ManifestTarget {
+  file: string;
+  absPath: string;
+  join: string;
+  entry: string;
+  perPage: boolean;
+}
+
+/** One value written into one manifest entry. */
+interface ManifestWrite {
+  home: ManifestTarget;
+  key: string;
+  value: unknown;
+}
+
+/**
+ * Where `key` goes: `null` for the page, the manifest entry, or meta's
+ * sentence for a manifest that cannot take it, which is a fetched one or one
+ * that joins on a field the page lacks.
+ */
+function writeTarget(
+  path: string,
+  home: KeyHome | undefined,
+  key: string,
+): ManifestTarget | string | null {
+  if (home === undefined || home.kind === "unowned") return null;
+  if (home.kind === "url") return urlManifestMessage(key, home.file);
+  if (home.entry === undefined) {
+    return `${path} carries no ${home.join}, which ${home.file} joins on, so its ${key} has no entry there.`;
+  }
+  return {
+    file: home.file,
+    absPath: home.absPath,
+    join: home.join,
+    entry: home.entry,
+    perPage: home.perPage,
+  };
+}
+
+/**
+ * Each manifest's text with its writes spliced in, through meta's splice, which
+ * changes no other byte of the file. A `{page}` manifest that is not on disk
+ * yet is held as empty and created by the write, as `manni meta fill` does.
+ */
+async function spliceAll(
+  writes: readonly ManifestWrite[],
+): Promise<Array<{ absPath: string; before: string; text: string }>> {
+  const out = new Map<string, { absPath: string; before: string; text: string }>();
+  for (const w of writes) {
+    let held = out.get(w.home.absPath);
+    if (held === undefined) {
+      let before: string;
+      try {
+        before = await readFile(w.home.absPath, "utf8");
+      } catch (e) {
+        if (!(w.home.perPage && isMissing(e))) {
+          throw new GraphError(`${w.home.file} could not be read: ${errorMessage(e)}`);
+        }
+        before = "";
+      }
+      held = { absPath: w.home.absPath, before, text: before };
+      out.set(w.home.absPath, held);
+    }
+    try {
+      held.text = spliceManifestValue(held.text, {
+        entry: w.home.entry,
+        key: w.key,
+        value: w.value,
+        join: w.home.join,
+        file: w.home.file,
+      }).text;
+    } catch (e) {
+      throw new GraphError(errorMessage(e));
+    }
+  }
+  return [...out.values()];
+}
+
+/**
+ * `content` with every key its manifests supply written into its frontmatter,
+ * so it reads as meta reads the page. `content` itself when none does. A
+ * frontmatter graph cannot edit is left alone, and `fill` refuses that page.
+ */
+async function mergedText(
+  view: MetaPageView,
+  path: string,
+  content: string,
+): Promise<string> {
+  if (frontmatterKind(content) === "unsupported") return content;
+  const own = ownMetadata(content);
+  const { supplied } = await mergePage(view, path, own.data, own.present);
+  if (Object.keys(supplied).length === 0) return content;
+  return applyGraphFields(content, path, {}, { page: supplied }).content;
 }
 
 export function renderFill(

@@ -1,0 +1,17 @@
+# The query page, with its graph block kept on the page and only the
+# bookkeeping beside it. `graph fill` writes the block to the page and its
+# meta-provenance entry to the manifest. The operators page is left out: its
+# manifest holds a graph block, which a manifest without `graph` in its keys
+# does not own, and meta refuses it.
+collections:
+  - name: pages
+    paths: ["docs/query.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [description, authors, created, owner, meta-provenance]
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  fill:
+    fields: [label, alt-labels, related-concepts, concepts]
