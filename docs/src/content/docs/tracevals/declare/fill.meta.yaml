@@ -12,3 +12,22 @@ docs/src/content/docs/tracevals/declare/fill.mdx:
       assertion: "A reader can run fill with --dry-run, read why a proposal was rejected, and say where the written evals land."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-258
+      integrity: sha256-56a25aad6c5b9a10a063045cadcecc8043b2173f85b5aff32b58a1c50835ae7a
+    - generated-by: Claude Opus 5.5
+      lines: 260-264
+      integrity: sha256-2279e2133d2ec9ad9558a59db62af8bd2022e612851410ac0acef590fa57458f
+    - generated-by: Claude Opus 5
+      lines: 266-268
+      integrity: sha256-c2341f5932180f67ec4b2a1898fa132e7b633180322727be6b1c4295b6cc056f
+    - generated-by: Claude Opus 5.5
+      lines: 270-280
+      integrity: sha256-b5017f83df080ab09c73f15c48a4659e3aca0eaad5ccb9b2eecfb7b94cd65298
+    - generated-by: Claude Opus 5
+      lines: 282-361
+      integrity: sha256-fd3a2d3368e2071c7fc7a4ec8af2979945ec986d3e6a86bdcf5e4b9da0a953bc
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

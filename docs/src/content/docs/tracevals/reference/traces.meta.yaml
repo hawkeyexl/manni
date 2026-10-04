@@ -12,3 +12,10 @@ docs/src/content/docs/tracevals/reference/traces.mdx:
       assertion: "A reader can say where tracevals looks for traces and how to point it elsewhere."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-222
+      integrity: sha256-a20365167ee03546f0651d5b7763adaf18b37d355e9a7e0f92e8444f2e2d94b3
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

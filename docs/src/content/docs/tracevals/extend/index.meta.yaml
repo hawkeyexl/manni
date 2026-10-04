@@ -11,3 +11,10 @@ docs/src/content/docs/tracevals/extend/index.mdx:
       assertion: "A reader can name the intended entry points of the tracevals namespace and stub the judge."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-160
+      integrity: sha256-1a056c0531eeb13741aadc9ebd3fc00cffdcd222759497594cc0ed85a29d1373
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

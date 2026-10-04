@@ -12,3 +12,76 @@ docs/src/content/docs/tracevals/judge/schema-versioning.mdx:
       assertion: "A reader can roll out a new eval at warning, measure it, and promote it to error."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-10
+      integrity: sha256-e2478da4af166ace189c6deeba6244c73108ac0323e5dc0ab75cd72f0ce71900
+    - generated-by: Claude Opus 5.5
+      lines: 11-13
+      integrity: sha256-e3b4e42e90f69e2fc4a4746ce3832815a9193043e362b7305f076f08ab909861
+    - generated-by: Claude Opus 5
+      lines: 15-17
+      integrity: sha256-c9198b3eda4138b11f9c2b5cc2cf8a4f55f610bd447e67f2dca7815d689cd44d
+    - generated-by: Claude Opus 5.5
+      lines: 18-19
+      integrity: sha256-b443d95c8472d8d647656784014fcf2ad9a82d8079150d0ea74d7171f791c6b1
+    - generated-by: Claude Opus 5
+      lines: 20
+      integrity: sha256-4570a523f5807615402548f1eb26cd1b31c2ecea1b8941f372f08ddd3f5ce634
+    - generated-by: Claude Opus 5.5
+      lines: 22-25
+      integrity: sha256-393b265c88ac8ab11c97243acdc815e251e89b78e4c2dabbe504df4cf3073155
+    - generated-by: Claude Opus 5
+      lines: 27-28
+      integrity: sha256-e48e534af765cb1d03bb4381286df78fac0d5684176bc93075490bbaedc5c181
+    - generated-by: Claude Opus 5.5
+      lines: 29-31
+      integrity: sha256-bf5dc966446a256510112ff9171eee24d65083b4f574b936221d941bdca6546e
+    - generated-by: Claude Opus 5
+      lines: 32
+      integrity: sha256-e0cd8dd7cf2d8a61c2523ea3b07cea7958ecce605d53b5da1ef22e4b3c372841
+    - generated-by: Claude Opus 5.5
+      lines: 34
+      integrity: sha256-a7fa988bb33cc80fd7fb43439952df8eb4237efacf580e4613c751d72816c0d5
+    - generated-by: Claude Opus 5
+      lines: 36-46
+      integrity: sha256-e4d032957db5f4bf94296ed63cd56e76c32929bb9a1489b3d8fe229ac9f82afe
+    - generated-by: Claude Opus 5.5
+      lines: 48-51
+      integrity: sha256-9591b5a4cbb6dfe69491f7b3283279e1feab64255e464904e256e12d1febd57a
+    - generated-by: Claude Opus 5
+      lines: 53-56
+      integrity: sha256-29e2767433f37e9e62ce43f3c26cc3012ed5412b04967eb47476b4ac8b4afebd
+    - generated-by: Claude Opus 5.5
+      lines: 58-62
+      integrity: sha256-c9120d31fb7e77cbebe549f57f8ba7610896d6360deb000dae460e7e1825df49
+    - generated-by: Claude Opus 5
+      lines: 63
+      integrity: sha256-9ecb20dd05c80cb24446dd1f2151a41a957d4122be87facbf1913308c06b33bf
+    - generated-by: Claude Opus 5.5
+      lines: 65-66
+      integrity: sha256-dcc5658ac860984bba519a339e30e6526d3bf315bccedae110552221d6f8d3e7
+    - generated-by: Claude Opus 5
+      lines: 68-82
+      integrity: sha256-d07ad8baf924e49b0d141338d48710524b9479fe35455d9854e24a17a054c40e
+    - generated-by: Claude Opus 5.5
+      lines: 84-85
+      integrity: sha256-f221773e60b56491ed5a72d3d8b6211c7f23cc6ed7cbd315e53a3ac6cb0d9c72
+    - generated-by: Claude Opus 5
+      lines: 86
+      integrity: sha256-8bc0b022df6ca0c7abcb0cd0c79a3a8dfbb821abfef8d2e8f17a2b901ed493c1
+    - generated-by: Claude Opus 5.5
+      lines: 87-89
+      integrity: sha256-69e78d062137f8f16f190d9ce75357b6cfd22b1db24b556bde678ef4cabc235a
+    - generated-by: Claude Opus 5
+      lines: 90-202
+      integrity: sha256-0494ab2586b0c5a17ce5ee21a45f6fc0ac299cc6fe07f36d171599660491d63f
+    - generated-by: Claude Opus 5.5
+      lines: 203-204
+      integrity: sha256-3d28f426aaf7ffe8dad97b7d4543a71fd08ae70f858b56db5500c9cbc2ddcd72
+    - generated-by: Claude Opus 5
+      lines: 205-211
+      integrity: sha256-50900d90e2d634a87d88674090079947476b90072199d9a5eef6b9bcea6b7616
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

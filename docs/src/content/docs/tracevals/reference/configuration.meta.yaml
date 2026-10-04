@@ -12,3 +12,76 @@ docs/src/content/docs/tracevals/reference/configuration.mdx:
       assertion: "A reader can find a tracevals config key, its default, and the flag that overrides it."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-73
+      integrity: sha256-9febc737a881b898bd1ff7e14b66ceeebef1b4d18ba3ecafb8867acb222f13bf
+    - generated-by: Claude Opus 5.5
+      lines: 75-107
+      integrity: sha256-6a156b4843c1519a46ab060a3507002eec60bf59d12db30d29dbd7dd1dc5bf27
+    - generated-by: Claude Opus 5
+      lines: 109-188
+      integrity: sha256-521100c8db4f091f86008f586d5707d3c7e2231ca95a8c82acc6bee8fa3b21c9
+    - generated-by: Claude Opus 5.5
+      lines: 189-190
+      integrity: sha256-cd289816ff8729e642074448a02250329a582880f2de75444e718687e880e9a5
+    - generated-by: Claude Opus 5
+      lines: 191-210
+      integrity: sha256-2a960846d197a989f8b79187c1723c7da5a8b2d3e91d5acd4c438b628adeb8a1
+    - generated-by: Claude Opus 5.5
+      lines: 211
+      integrity: sha256-6a35168031092b62fd609ffebf670b4db3427ca7e9e5145a86c7589e69f9dff7
+    - generated-by: Claude Opus 5
+      lines: 212-345
+      integrity: sha256-405dff90b14fa73aa10619ee2d9b6dc5bf1d74dc289e536174edc990b9b1ec36
+    - generated-by: Claude Opus 5.5
+      lines: 347-350
+      integrity: sha256-d8f8efd9a8da642ccdf024ab6430ee9cfd2162041299de8851dde963b0d1924d
+    - generated-by: Claude Opus 5
+      lines: 352-353
+      integrity: sha256-bfe258204bf3ade867ccb3f5b26fbafcffc565fcc20c35fe454b527571932165
+    - generated-by: Claude Opus 5.5
+      lines: 354-358
+      integrity: sha256-ef69eb5dabfc1df4303c7c35ee26d8d8df26a106614d4e165ce990b631b90b5d
+    - generated-by: Claude Opus 5
+      lines: 360-361
+      integrity: sha256-81d7f999c545bc16344773c4d98f0a464ec1dea170ab967f3458bd48cd34fc7d
+    - generated-by: Claude Opus 5.5
+      lines: 362-363
+      integrity: sha256-aed98bfb5076ba2f16acbcdd1d66fe8e36f9b89d701592bb3b8f2ff8f0c17153
+    - generated-by: Claude Opus 5
+      lines: 364
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5.5
+      lines: 366
+      integrity: sha256-3b5167562ca7bdc07f8a2f3de48b800ec7a1695f6c999ff1677c84203f5aceed
+    - generated-by: Claude Opus 5
+      lines: 367-371
+      integrity: sha256-3b3b5ef4d60ab6e20878fee2aee4b8a1bb725d9d522c02478983eea75cdca982
+    - generated-by: Claude Opus 5.5
+      lines: 372
+      integrity: sha256-f3f7ae9f683ffb0e0d47c5f89440754b1f3fcc9244e847a37363817885062f31
+    - generated-by: Claude Opus 5
+      lines: 373
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5.5
+      lines: 375-385
+      integrity: sha256-2f1e39414d75e18ac131d211bdae2ee046ad4a5c4ad5220ac24ea5db93406632
+    - generated-by: Claude Opus 5
+      lines: 387-470
+      integrity: sha256-cf2a28b140bded22fb729e3793eb0edb669308e3db571bf0ffdd0177ee7522f5
+    - generated-by: Claude Opus 5.5
+      lines: 472
+      integrity: sha256-00daa2e9d9d7299009283e2b52792ee946c88a91ecba421d1c0a0be24cad8f7f
+    - generated-by: Claude Opus 5
+      lines: 474-475
+      integrity: sha256-bfe258204bf3ade867ccb3f5b26fbafcffc565fcc20c35fe454b527571932165
+    - generated-by: Claude Opus 5.5
+      lines: 476
+      integrity: sha256-0ef0e4b8d6bcb6179ca63a521baaeb30753e9aa64f92aa4fb8ca90f7f1a1bc48
+    - generated-by: Claude Opus 5
+      lines: 478-556
+      integrity: sha256-186e9e48ae0e2e3673d117594d243566e14602230dd7bf1aeab1f92deea7b258
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

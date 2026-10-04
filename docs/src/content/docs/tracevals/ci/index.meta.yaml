@@ -17,3 +17,46 @@ docs/src/content/docs/tracevals/ci/index.mdx:
       assertion: "A reader can say which flag keeps an untrusted trace's command evals from running."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-63
+      integrity: sha256-322efc01e5c032591b6762ca0449bd0de9117c2eebd459215fbc6842d78b7249
+    - generated-by: Claude Opus 5.5
+      lines: 64
+      integrity: sha256-a66a945c077140d80a4562f265d903c7056625cac41e58c31c08168026e96499
+    - generated-by: Claude Opus 5
+      lines: 65-73
+      integrity: sha256-7ab0d277f3ede6093b2989e4b21a0231dd699dd6d60931dd18f7be7d36a09492
+    - generated-by: Claude Opus 5.5
+      lines: 74
+      integrity: sha256-6b399d70949c57e413b6064eec92c27fe18916535c042eff3cf499d236f85da6
+    - generated-by: Claude Opus 5
+      lines: 75
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5.5
+      lines: 77-78
+      integrity: sha256-80d5e87fdfdc8940bf217bee61861883c2f4840ff4f952b5b6fcd30c63ee6236
+    - generated-by: Claude Opus 5
+      lines: 80-110
+      integrity: sha256-5e1ee55457b43d19d92084508090dc91c33ceae8e225983b9a62db4ce5e58c28
+    - generated-by: Claude Opus 5.5
+      lines: 112-124
+      integrity: sha256-7f5e17d45bc93a8821325510c9ca88fc1272be1d751794ee7f15809bed63b7a3
+    - generated-by: Claude Opus 5
+      lines: 126-199
+      integrity: sha256-39357e9cd72b10070bc82d01390122901ba3ea28bb2efac5fb294bbf6279c44a
+    - generated-by: Claude Opus 5.5
+      lines: 201-243
+      integrity: sha256-d452c5b63a929a6fd55a3255ffaca563b47b7cd45aa1c0aca04bbfd294a30366
+    - generated-by: Claude Opus 5
+      lines: 245-306
+      integrity: sha256-156950c9930b6235a466238b9f0dc03acf46cdde308ff846528db6468c35ae4a
+    - generated-by: Claude Opus 5.5
+      lines: 307
+      integrity: sha256-2661d95d4e3198d8691d1c8451d9ffea33dda21a0be71a788b8fe4e7cdb51efb
+    - generated-by: Claude Opus 5
+      lines: 308-358
+      integrity: sha256-87cb9927b4b5c1befbe35052b6b2c3f30d926af7fe4b2f9786a0bc762c94f03e
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

@@ -12,3 +12,40 @@ docs/src/content/docs/tracevals/reference/report-and-exit-codes.mdx:
       assertion: "A reader can find a field in the JSON report and say which outcomes exit 1."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-7
+      integrity: sha256-b7c8ed14540c403c2232d15dc7f00ba94337764f416c330d3a7ac820d8bee52a
+    - generated-by: Claude Opus 5.5
+      lines: 9-11
+      integrity: sha256-e722fd9aa5e5151c59cea90d3f7b76911487e7e82afd27182990878e3214a047
+    - generated-by: Claude Opus 5
+      lines: 13-17
+      integrity: sha256-a5c91f726a86daddd4efcb6e13b6741513d90fea729e921d5fec210e38d924f3
+    - generated-by: Claude Opus 5.5
+      lines: 18
+      integrity: sha256-cd081d6ea00e02e299e97cef0092cea09dcfcd50a2ecdb9976915c24b470d07e
+    - generated-by: Claude Opus 5
+      lines: 19-47
+      integrity: sha256-7ec2066af281f01ba611878f79d5a4447a1566ddd024018eacad23eaeda046f6
+    - generated-by: Claude Opus 5.5
+      lines: 48
+      integrity: sha256-1ac8f875e3191fab1839710eb5ed759038ea4a490f02d6243f9dee1af69ea38b
+    - generated-by: Claude Opus 5
+      lines: 50-248
+      integrity: sha256-4f38c259c00fbfa943e299dab635ca51a2f97cab8c9c8295b99eb8594256d2f0
+    - generated-by: Claude Opus 5.5
+      lines: 250-280
+      integrity: sha256-de7171872acfb04cedfac75c5cfd363a114369e3b3ea04d965686f848aae9c47
+    - generated-by: Claude Opus 5
+      lines: 282-284
+      integrity: sha256-5cb8fb5830e7feb03c40d94c2ae6ef8657d163b84431635fc583baa5c4725598
+    - generated-by: Claude Opus 5.5
+      lines: 285
+      integrity: sha256-4e514ba77a5bee94c2385f301289f0bd9c33bb3d0a624b789e8f2ff3b757ee3a
+    - generated-by: Claude Opus 5
+      lines: 286-532
+      integrity: sha256-4f5265a5e736987880a1a2d2dff94aac0584e31f533292137dd77fa015018f38
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

@@ -12,3 +12,58 @@ docs/src/content/docs/tracevals/ci/exit-codes-and-reports.mdx:
       assertion: "A reader can say which outcomes exit 1 and how to stop needs-review from failing the run."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-34
+      integrity: sha256-11b3276d00a8c15c09ee2f0f01cf2ee0244032ba504e95c87b37c3e402ad5831
+    - generated-by: Claude Opus 5.5
+      lines: 35
+      integrity: sha256-5bb9fd3390a67971128eaf27bb98571d154f141cb7cd0ab47e8328f73c4176fc
+    - generated-by: Claude Opus 5
+      lines: 36-60
+      integrity: sha256-77d07ba1ece4a9aacece15c01586277d7a3c97e7449f635c73235415a5d1a353
+    - generated-by: Claude Opus 5.5
+      lines: 61
+      integrity: sha256-0b52c233b93c1195bac9cfc42ba794cba818b10be37c2a9ea77ac326352cc1c5
+    - generated-by: Claude Opus 5
+      lines: 62-70
+      integrity: sha256-123817f430e23d4e70529c7d84a9cf698d78ce1173e56197152121a1f855a0a4
+    - generated-by: Claude Opus 5.5
+      lines: 71
+      integrity: sha256-24013e3e80a6243d32ec285efd5daaca268d0c6a85c15190805e1074f15004a0
+    - generated-by: Claude Opus 5
+      lines: 72
+      integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
+    - generated-by: Claude Opus 5.5
+      lines: 74
+      integrity: sha256-3fdfa7ba5dae16595be80be284ae8942bf0841d7550da5061660ca6ce2b705d2
+    - generated-by: Claude Opus 5
+      lines: 76-79
+      integrity: sha256-f05ae3db4e0cfe76f30bef71538d9c34d553b1f0848c513f5ed7362f4db3789c
+    - generated-by: Claude Opus 5.5
+      lines: 81
+      integrity: sha256-8d52869057f1f8c26ac12266ec7eafc7a1bc2f985f9abf3ef6553c34e51ff5a6
+    - generated-by: Claude Opus 5
+      lines: 83-88
+      integrity: sha256-e43788e703551332011714a65c930f6cd300f9cbb964186e86e110c3fd0301f5
+    - generated-by: Claude Opus 5.5
+      lines: 89
+      integrity: sha256-7d8f63d68f9de9bfdfca4b7c1642a649ce4857128a964269a97ef44d0de14e0b
+    - generated-by: Claude Opus 5
+      lines: 91-132
+      integrity: sha256-02656b27eb5f4902f534188cba61ec3db25d9861ed79789d5e0faae20f5b7e1a
+    - generated-by: Claude Opus 5.5
+      lines: 134
+      integrity: sha256-66f8de2fe4f8b354b526d1e3cd78271af6775ac64b9719464f635eea5ba3c628
+    - generated-by: Claude Opus 5
+      lines: 135-145
+      integrity: sha256-7bc2a6ed44e922493c4107d5e7ea30eeb03348cac957416c6014625a681ac660
+    - generated-by: Claude Opus 5.5
+      lines: 146-151
+      integrity: sha256-ed18f4b57d2857f7b6dfccec972ec8fd75d3ffa7b23efcd069fb71f257d5f6cc
+    - generated-by: Claude Opus 5
+      lines: 153-222
+      integrity: sha256-ae9b829a9a6d39e65680131bf2e598062abcf11ec914519d18e3fca15c726204
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

@@ -12,3 +12,10 @@ docs/src/content/docs/tracevals/ci/consume-results.mdx:
       assertion: "A reader can write the JSON report to a file and find the evals that regressed since the previous run."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-283
+      integrity: sha256-31ba8e63d9b83cc93f641c4756c9683b3834d65f2df4a9e977a01ee33eb86193
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

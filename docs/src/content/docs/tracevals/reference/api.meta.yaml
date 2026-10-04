@@ -11,3 +11,28 @@ docs/src/content/docs/tracevals/reference/api.mdx:
       assertion: "A reader can find the export for a tracevals command and name its options."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-36
+      integrity: sha256-304b330c09c5b4c9a0c41d7034965865d9b78e51315d7629689f89711c74842f
+    - generated-by: Claude Opus 5.5
+      lines: 37
+      integrity: sha256-5fab2a02bfde2ceac91ea3a67a86738fc3393588fa70dd58071d2d49138bf74e
+    - generated-by: Claude Opus 5
+      lines: 38-41
+      integrity: sha256-25f08197fba35916ca356aeeb99026309141b1df754f88d161f16484d6cd8b0b
+    - generated-by: Claude Opus 5.5
+      lines: 43-49
+      integrity: sha256-be97fc5ae3861b3bec81dce3a43642c9594f0dcaa944cb885614fed91e05b98a
+    - generated-by: Claude Opus 5
+      lines: 51-87
+      integrity: sha256-c4d882359bb0098b62d89202d105613c5b1b7587fffa562e0763465ea8d3b49c
+    - generated-by: Claude Opus 5.5
+      lines: 88
+      integrity: sha256-8f73a88b17685698a38efc26c999344a93fc046dff749436c70b71def3e31c33
+    - generated-by: Claude Opus 5
+      lines: 89-205
+      integrity: sha256-2372f37edef0d1e1e5838b2efd5c9af29bb389289db509725ed3403b9704ea6f
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

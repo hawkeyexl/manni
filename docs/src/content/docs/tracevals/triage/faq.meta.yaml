@@ -11,3 +11,16 @@ docs/src/content/docs/tracevals/triage/faq.mdx:
       assertion: "A reader can find who owns the fix when they believe the eval itself is wrong."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-101
+      integrity: sha256-b2692e055fcf8d705442d8e83746ebde887e06d04bf33353c87a6ebf3cd8e8a3
+    - generated-by: Claude Opus 5.5
+      lines: 102
+      integrity: sha256-65abad057a6ade817cb3a213e37f4f0dd9895107c51834a7ad28bd956df0c7ba
+    - generated-by: Claude Opus 5
+      lines: 103-109
+      integrity: sha256-80f71442c1b6ae87cb73d2b228680c5a14ddf51f090a8bf4b36c07864bc098eb
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

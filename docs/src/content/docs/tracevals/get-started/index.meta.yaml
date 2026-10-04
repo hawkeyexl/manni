@@ -12,3 +12,10 @@ docs/src/content/docs/tracevals/get-started/index.mdx:
       assertion: "A reader can list a session, evaluate it offline with --deterministic-only, and say what the exit code means."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-209
+      integrity: sha256-cff344adb7c0173a702c72f34fbe46244357d5ee3894d3a26bb3449303a4ea01
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

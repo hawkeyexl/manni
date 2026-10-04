@@ -10,3 +10,10 @@ docs/src/content/docs/tracevals/reference/index.mdx:
       assertion: "A reader can pick the reference page that answers a lookup about a command, config key, grader, or report field."
       type: capability
       grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-65
+      integrity: sha256-c572fad2acb1d868f444dafdaefd61ca345b2e508ed110e387fdeac5ce7eba00
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16
