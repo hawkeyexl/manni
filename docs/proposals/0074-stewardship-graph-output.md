@@ -68,6 +68,7 @@ registers beside the earlier one.
 
 Validation over the default set is unchanged. 1.1.0 accepts and refuses
 exactly what 1.0.0 does, and a finding differs only in the schema id it names.
+Baselines carry across too, because a fingerprint treats 1.1.0 as 1.0.0.
 `x-manni-graph-output` is an annotation that no validation result reads.
 
 What changes is what a published graph carries, and only toward less. A
@@ -97,8 +98,9 @@ output changes either. The mark holds the line for any harvest that follows.
 
 ## Consequences
 
-- A finding from the default set names `manni:stewardship:1.1.0`. A baseline
-  fingerprint taken over the old id reads as a new finding once.
+- A finding from the default set names `manni:stewardship:1.1.0`. Baselines
+  carry across, because a fingerprint treats 1.1.0 as 1.0.0. A recorded
+  finding stays suppressed, and no re-record is needed.
 - One config now decides both which schemas judge a page and which of its
   fields a published graph may carry.
 - The stewardship draft `1.0.0-proposal.4` existed only to carry the mark. It
