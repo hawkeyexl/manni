@@ -29,6 +29,8 @@ import {
   type FingerprintContext,
 } from "./baseline.js";
 import { changedFilesSince, changedKey } from "./since.js";
+import { pageAges } from "./newer-than.js";
+import { parseDuration } from "../../shared/duration.js";
 import { graderFor } from "../graders/registry.js";
 import { assertRegisteredGraders, checkFeasibility } from "./feasibility.js";
 import { realExec } from "../../shared/exec.js";
@@ -60,6 +62,12 @@ export interface EngineReport extends RunReport {
    * what the reporters print.
    */
   since?: { ref: string; pagesSelected: number; pagesTotal: number };
+  /**
+   * Present only under `--newer-than`. `pagesSelected` is the count of pages
+   * this run graded: those that changed inside the window and, when `--since`
+   * is given too, since the ref as well. Both blocks then carry that one count.
+   */
+  newerThan?: { duration: string; pagesSelected: number; pagesTotal: number };
 }
 
 export interface JudgeOptions {
@@ -139,6 +147,13 @@ export interface RunOptions {
    * `evalNames`, an empty match is *not* a usage error (ADR 01040).
    */
   since?: string;
+  /**
+   * Evaluate only pages whose file or eval manifest changed within this
+   * duration back from now, such as `7d`. A committed page's age is its last
+   * commit's date; any other page's is its mtime. With `since`, a page must
+   * satisfy both. Like `since`, an empty match is not a usage error.
+   */
+  newerThan?: string;
   /**
    * Baseline in four states, like the metadata tool's: `undefined` leaves the config in
    * charge, a string names a file, `true` means "use the resolved path even if
@@ -490,19 +505,58 @@ export function applySinceScope(
   plans: ResolvedPagePlan[],
   changed: Set<string>,
 ): { pagesSelected: number } {
+  return applyScope(plans, (plan) => sinceSelects(plan, changed));
+}
+
+/**
+ * The files whose change counts as the page's: its own, then every manifest
+ * that supplied one of its eval keys. `external` is absent when the run loaded
+ * no manifest at all (`withExternalMetadata` returns such pages untouched).
+ */
+function scopeManifests(plan: ResolvedPagePlan): readonly string[] {
+  return plan.page.external?.evalManifests ?? [];
+}
+
+function sinceSelects(plan: ResolvedPagePlan, changed: Set<string>): boolean {
+  return [plan.page.absPath, ...scopeManifests(plan)].some((f) =>
+    changed.has(changedKey(f)),
+  );
+}
+
+/**
+ * Empty `plan.evals` on every page `keep` rejects, in place, and count the
+ * rest. `--since` and `--newer-than` both narrow through it, so a page under
+ * both keeps its evals only when both select it.
+ */
+function applyScope(
+  plans: ResolvedPagePlan[],
+  keep: (plan: ResolvedPagePlan) => boolean,
+): { pagesSelected: number } {
   let pagesSelected = 0;
   for (const plan of plans) {
-    // `external` is absent when the run loaded no manifest at all
-    // (`withExternalMetadata` returns such pages untouched). Then only the
-    // page's own file can select it.
-    const files = [plan.page.absPath, ...(plan.page.external?.evalManifests ?? [])];
-    if (files.some((f) => changed.has(changedKey(f)))) {
+    if (keep(plan)) {
       pagesSelected += 1;
       continue;
     }
     plan.evals = [];
   }
   return { pagesSelected };
+}
+
+/** The plans whose page or eval manifest changed inside the last `windowMs`. */
+async function recentPages(
+  plans: ResolvedPagePlan[],
+  windowMs: number,
+  cwd: string,
+  exec: ExecFn,
+): Promise<Set<ResolvedPagePlan>> {
+  const floor = Date.now() - windowMs;
+  const ages = await pageAges(
+    plans.map((p) => ({ page: p.page.absPath, manifests: scopeManifests(p) })),
+    cwd,
+    exec,
+  );
+  return new Set(plans.filter((_, i) => (ages[i] ?? Number.NEGATIVE_INFINITY) >= floor));
 }
 
 /**
@@ -686,12 +740,13 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
     options.writeBaseline !== false &&
     ((options.evalNames?.some((n) => n.trim() !== "") ?? false) ||
       options.suite !== undefined ||
-      options.since !== undefined)
+      options.since !== undefined ||
+      options.newerThan !== undefined)
   ) {
     throw new DocevalsError(
       "--write-baseline records the whole corpus, so it cannot be combined with " +
-        "--eval, --suite or --since: the re-record would drop every finding the " +
-        "narrowing excluded. Re-run without it to record.",
+        "--eval, --suite, --since or --newer-than: the re-record would drop every " +
+        "finding the narrowing excluded. Re-run without it to record.",
     );
   }
 
@@ -702,6 +757,13 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
   // Blank and option-shaped refs are rejected inside `changedFilesSince`, at
   // the seam, so a library caller gets the same guard the CLI does.
   const sinceRef = options.since;
+  // Parsed before git is asked anything, so a bad duration is a usage error
+  // that spawns no subprocess.
+  const newerThan = options.newerThan;
+  const windowMs =
+    newerThan === undefined
+      ? undefined
+      : parseDuration(newerThan, (message) => new DocevalsError(message));
   const changed =
     sinceRef === undefined ? null : await changedFilesSince(sinceRef, cwd, exec);
 
@@ -756,7 +818,7 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
   // empty and the config's own validity — a malformed grader option, an unknown
   // key — would go unchecked, exiting 0. The one flag meant for CI would make a
   // config-only change the least examined kind of change there is.
-  let scope: { ref: string; pagesSelected: number; pagesTotal: number } | null = null;
+  let scope: { pagesSelected: number; pagesTotal: number } | null = null;
   const judgeOptions = options.judgeOptions ?? {};
 
   const problems: RunProblem[] = plans.flatMap((p) =>
@@ -802,11 +864,18 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
 
   // Now that every page has been diagnosed, narrow what will actually be
   // graded. See the declaration above for why this cannot move earlier.
-  if (changed !== null && sinceRef !== undefined) {
+  if (changed !== null || windowMs !== undefined) {
+    // Ages are read only when asked for, and after every page was diagnosed.
+    const recent =
+      windowMs === undefined ? null : await recentPages(plans, windowMs, cwd, exec);
     scope = {
-      ref: sinceRef,
       pagesTotal: plans.length,
-      ...applySinceScope(plans, changed),
+      ...applyScope(
+        plans,
+        (plan) =>
+          (changed === null || sinceSelects(plan, changed)) &&
+          (recent === null || recent.has(plan)),
+      ),
     };
   }
 
@@ -1230,6 +1299,9 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
     exitCode: hasFailure ? 1 : 0,
     problems,
     ...(baselineOutcome.summary ? { baseline: baselineOutcome.summary } : {}),
-    ...(scope ? { since: scope } : {}),
+    ...(scope && sinceRef !== undefined ? { since: { ref: sinceRef, ...scope } } : {}),
+    ...(scope && newerThan !== undefined
+      ? { newerThan: { duration: newerThan, ...scope } }
+      : {}),
   };
 }

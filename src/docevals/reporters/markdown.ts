@@ -1,4 +1,5 @@
 /** Markdown reporter: PR-comment-friendly summary. */
+import { scopeLine } from "./scope.js";
 import type { EngineReport } from "../core/engine.js";
 
 const OUTCOME_ICON: Record<string, string> = {
@@ -28,15 +29,11 @@ export function renderMarkdown(report: EngineReport): string {
   // What `--since` scoped the run to. This matters most in the CI formats: a
   // clean-tree run is otherwise an empty table nobody can tell apart from a
   // corpus that passed (ADR 01040).
-  const sc = report.since;
+  const sc = scopeLine(report);
   if (sc) {
+    const text = sc.text((s) => `\`${s}\``);
     lines.push("");
-    lines.push(
-      sc.pagesSelected === 0
-        ? `> **No pages changed since \`${sc.ref}\` — nothing was evaluated.**`
-        : `_Scoped to ${sc.pagesSelected} of ${sc.pagesTotal} page(s) changed since ` +
-          `\`${sc.ref}\`._`,
-    );
+    lines.push(sc.empty ? `> **${text}**` : `_${text}_`);
   }
 
   // The baseline line belongs in the CI formats above all: `removed` is the

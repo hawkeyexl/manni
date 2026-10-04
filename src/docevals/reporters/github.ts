@@ -2,6 +2,7 @@
  * GitHub Actions reporter: workflow commands for inline PR annotations,
  * followed by the markdown summary (suitable for $GITHUB_STEP_SUMMARY).
  */
+import { scopeLine } from "./scope.js";
 import type { EngineReport } from "../core/engine.js";
 import {
   escapeWorkflowCommandMessage as escapeData,
@@ -50,15 +51,9 @@ export function renderGithub(report: EngineReport): string {
   // collapsed log still shows notices, and "nothing was evaluated" is the one
   // sentence that distinguishes a scoped clean run from a corpus that passed
   // (ADR 01040).
-  const sc = report.since;
+  const sc = scopeLine(report);
   if (sc) {
-    lines.push(
-      `::notice title=manni docevals::${escapeData(
-        sc.pagesSelected === 0
-          ? `No pages changed since ${sc.ref} — nothing was evaluated.`
-          : `Scoped to ${sc.pagesSelected} of ${sc.pagesTotal} page(s) changed since ${sc.ref}.`,
-      )}`,
-    );
+    lines.push(`::notice title=manni docevals::${escapeData(sc.text())}`);
   }
   lines.push("", renderMarkdown(report));
   return lines.join("\n");

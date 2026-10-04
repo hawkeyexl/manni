@@ -251,6 +251,13 @@ and Node touch.
   records those manifests on the page as `external.evalManifests`, read off
   the merge's `locate`, so the scope never re-derives a manifest path. Any
   change to such a file selects the page; nothing diffs the YAML by key.
+- **`--newer-than <duration>` narrows the same way, by age.** A page's age is
+  detected in `src/docevals/core/newer-than.ts`, never switched. A page git
+  tracks with no uncommitted change, in it or its eval manifests, takes the
+  committer date of the last commit touching them. Any other page takes the
+  newest mtime among them. A fresh clone stamps every file with the clone's
+  time, which is why committed pages never read mtime. With `--since` too, a
+  page must satisfy both, through the one `applyScope`.
 - **Grader failures are isolated per eval group, in the engine** (ADR 01042).
   `runEvals` drives `groupTargetsByEval` and calls `grader.grade()` once per
   group with the `try`/`catch` around each call. Do not move that boundary

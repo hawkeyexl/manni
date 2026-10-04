@@ -200,14 +200,14 @@ describe("baseline: paths, filters, and recovery", () => {
     const root = scaffold();
     await expect(
       run(root, { writeBaseline: true, evalNames: ["no-todo-markers"] }),
-    ).rejects.toThrow(/cannot be combined with --eval, --suite or --since/);
+    ).rejects.toThrow(/cannot be combined with --eval, --suite, --since or --newer-than/);
     // `--suite` is symmetric; the scaffold defines no suites, so a suite name
     // would be rejected by the earlier undefined-suite guard instead.
     // `--since` narrows the corpus the same way, and is refused for the same
     // reason (ADR 01040) — `test/docevals/unit/since.test.ts` also pins that it is
     // refused before git is spawned.
     await expect(run(root, { writeBaseline: true, since: "HEAD" })).rejects.toThrow(
-      /cannot be combined with --eval, --suite or --since/,
+      /cannot be combined with --eval, --suite, --since or --newer-than/,
     );
   });
 

@@ -276,6 +276,11 @@ export function buildProgram(): Command {
       "Evaluate only pages whose file or eval manifest changed between this git ref and HEAD",
     )
     .option(
+      "--newer-than <duration>",
+      "Evaluate only pages whose file or eval manifest changed within this window, " +
+        "such as 30m, 24h, 7d or 2w; in CI, prefer --since",
+    )
+    .option(
       "--max-turns <n>",
       "Stop after this many ensemble runs (a cached ensemble costs none)",
       parseIntArg("--max-turns"),
@@ -316,6 +321,7 @@ export function buildProgram(): Command {
           evalNames: opts.eval as string[] | undefined,
           suite: opts.suite as string | undefined,
           since: opts.since as string | undefined,
+          newerThan: opts.newerThan as string | undefined,
           // commander collapses `--baseline` to true and `--no-baseline` to
           // false on the same key; a string is an explicit path.
           baseline: opts.baseline as string | boolean | undefined,
