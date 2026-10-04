@@ -72,11 +72,12 @@ merged with every key an external-metadata manifest of its collections owns
 `metaPageView` from `src/meta/internal.ts`, which wraps meta's own
 `loadExternalMetadata`, `mergeWithMarks` and `keyHome`. Never grow a loader or
 a merge of graph's own. `build` merges before the output filter, so a mark
-governs a manifest's field too. `fill` reads what a page already holds, the
-guard's corpus and the `meta-provenance` list through the same merge, and
-writes each key where `keyHome` puts it: a manifest that owns it, else the
-page. `--no-config` declares no collection and stdin is in none, so neither
-reads a manifest, which is meta's behaviour.
+governs a manifest's field too. `fill` reads three things through the same
+merge. They are what a page already holds, the guard's corpus and the
+`meta-provenance` list. It writes each key to a manifest that owns it, as
+`keyHome` decides, and otherwise to the page. `--no-config` declares no
+collection and stdin is in none, so neither reads a manifest, which is meta's
+behaviour.
 
 ## The namespace and the shapes
 
@@ -113,7 +114,8 @@ cannot express: `skos:broader` cycles, and `skos:related` conflicting with
 
 `tsup.config.ts` builds this tool twice.
 
-1. The Node side: the `manni` bin and the library, `platform: "node"`.
+1. The Node side is the `manni` bin and the library, built with
+   `platform: "node"`.
 2. `@hawkeyexl/manni/graph/runtime` and `@hawkeyexl/manni/graph/embed`,
    `platform: "neutral"` (ADR 01018). `src/graph/runtime/**` must load in a
    browser: no `node:` imports, no CommonJS interop, no bare specifiers a
