@@ -25,7 +25,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO="$(cd .. && pwd)"
-C="$(pwd)/graph/graph-impact-capture"
+C="$(pwd)/graph/capture-impact"
 S="${GRAPHDEMO:-/c/graphdemo}"
 
 mkdir -p "$C"

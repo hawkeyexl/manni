@@ -1,6 +1,6 @@
 // Plain-text transcript: titles, every typed command, the real output, captions.
 // manni graph's pretty reporters emit no ANSI at all (checked with `cat -v` on
-// media/graph/graph-impact-capture/*.ans), so unlike the meta videos there is no colour to
+// media/graph/capture-impact/*.ans), so unlike the meta videos there is no colour to
 // describe here — the strip below is kept only so a future capture that does
 // carry colour cannot leak escape codes into the transcript.
 const b = require("./out-graph-impact/graph-impact/beats.js");

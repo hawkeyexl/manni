@@ -3,7 +3,7 @@
 // Run from media/: node graph/graph-impact-cols.mjs [px]
 import { readFileSync } from "node:fs";
 const strip = (s) => s.replace(/\x1b\[[0-9;]*m/g, "");
-const rd = (f) => strip(readFileSync("graph/graph-impact-capture/" + f, "utf8")).replace(/\r/g, "").replace(/\n$/, "").split("\n");
+const rd = (f) => strip(readFileSync("graph/capture-impact/" + f, "utf8")).replace(/\r/g, "").replace(/\n$/, "").split("\n");
 const IRI = "https://acme.dev/doc/docs/configuration.md";
 const beats = {
   b1: ["$ grep -rl configuration.md docs/", ...rd("grep.ans"), "$ "],

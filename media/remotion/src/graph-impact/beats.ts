@@ -9,7 +9,7 @@ export { FPS };
 export const TYPING_MS = 35;
 
 // Measured wall-clock latency on this machine, in C:\graphdemo
-// (media/graph/graph-impact-capture/latency.txt: the capture run plus three timing runs):
+// (media/graph/capture-impact/latency.txt: the capture run plus three timing runs):
 // build 1086-1166 ms, traverse 957-975 ms, query 947-964 ms, stats --check
 // 957-972 ms, grep 30-36 ms. Held to the slowest of each, so output never
 // appears sooner than the real command produced it.

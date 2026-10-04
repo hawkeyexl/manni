@@ -20,7 +20,7 @@ throughout. Title band 112 px, 2 px accent rules, caption band 86 px.
 
 One thing about the reserved-colour rule is specific to this video and worth
 recording: **`manni graph`'s pretty reporters emit no ANSI at all.** A `cat -v`
-over every file in `media/graph/graph-impact-capture/` finds not one escape sequence, and
+over every file in `media/graph/capture-impact/` finds not one escape sequence, and
 `grep -rn 'colors\.\|pc\.\|chalk' src/graph/reporters/` returns nothing. So unlike
 the `meta` videos, this frame has no product colour to collide with, and the
 blue accent carries the chrome and the row highlights alone. That is also why
@@ -36,7 +36,7 @@ command reads `manni`, the name `media/bin/manni` gives the built CLI.
   collections and sidecar videos. The CLI ran under the preload that makes
   stdout/stderr report as a TTY (`media/capture/tty.cjs`), so nothing is
   suppressed by the non-TTY path. The bytes were saved verbatim to
-  `media/graph/graph-impact-capture/`. The composition `GraphImpactDemo`
+  `media/graph/capture-impact/`. The composition `GraphImpactDemo`
   (`media/remotion/src/graph-impact/beats.ts`, shared `src/Demo.tsx`) replays them.
   Typing runs at 35 ms/char, then Enter, then the output after the command's
   **measured** latency. No output byte is edited.
@@ -60,7 +60,7 @@ command reads `manni`, the name `media/bin/manni` gives the built CLI.
   in the graph, only the length of the IRIs on screen. Without it the traverse
   rows run 75 characters before the title even starts.
 - **Latency is disclosed, not trimmed.** `beats.ts` holds each output for the
-  slowest of four measured runs (`media/graph/graph-impact-capture/latency.txt`). Those are
+  slowest of four measured runs (`media/graph/capture-impact/latency.txt`). Those are
   build 1086-1166 ms, traverse 957-975 ms, query 947-964 ms, `stats --check`
   957-972 ms, grep 30-36 ms. Nothing is sped up; there is no speed-up factor
   in this video at all.
@@ -105,23 +105,33 @@ default. The beat 3 caption rendered `--check` as `--` / `check`, reading as
 two flags. Design check 2 forbids a token split across a line break; this makes
 it hold for every video, not just this one.
 
-## Beats
+## Beats (storyboard)
 
-### 1. Two pages mention it (0:00-0:05)
+Three static full-frame shots. Every beat starts on a cleared terminal and
+cuts to the next, with no transitions.
 
-VISUAL: empty prompt, then one command.
+| # | Title (band) | Terminal | Caption (band) | Time |
+|---|---|---|---|---|
+| 1 | Two pages mention it | An empty prompt, then `grep -rl configuration.md docs/` | grep finds the pages that name configuration.md. It cannot find the pages that depend on those. | 0:00-0:05 |
+| 2 | manni graph finds three | `manni graph build docs/`, then the impact walk with `graph traverse` | harvest.md is reached through windows-notes.md. Two hops out, where grep never looked. | 0:05-0:20 |
+| 3 | The build fails on it | The same graph queried for dead links, then the exit code | The same graph carries every dead link, and stats --check exits 1. CI has something to fail on. | 0:20-0:34 |
+
+Beat 1 highlights both result rows on the faint accent ground. Beat 2
+highlights the indented `harvest.md` row and the `3 nodes, 4 hops` summary.
+Beat 3 highlights both `missing.md` rows, and the `1`.
+
+## Real output quoted
+
+Beat 1, `grep -rl configuration.md docs/`:
+
 ```
 $ grep -rl configuration.md docs/
 docs/getting-started.md
 docs/windows-notes.md
 ```
-CALLOUT: both result rows on the faint accent ground.
-CAPTION: grep finds the pages that name configuration.md. It cannot find the
-pages that depend on those.
 
-### 2. manni graph finds three (0:05-0:20)
+Beat 2, the build and the impact walk:
 
-VISUAL: build, then the impact walk.
 ```
 $ manni graph build docs/
 Wrote C:\graphdemo\graph.ttl (8 docs, 292 triples)
@@ -132,9 +142,6 @@ $ manni graph traverse https://acme.dev/doc/docs/configuration.md --predicates d
 
 3 nodes, 4 hops, 0 excluded
 ```
-CALLOUT: the indented `harvest.md` row and the `3 nodes, 4 hops` summary.
-CAPTION: harvest.md is reached through windows-notes.md. Two hops out, where
-grep never looked.
 
 The indent is the whole point of the beat. The first two rows are what grep
 found, and the third is one hop further. It is reachable only because
@@ -143,9 +150,8 @@ found, and the third is one hop further. It is reachable only because
 Without it the walk also follows the `prov:used` edges from the build activity,
 which touch every document in the corpus and drown the answer.
 
-### 3. The build fails on it (0:20-0:34)
+Beat 3, the dead links and the exit code:
 
-VISUAL: the same graph, queried for dead links, then the exit code.
 ```
 $ manni graph query --predicate graph:brokenLink
 <https://acme.dev/doc/docs/de/regional.md> graph:brokenLink "../missing.md"
@@ -155,13 +161,10 @@ $ manni graph query --predicate graph:brokenLink
 $ manni graph stats --check > /dev/null; echo $?
 1
 ```
-CALLOUT: both `missing.md` rows, and the `1`.
-CAPTION: The same graph carries every dead link, and stats --check exits 1. CI
-has something to fail on.
 
 The redirect is there because `graph stats` prints a 49-line report and the beat
 is about the status, not the report. It is what a person types when they care
-about the exit code. The exit code is real: `media/graph/graph-impact-capture/stats-check.exit`
+about the exit code. The exit code is real. `media/graph/capture-impact/stats-check.exit`
 holds `1`.
 
 ## Reproducing
@@ -170,7 +173,7 @@ From the repo root, with `npm run build` already done:
 
 ```bash
 cd media
-bash graph/graph-impact-capture.sh                    # stages C:\graphdemo, writes graph/graph-impact-capture/
+bash graph/graph-impact-capture.sh                    # stages C:\graphdemo, writes graph/capture-impact/
 node graph/graph-impact-cols.mjs 22 75                # re-check the geometry
 cd remotion
 npm ci
