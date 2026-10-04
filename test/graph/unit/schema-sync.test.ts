@@ -369,7 +369,8 @@ describe("documented coverage field count ↔ COVERAGE_FIELDS", () => {
   const pages = [
     join("govern", "coverage.mdx"),
     join("reference", "configuration.mdx"),
-    join("reference", "glossary.mdx"),
+    // The coverage term moved to the family termbase (proposal 0073).
+    join("..", "meta", "reference", "glossary", "coverage.mdx"),
     join("reference", "library-api.mdx"),
   ];
 
