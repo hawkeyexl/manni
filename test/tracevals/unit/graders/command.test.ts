@@ -161,9 +161,9 @@ describe("command grader", () => {
   });
 
   it("passes a script that writes more to stdout than a pipe buffer holds", async () => {
-    // stdout is discarded rather than piped: a piped stream nobody reads fills
-    // at ~64KB and blocks the child mid-write, which used to surface as a
-    // timeout on a script that had already decided the answer.
+    // The wrapper drains stdout as it arrives. A piped stream nobody reads
+    // fills at ~64KB and blocks the child mid-write, which used to surface as
+    // a timeout on a script that had already decided the answer.
     const result = await grade({
       command: [NODE, "-e", "process.stdout.write('x'.repeat(5_000_000)); process.exit(0)"],
       timeoutMs: 10_000,
