@@ -110,17 +110,17 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-1150f94a94622d52d4f66bd9f46476b437ac7a8ab281d22512f188d0d9c88e37
       source:
         file: src/meta/core/baseline.ts
-        lines: 517-522
+        lines: 520-525
         integrity: sha256-e0fa4119f2c7eb993f8bbe1117e9f626bd7cce162051e5654c71e4b2b38b2014
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: baseline-fails-only-on-new-findings
       claim:
         integrity: sha256-61f43fd19e78d2c217683be680952294579a2039a4ce004f8d5e941eb5963d60
       source:
         file: src/meta/core/baseline.ts
-        lines: 362-367
+        lines: 365-370
         integrity: sha256-a3c938928370f6881ed6788272c2fbe3a3375abe8f4f62dd2436469f53462431
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: write-baseline-reports-added-and-removed
       claim:
         integrity: sha256-61f43fd19e78d2c217683be680952294579a2039a4ce004f8d5e941eb5963d60

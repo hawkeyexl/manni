@@ -102,27 +102,27 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-9ea712da41174ae5b4147cb1205df08470b7199e461a6ac6265822dcbbcef234
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 401
+        lines: 415
         integrity: sha256-73916bbbc37290e31b41fcefb00183d8f66b200197926e0860d5a1138e8b6204
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: schema-ref-can-be-a-local-file
       claim:
         lines: 147
         integrity: sha256-fc6d6ffddbb665b5f12473d366e315d5b466d744cee17778f79c7eba0951f21a
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 410
+        lines: 424
         integrity: sha256-54d3ca5663d01b67211e96f23c07ea217f315568bb05c0fed1a575a471062a52
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: builtin-id-shape
       claim:
         lines: 146
         integrity: sha256-9587dcfd51c7ad3997de25290fc7c94812a4e5dea32cf9e38713b77814c7406f
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 398
+        lines: 412
         integrity: sha256-f5e3a939a781ffcfd02b1e0b1fc055d28d3a1ed1a39efbe53a978870587c0b1d
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: every-schema-in-the-set-is-applied
       claim:
         integrity: sha256-981a7d04d5bb404e8d68c177c9cf1de8f0b015d97b4bfaa854c4464b79fd7b15

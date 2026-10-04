@@ -5,6 +5,6 @@ docs/src/content/docs/meta/reference/glossary/schema.mdx:
         integrity: sha256-6ed8163b63269109343f41d0ef905cce905c2227e3ce7deb686aa9f954b8a7db
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 400-411
+        lines: 414-425
         integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
-        commit-sha: 9e1f1f356bcbc80a08449035e239611e0e191bdb
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7

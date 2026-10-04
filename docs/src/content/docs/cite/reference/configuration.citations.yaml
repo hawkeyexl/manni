@@ -89,18 +89,18 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-7b0eeb1464575d3e90779aff04256cb8cc9a372d91038f7161afe8bdf06b0dba
       source:
         file: src/meta/core/baseline.ts
-        lines: 486-490
+        lines: 489-493
         integrity: sha256-93430fe764498fd976f09e4b233c40bd5c8231a1a10599bb6cfb7e18dbf7bb01
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: key-baseline-flags
       claim:
         lines: 93
         integrity: sha256-7b0eeb1464575d3e90779aff04256cb8cc9a372d91038f7161afe8bdf06b0dba
       source:
         file: src/meta/core/baseline.ts
-        lines: 512-522
+        lines: 515-525
         integrity: sha256-c6a4b91ab11048ad58e6a8030343f1798445ea93d8d071923d77dc5f564e591b
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: key-check-sources
       claim:
         lines: 94
@@ -356,9 +356,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-ad1ea713828531a524d01d4f1078fd3d48b4a1f0a725a666ffc1973a547bcf10
       source:
         file: src/meta/core/baseline.ts
-        lines: 486-490
+        lines: 489-493
         integrity: sha256-93430fe764498fd976f09e4b233c40bd5c8231a1a10599bb6cfb7e18dbf7bb01
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: rel-positional-cwd
       claim:
         lines: 193
@@ -383,9 +383,9 @@ docs/src/content/docs/cite/reference/configuration.mdx:
         integrity: sha256-4a0d0b09de4c24fd5e9bc27f7d835c4556d81e77317f81aa53e30551ba2e43a2
       source:
         file: src/meta/core/baseline.ts
-        lines: 462-466
+        lines: 465-469
         integrity: sha256-0ce4eb7ffff3477e61e03f3b3fd6b34da5a65a4bc81b239f84832706d5eb2a2b
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: fingerprints-config-dir
       claim:
         integrity: sha256-9924707f21479f4ffb6babb0142f92f6c4cbe2342dd31205f61a7ad4aac0a9a5

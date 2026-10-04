@@ -1425,9 +1425,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-a0445253f21233dd09149c4dcbb9ca1f871514f2a509d21ee22874f7f3acf86b
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 990-998
+        lines: 1004-1012
         integrity: sha256-0fdd2bc93eb0acbc84d62eaaf5f1c7ec2795441da58714327642a7d7ee77c36c
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: offline-flag-is-per-run
       claim:
         integrity: sha256-50cc1fbd993bc5e2a23e9cdb9373a16358550f893478fc626477be551f7abcc7
@@ -2521,9 +2521,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-c281ad8913d98fba2270ed4075e73036f0a4cf70999a1147adfb07422a92c5f1
       source:
         file: src/meta/core/baseline.ts
-        lines: 462-477
+        lines: 465-480
         integrity: sha256-48abbdcbd268b69f1a4033c368d7080ad332d238c62685d2e44e59f71e413991
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: positional-paths-stay-relative-to-cwd
       claim:
         lines: 2752
