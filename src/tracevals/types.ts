@@ -30,6 +30,15 @@ export interface EvalResult {
   artifactType: ArtifactType;
   grader: string;
   implicit: boolean;
+  /**
+   * Where the eval is declared: the item of `metadata.evals` that names it, in
+   * the artifact or in the manifest that supplied the block (proposal 0037).
+   * `file` is relative to the working directory and forward-slashed when it is
+   * inside it, absolute when it is not, and a URL for a hosted manifest.
+   * `line` is 1-based, and absent when nothing records one, as for the
+   * implicit eval, which no entry declares.
+   */
+  location: { file: string; line?: number };
   outcome: Outcome;
   /** Present for deterministic evals that produced findings. */
   findings?: Finding[];

@@ -3,7 +3,12 @@
  * evals to run. Artifacts without declared evals get one implicit
  * whole-artifact adherence eval (ADR 01002).
  */
-import type { ExtractedMetadata } from "../../meta/index.js";
+import {
+  extractFrontmatter,
+  type ExtractedMetadata,
+  type SourceLocation,
+} from "../../meta/index.js";
+import { declaredAt } from "../../meta/internal.js";
 import type { ResolvedArtifact } from "../artifacts/types.js";
 import {
   extractEvals,
@@ -49,6 +54,14 @@ export interface EvalPlan {
   proposedBy?: string[];
   /** True for the zero-config whole-artifact adherence eval. */
   implicit: boolean;
+  /**
+   * Where the eval is declared: the item of `metadata.evals` that names it, in
+   * the artifact or in the manifest that supplied the block (proposal 0037).
+   * `file` is an absolute path, or a URL for a hosted manifest. `line` is
+   * absent when nothing records one, as for the implicit eval, which no entry
+   * declares.
+   */
+  location: EvalLocation;
   /** Set when the artifact's evals block failed schema validation. */
   error?: string;
   /** Set when the artifact or the entry opted out. */
@@ -59,6 +72,23 @@ export interface EvalPlan {
 
 export const IMPLICIT_EVAL_NAME = "adheres-to-artifact";
 
+/** A file, and the 1-based line in it when one is known. */
+export interface EvalLocation {
+  file: string;
+  line?: number;
+}
+
+/**
+ * The artifact's front matter as the run reads it, with the merge's `locate`
+ * when a manifest was read for it. `locate` names the manifest and line behind
+ * a value the manifest supplied; `evals/external.ts` spells that file as an
+ * absolute path, or a URL.
+ */
+export interface SuppliedMetadata {
+  extracted: ExtractedMetadata;
+  locate?: (pointer: string) => SourceLocation | undefined;
+}
+
 /**
  * The artifact's front matter as the run reads it: its own, or its own with a
  * manifest-supplied `metadata` block merged in (`evals/external.ts`). Absent
@@ -67,7 +97,7 @@ export const IMPLICIT_EVAL_NAME = "adheres-to-artifact";
  */
 export type ArtifactMetadataFor = (
   artifact: ResolvedArtifact,
-) => ExtractedMetadata | undefined;
+) => SuppliedMetadata | undefined;
 
 /**
  * `ArtifactMetadataFor`, before the manifests are read. Reading is async: a
@@ -76,7 +106,7 @@ export type ArtifactMetadataFor = (
  */
 export type ArtifactMetadataLoader = (
   artifact: ResolvedArtifact,
-) => Promise<ExtractedMetadata | undefined>;
+) => Promise<SuppliedMetadata | undefined>;
 
 export function planEvals(
   artifacts: ResolvedArtifact[],
@@ -84,7 +114,15 @@ export function planEvals(
 ): EvalPlan[] {
   const plans: EvalPlan[] = [];
   for (const artifact of artifacts) {
-    const extracted = extractEvals(artifact, metadataFor?.(artifact));
+    const supplied = metadataFor?.(artifact);
+    const metadata = {
+      extracted: supplied?.extracted ?? extractFrontmatter(artifact.content, "markdown"),
+      ...(supplied?.locate === undefined ? {} : { locate: supplied.locate }),
+    };
+    const extracted = extractEvals(artifact, metadata.extracted);
+    const at = (pointer: string): EvalLocation =>
+      declaredAt(artifact.path, pointer, metadata);
+    const whole: EvalLocation = { file: artifact.path };
 
     if (extracted.errors.length > 0) {
       const detail = extracted.errors
@@ -100,6 +138,7 @@ export function planEvals(
         grader: "ai",
         severity: "error",
         implicit: false,
+        location: at("/metadata/evals"),
         error: `invalid metadata.evals block: ${detail}`,
       });
       continue;
@@ -113,6 +152,7 @@ export function planEvals(
         grader: "ai",
         severity: "error",
         implicit: true,
+        location: at("/metadata/eval-skip"),
         skipped: true,
         skipReason: "artifact skipped via metadata.eval-skip",
       });
@@ -129,11 +169,12 @@ export function planEvals(
         grader: "ai",
         severity: "error",
         implicit: true,
+        location: whole,
       });
       continue;
     }
 
-    for (const entry of extracted.evals) {
+    for (const [index, entry] of extracted.evals.entries()) {
       const plan: EvalPlan = {
         artifact,
         evalName: entry.id,
@@ -145,6 +186,9 @@ export function planEvals(
         ...(entry.weight !== undefined ? { weight: entry.weight } : {}),
         severity: entry.severity,
         implicit: false,
+        // A string block is one entry at index 0, and the pointer walks up to
+        // the block's own line.
+        location: at(`/metadata/evals/${String(index)}`),
       };
       if (entry.options) plan.options = entry.options;
       if (entry.evidence) plan.evidence = entry.evidence;

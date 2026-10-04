@@ -1,5 +1,6 @@
 /** Markdown report, suitable for PR comments and docs. */
 import type { RunReport } from "../types.js";
+import { locationLabel } from "./ci.js";
 import {
   availabilityLines,
   coverageLocation,
@@ -39,7 +40,7 @@ export function renderMarkdown(report: RunReport): string {
         ? `votes p:${r.consensus.votes.pass} f:${r.consensus.votes.fail} e:${r.consensus.votes.error}`
         : "");
     lines.push(
-      `| ${r.outcome} | ${cell(r.artifactName)} | ${cell(r.evalName)}${r.implicit ? " (implicit)" : ""} | ${cell(r.grader)} | ${cell(detail)} |`,
+      `| ${r.outcome} | ${cell(r.artifactName)} | ${cell(r.evalName)}${r.implicit ? " (implicit)" : ""} \`${cell(locationLabel(r.location))}\` | ${cell(r.grader)} | ${cell(detail)} |`,
     );
   }
   lines.push("");

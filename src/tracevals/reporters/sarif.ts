@@ -10,23 +10,28 @@
  *   - **Rules are graders.** The id is `tracevals/<grader>`, so a dashboard
  *     groups by what checked the session (`tracevals/tool-usage`,
  *     `tracevals/ai`); the eval's own name is in `properties.eval`.
- *   - **Locations are artifacts, often outside the checkout.** A finding
- *     points at the skill or instruction file that declared the eval. Under
- *     the run root that is a relative URI against `SRCROOT`; a user-level
- *     skill in `~/.claude` gets an absolute `file:` URI, since no relative one
- *     reaches it. The trace graded is `properties.trace`.
+ *   - **Locations are declaring entries, often outside the checkout.** A
+ *     finding points at the entry that declares the eval, in the skill or
+ *     instruction file or in the manifest that supplied it, with its line as
+ *     the region. Under the run root that is a relative URI against `SRCROOT`.
+ *     A user-level skill in `~/.claude` gets an absolute `file:` URI, since no
+ *     relative one reaches it, and a hosted manifest keeps its URL. The trace
+ *     graded is `properties.trace`.
  */
 import type { Severity } from "../../shared/severity.js";
 import {
   artifactLocation,
   fileUri,
   URI_BASE_ID,
+  type ArtifactLocation,
 } from "../../shared/sarif-location.js";
+import { classifyRef } from "../../meta/index.js";
 import type { EvalResult, RunReport } from "../types.js";
 import {
   displayPath,
   errorText,
   judgeFailText,
+  locationPath,
   ruleIdFor,
   TRACE_RULE_ID,
   traceErrorText,
@@ -50,6 +55,12 @@ interface SarifRule {
   name: string;
   shortDescription: { text: string };
   defaultConfiguration: { level: SarifLevel };
+}
+
+/** The declaring file as a SARIF artifact location. A hosted manifest is its URL. */
+function declaringLocation(r: EvalResult, root: string): ArtifactLocation {
+  if (classifyRef(r.location.file).kind === "url") return { uri: r.location.file };
+  return artifactLocation(locationPath(r.location, root), root);
 }
 
 export function renderSarif(input: CiInput): string {
@@ -89,7 +100,12 @@ export function renderSarif(input: CiInput): string {
       locations: [
         {
           physicalLocation: {
-            artifactLocation: artifactLocation(r.artifact, input.root),
+            artifactLocation: declaringLocation(r, input.root),
+            // SARIF regions are 1-based and need `startLine`, so a location
+            // with no line has no region rather than an invented line 1.
+            ...(r.location.line === undefined
+              ? {}
+              : { region: { startLine: r.location.line } }),
           },
         },
       ],

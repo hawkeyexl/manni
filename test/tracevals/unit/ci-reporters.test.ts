@@ -2,7 +2,7 @@
  * The CI formats: `github`, `sarif` and `junit`, for one trace and for a batch.
  *
  * Shapes follow docevals' reporters. What is tracevals' own is the location:
- * a finding points at the artifact file that declared the eval, and the trace
+ * a finding points at the entry that declares the eval, and the trace
  * it was graded against travels in the message (github), the properties
  * (sarif) or the testsuite name (junit).
  */
@@ -50,6 +50,7 @@ const results: EvalResult[] = [
     artifactType: "skill",
     grader: "tool-usage",
     implicit: false,
+    location: { file: "C:/work/demo/artifact-evals.yaml", line: 12 },
     outcome: "fail",
     findings: [
       {
@@ -68,6 +69,7 @@ const results: EvalResult[] = [
     artifactType: "project-rules",
     grader: "ai",
     implicit: false,
+    location: { file: "C:/work/demo/CLAUDE.md", line: 5 },
     outcome: "fail",
     consensus: judgeFail,
     durationMs: 5,
@@ -80,6 +82,7 @@ const results: EvalResult[] = [
     artifactType: "skill",
     grader: "command",
     implicit: false,
+    location: { file: "C:/Users/me/.claude/skills/lint/SKILL.md", line: 9 },
     outcome: "error",
     error: "command: spawn ENOENT",
     durationMs: 1,
@@ -91,6 +94,7 @@ const results: EvalResult[] = [
     artifactType: "project-rules",
     grader: "human",
     implicit: false,
+    location: { file: "C:/work/demo/CLAUDE.md", line: 8 },
     outcome: "needs-review",
     durationMs: 0,
   },
@@ -101,6 +105,7 @@ const results: EvalResult[] = [
     artifactType: "project-rules",
     grader: "turn-count",
     implicit: false,
+    location: { file: "C:/work/demo/CLAUDE.md", line: 11 },
     outcome: "pass",
     durationMs: 1,
   },
@@ -133,25 +138,41 @@ describe("github", () => {
   const out = renderGithub(ciInputFromRun(report, { root: ROOT }), "SUMMARY");
   const lines = out.split("\n");
 
-  it("annotates a finding at the artifact that declared the eval, naming the trace", () => {
+  it("annotates a finding at the entry that declares the eval, naming the trace", () => {
+    // The eval lives in a manifest, so the annotation does too, not the skill.
     expect(lines).toContain(
-      "::error file=skills/fix-bug/SKILL.md,title=manni tracevals%3A forbidden-tool::" +
+      "::error file=artifact-evals.yaml,line=12,title=manni tracevals%3A forbidden-tool::" +
         "tool Bash was used 1 time(s) but must not be (trace: traces/session.jsonl)",
     );
   });
 
   it("annotates a judged failure with its confidence and reasoning", () => {
     expect(lines).toContain(
-      "::error file=CLAUDE.md,title=manni tracevals%3A tests-first::" +
+      "::error file=CLAUDE.md,line=5,title=manni tracevals%3A tests-first::" +
         "AI judge: fail (confidence 0.80). No test command preceded the commit. (trace: traces/session.jsonl)",
     );
   });
 
   it("annotates an errored eval rather than leaving it to the summary", () => {
     expect(lines).toContain(
-      "::error file=C%3A/Users/me/.claude/skills/lint/SKILL.md,title=manni tracevals%3A lint-clean::" +
+      "::error file=C%3A/Users/me/.claude/skills/lint/SKILL.md,line=9,title=manni tracevals%3A lint-clean::" +
         "command: spawn ENOENT (trace: traces/session.jsonl)",
     );
+  });
+
+  it("annotates the file alone when no line declares the eval", () => {
+    const implicit: RunReport = {
+      ...report,
+      evalResults: [
+        {
+          ...must(results[1], "the judged failure"),
+          implicit: true,
+          location: { file: "C:/work/demo/CLAUDE.md" },
+        },
+      ],
+    };
+    const out = renderGithub(ciInputFromRun(implicit, { root: ROOT }), "SUMMARY");
+    expect(out).toContain("::error file=CLAUDE.md,title=manni tracevals%3A tests-first::");
   });
 
   it("carries trace warnings as warning annotations", () => {
@@ -186,7 +207,12 @@ describe("sarif", () => {
         ruleId: string;
         level: string;
         message: { text: string };
-        locations: { physicalLocation: { artifactLocation: { uri: string; uriBaseId?: string } } }[];
+        locations: {
+          physicalLocation: {
+            artifactLocation: { uri: string; uriBaseId?: string };
+            region?: { startLine: number };
+          };
+        }[];
         properties: Record<string, unknown>;
       }[];
     }[];
@@ -206,13 +232,13 @@ describe("sarif", () => {
     expect(run.tool.driver.rules.find((r) => r.id === "tracevals/ai")?.name).toBe("ai");
   });
 
-  it("locates a finding at the artifact, with the trace in its properties", () => {
+  it("locates a finding at the entry that declares the eval, with the trace in its properties", () => {
     const finding = must(run.results.find((r) => r.ruleId === "tracevals/tool-usage"), "the finding");
     expect(finding.level).toBe("error");
     expect(finding.message.text).toBe("tool Bash was used 1 time(s) but must not be");
-    expect(finding.locations[0]?.physicalLocation.artifactLocation).toEqual({
-      uri: "skills/fix-bug/SKILL.md",
-      uriBaseId: "SRCROOT",
+    expect(finding.locations[0]?.physicalLocation).toEqual({
+      artifactLocation: { uri: "artifact-evals.yaml", uriBaseId: "SRCROOT" },
+      region: { startLine: 12 },
     });
     expect(finding.properties).toEqual({
       eval: "forbidden-tool",
@@ -227,8 +253,9 @@ describe("sarif", () => {
     const errored = must(run.results.find((r) => r.ruleId === "tracevals/command"), "the errored eval");
     expect(errored.level).toBe("error");
     expect(errored.message.text).toBe("command: spawn ENOENT");
-    expect(errored.locations[0]?.physicalLocation.artifactLocation).toEqual({
-      uri: "file:///C:/Users/me/.claude/skills/lint/SKILL.md",
+    expect(errored.locations[0]?.physicalLocation).toEqual({
+      artifactLocation: { uri: "file:///C:/Users/me/.claude/skills/lint/SKILL.md" },
+      region: { startLine: 9 },
     });
   });
 
@@ -238,6 +265,22 @@ describe("sarif", () => {
       "AI judge: fail (confidence 0.80). No test command preceded the commit.",
     );
     expect(run.results).toHaveLength(3);
+  });
+
+  it("locates an eval a hosted manifest declares at its URL, with no region", () => {
+    const hosted: RunReport = {
+      ...report,
+      evalResults: [
+        {
+          ...must(results[1], "the judged failure"),
+          location: { file: "https://example.com/evals.yaml" },
+        },
+      ],
+    };
+    const parsed = JSON.parse(render(hosted, "sarif")) as typeof log;
+    expect(parsed.runs[0]?.results[0]?.locations[0]?.physicalLocation).toEqual({
+      artifactLocation: { uri: "https://example.com/evals.yaml" },
+    });
   });
 
   it("maps notice to note", () => {
@@ -276,7 +319,8 @@ describe("junit", () => {
 
   it("names a testcase by artifact and eval, and fails it with the finding", () => {
     expect(xml).toContain(
-      '<testcase classname="skills/fix-bug/SKILL.md" name="forbidden-tool" time="0.002">\n' +
+      '<testcase classname="skills/fix-bug/SKILL.md" name="forbidden-tool" ' +
+        'file="artifact-evals.yaml" line="12" time="0.002">\n' +
         '      <failure message="forbidden-tool failed" type="tracevals/tool-usage">' +
         "tool Bash was used 1 time(s) but must not be</failure>",
     );
@@ -297,7 +341,9 @@ describe("junit", () => {
 
   it("skips a review queue and passes a pass", () => {
     expect(xml).toContain('<skipped message="needs human review" />');
-    expect(xml).toContain('<testcase classname="CLAUDE.md" name="turn-budget" time="0.001" />');
+    expect(xml).toContain(
+      '<testcase classname="CLAUDE.md" name="turn-budget" file="CLAUDE.md" line="11" time="0.001" />',
+    );
   });
 
   it("escapes XML metacharacters in messages", () => {

@@ -16,6 +16,7 @@ import {
   displayPath,
   errorText,
   judgeFailText,
+  locationPath,
   ruleIdFor,
   TRACE_RULE_ID,
   type CiInput,
@@ -35,10 +36,15 @@ function failureText(result: EvalResult): string {
 }
 
 function testcase(result: EvalResult, root: string): string {
+  // `file` and `line` are the entry that declares the eval, the attributes a
+  // JUnit viewer that links to source reads.
+  const line = result.location.line;
   const open = `    <testcase ${attr("classname", displayPath(result.artifact, root))} ${attr(
     "name",
     result.evalName,
-  )} ${attr("time", seconds(result.durationMs))}`;
+  )} ${attr("file", locationPath(result.location, root))}${
+    line === undefined ? "" : ` ${attr("line", line)}`
+  } ${attr("time", seconds(result.durationMs))}`;
   const type = attr("type", ruleIdFor(result.grader));
   switch (result.outcome) {
     case "pass":

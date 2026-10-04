@@ -51,6 +51,7 @@ export function makePlan(overrides: Partial<EvalPlan> = {}): EvalPlan {
     grader: "ai",
     severity: "error",
     implicit: false,
+    location: { file: "C:/work/demo-project/.claude/skills/demo-skill/SKILL.md" },
     ...overrides,
   };
 }

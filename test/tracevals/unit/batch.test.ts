@@ -246,6 +246,7 @@ describe("runBatch", () => {
       artifactType: "skill" as const,
       grader: outcome === "skipped" ? "ai" : "tool-usage",
       implicit: false,
+      location: { file: "SKILL.md", line: 5 },
       outcome,
       ...(skipReason !== undefined ? { skipReason } : {}),
       durationMs: 1,

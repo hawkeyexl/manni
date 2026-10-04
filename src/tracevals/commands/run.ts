@@ -271,8 +271,7 @@ export async function prepareRun(
     ...(external === null
       ? {}
       : {
-          metadataFor: async (artifact) =>
-            (await external.forArtifact(artifact)).extracted,
+          metadataFor: (artifact) => external.forArtifact(artifact),
         }),
   };
 }

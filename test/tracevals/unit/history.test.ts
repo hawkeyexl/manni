@@ -25,6 +25,7 @@ function result(evalName: string, outcome: EvalResult["outcome"]): EvalResult {
     artifactType: "skill",
     grader: "tool-usage",
     implicit: false,
+    location: { file: "SKILL.md", line: 5 },
     outcome,
     durationMs: 1,
   };

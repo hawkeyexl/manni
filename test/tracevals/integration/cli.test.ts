@@ -85,11 +85,11 @@ describe.skipIf(!built)("built CLI", () => {
       );
     const skill = "test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md";
 
-    it("-f github annotates the failure at the skill that declared it", async () => {
+    it("-f github annotates the failure at the skill line that declares it", async () => {
       const { code, stdout } = await ciRun("github");
       expect(code).toBe(1);
       expect(stdout).toContain(
-        `::error file=${skill},title=manni tracevals%3A forbidden-tool::`,
+        `::error file=${skill},line=12,title=manni tracevals%3A forbidden-tool::`,
       );
       expect(stdout).toContain(
         "(trace: test/tracevals/fixtures/traces/claude-session.jsonl)",
@@ -1163,6 +1163,52 @@ describe.skipIf(!built)("built CLI", () => {
         .map((r) => r.evalName);
       expect(names).toContain("adheres-to-artifact");
       expect(names).not.toContain("used-read");
+    });
+
+    it("points each result at the manifest line that declares its eval", async () => {
+      const { stdout } = await runCli([
+        "run",
+        trace,
+        "--project",
+        project,
+        "-c",
+        `${project}/manni.config.yaml`,
+        "--deterministic-only",
+        "-f",
+        "json",
+      ]);
+      const report = JSON.parse(stdout) as {
+        evalResults: {
+          evalName: string;
+          artifactName: string;
+          location: { file: string; line?: number };
+        }[];
+      };
+      const located = report.evalResults
+        .filter((r) => r.artifactName === "fix-bug")
+        .map((r) => [r.evalName, r.location]);
+      expect(located).toEqual([
+        ["used-read", { file: `${project}/artifact-evals.yaml`, line: 7 }],
+        ["stayed-out-of-the-shell", { file: `${project}/artifact-evals.yaml`, line: 13 }],
+        ["followed-the-skill", { file: `${project}/artifact-evals.yaml`, line: 19 }],
+      ]);
+    });
+
+    it("annotates a failing eval at its manifest line under -f github", async () => {
+      const { stdout } = await runCli([
+        "run",
+        trace,
+        "--project",
+        project,
+        "-c",
+        `${project}/manni.config.yaml`,
+        "--deterministic-only",
+        "-f",
+        "github",
+      ]);
+      expect(stdout).toContain(
+        `::error file=${project}/artifact-evals.yaml,line=13,title=manni tracevals%3A stayed-out-of-the-shell::`,
+      );
     });
 
     it("offers --offline on every verb that reads a manifest", async () => {

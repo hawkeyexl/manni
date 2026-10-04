@@ -53,6 +53,7 @@ import {
   type ExternalMetadataConfig,
   type ExternalMetadataIndex,
   type ExtractedMetadata,
+  type SourceLocation,
 } from "../../meta/index.js";
 import { TracevalsError } from "../types.js";
 import type { ResolvedArtifact } from "../artifacts/types.js";
@@ -94,6 +95,13 @@ export interface ArtifactManifest {
 export interface ArtifactMetadata {
   /** The artifact's front matter, with a manifest-supplied `metadata` merged in. */
   extracted: ExtractedMetadata;
+  /**
+   * The manifest file and line behind a merged JSON Pointer, as the merge
+   * reports it, with the file absolute (or the URL of a hosted manifest).
+   * Absent when no manifest was read for the artifact, and `undefined` for
+   * anything the artifact itself carries.
+   */
+  locate?: (pointer: string) => SourceLocation | undefined;
   /** The manifest that supplied `metadata`, when one did. */
   owner?: ArtifactManifest;
   /**
@@ -240,13 +248,20 @@ function reader(
       { encryptionKey: () => opts.key, marks: await marks() },
     );
 
+    // The merge spells a manifest relative to `base`; a result names it
+    // absolutely, as it names the artifact.
+    const locate = (pointer: string): SourceLocation | undefined => {
+      const found = merged.locate(pointer);
+      if (found === undefined || classifyRef(found.file).kind === "url") return found;
+      return { ...found, file: resolve(base, found.file) };
+    };
     // The manifest supplied the block exactly when `locate` answers for it; an
     // artifact carrying its own `metadata:` keeps it (the collision is meta's
     // finding, not a tiebreak), and `locate` then answers `undefined`.
     const at = merged.locate(`/${METADATA_KEY}`);
     const [declaration] = first.externalMetadata;
     if (at === undefined || declaration === undefined) {
-      return { extracted: merged.extracted };
+      return { extracted: merged.extracted, locate };
     }
 
     const url = classifyRef(at.file).kind === "url";
@@ -257,7 +272,7 @@ function reader(
       join: externalMetadataJoin(declaration),
       url,
     };
-    const out: ArtifactMetadata = { extracted: merged.extracted, owner };
+    const out: ArtifactMetadata = { extracted: merged.extracted, locate, owner };
     if (owner.join === PATH_JOIN) {
       out.entry = toPosix(relative(configDir, resolve(base, label)));
     } else {

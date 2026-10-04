@@ -43,6 +43,7 @@ const report: RunReport = {
       artifactType: "skill",
       grader: "tool-usage",
       implicit: false,
+      location: { file: "skills/fix-bug/SKILL.md", line: 12 },
       outcome: "fail",
       findings: [
         {
@@ -61,6 +62,7 @@ const report: RunReport = {
       artifactType: "project-rules",
       grader: "llm",
       implicit: true,
+      location: { file: "CLAUDE.md" },
       outcome: "pass",
       durationMs: 5,
       turns: 3,
@@ -102,6 +104,16 @@ describe("reporters", () => {
     expect(out).toContain("ghost");
     expect(out).toContain("unparseable");
     expect(out).toContain("(implicit)");
+  });
+
+  it("pretty and markdown show where each eval is declared", () => {
+    const pretty = render(report, "pretty");
+    expect(pretty).toContain("fix-bug › forbidden-tool  skills/fix-bug/SKILL.md:12");
+    // No entry declares the implicit eval, so its location is the file alone.
+    expect(pretty).toContain("CLAUDE.md › adheres-to-artifact (implicit)  CLAUDE.md");
+    const markdown = render(report, "markdown");
+    expect(markdown).toContain("| fail | fix-bug | forbidden-tool `skills/fix-bug/SKILL.md:12` |");
+    expect(markdown).toContain("| adheres-to-artifact (implicit) `CLAUDE.md` |");
   });
 
   it("markdown output includes eval and coverage tables", () => {

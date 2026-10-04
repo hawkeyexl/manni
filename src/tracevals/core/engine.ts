@@ -9,9 +9,16 @@ import { resolveArtifacts } from "../artifacts/resolve.js";
 import { findManifest, type FoundManifest } from "../capture/manifest.js";
 import { TracevalsError } from "../types.js";
 import type { CoverageEntry, ResolvedArtifact } from "../artifacts/types.js";
-import type { ExtractedMetadata } from "../../meta/index.js";
+import { classifyRef } from "../../meta/index.js";
+import { normalizeRoot, toPosix, underRoot } from "../../shared/sarif-location.js";
 import type { ManifestReport } from "../capture/types.js";
-import { planEvals, type ArtifactMetadataLoader, type EvalPlan } from "./plan.js";
+import {
+  planEvals,
+  type ArtifactMetadataLoader,
+  type EvalLocation,
+  type EvalPlan,
+  type SuppliedMetadata,
+} from "./plan.js";
 import { MAX_ARTIFACT_CHARS, artifactWasTruncated } from "../judge/prompt.js";
 import { graderFor, listGraderKinds } from "../graders/registry.js";
 import { windowFor } from "../graders/util.js";
@@ -100,7 +107,7 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
   // Read before planning, because planning is synchronous and reading a
   // manifest is not.
   const loader = options.metadataFor;
-  const metadata = new Map<ResolvedArtifact, ExtractedMetadata | undefined>();
+  const metadata = new Map<ResolvedArtifact, SuppliedMetadata | undefined>();
   if (loader !== undefined) {
     for (const artifact of resolved.artifacts) {
       metadata.set(artifact, await loader(artifact));
@@ -114,6 +121,7 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
   const results: EvalResult[] = [];
   const aiPlans: EvalPlan[] = [];
 
+  const root = normalizeRoot(process.cwd());
   for (const plan of plans) {
     const base = {
       evalName: plan.evalName,
@@ -122,6 +130,7 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
       artifactType: plan.artifact.type,
       grader: plan.grader,
       implicit: plan.implicit,
+      location: spelled(plan.location, root),
     };
 
     if (plan.error !== undefined) {
@@ -264,6 +273,7 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
           artifactType: plan.artifact.type,
           grader: plan.grader,
           implicit: plan.implicit,
+          location: spelled(plan.location, root),
           outcome: "skipped",
           skipReason,
           durationMs: 0,
@@ -298,6 +308,7 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
           artifactType: plan?.artifact.type ?? "skill",
           grader: j.grader,
           implicit: j.implicit,
+          location: spelled(plan?.location ?? { file: j.artifact }, root),
           outcome: j.outcome,
           ...(j.consensus !== undefined ? { consensus: j.consensus } : {}),
           ...(j.skipReason !== undefined ? { skipReason: j.skipReason } : {}),
@@ -392,6 +403,17 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
  * a colliding key. A separator that cannot appear in either half keeps that
  * true if artifact naming ever loosens.
  */
+/**
+ * A declaring location as a result reports it: relative and forward-slashed
+ * under the working directory, absolute outside it, and a hosted manifest's
+ * URL as it is.
+ */
+function spelled(location: EvalLocation, root: string): EvalLocation {
+  if (classifyRef(location.file).kind === "url") return location;
+  const posix = toPosix(location.file);
+  return { ...location, file: underRoot(posix, root) ?? posix };
+}
+
 function weightKey(artifact: string, evalName: string): string {
   return `${artifact}\u0000${evalName}`;
 }

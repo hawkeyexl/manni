@@ -40,6 +40,7 @@ function judged(runs: JudgeRun[], overrides: Partial<EvalResult> = {}): EvalResu
     artifactType: "skill",
     grader: "ai",
     implicit: false,
+    location: { file: "SKILL.md", line: 5 },
     outcome: "pass",
     consensus: {
       runs,
@@ -61,6 +62,7 @@ const deterministic = (overrides: Partial<EvalResult> = {}): EvalResult => ({
   artifactType: "skill",
   grader: "tool-usage",
   implicit: false,
+  location: { file: "SKILL.md", line: 5 },
   outcome: "fail",
   durationMs: 0,
   ...overrides,

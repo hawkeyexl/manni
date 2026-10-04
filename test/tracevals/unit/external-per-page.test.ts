@@ -76,7 +76,7 @@ describe("a keyless {page} manifest", () => {
     const merged = new Map<string, Awaited<ReturnType<typeof external.forArtifact>>>();
     for (const a of skills) merged.set(a.path, await external.forArtifact(a));
 
-    const plans = planEvals(skills, (a) => merged.get(a.path)?.extracted);
+    const plans = planEvals(skills, (a) => merged.get(a.path));
     expect(plans.map((p) => p.evalName)).toEqual([
       "used-read",
       "stayed-out-of-the-shell",
@@ -88,8 +88,8 @@ describe("a keyless {page} manifest", () => {
     const context = await prepareRun({ configDir: fixture });
     const loader = context.metadataFor;
     if (loader === undefined) throw new Error("the fixture declares a manifest");
-    const extracted = await loader(await artifact("write-docs"));
-    const metadata = extracted?.data.metadata as { evals: { id: string }[] };
+    const supplied = await loader(await artifact("write-docs"));
+    const metadata = supplied?.extracted.data.metadata as { evals: { id: string }[] };
     expect(metadata.evals.map((e) => e.id)).toEqual(["read-the-page"]);
   });
 });

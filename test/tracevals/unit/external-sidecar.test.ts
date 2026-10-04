@@ -42,7 +42,7 @@ async function evalIds(name: string): Promise<string[]> {
   if (external === null) throw new Error(`${name} declares a manifest`);
   const artifact = await fixBug(dir);
   const merged = await external.forArtifact(artifact);
-  return planEvals([artifact], () => merged.extracted).map((p) => p.evalName);
+  return planEvals([artifact], () => merged).map((p) => p.evalName);
 }
 
 describe("sidecar shapes", () => {

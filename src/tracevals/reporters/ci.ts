@@ -8,6 +8,7 @@
  * aggregate rates, which carry no message to annotate with.
  */
 import type { BatchReport, EvalResult, RunReport } from "../types.js";
+import { classifyRef } from "../../meta/index.js";
 import { normalizeRoot, toPosix, underRoot } from "../../shared/sarif-location.js";
 
 export interface CiOptions {
@@ -63,6 +64,28 @@ export function ciInputFromBatch(
 export function displayPath(file: string, root: string): string {
   const posix = toPosix(file);
   return underRoot(posix, root) ?? posix;
+}
+
+/** A forward-slashed drive or POSIX path, as opposed to a relative one. */
+const ABSOLUTE = /^(?:[A-Za-z]:)?\//;
+
+/**
+ * The file that declares an eval, as a reader in the checkout names it. A
+ * result spells it relative to the working directory, so it is anchored there
+ * before it is made relative to the root. A hosted manifest keeps its URL.
+ */
+export function locationPath(location: EvalResult["location"], root: string): string {
+  if (classifyRef(location.file).kind === "url") return location.file;
+  const posix = toPosix(location.file);
+  const abs = ABSOLUTE.test(posix) ? posix : `${normalizeRoot(process.cwd())}${posix}`;
+  return underRoot(abs, root) ?? abs;
+}
+
+/** `<file>:<line>`, or the file alone when no line declares the eval. */
+export function locationLabel(location: EvalResult["location"]): string {
+  return location.line === undefined
+    ? location.file
+    : `${location.file}:${String(location.line)}`;
 }
 
 /** `tracevals/<grader>`: the rule a result is filed under. */

@@ -86,7 +86,7 @@ describe("a relocated artifact's evals", () => {
 
     const plans = planEvals(
       [artifact],
-      () => merged.extracted,
+      () => merged,
     );
     expect(plans.map((p) => p.evalName)).toEqual([
       "used-read",
@@ -138,7 +138,7 @@ describe("self-preference, criterion axis, on a relocated artifact", () => {
     const merged = await external.forArtifact(artifact);
     const plans = planEvals(
       [artifact],
-      () => merged.extracted,
+      () => merged,
     );
     const ai = plans.find((p) => p.evalName === "followed-the-skill");
     if (ai === undefined) throw new Error("the manifest declares an ai eval");

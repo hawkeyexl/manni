@@ -55,7 +55,13 @@ export {
   type EvalProvenance,
   type NewEvalEntry,
 } from "./evals/write.js";
-export { IMPLICIT_EVAL_NAME, planEvals, type EvalPlan } from "./core/plan.js";
+export {
+  IMPLICIT_EVAL_NAME,
+  planEvals,
+  type EvalLocation,
+  type EvalPlan,
+  type SuppliedMetadata,
+} from "./core/plan.js";
 export * from "./graders/types.js";
 export {
   BUILTIN_GRADER_KINDS,

@@ -1,6 +1,7 @@
 /** Human-readable terminal report. */
 import { palette, type Colors } from "../../shared/color.js";
 import type { EvalResult, RunReport } from "../types.js";
+import { locationLabel } from "./ci.js";
 import type { CoverageEntry } from "../artifacts/types.js";
 import {
   availabilityLines,
@@ -66,7 +67,9 @@ export function renderPretty(report: RunReport, opts: ColorOptions = {}): string
     const paint = paintFor(pc, result.outcome);
     const label = paint(OUTCOME_LABEL[result.outcome].padEnd(6));
     const name = `${result.artifactName} › ${result.evalName}`;
-    lines.push(`  ${label} ${name}${result.implicit ? pc.dim(" (implicit)") : ""}`);
+    lines.push(
+      `  ${label} ${name}${result.implicit ? pc.dim(" (implicit)") : ""}  ${pc.dim(locationLabel(result.location))}`,
+    );
     for (const finding of result.findings ?? []) {
       if (result.outcome !== "pass" || finding.severity !== "error") {
         lines.push(`         ${pc.dim(`[${finding.severity}]`)} ${finding.message}`);
