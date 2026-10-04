@@ -55,13 +55,14 @@ jobs:
           restore-keys: docs-judge-${{ github.event.pull_request.number }}-
       # --ai-only: a model that cannot start is exit 2, not a quiet
       # deterministic pass. ci.yml and docs.yml run the deterministic evals.
-      # --max-turns: about 80 evals at three runs. Past it, the rest are
-      # skipped and reported, and the next push continues from the cache.
+      # --max-turns: about 25 evals at three runs, under the timeout at the
+      # slowest rate measured. Past it, the rest are skipped and reported,
+      # and the next push continues from the cache.
       - name: Judge the changed pages
         run: >-
           node dist/cli.js docevals run --ai-only
           --since origin/${{ github.base_ref }}
-          --max-turns 240 --format github
+          --max-turns 75 --format github
       # Saved on success, failure and cancellation alike, so a run replaced
       # by a newer push keeps the verdicts it reached.
       - name: Save the verdicts
