@@ -10,8 +10,8 @@ docs/src/content/docs/graph/govern/coverage.mdx:
       lines: 7
       integrity: sha256-28d9c58a20c9add357126b1f414d2ffa12defb0fc2544cb23e3cb7bdd782c63b
     - generated-by: Claude Opus 5
-      lines: 8-34
-      integrity: sha256-6d466429773165779c40f1c627968669ceca028852a77453aa52aaf7b2ed75cf
+      lines: 8-33
+      integrity: sha256-1fff1400f9eda41f4d89ba283f89c67c0bbc420039f45b68bae5280500610f1a
     - generated-by: Claude Opus 5.5
       lines: 35-37
       integrity: sha256-95cfc418a6140eb015abaa3fb930beabd1bba1eb2973ba8cd2b955f42a343961

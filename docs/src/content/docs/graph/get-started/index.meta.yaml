@@ -10,8 +10,8 @@ docs/src/content/docs/graph/get-started/index.mdx:
       lines: 8-24
       integrity: sha256-13b33f9463f8490eb3321a1f7a6dec4a5655e95c20aa43b2845fea70c9fa2a4e
     - generated-by: Claude Opus 5.5
-      lines: 25-26
-      integrity: sha256-e5e4f3955431cf1f8b8a57481f5d86573376589340591ab9917fe70d6387da42
+      lines: 25
+      integrity: sha256-cea99898e173290b8fa991b2feb59dfd2f6f0c6d15a56f3bd668eb9124e20147
     - generated-by: Claude Opus 5
       lines: 27-39
       integrity: sha256-c1d289bb48f35edbe12bdef1c798535a835e6398103635bd461fbb90416db439
@@ -19,8 +19,8 @@ docs/src/content/docs/graph/get-started/index.mdx:
       lines: 40
       integrity: sha256-5f884cc3e63eb02298b0262a3965814cfca5c4278bebd3ef6b426bb4da94cfd2
     - generated-by: Claude Opus 5
-      lines: 41-47
-      integrity: sha256-5232be8881275d3f20bd5331a07a94b5644a7833fdfce0c17e635167499845df
+      lines: 42-47
+      integrity: sha256-cc97d969319b5454a1efce90df7e1bf196b4e5c41cf1488cabde02d80869f8e4
     - generated-by: Claude Opus 5.5
       lines: 48-49
       integrity: sha256-1544d491c6fc4a547de6594ffee4dbc6c1d866631aedeac3cfad9dc90b404647
@@ -100,8 +100,11 @@ docs/src/content/docs/graph/get-started/index.mdx:
       lines: 130-143
       integrity: sha256-ae40698b223f3e84306a528eff3550fca65425c91da998f74cb4dec288474015
     - generated-by: Claude Opus 5.5
-      lines: 144-164
-      integrity: sha256-9b5e925837d8362422aa898e8ff122d6f9f2f915d17d9014d3cafe1de5d985e9
+      lines: 144-150
+      integrity: sha256-a8032a5a0535fb97f8f98814782fb8bbea065981e5df283316fd8dfceb82a191
+    - generated-by: Claude Opus 5.5
+      lines: 156-164
+      integrity: sha256-b0cf771330a59a2ae4eb080834a5af3e3e7634be6ca890b1ac0f9f39ef394da5
   owner:
     - "@hawkeyexl"
   created: 2026-09-16
