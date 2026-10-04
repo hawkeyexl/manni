@@ -35,17 +35,9 @@
  */
 import { resolve } from "node:path";
 import { ownsKey } from "../../shared/collections.js";
-import {
-  configMarks,
-  marksValidator,
-  mergeWithMarks,
-  pageMarks,
-  schemaTrustRoot,
-  type PageMarks,
-} from "../../meta/internal.js";
+import { familyMarks, mergeWithMarks, type PageMarks } from "../../meta/internal.js";
 import {
   classifyRef,
-  DocmetaError,
   loadExternalMetadata,
   memberOf,
   type CollectionConfig,
@@ -207,25 +199,9 @@ export async function loadExternalReader(
  * either way. Built once, on the first page that has a keyless manifest.
  */
 function marksFor(config: DocevalsConfig, base: string): () => Promise<PageMarks> {
-  let built: Promise<PageMarks> | undefined;
-  const defaults = (): PageMarks =>
-    pageMarks({
-      validator: marksValidator({ config: null, cwd: base, configDir: config.configDir }),
-      config: null,
-      cwd: base,
-      trustRoot: schemaTrustRoot(base, config.configDir),
-    });
-  return () =>
-    (built ??= (async () => {
-      try {
-        return (await configMarks(config.configPath, base)) ?? defaults();
-      } catch (err) {
-        // A family file whose other sections meta cannot read as its own is
-        // still docevals' file; the default set decides the marks then.
-        if (err instanceof DocmetaError) return defaults();
-        throw err;
-      }
-    })());
+  // A family file whose other sections meta cannot read as its own is still
+  // docevals' file; the default set decides the marks then.
+  return familyMarks({ configPath: config.configPath, configDir: config.configDir, cwd: base });
 }
 
 /**

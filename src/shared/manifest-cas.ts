@@ -37,6 +37,7 @@
  * of a whole command to the microseconds around one `rename`, which is what a
  * lock file would have to justify itself against.
  */
+import { readFile } from "node:fs/promises";
 import { posix } from "node:path";
 
 /** One entry's one key: what an edit rewrites, and what a conflict is about. */
@@ -245,6 +246,22 @@ export async function settle<Op extends ManifestOp>(
 /** A read that failed because nothing is there. */
 export function isMissing(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
+}
+
+/**
+ * A manifest's bytes, read just before a writer splices into them. A per-page
+ * manifest (proposal 0058) that is not on disk yet is a page with nothing
+ * recorded: it reads as empty text, and the write creates it. A missing
+ * concrete manifest, or any other failure, is thrown for the caller to report
+ * in its own error class.
+ */
+export async function readManifestOrEmpty(absPath: string, perPage: boolean): Promise<string> {
+  try {
+    return await readFile(absPath, "utf8");
+  } catch (e) {
+    if (perPage && isMissing(e)) return "";
+    throw e;
+  }
 }
 
 /** What a caller may substitute when it writes the manifests it held. */

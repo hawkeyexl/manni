@@ -28,7 +28,6 @@
  * the vocabulary this tool implements marks its three keys, so the answer is
  * in the schema docevals already bundles.
  */
-import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   LOCATION_KEYWORD,
@@ -46,7 +45,7 @@ import {
   type RelocateResult,
   type RelocationContext,
 } from "../../meta/internal.js";
-import { isMissing } from "../../shared/manifest-cas.js";
+import { readManifestOrEmpty } from "../../shared/manifest-cas.js";
 import type { Confirm } from "../../shared/prompt.js";
 import { errorMessage } from "../../shared/errors.js";
 import { DocevalsError } from "../types.js";
@@ -278,9 +277,8 @@ export class EvalWriter {
    */
   private async text(absPath: string, perPage: boolean): Promise<string> {
     try {
-      return await readFile(absPath, "utf8");
+      return await readManifestOrEmpty(absPath, perPage);
     } catch (e) {
-      if (perPage && isMissing(e)) return "";
       throw new DocevalsError(
         `${resolve(absPath)} could not be read: ${errorMessage(e)}`,
       );

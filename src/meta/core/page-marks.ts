@@ -160,3 +160,47 @@ export async function configMarks(configPath: string, cwd: string): Promise<Page
     trustRoot: schemaTrustRoot(cwd, loaded.dir),
   });
 }
+
+/**
+ * Meta's section of a family file, rebased the way `resolveRunConfig` rebases
+ * it, or `null` when the file has none. A sibling tool that writes a key meta
+ * homes (`keyHome`) hands this to its `RelocationContext`, so the marks a
+ * keyless manifest owns by are the ones `configMarks` reads.
+ */
+export async function metaSection(configPath: string, cwd: string): Promise<DocmetaConfig | null> {
+  const loaded = await loadConfig(configPath, cwd);
+  if (loaded === null) return null;
+  return rebaseConfigSchemaRefs(loaded.config, loaded.dir, cwd);
+}
+
+/**
+ * `configMarks` for a sibling tool that reads a family file every run (proposal
+ * 0068), built once on first use. The page marks come from meta's section of
+ * that file, or from meta's default set when the file has none for meta, or
+ * when meta cannot read the file as its own. Without a file, the default set
+ * decides.
+ */
+export function familyMarks(opts: {
+  configPath: string | undefined;
+  configDir: string;
+  cwd: string;
+}): () => Promise<PageMarks> {
+  let built: Promise<PageMarks> | undefined;
+  const defaults = (): PageMarks =>
+    pageMarks({
+      validator: marksValidator({ config: null, cwd: opts.cwd, configDir: opts.configDir }),
+      config: null,
+      cwd: opts.cwd,
+      trustRoot: schemaTrustRoot(opts.cwd, opts.configDir),
+    });
+  return () =>
+    (built ??= (async () => {
+      if (opts.configPath === undefined) return defaults();
+      try {
+        return (await configMarks(opts.configPath, opts.cwd)) ?? defaults();
+      } catch (err) {
+        if (err instanceof DocmetaError) return defaults();
+        throw err;
+      }
+    })());
+}
