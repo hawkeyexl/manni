@@ -54,6 +54,8 @@ export interface RunSharedOptions {
   maxTurns?: number;
   format?: ReportFormat;
   output?: string;
+  /** Colour the pretty report. Off unless the caller turns it on. */
+  color?: boolean;
   /** Append this run to history and compare against the previous run. */
   history?: boolean;
   /** Overrides config.failOnReview; undefined defers to the config. */
@@ -317,7 +319,8 @@ export async function runRun(
   const { report, comparison } = await runOne(options, context);
 
   const format = options.format ?? "pretty";
-  let rendered = render(report, format);
+  // Colour reaches the pretty report only; every CI format stays plain text.
+  let rendered = render(report, format, { color: options.color === true });
   // Prose only. Appended to JSON, SARIF or JUnit it would leave a document no
   // parser accepts; `github` ends in the markdown summary, so it reads there.
   if (

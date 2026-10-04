@@ -179,7 +179,9 @@ export async function runBatch(
     durationMs: Date.now() - start,
   });
 
-  const rendered = renderBatch(report, options.format ?? "pretty", reports);
+  const rendered = renderBatch(report, options.format ?? "pretty", reports, {
+    color: options.color === true,
+  });
   if (options.output) {
     await writeFile(options.output, rendered, "utf-8");
   }

@@ -10,7 +10,7 @@ import {
 import { ciInputFromBatch, ciInputFromRun, type CiInput } from "./ci.js";
 import { renderGithub } from "./github.js";
 import { renderJunit } from "./junit.js";
-import { renderPretty } from "./pretty.js";
+import { renderPretty, type ColorOptions } from "./pretty.js";
 import { renderMarkdown } from "./markdown.js";
 import { renderSarif } from "./sarif.js";
 import {
@@ -29,7 +29,13 @@ export {
   type SummaryFormat,
 } from "./format.js";
 
-export function render(report: RunReport, format: ReportFormat): string {
+export type { ColorOptions } from "./pretty.js";
+
+export function render(
+  report: RunReport,
+  format: ReportFormat,
+  opts: ColorOptions = {},
+): string {
   // The same entry guard the sibling entry points carry, and for docevals'
   // reason: these are exported from `src/index.ts`, so a library caller
   // arrives with no CLI parser in front of them. A `default:` branch would
@@ -41,7 +47,7 @@ export function render(report: RunReport, format: ReportFormat): string {
     case "markdown":
       return renderMarkdown(report);
     case "pretty":
-      return renderPretty(report);
+      return renderPretty(report, opts);
     case "github":
       return renderGithub(ciInputFromRun(report), renderMarkdown(report));
     case "sarif":
@@ -68,6 +74,7 @@ export function renderBatch(
   report: BatchReportWithBudget,
   format: ReportFormat,
   runs?: readonly RunReport[],
+  opts: ColorOptions = {},
 ): string {
   parseFormat(format, REPORT_FORMATS, "format");
   const ci = (): CiInput => {
@@ -84,7 +91,7 @@ export function renderBatch(
     case "markdown":
       return renderBatchMarkdown(report);
     case "pretty":
-      return renderBatchPretty(report);
+      return renderBatchPretty(report, opts);
     case "github":
       return renderGithub(ci(), renderBatchMarkdown(report));
     case "sarif":
@@ -104,6 +111,7 @@ export function renderBatch(
 export function renderCalibration(
   report: CalibrationReport,
   format: ReportFormat,
+  opts: ColorOptions = {},
 ): string {
   const narrowed = parseFormat(format, CALIBRATE_FORMATS, "format");
   switch (narrowed) {
@@ -112,6 +120,6 @@ export function renderCalibration(
     case "markdown":
       return renderCalibrationMarkdown(report);
     case "pretty":
-      return renderCalibrationPretty(report);
+      return renderCalibrationPretty(report, opts);
   }
 }

@@ -1,5 +1,5 @@
 /** Human-readable terminal report. */
-import pc from "picocolors";
+import { palette, type Colors } from "../../shared/color.js";
 import type { EvalResult, RunReport } from "../types.js";
 import type { CoverageEntry } from "../artifacts/types.js";
 import {
@@ -18,7 +18,10 @@ const OUTCOME_LABEL: Record<EvalResult["outcome"], string> = {
   skipped: "SKIP",
 };
 
-function colorFor(outcome: EvalResult["outcome"]): (s: string) => string {
+function paintFor(
+  pc: Colors,
+  outcome: EvalResult["outcome"],
+): (s: string) => string {
   switch (outcome) {
     case "pass":
       return pc.green;
@@ -36,13 +39,19 @@ function colorFor(outcome: EvalResult["outcome"]): (s: string) => string {
  * `✓` resolved, `·` offered and never used (nothing was looked for, so it is
  * not an unresolved reference), `○` referenced but not found.
  */
-function coverageMark(entry: CoverageEntry): string {
+function coverageMark(pc: Colors, entry: CoverageEntry): string {
   if (entry.resolved) return pc.green("✓");
   if (entry.availability === "offered-not-used") return pc.dim("·");
   return pc.yellow("○");
 }
 
-export function renderPretty(report: RunReport): string {
+/** Colour is off unless the caller turns it on (the CLI decides, per clig.dev). */
+export interface ColorOptions {
+  color?: boolean;
+}
+
+export function renderPretty(report: RunReport, opts: ColorOptions = {}): string {
+  const pc = palette(opts.color === true);
   const lines: string[] = [];
   const t = report.trace;
   lines.push(pc.bold(`manni tracevals — ${t.file}`));
@@ -54,7 +63,7 @@ export function renderPretty(report: RunReport): string {
   lines.push("");
 
   for (const result of report.evalResults) {
-    const paint = colorFor(result.outcome);
+    const paint = paintFor(pc, result.outcome);
     const label = paint(OUTCOME_LABEL[result.outcome].padEnd(6));
     const name = `${result.artifactName} › ${result.evalName}`;
     lines.push(`  ${label} ${name}${result.implicit ? pc.dim(" (implicit)") : ""}`);
@@ -87,7 +96,7 @@ export function renderPretty(report: RunReport): string {
     // markers are independent — a row can be both offered-but-unused and stale.
     lines.push(
       [
-        `  ${coverageMark(entry)} ${entry.kind}: ${entry.ref}`,
+        `  ${coverageMark(pc, entry)} ${entry.kind}: ${entry.ref}`,
         tag === undefined ? "" : pc.yellow(`[${tag}]`),
         location ? pc.dim(location) : "",
         stale ? pc.yellow(`⚠ ${stale}`) : "",

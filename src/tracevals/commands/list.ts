@@ -1,10 +1,10 @@
 /** `manni tracevals list` — enumerate discoverable traces. */
-import pc from "picocolors";
 import {
   discoverTraces,
   type DiscoverOptions,
   type TraceListing,
 } from "../trace/discover.js";
+import { palette } from "../../shared/color.js";
 import { keepNewerThan, parseNewerThan } from "./batch.js";
 
 export interface ListOptions extends DiscoverOptions {
@@ -27,9 +27,9 @@ export function renderList(
   run: ListRun,
   opts: { color?: boolean } = {},
 ): string {
-  const color = opts.color ?? true;
-  const dim = (s: string) => (color ? pc.dim(s) : s);
-  const bold = (s: string) => (color ? pc.bold(s) : s);
+  const pc = palette(opts.color === true);
+  const dim = pc.dim;
+  const bold = pc.bold;
 
   if (run.traces.length === 0) {
     return "No traces found. Pass --all-projects to scan every project, or --project <dir> to scope to one.";

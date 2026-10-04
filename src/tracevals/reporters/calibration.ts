@@ -7,7 +7,8 @@
  * which eval is a number nobody can act on.
  */
 import { isAbsolute, relative } from "node:path";
-import pc from "picocolors";
+import { palette } from "../../shared/color.js";
+import type { ColorOptions } from "./pretty.js";
 import type {
   CalibrationCounts,
   CalibrationReport,
@@ -83,7 +84,11 @@ const KIND_LABEL: Record<Disagreement["kind"], string> = {
   skipped: "SKIPPED",
 };
 
-export function renderCalibrationPretty(report: CalibrationReport): string {
+export function renderCalibrationPretty(
+  report: CalibrationReport,
+  opts: ColorOptions = {},
+): string {
+  const pc = palette(opts.color === true);
   const lines: string[] = [];
   const c = report.counts;
   lines.push(

@@ -3,7 +3,7 @@
  * broken bin entry, a bad bundle, or a module that only resolves under
  * vitest. Requires `npm run build` first; CI builds before testing.
  */
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile, rm } from "node:fs/promises";
@@ -1190,5 +1190,56 @@ describe.skipIf(!built)("built CLI", () => {
     expect(report.trace.source).toBe("claude-code");
     // The stream fixture invoked no skills; project rules still evaluate.
     expect([0, 1]).toContain(code);
+  });
+});
+
+/**
+ * `manni tracevals list | head -1`: the reader goes away after one line, and
+ * the bin must exit on its own terms rather than crash on EPIPE. The reader is
+ * a Node parent that destroys its end of the pipe at once, so the first write
+ * fails on every platform rather than whenever a pipe buffer fills.
+ */
+describe.skipIf(!built)("stdout closed early", () => {
+  function runClosed(args: string[]): Promise<{
+    status: number | null;
+    signal: NodeJS.Signals | null;
+    stderr: string;
+  }> {
+    return new Promise((done, reject) => {
+      const child = spawn(process.execPath, [cli, "tracevals", ...args], {
+        cwd: root,
+        stdio: ["ignore", "pipe", "pipe"],
+        env: {
+          ...process.env,
+          CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude",
+        },
+      });
+      child.stdout.destroy();
+      let stderr = "";
+      child.stderr.setEncoding("utf8");
+      child.stderr.on("data", (chunk: string) => {
+        stderr += chunk;
+      });
+      child.on("error", reject);
+      child.on("close", (status, signal) => {
+        done({ status, signal, stderr });
+      });
+    });
+  }
+
+  it("list exits quietly with its own exit code", async () => {
+    const r = await runClosed(["list", "--all-projects"]);
+    expect(r.signal).toBeNull();
+    expect(r.status).toBe(0);
+    expect(r.stderr).not.toMatch(/EPIPE/);
+    expect(r.stderr).not.toMatch(/Unhandled 'error' event/);
+  });
+
+  it("accepts --no-color on the domain", async () => {
+    const { code, stdout } = await runCli(["list", "--all-projects", "--no-color"], {
+      CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude",
+    });
+    expect(code).toBe(0);
+    expect(stdout).not.toContain("\u001b[");
   });
 });

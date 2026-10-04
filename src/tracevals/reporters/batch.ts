@@ -6,7 +6,8 @@
  * eval list. The outlier traces are named inline: a rate with no way back to
  * the session that produced it is a number nobody can act on.
  */
-import pc from "picocolors";
+import { palette } from "../../shared/color.js";
+import type { ColorOptions } from "./pretty.js";
 import type { BatchReportWithBudget } from "../aggregate.js";
 import type { AggregateRow } from "../types.js";
 
@@ -78,7 +79,8 @@ function outliers(row: AggregateRow): string {
   return parts.join("; ");
 }
 
-export function renderBatchPretty(report: Report): string {
+export function renderBatchPretty(report: Report, opts: ColorOptions = {}): string {
+  const pc = palette(opts.color === true);
   const lines: string[] = [];
   const s = report.summary;
   lines.push(pc.bold(`manni tracevals — ${s.traces} trace(s)`));

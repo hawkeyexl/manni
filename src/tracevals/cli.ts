@@ -9,6 +9,7 @@ import { collect, configOption } from "../shared/cli-options.js";
 import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import { fail } from "../shared/run.js";
 import { terminalConfirm } from "../shared/prompt.js";
+import { colorFor } from "../shared/color.js";
 import { notice } from "../shared/warn.js";
 import { renderList, runList } from "./commands/list.js";
 import { runFill } from "./commands/fill.js";
@@ -35,6 +36,7 @@ program
     "Deterministic and LLM-as-judge adherence evals for AI agent session traces.",
   )
   .version(version)
+  .option("--no-color", "disable colored output")
   // A pointer, not the whole help screen: the message that precedes it
   // already names the offending flag.
   .showHelpAfterError("(add --help for usage)")
@@ -220,9 +222,10 @@ function sharedRunOptions(opts: RunFlags) {
   };
 }
 
-async function executeRun(traces: string[], opts: RunFlags) {
+async function executeRun(traces: string[], opts: RunFlags, color: boolean) {
   const shared = {
     ...sharedRunOptions(opts),
+    color,
     // Run-only, both of them: `--history` is a point in one session's
     // timeline, and a manifest belongs to exactly one session (ADR 01024).
     history: opts.history,
@@ -371,9 +374,9 @@ addRunFlags(
     "--manifest <file>",
     "session manifest to compare artifacts against; without it one is looked for beside the trace and under the project",
   )
-  .action(async (traces: string[], opts: RunFlags) => {
+  .action(async (traces: string[], opts: RunFlags, command: Command) => {
     try {
-      await executeRun(traces, opts);
+      await executeRun(traces, opts, colorFor(command, process.stdout.isTTY));
     } catch (e) {
       fail(e);
     }
@@ -419,9 +422,13 @@ addRunFlags(
       maxFalseFail?: number;
       maxReview?: number;
     },
+    command: Command,
   ) => {
     try {
-      const shared = sharedRunOptions(opts);
+      const shared = {
+        ...sharedRunOptions(opts),
+        color: colorFor(command, process.stdout.isTTY),
+      };
       // A threshold that never trips looks exactly like a threshold that held.
       whole("--max-false-pass", opts.maxFalsePass, 0);
       whole("--max-false-fail", opts.maxFalseFail, 0);
@@ -517,7 +524,7 @@ addConfigFlags(
     offline?: boolean;
     require?: string[];
     format?: SummaryFormat;
-  }) => {
+  }, command: Command) => {
     try {
       numeric("--confidence", opts.confidence, 0, 1);
       whole("--max-evals", opts.maxEvals, 1);
@@ -547,6 +554,7 @@ addConfigFlags(
           const manifests = result.manifests.map((m) => m.file).join(", ");
           notice(`moved ${String(result.summary.moved)} value(s) into ${manifests}.`);
         },
+        color: colorFor(command, process.stdout.isTTY),
       });
       console.log(
         opts.format === "json" ? JSON.stringify(report, null, 2) : rendered,
@@ -635,7 +643,7 @@ program
     newerThan?: string;
     limit?: number;
     format?: SummaryFormat;
-  }) => {
+  }, command: Command) => {
     try {
       // The same footgun as `run --limit`: `slice(0, -1)` lists everything but
       // the oldest, and reads as a shorter store rather than as a bad flag.
@@ -647,7 +655,9 @@ program
         limit: opts.limit,
       });
       console.log(
-        opts.format === "json" ? JSON.stringify(run, null, 2) : renderList(run),
+        opts.format === "json"
+          ? JSON.stringify(run, null, 2)
+          : renderList(run, { color: colorFor(command, process.stdout.isTTY) }),
       );
     } catch (e) {
       fail(e);

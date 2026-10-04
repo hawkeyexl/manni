@@ -9,7 +9,7 @@
  */
 import { writeFile } from "node:fs/promises";
 import { relative, resolve } from "node:path";
-import pc from "picocolors";
+import { palette } from "../../shared/color.js";
 import { extractFrontmatter } from "../../meta/index.js";
 import {
   externalWriteWarnings,
@@ -61,6 +61,8 @@ import { buildVocabulary } from "../fill/vocabulary.js";
 import type { InferenceProvider } from "@hawkeyexl/inference";
 
 export interface FillOptions {
+  /** Colour the pretty report. Off unless the caller turns it on. */
+  color?: boolean;
   /** Files or directories to scan; defaults to the whole project. */
   paths?: string[];
   /** Project root; defaults to cwd. */
@@ -343,7 +345,13 @@ export async function runFill(options: FillOptions = {}): Promise<FillRun> {
     ],
     exitCode: results.some((r) => r.status === "error") ? 1 : 0,
   };
-  return { report, rendered: renderFill(report, { cwd }) };
+  return {
+    report,
+    rendered: renderFill(report, {
+      cwd,
+      ...(options.color === undefined ? {} : { color: options.color }),
+    }),
+  };
 
   async function fillOne(
     discovered: DiscoveredArtifact,
@@ -559,19 +567,14 @@ export function renderFill(
   report: FillReport,
   opts: { color?: boolean; cwd?: string } = {},
 ): string {
-  const color = opts.color ?? true;
+  const pc = palette(opts.color === true);
   const from = opts.cwd ?? process.cwd();
   /** Absolute paths stay in the report; the human view is relative. */
   const show = (path: string): string => {
     const rel = relative(from, path);
     return rel === "" || rel.startsWith("..") ? path : rel;
   };
-  const paint = (fn: (s: string) => string) => (s: string) =>
-    color ? fn(s) : s;
-  const green = paint(pc.green);
-  const cyan = paint(pc.cyan);
-  const dim = paint(pc.dim);
-  const red = paint(pc.red);
+  const { green, cyan, dim, red } = pc;
 
   const lines: string[] = [];
   for (const result of report.results) {

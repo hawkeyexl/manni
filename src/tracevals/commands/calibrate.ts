@@ -196,7 +196,9 @@ export async function runCalibrate(
     durationMs: Date.now() - start,
   };
 
-  const rendered = renderCalibration(report, options.format ?? "pretty");
+  const rendered = renderCalibration(report, options.format ?? "pretty", {
+    color: options.color === true,
+  });
   if (options.output) await writeFile(options.output, rendered, "utf-8");
   return { report, rendered };
 }
