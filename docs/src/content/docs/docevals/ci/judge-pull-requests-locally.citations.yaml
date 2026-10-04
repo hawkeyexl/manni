@@ -18,15 +18,6 @@ docs/src/content/docs/docevals/ci/judge-pull-requests-locally.mdx:
         lines: 71-78
         integrity: sha256-43d616d30d0b1fa4399242e293523c7d3cd72c7599d83b6db052bc128a0f33a2
         commit-sha: d83553211e58a4bd2618600c8d963845ad1a7c07
-    - id: restore-earlier-verdicts
-      claim:
-        lines: 117-119
-        integrity: sha256-34c5a194b59072f1566a09271417daa631eb5677f2e0525eb02fea647bc5dfab
-      source:
-        file: .github/workflows/docs-judge.yml
-        lines: 51-60
-        integrity: sha256-ece971c68dea0a2747795c8a703bc93dd96555202e3c68f0af137e07a66b9459
-        commit-sha: d83553211e58a4bd2618600c8d963845ad1a7c07
     - id: full-history
       claim:
         lines: 133
@@ -53,15 +44,6 @@ docs/src/content/docs/docevals/ci/judge-pull-requests-locally.mdx:
         file: .github/workflows/docs-judge.yml
         lines: 61-62
         integrity: sha256-64e5a8c4a51166c478ec5315c048d973996f885b1bcc7a063699c099d1d46c62
-        commit-sha: d83553211e58a4bd2618600c8d963845ad1a7c07
-    - id: runtime-cache
-      claim:
-        lines: 171-172
-        integrity: sha256-2de3ebd14463ed5493d267e5b42265e21369d5b4f9c639aab63fdb41d6d69032
-      source:
-        file: .github/workflows/docs-judge.yml
-        lines: 43-50
-        integrity: sha256-465cab1ab1909f48e77caf80669acb3ffd6e34fb93967a851008b3081b18b8e1
         commit-sha: d83553211e58a4bd2618600c8d963845ad1a7c07
     - id: config-provider-model
       claim:
@@ -100,3 +82,21 @@ docs/src/content/docs/docevals/ci/judge-pull-requests-locally.mdx:
         integrity: sha256-c53124e9da4fab4a78f8ddb81b185fbed9c0be5148daf51add2c4f985005d70b
         commit-sha: d83553211e58a4bd2618600c8d963845ad1a7c07
       quote: true
+    - id: restore-earlier-verdicts
+      claim:
+        lines: 117-119
+        integrity: sha256-34c5a194b59072f1566a09271417daa631eb5677f2e0525eb02fea647bc5dfab
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 51-60
+        integrity: sha256-ece971c68dea0a2747795c8a703bc93dd96555202e3c68f0af137e07a66b9459
+        commit-sha: c2e8212efcec1b450ba5d6707495b208da2f9ed0
+    - id: runtime-cache
+      claim:
+        lines: 171-172
+        integrity: sha256-2de3ebd14463ed5493d267e5b42265e21369d5b4f9c639aab63fdb41d6d69032
+      source:
+        file: .github/workflows/docs-judge.yml
+        lines: 43-50
+        integrity: sha256-465cab1ab1909f48e77caf80669acb3ffd6e34fb93967a851008b3081b18b8e1
+        commit-sha: c2e8212efcec1b450ba5d6707495b208da2f9ed0
