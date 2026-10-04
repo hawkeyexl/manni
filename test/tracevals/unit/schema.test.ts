@@ -115,7 +115,7 @@ metadata:
   ],
   ["8 artifact skipped", true, `metadata:\n  eval-skip: true`],
   [
-    // 1.1.0's one addition (proposal 0074). The open vocabulary passed any
+    // 1.1.0's one addition (proposal 0076). The open vocabulary passed any
     // kebab name before, so this pins that it still does for this one.
     "8b tool-order, a sequence claim",
     true,

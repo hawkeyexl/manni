@@ -307,7 +307,7 @@ trace itself records.
   Behavior is ours, meaning the graders, the runtime and the reports. The shape
   is not. A registered file never changes (`npm run schemas:check`). A change
   to the shape is a new version beside the old one, as 1.1.0 sits beside
-  1.0.0 (proposal 0074).
+  1.0.0 (proposal 0076).
   `test/tracevals/unit/schema.test.ts` is a case-for-case port of the draft's own
   ladder, so drift between the vocabulary and what this tool accepts fails
   there.

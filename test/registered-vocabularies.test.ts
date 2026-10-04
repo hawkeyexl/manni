@@ -84,7 +84,7 @@ describe.each(Object.keys(DRAFTS))("manni:%s:1.0.0", (family) => {
 });
 
 /**
- * artifact-evals 1.1.0 (proposal 0074) registers beside 1.0.0 and adds one
+ * artifact-evals 1.1.0 (proposal 0076) registers beside 1.0.0 and adds one
  * grader name, `tool-order`. The open vocabulary already accepted any kebab
  * name, so it gains the name in its recommended list and nothing else. The
  * strict overlay's closed list grows from ten names to eleven.

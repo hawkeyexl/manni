@@ -1,4 +1,4 @@
-# 0074: artifact-evals 1.1.0 names `tool-order`
+# 0076: artifact-evals 1.1.0 names `tool-order`
 
 - **Status:** Proposed
 - **Serves:** Sara · S14, "Change the artifact-evals standard without

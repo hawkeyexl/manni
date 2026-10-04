@@ -1,7 +1,7 @@
 /**
  * The artifact vocabulary `manni tracevals` implements:
  * `manni:artifact-evals:1.1.0`, the built-in the metadata tool registers
- * under `src/meta/schemas/` (proposal 0074). Artifacts are validated against
+ * under `src/meta/schemas/` (proposal 0076). Artifacts are validated against
  * that schema itself, imported and bundled into the build, so tracevals and
  * `manni meta validate` read the same bytes and the built CLI never reads a
  * `schemas/` directory at runtime.
