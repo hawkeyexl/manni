@@ -247,7 +247,7 @@ export function buildProgram(): Command {
       // frontmatter-commands docs/**` would silently swallow the glob and run
       // over the default file set instead. Repeat the flag to grant twice.
       "--allow-execution <kind>",
-      "Grant content-authored execution: frontmatter-commands",
+      "Run only these execution grants (repeatable): frontmatter-commands",
       collectGrant,
       [],
     )
@@ -307,7 +307,12 @@ export function buildProgram(): Command {
           format: opts.format as ReportFormat,
           deterministicOnly: opts.deterministicOnly as boolean | undefined,
           aiOnly: opts.aiOnly as boolean | undefined,
-          allowExecution: opts.allowExecution as string[] | undefined,
+          // Commander's default is `[]`, which is "no flag", not "run nothing":
+          // only a list someone typed narrows the run.
+          allowExecution:
+            (opts.allowExecution as string[]).length > 0
+              ? (opts.allowExecution as string[])
+              : undefined,
           execution: opts.execution as boolean | undefined,
           generate: opts.generate as boolean | undefined,
           cache: opts.cache as boolean | undefined,

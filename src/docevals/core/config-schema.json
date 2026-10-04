@@ -128,8 +128,8 @@
                   "frontmatter-commands"
                 ]
               },
-              "default": [],
-              "description": "Which content-authored code this corpus may execute. Default deny: frontmatter-commands lets `command` evals declared in page frontmatter run. That is code a page author controls, so the operator grants it explicitly. This is defense in depth, not a substitute for restricting untrusted pull requests."
+              "default": ["frontmatter-commands"],
+              "description": "Which content-authored code this corpus may execute. Absent, every grant holds; list fewer to narrow it, or write [] to run none. frontmatter-commands lets `command` evals declared in page frontmatter run. That is code a page author controls, so a run over an untrusted pull request passes --no-execution."
             }
           },
           "description": "Operator grant for executing content-authored code."

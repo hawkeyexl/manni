@@ -31,6 +31,7 @@ import {
 import type { ProviderSelector } from "@hawkeyexl/inference";
 import {
   configuredGrants,
+  EXECUTION_GRANTS,
   isExecutionGrant,
   unknownGrantsMessage,
   type ExecutionGrant,
@@ -214,12 +215,11 @@ export interface DocevalsConfig {
     timeoutMs: number;
   };
   /**
-   * What content-authored code this run may execute. Default deny.
+   * What content-authored code this run may execute. Every grant unless the
+   * operator narrows it (proposal 0075); `[]` runs nothing.
    *
    * A page reaches a shell through a `command` eval declared in its
-   * frontmatter, or through `options.command` argv it hands a grader. The old
-   * `scripts.allow-frontmatter-commands` boolean covered the first and
-   * defaulted to true.
+   * frontmatter, or through `options.command` argv it hands a grader.
    */
   execution: { allow: ExecutionGrant[] };
   fill: {
@@ -549,8 +549,7 @@ export function parseConfigSection(
   // The removed key would otherwise surface as "must NOT have additional
   // properties" against `scripts`, which names the parent and leaves the
   // reader to find the child — the same failure the camelCase check above
-  // exists to avoid. It also flipped default: it was `true`, and the grant is
-  // default-deny, so a silent migration would quietly stop running checks.
+  // exists to avoid.
   const ns = raw[NAMESPACE];
   const scriptsSection =
     ns && typeof ns === "object"
@@ -565,9 +564,8 @@ export function parseConfigSection(
       `Invalid config in ${configPath}: scripts.allow-frontmatter-commands has been replaced by ` +
         `execution.allow.
 ` +
-        `  Write \`execution: { allow: [frontmatter-commands] }\` to keep running them.
-` +
-        `The grant is default-deny.`,
+        `  Command evals run unless it narrows them; write ` +
+        `\`execution: { allow: [] }\` to stop them.`,
     );
   }
 
@@ -670,7 +668,7 @@ export function parseConfigSection(
       configDir: r.scripts?.configDir ?? "manni-docevals-scripts",
       timeoutMs: r.scripts?.timeoutMs ?? 30000,
     },
-    execution: { allow: r.execution?.allow ?? [] },
+    execution: { allow: [...(r.execution?.allow ?? EXECUTION_GRANTS)] },
     fill: {
       confidenceThreshold: r.fill?.confidenceThreshold ?? 0.7,
       maxEvalsPerPage: r.fill?.maxEvalsPerPage ?? 3,

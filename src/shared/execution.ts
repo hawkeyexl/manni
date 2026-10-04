@@ -36,6 +36,30 @@ export function allowExecutionMessage(value: string): string {
   return `--allow-execution must be one of ${EXECUTION_GRANTS.join(" | ")}, got "${value}"`;
 }
 
+/**
+ * Why a content-authored command did not run, as an eval's skip reason. One
+ * sentence for both domains, since one grant gates both.
+ */
+export const NOT_GRANTED_REASON =
+  "frontmatter commands not granted (execution.allow: [frontmatter-commands])";
+
+/**
+ * The grants one run holds. Everything available runs unless the operator
+ * narrows it: `configured` is `execution.allow` (every grant when the key is
+ * absent), `allowExecution` keeps only the named grants it already holds, and
+ * `execution: false` (`--no-execution`) clears them all. Nothing here widens.
+ */
+export function grantsFor(
+  configured: readonly ExecutionGrant[],
+  flags: { allowExecution?: readonly ExecutionGrant[]; execution?: boolean } = {},
+): Set<ExecutionGrant> {
+  if (flags.execution === false) return new Set();
+  const named = flags.allowExecution;
+  return new Set(
+    named === undefined ? configured : configured.filter((g) => named.includes(g)),
+  );
+}
+
 /** The string values under `execution.allow`, before any schema has run. */
 export function configuredGrants(section: unknown): string[] {
   if (!section || typeof section !== "object") return [];

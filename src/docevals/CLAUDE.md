@@ -303,15 +303,19 @@ and Node touch.
   **attach** what it defines (ADR 01041): the guard is a bare page run through
   `runList`/`runEvals`, not an assertion about the file's text.
 - Content files drive arbitrary code execution by **one** path: `command`
-  evals declared in page frontmatter or a manifest. It is default-deny behind
-  one operator grant, `docevals.execution.allow: [frontmatter-commands]` (CLI
-  `--allow-execution`, `--no-execution`). The gate is on the eval's source
-  being the page, not on the grader, so any page-authored argv is covered.
-  Any change near command graders or script generation must preserve it.
-  **The grant is defense in depth, never sufficient on its own.** A grant says "this corpus is trusted
-  to execute", and a fork's pages are not this corpus. The only complete
-  control is restricting the job to same-repo pull requests; the
-  docs-as-tests workflow carries that gate. Never remove it.
+  evals declared in page frontmatter or a manifest. It sits behind one grant,
+  `frontmatter-commands`, from `src/shared/execution.ts`, and it is **on by
+  default** (proposal 0075). Everything available runs unless the operator
+  narrows it. `docevals.execution.allow` lists fewer grants, `[]` runs none,
+  `--allow-execution` keeps only the named ones the config holds, and
+  `--no-execution` runs none for one run. No flag widens what the config
+  narrowed. The gate is on the eval's source being the page, not on the
+  grader, so any page-authored argv is covered. Any change near command
+  graders or script generation must preserve it.
+  **The grant is defense in depth, never sufficient on its own.** A fork's
+  pages are not this corpus, so a run over an untrusted pull request passes
+  `--no-execution`. The complete control is restricting the job to same-repo
+  pull requests; the docs-as-tests workflow carries that gate. Never remove it.
 - The page vocabulary is the shipped **`manni:evals:1.0.0`**, published by the
   metadata tool (proposal 0023) and implemented here (ADR 01009, proposal
   0073). `src/docevals/schema.ts` imports it from

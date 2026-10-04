@@ -28,7 +28,10 @@ export interface RunCommandOptions extends DocumentInputOptions {
   format?: ReportFormat;
   deterministicOnly?: boolean;
   aiOnly?: boolean;
-  /** Extra execution grants for this run. */
+  /**
+   * Run only these execution grants, of those the config holds. Absent keeps
+   * every grant `execution.allow` holds, which is every grant by default.
+   */
   allowExecution?: string[];
   /** `false` clears every grant for this run. */
   execution?: boolean;
@@ -61,10 +64,9 @@ export interface RunCommandOptions extends DocumentInputOptions {
  * Grants, checked rather than asserted.
  *
  * The CLI validates in `collectGrant`, but this is also the entry point for
- * programmatic callers, and an unknown grant that silently does nothing is the
- * exact failure the default-deny posture exists to avoid: the run skips every
- * command eval and exits 0, which reads as a clean corpus rather than a
- * misspelled grant.
+ * programmatic callers. An unknown grant that silently matched nothing would
+ * narrow the run to no grant at all: every command eval skipped, exit 0, which
+ * reads as a clean corpus rather than a misspelled grant.
  */
 function asGrants(values: string[] | undefined): ExecutionGrant[] | undefined {
   if (values === undefined) return undefined;

@@ -13,7 +13,11 @@ import type {
   SuiteSummary,
 } from "../types.js";
 import { loadRunConfig, type DocevalsConfig } from "./config.js";
-import type { ExecutionGrant } from "../../shared/execution.js";
+import {
+  grantsFor,
+  NOT_GRANTED_REASON,
+  type ExecutionGrant,
+} from "../../shared/execution.js";
 import { discoverPages } from "./discover.js";
 import { withExternalMetadata } from "./external.js";
 import { resolvePages, type ResolvedPagePlan } from "./resolve.js";
@@ -134,7 +138,10 @@ export interface RunOptions {
   cwd?: string;
   deterministicOnly?: boolean;
   aiOnly?: boolean;
-  /** Additional execution grants for this run; never widens beyond these. */
+  /**
+   * Run only these grants, of those the config holds. Absent keeps them all;
+   * `[]` runs nothing. Never widens past `execution.allow`.
+   */
   allowExecution?: ExecutionGrant[];
   /** `false` clears every grant for this run. */
   execution?: boolean;
@@ -840,14 +847,16 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
   /** "<file> <evalName>" keys whose check script this run generated. */
   const generatedThisRun = new Set<string>();
 
-  // Default deny, with the CLI able to withhold a configured grant but never
-  // to widen one: `--allow-execution` on the command line is still an operator
-  // act, so it grants; `--no-execution` clears everything for one run.
-  const granted = new Set<ExecutionGrant>([
-    ...config.execution.allow,
-    ...(options.allowExecution ?? []),
-  ]);
-  if (options.execution === false) granted.clear();
+  // Everything available runs unless the operator narrows it (proposal 0075).
+  // The config holds every grant unless `execution.allow` lists fewer;
+  // `--allow-execution` keeps only the named ones it already holds, and
+  // `--no-execution` clears them all for one run. Nothing here widens.
+  const granted = grantsFor(config.execution.allow, {
+    ...(options.allowExecution === undefined
+      ? {}
+      : { allowExecution: options.allowExecution }),
+    ...(options.execution === undefined ? {} : { execution: options.execution }),
+  });
   const allowFrontmatterCommands = granted.has("frontmatter-commands");
 
   // Before anything is dispatched: an eval that cannot reach a verdict as
@@ -920,7 +929,7 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
       // it in `command`; a registered grader may also accept an
       // `options.command` override and hand it to the same `exec`. Gating
       // only the grader left a second spelling of "run this" that reached a
-      // shell ungated, which made default-deny decorative — a page that cannot
+      // shell ungated, which made the grant decorative — a page that cannot
       // say `grader: command` could name such a grader with the same argv.
       // Config-authored argv is the operator's own and is not content, so the
       // gate is on `source === "page"` rather than on the key's presence.
@@ -932,7 +941,7 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
           skippedResult(
             plan,
             ev,
-            "frontmatter commands not granted (execution.allow: [frontmatter-commands])",
+            NOT_GRANTED_REASON,
           ),
         );
         continue;

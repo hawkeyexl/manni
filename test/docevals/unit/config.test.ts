@@ -34,8 +34,8 @@ describe("parseConfig", () => {
     expect(c.judge.falsePositiveAlert).toBe(0.15);
     expect(c.judge.cacheDir).toBe(".manni/docevals/cache");
     expect(c.judge.maxTurns).toBeNull();
-    // Default deny: nothing content-authored executes until an operator says so.
-    expect(c.execution.allow).toEqual([]);
+    // Every grant holds until an operator narrows it (proposal 0075).
+    expect(c.execution.allow).toEqual(["frontmatter-commands"]);
     expect(c.scripts.dir).toBe("{docDir}/manni-docevals");
     expect(c.scripts.configDir).toBe("manni-docevals-scripts");
     expect(c.evals).toEqual({});
