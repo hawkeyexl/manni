@@ -739,7 +739,11 @@ async function loadSidecars(
         "utf-8",
       );
       const parsed: unknown = JSON.parse(raw);
-      if (typeof parsed !== "object" || parsed === null) throw new Error("shape");
+      // An array is `typeof "object"` too, and would merge with every member
+      // undefined while the warning below never fired.
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        throw new Error("shape");
+      }
       meta = parsed;
     } catch {
       trace.warnings.push(
