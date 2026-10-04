@@ -295,8 +295,14 @@ export async function runRun(
   const context = await prepareRun(options);
   const { report, comparison } = await runOne(options, context);
 
-  let rendered = render(report, options.format ?? "pretty");
-  if (comparison && (options.format ?? "pretty") !== "json") {
+  const format = options.format ?? "pretty";
+  let rendered = render(report, format);
+  // Prose only. Appended to JSON, SARIF or JUnit it would leave a document no
+  // parser accepts; `github` ends in the markdown summary, so it reads there.
+  if (
+    comparison &&
+    (format === "pretty" || format === "markdown" || format === "github")
+  ) {
     rendered += `\n\n${renderComparison(comparison)}`;
   }
   if (options.output) {

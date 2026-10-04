@@ -69,6 +69,67 @@ describe.skipIf(!built)("built CLI", () => {
     ).toBeGreaterThan(0);
   });
 
+  describe("CI formats", () => {
+    const ciRun = (format: string) =>
+      runCli(
+        [
+          "run",
+          "test/tracevals/fixtures/traces/claude-session.jsonl",
+          "--project",
+          "test/tracevals/fixtures/project",
+          "--deterministic-only",
+          "-f",
+          format,
+        ],
+        { CLAUDE_CONFIG_DIR: "test/tracevals/fixtures/home/.claude" },
+      );
+    const skill = "test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md";
+
+    it("-f github annotates the failure at the skill that declared it", async () => {
+      const { code, stdout } = await ciRun("github");
+      expect(code).toBe(1);
+      expect(stdout).toContain(
+        `::error file=${skill},title=manni tracevals%3A forbidden-tool::`,
+      );
+      expect(stdout).toContain(
+        "(trace: test/tracevals/fixtures/traces/claude-session.jsonl)",
+      );
+      expect(stdout).toContain("| Outcome | Artifact | Eval | Grader | Detail |");
+    });
+
+    it("-f sarif reports tracevals/<grader> rules at repo-relative URIs", async () => {
+      const { code, stdout } = await ciRun("sarif");
+      expect(code).toBe(1);
+      const log = JSON.parse(stdout);
+      const run = log.runs[0];
+      expect(run.tool.driver.name).toBe("manni-tracevals");
+      const result = run.results.find(
+        (r: { properties: { eval: string } }) => r.properties.eval === "forbidden-tool",
+      );
+      expect(result.ruleId).toBe("tracevals/tool-usage");
+      expect(result.locations[0].physicalLocation.artifactLocation).toEqual({
+        uri: skill,
+        uriBaseId: "SRCROOT",
+      });
+      expect(result.properties.trace).toBe(
+        "test/tracevals/fixtures/traces/claude-session.jsonl",
+      );
+    });
+
+    it("-f junit writes one testsuite for the trace", async () => {
+      const { code, stdout } = await ciRun("junit");
+      expect(code).toBe(1);
+      expect(stdout.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+      expect(stdout).toContain(
+        '<testsuite name="test/tracevals/fixtures/traces/claude-session.jsonl"',
+      );
+      expect(stdout).toContain(
+        `<testcase classname="${skill}" name="forbidden-tool"`,
+      );
+      expect(stdout).toContain('type="tracevals/tool-usage"');
+    });
+  });
+
   it("mock-judge run produces consensus objects with zero network", async () => {
     const { code, stdout } = await runCli(
       [
@@ -137,7 +198,15 @@ describe.skipIf(!built)("built CLI", () => {
       ]);
       expect(code).toBe(2);
       expect(stderr).toContain(
-        'manni: --format must be one of pretty | json | markdown, got "human"',
+        'manni: --format must be one of pretty | json | markdown | github | sarif | junit, got "human"',
+      );
+    });
+
+    it("refuses a CI format on calibrate, as docevals' calibrate has none", async () => {
+      const { code, stderr } = await runCli(["calibrate", "-f", "sarif"]);
+      expect(code).toBe(2);
+      expect(stderr).toContain(
+        'manni: --format must be one of pretty | json | markdown, got "sarif"',
       );
     });
 

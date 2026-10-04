@@ -15,6 +15,7 @@ import { runFill } from "./commands/fill.js";
 import { runRun } from "./commands/run.js";
 import { TracevalsError } from "./types.js";
 import {
+  CALIBRATE_FORMATS,
   REPORT_FORMATS,
   SUMMARY_FORMATS,
   parseFormat,
@@ -259,8 +260,12 @@ async function executeRun(traces: string[], opts: RunFlags) {
  * is a measurement of a corpus, not a point in one session's timeline, and an
  * accepted flag that quietly does nothing is worse than an absent one.
  */
-function addRunFlags(cmd: Command, options: { history?: boolean } = {}): Command {
+function addRunFlags(
+  cmd: Command,
+  options: { history?: boolean; formats?: readonly ReportFormat[] } = {},
+): Command {
   const withHistory = options.history !== false;
+  const formats = options.formats ?? REPORT_FORMATS;
   const base = addConfigFlags(cmd)
     .option(
       "--project <dir>",
@@ -292,8 +297,8 @@ function addRunFlags(cmd: Command, options: { history?: boolean } = {}): Command
     )
     .option(
       "-f, --format <format>",
-      `Output format: ${REPORT_FORMATS.join(" | ")}`,
-      parseFormatArg("--format", REPORT_FORMATS),
+      `Output format: ${formats.join(" | ")}`,
+      parseFormatArg("--format", formats),
       "pretty" as ReportFormat,
     )
     .option("-o, --output <file>", "also write the report to a file")
@@ -384,7 +389,7 @@ addRunFlags(
       "exit 1 above this many needs-review outcomes",
       (v) => Number(v),
     ),
-  { history: false },
+  { history: false, formats: CALIBRATE_FORMATS },
 ).action(
   async (
     traces: string[],

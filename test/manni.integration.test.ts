@@ -214,7 +214,7 @@ describe("manni (built bin)", () => {
     const format = run(manni, ["tracevals", "run", "x.jsonl", "-f", "human"]);
     expect(format.status).toBe(2);
     expect(format.stderr).toContain(
-      'manni: --format must be one of pretty | json | markdown, got "human"',
+      'manni: --format must be one of pretty | json | markdown | github | sarif | junit, got "human"',
     );
 
     const json = run(manni, ["tracevals", "list", "--json"]);

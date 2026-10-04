@@ -769,6 +769,16 @@ const calibration: CalibrationReport = {
 const lines = (text: string): string[] => text.split(/\r?\n/);
 
 describe("calibration reporters", () => {
+  // docevals' calibrate has no CI format either: a calibration report is a
+  // measurement of the judge, not a set of findings to annotate.
+  it("refuses the CI formats", () => {
+    for (const format of ["github", "sarif", "junit"] as const) {
+      expect(() => renderCalibration(calibration, format)).toThrow(
+        `format must be one of pretty | json | markdown, got "${format}"`,
+      );
+    }
+  });
+
   it("leads with the two mistakes and the review volume, not a pass rate", () => {
     const text = renderCalibration(calibration, "pretty");
     expect(text).toContain("Agreement 3/5 (60%)");

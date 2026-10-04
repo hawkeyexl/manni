@@ -8,13 +8,28 @@
  */
 import { TracevalsError } from "../types.js";
 
-/** Formats `run` and `calibrate` can emit — one per module in this directory. */
-export const REPORT_FORMATS = ["pretty", "json", "markdown"] as const;
+/** Formats `run` can emit: docevals' `run` set, less `html`. */
+export const REPORT_FORMATS = [
+  "pretty",
+  "json",
+  "markdown",
+  "github",
+  "sarif",
+  "junit",
+] as const;
+
+/**
+ * Formats `calibrate` can emit. Not the CI three: a calibration report
+ * measures the judge rather than listing findings to annotate, and docevals'
+ * `calibrate` has no CI format either.
+ */
+export const CALIBRATE_FORMATS = ["pretty", "json", "markdown"] as const;
 
 /** Formats the summary commands (`list`, `fill`, `capture`) can emit. */
 export const SUMMARY_FORMATS = ["pretty", "json"] as const;
 
 export type ReportFormat = (typeof REPORT_FORMATS)[number];
+export type CalibrateFormat = (typeof CALIBRATE_FORMATS)[number];
 export type SummaryFormat = (typeof SUMMARY_FORMATS)[number];
 
 /**
