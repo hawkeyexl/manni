@@ -48,6 +48,23 @@ export function isLanguageTag(value: string): boolean {
   return LANGUAGE_TAG.test(value);
 }
 
+/**
+ * The canonical spelling of a BCP-47 tag: `en-us` and `EN-US` both become
+ * `en-US`. Tags are case-insensitive, so without this one locale splits into
+ * two indexes and a filter matches only the spelling its author happened to
+ * type. A string `Intl` refuses comes back as written, so the tag check that
+ * guards filenames still sees, and reports, what the author wrote.
+ *
+ * `Intl` exists in every browser, so the runtime calls this too.
+ */
+export function canonicalLanguageTag(tag: string): string {
+  try {
+    return Intl.getCanonicalLocales(tag)[0] ?? tag;
+  } catch {
+    return tag;
+  }
+}
+
 /** Where one language's lexical index lives, and what it holds. */
 export interface SearchArtifact {
   /** Filename, relative to the manifest. */

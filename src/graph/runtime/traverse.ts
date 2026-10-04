@@ -13,6 +13,7 @@
  */
 import { byCodeUnit } from "../core/sort.js";
 import { NS, RDF_TYPE } from "../core/vocab.js";
+import { canonicalLanguageTag } from "../core/localizations.js";
 import {
   GRAPH_NOT_APPLICABLE_TO_VARIANT,
   GRAPH_NOT_SOFTWARE_SUBJECT,
@@ -41,9 +42,10 @@ export interface ScopeFilter {
   /** Software subject: an IRI or a `graph.about-product-aspect` value (e.g. "architecture"). */
   subject?: string;
   /**
-   * BCP-47 tag (ADR 01037). Matched exactly against `dcterms:language`, with no
-   * fallback: `de-AT` is not `de`, because relatedness between locales is an
-   * inference and this runtime does not infer.
+   * BCP-47 tag (ADR 01037). Matched against `dcterms:language` after both are
+   * canonicalized, since tags are case-insensitive. There is no fallback:
+   * `de-AT` is not `de`, because relatedness between locales is an inference
+   * and this runtime does not infer.
    */
   language?: string;
 }
@@ -64,7 +66,8 @@ export interface TraverseOptions extends ScopeFilter {
    * class nodes are schema, not content, and every document shares them — so
    * traversing them makes every document reachable from every other in two
    * hops (`a → graph:Document → b`). That is exactly the edge contamination
-   * graph-governed retrieval exists to avoid.
+   * graph-governed retrieval exists to avoid. A `predicates` list that names
+   * `rdf:type` follows them too, because it asked for them by name.
    */
   includeTypeEdges?: boolean;
   /** Append to an existing trace instead of starting a new one. */
@@ -195,9 +198,17 @@ export function traverse(
   const subjectIri = options.subject
     ? resolveSubject(graph, options.subject)
     : undefined;
-  // Language needs no resolution step: the filter value and the graph value are
-  // both BCP-47 tags, matched exactly.
-  const scope = { variantIri, subjectIri, language: options.language };
+  // Language needs no resolution step, only a spelling: the filter value and
+  // the graph value are both BCP-47 tags, and `derive` writes the canonical one.
+  const language =
+    options.language === undefined
+      ? undefined
+      : canonicalLanguageTag(options.language);
+  const scope = { variantIri, subjectIri, language };
+  // A predicate list that names `rdf:type` asked for type edges. Dropping them
+  // anyway answered a question nobody asked, with an empty result.
+  const followTypes =
+    options.includeTypeEdges === true || allowed?.has(RDF_TYPE) === true;
 
   const excluded = new Set<string>();
   const keep = (iri: string): boolean => {
@@ -250,7 +261,7 @@ export function traverse(
         direction,
       )) {
         if (allowed && !allowed.has(predicate)) continue;
-        if (!options.includeTypeEdges && predicate === RDF_TYPE) continue;
+        if (!followTypes && predicate === RDF_TYPE) continue;
         // The hop is recorded before filtering: the trace shows the edge was
         // walked even when the target is then scope-excluded.
         trace.hops.push({ from, predicate, to: target, depth, direction: dir });

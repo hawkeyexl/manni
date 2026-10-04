@@ -95,6 +95,25 @@ describe("traverse", () => {
     expect(r.nodes.map((n) => n.iri)).toContain(`${NS.graph}Document`);
   });
 
+  it("follows rdf:type when the predicate list names it", () => {
+    const g = fixture();
+    const r = traverse(g, { seeds: [A], depth: 1, predicates: [RDF_TYPE] });
+    expect(r.nodes.map((n) => n.iri)).toEqual([A, `${NS.graph}Document`]);
+  });
+
+  it("matches a language filter whatever the tag's case", () => {
+    const g = GraphIndex.fromQuads([
+      { s: A, p: REFERENCES, o: { kind: "iri", value: B } },
+      {
+        s: B,
+        p: `${NS.dcterms}language`,
+        o: { kind: "literal", value: "en-US" },
+      },
+    ]);
+    const r = traverse(g, { seeds: [A], depth: 1, language: "EN-us" });
+    expect(r.nodes.map((n) => n.iri)).toEqual([A, B]);
+  });
+
   it("restricts to the requested predicates", () => {
     const g = fixture();
     const r = traverse(g, { seeds: [A], depth: 1, predicates: [REFERENCES] });

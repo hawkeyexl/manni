@@ -659,7 +659,7 @@ program
   // Not `--subject`: on `query` that is a triple's subject, and one flag name
   // means one thing across the domain.
   .option("--software-subject <subject>", "Scope filter: software subject")
-  .option("--lang <tag>", "Scope filter: BCP-47 language tag, matched exactly")
+  .option("--lang <tag>", "Scope filter: BCP-47 language tag, matched in any case")
   .option("--limit <n>", "Stop after this many nodes", countOption("--limit"))
   .option(
     "-f, --format <format>",

@@ -48,7 +48,7 @@ export interface TraverseOptions {
   variant?: string;
   /** Scope filter: a software subject. */
   subject?: string;
-  /** Scope filter: a BCP-47 language tag, matched exactly (ADR 01037). */
+  /** Scope filter: a BCP-47 language tag, matched in any case (ADR 01037). */
   lang?: string;
   limit?: number;
   cwd?: string;
@@ -71,10 +71,8 @@ export function runTraverse(opts: TraverseOptions): TraverseReport {
     cwd,
   );
   const store = loadGraph(resolve(cwd, opts.graph ?? config.out));
-  const graph = GraphIndex.fromQuads(
-    storeToQuads(store),
-    Object.fromEntries(PREFIXES),
-  );
+  const quads = storeToQuads(store);
+  const graph = GraphIndex.fromQuads(quads, Object.fromEntries(PREFIXES));
 
   const node = expandTerm(opts.node);
   if (!graph.has(node)) {
@@ -98,6 +96,21 @@ export function runTraverse(opts: TraverseOptions): TraverseReport {
   }
 
   const predicates = opts.predicates?.map(expandTerm);
+  // A misspelt predicate matches no edge, so the walk returns the seed alone
+  // and looks like an answer. Same contract as --variant: fail loudly.
+  if (predicates && predicates.length > 0) {
+    const used = new Set<string>();
+    for (const quad of quads) {
+      if (quad.o.kind === "iri") used.add(quad.p);
+    }
+    predicates.forEach((predicate, i) => {
+      if (!used.has(predicate)) {
+        throw new GraphError(
+          `Unknown predicate: ${opts.predicates?.[i] ?? predicate}. No edge in the graph uses it.`,
+        );
+      }
+    });
+  }
   const direction: Direction = opts.reverse ? "in" : "out";
   const result = opts.impact
     ? impact(graph, node, {
