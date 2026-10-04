@@ -16,8 +16,8 @@ sources live under `src/graph/`, its tests under
 `test/graph/{unit,integration,real,fixtures,helpers}`, its SHACL shapes under
 `shapes/graph/`, its vocabulary document under `ns/graph/`, and its imported ADR log
 (closed at 01040) under `docs/proposals/graph/`. It ships no schema file: pages
-validate against the graph draft in `docs/proposals/0023/schemas/graph/`,
-bundled into the build by `src/graph/schema.ts`. The metadata tool is a sibling in
+validate against meta's built-in `manni:graph:1.0.0`
+(`src/meta/schemas/graph/1.0.0.json`), which `src/graph/schema.ts` imports. The metadata tool is a sibling in
 this repository, imported by relative path (`../meta/index.js`), not a
 dependency.
 
