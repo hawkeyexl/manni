@@ -63,8 +63,7 @@ provenance:
 # The schema set that judges a page's frontmatter: where \`manni kg build\`
 # reads x-manni-kg-output from, and what to check these pages against with
 # \`manni meta validate\`. Default: the \`graph\` page vocabulary,
-# manni:graph:1.0.0-proposal.1 — the proposal 0023 draft, built into manni, so no
-# schema file ships. Override with file paths, URLs, or manni meta built-in ids:
+# manni:graph:1.0.0, a built-in schema of manni meta, so no schema file ships. Override with file paths, URLs, or manni meta built-in ids:
 # schemas: ["./my-schema.json"]
 
 # SHACL shapes \`manni kg check\` validates the built graph against. Default:

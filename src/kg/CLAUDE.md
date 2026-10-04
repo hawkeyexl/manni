@@ -234,11 +234,11 @@ Corpus-defining settings such as routes and derive sources may be config-only.
 - **Section keys are camelCase; the vocabulary's own entries are kebab-case.**
   `baseIri`, `maxTurns` and `confidenceThreshold` in the config; `alt-labels`
   and `applies-to` on a page.
-- The page vocabulary is **`manni:graph:1.0.0-proposal.1`**, proposed by the
-  metadata tool (proposal 0023) and implemented here. `src/kg/schema.ts`
-  imports the draft and tsup bundles it, so `dist` never reads `docs/`. Never
-  ship a copy or patch it in memory: the vendored copy this tool used to
-  publish is exactly what that avoids.
+- The page vocabulary is **`manni:graph:1.0.0`**, a built-in schema of the
+  metadata tool (proposals 0023 and 0067) implemented here. `src/kg/schema.ts`
+  imports it from `src/meta/schemas/graph/` and tsup bundles it. Never ship a
+  copy or patch it in memory: the vendored copy this tool used to publish is
+  exactly what that avoids.
 
 ## Commands
 

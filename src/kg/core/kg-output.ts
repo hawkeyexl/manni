@@ -23,19 +23,15 @@
  */
 import { Validator } from "../../meta/index.js";
 import { errorMessage } from "../../shared/errors.js";
-import { FRONTMATTER_SCHEMA_ID, frontmatterSchema } from "../schema.js";
+import { FRONTMATTER_SCHEMA_ID } from "../schema.js";
 import { KgError } from "../types.js";
 import type { KgConfig } from "./config.js";
 import type { DocModel } from "../types.js";
 
 /**
  * The schema set a page is judged by, as kg spells it: the operator's
- * `kg.schemas` when they set one, else the bundled draft.
- *
- * The draft is handed over as an object rather than by ref. 0023's ids are
- * unregistered on purpose while the vocabulary is under review, so
- * `manni:graph:1.0.0-proposal.1` resolves to nothing a user could type — which is
- * exactly what `LoadSchemaOptions.inlineSchemas` is for.
+ * `kg.schemas` when they set one, else the built-in `manni:graph:1.0.0`,
+ * which meta resolves by its id like any other built-in.
  */
 function schemaRefs(config: KgConfig): string[] {
   return config.schemas.length > 0 ? config.schemas : [FRONTMATTER_SCHEMA_ID];
@@ -55,10 +51,7 @@ export async function suppressKgOutput(
   cwd: string,
 ): Promise<DocModel[]> {
   const refs = schemaRefs(config);
-  const validator = new Validator({
-    fileBase: cwd,
-    inlineSchemas: new Map([[FRONTMATTER_SCHEMA_ID, frontmatterSchema]]),
-  });
+  const validator = new Validator({ fileBase: cwd });
 
   const out: DocModel[] = [];
   for (const doc of docs) {

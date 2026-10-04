@@ -5,12 +5,12 @@
  *
  * kg does not own this vocabulary (ADR 01023): manni publishes the common
  * metadata vocabularies and tools implement graph behavior against them. It is
- * no longer copied here either. `src/kg/schema.ts` imports the draft under
- * `docs/proposals/0023/schemas/graph/` and the build inlines it, so one file is
- * both the draft under review and the schema the tool enforces — there is no
- * second artifact, and nothing left for a hash pin to protect. What is still
- * worth pinning is the other half of the old pair: that kg reads the draft the
- * way the proposal says it reads.
+ * no longer copied here either. `src/kg/schema.ts` imports the built-in
+ * `manni:graph:1.0.0` from `src/meta/schemas/graph/` and the build inlines it,
+ * so kg and `manni meta validate` read one file — there is no second artifact,
+ * and nothing left for a hash pin to protect. What is still worth pinning is
+ * the other half of the old pair: that kg reads the vocabulary the way the
+ * proposal says it reads.
  *
  * A negative case failing for the *wrong* reason is a silent pass, so each one
  * names the key its error must point at.
@@ -29,20 +29,20 @@ import { deriveGraph } from "../../../src/kg/core/derive.js";
 import { NS } from "../../../src/kg/core/vocab.js";
 
 const ROOT = resolve(import.meta.dirname, "../../..");
-const DRAFT = "docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json";
+const BUILTIN = "src/meta/schemas/graph/1.0.0.json";
 
 const schema: unknown = frontmatterSchema;
 
 describe("the manni:graph page schema", () => {
-  it("is the graph draft, byte for byte", () => {
+  it("is the built-in graph vocabulary, byte for byte", () => {
     expect(frontmatterSchema).toEqual(
-      JSON.parse(readFileSync(resolve(ROOT, DRAFT), "utf8")),
+      JSON.parse(readFileSync(resolve(ROOT, BUILTIN), "utf8")),
     );
   });
 
-  it("declares the draft's $id, not one of kg's own", () => {
-    expect(FRONTMATTER_SCHEMA_ID).toBe("manni:graph:1.0.0-proposal.1");
-    expect(schema).toMatchObject({ $id: "manni:graph:1.0.0-proposal.1" });
+  it("declares the built-in's $id, not one of kg's own", () => {
+    expect(FRONTMATTER_SCHEMA_ID).toBe("manni:graph:1.0.0");
+    expect(schema).toMatchObject({ $id: "manni:graph:1.0.0" });
   });
 });
 

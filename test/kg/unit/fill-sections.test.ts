@@ -13,10 +13,7 @@ import { describe, expect, it } from "vitest";
 import { defined } from "../helpers/defined.js";
 import { renderFill, runFill } from "../../../src/kg/commands/fill.js";
 import { runValidate } from "../../../src/meta/index.js";
-import {
-  FRONTMATTER_SCHEMA_ID,
-  frontmatterSchema,
-} from "../../../src/kg/schema.js";
+import { FRONTMATTER_SCHEMA_ID } from "../../../src/kg/schema.js";
 import { runBuild } from "../../../src/kg/commands/build.js";
 import { runCheck } from "../../../src/kg/commands/check.js";
 import { MockProvider } from "@hawkeyexl/inference";
@@ -259,14 +256,11 @@ describe("fill --sections", () => {
     expect(written).not.toContain("/graph/sections");
 
     // What fill writes must still pass the page vocabulary. That is
-    // `manni meta validate` against the kg draft (proposal 0051 §8), which is
-    // how every vocabulary in this family is checked; the draft is named by
-    // its `$id` and handed over inline, because 0023's ids stay unregistered
-    // while the vocabulary is under review.
+    // `manni meta validate` against the built-in graph vocabulary (proposal
+    // 0051 §8), which is how every vocabulary in this family is checked.
     const validated = await runValidate({
       inputs: [join(dir, "a.md")],
       cliSchemas: [FRONTMATTER_SCHEMA_ID],
-      inlineSchemas: new Map([[FRONTMATTER_SCHEMA_ID, frontmatterSchema]]),
       noConfig: true,
       cwd: dir,
     });
