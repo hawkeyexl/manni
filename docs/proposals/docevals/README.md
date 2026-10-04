@@ -47,7 +47,7 @@ Numbering starts at `01000`. The `00001`–`00999` range holds decisions that pr
 | [01022](01022-a-grader-that-reached-no-verdict-fails-the-eval.md) | A grader that reached no verdict fails the eval, at any severity | accepted |
 | [01023](01023-the-diagnostic-invariant-is-enforced-by-enumeration.md) | The diagnostic invariant is enforced by enumeration, not by inspection | accepted |
 | [01024](01024-remark-lints-mdx-where-markdownlint-cannot.md) | remark lints this repo's MDX; markdownlint stays for Markdown | superseded by [0073](../0073-docevals-grades-what-no-other-domain-owns.md) |
-| [01025](01025-an-operator-grant-replaces-the-frontmatter-commands-boolean.md) | An operator grant replaces the frontmatter-commands boolean | accepted |
+| [01025](01025-an-operator-grant-replaces-the-frontmatter-commands-boolean.md) | An operator grant replaces the frontmatter-commands boolean | superseded by [0075](../0075-time-windows-and-execution-in-the-evals-domains.md) |
 | [01026](01026-split-long-content-never-truncate-it.md) | Split long content for inference; never truncate it | accepted |
 | [01027](01027-calibration-requires-both-expected-classes.md) | Calibration requires both expected classes | accepted |
 | [01028](01028-a-pre-run-feasibility-pass.md) | A pre-run feasibility pass | accepted |
