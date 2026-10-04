@@ -8,7 +8,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 830-831
         integrity: sha256-3ef67f71b6dd6d13aa8db8c7e567afcb9df863c1d137c5597d3a9fd7de40c6fa
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: formats-enforced-by-ajv-formats
       claim:
         lines: 95-96
@@ -17,7 +17,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/core/validator.ts
         lines: 94
         integrity: sha256-13cad13b9da05a87f1d7e4ed101397327ec94367e2c9e0f6eba648bb4109934b
-        commit-sha: 7aa9a5632411b78d43c793baf6f8f48f0b9db79f
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: required-fields-checked-against-metadata-object
       claim:
         lines: 95
@@ -26,7 +26,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/core/validator.ts
         lines: 798-799
         integrity: sha256-b41d2247f4df563b4638532286fcaf90f3105ab234b56e24619fd7f598d68e59
-        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: forty-five-built-in-schemas
       claim:
         integrity: sha256-3d75e5e96554eab6f6711261ca7ada33808511532f21fe6237e5c15089d3d439
@@ -34,7 +34,7 @@ docs/src/content/docs/meta/index.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 81-131
         integrity: sha256-a704c5e7f4c99812eb53ea0b48faa524598f9471492b4b7a93e22cfa116b6452
-        commit-sha: 7aa9a5632411b78d43c793baf6f8f48f0b9db79f
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: error-line-names-field-line-and-schema
       claim:
         integrity: sha256-6e24a2751ad70c15d7e6a0c643456d631350f32d19020526786cb196d44968af

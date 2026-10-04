@@ -92,7 +92,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/commands/check.ts
         lines: 359-361
         integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: exit-two-no-inputs
       claim:
         lines: 24
@@ -101,7 +101,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/commands/check.ts
         lines: 165-169
         integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: format-pretty-default
       claim:
         lines: 70
@@ -355,7 +355,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/commands/check.ts
         lines: 340-343
         integrity: sha256-df9e2099e2cacae4348d2fafecabf6ffe16e6f7a0c74f462c0d0edd44d388b2a
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: collections-fallback-no-args
       claim:
         lines: 170-171
@@ -381,7 +381,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/meta/core/baseline.ts
         lines: 549-556
         integrity: sha256-682f1eea272dfee261c52f994deb35b70f02439eb6c069c83de302b3dcdc2fa6
-        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: write-baseline-default-path
       claim:
         lines: 264-266
@@ -417,7 +417,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/commands/check.ts
         lines: 359-361
         integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: baseline-optional-path
       claim:
         lines: 326
@@ -487,4 +487,4 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/meta/core/baseline.ts
         lines: 549-555
         integrity: sha256-9bd2fc45d80ca86284dfbbf0d4811799bd6d19467d3d823e5edd9d2b2d576e73
-        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c

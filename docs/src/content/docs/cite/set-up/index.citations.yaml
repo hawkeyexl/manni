@@ -17,7 +17,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/cite/commands/add.ts
         lines: 521
         integrity: sha256-2018bfcbdee1a809b08f071e6fa0e7a3e8d7c90078b5da437c99bd34a8ea3410
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: default-severities
       claim:
         lines: 22
@@ -62,7 +62,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/cite/commands/check.ts
         lines: 188-198
         integrity: sha256-473fa9dbc7c8c57a21c0c516bd0ec06830610bd48cfe73fd0da009d5208702ca
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: bare-check-covers-collections
       claim:
         lines: 38
@@ -188,7 +188,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/cite/commands/add.ts
         lines: 538
         integrity: sha256-02b9081f935fd087efc17ae5f3b2627313d9c17cf1b26aed3aced25c5db1edae
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: add-report-names-both-pins
       claim:
         lines: 101-102
@@ -206,7 +206,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/cite/commands/add.ts
         lines: 522-542
         integrity: sha256-323ef4654acd8e3c88b384dc6178c67986ee20c98aa7a6a55119a34ff1c2abbc
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: claim-stored-as-body-lines
       claim:
         lines: 109-111
@@ -215,7 +215,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/cite/commands/add.ts
         lines: 431
         integrity: sha256-019c18c06304d1c8621a2fec67bb8c3cd156a317e177fa874d251d702516e87e
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: check-rows-read-file-lines
       claim:
         lines: 129
@@ -232,7 +232,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/cite/commands/check.ts
         lines: 165-169
         integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: no-inputs-exits-2
       claim:
         integrity: sha256-622dccd00088a07c45e856fc590b1d9b59c7df0e85b90e35f06dcc305d171bf2
@@ -256,7 +256,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/cite/commands/add.ts
         lines: 521
         integrity: sha256-2018bfcbdee1a809b08f071e6fa0e7a3e8d7c90078b5da437c99bd34a8ea3410
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: sources-walk-without-git
       claim:
         lines: 72-73

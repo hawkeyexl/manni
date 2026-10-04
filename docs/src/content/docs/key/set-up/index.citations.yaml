@@ -160,7 +160,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 903-905
         integrity: sha256-beeb884d4016a47d5cd408fecc74625687215f383f3e39ea7f02a956d976deb6
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: rotation-needs-key
       claim:
         lines: 134
@@ -178,7 +178,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 903-905
         integrity: sha256-beeb884d4016a47d5cd408fecc74625687215f383f3e39ea7f02a956d976deb6
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: no-key-write-row-terminal
       claim:
         lines: 149
@@ -231,7 +231,7 @@ docs/src/content/docs/key/set-up/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 903-905
         integrity: sha256-beeb884d4016a47d5cd408fecc74625687215f383f3e39ea7f02a956d976deb6
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: unverified-warning-message
       claim:
         lines: 160

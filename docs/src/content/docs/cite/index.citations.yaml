@@ -7,7 +7,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/commands/add.ts
         lines: 425-433
         integrity: sha256-f95492a399ba089fe20301cad93bc018d57f9fdb33d9da13d9dc99fc94f5b1b6
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: two-ends-source
       claim:
         integrity: sha256-278c17058b2b02e15d4b9bff95037661c331d2295f6816870d0b8ea94fbe986b
@@ -64,7 +64,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/commands/add.ts
         lines: 521
         integrity: sha256-2018bfcbdee1a809b08f071e6fa0e7a3e8d7c90078b5da437c99bd34a8ea3410
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: check-meta-formats
       claim:
         lines: 37
@@ -108,7 +108,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/commands/add.ts
         lines: 431
         integrity: sha256-019c18c06304d1c8621a2fec67bb8c3cd156a317e177fa874d251d702516e87e
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: finding-on-sentence
       claim:
         integrity: sha256-d5fb505c9df0a4192666318d524ce9673afad6bc01f9b3f4f222740fc3e4481d

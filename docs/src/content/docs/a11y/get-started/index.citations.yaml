@@ -7,7 +7,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: package.json
         lines: 45-47
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 9e1f1f356bcbc80a08449035e239611e0e191bdb
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: browser-not-bundled
       claim:
         integrity: sha256-396e8d96921572f27d6b6f58c61c2222b61b688b7096e5c3c890292aed962853
@@ -15,7 +15,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: package.json
         lines: 114
         integrity: sha256-6506e0dbde439aea4f024722a85dcca168ede911a3173a80b2efe2367dfd3740
-        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: browser-launch-order
       claim:
         lines: 32-35
@@ -83,7 +83,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/core/crawl.ts
         lines: 123-124
         integrity: sha256-ac9e729a3e66dc7e44cf40da4ebbf131ba0c8e2c7452c44366ba8f152defd6f4
-        commit-sha: 99f6129cb8fdae7e4375dd55bacff75b3d766a75
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: bare-run-follow-links
       claim:
         lines: 76-77
@@ -92,7 +92,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/core/crawl.ts
         lines: 202
         integrity: sha256-49bfcd2caf112e0e75f4574d7c872745f7ed18cce309f623e60cf67b1c8cba57
-        commit-sha: 99f6129cb8fdae7e4375dd55bacff75b3d766a75
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: findings-exit-1
       claim:
         integrity: sha256-b7bb54562f95f271a30eee660f1937a3babba1a434a96c6bca7fc727c13b3b62
@@ -205,7 +205,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/core/crawl.ts
         lines: 152
         integrity: sha256-1ff50f94c9678c57e2ba8d3a93ea40d4f2b2daf18a8a3eda14c82f8abe84dc33
-        commit-sha: 99f6129cb8fdae7e4375dd55bacff75b3d766a75
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: no-crawl-no-links
       claim:
         lines: 171-172
@@ -214,7 +214,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/core/crawl.ts
         lines: 202
         integrity: sha256-49bfcd2caf112e0e75f4574d7c872745f7ed18cce309f623e60cf67b1c8cba57
-        commit-sha: 99f6129cb8fdae7e4375dd55bacff75b3d766a75
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: single-page-exit-0
       claim:
         integrity: sha256-8a465d2ac2f6bbccddd9ae7274e4b138c0bc5abbe7c85d389831bbf9adb98ba5

@@ -4,6 +4,18 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.2.0](https://github.com/hawkeyexl/manni/compare/v4.1.0...v4.2.0) (2026-10-04)
+
+
+### Bug Fixes
+
+* **a11y:** follow a page that redirects in the browser instead of failing the run ([#157](https://github.com/hawkeyexl/manni/issues/157)) ([80f14fd](https://github.com/hawkeyexl/manni/commit/80f14fda27c0fd002fd9ef92b9ccb35d56fe289c))
+
+
+### Features
+
+* **graph:** fold moose-kg in as `manni graph` ([#13](https://github.com/hawkeyexl/manni/issues/13)) ([28eb9b0](https://github.com/hawkeyexl/manni/commit/28eb9b0f7e41597b81234a624d5d286ae3880ff5)), closes [#10](https://github.com/hawkeyexl/manni/issues/10) [#s](https://github.com/hawkeyexl/manni/issues/s)
+
 # [4.1.0](https://github.com/hawkeyexl/manni/compare/v4.0.3...v4.1.0) (2026-10-04)
 
 
