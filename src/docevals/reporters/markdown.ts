@@ -1,6 +1,7 @@
 /** Markdown reporter: PR-comment-friendly summary. */
 import { scopeLine } from "./scope.js";
 import type { EngineReport } from "../core/engine.js";
+import { declaringEntry, locationLabel } from "./location.js";
 
 const OUTCOME_ICON: Record<string, string> = {
   pass: "✅",
@@ -71,7 +72,14 @@ export function renderMarkdown(report: EngineReport): string {
     lines.push("", "### Findings", "");
     for (const r of notable) {
       const icon = OUTCOME_ICON[r.outcome] ?? "";
-      lines.push(`- ${icon} **${r.evalName}** — \`${r.file}\``);
+      // The page, then the entry that declares the eval. When the page
+      // declares it, the one label says both.
+      const entry = declaringEntry(r);
+      const where =
+        entry.file === r.file
+          ? `\`${locationLabel(entry)}\``
+          : `\`${r.file}\` · \`${locationLabel(entry)}\``;
+      lines.push(`- ${icon} **${r.evalName}** — ${where}`);
       for (const f of r.findings ?? []) {
         const loc = f.line != null ? `:${f.line}` : "";
         lines.push(`  - ${f.severity}${loc}: ${f.message}`);

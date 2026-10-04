@@ -3,6 +3,7 @@ import { scopeLine } from "./scope.js";
 import { palette, type Colors } from "../../shared/color.js";
 import type { EvalResult } from "../types.js";
 import type { EngineReport } from "../core/engine.js";
+import { declaringEntry, locationLabel } from "./location.js";
 
 function outcomeTag(r: EvalResult, pc: Colors): string {
   switch (r.outcome) {
@@ -44,7 +45,8 @@ export function renderPretty(
       const zone = r.consensus ? pc.dim(` [${r.consensus.zone}]`) : "";
       const via = r.via ? pc.dim(" (human-reviewed)") : "";
       const gen = r.generated ? pc.cyan(" (generated)") : "";
-      lines.push(`  ${outcomeTag(r, pc)} ${r.evalName}${zone}${via}${gen}`);
+      const entry = pc.dim(locationLabel(declaringEntry(r)));
+      lines.push(`  ${outcomeTag(r, pc)} ${r.evalName}${zone}${via}${gen}  ${entry}`);
       if (r.skipReason && r.outcome !== "pass") {
         lines.push(pc.dim(`       ${r.skipReason}`));
       }

@@ -20,7 +20,7 @@ import {
 } from "../../shared/execution.js";
 import { discoverPages } from "./discover.js";
 import { withExternalMetadata } from "./external.js";
-import { resolvePages, type ResolvedPagePlan } from "./resolve.js";
+import { resolvePages, type EvalLocation, type ResolvedPagePlan } from "./resolve.js";
 import {
   applyBaseline,
   buildBaseline,
@@ -254,11 +254,13 @@ function stampSuites(
 ): void {
   const suiteOf = new Map<string, string>();
   const weightOf = new Map<string, number>();
+  const locationOf = new Map<string, EvalLocation>();
   for (const plan of plans) {
     for (const ev of plan.evals) {
       const key = resultKey(plan.page.file, ev.name);
       suiteOf.set(key, ev.suite);
       weightOf.set(key, ev.weight);
+      locationOf.set(key, ev.location);
     }
   }
   for (const r of results) {
@@ -268,6 +270,9 @@ function stampSuites(
     // counts as 1 rather than 0 — dropping it out of the denominator would let
     // an unresolvable eval quietly raise a suite's rate.
     r.weight = weightOf.get(key) ?? 1;
+    // A result with no plan entry has no declaring entry to point at, so it
+    // names its page alone, as every result did before locations.
+    r.location = locationOf.get(key) ?? { file: r.file };
   }
 }
 

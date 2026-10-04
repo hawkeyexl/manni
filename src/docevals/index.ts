@@ -11,7 +11,12 @@ export {
 } from "./core/external.js";
 export type { ExternalMetadataReader, PageExternal } from "./core/external.js";
 export { resolvePage, resolvePages } from "./core/resolve.js";
-export type { ResolvedEval, ResolvedPagePlan, PageProblem } from "./core/resolve.js";
+export type {
+  EvalLocation,
+  ResolvedEval,
+  ResolvedPagePlan,
+  PageProblem,
+} from "./core/resolve.js";
 export { runList, renderList } from "./commands/list.js";
 export type { ListOptions, ListRun } from "./commands/list.js";
 export { runEvals } from "./core/engine.js";

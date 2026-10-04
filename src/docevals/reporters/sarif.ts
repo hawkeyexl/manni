@@ -16,7 +16,8 @@
  *     difference between a finding someone acts on and one they dismiss.
  */
 import type { EngineReport } from "../core/engine.js";
-import type { Finding, Severity } from "../types.js";
+import type { EvalResult, Finding, Severity } from "../types.js";
+import { declaringEntry } from "./location.js";
 
 const SARIF_SCHEMA =
   "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json";
@@ -47,6 +48,19 @@ function uriFor(file: string): string {
  */
 function ruleIdFor(finding: Finding): string {
   return finding.ruleId ?? finding.evalName;
+}
+
+/**
+ * The entry that declares an eval, as a SARIF physical location. SARIF regions
+ * are 1-based and `startLine` is required once a region is present, so an
+ * entry with no line has no region rather than an invented line 1.
+ */
+function entryLocation(result: EvalResult): unknown {
+  const entry = declaringEntry(result);
+  return {
+    artifactLocation: { uri: uriFor(entry.file) },
+    ...(entry.line !== undefined ? { region: { startLine: entry.line } } : {}),
+  };
 }
 
 interface SarifRule {
@@ -80,20 +94,18 @@ export function renderSarif(report: EngineReport): string {
         message: { text: finding.message },
         locations: [
           {
-            physicalLocation: {
-              artifactLocation: { uri: uriFor(finding.file) },
-              // SARIF regions are 1-based and `startLine` is required once a
-              // region is present, so omit the region entirely rather than
-              // inventing line 1 for a whole-file finding.
-              ...(finding.line != null
+            // A finding with a content line keeps it. One without lands on
+            // the entry that declares the eval.
+            physicalLocation:
+              finding.line != null
                 ? {
+                    artifactLocation: { uri: uriFor(finding.file) },
                     region: {
                       startLine: finding.line,
                       ...(finding.col != null ? { startColumn: finding.col } : {}),
                     },
                   }
-                : {}),
-            },
+                : entryLocation(evalResult),
           },
         ],
       });
@@ -118,13 +130,7 @@ export function renderSarif(report: EngineReport): string {
         ruleId: id,
         level: "error",
         message: { text: evalResult.skipReason ?? "eval errored" },
-        locations: [
-          {
-            physicalLocation: {
-              artifactLocation: { uri: uriFor(evalResult.file) },
-            },
-          },
-        ],
+        locations: [{ physicalLocation: entryLocation(evalResult) }],
       });
     }
 
@@ -151,13 +157,7 @@ export function renderSarif(report: EngineReport): string {
         message: {
           text: `AI judge: fail (confidence ${evalResult.consensus.meanConfidence.toFixed(2)}). ${reasoning}`.trim(),
         },
-        locations: [
-          {
-            physicalLocation: {
-              artifactLocation: { uri: uriFor(evalResult.file) },
-            },
-          },
-        ],
+        locations: [{ physicalLocation: entryLocation(evalResult) }],
       });
     }
   }

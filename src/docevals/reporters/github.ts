@@ -9,17 +9,26 @@ import {
   escapeWorkflowCommandProperty as escapeProperty,
 } from "../../shared/github.js";
 import { renderMarkdown } from "./markdown.js";
+import { declaringEntry } from "./location.js";
 
 export function renderGithub(report: EngineReport): string {
   const lines: string[] = [];
   for (const r of report.evalResults) {
+    const entry = declaringEntry(r);
+    const entryProps = [
+      `file=${escapeProperty(entry.file)}`,
+      entry.line !== undefined ? `line=${String(entry.line)}` : undefined,
+    ];
     for (const f of r.findings ?? []) {
       // The family scale is GitHub's annotation levels, word for word.
       const level = f.severity;
+      // A finding with a content line keeps it; one without lands on the
+      // entry that declares the eval, which is what someone edits instead.
       const props = [
-        `file=${escapeProperty(f.file)}`,
-        f.line != null ? `line=${f.line}` : undefined,
-        f.col != null ? `col=${f.col}` : undefined,
+        ...(f.line != null
+          ? [`file=${escapeProperty(f.file)}`, `line=${String(f.line)}`]
+          : entryProps),
+        f.line != null && f.col != null ? `col=${String(f.col)}` : undefined,
         `title=${escapeProperty(`manni docevals: ${f.evalName}`)}`,
       ]
         .filter(Boolean)
@@ -29,8 +38,11 @@ export function renderGithub(report: EngineReport): string {
     if (r.outcome === "fail" && r.consensus) {
       const reasoning =
         r.consensus.runs.find((run) => run.verdict)?.verdict?.reasoning ?? "";
+      const props = [...entryProps, `title=${escapeProperty(`manni docevals: ${r.evalName}`)}`]
+        .filter(Boolean)
+        .join(",");
       lines.push(
-        `::error file=${escapeProperty(r.file)},title=${escapeProperty(`manni docevals: ${r.evalName}`)}::${escapeData(
+        `::error ${props}::${escapeData(
           `AI judge: fail (confidence ${r.consensus.meanConfidence.toFixed(2)}). ${reasoning}`,
         )}`,
       );
