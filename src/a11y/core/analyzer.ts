@@ -199,24 +199,38 @@ async function analyzePage(
   const loaded = response?.url() ?? page.url();
 
   /**
-   * Where the page sent the browser: the navigation started after the load's
-   * own, or the URL the frame is on when that is unknown.
+   * The first navigation the main frame started after the load's own, or
+   * `undefined` when it started none. The load's own is found by walking its
+   * HTTP redirect hops back to the first request. When `goto` gave no
+   * response (a service worker answered it), the listener was attached just
+   * before `goto`, so its navigation is the first one recorded.
    */
-  const destination = (): string => {
+  const nextNavigation = (): Request | undefined => {
     let first = response?.request() ?? null;
     for (let from = first?.redirectedFrom() ?? null; from !== null; from = from.redirectedFrom()) {
       first = from;
     }
-    const own = first === null ? -1 : navigations.indexOf(first);
-    const next = own === -1 ? undefined : navigations[own + 1];
-    return next?.url() ?? page.url();
+    const own = first === null ? 0 : navigations.indexOf(first);
+    return own === -1 ? undefined : navigations[own + 1];
   };
 
   /**
-   * After a read rejected: wait, up to the timeout, for the main frame to
-   * commit another page. The original error stands when it never does.
+   * Where the page sent the browser. The navigation request is named even
+   * when it never commits, since an unresolvable host leaves the frame on the
+   * browser's own error page. Without one, the frame's URL is the answer:
+   * every caller has already seen it move off `loaded`, and Playwright
+   * reports the request before the URL changes, so this is a fallback only.
+   */
+  const destination = (): string => nextNavigation()?.url() ?? page.url();
+
+  /**
+   * After a read rejected: when the page started a navigation, wait for the
+   * main frame to commit it and return the redirect. When it started none,
+   * the error was not a navigation and stands at once, rather than after a
+   * second wait of `timeout`.
    */
   const navigatedAway = async (): Promise<RedirectedPage | null> => {
+    if (nextNavigation() === undefined && samePage(page.url(), loaded)) return null;
     try {
       await page.waitForURL((u) => !samePage(u.href, loaded), {
         waitUntil: "commit",
@@ -250,7 +264,8 @@ async function analyzePage(
     throw new A11yError(`Could not analyze ${url}: ${reason(err)}`);
   }
   // The page can navigate between two reads without either rejecting, and
-  // then what was read belongs to the destination, not to `url`.
+  // then what was read belongs to the destination, not to `url`. Where it
+  // went comes from the recorded request, with the frame's URL as fallback.
   if (!samePage(page.url(), loaded)) return { redirect: destination() };
   return {
     result: {
@@ -295,6 +310,8 @@ function readPage(): InPage {
  * optional. `null` for a bare delay, which is a reload rather than a redirect.
  */
 export function refreshUrl(content: string): string | null {
+  // The delay may be fractional ("0.5"), hence the dot. A malformed delay
+  // such as "..." also passes, which costs nothing: only the URL is used.
   const match = /^\s*[\d.]*\s*[;,]\s*(?:url\s*=\s*)?(.*)$/is.exec(content);
   let target = match?.[1]?.trim() ?? "";
   const quote = target[0];

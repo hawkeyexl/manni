@@ -176,6 +176,9 @@ export async function crawl(opts: CrawlOptions, analyzer: PageAnalyzer): Promise
       const analyzed = await analyzer.analyze(url, opts.analyze);
       if ("redirect" in analyzed) {
         const to = normalized(analyzed.redirect);
+        // Recorded and narrated before the seed checks below on purpose: the
+        // `↪` line then precedes the fatal message that explains it, and a
+        // throw discards `redirects` anyway.
         redirects.push({ url, to, source });
         progress({ kind: "redirected", index, url, to });
         const outcome = enqueue(to, source);
