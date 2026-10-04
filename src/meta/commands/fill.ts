@@ -152,6 +152,7 @@ import {
   selectProvider,
 } from "../../shared/providers.js";
 import { deriveCovers, managedFields } from "../core/derive/types.js";
+import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 
 export type {
   Candidate,
@@ -313,7 +314,7 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   }
   if (usingStdin && !forcedExtractor) {
     throw new DocmetaError(
-      "Reading from stdin (`-`) requires --as <format> to choose an extractor.",
+      STDIN_REQUIRES_AS,
     );
   }
 

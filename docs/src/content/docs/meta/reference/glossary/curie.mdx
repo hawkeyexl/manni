@@ -1,0 +1,40 @@
+---
+title: "CURIE"
+description: "What CURIE means in manni graph, and where the tool uses it."
+type: term
+id: curie
+label: "CURIE"
+abstract: "A compact IRI, written prefix:local."
+definition: "A compact IRI, written as a namespace prefix and a local name."
+keywords:
+  - "CURIE"
+  - "compact IRI"
+  - "prefix"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what CURIE means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a CURIE?"
+  - "Can graph query take a CURIE instead of a full IRI?"
+graph:
+  label: "CURIE"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "iri"
+  - "namespace"
+last-updated: 2026-10-04
+---
+
+<p>{frontmatter.definition}</p>
+
+`dcterms:subject` is the CURIE for `http://purl.org/dc/terms/subject`.
+`graph query` and `graph traverse` accept one anywhere they accept a term.

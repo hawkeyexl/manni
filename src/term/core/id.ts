@@ -1,8 +1,8 @@
 /**
  * A term's identity when its record carries no `id` and its construct no
  * identifier of its own: the GitHub slug of its preferred label. The slug is
- * `github-slugger`'s, which is the one kg mints concept IRIs with, so a term
- * and its kg concept agree on a name without either carrying one.
+ * `github-slugger`'s, which is the one graph mints concept IRIs with, so a term
+ * and its graph concept agree on a name without either carrying one.
  */
 import { slug } from "github-slugger";
 

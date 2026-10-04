@@ -8,7 +8,7 @@ The site is organized by user intent, not by document type. Each top-level secti
 
 ## Domains
 
-manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Seven domains ship today, so the site has seven top-level sections: `meta/`, `cite/`, `key/`, `a11y/`, `term/`, `lint/` and `docevals/`. The same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
+manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Eight domains ship today, so the site has eight top-level sections: `meta/`, `cite/`, `key/`, `a11y/`, `term/`, `lint/`, `docevals/` and `graph/`. The same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
 
 The `lint/` section is the sixth. It carries four journey pages and a reference shelf. It serves Maya (M10), Devin (D9), Theo (T5) and Sara (S7). Maya holds every page to the shape its doctype promises. Devin runs the CI gate, Theo reads one structure failure, and Sara describes a doctype as a template. Proposal 0050 folded the domain in, and 0061 made the template format a grammar. That is what earned Sara a set-up track. Writing a template is a job with steps now, rather than a key list to read once. The `lint/` content set is below, after `a11y/`.
 
@@ -17,6 +17,8 @@ The `a11y/` section now carries journey pages of its own. It serves Maya (M7, th
 The `term/` section serves four journeys. Sara defines the terms (S6), Maya keeps the terms and the prose in step (M9), and Devin hands the termbase to localization (D8). Theo fixes the term check that turned his pull request red (T4). Its content set is below `a11y/`.
 
 The `docevals/` section arrived with a strategy of its own, six personas and twelve journeys. Three of those personas were already these people by name, Devin, Sara and Theo. The other three were Priya, Nate and Iris. They are Maya as a platform lead, as the only person writing the docs, and as the one handed a corpus she did not write. They were folded into her entry in `personas.md` rather than added, for the same reason a11y added no persona. The journeys became M11–M15, D10–D11, S8–S11 and T6. M16 was added later, when the eval keys gained a home outside the page. Its content set is below, after `term/`.
+
+The `graph/` section is the eighth. It serves Maya (M18–M20), Devin (D12–D13), Sara (S12) and Theo (T7). Maya sees the docset as a graph, walks what a change affects, and fills the categorization nobody wrote. Devin gates the graph and publishes it. Sara extends the shapes it is checked against, and Theo fixes a red `graph check`. Proposal 0051 folded the domain in. Its content set is below, after `docevals/`.
 
 ---
 
@@ -135,7 +137,7 @@ The tree above is the `meta` group. The nav gains a `cite` group beside it, a si
 | Output formats & exit codes | D1, D3, D5, D7 | ★ | `pretty`/`json`/`github` shapes; `NO_COLOR`/TTY behavior. Also carries the `## Severity across the family` section, the one shared concept with no other home. That covers the three levels, which tool emits which, how each renders per format, and how a domain maps its own scale onto them. The a11y and cite configuration pages link here rather than restating it. Source of truth: `src/meta/reporters/index.ts`, `src/shared/severity.ts`. |
 | GitHub Action reference | D1 | ★ | Every input and output of `hawkeyexl/manni@v0`, with defaults, the one-item-per-line rule for multi-value inputs, and why globs reach manni meta unexpanded. Source of truth: `action.yml`, guarded by `npm run docs:check-action`. |
 | TypeScript API reference | D3 | | Every symbol the programmatic entry point publishes, with a purpose per export. That covers command cores, schema resolution, config, cache, reporters, extractors, and result types. Drift-checked against the built `dist/index.d.ts` by `npm run docs:check-api`, so a new export cannot ship undocumented. Source of truth: `src/index.ts`. |
-| Glossary | All | | frontmatter, extractor, schema set, dialect, `$schema`, OKF. |
+| Glossary | All | | One `type: term` page per term under `meta/reference/glossary/`, which `manni term` reads. The meta terms, then the graph terms. |
 
 ### `cite/` (citations and drift)
 
@@ -197,7 +199,7 @@ The fifth domain's content set, under `docs/src/content/docs/term/`. It serves f
 
 ### `lint/` (document structure)
 
-The sixth domain's content set, under `docs/src/content/docs/lint/`. Four journey pages and a reference shelf of three. Four CUJs (M10, D9, T5, S7). The nav gains a `lint` group after `key`. It carries an Overview link, then Get started, Set up, Run it in CI, and Fix a failing check. Reference groups are autogenerated from the matching directories. Doc Detective steps run on the get-started and CI pages, over `test/lint/fixtures/`, because a structure check needs nothing but a file.
+The eighth domain's content set, under `docs/src/content/docs/lint/`. Four journey pages and a reference shelf of three. Four CUJs (M10, D9, T5, S7). The nav gains a `lint` group after `key`. It carries an Overview link, then Get started, Set up, Run it in CI, and Fix a failing check. Reference groups are autogenerated from the matching directories. Doc Detective steps run on the get-started and CI pages, over `test/lint/fixtures/`, because a structure check needs nothing but a file.
 
 | Page | CUJ | ★ | Notes |
 |---|---|---|---|
@@ -270,6 +272,74 @@ Two constraints hold across the section. `fix/index.mdx` has no subject dependen
 | Files and state (`docevals/reference/files-and-state.mdx`) | S10, M15 | | The `.manni/docevals/` layout: caches, reviews, the golden set, generated scripts, and the baseline file. |
 | Glossary (`docevals/reference/glossary.mdx`) | Vocabulary | | eval, grader, assertion, evidence, suite, criterion, ensemble, consensus, confidence zone, calibration, regression and capability. |
 
+### `graph/` (the knowledge graph)
+
+The eighth domain's content set, under `docs/src/content/docs/graph/`, written here
+rather than imported: moose-kg brought sources and an ADR log, not pages. Its
+tree is the same intent-based shape as the siblings', with sections by job and
+a flat reference shelf the journeys deep-link into. The nav gains a `graph` group
+after `docevals`, with an Overview link and eight groups autogenerated from the
+matching directories:
+
+```
+Overview — "What are you trying to do?" router + a 60-second proof
+│
+├─ Get started          (Maya)   → M18
+├─ Explore the graph    (Maya)   → M18, M19
+├─ Fill the vocabulary  (Maya)   → M20
+├─ Run it in CI         (Devin)  → D12
+├─ Publish the graph    (Devin)  → D13
+├─ Govern the graph     (Sara)   → S12
+├─ Fix a failing check  (Theo)   → T7   (highest traffic; no prerequisites)
+└─ Reference            (lookup shelf)
+```
+
+Three placements are deliberate. `explore/` is apart from `get-started/`,
+because asking the graph questions is a journey a reader returns to. The
+quickstart is one they take once. `publish/` is apart from `ci/`, because
+gating and shipping are different jobs. Burying the export in a CI recipe loses
+the reader who came for retrieval. `govern/` is a section rather than
+reference. "Whose rules are these, and how do I add mine?" decides whether a
+team adopts the check at all.
+
+Two constraints hold across the section. `fix/index.mdx` has no subject
+dependencies: its reader arrives from an annotation and has read nothing else.
+And every page that presents a command carries inline Doc Detective steps over
+`test/graph/fixtures/dd/`, which the docs-as-tests workflow runs. A sample
+transcript therefore cannot drift from what the binary prints.
+`npm run docs:check-graph` builds a graph of this section and checks it against
+the bundled shapes. It reads the root `manni.config.yaml`, so each page's
+`{page}.meta.yaml` manifest reaches the graph as it reaches `manni meta validate`.
+
+Three drift guards read these pages directly, in
+`test/graph/unit/{schema-sync,vocabulary}.test.ts`. The configuration page must
+name the page vocabulary and the bundled shapes file in force. The library-API
+page must name only coverage symbols the entry point exports. And no page may
+spell a measured-field count other than the real one. A fourth guard pairs with
+the section rather than reading it. `docs/public/graph/ns.ttl` must be
+byte-identical to the newest `ns/graph/ns-<version>.ttl`, because that file is
+what the namespace IRI dereferences to.
+
+The section has no glossary page of its own. `manni term` owns the glossary (proposals 0052 and 0073), so each graph term is a `type: term` page in the family termbase under `meta/reference/glossary/`. The reference shelf links there, and each journey page names the terms it covers in `concepts:`.
+
+| Page | CUJ | ★ | Notes |
+|---|---|---|---|
+| Overview (`graph/index.mdx`) | All | ★ | A hero with two actions, mirroring the sibling overviews. What is already a graph in a docset. A 60-second proof from a real `build` / `stats` / `check` run. A goal router into the eight sections. Carries the load-bearing claim that nothing is inferred from prose. |
+| Get started (`graph/get-started/index.mdx`) | M18 | ★ | Build, read `stats`, ask one `query`, run `check`, write the config with `graph init`. Minimum vocabulary: the reader reaches an orphan and a concept collision without meeting "SHACL". Source of truth: `src/graph/commands/{build,stats,query,check,init}.ts`. |
+| How manni graph works (`graph/get-started/how-graph-works.mdx`) | M18 | ★ | What becomes a node and an edge, and the fifteen `graph:` keys. The harvest rule (deeper wins, per fact), near-miss warnings, determinism, and git as a detected fact. Sits after the quickstart on purpose. Source of truth: `src/graph/core/{analyze,derive,harvest}.ts`, `src/graph/schema.ts`. |
+| Explore the graph (`graph/explore/index.mdx`) | M18 | ★ | `stats` read in order, `query`'s three patterns, and `search`. The questions prose cannot answer. Source of truth: `src/graph/commands/{stats,query,search}.ts`. |
+| See what a change affects (`graph/explore/impact.mdx`) | M19 | ★ | `traverse` with `--reverse`, `--impact`, `--depth`, `--predicates` and the three scope filters. Why a graph walk beats a text search, and how to find the node to start from. Source of truth: `src/graph/commands/traverse.ts`, `src/graph/runtime/traverse.ts`. |
+| Fill the vocabulary (`graph/fill/index.mdx`) | M20 | ★ | `--dry-run` first, the status vocabulary, the confidence bar, `--fields`, the turn budget, `--local`, and the SHACL guardrail. Then the `meta-provenance` review loop, where deleting the entry is how you sign off. No dollar figure anywhere. Source of truth: `src/graph/commands/fill.ts`, `src/graph/core/fill-guard.ts`, `src/graph/llm/`. |
+| Run it in CI (`graph/ci/index.mdx`) | D12 | ★ | The two-step job, `fetch-depth: 0`, and `-f github` annotations on a finding with no line. Then the 0/1/2 contract, and the ramp-in that raises severity rather than weakening rules. Says why there is no findings baseline. Source of truth: `src/graph/reporters/github.ts`, `src/shared/run.ts`. |
+| Publish the graph (`graph/publish/index.mdx`) | D13 | ★ | The three export targets, the localization manifest, and `embed` per language. Then the browser runtime that never generates, and `x-manni-graph-output` as the decision about what ships. Publish on the run that gated it. Source of truth: `src/graph/commands/{export,embed}.ts`, `src/graph/core/{iirds-package,search-index,localizations}.ts`, `src/graph/runtime/`. |
+| Govern the graph (`graph/govern/index.mdx`) | S12 | ★ | Why emergent failures need a graph, and the bundled shapes as a floor. Extending them, and that naming shapes replaces rather than adds. The `sh:severity` mapping onto the family scale, `x-manni-graph-output`, and the three curated pointers a machine may never claim. Source of truth: `shapes/graph/shapes-1.0.0.ttl`, `src/graph/core/{shacl,graph-output}.ts`. |
+| Coverage (`graph/govern/coverage.mdx`) | M18, D12, S12 | ★ | The twelve measured document rows with what fills each. The two negative predicates left unmeasured on purpose. The section table that is reported and never gated, and the per-field threshold map. Ratchet, do not set. Guarded by the field-count drift test. Source of truth: `src/graph/core/coverage.ts`, `src/graph/commands/stats.ts`. |
+| Fix a failing check (`graph/fix/index.mdx`) | T7 | ★ | The four parts of a finding line, on the first screen. Then the common findings, rule by rule, with what to change. No subject dependencies. Source of truth: `src/graph/core/shacl.ts`, `src/graph/reporters/`, `test/graph/fixtures/dd/`. |
+| Reference (`graph/reference/index.mdx`) | Navigation | ★ | The shelf index, plus the three versioned contracts: the page vocabulary, the shapes, and the namespace document. |
+| CLI reference (`graph/reference/cli.mdx`) | All | ★ | Ten commands. Every argument, flag and value-default, and the exit codes. Guarded by `npm run docs:check-cli`. Source of truth: `src/graph/cli.ts`. |
+| Configuration reference (`graph/reference/configuration.mdx`) | All | ★ | Every `graph:` key with type and default, in camelCase. Then how the family's `collections:` and `providers:` reach this tool, and the keys that moved or went. Guarded by two drift tests. Source of truth: `src/graph/core/{config,config-schema.json}`, `src/shared/{collections,providers}.ts`. |
+| Library API reference (`graph/reference/library-api.mdx`) | D13 | ★ | The `graph` namespace, and the dependency-free browser runtime published beside it. Guarded by the coverage-symbol drift test. That is why the entry point re-exports `SECTION_COVERAGE_FIELDS`. Source of truth: `src/graph/index.ts`, `src/graph/runtime/index.ts`, `src/graph/embed/index.ts`. |
+
 ### Supporting / project
 
 | Page | CUJ | ★ | Notes |
@@ -330,6 +400,13 @@ Reference pages must never contradict the source code. Before writing any Refere
 | `docevals` files and state (`docevals/reference/files-and-state.mdx`) | `src/docevals/judge/cache.ts`, `src/docevals/fill/cache.ts`, `src/docevals/core/reviews.ts`, `src/docevals/core/baseline.ts`, `src/docevals/graders/scriptgen.ts` |
 | `docevals` judge pages (trust the judge, calibrate, choose a provider) | `src/docevals/judge/judge.ts`, `src/docevals/judge/verdict-schema.json`, `src/docevals/judge/provider.ts`, `src/docevals/commands/calibrate.ts` |
 | `docevals` journey pages | `src/docevals/commands/` for behaviour, `test/docevals/` for the exact emitted strings; sample output captured from the built binary over `test/docevals/fixtures/pages/` |
+| `graph` CLI reference (`graph/reference/cli.mdx`) | `src/graph/cli.ts`, guarded by `scripts/check-cli-reference.mjs` |
+| `graph` configuration reference (`graph/reference/configuration.mdx`) | `src/graph/core/config-schema.json`, `src/graph/core/config.ts`, `src/shared/collections.ts`, `src/shared/providers.ts`; guarded by the two `documented bundled defaults ↔ pkg.ts` cases in `test/graph/unit/schema-sync.test.ts` |
+| `graph` library API reference (`graph/reference/library-api.mdx`) | `src/graph/index.ts`, `src/graph/runtime/index.ts`, `src/graph/embed/index.ts`; guarded by the coverage-symbol case in `test/graph/unit/schema-sync.test.ts` |
+| `graph` coverage (`graph/govern/coverage.mdx`) | `src/graph/core/coverage.ts`, `src/graph/commands/stats.ts`, `src/graph/core/iirds.ts` for the predicate IRIs; the field count is guarded in `test/graph/unit/schema-sync.test.ts` |
+| `graph` govern (`graph/govern/index.mdx`) | `shapes/graph/shapes-1.0.0.ttl`, `src/graph/core/shacl.ts` for the severity mapping and the two SKOS integrity checks, `src/graph/core/graph-output.ts` for `x-manni-graph-output` |
+| `graph` journey pages (overview, get started, how it works, explore, impact, fill, CI, publish, fix) | `src/graph/commands/` for behaviour, `src/graph/core/{analyze,derive,harvest}.ts` for what becomes a triple, `src/graph/reporters/` and `test/graph/` for the exact emitted strings; sample output captured from the built binary over `test/graph/fixtures/dd/` |
+| The graph namespace document | `ns/graph/ns-<version>.ttl` is the source; `docs/public/graph/ns.ttl` is the copy the IRI `https://hawkeyexl.github.io/manni/graph/ns#` dereferences to, and `test/graph/unit/vocabulary.test.ts` asserts they are byte-identical |
 | `a11y` journey pages (get started, CI, fix) | `src/a11y/commands/check.ts` for behaviour, `src/a11y/core/{crawl,seeds,sitemap,url}.ts` for the crawl, `src/a11y/core/analyzer.ts` for the browser seam. `src/a11y/reporters/{pretty,github,json}.ts` for the exact emitted strings, captured from a real run, because no Doc Detective step can crawl here |
 
 ---

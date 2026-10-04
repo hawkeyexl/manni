@@ -257,6 +257,11 @@ Three things do change a fingerprint, and each is recovered with one
   stable `subject`, so a violation of the edited rule keeps its fingerprint. A
   violation that moves to a *different* keyword does not.
 
+Moving to a built-in version that only adds annotations keeps every
+fingerprint. That version hashes as the one before it, so
+`manni:stewardship:1.1.0` and its strict overlay fingerprint as their 1.0.0
+counterparts.
+
 {/* cite schema-ref-measured-from-the-config-dir */}
 {/* cite baseline-path-measured-from-the-config-dir */}
 A local file schema reference is measured **relative to the config file's

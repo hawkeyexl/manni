@@ -50,6 +50,7 @@ import {
   type FieldLocation,
   type LocationPreference,
 } from "./location.js";
+import { GRAPH_OUTPUT_KEYWORD } from "./graph-output.js";
 import { errorMessage } from "../../shared/errors.js";
 
 type Dialect = "2020" | "2019" | "draft7" | "draft4";
@@ -96,6 +97,7 @@ function buildAjv(
   if (dialect === "draft7") ajv.addMetaSchema(draft06MetaSchema);
   registerEncryptKeyword(ajv);
   registerLocationKeyword(ajv);
+  registerGraphOutputKeyword(ajv);
   registerBuiltins(ajv, dialect);
   return ajv;
 }
@@ -201,6 +203,52 @@ function isLocationShapeError(err: unknown): boolean {
   return err instanceof Error && err.message.includes(`"${LOCATION_KEYWORD}"`);
 }
 
+/**
+ * Where `x-manni-graph-output` records what it says for each top-level key it is
+ * evaluated at, while `graphOutputPreferences` is running: key name to the set of
+ * values seen, so one schema saying both is detectable. `undefined` the rest of
+ * the time, for the same reason and with the same safety as `markRecorder`.
+ */
+let graphOutputRecorder: Map<string, Set<boolean>> | undefined;
+
+/**
+ * `x-manni-graph-output` (proposal 0051 §5), on every Ajv meta builds. Like
+ * `x-manni-location`, it never fails a value; it says where it was evaluated,
+ * so a mark counts wherever Ajv's resolution takes the validator. Only a mark
+ * evaluated at a top-level property is recorded; one nested inside `graph` is
+ * accepted and ignored. The boolean meta-schema refuses any other value at
+ * compile time, and `compileUncached` turns Ajv's wording into the plan's
+ * message.
+ */
+function registerGraphOutputKeyword(ajv: InstanceType<AjvCtor>): void {
+  ajv.addKeyword({
+    keyword: GRAPH_OUTPUT_KEYWORD,
+    metaSchema: { type: "boolean" },
+    errors: false,
+    validate: (
+      schema: unknown,
+      _data: unknown,
+      _parent?: unknown,
+      cxt?: { instancePath: string },
+    ): boolean => {
+      if (graphOutputRecorder !== undefined && typeof schema === "boolean") {
+        const key = topLevelKey(cxt?.instancePath ?? "");
+        if (key !== undefined) {
+          const seen = graphOutputRecorder.get(key);
+          if (seen) seen.add(schema);
+          else graphOutputRecorder.set(key, new Set([schema]));
+        }
+      }
+      return true;
+    },
+  });
+}
+
+/** Ajv's compile error for a non-boolean mark names the keyword. */
+function isGraphOutputShapeError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes(`"${GRAPH_OUTPUT_KEYWORD}"`);
+}
+
 /** Does this schema mark its own top-level `$schema` property external? */
 function marksSchemaExternal(schema: Record<string, unknown>): boolean {
   const properties = schema["properties"];
@@ -215,8 +263,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * The first top-level key this schema marks both `page` and `external` on
- * paths every document takes; else undefined.
+ * The first top-level key this schema gives two different values of the mark
+ * `keyword` on paths every document takes; else undefined. `isMark` says
+ * which values count, so a malformed one is left to the keyword's own check.
  *
  * Unconditional means the schema's own `properties`, its `allOf` entries, and
  * a local `$ref` reached from those, applied again inside a property's
@@ -225,8 +274,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * is not chased, and neither is a local one inside an embedded `$id`, whose
  * `#` names another resource.
  */
-function definiteLocationConflict(root: Record<string, unknown>): string | undefined {
-  const marks = new Map<string, Set<FieldLocation>>();
+function definiteMarkConflict(
+  root: Record<string, unknown>,
+  keyword: string,
+  isMark: (value: unknown) => boolean,
+): string | undefined {
+  const marks = new Map<string, Set<unknown>>();
   /** The target of a `#/...` pointer from the root, if it resolves. */
   const localRef = (node: Record<string, unknown>, embedded: boolean): unknown => {
     const ref = node["$ref"];
@@ -257,8 +310,8 @@ function definiteLocationConflict(root: Record<string, unknown>): string | undef
     if (!isRecord(node) || visited.has(node)) return;
     visited.add(node);
     const inner = isEmbedded(node, embedded);
-    const mark = node[LOCATION_KEYWORD];
-    if (isFieldLocation(mark)) {
+    const mark = node[keyword];
+    if (isMark(mark)) {
       const seen = marks.get(key);
       if (seen) seen.add(mark);
       else marks.set(key, new Set([mark]));
@@ -496,10 +549,20 @@ export class Validator {
         `${ref}: "${FILE_SCHEMA_KEY}" cannot be stored in external metadata.`,
       );
     }
-    const contradicted = definiteLocationConflict(schema);
+    const contradicted = definiteMarkConflict(schema, LOCATION_KEYWORD, isFieldLocation);
     if (contradicted !== undefined) {
       throw new DocmetaError(
         `${ref}: "${LOCATION_KEYWORD}" says both "page" and "external" for "${contradicted}".`,
+      );
+    }
+    const graphContradicted = definiteMarkConflict(
+      schema,
+      GRAPH_OUTPUT_KEYWORD,
+      (value) => typeof value === "boolean",
+    );
+    if (graphContradicted !== undefined) {
+      throw new DocmetaError(
+        `${ref}: "${GRAPH_OUTPUT_KEYWORD}" says both true and false for "${graphContradicted}".`,
       );
     }
     try {
@@ -548,6 +611,11 @@ export class Validator {
       if (isLocationShapeError(err)) {
         throw new DocmetaError(
           `${ref}: "${LOCATION_KEYWORD}" must be "page" or "external".`,
+        );
+      }
+      if (isGraphOutputShapeError(err)) {
+        throw new DocmetaError(
+          `${ref}: "${GRAPH_OUTPUT_KEYWORD}" must be true or false.`,
         );
       }
       throw new DocmetaError(
@@ -653,6 +721,49 @@ export class Validator {
       for (const key of Object.keys(properties)) claimed.add(key);
     }
     return claimed;
+  }
+
+  /**
+   * Whether each top-level key of `data` belongs in a published graph under
+   * `refs`, as its `x-manni-graph-output` mark says. A key no schema marks has no
+   * entry, which the caller reads as `true`: absent means harvested.
+   *
+   * A first pass with the recording keyword, as `locationPreferences` runs, so
+   * a mark counts exactly where validation would evaluate it, and a mark nested
+   * inside `graph` is ignored. Only present values are marked: Ajv applies a
+   * property's subschema to a property that exists. `$schema` is stripped
+   * first, as validation does.
+   *
+   * Refs are evaluated in order and a later ref's mark wins, so a house schema
+   * listed after a vocabulary refines it. A schema that says both on paths
+   * every document takes is refused when it compiles. A ref whose conditional
+   * branches say both `true` and `false` gives that key no preference: with
+   * `allErrors`, Ajv evaluates failing branches too, so neither value is that
+   * ref's answer and an earlier ref's stands.
+   */
+  async graphOutputPreferences(
+    data: Record<string, unknown>,
+    refs: string[],
+  ): Promise<Map<string, boolean>> {
+    const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
+    void _omit;
+    const preferences = new Map<string, boolean>();
+    for (const ref of refs) {
+      const fn = await this.compile(ref);
+      const seen = new Map<string, Set<boolean>>();
+      graphOutputRecorder = seen;
+      try {
+        fn(subject);
+      } finally {
+        graphOutputRecorder = undefined;
+      }
+      for (const [key, values] of seen) {
+        const [value, ...others] = [...values];
+        if (value === undefined || others.length > 0) continue;
+        preferences.set(key, value);
+      }
+    }
+    return preferences;
   }
 
   /**

@@ -1,0 +1,11 @@
+# Proposal 0074: graph build reads x-manni-graph-output from the schema set
+# `manni meta validate` resolves. No meta: section, so that is the default set,
+# which carries manni:stewardship:1.1.0.
+collections:
+  - name: stewardship-output
+    paths:
+      - "docs/**/*.md"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl

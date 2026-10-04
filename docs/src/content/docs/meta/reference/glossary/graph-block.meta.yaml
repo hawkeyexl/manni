@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/graph-block.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-graph-block
+      assertion: "A reader can say what graph block means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-7
+      integrity: sha256-b633a373fc9be2d05411b696f328b7f190052f9171dd4ddddde1403d486c5eb7
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

@@ -360,7 +360,7 @@ describe("resolvePage: the eval- prefix reservation", () => {
   });
 
   it("leaves a sibling tool's page keys alone", () => {
-    const plan = resolvePage(page("title: x\nkg:\n  label: Thing"), CONFIG);
+    const plan = resolvePage(page("title: x\ngraph:\n  label: Thing"), CONFIG);
     expect(plan.problems.filter((p) => p.level === "error")).toHaveLength(0);
   });
 });

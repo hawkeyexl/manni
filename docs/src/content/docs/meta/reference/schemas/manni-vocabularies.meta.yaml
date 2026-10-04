@@ -21,7 +21,7 @@ docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
       integrity: sha256-d3c0b06c4eee9a7c75b802ee006a4fcf73e939661b20dca5254b32a5d5c224dc
     - generated-by: Claude Opus 5.5
       lines: 15-40
-      integrity: sha256-74df1fa9018fd56cb74c677796e997e962297a72107187c80fd5fa42967b24f6
+      integrity: sha256-6ed10beee184090e371f451af118814a3bb803be5918d05647cf44426cf1c8f5
     - generated-by: Claude Opus 5.5
       lines: 56-57
       integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
@@ -39,7 +39,7 @@ docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
       integrity: sha256-4ef9021fb32a169a48899d263959b826877cee7489aff983f32700dce76bc99c
     - generated-by: Claude Opus 5.5
       lines: 121-308
-      integrity: sha256-e72df35ced8def8ff109ba207c144c211439a71b446e24c36a144502bc957fe8
+      integrity: sha256-caf2f866c52e09248dfc333612893b8bff451f0d732927e86d750403004076ab
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

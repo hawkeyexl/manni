@@ -4,13 +4,9 @@ docs/src/content/docs/graph/index.mdx:
   eval-suite: graph
   evals:
     - id: what-it-does
-      assertion: "A reader can say what manni graph derives and that it is not in the published package."
+      assertion: "A reader can say what manni graph derives a graph from, and that nothing in it is inferred from prose."
       type: capability
       grader: ai
-  provenance:
-    - generated-by: Claude Opus 5.5
-      lines: 2-8
-      integrity: sha256-eb16edbbef0e60a1b66c40efa5c1272fc98fe5083ef752e1a860fc66f4eea1fc
   owner:
     - "@hawkeyexl"
   created: 2026-09-24
@@ -19,10 +15,12 @@ docs/src/content/docs/graph/index.mdx:
       fields:
         - /tags
         - /action
-        - /concepts
         - /related-pages
       confidence:
         /tags: 0.75
         /action: 0.95
-        /concepts: 0.85
         /related-pages: 0.75
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-99
+      integrity: sha256-a7c288613476027d7ffa5a4ec9b549c148cdd980ff774e572c3824897ca006d3

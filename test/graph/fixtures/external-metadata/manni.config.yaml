@@ -1,0 +1,15 @@
+# Fields kept beside each page rather than on it: every page under docs/ has
+# its own {page}.meta.yaml (proposals 0047 and 0058). graph reads a page the
+# way `manni meta validate` does, so what the manifest holds is the page's.
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+        keys: [description, authors, created, owner, meta-provenance, graph]
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  fill:
+    fields: [label, alt-labels, related-concepts, concepts]

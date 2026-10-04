@@ -51,6 +51,7 @@ import type {
   GitClient,
   PageCitationReport,
 } from "../types.js";
+import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 
 /** What `check` and `update` settle before touching a page. */
 export interface PreparedRun {
@@ -175,7 +176,7 @@ export async function prepareRun(
     );
   }
   if (usingStdin && forced === undefined) {
-    throw new CiteError("Reading from stdin (`-`) requires --as <format> to choose an extractor.");
+    throw new CiteError(STDIN_REQUIRES_AS);
   }
 
   const exts = opts.exts ?? forced?.extensions;

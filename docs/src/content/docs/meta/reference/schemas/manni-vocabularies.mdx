@@ -1,6 +1,6 @@
 ---
 title: The manni vocabularies
-description: "The eleven manni:<family>:1.0.0 built-in vocabularies for maintained, machine-readable docs: what each one answers, how they stack, and their strict overlays."
+description: "The eleven manni:<family> built-in vocabularies for maintained, machine-readable docs: what each one answers, how they stack, and their strict overlays."
 type: concept
 id: meta-reference-schemas-manni-vocabularies
 keywords: ["manni vocabularies", "strict overlays", "field location", "quality contracts"]
@@ -17,7 +17,7 @@ sample-questions:
 graph:
   label: "The manni vocabularies"
   type: concept
-last-updated: 2026-09-27
+last-updated: 2026-10-04
 tags:
   - vocabularies
   - schemas
@@ -57,7 +57,7 @@ glossary tool or CI tool can read.
 | Id | The question it answers | Fields |
 |---|---|---|
 | [`manni:core:1.0.0`](/manni/meta/reference/schemas/manni-core/) | What is this page? | `title`\* · `description`\* · `id` · `type` · `keywords` · `language` |
-| [`manni:stewardship:1.0.0`](/manni/meta/reference/schemas/manni-stewardship/) | Is it cared for? | `authors` · `owner` · `stakeholders` · `reviewed-by` · `created` · `last-updated` · `last-reviewed` · `review-interval` · `verified-against` · `source-of-truth` |
+| [`manni:stewardship:1.1.0`](/manni/meta/reference/schemas/manni-stewardship/) | Is it cared for? | `authors` · `owner` · `stakeholders` · `reviewed-by` · `created` · `last-updated` · `last-reviewed` · `review-interval` · `verified-against` · `source-of-truth` |
 | [`manni:audience:1.0.0`](/manni/meta/reference/schemas/manni-audience/) | Who does it serve, and who may see it? | `audiences` · `personas` · `journeys` · `intent` · `visibility` |
 | [`manni:lifecycle:1.0.0`](/manni/meta/reference/schemas/manni-lifecycle/) | Where is it in its life? | `lifecycle` · `replaced-by` · `supersedes` · `remove-by` |
 | [`manni:structure:1.0.0`](/manni/meta/reference/schemas/manni-structure/) | What does it connect to? | `applies-to` · `not-applicable-to` · `concepts` · `prerequisites` · `next-steps` · `related-pages` |
@@ -162,7 +162,7 @@ meta:
 | Vocabulary | Strict overlay |
 |---|---|
 | `manni:core:1.0.0` | [`manni:core-strict:1.0.0`](/manni/meta/reference/schemas/manni-core/#strict-overlay) |
-| `manni:stewardship:1.0.0` | [`manni:stewardship-strict:1.0.0`](/manni/meta/reference/schemas/manni-stewardship/#strict-overlay) |
+| `manni:stewardship:1.1.0` | [`manni:stewardship-strict:1.1.0`](/manni/meta/reference/schemas/manni-stewardship/#strict-overlay) |
 | `manni:audience:1.0.0` | [`manni:audience-strict:1.0.0`](/manni/meta/reference/schemas/manni-audience/#strict-overlay) |
 | `manni:lifecycle:1.0.0` | [`manni:lifecycle-strict:1.0.0`](/manni/meta/reference/schemas/manni-lifecycle/#strict-overlay) |
 | `manni:structure:1.0.0` | [`manni:structure-strict:1.0.0`](/manni/meta/reference/schemas/manni-structure/#strict-overlay) |

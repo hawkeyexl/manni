@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/localization-manifest.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-localization-manifest
+      assertion: "A reader can say what localization manifest means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-4
+      integrity: sha256-1abeacbd745b6b3f3538284137654be0401ca2c28be7064be3a8ef94a57a9cfe
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

@@ -4,16 +4,24 @@ description: "Deterministic knowledge graphs derived from documentation frontmat
 tableOfContents: false
 hero:
   tagline: Deterministic knowledge graphs derived from documentation frontmatter and formatting.
+  actions:
+    - text: Get started
+      link: /manni/graph/get-started/
+      icon: right-arrow
+      variant: primary
+    - text: Fix a failing check
+      link: /manni/graph/fix/
+      icon: error
+      variant: minimal
 id: "graph"
 type: "overview"
 keywords: ["knowledge graph", "frontmatter", "docset"]
 language: en
 intent: "Learn that manni graph derives a knowledge graph from a docset's frontmatter and structure."
-lifecycle: draft
+lifecycle: published
 applies-to: ["domain:graph"]
 sample-questions: ["What is manni graph?", "What does the graph tool derive a graph from?"]
 graph: { label: "manni graph", type: concept }
-last-updated: 2026-09-24
 tags:
   - graph
   - cli
@@ -23,16 +31,116 @@ action: understand
 concepts:
   - frontmatter
   - metadata
+  - triple
+  - derivation
+  - concept
+  - emergent failure
+  - SHACL
+  - JSON-LD
+  - iiRDS
+  - turn
 related-pages:
   - meta
   - cite
   - term
+last-updated: 2026-10-04
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside type="note" title="In development">
-`manni graph` is in development. It is not in the published package.
+<Aside type="note" title="Beta">
+`manni graph` is in beta. Its commands, config keys and output can change in
+any release, without notice.
 </Aside>
 
-Your docset is already a graph. Pages link to pages, headings nest, tags repeat across sections, and git knows who wrote what. The graph tool writes all of that down as one file you can query and check. Nothing is inferred from prose.
+Your docset is already a graph. Pages link to pages, headings nest, tags repeat
+across sections, and git knows who wrote what. `manni graph` reads all of that and
+writes it down as one file you can query, check, and hand to a retrieval
+system.
+
+Nothing is inferred from prose. A triple exists because frontmatter, a link, a
+heading, a code block or git history put it there.
+
+## The 60-second version
+
+Build it:
+
+```console
+$ npx @hawkeyexl/manni graph build docs/
+Wrote graph/graph.ttl (3 docs, 157 triples)
+```
+
+Ask it what nothing links to:
+
+```console
+$ npx @hawkeyexl/manni graph stats
+Orphan docs (1):
+  docs/troubleshooting.md
+
+Broken internal links (1):
+  docs/troubleshooting.md -> missing.md
+
+Broken section refs (1):
+  docs/getting-started.md -> #renamed-heading
+```
+
+Check it as a whole:
+
+```console
+$ npx @hawkeyexl/manni graph check
+warning: https://example.com/dd/concept/installation skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [docs/configuration.md, docs/getting-started.md]
+
+0 errors, 1 warning, 0 notices
+```
+
+Two pages named one concept differently, so they collided on a single node.
+That finding exists in neither file. No API key, no network, no model.
+
+## What are you trying to do?
+
+| Goal | Start here |
+|---|---|
+| See my docset as a graph and find what nothing links to | [Get started](/manni/graph/get-started/) |
+| Understand what becomes a triple before I commit to it | [How manni graph works](/manni/graph/get-started/how-graph-works/) |
+| Ask the corpus questions prose cannot answer | [Explore the graph](/manni/graph/explore/) |
+| Know what a change to one page affects | [See what a change affects](/manni/graph/explore/impact/) |
+| Categorize pages that predate the vocabulary | [Fill the vocabulary](/manni/graph/fill/) |
+| Gate the docset's structure on every pull request | [Run it in CI](/manni/graph/ci/) |
+| Ship the graph to a retrieval system or a portal | [Publish the graph](/manni/graph/publish/) |
+| Enforce my own house rules about structure | [Govern the graph](/manni/graph/govern/) |
+| Unblock a pull request that just went red | [Fix a failing check](/manni/graph/fix/) |
+| Look up a flag, a config key, or a word | [Reference](/manni/graph/reference/) |
+
+## What makes it different
+
+**It reads, it does not guess.** Frontmatter, links, headings, images, code
+blocks and git history become triples. Nothing else does. A wrong answer is
+always traceable to a line in a file.
+
+**It catches what no per-file check can.** A concept split across two
+spellings, a `broader` cycle closed by three pages, a link to a page that no
+longer exists. These failures exist only after the corpus merges into shared
+nodes, which is why `manni graph check` validates the graph rather than the files.
+
+**It is deterministic.** Two builds over unchanged inputs are byte-identical:
+canonically sorted output, no blank nodes, and no wall clock anywhere. The
+graph is safe to commit, diff and cache.
+
+**The output is somebody else's input.** JSON-LD for a linked-data ingester.
+A conformant iiRDS package for a content delivery portal. A search index a
+dependency-free browser runtime reads client-side. Publish on the run that
+gated it, so what ships is what passed.
+
+**One model call, clearly marked.** `manni graph fill` is the only verb that
+reaches a provider. The budget is counted in inference calls rather than
+dollars, and every value it writes is attributed for review.
+
+## Requirements
+
+Node.js 24 or newer. No hosted service, no account. Git is used where it is
+available and its absence is a warning, not a failure.
+
+```sh
+npm install -D @hawkeyexl/manni
+npx @hawkeyexl/manni graph init
+```

@@ -24,7 +24,7 @@ applies-to: ["domain:manni"]
 next-steps: ["meta", "a11y", "cite", "key", "term"]
 sample-questions: ["What tools does manni include?", "How do I install manni and run my first command?", "What changed when docmeta became manni meta?"]
 graph: { label: "manni", type: concept }
-last-updated: 2026-10-01
+last-updated: 2026-10-04
 tags:
   - overview
   - installation
@@ -83,6 +83,11 @@ npx @hawkeyexl/manni docevals run docs/ --deterministic-only
     description="Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter. Code first, an AI judge second, a human last."
   />
   <LinkCard
+    title="graph"
+    href="/manni/graph/"
+    description="Derive a knowledge graph from documentation frontmatter and formatting, check it against SHACL shapes, and publish it for retrieval. Deterministic, with no model in the loop."
+  />
+  <LinkCard
     title="key"
     href="/manni/key/"
     description="Set and rotate the family encryption key, so a required field or a private source path is on the page without being readable there."
@@ -98,12 +103,13 @@ npx @hawkeyexl/manni docevals run docs/ --deterministic-only
 like what it says it is. `cite` checks that what a page says about the code is
 still true. `docevals` checks that a page still meets the quality bar its team
 wrote down. `term` checks that the terms a page names are defined, and carries
-those terms into Vale and translation. `key` sets and rotates the one encryption
-key that `meta` and `cite` encrypt values with. `manni --help` lists exactly the tools the package
-carries.
+those terms into Vale and translation. `graph` checks what the pages say about each
+other, which is the only question no single file can answer. `key` sets and
+rotates the one encryption key that `meta` and `cite` encrypt values with.
+`manni --help` lists exactly the tools the package carries.
 
-`cite`, `docevals`, `key`, `term` and `lint` are in beta. Their commands, config keys and output
-can change in any release, without notice.
+`cite`, `docevals`, `key`, `term`, `lint` and `graph` are in beta. Their commands,
+config keys and output can change in any release, without notice.
 
 ## Coming from docmeta?
 

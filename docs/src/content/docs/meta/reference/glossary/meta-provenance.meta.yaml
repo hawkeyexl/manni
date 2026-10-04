@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/meta-provenance.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-meta-provenance
+      assertion: "A reader can say what meta-provenance means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-6
+      integrity: sha256-f9d3d4428a1abeb61cf61debe3dc326611a0979f285f8635078cd5bd150ada7f
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

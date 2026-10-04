@@ -6,35 +6,35 @@ docs/src/content/docs/meta/index.mdx:
         integrity: sha256-51deef4abb34be45aea7bddc2af2800a193cdc7ce9380a757913e5717f68ae9f
       source:
         file: src/meta/commands/validate.ts
-        lines: 829-830
+        lines: 830-831
         integrity: sha256-3ef67f71b6dd6d13aa8db8c7e567afcb9df863c1d137c5597d3a9fd7de40c6fa
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: formats-enforced-by-ajv-formats
       claim:
         lines: 95-96
         integrity: sha256-a468756f18d56ccaf94e1a02532414aec245950d691be3767ebf9aab297e4ad8
       source:
         file: src/meta/core/validator.ts
-        lines: 93
+        lines: 94
         integrity: sha256-13cad13b9da05a87f1d7e4ed101397327ec94367e2c9e0f6eba648bb4109934b
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 7aa9a5632411b78d43c793baf6f8f48f0b9db79f
     - id: required-fields-checked-against-metadata-object
       claim:
         lines: 95
         integrity: sha256-af4f5a31f389ce65cdf3dad01011d038d8fa8b69671d410d8c16078f4db54bda
       source:
         file: src/meta/core/validator.ts
-        lines: 687-688
+        lines: 798-799
         integrity: sha256-b41d2247f4df563b4638532286fcaf90f3105ab234b56e24619fd7f598d68e59
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
     - id: forty-five-built-in-schemas
       claim:
-        integrity: sha256-f1d6abfbc94bfaaf4918aa31b526fa8b929987ce3b1782bf3cad9946b473e906
+        integrity: sha256-3d75e5e96554eab6f6711261ca7ada33808511532f21fe6237e5c15089d3d439
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 79-127
-        integrity: sha256-b34b13447649abac27c865e57b62674978e2d0b5f1b1c3bef6380c9c9a1b98df
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        lines: 81-131
+        integrity: sha256-a704c5e7f4c99812eb53ea0b48faa524598f9471492b4b7a93e22cfa116b6452
+        commit-sha: 7aa9a5632411b78d43c793baf6f8f48f0b9db79f
     - id: error-line-names-field-line-and-schema
       claim:
         integrity: sha256-6e24a2751ad70c15d7e6a0c643456d631350f32d19020526786cb196d44968af

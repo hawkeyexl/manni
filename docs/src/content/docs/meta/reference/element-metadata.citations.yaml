@@ -5,17 +5,17 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-291ce93da80cc0dbf7e135aff60d977a7933a3b35252e3f5110f45b7ec56aad5
       source:
         file: src/meta/commands/get.ts
-        lines: 522-528
+        lines: 523-529
         integrity: sha256-495ffdf01f73b7275bfcc4fcf36a79c97478f992ed666a0dc962fa3fbd8edb63
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: element-pointer-and-dot-notation-both-work
       claim:
         integrity: sha256-4a50876d9419354c5c40b89c85df1a13373722cb9b04e69b650eaf654e69ede3
       source:
         file: src/meta/commands/get.ts
-        lines: 512-520
+        lines: 513-521
         integrity: sha256-80a40363a4c3211debea1d799d96c7d19655f448f3c3d1d38f16f30733aa1ab7
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: element-collision-guard-is-narrow
       claim:
         lines: 229-231
@@ -102,9 +102,9 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-2c60cbda72930e43b17814fc11e6ec89cb3160402513a7d2d11cb914b28326ab
       source:
         file: src/meta/core/resolve-schema.ts
-        lines: 572-580
+        lines: 617-625
         integrity: sha256-83a34b6970a5db3985735ca2d0c158b31b9654dca2f5fc46f9eea9c221f00ec9
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
     - id: element-config-extends-the-convention
       claim:
         lines: 170-174

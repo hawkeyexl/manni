@@ -71,7 +71,7 @@ describe("resolveSchemaSet", () => {
       "manni:core:1.0.0",
       "manni:audience:1.0.0",
       "manni:structure:1.0.0",
-      "manni:stewardship:1.0.0",
+      "manni:stewardship:1.1.0",
       "manni:lifecycle:1.0.0",
       "manni:ai-context:1.0.0",
       "manni:evals:1.0.0",

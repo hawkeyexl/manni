@@ -1,0 +1,41 @@
+---
+title: "Focus node"
+description: "What focus node means in manni graph, and where the tool uses it."
+type: term
+id: focus-node
+label: "focus node"
+abstract: "The node a SHACL finding is about."
+definition: "The node a SHACL finding is about."
+keywords:
+  - "focus node"
+  - "SHACL"
+  - "finding"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what focus node means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a focus node?"
+  - "How do I find the page behind a graph finding?"
+graph:
+  label: "focus node"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "shacl"
+  - "emergent-failure"
+last-updated: 2026-10-04
+---
+
+<p>{frontmatter.definition}</p>
+
+It is the graph's name for the thing that failed. The documents listed
+beside it are where it came from, and the fix is usually in one of them.
+[Fix a failing check](/manni/graph/fix/) reads a finding line by line.

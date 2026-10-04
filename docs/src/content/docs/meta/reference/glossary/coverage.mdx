@@ -1,0 +1,39 @@
+---
+title: "Coverage"
+description: "What coverage means in manni graph, and where the tool uses it."
+type: term
+id: coverage
+label: "coverage"
+abstract: "The share of documents carrying each measured field."
+definition: "The share of documents that carry each measured field."
+keywords:
+  - "coverage"
+  - "stats"
+  - "threshold"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what coverage means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What does manni graph coverage measure?"
+  - "How do I fail a build on low coverage?"
+graph:
+  label: "coverage"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "orphan"
+last-updated: 2026-10-04
+---
+
+<p>{frontmatter.definition}</p>
+
+Twelve document-level rows are measured, and [Coverage](/manni/graph/govern/coverage/)
+lists them. `graph stats --check` turns a floor into an exit code.

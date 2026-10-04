@@ -14,7 +14,12 @@
  * `derive:` block with no `fields` manages on the page (proposal 0069).
  */
 import { DocmetaError } from "../types.js";
-import { loadConfig, schemaTrustRoot, type DocmetaConfig, type SchemaTrustRoot } from "./config.js";
+import {
+  loadConfig,
+  schemaTrustRoot,
+  type DocmetaConfig,
+  type SchemaTrustRoot,
+} from "./config.js";
 import type { PageMarks } from "./external-metadata.js";
 import {
   collectSchemaPins,
@@ -96,6 +101,24 @@ function lazyValidator(opts: PageMarksOptions): () => Validator {
   return () => (opts.validator instanceof Validator ? opts.validator : (built ??= opts.validator()));
 }
 
+/** The page's schema set, as `validate` resolves it. Throws when it cannot. */
+export function pageSchemaSet(
+  opts: PageMarksOptions,
+  label: string,
+  probe: Readonly<Record<string, unknown>>,
+  memberOf: readonly string[],
+): string[] {
+  return resolveSchemaSetWithSource({
+    filePath: label,
+    fileSchema: probe[FILE_SCHEMA_KEY],
+    ...(opts.cliSchemas !== undefined ? { cliSchemas: [...opts.cliSchemas] } : {}),
+    config: opts.config,
+    memberOf: opts.memberOf?.(label) ?? memberOf,
+    fileBase: opts.cwd,
+    trustRoot: opts.trustRoot,
+  }).schemas;
+}
+
 /** The page's schema set, or undefined when it cannot be resolved. */
 function pageRefs(
   opts: PageMarksOptions,
@@ -104,15 +127,7 @@ function pageRefs(
   memberOf: readonly string[],
 ): string[] | undefined {
   try {
-    return resolveSchemaSetWithSource({
-      filePath: label,
-      fileSchema: probe[FILE_SCHEMA_KEY],
-      ...(opts.cliSchemas !== undefined ? { cliSchemas: [...opts.cliSchemas] } : {}),
-      config: opts.config,
-      memberOf: opts.memberOf?.(label) ?? memberOf,
-      fileBase: opts.cwd,
-      trustRoot: opts.trustRoot,
-    }).schemas;
+    return pageSchemaSet(opts, label, probe, memberOf);
   } catch (err) {
     if (err instanceof DocmetaError) return undefined;
     throw err;

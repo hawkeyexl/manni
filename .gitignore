@@ -12,8 +12,21 @@ coverage/
 
 # `docmeta fill` proposal cache — machine-local, safe to delete at any time.
 .docmeta/
-# The family cache directory: `.manni/meta/…` for the metadata tool. Same rule.
+# The family cache directory: `.manni/meta/…` for the metadata tool,
+# `.manni/graph/…` for the graph tool's proposal and vector caches. Same rule.
 .manni/
+
+# Scratch output. The graph packaged test (test/graph/integration/packaged.test.ts)
+# extracts the `npm pack` tarball here so Node resolves its dependencies from
+# this repo's node_modules.
+.tmp/
+
+# Derived, binary, and not CI-regenerable (model weights are a download).
+# `manni graph embed` writes one vector sidecar per language into the configured
+# `embed.out` directory, `graph/` by default. The goldens under
+# test/graph/fixtures/golden/ are mock-embedded and committed deliberately, and
+# sit directly under `golden/`, which the pattern does not match.
+**/graph/vectors.*.bin
 
 # Feature demo videos (see CLAUDE.md). The sources, scripts, captions, GIFs
 # and thumbnails under media/ are committed; the rendered MP4s are not, and

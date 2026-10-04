@@ -21,6 +21,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import {
+  ANNOTATION_ONLY_PREDECESSORS,
   listBuiltins,
   classifyRef,
   fetchSchemaBytes,
@@ -1232,5 +1233,45 @@ describe("0009 · a published built-in URL resolves from the bundle", () => {
         pins: new Map([[url, { integrity: `sha256-${"0".repeat(64)}` }]]),
       }),
     ).rejects.toThrow(/integrity pin/);
+  });
+});
+
+describe("ANNOTATION_ONLY_PREDECESSORS", () => {
+  // A string-valued `description`, `title` or `$id`, and any `x-manni-*` key,
+  // annotate without validating. An object under a property named `title` is a
+  // property schema, and stays. What is left must be identical, or the entry
+  // hides a real change from every recorded baseline.
+  const ANNOTATION = new Set(["description", "title", "$id"]);
+  const validation = (node: unknown): unknown => {
+    if (Array.isArray(node)) return node.map(validation);
+    if (typeof node !== "object" || node === null) return node;
+    return Object.fromEntries(
+      Object.entries(node)
+        .filter(([k, v]) => !k.startsWith("x-manni-") && !(ANNOTATION.has(k) && typeof v === "string"))
+        .map(([k, v]) => [k, validation(v)]),
+    );
+  };
+
+  it("is not empty", () => {
+    expect(ANNOTATION_ONLY_PREDECESSORS.size).toBeGreaterThan(0);
+  });
+
+  it.each([...ANNOTATION_ONLY_PREDECESSORS])(
+    "%s validates exactly as %s",
+    async (successor, predecessor) => {
+      expect(validation(await loadSchema(successor))).toEqual(
+        validation(await loadSchema(predecessor)),
+      );
+    },
+  );
+
+  it("maps each successor to a built-in, never to itself", () => {
+    const ids = new Set(listBuiltins().map((b) => b.id));
+    for (const [successor, predecessor] of ANNOTATION_ONLY_PREDECESSORS) {
+      expect(ids.has(successor)).toBe(true);
+      expect(ids.has(predecessor)).toBe(true);
+      expect(predecessor).not.toBe(successor);
+      expect(ANNOTATION_ONLY_PREDECESSORS.has(predecessor)).toBe(false);
+    }
   });
 });

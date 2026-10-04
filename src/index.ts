@@ -8,6 +8,10 @@ export * as docevals from "./docevals/index.js";
 // The lint domain (proposal 0050): its command cores, the template registry,
 // the parsers and the reporters. `import { lint } from "@hawkeyexl/manni"`.
 export * as lint from "./lint/index.js";
+// The knowledge-graph tool. `./graph/runtime` and `./graph/embed` stay as their own
+// package subpaths: those are the browser build, and reaching them through
+// this entry point would pull the Node half in with them.
+export * as graph from "./graph/index.js";
 // The family encryption key's domain (proposal 0045): its command cores and
 // the encryption primitives. `import { key } from "@hawkeyexl/manni"`.
 export * as key from "./key/index.js";

@@ -1,0 +1,42 @@
+---
+title: "Triple"
+description: "What triple means in manni graph, and where the tool uses it."
+type: term
+id: triple
+label: "triple"
+abstract: "One statement in the graph."
+definition: "One statement in the graph, made of a subject, a predicate and an object."
+keywords:
+  - "triple"
+  - "RDF"
+  - "statement"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what triple means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a triple in manni graph?"
+  - "How many triples did manni graph build derive?"
+graph:
+  label: "triple"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "quad"
+  - "iri"
+  - "derivation"
+last-updated: 2026-10-04
+---
+
+<p>{frontmatter.definition}</p>
+
+`this page` `has subject` `this concept` is one triple. A graph is a set of
+them, and `manni graph build` reports how many it derived. See
+[derivation](/manni/meta/reference/glossary/derivation/) for where each one comes from.

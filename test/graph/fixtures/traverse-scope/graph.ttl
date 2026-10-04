@@ -1,0 +1,11 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix graph: <https://hawkeyexl.github.io/manni/graph/ns#> .
+
+<https://ex.com/graph/doc/a.md> a graph:Document ;
+  dcterms:language "en-US" ;
+  dcterms:references <https://ex.com/graph/doc/b.md> ;
+  dcterms:title "A" .
+
+<https://ex.com/graph/doc/b.md> a graph:Document ;
+  dcterms:language "en-US" ;
+  dcterms:title "B" .

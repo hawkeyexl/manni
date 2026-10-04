@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/emergent-failure.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-emergent-failure
+      assertion: "A reader can say what emergent failure means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-7
+      integrity: sha256-a2208a7c2e5d725ecd750b77b223787f5ddbe1993936b39bc276ff6314eac614
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04
