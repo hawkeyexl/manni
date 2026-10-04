@@ -118,27 +118,26 @@ Three are structural and hand-curated: `sections`, `revision-of` and
 The block is **closed**, so a key that is not one of those fifteen is a schema
 error with a line number. There is no `graph validate`. A `graph:` block is
 frontmatter, so `manni meta validate` checks it against the page vocabulary.
-That is the command every vocabulary in this family is checked with. Put the
-draft in the schema set for those pages, and a bare run finds it:
+That is the command every vocabulary in this family is checked with. Put
+`manni:graph:1.0.0` in the schema set for those pages, and a bare run finds it:
 
 ```yaml title="manni.config.yaml"
 meta:
   overrides:
     - collection: site
       schemas:
-        - ./schema/graph-1.0.0-proposal.1.json
+        - manni:graph:1.0.0
 ```
 
 ```console
 $ manni meta validate
 ✗ docs/install.md
-    /graph  must NOT have additional property 'bogus'  (line 3)  [./schema/graph-1.0.0-proposal.1.json]
+    /graph  must NOT have additional property 'bogus'  (line 3)  [manni:graph:1.0.0]
 ```
 
-The draft is [open for review](/manni/meta/proposals/graph/), so copy
-[`1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json)
-into your repository rather than pointing at a published URL. `manni graph
-build` reads `x-manni-graph-output` from the same set, the one `manni meta
+`manni:graph:1.0.0` is a built-in schema of `manni meta`, and its
+[reference page](/manni/meta/reference/schemas/manni-graph/) lists every key.
+`manni graph build` reads `x-manni-graph-output` from the same set, the one `manni meta
 validate` resolves for each page.
 
 Two spellings are deliberate and different. Config keys are camelCase
@@ -234,14 +233,14 @@ therefore be checked without being published.
 
 {/* Verified by Doc Detective in docs-as-tests, against test/graph/fixtures/dd/. */}
 
-{/* step {"description":"A legal graph block validates against the page vocabulary.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/docs.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[0],"stdio":"3 files checked, 3 passed, 0 failed, 0 errors"}} */}
+{/* step {"description":"A legal graph block validates against the page vocabulary.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/docs.config.yaml -s manni:graph:1.0.0","exitCodes":[0],"stdio":"3 files checked, 3 passed, 0 failed, 0 errors"}} */}
 
-{/* step {"description":"The graph block is closed, so an unknown key is a schema error.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[1],"stdio":"must NOT have additional property 'bogus'"}} */}
+{/* step {"description":"The graph block is closed, so an unknown key is a schema error.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/invalid.config.yaml -s manni:graph:1.0.0","exitCodes":[1],"stdio":"must NOT have additional property 'bogus'"}} */}
 
-{/* step {"description":"The page vocabulary in force is named in the finding.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[1],"stdio":"1.0.0-proposal.1.json"}} */}
+{/* step {"description":"The page vocabulary in force is named in the finding.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/invalid.config.yaml -s manni:graph:1.0.0","exitCodes":[1],"stdio":"[manni:graph:1.0.0]"}} */}
 
 {/* step {"description":"A near-miss page key warns and derives nothing.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"nothing was derived from it"}} */}
 
 {/* step {"description":"A page type with no iiRDS counterpart derives no graph.type.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"no graph.type was derived"}} */}
 
-{/* step {"description":"A near miss is a warning: the build still succeeds.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"1 docs, 34 triples"}} */}
+{/* step {"description":"A near miss is a warning: the build still succeeds.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"1 docs, 44 triples"}} */}

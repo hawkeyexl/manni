@@ -37,7 +37,7 @@ Point it at your docs:
 
 ```console
 $ npx @hawkeyexl/manni graph build docs/
-Wrote graph/graph.ttl (3 docs, 131 triples)
+Wrote graph/graph.ttl (3 docs, 157 triples)
 ```
 
 That is the whole first step. You now have a Turtle file: one node per
@@ -52,7 +52,7 @@ commit, diff, and cache.
 
 ```console
 $ npx @hawkeyexl/manni graph stats
-Triples:    131
+Triples:    157
 Documents:  3
 Sections:   8
 Concepts:   3
@@ -163,9 +163,9 @@ else.
 
 {/* Verified by Doc Detective in docs-as-tests, against test/graph/fixtures/dd/. */}
 
-{/* step {"description":"One command builds the graph and reports the counts.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"3 docs, 131 triples"}} */}
+{/* step {"description":"One command builds the graph and reports the counts.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"3 docs, 157 triples"}} */}
 
-{/* step {"description":"A second build over unchanged inputs produces the same file.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"3 docs, 131 triples"}} */}
+{/* step {"description":"A second build over unchanged inputs produces the same file.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"3 docs, 157 triples"}} */}
 
 {/* step {"description":"stats reports the orphan nothing links to.","runShell":{"command":"manni graph stats -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Orphan docs (1):"}} */}
 

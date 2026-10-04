@@ -121,7 +121,7 @@ manni graph build [paths...] [options]
 
 ```console
 $ manni graph build -c test/graph/fixtures/dd/docs.config.yaml
-Wrote .tmp/dd/graph.ttl (3 docs, 131 triples)
+Wrote .tmp/dd/graph.ttl (3 docs, 157 triples)
 ```
 
 A page piped in with `-` joins the graph beside the named paths:
@@ -193,23 +193,22 @@ There is no `graph validate`. A `graph:` block is frontmatter, and frontmatter i
 checked by `manni meta validate` against the page vocabulary. That is the
 command every vocabulary in this family is checked with.
 
-The draft is [open for review](/manni/meta/proposals/graph/), so no built-in id and
-no published URL serves it yet. Copy
-[`1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json)
-into your repository and name it for the pages it governs:
+The page vocabulary is
+[`manni:graph:1.0.0`](/manni/meta/reference/schemas/manni-graph/), a built-in
+schema of `manni meta`. Name it for the pages it governs:
 
 ```yaml title="manni.config.yaml"
 meta:
   overrides:
     - collection: site
       schemas:
-        - ./schema/graph-1.0.0-proposal.1.json
+        - manni:graph:1.0.0
 ```
 
 ```console
 $ manni meta validate
 ✗ docs/install.md
-    /graph  must NOT have additional property 'bogus'  (line 3)  [./schema/graph-1.0.0-proposal.1.json]
+    /graph  must NOT have additional property 'bogus'  (line 3)  [manni:graph:1.0.0]
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```
@@ -322,7 +321,7 @@ manni graph stats [options]
 
 ```console
 $ manni graph stats -c test/graph/fixtures/dd/docs.config.yaml
-Triples:    131
+Triples:    157
 Documents:  3
 Sections:   8
 Concepts:   3
@@ -467,7 +466,7 @@ manni graph export <target> [options]
 
 ```console
 $ manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml
-Wrote 25 nodes to .tmp/dd/graph.jsonld
+Wrote 32 nodes to .tmp/dd/graph.jsonld
 ```
 
 | Target | What it writes |
@@ -509,7 +508,7 @@ An unknown target is **exit 2**, with the allowed set named.
 
 {/* step {"description":"There is no default subcommand: the domain owns verbs.","runShell":{"command":"manni graph test/graph/fixtures/dd/docs","exitCodes":[2]}} */}
 
-{/* step {"description":"build writes deterministic Turtle and reports the counts.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"3 docs, 131 triples"}} */}
+{/* step {"description":"build writes deterministic Turtle and reports the counts.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"3 docs, 157 triples"}} */}
 
 {/* step {"description":"No input files matched is operational, not an empty successful build.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/nomatch.config.yaml","exitCodes":[2],"stdio":"No input files matched"}} */}
 
@@ -531,9 +530,9 @@ An unknown target is **exit 2**, with the allowed set named.
 
 {/* step {"description":"An unknown --format is refused while the options are parsed.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/docs.config.yaml -f xml","exitCodes":[2],"stdio":"/Unknown --format \"xml\". Use pretty \\| json \\| github./"}} */}
 
-{/* step {"description":"manni meta validate passes a corpus whose graph blocks are legal.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/docs.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[0],"stdio":"3 files checked, 3 passed"}} */}
+{/* step {"description":"manni meta validate passes a corpus whose graph blocks are legal.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/docs.config.yaml -s manni:graph:1.0.0","exitCodes":[0],"stdio":"3 files checked, 3 passed"}} */}
 
-{/* step {"description":"A typo inside the graph block is a schema error with a line number.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[1],"stdio":"must NOT have additional property 'bogus'"}} */}
+{/* step {"description":"A typo inside the graph block is a schema error with a line number.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/invalid.config.yaml -s manni:graph:1.0.0","exitCodes":[1],"stdio":"must NOT have additional property 'bogus'"}} */}
 
 {/* step {"description":"graph validate is gone, and gets no softer treatment than any other unknown verb.","runShell":{"command":"manni graph validate docs/","exitCodes":[2],"stdio":"unknown command 'validate'"}} */}
 
@@ -549,7 +548,7 @@ An unknown target is **exit 2**, with the allowed set named.
 
 {/* step {"description":"An unknown --fields name is refused, with the allowed set in the message.","runShell":{"command":"manni graph fill --dry-run -c test/graph/fixtures/dd/unpriced.config.yaml --fields no-such-field","exitCodes":[2],"stdio":"--fields must be one of"}} */}
 
-{/* step {"description":"export jsonld reserializes the built graph.","runShell":{"command":"manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote 25 nodes"}} */}
+{/* step {"description":"export jsonld reserializes the built graph.","runShell":{"command":"manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote 32 nodes"}} */}
 
 {/* step {"description":"An unknown export target is exit 2, with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Unknown export target \"turtle\""}} */}
 

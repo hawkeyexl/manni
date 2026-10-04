@@ -129,7 +129,7 @@ against the page vocabulary:
 
 ```console
 ✗ docs/install.md
-    /graph  must NOT have additional property 'bogus'  (line 3)  [./schema/graph-1.0.0-proposal.1.json]
+    /graph  must NOT have additional property 'bogus'  (line 3)  [manni:graph:1.0.0]
 ```
 
 A typo inside the `graph` block, with the line number. The block is closed, so an
@@ -179,7 +179,7 @@ unknown flag value. None of those is about your page.
 
 {/* step {"description":"A broken internal link and a broken section ref are stats findings.","runShell":{"command":"manni graph stats -c test/graph/fixtures/dd/docs.config.yaml --check","exitCodes":[1],"stdio":"Broken section refs (1):"}} */}
 
-{/* step {"description":"A typo inside the graph block is a schema error with a line number.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/invalid.config.yaml -s docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json","exitCodes":[1],"stdio":"(line 3)"}} */}
+{/* step {"description":"A typo inside the graph block is a schema error with a line number.","runShell":{"command":"manni meta validate -c test/graph/fixtures/dd/invalid.config.yaml -s manni:graph:1.0.0","exitCodes":[1],"stdio":"(line 3)"}} */}
 
 {/* step {"description":"A near-miss page key warns and never fails the build.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"is not read by manni graph and looks like"}} */}
 

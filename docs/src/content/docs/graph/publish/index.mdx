@@ -38,7 +38,7 @@ manni graph export <target> [options]
 
 ```console
 $ manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml
-Wrote 25 nodes to .tmp/dd/graph.jsonld
+Wrote 32 nodes to .tmp/dd/graph.jsonld
 ```
 
 The target is a positional, not a `-f`. Every other verb of the family means
@@ -237,7 +237,7 @@ produce something nobody checked.
 
 {/* step {"description":"Export needs a built graph.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
 
-{/* step {"description":"jsonld writes linked data and reports the node count.","runShell":{"command":"manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote 25 nodes"}} */}
+{/* step {"description":"jsonld writes linked data and reports the node count.","runShell":{"command":"manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote 32 nodes"}} */}
 
 {/* step {"description":"iirds writes a conformant package.","runShell":{"command":"manni graph export iirds -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote"}} */}
 

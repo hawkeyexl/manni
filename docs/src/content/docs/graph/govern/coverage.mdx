@@ -43,7 +43,7 @@ exactly that.
 |---|---|---|
 | `title` | `dcterms:title` | The page's `title` frontmatter, or its first heading. |
 | `description` | `dcterms:description` | The page's `description` frontmatter. |
-| `creator` | `dcterms:creator` | `author` or `authors` frontmatter, or the git commit history. |
+| `creator` | `dcterms:creator` | `author` or `authors` frontmatter, as names or person objects with a `name`, or the git commit history. |
 | `created` | `dcterms:created` | `created` frontmatter, else `date`, else the first git commit that touched the file. |
 | `modified` | `dcterms:modified` | The first of `last-updated`, `updated`, `lastmod` and `modified` in frontmatter, else the last git commit. |
 | `subject` | `dcterms:subject` | `tags` or `keywords`, plus `graph.concepts` or else page-level `concepts`. Each value becomes a SKOS concept node. |
