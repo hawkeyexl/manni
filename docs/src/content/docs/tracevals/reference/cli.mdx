@@ -1,6 +1,15 @@
 ---
 title: CLI reference
 description: Every manni tracevals command, argument, and flag, with the defaults they override and the exit code each produces.
+id: "tracevals-reference-cli"
+type: "reference"
+keywords: ["CLI", "flags", "exit codes", "newer-than", "allow-execution"]
+language: en
+intent: "Look up every manni tracevals command, argument and flag."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["What flags does manni tracevals run take?", "What does --newer-than accept?"]
+graph: { label: "CLI reference", type: reference }
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -40,7 +49,7 @@ are graded rather than silently missing.
 | `--provider <name>` | `run`, `calibrate`, `fill` | `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. Selection runs through the family's shared provider layer: `--local`, then this flag, then the eval's own `provider:`, then `tracevals.provider`, then `providers.provider`, then `auto`. An unknown name is **exit 2**. |
 | `--model <model>` | same as above | The model within the provider. It needs a named provider, from this flag or from config, because a model name does not say which provider owns it. No model id is hardcoded anywhere in the tool. |
 | `--local` | same as above | Run inference on this machine with `llama-cpp`, over every configured or eval-level choice, with one notice per choice it replaced. `--local` next to a hosted `--provider` is a contradiction: **exit 2**. |
-| `-f, --format <format>` | all five | Output format. `run` and `calibrate` accept `pretty`, `json`, and `markdown`; `fill`, `capture`, and `list` accept `pretty` and `json`. Anything else is a usage error, with the allowed set in the message. |
+| `-f, --format <format>` | all five | Output format. `run` accepts `pretty`, `json`, `markdown`, `github`, `sarif`, and `junit`. `calibrate` accepts `pretty`, `json`, and `markdown`. `fill`, `capture`, and `list` accept `pretty` and `json`. Anything else is a usage error, with the allowed set in the message. |
 | `--require <module>` | `run`, `calibrate`, `fill` | Load a [grader plugin](/manni/tracevals/extend/custom-graders/). Repeatable, one module per occurrence, never comma-separated. It **adds to** `tracevals.plugins` rather than replacing it, and a specifier that will not import is an error rather than a skip. |
 
 Flags override config; they do not bypass it. An unset flag falls through to
@@ -63,7 +72,11 @@ Global options are accepted before the subcommand.
 
 The session adherence tool. Every command on this page lives under it.
 `tracevals` accepts its own `-V, --version`, which reports the manni version,
-and `-h, --help`. It carries no flags of its own.
+and `-h, --help`.
+
+| Option | Description |
+|---|---|
+| `--no-color` | Disable colored output. Color is on only when stdout is a TTY, and `NO_COLOR` turns it off too. |
 
 ```sh
 manni tracevals <command> [command options] [arguments]
@@ -117,16 +130,16 @@ claude-code · claude-opus-4-8 · 4 turn(s) · C:\work\demo-project
 | `--offline` | n/a | off | Never fetch a remote manifest. External metadata is read from local manifests only, so a hosted eval trail is skipped rather than requested. |
 | `--no-cache` | n/a | off | Bypass the judge cache under `judge.cacheDir`. |
 | `--max-turns` | `<n>` | config `judge.maxTurns`, unbounded | Stop after this many uncached ensemble runs. A cached ensemble costs none. Evals left unjudged report `skipped` with `reason: "turn budget"`. |
-| `-f, --format` | `<pretty\|json\|markdown>` | `pretty` | Output format. An unknown value is a usage error (exit 2), with the allowed set named. |
+| `-f, --format` | `<pretty\|json\|markdown\|github\|sarif\|junit>` | `pretty` | Output format. `github` prints workflow annotations on the artifact files, then the markdown summary. `sarif` files each result under the rule `tracevals/<grader>`. `junit` reports `needs-review` as skipped. An unknown value is a usage error (exit 2), with the allowed set named. |
 | `-o, --output` | `<file>` | n/a | Also write the report to a file, in the chosen format. stdout still gets it. |
 | `--report-unused-artifacts` | n/a | off | List every skill and agent the session was offered and never used. Without it the counts are still reported, and only the names are withheld. |
-| `--fail-on-needs-review` | n/a | config `failOnNeedsReview`, which is `true` | Treat `needs-review` as a failure, so an eval the judge could not decide exits `1`. |
-| `--no-fail-on-needs-review` | n/a | off | Do not fail the run on `needs-review`. Declared as the pair to the flag above so that the config value stays reachable from the command line. |
-| `--commands` | n/a | config `graders.command.enabled`, which is `true` | Execute `command`-graded evals. |
-| `--no-commands` | n/a | off | Do not execute `command`-graded evals; they report `skipped`. |
+| `--fail-on-review` | n/a | config `failOnReview`, which is `true` | Treat `needs-review` as a failure, so an eval the judge could not decide exits `1`. |
+| `--no-fail-on-review` | n/a | off | Do not fail the run on `needs-review`. Declared as the pair to the flag above so that the config value stays reachable from the command line. |
+| `--allow-execution` | `<kind>` | config `execution.allow`, which is every grant | Keep only the named execution grants. Repeatable, one grant per occurrence. The one grant is `frontmatter-commands`, which runs `command` evals. It narrows the config and never widens it. Any other value is **exit 2**. |
+| `--no-execution` | n/a | off | Clear every execution grant for this run. Every `command` eval reports `skipped`, never `pass`. |
 | `--require` | `<module>` | config `plugins`, else none | Load a grader plugin. Repeatable; appends to the configured list. |
 | `--all-projects` | n/a | off | Evaluate every project's traces in the session store rather than this project's. |
-| `--since` | `<duration>` | n/a | Only traces newer than a duration such as `30m`, `24h`, `7d`, or `2w`. Any other spelling is **exit 2**. |
+| `--newer-than` | `<duration>` | n/a | Only traces whose file changed within this window, such as `30m`, `24h`, `7d`, or `2w`. Any other spelling is **exit 2**. |
 | `--limit` | `<n>` | n/a | Maximum traces to evaluate. A whole number of at least 1. |
 | `--history` | n/a | off | Append this run to `history.file` and compare it with the previous run, so a regression is a check that passed before and does not now. |
 | `--manifest` | `<file>` | looked for beside the trace and under the project | The [session manifest](#session-manifests) to compare artifacts against. One session's evidence, so it cannot be combined with a corpus. |
@@ -139,7 +152,7 @@ came back:
 - One named trace is a single-run report. The pretty form is the per-eval list
   above; `--format json` is the `RunReport` object.
 - Two or more named traces, or any discovery selector (`--all-projects`,
-  `--since`, `--limit`), is an aggregate report. It carries eval pass rates
+  `--newer-than`, `--limit`), is an aggregate report. It carries eval pass rates
   across the corpus, the traces that failed, and the skip reasons that survived
   aggregation.
 
@@ -154,11 +167,11 @@ Naming traces and selecting them are alternatives, not a filter applied to a
 list. Doing both is a usage error:
 
 ```console
-$ manni tracevals run a.jsonl --since 7d --deterministic-only
-manni: name traces or select them with --all-projects/--since/--limit, not both
+$ manni tracevals run a.jsonl --newer-than 7d --deterministic-only
+manni: name traces or select them with --all-projects/--newer-than/--limit, not both
 ```
 
-The selectors compose with each other. `--all-projects --since 30d --limit 20`
+The selectors compose with each other. `--all-projects --newer-than 30d --limit 20`
 reads the whole session store, keeps the last thirty days, and evaluates the
 twenty most recent of those.
 
@@ -198,7 +211,7 @@ manni tracevals calibrate [traces...] [options]
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
-| `--labels` | `<file>` | config `calibrate.labels`, which is `tracevals/labels.yaml` | The calibration labels sidecar: the human verdict each eval is scored against. |
+| `--labels` | `<file>` | config `calibrate.labels`, which is `tracevals/labels.yaml` | The calibration labels sidecar, holding the human verdict each eval is scored against. |
 | `--sweep` | n/a | off | Re-score the corpus across the configured grid of zones and ensemble sizes, from cached verdicts. It makes no further model calls. |
 | `--max-false-pass` | `<n>` | n/a | Exit `1` above this many false passes. A whole number of at least 0. |
 | `--max-false-fail` | `<n>` | n/a | Exit `1` above this many false fails. |
@@ -217,13 +230,13 @@ manni tracevals calibrate [traces...] [options]
 | `-f, --format` | `<pretty\|json\|markdown>` | `pretty` | Output format. |
 | `-o, --output` | `<file>` | n/a | Also write the report to a file. |
 | `--report-unused-artifacts` | n/a | off | List every skill and agent the session was offered and never used. |
-| `--fail-on-needs-review` | n/a | config `failOnNeedsReview`, which is `true` | Treat `needs-review` as a failure. |
-| `--no-fail-on-needs-review` | n/a | off | Do not fail on `needs-review`. |
-| `--commands` | n/a | config `graders.command.enabled`, which is `true` | Execute `command`-graded evals. |
-| `--no-commands` | n/a | off | Do not execute `command`-graded evals. |
+| `--fail-on-review` | n/a | config `failOnReview`, which is `true` | Treat `needs-review` as a failure. |
+| `--no-fail-on-review` | n/a | off | Do not fail on `needs-review`. |
+| `--allow-execution` | `<kind>` | config `execution.allow`, which is every grant | Keep only the named execution grants. Repeatable. |
+| `--no-execution` | n/a | off | Clear every execution grant for this run. |
 | `--require` | `<module>` | config `plugins`, else none | Load a grader plugin. Repeatable. |
 | `--all-projects` | n/a | off | Score every project's traces in the session store. |
-| `--since` | `<duration>` | n/a | Only traces newer than `30m`, `24h`, `7d`, `2w`, and so on. |
+| `--newer-than` | `<duration>` | n/a | Only traces whose file changed within `30m`, `24h`, `7d`, `2w`, and so on. |
 | `--limit` | `<n>` | n/a | Maximum traces to score. |
 
 `calibrate` takes no `--history` and no `--manifest`. Calibration measures a
@@ -292,8 +305,8 @@ journey is in [Propose evals with `fill`](/manni/tracevals/declare/fill/).
 
 ## `tracevals capture`
 
-Records a session manifest: the sha256 of every instruction artifact plus the
-git SHA, read from a Claude Code hook payload on stdin. It is the second write
+Records a session manifest, which holds the sha256 of every instruction artifact
+plus the git SHA. It reads a Claude Code hook payload on stdin. It is the second write
 path, and `run` never calls it either.
 
 ```sh
@@ -376,6 +389,7 @@ with a line saying which flag would widen the search.
 |---|---|---|---|
 | `--project` | `<dir>` | the working directory | Project directory to scope to. |
 | `--all-projects` | n/a | off | Scan every project in the session store. |
+| `--newer-than` | `<duration>` | n/a | Only traces whose file changed within this window, as on `run`. Use it to see what a `run` with the same window would evaluate. |
 | `--limit` | `<n>` | n/a | Maximum traces to list. A whole number of at least 1, because `--limit -1` would quietly list everything but the oldest. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 
@@ -390,7 +404,7 @@ than an absent one. It takes the long spellings of `--project` and
 |---|---|
 | `0` | Everything that ran passed. |
 | `1` | A failed or errored eval, or a calibration threshold that was exceeded. The author's problem. |
-| `2` | Operational or usage error: a bad flag, an unreadable trace, invalid config, a contradictory provider. Not the author's problem. |
+| `2` | Operational or usage error, such as a bad flag, an unreadable trace, invalid config, or a contradictory provider. Not the author's problem. |
 
 Every operational message leaves through the family's stderr writer, so it
 carries the `manni: ` prefix and nothing spells that prefix by hand. Full
@@ -411,9 +425,11 @@ detail in
 
 {/* step {"description":"--max-turns below 1 is refused the same way.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --deterministic-only --max-turns 0","exitCodes":[2],"stdio":"--max-turns must be a whole number of at least 1"}} */}
 
-{/* step {"description":"Naming traces and selecting them are alternatives, not a filter.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --since 7d --deterministic-only","exitCodes":[2],"stdio":"not both"}} */}
+{/* step {"description":"Naming traces and selecting them are alternatives, not a filter.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --newer-than 7d --deterministic-only","exitCodes":[2],"stdio":"not both"}} */}
 
-{/* step {"description":"A --since that is not a duration names the shapes it accepts.","runShell":{"command":"manni tracevals run --all-projects --since 30x --deterministic-only","exitCodes":[2],"stdio":"/30m, 24h, 7d, or 2w/"}} */}
+{/* step {"description":"A --newer-than that is not a duration names the shapes it accepts.","runShell":{"command":"manni tracevals run --all-projects --newer-than 30x --deterministic-only","exitCodes":[2],"stdio":"/30m, 24h, 7d or 2w/"}} */}
+
+{/* step {"description":"An unknown execution grant is a usage error.","runShell":{"command":"manni tracevals run --all-projects --newer-than 7d --allow-execution x --deterministic-only","exitCodes":[2],"stdio":"--allow-execution must be one of frontmatter-commands"}} */}
 
 {/* step {"description":"--manifest cannot be used with a corpus.","runShell":{"command":"manni tracevals run a.jsonl b.jsonl --manifest m.json --deterministic-only","exitCodes":[2],"stdio":"cannot be used with a corpus"}} */}
 

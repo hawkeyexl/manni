@@ -3,6 +3,15 @@ title: Configuration reference
 description: Every manni.config.yaml key under tracevals with its type, default, and CLI override, including the knobs that have no flag at all.
 sidebar:
   order: 3
+id: "tracevals-reference-configuration"
+type: "reference"
+keywords: ["configuration", "manni.config.yaml", "execution", "failOnReview"]
+language: en
+intent: "Look up every tracevals configuration key with its type, default and flag."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["What does execution.allow do?", "Where do relocated evals live?"]
+graph: { label: "Configuration reference", type: reference }
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -77,6 +86,40 @@ one, with the same evals, the same `eval-skip`, and the same self-preference cri
 manifest shape, the join rules and the ownership rules are the metadata tool's, in
 [external metadata](/manni/meta/set-up/external-metadata/) and its
 [configuration reference](/manni/meta/reference/configuration/#collections).
+
+### One manifest per artifact
+
+A manifest's `file` may name a pattern, so each artifact keeps its own. `{page}.meta.yaml` puts
+`SKILL.meta.yaml` beside each `SKILL.md`, and `fill` creates it on the first write. A manifest with
+no `keys` owns what the artifact's schema set marks external. That set comes from the metadata
+tool's section, so name `manni:artifact-evals:1.1.0` there, or in the artifact's own `$schema`:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: agents
+    paths: [".claude/skills/**/SKILL.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+meta:
+  overrides:
+    - collection: agents
+      schemas: ["manni:artifact-evals:1.1.0"]
+```
+
+Without the vocabulary in the set, nothing marks `metadata` external, and a keyless manifest does not
+own it. Each entry is keyed by the artifact's path from the config file:
+
+```yaml title=".claude/skills/fix-bug/SKILL.meta.yaml"
+.claude/skills/fix-bug/SKILL.md:
+  metadata:
+    evals:
+      - id: used-read
+        assertion: The session read at least one source file before editing.
+        grader: tool-usage
+        options:
+          tool: Read
+          expect: used
+```
 
 Three rules are worth knowing before you rely on this:
 
@@ -158,10 +201,8 @@ tracevals:
     cacheDir: .manni/tracevals/cache
     redact: []                   # extra patterns scrubbed from the digest
     # maxTurns has no default; set it to impose a ceiling
-  graders:
-    command:
-      enabled: true              # false, or --no-commands, skips them instead
-                                 # (--commands forces them back on)
+  execution:
+    allow: [frontmatter-commands]  # absent means every grant; [] runs no command eval
   render:
     maxBlockChars: 2000
     maxTotalChars: 150000
@@ -182,7 +223,7 @@ tracevals:
       ensembleRuns: [1, 3, 5]
       autoPass: [0.5, 0.6, 0.7, 0.8, 0.9, 0.95]
       autoFail: [0.5, 0.6, 0.7, 0.8, 0.9, 0.95]
-  failOnNeedsReview: true
+  failOnReview: true
   plugins: []                    # grader modules to import before evals are planned
   reportUnusedArtifacts: false
 ```
@@ -318,37 +359,45 @@ Three things to know:
 See [What leaves the machine](/manni/tracevals/judge/#what-leaves-the-machine) for the full list of
 what a judged run sends, redacted or not.
 
-## `graders`
+## `execution`
 
-Per-grader settings. Only graders with a knob outside the eval that names them appear here.
+What content-authored code a run may execute. One grant exists, and both evals domains spell it the
+same way.
 
 | Key | Type | Required | Default | CLI |
 |---|---|---|---|---|
-| `graders.command.enabled` | boolean | no | `true` | `--commands` / `--no-commands` |
+| `execution.allow` | list of grants | no | every grant | `--allow-execution <kind>` / `--no-execution` |
 
-`command`-graded evals run a program named in an artifact, and artifacts come from the **trace's**
-project. Evaluating someone else's trace can therefore execute that repository's code. That is the
-documented default and it is not changing; this is the switch for when you do not want to take it.
+`frontmatter-commands` lets a `command` eval declared in an artifact's front matter run its program.
+Artifacts come from the **trace's** project, so evaluating someone else's trace can execute that
+repository's code. Command evals run by default. Narrow the list to run less.
 
 ```yaml
 tracevals:
-  graders:
-    command:
-      enabled: false
+  execution:
+    allow: []      # run no command eval
 ```
 
-Disabled, a command eval reports **`skipped`** with the reason stated, never `pass`. An unrun check
+An ungranted command eval reports **`skipped`** with the reason stated, never `pass`. An unrun check
 has not been satisfied, so the report says so rather than quietly counting it as clean. Nothing else
 about the run changes, including the exit code. See
 [the `command` grader](/manni/tracevals/reference/graders/).
 
 ```
-command execution is disabled (--no-commands / graders.command.enabled: false)
+frontmatter commands not granted (execution.allow: [frontmatter-commands])
 ```
 
-The flag is a **pair**, and both `run` and `calibrate` honour it. Pass neither and this setting
-decides; `--no-commands` turns execution off for one invocation; `--commands` turns it back on
-against a config that disabled it.
+The flags only narrow, and both `run` and `calibrate` honour them. `--allow-execution <kind>` keeps
+the named grants the config already holds, one per occurrence. `--no-execution` clears every grant
+for one invocation. No flag widens what the config narrowed, so `allow: []` with
+`--allow-execution frontmatter-commands` still runs nothing.
+
+An unknown grant is **exit 2**, from the config or the command line:
+
+```
+manni: manni.config.yaml: unknown execution grant "x"; expected one of frontmatter-commands
+manni: --allow-execution must be one of frontmatter-commands, got "x"
+```
 
 ## `render`
 
@@ -435,11 +484,11 @@ useful range is a property of a corpus, and a corpus outlives an invocation. Wid
 `sweep.ensembleRuns` is the one calibration setting that spends turns: the corpus is judged once at
 the largest value in it.
 
-## `failOnNeedsReview`
+## `failOnReview`
 
 | Key | Type | Required | Default | CLI |
 |---|---|---|---|---|
-| `failOnNeedsReview` | boolean | no | `true` | `--fail-on-needs-review` / `--no-fail-on-needs-review` |
+| `failOnReview` | boolean | no | `true` | `--fail-on-review` / `--no-fail-on-review` |
 
 Whether a `needs-review` outcome contributes to a non-zero exit code. Set it to `false` to surface
 ambiguous verdicts in the report without blocking on them.

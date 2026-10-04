@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/judge/calibrate.mdx:
+  personas: ["sara"]
+  journeys: ["s12"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/commands/calibrate.ts"
+    - path: "src/tracevals/calibrate/score.ts"
+  eval-suite: tracevals
+  evals:
+    - id: calibrate-run
+      assertion: "A reader can write a labels file, run calibrate, and read false passes, false fails and review volume."
+      type: capability
+      grader: ai

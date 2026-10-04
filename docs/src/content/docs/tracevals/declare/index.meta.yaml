@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/declare/index.mdx:
+  personas: ["maya"]
+  journeys: ["m18"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/meta/schemas/artifact-evals/1.1.0.json"
+    - path: "src/tracevals/evals/extract.ts"
+  eval-suite: tracevals
+  evals:
+    - id: declare-an-eval
+      assertion: "A reader can write a metadata.evals entry with an id, an assertion and a grader, and choose its severity."
+      type: capability
+      grader: ai

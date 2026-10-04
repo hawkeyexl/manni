@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/judge/index.mdx:
+  personas: ["sara"]
+  journeys: ["s12"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/judge/trace-judge.ts"
+    - path: "src/tracevals/judge/provider.ts"
+  eval-suite: tracevals
+  evals:
+    - id: judge-arithmetic
+      assertion: "A reader can explain how ensemble runs and confidence zones combine into pass, fail or needs-review."
+      type: capability
+      grader: ai

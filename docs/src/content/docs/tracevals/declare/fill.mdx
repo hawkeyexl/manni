@@ -3,6 +3,15 @@ title: Fill in evals across a project
 description: "Use fill to propose evals for every skill, agent, slash command, and rules file in a project. Understand the gate that gets applied, and review the diff before anything is written."
 sidebar:
   order: 2
+id: "tracevals-declare-fill"
+type: "how-to"
+keywords: ["fill", "proposed evals", "confidence", "dry run", "manifest"]
+language: en
+intent: "Propose evals across a project's artifacts and review them before anything is written."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["How does fill decide what to write?", "Where does fill write an artifact's evals?"]
+graph: { label: "Fill in evals across a project", type: task }
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -263,12 +272,27 @@ filled    .claude/skills/fix-bug/SKILL.md  +1 (no-shell 0.90) in artifact-evals.
 `-f json` carries the same answer as a `manifest` field on the result. A script can then point a
 reviewer at the file that actually changed.
 
+The manifest may be one file per artifact, such as `{page}.meta.yaml` beside each `SKILL.md`. The
+first write creates it, keyed by the artifact's path. A manifest with no `keys` owns `metadata` only
+where the artifact's schema set marks it external. Name `manni:artifact-evals:1.1.0` for the
+collection in `meta.overrides`, or in the artifact's `$schema`. [One manifest per
+artifact](/manni/tracevals/reference/configuration/#one-manifest-per-artifact) shows the config.
+
 **Nothing owns the block.** The artifact's own front matter is written, exactly as before. A
 repository that declares no `collections:` at all is always this case, as is any run under
 `--no-config`, and neither is told anything extra.
 
-**A collection is declared, and no manifest owns `metadata`.** The page is still written, and the
-report adds a warning in the words `manni meta fill` already uses for a homeless key:
+**A collection is declared, and no manifest owns `metadata`.** On a terminal, `fill` first offers a
+home, with the prompt `manni meta fill` uses. It names the collection, then asks before it creates a
+manifest and adds it to the config:
+
+```
+manni: collection agents has no manifest for metadata, which the schema prefers in external metadata.
+```
+
+A yes moves the block into the new manifest and writes the proposals there. `--dry-run` asks
+nothing. On a no, or off a terminal, the page is written. The report then adds a warning in the
+words `manni meta fill` already uses for a homeless key:
 
 ```
 warning: wrote metadata to 1 page in collection agents; the schema prefers external metadata, and no manifest owns it. Run manni meta relocate to move it.

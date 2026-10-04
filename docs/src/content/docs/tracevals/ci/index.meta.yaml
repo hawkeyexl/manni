@@ -1,0 +1,19 @@
+docs/src/content/docs/tracevals/ci/index.mdx:
+  personas: ["devin"]
+  journeys: ["d12"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/cli.ts"
+    - path: "src/tracevals/reporters/github.ts"
+    - path: "src/tracevals/reporters/sarif.ts"
+  eval-suite: tracevals
+  evals:
+    - id: ci-gate
+      assertion: "A reader can write a GitHub Actions job that runs manni tracevals offline and fails on its exit code."
+      type: capability
+      grader: ai
+    - id: untrusted-trace
+      assertion: "A reader can say which flag keeps an untrusted trace's command evals from running."
+      type: capability
+      grader: ai

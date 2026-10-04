@@ -1,10 +1,14 @@
 docs/src/content/docs/tracevals/index.mdx:
+  personas: ["maya", "devin", "sara", "theo"]
+  journeys: ["m17", "d12", "s12", "t7"]
   visibility: public
   review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/cli.ts"
   eval-suite: tracevals
   evals:
     - id: what-it-does
-      assertion: "A reader can say what manni tracevals evaluates and that it is not in the published package."
+      assertion: "A reader can say what manni tracevals evaluates and which page to open for their next step."
       type: capability
       grader: ai
   provenance:

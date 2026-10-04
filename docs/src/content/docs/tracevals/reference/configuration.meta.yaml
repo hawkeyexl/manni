@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/reference/configuration.mdx:
+  personas: ["maya", "devin", "sara"]
+  journeys: ["m18", "d12", "s12"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/core/config-schema.json"
+    - path: "src/tracevals/core/config.ts"
+  eval-suite: tracevals
+  evals:
+    - id: find-a-key
+      assertion: "A reader can find a tracevals config key, its default, and the flag that overrides it."
+      type: capability
+      grader: ai

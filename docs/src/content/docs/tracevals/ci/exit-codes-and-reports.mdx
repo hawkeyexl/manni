@@ -1,8 +1,17 @@
 ---
 title: Exit codes & reports
-description: "The 0/1/2 exit-code contract, why needs-review counts as a failure by default, and the three report formats you can keep from a run."
+description: "The 0/1/2 exit-code contract, why needs-review counts as a failure by default, and the report formats you can keep from a run."
 sidebar:
   order: 2
+id: "tracevals-ci-exit-codes-and-reports"
+type: "reference"
+keywords: ["exit codes", "needs-review", "failOnReview", "report formats"]
+language: en
+intent: "Know what each exit code means and decide the needs-review policy before it turns a build red."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["What do exit codes 0, 1 and 2 mean?", "How do I stop needs-review from failing the build?"]
+graph: { label: "Exit codes & reports", type: reference }
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -38,7 +47,7 @@ for operational failures, including a numeric flag out of range.
     committed fixtures. */}
 {/* test {"testId":"exit-code-contract","description":"The documented exit codes hold against the fixture corpus."} */}
 {/* step {"description":"A run with a failing eval exits 1.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1]}} */}
-{/* step {"description":"A corpus with nothing to report exits 0.","runShell":{"command":"manni tracevals run --all-projects --since 520w --limit 5 --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[0]}} */}
+{/* step {"description":"A corpus with nothing to report exits 0.","runShell":{"command":"manni tracevals run --all-projects --newer-than 520w --limit 5 --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[0]}} */}
 {/* step {"description":"An operational error exits 2 and names itself on stderr.","runShell":{"command":"manni tracevals run ./does-not-exist.jsonl --deterministic-only","exitCodes":[2],"stdio":"manni:"}} */}
 {/* test end */}
 
@@ -64,7 +73,7 @@ merge quietly. If your pipeline has somewhere better to send those, change it:
 
 ```yaml title="manni.config.yaml"
 tracevals:
-  failOnNeedsReview: false
+  failOnReview: false
 ```
 
 Now `needs-review` no longer contributes to a non-zero exit. It still appears in the report and in
@@ -74,17 +83,17 @@ To decide per invocation instead, override it on the command line. That lets a s
 and a lenient nightly one share one config:
 
 ```bash
-npx @hawkeyexl/manni tracevals run <trace> --no-fail-on-needs-review
+npx @hawkeyexl/manni tracevals run <trace> --no-fail-on-review
 ```
 
-`--fail-on-needs-review` forces the opposite. Passing neither leaves the config value in force.
+`--fail-on-review` forces the opposite. Passing neither leaves the config value in force.
 
 <Aside type="tip" title="Decide this before you meet it">
 Pick a policy when you install the gate. Meeting `needs-review` for the first time as a red build
 nobody can explain is the avoidable version of this.
 </Aside>
 
-`skipped` never fails a run, and it has four unrelated causes:
+`skipped` never fails a run, and it has five unrelated causes:
 
 | Cause | What it looks like |
 |---|---|
@@ -92,6 +101,7 @@ nobody can explain is the avoidable version of this.
 | an exhausted turn budget | the reason names the budget, and the batch says so beside the headline |
 | a `cost` grader on a trace with no usage data | `no cost data (maxUsd not checkable)` |
 | an artifact that opted out | the eval's own `metadata.eval-skip` |
+| a `command` eval without its grant | `frontmatter commands not granted (execution.allow: [frontmatter-commands])` |
 
 Each is listed with its reason in the report. See
 [Read a failing eval](/manni/tracevals/triage/#why-something-was-skipped).
@@ -136,7 +146,7 @@ pointed at fifty. Or it is judging evals a `--deterministic-only` job could have
 
 ## Keep the report
 
-`run` writes its report to stdout in one of three formats, and `--output` additionally writes it to
+`run` writes its report to stdout in one of six formats, and `--output` additionally writes it to
 a file.
 
 ```bash
@@ -148,6 +158,12 @@ npx @hawkeyexl/manni tracevals run <trace> --format markdown --output tracevals-
 | `pretty` (default) | reading in a terminal, colored, with vote splits on non-passing judged evals |
 | `json` | anything programmatic; the full report structure |
 | `markdown` | a build summary or a PR comment |
+| `github` | GitHub Actions annotations on the artifact files, then the markdown summary |
+| `sarif` | code scanning, with one rule per grader as `tracevals/<grader>` |
+| `junit` | a test-report viewer; `needs-review` lands as skipped, not failed |
+
+`calibrate` takes `pretty`, `json` and `markdown`. The CI recipes for `github` and `sarif` are in
+[Run it in CI](/manni/tracevals/ci/#annotate-the-pull-request).
 
 The markdown format renders as tables:
 

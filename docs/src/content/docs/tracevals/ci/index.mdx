@@ -3,6 +3,15 @@ title: Run it in CI
 description: "Run manni tracevals as a gate in GitHub Actions, offline and with no API key, keyed off an exit code you can branch on."
 sidebar:
   order: 1
+id: "tracevals-ci"
+type: "how-to"
+keywords: ["CI", "GitHub Actions", "deterministic-only", "SARIF", "no-execution"]
+language: en
+intent: "Gate agent sessions in CI offline, with annotations or SARIF, keyed off the exit code."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["How do I run manni tracevals in GitHub Actions?", "How do I evaluate an untrusted trace safely?"]
+graph: { label: "Run it in CI", type: task }
 ---
 
 import { Tabs, TabItem, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -67,7 +76,7 @@ the familiar single-session report. See
 {/* step {"description":"Two traces produce an aggregate report.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"2 trace(s)"}} */}
 {/* step {"description":"The report leads with pass rates.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"Eval pass rates"}} */}
 {/* step {"description":"Outlier traces are named, not just counted.","runShell":{"command":"manni tracevals run test/tracevals/fixtures/traces/claude-session.jsonl test/tracevals/fixtures/traces/claude-session-sidecar.jsonl --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[1],"stdio":"failing: claude-session.jsonl"}} */}
-{/* step {"description":"A discovery selector evaluates the session store without naming files.","runShell":{"command":"manni tracevals run --all-projects --since 520w --limit 5 --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[0],"stdio":"Eval pass rates"}} */}
+{/* step {"description":"A discovery selector evaluates the session store without naming files.","runShell":{"command":"manni tracevals run --all-projects --newer-than 520w --limit 5 --project test/tracevals/fixtures/project --deterministic-only","exitCodes":[0],"stdio":"Eval pass rates"}} */}
 {/* test end */}
 
 ### Or let the tool find the sessions
@@ -77,8 +86,11 @@ of naming files. They are the same `--all-projects` and `--limit` that
 [`list`](/manni/tracevals/reference/cli/#tracevals-list) uses, plus a time window:
 
 ```bash
-npx @hawkeyexl/manni tracevals run --since 7d --limit 20 --deterministic-only
+npx @hawkeyexl/manni tracevals run --newer-than 7d --limit 20 --deterministic-only
 ```
+
+`--newer-than` keeps traces whose file changed within the window. `list` takes the same flag, so
+`list --newer-than 7d` shows what that run would evaluate.
 
 A selector always produces the aggregate report, even when it matches one trace. A script's parsing
 therefore does not depend on how busy the week was. A selector that matches **nothing** exits `2`
@@ -111,6 +123,20 @@ Set a ceiling with `judge.maxTurns` and provision the API key as a secret. The b
 not fit in what is left is skipped with its reason, rather than judged on a partial ensemble. See
 [configuration](/manni/tracevals/reference/configuration/).
 </Aside>
+
+## Evaluate an untrusted trace with `--no-execution`
+
+A `command` eval runs a program its artifact names, and command evals run by default. Artifacts come
+from the trace's own project. A trace from a fork, or from anyone you do not trust, can therefore
+run that project's code on your runner. Pass `--no-execution` for that job:
+
+```bash
+npx @hawkeyexl/manni tracevals run --newer-than 7d --deterministic-only --no-execution
+```
+
+Every command eval then reports `skipped` with its reason, never `pass`. To make it the repository's
+standing choice, write `execution.allow: []` under `tracevals:`. No flag widens that. See
+[`execution`](/manni/tracevals/reference/configuration/#execution).
 
 ## Control the environment
 
@@ -187,6 +213,50 @@ Every action above is GitHub's own, referenced by tag. **Pin any third-party act
 SHA**, not to a tag or a branch. A tag is a moving pointer. A workflow that evaluates agent
 sessions is not the place to run whatever it points at this week.
 
+### Annotate the pull request
+
+`-f github` prints a workflow annotation on the artifact file behind each finding, then the markdown
+summary. Append the summary to the step summary and the annotations still reach the log:
+
+```yaml
+      - name: Evaluate agent sessions
+        run: |
+          npx @hawkeyexl/manni tracevals run traces/refactor-session.jsonl             --deterministic-only             -f github | tee -a "$GITHUB_STEP_SUMMARY"
+        shell: bash
+```
+
+An annotation names the trace at the end of its message, because a workflow command has nowhere else
+to carry it. `shell: bash` runs the step with `pipefail`, so the step still fails on the exit code.
+
+### Upload SARIF to code scanning
+
+Annotations vanish with the job log. Code scanning keeps a finding open until someone closes it, and
+groups it by rule id across runs. Each rule is a grader, as `tracevals/<grader>`.
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+
+# ...
+
+      - name: Evaluate agent sessions
+        run: |
+          npx @hawkeyexl/manni tracevals run traces/refactor-session.jsonl             --deterministic-only -f sarif -o tracevals.sarif
+        continue-on-error: true
+
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: tracevals.sarif
+          category: manni-tracevals
+```
+
+The failing run is the one with findings, so the upload must survive it. Keep the gate by failing a
+later step on the exit code. A location under the checkout is relative to `SRCROOT`. A user-level
+skill in `~/.claude` lies outside it, so its result carries an absolute `file:` URI instead. See
+[`--format sarif`](/manni/tracevals/reference/report-and-exit-codes/#--format-sarif).
+
 ### Judge without leaving the runner
 
 When you want the judged verdicts but the session content must stay on the machine, swap one flag:
@@ -249,7 +319,7 @@ The evaluating job downloads both into one directory, names the trace, and gets 
 free.
 
 <Aside title="Nothing breaks without one">
-An absent manifest is the default and always will be. Every hash check reports `skipped` with the
+An absent manifest is the default. Every hash check reports `skipped` with the
 reason, the mtime heuristic stands, and no verdict, summary count, or exit code moves either way.
 A manifest is an observation about the artifacts, never an input to a verdict.
 </Aside>

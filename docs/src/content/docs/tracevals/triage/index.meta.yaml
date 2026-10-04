@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/triage/index.mdx:
+  personas: ["theo"]
+  journeys: ["t7"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/reporters/pretty.ts"
+    - path: "src/tracevals/types.ts"
+  eval-suite: tracevals
+  evals:
+    - id: decide-next-step
+      assertion: "A reader can read a FAIL, ERROR, REVIEW or SKIP line and say what to do next."
+      type: capability
+      grader: ai

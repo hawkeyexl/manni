@@ -1,0 +1,13 @@
+docs/src/content/docs/tracevals/triage/faq.mdx:
+  personas: ["theo"]
+  journeys: ["t7"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/types.ts"
+  eval-suite: tracevals
+  evals:
+    - id: faq-answers
+      assertion: "A reader can find who owns the fix when they believe the eval itself is wrong."
+      type: capability
+      grader: ai

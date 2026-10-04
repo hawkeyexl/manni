@@ -3,6 +3,15 @@ title: Triage FAQ
 description: Short answers to the questions that come up after reading a failing manni tracevals result. Covers skipped checks, missing artifacts, judged verdicts you disagree with, and who owns the fix.
 sidebar:
   order: 2
+id: "tracevals-triage-faq"
+type: "faq"
+keywords: ["FAQ", "triage", "skipped checks", "missing artifacts"]
+language: en
+intent: "Answer the follow-up questions that come up after reading a failing session eval."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["Why is an artifact missing from the report?", "Who owns the fix for a failing eval?"]
+graph: { label: "Triage FAQ", type: troubleshooting }
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -105,7 +114,7 @@ artifact, and you may be the first person to notice. Raise it as an eval bug rat
 changing your work to satisfy it.
 
 **The build is red and I cannot fix it right now.**
-`needs-review` counting as a failure is configurable (`failOnNeedsReview: false` under `tracevals:`
+`needs-review` counting as a failure is configurable (`failOnReview: false` under `tracevals:`
 in `manni.config.yaml`), and severity is per eval. Both are decisions for whoever owns the gate,
 though, not a workaround to apply under time pressure.
 

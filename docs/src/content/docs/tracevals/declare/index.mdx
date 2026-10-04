@@ -3,6 +3,15 @@ title: Declare what to check
 description: "Turn an instruction into a named, testable eval in an artifact's frontmatter, choosing between a deterministic grader and the judge and setting severity on purpose."
 sidebar:
   order: 1
+id: "tracevals-declare"
+type: "how-to"
+keywords: ["evals", "metadata.evals", "graders", "severity"]
+language: en
+intent: "Turn one instruction in an artifact into a named, testable eval."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["How do I declare an eval in a skill?", "Should an eval be judged or deterministic?"]
+graph: { label: "Declare what to check", type: task }
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -83,7 +92,7 @@ The full block shape, including every optional field, is in the
 ### Where the block comes from
 
 `metadata.evals` is the family vocabulary
-[`manni:artifact-evals:1.0.0-proposal.4`](/manni/meta/proposals/artifact-evals/), shared with
+[`manni:artifact-evals:1.1.0`](/manni/meta/reference/schemas/manni-artifact-evals/), shared with
 anything else that grades a session. The evals sit one level down, under `metadata`, because an
 artifact's top-level frontmatter belongs to the tool that runs it.
 

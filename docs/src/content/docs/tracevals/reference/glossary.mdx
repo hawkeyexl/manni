@@ -3,6 +3,15 @@ title: Glossary
 description: Definitions of the terms manni tracevals uses, from trace and artifact to eval, grader, plan, finding, outcome, consensus, zone, and sidechain.
 sidebar:
   order: 9
+id: "tracevals-reference-glossary"
+type: "glossary"
+keywords: ["glossary", "trace", "eval", "grader", "outcome"]
+language: en
+intent: "Look up the terms manni tracevals uses."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["What is a trace?", "What is the difference between an outcome and a finding?"]
+graph: { label: "Glossary", type: reference }
 ---
 
 **Scope:** one authority for the vocabulary every other page assumes. Terms are grouped by where
@@ -195,7 +204,8 @@ this eval. Reported on the result, never fatal.
 | `skipped` | the check did not run; a reason is always given | no |
 
 **Report**
-: The output of a run, in `pretty`, `json`, or `markdown`. The JSON form is the documented contract.
+: The output of a run, in `pretty`, `json`, `markdown`, `github`, `sarif`, or `junit`. The JSON form
+is the documented contract.
 See [Reports and exit codes](/manni/tracevals/reference/report-and-exit-codes/).
 
 **History**

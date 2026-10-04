@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/reference/evals-schema.mdx:
+  personas: ["maya", "sara"]
+  journeys: ["m18", "s13"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/meta/schemas/artifact-evals/1.1.0.json"
+    - path: "src/tracevals/evals/extract.ts"
+  eval-suite: tracevals
+  evals:
+    - id: block-shape
+      assertion: "A reader can write a valid metadata.evals block and say where else it may live."
+      type: capability
+      grader: ai

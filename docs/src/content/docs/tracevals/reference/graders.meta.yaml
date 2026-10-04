@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/reference/graders.mdx:
+  personas: ["maya", "devin"]
+  journeys: ["m18", "d12"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/graders/registry.ts"
+    - path: "src/tracevals/graders/command.ts"
+  eval-suite: tracevals
+  evals:
+    - id: pick-a-grader
+      assertion: "A reader can pick the grader for an instruction and write its options."
+      type: capability
+      grader: ai

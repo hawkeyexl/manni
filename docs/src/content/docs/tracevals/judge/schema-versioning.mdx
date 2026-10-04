@@ -3,6 +3,15 @@ title: Evolve the eval standard
 description: Treat the metadata.evals block as a shared contract, separate capability probes from regression guards, and roll out a new convention across many repositories without breaking the build.
 sidebar:
   order: 3
+id: "tracevals-judge-schema-versioning"
+type: "concept"
+keywords: ["artifact-evals", "versioning", "capability", "regression"]
+language: en
+intent: "Change the artifact-evals standard and roll out a convention without breaking existing artifacts."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["Which artifact-evals version does tracevals read?", "How do I roll out a new eval convention?"]
+graph: { label: "Evolve the eval standard", type: concept }
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -14,36 +23,30 @@ the [evals schema reference](/manni/tracevals/reference/evals-schema/); tuning h
 ## The block is a shared contract, not ours alone
 
 The shape of `metadata.evals` is not an implementation detail, and it is not this tool's to change.
-It implements **`manni:artifact-evals:1.0.0-proposal.4`**, a common vocabulary
-[published by manni meta](/manni/meta/proposals/artifact-evals/) that any session-grading tool can
-implement. manni tracevals implements behavior against it.
+It implements **`manni:artifact-evals:1.1.0`**, a built-in vocabulary
+[published by manni meta](/manni/meta/reference/schemas/manni-artifact-evals/) that any
+session-grading tool can implement. manni tracevals implements behavior against it.
 
 Two consequences for you:
 
 - **A shape change is a vocabulary conversation.** If a field is missing, the place to argue for it
-  is the proposal, not this tool's issue tracker. What lands there lands for every implementer at
-  once, `manni docevals` and `manni meta fill` included.
+  is a proposal against the vocabulary, not this tool's issue tracker. What lands there lands for
+  every implementer at once, `manni docevals` and `manni meta fill` included.
 - **Your artifacts are portable.** An artifact carrying evals is not locked to this runner.
 
-The draft schema lives in this repository at
-[`docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json),
-and is bundled into the build. The package ships no separate schema copy and exports no per-version
-schema URL. There is no second set of bytes to drift out of step with the first.
+The schema is published at `https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.1.0.json`,
+and the package carries the same bytes. A finding about the block names
+`manni:artifact-evals:1.1.0` as its schema. Copy that id into `manni meta validate -s` and it
+resolves.
 
 <Aside title="Do I need to pin anything?">
 Not to author evals. manni tracevals validates against the vocabulary it was built with, and you
-write the block. Reading the schema matters when *your own tooling* generates or consumes these
-blocks and you need the shape to hold still. Read it from the path above, at a tag.
+write the block. Pinning matters when *your own tooling* validates these blocks and you need the
+shape to hold still. Name the exact id, such as `manni:artifact-evals:1.1.0`, in your config. Ids
+resolve by exact string, so nothing moves to a later version without a config edit.
 </Aside>
 
-<Aside type="caution" title="`-proposal.4` is a prerelease, and the hyphen is load-bearing">
-The vocabulary is under community review. `1.0.0-proposal.4` is a semver **prerelease**. It sorts
-*below* the `1.0.0` it will register as, and standard range matching excludes it, so nobody depends
-on a draft by accident. Spelled `+proposal.4` it would be build metadata and compare **equal** to the
-release, which is the opposite of what a draft wants.
-</Aside>
-
-## What a version bump will mean
+## What a version bump means
 
 manni meta versions these vocabularies with three-segment semver, and each segment is a claim about
 *validation behavior* rather than a mood:
@@ -57,23 +60,25 @@ manni meta versions these vocabularies with three-segment semver, and each segme
 So a bump tells you directly whether your corpus is at risk: only MAJOR can break an artifact that
 validates today.
 
-### What changed at `proposal.3` and `proposal.4`
+### What changed on the way to `1.1.0`
 
-Two renames landed at `proposal.3`, and both are the kind that fail loudly rather than
-quietly:
+Two renames landed while the vocabulary was still a draft. Both are the kind that fail loudly rather
+than quietly:
 
 | Was | Is | What to do |
 |---|---|---|
 | `metadata.eval-provenance` | `metadata.meta-provenance` | Rename the key. The old spelling is now a reserved-prefix error, not an ignored member. |
 | `severity: info` | `severity: notice` | Rename the value. Severity across the family is `error \| warning \| notice`. |
 
-`proposal.4` adds one thing, and it changes no artifact that validates today. The whole top-level
-`metadata` key carries `x-manni-location: external`. The mark sits on the map, not on one field, so
-`evals`, `eval-skip` and `meta-provenance` move as one block. They cannot be split across an
-artifact and a manifest. `manni meta relocate` moves that block into the external-metadata manifest
-a collection declares, which leaves the instructions a person reads uncluttered. tracevals reads the
-block wherever it lives. [Collections and a relocated
+The whole top-level `metadata` key carries `x-manni-location: external`. The mark sits on the map,
+not on one field, so `evals`, `eval-skip` and `meta-provenance` move as one block. They cannot be
+split across an artifact and a manifest. `manni meta relocate` moves that block into the
+external-metadata manifest a collection declares, which leaves the instructions a person reads
+uncluttered. tracevals reads the block wherever it lives. [Collections and a relocated
 block](/manni/tracevals/reference/configuration/#collections-and-a-relocated-block) has the rules.
+
+`1.1.0` is a MINOR release over `1.0.0`. It names the `tool-order` grader, so the strict overlay
+accepts it. Every block that validated at `1.0.0` still validates, and `1.0.0` keeps its bytes.
 
 The provenance rename is worth a second look, because the guard changed under it. The reserved
 prefix inside `metadata` is `^eval-(?!skip$)`: every `eval-*` member is rejected except
@@ -91,11 +96,12 @@ key](/manni/tracevals/judge/calibrate/#what-invalidates-a-cached-verdict), so a 
 the old vocabulary misses once and the next run judges fresh. Nothing to clear by hand.
 </Aside>
 
-<Aside title="Adding a grader is not a schema change">
-The `grader` field is an **open enum**. Any kebab-case name validates, and the
+<Aside title="Adding a grader is a strict-overlay change">
+The `grader` field is an **open enum** in the vocabulary. Any kebab-case name validates, and the
 [grader registry](/manni/tracevals/reference/graders/) is what rejects an unknown one at run time.
-A new grader therefore never needs a new schema version. The cost is that a misspelled or retired
-name (`llm`, the pre-1.0 spelling of `ai`) passes validation and fails during the run instead.
+So a misspelled or retired name (`llm`, the pre-1.0 spelling of `ai`) passes the open vocabulary and
+fails during the run instead. The strict overlay closes the enum to the graders it names, so a new
+grader needs a new overlay version. That is why `tool-order` arrived with `1.1.0`.
 </Aside>
 
 ## Separate probes from guards
@@ -209,8 +215,8 @@ Rename when the meaning genuinely changed. Otherwise leave the id alone and edit
   />
   <LinkCard
     title="The vocabulary itself"
-    description="artifact-evals as manni meta publishes it, with every key, the location marks, and the design decisions."
-    href="/manni/meta/proposals/artifact-evals/"
+    description="artifact-evals as manni meta publishes it, with every key, the location marks, and the strict overlay."
+    href="/manni/meta/reference/schemas/manni-artifact-evals/"
   />
   <LinkCard
     title="Track it over time"

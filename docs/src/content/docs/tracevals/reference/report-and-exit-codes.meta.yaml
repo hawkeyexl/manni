@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/reference/report-and-exit-codes.mdx:
+  personas: ["devin", "theo"]
+  journeys: ["d12", "d13", "t7"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/types.ts"
+    - path: "src/tracevals/reporters/index.ts"
+  eval-suite: tracevals
+  evals:
+    - id: read-report
+      assertion: "A reader can find a field in the JSON report and say which outcomes exit 1."
+      type: capability
+      grader: ai

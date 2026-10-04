@@ -1,8 +1,17 @@
 ---
 title: Reports & exit codes
-description: The pretty, JSON, and markdown report formats field by field, the exit-code contract, and the append-only history file.
+description: Every report format field by field, the exit-code contract, and the append-only history file.
 sidebar:
   order: 6
+id: "tracevals-reference-report-and-exit-codes"
+type: "reference"
+keywords: ["report", "JSON", "SARIF", "JUnit", "exit codes"]
+language: en
+intent: "Look up every report format field by field and the exit-code contract."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["What does the JSON report contain?", "How does SARIF name its rules?"]
+graph: { label: "Reports & exit codes", type: reference }
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -12,15 +21,16 @@ import { Aside } from '@astrojs/starlight/components';
 `src/tracevals/types.ts`, `src/tracevals/calibrate/types.ts`, `src/tracevals/reporters/`, and
 `src/tracevals/history.ts`. The verdict schema's `$id` is `manni:tracevals:verdict`.
 
-`-f, --format` on `run` and `calibrate` is `pretty | json | markdown`, default `pretty`. On `fill`,
-`capture`, and `list` it is `pretty | json`, default `pretty`.
+`-f, --format` on `run` is `pretty | json | markdown | github | sarif | junit`, default `pretty`. On
+`calibrate` it is `pretty | json | markdown`. On `fill`, `capture`, and `list` it is `pretty | json`.
+Every default is `pretty`.
 
 ## Exit codes
 
 | Code | Meaning |
 |---|---|
 | `0` | every eval passed or was skipped |
-| `1` | any `fail` or `error`, and `needs-review` unless `failOnNeedsReview: false` |
+| `1` | any `fail` or `error`, and `needs-review` unless `failOnReview: false` |
 | `2` | tracevals itself could not run, from bad usage, an unreadable trace, an unknown format, or a nonexistent path |
 
 `2` is written to stderr as `manni: <message>`; `0` and `1` write the report to stdout.
@@ -50,7 +60,7 @@ Skip reasons stay distinct, because they mean different things about your covera
 | `turn budget` | the judge budget was spent; see [`judge.maxTurns`](/manni/tracevals/reference/configuration/#judge) |
 | `no cost data (maxUsd not checkable)` | the trace carried no usage record for a `cost` grader to read |
 | `artifact skipped via metadata.eval-skip` | the artifact opted out |
-| `command execution is disabled (--no-commands / graders.command.enabled: false)` | command graders were turned off |
+| `frontmatter commands not granted (execution.allow: [frontmatter-commands])` | `--no-execution`, or an `execution.allow` without the grant |
 
 ## `--format json`
 
@@ -252,10 +262,42 @@ The same run as tables: `# manni tracevals report`, bullet metadata, then `## Ev
 summary sentence. An offered-but-unused row reads `n/a` under **Resolved**, never `no`. Pipe
 characters in messages are escaped. Suited to a build summary or a PR comment.
 
+## `--format github`
+
+GitHub Actions workflow commands, then the markdown summary, so the step's log and
+`$GITHUB_STEP_SUMMARY` read the same run. Each annotation lands on the **artifact file** that
+declared the eval, because that is the file someone edits to change the outcome. The trace it was
+graded against goes at the end of the message:
+
+```text
+::error file=test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md,title=manni tracevals%3A forbidden-tool::tool Bash was used 1 time(s) but must not be (trace: test/tracevals/fixtures/traces/claude-session.jsonl)
+```
+
+A finding takes its own severity as the annotation level. A judged `fail` and an `error` outcome are
+annotated as errors. A `needs-review` outcome is not annotated, and the summary table carries it.
+
+## `--format sarif`
+
+One SARIF 2.1.0 run from the driver `manni-tracevals`. Each rule is a grader, with the id
+`tracevals/<grader>`, such as `tracevals/tool-usage` or `tracevals/ai`. A trace that could not be read
+is filed under `tracevals/trace`. Levels map `error` to `error`, `warning` to `warning` and `notice`
+to `note`.
+
+A location is the artifact file. Under the working directory it is relative to `SRCROOT`. A
+user-level skill in `~/.claude` gets an absolute `file:` URI, since no relative one reaches it. Each
+result's `properties` carry `eval`, `artifactName`, `artifactType`, `trace` and `sessionId`.
+
+## `--format junit`
+
+One `<testsuite>` per trace and one `<testcase>` per artifact and eval. `classname` is the artifact
+file and `name` is the eval, so a JUnit viewer groups by the file someone edits. `fail` and `error`
+are `<failure>` elements. `skipped` and `needs-review` are both `<skipped>`, because JUnit has no
+third state and a review queue is not a broken build.
+
 ## Batch runs
 
 Naming more than one trace emits a **`BatchReport`** instead, as does selecting them with
-`--all-projects`, `--since`, or `--limit`. It answers a different question: not *did this hold?* but
+`--all-projects`, `--newer-than`, or `--limit`. It answers a different question: not *did this hold?* but
 *how often does it hold?*
 
 Naming exactly one trace still emits the `RunReport` above, byte for byte. What decides the shape is

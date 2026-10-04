@@ -3,6 +3,15 @@ title: API reference
 description: Everything the tracevals namespace exports, grouped by what it is for, with the intended entry points marked.
 sidebar:
   order: 8
+id: "tracevals-reference-api"
+type: "reference"
+keywords: ["API", "tracevals namespace", "exports", "newerThan"]
+language: en
+intent: "Look up everything the tracevals namespace exports."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["What does the tracevals namespace export?", "How do I run a batch from TypeScript?"]
+graph: { label: "API reference", type: reference }
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -40,11 +49,19 @@ The CLI's verbs, callable directly. Each pairs a runner with a renderer.
 |---|---|
 | `runRun`, `RunCommandOptions`, `RunCommandResult` | `run`, one trace. `RunCommandOptions.judge` injects a judge. |
 | `prepareRun`, `runOne`, `RunContext`, `RunSharedOptions` | The seams a batch reuses. Build the judge, config and plugins once, then evaluate one trace. |
-| `runBatch`, `resolveBatchTraces`, `parseSince`, `BatchCommandOptions`, `BatchCommandResult` | `run` over many traces. `BatchCommandResult.outcomes` pairs each file with its report, errors included. |
+| `runBatch`, `resolveBatchTraces`, `parseNewerThan`, `keepNewerThan`, `BatchCommandOptions`, `BatchCommandResult` | `run` over many traces. `BatchCommandResult.outcomes` pairs each file with its report, errors included. |
 | `runCalibrate`, `CalibrateCommandOptions`, `CalibrateCommandResult` | `calibrate`. Accepts the same judge injection through `RunSharedOptions`. |
 | `runFill`, `renderFill`, `FillOptions`, `FillReport`, `FillArtifactResult`, `FillRun`, `FillStatus`, `SharpeningNote` | `fill`. `FillOptions.providerInstance` injects a provider. |
 | `runCapture`, `renderCapture`, `CaptureCommandOptions`, `CaptureCommandResult` | `capture`. |
 | `runList`, `renderList`, `ListOptions`, `ListRun` | `list`. |
+
+The command options spell each flag in camelCase:
+
+| Option | Flag | Notes |
+|---|---|---|
+| `newerThan` | `--newer-than` | A duration string such as `"7d"`, on `BatchCommandOptions`, `CalibrateCommandOptions` and `ListOptions`. `parseNewerThan` turns one into milliseconds and throws on any other spelling. |
+| `allowExecution` | `--allow-execution`, `--no-execution` | The grants to keep, such as `["frontmatter-commands"]`. Absent keeps every grant `execution.allow` holds, and `[]` runs no command eval. It never widens the config. |
+| `failOnReview` | `--fail-on-review`, `--no-fail-on-review` | Overrides `config.failOnReview`. Absent defers to the config. |
 
 ## Traces
 
@@ -83,8 +100,7 @@ The CLI's verbs, callable directly. Each pairs a runner with a renderer.
 |---|---|
 | `extractEvals` | Read and validate an artifact's `metadata.evals` block. |
 | `appendArtifactEvals` | Append evals to frontmatter. The one write path. |
-| `ARTIFACT_EVALS_SCHEMA_ID` | `manni:artifact-evals:1.0.0-proposal.4`. |
-| `artifactEvalsSchemaPath` | Where the bundled draft of that vocabulary resolves on disk. |
+| `ARTIFACT_EVALS_SCHEMA_ID` | `manni:artifact-evals:1.1.0`, the id a finding about the block names as its `schema`. |
 | `EvalEntry`, `EvalType`, `ExtractedEvals`, `Severity`, `NewEvalEntry`, `EvalProvenance` | `Severity` is the family scale, `error \| warning \| notice`. |
 
 ## Planning and graders

@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/reference/traces.mdx:
+  personas: ["maya", "devin"]
+  journeys: ["m17", "d12"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/trace/discover.ts"
+    - path: "src/tracevals/trace/claude.ts"
+  eval-suite: tracevals
+  evals:
+    - id: find-session-store
+      assertion: "A reader can say where tracevals looks for traces and how to point it elsewhere."
+      type: capability
+      grader: ai

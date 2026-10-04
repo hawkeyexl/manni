@@ -3,6 +3,15 @@ title: Calibrate the judge
 description: Write down the verdicts you already know, run calibrate to count false passes, false fails, and review volume, then sweep zones and ensemble size for free against cached verdicts.
 sidebar:
   order: 2
+id: "tracevals-judge-calibrate"
+type: "how-to"
+keywords: ["calibrate", "labels", "false pass", "sweep"]
+language: en
+intent: "Measure the judge against known verdicts and tune its zones and ensemble size."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["How do I measure false passes?", "What does calibrate --sweep do?"]
+graph: { label: "Calibrate the judge", type: task }
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -31,11 +40,13 @@ npx @hawkeyexl/manni tracevals calibrate <traces...> --labels tracevals/labels.y
 It runs the corpus and joins the results against the answers you wrote down. Then it counts the
 three things that matter: [false passes, false fails, and review volume](#the-three-numbers).
 
-`calibrate` takes the same inputs and the same flags as `run`, minus `--history` and `--manifest`:
-`-c, --config <path>`, `--no-config`, `--provider`, `--model`, `--local`, `--offline`,
-`--max-turns`, `--deterministic-only`, `--no-cache`, and
-`-f, --format <pretty | json | markdown>`. History and a
+`calibrate` takes the same inputs and the same flags as `run`, minus `--history` and `--manifest`.
+That covers `-c, --config <path>`, `--no-config`, `--provider`, `--model`, `--local`, `--offline`,
+`--max-turns`, `--deterministic-only`, `--no-cache` and `--newer-than <duration>`. History and a
 session manifest belong to a run you are recording, and a calibration corpus is neither.
+
+Its `-f, --format` is `pretty | json | markdown`. The CI formats `github`, `sarif` and `junit`
+belong to `run`, because a calibration reports numbers rather than findings on a file.
 
 ## Write down what you decided
 

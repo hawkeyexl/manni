@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/declare/fill.mdx:
+  personas: ["maya"]
+  journeys: ["m19"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/commands/fill.ts"
+    - path: "src/tracevals/evals/write-location.ts"
+  eval-suite: tracevals
+  evals:
+    - id: dry-run-then-write
+      assertion: "A reader can run fill with --dry-run, read why a proposal was rejected, and say where the written evals land."
+      type: capability
+      grader: ai

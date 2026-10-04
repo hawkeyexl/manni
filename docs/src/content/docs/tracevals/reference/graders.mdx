@@ -3,6 +3,15 @@ title: Grader reference
 description: Every grader kind. The open enum, the deterministic ones with their options and messages, and the ai, human, and command families.
 sidebar:
   order: 4
+id: "tracevals-reference-graders"
+type: "reference"
+keywords: ["graders", "tool-usage", "tool-order", "command", "ai"]
+language: en
+intent: "Look up every grader kind with its options and messages."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["What options does tool-order take?", "How do I stop command evals from running?"]
+graph: { label: "Grader reference", type: reference }
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -271,6 +280,9 @@ write. Run the tests after you edit. A suite built only on `tool-usage` would se
 | `afterInputMatch` | string | none | The same for the `after` call. |
 | `includeSidechains` | boolean | `false` | Count subagent calls as well as main-chain ones. |
 
+[`manni:artifact-evals:1.1.0`](/manni/meta/reference/schemas/manni-artifact-evals/) names
+`tool-order`, so its strict overlay accepts it. The `1.0.0` overlay predates it and rejects it.
+
 ```yaml
 - id: reads-before-writing
   assertion: The session read a source file before writing to src/.
@@ -537,7 +549,7 @@ session and never cached**. Every trace is new, so there is nothing a previous v
 be true about. It needs no provider and no inference turn, so it reports in `--deterministic-only`
 runs too.
 
-Whether a `needs-review` outcome fails the run is a config decision. See `failOnNeedsReview` in the
+Whether a `needs-review` outcome fails the run is a config decision. See `failOnReview` in the
 [configuration reference](/manni/tracevals/reference/configuration/).
 
 ## `command`
@@ -575,7 +587,7 @@ Two properties bound it. argv is spawned with **no shell**, so `;`, `&&`, and `$
 artifact reach the process as literal argument text. And `timeout-ms` always has a finite value, so
 a hung check fails its own eval rather than the run.
 
-**To evaluate a trace without running anything it declares**, pass `--no-commands`. See below.
+**To evaluate a trace without running anything it declares**, pass `--no-execution`. See below.
 </Aside>
 
 Four states are an `error` rather than a verdict, because none of them can honestly be called a
@@ -597,36 +609,34 @@ makes.
 
 ### Turning execution off
 
-Pass `--no-commands`, or set the config key, to evaluate a trace without running anything its
-project declares:
+Pass `--no-execution`, or narrow the config's grants, to evaluate a trace without running anything
+its project declares:
 
 ```yaml title="manni.config.yaml"
 tracevals:
-  graders:
-    command:
-      enabled: false
+  execution:
+    allow: []
 ```
 
 The eval reports **`skipped`**, with the reason stated, never `pass`:
 
 ```
   SKIP   fix-bug › no-force-push
-         command execution is disabled (--no-commands / graders.command.enabled: false)
+         frontmatter commands not granted (execution.allow: [frontmatter-commands])
 ```
 
 An unrun check has not been satisfied, so it never counts as clean. Nothing else about the run
 changes. The verdicts and the exit code are the same as a run without the flag.
 
-The default stays **on**. An eval that declares a command is asking for that command to run. A tool
-that silently refused would make the vocabulary's own worked example look broken. What is new is the
-lever for the person taking the risk
-([ADR 01019](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/tracevals/01019-add-an-opt-out-for-command-execution.md),
-which amends 01011 rather than reversing it).
+Command evals run by default. An eval that declares a command is asking for that command to run, so
+everything available runs unless the operator narrows it. `--allow-execution <kind>` keeps only the
+named grants, and no flag widens what the config narrowed. docevals reads the same grant
+([proposal 0075](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0075-time-windows-and-execution-in-the-evals-domains.md)).
 
 For a run that both executes nothing *and* sends nothing, combine it with `--deterministic-only`:
 
 ```bash
-npx @hawkeyexl/manni tracevals run session.jsonl --deterministic-only --no-commands
+npx @hawkeyexl/manni tracevals run session.jsonl --deterministic-only --no-execution
 ```
 
 ## Custom graders

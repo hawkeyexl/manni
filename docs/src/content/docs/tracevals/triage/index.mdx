@@ -3,6 +3,15 @@ title: Read a failing eval
 description: Decode a FAIL, ERROR, REVIEW, or SKIP from a manni tracevals run in one page, then decide whether to fix the session, fix the eval, or escalate.
 sidebar:
   order: 1
+id: "tracevals-triage"
+type: "troubleshooting"
+keywords: ["failing eval", "triage", "skipped", "needs-review"]
+language: en
+intent: "Decode a failing session eval and decide whether to fix the session, fix the eval, or escalate."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["Why was my eval skipped?", "What do I do about a FAIL?"]
+graph: { label: "Read a failing eval", type: troubleshooting }
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -117,7 +126,7 @@ Either way the bug lives in the artifact's frontmatter, and it belongs to whoeve
 
 ## Why something was skipped
 
-`SKIP` never affects the exit code. It has **four unrelated causes**, and the reason is always
+`SKIP` never affects the exit code. It has **five unrelated causes**, and the reason is always
 printed underneath. Read it, because each one means something different:
 
 | Reason shown | What happened | What to do |
@@ -126,6 +135,7 @@ printed underneath. Read it, because each one means something different:
 | `ai evals skipped (no judge provided)` | No judge was configured for this run. | Nothing, unless you expected judged checks; then check the provider config. |
 | `artifact skipped via metadata.eval-skip` | The artifact opted out. | Nothing. Someone chose this on purpose. |
 | `turn budget` | The run hit its ceiling on inference calls; the remaining judged evals did not run. | Raise `judge.maxTurns`, or accept partial coverage. |
+| `frontmatter commands not granted (execution.allow: [frontmatter-commands])` | The run held no execution grant, so `command` evals did not run. | Nothing, if the job passed `--no-execution` on purpose. Otherwise check `tracevals.execution.allow`. |
 
 The turn budget is the ceiling on tracevals' own inference calls. Reaching it never aborts a run.
 It stops there and marks what is left as skipped, so a capped run still reports everything it did

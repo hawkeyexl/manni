@@ -1,0 +1,12 @@
+docs/src/content/docs/tracevals/reference/glossary.mdx:
+  personas: ["maya", "devin", "sara", "theo"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/types.ts"
+  eval-suite: tracevals
+  evals:
+    - id: define-a-term
+      assertion: "A reader can find the definition of any term a tracevals report uses."
+      type: capability
+      grader: ai

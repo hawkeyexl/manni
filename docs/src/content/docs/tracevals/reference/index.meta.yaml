@@ -1,0 +1,12 @@
+docs/src/content/docs/tracevals/reference/index.mdx:
+  personas: ["maya", "devin", "sara", "theo"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/cli.ts"
+  eval-suite: tracevals
+  evals:
+    - id: find-reference-page
+      assertion: "A reader can pick the reference page that answers a lookup about a command, config key, grader, or report field."
+      type: capability
+      grader: ai

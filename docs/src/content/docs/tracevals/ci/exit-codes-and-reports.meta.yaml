@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/ci/exit-codes-and-reports.mdx:
+  personas: ["devin", "theo"]
+  journeys: ["d12", "t7"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/cli.ts"
+    - path: "src/tracevals/core/config-schema.json"
+  eval-suite: tracevals
+  evals:
+    - id: exit-codes
+      assertion: "A reader can say which outcomes exit 1 and how to stop needs-review from failing the run."
+      type: capability
+      grader: ai

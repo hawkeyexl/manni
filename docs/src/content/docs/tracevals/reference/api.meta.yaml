@@ -1,0 +1,13 @@
+docs/src/content/docs/tracevals/reference/api.mdx:
+  personas: ["devin"]
+  journeys: ["d13"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/index.ts"
+  eval-suite: tracevals
+  evals:
+    - id: find-an-export
+      assertion: "A reader can find the export for a tracevals command and name its options."
+      type: capability
+      grader: ai

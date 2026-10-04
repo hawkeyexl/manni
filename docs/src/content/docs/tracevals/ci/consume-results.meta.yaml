@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/ci/consume-results.mdx:
+  personas: ["devin"]
+  journeys: ["d13"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/history.ts"
+    - path: "src/tracevals/types.ts"
+  eval-suite: tracevals
+  evals:
+    - id: consume-json
+      assertion: "A reader can write the JSON report to a file and find the evals that regressed since the previous run."
+      type: capability
+      grader: ai

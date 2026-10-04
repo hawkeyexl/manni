@@ -1,0 +1,13 @@
+docs/src/content/docs/tracevals/reference/cli.mdx:
+  personas: ["maya", "devin", "sara", "theo"]
+  journeys: ["m17", "d12", "t7"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/cli.ts"
+  eval-suite: tracevals
+  evals:
+    - id: find-a-flag
+      assertion: "A reader can find any tracevals flag, its default, and the usage error it gives."
+      type: capability
+      grader: ai

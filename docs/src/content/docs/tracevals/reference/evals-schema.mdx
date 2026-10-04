@@ -3,29 +3,35 @@ title: Evals schema reference
 description: The metadata.evals frontmatter block field by field, the manni vocabulary it implements, and what capability and regression mean.
 sidebar:
   order: 5
+id: "tracevals-reference-evals-schema"
+type: "reference"
+keywords: ["metadata.evals", "artifact-evals", "schema", "manifest"]
+language: en
+intent: "Look up the exact shape of the metadata.evals block."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["Which vocabulary does the evals block implement?", "Can evals live outside the artifact?"]
+graph: { label: "Evals schema reference", type: reference }
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
 **Scope:** the exact shape of the `metadata.evals` block. How to decide what to put in it is
 [Declare what to check](/manni/tracevals/declare/). Source of truth:
-`docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json`.
+`src/meta/schemas/artifact-evals/1.1.0.json`.
 
 ## The vocabulary is the family's
 
-The block implements **`manni:artifact-evals:1.0.0-proposal.4`**, a common metadata vocabulary
-rather than a setting of this tool. It shares its entry shape with the page-side `manni:evals` that
+The block implements **`manni:artifact-evals:1.1.0`**, a built-in metadata vocabulary rather than a
+setting of this tool. It shares its entry shape with the page-side `manni:evals` that
 [manni docevals](/manni/docevals/) reads, so one eval spelling ports across both. tracevals
 implements the *behavior* against it, which is the graders, the judge and the reports. Any
-session-grading tool can implement the same vocabulary. The vocabulary itself, and the review it is
-open for, are written up under
-[metadata vocabularies](/manni/meta/proposals/artifact-evals/).
+session-grading tool can implement the same vocabulary. Its fields, its strict overlay and what
+changed from `1.0.0` are on the
+[vocabulary's reference page](/manni/meta/reference/schemas/manni-artifact-evals/).
 
-<Aside type="caution" title="Still a proposal">
-The vocabulary is open for community review, which is what the `-proposal.4` suffix records. It is
-a semver **prerelease**, so it sorts below the `1.0.0` it will register as. If the review changes
-the shape, the next draft supersedes this one.
-</Aside>
+A finding about the block names that id as its `schema`, so the same id works in
+`manni meta validate -s manni:artifact-evals:1.1.0`.
 
 ## Where the block goes
 
@@ -54,7 +60,7 @@ so a misspelled field inside one fails loudly instead of being ignored.
 
 ### Or in an external-metadata manifest
 
-At `proposal.4` the whole top-level `metadata` key carries `x-manni-location: external`. The mark
+The whole top-level `metadata` key carries `x-manni-location: external`. The mark
 sits on the map, not on one field. So `evals`, `eval-skip` and `meta-provenance` move as one block,
 and they cannot be split across an artifact and a manifest.
 
@@ -63,6 +69,12 @@ The artifact then keeps only the front matter the tool running it reads. `run`, 
 `fill` read the block back from there, so a relocated artifact grades exactly as an inline one. The
 rules are in [Collections and a relocated
 block](/manni/tracevals/reference/configuration/#collections-and-a-relocated-block).
+
+A manifest may be one file per artifact, such as `{page}.meta.yaml`, with no `keys`. Such a manifest
+owns `metadata` only where the artifact's schema set marks it external. Name
+`manni:artifact-evals:1.1.0` in a `meta.overrides` entry for the collection, or in the artifact's
+`$schema`. See [One manifest per
+artifact](/manni/tracevals/reference/configuration/#one-manifest-per-artifact).
 
 ## The three keys
 
@@ -177,7 +189,7 @@ transcript when the author asked for a written file would report a verdict about
 
 `weight` decides how much an eval's outcome moves the run's reported pass rate, and nothing else.
 The eval still passes or fails on its own terms, and the exit code still reads the binary verdict.
-Zero is excluded on purpose: a weightless eval is a silent disable, and `skip` already means that,
+Zero is excluded on purpose. A weightless eval is a silent disable, and `skip` already means that,
 loudly.
 
 ## `capability` versus `regression`
@@ -238,11 +250,11 @@ what matters: the general check no longer runs alongside.
 
 ## Reading the schema yourself
 
-No schema copy ships in the published package, and there is no per-version URL to pin. The draft
-lives in this repository at `docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.4.json`, and
-is bundled into the build. The bytes tracevals validates against are the bytes you can read. You do
-not need to pin anything to author evals. Read the draft when *your own* tooling generates or
-consumes these blocks.
+The schema ships in the package and is published at
+`https://hawkeyexl.github.io/manni/schemas/artifact-evals/1.1.0.json`. The bytes tracevals validates
+against are the bytes you can read. You do not need to pin anything to author evals. Read it when
+*your own* tooling generates or consumes these blocks, and validate an artifact with
+`manni meta validate -s manni:artifact-evals:1.1.0`.
 
 ## When the block is invalid
 
@@ -254,7 +266,7 @@ an `error` outcome, a JSON Pointer to the offending field, and a source line num
          invalid metadata.evals block: /metadata/evals/1/grader (line 12): must be string
 ```
 
-<Aside type="caution" title="Migrating from an earlier draft">
+<Aside type="caution" title="Migrating from a draft spelling">
 Older spellings fail loudly rather than degrading, which is the point:
 
 - `metadata.eval-provenance` is now `metadata.meta-provenance`, in the family's attribution shape.
@@ -266,7 +278,7 @@ Older spellings fail loudly rather than degrading, which is the point:
 - `grader: llm` is now `grader: ai`. It passes the schema, because the grader enum is open. The
   grader registry rejects it at run time, with a message naming every kind it knows.
 
-One `proposal.4` change is not a migration. The whole `metadata` key is marked
+One change is not a migration. The whole `metadata` key is marked
 `x-manni-location: external`, and a block in front matter still validates. Relocating one moves
 every key under `metadata` at once, [as above](#or-in-an-external-metadata-manifest).
 </Aside>

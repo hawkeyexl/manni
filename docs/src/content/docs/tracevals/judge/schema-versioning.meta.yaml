@@ -1,0 +1,14 @@
+docs/src/content/docs/tracevals/judge/schema-versioning.mdx:
+  personas: ["sara"]
+  journeys: ["s13"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/meta/schemas/artifact-evals/1.1.0.json"
+    - path: "src/tracevals/evals/schema.ts"
+  eval-suite: tracevals
+  evals:
+    - id: staged-rollout
+      assertion: "A reader can roll out a new eval at warning, measure it, and promote it to error."
+      type: capability
+      grader: ai
