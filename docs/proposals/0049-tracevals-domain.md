@@ -1,6 +1,6 @@
 # 0049: the `tracevals` domain: session adherence joins the family
 
-- **Status:** Proposed
+- **Status:** Proposed; superseded in part by [0074](0074-artifact-evals-1-1-0-tool-order.md)
 - **Serves:** Maya · M14–M17 · Devin · D10, D11 · Sara · S10, S11 · Theo · T5
 - **Depends on:** [0033](0033-manni-monorepo.md), the umbrella this domain
   mounts on and the import recipe it follows. [0034](0034-command-grammar.md),
