@@ -122,6 +122,7 @@ against the budget that produced it. tracevals counts turns and reports no spend
 | `artifactType` | string | `skill`, `agent`, `project-rules`, or `slash-command`. |
 | `grader` | string | The grader kind, `ai` for judged. |
 | `implicit` | boolean | `true` for the whole-artifact eval. |
+| `location` | object | Where the eval is declared, `{ file, line? }`. See [below](#location). |
 | `outcome` | string | One of the five outcomes above. |
 | `findings` | array? | Deterministic findings: `{ evalName, artifact, message, severity }`, severity one of `notice`, `warning`, `error`. |
 | `consensus` | object? | Judged evals only, see below. |
@@ -129,6 +130,24 @@ against the budget that produced it. tracevals counts turns and reports no spend
 | `skipReason` | string? | Why it was skipped. |
 | `turns` | number? | Judged evals only. Uncached ensemble runs spent on this eval; `0` when the ensemble came from cache. |
 | `durationMs` | number | Time for this eval. |
+
+### `location`
+
+The item of `metadata.evals` that declares the eval. That is the artifact when its front matter holds
+the block. It is the manifest when [relocation](/manni/tracevals/reference/configuration/#collections-and-a-relocated-block) put the
+block there, so `file` can differ from `artifact`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `file` | string | Relative to the working directory and forward-slashed inside it, absolute outside it, or a hosted manifest's URL. |
+| `line` | number? | The 1-based line of the entry. Absent when nothing records one. |
+
+The implicit `adheres-to-artifact` eval has no entry, so its `location` is the artifact alone, with
+no `line`. A schema failure (`evals-block-valid`) points at the block, and an `eval-skip` at its key.
+
+```json
+"location": { "file": ".claude/skills/fix-bug/SKILL.md", "line": 12 }
+```
 
 ### `consensus`
 
@@ -206,17 +225,17 @@ The default. Structure:
 manni tracevals — /path/to/session.jsonl
 claude-code · claude-opus-4-8 · 2 turn(s) · /work/demo-project
 
-  PASS   fix-bug › used-read
-  FAIL   fix-bug › forbidden-tool
+  PASS   fix-bug › used-read  .claude/skills/fix-bug/SKILL.md:6
+  FAIL   fix-bug › forbidden-tool  .claude/skills/fix-bug/SKILL.md:12
          [error] tool Bash was used 1 time(s) but must not be
-  PASS   fix-bug › no-force-push
-  REVIEW fix-bug › refactor-preserved-intent
+  PASS   fix-bug › no-force-push  .claude/skills/fix-bug/SKILL.md:18
+  REVIEW fix-bug › refactor-preserved-intent  .claude/skills/fix-bug/SKILL.md:23
          awaiting human review
-  PASS   reviewer › reviewer-is-read-only
-  SKIP   doc-writer › doc-writer-wrote-docs
+  PASS   reviewer › reviewer-is-read-only  .claude/agents/reviewer.md:6
+  SKIP   doc-writer › doc-writer-wrote-docs  .claude/agents/doc-writer.md:6
          agent "doc-writer" was spawned but recorded no subagent turns (no inline
          sidechain records and no sidecar transcript), so it governed no turns
-  SKIP   CLAUDE.md › adheres-to-artifact (implicit)
+  SKIP   CLAUDE.md › adheres-to-artifact (implicit)  CLAUDE.md
          ai evals skipped (deterministic-only run)
 
 Artifact coverage
@@ -240,11 +259,12 @@ Warnings
 recorded no turns, so its evals report `skipped` rather than a verdict about work it had no part in.
 Both are [eval windowing](/manni/tracevals/reference/graders/).
 
-Outcome labels are `PASS`, `FAIL`, `ERROR`, `REVIEW`, `SKIP`. For a **non-passing judged** eval, two
-extra lines appear: the vote split and the first `observed`.
+Outcome labels are `PASS`, `FAIL`, `ERROR`, `REVIEW`, `SKIP`. Each eval line ends with its
+[`location`](#location) as `<file>:<line>`, or the file alone when no line is recorded. For a
+**non-passing judged** eval, two extra lines appear: the vote split and the first `observed`.
 
 ```
-  REVIEW fix-bug › eval-5
+  REVIEW fix-bug › eval-5  .claude/skills/fix-bug/SKILL.md:27
          votes pass:1 fail:2 partial:0 error:0 · confidence 0.87
          The session edited src/app.ts at turn 2 without a preceding test run.
 ```
@@ -258,7 +278,8 @@ that goes into the same **Where** cell, so the table keeps its column count.
 ## `--format markdown`
 
 The same run as tables: `# manni tracevals report`, bullet metadata, then `## Evals`
-(`| Outcome | Artifact | Eval | Grader | Detail |`), `## Artifact coverage`
+(`| Outcome | Artifact | Eval | Grader | Detail |`, with the eval's `<file>:<line>` in code after its
+name), `## Artifact coverage`
 (`| Resolved | Kind | Ref | Availability | Where |`), `## Availability`, `## Warnings`, and a bold
 summary sentence. An offered-but-unused row reads `n/a` under **Resolved**, never `no`. Pipe
 characters in messages are escaped. Suited to a build summary or a PR comment.
@@ -266,12 +287,13 @@ characters in messages are escaped. Suited to a build summary or a PR comment.
 ## `--format github`
 
 GitHub Actions workflow commands, then the markdown summary, so the step's log and
-`$GITHUB_STEP_SUMMARY` read the same run. Each annotation lands on the **artifact file** that
-declared the eval, because that is the file someone edits to change the outcome. The trace it was
-graded against goes at the end of the message:
+`$GITHUB_STEP_SUMMARY` read the same run. Each annotation lands on the eval's
+[`location`](#location), meaning the file and line that declare it. That is the line someone edits to
+change the outcome, in the artifact or in its manifest. The annotation carries no `line` when the
+location has none. The trace it was graded against goes at the end of the message:
 
 ```text
-::error file=test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md,title=manni tracevals%3A forbidden-tool::tool Bash was used 1 time(s) but must not be (trace: test/tracevals/fixtures/traces/claude-session.jsonl)
+::error file=test/tracevals/fixtures/project/.claude/skills/fix-bug/SKILL.md,line=12,title=manni tracevals%3A forbidden-tool::tool Bash was used 1 time(s) but must not be (trace: test/tracevals/fixtures/traces/claude-session.jsonl)
 ```
 
 A finding takes its own severity as the annotation level. A judged `fail` and an `error` outcome are
@@ -284,14 +306,17 @@ One SARIF 2.1.0 run from the driver `manni-tracevals`. Each rule is a grader, wi
 is filed under `tracevals/trace`. Levels map `error` to `error`, `warning` to `warning` and `notice`
 to `note`.
 
-A location is the artifact file. Under the working directory it is relative to `SRCROOT`. A
-user-level skill in `~/.claude` gets an absolute `file:` URI, since no relative one reaches it. Each
+A location is the eval's [`location`](#location), with its line as `region.startLine`. A location
+with no line has no `region`. Under the working directory the file is relative to `SRCROOT`. A
+user-level skill in `~/.claude` gets an absolute `file:` URI, since no relative one reaches it, and a
+hosted manifest keeps its URL. Each
 result's `properties` carry `eval`, `artifactName`, `artifactType`, `trace` and `sessionId`.
 
 ## `--format junit`
 
 One `<testsuite>` per trace and one `<testcase>` per artifact and eval. `classname` is the artifact
-file and `name` is the eval, so a JUnit viewer groups by the file someone edits. `fail` and `error`
+file and `name` is the eval, so a JUnit viewer groups by the file someone edits. `file` and `line`
+are the eval's [`location`](#location), and `line` is left out when the location has none. `fail` and `error`
 are `<failure>` elements. `skipped` and `needs-review` are both `<skipped>`, because JUnit has no
 third state and a review queue is not a broken build.
 

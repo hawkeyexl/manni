@@ -159,7 +159,7 @@ npx @hawkeyexl/manni tracevals run <trace> --format markdown --output tracevals-
 | `pretty` (default) | reading in a terminal, colored, with vote splits on non-passing judged evals |
 | `json` | anything programmatic; the full report structure |
 | `markdown` | a build summary or a PR comment |
-| `github` | GitHub Actions annotations on the artifact files, then the markdown summary |
+| `github` | GitHub Actions annotations on the lines that declare each eval, then the markdown summary |
 | `sarif` | code scanning, with one rule per grader as `tracevals/<grader>` |
 | `junit` | a test-report viewer; `needs-review` lands as skipped, not failed |
 
@@ -180,11 +180,11 @@ The markdown format renders as tables:
 
 | Outcome | Artifact | Eval | Grader | Detail |
 |---|---|---|---|---|
-| pass | fix-bug | used-read | tool-usage |  |
-| fail | fix-bug | forbidden-tool | tool-usage | tool Bash was used 1 time(s) but must not be |
-| pass | fix-bug | no-force-push | command |  |
-| needs-review | fix-bug | refactor-preserved-intent | human | awaiting human review |
-| skipped | CLAUDE.md | adheres-to-artifact (implicit) | ai | ai evals skipped (deterministic-only run) |
+| pass | fix-bug | used-read `.claude/skills/fix-bug/SKILL.md:6` | tool-usage |  |
+| fail | fix-bug | forbidden-tool `.claude/skills/fix-bug/SKILL.md:12` | tool-usage | tool Bash was used 1 time(s) but must not be |
+| pass | fix-bug | no-force-push `.claude/skills/fix-bug/SKILL.md:18` | command |  |
+| needs-review | fix-bug | refactor-preserved-intent `.claude/skills/fix-bug/SKILL.md:23` | human | awaiting human review |
+| skipped | CLAUDE.md | adheres-to-artifact (implicit) `CLAUDE.md` | ai | ai evals skipped (deterministic-only run) |
 
 ## Artifact coverage
 
@@ -211,9 +211,13 @@ entry covering several files, so it is resolved with no single path. Every locat
 the entry's `tried` list. See
 [Reports & exit codes](/manni/tracevals/reference/report-and-exit-codes/#the-location-shown-for-an-entry).
 
+Each eval names the file and line that declare it, after its name. That is the artifact, or the
+manifest that holds a relocated block. The implicit eval has no declaring entry, so it names its
+artifact alone. The `github`, `sarif` and `junit` formats point at the same file and line.
+
 `--format json` emits the same run as a structured document. That document carries trace metadata,
-per-eval outcomes with findings and consensus, and the coverage list including every location that
-was tried. It also carries warnings, summary counts, turn telemetry, and duration. Every field is
+per-eval outcomes with findings, consensus and the declaring `location`, and the coverage list
+including every location that was tried. It also carries warnings, summary counts, turn telemetry, and duration. Every field is
 documented in [Reports & exit codes](/manni/tracevals/reference/report-and-exit-codes/).
 
 <Aside title="The commands are re-run, so the samples stay true">

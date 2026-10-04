@@ -216,8 +216,8 @@ sessions is not the place to run whatever it points at this week.
 
 ### Annotate the pull request
 
-`-f github` prints a workflow annotation on the artifact file behind each finding, then the markdown
-summary. Append the summary to the step summary and the annotations still reach the log:
+`-f github` prints a workflow annotation for each finding, then the markdown summary. It lands on
+the line that declares the eval, in the artifact or in the manifest that holds its evals. Append the summary to the step summary and the annotations still reach the log:
 
 ```yaml
       - name: Evaluate agent sessions

@@ -131,7 +131,7 @@ claude-code · claude-opus-4-8 · 4 turn(s) · C:\work\demo-project
 | `--offline` | n/a | off | Never fetch a remote manifest. External metadata is read from local manifests only, so a hosted eval trail is skipped rather than requested. |
 | `--no-cache` | n/a | off | Bypass the judge cache under `judge.cacheDir`. |
 | `--max-turns` | `<n>` | config `judge.maxTurns`, unbounded | Stop after this many uncached ensemble runs. A cached ensemble costs none. Evals left unjudged report `skipped` with `reason: "turn budget"`. |
-| `-f, --format` | `<pretty\|json\|markdown\|github\|sarif\|junit>` | `pretty` | Output format. `github` prints workflow annotations on the artifact files, then the markdown summary. `sarif` files each result under the rule `tracevals/<grader>`. `junit` reports `needs-review` as skipped. An unknown value is a usage error (exit 2), with the allowed set named. |
+| `-f, --format` | `<pretty\|json\|markdown\|github\|sarif\|junit>` | `pretty` | Output format. `github` prints workflow annotations on the lines that declare each eval, then the markdown summary. `sarif` files each result under the rule `tracevals/<grader>`. `junit` reports `needs-review` as skipped. An unknown value is a usage error (exit 2), with the allowed set named. |
 | `-o, --output` | `<file>` | n/a | Also write the report to a file, in the chosen format. stdout still gets it. |
 | `--report-unused-artifacts` | n/a | off | List every skill and agent the session was offered and never used. Without it the counts are still reported, and only the names are withheld. |
 | `--fail-on-review` | n/a | config `failOnReview`, which is `true` | Treat `needs-review` as a failure, so an eval the judge could not decide exits `1`. |

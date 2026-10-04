@@ -108,14 +108,14 @@ The command options spell each flag in camelCase:
 
 | Export | Notes |
 |---|---|
-| `planEvals` | Turn artifacts into `EvalPlan[]`. |
+| `planEvals` | Turn artifacts into `EvalPlan[]`. The optional second argument returns each artifact's `SuppliedMetadata`, its front matter merged with any manifest. Each plan's `location` is the entry that declares the eval. |
 | `IMPLICIT_EVAL_NAME` | `"adheres-to-artifact"`. |
 | ★ `registerGrader` | Add a kind at run time. See [Custom graders](/manni/tracevals/extend/custom-graders/). |
 | `graderFor`, `listGraderKinds` | |
 | `BUILTIN_GRADER_KINDS` | The kinds this tool ships, frozen before anything can register over them. |
 | `loadGraderPlugins` | Import grader plugins the way `run` and `fill` do, with the same resolution and the same warnings. Throws `TracevalsError` on a specifier that will not load. |
 | `GraderPluginApi`, `GraderPluginRegister`, `LoadGraderPluginsOptions`, `LoadedGraderPlugins` | |
-| `EvalPlan` | |
+| `EvalPlan`, `EvalLocation`, `SuppliedMetadata` | `EvalLocation` is `{ file, line? }`. `SuppliedMetadata` is `{ extracted, locate? }`, where `locate` names the manifest file and line behind a merged value. |
 | `TraceGrader`, `GradeResult`, `Finding`, `TraceGraderContext` | The grader contract. |
 | `windowFor` | The slice of the trace that plan's artifact governed. A custom grader that counts events should read this rather than the trace. |
 | `skippedWindow` | The `GradeResult` for an empty window, which is a skip carrying its reason, never a pass. |
@@ -172,7 +172,7 @@ map, shared with `manni meta fill` and `manni docevals`. See the
 | `ReportFormat` | |
 | `appendHistory`, `loadHistory`, `compareToLast`, `entryFor` | |
 | `HistoryEntry`, `HistoryEval`, `HistoryComparison` | |
-| `TracevalsError`, `RunReport`, `EvalResult`, `RunSummary`, `Outcome`, `BatchReport`, `AggregateRow`, `AggregateCounts`, `BatchTraceEntry`, `BatchSummary` | The report model. |
+| `TracevalsError`, `RunReport`, `EvalResult`, `RunSummary`, `Outcome`, `BatchReport`, `AggregateRow`, `AggregateCounts`, `BatchTraceEntry`, `BatchSummary` | The report model. Each `EvalResult` carries the `location` that declares its eval. See [`location`](/manni/tracevals/reference/report-and-exit-codes/#location). |
 | `CalibrationReport`, `CalibrationCounts`, `Disagreement`, `SweepCell`, `CalibrationGate`, `JudgeSetting`, `JoinKind`, `EvalLabel`, `LabelOutcome` | The calibration model. |
 | `loadLabels`, `parseLabels`, `labelKey`, `DEFAULT_LABELS_FILE` | The labels sidecar. `parseLabels` resolves trace paths against the file's own directory. |
 | `joinLabels`, `score`, `rescore`, `classify` | Pure calibration arithmetic. `rescore` re-applies zones and ensemble depth to a result's cached runs, with no provider involved. |

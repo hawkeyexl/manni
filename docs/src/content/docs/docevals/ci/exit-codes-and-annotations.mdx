@@ -2,7 +2,7 @@
 title: Exit codes and annotations
 description: What 0, 1, and 2 mean, who each routes to, and how failures land on the right line.
 type: how-to
-last-updated: 2026-10-02
+last-updated: 2026-10-04
 ---
 
 Three exit codes, and the distinction between two of them is the difference between a check people
@@ -125,14 +125,18 @@ Severity maps to the annotation level:
 Values are escaped per GitHub's rules. That covers `%`, CR and LF in data, plus `:` and `,` in
 properties, which is why the title renders as `manni docevals%3A no-todo-markers`.
 
-### Judged failures annotate the file
+### Judged failures annotate the line that declares the eval
 
-An ai eval has no line to point at, so it annotates the file with the mean confidence and the
-judge's reasoning:
+An ai eval has no line in the content to point at. So it annotates the entry that declares the eval,
+with the mean confidence and the judge's reasoning. That entry is in the page's `evals` or
+`eval-suite` key, or in the manifest that supplies it:
 
 ```text
-::error file=docs/tutorial.mdx,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). <reasoning>
+::error file=docs/tutorial.mdx,line=6,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). <reasoning>
 ```
+
+A finding with no line of its own lands on the same entry. Every result carries it as
+[`location`](/manni/docevals/reference/output-and-exit-codes/#location).
 
 That reasoning is what a contributor acts on. It is only as good as the assertion behind it. See
 [Write good assertions](/manni/docevals/evals/write-good-assertions/).

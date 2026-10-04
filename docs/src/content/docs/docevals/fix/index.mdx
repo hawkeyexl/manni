@@ -2,7 +2,7 @@
 title: Fix a failing eval
 description: Your pull request went red on a manni docevals check. Work out which one, fix it, and move on.
 type: troubleshooting
-last-updated: 2026-10-02
+last-updated: 2026-10-04
 ---
 
 You did not configure this check and you do not need to learn the tool. Start with the table.
@@ -17,7 +17,7 @@ Find your CI output in the left column.
 | What you see | What it is | What to do |
 |---|---|---|
 | A message with a **file and line**, like `error:14 [regex/found] …` | A script-based check | [Fix the line](#a-finding-with-a-line) |
-| A message with **reasoning but no line**, mentioning "AI judge" | An AI verdict | [Read the assertion](#an-ai-verdict) |
+| A message with **reasoning**, mentioning "AI judge" | An AI verdict | [Read the assertion](#an-ai-verdict) |
 | **`needs-review`** | Waiting on a person | [Not yours to fix](#needs-review) |
 | An **assertion changed since its script was generated** | A generated script is out of date | [Not yours to fix](#stale-generated-script) |
 | **Exit code 2**, or "could not run" / missing key / bad config | The tool itself failed | [Not your fault](#exit-2) |
@@ -59,10 +59,11 @@ the build red. Keep reading the log.
 ## An AI verdict
 
 ```text
-::error file=docs/tutorial.mdx,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). The "Coming in v3" section describes unreleased functionality.
+::error file=docs/tutorial.mdx,line=6,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). The "Coming in v3" section describes unreleased functionality.
 ```
 
-No line number, because the judgement is about the page rather than a character position.
+The judgement is about the page rather than a character position. So the line is the one that
+declares the eval, in the page's frontmatter or in the manifest that holds its evals.
 
 **The rationale tells you what is wrong; the assertion tells you what was required.** Look both up:
 

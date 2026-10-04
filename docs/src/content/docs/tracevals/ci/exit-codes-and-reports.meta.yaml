@@ -60,10 +60,28 @@ docs/src/content/docs/tracevals/ci/exit-codes-and-reports.mdx:
       integrity: sha256-7bc2a6ed44e922493c4107d5e7ea30eeb03348cac957416c6014625a681ac660
     - generated-by: Claude Opus 5.5
       lines: 146-151
-      integrity: sha256-ed18f4b57d2857f7b6dfccec972ec8fd75d3ffa7b23efcd069fb71f257d5f6cc
+      integrity: sha256-1e57ab14aab8c06b6ba428512ab98a93ce7cde64128eee2b2a3461fb650276dd
     - generated-by: Claude Opus 5
-      lines: 153-222
-      integrity: sha256-ae9b829a9a6d39e65680131bf2e598062abcf11ec914519d18e3fca15c726204
+      lines: 153-166
+      integrity: sha256-45ee395facfb3914779aa393f562a77fa1d2af055bd2fb6d892f6ad6cbcea336
+    - generated-by: Claude Opus 5.5
+      lines: 167-171
+      integrity: sha256-ed91eeeacc73e4ec75d4fddbb8d9d2d6fefce22e149b48acef67d8565d0d0d4e
+    - generated-by: Claude Opus 5
+      lines: 173-196
+      integrity: sha256-eca93786f62a5d3402e7fcd7b7a273f9e0528249965ebb827f476c077b464f91
+    - generated-by: Claude Opus 5.5
+      lines: 198-200
+      integrity: sha256-323dd1b5ebf73cda11e346917beacb66cf3b13370a0ec9526910d2579d97c748
+    - generated-by: Claude Opus 5
+      lines: 202
+      integrity: sha256-57ccab9f6537eb36b2e7f7625d6e05f0d1975014b58ec78f7e0160a77e96b3c7
+    - generated-by: Claude Opus 5.5
+      lines: 203-204
+      integrity: sha256-10ffedeb15c25f5fa0ea762500100789ba83e64f6838dc3e3e416fd38e11c93c
+    - generated-by: Claude Opus 5
+      lines: 205-226
+      integrity: sha256-6032c6e69807ebbcfc4d736242cfafc1d0267f33e540ca16cc597efabb9d726f
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

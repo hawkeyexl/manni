@@ -29,7 +29,7 @@ docs/src/content/docs/tracevals/reference/cli.mdx:
       integrity: sha256-e56230d445aba3d0156542993a4eb1696646f35be776a53e6b32c9176ea8dfbd
     - generated-by: Claude Opus 5.5
       lines: 120
-      integrity: sha256-791f11b46a05bd0e7973ed6d7a81c6f4c17380a89fecb57c49eb82a95b75e8a9
+      integrity: sha256-5d8f15ec117d6b50bc38d36fc67286db5a1bd03895b248ccca02a059489a3c5d
     - generated-by: Claude Opus 5
       lines: 121-122
       integrity: sha256-dbaa5643cb39c33ecade513048fa72d11794f234a520ea52ed7e62b30ec10cb1
