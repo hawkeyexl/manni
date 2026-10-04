@@ -84,6 +84,12 @@ export interface VetResult {
 export class FillGuard {
   private readonly models = new Map<string, DocModel>();
   private baselineKeys: Set<string> | null = null;
+  /**
+   * Pages left out of the simulation because they would not analyze, sorted.
+   * The caller decides what each one means: a named page fails on its own,
+   * and a page read only for context is worth a warning.
+   */
+  readonly unreadable: string[] = [];
 
   private constructor(
     private readonly allPaths: Set<string>,
@@ -97,7 +103,9 @@ export class FillGuard {
   /**
    * Read and analyze the whole corpus once, up front. A path in `inline` is
    * taken from memory rather than disk: that is how a page read from stdin
-   * joins the corpus. `format` is `--as`, applied to every page.
+   * joins the corpus. `format` is `--as`, applied to the run's `inputs`. Any
+   * other page is parsed by its extension, as `build` reads it. A page that
+   * will not read or analyze is left out and listed in `unreadable`.
    */
   static create(
     files: string[],
@@ -108,7 +116,12 @@ export class FillGuard {
     {
       inline = new Map<string, string>(),
       format,
-    }: { inline?: ReadonlyMap<string, string>; format?: DocFormat } = {},
+      inputs = new Set<string>(),
+    }: {
+      inline?: ReadonlyMap<string, string>;
+      format?: DocFormat;
+      inputs?: ReadonlySet<string>;
+    } = {},
   ): FillGuard {
     const sources = config.build.derive.filter((s) =>
       GUARD_SOURCES.includes(s),
@@ -125,17 +138,23 @@ export class FillGuard {
       shapesPaths,
       force,
     );
+    const byExtension: AnalyzeOptions = { routes: config.routes };
     for (const path of all) {
-      guard.models.set(
-        path,
-        analyzeDoc(
-          inline.get(path) ?? readFileSync(resolve(cwd, path), "utf8"),
+      try {
+        guard.models.set(
           path,
-          guard.allPaths,
-          guard.analyzeOptions,
-        ),
-      );
+          analyzeDoc(
+            inline.get(path) ?? readFileSync(resolve(cwd, path), "utf8"),
+            path,
+            guard.allPaths,
+            inputs.has(path) ? guard.analyzeOptions : byExtension,
+          ),
+        );
+      } catch {
+        guard.unreadable.push(path);
+      }
     }
+    guard.unreadable.sort(byCodeUnit);
     return guard;
   }
 

@@ -37,8 +37,10 @@ import {
 import { isMissing } from "../../shared/manifest-cas.js";
 import { mergePage, openMetaView, ownMetadata } from "../core/external.js";
 import { FillGuard } from "../core/fill-guard.js";
+import { byCodeUnit } from "../core/sort.js";
 import { bundledShapesPath } from "../core/pkg.js";
 import { errorMessage } from "../../shared/errors.js";
+import { warn } from "../../shared/warn.js";
 import { GraphError } from "../types.js";
 import {
   completeValidatedJSON,
@@ -360,33 +362,55 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       ...files,
     ]),
   ];
+  // `--as` is how the run's own inputs are parsed. A corpus page the guard
+  // reads for context is parsed by its extension, as `build` would read it.
+  const inputs = new Set(files);
+  const formatFor = (path: string): DocFormat | undefined =>
+    inputs.has(path) ? format : undefined;
   // Each page as `manni meta validate` reads it (proposal 0047): its own
   // frontmatter plus every key a manifest of its collections owns. What a page
   // already holds, the guard's corpus and the `meta-provenance` list a fill
   // extends are all read through it, so a value kept beside the page counts.
-  const view = await openMetaView(
+  //
+  // A page meta will not read is that page's problem, not the run's. Named,
+  // it is that page's error, reported by `fillOne`. Read only for context,
+  // it is left out of the guard, and one warning lists it.
+  const mergeErrors = new Map<string, unknown>();
+  const view = await openMetaViewPerPage(
     {
       ...(opts.config === undefined ? {} : { configPath: opts.config }),
       ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
     },
     cwd,
     guardFiles,
+    mergeErrors,
   );
   // Each page's merged text, computed once. `fillOne` reads it from here, so
   // no page is merged twice.
   const mergedTexts = new Map<string, string>();
-  // A page whose frontmatter or manifest will not read is that page's error,
-  // reported by `fillOne`, not the run's.
-  const mergeErrors = new Map<string, unknown>();
   // The stdin page joins the guard's corpus from memory: it has no file. A
   // page whose manifests supply a key joins it as merged, so the simulation
   // sees what `graph build` would.
   const inline = new Map<string, string>();
   for (const path of guardFiles) {
-    const text = readFileSync(resolve(cwd, path), "utf8");
+    if (mergeErrors.has(path)) continue;
+    let text: string;
+    try {
+      text = readFileSync(resolve(cwd, path), "utf8");
+    } catch (e) {
+      // A named page that cannot be read aborts the run below, as it always
+      // has. One read only for context is left out of the guard.
+      mergeErrors.set(path, e);
+      continue;
+    }
     let asMetaReadsIt: string;
     try {
-      asMetaReadsIt = await mergedText(view, path, text, formatOf(path, format));
+      asMetaReadsIt = await mergedText(
+        view,
+        path,
+        text,
+        formatOf(path, formatFor(path)),
+      );
     } catch (e) {
       mergeErrors.set(path, e);
       continue;
@@ -398,14 +422,30 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   const guard =
     !opts.noValidateGraph && config.fill.validateGraph
       ? FillGuard.create(
-          guardFiles,
+          guardFiles.filter((path) => !mergeErrors.has(path)),
           cwd,
           config,
           shapesPaths,
           opts.force ?? false,
-          { inline, ...(format === undefined ? {} : { format }) },
+          {
+            inline,
+            ...(format === undefined ? {} : { format }),
+            inputs: new Set([...files, STDIN_PATH]),
+          },
         )
       : undefined;
+  if (guard) {
+    const leftOut = [
+      ...guardFiles.filter((path) => !inputs.has(path) && mergeErrors.has(path)),
+      ...guard.unreadable.filter((path) => !inputs.has(path) && path !== STDIN_PATH),
+    ].sort(byCodeUnit);
+    if (leftOut.length > 0) {
+      warn(
+        `The graph check left out ${String(leftOut.length)} page${leftOut.length === 1 ? "" : "s"} it could not read: ${leftOut.join(", ")}. ` +
+          "Proposals were vetted without them. `manni meta validate` says what is wrong with each.",
+      );
+    }
+  }
 
   for (const path of files) {
     // Read failures are operational (deleted file, permissions) — abort the
@@ -497,6 +537,20 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       throw failure instanceof Error
         ? failure
         : new GraphError(errorMessage(failure));
+    }
+    // A page that carries `graph:` while a manifest owns it is meta's
+    // collision. meta's merge keeps the page's block, so a fill written to
+    // the manifest would never reach `build`. Refused before any turn is spent.
+    if (absPath !== undefined) {
+      const own = ownMetadata(content).data;
+      if (GRAPH_KEY in own) {
+        const home = await view.home(path, own, GRAPH_KEY);
+        if (home.kind !== "unowned") {
+          throw new GraphError(
+            `"${GRAPH_KEY}" is owned by manifest ${home.file} (collection ${home.collection}); remove it from the document`,
+          );
+        }
+      }
     }
     const present = new Set(existingGraphFields(effective));
     const missing = opts.force ? fields : fields.filter((f) => !present.has(f));
@@ -819,9 +873,8 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
 
     const manifestWrites: ManifestWrite[] = [];
     // A manifest that owns `graph:` gets the whole block as meta reads it,
-    // merged and then filled. A `graph:` block the page still carries is left
-    // as it is: `build` merges the two with the manifest winning, as
-    // `manni meta fill` does.
+    // merged and then filled. A page that also carries one was refused above:
+    // meta keeps the page's value, so the manifest's would never be read.
     if (graphTarget !== null) {
       manifestWrites.push({
         home: graphTarget,
@@ -961,10 +1014,49 @@ async function mergedText(
   format: DocFormat,
 ): Promise<string> {
   if (frontmatterKind(content) === "unsupported") return content;
-  const own = ownMetadata(content);
+  let own: ReturnType<typeof ownMetadata>;
+  try {
+    own = ownMetadata(content);
+  } catch (e) {
+    // The extractor knows the bytes, not the file.
+    throw new GraphError(`${path}: ${errorMessage(e)}`);
+  }
   const { supplied } = await mergePage(view, path, own.data, own.present, format);
   if (Object.keys(supplied).length === 0) return content;
   return applyGraphFields(content, path, {}, { page: supplied }).content;
+}
+
+/**
+ * Meta's view of `paths`, with a page meta refuses left out rather than
+ * failing the run. One view over every page is tried first, so the common
+ * case reads each manifest once. When it is refused, each page is opened on
+ * its own to find the ones at fault, and each lands in `failures`.
+ *
+ * A refusal that holds with no page at all is not any page's. A broken
+ * config or shared manifest stays an operational error, exit 2.
+ */
+async function openMetaViewPerPage(
+  source: Parameters<typeof openMetaView>[0],
+  cwd: string,
+  paths: readonly string[],
+  failures: Map<string, unknown>,
+): Promise<MetaPageView> {
+  try {
+    return await openMetaView(source, cwd, paths);
+  } catch (whole) {
+    await openMetaView(source, cwd, []);
+    const readable: string[] = [];
+    for (const path of paths) {
+      try {
+        await openMetaView(source, cwd, [path]);
+        readable.push(path);
+      } catch (e) {
+        failures.set(path, e);
+      }
+    }
+    if (readable.length === paths.length) throw whole;
+    return openMetaView(source, cwd, readable);
+  }
 }
 
 export function renderFill(

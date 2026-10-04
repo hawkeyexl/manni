@@ -237,7 +237,13 @@ With `-`, the page from stdin is filled in memory and printed to stdout, as
 
 A field already held in an external-metadata manifest counts as filled. Each
 key is written where `meta fill` would write it. A key a manifest owns goes to
-the page's entry there, and every other key goes to the page.
+the page's entry there, and every other key goes to the page. A page that
+carries `graph:` while a manifest owns it is that page's error, in the words
+`meta validate` uses for the collision.
+
+The graph check vets each proposal against the whole configured corpus. A
+corpus page it cannot read is left out, and one warning lists it. A named page
+that cannot be read is that page's error.
 
 Every written value is recorded in the page's `meta-provenance`, naming the
 model and the fields. See

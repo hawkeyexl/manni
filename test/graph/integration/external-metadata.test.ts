@@ -12,7 +12,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { resetWarnings } from "../../../src/shared/warn.js";
 import { MockProvider } from "@hawkeyexl/inference";
 import { runBuild } from "../../../src/graph/commands/build.js";
 import { runFill } from "../../../src/graph/commands/fill.js";
@@ -173,5 +174,106 @@ describe("graph fill writes where meta fill would", () => {
     expect(report.results[0]).toMatchObject({ status: "proposed" });
     expect(readFileSync(join(dir, QUERY), "utf8")).toBe(page);
     expect(readFileSync(join(dir, "docs/query.meta.yaml"), "utf8")).toBe(manifest);
+  });
+});
+
+describe("graph fill refuses a page and its manifest both holding graph", () => {
+  it("is that page's error, in meta's collision words, and writes nothing", async () => {
+    const dir = copy();
+    writeFileSync(
+      join(dir, QUERY),
+      "---\ntitle: Query syntax\ngraph:\n  concepts: [old]\n---\n\n# Query syntax\n\nHow to write a query.\n",
+    );
+    const manifest = readFileSync(join(dir, "docs/query.meta.yaml"), "utf8");
+    const provider = new MockProvider([{ json: PROPOSAL }], "mock-model");
+    const report = await runFill({ cwd: dir, paths: [QUERY], providerInstance: provider, noCache: true });
+    expect(report.results[0]).toMatchObject({
+      path: QUERY,
+      status: "error",
+      error: '"graph" is owned by manifest docs/query.meta.yaml (collection pages); remove it from the document',
+    });
+    expect(report.exitCode).toBe(1);
+    expect(provider.requests).toHaveLength(0);
+    expect(readFileSync(join(dir, "docs/query.meta.yaml"), "utf8")).toBe(manifest);
+  });
+});
+
+describe("graph fill keeps going past a corpus page it cannot read", () => {
+  /** stderr of `body`, which `warn()` writes to. */
+  async function stderrOf(body: () => Promise<unknown>): Promise<string> {
+    resetWarnings();
+    const chunks: string[] = [];
+    const spy = vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+      chunks.push(String(chunk));
+      return true;
+    });
+    try {
+      await body();
+    } finally {
+      spy.mockRestore();
+    }
+    return chunks.join("");
+  }
+
+  it("leaves an unrelated page with bad YAML out of the guard, and says so once", async () => {
+    const dir = copy();
+    writeFileSync(join(dir, "docs/broken.md"), "---\ntitle: [bad\n---\n\n# Broken\n");
+    const provider = new MockProvider([{ json: PROPOSAL }], "mock-model");
+    let report: Awaited<ReturnType<typeof runFill>> | undefined;
+    const stderr = await stderrOf(async () => {
+      report = await runFill({ cwd: dir, paths: [QUERY], providerInstance: provider, noCache: true });
+    });
+    expect(report?.results[0]).toMatchObject({ path: QUERY, status: "filled" });
+    expect(stderr).toContain("docs/broken.md");
+    expect(stderr.match(/graph check/g)).toHaveLength(1);
+  });
+
+  it("leaves an unrelated page whose manifest meta refuses out of the guard", async () => {
+    const dir = copy();
+    writeFileSync(join(dir, "docs/operators.meta.yaml"), "docs/operators.md: [unclosed\n");
+    const provider = new MockProvider([{ json: PROPOSAL }], "mock-model");
+    let report: Awaited<ReturnType<typeof runFill>> | undefined;
+    const stderr = await stderrOf(async () => {
+      report = await runFill({ cwd: dir, paths: [QUERY], providerInstance: provider, noCache: true });
+    });
+    expect(report?.results[0]).toMatchObject({ path: QUERY, status: "filled" });
+    expect(stderr).toContain(OPERATORS);
+  });
+
+  it("reports a named page that will not read as that page's error", async () => {
+    const dir = copy();
+    writeFileSync(join(dir, "docs/broken.md"), "---\ntitle: [bad\n---\n\n# Broken\n");
+    const provider = new MockProvider([{ json: PROPOSAL }], "mock-model");
+    const report = await runFill({
+      cwd: dir,
+      paths: ["docs/broken.md", QUERY],
+      providerInstance: provider,
+      noCache: true,
+    });
+    expect(report.results.map((r) => [r.path, r.status])).toEqual([
+      ["docs/broken.md", "error"],
+      [QUERY, "filled"],
+    ]);
+    expect(report.results[0]?.error).toContain("docs/broken.md");
+  });
+
+  it("applies --as to the stdin page only, not to every corpus page", async () => {
+    const dir = copy();
+    // Valid Markdown, and not valid MDX: a bare `{` opens an expression.
+    writeFileSync(join(dir, "docs/braces.md"), "---\ntitle: Braces\n---\n\n# Braces\n\nUse { to open.\n");
+    const provider = new MockProvider([{ json: PROPOSAL }], "mock-model");
+    let report: Awaited<ReturnType<typeof runFill>> | undefined;
+    const stderr = await stderrOf(async () => {
+      report = await runFill({
+        cwd: dir,
+        paths: ["-"],
+        as: "mdx",
+        stdinContent: "---\ntitle: In\n---\n\n# In\n\nText.\n",
+        providerInstance: provider,
+        noCache: true,
+      });
+    });
+    expect(report?.results[0]).toMatchObject({ path: "<stdin>", status: "filled" });
+    expect(stderr).not.toContain("braces.md");
   });
 });
