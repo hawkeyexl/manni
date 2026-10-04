@@ -115,6 +115,22 @@ function asStringArray(v: unknown): string[] {
   return [];
 }
 
+/**
+ * The names in an `author`/`authors` value. Stewardship allows a name, a
+ * person object with a `name` (the MyST and Docusaurus shape), or a list of
+ * either. A person object with no name names no one.
+ */
+function asPersonNames(v: unknown): string[] {
+  const one = (item: unknown): string[] => {
+    const name =
+      item != null && typeof item === "object" && !Array.isArray(item)
+        ? asString(asRecord(item).name)
+        : asString(item);
+    return name === undefined ? [] : [name];
+  };
+  return Array.isArray(v) ? v.flatMap(one) : one(v);
+}
+
 /** A plain object as a string-keyed record; anything else becomes `{}`. */
 function asRecord(v: unknown): Record<string, unknown> {
   return v != null && typeof v === "object" && !Array.isArray(v)
@@ -412,7 +428,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       if (description)
         add(docIri, `${NS.dcterms}description`, lit(description));
 
-      for (const author of asStringArray(fmValue(fm, ["author", "authors"]))) {
+      for (const author of asPersonNames(fmValue(fm, ["author", "authors"]))) {
         if (prov) {
           attributeAuthor(docIri, author);
         } else {

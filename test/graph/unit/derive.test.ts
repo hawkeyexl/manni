@@ -182,6 +182,34 @@ describe("deriveGraph — document basics", () => {
     expect(janeTypes).toHaveLength(1);
   });
 
+  it("reads the name of a person object among authors", () => {
+    const g = graph({
+      "docs/a.md":
+        "---\nauthors:\n  - name: Jane\n    email: jane@example.com\n  - Sam\n  - email: nobody@example.com\n---\n",
+    });
+    const creators = g.filter(
+      (q) => q.s === DOC && q.p === `${NS.dcterms}creator`,
+    );
+    expect(creators.map((q) => q.o.value).sort()).toEqual([
+      `${BASE}agent/person/jane`,
+      `${BASE}agent/person/sam`,
+    ]);
+  });
+
+  it("reads a single person object as the author", () => {
+    const g = graph({ "docs/a.md": "---\nauthors:\n  name: Jane\n---\n" });
+    expect(
+      has(g, DOC, `${NS.dcterms}creator`, iri(`${BASE}agent/person/jane`)),
+    ).toBe(true);
+  });
+
+  it("writes a person object's name as the creator literal with provenance off", () => {
+    const g = graph({ "docs/a.md": "---\nauthors:\n  - name: Jane\n---\n" }, [
+      "frontmatter",
+    ]);
+    expect(has(g, DOC, `${NS.dcterms}creator`, lit("Jane"))).toBe(true);
+  });
+
   it("falls back to creator literals when the provenance source is off", () => {
     const g = graph({ "docs/a.md": "---\nauthor: Jane\n---\n" }, [
       "frontmatter",
