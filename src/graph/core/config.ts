@@ -186,9 +186,11 @@ export interface GraphConfig {
     /**
      * Directory the sidecars are written into (ADR 01038). One file per
      * language, named by `vectorIndexFilename`, so this is a directory rather
-     * than the single path it was before the fan-out.
+     * than the single path it was before the fan-out. Resolved from the
+     * working directory, as `out` is. Undefined means the index directory,
+     * which is why it has no default here.
      */
-    out: string;
+    out: string | undefined;
     /**
      * Per-language model overrides, keyed by BCP-47 tag (ADR 01038). A German
      * corpus embedded with an English-only model returns confident, meaningless
@@ -509,7 +511,7 @@ export function parseConfigSection(
     embed: {
       model: r.embed?.model ?? DEFAULT_EMBED_MODEL,
       dtype: r.embed?.dtype ?? "q8",
-      out: r.embed?.out ?? "graph",
+      out: r.embed?.out,
       cacheDir: r.embed?.cacheDir ?? ".manni/graph/embed-cache",
       byLanguage: r.embed?.byLanguage ?? {},
     },

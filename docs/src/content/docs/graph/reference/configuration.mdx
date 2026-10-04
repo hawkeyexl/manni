@@ -231,7 +231,7 @@ graph:
 |---|---|---|---|
 | `model` | string | `onnx-community/granite-embedding-small-english-r2-ONNX` | The local embedding model. Any id is accepted: the documented table is the tested set, not the permitted one, so a newer model works without a manni release. |
 | `dtype` | string | `q8` | Weight quantization. `q8` keeps int32 accumulation, which is associative, and so keeps the sidecars reproducible. |
-| `out` | string | `graph` | Directory for the vector sidecars, one file per language. |
+| `out` | string | the index directory | Directory for the vector sidecars, one file per language. Resolved from the working directory. `-o` overrides it for one run. |
 | `cacheDir` | string | `.manni/graph/embed-cache` | Per-text vector cache, keyed on text, model and dtype. |
 | `byLanguage` | map, BCP-47 tag → `{model, dtype}` | `{}` | Per-language overrides. A German corpus embedded with an English-only model returns confident, meaningless vectors and fails nothing, which is why this key exists. Unlisted languages use the two settings above. |
 

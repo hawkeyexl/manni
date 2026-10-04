@@ -209,7 +209,7 @@ export function parseLocalizations(text: string): LocalizationsDoc | undefined {
  * `vectors.<lang>.bin`, which is a long way from arbitrary-file read, and no
  * number of `..` segments widens it.
  */
-function isSafeRelativePath(path: string): boolean {
+export function isSafeRelativePath(path: string): boolean {
   if (path === "" || path.startsWith("/") || /^[A-Za-z]:/.test(path)) {
     return false;
   }

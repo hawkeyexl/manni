@@ -16,11 +16,13 @@
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import path, { dirname, join, resolve } from "node:path";
 import { loadRunConfig } from "../core/config.js";
 import { type SearchEntry, type SearchIndexDoc } from "../core/search-index.js";
 import {
+  canonicalLanguageTag,
   emitLocalizations,
+  isSafeRelativePath,
   LOCALIZATIONS_FILENAME,
   parseLocalizations,
   vectorIndexFilename,
@@ -149,6 +151,30 @@ async function makeEmbedder(
   }
 }
 
+/**
+ * The sidecar's path as the manifest records it: relative to the manifest,
+ * with forward slashes, because a browser resolves it against a URL.
+ *
+ * On Windows a sidecar on another drive has no relative path, and `relative`
+ * returns an absolute one. The reader refuses that, so writing it would leave
+ * an artifact set nothing can read back. Refused here instead, before any
+ * file is written. `pathApi` is the seam that lets a test be Windows anywhere.
+ */
+export function manifestRelativePath(
+  indexDir: string,
+  outPath: string,
+  pathApi: Pick<typeof path, "relative" | "isAbsolute" | "sep"> = path,
+): string {
+  const rel = pathApi.relative(indexDir, outPath);
+  const recorded = rel.split(pathApi.sep).join("/");
+  if (pathApi.isAbsolute(rel) || !isSafeRelativePath(recorded)) {
+    throw new GraphError(
+      `Cannot record vectors at ${outPath}: the localization manifest needs a path relative to ${indexDir}. Write the sidecars on the index's drive.`,
+    );
+  }
+  return recorded;
+}
+
 export async function runEmbed(opts: EmbedOptions = {}): Promise<EmbedReport> {
   const cwd = opts.cwd ?? process.cwd();
   const config = loadRunConfig(
@@ -177,7 +203,10 @@ export async function runEmbed(opts: EmbedOptions = {}): Promise<EmbedReport> {
     );
   }
 
-  const outDir = opts.out ? resolve(cwd, opts.out) : indexDir;
+  // `-o` over the config's `embed.out`, both from the working directory as
+  // `out` is, and the index directory when neither names one.
+  const outSetting = opts.out ?? config.embed.out;
+  const outDir = outSetting ? resolve(cwd, outSetting) : indexDir;
   mkdirSync(outDir, { recursive: true });
   const cache = new VectorCache(
     resolve(cwd, config.embed.cacheDir),
@@ -240,7 +269,12 @@ export async function runEmbed(opts: EmbedOptions = {}): Promise<EmbedReport> {
     // German corpus embedded with an English-only model returns confident,
     // meaningless vectors and fails nothing, so this override is the whole
     // reason the fan-out exists.
-    const perLanguage = config.embed.byLanguage[entry.language];
+    //
+    // Keys are matched canonically, so `en-us:` configures the `en-US` index.
+    const wanted = canonicalLanguageTag(entry.language);
+    const perLanguage = Object.entries(config.embed.byLanguage).find(
+      ([tag]) => canonicalLanguageTag(tag) === wanted,
+    )?.[1];
     const model = opts.model ?? perLanguage?.model ?? config.embed.model;
     const dtype = opts.dtype ?? perLanguage?.dtype ?? config.embed.dtype;
     const identity = opts.embedder
@@ -277,7 +311,7 @@ export async function runEmbed(opts: EmbedOptions = {}): Promise<EmbedReport> {
     // `-o` happened to point — so a sidecar written outside the index
     // directory is still findable from the file that names it. Forward slashes
     // because this is a JSON artifact a browser resolves against a URL.
-    const manifestRelative = relative(indexDir, outPath).split(sep).join("/");
+    const manifestRelative = manifestRelativePath(indexDir, outPath);
     writeFileSync(
       outPath,
       encodeVectorIndex(vectors, {

@@ -60,8 +60,8 @@ describe("parseConfig", () => {
     expect(c.embed.model).toContain("granite-embedding-small-english-r2");
     expect(c.embed.dtype).toBe("q8");
     // A directory since the per-locale fan-out (ADR 01038): one sidecar per
-    // language lands in it, named by its tag.
-    expect(c.embed.out).toBe("graph");
+    // language lands in it, named by its tag. Unset means the index directory.
+    expect(c.embed.out).toBeUndefined();
     expect(c.embed.byLanguage).toEqual({});
     expect(c.embed.cacheDir).toBe(".manni/graph/embed-cache");
     // iiRDS export defaults: version 1.3, no title/creator (ADR 01017).
