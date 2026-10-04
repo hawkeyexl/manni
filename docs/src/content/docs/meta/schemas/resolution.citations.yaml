@@ -67,54 +67,54 @@ docs/src/content/docs/meta/schemas/resolution.mdx:
         integrity: sha256-82a18f9e54def8ddf6906deb461d034ec27d6707ced240a2e99890f16c59eb53
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1162-1166
+        lines: 1168-1172
         integrity: sha256-77e8b12c5da1312376afb51b7c5dbf33a0c666f0d7c61083c88f9e29490bc17a
-        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
+        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
     - id: reference-kind-is-structural
       claim:
         lines: 153
         integrity: sha256-b99370a4e50938b5f68da2188fe95d0b7e95405d16baf66442bd95c3919ed82b
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 414-425
+        lines: 420-431
         integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
-        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
+        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
     - id: url-kind-is-http-or-https
       claim:
         lines: 145-148
         integrity: sha256-2b9fa07692a96abce9e215df2321d789ce4ee7c70abad67d59bf074eb55915a9
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 415
+        lines: 421
         integrity: sha256-73916bbbc37290e31b41fcefb00183d8f66b200197926e0860d5a1138e8b6204
-        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
+        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
     - id: url-fetch-has-a-10-second-timeout
       claim:
         lines: 148
         integrity: sha256-b5176ce65932843a58cca5516596edc8e9721587ef0111b612569eecedfb7e16
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 488-489
+        lines: 494-495
         integrity: sha256-aa333a8e669bd4b424cabd01575e4c0bb18cb0b7837d95668f032f176ddaa95b
-        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
+        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
     - id: builtin-kind-has-no-separator
       claim:
         lines: 130
         integrity: sha256-d9c1441a47043e0163cada5d580bd3a5131881c8d2ea34ab601e5e4b7df44cb5
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 416-423
+        lines: 422-429
         integrity: sha256-fb3e1d0326e54a52b38c8797c6459bfc3fbd81f6bc3544b51fe5f3bc39809013
-        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
+        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
     - id: file-kind-is-everything-else
       claim:
         lines: 137
         integrity: sha256-dca6de517481c06a115764470033e3a3c9b2e07286cdde171dbd4794118771dc
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 424
+        lines: 430
         integrity: sha256-54d3ca5663d01b67211e96f23c07ea217f315568bb05c0fed1a575a471062a52
-        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
+        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
     - id: schema-trust-narrows-level-two
       claim:
         lines: 122

@@ -107,8 +107,11 @@ docs/src/content/docs/meta/schemas/index.mdx:
       lines: 197
       integrity: sha256-cf9cdf2b337a9088cd1bc2e8dea646f68cc78f9dac8ad2f16e72a944ebc4a2cd
     - generated-by: Claude Opus 5.5
-      lines: 202-205
-      integrity: sha256-f99691fbf05019958342b0d6a5404f8241781a80995a887be04c4b9a0e0307fe
+      lines: 202
+      integrity: sha256-61fa6236f56795e77bbae885912af0f8a34800a9bc4f77896ac78f5d62289cc4
+    - generated-by: Claude Opus 5.5
+      lines: 205
+      integrity: sha256-fc702baf6691592e6ecdc4942d5c1c92ec9e1ad91b884a46b8eab00211412096
     - generated-by: Claude Opus 5
       lines: 207-209
       integrity: sha256-2bf68ce22cec0b3eea5303400ec791555a2f8aaf9f3ed58947499435b5e60a8c

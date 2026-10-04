@@ -143,9 +143,9 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         integrity: sha256-532bd9663597e021387396a0d71bc4ba7d4d902e8235e18167ce466f6bd8fbfa
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 414-425
+        lines: 420-431
         integrity: sha256-d90a35561f5a1fe78578e6f93047d7b1f1ceaa64bee2989b9729aa62642840a7
-        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
+        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
     - id: docusaurus-no-required-fields-row
       claim:
         lines: 23
@@ -178,9 +178,9 @@ docs/src/content/docs/meta/reference/docusaurus-schemas.mdx:
         integrity: sha256-29f6a94431f637c2546ae1e256b40d65728ed38b56f91c3cb185b2a33f8e8781
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 356-367
+        lines: 362-373
         integrity: sha256-b609d7a86f241caa53f6c3ab9266149e6c0333c7496005e23ab3d94797659c1c
-        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
+        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
     - id: docusaurus-row-pages
       claim:
         lines: 11

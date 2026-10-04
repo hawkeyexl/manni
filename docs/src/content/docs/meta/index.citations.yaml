@@ -29,12 +29,12 @@ docs/src/content/docs/meta/index.mdx:
         commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
     - id: forty-five-built-in-schemas
       claim:
-        integrity: sha256-3d75e5e96554eab6f6711261ca7ada33808511532f21fe6237e5c15089d3d439
+        integrity: sha256-fa3d50f8cb560eb8271b315afb5fb039994b7bf9e4337ed4a513050a9822c106
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 81-131
-        integrity: sha256-a704c5e7f4c99812eb53ea0b48faa524598f9471492b4b7a93e22cfa116b6452
-        commit-sha: 7aa9a5632411b78d43c793baf6f8f48f0b9db79f
+        lines: 82-135
+        integrity: sha256-f231ea994e5403ad6644182767cb8d52fa6d341f943909b8cfa3ccaa3793fddb
+        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
     - id: error-line-names-field-line-and-schema
       claim:
         integrity: sha256-6e24a2751ad70c15d7e6a0c643456d631350f32d19020526786cb196d44968af

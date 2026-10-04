@@ -64,9 +64,9 @@ docs/src/content/docs/meta/ci/index.mdx:
         integrity: sha256-306bc7345a1df9a142ef8cd5f3be6e8f584f5564a4ef5946d90f342eae23c685
       source:
         file: package.json
-        lines: 45-47
+        lines: 46-48
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
     - id: action-inputs-lines-or-spaces
       claim:
         lines: 25-28

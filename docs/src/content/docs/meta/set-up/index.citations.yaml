@@ -87,9 +87,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-70b11580b3b79d5a7044d2b616dcd08dfd6b81ff96941036950f9eac496b306e
       source:
         file: package.json
-        lines: 45-47
+        lines: 46-48
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
     - id: okf-requires-type
       claim:
         lines: 9

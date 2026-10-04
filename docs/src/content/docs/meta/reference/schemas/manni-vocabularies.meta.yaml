@@ -20,8 +20,11 @@ docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
       lines: 2-12
       integrity: sha256-d3c0b06c4eee9a7c75b802ee006a4fcf73e939661b20dca5254b32a5d5c224dc
     - generated-by: Claude Opus 5.5
-      lines: 15-40
-      integrity: sha256-6ed10beee184090e371f451af118814a3bb803be5918d05647cf44426cf1c8f5
+      lines: 15-27
+      integrity: sha256-0ba2c4397fd66f63485ed0a29d3a4655aefcc62f0a5f3deff2bdf2ceb23adbe8
+    - generated-by: Claude Opus 5.5
+      lines: 29-40
+      integrity: sha256-19f85c3333863be566a9f22972a84a1ff0f40bb669d8c9335e47b06be8f8b907
     - generated-by: Claude Opus 5.5
       lines: 56-57
       integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
@@ -38,8 +41,11 @@ docs/src/content/docs/meta/reference/schemas/manni-vocabularies.mdx:
       lines: 116-118
       integrity: sha256-4ef9021fb32a169a48899d263959b826877cee7489aff983f32700dce76bc99c
     - generated-by: Claude Opus 5.5
-      lines: 121-308
-      integrity: sha256-caf2f866c52e09248dfc333612893b8bff451f0d732927e86d750403004076ab
+      lines: 121-132
+      integrity: sha256-faa6740f4807e5f28aa5526eadfec16329e6b948818225ac9e8a56e32d2b5584
+    - generated-by: Claude Opus 5.5
+      lines: 134-308
+      integrity: sha256-aa5fb12391de0934098545742ac8201b30b081c1396f2fdb93b582eb306c2d40
   owner:
     - "@hawkeyexl"
   created: 2026-09-26
