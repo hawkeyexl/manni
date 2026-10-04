@@ -131,6 +131,20 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
 ]);
 
 /**
+ * Built-in versions that only add annotations, each mapped to the predecessor
+ * it validates exactly like. A baseline fingerprints a finding under the
+ * predecessor's id, so moving to the successor leaves recorded entries intact.
+ *
+ * A version belongs here only when its validation is byte-identical in effect
+ * to its predecessor's: the two differ in `x-manni-*` keys, `description`,
+ * `title` and `$id` alone. The test suite holds every entry to that.
+ */
+export const ANNOTATION_ONLY_PREDECESSORS: ReadonlyMap<string, string> = new Map([
+  ["manni:stewardship:1.1.0", "manni:stewardship:1.0.0"],
+  ["manni:stewardship-strict:1.1.0", "manni:stewardship-strict:1.0.0"],
+]);
+
+/**
  * Refuse a built-in id whose first segment is `check`.
  *
  * `check:<name>` is a corpus check's identity inside baseline fingerprints and
