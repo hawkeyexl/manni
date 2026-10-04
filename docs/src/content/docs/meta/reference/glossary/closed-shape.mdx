@@ -1,0 +1,42 @@
+---
+title: "Closed shape"
+description: "What closed shape means in manni graph, and where the tool uses it."
+type: term
+id: closed-shape
+label: "closed shape"
+alt-labels:
+  - "closed shapes"
+abstract: "A shape that rejects any predicate it does not list."
+definition: "A SHACL shape that declares `sh:closed`, so a predicate it does not list is a violation."
+keywords:
+  - "closed shape"
+  - "SHACL"
+  - "sh:closed"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what closed shape means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a closed shape?"
+  - "Why does a new predicate fail graph check?"
+graph:
+  label: "closed shape"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "shacl"
+last-updated: 2026-10-04
+---
+
+<p>{frontmatter.definition}</p>
+
+The bundled shapes are closed, and that failure is the feature. A change to
+what the graph contains is not finished until the shapes say so, in the same
+commit.

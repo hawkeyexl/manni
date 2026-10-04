@@ -1,0 +1,39 @@
+---
+title: "Quad"
+description: "What quad means in manni graph, and where the tool uses it."
+type: term
+id: quad
+label: "quad"
+abstract: "A triple plus the graph it belongs to."
+definition: "A triple plus the named graph it belongs to."
+keywords:
+  - "quad"
+  - "RDF"
+  - "named graph"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what quad means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a quad in manni graph?"
+  - "Why does the Turtle output show no fourth term?"
+graph:
+  label: "quad"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "triple"
+last-updated: 2026-10-04
+---
+
+<p>{frontmatter.definition}</p>
+
+manni graph holds its graph as quads internally. The Turtle output is a
+single default graph, so the fourth term is rarely visible.

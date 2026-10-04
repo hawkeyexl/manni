@@ -5,9 +5,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-4b05619ee1dad6b4e245c704a98cb494c3ca4ecdf8f9c30bd746ca020c8bb867
       source:
         file: src/cite/commands/add.ts
-        lines: 453-454
+        lines: 454-455
         integrity: sha256-f05edba3de967672071fa9a9dec5a9138e8bb7958b7b3fea68b90415d4c21f80
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: add-encrypts-source-path
       claim:
         integrity: sha256-4b05619ee1dad6b4e245c704a98cb494c3ca4ecdf8f9c30bd746ca020c8bb867
@@ -203,9 +203,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-98683190447bbec49e72ff1a8d77f60e3078121ce9ee362f990138b5dcd2d721
       source:
         file: src/cite/commands/add.ts
-        lines: 453-454
+        lines: 454-455
         integrity: sha256-f05edba3de967672071fa9a9dec5a9138e8bb7958b7b3fea68b90415d4c21f80
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: url-manifest-refused
       claim:
         lines: 190
@@ -239,18 +239,18 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-ffb213af7c16d3ea22998c1f8a03fd725ffa38dddc7fe2a83caf96e3a3a84c07
       source:
         file: src/cite/commands/add.ts
-        lines: 520-525
+        lines: 521-526
         integrity: sha256-a9f66060a0b6e07b3220f2b2e49f7c7140e3a1aa79c7962efb05b08c4808904e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: encrypt-flag-only-without-key
       claim:
         lines: 231-233
         integrity: sha256-523ab16462b05dbd0d34058105ce80b3a4354fc4104d1cbb3e5ba6ddcb706aa5
       source:
         file: src/cite/commands/add.ts
-        lines: 448-453
+        lines: 449-454
         integrity: sha256-aa0015743b6ff2b1869185451f440ff74af4031f806a31d1b441c24fdc37c30a
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: encrypt-refusal-message
       claim:
         lines: 236
@@ -387,9 +387,9 @@ docs/src/content/docs/cite/set-up/public-docs-private-code.mdx:
         integrity: sha256-cc726f2799ec65b1b55d5667a42946f097107a27b89040bf5628ea573d75c0c4
       source:
         file: src/cite/commands/check.ts
-        lines: 160
+        lines: 161
         integrity: sha256-967888f703b7f5b60bd0f842e101bb63b94d885534dcf2c70481f47e9d95c274
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: output-rule-findings-test
       claim:
         lines: 157-158

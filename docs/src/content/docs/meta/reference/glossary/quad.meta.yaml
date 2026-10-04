@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/quad.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-quad
+      assertion: "A reader can say what quad means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-5
+      integrity: sha256-0f4fa84111d8ddfa400e5a2bc2eb859191e85cd0a460894e3431de8107788b78
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

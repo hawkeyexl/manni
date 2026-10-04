@@ -25,6 +25,9 @@ docs/src/content/docs/meta/reference/index.mdx:
     - generated-by: Claude Opus 5.5
       lines: 9
       integrity: sha256-50e7e8f93fb75a28478d73e2def99e2bef49f410961f53a08d838960a5a17025
+    - generated-by: Claude Opus 5.5
+      lines: 11
+      integrity: sha256-f4904e635757d0991098253be4bfcb608a81615f21522e3634a9d58ee8ac7c32
     - generated-by: Claude Opus 4.8
       lines: 14
       integrity: sha256-46c55a54eaf83b0093cdc02d45ac7a37a0947674627e7947365565398fe923d9

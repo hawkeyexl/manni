@@ -121,18 +121,18 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-e5791eb014c196a6c286cc241af4a408c92812224e1ac454ae96a12569f45bbb
       source:
         file: src/meta/core/baseline.ts
-        lines: 486-490
+        lines: 489-493
         integrity: sha256-93430fe764498fd976f09e4b233c40bd5c8231a1a10599bb6cfb7e18dbf7bb01
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: baseline-key-compares-without-flag
       claim:
         lines: 67
         integrity: sha256-e5791eb014c196a6c286cc241af4a408c92812224e1ac454ae96a12569f45bbb
       source:
         file: src/meta/core/baseline.ts
-        lines: 517-521
+        lines: 520-524
         integrity: sha256-d0b6f17f28cd0acad7eec6d9f161458a944863e3ad5c193e56fe188fbdfe780b
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: bd75453d52d7c85ff1f41196b0a6e72386c3a4c7
     - id: baseline-default-file
       claim:
         lines: 67

@@ -24,7 +24,7 @@ import {
 } from "../types.js";
 import { stripBom } from "./json-text.js";
 import { STDIN_LABEL } from "./load-files.js";
-import { classifyRef } from "./schema-registry.js";
+import { ANNOTATION_ONLY_PREDECESSORS, classifyRef } from "./schema-registry.js";
 import { writeFileAtomic } from "./write-file.js";
 import { errorMessage } from "../../shared/errors.js";
 
@@ -143,14 +143,17 @@ export function canonicalSchemaRef(
  * of the identity, so re-pointing a schema from `google:okf:0.1` to a URL
  * serving the same bytes changes every fingerprint. That is correct — docmeta
  * cannot tell it is the same contract — but it is surprising, and the remedy is
- * a re-record.
+ * a re-record. The exception is a built-in version that only adds annotations:
+ * it hashes as its predecessor (`ANNOTATION_ONLY_PREDECESSORS`), so a default
+ * set that moves to it keeps every recorded entry.
  */
 export function fingerprint(
   e: Fingerprintable,
   ctx?: FingerprintContext,
 ): string {
+  const ref = canonicalSchemaRef(e.schema, ctx);
   const parts = [
-    canonicalSchemaRef(e.schema, ctx),
+    ANNOTATION_ONLY_PREDECESSORS.get(ref) ?? ref,
     e.instancePath,
     e.keyword,
     e.subject ?? "",

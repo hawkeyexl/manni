@@ -1,0 +1,43 @@
+---
+title: "Emergent failure"
+description: "What emergent failure means in manni graph, and where the tool uses it."
+type: term
+id: emergent-failure
+label: "emergent failure"
+abstract: "A failure only the merged graph can show."
+definition: "A finding that exists only after several documents merge into shared nodes."
+keywords:
+  - "emergent failure"
+  - "SHACL"
+  - "corpus"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what emergent failure means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is an emergent failure?"
+  - "Why does manni graph check the graph instead of each file?"
+graph:
+  label: "emergent failure"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "concept"
+  - "focus-node"
+  - "shacl"
+last-updated: 2026-10-04
+---
+
+<p>{frontmatter.definition}</p>
+
+Two spellings of one [concept](/manni/meta/reference/glossary/concept/) are one example. A cycle
+through three pages' `broader` links is another. No per-file check can see
+either, which is why `manni graph check` checks the graph rather than the
+files.

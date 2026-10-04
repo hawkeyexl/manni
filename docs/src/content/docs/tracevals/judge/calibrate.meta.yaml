@@ -1,6 +1,6 @@
 docs/src/content/docs/tracevals/judge/calibrate.mdx:
   personas: ["sara"]
-  journeys: ["s12"]
+  journeys: ["s13"]
   visibility: public
   review-interval: P180D
   source-of-truth:

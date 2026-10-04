@@ -44,7 +44,7 @@ export const DEFAULT_SCHEMAS: readonly string[] = Object.freeze([
   "manni:core:1.0.0",
   "manni:audience:1.0.0",
   "manni:structure:1.0.0",
-  "manni:stewardship:1.0.0",
+  "manni:stewardship:1.1.0",
   "manni:lifecycle:1.0.0",
   "manni:ai-context:1.0.0",
   "manni:evals:1.0.0",
@@ -53,8 +53,24 @@ export const DEFAULT_SCHEMAS: readonly string[] = Object.freeze([
 ]);
 export const FILE_SCHEMA_KEY = "$schema";
 
-/** `DEFAULT_SCHEMAS` as a set, for the per-ref lookup in `withStrict`. */
-const DEFAULT_SCHEMA_SET: ReadonlySet<string> = new Set(DEFAULT_SCHEMAS);
+/**
+ * A built-in id's `vendor:name`, its version dropped: what two versions of
+ * one vocabulary share. `undefined` for anything but a three-segment id.
+ */
+function vocabularyOf(id: string): string | undefined {
+  const parts = id.split(":");
+  if (parts.length !== 3) return undefined;
+  return `${parts[0] ?? ""}:${parts[1] ?? ""}`;
+}
+
+/**
+ * The default set's vocabularies, by `vendor:name`, for the per-ref lookup in
+ * `withStrict`: any version of one of them is paired with its overlay, so a
+ * pinned older version keeps the strict version it shipped with.
+ */
+const DEFAULT_VOCABULARIES: ReadonlySet<string> = new Set(
+  DEFAULT_SCHEMAS.map(vocabularyOf).filter((v): v is string => v !== undefined),
+);
 
 /**
  * The reference a `schemas:` entry loads, in either form.
@@ -429,8 +445,10 @@ export interface ResolvedSchemaSet {
  * where one exists (proposal 0070).
  *
  * A default's strict version is a built-in; a registered schema's is
- * registered. Any other schema in the set is left alone, a listed built-in
- * outside the default set included: a team that wants one closed lists its
+ * registered. Any version of a default vocabulary counts as a default, so a
+ * pinned `manni:stewardship:1.0.0` pairs with `manni:stewardship-strict:1.0.0`.
+ * Any other schema in the set is left alone, a listed built-in outside the
+ * default vocabularies included: a team that wants one closed lists its
  * overlay. Duplicates are then removed, the first kept, so an overlay also
  * listed by hand sits once, after its base.
  *
@@ -448,15 +466,41 @@ function withStrict(
     out.push(ref);
     const strictId = strictIdOf(ref);
     if (strictId === undefined) continue;
-    if (DEFAULT_SCHEMA_SET.has(ref) && isBuiltinId(strictId)) out.push(strictId);
+    const vocabulary = vocabularyOf(ref);
+    const isDefault = vocabulary !== undefined && DEFAULT_VOCABULARIES.has(vocabulary);
+    if (isDefault && isBuiltinId(ref) && isBuiltinId(strictId)) out.push(strictId);
     else if (registered?.has(ref) === true && registered.has(strictId)) out.push(strictId);
   }
   return dedupe(out);
 }
 
 /**
+ * Drop each built-in another version of which was listed: a listed
+ * `manni:stewardship:1.0.0` replaces the default's `1.1.0`, and its overlay
+ * the default's overlay, so one vocabulary never judges a page twice.
+ */
+function withoutReplacedVersions(set: readonly string[], listed: readonly string[]): string[] {
+  const explicit = new Set<string>();
+  for (const ref of listed) {
+    if (!isBuiltinId(ref)) continue;
+    explicit.add(ref);
+    const strictId = strictIdOf(ref);
+    if (strictId !== undefined) explicit.add(strictId);
+  }
+  const pinned = new Set(
+    [...explicit].map(vocabularyOf).filter((v): v is string => v !== undefined),
+  );
+  return set.filter((ref) => {
+    if (explicit.has(ref) || !isBuiltinId(ref)) return true;
+    const vocabulary = vocabularyOf(ref);
+    return vocabulary === undefined || !pinned.has(vocabulary);
+  });
+}
+
+/**
  * One tier's set: the defaults first when `defaults`, then `listed`, with
- * duplicates removed and the first kept, then `strict` applied.
+ * duplicates removed and the first kept, then `strict` applied. A listed
+ * version of a built-in replaces the default's version of it.
  */
 function joined(
   listed: readonly string[],
@@ -465,7 +509,8 @@ function joined(
   registered: RegisteredSchemas | undefined,
 ): string[] {
   const set = dedupe([...(defaults ? DEFAULT_SCHEMAS : []), ...listed]);
-  return strict ? withStrict(set, registered) : set;
+  const paired = strict ? withStrict(set, registered) : set;
+  return defaults ? withoutReplacedVersions(paired, listed) : paired;
 }
 
 /**

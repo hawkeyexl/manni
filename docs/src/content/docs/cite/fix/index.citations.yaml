@@ -562,17 +562,17 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-c42d16b7dad8d6348cd4554188a1aa2d9cf2060610e8b2def0b350d891e9b42f
       source:
         file: src/cite/commands/add.ts
-        lines: 281-284
+        lines: 282-285
         integrity: sha256-e121433b98386e90d534b0a633a70408fb0224cc90b2d8158b1645d8475bbf85
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: add-refuses-frontmatter
       claim:
         integrity: sha256-4b2ebb1c7c0fe58d00f5201b6821c60d0d96f957ef0567ee76278f58093053b1
       source:
         file: src/cite/commands/add.ts
-        lines: 281-284
+        lines: 282-285
         integrity: sha256-e121433b98386e90d534b0a633a70408fb0224cc90b2d8158b1645d8475bbf85
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: entry-invalid-duplicate-sample
       claim:
         lines: 454
@@ -683,9 +683,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-045efe64a562de93f7bf62d08ababbce49159b7992227362e697e0941bed547f
       source:
         file: src/cite/commands/check.ts
-        lines: 358-360
+        lines: 359-361
         integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: exit-table-one-update
       claim:
         lines: 547
@@ -710,9 +710,9 @@ docs/src/content/docs/cite/fix/index.mdx:
         integrity: sha256-7fb56a40fc34390add7b23de0486c46bd90c891a7a1f96b0bb26119fd1b6c8a9
       source:
         file: src/cite/commands/check.ts
-        lines: 164-168
+        lines: 165-169
         integrity: sha256-dd1fd746781a236fa50aca4af4a370c3d18e06a6eb84ceda7b7eb3eb133f10cb
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: exit-table-two-unknown-format
       claim:
         lines: 548

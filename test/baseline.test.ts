@@ -16,6 +16,7 @@ import {
   settleBaseline,
   writeBaselineFile,
 } from "../src/meta/core/baseline.js";
+import { DEFAULT_SCHEMAS } from "../src/meta/core/resolve-schema.js";
 import { resetWarnings } from "../src/shared/warn.js";
 import { DocmetaError, type FieldError, type ValidationResult } from "../src/meta/types.js";
 
@@ -162,6 +163,45 @@ describe("fingerprint schema-ref canonicalization", () => {
     );
     expect(applied.suppressed).toBe(1);
     expect(applied.results[0]?.ok).toBe(true);
+  });
+});
+
+describe("fingerprint: annotation-only built-in versions", () => {
+  // stewardship 1.1.0 only adds annotations, and the default set moved to it.
+  // A baseline recorded under 1.0.0 must still suppress the same finding.
+  const steward = DEFAULT_SCHEMAS.find((id) => id.startsWith("manni:stewardship:"));
+  const under = (schema: string) =>
+    err({ schema, keyword: "type", instancePath: "/owner", subject: undefined });
+
+  it("the default set carries stewardship 1.1.0", () => {
+    expect(steward).toBe("manni:stewardship:1.1.0");
+  });
+
+  it.each([
+    ["manni:stewardship:1.0.0", "manni:stewardship:1.1.0"],
+    ["manni:stewardship:1.1.0", "manni:stewardship:1.0.0"],
+    ["manni:stewardship-strict:1.0.0", "manni:stewardship-strict:1.1.0"],
+    ["manni:stewardship-strict:1.1.0", "manni:stewardship-strict:1.0.0"],
+  ])("a baseline recorded under %s suppresses the finding under %s", (from, to) => {
+    const recorded = buildBaseline([result("a.md", [under(from)])], "1.0.0");
+    const applied = applyBaseline([result("a.md", [under(to)])], recorded);
+    expect(applied.suppressed).toBe(1);
+    expect(applied.results[0]?.ok).toBe(true);
+  });
+
+  it("keeps the open vocabulary and its strict overlay apart", () => {
+    expect(fingerprint(under("manni:stewardship:1.1.0"))).not.toBe(
+      fingerprint(under("manni:stewardship-strict:1.0.0")),
+    );
+  });
+
+  it("leaves unrelated refs unchanged", () => {
+    expect(fingerprint(under("manni:core:1.0.0"))).not.toBe(
+      fingerprint(under("manni:stewardship:1.0.0")),
+    );
+    expect(fingerprint(under("https://example.com/stewardship/1.1.0.json"))).not.toBe(
+      fingerprint(under("manni:stewardship:1.0.0")),
+    );
   });
 });
 

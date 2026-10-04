@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/concept.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-concept
+      assertion: "A reader can say what concept means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-6
+      integrity: sha256-bd5e0618e2522d13592c0c00756255ab3c6d4cce5db23de1c4ae27030f2ae42a
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

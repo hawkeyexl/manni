@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "languages": [
+    {
+      "language": "de",
+      "documents": 1,
+      "search": {
+        "path": "search.de.json",
+        "entries": 9,
+        "digest": "sha256:23773d29a9d464b8e2abc47fa563b1031ccf0b229351e55f40d7389fd0c25dee"
+      },
+      "vectors": {
+        "path": "vectors.de.bin",
+        "model": "mock",
+        "dtype": "q8",
+        "dims": 8,
+        "count": 9
+      }
+    },
+    {
+      "language": "de-AT",
+      "documents": 1,
+      "search": {
+        "path": "search.de-AT.json",
+        "entries": 8,
+        "digest": "sha256:e2a62e1a761d625d90b6767604c500a472240512a00e11a62695078308b679f2"
+      },
+      "vectors": {
+        "path": "vectors.de-AT.bin",
+        "model": "mock",
+        "dtype": "q8",
+        "dims": 8,
+        "count": 8
+      }
+    },
+    {
+      "language": "fr",
+      "documents": 1,
+      "search": {
+        "path": "search.fr.json",
+        "entries": 8,
+        "digest": "sha256:000ba7284a891335d8c17970f17d195494f0520e8c4aae9830b3b3803c21e741"
+      },
+      "vectors": {
+        "path": "vectors.fr.bin",
+        "model": "mock",
+        "dtype": "q8",
+        "dims": 8,
+        "count": 8
+      }
+    },
+    {
+      "language": "und",
+      "documents": 5,
+      "search": {
+        "path": "search.und.json",
+        "entries": 20,
+        "digest": "sha256:5286c48a0ac6f9b12dcb2d08072dae45ab6b53ba1778d26d1c8b3f4526046f38"
+      },
+      "vectors": {
+        "path": "vectors.und.bin",
+        "model": "mock",
+        "dtype": "q8",
+        "dims": 8,
+        "count": 20
+      }
+    }
+  ]
+}

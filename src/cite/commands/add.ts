@@ -78,6 +78,7 @@ import type {
   PageLines,
   SourceIndex,
 } from "../types.js";
+import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 
 /** The schema's id grammar, checked before anything is written. */
 const ID = /^[a-z0-9][a-z0-9-]*$/;
@@ -187,7 +188,7 @@ export async function runAdd(opts: AddOptions): Promise<AddResult> {
 
   const usingStdin = opts.page === STDIN_TOKEN;
   if (usingStdin && opts.as === undefined) {
-    throw new CiteError("Reading from stdin (`-`) requires --as <format> to choose an extractor.");
+    throw new CiteError(STDIN_REQUIRES_AS);
   }
   // `-` names no file: nothing to resolve, and nothing to write back to.
   const path = usingStdin ? undefined : resolve(cwd, opts.page);

@@ -5,9 +5,9 @@ docs/src/content/docs/meta/get-started/index.mdx:
         integrity: sha256-406e5875f4673b04cb939611bfaf8879c1ed1178c555a79559352e6e8e01ce64
       source:
         file: package.json
-        lines: 38
+        lines: 46
         integrity: sha256-3f1eeebc0910c73dfab1013efd6c1309935f09b9ec2dc222b904e3c2432b4064
-        commit-sha: 80630b85776701d17caa29822d40d6b5ea91c47b
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: summary-green-follows-exit-code
       claim:
         integrity: sha256-369507c6dc33f81889b07da8b4d09a206daee4c6e5c97ba18ae13c81b7981e89
@@ -30,27 +30,27 @@ docs/src/content/docs/meta/get-started/index.mdx:
         integrity: sha256-d22c8a9368acdffcc63703e0573c7237392ee0273cc962117fabcaa15a284299
       source:
         file: src/meta/commands/validate.ts
-        lines: 1084
+        lines: 1085
         integrity: sha256-5a747f3719f7b94468316a11359c5c20bec812149e4567499530387997f30763
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: summary-failed-is-files-with-errors
       claim:
         lines: 137
         integrity: sha256-f8625c6402b96c857a37ca80f2e9dfd31049c6f8a6a793979758002996df5682
       source:
         file: src/meta/commands/validate.ts
-        lines: 1075
+        lines: 1076
         integrity: sha256-11e63cff120ee33b4c6ab5973adecba3549f1192bc0c720863f506d6ad9e6777
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: summary-files-is-resolved-count
       claim:
         lines: 135
         integrity: sha256-f49b1c3b26c1892324eb807d699467ba2b1932227ef03d4df53fac6d84ef6eca
       source:
         file: src/meta/commands/validate.ts
-        lines: 1081
+        lines: 1082
         integrity: sha256-d57f0feffc745c09869811b0410b200aed12376a25fb3320e3f7b42090eeec14
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: summary-line-shape
       claim:
         integrity: sha256-82cf14992026f2dda2307208f8892645ab134077755f316a669bdcb85fc8d045
@@ -65,9 +65,9 @@ docs/src/content/docs/meta/get-started/index.mdx:
         integrity: sha256-f9de5160c76d144d93d5da1c20da3da277410b9bb67c7f765c09247bc5eaa112
       source:
         file: src/meta/commands/validate.ts
-        lines: 829-830
+        lines: 830-831
         integrity: sha256-3ef67f71b6dd6d13aa8db8c7e567afcb9df863c1d137c5597d3a9fd7de40c6fa
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
     - id: error-line-parts
       claim:
         integrity: sha256-cf6f5ea2062c78d9deb2fbb4fb72a66993427ff0b87ff0e64efb2a369bf4c70d

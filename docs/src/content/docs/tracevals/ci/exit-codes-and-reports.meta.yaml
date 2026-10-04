@@ -1,6 +1,6 @@
 docs/src/content/docs/tracevals/ci/exit-codes-and-reports.mdx:
   personas: ["devin", "theo"]
-  journeys: ["d12", "t7"]
+  journeys: ["d14", "t8"]
   visibility: public
   review-interval: P180D
   source-of-truth:

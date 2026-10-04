@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/search-index.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-search-index
+      assertion: "A reader can say what search index means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-5
+      integrity: sha256-b145cd80d3407c3a34f41dcae4b5f21025f20e3956e09267fad7c99dd59ad59f
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

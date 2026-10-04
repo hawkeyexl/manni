@@ -6,5 +6,5 @@ docs/src/content/docs/meta/reference/index.mdx:
       source:
         file: src/meta/core/schema-registry.ts
         lines: 81-131
-        integrity: sha256-ef801a2216afc4c240a123d88c60bf6c14cddef2579cac66e8a142fb8bc28a97
-        commit-sha: 80630b85776701d17caa29822d40d6b5ea91c47b
+        integrity: sha256-a704c5e7f4c99812eb53ea0b48faa524598f9471492b4b7a93e22cfa116b6452
+        commit-sha: 7aa9a5632411b78d43c793baf6f8f48f0b9db79f

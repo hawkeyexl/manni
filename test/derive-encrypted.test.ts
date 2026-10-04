@@ -147,7 +147,7 @@ describe("validate's derived comparison over a marked field", () => {
         keyword: "location",
         subject: "owner",
         instancePath: "/owner",
-        message: '"owner" is stored in the page; manni:stewardship:1.0.0 prefers external metadata. Run manni meta relocate.',
+        message: '"owner" is stored in the page; manni:stewardship:1.1.0 prefers external metadata. Run manni meta relocate.',
         severity: "warning",
         line: 5,
       },

@@ -1,6 +1,6 @@
 docs/src/content/docs/tracevals/judge/schema-versioning.mdx:
   personas: ["sara"]
-  journeys: ["s13"]
+  journeys: ["s14"]
   visibility: public
   review-interval: P180D
   source-of-truth:

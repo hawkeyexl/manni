@@ -1,0 +1,47 @@
+---
+title: "Namespace"
+description: "What namespace means in manni graph, and where the tool uses it."
+type: term
+id: namespace
+label: "namespace"
+abstract: "A set of RDF terms under one IRI prefix."
+definition: "A set of RDF terms that share one IRI prefix."
+keywords:
+  - "namespace"
+  - "prefix"
+  - "vocabulary"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what namespace means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What namespace does manni graph mint terms in?"
+  - "What does the graph: prefix resolve to?"
+graph:
+  label: "namespace"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "curie"
+  - "graph-block"
+last-updated: 2026-10-04
+---
+
+<p>{frontmatter.definition}</p>
+
+manni graph's own namespace is `graph:`, which resolves to
+`https://hawkeyexl.github.io/manni/graph/ns#`. The document at that address
+defines every term the emitter can produce. The namespace stays small on
+purpose. A Dublin Core, SKOS, PROV, schema.org, FOAF or iiRDS term is preferred
+wherever one exists.
+
+The `graph:` prefix shares its spelling with the page's
+[`graph` block](/manni/meta/reference/glossary/graph-block/) but names a different thing. The block is
+frontmatter, and the prefix abbreviates an IRI.

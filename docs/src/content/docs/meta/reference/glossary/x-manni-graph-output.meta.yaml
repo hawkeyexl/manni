@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/x-manni-graph-output.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-x-manni-graph-output
+      assertion: "A reader can say what x-manni-graph-output means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-7
+      integrity: sha256-c5e9363d27289ef396d22ae25744b497aac9cfae3f051b089caa6fd788c38c12
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

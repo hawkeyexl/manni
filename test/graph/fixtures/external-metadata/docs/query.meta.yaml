@@ -1,0 +1,5 @@
+docs/query.md:
+  description: The operators a query accepts.
+  authors: [Ada Lovelace]
+  created: 2026-01-15
+  owner: ["@docs-team"]

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "title": { "type": "string" },
+    "owner": { "type": "string", "x-manni-graph-output": false },
+    "a/b": { "type": "string", "x-manni-graph-output": false },
+    "audiences": { "type": "array", "x-manni-graph-output": true }
+  }
+}

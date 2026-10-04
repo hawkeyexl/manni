@@ -1,0 +1,43 @@
+---
+title: "x-manni-graph-output"
+description: "What x-manni-graph-output means in manni graph, and where the tool uses it."
+type: term
+id: x-manni-graph-output
+label: "x-manni-graph-output"
+abstract: "Whether a published graph may carry a field."
+definition: "A boolean beside a top-level property in a page's schema, saying whether a published graph may carry that field."
+keywords:
+  - "x-manni-graph-output"
+  - "schema keyword"
+  - "publish"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what x-manni-graph-output means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What does x-manni-graph-output do?"
+  - "Which fields does a published graph leave out?"
+graph:
+  label: "x-manni-graph-output"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "json-ld"
+  - "intelligent-information-delivery"
+  - "search-index"
+last-updated: 2026-10-04
+---
+
+<p>{frontmatter.definition}</p>
+
+Absent means `true`. `manni:stewardship:1.1.0` marks `owner`,
+`stakeholders` and `reviewed-by` as `false`, because those three name people.
+The filter runs once, before [derivation](/manni/meta/reference/glossary/derivation/), so a dropped
+field is absent from every export.

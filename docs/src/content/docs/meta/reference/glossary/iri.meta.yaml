@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/iri.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-iri
+      assertion: "A reader can say what IRI means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-6
+      integrity: sha256-4fd4c40cf4af31d77b47f7aab548de5794ffc01b1a08abe95f40107201a5faea
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

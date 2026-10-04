@@ -136,6 +136,8 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** A reader fetching the markdown sees prose. The verdicts, the failing page and the suite rates are identical either side of the move.
 
+---
+
 ### M17 · Grade a real past session against the instructions it ran on
 
 **Outcome.** Maya points `manni tracevals` at a Claude Code session that already happened and can say, artifact by artifact, which of her instructions held and which did not. No API key, no instrumentation, no work re-run.
@@ -144,7 +146,39 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** One real finding on a real session inside ten minutes. A reader who can now choose between declaring a specific eval and putting the gate in CI.
 
-### M18 · Turn one instruction into a testable eval
+---
+
+### M18 · See the docset as a graph, and find what nothing links to
+
+**Outcome.** Maya has a graph of her docset and can ask it questions prose cannot answer. Which pages nothing links to, which concepts have no page, which page owns a term.
+
+**Steps.** She runs `manni graph build` over a collection she already declared for `meta validate`, and gets one Turtle file plus a count of documents and triples. `manni graph stats` tells her how much of the vocabulary the corpus actually fills, per field, and `--check` turns a coverage floor into an exit code. `manni graph query --predicate dcterms:subject` lists what the corpus says about a predicate, and `manni graph search` finds pages by words or, once she has run `manni graph embed`, by meaning. Nothing is inferred from prose: a triple exists because frontmatter, a link, a heading or a code block put it there.
+
+**What success looks like.** A question that used to mean reading forty pages is a one-line command. The answer is the same on her machine and in CI.
+
+---
+
+### M19 · See what a change to one page affects before making it
+
+**Outcome.** Before editing a page, Maya knows what depends on it. The pages that link to it, the concepts it carries, and what a rename would orphan.
+
+**Steps.** `manni graph traverse <page> --impact` walks the graph outward from that node and reports what it reaches. `--reverse` gives what reaches it, `--depth` how far, and `--predicates` follows only the edges she cares about. The answer is a graph walk rather than a text search, so a page reached through a concept rather than a hyperlink still shows up.
+
+**What success looks like.** The review comment "this breaks the install tutorial" arrives before the change, from her own terminal.
+
+---
+
+### M20 · Fill the categorization nobody wrote, and review what a model proposed
+
+**Outcome.** Pages that predate the vocabulary carry a `graph` block, and every value a model proposed is attributed and reviewable rather than silently merged into the corpus.
+
+**Steps.** She runs `manni graph fill --dry-run` over one directory and reads the proposals. `--confidence` sets the bar a value must clear to be written, `--fields` narrows what is proposed at all, and `--max-turns` caps the inference calls before the first one. `--local` runs the pass on her machine. Every written value is recorded in `meta-provenance` naming the model and the field. A surviving entry therefore means unreviewed machine metadata, and deleting it is how she signs off. A field the schema marks `x-manni-graph-output: false` never reaches the published graph, whatever fills it.
+
+**What success looks like.** A directory categorized in an afternoon, a review step rather than a claim, and a record of which values a machine wrote.
+
+---
+
+### M21 · Turn one instruction into a testable eval
 
 **Outcome.** A named check lives in the frontmatter of the same `SKILL.md` a person edits when the instruction changes. It is picked up on the next run, and it fails when the session violates it.
 
@@ -152,7 +186,9 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** An eval that sits next to the instruction it checks, so the two cannot drift. A failure whose finding names what the session actually did.
 
-### M19 · Propose evals across a project's agent artifacts and review the diff
+---
+
+### M22 · Propose evals across a project's agent artifacts and review the diff
 
 **Outcome.** Every instruction artifact in the project has been offered evals, Maya has reviewed a real diff, and only the evals she accepted were written.
 
@@ -160,7 +196,9 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **What success looks like.** A project whose artifacts are covered, a diff a reviewer can read, and no hand-tuned instruction file edited without permission.
 
-### M20 · Account for every artifact a session used
+---
+
+### M23 · Account for every artifact a session used
 
 **Outcome.** Maya can name every skill, agent definition, slash command and project-rules file the session touched, including the ones that could not be found. She knows how to close each gap.
 
@@ -258,7 +296,27 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 
 ---
 
-### D12 · Gate agent work in CI, offline
+### D12 · Gate the graph in CI
+
+**Outcome.** A pull request that breaks the docset's structure is red before review. A concept split across two spellings, a link to a page that does not exist, coverage falling below the floor.
+
+**Steps.** He adds one step that runs `manni graph build` and `manni graph check` over the same collection the metadata gate already uses. `check` validates the built graph against SHACL shapes, which is where the emergent failures live. They exist only after N documents merge into shared nodes, so no per-file check can see them. Findings come back on the family scale, `notice | warning | error`, and `-f github` annotates the diff. `manni graph stats --check --coverage-threshold` gates the vocabulary coverage. The exit codes are the family's: 0, 1 for findings, 2 for an operational error.
+
+**What success looks like.** A structural regression is caught by the same pipeline that already checks metadata, reported in the same words, with no second tool to install.
+
+---
+
+### D13 · Publish the graph for retrieval
+
+**Outcome.** The graph leaves CI as an artifact other systems consume. That is linked data for an ingester, iiRDS for a content delivery portal, or a search index the docs site loads in the browser.
+
+**Steps.** `manni graph export jsonld` writes linked data, `export iirds` writes a conformant package, and `export search` writes the index the `@hawkeyexl/manni/graph/runtime` bundle reads client-side. `manni graph embed` adds vector sidecars for semantic search, per language. He pins what the artifact carries by marking fields in the schema rather than post-processing the output. He publishes on the same run that gated it, so what ships is what passed.
+
+**What success looks like.** A RAG ingester and the docs site's own search read one artifact, produced by the build that already ran.
+
+---
+
+### D14 · Gate agent work in CI, offline
 
 **Outcome.** A pipeline step grades the agent sessions behind a change, makes no network call, and exits on a contract Devin can branch on.
 
@@ -266,7 +324,9 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 
 **What success looks like.** A green pipeline with no secret in it, and a red one whose exit code says whose problem it is.
 
-### D13 · Feed session results into your own tooling
+---
+
+### D15 · Feed session results into your own tooling
 
 **Outcome.** Devin can answer whether adherence is getting better or worse, and be told when it regresses, without anyone reading a terminal.
 
@@ -371,7 +431,17 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 ---
 
-### S12 · Prove the trace judge is trustworthy, then tune it
+### S12 · Extend what the graph is checked against
+
+**Outcome.** Sara's house rules about structure hold in the graph, not only in review. A concept with two labels, a page with no owning section, a required relationship nobody filled.
+
+**Steps.** She writes SHACL shapes and points `graph.check.shapes` at them, or passes `--shapes` per run; the bundled shapes are the floor, not the ceiling. She marks the vocabulary fields the published graph should carry with `x-manni-graph-output`, in the same file where she already marks `x-manni-location`. What a page stores and what a delivered artifact says are therefore two decisions in one place. A shape's own `sh:severity` maps onto the family scale, and the source value stays in `shaclSeverity` for anyone who needs it.
+
+**What success looks like.** Her standard is enforced twice: per page by `meta validate`, and across the corpus by `graph check`, with no third vocabulary to learn.
+
+---
+
+### S13 · Prove the trace judge is trustworthy, then tune it
 
 **Outcome.** A calibration report gives Sara a number rather than an opinion. She can say which eval disagreed and what a different threshold would have done.
 
@@ -379,7 +449,9 @@ Sara needs to ship a stricter version of the schema without immediately breaking
 
 **What success looks like.** An agreement figure she can hand to a skeptic, and a knob she changed for a reason she can state.
 
-### S13 · Change the artifact-evals standard without breaking what exists
+---
+
+### S14 · Change the artifact-evals standard without breaking what exists
 
 **Outcome.** A change to the evals block lands across repositories that do not all move at the same speed, and nothing breaks silently.
 
@@ -448,7 +520,17 @@ This is the highest-traffic journey in the section and the shallowest. The fix p
 
 ---
 
-### T7 · Read a failing session eval and decide what to do
+### T7 · Fix a red `graph check`
+
+**Outcome.** Theo's pull request is red on a graph finding he did not cause directly. He works out which of his pages produced it, makes the smallest correct change, and confirms locally.
+
+**Steps.** He reads the finding's focus node, which is the graph's name for the thing that failed. He also reads the documents listed beside it, which is where it came from. A graph finding is emergent by nature: two pages spelling one concept differently collide on a single node. The fix is usually in one of them, and the report names both. He reproduces with `npx @hawkeyexl/manni graph build && npx @hawkeyexl/manni graph check`, which needs no key and no network. An exit 2 is operational and goes to the platform team.
+
+**What success looks like.** He fixes a corpus-level failure from a page-level edit, and never opens a Turtle file.
+
+---
+
+### T8 · Read a failing session eval and decide what to do
 
 **Outcome.** Theo's build is red on a session eval. He works out what failed, whether the verdict is trustworthy, and what to do about it, from one page he reached cold.
 

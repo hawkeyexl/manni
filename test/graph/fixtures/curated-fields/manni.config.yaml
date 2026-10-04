@@ -1,0 +1,7 @@
+collections:
+  - name: curated
+    paths: ["docs/**/*.md"]
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph/graph.ttl

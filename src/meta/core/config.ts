@@ -1667,6 +1667,25 @@ export async function loadConfig(
     ? await readConfigFile(explicitPath, cwd, CONFIG_FILE)
     : await findConfigFile(cwd, CONFIG_FILE);
   if (file === null) return null;
+  return loadedFrom(file);
+}
+
+/**
+ * `loadConfig` for a sibling tool that reads meta's section of a file it was
+ * pointed at (proposal 0074). An explicit path whose document is no family
+ * file is that tool's own section, not meta's, so it governs nothing here and
+ * the result is `null`. Discovery is `loadConfig`'s own.
+ */
+export async function loadMetaSection(
+  explicitPath?: string,
+  cwd: string = process.cwd(),
+): Promise<LoadedConfig | null> {
+  if (explicitPath === undefined) return loadConfig(undefined, cwd);
+  const file = await readConfigFile(explicitPath, cwd, CONFIG_FILE);
+  return file.wrapped ? loadedFrom(file) : null;
+}
+
+async function loadedFrom(file: ConfigFile): Promise<LoadedConfig> {
   const section = file.wrapped ? META_SECTION : undefined;
   const config = parseConfigValue(file.value, file.source, section);
   assertOverrideCollections(config, file.collections, file.source, section);

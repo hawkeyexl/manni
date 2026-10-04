@@ -1,0 +1,41 @@
+---
+title: "Turn"
+description: "What turn means in manni graph, and where the tool uses it."
+type: term
+id: turn
+label: "turn"
+abstract: "One inference call."
+definition: "One inference call, the unit `fill.maxTurns` counts."
+keywords:
+  - "turn"
+  - "budget"
+  - "fill"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what turn means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a turn in manni graph fill?"
+  - "Why is the fill budget counted in turns?"
+graph:
+  label: "turn"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "confidence"
+  - "guardrail"
+last-updated: 2026-10-04
+---
+
+<p>{frontmatter.definition}</p>
+
+The budget counts calls rather than money, because every model makes calls
+and each one can be counted. One page is one turn, and a cached page spends
+none. Converting turns to a cost is your provider's rate card.

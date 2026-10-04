@@ -1,0 +1,42 @@
+---
+title: "IRI"
+description: "What IRI means in manni graph, and where the tool uses it."
+type: term
+id: iri
+label: "IRI"
+abstract: "The identifier of a node in the graph."
+definition: "The identifier of a node in the graph, an internationalized resource identifier."
+keywords:
+  - "IRI"
+  - "identifier"
+  - "node"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what IRI means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is an IRI in manni graph?"
+  - "Why are manni graph's IRIs deterministic?"
+graph:
+  label: "IRI"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "base-iri"
+  - "curie"
+  - "namespace"
+last-updated: 2026-10-04
+---
+
+<p>{frontmatter.definition}</p>
+
+Every node manni graph mints gets a deterministic IRI, derived from its path
+or its slug. Two runs over unchanged input therefore write identical files.
+There are no blank nodes, which is what keeps a diff of two graphs readable.

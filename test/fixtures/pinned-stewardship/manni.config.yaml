@@ -1,0 +1,5 @@
+# A pinned stewardship 1.0.0 replaces the default set's 1.1.0, so each
+# stewardship error is reported once, not once per version.
+meta:
+  schemas:
+    - manni:stewardship:1.0.0

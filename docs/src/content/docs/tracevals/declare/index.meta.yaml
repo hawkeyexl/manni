@@ -1,6 +1,6 @@
 docs/src/content/docs/tracevals/declare/index.mdx:
   personas: ["maya"]
-  journeys: ["m18"]
+  journeys: ["m21"]
   visibility: public
   review-interval: P180D
   source-of-truth:

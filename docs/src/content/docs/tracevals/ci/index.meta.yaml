@@ -1,6 +1,6 @@
 docs/src/content/docs/tracevals/ci/index.mdx:
   personas: ["devin"]
-  journeys: ["d12"]
+  journeys: ["d14"]
   visibility: public
   review-interval: P180D
   source-of-truth:

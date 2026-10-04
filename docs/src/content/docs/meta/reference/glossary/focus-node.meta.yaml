@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/focus-node.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-focus-node
+      assertion: "A reader can say what focus node means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-6
+      integrity: sha256-72d52efc3d629915d9c9f150b42b0ab9f8c506297a667f4347a16bd307f2a5a9
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

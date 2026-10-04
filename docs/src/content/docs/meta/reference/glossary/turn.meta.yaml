@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/turn.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-turn
+      assertion: "A reader can say what turn means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-6
+      integrity: sha256-56bc17bf6ac9188b573e2c964183267d1418e6260b8c06247e053c0274c51e87
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

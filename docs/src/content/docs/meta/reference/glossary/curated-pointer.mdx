@@ -1,0 +1,42 @@
+---
+title: "Curated pointer"
+description: "What curated pointer means in manni graph, and where the tool uses it."
+type: term
+id: curated-pointer
+label: "curated pointer"
+alt-labels:
+  - "curated pointers"
+abstract: "A graph field only a person may write."
+definition: "One of three `graph` locations a machine may never claim, `/graph/sections`, `/graph/revision-of` and `/graph/derived-from`."
+keywords:
+  - "curated pointer"
+  - "meta-provenance"
+  - "fill"
+language: en
+audiences:
+  - "docs-engineers"
+  - "ci-engineers"
+  - "schema-authors"
+  - "contributors"
+intent: "Say what curated pointer means in manni graph."
+lifecycle: published
+applies-to:
+  - "domain:graph"
+sample-questions:
+  - "What is a curated pointer?"
+  - "Which graph fields may a model never write?"
+graph:
+  label: "curated pointer"
+  type: concept
+action: understand
+risks: read-only
+related-terms:
+  - "meta-provenance"
+  - "graph-block"
+last-updated: 2026-10-04
+---
+
+<p>{frontmatter.definition}</p>
+
+A [`meta-provenance`](/manni/meta/reference/glossary/meta-provenance/) entry naming one is a
+`graph check` finding at `error`.

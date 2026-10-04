@@ -1,6 +1,6 @@
 docs/src/content/docs/tracevals/reference/configuration.mdx:
   personas: ["maya", "devin", "sara"]
-  journeys: ["m18", "d12", "s12"]
+  journeys: ["m21", "d14", "s13"]
   visibility: public
   review-interval: P180D
   source-of-truth:

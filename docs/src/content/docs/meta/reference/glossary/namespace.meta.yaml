@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/namespace.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-namespace
+      assertion: "A reader can say what namespace means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-12
+      integrity: sha256-91b663fd99725e69499586772d9f0d8fcf22d514fb57f2f68aece28eac5460e6
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

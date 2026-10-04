@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/derivation.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-derivation
+      assertion: "A reader can say what derivation means in manni graph."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-6
+      integrity: sha256-029e38eabdb17052319c03ba2cec59c7cef63a329dc888b287ab1fca98e1120f
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-04

@@ -1,0 +1,244 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix graph: <https://hawkeyexl.github.io/manni/graph/ns#> .
+@prefix iirds: <http://iirds.tekom.de/iirds#> .
+@prefix iirdsSft: <http://iirds.tekom.de/iirds/domain/software#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix schema: <https://schema.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.com/graph/activity/build> a prov:Activity ;
+  prov:qualifiedAssociation <https://example.com/graph/activity/build.assoc.manni> ;
+  prov:used <https://example.com/graph/doc/docs/configuration.md>, <https://example.com/graph/doc/docs/de/getting-started.md>, <https://example.com/graph/doc/docs/de/regional.md>, <https://example.com/graph/doc/docs/fr/getting-started.md>, <https://example.com/graph/doc/docs/getting-started.md>, <https://example.com/graph/doc/docs/harvest.md>, <https://example.com/graph/doc/docs/no-frontmatter.md>, <https://example.com/graph/doc/docs/windows-notes.md> ;
+  prov:wasAssociatedWith <https://example.com/graph/agent/software/manni> .
+
+<https://example.com/graph/activity/build.assoc.manni> a prov:Association ;
+  prov:agent <https://example.com/graph/agent/software/manni> ;
+  prov:hadRole graph:toolRole .
+
+<https://example.com/graph/agent/person/jane-doe> a prov:Person ;
+  foaf:name "Jane Doe" .
+
+<https://example.com/graph/agent/software/claude-sonnet-4-5> a prov:SoftwareAgent ;
+  foaf:name "claude-sonnet-4-5" .
+
+<https://example.com/graph/agent/software/manni> a prov:SoftwareAgent ;
+  foaf:name "manni" ;
+  graph:version "2.1.0" .
+
+<https://example.com/graph/concept/administration> a skos:Concept ;
+  skos:inScheme <https://example.com/graph/scheme> ;
+  skos:prefLabel "Administration" .
+
+<https://example.com/graph/concept/configuration> a skos:Concept ;
+  skos:altLabel "config", "settings" ;
+  skos:broader <https://example.com/graph/concept/administration> ;
+  skos:inScheme <https://example.com/graph/scheme> ;
+  skos:prefLabel "Configuration", "configuration" ;
+  skos:related <https://example.com/graph/concept/installation> .
+
+<https://example.com/graph/concept/installation> a skos:Concept ;
+  skos:inScheme <https://example.com/graph/scheme> ;
+  skos:prefLabel "Installation", "installation" .
+
+<https://example.com/graph/concept/reference> a skos:Concept ;
+  skos:inScheme <https://example.com/graph/scheme> ;
+  skos:prefLabel "reference" .
+
+<https://example.com/graph/concept/setup> a skos:Concept ;
+  skos:inScheme <https://example.com/graph/scheme> ;
+  skos:prefLabel "setup" .
+
+<https://example.com/graph/concept/upgrade> a skos:Concept ;
+  skos:inScheme <https://example.com/graph/scheme> ;
+  skos:prefLabel "upgrade" .
+
+<https://example.com/graph/doc/docs/configuration.md> a prov:Entity, graph:Document ;
+  iirds:has-subject iirdsSft:Interface ;
+  iirds:has-topic-type iirds:GenericReference ;
+  iirds:relates-to-product-variant <https://example.com/graph/product/sp-x100>, <https://example.com/graph/product/sp-x200> ;
+  dcterms:hasPart <https://example.com/graph/doc/docs/configuration.md#configuration> ;
+  dcterms:references <https://example.com/graph/doc/docs/getting-started.md>, <https://example.com/graph/doc/docs/getting-started.md#install>, <https://json-schema.org/> ;
+  dcterms:subject <https://example.com/graph/concept/configuration>, <https://example.com/graph/concept/reference> ;
+  dcterms:title "Configuration Reference" ;
+  foaf:primaryTopic <https://example.com/graph/concept/configuration> ;
+  graph:contentHash "622c6730fb6a6474c056b1ef92dab07c3ae9babc1e6ea01a72a249d71652bf0e" ;
+  graph:notApplicableToVariant <https://example.com/graph/product/sp-x300> ;
+  graph:path "docs/configuration.md" .
+
+<https://example.com/graph/doc/docs/configuration.md#advanced> a graph:Section ;
+  dcterms:title "Advanced" ;
+  graph:level 3 ;
+  graph:order 1 .
+
+<https://example.com/graph/doc/docs/configuration.md#configuration> a graph:Section ;
+  dcterms:hasPart <https://example.com/graph/doc/docs/configuration.md#options> ;
+  dcterms:title "Configuration" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/graph/doc/docs/configuration.md#options> a graph:Section ;
+  dcterms:hasPart <https://example.com/graph/doc/docs/configuration.md#advanced> ;
+  dcterms:title "Options" ;
+  graph:level 2 ;
+  graph:notSoftwareSubject iirdsSft:Architecture ;
+  graph:order 1 .
+
+<https://example.com/graph/doc/docs/de/getting-started.md> a prov:Entity, graph:Document ;
+  dcterms:description "Installieren und den ersten Graphen bauen." ;
+  dcterms:hasPart <https://example.com/graph/doc/docs/de/getting-started.md#erste-schritte> ;
+  dcterms:language "de" ;
+  dcterms:title "Erste Schritte" ;
+  graph:contentHash "ca7491427d71996b92cbbb13bff2e3af9bb5129547f2d20682fa160910138882" ;
+  graph:path "docs/de/getting-started.md" ;
+  schema:translationOfWork <https://example.com/graph/doc/docs/getting-started.md> .
+
+<https://example.com/graph/doc/docs/de/getting-started.md#erste-schritte> a graph:Section ;
+  dcterms:hasPart <https://example.com/graph/doc/docs/de/getting-started.md#install> ;
+  dcterms:title "Erste Schritte" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/graph/doc/docs/de/getting-started.md#install> a graph:Section ;
+  dcterms:title "Install" ;
+  graph:level 2 ;
+  graph:order 1 .
+
+<https://example.com/graph/doc/docs/de/regional.md> a prov:Entity, graph:Document ;
+  dcterms:hasPart <https://example.com/graph/doc/docs/de/regional.md#regionale-hinweise> ;
+  dcterms:language "de-AT" ;
+  dcterms:title "Regionale Hinweise" ;
+  graph:brokenLink "../missing.md" ;
+  graph:contentHash "463df292d27824877245efd67b35ef8715cf81a31abc1e82ba17115c3c158f76" ;
+  graph:path "docs/de/regional.md" .
+
+<https://example.com/graph/doc/docs/de/regional.md#regionale-hinweise> a graph:Section ;
+  dcterms:title "Regionale Hinweise" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/graph/doc/docs/fr/getting-started.md> a prov:Entity, graph:Document ;
+  dcterms:description "Installer et construire le premier graphe." ;
+  dcterms:hasPart <https://example.com/graph/doc/docs/fr/getting-started.md#premiers-pas> ;
+  dcterms:language "fr" ;
+  dcterms:title "Premiers pas" ;
+  graph:contentHash "d32594ff753ed0821c0bb855d0c7007aa52d1b5f4dce1393566bd46ae8255743" ;
+  graph:path "docs/fr/getting-started.md" ;
+  schema:translationOfWork <https://example.com/graph/doc/docs/getting-started.md> .
+
+<https://example.com/graph/doc/docs/fr/getting-started.md#premiers-pas> a graph:Section ;
+  dcterms:title "Premiers pas" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/graph/doc/docs/getting-started.md> a prov:Entity, graph:Document ;
+  iirds:has-topic-type iirds:GenericTask ;
+  iirds:relates-to-product-lifecycle-phase iirdsSft:Deployment ;
+  dcterms:created "2026-05-01"^^xsd:date ;
+  dcterms:creator <https://example.com/graph/agent/person/jane-doe> ;
+  dcterms:description "Install and configure the tool." ;
+  dcterms:hasPart <https://example.com/graph/doc/docs/getting-started.md#getting-started> ;
+  dcterms:modified "2026-07-01"^^xsd:date ;
+  dcterms:references <https://example.com/graph/doc/docs/configuration.md> ;
+  dcterms:subject <https://example.com/graph/concept/installation>, <https://example.com/graph/concept/setup> ;
+  dcterms:title "Getting Started" ;
+  prov:generatedAtTime "2026-05-01"^^xsd:date ;
+  prov:qualifiedAttribution <https://example.com/graph/doc/docs/getting-started.md#prov.attribution.jane-doe> ;
+  prov:wasAttributedTo <https://example.com/graph/agent/person/jane-doe> ;
+  graph:brokenSectionRef "missing-heading" ;
+  graph:codeLanguage "bash", "python" ;
+  graph:contentHash "9a29131d69ffea8a4ad9108d1cddb23898b545f08933ce046cb10a1be39c5728" ;
+  graph:path "docs/getting-started.md" ;
+  schema:image <https://example.com/graph/file/docs/img/arch.png> ;
+  schema:workTranslation <https://example.com/graph/doc/docs/de/getting-started.md>, <https://example.com/graph/doc/docs/fr/getting-started.md> .
+
+<https://example.com/graph/doc/docs/getting-started.md#getting-started> a graph:Section ;
+  dcterms:hasPart <https://example.com/graph/doc/docs/getting-started.md#install>, <https://example.com/graph/doc/docs/getting-started.md#install-1> ;
+  dcterms:title "Getting Started" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/graph/doc/docs/getting-started.md#install> a graph:Section ;
+  iirds:has-topic-type iirds:GenericReference ;
+  iirds:relates-to-product-variant <https://example.com/graph/product/sp-x200> ;
+  dcterms:subject <https://example.com/graph/concept/installation> ;
+  dcterms:title "Install" ;
+  graph:level 2 ;
+  graph:order 1 .
+
+<https://example.com/graph/doc/docs/getting-started.md#install-1> a graph:Section ;
+  dcterms:title "Install" ;
+  graph:level 2 ;
+  graph:order 2 .
+
+<https://example.com/graph/doc/docs/getting-started.md#prov.attribution.jane-doe> a prov:Attribution ;
+  prov:agent <https://example.com/graph/agent/person/jane-doe> ;
+  prov:hadRole graph:authorRole .
+
+<https://example.com/graph/doc/docs/harvest.md> a prov:Entity, graph:Document ;
+  iirds:has-topic-type iirds:GenericTask ;
+  iirds:relates-to-product-variant <https://example.com/graph/product/sp-x100> ;
+  dcterms:description "Move an existing install to the current release." ;
+  dcterms:hasPart <https://example.com/graph/doc/docs/harvest.md#upgrading> ;
+  dcterms:references <https://example.com/graph/doc/docs/getting-started.md> ;
+  dcterms:subject <https://example.com/graph/concept/upgrade> ;
+  dcterms:title "Upgrading" ;
+  prov:wasGeneratedBy <https://example.com/graph/doc/docs/harvest.md#prov.generation> ;
+  prov:wasRevisionOf <https://example.com/graph/doc/docs/getting-started.md> ;
+  graph:contentHash "e7e23a17e5148add6a88ab2aa5d68c11906c7e1d038f3ec073130c60f4f92764" ;
+  graph:path "docs/harvest.md" .
+
+<https://example.com/graph/doc/docs/harvest.md#prov.generation> a prov:Activity ;
+  prov:qualifiedAssociation <https://example.com/graph/doc/docs/harvest.md#prov.generation.assoc.claude-sonnet-4-5> ;
+  prov:wasAssociatedWith <https://example.com/graph/agent/software/claude-sonnet-4-5> .
+
+<https://example.com/graph/doc/docs/harvest.md#prov.generation.assoc.claude-sonnet-4-5> a prov:Association ;
+  prov:agent <https://example.com/graph/agent/software/claude-sonnet-4-5> ;
+  prov:hadRole graph:generatorRole .
+
+<https://example.com/graph/doc/docs/harvest.md#upgrading> a graph:Section ;
+  dcterms:title "Upgrading" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/graph/doc/docs/no-frontmatter.md> a prov:Entity, graph:Document ;
+  dcterms:hasPart <https://example.com/graph/doc/docs/no-frontmatter.md#loose-notes> ;
+  dcterms:references <https://example.org/page> ;
+  dcterms:title "Loose Notes" ;
+  graph:brokenLink "missing.md" ;
+  graph:contentHash "a1bed4d62ffe65581cb2d3465d701ee91a99640389f7564cca967f77f50a4d54" ;
+  graph:path "docs/no-frontmatter.md" .
+
+<https://example.com/graph/doc/docs/no-frontmatter.md#loose-notes> a graph:Section ;
+  dcterms:title "Loose Notes" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/graph/doc/docs/windows-notes.md> a prov:Entity, graph:Document ;
+  dcterms:hasPart <https://example.com/graph/doc/docs/windows-notes.md#windows-notes> ;
+  dcterms:references <https://example.com/graph/doc/docs/configuration.md> ;
+  dcterms:title "Windows Notes" ;
+  graph:contentHash "dc2e35b9d7d7dd98be827e186456f691a89c6022bd0d9f2b265786d7d3962fe3" ;
+  graph:path "docs/windows-notes.md" .
+
+<https://example.com/graph/doc/docs/windows-notes.md#windows-notes> a graph:Section ;
+  dcterms:title "Windows Notes" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/graph/graph> a prov:Entity ;
+  prov:wasGeneratedBy <https://example.com/graph/activity/build> .
+
+<https://example.com/graph/product/sp-x100> a iirds:ProductVariant ;
+  dcterms:title "SP-X100" .
+
+<https://example.com/graph/product/sp-x200> a iirds:ProductVariant ;
+  dcterms:title "SP-X200" .
+
+<https://example.com/graph/product/sp-x300> a iirds:ProductVariant ;
+  dcterms:title "SP-X300" .
+
+<https://example.com/graph/scheme> a skos:ConceptScheme ;
+  dcterms:title "manni graph concepts" .

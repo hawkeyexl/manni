@@ -204,6 +204,8 @@ describe("docmeta CLI (built bin)", () => {
       "tgdp:templates-strict:1.1",
       "manni:artifact-evals:1.1.0",
       "manni:artifact-evals-strict:1.1.0",
+      "manni:stewardship:1.1.0",
+      "manni:stewardship-strict:1.1.0",
     ]);
   });
 
@@ -3285,7 +3287,7 @@ describe("an overrides entry may group several globs", () => {
         "manni:core:1.0.0",
         "manni:audience:1.0.0",
         "manni:structure:1.0.0",
-        "manni:stewardship:1.0.0",
+        "manni:stewardship:1.1.0",
         "manni:lifecycle:1.0.0",
         "manni:ai-context:1.0.0",
         "manni:evals:1.0.0",

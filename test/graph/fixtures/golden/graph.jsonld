@@ -1,0 +1,633 @@
+{
+  "@context": {
+    "dcterms": "http://purl.org/dc/terms/",
+    "foaf": "http://xmlns.com/foaf/0.1/",
+    "graph": "https://hawkeyexl.github.io/manni/graph/ns#",
+    "iirds": "http://iirds.tekom.de/iirds#",
+    "iirdsSft": "http://iirds.tekom.de/iirds/domain/software#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "schema": "https://schema.org/",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "@graph": [
+    {
+      "@id": "https://example.com/graph/activity/build",
+      "@type": "prov:Activity",
+      "prov:qualifiedAssociation": {
+        "@id": "https://example.com/graph/activity/build.assoc.manni"
+      },
+      "prov:used": [
+        {
+          "@id": "https://example.com/graph/doc/docs/configuration.md"
+        },
+        {
+          "@id": "https://example.com/graph/doc/docs/de/getting-started.md"
+        },
+        {
+          "@id": "https://example.com/graph/doc/docs/de/regional.md"
+        },
+        {
+          "@id": "https://example.com/graph/doc/docs/fr/getting-started.md"
+        },
+        {
+          "@id": "https://example.com/graph/doc/docs/getting-started.md"
+        },
+        {
+          "@id": "https://example.com/graph/doc/docs/harvest.md"
+        },
+        {
+          "@id": "https://example.com/graph/doc/docs/no-frontmatter.md"
+        },
+        {
+          "@id": "https://example.com/graph/doc/docs/windows-notes.md"
+        }
+      ],
+      "prov:wasAssociatedWith": {
+        "@id": "https://example.com/graph/agent/software/manni"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/activity/build.assoc.manni",
+      "@type": "prov:Association",
+      "prov:agent": {
+        "@id": "https://example.com/graph/agent/software/manni"
+      },
+      "prov:hadRole": {
+        "@id": "https://hawkeyexl.github.io/manni/graph/ns#toolRole"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/agent/person/jane-doe",
+      "@type": "prov:Person",
+      "foaf:name": "Jane Doe"
+    },
+    {
+      "@id": "https://example.com/graph/agent/software/claude-sonnet-4-5",
+      "@type": "prov:SoftwareAgent",
+      "foaf:name": "claude-sonnet-4-5"
+    },
+    {
+      "@id": "https://example.com/graph/agent/software/manni",
+      "@type": "prov:SoftwareAgent",
+      "foaf:name": "manni",
+      "graph:version": "2.1.0"
+    },
+    {
+      "@id": "https://example.com/graph/concept/administration",
+      "@type": "skos:Concept",
+      "skos:inScheme": {
+        "@id": "https://example.com/graph/scheme"
+      },
+      "skos:prefLabel": "Administration"
+    },
+    {
+      "@id": "https://example.com/graph/concept/configuration",
+      "@type": "skos:Concept",
+      "skos:altLabel": [
+        "config",
+        "settings"
+      ],
+      "skos:broader": {
+        "@id": "https://example.com/graph/concept/administration"
+      },
+      "skos:inScheme": {
+        "@id": "https://example.com/graph/scheme"
+      },
+      "skos:prefLabel": [
+        "Configuration",
+        "configuration"
+      ],
+      "skos:related": {
+        "@id": "https://example.com/graph/concept/installation"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/concept/installation",
+      "@type": "skos:Concept",
+      "skos:inScheme": {
+        "@id": "https://example.com/graph/scheme"
+      },
+      "skos:prefLabel": [
+        "Installation",
+        "installation"
+      ]
+    },
+    {
+      "@id": "https://example.com/graph/concept/reference",
+      "@type": "skos:Concept",
+      "skos:inScheme": {
+        "@id": "https://example.com/graph/scheme"
+      },
+      "skos:prefLabel": "reference"
+    },
+    {
+      "@id": "https://example.com/graph/concept/setup",
+      "@type": "skos:Concept",
+      "skos:inScheme": {
+        "@id": "https://example.com/graph/scheme"
+      },
+      "skos:prefLabel": "setup"
+    },
+    {
+      "@id": "https://example.com/graph/concept/upgrade",
+      "@type": "skos:Concept",
+      "skos:inScheme": {
+        "@id": "https://example.com/graph/scheme"
+      },
+      "skos:prefLabel": "upgrade"
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/configuration.md",
+      "@type": [
+        "graph:Document",
+        "prov:Entity"
+      ],
+      "iirds:has-subject": {
+        "@id": "http://iirds.tekom.de/iirds/domain/software#Interface"
+      },
+      "iirds:has-topic-type": {
+        "@id": "http://iirds.tekom.de/iirds#GenericReference"
+      },
+      "iirds:relates-to-product-variant": [
+        {
+          "@id": "https://example.com/graph/product/sp-x100"
+        },
+        {
+          "@id": "https://example.com/graph/product/sp-x200"
+        }
+      ],
+      "dcterms:hasPart": {
+        "@id": "https://example.com/graph/doc/docs/configuration.md#configuration"
+      },
+      "dcterms:references": [
+        {
+          "@id": "https://example.com/graph/doc/docs/getting-started.md"
+        },
+        {
+          "@id": "https://example.com/graph/doc/docs/getting-started.md#install"
+        },
+        {
+          "@id": "https://json-schema.org/"
+        }
+      ],
+      "dcterms:subject": [
+        {
+          "@id": "https://example.com/graph/concept/configuration"
+        },
+        {
+          "@id": "https://example.com/graph/concept/reference"
+        }
+      ],
+      "dcterms:title": "Configuration Reference",
+      "foaf:primaryTopic": {
+        "@id": "https://example.com/graph/concept/configuration"
+      },
+      "graph:contentHash": "622c6730fb6a6474c056b1ef92dab07c3ae9babc1e6ea01a72a249d71652bf0e",
+      "graph:notApplicableToVariant": {
+        "@id": "https://example.com/graph/product/sp-x300"
+      },
+      "graph:path": "docs/configuration.md"
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/configuration.md#advanced",
+      "@type": "graph:Section",
+      "dcterms:title": "Advanced",
+      "graph:level": {
+        "@value": "3",
+        "@type": "xsd:integer"
+      },
+      "graph:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/configuration.md#configuration",
+      "@type": "graph:Section",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/graph/doc/docs/configuration.md#options"
+      },
+      "dcterms:title": "Configuration",
+      "graph:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "graph:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/configuration.md#options",
+      "@type": "graph:Section",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/graph/doc/docs/configuration.md#advanced"
+      },
+      "dcterms:title": "Options",
+      "graph:level": {
+        "@value": "2",
+        "@type": "xsd:integer"
+      },
+      "graph:notSoftwareSubject": {
+        "@id": "http://iirds.tekom.de/iirds/domain/software#Architecture"
+      },
+      "graph:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/de/getting-started.md",
+      "@type": [
+        "graph:Document",
+        "prov:Entity"
+      ],
+      "dcterms:description": "Installieren und den ersten Graphen bauen.",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/graph/doc/docs/de/getting-started.md#erste-schritte"
+      },
+      "dcterms:language": "de",
+      "dcterms:title": "Erste Schritte",
+      "graph:contentHash": "ca7491427d71996b92cbbb13bff2e3af9bb5129547f2d20682fa160910138882",
+      "graph:path": "docs/de/getting-started.md",
+      "schema:translationOfWork": {
+        "@id": "https://example.com/graph/doc/docs/getting-started.md"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/de/getting-started.md#erste-schritte",
+      "@type": "graph:Section",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/graph/doc/docs/de/getting-started.md#install"
+      },
+      "dcterms:title": "Erste Schritte",
+      "graph:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "graph:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/de/getting-started.md#install",
+      "@type": "graph:Section",
+      "dcterms:title": "Install",
+      "graph:level": {
+        "@value": "2",
+        "@type": "xsd:integer"
+      },
+      "graph:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/de/regional.md",
+      "@type": [
+        "graph:Document",
+        "prov:Entity"
+      ],
+      "dcterms:hasPart": {
+        "@id": "https://example.com/graph/doc/docs/de/regional.md#regionale-hinweise"
+      },
+      "dcterms:language": "de-AT",
+      "dcterms:title": "Regionale Hinweise",
+      "graph:brokenLink": "../missing.md",
+      "graph:contentHash": "463df292d27824877245efd67b35ef8715cf81a31abc1e82ba17115c3c158f76",
+      "graph:path": "docs/de/regional.md"
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/de/regional.md#regionale-hinweise",
+      "@type": "graph:Section",
+      "dcterms:title": "Regionale Hinweise",
+      "graph:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "graph:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/fr/getting-started.md",
+      "@type": [
+        "graph:Document",
+        "prov:Entity"
+      ],
+      "dcterms:description": "Installer et construire le premier graphe.",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/graph/doc/docs/fr/getting-started.md#premiers-pas"
+      },
+      "dcterms:language": "fr",
+      "dcterms:title": "Premiers pas",
+      "graph:contentHash": "d32594ff753ed0821c0bb855d0c7007aa52d1b5f4dce1393566bd46ae8255743",
+      "graph:path": "docs/fr/getting-started.md",
+      "schema:translationOfWork": {
+        "@id": "https://example.com/graph/doc/docs/getting-started.md"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/fr/getting-started.md#premiers-pas",
+      "@type": "graph:Section",
+      "dcterms:title": "Premiers pas",
+      "graph:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "graph:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/getting-started.md",
+      "@type": [
+        "graph:Document",
+        "prov:Entity"
+      ],
+      "iirds:has-topic-type": {
+        "@id": "http://iirds.tekom.de/iirds#GenericTask"
+      },
+      "iirds:relates-to-product-lifecycle-phase": {
+        "@id": "http://iirds.tekom.de/iirds/domain/software#Deployment"
+      },
+      "dcterms:created": {
+        "@value": "2026-05-01",
+        "@type": "xsd:date"
+      },
+      "dcterms:creator": {
+        "@id": "https://example.com/graph/agent/person/jane-doe"
+      },
+      "dcterms:description": "Install and configure the tool.",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/graph/doc/docs/getting-started.md#getting-started"
+      },
+      "dcterms:modified": {
+        "@value": "2026-07-01",
+        "@type": "xsd:date"
+      },
+      "dcterms:references": {
+        "@id": "https://example.com/graph/doc/docs/configuration.md"
+      },
+      "dcterms:subject": [
+        {
+          "@id": "https://example.com/graph/concept/installation"
+        },
+        {
+          "@id": "https://example.com/graph/concept/setup"
+        }
+      ],
+      "dcterms:title": "Getting Started",
+      "prov:generatedAtTime": {
+        "@value": "2026-05-01",
+        "@type": "xsd:date"
+      },
+      "prov:qualifiedAttribution": {
+        "@id": "https://example.com/graph/doc/docs/getting-started.md#prov.attribution.jane-doe"
+      },
+      "prov:wasAttributedTo": {
+        "@id": "https://example.com/graph/agent/person/jane-doe"
+      },
+      "graph:brokenSectionRef": "missing-heading",
+      "graph:codeLanguage": [
+        "bash",
+        "python"
+      ],
+      "graph:contentHash": "9a29131d69ffea8a4ad9108d1cddb23898b545f08933ce046cb10a1be39c5728",
+      "graph:path": "docs/getting-started.md",
+      "schema:image": {
+        "@id": "https://example.com/graph/file/docs/img/arch.png"
+      },
+      "schema:workTranslation": [
+        {
+          "@id": "https://example.com/graph/doc/docs/de/getting-started.md"
+        },
+        {
+          "@id": "https://example.com/graph/doc/docs/fr/getting-started.md"
+        }
+      ]
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/getting-started.md#getting-started",
+      "@type": "graph:Section",
+      "dcterms:hasPart": [
+        {
+          "@id": "https://example.com/graph/doc/docs/getting-started.md#install"
+        },
+        {
+          "@id": "https://example.com/graph/doc/docs/getting-started.md#install-1"
+        }
+      ],
+      "dcterms:title": "Getting Started",
+      "graph:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "graph:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/getting-started.md#install",
+      "@type": "graph:Section",
+      "iirds:has-topic-type": {
+        "@id": "http://iirds.tekom.de/iirds#GenericReference"
+      },
+      "iirds:relates-to-product-variant": {
+        "@id": "https://example.com/graph/product/sp-x200"
+      },
+      "dcterms:subject": {
+        "@id": "https://example.com/graph/concept/installation"
+      },
+      "dcterms:title": "Install",
+      "graph:level": {
+        "@value": "2",
+        "@type": "xsd:integer"
+      },
+      "graph:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/getting-started.md#install-1",
+      "@type": "graph:Section",
+      "dcterms:title": "Install",
+      "graph:level": {
+        "@value": "2",
+        "@type": "xsd:integer"
+      },
+      "graph:order": {
+        "@value": "2",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/getting-started.md#prov.attribution.jane-doe",
+      "@type": "prov:Attribution",
+      "prov:agent": {
+        "@id": "https://example.com/graph/agent/person/jane-doe"
+      },
+      "prov:hadRole": {
+        "@id": "https://hawkeyexl.github.io/manni/graph/ns#authorRole"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/harvest.md",
+      "@type": [
+        "graph:Document",
+        "prov:Entity"
+      ],
+      "iirds:has-topic-type": {
+        "@id": "http://iirds.tekom.de/iirds#GenericTask"
+      },
+      "iirds:relates-to-product-variant": {
+        "@id": "https://example.com/graph/product/sp-x100"
+      },
+      "dcterms:description": "Move an existing install to the current release.",
+      "dcterms:hasPart": {
+        "@id": "https://example.com/graph/doc/docs/harvest.md#upgrading"
+      },
+      "dcterms:references": {
+        "@id": "https://example.com/graph/doc/docs/getting-started.md"
+      },
+      "dcterms:subject": {
+        "@id": "https://example.com/graph/concept/upgrade"
+      },
+      "dcterms:title": "Upgrading",
+      "prov:wasGeneratedBy": {
+        "@id": "https://example.com/graph/doc/docs/harvest.md#prov.generation"
+      },
+      "prov:wasRevisionOf": {
+        "@id": "https://example.com/graph/doc/docs/getting-started.md"
+      },
+      "graph:contentHash": "e7e23a17e5148add6a88ab2aa5d68c11906c7e1d038f3ec073130c60f4f92764",
+      "graph:path": "docs/harvest.md"
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/harvest.md#prov.generation",
+      "@type": "prov:Activity",
+      "prov:qualifiedAssociation": {
+        "@id": "https://example.com/graph/doc/docs/harvest.md#prov.generation.assoc.claude-sonnet-4-5"
+      },
+      "prov:wasAssociatedWith": {
+        "@id": "https://example.com/graph/agent/software/claude-sonnet-4-5"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/harvest.md#prov.generation.assoc.claude-sonnet-4-5",
+      "@type": "prov:Association",
+      "prov:agent": {
+        "@id": "https://example.com/graph/agent/software/claude-sonnet-4-5"
+      },
+      "prov:hadRole": {
+        "@id": "https://hawkeyexl.github.io/manni/graph/ns#generatorRole"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/harvest.md#upgrading",
+      "@type": "graph:Section",
+      "dcterms:title": "Upgrading",
+      "graph:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "graph:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/no-frontmatter.md",
+      "@type": [
+        "graph:Document",
+        "prov:Entity"
+      ],
+      "dcterms:hasPart": {
+        "@id": "https://example.com/graph/doc/docs/no-frontmatter.md#loose-notes"
+      },
+      "dcterms:references": {
+        "@id": "https://example.org/page"
+      },
+      "dcterms:title": "Loose Notes",
+      "graph:brokenLink": "missing.md",
+      "graph:contentHash": "a1bed4d62ffe65581cb2d3465d701ee91a99640389f7564cca967f77f50a4d54",
+      "graph:path": "docs/no-frontmatter.md"
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/no-frontmatter.md#loose-notes",
+      "@type": "graph:Section",
+      "dcterms:title": "Loose Notes",
+      "graph:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "graph:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/windows-notes.md",
+      "@type": [
+        "graph:Document",
+        "prov:Entity"
+      ],
+      "dcterms:hasPart": {
+        "@id": "https://example.com/graph/doc/docs/windows-notes.md#windows-notes"
+      },
+      "dcterms:references": {
+        "@id": "https://example.com/graph/doc/docs/configuration.md"
+      },
+      "dcterms:title": "Windows Notes",
+      "graph:contentHash": "dc2e35b9d7d7dd98be827e186456f691a89c6022bd0d9f2b265786d7d3962fe3",
+      "graph:path": "docs/windows-notes.md"
+    },
+    {
+      "@id": "https://example.com/graph/doc/docs/windows-notes.md#windows-notes",
+      "@type": "graph:Section",
+      "dcterms:title": "Windows Notes",
+      "graph:level": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      },
+      "graph:order": {
+        "@value": "1",
+        "@type": "xsd:integer"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/graph",
+      "@type": "prov:Entity",
+      "prov:wasGeneratedBy": {
+        "@id": "https://example.com/graph/activity/build"
+      }
+    },
+    {
+      "@id": "https://example.com/graph/product/sp-x100",
+      "@type": "iirds:ProductVariant",
+      "dcterms:title": "SP-X100"
+    },
+    {
+      "@id": "https://example.com/graph/product/sp-x200",
+      "@type": "iirds:ProductVariant",
+      "dcterms:title": "SP-X200"
+    },
+    {
+      "@id": "https://example.com/graph/product/sp-x300",
+      "@type": "iirds:ProductVariant",
+      "dcterms:title": "SP-X300"
+    },
+    {
+      "@id": "https://example.com/graph/scheme",
+      "@type": "skos:ConceptScheme",
+      "dcterms:title": "manni graph concepts"
+    }
+  ]
+}
