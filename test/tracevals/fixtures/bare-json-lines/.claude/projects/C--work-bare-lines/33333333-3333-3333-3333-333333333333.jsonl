@@ -1,0 +1,4 @@
+null
+42
+"text"
+{"type":"user","sessionId":"33333333-3333-3333-3333-333333333333","cwd":"/work/bare-lines","isSidechain":false,"message":{"role":"user","content":"List the files."}}

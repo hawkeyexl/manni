@@ -130,12 +130,17 @@ async function summarizeTrace(
   for (const line of content.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    let rec: Record<string, unknown>;
+    let parsed: unknown;
     try {
-      rec = JSON.parse(trimmed) as Record<string, unknown>;
+      parsed = JSON.parse(trimmed);
     } catch {
       continue;
     }
+    // A bare `null`, number or string is valid JSON but no record. The same
+    // guard `detect.ts` uses: skip the line rather than let a property read
+    // throw and drop the whole file from the listing.
+    if (typeof parsed !== "object" || parsed === null) continue;
+    const rec = parsed as Record<string, unknown>;
     if (summary.sessionId === undefined) {
       const id = rec.sessionId ?? rec.session_id;
       if (typeof id === "string") summary.sessionId = id;

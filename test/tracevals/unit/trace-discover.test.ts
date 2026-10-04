@@ -95,6 +95,21 @@ describe("discoverTraces", () => {
     expect(traces).toHaveLength(1);
   });
 
+  it("skips a line that is JSON but not a record, and keeps the file", async () => {
+    const traces = await discoverTraces({
+      allProjects: true,
+      env: {
+        CLAUDE_CONFIG_DIR: fileURLToPath(
+          new URL("../fixtures/bare-json-lines/.claude", import.meta.url),
+        ),
+      },
+    });
+    expect(traces).toHaveLength(1);
+    expect(traces[0]?.sessionId).toBe("33333333-3333-3333-3333-333333333333");
+    expect(traces[0]?.project).toBe("/work/bare-lines");
+    expect(traces[0]?.firstPrompt).toBe("List the files.");
+  });
+
   it("returns an empty list for a project with no sessions", async () => {
     const traces = await discoverTraces({
       project: "C:\\work\\nonexistent",
