@@ -42,7 +42,7 @@ describe("manni graph query", () => {
   it("matches by predicate with a prefixed name", () => {
     const { stdout, status } = run([
       "query",
-      "--p",
+      "--predicate",
       "dcterms:references",
       "-g",
       graph,
@@ -55,7 +55,7 @@ describe("manni graph query", () => {
   it("matches by subject and returns JSON", () => {
     const { stdout, status } = run([
       "query",
-      "--s",
+      "--subject",
       "https://example.com/graph/doc/docs/getting-started.md",
       "-f",
       "json",
@@ -68,14 +68,14 @@ describe("manni graph query", () => {
   });
 
   it("matches literal objects", () => {
-    const { stdout } = run(["query", "--o", "python", "-g", graph]);
+    const { stdout } = run(["query", "--object", "python", "-g", graph]);
     expect(stdout).toContain("graph:codeLanguage");
   });
 
   it("reports no matches cleanly", () => {
     const { stdout, status } = run([
       "query",
-      "--p",
+      "--predicate",
       "dcterms:nonexistent",
       "-g",
       graph,

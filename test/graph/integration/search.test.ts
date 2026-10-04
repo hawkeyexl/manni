@@ -362,7 +362,7 @@ describe("manni graph search — artifact resolution (review fixes)", () => {
     const { graph, dir } = buildIndexed();
     execFileSync(
       process.execPath,
-      [cli, "graph", "embed", "-g", graph, "--model", "mock", "--no-cache"],
+      [cli, "graph", "embed", "-g", graph, "--embedding-model", "mock", "--no-cache"],
       { encoding: "utf8", cwd: corpus },
     );
     const out = search([

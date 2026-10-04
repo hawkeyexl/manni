@@ -47,6 +47,7 @@ import {
 import { toJsonText } from "../core/json-text.js";
 import { writeFileAtomic } from "../core/write-file.js";
 import { lazyKey } from "../core/encrypted.js";
+import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 
 /** One schema `meta.register` loaded: its `$id` and its file. */
 export interface RegisteredInfo {
@@ -812,7 +813,7 @@ export async function runInferSchema(
   }
   if (usingStdin && !forced) {
     throw new DocmetaError(
-      "Reading from stdin (`-`) requires --as <format> to choose an extractor.",
+      STDIN_REQUIRES_AS,
     );
   }
 

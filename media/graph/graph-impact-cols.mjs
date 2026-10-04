@@ -15,7 +15,7 @@ const beats = {
     "$ ",
   ],
   b3: [
-    "$ manni graph query --p graph:brokenLink",
+    "$ manni graph query --predicate graph:brokenLink",
     ...rd("query.ans"),
     "$ manni graph stats --check > /dev/null; echo $?",
     "1",

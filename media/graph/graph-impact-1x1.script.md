@@ -145,7 +145,7 @@ which touch every document in the corpus and drown the answer.
 
 VISUAL: the same graph, queried for dead links, then the exit code.
 ```
-$ manni graph query --p graph:brokenLink
+$ manni graph query --predicate graph:brokenLink
 <https://acme.dev/doc/docs/de/regional.md> graph:brokenLink "../missing.md"
 <https://acme.dev/doc/docs/no-frontmatter.md> graph:brokenLink "missing.md"
 

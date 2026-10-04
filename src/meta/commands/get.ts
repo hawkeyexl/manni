@@ -54,6 +54,7 @@ import {
   type DeriveInput,
 } from "../core/derive/types.js";
 import { lazyKey } from "../core/encrypted.js";
+import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 
 export interface GetOptions {
   fields: string[];
@@ -369,7 +370,7 @@ export async function runGet(opts: GetOptions): Promise<GetFileResult[]> {
   if (usingStdin) {
     if (!forced) {
       throw new DocmetaError(
-        "Reading from stdin (`-`) requires --as <format> to choose an extractor.",
+        STDIN_REQUIRES_AS,
       );
     }
     await readOne(STDIN_LABEL, opts.stdinContent ?? "", forced.extensions[0] ?? "");

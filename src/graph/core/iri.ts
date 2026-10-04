@@ -30,8 +30,19 @@ export function encodeSegment(segment: string): string {
   );
 }
 
-/** `{base}doc/{repo-relative-path}`, segment-wise percent-encoded. */
+/**
+ * The display path of a document read from stdin (`-`). It has no file name,
+ * so its node is `{base}stdin` rather than a `doc/` path, and its links
+ * resolve from the working directory.
+ */
+export const STDIN_PATH = "<stdin>";
+
+/**
+ * `{base}doc/{repo-relative-path}`, segment-wise percent-encoded. A document
+ * read from stdin is `{base}stdin`.
+ */
 export function mintDocIri(base: string, relPath: string): string {
+  if (relPath === STDIN_PATH) return `${base}stdin`;
   const path = normalizeDocPath(relPath)
     .split("/")
     .map(encodeSegment)

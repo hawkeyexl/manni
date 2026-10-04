@@ -24,6 +24,14 @@ export function splitList(value: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * What a run that reads `-` without `--as` is told. Stdin has no file name to
+ * pick a parser by, so the user names the format. One sentence for every tool
+ * that reads stdin, so the refusal reads the same wherever it is hit.
+ */
+export const STDIN_REQUIRES_AS =
+  "Reading from stdin (`-`) requires --as <format> to choose an extractor.";
+
 /** Drain stdin to a UTF-8 string. */
 export async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];

@@ -11,13 +11,23 @@
  */
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
-import { collect, configOption, splitList } from "../shared/cli-options.js";
+import {
+  collect,
+  configOption,
+  readStdin,
+  splitList,
+} from "../shared/cli-options.js";
 import { shouldColor } from "../shared/color.js";
 import { fail } from "../shared/run.js";
 import { warn } from "../shared/warn.js";
 import { GraphError } from "./types.js";
 import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import { ALL_FILL_FIELDS, type FillField } from "./core/config.js";
+import {
+  assertInputFormat,
+  DEFAULT_EXTENSIONS,
+  STDIN,
+} from "./core/discover.js";
 import {
   CHECK_FORMATS,
   CHECK_FORMAT_LIST,
@@ -181,15 +191,17 @@ const fieldsOption = (raw: string): FillField[] =>
 
 /**
  * The document-set surface the verbs that read documents share (proposals
- * 0041 and 0051 §1): positional `[paths...]`, `--collection` and `--exclude`
- * (each one value per occurrence), and `-c`/`--no-config`. Declared once so
- * the verbs cannot drift apart on a name or a description.
+ * 0041 and 0051 §1): positional `[paths...]` with `-` for stdin,
+ * `--collection` and `--exclude` (each one value per occurrence), `--as`,
+ * `--ext` (comma-separated, given once), `--allow-empty`, and
+ * `-c`/`--no-config`. Declared once so the verbs cannot drift apart on a name
+ * or a description, and worded as `meta` and `lint` word them.
  */
 function documentInputs(command: Command, verb: string): Command {
   return command
     .argument(
       "[paths...]",
-      `Files, directories, or globs to ${verb} (default: the configured collections)`,
+      `files, directories, or globs to ${verb} (use - for stdin)`,
     )
     .option(
       "--collection <name>",
@@ -198,8 +210,44 @@ function documentInputs(command: Command, verb: string): Command {
       [],
     )
     .option("--exclude <glob>", "Glob to exclude (repeatable)", collect, [])
+    .option("--as <format>", "force an input format (markdown, mdx)")
+    .option(
+      "--ext <list>",
+      "comma-separated extensions for directory walks",
+      DEFAULT_EXTENSIONS.join(","),
+    )
+    .option("--allow-empty", "treat zero matched files as success")
     .option("-c, --config <path>", "Path to manni.config.yaml")
     .option("--no-config", "Ignore any discovered config file");
+}
+
+/** The input flags as commander hands them over. */
+interface InputFlags {
+  as?: string;
+  ext: string;
+  allowEmpty?: boolean;
+}
+
+/**
+ * The input flags for a core, and stdin when `paths` holds `-`. `--as` is
+ * checked first, so `-` without it is refused before anything waits on stdin.
+ */
+async function inputOptions(
+  paths: string[],
+  opts: InputFlags,
+): Promise<{
+  as?: string;
+  ext: string[];
+  allowEmpty?: boolean;
+  stdinContent?: string;
+}> {
+  assertInputFormat(paths, opts.as);
+  return {
+    ...(opts.as === undefined ? {} : { as: opts.as }),
+    ext: splitList(opts.ext),
+    ...(opts.allowEmpty === true ? { allowEmpty: true } : {}),
+    ...(paths.includes(STDIN) ? { stdinContent: await readStdin() } : {}),
+  };
 }
 
 /**
@@ -263,7 +311,7 @@ documentInputs(
   "build",
 )
   .option("-o, --out <path>", "Output .ttl path (default: config out)")
-  .action(async (paths: string[], opts: {
+  .action(async (paths: string[], opts: InputFlags & {
     config?: string | boolean;
     collection?: string[];
     exclude?: string[];
@@ -273,6 +321,7 @@ documentInputs(
       const result = await runBuild({
         paths,
         ...documentOptions(opts),
+        ...(await inputOptions(paths, opts)),
         out: opts.out,
       });
       // Warnings go to stderr so stdout stays the machine-readable summary;
@@ -372,7 +421,7 @@ documentInputs(
   // on anything malformed by the time this runs, so a cast per field would be
   // safe — but it would also be the one command with the most options and the
   // least help from the compiler.
-  .action(async (paths: string[], opts: {
+  .action(async (paths: string[], opts: InputFlags & {
     config?: string | boolean;
     collection?: string[];
     exclude?: string[];
@@ -393,6 +442,7 @@ documentInputs(
       const report = await runFill({
         paths,
         ...documentOptions(opts),
+        ...(await inputOptions(paths, opts)),
         dryRun: opts.dryRun,
         force: opts.force,
         noCache: opts.cache === false,
@@ -408,7 +458,17 @@ documentInputs(
       // Same channel discipline as build: warnings on stderr, so stdout stays
       // the report, and a warning never changes the exit code.
       for (const warning of report.warnings) warn(warning);
-      console.log(renderFill(report, opts.format));
+      const rendered = renderFill(report, opts.format);
+      if (paths.includes(STDIN)) {
+        // With `-` the filled document owns stdout, as under `meta fill -`,
+        // and the report in either format is a diagnostic on stderr.
+        if (report.stdinDocument !== undefined) {
+          process.stdout.write(report.stdinDocument);
+        }
+        if (rendered.length > 0) process.stderr.write(`${rendered}\n`);
+      } else {
+        console.log(rendered);
+      }
       process.exitCode = report.exitCode;
     } catch (e) {
       fail(e);
@@ -420,12 +480,13 @@ program
   .description(
     "Match triple patterns against the built graph (omit a term for wildcard)",
   )
-  // Long-only. `-o` is `--out` on every other graph verb and `-s` is meta's
-  // schema flag; a one-letter spelling that means two things in one family
-  // costs more than three characters do.
-  .option("--s <term>", "Subject IRI or prefixed name")
-  .option("--p <term>", "Predicate IRI or prefixed name")
-  .option("--o <term>", "Object IRI, prefixed name, or literal value")
+  // Long-only, and named for the triple position each one fills. `-o` is
+  // `--out` on every other graph verb and `-s` is meta's schema flag; a
+  // one-letter spelling that means two things in one family costs more than
+  // the letters it saves.
+  .option("--subject <term>", "Subject IRI or prefixed name")
+  .option("--predicate <term>", "Predicate IRI or prefixed name")
+  .option("--object <term>", "Object IRI, prefixed name, or literal value")
   .option("-c, --config <path>", "Path to manni.config.yaml")
   .option("--no-config", "Ignore any discovered config file")
   .option("-g, --graph <path>", "Graph .ttl path (default: config out)")
@@ -437,15 +498,22 @@ program
   )
   .action(
     (opts: {
-      s?: string;
-      p?: string;
-      o?: string;
+      subject?: string;
+      predicate?: string;
+      object?: string;
       config?: string | boolean;
       graph?: string;
       format: GraphFormat;
     }) => {
       try {
-        const result = runQuery({ ...rest(opts), ...documentOptions(opts) });
+        const { subject, predicate, object, ...others } = rest(opts);
+        const result = runQuery({
+          ...others,
+          ...documentOptions(opts),
+          ...(subject === undefined ? {} : { s: subject }),
+          ...(predicate === undefined ? {} : { p: predicate }),
+          ...(object === undefined ? {} : { o: object }),
+        });
         console.log(renderQuery(result, opts.format));
       } catch (e) {
         fail(e);
@@ -588,7 +656,9 @@ program
     "--variant <variant>",
     "Scope filter: product variant IRI, title, or slug",
   )
-  .option("--subject <subject>", "Scope filter: software subject")
+  // Not `--subject`: on `query` that is a triple's subject, and one flag name
+  // means one thing across the domain.
+  .option("--software-subject <subject>", "Scope filter: software subject")
   .option("--lang <tag>", "Scope filter: BCP-47 language tag, matched exactly")
   .option("--limit <n>", "Stop after this many nodes", countOption("--limit"))
   .option(
@@ -608,16 +678,18 @@ program
         reverse?: boolean;
         impact?: boolean;
         variant?: string;
-        subject?: string;
+        softwareSubject?: string;
         lang?: string;
         limit?: number;
         format: GraphFormat;
       },
     ) => {
       try {
+        const { softwareSubject, ...others } = rest(opts);
         const report = runTraverse({
-          ...rest(opts),
+          ...others,
           ...documentOptions(opts),
+          ...(softwareSubject === undefined ? {} : { subject: softwareSubject }),
           node,
           predicates:
             opts.predicates === undefined
@@ -647,8 +719,9 @@ program
     "-o, --out <dir>",
     "Directory for the sidecars (default: the index directory)",
   )
+  // Not `--model`: on `fill` that is the inference model, a different thing.
   .option(
-    "--model <id>",
+    "--embedding-model <id>",
     "Embedding model id (any id; `mock` for offline runs)",
   )
   .option("--dtype <dtype>", "Weight quantization (default q8)")
@@ -665,15 +738,17 @@ program
       graph?: string;
       index?: string;
       out?: string;
-      model?: string;
+      embeddingModel?: string;
       dtype?: string;
       cache?: boolean;
       format: GraphFormat;
     }) => {
       try {
+        const { embeddingModel, ...others } = rest(opts);
         const report = await runEmbed({
-          ...rest(opts),
+          ...others,
           ...documentOptions(opts),
+          ...(embeddingModel === undefined ? {} : { model: embeddingModel }),
           noCache: opts.cache === false,
         });
         console.log(renderEmbed(report, opts.format));

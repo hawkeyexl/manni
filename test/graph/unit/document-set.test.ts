@@ -16,6 +16,7 @@ import {
   parseConfig,
 } from "../../../src/graph/core/config.js";
 import { resolveDocumentSet } from "../../../src/graph/core/discover.js";
+import { STDIN_REQUIRES_AS } from "../../../src/shared/cli-options.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, "..", "fixtures");
@@ -120,14 +121,48 @@ describe("graph document set: the refusals", () => {
     );
   });
 
-  it("refuses stdin: a graph node needs a path", () => {
+  it("refuses stdin without --as", () => {
     const config = defaultConfig(collections);
     expect(() =>
       resolveDocumentSet(config, { paths: ["-"] }, "build", collections),
-    ).toThrow("graph build reads files, not stdin: a graph node needs a path.");
+    ).toThrow(STDIN_REQUIRES_AS);
+  });
+
+  it("refuses an unknown --as, listing the known formats", () => {
+    const config = defaultConfig(collections);
     expect(() =>
-      resolveDocumentSet(config, { paths: ["-"] }, "fill", collections),
-    ).toThrow("graph fill reads files, not stdin: a graph node needs a path.");
+      resolveDocumentSet(config, { paths: ["guides"], as: "rst" }, "build", collections),
+    ).toThrow('Unknown format "rst". Known formats: markdown, mdx.');
+  });
+
+  it("reads `-` alongside named paths, and never falls back to collections", () => {
+    const config = configFor(collections);
+    expect(
+      resolveDocumentSet(config, { paths: ["-"], as: "markdown" }, "build", collections),
+    ).toEqual([]);
+    expect(
+      resolveDocumentSet(
+        config,
+        { paths: ["-", "guides/intro.md"], as: "markdown" },
+        "build",
+        collections,
+      ),
+    ).toEqual(["guides/intro.md"]);
+  });
+
+  it("narrows directory walks to --ext, and keeps a named file", () => {
+    const config = defaultConfig(collections);
+    expect(
+      resolveDocumentSet(config, { paths: ["guides"], ext: [".mdx"] }, "build", collections),
+    ).toEqual([]);
+    expect(
+      resolveDocumentSet(
+        config,
+        { paths: ["guides", "blog/post.md"], ext: ["mdx"] },
+        "build",
+        collections,
+      ),
+    ).toEqual(["blog/post.md"]);
   });
 });
 

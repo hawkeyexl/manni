@@ -71,7 +71,7 @@ Neither is visible from any single file.
 ## 3. Ask a question
 
 ```console
-$ npx @hawkeyexl/manni graph query --p dcterms:subject
+$ npx @hawkeyexl/manni graph query --predicate dcterms:subject
 <https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md> dcterms:subject <https://example.com/dd/concept/reference>
 <https://example.com/dd/doc/test/graph/fixtures/dd/docs/getting-started.md> dcterms:subject <https://example.com/dd/concept/onboarding>
 
@@ -79,7 +79,7 @@ $ npx @hawkeyexl/manni graph query --p dcterms:subject
 ```
 
 Omit a term and it is a wildcard, so that reads "everything the corpus says
-about subject". `--s` and `--o` narrow the other two positions.
+about subject". `--subject` and `--object` narrow the other two positions.
 
 ## 4. Check the graph
 
@@ -161,7 +161,7 @@ else.
 
 {/* step {"description":"stats alone exits 0 even with findings in the report.","runShell":{"command":"manni graph stats -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
 
-{/* step {"description":"A wildcard query lists what the corpus says about a predicate.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --p dcterms:subject","exitCodes":[0],"stdio":"2 match(es)"}} */}
+{/* step {"description":"A wildcard query lists what the corpus says about a predicate.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --predicate dcterms:subject","exitCodes":[0],"stdio":"2 match(es)"}} */}
 
 {/* step {"description":"check finds the collision that exists in neither file.","runShell":{"command":"manni graph check -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"concept carries multiple prefLabels"}} */}
 

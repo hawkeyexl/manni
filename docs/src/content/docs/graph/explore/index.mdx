@@ -67,7 +67,7 @@ Coverage is the second half of `stats`, and it has a page of its own:
 What subjects does the corpus assign?
 
 ```console
-$ manni graph query --p dcterms:subject
+$ manni graph query --predicate dcterms:subject
 <https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md> dcterms:subject <https://example.com/dd/concept/reference>
 <https://example.com/dd/doc/test/graph/fixtures/dd/docs/getting-started.md> dcterms:subject <https://example.com/dd/concept/onboarding>
 
@@ -77,7 +77,7 @@ $ manni graph query --p dcterms:subject
 What does the graph know about one concept?
 
 ```console
-$ manni graph query --s https://example.com/dd/concept/installation
+$ manni graph query --subject https://example.com/dd/concept/installation
 <https://example.com/dd/concept/installation> rdf:type <http://www.w3.org/2004/02/skos/core#Concept>
 <https://example.com/dd/concept/installation> skos:inScheme <https://example.com/dd/scheme>
 <https://example.com/dd/concept/installation> skos:prefLabel "Installation"
@@ -92,14 +92,14 @@ spellings, seen from the other side.
 Which node carries a literal?
 
 ```console
-$ manni graph query --o "Configuration"
+$ manni graph query --object "Configuration"
 <https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md> dcterms:title "Configuration"
 <https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md#configuration> dcterms:title "Configuration"
 
 2 match(es)
 ```
 
-A term can be a full IRI, a `prefix:local` CURIE, or, for `--o`, a literal
+A term can be a full IRI, a `prefix:local` CURIE, or, for `--object`, a literal
 value. No match is `No matches.` and exit `0`: a question with no answer has
 not failed.
 
@@ -135,7 +135,7 @@ own, because it is a different question from the four above:
 
 **Ask before you assume.** "Does anything link to the old upgrade guide?" is a
 `--reverse` walk, not an afternoon. "Which pages claim to be about the CLI?" is
-a `--p dcterms:subject` query.
+a `--predicate dcterms:subject` query.
 
 **Put the answers in CI.** `stats --check` and `graph check` turn today's ad-hoc
 question into tomorrow's gate. See [Run it in CI](/manni/graph/ci/).
@@ -148,13 +148,13 @@ question into tomorrow's gate. See [Run it in CI](/manni/graph/ci/).
 
 {/* step {"description":"--top limits the hub list.","runShell":{"command":"manni graph stats -c test/graph/fixtures/dd/docs.config.yaml --top 1","exitCodes":[0],"stdio":"Most connected:"}} */}
 
-{/* step {"description":"A predicate pattern lists what the corpus says.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --p dcterms:subject","exitCodes":[0],"stdio":"2 match(es)"}} */}
+{/* step {"description":"A predicate pattern lists what the corpus says.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --predicate dcterms:subject","exitCodes":[0],"stdio":"2 match(es)"}} */}
 
-{/* step {"description":"A subject pattern shows everything known about one node.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --s https://example.com/dd/concept/installation","exitCodes":[0],"stdio":"4 match(es)"}} */}
+{/* step {"description":"A subject pattern shows everything known about one node.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --subject https://example.com/dd/concept/installation","exitCodes":[0],"stdio":"4 match(es)"}} */}
 
-{/* step {"description":"An object pattern matches a literal.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --o Configuration","exitCodes":[0],"stdio":"2 match(es)"}} */}
+{/* step {"description":"An object pattern matches a literal.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --object Configuration","exitCodes":[0],"stdio":"2 match(es)"}} */}
 
-{/* step {"description":"No match is exit 0, not a finding.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --p skos:notation","exitCodes":[0],"stdio":"No matches."}} */}
+{/* step {"description":"No match is exit 0, not a finding.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --predicate skos:notation","exitCodes":[0],"stdio":"No matches."}} */}
 
 {/* step {"description":"search reads the exported index and reports its mode.","runShell":{"command":"manni graph export search -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
 

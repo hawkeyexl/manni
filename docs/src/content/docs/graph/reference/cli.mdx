@@ -27,7 +27,12 @@ none given they read every
 [collection](/manni/meta/reference/configuration/#collections) the config
 declares, or the ones `--collection` names. A collection's `paths` resolve from
 the config file's directory, wherever the command runs. Nothing matching is
-**exit 2**, not an empty successful build.
+**exit 2**, not an empty successful build, unless `--allow-empty` is given.
+
+`-` reads one more document from stdin, alongside any named paths and never
+instead of them. It needs `--as`, because stdin has no file name to choose a
+parser by. Its display path is `<stdin>`, its node is `<baseIri>stdin`, and its
+relative links resolve from the working directory. It has no git history.
 
 The other verbs read the **built graph** rather than the documents: `check`,
 `query`, `stats`, `search`, `traverse`, `embed` and `export` all load the
@@ -39,6 +44,9 @@ Turtle file at `graph.out`, or the one `-g` names. Build first, then ask.
 | `--no-config` | same as above | Ignore any discovered config file and run on built-in defaults. It shares one option with `-c`, so the one written later wins. |
 | `--collection <name>` | `build`, `fill` | Read only this configured collection. Repeatable, one name per occurrence, never comma-separated. It cannot be combined with positional paths, and it needs a config file to select from. Each of those is **exit 2**. |
 | `--exclude <glob>` | same as above | Glob to exclude. Repeatable, one glob per occurrence. |
+| `--as <format>` | same as above | Parse every input as `markdown` or `mdx`, whatever its extension. Required with `-`. Another value is **exit 2**. |
+| `--ext <list>` | same as above | Extensions a directory walk or a glob keeps, comma-separated and given once. A file named outright is kept whatever this says. |
+| `--allow-empty` | same as above | Treat zero matched files as success. |
 | `-g, --graph <path>` | the graph readers | The built Turtle file. Defaults to the resolved `graph.out`. |
 | `-f, --format <format>` | every verb that reports | `pretty` or `json`; `check` adds `github`. An unknown value is refused while the options are parsed. A typo therefore costs a message rather than a graph load: **exit 2**, with the allowed set named. |
 
@@ -47,8 +55,8 @@ the resolved `graph:` value, so a config file and the command line reach the sam
 code.
 
 One separator per list. A positional variadic is space-separated because argv
-is. `--fields` and `--predicates` are written `<list>`, comma-separated and
-given once. `--collection`, `--exclude` and `--shapes` are repeatable and never
+is. `--ext`, `--fields` and `--predicates` are written `<list>`, comma-separated
+and given once. `--collection`, `--exclude` and `--shapes` are repeatable and never
 split on commas, because a path or a name may hold one.
 
 Each command's table below lists every flag it accepts, the shared ones
@@ -104,6 +112,13 @@ $ manni graph build -c test/graph/fixtures/dd/docs.config.yaml
 Wrote .tmp/dd/graph.ttl (3 docs, 131 triples)
 ```
 
+A page piped in with `-` joins the graph beside the named paths:
+
+```console
+$ cat draft.md | manni graph build - docs/ --as markdown
+Wrote graph/graph.ttl (4 docs, 152 triples)
+```
+
 Warnings go to stderr, so stdout stays the one-line summary. A degraded build
 is still a successful one. A repository git cannot read warns once and builds
 the rest. A near-miss frontmatter key warns and derives nothing. Neither
@@ -113,7 +128,7 @@ changes the exit code.
 
 | Argument | Description |
 |---|---|
-| `[paths...]` | Files, directories, or globs to build from, relative to the working directory. Optional; without them, the configured collections. |
+| `[paths...]` | Files, directories, or globs to build from, relative to the working directory. `-` reads stdin as well. Optional; without them, the configured collections. |
 
 ### Options
 
@@ -123,6 +138,9 @@ changes the exit code.
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `--as` | `<format>` | by extension | Parse every input as `markdown` or `mdx`. Required with `-`. |
+| `--ext` | `<list>` | `.md,.mdx` | Extensions for directory walks and globs, comma-separated. |
+| `--allow-empty` | n/a | off | Zero matched files writes an empty graph and exits 0. |
 | `-o, --out` | `<path>` | config `out`, else `graph/graph.ttl` | Where to write the Turtle. The directory is created if it does not exist. |
 
 ## `graph check`
@@ -203,6 +221,9 @@ re-running at a different `--confidence` spends no turns. A turn is one
 inference call, one page is one turn, and a cached page costs none. A page the
 budget stopped at is reported `skipped` with the reason `turn budget`.
 
+With `-`, the page from stdin is filled in memory and printed to stdout, as
+`meta fill -` does. The report goes to stderr in either format.
+
 Every written value is recorded in the page's `meta-provenance`, naming the
 model and the fields. See
 [Fill the vocabulary](/manni/graph/fill/).
@@ -211,7 +232,7 @@ model and the fields. See
 
 | Argument | Description |
 |---|---|
-| `[paths...]` | Files, directories, or globs to fill, relative to the working directory. Optional; without them, the configured collections. |
+| `[paths...]` | Files, directories, or globs to fill, relative to the working directory. `-` reads stdin as well. Optional; without them, the configured collections. |
 
 ### Options
 
@@ -221,6 +242,9 @@ model and the fields. See
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
+| `--as` | `<format>` | by extension | Parse every input as `markdown` or `mdx`. Required with `-`. |
+| `--ext` | `<list>` | `.md,.mdx` | Extensions for directory walks and globs, comma-separated. |
+| `--allow-empty` | n/a | off | Zero matched files is an empty report and exit 0. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 | `--dry-run` | n/a | off | Report proposals without writing files. |
 | `--force` | n/a | off | Overwrite `graph` fields a human set. Without it, a field already present on the page is left alone. |
@@ -244,24 +268,25 @@ manni graph query [options]
 ```
 
 ```console
-$ manni graph query -c test/graph/fixtures/dd/docs.config.yaml --p dcterms:subject
+$ manni graph query -c test/graph/fixtures/dd/docs.config.yaml --predicate dcterms:subject
 <https://example.com/dd/doc/test/graph/fixtures/dd/docs/configuration.md> dcterms:subject <https://example.com/dd/concept/reference>
 <https://example.com/dd/doc/test/graph/fixtures/dd/docs/getting-started.md> dcterms:subject <https://example.com/dd/concept/onboarding>
 
 2 match(es)
 ```
 
-The three pattern flags are long-only on purpose. `-o` is `--out` on every
-other verb, and `-s` is the metadata tool's schema flag. One letter meaning two
-things across one family costs more than three characters do.
+The three pattern flags are long-only and named for the triple position each
+one fills. `-o` is `--out` on every other verb, and `-s` is the metadata tool's
+schema flag. One letter meaning two things across one family costs more than
+the letters it saves.
 
 ### Options
 
 | Option | Argument | Default | Description |
 |---|---|---|---|
-| `--s` | `<term>` | wildcard | Subject: a full IRI or a `prefix:local` name. |
-| `--p` | `<term>` | wildcard | Predicate: a full IRI or a `prefix:local` name. |
-| `--o` | `<term>` | wildcard | Object: a full IRI, a `prefix:local` name, or a literal value. |
+| `--subject` | `<term>` | wildcard | Subject: a full IRI or a `prefix:local` name. |
+| `--predicate` | `<term>` | wildcard | Predicate: a full IRI or a `prefix:local` name. |
+| `--object` | `<term>` | wildcard | Object: a full IRI, a `prefix:local` name, or a literal value. |
 | `-c, --config` | `<path>` | discovered | Path to `manni.config.yaml`. |
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file to read. |
@@ -385,7 +410,7 @@ $ manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml \
 | `--reverse` | n/a | off | Follow inbound edges: who points at this node. |
 | `--impact` | n/a | off | Transitive inbound reach: what a change here affects. |
 | `--variant` | `<variant>` | no filter | Scope filter: a product variant IRI, title, or slug. |
-| `--subject` | `<subject>` | no filter | Scope filter: a software subject. |
+| `--software-subject` | `<subject>` | no filter | Scope filter: a software subject. An unknown one is **exit 2**. |
 | `--lang` | `<tag>` | no filter | Scope filter: a BCP-47 language tag, matched exactly. |
 | `--limit` | `<n>` | unbounded | Stop after this many nodes. A whole number, at least 1. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
@@ -393,7 +418,7 @@ $ manni graph traverse -c test/graph/fixtures/dd/docs.config.yaml \
 ## `graph embed`
 
 Computes local embeddings for the search index, one sidecar per language. It
-needs the optional `@huggingface/transformers` peer; `--model mock` runs
+needs the optional `@huggingface/transformers` peer; `--embedding-model mock` runs
 offline and is what regenerates the committed fixtures.
 
 ```sh
@@ -409,7 +434,7 @@ manni graph embed [options]
 | `-g, --graph` | `<path>` | config `out` | The built Turtle file the index sits beside. |
 | `-i, --index` | `<dir>` | beside the graph | Directory holding the indexes and the manifest. |
 | `-o, --out` | `<dir>` | config `embed.out`, else the index directory | Directory for the sidecars. |
-| `--model` | `<id>` | config `embed.model` | Embedding model id. Any id is accepted, because the documented table is the tested set rather than the permitted one. `mock` runs offline. |
+| `--embedding-model` | `<id>` | config `embed.model` | Embedding model id. Any id is accepted, because the documented table is the tested set rather than the permitted one. `mock` runs offline. |
 | `--dtype` | `<dtype>` | config `embed.dtype`, else `q8` | Weight quantization. |
 | `--no-cache` | n/a | off | Ignore the vector cache. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
@@ -472,9 +497,9 @@ An unknown target is **exit 2**, with the allowed set named.
 
 {/* step {"description":"No input files matched is operational, not an empty successful build.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/nomatch.config.yaml","exitCodes":[2],"stdio":"No input files matched"}} */}
 
-{/* step {"description":"query matches a predicate pattern against the built graph.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --p dcterms:subject","exitCodes":[0],"stdio":"2 match(es)"}} */}
+{/* step {"description":"query matches a predicate pattern against the built graph.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --predicate dcterms:subject","exitCodes":[0],"stdio":"2 match(es)"}} */}
 
-{/* step {"description":"A pattern nothing matches is exit 0, not a finding.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --p skos:notation","exitCodes":[0],"stdio":"No matches."}} */}
+{/* step {"description":"A pattern nothing matches is exit 0, not a finding.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --predicate skos:notation","exitCodes":[0],"stdio":"No matches."}} */}
 
 {/* step {"description":"stats reports the orphan and the broken link this corpus carries.","runShell":{"command":"manni graph stats -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Orphan docs \\(1\\)[\\s\\S]*Broken internal links \\(1\\)/"}} */}
 

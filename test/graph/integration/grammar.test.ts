@@ -144,7 +144,7 @@ describe("graph -f is the output format, and it is checked", () => {
   it("still takes json", () => {
     const { status, stdout } = run([
       "query",
-      "--p",
+      "--predicate",
       "dcterms:title",
       "-g",
       graph,
@@ -242,10 +242,10 @@ describe("graph search --mode is checked", () => {
 });
 
 describe("graph query's terms are long-only", () => {
-  it("takes --o as the object term", () => {
+  it("takes --object as the object term", () => {
     const { status, stdout, stderr } = run([
       "query",
-      "--o",
+      "--object",
       "no-such-object",
       "-g",
       graph,

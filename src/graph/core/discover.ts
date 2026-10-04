@@ -13,8 +13,10 @@
 import { statSync } from "node:fs";
 import { extname, relative, resolve } from "node:path";
 import fg from "fast-glob";
+import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 import { selectCollections } from "../../shared/collections.js";
 import { GraphError } from "../types.js";
+import { DOC_FORMATS, type DocFormat } from "./analyze.js";
 import {
   assertCollectionWithoutPaths,
   DEFAULT_CONFIG_FILENAME,
@@ -47,15 +49,43 @@ export function discoverFiles(
 const FAMILY_EXCLUDE = ["**/node_modules/**", "**/.git/**"];
 
 /**
- * What graph can read. `analyzeDoc` parses markdown, and MDX when the path says
- * so; nothing else is a document.
- *
- * The filter matters because a positional path may now be a *directory*, which
- * expands to everything beneath it. Without it, `manni graph build docs` would
- * mint a graph node for every image and data file in the tree — and a node's
- * IRI is the part of the output a consumer stores.
+ * What graph can read. `analyzeDoc` parses markdown, and MDX when the path or
+ * `--as` says so; nothing else is a document. A file named on the command line
+ * is kept when its extension is one of these, or when `--as` names its format.
  */
 const SUPPORTED_EXTENSIONS = new Set([".md", ".markdown", ".mdx"]);
+
+/**
+ * What a directory walk or a glob keeps when `--ext` is not given. The filter
+ * matters because a positional path may be a *directory*, which expands to
+ * everything beneath it. Without it, `manni graph build docs` would mint a
+ * graph node for every image and data file in the tree, and a node's IRI is
+ * the part of the output a consumer stores.
+ */
+export const DEFAULT_EXTENSIONS = [".md", ".mdx"];
+
+/** The positional that reads stdin. One more input, never instead of the rest. */
+export const STDIN = "-";
+
+/**
+ * Hold `--as` to the formats graph parses, and require it with `-`: stdin has
+ * no file name to choose a parser by. Returns the format, or undefined when
+ * none was forced.
+ */
+export function assertInputFormat(
+  paths: readonly string[],
+  as: string | undefined,
+): DocFormat | undefined {
+  if (as !== undefined && !(DOC_FORMATS as readonly string[]).includes(as)) {
+    throw new GraphError(
+      `Unknown format "${as}". Known formats: ${DOC_FORMATS.join(", ")}.`,
+    );
+  }
+  if (paths.includes(STDIN) && as === undefined) {
+    throw new GraphError(STDIN_REQUIRES_AS);
+  }
+  return as as DocFormat | undefined;
+}
 
 /** The word the empty-input message uses for what the command would do. */
 export type DocumentVerb = "build" | "fill";
@@ -74,6 +104,13 @@ export interface DocumentSetOptions {
   collection?: string[];
   /** `--exclude <glob>`, repeatable. Applies to paths and collections alike. */
   exclude?: string[];
+  /**
+   * `--ext <list>`: what a directory walk or a glob keeps. Absent means
+   * `.md,.mdx`. A file named outright is never filtered by it.
+   */
+  ext?: string[];
+  /** `--as <format>`: parse every input as this format. Required with `-`. */
+  as?: string;
 }
 
 /**
@@ -88,34 +125,58 @@ export interface DocumentInputOptions extends DocumentSetOptions {
 }
 
 /**
- * One input as fast-glob patterns: a glob as written, an existing file as its
- * escaped literal, and an existing directory as everything beneath it. Only
- * the glob is left for fast-glob to interpret, so a literal path with `(` or
- * `[` in its name still means itself.
+ * Every file `inputs` match beneath `base`, as absolute paths, split by how
+ * they were reached. A file named outright is `named`. A directory expands to
+ * everything beneath it, and a glob is left for fast-glob to interpret; both
+ * land in `walked`, the half `--ext` filters. A literal path with `(` or `[`
+ * in its name still means itself, because only the glob is a pattern.
  */
-function toPatterns(input: string, base: string): string[] {
-  if (fg.isDynamicPattern(input)) return [input.replace(/\\/g, "/")];
-  let isDirectory: boolean;
-  try {
-    isDirectory = statSync(resolve(base, input)).isDirectory();
-  } catch {
-    // Missing: kept as written, so it matches nothing and the caller's
-    // empty-match error names it.
-    return [input.replace(/\\/g, "/")];
-  }
-  const literal = fg.convertPathToPattern(input);
-  return [isDirectory ? `${literal.replace(/\/$/, "")}/**/*` : literal];
-}
-
-/** Every file `patterns` match beneath `base`, as absolute paths. */
-function globAbsolute(
-  patterns: string[],
+function expandInputs(
+  inputs: string[],
   base: string,
   ignore: string[],
-): string[] {
-  return fg.sync(
-    patterns.flatMap((p) => toPatterns(p, base)),
-    { cwd: base, ignore, absolute: true, dot: false, onlyFiles: true },
+): { named: string[]; walked: string[] } {
+  const named: string[] = [];
+  const patterns: string[] = [];
+  for (const input of inputs) {
+    if (fg.isDynamicPattern(input)) {
+      patterns.push(input.replace(/\\/g, "/"));
+      continue;
+    }
+    let isDirectory: boolean;
+    try {
+      isDirectory = statSync(resolve(base, input)).isDirectory();
+    } catch {
+      // Missing: kept as written, so it matches nothing and the caller's
+      // empty-match error names it.
+      patterns.push(input.replace(/\\/g, "/"));
+      continue;
+    }
+    const literal = fg.convertPathToPattern(input);
+    if (isDirectory) patterns.push(`${literal.replace(/\/$/, "")}/**/*`);
+    else named.push(...glob([literal], base, ignore));
+  }
+  return { named, walked: glob(patterns, base, ignore) };
+}
+
+function glob(patterns: string[], base: string, ignore: string[]): string[] {
+  if (patterns.length === 0) return [];
+  return fg.sync(patterns, {
+    cwd: base,
+    ignore,
+    absolute: true,
+    dot: false,
+    onlyFiles: true,
+  });
+}
+
+/** `--ext` values as lower-case extensions with their dot. */
+function normalizeExtensions(exts: readonly string[]): Set<string> {
+  return new Set(
+    exts.map((e) => {
+      const lower = e.toLowerCase();
+      return lower.startsWith(".") ? lower : `.${lower}`;
+    }),
   );
 }
 
@@ -126,6 +187,10 @@ function globAbsolute(
  * narrowed by its own `exclude:`. The family-wide exclusions and `--exclude`
  * apply to both. Labels stay relative to `cwd` either way, because a graph
  * node's IRI is derived from the path the build was asked about.
+ *
+ * `-` is not a file, so it is left out of what this returns: the caller reads
+ * stdin itself. It still counts as a positional path, so a run given only `-`
+ * reads stdin alone and never falls back to the collections.
  */
 export function resolveDocumentSet(
   config: GraphConfig,
@@ -136,14 +201,7 @@ export function resolveDocumentSet(
   const paths = options.paths ?? [];
   const wanted = options.collection ?? [];
   assertCollectionWithoutPaths(wanted, paths);
-  // A graph node's IRI is derived from the file's path, so there is nothing to
-  // call a document that arrived on stdin. Refused by name rather than read as
-  // a file called "-", which would be a confusing miss.
-  if (paths.includes("-")) {
-    throw new GraphError(
-      `graph ${verb} reads files, not stdin: a graph node needs a path.`,
-    );
-  }
+  const format = assertInputFormat(paths, options.as);
   if (wanted.length > 0 && config.configSource === null) {
     throw new GraphError("--collection needs a config file to select from.");
   }
@@ -155,9 +213,14 @@ export function resolveDocumentSet(
   );
 
   const exclude = [...FAMILY_EXCLUDE, ...(options.exclude ?? [])];
-  let entries: string[];
+  let named: string[] = [];
+  let walked: string[];
   if (paths.length > 0) {
-    entries = globAbsolute(paths, cwd, exclude);
+    ({ named, walked } = expandInputs(
+      paths.filter((p) => p !== STDIN),
+      cwd,
+      exclude,
+    ));
   } else {
     // A collection's `exclude:` shapes that collection only, so each is walked
     // with its own and the results are joined.
@@ -167,16 +230,24 @@ export function resolveDocumentSet(
         `No files to ${verb}. Pass paths/globs, or declare a collection under \`collections:\` in manni.config.yaml.`,
       );
     }
-    entries = collections.flatMap((c) =>
-      globAbsolute(c.paths, config.configDir, [...exclude, ...c.exclude]),
-    );
+    walked = collections.flatMap((c) => {
+      const found = expandInputs(c.paths, config.configDir, [
+        ...exclude,
+        ...c.exclude,
+      ]);
+      return [...found.named, ...found.walked];
+    });
   }
 
+  const exts = normalizeExtensions(options.ext ?? DEFAULT_EXTENSIONS);
+  const keepNamed = (p: string): boolean =>
+    format !== undefined || SUPPORTED_EXTENSIONS.has(extname(p).toLowerCase());
+  const keepWalked = (p: string): boolean => exts.has(extname(p).toLowerCase());
   return [
     ...new Set(
-      entries
-        .filter((p) => SUPPORTED_EXTENSIONS.has(extname(p).toLowerCase()))
-        .map((p) => relative(cwd, p).replace(/\\/g, "/")),
+      [...named.filter(keepNamed), ...walked.filter(keepWalked)].map((p) =>
+        relative(cwd, p).replace(/\\/g, "/"),
+      ),
     ),
   ].sort(byCodeUnit);
 }

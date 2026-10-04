@@ -1,7 +1,7 @@
 /**
  * `manni graph query` — triple-pattern matching over the built graph. Any of
  * s/p/o may be omitted (wildcard). Prefixed names (`dcterms:references`)
- * and full IRIs are accepted; `--o` also matches literal values verbatim.
+ * and full IRIs are accepted; `--object` also matches literal values verbatim.
  */
 import { resolve } from "node:path";
 import { DataFactory } from "n3";

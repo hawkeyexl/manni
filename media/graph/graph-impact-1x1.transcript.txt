@@ -24,7 +24,7 @@ Highlighted rows: lines containing "harvest.md", "3 nodes"
 Caption: harvest.md is reached through windows-notes.md. Two hops out, where grep never looked.
 
 [0:20-0:32] Title: The build fails on it (3 / 3)
-$ manni graph query --p graph:brokenLink
+$ manni graph query --predicate graph:brokenLink
 <https://acme.dev/doc/docs/de/regional.md> graph:brokenLink "../missing.md"
 <https://acme.dev/doc/docs/no-frontmatter.md> graph:brokenLink "missing.md"
 

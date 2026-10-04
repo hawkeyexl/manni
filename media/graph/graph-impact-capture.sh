@@ -67,7 +67,7 @@ run build "${T[@]}" graph build docs/
 run traverse "${T[@]}" graph traverse "$IRI" --predicates dcterms:references --impact -d 2
 
 # Beat 3 — the same graph answers "what is broken", and gates CI on it.
-run query "${T[@]}" graph query --p graph:brokenLink
+run query "${T[@]}" graph query --predicate graph:brokenLink
 a=$(ms); "${T[@]}" graph stats --check > /dev/null 2>&1 && rc=0 || rc=$?; b=$(ms)
 echo "$rc" > "$C/stats-check.exit"
 echo "stats-check ${rc} $((b - a))ms" >> "$C/latency.txt"
@@ -76,7 +76,7 @@ echo "stats-check ${rc} $((b - a))ms" >> "$C/latency.txt"
 for i in 1 2 3; do
   a=$(ms); "${T[@]}" graph build docs/ > /dev/null 2>&1; b=$(ms)
   "${T[@]}" graph traverse "$IRI" --predicates dcterms:references --impact -d 2 > /dev/null 2>&1; c=$(ms)
-  "${T[@]}" graph query --p graph:brokenLink > /dev/null 2>&1; d=$(ms)
+  "${T[@]}" graph query --predicate graph:brokenLink > /dev/null 2>&1; d=$(ms)
   "${T[@]}" graph stats --check > /dev/null 2>&1 || true; e=$(ms)
   grep -rl configuration.md docs/ > /dev/null 2>&1; f=$(ms)
   echo "timing$i build $((b - a))ms traverse $((c - b))ms query $((d - c))ms stats $((e - d))ms grep $((f - e))ms" >> "$C/latency.txt"

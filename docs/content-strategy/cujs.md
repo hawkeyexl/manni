@@ -142,7 +142,7 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 **Outcome.** Maya has a graph of her docset and can ask it questions prose cannot answer. Which pages nothing links to, which concepts have no page, which page owns a term.
 
-**Steps.** She runs `manni graph build` over a collection she already declared for `meta validate`, and gets one Turtle file plus a count of documents and triples. `manni graph stats` tells her how much of the vocabulary the corpus actually fills, per field, and `--check` turns a coverage floor into an exit code. `manni graph query --p dcterms:subject` lists what the corpus says about a predicate, and `manni graph search` finds pages by words or, once she has run `manni graph embed`, by meaning. Nothing is inferred from prose: a triple exists because frontmatter, a link, a heading or a code block put it there.
+**Steps.** She runs `manni graph build` over a collection she already declared for `meta validate`, and gets one Turtle file plus a count of documents and triples. `manni graph stats` tells her how much of the vocabulary the corpus actually fills, per field, and `--check` turns a coverage floor into an exit code. `manni graph query --predicate dcterms:subject` lists what the corpus says about a predicate, and `manni graph search` finds pages by words or, once she has run `manni graph embed`, by meaning. Nothing is inferred from prose: a triple exists because frontmatter, a link, a heading or a code block put it there.
 
 **What success looks like.** A question that used to mean reading forty pages is a one-line command. The answer is the same on her machine and in CI.
 

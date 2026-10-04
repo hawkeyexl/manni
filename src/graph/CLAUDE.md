@@ -143,7 +143,7 @@ triple counts asserted across the build, query, stats and runtime suites.
 
 All of them regenerate from the built CLI: `manni graph build`, then
 `manni graph export search` for the indexes and the manifest, then
-`manni graph embed --model mock --no-cache` for the sidecars and the manifest's
+`manni graph embed --embedding-model mock --no-cache` for the sidecars and the manifest's
 `vectors` blocks. The mock embedder is why the optional
 `@huggingface/transformers` peer is not needed to regenerate them. Update a
 golden only deliberately, and read the diff line by line first. Golden
@@ -192,6 +192,12 @@ Corpus-defining settings such as routes and derive sources may be config-only.
   it, and the source word stays in `shaclSeverity`, the way a11y keeps axe's
   `impact`. Findings are built through `finding()` in `src/graph/core/shacl.ts` so
   the translation happens in one place and no caller re-derives it.
+- **`-` reads one more page from stdin**, beside the named paths and never
+  instead of them, and `--as` is required with it. Its display path is
+  `<stdin>` (`STDIN_PATH` in `src/graph/core/iri.ts`) and its node is
+  `{baseIri}stdin`. Its links resolve from the working directory. git has no
+  history for it, and no second warning says so. `fill -` never writes a
+  file: the page comes back as `stdinDocument` and the CLI prints it.
 - **Git is detected, never declared.** History is used wherever git can run over
   a repository, and a run that finds neither warns once through `warn()` and
   builds the rest. The warning carries git's own reason, because detection took

@@ -63,7 +63,7 @@ exports.beats = [
         highlight: ["missing.md", "1"],
         commands: [
             {
-                typed: "manni graph query --p graph:brokenLink",
+                typed: "manni graph query --predicate graph:brokenLink",
                 output: captures_json_1.default.query,
                 latencyFrames: exports.latency.query,
                 holdFrames: 3.2 * beats_1.FPS,

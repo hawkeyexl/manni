@@ -12,10 +12,13 @@ import { analyzeDoc } from "../core/analyze.js";
 import { loadRunConfig, type FillField } from "../core/config.js";
 import type { DocModel } from "../types.js";
 import {
+  assertInputFormat,
   documentSetPatterns,
   resolveDocumentSet,
+  STDIN,
   type DocumentInputOptions,
 } from "../core/discover.js";
+import { STDIN_PATH } from "../core/iri.js";
 import {
   applyGraphFields,
   existingGraphFields,
@@ -74,6 +77,14 @@ export interface FillOptions extends DocumentInputOptions {
   sections?: boolean;
   /** Injection seam for tests: bypasses the provider factory. */
   providerInstance?: InferenceProvider;
+  /**
+   * What `-` reads: the document from stdin, read by the caller. Required when
+   * `paths` holds `-`. It is never written to disk: the report's
+   * `stdinDocument` carries it back, filled or as it came.
+   */
+  stdinContent?: string;
+  /** `--allow-empty`: zero matched files is an empty report, not an error. */
+  allowEmpty?: boolean;
 }
 
 export type FillStatus =
@@ -131,6 +142,13 @@ export interface FillReport {
   /** Non-fatal diagnostics. Never affects the exit code. */
   warnings: string[];
   exitCode: 0 | 1;
+  /**
+   * The document read from stdin, with the accepted fields written into it,
+   * or unchanged when nothing was written. Absent when the run read no stdin
+   * or the page errored. The CLI prints it to stdout; it is not part of the
+   * rendered report.
+   */
+  stdinDocument?: string;
 }
 
 /** SKOS relation fields that require a `label` to attach to. */
@@ -212,12 +230,31 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   const selection = selectProvider(config, flags);
   assertProviderSelection(selection);
 
+  const format = assertInputFormat(opts.paths ?? [], opts.as);
   const files = resolveDocumentSet(config, opts, "fill", cwd);
-  if (files.length === 0) {
+  const usingStdin = (opts.paths ?? []).includes(STDIN);
+  if (files.length === 0 && !usingStdin) {
+    if (opts.allowEmpty) {
+      return {
+        results: [],
+        turnsUsed: 0,
+        maxTurns: opts.maxTurns ?? config.fill.maxTurns,
+        warnings: [],
+        exitCode: 0,
+      };
+    }
     throw new GraphError(
       `No input files matched: ${documentSetPatterns(config, opts).join(", ")} (cwd: ${cwd})`,
     );
   }
+  if (usingStdin && opts.stdinContent === undefined) {
+    throw new GraphError("graph fill was given `-` but no stdin content.");
+  }
+  const stdinContent = usingStdin ? opts.stdinContent : undefined;
+  const analyzeOptions = {
+    routes: config.routes,
+    ...(format === undefined ? {} : { format }),
+  };
 
   // Identity (for cache keys) is resolvable without constructing the provider;
   // construction — which may demand an API key — is deferred to the first
@@ -289,7 +326,9 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
    */
   const sectionsUnrecorded: string[] = [];
 
-  const allPaths = new Set(files);
+  const allPaths = new Set(
+    stdinContent === undefined ? files : [...files, STDIN_PATH],
+  );
   const results: FillDocResult[] = [];
   let turnsUsed = 0;
 
@@ -311,6 +350,10 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       ...files,
     ]),
   ];
+  // The stdin page joins the guard's corpus from memory: it has no file.
+  const inline = new Map<string, string>(
+    stdinContent === undefined ? [] : [[STDIN_PATH, stdinContent]],
+  );
   const guard =
     !opts.noValidateGraph && config.fill.validateGraph
       ? FillGuard.create(
@@ -319,6 +362,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
           config,
           shapesPaths,
           opts.force ?? false,
+          { inline, ...(format === undefined ? {} : { format }) },
         )
       : undefined;
 
@@ -348,6 +392,27 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     }
   }
 
+  // The stdin page is filled last, after the named files, and never written:
+  // what would have gone to disk comes back as `stdinDocument`.
+  let stdinDocument: string | undefined;
+  if (stdinContent !== undefined) {
+    try {
+      const result = await fillOne(STDIN_PATH, undefined, stdinContent);
+      results.push(result);
+      stdinDocument = result.filledContent ?? stdinContent;
+      Reflect.deleteProperty(result, "filledContent");
+    } catch (e) {
+      results.push({
+        path: STDIN_PATH,
+        status: "error",
+        fields: [],
+        preserved: [],
+        cached: false,
+        error: errorMessage(e),
+      });
+    }
+  }
+
   if (sectionsUnrecorded.length > 0) {
     warnings.push(
       "Section metadata was written but is NOT recorded in meta-provenance: /graph/sections is " +
@@ -364,13 +429,19 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     maxTurns,
     warnings,
     exitCode: hasErrors ? 1 : 0,
+    ...(stdinDocument === undefined ? {} : { stdinDocument }),
   };
 
+  /**
+   * Fill one page. `absPath` is where an accepted result is written; a page
+   * read from stdin has none, and its result carries the filled text back in
+   * `filledContent` instead.
+   */
   async function fillOne(
     path: string,
-    absPath: string,
+    absPath: string | undefined,
     content: string,
-  ): Promise<FillDocResult> {
+  ): Promise<FillDocResult & { filledContent?: string }> {
     if (frontmatterKind(content) === "unsupported") {
       throw new GraphError(
         "only YAML frontmatter can be edited (found a TOML/JSON fence) — exclude this file or convert its frontmatter",
@@ -412,9 +483,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // the cache should not pay for a full markdown parse it never reads.
     let docModel: DocModel | undefined;
     const doc = (): DocModel =>
-      (docModel ??= analyzeDoc(content, path, allPaths, {
-        routes: config.routes,
-      }));
+      (docModel ??= analyzeDoc(content, path, allPaths, analyzeOptions));
 
     if (proposal === undefined) {
       // The budget is claimed here rather than at the top of the page, so a
@@ -664,7 +733,9 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       };
     }
 
-    if (!opts.dryRun) writeFileSync(absPath, applied.content, "utf8");
+    if (!opts.dryRun && absPath !== undefined) {
+      writeFileSync(absPath, applied.content, "utf8");
+    }
     // Fold the accepted result into the guard even on --dry-run, so the dry
     // run predicts exactly what a real run would accept and reject.
     guard?.commit(path, applied.content);
@@ -677,6 +748,9 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       ...(unknownSlugs.length > 0 ? { unknownSections: unknownSlugs } : {}),
       ...lowConf,
       cached,
+      ...(absPath === undefined && !opts.dryRun
+        ? { filledContent: applied.content }
+        : {}),
     };
   }
 }
@@ -685,7 +759,10 @@ export function renderFill(
   report: FillReport,
   format: "pretty" | "json",
 ): string {
-  if (format === "json") return JSON.stringify(report, null, 2);
+  if (format === "json") {
+    // The stdin document is output of its own, never part of the report.
+    return JSON.stringify({ ...report, stdinDocument: undefined }, null, 2);
+  }
   const lines: string[] = [];
   for (const r of report.results) {
     const dropped =

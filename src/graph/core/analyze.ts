@@ -25,9 +25,18 @@ import {
 } from "./config.js";
 import { normalizeDocPath } from "./iri.js";
 
+/** The formats graph parses, as `--as` names them. */
+export const DOC_FORMATS = ["markdown", "mdx"] as const;
+export type DocFormat = (typeof DOC_FORMATS)[number];
+
 export interface AnalyzeOptions {
   /** Site-route mappings for resolving root-absolute links. */
   routes?: RouteMapping[];
+  /**
+   * `--as`: parse as this format whatever the path says. Absent, a `.mdx`
+   * path is MDX and anything else is markdown.
+   */
+  format?: DocFormat;
 }
 
 const processor = unified()
@@ -378,7 +387,10 @@ export function analyzeDoc(
   const routes = options.routes ?? [];
   const path = normalizeDocPath(relPath);
   const meta = extractFrontmatter(content, "markdown");
-  const isMdx = path.endsWith(".mdx");
+  const isMdx =
+    options.format === undefined
+      ? path.endsWith(".mdx")
+      : options.format === "mdx";
   let tree: Root;
   try {
     tree = (isMdx ? mdxProcessor : processor).parse(content);

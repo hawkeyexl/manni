@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { DataFactory, Store } from "n3";
 import type { DocModel } from "../types.js";
-import { analyzeDoc } from "./analyze.js";
+import { analyzeDoc, type AnalyzeOptions, type DocFormat } from "./analyze.js";
 import type { DeriveSource, GraphConfig } from "./config.js";
 import { deriveGraph, type Quad } from "./derive.js";
 import { applyGraphFields } from "./frontmatter-edit.js";
@@ -87,42 +87,52 @@ export class FillGuard {
 
   private constructor(
     private readonly allPaths: Set<string>,
-    private readonly routes: GraphConfig["routes"],
+    private readonly analyzeOptions: AnalyzeOptions,
     private readonly baseIri: string,
     private readonly sources: DeriveSource[],
     private readonly shapesPaths: string[],
     private readonly force: boolean,
   ) {}
 
-  /** Read and analyze the whole corpus once, up front. */
+  /**
+   * Read and analyze the whole corpus once, up front. A path in `inline` is
+   * taken from memory rather than disk: that is how a page read from stdin
+   * joins the corpus. `format` is `--as`, applied to every page.
+   */
   static create(
     files: string[],
     cwd: string,
     config: GraphConfig,
     shapesPaths: string[],
     force: boolean,
+    {
+      inline = new Map<string, string>(),
+      format,
+    }: { inline?: ReadonlyMap<string, string>; format?: DocFormat } = {},
   ): FillGuard {
     const sources = config.build.derive.filter((s) =>
       GUARD_SOURCES.includes(s),
     );
+    const all = [...files, ...inline.keys()];
     const guard = new FillGuard(
-      new Set(files),
-      config.routes,
+      new Set(all),
+      {
+        routes: config.routes,
+        ...(format === undefined ? {} : { format }),
+      },
       config.baseIri,
       sources,
       shapesPaths,
       force,
     );
-    for (const path of files) {
+    for (const path of all) {
       guard.models.set(
         path,
         analyzeDoc(
-          readFileSync(resolve(cwd, path), "utf8"),
+          inline.get(path) ?? readFileSync(resolve(cwd, path), "utf8"),
           path,
           guard.allPaths,
-          {
-            routes: config.routes,
-          },
+          guard.analyzeOptions,
         ),
       );
     }
@@ -228,9 +238,12 @@ export class FillGuard {
       const applied = applyGraphFields(content, path, current, {
         force: this.force,
       });
-      const model = analyzeDoc(applied.content, path, this.allPaths, {
-        routes: this.routes,
-      });
+      const model = analyzeDoc(
+        applied.content,
+        path,
+        this.allPaths,
+        this.analyzeOptions,
+      );
       const findings = await validateGraph(
         this.buildStore({ path, model }),
         this.shapesPaths,
@@ -276,7 +289,7 @@ export class FillGuard {
   commit(path: string, content: string): void {
     this.models.set(
       path,
-      analyzeDoc(content, path, this.allPaths, { routes: this.routes }),
+      analyzeDoc(content, path, this.allPaths, this.analyzeOptions),
     );
     this.baselineKeys = null;
   }

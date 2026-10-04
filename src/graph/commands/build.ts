@@ -10,10 +10,13 @@ import { analyzeDoc } from "../core/analyze.js";
 import { loadRunConfig } from "../core/config.js";
 import { deriveGraph } from "../core/derive.js";
 import {
+  assertInputFormat,
   documentSetPatterns,
   resolveDocumentSet,
+  STDIN,
   type DocumentInputOptions,
 } from "../core/discover.js";
+import { STDIN_PATH } from "../core/iri.js";
 import { emitTurtle } from "../core/emit.js";
 import { harvestWarnings } from "../core/harvest.js";
 import { collectGitHistory } from "../core/git.js";
@@ -25,6 +28,14 @@ export interface BuildOptions extends DocumentInputOptions {
   /** Output path override (default: config `out`). */
   out?: string;
   cwd?: string;
+  /**
+   * What `-` reads: the document from stdin, read by the caller. Required
+   * when `paths` holds `-`. Its display path is `<stdin>`, its node is
+   * `{baseIri}stdin`, and its links resolve from `cwd`.
+   */
+  stdinContent?: string;
+  /** `--allow-empty`: zero matched files writes an empty graph, not an error. */
+  allowEmpty?: boolean;
 }
 
 /**
@@ -69,19 +80,37 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
     cwd,
   );
 
+  const format = assertInputFormat(opts.paths ?? [], opts.as);
   const files = resolveDocumentSet(config, opts, "build", cwd);
-  if (files.length === 0) {
+  const usingStdin = (opts.paths ?? []).includes(STDIN);
+  const outPath = resolve(cwd, opts.out ?? config.out);
+  if (files.length === 0 && !usingStdin) {
+    if (opts.allowEmpty) {
+      // Zero documents is an empty graph, written where the graph goes, so a
+      // later step that reads it finds a file rather than a stale one.
+      mkdirSync(dirname(outPath), { recursive: true });
+      writeFileSync(outPath, emitTurtle([]), "utf8");
+      return { outPath, docs: 0, quads: 0, warnings: [] };
+    }
     throw new GraphError(
       `No input files matched: ${documentSetPatterns(config, opts).join(", ")} (cwd: ${cwd})`,
     );
   }
+  if (usingStdin && opts.stdinContent === undefined) {
+    throw new GraphError("graph build was given `-` but no stdin content.");
+  }
 
-  const allPaths = new Set(files);
+  const allPaths = new Set(usingStdin ? [...files, STDIN_PATH] : files);
+  const analyzeOptions = {
+    routes: config.routes,
+    ...(format === undefined ? {} : { format }),
+  };
   const read = files.map((path) =>
-    analyzeDoc(readFileSync(resolve(cwd, path), "utf8"), path, allPaths, {
-      routes: config.routes,
-    }),
+    analyzeDoc(readFileSync(resolve(cwd, path), "utf8"), path, allPaths, analyzeOptions),
   );
+  if (usingStdin && opts.stdinContent !== undefined) {
+    read.push(analyzeDoc(opts.stdinContent, STDIN_PATH, allPaths, analyzeOptions));
+  }
 
   // What the graph carries is the schema's call (proposal 0051 §5): a top-level
   // field marked `x-manni-graph-output: false` is dropped here, before derivation,
@@ -128,7 +157,6 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
   });
   const turtle = emitTurtle(quads);
 
-  const outPath = resolve(cwd, opts.out ?? config.out);
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, turtle, "utf8");
 

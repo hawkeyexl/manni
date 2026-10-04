@@ -113,6 +113,7 @@ import {
   type DeriveInput,
 } from "../core/derive/types.js";
 import { errorMessage } from "../../shared/errors.js";
+import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 
 export interface ValidateOptions {
   inputs: string[];
@@ -888,7 +889,7 @@ export async function runValidate(
     const content = opts.stdinContent ?? "";
     if (!forcedExtractor) {
       throw new DocmetaError(
-        "Reading from stdin (`-`) requires --as <format> to choose an extractor.",
+        STDIN_REQUIRES_AS,
       );
     }
     await processOne(STDIN_LABEL, content, forcedExtractor.extensions[0] ?? "");

@@ -62,7 +62,7 @@ function prepare(withVectors = true): {
   if (withVectors) {
     execFileSync(
       process.execPath,
-      [cli, "graph", "embed", "-g", graph, "--model", "mock", "--no-cache"],
+      [cli, "graph", "embed", "-g", graph, "--embedding-model", "mock", "--no-cache"],
       { encoding: "utf8", cwd: corpus },
     );
   }
@@ -133,7 +133,7 @@ describe("manni graph embed (integration)", () => {
       "embed",
       "-g",
       graph,
-      "--model",
+      "--embedding-model",
       "mock",
       "--no-cache",
       "-o",
@@ -162,7 +162,7 @@ describe("manni graph embed (integration)", () => {
       graph,
       "-c",
       cfg,
-      "--model",
+      "--embedding-model",
       "mock",
       "-o",
       join(dir, "c"),
@@ -196,7 +196,7 @@ describe("manni graph embed (integration)", () => {
           "embed",
           "-g",
           graph,
-          "--model",
+          "--embedding-model",
           "mock",
           "--no-cache",
           "-o",
@@ -226,7 +226,7 @@ describe("manni graph embed (integration)", () => {
       cwd: corpus,
     });
     const { status, output } = run(
-      ["embed", "-g", graph, "--model", "mock"],
+      ["embed", "-g", graph, "--embedding-model", "mock"],
       corpus,
     );
     expect(status).toBe(2);
@@ -537,7 +537,7 @@ describe("manni graph search with vectors (integration)", () => {
         "embed",
         "-g",
         graph,
-        "--model",
+        "--embedding-model",
         "mock",
         "--no-cache",
         "-o",

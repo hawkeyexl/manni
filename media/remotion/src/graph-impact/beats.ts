@@ -65,7 +65,7 @@ export const beats: Beat[] = [
     highlight: ["missing.md", "1"],
     commands: [
       {
-        typed: "manni graph query --p graph:brokenLink",
+        typed: "manni graph query --predicate graph:brokenLink",
         output: captures.query,
         latencyFrames: latency.query,
         holdFrames: 3.2 * FPS,

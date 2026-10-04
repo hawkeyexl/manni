@@ -158,6 +158,7 @@ import {
   type RelocationContext,
 } from "../core/relocation.js";
 import { externalWriteWarning } from "../core/location-writes.js";
+import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 
 export interface QueryOptions {
   /**
@@ -564,7 +565,7 @@ export async function runQuery(opts: QueryOptions): Promise<QueryRun> {
   if (usingStdin) {
     if (!forced) {
       throw new DocmetaError(
-        "Reading from stdin (`-`) requires --as <format> to choose an extractor.",
+        STDIN_REQUIRES_AS,
       );
     }
     // Unreachable while every registered extractor has at least one extension,

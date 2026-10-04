@@ -87,17 +87,15 @@ describe("manni graph build: the document surface", () => {
     );
   });
 
-  it("refuses stdin, exit 2", () => {
+  it("refuses stdin without --as, exit 2", () => {
+    const message =
+      "manni: Reading from stdin (`-`) requires --as <format> to choose an extractor.\n";
     const r = graph(["build", "-"], collections);
     expect(r.status).toBe(2);
-    expect(r.stderr).toBe(
-      "manni: graph build reads files, not stdin: a graph node needs a path.\n",
-    );
+    expect(r.stderr).toBe(message);
     const f = graph(["fill", "-"], collections);
     expect(f.status).toBe(2);
-    expect(f.stderr).toBe(
-      "manni: graph fill reads files, not stdin: a graph node needs a path.\n",
-    );
+    expect(f.stderr).toBe(message);
   });
 
   it("refuses graph.inputs and graph.exclude by name, exit 2", () => {

@@ -18,7 +18,7 @@
  * the prefix abbreviates an IRI in emitted RDF, and the prefix carries the
  * tool's name because `…/manni/graph/ns#` is the tool's namespace. Nothing
  * collides: no other prefix in this table is `graph`, and a `graph:` CURIE typed
- * at `--predicates` or `--s` expanded to nothing before.
+ * at `--predicates` or `--subject` expanded to nothing before.
  */
 export const NS = {
   dcterms: "http://purl.org/dc/terms/",

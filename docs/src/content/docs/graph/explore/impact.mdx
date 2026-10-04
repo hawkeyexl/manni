@@ -92,7 +92,7 @@ corpus:
 | Flag | What it filters on |
 |---|---|
 | `--variant <variant>` | A product variant, by IRI, title, or slug. |
-| `--subject <subject>` | A software subject. |
+| `--software-subject <subject>` | A software subject. |
 | `--lang <tag>` | A BCP-47 language tag, matched exactly. |
 
 The count line's `excluded` number is how many nodes the scope removed. A walk
@@ -105,7 +105,7 @@ which is usually a spelling rather than an empty answer.
 
 ```console
 $ manni graph search "configuration" --limit 5
-$ manni graph query --o "Configuration"
+$ manni graph query --object "Configuration"
 ```
 
 Or read it off the pattern: a document node is the base IRI plus `doc/` plus

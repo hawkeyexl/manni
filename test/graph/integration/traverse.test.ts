@@ -185,14 +185,14 @@ describe("manni graph traverse (integration)", () => {
     // An unresolvable subject silently disables scope filtering in the walker,
     // which would return exactly the nodes the filter was meant to exclude.
     const bad = run(
-      ["traverse", CONFIG_DOC, "-g", graph, "--subject", "not-a-subject"],
+      ["traverse", CONFIG_DOC, "-g", graph, "--software-subject", "not-a-subject"],
       corpus,
     );
     expect(bad.status).toBe(2);
     expect(bad.stdout.toLowerCase()).toContain("unknown software subject");
 
     const good = run(
-      ["traverse", CONFIG_DOC, "-g", graph, "--subject", "architecture"],
+      ["traverse", CONFIG_DOC, "-g", graph, "--software-subject", "architecture"],
       corpus,
     );
     expect(good.status).toBe(0);
