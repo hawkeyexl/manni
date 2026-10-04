@@ -53,7 +53,11 @@ A suspicion must never fail a build.
 **What a field publishes is the schema's call, not this tool's.**
 `x-manni-graph-output` is a boolean beside a top-level property, registered by
 `manni meta` and read back through `Validator.graphOutputPreferences`
-(`src/graph/core/graph-output.ts`). Absent means `true`. The filter runs **once**,
+(`src/graph/core/graph-output.ts`). Absent means `true`. The schemas are the
+set `manni meta validate` resolves for each page, read from meta's section of
+the same config through `metaSchemaSets` (proposal 0074). graph keeps no schema
+set of its own, so there is no `graph.schemas` key. The default set carries
+`manni:stewardship:1.1.0`, which marks the three people fields. The filter runs **once**,
 before `deriveGraph`. All four published outputs descend from what derivation
 produces, so dropping the field there keeps it out of every one of them.
 A mark nested inside `graph` is ignored, because the mark governs a top-level

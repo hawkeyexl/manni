@@ -5,10 +5,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
 import { defined } from "../helpers/defined.js";
 import { bundledShapesPath } from "../../../src/graph/core/pkg.js";
-import {
-  frontmatterSchema,
-  FRONTMATTER_SCHEMA_ID,
-} from "../../../src/graph/schema.js";
+import { frontmatterSchema } from "../../../src/graph/schema.js";
 import { LANGUAGE_TAG } from "../../../src/graph/core/localizations.js";
 import { FIELD_SCHEMAS } from "../../../src/graph/llm/prompt.js";
 import {
@@ -263,12 +260,9 @@ describe("documented bundled defaults ↔ pkg.ts", () => {
   const configPage = graphDocsPage("reference", "configuration.mdx");
   const shapesFile = basename(bundledShapesPath(import.meta.url));
 
-  // No schema *file* to name any more: the page vocabulary is the 0023 draft,
-  // inlined into the build, so what the page has to get right is its id.
-  it("names the page vocabulary in force", () => {
-    expect(configPage).toContain(FRONTMATTER_SCHEMA_ID);
-  });
-
+  // No page-vocabulary default to name any more: graph keeps no schema set of
+  // its own and reads meta's (proposal 0074), so the page documents no
+  // `schemas` key and no default for one.
   it("names the current bundled shapes file", () => {
     expect(configPage).toContain(`shapes/graph/${shapesFile}`);
   });

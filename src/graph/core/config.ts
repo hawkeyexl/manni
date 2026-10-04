@@ -122,14 +122,6 @@ export interface GraphConfig {
   baseIri: string;
   /** Output path of the built Turtle file, relative to configDir. */
   out: string;
-  /**
-   * The schema set a page's frontmatter is judged by: where `manni graph build`
-   * reads `x-manni-graph-output` from, deciding which fields a published graph may
-   * carry. Empty = the `graph` page vocabulary bundled into manni
-   * (`src/graph/schema.ts`). Spelled as meta spells its own `schemas:`; it sat
-   * under a `validate:` wrapper while `manni kg validate` existed (0051 §8).
-   */
-  schemas: string[];
   routes: RouteMapping[];
   build: { derive: DeriveSource[] };
   /** Graph-level SHACL validation (`manni graph check`). */
@@ -296,7 +288,6 @@ interface RawGraphConfig {
   model?: string;
   baseIri?: string;
   out?: string;
-  schemas?: string[];
   routes?: RawRouteMapping[];
   build?: { derive?: DeriveSource[] };
   check?: { shapes?: string[] };
@@ -482,9 +473,6 @@ export function parseConfigSection(
     providers: file.providers ?? {},
     baseIri: resolveBaseIri(r.baseIri),
     out: r.out ?? "graph/graph.ttl",
-    // Empty means: use the `graph` page vocabulary built into manni (see
-    // src/graph/schema.ts).
-    schemas: r.schemas ?? [],
     routes: (r.routes ?? []).map((m) => ({
       basePath: normalizeBasePath(m.basePath ?? "/"),
       root: m.root

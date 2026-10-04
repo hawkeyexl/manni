@@ -1,0 +1,13 @@
+# The default set with its strict overlays stacked (proposal 0070). The marks
+# still come from manni:stewardship:1.1.0.
+collections:
+  - name: stewardship-output
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  strict: true
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl

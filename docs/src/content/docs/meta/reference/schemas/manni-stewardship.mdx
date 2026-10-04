@@ -1,25 +1,25 @@
 ---
 title: manni stewardship vocabulary
-description: "The manni:stewardship:1.0.0 schema for attribution, ownership and review: who wrote a page, who answers for it, its own dates, and what it was verified against."
+description: "The manni:stewardship:1.1.0 schema for attribution, ownership and review: who wrote a page, who answers for it, its own dates, and what it was verified against."
 sidebar:
-  label: "manni:stewardship:1.0.0"
+  label: "manni:stewardship:1.1.0"
 type: reference
 id: meta-reference-schemas-manni-stewardship
-keywords: ["stewardship", "manni:stewardship:1.0.0", "owner", "review", "strict overlay"]
+keywords: ["stewardship", "manni:stewardship:1.1.0", "owner", "review", "strict overlay"]
 language: en
 audiences: ["schema-authors"]
-intent: "Record who wrote a page, who answers for it, its dates, and what it was verified against, with manni:stewardship:1.0.0."
+intent: "Record who wrote a page, who answers for it, its dates, and what it was verified against, with manni:stewardship:1.1.0."
 lifecycle: published
 applies-to: ["domain:meta"]
 concepts: ["schema"]
 sample-questions:
-  - "Which fields does manni:stewardship:1.0.0 define?"
+  - "Which fields does manni:stewardship:1.1.0 define?"
   - "Which stewardship fields can derive stamp?"
   - "What does the stewardship strict overlay narrow?"
 graph:
   label: "manni stewardship vocabulary"
   type: reference
-last-updated: 2026-09-27
+last-updated: 2026-10-04
 tags:
   - metadata
   - schema
@@ -42,9 +42,9 @@ prerequisites:
   - meta-schemas-field-location
 ---
 
-**Built-in id:** `manni:stewardship:1.0.0`
+**Built-in id:** `manni:stewardship:1.1.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/stewardship/1.0.0.json`.
+Published at `https://hawkeyexl.github.io/manni/schemas/stewardship/1.1.0.json`.
 A `$schema` that names this URL resolves to the bundled copy, with no network
 call.
 
@@ -103,6 +103,20 @@ page is fresh enough to trust. The rest name people and review cadence. See
 [field location](/manni/meta/schemas/field-location/) for how the marks are
 used.
 
+## Graph output
+
+`owner`, `stakeholders` and `reviewed-by` carry `x-manni-graph-output: false`.
+Those three fields name people, so `manni graph build` leaves them out of a
+published graph. That covers its Turtle, its JSON-LD, its iiRDS package and
+its search index. Every other stewardship field has no mark, so a graph
+carries it.
+
+The mark governs output only. Validation, location and strict all treat the
+three fields as they treat any other. `graph build` reads the mark from the
+schema set `manni meta validate` resolves for each page. A schema listed after
+stewardship that marks one of the three `true` puts it back, because the later
+mark wins.
+
 ## Additional properties
 
 Allowed. The root is open, so a generator's keys and the other vocabularies'
@@ -160,10 +174,10 @@ last-updated: 2026-08-20
 ```
 
 ```text
-$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:stewardship:1.0.0
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:stewardship:1.1.0
 ✗ page.md
-    /authors  must NOT have fewer than 1 items  (line 4)  [manni:stewardship:1.0.0]
-    /authors  warning "authors" is stored in the page; manni:stewardship:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+    /authors  must NOT have fewer than 1 items  (line 4)  [manni:stewardship:1.1.0]
+    /authors  warning "authors" is stored in the page; manni:stewardship:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
 
 1 file checked, 0 passed, 1 failed, 1 error, 1 warning
 ```
@@ -243,9 +257,9 @@ until someone is named. An empty `""` or `{}` fails too.
 
 ## Strict overlay
 
-**Strict overlay id:** `manni:stewardship-strict:1.0.0`
+**Strict overlay id:** `manni:stewardship-strict:1.1.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.0.0.json`.
+Published at `https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.1.0.json`.
 The overlay holds only what strict adds. It narrows the form of a value that is
 present and requires no key, so a page with no stewardship fields still passes
 it.
@@ -276,7 +290,7 @@ vocabulary:
 ```yaml
 meta:
   schemas:
-    - manni:stewardship-strict:1.0.0
+    - manni:stewardship-strict:1.1.0
 ```
 
 Each schema is checked on its own, and a finding names the one that produced
@@ -295,14 +309,38 @@ last-updated: 2026-08-20
 ```
 
 ```text
-$ manni meta validate page.md --no-config -s manni:stewardship:1.0.0 -s manni:stewardship-strict:1.0.0
+$ manni meta validate page.md --no-config -s manni:stewardship:1.1.0 -s manni:stewardship-strict:1.1.0
 ✗ page.md
-    /authors  must be array  (line 4)  [manni:stewardship-strict:1.0.0]
-    /verified-against  must have required property 'version'  (line 5)  [manni:stewardship-strict:1.0.0]
-    /authors  warning "authors" is stored in the page; manni:stewardship:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
-    /verified-against  warning "verified-against" is stored in the page; manni:stewardship:1.0.0 prefers external metadata, and --no-config leaves it no manifest.  (line 5)  [location:external]
+    /authors  must be array  (line 4)  [manni:stewardship-strict:1.1.0]
+    /verified-against  must have required property 'version'  (line 5)  [manni:stewardship-strict:1.1.0]
+    /authors  warning "authors" is stored in the page; manni:stewardship:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 4)  [location:external]
+    /verified-against  warning "verified-against" is stored in the page; manni:stewardship:1.1.0 prefers external metadata, and --no-config leaves it no manifest.  (line 5)  [location:external]
 
 1 file checked, 0 passed, 1 failed, 2 errors, 2 warnings
 ```
 
 The open vocabulary accepts both values, so the overlay alone fails the page.
+
+## Version 1.0.0
+
+**Built-in id:** `manni:stewardship:1.0.0`
+
+**Strict overlay id:** `manni:stewardship-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/stewardship/1.0.0.json`
+and `https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.0.0.json`.
+Version 1.0.0 claims the same ten fields and validates every value as 1.1.0
+does. It carries no `x-manni-graph-output` mark, so a published graph built
+under it keeps `owner`, `stakeholders` and `reviewed-by`.
+
+Both ids still resolve, and a page that names one keeps it. The default set
+carries 1.1.0, so a set that should mark nothing names 1.0.0 without the
+defaults:
+
+```yaml
+meta:
+  defaults: false
+  schemas:
+    - manni:core:1.0.0
+    - manni:stewardship:1.0.0
+```

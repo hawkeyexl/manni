@@ -1,0 +1,15 @@
+# An explicit set without the defaults, pinned to manni:stewardship:1.0.0,
+# which marks nothing. The marks come from the resolved set, so the people
+# fields stay in what graph harvests.
+collections:
+  - name: stewardship-output
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  defaults: false
+  schemas: ["manni:stewardship:1.0.0"]
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl

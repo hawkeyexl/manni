@@ -39,7 +39,6 @@ providers:
 graph:
   baseIri: https://example.com/graph/
   out: graph/graph.ttl
-  schemas: []
 
   routes:
     - basePath: /
@@ -144,7 +143,6 @@ error.
 | `model` | string | unset | The model within the provider named beside it. Unset, the inference library's default for that provider is used; manni pins none, and every cache key names the model it resolved to. This is not `embed.model`. |
 | `baseIri` | string | `urn:manni:graph:` | The base every minted node IRI hangs off. A value not ending in `/` or `:` gets a trailing slash. Use an HTTP base when the graph is published, so its nodes dereference. |
 | `out` | string | `graph/graph.ttl` | Where `graph build` writes the Turtle, and where every graph reader looks for it. Resolved from the working directory. `-o` overrides it for one build, `-g` for one read. |
-| `schemas` | list of schema refs | `[]` | The schema set that judges a page's frontmatter. `graph build` reads `x-manni-graph-output` from it, to decide what a published graph may carry. Check these pages against the same set with `manni meta validate`. Empty means the page vocabulary built into manni meta, `manni:graph:1.0.0`. A ref here is anything `manni meta` resolves: a built-in id, a file path, or a URL. |
 
 ### `routes`
 
@@ -266,6 +264,12 @@ Mark a top-level property `x-manni-graph-output: false` in the schema that gover
 the page. It is then dropped before derivation, so it appears in none of the
 four outputs. Absent means `true`. The mark sits beside `x-manni-location` in the
 same schema, so what a page stores and what a delivered artifact says are two
-decisions in one place. See
+decisions in one place.
+
+graph keeps no schema set of its own. `graph build` reads the marks from the
+set `manni meta validate` resolves for each page, so `schemas`, `strict`,
+`register` and `overrides` under `meta:` decide them. The default set carries
+`manni:stewardship:1.1.0`, which marks `owner`, `stakeholders` and
+`reviewed-by`, so a published graph leaves those three out with no config line. See
 [Govern the graph](/manni/graph/govern/#what-the-published-graph-carries) and
 [how a schema reaches a file](/manni/meta/reference/schema-resolution/).

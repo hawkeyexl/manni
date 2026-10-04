@@ -21,50 +21,61 @@
  * of the output", rather than one rule for encryption and another for
  * everything else (0051 stress test 4).
  */
-import { Validator } from "../../meta/index.js";
+import { metaSchemaSets } from "../../meta/internal.js";
 import { errorMessage } from "../../shared/errors.js";
-import { FRONTMATTER_SCHEMA_ID } from "../schema.js";
 import { GraphError } from "../types.js";
-import type { GraphConfig } from "./config.js";
 import type { DocModel } from "../types.js";
 
-/**
- * The schema set a page is judged by, as graph spells it: the operator's
- * `graph.schemas` when they set one, else the built-in `manni:graph:1.0.0`,
- * which meta resolves by its id like any other built-in.
- */
-function schemaRefs(config: GraphConfig): string[] {
-  return config.schemas.length > 0 ? config.schemas : [FRONTMATTER_SCHEMA_ID];
+/** Which config a build runs under, as its flags said. */
+export interface GraphOutputSource {
+  /** `-c/--config`. */
+  configPath?: string;
+  /** `--no-config`. */
+  noConfig?: boolean;
 }
 
 /**
  * `docs`, with every top-level frontmatter key its schemas mark
  * `x-manni-graph-output: false` removed.
  *
+ * A page's schemas are the set `manni meta validate` resolves for it (proposal
+ * 0074): its own `$schema`, then meta's overrides, `schemas:`, `strict` and
+ * the default set, read from meta's section of the same config. graph keeps
+ * no schema set of its own, so one config answers both what a page is checked
+ * against and what its published graph may carry.
+ *
  * A document whose schemas mark nothing is returned as it came in, so the
- * common case allocates nothing and the derived graph is bit-for-bit what it
- * was before this existed.
+ * common case allocates nothing.
  */
 export async function suppressGraphOutput(
   docs: readonly DocModel[],
-  config: GraphConfig,
+  source: GraphOutputSource,
   cwd: string,
 ): Promise<DocModel[]> {
-  const refs = schemaRefs(config);
-  const validator = new Validator({ fileBase: cwd });
+  let sets: Awaited<ReturnType<typeof metaSchemaSets>>;
+  try {
+    sets = await metaSchemaSets({
+      cwd,
+      ...(source.configPath === undefined ? {} : { configPath: source.configPath }),
+      ...(source.noConfig === undefined ? {} : { noConfig: source.noConfig }),
+    });
+  } catch (e) {
+    throw new GraphError(`cannot read which fields the graph may carry: ${errorMessage(e)}`);
+  }
 
   const out: DocModel[] = [];
   for (const doc of docs) {
     let preferences: Map<string, boolean>;
     try {
-      preferences = await validator.graphOutputPreferences(doc.frontmatter, refs);
+      const refs = sets.refsFor(doc.path, doc.frontmatter);
+      preferences = await sets.validator.graphOutputPreferences(doc.frontmatter, refs);
     } catch (e) {
       // Loudly, and for the whole run. The schema is what decides which fields
       // a published graph may carry; a graph built while it could not be read
       // is a graph nobody checked, and quietly building one is the failure
       // this keyword exists to prevent.
       throw new GraphError(
-        `${doc.path}: cannot read which fields the graph may carry — ${errorMessage(e)}`,
+        `${doc.path}: cannot read which fields the graph may carry: ${errorMessage(e)}`,
       );
     }
 

@@ -14,7 +14,14 @@
  * `derive:` block with no `fields` manages on the page (proposal 0069).
  */
 import { DocmetaError } from "../types.js";
-import { loadConfig, schemaTrustRoot, type DocmetaConfig, type SchemaTrustRoot } from "./config.js";
+import {
+  loadConfig,
+  loadMetaSection,
+  schemaTrustRoot,
+  type DocmetaConfig,
+  type SchemaTrustRoot,
+} from "./config.js";
+import { memberOf as membershipOf } from "./collections.js";
 import type { PageMarks } from "./external-metadata.js";
 import {
   collectSchemaPins,
@@ -96,6 +103,24 @@ function lazyValidator(opts: PageMarksOptions): () => Validator {
   return () => (opts.validator instanceof Validator ? opts.validator : (built ??= opts.validator()));
 }
 
+/** The page's schema set, as `validate` resolves it. Throws when it cannot. */
+function pageSchemaSet(
+  opts: PageMarksOptions,
+  label: string,
+  probe: Readonly<Record<string, unknown>>,
+  memberOf: readonly string[],
+): string[] {
+  return resolveSchemaSetWithSource({
+    filePath: label,
+    fileSchema: probe[FILE_SCHEMA_KEY],
+    ...(opts.cliSchemas !== undefined ? { cliSchemas: [...opts.cliSchemas] } : {}),
+    config: opts.config,
+    memberOf: opts.memberOf?.(label) ?? memberOf,
+    fileBase: opts.cwd,
+    trustRoot: opts.trustRoot,
+  }).schemas;
+}
+
 /** The page's schema set, or undefined when it cannot be resolved. */
 function pageRefs(
   opts: PageMarksOptions,
@@ -104,15 +129,7 @@ function pageRefs(
   memberOf: readonly string[],
 ): string[] | undefined {
   try {
-    return resolveSchemaSetWithSource({
-      filePath: label,
-      fileSchema: probe[FILE_SCHEMA_KEY],
-      ...(opts.cliSchemas !== undefined ? { cliSchemas: [...opts.cliSchemas] } : {}),
-      config: opts.config,
-      memberOf: opts.memberOf?.(label) ?? memberOf,
-      fileBase: opts.cwd,
-      trustRoot: opts.trustRoot,
-    }).schemas;
+    return pageSchemaSet(opts, label, probe, memberOf);
   } catch (err) {
     if (err instanceof DocmetaError) return undefined;
     throw err;
@@ -159,4 +176,53 @@ export async function configMarks(configPath: string, cwd: string): Promise<Page
     cwd,
     trustRoot: schemaTrustRoot(cwd, loaded.dir),
   });
+}
+
+/**
+ * The schema set `manni meta validate` resolves for each page, for a sibling
+ * tool that reads what those schemas say rather than validating (proposal
+ * 0074: `manni graph build` reads `x-manni-graph-output` from it).
+ */
+export interface PageSchemaSets {
+  /** Built the way `validate` builds its own, over the same config. */
+  validator: Validator;
+  /**
+   * The set for one page, by `$schema`, override, `schemas:`, `strict` and
+   * the default set. `label` is relative to the run's `cwd`. Throws a
+   * `DocmetaError` when the page's own `$schema` is refused.
+   */
+  refsFor(label: string, data: Readonly<Record<string, unknown>>): string[];
+}
+
+/**
+ * `PageSchemaSets` over meta's section of the config a sibling run is under.
+ * `noConfig` is the default set alone. `configPath` reads meta's section of
+ * that file, which a file with no family key does not have. With neither,
+ * meta's own discovery finds the config, as `manni meta validate` would.
+ */
+export async function metaSchemaSets(opts: {
+  cwd: string;
+  configPath?: string;
+  noConfig?: boolean;
+}): Promise<PageSchemaSets> {
+  const { cwd } = opts;
+  const loaded = opts.noConfig === true ? null : await loadMetaSection(opts.configPath, cwd);
+  const config = loaded ? rebaseConfigSchemaRefs(loaded.config, loaded.dir, cwd) : null;
+  const marks: PageMarksOptions = {
+    validator: marksValidator({
+      config,
+      cwd,
+      ...(loaded ? { configDir: loaded.dir } : {}),
+    }),
+    config,
+    cwd,
+    trustRoot: schemaTrustRoot(cwd, loaded?.dir),
+  };
+  const collections = loaded?.collections ?? [];
+  const configDir = loaded?.dir ?? cwd;
+  return {
+    validator: lazyValidator(marks)(),
+    refsFor: (label, data) =>
+      pageSchemaSet(marks, label, data, membershipOf(collections, configDir, cwd, label)),
+  };
 }

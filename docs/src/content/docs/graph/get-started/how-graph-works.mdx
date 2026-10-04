@@ -113,9 +113,9 @@ $ manni meta validate
 
 The draft is [open for review](/manni/meta/proposals/graph/), so copy
 [`1.0.0-proposal.1.json`](https://github.com/hawkeyexl/manni/blob/main/docs/proposals/0023/schemas/graph/1.0.0-proposal.1.json)
-into your repository rather than pointing at a published URL. The same set goes
-in `graph.schemas`, where `manni graph build` reads `x-manni-graph-output` from
-it.
+into your repository rather than pointing at a published URL. `manni graph
+build` reads `x-manni-graph-output` from the same set, the one `manni meta
+validate` resolves for each page.
 
 Two spellings are deliberate and different. Config keys are camelCase
 (`baseIri`, `maxTurns`); the page vocabulary is kebab-case (`alt-labels`,

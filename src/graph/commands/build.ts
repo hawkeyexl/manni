@@ -85,11 +85,19 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
 
   // What the graph carries is the schema's call (proposal 0051 §5): a top-level
   // field marked `x-manni-graph-output: false` is dropped here, before derivation,
+  // and the schemas are the set `manni meta validate` resolves (proposal 0074),
   // so it reaches none of Turtle, JSON-LD, iiRDS or the search index. All four
   // read what `deriveGraph` produces, so one filter at the fan-in is the whole
   // mechanism; suppressing a field downstream would be triple surgery in four
   // places.
-  const docs = await suppressGraphOutput(read, config, cwd);
+  const docs = await suppressGraphOutput(
+    read,
+    {
+      ...(opts.config === undefined ? {} : { configPath: opts.config }),
+      ...(opts.noConfig === undefined ? {} : { noConfig: opts.noConfig }),
+    },
+    cwd,
+  );
 
   // Page-level keys that look like harvest inputs but are not. The graph block
   // is schema-strict, so a typo there is a hard error; at the page level

@@ -43,6 +43,9 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
     - generated-by: Claude Opus 4.8
       lines: 24
       integrity: sha256-01fa721ec18a240815a05add257bdadcf2435e0a014afe1cead8b5ad17ddb95b
+    - generated-by: Claude Opus 5.5
+      lines: 41
+      integrity: sha256-98671babc354d5ea32eb5a4ed274b8e1ec36f1b989381c26349a860253d50bb2
     - generated-by: Claude Fable 5.1
       lines: 76
       integrity: sha256-f7416ef5042cb652d1237224c4187f54b2ccba5ba17becee9611f91881ee2ecd

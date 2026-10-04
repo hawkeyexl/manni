@@ -1,6 +1,6 @@
 # 0070: the vocabularies by default, registered schemas and `strict`
 
-- **Status:** Implemented (#134)
+- **Status:** Implemented (#134); superseded in part by [0074](0074-stewardship-graph-output.md)
 - **Serves:** Maya · M1, "Stand up metadata validation for my repo", and
   Sara · S1, "Define our metadata standard as a schema". Both write a
   `meta:` block, and today that block repeats the whole default set to add

@@ -45,8 +45,10 @@ describe("manni graph init", () => {
     // tool gets a `graph:` key appended, and the sibling's bytes come out as they
     // went in — comments included.
     const dir = mkdtempSync(join(tmpdir(), "manni-graph-init-sibling-"));
-    const sibling =
-      "# The metadata tool's settings.\nmeta:\n  paths:\n    - docs/**/*.md\n";
+    // A valid meta section: graph build reads it for the schema set its output
+    // marks come from (proposal 0074), so a broken one fails the build as it
+    // fails `manni meta validate`.
+    const sibling = "# The metadata tool's settings.\nmeta:\n  strict: true\n";
     writeFileSync(join(dir, "manni.config.yaml"), sibling);
 
     const r = run(["init"], dir);

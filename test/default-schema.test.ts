@@ -789,7 +789,8 @@ describe("the default set (proposal 0070)", () => {
     CORE_ID,
     ref("audience"),
     ref("structure"),
-    ref("stewardship"),
+    // Stewardship is the one family whose default moved past 1.0.0 (0074).
+    "manni:stewardship:1.1.0",
     ref("lifecycle"),
     ref("ai-context"),
     ref("evals"),

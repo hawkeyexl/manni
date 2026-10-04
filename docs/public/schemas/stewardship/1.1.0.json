@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "manni:stewardship:1.0.0-proposal.4",
-  "title": "manni stewardship vocabulary (1.0.0-proposal.4)",
-  "description": "Is this page cared for: attribution, ownership, review, the document's own dates, and the anchors that make drift detectable. Every field records a fact a person asserts about the document, rather than one a tool reads off the file. `created` and `last-updated` are here on that line, and proposal.1 left them out on the other one. Git's timestamps answer a neighbouring question: when this path first appeared in this repo, and when any byte of it last moved. That parts company with the document's own history at every migration, split, squashed import, typo fix and bulk frontmatter sweep. It is the same reason `authors` sits here — git records who committed a change, not who wrote the prose. A published page carries no repo, so a stamped date travels with the document where a derived one cannot. The cost is the one proposal.1 named: a hand-typed `last-updated` goes stale quietly, and no JSON Schema can catch that. The review dates are records, not freshness gates: JSON Schema cannot compare a date to today, and deriving the due date from `last-reviewed` + `review-interval` belongs to tooling that can read a clock (any freshness grader reads `last-reviewed`). proposal.3's location marks all stand; what this revision adds is `x-manni-graph-output: false` on `owner`, `stakeholders` and `reviewed-by`. Those three name people, and a published graph — Turtle, JSON-LD, iiRDS, a search index — should not carry them. The mark is the field's own property rather than a rule inside a graph builder, for the reason `x-manni-location` is one: what a delivered artifact carries is decided where the field is defined. The two marks answer different questions, which is why this is not folded into the other — a field can be stored externally and still belong in the graph.",
+  "$id": "manni:stewardship:1.1.0",
+  "title": "manni stewardship vocabulary v1.1.0",
+  "description": "Is this page cared for? This vocabulary covers attribution, ownership, review, the document's own dates, and the anchors that make drift detectable. Every field records a fact a person asserts about the document, not one a tool reads off the file. That is why `created`, `last-updated` and `authors` are here. Git records when a path changed and who committed the change, not when the document was written or who wrote it. Those part company at every migration, split, squashed import, typo fix and bulk frontmatter sweep. A published page carries no repo, so a stamped date travels with the document where a derived one cannot. The cost is that a hand-typed `last-updated` goes stale quietly, and no JSON Schema can catch that. The review dates are records, not freshness gates. Tooling that can read a clock derives the due date from `last-reviewed` and `review-interval`. Version 1.1.0 adds `x-manni-graph-output: false` to `owner`, `stakeholders` and `reviewed-by`. Those three name people, so a published graph leaves them out: its Turtle, its JSON-LD, its iiRDS package and its search index. Validation is the same as in 1.0.0.",
   "type": "object",
   "additionalProperties": true,
   "properties": {
@@ -12,7 +12,7 @@
         "object",
         "array"
       ],
-      "description": "Who wrote the page: a name, a list of names, or the structured person objects MyST and Docusaurus define. Attribution rather than answerability — `owner` is the party on the hook for the page now, and the two part company the moment an author moves on. Not a `stringList`, and since proposal.2 not the only field here that isn't: `verified-against` and `source-of-truth` take the same string-or-object-or-list shape, as `entryList`. `authors` keeps its own inline copy rather than sharing that definition, because MyST and Docusaurus claim this key too and the composability law holds it at their loosest published definition, which `entryList`'s uniqueness and member floors go past. List members are names or person objects — never bare numbers or nulls. Never empty in any form: minLength, minItems and minProperties each bind to their own type and are ignored for the others.",
+      "description": "Who wrote the page: a name, a list of names, or the structured person objects MyST and Docusaurus define. Attribution rather than answerability — `owner` is the party on the hook for the page now, and the two part company the moment an author moves on. Not a `stringList`, and not the only field here that isn't: `verified-against` and `source-of-truth` take the same string-or-object-or-list shape, as `entryList`. `authors` keeps its own inline copy rather than sharing that definition, because MyST and Docusaurus claim this key too and the composability law holds it at their loosest published definition, which `entryList`'s uniqueness and member floors go past. List members are names or person objects — never bare numbers or nulls. Never empty in any form: minLength, minItems and minProperties each bind to their own type and are ignored for the others.",
       "items": {
         "type": [
           "string",
@@ -26,19 +26,19 @@
     },
     "owner": {
       "$ref": "#/$defs/stringList",
-      "description": "The person or team answerable for this page — the one required field of every docs-ownership system from Backstage to GitLab. A name, a handle, a chat channel, a team slug, or a list of them; write the spelling people can actually reach.",
+      "description": "The person or team answerable for this page — the one required field of every docs-ownership system from Backstage to GitLab. A name, a handle, a chat channel, a team slug, or a list of them; write the spelling people can actually reach. A published graph does not carry it, because it names people.",
       "x-manni-location": "external",
       "x-manni-graph-output": false
     },
     "stakeholders": {
       "$ref": "#/$defs/stringList",
-      "description": "Who has a stake in this page being right: the feature's engineer, the product owner, the support lead who fields its tickets. The standing parties to consult before changing the page — where `reviewed-by` records who actually did the last pass. Page-level on purpose: the right stakeholders differ page by page, and project-wide ones belong in your project docs, not in every file's frontmatter.",
+      "description": "Who has a stake in this page being right: the feature's engineer, the product owner, the support lead who fields its tickets. The standing parties to consult before changing the page — where `reviewed-by` records who actually did the last pass. Page-level on purpose: the right stakeholders differ page by page, and project-wide ones belong in your project docs, not in every file's frontmatter. A published graph does not carry it, because it names people.",
       "x-manni-location": "external",
       "x-manni-graph-output": false
     },
     "reviewed-by": {
       "$ref": "#/$defs/stringList",
-      "description": "Who last reviewed the page. Named `reviewed-by` rather than `reviewers` because MyST already defines `reviewers` as scholarly person objects.",
+      "description": "Who last reviewed the page. Named `reviewed-by` rather than `reviewers` because MyST already defines `reviewers` as scholarly person objects. A published graph does not carry it, because it names people.",
       "x-manni-location": "external",
       "x-manni-graph-output": false
     },
@@ -65,7 +65,7 @@
     },
     "verified-against": {
       "$ref": "#/$defs/entryList",
-      "description": "The product version, API revision, or spec the content was last verified against. A string is the short spelling — `operator 1.4.2` — and an object the checkable one, such as `{name: operator, version: 1.4.2}`, which a drift check can compare without parsing prose. A list says a page was verified against more than one thing, such as the operator and the cluster it runs on; proposal.1 held this to a single string and could not say that at all. What turns \"reviewed\" into \"reviewed against something\".",
+      "description": "The product version, API revision, or spec the content was last verified against. A string is the short spelling — `operator 1.4.2` — and an object the checkable one, such as `{name: operator, version: 1.4.2}`, which a drift check can compare without parsing prose. A list says a page was verified against more than one thing, such as the operator and the cluster it runs on. What turns \"reviewed\" into \"reviewed against something\".",
       "x-manni-location": "external"
     },
     "source-of-truth": {
@@ -92,7 +92,7 @@
         "type": "string",
         "minLength": 1
       },
-      "description": "One non-empty string, or a non-empty list of unique ones — the same shape as kg's labelList."
+      "description": "One non-empty string, or a non-empty list of unique ones — the same shape as the `labelList` of manni:graph:1.0.0."
     },
     "entryList": {
       "type": [
@@ -113,7 +113,7 @@
       "minItems": 1,
       "minProperties": 1,
       "uniqueItems": true,
-      "description": "One entry, or a non-empty list of unique ones, where an entry is a non-empty string or a non-empty object. The shape `authors` carries, made a definition in proposal.2 where two more fields needed it: the short human spelling and the structured machine-checkable one, without minting a second field name for the same fact. Object keys are left open on purpose, since enumerating them would freeze a vocabulary this proposal has not put to review; the recommendations live in each field's description. Every non-empty floor binds to its own type — minLength for the string, minProperties for the object, minItems and uniqueItems for the list — and `items` repeats the first two, so `\"\"`, `[]`, `{}`, `[\"\"]` and `[{}]` all fail. Unlike `authors`, no other schema claims the keys that use this, so the family is free to set that floor.",
+      "description": "One entry, or a non-empty list of unique ones, where an entry is a non-empty string or a non-empty object. The shape `authors` carries, made a definition because two more fields need it: the short human spelling and the structured machine-checkable one, without minting a second field name for the same fact. Object keys are left open on purpose, and the recommendations live in each field's description. Every non-empty floor binds to its own type — minLength for the string, minProperties for the object, minItems and uniqueItems for the list — and `items` repeats the first two, so `\"\"`, `[]`, `{}`, `[\"\"]` and `[{}]` all fail. Unlike `authors`, no other schema claims the keys that use this, so the family is free to set that floor.",
       "$comment": "minLength, minItems, minProperties and uniqueItems each apply to one instance type and are ignored for the others; that is what lets one subschema hold three shapes without an anyOf whose errors name all three branches."
     },
     "w3cdtf": {

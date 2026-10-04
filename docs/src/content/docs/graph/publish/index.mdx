@@ -191,7 +191,9 @@ Mark the property in the schema, not in a post-processing step:
 ```
 
 The filter runs once, before derivation, so the field is absent from all three
-exports and from the Turtle. Absent means `true`. See
+exports and from the Turtle. Absent means `true`. The default set already marks
+`owner`, `stakeholders` and `reviewed-by`, the stewardship fields that name
+people. See
 [Govern the graph](/manni/graph/govern/#what-the-published-graph-carries).
 
 Encrypted values need no mark. graph never decrypts, so an encrypted value reaches

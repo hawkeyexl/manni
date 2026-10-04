@@ -23,8 +23,6 @@ describe("parseConfig", () => {
       "code",
       "provenance",
     ]);
-    // empty = use the page vocabulary bundled with manni
-    expect(c.schemas).toEqual([]);
     // empty = use the shapes bundled with manni (shapes/graph/shapes-1.0.0.ttl)
     expect(c.check.shapes).toEqual([]);
     expect(c.fill.validateGraph).toBe(true);
@@ -74,12 +72,16 @@ describe("parseConfig", () => {
     });
   });
 
-  it("reads schemas at the section's top level", () => {
-    const c = parseConfig(
-      'schemas: ["./house.schema.json"]\n',
-      "/tmp/manni.config.yaml",
+  it("refuses a schemas key: the schema set is meta's (proposal 0074)", () => {
+    // graph build reads x-manni-graph-output from the set `manni meta validate`
+    // resolves for each page, so graph keeps no schema set of its own. The key
+    // is unknown, refused by the config schema like any other.
+    const parse = (): unknown =>
+      parseConfig('schemas: ["./house.schema.json"]\n', "/tmp/manni.config.yaml");
+    expect(parse).toThrow(GraphError);
+    expect(parse).toThrow(
+      'Invalid config in /tmp/manni.config.yaml:\n  /graph: unknown key "schemas"',
     );
-    expect(c.schemas).toEqual(["./house.schema.json"]);
   });
 
   it("refuses the old validate: wrapper by name", () => {

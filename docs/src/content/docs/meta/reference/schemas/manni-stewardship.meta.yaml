@@ -6,6 +6,8 @@ docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx:
   source-of-truth:
     - path: src/meta/schemas/stewardship/1.0.0.json
     - path: src/meta/schemas/stewardship-strict/1.0.0.json
+    - path: src/meta/schemas/stewardship/1.1.0.json
+    - path: src/meta/schemas/stewardship-strict/1.1.0.json
     - path: src/meta/core/schema-registry.ts
   eval-suite: meta
   evals:
@@ -20,16 +22,16 @@ docs/src/content/docs/meta/reference/schemas/manni-stewardship.mdx:
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2-15
-      integrity: sha256-9fd5c4f2dcf29c980ff11d8eaf3d6a72e9ce5ecf67a9ec50497bb532d00b9008
+      integrity: sha256-a5237f51d3dd7762519de08931983491d8b0194f6ec968f8a659139fcc64a763
     - generated-by: Claude Opus 5.5
       lines: 23-24
       integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
     - generated-by: Claude Opus 5.5
-      lines: 30-220
-      integrity: sha256-cdce41166d0486564ba891ed2ba311237a0e06b5a32dd477fdc521a8e3560757
+      lines: 30-234
+      integrity: sha256-1a8ae803f5cd078840ddfc9849f4ea366b108b9b9296d07c1dccb0dfafa530fd
     - generated-by: Claude Opus 5.5
-      lines: 233-265
-      integrity: sha256-59f9c750abc554b36d683aa65f41142b7a0da9a519ae0f481658ecca527e2f3a
+      lines: 247-303
+      integrity: sha256-b53f96504f478023d334b12195c0d700fd1ccbac8d29230646f5b3d3e7991fd2
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

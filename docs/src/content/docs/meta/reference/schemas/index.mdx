@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "Built-in schemas"
   type: reference
-last-updated: 2026-10-01
+last-updated: 2026-10-04
 tags:
   - schemas
   - registry
@@ -44,7 +44,7 @@ prerequisites:
 import { Aside, Tabs, TabItem, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 {/* cite registry-forty-five-bundled-schemas */}
-manni meta bundles forty-seven schemas. You reference any of them by id, with no file
+manni meta bundles forty-nine schemas. You reference any of them by id, with no file
 to write, no URL to host, and no network call at validation time. This page is
 the registry: what each one constrains, whether it requires anything, and which
 are applied when you pass no flags at all. Each id links to its own page, with
@@ -85,8 +85,10 @@ installed.
 | [`anthropic:claude-subagent:2.1`](/manni/meta/reference/schemas/anthropic-claude-subagent/) | 18 Claude Code agent definition fields | `name`, `description` | No | [`claude-subagent/2.1.json`](/manni/schemas/claude-subagent/2.1.json) |
 | [`manni:core:1.0.0`](/manni/meta/reference/schemas/manni-core/) | `title`, `description`, `id`, `type`, `keywords`, `language` | `title`, `description` | **Yes** | [`core/1.0.0.json`](/manni/schemas/core/1.0.0.json) |
 | [`manni:core-strict:1.0.0`](/manni/meta/reference/schemas/manni-core/#strict-overlay) | the form of `title`, `description`, `id`, `type`, `keywords`, `language` | nothing | No | [`core-strict/1.0.0.json`](/manni/schemas/core-strict/1.0.0.json) |
-| [`manni:stewardship:1.0.0`](/manni/meta/reference/schemas/manni-stewardship/) | `authors`, `owner`, `stakeholders`, `reviewed-by`, `created`, `last-updated`, `last-reviewed`, `review-interval`, `verified-against`, `source-of-truth` | nothing | **Yes** | [`stewardship/1.0.0.json`](/manni/schemas/stewardship/1.0.0.json) |
-| [`manni:stewardship-strict:1.0.0`](/manni/meta/reference/schemas/manni-stewardship/#strict-overlay) | the form of `authors`, `owner`, `stakeholders`, `reviewed-by`, `created`, `last-updated`, `last-reviewed`, `verified-against`, `source-of-truth` | nothing | No | [`stewardship-strict/1.0.0.json`](/manni/schemas/stewardship-strict/1.0.0.json) |
+| [`manni:stewardship:1.1.0`](/manni/meta/reference/schemas/manni-stewardship/) | `authors`, `owner`, `stakeholders`, `reviewed-by`, `created`, `last-updated`, `last-reviewed`, `review-interval`, `verified-against`, `source-of-truth` | nothing | **Yes** | [`stewardship/1.1.0.json`](/manni/schemas/stewardship/1.1.0.json) |
+| [`manni:stewardship:1.0.0`](/manni/meta/reference/schemas/manni-stewardship/#version-100) | `authors`, `owner`, `stakeholders`, `reviewed-by`, `created`, `last-updated`, `last-reviewed`, `review-interval`, `verified-against`, `source-of-truth` | nothing | No | [`stewardship/1.0.0.json`](/manni/schemas/stewardship/1.0.0.json) |
+| [`manni:stewardship-strict:1.1.0`](/manni/meta/reference/schemas/manni-stewardship/#strict-overlay) | the form of `authors`, `owner`, `stakeholders`, `reviewed-by`, `created`, `last-updated`, `last-reviewed`, `verified-against`, `source-of-truth` | nothing | No | [`stewardship-strict/1.1.0.json`](/manni/schemas/stewardship-strict/1.1.0.json) |
+| [`manni:stewardship-strict:1.0.0`](/manni/meta/reference/schemas/manni-stewardship/#version-100) | the form of `authors`, `owner`, `stakeholders`, `reviewed-by`, `created`, `last-updated`, `last-reviewed`, `verified-against`, `source-of-truth` | nothing | No | [`stewardship-strict/1.0.0.json`](/manni/schemas/stewardship-strict/1.0.0.json) |
 | [`manni:audience:1.0.0`](/manni/meta/reference/schemas/manni-audience/) | `audiences`, `personas`, `journeys`, `intent`, `visibility` | nothing | **Yes** | [`audience/1.0.0.json`](/manni/schemas/audience/1.0.0.json) |
 | [`manni:audience-strict:1.0.0`](/manni/meta/reference/schemas/manni-audience/#strict-overlay) | the form of `audiences`, `personas`, `journeys`, `intent` | nothing | No | [`audience-strict/1.0.0.json`](/manni/schemas/audience-strict/1.0.0.json) |
 | [`manni:lifecycle:1.0.0`](/manni/meta/reference/schemas/manni-lifecycle/) | `lifecycle`, `replaced-by`, `supersedes`, `remove-by` | `replaced-by` or `remove-by` on a `deprecated` page | **Yes** | [`lifecycle/1.0.0.json`](/manni/schemas/lifecycle/1.0.0.json) |
@@ -107,13 +109,13 @@ installed.
 | [`manni:citations-strict:1.0.0`](/manni/meta/reference/schemas/manni-citations/#strict-overlay) | the form of `citations` | nothing | No | [`citations-strict/1.0.0.json`](/manni/schemas/citations-strict/1.0.0.json) |
 
 {/* cite registry-all-draft-2020-12-and-builtin-refs */}
-All forty-seven use [Draft
+All forty-nine use [Draft
 2020-12](/manni/meta/reference/schema-resolution/#dialects) and are [built-in
 references](/manni/meta/reference/schema-resolution/#reference-kinds). A typo in an
 id is reported as an unknown schema rather than a missing file.
 
 {/* cite registry-forty-four-allow-additional-properties */}
-Forty-six of them allow additional properties. `agentskills:skill:1.0` is the
+Forty-eight of them allow additional properties. `agentskills:skill:1.0` is the
 one exception, and not out of strictness. The tooling that packages a skill for
 distribution *hard-errors* on a key outside the standard's six rather than
 ignoring it. A schema that tolerated unknown keys would pass exactly the file
@@ -158,6 +160,8 @@ https://hawkeyexl.github.io/manni/schemas/core/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/core-strict/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/stewardship/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/stewardship/1.1.0.json
+https://hawkeyexl.github.io/manni/schemas/stewardship-strict/1.1.0.json
 https://hawkeyexl.github.io/manni/schemas/audience/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/audience-strict/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/lifecycle/1.0.0.json
@@ -346,7 +350,7 @@ compose](/manni/meta/reference/taxonomy-schemas/#which-ones-compose).
 ## What runs when you pass no flags
 
 {/* cite registry-only-two-in-the-default-set */}
-Eleven of the forty-seven are in the default set, in this order:
+Eleven of the forty-nine are in the default set, in this order:
 
 ```text
 google:okf:0.1
@@ -354,7 +358,7 @@ passo-uno:seven-action:1.0
 manni:core:1.0.0
 manni:audience:1.0.0
 manni:structure:1.0.0
-manni:stewardship:1.0.0
+manni:stewardship:1.1.0
 manni:lifecycle:1.0.0
 manni:ai-context:1.0.0
 manni:evals:1.0.0

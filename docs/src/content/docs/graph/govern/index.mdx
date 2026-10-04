@@ -131,6 +131,12 @@ Absent means `true`. The filter runs **once**, before derivation. A dropped
 field is therefore absent from the Turtle, the JSON-LD, the iiRDS package and
 the search index alike. There is no post-processing step to forget.
 
+The marks come from the schema set `manni meta validate` resolves for each
+page, so the `meta:` section of `manni.config.yaml` decides them. graph keeps
+no schema set of its own. The default set carries `manni:stewardship:1.1.0`,
+which marks `owner`, `stakeholders` and `reviewed-by`. Those name people, so
+a published graph leaves them out with no config line.
+
 The mark sits beside
 [`x-manni-location`](/manni/meta/schemas/field-location/) in the same file on
 purpose. What a page stores and what a delivered artifact says are two

@@ -60,11 +60,10 @@ build:
 provenance:
   qualified: true
 
-# The schema set that judges a page's frontmatter: where \`manni graph build\`
-# reads x-manni-graph-output from, and what to check these pages against with
-# \`manni meta validate\`. Default: the \`graph\` page vocabulary,
-# manni:graph:1.0.0, a built-in schema of manni meta, so no schema file ships. Override with file paths, URLs, or manni meta built-in ids:
-# schemas: ["./my-schema.json"]
+# Which fields a published graph may carry is read from x-manni-graph-output in
+# the schema set \`manni meta validate\` resolves for each page. Set that under
+# meta: (schemas, strict, register), not here. The default set keeps the
+# stewardship people fields (owner, stakeholders, reviewed-by) out.
 
 # SHACL shapes \`manni graph check\` validates the built graph against. Default:
 # the shapes contract bundled with manni (shapes/graph/shapes-1.0.0.ttl).

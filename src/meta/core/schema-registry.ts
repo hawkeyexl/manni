@@ -67,6 +67,8 @@ import manniGraphStrict100 from "../schemas/graph-strict/1.0.0.json" with { type
 import manniCitationsStrict100 from "../schemas/citations-strict/1.0.0.json" with { type: "json" };
 import tgdp11 from "../schemas/tgdp/1.1.json" with { type: "json" };
 import tgdpStrict11 from "../schemas/tgdp-strict/1.1.json" with { type: "json" };
+import manniStewardship110 from "../schemas/stewardship/1.1.0.json" with { type: "json" };
+import manniStewardshipStrict110 from "../schemas/stewardship-strict/1.1.0.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 
 export interface BuiltinInfo {
@@ -124,6 +126,8 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
   ["manni:citations-strict:1.0.0", manniCitationsStrict100],
   ["tgdp:templates:1.1", tgdp11],
   ["tgdp:templates-strict:1.1", tgdpStrict11],
+  ["manni:stewardship:1.1.0", manniStewardship110],
+  ["manni:stewardship-strict:1.1.0", manniStewardshipStrict110],
 ]);
 
 /**
@@ -296,6 +300,8 @@ const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
   ["citations-strict/1.0.0.json", "manni:citations-strict:1.0.0"],
   ["tgdp/1.1.json", "tgdp:templates:1.1"],
   ["tgdp-strict/1.1.json", "tgdp:templates-strict:1.1"],
+  ["stewardship/1.1.0.json", "manni:stewardship:1.1.0"],
+  ["stewardship-strict/1.1.0.json", "manni:stewardship-strict:1.1.0"],
 ];
 
 /** Published URL → built-in id, under the current base. */

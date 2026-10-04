@@ -109,3 +109,53 @@ describe("x-manni-graph-output", () => {
     expect(turtle).toContain("encrypted-value.md");
   });
 });
+
+/**
+ * Proposal 0074: the marks come from the schema set `manni meta validate`
+ * resolves, and the default set carries manni:stewardship:1.1.0. A page's
+ * `owner`, `stakeholders` and `reviewed-by` reach none of the published
+ * outputs, with the defaults and with meta `strict: true`.
+ *
+ * graph derives no triple from those fields, so these checks hold with or
+ * without the marks. test/graph/unit/graph-output.test.ts is where the marks
+ * are proved both ways round; this is the end-to-end guard that a build over
+ * the real CLI resolves meta's set at all.
+ */
+describe.each([
+  ["the default set", "manni.config.yaml"],
+  ["meta strict: true", "strict.config.yaml"],
+])("stewardship 1.1.0 under %s", (_name, configFile) => {
+  const people = ["Jane", "Anouk", "Rajesh"];
+  let cwd: string;
+
+  beforeAll(() => {
+    cwd = mkdtempSync(join(tmpdir(), "manni-graph-stewardship-"));
+    cpSync(join(root, "test", "graph", "fixtures", "stewardship-output"), cwd, {
+      recursive: true,
+    });
+    const built = run(["build", "-c", configFile, "-o", "graph.ttl"], cwd);
+    expect(built.status, built.stdout).toBe(0);
+  });
+
+  it("keeps the people out of Turtle", () => {
+    const turtle = readFileSync(join(cwd, "graph.ttl"), "utf8");
+    expect(turtle).toContain("Quota alerting");
+    for (const name of people) expect(turtle).not.toContain(name);
+  });
+
+  it("keeps them out of JSON-LD", () => {
+    const out = run(["export", "jsonld", "-g", "graph.ttl", "-o", "g.jsonld"], cwd);
+    expect(out.status, out.stdout).toBe(0);
+    const jsonld = readFileSync(join(cwd, "g.jsonld"), "utf8");
+    expect(jsonld).toContain("Quota alerting");
+    for (const name of people) expect(jsonld).not.toContain(name);
+  });
+
+  it("keeps them out of the search index", () => {
+    const out = run(["export", "search", "-g", "graph.ttl", "-o", "search"], cwd);
+    expect(out.status, out.stdout).toBe(0);
+    const index = readFileSync(join(cwd, "search", "search.und.json"), "utf8");
+    expect(index).toContain("Quota alerting");
+    for (const name of people) expect(index).not.toContain(name);
+  });
+});

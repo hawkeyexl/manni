@@ -4,6 +4,7 @@
  * `Validator.graphOutputPreferences`, the one question graph's harvest asks of it.
  */
 import { describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Validator } from "../src/meta/core/validator.js";
@@ -131,5 +132,53 @@ describe("x-manni-graph-output: the keyword", () => {
     expect(
       Object.fromEntries(await validator.locationPreferences(data, [PLAIN])),
     ).toEqual({});
+  });
+});
+
+describe("x-manni-graph-output in manni:stewardship (proposal 0074)", () => {
+  const people = {
+    owner: "Jane",
+    stakeholders: ["Ana"],
+    "reviewed-by": "Raj",
+    authors: "Jane",
+    "last-reviewed": "2026-10-01",
+  };
+
+  it("1.1.0 keeps the three people fields out of a published graph", async () => {
+    expect(await prefs(new Validator(), people, ["manni:stewardship:1.1.0"])).toEqual({
+      owner: false,
+      stakeholders: false,
+      "reviewed-by": false,
+    });
+  });
+
+  it("1.0.0 marks nothing, and stays resolvable", async () => {
+    expect(await prefs(new Validator(), people, ["manni:stewardship:1.0.0"])).toEqual({});
+  });
+
+  it("1.1.0 validates exactly as 1.0.0 does", async () => {
+    const v = new Validator();
+    const bad = { owner: "", "last-reviewed": "soon", authors: [] };
+    const strip = (errors: { schema: string }[]) =>
+      errors.map((e) => ({ ...e, schema: "" }));
+    const old = await v.validate(bad, ["manni:stewardship:1.0.0"], () => undefined);
+    const now = await v.validate(bad, ["manni:stewardship:1.1.0"], () => undefined);
+    expect(old.length).toBeGreaterThan(0);
+    expect(strip(now)).toEqual(strip(old));
+  });
+});
+
+describe("manni:stewardship-strict:1.1.0 (proposal 0074)", () => {
+  it("is the 1.0.0 overlay under the 1.1.0 id", async () => {
+    const read = async (v: string) =>
+      JSON.parse(
+        await readFile(join(here, "..", "src", "meta", "schemas", "stewardship-strict", `${v}.json`), "utf8"),
+      ) as Record<string, unknown>;
+    const { $id, title, description, ...rest } = await read("1.1.0");
+    const { $id: _i, title: _t, description: _d, ...old } = await read("1.0.0");
+    expect($id).toBe("manni:stewardship-strict:1.1.0");
+    expect(title).toBe("manni stewardship strict overlay v1.1.0");
+    expect(description).toContain("manni:stewardship:1.1.0");
+    expect(rest).toEqual(old);
   });
 });

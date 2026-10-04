@@ -37,13 +37,13 @@ docs/src/content/docs/meta/index.mdx:
       integrity: sha256-a8ebb85200e3d1e1d36f725748d2bbec7f7fae7d1a7a081d14e1db973dd28d83
     - generated-by: Claude Opus 5.5
       lines: 82-84
-      integrity: sha256-83c76ac07ce43182e188a97f4297519797bd70e111922a3d94bfa840ed1b3a43
+      integrity: sha256-b2fceb517772f98be87916d5be182ca16e685df9fb74047e0fd671213f93c823
     - generated-by: Claude Fable 5.1
       lines: 85
       integrity: sha256-aa17eefa1e5439e9af73778b7fc2270e55e43b3218512c194d803489bd3f2c24
     - generated-by: Claude Opus 5.5
       lines: 86-89
-      integrity: sha256-57f90f18ad0d9336dae58c6930621366487b3a91bb183723a928c45bd5ebeeef
+      integrity: sha256-93f6d480198749990a0917d759fbc2d2d8f94de59a40212c89ddc39a3093f964
     - generated-by: Claude Fable 5.1
       lines: 91-115
       integrity: sha256-1e5a77567ea78f7c019a253c1d99c8063cee127534b78e7d27c478e7132f26fc

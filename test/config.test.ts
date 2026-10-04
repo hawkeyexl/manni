@@ -823,7 +823,11 @@ describe("the repository's own manni.config.yaml", () => {
     ...[
       "core", "audience", "structure", "stewardship", "lifecycle",
       "ai-context", "evals", "graph", "citations",
-    ].flatMap((family) => [`manni:${family}:1.0.0`, `manni:${family}-strict:1.0.0`]),
+    ].flatMap((family) => {
+      // Stewardship's default is 1.1.0, which adds the graph output marks (0074).
+      const v = family === "stewardship" ? "1.1.0" : "1.0.0";
+      return [`manni:${family}:${v}`, `manni:${family}-strict:${v}`];
+    }),
   ];
 
   it("is what discovery finds from the repo root, and names a schema that is there", async () => {
