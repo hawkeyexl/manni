@@ -105,6 +105,52 @@ describe("deriveGraph — document basics", () => {
     expect(has(g, DOC, `${NS.dcterms}language`, lit("en"))).toBe(true);
   });
 
+  it("reads stewardship's created and last-updated as the document's dates", () => {
+    const g = graph({
+      "docs/a.md": "---\ncreated: 2026-05-01\nlast-updated: 2026-07-01\n---\n",
+    });
+    expect(
+      has(g, DOC, `${NS.dcterms}created`, lit("2026-05-01", `${NS.xsd}date`)),
+    ).toBe(true);
+    expect(
+      has(g, DOC, `${NS.dcterms}modified`, lit("2026-07-01", `${NS.xsd}date`)),
+    ).toBe(true);
+  });
+
+  it("prefers stewardship's spelling over the other date aliases", () => {
+    const g = graph({
+      "docs/a.md": [
+        "---",
+        "date: 2026-01-01",
+        "created: 2026-05-01",
+        "updated: 2026-02-02",
+        "lastmod: 2026-03-03",
+        "modified: 2026-04-04",
+        "last-updated: 2026-07-01",
+        "---",
+        "",
+      ].join("\n"),
+    });
+    const values = (p: string) =>
+      g.filter((q) => q.s === DOC && q.p === p).map((q) => q.o.value);
+    expect(values(`${NS.dcterms}created`)).toEqual(["2026-05-01"]);
+    expect(values(`${NS.dcterms}modified`)).toEqual(["2026-07-01"]);
+  });
+
+  it("falls back through updated, lastmod and modified, in that order", () => {
+    const modified = (fm: string) =>
+      graph({ "docs/a.md": `---\n${fm}\n---\n` })
+        .filter((q) => q.s === DOC && q.p === `${NS.dcterms}modified`)
+        .map((q) => q.o.value);
+    expect(
+      modified("updated: 2026-02-02\nlastmod: 2026-03-03\nmodified: 2026-04-04"),
+    ).toEqual(["2026-02-02"]);
+    expect(modified("lastmod: 2026-03-03\nmodified: 2026-04-04")).toEqual([
+      "2026-03-03",
+    ]);
+    expect(modified("modified: 2026-04-04")).toEqual(["2026-04-04"]);
+  });
+
   it("serializes Date frontmatter values as ISO 8601 (TOML frontmatter)", () => {
     const g = graph({
       "docs/a.md": '+++\ntitle = "T"\ndate = 2024-01-05T10:00:00Z\n+++\n',

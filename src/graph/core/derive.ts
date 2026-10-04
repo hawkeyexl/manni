@@ -420,7 +420,10 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         }
       }
 
-      const created = asString(fmValue(fm, ["date", "created"]));
+      // Stewardship's spelling first (`created`, `last-updated`), then the
+      // aliases other generators write. One value per predicate: the first
+      // key present wins and the rest are ignored.
+      const created = asString(fmValue(fm, ["created", "date"]));
       if (created) {
         add(docIri, `${NS.dcterms}created`, dateTerm(created));
         if (prov) add(docIri, `${NS.prov}generatedAtTime`, dateTerm(created));
@@ -428,7 +431,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       }
 
       const modified = asString(
-        fmValue(fm, ["updated", "lastmod", "modified"]),
+        fmValue(fm, ["last-updated", "updated", "lastmod", "modified"]),
       );
       if (modified) {
         add(docIri, `${NS.dcterms}modified`, dateTerm(modified));
