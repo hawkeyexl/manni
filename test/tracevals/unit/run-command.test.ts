@@ -1,7 +1,7 @@
 /**
  * `runRun` is where CLI options meet the resolved config. The engine's own
- * `failOnNeedsReview` handling is covered in engine.test.ts; what is covered
- * here is the overlay — that `--fail-on-needs-review` and `--require` actually
+ * `failOnReview` handling is covered in engine.test.ts; what is covered
+ * here is the overlay — that `--fail-on-review` and `--require` actually
  * reach it, and that the flag composes with the config rather than erasing it.
  */
 import { join } from "node:path";
@@ -46,13 +46,13 @@ describe("runRun needs-review policy", () => {
   });
 
   it("passes the run when the flag turns the policy off", async () => {
-    const { report } = await run({ failOnNeedsReview: false });
+    const { report } = await run({ failOnReview: false });
     expect(report.summary.needsReview).toBe(1);
     expect(report.exitCode).toBe(0);
   });
 
   it("leaves the config value in force when the flag is absent", async () => {
-    const { report } = await run({ failOnNeedsReview: undefined });
+    const { report } = await run({ failOnReview: undefined });
     expect(report.exitCode).toBe(1);
   });
 });

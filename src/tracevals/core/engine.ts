@@ -343,7 +343,7 @@ export async function runEvals(options: EngineOptions): Promise<RunReport> {
   const failing =
     summary.fail > 0 ||
     summary.error > 0 ||
-    (config.failOnNeedsReview && summary.needsReview > 0);
+    (config.failOnReview && summary.needsReview > 0);
 
   return {
     trace: {

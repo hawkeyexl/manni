@@ -142,7 +142,7 @@ export interface TracevalsConfig {
       autoFail: number[];
     };
   };
-  failOnNeedsReview: boolean;
+  failOnReview: boolean;
   /**
    * Module specifiers imported before evals are planned, so a `registerGrader`
    * call from outside this package lands in time (ADR 01017). Resolved against
@@ -227,7 +227,7 @@ interface RawConfig {
     maxReview?: number;
     sweep?: { ensembleRuns?: number[]; autoPass?: number[]; autoFail?: number[] };
   };
-  failOnNeedsReview?: boolean;
+  failOnReview?: boolean;
   plugins?: string[];
   reportUnusedArtifacts?: boolean;
 }
@@ -340,7 +340,7 @@ export function parseConfig(
         ],
       },
     },
-    failOnNeedsReview: r.failOnNeedsReview ?? true,
+    failOnReview: r.failOnReview ?? true,
     // Always a list, never undefined: the read site concatenates `--require`
     // onto it, and a hole there would be a special case in every caller.
     plugins: [...(r.plugins ?? [])],

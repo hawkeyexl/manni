@@ -113,7 +113,7 @@ export interface RunReport {
   manifest?: ManifestReport;
   evalResults: EvalResult[];
   summary: RunSummary;
-  /** 0 pass, 1 any fail/error (and needs-review when failOnNeedsReview). */
+  /** 0 pass, 1 any fail/error (and needs-review when failOnReview). */
   exitCode: 0 | 1;
   /** Uncached ensemble runs this run spent. See `judge.maxTurns`. */
   turns: number;

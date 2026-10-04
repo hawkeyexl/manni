@@ -62,7 +62,7 @@ interface RunFlags extends ConfigFlags {
   format?: ReportFormat;
   output?: string;
   history?: boolean;
-  failOnNeedsReview?: boolean;
+  failOnReview?: boolean;
   allowExecution?: string[];
   execution?: boolean;
   require?: string[];
@@ -204,7 +204,7 @@ function sharedRunOptions(opts: RunFlags) {
     // Both spellings are declared for precisely that reason: commander
     // defaults a lone `--no-x` to `true`, which makes the config's own value
     // unreachable from the command line.
-    failOnNeedsReview: opts.failOnNeedsReview,
+    failOnReview: opts.failOnReview,
     // Commander's default is `[]`, which is "no flag", not "run nothing": only
     // a list someone typed narrows the run, and `--no-execution` runs none.
     ...(opts.execution === false
@@ -323,8 +323,8 @@ function addRunFlags(
       "--report-unused-artifacts",
       "list every skill and agent the session was offered and never used",
     )
-    .option("--fail-on-needs-review", "treat needs-review as a failure")
-    .option("--no-fail-on-needs-review", "do not fail the run on needs-review")
+    .option("--fail-on-review", "Exit 1 when any eval lands in the human-review zone (the default)")
+    .option("--no-fail-on-review", "Do not fail the run on evals left for human review")
     // `<kind>`, not `<kind...>`: a variadic option greedily eats the
     // positional `[traces...]` that follow it. Repeat the flag instead.
     .option(

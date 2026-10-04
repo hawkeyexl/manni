@@ -56,8 +56,8 @@ export interface RunSharedOptions {
   output?: string;
   /** Append this run to history and compare against the previous run. */
   history?: boolean;
-  /** Overrides config.failOnNeedsReview; undefined defers to the config. */
-  failOnNeedsReview?: boolean;
+  /** Overrides config.failOnReview; undefined defers to the config. */
+  failOnReview?: boolean;
   /**
    * `--allow-execution`: run only these grants, of those `execution.allow`
    * holds. Absent keeps them all; `[]` (`--no-execution`) runs none. Never
@@ -157,7 +157,7 @@ export async function prepareRun(
   // reads one fully-resolved value (CLAUDE.md, "Config <-> CLI flags").
   const config = {
     ...loaded,
-    failOnNeedsReview: options.failOnNeedsReview ?? loaded.failOnNeedsReview,
+    failOnReview: options.failOnReview ?? loaded.failOnReview,
     execution: {
       allow: [
         ...grantsFor(loaded.execution.allow, {

@@ -21,7 +21,7 @@ describe("parseConfig", () => {
     expect(config.render.maxTotalChars).toBe(150000);
     expect(config.history.file).toBe(".manni/tracevals/history.jsonl");
     expect(config.capture.dir).toBe(".manni/tracevals/sessions");
-    expect(config.failOnNeedsReview).toBe(true);
+    expect(config.failOnReview).toBe(true);
   });
 
   it("takes an explicit capture directory and rejects a bad one", () => {
@@ -37,11 +37,11 @@ describe("parseConfig", () => {
   it("keeps explicit values", () => {
     const config = parseConfig({
       judge: { ensembleRuns: 5, maxTurns: 40 },
-      failOnNeedsReview: false,
+      failOnReview: false,
     });
     expect(config.judge.ensembleRuns).toBe(5);
     expect(config.judge.maxTurns).toBe(40);
-    expect(config.failOnNeedsReview).toBe(false);
+    expect(config.failOnReview).toBe(false);
     // Untouched sections still get defaults.
     expect(config.judge.temperature).toBe(0);
   });
@@ -315,11 +315,11 @@ describe("loadConfig", () => {
   it("reads settings from the tracevals section of manni.config.yaml", async () => {
     await write(
       "manni.config.yaml",
-      "tracevals:\n  judge:\n    ensembleRuns: 5\n  failOnNeedsReview: false\n",
+      "tracevals:\n  judge:\n    ensembleRuns: 5\n  failOnReview: false\n",
     );
     const config = await loadConfig(dir);
     expect(config.judge.ensembleRuns).toBe(5);
-    expect(config.failOnNeedsReview).toBe(false);
+    expect(config.failOnReview).toBe(false);
     // Untouched sections still get their defaults.
     expect(config.judge.temperature).toBe(0);
   });

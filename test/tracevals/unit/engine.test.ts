@@ -116,7 +116,7 @@ describe("runEvals", () => {
     }
   });
 
-  it("respects failOnNeedsReview", async () => {
+  it("respects failOnReview", async () => {
     const reviewJudge: TraceJudge = (plans) =>
       Promise.resolve(
         plans.map((plan) => ({
@@ -138,7 +138,7 @@ describe("runEvals", () => {
 
     const lax = await run({
       judge: reviewJudge,
-      config: parseConfig({ failOnNeedsReview: false }),
+      config: parseConfig({ failOnReview: false }),
     });
     // Deterministic forbidden-tool still fails, so isolate: needs-review alone
     // must not force failure — check summary accounting instead.

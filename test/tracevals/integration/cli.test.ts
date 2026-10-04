@@ -811,6 +811,42 @@ describe.skipIf(!built)("built CLI", () => {
    * the flag declarations, which is where a commander default once hid a
    * config value from the command line.
    */
+  /**
+   * The review gate, through the built binary: the flag pair must reach the
+   * run, and the old spelling is gone rather than aliased.
+   */
+  describe("review gate", () => {
+    const home = { CLAUDE_CONFIG_DIR: join(root, "test/tracevals/fixtures/home/.claude") };
+    const args = (extra: string[]) => [
+      "run",
+      join(root, "test/tracevals/fixtures/traces/claude-session.jsonl"),
+      "--project",
+      join(root, "test/tracevals/fixtures/review-only"),
+      "--deterministic-only",
+      "--format",
+      "json",
+      ...extra,
+    ];
+
+    it("fails on needs-review by default", async () => {
+      expect((await runCli(args([]), home)).code).toBe(1);
+    });
+
+    it("--no-fail-on-review passes a run whose only outcome is needs-review", async () => {
+      expect((await runCli(args(["--no-fail-on-review"]), home)).code).toBe(0);
+    });
+
+    it("--fail-on-review fails it again", async () => {
+      expect((await runCli(args(["--fail-on-review"]), home)).code).toBe(1);
+    });
+
+    it("no longer accepts --no-fail-on-needs-review", async () => {
+      const { code, stderr } = await runCli(args(["--no-fail-on-needs-review"]), home);
+      expect(code).toBe(2);
+      expect(stderr).toMatch(/unknown option '--no-fail-on-needs-review'/);
+    });
+  });
+
   describe("execution grants", () => {
     // A config directory whose only job is to turn command execution off.
     const noCommands = join(root, "test/tracevals/fixtures/no-commands");
