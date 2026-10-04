@@ -119,4 +119,8 @@ export { hasFrontmatterFence } from "./extractors/frontmatter.js";
 export { configMarks, familyMarks, marksValidator, metaSection, pageMarks } from "./core/page-marks.js";
 export { schemaTrustRoot } from "./core/config.js";
 export { mergeWithMarks } from "./core/external-metadata.js";
+// `manni docevals` and `manni tracevals` point each eval result at the entry
+// that declares it, in the page or in the manifest that supplied it.
+export { declaredAt } from "./core/declared-at.js";
+export type { DeclaredAt, LocatedMetadata } from "./core/declared-at.js";
 export type { PageMarks } from "./core/external-metadata.js";
