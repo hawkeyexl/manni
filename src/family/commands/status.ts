@@ -70,6 +70,26 @@ function ownSchemaCount(cwd: string, members: readonly string[]): number {
   return n;
 }
 
+/**
+ * The pages carrying citations, read the way `cite check` reads them: its
+ * targets, its manifests, its entry rules. Nothing is classified, so no claim
+ * or source is looked at and no git history is read.
+ */
+async function citedPages(cwd: string, configPath: string): Promise<number> {
+  // Imported where they run, so `manni check` never loads them.
+  const { prepareRun, readTarget } = await import("../../cite/commands/check.js");
+  const { readPage } = await import("../../cite/core/page.js");
+  const prepared = await prepareRun({ inputs: [], configPath, cwd, checkSources: false }, "checked", "check");
+  let n = 0;
+  for (const file of prepared.files) {
+    const content = await readTarget(prepared.run, file);
+    const { citations } = (await prepared.setupFor(file, content)).options;
+    const read = readPage(file, content, { markers: false, ...(citations === undefined ? {} : { citations }) });
+    if (read.citations.length > 0) n++;
+  }
+  return n;
+}
+
 async function row(domain: Domain, family: Family, cwd: string, members: readonly string[]): Promise<DomainRow> {
   const configPath = family.configPath;
   const inPlay = (reason: string): DomainRow => ({ name: domain, status: "in-play", reason });
@@ -82,10 +102,7 @@ async function row(domain: Domain, family: Family, cwd: string, members: readonl
       return n > 0 ? inPlay(pages(n, "names its own $schema", "name their own $schema")) : notSetUp;
     }
     case "cite": {
-      // Imported where they run, so `manni check` never loads them.
-      const { runCheck: runCite } = await import("../../cite/commands/check.js");
-      const run = await runCite({ inputs: [], configPath, cwd, checkSources: false });
-      const n = run.pages.filter((p) => p.citations.length > 0).length;
+      const n = await citedPages(cwd, configPath);
       return n > 0 ? inPlay(pages(n, "carries citations", "carry citations")) : notSetUp;
     }
     case "docevals": {

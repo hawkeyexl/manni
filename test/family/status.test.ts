@@ -74,6 +74,30 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
     expect(row?.reason).toMatch(/^manni docevals run could not run: /);
   });
 
+  it("counts the pages whose entries a manifest keeps, and not a page with a marker alone", async () => {
+    dir = fixtureRepo("only-citations");
+    const config = join(dir, "manni.config.yaml");
+    writeFileSync(
+      config,
+      readFileSync(config, "utf8").replace(
+        '      - "docs/**/*.md"\n',
+        '      - "docs/**/*.md"\n    externalMetadata:\n      - file: "{page}.citations.yaml"\n        keys: [citations]\n',
+      ),
+    );
+    const page = join(dir, "docs/limits.md");
+    const [, front = "", body = ""] = /^---\n([\s\S]*?)---\n([\s\S]*)$/.exec(readFileSync(page, "utf8")) ?? [];
+    const entries = front.slice(front.indexOf("citations:")).replace(/^/gm, "  ");
+    writeFileSync(page, `---\ntitle: Limits\n---\n${body}`);
+    writeFileSync(join(dir, "docs/limits.citations.yaml"), `docs/limits.md:\n${entries}`);
+    writeFileSync(join(dir, "docs/marker.md"), "---\ntitle: Marker\n---\n# Marker\n\n<!-- cite nope -->\nA claim.\n");
+    const report = await runStatus({ cwd: dir });
+    expect(report.domains.find((d) => d.name === "cite")).toEqual({
+      name: "cite",
+      status: "in-play",
+      reason: "1 page carries citations",
+    });
+  });
+
   it("puts meta in play for a page that names its own $schema", async () => {
     dir = fixtureRepo("only-citations");
     writeFileSync(join(dir, "docs/own.md"), "---\n$schema: manni:core:1.0.0\ntitle: Own\n---\n# Own\n");
