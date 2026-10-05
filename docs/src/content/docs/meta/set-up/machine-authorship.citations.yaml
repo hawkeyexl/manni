@@ -280,9 +280,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-f5a22fcbc860651acfaf4f4934552be01af9ce818b01782c171d7228c0f90289
       source:
         file: src/meta/core/derive/git.ts
-        lines: 979-985
+        lines: 991-997
         integrity: sha256-2b435bc7191e493beab226d9b5d2150e5ce420e88b2d22176f723c6d29db9b1c
-        commit-sha: e7dd1089550bbee8c728ac158583408866077d49
+        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
     - id: machines-glob-matches-trailer-name-or-email
       claim:
         lines: 60

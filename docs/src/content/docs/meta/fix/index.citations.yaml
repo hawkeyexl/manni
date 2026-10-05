@@ -118,14 +118,6 @@ docs/src/content/docs/meta/fix/index.mdx:
         lines: 1135-1141
         integrity: sha256-32f532eec4d87ee764584428f50c80c02ce2af2b1bd3f803c01ccec9ae0daf6d
         commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
-    - id: derive-rereads-git-blame
-      claim:
-        integrity: sha256-2a92270a056121c9517f9f40032ce7b62e09aacc74668d10a25ea220748cdc48
-      source:
-        file: src/meta/core/derive/git.ts
-        lines: 1043
-        integrity: sha256-817b6bb2ab7bc4c8c0afb4f11f680e9d7eeb053fea6781fb8bffabdff13331bd
-        commit-sha: e7dd1089550bbee8c728ac158583408866077d49
     - id: moved-text-is-never-a-finding
       claim:
         integrity: sha256-2a92270a056121c9517f9f40032ce7b62e09aacc74668d10a25ea220748cdc48
@@ -301,3 +293,11 @@ docs/src/content/docs/meta/fix/index.mdx:
         lines: 360-366
         integrity: sha256-e33a2048ef6a6c5b6515a2aecacd40ffc7fcc9fe41219ba22cf70f9c621c6968
         commit-sha: e7dd1089550bbee8c728ac158583408866077d49
+    - id: derive-rereads-git-blame
+      claim:
+        integrity: sha256-2a92270a056121c9517f9f40032ce7b62e09aacc74668d10a25ea220748cdc48
+      source:
+        file: src/meta/core/derive/git.ts
+        lines: 282-284
+        integrity: sha256-d3c5b10c171e6feaf1de8163a163f27553ce88a39bf7ec4f3d35555114975845
+        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
