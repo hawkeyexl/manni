@@ -104,6 +104,28 @@ const CONDITIONS = {
     },
     reason: (value) => `no prompt matched /${value as string}/`,
   },
+  "command-matches": {
+    validate: (value) => {
+      const shape = stringValue("command-matches")(value);
+      if (shape !== undefined) return shape;
+      try {
+        new RegExp(value as string);
+      } catch (err) {
+        return `options.when.command-matches is not a valid regular expression: ${(err as Error).message}`;
+      }
+      return undefined;
+    },
+    test: (value, window) => {
+      const re = promptRe(value as string);
+      return window.toolCalls.some(
+        (c) =>
+          c.name === "Bash" &&
+          typeof c.input.command === "string" &&
+          re.test(c.input.command),
+      );
+    },
+    reason: (value) => `no Bash command matched /${value as string}/`,
+  },
   "turn-count-above": {
     validate: (value) => {
       if (typeof value !== "number" || !Number.isInteger(value)) {
