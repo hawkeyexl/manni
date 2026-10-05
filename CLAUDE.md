@@ -137,6 +137,14 @@ Key layers:
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
   cite's re-encryption, and the one ciphertext format lives in
   `src/shared/encryption.ts`.
+- `src/docs/`: the docs site's domain, `manni docs start`, `build` and
+  `preview` (proposal 0077). It detects the site's framework and runs that
+  framework's own commands. `docs.commands` overrides any of them.
+  - `src/docs/core/`: the `docs:` config loader, the framework table and
+    site search (`detect.ts`), the long-running child runner, and the
+    built-in static server `preview` uses for frameworks without one.
+  - `src/docs/cli.ts`: thin commander wrapper exported as `buildProgram()`
+    and mounted by `src/cli.ts`. No entry point of its own.
 - `src/index.ts`: the programmatic API, re-exporting `src/meta/index.ts`.
 
 The metadata tool's tests stay flat under `test/`; each later tool adds
@@ -345,7 +353,7 @@ stdin/parse cases.
 Before any user-facing writing or docs task, consult `docs/content-strategy/`:
 
 1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). See `personas.md`.
-2. Find the matching **CUJ** in `cujs.md` (M1–M23, D1–D15, S1–S14, T1–T8). Structure the content around reaching that outcome, not by document type or Diátaxis category.
+2. Find the matching **CUJ** in `cujs.md` (M1–M24, D1–D15, S1–S14, T1–T8). Structure the content around reaching that outcome, not by document type or Diátaxis category.
 3. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
 4. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
 5. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.

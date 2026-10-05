@@ -8,7 +8,7 @@ The site is organized by user intent, not by document type. Each top-level secti
 
 ## Domains
 
-manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Nine domains ship today, so the site has nine top-level sections: `meta/`, `cite/`, `key/`, `a11y/`, `term/`, `lint/`, `docevals/`, `graph/` and `tracevals/`. The same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
+manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Ten domains ship today, so the site has ten top-level sections: `meta/`, `cite/`, `key/`, `docs/`, `a11y/`, `term/`, `lint/`, `docevals/`, `graph/` and `tracevals/`. The same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
 
 The `lint/` section is the sixth. It carries four journey pages and a reference shelf. It serves Maya (M10), Devin (D9), Theo (T5) and Sara (S7). Maya holds every page to the shape its doctype promises. Devin runs the CI gate, Theo reads one structure failure, and Sara describes a doctype as a template. Proposal 0050 folded the domain in, and 0061 made the template format a grammar. That is what earned Sara a set-up track. Writing a template is a job with steps now, rather than a key list to read once. The `lint/` content set is below, after `a11y/`.
 
@@ -21,6 +21,8 @@ The `docevals/` section arrived with a strategy of its own, six personas and twe
 The `graph/` section is the eighth. It serves Maya (M18–M20), Devin (D12–D13), Sara (S12) and Theo (T7). Maya sees the docset as a graph, walks what a change affects, and fills the categorization nobody wrote. Devin gates the graph and publishes it. Sara extends the shapes it is checked against, and Theo fixes a red `graph check`. Proposal 0051 folded the domain in. Its content set is below, after `docevals/`.
 
 The `tracevals/` section is the ninth. It arrived as `docevals/` did, with five audiences of its own. They were artifact authors, an eval-standard owner, platform and CI, run triagers, and a toolsmith named Rin. Rin wants the library rather than the binary. Four of the five were already these people by name. Rin was the only genuinely new shape. He is Devin reading the JSON report and calling the namespace export. So he folded into D15 and the API reference rather than becoming a sixth persona. Upstream's nine journeys became M17, M21–M23, D14–D15, S13–S14 and T8. They took the next free ids, because docevals, lint and graph already held the lower ones. Its content set is last, after `graph/`. No per-tool strategy directory came over: `cujs.md`, `personas.md` and this file carry the whole family.
+
+The `docs/` section is the tenth. Like `key/`, it is a family resource rather than a tool (proposal 0077). The resource is the site itself, which every other domain checks. It serves Maya (M24, running the site locally, and M7) and Devin (D7, the one-command serve step in CI). It serves Theo too (T3, seeing the page in a repository he does not own). It has an overview and a reference page, and no journey pages yet. One command per job leaves no path long enough to need one. The path doubles in this repository, `docs/src/content/docs/docs/`, because the site lives in `docs/` and the domain is named `docs`. Its content set is below, after `key/`.
 
 ---
 
@@ -169,6 +171,15 @@ The third domain's content set, under `docs/src/content/docs/key/`. `key` is not
 | Set up (`key/set-up/index.mdx`) | S4, D6 | ★ | Put the key where every tool finds it. `encryptionKey:` against `MANNI_ENCRYPTION_KEY`, and why a shared repository wants the environment. Then the git-ignore warning, who on the team needs the key, and what breaks without it. Source of truth: `src/shared/encryption-key.ts`, `src/key/commands/set.ts`, `src/key/core/config.ts`. |
 | Run it in CI (`key/ci/index.mdx`) | D6 | ★ | The rotation runbook, written as numbered steps with the exact commands and what each prints. Generate, rotate over the whole family, update the CI secret, and re-record the citation baseline. Then verify under the new key, and resume an interrupted rotation. Source of truth: `src/key/commands/rotate.ts`, `src/shared/encryption.ts`, `src/cite/core/reencrypt.ts`, `src/meta/core/reencrypt.ts`. |
 | CLI reference (`key/reference/cli.mdx`) | S4, D5, D6 | ★ | `set`/`rotate`; every argument and flag, and the exit codes. How rotation finds values: by ciphertext, every value or none, resumable, the narrowed-run and environment rules, and the citation baseline. Then every refusal, and the ladder from minimal to maximal. Guarded by `npm run docs:check-cli`. Source of truth: `src/key/cli.ts`. |
+
+### `docs/` (running the docs site)
+
+The tenth domain's content set, under `docs/src/content/docs/docs/`. `docs` is not a document tool. It runs the site every other domain checks, through the framework's own commands (proposal 0077). The nav gains a `docs` group after `docevals`, with an Overview link and a Reference group autogenerated from `docs/reference/`. The a11y pages that used to type a serve line now run `manni docs preview` and link here.
+
+| Page | CUJ | ★ | Notes |
+|---|---|---|---|
+| Overview (`docs/index.mdx`) | M24, M7, D7, T3 | ★ | What each verb does, how the site and its framework are found, and why the port comes from the collection `url:`. A 30-second proof in this repository: `manni docs preview`, then `manni a11y check` with no flags. Source of truth: `src/docs/core/detect.ts`, `src/docs/commands/`. |
+| CLI reference (`docs/reference/cli.mdx`) | M24, D7 | ★ | `start`/`build`/`preview`; every argument and flag. The framework table with markers, commands and default ports. The `docs:` config keys, the built-in server, and every message with its exit code. Guarded by `npm run docs:check-cli`. Source of truth: `src/docs/cli.ts`, `src/docs/core/config.ts`, `src/docs/core/detect.ts`. |
 
 ### `a11y/` (accessibility)
 

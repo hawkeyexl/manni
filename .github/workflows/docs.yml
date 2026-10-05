@@ -162,22 +162,26 @@ jobs:
       - name: Install docs dependencies
         run: npm ci
         working-directory: docs
-      - name: Build docs site
-        run: npm run build
-        working-directory: docs
 
-      # `astro preview` serves docs/dist under the site's `base`, so the
-      # pages answer at /manni/ the way they do on Pages. It stays up for the
-      # rest of the job; the runner tears it down with the job.
-      - name: Serve the built site
-        run: npx astro preview --host 127.0.0.1 --port 4321 > ../preview.log 2>&1 &
-        working-directory: docs
+      # `manni docs preview` (proposal 0077) dogfoods the docs domain: it
+      # detects Starlight in docs/, builds the site, then runs `astro preview`
+      # on the host and port the `site` collection's url: names. No separate
+      # build step, because preview always builds first. `astro preview`
+      # serves docs/dist under the site's `base`, so the pages answer at
+      # /manni/ the way they do on Pages. It stays up for the rest of the job;
+      # the runner tears it down with the job.
+      - name: Build and serve the site
+        run: node dist/cli.js docs preview > preview.log 2>&1 &
+      # The wait covers the build too, so it allows ten minutes. A preview
+      # that exits (a failed build exits 2) stops the wait at once, with its
+      # log, rather than at the timeout.
       - name: Wait for the preview to answer
         run: |
           tries=0
           until curl -fsS http://127.0.0.1:4321/manni/ > /dev/null; do
             tries=$((tries + 1))
-            [ "$tries" -lt 60 ] || { echo "preview did not answer" >&2; cat preview.log >&2; exit 1; }
+            [ "$tries" -lt 600 ] || { echo "preview did not answer" >&2; cat preview.log >&2; exit 1; }
+            pgrep -f "dist/cli.js docs preview" > /dev/null || { echo "preview exited" >&2; cat preview.log >&2; exit 1; }
             sleep 1
           done
 

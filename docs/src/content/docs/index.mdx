@@ -93,6 +93,11 @@ npx @hawkeyexl/manni docevals run docs/ --deterministic-only
     description="Derive a knowledge graph from documentation frontmatter and formatting, check it against SHACL shapes, and publish it for retrieval. Deterministic, with no model in the loop."
   />
   <LinkCard
+    title="docs"
+    href="/manni/docs/"
+    description="Start, build and preview the docs site with one command per job, whatever framework it runs on, on the port the collection url names."
+  />
+  <LinkCard
     title="key"
     href="/manni/key/"
     description="Set and rotate the family encryption key, so a required field or a private source path is on the page without being readable there."
@@ -112,9 +117,12 @@ it ran on. `term` checks that the terms a page names are defined, and carries
 those terms into Vale and translation. `graph` checks what the pages say about
 each other, which is the only question no single file can answer. `key` sets and
 rotates the one encryption key that `meta` and `cite` encrypt values with.
+`docs` runs the site itself, the one `a11y` crawls, through its framework's own
+commands.
 `manni --help` lists exactly the tools the package carries.
 
-`cite`, `docevals`, `tracevals`, `key`, `term`, `lint` and `graph` are in beta.
+`cite`, `docevals`, `tracevals`, `key`, `docs`, `term`, `lint` and `graph` are
+in beta.
 Their commands, config keys and output can change in any release, without
 notice.
 

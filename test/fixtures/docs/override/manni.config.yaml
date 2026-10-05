@@ -1,0 +1,3 @@
+docs:
+  commands:
+    start: pnpm dev --port 4000

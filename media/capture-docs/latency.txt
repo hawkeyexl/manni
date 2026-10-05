@@ -1,0 +1,9 @@
+preview: 295 lines
+1148	manni: Starlight in docs/. Running npm run build
+16757	07:49:57 [build] Complete!
+16777	manni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321
+16904	┃ Local    http://127.0.0.1:4321/manni
+hugo exit 2 1080ms
+a11y exit 0
+real	4m36.662s
+port 4321 free (checked after the run; the script stopped on the pid lookup, fixed since)

@@ -13,6 +13,7 @@ import { beats as lintBeats, totalFrames as lintTotalFrames, TYPING_MS as lintTy
 import { beats as graphBeats, totalFrames as graphTotalFrames, TYPING_MS as graphTypingMs } from "./graph/beats";
 import { beats as tracevalsBeats, totalFrames as tracevalsTotalFrames, TYPING_MS as tracevalsTypingMs } from "./tracevals/beats";
 import { beats as graphImpactBeats, totalFrames as graphImpactTotalFrames, TYPING_MS as graphImpactTypingMs } from "./graph-impact/beats";
+import { beats as docsBeats, totalFrames as docsTotalFrames, TYPING_MS as docsTypingMs } from "./docs/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -53,6 +54,12 @@ const DemoGraph: React.FC = () => <DemoView beats={graphBeats} fontPx={22} lineP
 const DemoTracevals: React.FC = () => <DemoView beats={tracevalsBeats} fontPx={26} linePx={36} cols={66} typingMs={tracevalsTypingMs} />;
 /** graph-impact-1x1: 23 px / 72 columns, derived in media/graph/graph-impact-1x1.script.md (media/graph/graph-impact-cols.mjs). */
 const DemoGraphImpact: React.FC = () => <DemoView beats={graphImpactBeats} fontPx={22} linePx={31} cols={75} typingMs={graphImpactTypingMs} />;
+
+/**
+ * docs-preview-1x1: 28 px / 61 columns, derived in media/docs-preview-1x1.script.md
+ * (media/capture-docs/cols.mjs). Ligatures off: `://`, `--` and `...` are characters in a terminal.
+ */
+const DemoDocs: React.FC = () => <DemoView beats={docsBeats} fontPx={28} linePx={39} cols={61} typingMs={docsTypingMs} ligatures={false} />;
 
 export const Root: React.FC = () => (
   <>
@@ -151,6 +158,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={graphImpactTotalFrames}
+    />
+    <Composition
+      id="DocsPreviewDemo"
+      component={DemoDocs}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={docsTotalFrames}
     />
   </>
 );

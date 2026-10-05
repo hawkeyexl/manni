@@ -2383,9 +2383,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-c07f8140fd4d829045817b2a220f3a53ecbb75b7bd0bb7a3f716f962a139176e
       source:
         file: src/cli.ts
-        lines: 37
+        lines: 38
         integrity: sha256-f6c79bda32f8010de1827777c8ac4c7ab460ca1cab8482031f39f69d871a4b34
-        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
+        commit-sha: fb809efb98e409ba809c018ef009a4a8094d1c2e
     - id: validate-stale-stamp-is-a-finding
       claim:
         integrity: sha256-6394575c30227d5060c5478c947e4c95c226c178f20dc4ed30e7fec9397fc7ee

@@ -22,6 +22,10 @@ import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  launcherCommandLine,
+  type LauncherCommandLine,
+} from "../../shared/batch-launcher.js";
 import type { Severity } from "../../shared/severity.js";
 import { ditaOtHome } from "../../shared/tools.js";
 import { LintError } from "../types.js";
@@ -77,57 +81,24 @@ export function ditaOtLauncher(
 }
 
 /** How a launcher is actually started. */
-export interface DitaOtCommandLine {
-  command: string;
-  argv: string[];
-  /** Windows: the argv is already one quoted string and must not be re-quoted. */
-  verbatim: boolean;
-}
-
-function isBatch(launcher: string): boolean {
-  const lower = launcher.toLowerCase();
-  return lower.endsWith(".bat") || lower.endsWith(".cmd");
-}
+export type DitaOtCommandLine = LauncherCommandLine;
 
 /**
- * Quote one token for `cmd.exe`. A `"` inside a Windows path is impossible -
- * the character is not legal in a filename - so a value carrying one is a
- * shape this cannot quote safely, and it is refused rather than passed on.
- */
-function quoteForCmd(value: string): string {
-  if (value.includes('"')) {
-    throw new LintError(
-      `DITA Open Toolkit cannot be given an argument containing a quote: ${value}`,
-    );
-  }
-  return `"${value}"`;
-}
-
-/**
- * How to start `launcher`, given what it is.
- *
- * Node refuses to `execFile` a `.bat` or `.cmd` without a shell, and
- * `shell: true` joins the argv into one string **with no quoting at all**. Our
- * argv carries user-supplied paths, so that is a command-injection hole, not a
- * convenience. The documented alternative is this one: run `cmd.exe` directly,
- * do the quoting here, and pass the whole command as one verbatim argument.
- * `/s` then strips exactly the outer pair of quotes, which is why the string
- * is wrapped a second time. The next reader will find `shell: true` simpler;
- * it is also the version with the hole in it.
+ * How to start `launcher`, given what it is: a `.bat` goes through `cmd.exe`,
+ * quoted, never through a shell string (`src/shared/batch-launcher.ts` says why).
  */
 export function ditaOtCommandLine(
   launcher: string,
   args: string[],
 ): DitaOtCommandLine {
-  if (!isBatch(launcher)) {
-    return { command: launcher, argv: args, verbatim: false };
-  }
-  const line = [launcher, ...args].map(quoteForCmd).join(" ");
-  return {
-    command: process.env["COMSPEC"] ?? "cmd.exe",
-    argv: ["/d", "/s", "/c", `"${line}"`],
-    verbatim: true,
-  };
+  return launcherCommandLine(
+    launcher,
+    args,
+    (value) =>
+      new LintError(
+        `DITA Open Toolkit cannot be given an argument containing a quote: ${value}`,
+      ),
+  );
 }
 
 export const spawnDitaOt: DitaOtSpawn = (launcher, args, opts) =>

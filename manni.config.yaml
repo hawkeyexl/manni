@@ -37,10 +37,12 @@ collections:
     # when it is given no URLs of its own (proposal 0041, rule 12). It is the
     # local preview rather than the deployed site, because the point of the
     # check is the build a pull request produces, before it deploys. To run it
-    # by hand: `cd docs && npm run build && npx astro preview --host 127.0.0.1
-    # --port 4321`, then `manni a11y check` from anywhere in the repo. The Docs
-    # workflow's `a11y` job runs exactly that. To check the live site instead,
-    # name it: `manni a11y check https://hawkeyexl.github.io/manni/`.
+    # by hand: `manni docs preview`, then `manni a11y check` from another
+    # terminal (proposal 0077). `preview` finds Starlight in docs/, builds it,
+    # and serves it on the host and port this url names, so neither command
+    # takes a flag and this file needs no `docs:` section. The Docs workflow's
+    # `a11y` job runs exactly that. To check the live site instead, name it:
+    # `manni a11y check https://hawkeyexl.github.io/manni/`.
     #
     # It is not `a11y.urls` because it is a fact about where this collection
     # of documents lives, not a setting of the accessibility tool — the whole
@@ -214,6 +216,7 @@ docevals:
     site: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     a11y: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     cite: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    docs: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     docevals: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     graph: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     key: { target-pass-rate: 1.0, evals: [no-todo-markers] }

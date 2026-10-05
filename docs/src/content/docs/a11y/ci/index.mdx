@@ -74,9 +74,10 @@ edited in a year.
 
 ## Check a pull request before it deploys
 
-To catch a finding before it ships, build the site in the pull request. Serve
-the output, wait for the port, and point the check at it. Adjust the build
-command and the output directory to what your generator writes.
+To catch a finding before it ships, build and serve the site in the pull
+request with [`manni docs preview`](/manni/docs/). It detects the framework,
+runs its build, and serves the output. Then wait for the port, and point the
+check at it.
 
 ```yaml title=".github/workflows/a11y-pr.yml"
 name: Accessibility (pull request)
@@ -93,15 +94,15 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci && npm run build
-      - name: Serve the build output
-        run: npx serve dist -l 4173 > serve.log 2>&1 &
+      - run: npm ci
+      - name: Build and serve the site
+        run: npx @hawkeyexl/manni docs preview --host 127.0.0.1 --port 4173 > preview.log 2>&1 &
       - name: Wait for the server
         run: |
           tries=0
           until curl -fsS http://127.0.0.1:4173/ > /dev/null; do
             tries=$((tries + 1))
-            [ "$tries" -lt 60 ] || { echo "server did not answer" >&2; exit 1; }
+            [ "$tries" -lt 600 ] || { echo "server did not answer" >&2; cat preview.log >&2; exit 1; }
             sleep 1
           done
       - run: npx @hawkeyexl/manni a11y check http://127.0.0.1:4173/ -f github --progress
@@ -113,6 +114,11 @@ The wait step is the one people leave out. A server started with `&` returns
 immediately, and the crawl then fails on a seed that is not listening yet. That
 is exit `2`, not a violation, so the job fails loudly rather than reporting a
 clean site.
+
+The wait covers the build as well, because `preview` builds before it serves.
+That is why the loop allows ten minutes rather than one. The step's log names the
+framework and the command it ran, so `preview.log` is the file to read when the
+server never answers.
 
 {/* cite offhost-sitemap-urls-dropped */}
 {/* cite crawl-follows-links */}
