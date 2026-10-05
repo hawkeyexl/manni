@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.3.1](https://github.com/hawkeyexl/manni/compare/v4.3.0...v4.3.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* **a11y:** give each page its own browser page so a late redirect cannot abort the next load ([#159](https://github.com/hawkeyexl/manni/issues/159)) ([a47a744](https://github.com/hawkeyexl/manni/commit/a47a74489105e77a82f35af1613faddc7a0670d9)), closes [#160](https://github.com/hawkeyexl/manni/issues/160)
+
 # [4.3.0](https://github.com/hawkeyexl/manni/compare/v4.2.0...v4.3.0) (2026-10-05)
 
 

@@ -565,7 +565,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 378-396
         integrity: sha256-789cbf0f45ab76622d0cbb762d0eff7279d099060069c26cf74770dfd5607ba3
-        commit-sha: 652c810cbebf649215a4529b092dd815dc370499
+        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
     - id: output-what-makes-each-tool-exit-1
       claim:
         lines: 442-446
