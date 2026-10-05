@@ -223,6 +223,7 @@ export async function deriveFromGit(
   const machines = opts.machines ?? DEFAULT_MACHINES;
   const wantsProvenance = opts.fields?.includes(PROVENANCE_FIELD) ?? false;
   const maxBytes = opts.maxOutputBytes ?? MAX_GIT_OUTPUT_BYTES;
+  const parse = yamlOnce();
   const reasons: string[] = [];
   for (const [root, bucket] of byRoot) {
     const run: GitRun = (args, stdin) => runGit(args, root, stdin, maxBytes);
@@ -260,7 +261,7 @@ export async function deriveFromGit(
         reasons.push(`git could not read the history at ${root}`);
         continue;
       }
-      const manifestStamps = await stampsInManifests(run, root, bucket, found, blobs);
+      const manifestStamps = await stampsInManifests(run, root, bucket, found, blobs, parse);
 
       const facts = bucket.map((entry) =>
         judge(
@@ -283,7 +284,7 @@ export async function deriveFromGit(
           blame: await blameOf(run, entry.rel, entry.input.content),
           history: found.get(entry.rel) ?? [],
         }));
-        const evidence = await commitEvidence(run, root, pages, blobs);
+        const evidence = await commitEvidence(run, root, pages, blobs, parse);
         const provenanceRun: ProvenanceRun = {
           machines,
           ...(opts.generatedBy !== undefined ? { generatedBy: opts.generatedBy } : {}),
@@ -832,6 +833,7 @@ async function stampsInManifests(
   bucket: readonly RootEntry[],
   histories: ReadonlyMap<string, FileHistory[]>,
   blobs: ReadonlyMap<string, string>,
+  parse: ParseYaml,
 ): Promise<Map<string, ManifestStamp>> {
   interface Read {
     label: string;
@@ -865,7 +867,7 @@ async function stampsInManifests(
   const values = new Map<string, unknown>();
   const keyOf = (label: string, field: string, rev: string): string => `${label}\0${field}\0${rev}`;
   for (const r of reads) {
-    values.set(keyOf(r.label, r.field, r.rev), manifestValue(fetched.get(r.spec), r.key, r.join, r.field));
+    values.set(keyOf(r.label, r.field, r.rev), manifestValue(fetched.get(r.spec), r.key, r.join, r.field, parse));
   }
   for (const label of new Set(reads.map((r) => r.label))) {
     out.set(label, (field, rev) => values.get(keyOf(label, field, rev)));
@@ -1198,6 +1200,7 @@ async function commitEvidence(
   root: string,
   pages: readonly BlamedPage[],
   blobs: ReadonlyMap<string, string>,
+  parse: ParseYaml,
 ): Promise<Map<string, CommitEvidence>[]> {
   const plans = pages.map(({ entry, blame, history }) => {
     const pathAt = new Map<string, string>();
@@ -1255,6 +1258,7 @@ async function commitEvidence(
                       fetched.get(`${sha}:${manifestRel}`),
                       manifest.join === "path" ? entryAt(manifest.entry, entry.rel, path) : manifest.entry,
                       manifest.join,
+                      parse,
                     ),
             }
           : {}),
@@ -1294,8 +1298,32 @@ function manifestStamp(
   text: string | undefined,
   key: string,
   join: ManifestRef["join"],
+  parse: ParseYaml,
 ): ProvenanceEntry[] {
-  return provenanceEntries(manifestValue(text, key, join, PROVENANCE_FIELD));
+  return provenanceEntries(manifestValue(text, key, join, PROVENANCE_FIELD, parse));
+}
+
+/** Manifest text to its parsed data, or undefined when it does not parse. */
+type ParseYaml = (text: string) => unknown;
+
+/**
+ * A `ParseYaml` that parses each distinct text once. A manifest's blob is
+ * read for every page it holds and at every commit a page's blame names, and
+ * it is mostly the same bytes each time. One per run, so nothing outlives it.
+ */
+export function yamlOnce(): ParseYaml {
+  const parsed = new Map<string, unknown>();
+  return (text) => {
+    if (parsed.has(text)) return parsed.get(text);
+    let data: unknown;
+    try {
+      data = parseYaml(text);
+    } catch {
+      data = undefined;
+    }
+    parsed.set(text, data);
+    return data;
+  };
 }
 
 /**
@@ -1308,14 +1336,10 @@ function manifestValue(
   key: string,
   join: ManifestRef["join"],
   field: string,
+  parse: ParseYaml,
 ): unknown {
   if (text === undefined) return undefined;
-  let data: unknown;
-  try {
-    data = parseYaml(text);
-  } catch {
-    return undefined;
-  }
+  const data = parse(text);
   if (!isRecord(data)) return undefined;
   for (const [candidate, value] of Object.entries(data)) {
     const same =
