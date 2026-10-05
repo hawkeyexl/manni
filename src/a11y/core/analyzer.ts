@@ -7,7 +7,14 @@
  * implementation lives here too, behind the same interface.
  */
 import { AxeBuilder } from "@axe-core/playwright";
-import { chromium, type Browser, type Page, type Request, type Response } from "playwright-core";
+import {
+  chromium,
+  type Browser,
+  type BrowserContext,
+  type Page,
+  type Request,
+  type Response,
+} from "playwright-core";
 import {
   A11yError,
   isAxeImpact,
@@ -108,12 +115,17 @@ type AxeNode = AxeResult["nodes"][number];
 
 interface Session {
   browser: Browser;
-  page: Page;
+  context: BrowserContext;
 }
 
 /**
  * Playwright-backed analyzer. Lazy: the browser launches on the first
- * `analyze`, one context and one page are reused for every URL.
+ * `analyze`, and one context is reused for every URL. Each URL gets a page
+ * of its own, so a navigation a page starts late (a script redirect after axe
+ * returned, or a meta refresh reported without waiting for it) stays in that
+ * page's tab instead of aborting the next load. A page is closed once the
+ * next one exists, never before: Chrome can drop a context left with no page,
+ * and `newPage` then fails with "Failed to open a new tab".
  * - `page.goto(url, { waitUntil: "load", timeout })`; `finalUrl` is `page.url()` after it
  * - one in-page evaluation reads every `a[href]`'s absolute `href` and the
  *   first meta refresh; a refresh to another page (by `dedupeKey`) is a
@@ -128,21 +140,28 @@ interface Session {
  */
 export function createPlaywrightAnalyzer(): PageAnalyzer {
   let session: Promise<Session> | null = null;
+  let current: Page | null = null;
 
   const open = (): Promise<Session> => {
     session ??= (async () => {
       const found = await launchAny();
       if (found === null) throw new A11yError(NO_BROWSER_MESSAGE);
       const context = await found.browser.newContext();
-      const page = await context.newPage();
-      return { browser: found.browser, page };
+      return { browser: found.browser, context };
     })();
     return session;
   };
 
   return {
     async analyze(url, opts) {
-      const { page } = await open();
+      const { context } = await open();
+      const page = await context.newPage();
+      const previous = current;
+      current = page;
+      // Its outcome is settled; a failure to close it is not this URL's. Not
+      // reentrant: an overlapping call would close a page still being read,
+      // so the caller (the crawl, one page at a time) sequences its calls.
+      await previous?.close().catch(() => undefined);
       // Every navigation the main frame starts, first hop only, so the one
       // that follows the load can be named even when it never commits (an
       // unresolvable host leaves the browser on its own error page).
@@ -168,6 +187,7 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
       if (session === null) return;
       const pending = session;
       session = null;
+      current = null;
       try {
         const { browser } = await pending;
         await browser.close();
@@ -179,7 +199,7 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
 }
 
 /**
- * One `analyze`, on the session's page. `navigations` is filled while it
+ * One `analyze`, on a page of its own. `navigations` is filled while it
  * runs: the first hop of every main-frame navigation, in order.
  */
 async function analyzePage(
