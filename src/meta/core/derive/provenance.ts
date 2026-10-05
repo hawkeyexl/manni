@@ -336,16 +336,11 @@ export interface EvidenceContext {
  * does not count, and the first covering entry that verifies wins.
  */
 function stampEvidence(commit: CommitEvidence, origLine: number, fenced: boolean | undefined): string | undefined {
-  if (commit.blob === undefined) return undefined;
-  const page = readProvenancePage(commit.blob, fenced === undefined ? undefined : { fenced });
-  const body = origLine - page.bodyLine + 1;
+  const stamps = verifiedStamps(commit, fenced);
+  if (stamps === undefined) return undefined;
+  const body = origLine - stamps.bodyLine + 1;
   if (body < 1) return undefined;
-  for (const entry of commit.stamp === undefined ? page.stamp : provenanceEntries(commit.stamp)) {
-    const span = parseLines(entry.lines);
-    if (span === undefined || body < span.start || body > span.end) continue;
-    if (pinOfLines(page.body, span) === entry.integrity) return entry["generated-by"];
-  }
-  return undefined;
+  return stamps.entries.find((entry) => body >= entry.start && body <= entry.end)?.generatedBy;
 }
 
 /**
@@ -354,32 +349,49 @@ function stampEvidence(commit: CommitEvidence, origLine: number, fenced: boolean
  * commit. Such a commit is the whole account of the lines it last touched.
  */
 function carriesStamp(commit: CommitEvidence, fenced: boolean | undefined): boolean {
-  const carried = fenced === false ? carriedUnfenced : carriedFenced;
-  const known = carried.get(commit);
-  if (known !== undefined) return known;
-  let verified = false;
-  if (commit.blob !== undefined) {
-    const page = readProvenancePage(commit.blob, fenced === undefined ? undefined : { fenced });
-    const stamp = commit.stamp === undefined ? page.stamp : provenanceEntries(commit.stamp);
-    verified = stamp.some((entry) => {
-      const span = parseLines(entry.lines);
-      return span !== undefined && pinOfLines(page.body, span) === entry.integrity;
-    });
-  }
-  carried.set(commit, verified);
-  return verified;
+  return (verifiedStamps(commit, fenced)?.entries.length ?? 0) > 0;
+}
+
+/** The stamp entries that verify against the page at one commit, in stamp order. */
+interface VerifiedStamps {
+  /** The file line body line 1 sits on, in the commit's blob. */
+  bodyLine: number;
+  entries: { start: number; end: number; generatedBy: string }[];
 }
 
 /**
- * `carriesStamp` per commit, since every line a commit last touched asks it.
- * Keyed by identity: a run builds its CommitEvidence objects fresh, so an
- * entry never outlives the evidence it describes. A pool of reused objects
- * would need this cleared between runs. One map per fenced setting, since the
- * answer reads the commit's blob as fenced or not: a commit shared by a
- * Markdown page and an HTML page is judged once for each.
+ * A commit's stamp, read and verified once. Every line a commit last touched
+ * asks it, and reading means parsing the blob's frontmatter and hashing each
+ * stamped range, so asking per line re-did both for every line.
  */
-const carriedFenced = new WeakMap<CommitEvidence, boolean>();
-const carriedUnfenced = new WeakMap<CommitEvidence, boolean>();
+function verifiedStamps(commit: CommitEvidence, fenced: boolean | undefined): VerifiedStamps | undefined {
+  if (commit.blob === undefined) return undefined;
+  const memo = fenced === false ? stampsUnfenced : stampsFenced;
+  const known = memo.get(commit);
+  if (known !== undefined) return known;
+  const page = readProvenancePage(commit.blob, fenced === undefined ? undefined : { fenced });
+  const entries: VerifiedStamps["entries"] = [];
+  for (const entry of commit.stamp === undefined ? page.stamp : provenanceEntries(commit.stamp)) {
+    const span = parseLines(entry.lines);
+    if (span !== undefined && pinOfLines(page.body, span) === entry.integrity) {
+      entries.push({ start: span.start, end: span.end, generatedBy: entry["generated-by"] });
+    }
+  }
+  const stamps = { bodyLine: page.bodyLine, entries };
+  memo.set(commit, stamps);
+  return stamps;
+}
+
+/**
+ * `verifiedStamps` per commit. Keyed by identity: a run builds its
+ * CommitEvidence objects fresh, so an entry never outlives the evidence it
+ * describes. A pool of reused objects would need this cleared between runs.
+ * One map per fenced setting, since the answer reads the commit's blob as
+ * fenced or not: a commit shared by a Markdown page and an HTML page is
+ * judged once for each.
+ */
+const stampsFenced = new WeakMap<CommitEvidence, VerifiedStamps>();
+const stampsUnfenced = new WeakMap<CommitEvidence, VerifiedStamps>();
 
 /**
  * Rules 2 to 4 for one line. An uncommitted line has no commit, so none of
