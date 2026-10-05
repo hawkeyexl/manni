@@ -23,14 +23,25 @@ function calls(items: Array<Omit<ToolCall, "index">>): ToolCall[] {
   return items.map((call, index) => ({ ...call, index }));
 }
 
-const ordered = makeTrace({
+/**
+ * A trace in which the default plan's skill, `demo-skill`, is invoked at the
+ * first ordinal, so its window spans every call. These cases are about
+ * ordering; scoping has cases of its own below.
+ */
+const invoked = (fields: Parameters<typeof makeTrace>[0]) =>
+  makeTrace({
+    skillInvocations: [{ name: "demo-skill", via: "skill-tool", index: 0 }],
+    ...fields,
+  });
+
+const ordered = invoked({
   toolCalls: calls([
     { name: "Read", input: { file_path: "src/a.ts" }, sidechain: false },
     { name: "Write", input: { file_path: "src/a.ts" }, sidechain: false },
   ]),
 });
 
-const reversed = makeTrace({
+const reversed = invoked({
   toolCalls: calls([
     { name: "Write", input: { file_path: "src/a.ts" }, sidechain: false },
     { name: "Read", input: { file_path: "src/a.ts" }, sidechain: false },
@@ -40,7 +51,7 @@ const reversed = makeTrace({
 const plan = (options: Record<string, unknown>) =>
   makePlan({ grader: "tool-order", options });
 
-const gradeWith = async (trace: ReturnType<typeof makeTrace>, options: Record<string, unknown>) =>
+const gradeWith = async (trace: ReturnType<typeof invoked>, options: Record<string, unknown>) =>
   grader.grade({ trace, plan: plan(options) });
 
 describe("tool-order grader", () => {
@@ -56,7 +67,7 @@ describe("tool-order grader", () => {
   });
 
   it("fails when after happened and before never did", async () => {
-    const writeOnly = makeTrace({
+    const writeOnly = invoked({
       toolCalls: calls([{ name: "Write", input: {}, sidechain: false }]),
     });
     const r = await gradeWith(writeOnly, { before: "Read", after: "Write" });
@@ -64,7 +75,7 @@ describe("tool-order grader", () => {
   });
 
   it("fails when before happened and after never did", async () => {
-    const readOnly = makeTrace({
+    const readOnly = invoked({
       toolCalls: calls([{ name: "Read", input: {}, sidechain: false }]),
     });
     const r = await gradeWith(readOnly, { before: "Read", after: "Write" });
@@ -74,7 +85,7 @@ describe("tool-order grader", () => {
   it("passes vacuously when neither tool appears", async () => {
     // An ordering claim with nothing to bite on. A suite that wants the calls
     // to happen at all says so with tool-usage — the grader for that question.
-    const neither = makeTrace({
+    const neither = invoked({
       toolCalls: calls([{ name: "Glob", input: {}, sidechain: false }]),
     });
     const r = await gradeWith(neither, { before: "Read", after: "Write" });
@@ -82,7 +93,7 @@ describe("tool-order grader", () => {
   });
 
   it("narrows by input, so an unrelated read does not satisfy the claim", async () => {
-    const wrongFile = makeTrace({
+    const wrongFile = invoked({
       toolCalls: calls([
         { name: "Read", input: { file_path: "README.md" }, sidechain: false },
         { name: "Write", input: { file_path: "src/a.ts" }, sidechain: false },
@@ -103,7 +114,7 @@ describe("tool-order grader", () => {
     // Read, Write, Write. Demanding every Write be preceded by its own Read
     // would fail a session that did the right thing and then repeated the
     // second half.
-    const repeated = makeTrace({
+    const repeated = invoked({
       toolCalls: calls([
         { name: "Read", input: {}, sidechain: false },
         { name: "Write", input: {}, sidechain: false },
@@ -115,7 +126,7 @@ describe("tool-order grader", () => {
   });
 
   it("ignores sidechain calls by default but counts them on request", async () => {
-    const inSubagent = makeTrace({
+    const inSubagent = invoked({
       toolCalls: calls([
         { name: "Read", input: {}, sidechain: true },
         { name: "Write", input: {}, sidechain: false },
@@ -151,7 +162,7 @@ describe("tool-order grader", () => {
     // branch's calls together in `toolCalls` while their ordinals interleave
     // with the main chain. Here the Write is listed first but happened last,
     // so reading array position would report a violation that never occurred.
-    const spliced = makeTrace({
+    const spliced = invoked({
       toolCalls: [
         { name: "Write", input: {}, sidechain: false, index: 7 },
         { name: "Read", input: {}, sidechain: false, index: 3 },
@@ -162,7 +173,7 @@ describe("tool-order grader", () => {
 
     // And the inverse still fails, so this is ordering rather than blanket
     // permissiveness.
-    const violating = makeTrace({
+    const violating = invoked({
       toolCalls: [
         { name: "Read", input: {}, sidechain: false, index: 9 },
         { name: "Write", input: {}, sidechain: false, index: 2 },
@@ -172,10 +183,35 @@ describe("tool-order grader", () => {
     expect(bad.findings).toHaveLength(1);
   });
 
+  it("orders only the calls inside the artifact's window", async () => {
+    // The Read happened before the skill was invoked, so it was not under the
+    // skill's instructions. Over the whole session it would satisfy the claim.
+    const windowed = makeTrace({
+      skillInvocations: [{ name: "demo-skill", via: "skill-tool", index: 1 }],
+      toolCalls: [
+        { name: "Read", input: {}, sidechain: false, index: 0 },
+        { name: "Skill", input: { skill: "demo-skill" }, sidechain: false, index: 1 },
+        { name: "Write", input: {}, sidechain: false, index: 2 },
+      ],
+    });
+    const r = await gradeWith(windowed, { before: "Read", after: "Write" });
+    expect(r.findings).toHaveLength(1);
+    expect(r.findings[0]?.message).toBe("Write was used without Read ever being used first");
+  });
+
+  it("skips, never passes, when the skill was never invoked", async () => {
+    const r = await gradeWith(makeTrace({ toolCalls: ordered.toolCalls }), {
+      before: "Read",
+      after: "Write",
+    });
+    expect(r.skipped).toContain("never invoked");
+    expect(r.findings).toEqual([]);
+  });
+
   it("treats ordinal 0 as a real position rather than an absent one", async () => {
     // The sentinel trap: with -1 meaning "not found", a `before` at the
     // session's very first event compares equal to nothing found at all.
-    const atZero = makeTrace({
+    const atZero = invoked({
       toolCalls: [
         { name: "Read", input: {}, sidechain: false, index: 0 },
         { name: "Write", input: {}, sidechain: false, index: 1 },

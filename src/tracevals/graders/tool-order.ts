@@ -20,6 +20,7 @@
  */
 import type { ToolCall } from "../trace/types.js";
 import type { TraceGrader } from "./types.js";
+import { evaluateWhen, skippedTrigger, validateWhen } from "./when.js";
 import {
   fail,
   firstError,
@@ -28,6 +29,8 @@ import {
   optionsError,
   pass,
   requiredString,
+  skippedWindow,
+  windowFor,
   type Options,
 } from "./util.js";
 
@@ -38,6 +41,7 @@ function validateOptions(options: Options): string | undefined {
     optionalString(options, "beforeInputMatch"),
     optionalString(options, "afterInputMatch"),
     optionalBoolean(options, "includeSidechains"),
+    validateWhen(options),
     // A pattern that will not compile is the eval's bug, not the session's.
     ...(["beforeInputMatch", "afterInputMatch"] as const).map((key) => {
       const value = options[key];
@@ -96,7 +100,20 @@ export const toolOrderGrader: TraceGrader = {
     const afterMatch = options.afterInputMatch as string | undefined;
     const includeSidechains = options.includeSidechains === true;
 
-    const calls = trace.toolCalls.filter((c) => includeSidechains || !c.sidechain);
+    // Order only the calls the artifact was governing (ADR 01015), as
+    // tool-usage counts them. Over the whole session, a call made before the
+    // skill was invoked would satisfy a claim the skill never governed.
+    const window = windowFor(trace, plan);
+    if (window.empty) return skippedWindow(window);
+    const trigger = evaluateWhen(options, window);
+    if (!trigger.armed) return skippedTrigger(trigger);
+
+    // An agent's window is its own branch, so every call in it is the subject
+    // even though each one is a sidechain call; tool-usage says why.
+    const branchScoped = window.scope === "agent";
+    const calls = window.toolCalls.filter(
+      (c) => branchScoped || includeSidechains || !c.sidechain,
+    );
     const beforeOrdinals = ordinalsOf(calls, before, beforeMatch);
     const afterOrdinals = ordinalsOf(calls, after, afterMatch);
     // `undefined` rather than -1: an ordinal of 0 is the session's very first

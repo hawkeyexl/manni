@@ -35,6 +35,7 @@ function docsSession(): Trace {
  */
 const CASES: Array<{ kind: string; options: Record<string, unknown> }> = [
   { kind: "tool-usage", options: { tool: "Edit", expect: "not-used" } },
+  { kind: "tool-order", options: { before: "Read", after: "Edit" } },
   {
     kind: "file-access",
     options: { path: "docs/get-started.md", expect: "not-accessed" },

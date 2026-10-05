@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What options does tool-order take?", "How do I stop command evals from running?"]
 graph: { label: "Grader reference", type: reference }
-last-updated: 2026-10-04
+last-updated: 2026-10-05
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -77,10 +77,10 @@ So a `Bash` call that happened *before* a skill was invoked does not count again
 `expect: not-used`. An `Edit` the main session made does not count against an agent that only
 read. Nothing outside the window is evidence about the artifact.
 
-`tool-usage`, `file-access`, `skill-invoked`, `regex`, and `turn-count` are windowed, and so is the
-transcript sent to the judge for an `ai` eval. That also makes a judged skill eval markedly cheaper
-than judging the whole session. `tool-order`, `cost` and `json-output` are session-level by nature;
-see their sections.
+`tool-usage`, `tool-order`, `file-access`, `skill-invoked`, `regex`, and `turn-count` are windowed,
+and so is the transcript sent to the judge for an `ai` eval. That also makes a judged skill eval
+markedly cheaper than judging the whole session. `cost` and `json-output` are session-level by
+nature; see their sections.
 
 **An empty window is skipped, never passed.** A skill that resolved but was never invoked governed
 nothing, and so did an agent that was spawned but recorded no turns. There is no evidence either
@@ -107,8 +107,8 @@ judge shown the parent session would answer about work the artifact had no part 
 `when` makes an eval **arm only for the sessions it is about**. That is what lets you check the
 artifact that *should* have been used and wasn't.
 
-**Every windowed grader takes it**, meaning `tool-usage`, `skill-invoked`, `file-access`, `regex`,
-and `turn-count`. The predicate is evaluated over the artifact's window, and those are the graders
+**Every windowed grader takes it**, meaning `tool-usage`, `tool-order`, `skill-invoked`,
+`file-access`, `regex`, and `turn-count`. The predicate is evaluated over the artifact's window, and those are the graders
 that have one. `cost` and `json-output` grade the whole session by nature, so they **reject** `when`
 rather than accept an option they could not honour:
 
@@ -293,6 +293,10 @@ write. Run the tests after you edit. A suite built only on `tool-usage` would se
     after: Write
     afterInputMatch: "src/"
 ```
+
+**Only calls inside the artifact's window are ordered.** A `Read` made before a skill was invoked
+does not satisfy that skill's claim. On an agent definition, every call in its branch counts, as it
+does for `tool-usage`.
 
 **The semantics are the weakest useful ones.** *Some* occurrence of `before` must precede *some*
 occurrence of `after`. Requiring every `after` to be preceded by a `before` would fail an otherwise
