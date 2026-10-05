@@ -86,7 +86,18 @@ function mintlify(s: Site): string | null {
   return null;
 }
 
+// Both the MkDocs and Zensical markers ask, so each site is answered once.
+const zensicalSeen = new WeakMap<Site, string | null>();
+
 function zensical(s: Site): string | null {
+  const seen = zensicalSeen.get(s);
+  if (seen !== undefined) return seen;
+  const found = zensicalMarker(s);
+  zensicalSeen.set(s, found);
+  return found;
+}
+
+function zensicalMarker(s: Site): string | null {
   if (has(s.dir, "zensical.toml")) return "zensical.toml";
   if (!has(s.dir, "mkdocs.yml")) return null;
   let files: string[];
