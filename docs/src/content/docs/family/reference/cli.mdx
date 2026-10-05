@@ -239,12 +239,12 @@ its file count. `-f json` prints the same facts:
 | `version` | string | The manni version. |
 | `config` | string | The config file, as discovery found it or as `-c` named it. |
 | `collections[]` | `{ name, files }` | Each declared collection and the number of files it holds. |
-| `domains[]` | `{ name, status, reason }` | One row per domain. `status` is `in-play`, `not-set-up` or `not-checked`. |
+| `domains[]` | `{ name, status, reason }` | One row per domain. `status` is `in-play`, `not-set-up`, `not-checked` or `unknown`. |
 
 <Aside type="note" title="A domain that cannot read its setup">
 `status` runs no check, so a domain that cannot read its own setup stays in the
-table. Its row is `in play`, and the reason reads `manni <check> could not run`
-followed by the cause.
+table. Its row is `unknown`, and the reason reads `manni <check> could not run`
+followed by the cause. `check` still runs that domain and reports what it finds.
 </Aside>
 
 A config with no `collections:` gives `check` no files to read. Every domain

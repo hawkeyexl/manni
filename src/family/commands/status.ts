@@ -31,7 +31,7 @@ import {
 export const STATUS_FORMATS = ["pretty", "json"] as const;
 export type StatusFormat = (typeof STATUS_FORMATS)[number];
 
-export type DomainState = "in-play" | "not-set-up" | "not-checked";
+export type DomainState = "in-play" | "not-set-up" | "not-checked" | "unknown";
 
 export interface DomainRow {
   name: string;
@@ -121,9 +121,10 @@ export async function runStatus(opts: StatusOptions = {}): Promise<StatusReport>
       domains.push(await row(domain, family, cwd, members));
     } catch (err) {
       // Status checks nothing, so a domain that cannot read its own setup is
-      // reported in its row rather than ending the run.
+      // reported in its row rather than ending the run, as unknown: whether it is
+      // set up is the thing it could not read.
       const message = errorMessage(err).split("\n", 1)[0] ?? "";
-      domains.push({ name: domain, status: "in-play", reason: `manni ${COMMANDS[domain]} could not run: ${message}` });
+      domains.push({ name: domain, status: "unknown", reason: `manni ${COMMANDS[domain]} could not run: ${message}` });
     }
   }
   for (const [name, reason] of NOT_CHECKED) domains.push({ name, status: "not-checked", reason });
@@ -142,6 +143,7 @@ const STATE_LABEL: Readonly<Record<DomainState, string>> = {
   "in-play": "in play",
   "not-set-up": "not set up",
   "not-checked": "not checked",
+  unknown: "unknown",
 };
 
 export function renderStatus(report: StatusReport, format: StatusFormat): string {

@@ -64,6 +64,16 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
     }
   });
 
+  it("says unknown, not in play, for a domain that cannot read its own setup", async () => {
+    dir = fixtureRepo("only-docevals");
+    const config = join(dir, "manni.config.yaml");
+    writeFileSync(config, readFileSync(config, "utf8").replace("docevals:\n", "docevals:\n  bogus: 1\n"));
+    const report = await runStatus({ cwd: dir });
+    const row = report.domains.find((d) => d.name === "docevals");
+    expect(row?.status).toBe("unknown");
+    expect(row?.reason).toMatch(/^manni docevals run could not run: /);
+  });
+
   it("puts meta in play for a page that names its own $schema", async () => {
     dir = fixtureRepo("only-citations");
     writeFileSync(join(dir, "docs/own.md"), "---\n$schema: manni:core:1.0.0\ntitle: Own\n---\n# Own\n");

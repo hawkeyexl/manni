@@ -214,7 +214,8 @@ tracevals  not checked   run manni tracevals run over sessions
 
 In JSON the shape is `version`, `config`, `collections` as `{ name, files }`
 objects, and `domains` as `{ name, status, reason }` objects. A domain's
-`status` is `in-play`, `not-set-up` or `not-checked`.
+`status` is `in-play`, `not-set-up`, `not-checked` or `unknown`. A domain
+that cannot read its own setup is `unknown`.
 
 Under a `SessionStart` envelope, stdout becomes the agent's context. With no
 config it prints nothing. Otherwise it prints the table, then three lines that
