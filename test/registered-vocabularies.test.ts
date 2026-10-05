@@ -130,12 +130,11 @@ describe("manni:artifact-evals:1.1.0 and its strict overlay", () => {
     expect(withoutProse(v110)).toEqual(withoutProse(v100));
   });
 
-  it("is the 1.0.0 overlay with tool-order the eleventh named grader", async () => {
+  it("is the 1.0.0 overlay with tool-order added to the named graders", async () => {
     const v100 = await copy("manni:artifact-evals-strict:1.0.0");
     const v110 = await copy("manni:artifact-evals-strict:1.1.0");
     const before = graderEnum(v100, STRICT_GRADER);
     expect(graderEnum(v110, STRICT_GRADER)).toEqual([...before, "tool-order"]);
-    expect(graderEnum(v110, STRICT_GRADER)).toHaveLength(11);
     before.push("tool-order");
     expect(withoutProse(v110)).toEqual(withoutProse(v100));
   });
