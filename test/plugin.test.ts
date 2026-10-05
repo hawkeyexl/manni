@@ -26,8 +26,8 @@ const entry = marketplace.plugins[0];
 const pluginDir = join(ROOT, entry?.source ?? "missing");
 
 /** Does `args` name a command the umbrella mounts, subcommand included? */
-function resolves(args: string[]): boolean {
-  let cmd: Command = buildProgram();
+async function resolves(args: string[]): Promise<boolean> {
+  let cmd: Command = await buildProgram();
   for (const arg of args) {
     // Words after a leaf command are its arguments, not more commands.
     if (arg.startsWith("-") || cmd.commands.length === 0) break;
@@ -63,7 +63,7 @@ describe("manni plugin", () => {
     expect(manifest.name).toBe(entry?.name);
   });
 
-  it("every hook runs a command the manni umbrella mounts", () => {
+  it("every hook runs a command the manni umbrella mounts", async () => {
     const { hooks } = readJson(
       `${entry?.source.replace(/^\.\//, "") ?? ""}/hooks/hooks.json`,
     ) as HookFile;
@@ -76,7 +76,7 @@ describe("manni plugin", () => {
       const prefix = "npx --no @hawkeyexl/manni ";
       expect(command.startsWith(prefix), command).toBe(true);
       const args = command.slice(prefix.length).split(/\s+/).filter(Boolean);
-      expect(resolves(args), command).toBe(true);
+      expect(await resolves(args), command).toBe(true);
     }
   });
 

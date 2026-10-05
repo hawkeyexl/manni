@@ -11,9 +11,6 @@ import { extname, resolve } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 import { extractorForExtension } from "../../meta/extractors/index.js";
-import { runCheck as runCite } from "../../cite/commands/check.js";
-import { runList as listEvals } from "../../docevals/commands/list.js";
-import { runList as listTerms } from "../../term/commands/list.js";
 import type { Envelope } from "../core/envelope.js";
 import {
   COMMANDS,
@@ -85,17 +82,21 @@ async function row(domain: Domain, family: Family, cwd: string, members: readonl
       return n > 0 ? inPlay(pages(n, "names its own $schema", "name their own $schema")) : notSetUp;
     }
     case "cite": {
+      // Imported where they run, so `manni check` never loads them.
+      const { runCheck: runCite } = await import("../../cite/commands/check.js");
       const run = await runCite({ inputs: [], configPath, cwd, checkSources: false });
       const n = run.pages.filter((p) => p.citations.length > 0).length;
       return n > 0 ? inPlay(pages(n, "carries citations", "carry citations")) : notSetUp;
     }
     case "docevals": {
+      const { runList: listEvals } = await import("../../docevals/commands/list.js");
       const { plans } = await listEvals([], { config: configPath, cwd });
       const n = plans.filter((p) => !p.skip && p.evals.length > 0).length;
       if (n === 0) return notSetUp;
       return inPlay(section ? "docevals: section" : pages(n, "declares evals", "declare evals"));
     }
     case "term": {
+      const { runList: listTerms } = await import("../../term/commands/list.js");
       const { terms } = await listTerms({ inputs: [], configPath, cwd, allowEmpty: true });
       return terms.length > 0 ? inPlay(plural(terms.length, "term")) : notSetUp;
     }

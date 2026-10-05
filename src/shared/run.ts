@@ -136,8 +136,11 @@ export function endOutputOnClosedReader(
 }
 
 /** Run `build()` as a bin when `moduleUrl` is the entry, and not when imported. */
-export function runIfMain(moduleUrl: string, build: () => Command): void {
+export function runIfMain(
+  moduleUrl: string,
+  build: () => Command | Promise<Command>,
+): void {
   if (!isMainModule(moduleUrl)) return;
   endOutputOnClosedReader();
-  runProgram(build()).catch(fail);
+  Promise.resolve(build()).then(runProgram).catch(fail);
 }

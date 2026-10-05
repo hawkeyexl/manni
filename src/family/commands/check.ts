@@ -20,25 +20,8 @@
 import { extname, resolve } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
-import { runValidate } from "../../meta/commands/validate.js";
-import { render as renderMeta } from "../../meta/reporters/index.js";
 import { resolveTargetSet } from "../../meta/internal.js";
 import { supportedExtensions } from "../../meta/extractors/index.js";
-import { runCheck as runCite } from "../../cite/commands/check.js";
-import { renderCheckPretty as citePretty } from "../../cite/reporters/pretty.js";
-import { renderCheckJson as citeJson } from "../../cite/reporters/json.js";
-import { renderCheckGithub as citeGithub } from "../../cite/reporters/github.js";
-import { runLint } from "../../lint/commands/lint.js";
-import { render as renderLint } from "../../lint/reporters/index.js";
-import { runRun as runDocevals } from "../../docevals/commands/run.js";
-import { render as renderDocevals } from "../../docevals/reporters/index.js";
-import { DocevalsError } from "../../docevals/types.js";
-import { runCheck as runTerm } from "../../term/commands/check.js";
-import { renderFindingsPretty as termPretty } from "../../term/reporters/pretty.js";
-import { renderFindingsJson as termJson } from "../../term/reporters/json.js";
-import { renderFindingsGithub as termGithub } from "../../term/reporters/github.js";
-import { buildGraph } from "../../graph/commands/build.js";
-import { runCheck as runGraph, renderCheck as renderGraph } from "../../graph/commands/check.js";
 import { changedFiles } from "../core/changed.js";
 import type { Envelope } from "../core/envelope.js";
 import {
@@ -114,11 +97,20 @@ interface Context {
   onNotice: (message: string) => void;
 }
 
+/**
+ * Each domain's command core and reporter are imported where it runs: a hook
+ * checks one page with four domains, and the other two (the RDF stack among
+ * them) are worth not loading.
+ */
 async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
   const { family, cwd, inputs, onNotice } = ctx;
   const configPath = family.configPath;
   switch (domain) {
     case "meta": {
+      const [{ runValidate }, { render: renderMeta }] = await Promise.all([
+        import("../../meta/commands/validate.js"),
+        import("../../meta/reporters/index.js"),
+      ]);
       const run = await runValidate({ inputs, configPath, cwd, skipDefaultOnly: true, onNotice });
       if (run.results.length === 0) {
         return { skipped: family.sections.has("meta") ? META_DEFAULTS_ONLY : NOT_SET_UP.meta };
@@ -130,6 +122,13 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       };
     }
     case "cite": {
+      const [{ runCheck: runCite }, { renderCheckPretty: citePretty }, { renderCheckJson: citeJson }, { renderCheckGithub: citeGithub }] =
+        await Promise.all([
+          import("../../cite/commands/check.js"),
+          import("../../cite/reporters/pretty.js"),
+          import("../../cite/reporters/json.js"),
+          import("../../cite/reporters/github.js"),
+        ]);
       const run = await runCite({ inputs, configPath, cwd, onNotice });
       if (!run.pages.some((p) => p.citations.length > 0 || p.findings.length > 0)) {
         return { skipped: NOT_SET_UP.cite };
@@ -146,6 +145,10 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
     }
     case "lint": {
       if (!family.sections.has("lint")) return { skipped: NOT_SET_UP.lint };
+      const [{ runLint }, { render: renderLint }] = await Promise.all([
+        import("../../lint/commands/lint.js"),
+        import("../../lint/reporters/index.js"),
+      ]);
       const run = await runLint({ inputs, configPath, cwd, onNotice });
       return {
         failed: run.summary.failed > 0,
@@ -153,6 +156,11 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       };
     }
     case "docevals": {
+      const [{ runRun: runDocevals }, { render: renderDocevals }, { DocevalsError }] = await Promise.all([
+        import("../../docevals/commands/run.js"),
+        import("../../docevals/reporters/index.js"),
+        import("../../docevals/types.js"),
+      ]);
       let report;
       try {
         report = await runDocevals(inputs, {
@@ -175,6 +183,13 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       };
     }
     case "term": {
+      const [{ runCheck: runTerm }, { renderFindingsPretty: termPretty }, { renderFindingsJson: termJson }, { renderFindingsGithub: termGithub }] =
+        await Promise.all([
+          import("../../term/commands/check.js"),
+          import("../../term/reporters/pretty.js"),
+          import("../../term/reporters/json.js"),
+          import("../../term/reporters/github.js"),
+        ]);
       const report = await runTerm({ inputs, configPath, cwd, allowEmpty: true, onNotice });
       if (report.terms === 0) return { skipped: NOT_SET_UP.term };
       return {
@@ -189,6 +204,10 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
     }
     case "graph": {
       if (!family.sections.has("graph")) return { skipped: NOT_SET_UP.graph };
+      const [{ buildGraph }, { runCheck: runGraph, renderCheck: renderGraph }] = await Promise.all([
+        import("../../graph/commands/build.js"),
+        import("../../graph/commands/check.js"),
+      ]);
       const built = await buildGraph({ config: configPath, cwd });
       for (const warning of built.warnings) onNotice(warning);
       const report = await runGraph({ config: configPath, cwd, turtle: built.turtle });
