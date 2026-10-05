@@ -138,6 +138,11 @@ function parseStringKey<K extends string>(
   return out;
 }
 
+/** A path as written in the config, made absolute against the config file's directory. */
+function fromConfigDir(path: string, configDir: string): string {
+  return isAbsolute(path) ? path : resolve(configDir, path);
+}
+
 /**
  * The absolute path of Vale's config file, resolved against the directory of
  * the config file that declared it. `undefined` when none is set, which means
@@ -146,7 +151,7 @@ function parseStringKey<K extends string>(
 export function valeConfigPath(tools: ToolsConfig, configDir: string): string | undefined {
   const config = tools.vale?.config;
   if (config === undefined) return undefined;
-  return isAbsolute(config) ? config : resolve(configDir, config);
+  return fromConfigDir(config, configDir);
 }
 
 /**
@@ -157,7 +162,7 @@ export function valeConfigPath(tools: ToolsConfig, configDir: string): string | 
 export function ditaOtHome(tools: ToolsConfig, configDir: string): string | undefined {
   const home = tools["dita-ot"]?.home;
   if (home === undefined) return undefined;
-  return isAbsolute(home) ? home : resolve(configDir, home);
+  return fromConfigDir(home, configDir);
 }
 
 /**
@@ -171,5 +176,5 @@ export function docDetectiveConfigPath(
 ): string | undefined {
   const config = tools["doc-detective"]?.config;
   if (config === undefined) return undefined;
-  return isAbsolute(config) ? config : resolve(configDir, config);
+  return fromConfigDir(config, configDir);
 }

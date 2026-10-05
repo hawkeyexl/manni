@@ -279,6 +279,15 @@ describe("runTest: refusals", () => {
     );
   });
 
+  it("refuses a test: section, which carries no keys", async () => {
+    write("manni.config.yaml", "test:\n  config: .doc-detective.json\n");
+    await expect(runTest({ paths: ["docs"], cwd, spawn: spawn() })).rejects.toThrow(
+      new TestError(
+        "manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective.",
+      ),
+    );
+  });
+
   it("accepts a Doc Detective config in YAML", async () => {
     write(".doc-detective.yaml", "input: docs\n");
     await expect(runTest({ cwd, spawn: spawn() })).resolves.toHaveProperty("exitCode", 0);

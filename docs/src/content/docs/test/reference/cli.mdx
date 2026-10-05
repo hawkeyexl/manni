@@ -254,6 +254,7 @@ Every message below exits `2` and is printed on stderr, prefixed `manni: `.
 | An unknown collection | `no collection named "<name>" in manni.config.yaml. Configured: site.`, with a `did you mean` hint for a name that differs only in case |
 | The collections match no files | `--collection matched no files. Pass --allow-empty if that is expected.` |
 | `tools.doc-detective.config` names a missing file | `manni.config.yaml: tools.doc-detective.config "<path>" does not exist.` |
+| The config has a `test:` section | `manni.config.yaml: test has no keys. Doc Detective's settings live under tools.doc-detective.` |
 | Doc Detective exits non-zero | `Doc Detective failed (exit <n>):`, then the tail of its output. `killed before exiting` replaces `exit <n>` when it had no exit code. |
 | No results file, or one that does not parse | `Doc Detective wrote no results to read. Run doc-detective directly to see why.` |
 | No tests in the inputs | `Doc Detective found no tests in the inputs. Pass --allow-empty if that is expected.` |

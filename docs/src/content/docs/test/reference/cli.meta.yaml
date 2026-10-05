@@ -19,8 +19,8 @@ docs/src/content/docs/test/reference/cli.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-302
-      integrity: sha256-c0440703b0093562e20eaae02550d3a66d3f1a15c6380b9c09015c655db0510f
+      lines: 2-303
+      integrity: sha256-024fb197f21dfc31abdc495eafcc42abddd7a802144a5798aa430d72b79e3832
   owner:
     - "@hawkeyexl"
   created: 2026-10-05

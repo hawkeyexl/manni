@@ -89,11 +89,14 @@ export function collectFindings(results: DocDetectiveResults | null, cwd: string
     for (const test of records(spec["tests"])) {
       const contentPath = test["contentPath"] ?? spec["contentPath"];
       // Without a contentPath the file is unknown, and `""` says so: the
-      // github reporter then leaves `file=` off the annotation.
+      // github reporter then leaves `file=` off the annotation. A URL input
+      // is reported as Doc Detective names it; only a file path is relative.
       const file =
-        typeof contentPath === "string"
-          ? relative(cwd, contentPath).replace(/\\/g, "/")
-          : "";
+        typeof contentPath !== "string"
+          ? ""
+          : /^[a-z][a-z0-9+.-]*:\/\//i.test(contentPath)
+            ? contentPath
+            : relative(cwd, contentPath).replace(/\\/g, "/");
       for (const context of records(test["contexts"])) {
         for (const step of records(context["steps"])) {
           const result = step["result"];

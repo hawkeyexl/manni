@@ -13,7 +13,7 @@ import { supportedExtensions } from "../extractors/index.js";
 import { DocmetaError } from "../types.js";
 import { GITIGNORE_UNAVAILABLE, gitIgnored } from "./gitignore.js";
 
-const DEFAULT_IGNORE = ["**/node_modules/**", "**/.git/**"];
+export const DEFAULT_IGNORE = ["**/node_modules/**", "**/.git/**"];
 
 export const STDIN_TOKEN = "-";
 

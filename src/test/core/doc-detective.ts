@@ -47,7 +47,9 @@ export function launchFor(
   host: { platform: NodeJS.Platform; path: string; isFile: (path: string) => boolean },
 ): Launch {
   if (host.platform !== "win32") return { command: "doc-detective", args, viaShim: false };
-  for (const dir of host.path.split(";")) {
+  // Windows lets a PATH entry be quoted, as in "C:\Program Files\nodejs".
+  for (const entry of host.path.split(";")) {
+    const dir = entry.replace(/^"(.*)"$/, "$1");
     if (dir === "" || !host.isFile(join(dir, "doc-detective.cmd"))) continue;
     const script = join(dir, "node_modules", "doc-detective", "bin", "doc-detective.js");
     if (host.isFile(script)) {

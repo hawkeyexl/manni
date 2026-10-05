@@ -20,7 +20,7 @@ import { findConfigFile, readConfigFile, type ConfigFile } from "../../shared/co
 import { ToolError } from "../../shared/errors.js";
 import { outputTail } from "../../shared/exec.js";
 import { docDetectiveConfigPath } from "../../shared/tools.js";
-import { notFoundMessage, resolveTargetSet, STDIN_TOKEN } from "../../meta/internal.js";
+import { DEFAULT_IGNORE, notFoundMessage, resolveTargetSet, STDIN_TOKEN } from "../../meta/internal.js";
 import { NOT_ON_PATH, realSpawn, type DocDetectiveSpawn } from "../core/doc-detective.js";
 import {
   anyFailed,
@@ -63,8 +63,6 @@ export interface TestRunResult {
 /** What Doc Detective finds on its own in the working directory. */
 const DOC_DETECTIVE_CONFIG_NAMES = [".doc-detective.json", ".doc-detective.yaml", ".doc-detective.yml"];
 
-const DEFAULT_IGNORE = ["**/node_modules/**", "**/.git/**"];
-
 const NO_RESULTS = "Doc Detective wrote no results to read. Run doc-detective directly to see why.";
 
 /** A run with nothing to report; a fresh object each time, so no caller shares one. */
@@ -86,9 +84,16 @@ async function asTestError<T>(work: () => Promise<T>): Promise<T> {
 
 async function loadConfig(cwd: string, configPath: string | undefined): Promise<ConfigFile | null> {
   const opts = { section: "test", legacyNames: [], toError };
-  return configPath === undefined
-    ? findConfigFile(cwd, opts)
-    : readConfigFile(configPath, cwd, opts);
+  const file =
+    configPath === undefined ? await findConfigFile(cwd, opts) : await readConfigFile(configPath, cwd, opts);
+  // The domain has no keys of its own, so a `test:` section is a setting that
+  // would otherwise read as configured and do nothing.
+  if (file !== null && file.wrapped && file.value !== null) {
+    throw new TestError(
+      `${file.source}: test has no keys. Doc Detective's settings live under tools.doc-detective.`,
+    );
+  }
+  return file;
 }
 
 /**

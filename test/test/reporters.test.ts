@@ -7,6 +7,8 @@ import type { TestRunResult } from "../../src/test/commands/run.js";
 import { renderGithub } from "../../src/test/reporters/github.js";
 import { renderJson } from "../../src/test/reporters/json.js";
 import { renderPretty } from "../../src/test/reporters/pretty.js";
+import { collectFindings } from "../../src/test/core/results.js";
+import { join } from "node:path";
 
 const failing: TestRunResult = {
   results: { summary: {}, specs: [] },
@@ -139,5 +141,21 @@ describe("renderJson", () => {
 
   it("is null for a run that found no tests, as Doc Detective writes it", () => {
     expect(renderJson({ ...passing, results: null })).toBe("null");
+  });
+});
+
+describe("collectFindings", () => {
+  it("reports a URL input as Doc Detective names it, and a file relative to cwd", () => {
+    const step = { result: "FAIL", resultDescription: "broke", location: { line: 2 } };
+    const spec = (contentPath: string) => ({
+      contentPath,
+      tests: [{ contexts: [{ steps: [step] }] }],
+    });
+    const cwd = join("/", "repo");
+    const files = collectFindings(
+      { summary: {}, specs: [spec("https://example.com/guide.md"), spec(join(cwd, "docs", "a.md"))] },
+      cwd,
+    ).map((f) => f.file);
+    expect(files).toEqual(["https://example.com/guide.md", "docs/a.md"]);
   });
 });

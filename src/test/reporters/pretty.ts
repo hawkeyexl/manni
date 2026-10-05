@@ -11,7 +11,9 @@ export function renderPretty(result: TestRunResult, opts: { color: boolean }): s
   const c = palette(opts.color);
   const byFile = new Map<string, TestFinding[]>();
   for (const finding of result.findings) {
-    byFile.set(finding.file, [...(byFile.get(finding.file) ?? []), finding]);
+    const list = byFile.get(finding.file);
+    if (list === undefined) byFile.set(finding.file, [finding]);
+    else list.push(finding);
   }
   const width = Math.max(0, ...result.findings.map((f) => String(f.line ?? "").length));
   const blocks = [...byFile].map(([file, findings]) =>

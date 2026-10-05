@@ -31,6 +31,16 @@ describe("launchFor", () => {
     expect(launch).toEqual({ command: process.execPath, args: [SCRIPT, "-i", "a.md"], viaShim: false });
   });
 
+  it("finds the shim in a quoted PATH entry", () => {
+    const files = new Set([SHIM, SCRIPT]);
+    const launch = launchFor(["-i", "a.md"], {
+      platform: "win32",
+      path: `"${BIN}"`,
+      isFile: (p) => files.has(p),
+    });
+    expect(launch).toEqual({ command: process.execPath, args: [SCRIPT, "-i", "a.md"], viaShim: false });
+  });
+
   it("falls back to the shim when no bin script sits beside it", () => {
     const launch = launchFor(["-i", "a.md"], {
       platform: "win32",
