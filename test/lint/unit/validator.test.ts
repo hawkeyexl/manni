@@ -114,6 +114,7 @@ function tree(sections: SectionNode[], format = "markdown"): DocumentTree {
     frontmatter: null,
     frontmatterPosition: null,
     sections,
+    links: [],
   };
 }
 

@@ -700,11 +700,13 @@ function scanRange(
     if (headings) {
       const hit = titleAt(src, i, to);
       if (hit) {
+        const id = labelAbove(src, hit.first);
         fragments.push({
           type: "heading",
           level: levelFor(levels, hit.style),
           title: hit.title,
           position: spanOf(src, hit.first, hit.last),
+          ...(id !== undefined ? { id } : {}),
         });
         i = hit.last + 1;
         continue;
@@ -1187,6 +1189,152 @@ function readParagraph(
   return Math.max(blockEnd, end);
 }
 
+// ---------------------------------------------------------------------------
+// Links and section labels
+// ---------------------------------------------------------------------------
+
+/** A hyperlink target: `.. _name: uri`, `.. _name:`, or a backquoted phrase name. */
+const TARGET = /^[ \t]*\.\.[ \t]+_(?:`([^`]+)`|([^:`]+)):(?:[ \t]+(.*?))?[ \t]*$/;
+
+/**
+ * The hyperlink target defined at `line`, or null. `uri` is empty for an
+ * internal target - a label for whatever follows it - and otherwise joins the
+ * indented lines a long URI may continue onto, whitespace removed, as docutils
+ * does. An anonymous target (`.. __: uri`) names nothing and is not one.
+ */
+function targetAt(src: Source, line: number): { name: string; uri: string } | null {
+  const match = TARGET.exec(src.text[line] ?? "");
+  const name = (match?.[1] ?? match?.[2] ?? "").trim();
+  if (!match || name === "" || name === "_") return null;
+  let uri = match[3] ?? "";
+  const base = indentOf(src.text[line] ?? "");
+  for (let next = line + 1; next < src.text.length; next++) {
+    const text = src.text[next] ?? "";
+    if (isBlank(text) || indentOf(text) <= base) break;
+    uri += text;
+  }
+  return { name, uri: uri.replace(/\s+/g, "") };
+}
+
+/** Reference names match case-insensitively, with whitespace collapsed. */
+const refName = (name: string): string => name.replace(/\s+/g, " ").trim().toLowerCase();
+
+/**
+ * The label of an internal target directly above a section title - blank lines
+ * between allowed, anything else not - which is how reST gives a section the
+ * anchor `:ref:` and `label_` resolve to.
+ */
+function labelAbove(src: Source, first: number): string | undefined {
+  let line = first - 1;
+  while (line >= 0 && isBlank(src.text[line])) line--;
+  const target = line >= 0 ? targetAt(src, line) : null;
+  return target && target.uri === "" ? target.name : undefined;
+}
+
+/** Every source line a code block covers, 1-based, nested blocks included. */
+function codeLines(
+  nodes: readonly (ContentNode | ListItemNode | TableRowNode | TableCellNode | DefinitionItemNode)[],
+  out: Set<number>,
+): Set<number> {
+  for (const node of nodes) {
+    if (node.kind === "codeBlock") {
+      for (let l = node.position.start.line; l <= node.position.end.line; l++) out.add(l);
+    } else if (node.kind === "list") {
+      codeLines(node.items, out);
+    } else if (node.kind === "definitionItem") {
+      codeLines(node.definition, out);
+    } else if ("children" in node) {
+      codeLines(node.children, out);
+    }
+  }
+  return out;
+}
+
+/** Replace a match with spaces, so later patterns cannot see it and columns hold. */
+const blank = (text: string, index: number, length: number): string =>
+  text.slice(0, index) + " ".repeat(length) + text.slice(index + length);
+
+const INLINE_LITERAL = /``.+?``/g;
+const DOC_ROLE = /:doc:`([^`]*)`/g;
+const ROLE = /:[\w.+:-]+:`[^`]*`/g;
+const EMBEDDED = /`([^`<]*?)\s*<([^<>`]+)>`(__?)/g;
+const PHRASE_REF = /`([^`]+)`_(?!_)/g;
+/** A simple reference name: alphanumerics joined by single `-_.:+`. */
+const SIMPLE_REF = /(?<![\w\\])([A-Za-z0-9]+(?:[-_.:+][A-Za-z0-9]+)*)_(?!\w)/g;
+
+/**
+ * The document's link targets, in document order.
+ *
+ * Three constructs are links: an embedded URI (`` `text <uri>`_ ``, or `__`
+ * for an anonymous one), a named reference (`name_`, `` `two words`_ ``)
+ * resolved against this document's own `.. _name: uri` targets, and a Sphinx
+ * `:doc:` role. A reference to a name the document never defines yields
+ * nothing - it may be a section label, or a typo, and neither has a target to
+ * report. `:ref:` yields nothing either: its label resolves across a whole
+ * Sphinx project, which one file cannot see.
+ *
+ * A line scan of its own, over every line but a code block's, rather than
+ * part of `scanRange`: a link counts wherever it is, inside a directive this
+ * parser skips (`seealso`) as much as in a paragraph. Like the rest of this
+ * file it is not docutils. A reference split across two lines is missed, and
+ * standalone URLs are not collected.
+ */
+function collectLinks(src: Source, from: number, code: Set<number>): DocumentTree["links"] {
+  const targets = new Map<string, string>();
+  for (let line = from; line < src.text.length; line++) {
+    const target = targetAt(src, line);
+    if (target && target.uri !== "") targets.set(refName(target.name), target.uri);
+  }
+  // An embedded URI with a single `_` also defines its text as a name.
+  for (let line = from; line < src.text.length; line++) {
+    for (const m of (src.text[line] ?? "").matchAll(EMBEDDED)) {
+      const name = refName(m[1] ?? "");
+      if (m[3] === "_" && name !== "" && !targets.has(name)) targets.set(name, m[2] ?? "");
+    }
+  }
+  const resolve = (name: string): string | undefined => targets.get(refName(name));
+
+  const links: DocumentTree["links"] = [];
+  for (let line = from; line < src.text.length; line++) {
+    let text = src.text[line] ?? "";
+    if (code.has(line + 1) || TARGET.test(text)) continue;
+    const hits: { column: number; length: number; target: string }[] = [];
+    // Each construct is blanked once read, so a later, looser pattern cannot
+    // read it again: `:ref:` text never becomes a phrase reference.
+    const take = (pattern: RegExp, toTarget: (m: RegExpExecArray) => string | undefined): void => {
+      for (const m of text.matchAll(pattern)) {
+        const target = toTarget(m);
+        if (target) hits.push({ column: m.index + 1, length: m[0].length, target });
+        text = blank(text, m.index, m[0].length);
+      }
+    };
+    take(INLINE_LITERAL, () => undefined);
+    take(DOC_ROLE, (m) => {
+      const inner = (m[1] ?? "").trim();
+      return /<([^<>]+)>$/.exec(inner)?.[1]?.trim() ?? inner;
+    });
+    take(ROLE, () => undefined);
+    take(EMBEDDED, (m) => {
+      const uri = (m[2] ?? "").replace(/\s+/g, "");
+      // `<name_>` embeds a reference to another target, not a URI.
+      return uri.endsWith("_") ? resolve(uri.slice(0, -1)) : uri;
+    });
+    take(PHRASE_REF, (m) => resolve(m[1] ?? ""));
+    take(SIMPLE_REF, (m) => resolve(m[1] ?? ""));
+    hits.sort((a, b) => a.column - b.column);
+    for (const hit of hits) {
+      links.push({
+        target: hit.target,
+        position: {
+          start: pointAt(src, line, hit.column),
+          end: pointAt(src, line, hit.column + hit.length),
+        },
+      });
+    }
+  }
+  return links;
+}
+
 /**
  * Span of the native docinfo block: the leading field list, or - when a page
  * carries only a title - the title line docmeta read it from.
@@ -1324,6 +1472,14 @@ export const rstParser: DocumentParser = {
       sections: sectionize(
         withFrontmatterTitle(fragments, frontmatter, position),
         src.end,
+      ),
+      links: collectLinks(
+        src,
+        Math.max(bodyStart, 0),
+        codeLines(
+          fragments.flatMap((f) => (f.type === "content" ? [f.node] : [])),
+          new Set(),
+        ),
       ),
     };
   },
