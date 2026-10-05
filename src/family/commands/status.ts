@@ -165,14 +165,18 @@ const SET_WIDE: ReadonlyArray<readonly [Domain, string]> = [
 ];
 
 /** What an agent is told at the start of a session, after the table. */
+/** `a`, `a or b`, `a, b or c`: a list in prose, joined by `conjunction`. */
+function prose(items: readonly string[], conjunction: string): string {
+  return items.length <= 1
+    ? (items[0] ?? "")
+    : `${items.slice(0, -1).join(", ")} ${conjunction} ${items.at(-1) ?? ""}`;
+}
+
 export function agentLines(report: StatusReport): string {
-  const names = report.collections.map((c) => c.name).join(" or ");
+  const names = prose(report.collections.map((c) => c.name), "or");
   const inPlay = new Set(report.domains.filter((d) => d.status === "in-play").map((d) => d.name));
   const setWide = SET_WIDE.filter(([domain]) => inPlay.has(domain)).map(([, what]) => what);
-  const plus =
-    setWide.length === 0
-      ? ""
-      : `, plus ${setWide.length === 1 ? (setWide[0] ?? "") : `${setWide.slice(0, -1).join(", ")} and ${setWide.at(-1) ?? ""}`}`;
+  const plus = setWide.length === 0 ? "" : `, plus ${prose(setWide, "and")}`;
   return [
     `After you edit a file in ${names}, manni check runs on it, and errors come back to you at once.`,
     `Before you finish, manni check runs on every file you changed${plus}. You get one repair pass.`,

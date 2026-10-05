@@ -19,10 +19,10 @@
   112 px with `n / 4` counter, caption band 86 px, accent `#58a6ff` blue.
   Never red, green, yellow or cyan. The report's own `✗`, its red and green
   summary lines, and the cyan `(root)` field use those in the same frame.
-- **Material:** the demo repository is `test/family/fixtures/only-citations/`
-  (one page with a citation into `src/limits.ts`), plus a `meta:` section with
-  one house schema that requires `title` and `description`, and a second page
-  that passes it. `meta.defaults: false` keeps the built-in default schemas
+- **Material.** The demo repository is `test/family/fixtures/only-citations/`,
+  whose one page cites `src/limits.ts`. It adds a `meta:` section with one
+  house schema that requires `title` and `description`, and a second page that
+  passes it. `meta.defaults: false` keeps the built-in default schemas
   out, so the only error is the one the story is about. `hook-edit.json` is the
   `PostToolUse` envelope Claude Code sends after an `Edit`, cut to the three
   fields `manni check` reads. Nothing adds output. Everything on screen is real

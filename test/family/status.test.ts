@@ -113,6 +113,13 @@ describe("renderStatus", () => {
     expect(agentLines(everything).split("\n")[1]).toBe(
       "Before you finish, manni check runs on every file you changed, plus every citation, the glossary and the graph. You get one repair pass.",
     );
+    const three: StatusReport = {
+      ...report,
+      collections: ["site", "api", "blog"].map((name) => ({ name, files: 1 })),
+    };
+    expect(agentLines(three).split("\n")[0]).toBe(
+      "After you edit a file in site, api or blog, manni check runs on it, and errors come back to you at once.",
+    );
     const citeOnly: StatusReport = { ...report, domains: [{ name: "cite", status: "in-play", reason: "" }] };
     expect(agentLines(citeOnly).split("\n")[1]).toBe(
       "Before you finish, manni check runs on every file you changed, plus every citation. You get one repair pass.",

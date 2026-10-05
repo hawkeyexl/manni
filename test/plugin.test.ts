@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { Command } from "commander";
 import { buildProgram } from "../src/cli.js";
+import { EDIT_TOOLS } from "../src/family/commands/check.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
 
@@ -37,6 +38,17 @@ function resolves(args: string[]): boolean {
 }
 
 describe("manni plugin", () => {
+  // The hook fires on the matcher's tools, and `manni check` answers only
+  // EDIT_TOOLS: one list, kept in two places.
+  it("the PostToolUse matcher names exactly the tools manni check answers", () => {
+    const hooks = JSON.parse(readFileSync(join(pluginDir, "hooks/hooks.json"), "utf8")) as HookFile;
+    const matchers = (hooks.hooks.PostToolUse ?? []).map((h) => h.matcher ?? "");
+    expect(matchers.length).toBeGreaterThan(0);
+    for (const matcher of matchers) {
+      expect(matcher.split("|").sort()).toEqual([...EDIT_TOOLS].sort());
+    }
+  });
+
   it("the marketplace entry points at a plugin directory with a manifest", () => {
     expect(entry).toBeDefined();
     expect(statSync(pluginDir).isDirectory()).toBe(true);

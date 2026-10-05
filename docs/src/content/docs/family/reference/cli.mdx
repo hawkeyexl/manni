@@ -210,7 +210,7 @@ One object. Each `report` is that domain's own `-f json` output, unchanged.
 | `status` | `pass` or `fail` | `fail` when any check failed. A check that could not run does not make it `fail`, and the exit code is still `2`. |
 | `files` | string[] | The collection members the per-file checks covered, relative to the working directory. On a bare run, every member of every collection. |
 | `checks[].command` | string | The check, such as `meta validate`. |
-| `checks[].status` | `pass`, `fail`, `error` or `skipped` | `error` means the check could not run. |
+| `checks[].status` | `pass`, `fail`, `error` or `skipped` | `error` means the check could not run, or its own JSON report did not parse. The other checks' reports are still there. |
 | `checks[].report` | object | On `pass` and `fail`. The domain's own JSON report. |
 | `checks[].message` | string | On `error` and `skipped`. Why the check did not run. |
 

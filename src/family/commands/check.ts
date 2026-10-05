@@ -114,8 +114,6 @@ interface Context {
   onNotice: (message: string) => void;
 }
 
-const DOCEVALS_NOTHING_RESOLVED = "No evals resolved";
-
 async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
   const { family, cwd, inputs, onNotice } = ctx;
   const configPath = family.configPath;
@@ -166,7 +164,7 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
           toolVersion: pkg.version,
         });
       } catch (err) {
-        if (err instanceof DocevalsError && err.message.startsWith(DOCEVALS_NOTHING_RESOLVED)) {
+        if (err instanceof DocevalsError && err.code === "nothing-resolved") {
           return { skipped: NOT_SET_UP.docevals };
         }
         throw err;
@@ -320,16 +318,23 @@ export function renderPretty(run: FamilyCheckRun, color: boolean): string {
   return blocks.join("\n\n");
 }
 
+/** A check's JSON entry: its own report, or why there is none. */
+function jsonEntry(c: CheckOutcome): object {
+  if (!isRan(c)) return { command: c.command, status: c.status, message: c.message };
+  try {
+    return { command: c.command, status: c.status, report: JSON.parse(c.render("json", false)) as unknown };
+  } catch {
+    // One reporter's bad output must not take the other checks' reports with it.
+    return { command: c.command, status: "error", message: `${c.command} -f json printed output that is not JSON` };
+  }
+}
+
 export function renderJson(run: FamilyCheckRun): string {
   return JSON.stringify(
     {
       status: run.status,
       files: run.files,
-      checks: run.checks.map((c) =>
-        isRan(c)
-          ? { command: c.command, status: c.status, report: JSON.parse(c.render("json", false)) as unknown }
-          : { command: c.command, status: c.status, message: c.message },
-      ),
+      checks: run.checks.map(jsonEntry),
     },
     null,
     2,

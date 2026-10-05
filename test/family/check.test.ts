@@ -343,3 +343,21 @@ describe.skipIf(!gitAvailable())("hookReply", () => {
     expect(hookFailure("bad YAML", env("stop"), undefined)).toEqual({ exitCode: 0 });
   });
 });
+
+describe("renderJson", () => {
+  it("keeps the rest of the output when one reporter's JSON does not parse", () => {
+    const run: FamilyCheckRun = {
+      status: "pass",
+      files: ["docs/a.md"],
+      checks: [
+        { command: "meta validate", status: "pass", render: () => "not json" },
+        { command: "cite check", status: "pass", render: () => '{"ok":true}' },
+      ],
+    };
+    const doc = JSON.parse(renderJson(run)) as { checks: unknown[] };
+    expect(doc.checks).toEqual([
+      { command: "meta validate", status: "error", message: "meta validate -f json printed output that is not JSON" },
+      { command: "cite check", status: "pass", report: { ok: true } },
+    ]);
+  });
+});
