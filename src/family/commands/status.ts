@@ -183,9 +183,8 @@ export function renderStatus(report: StatusReport, format: StatusFormat): string
  */
 export const FIX_SKILL = "manni:fix";
 
-/** The set-wide checks a stop runs, as the briefing names them. */
-const SET_WIDE: ReadonlyArray<readonly [Domain, string]> = [
-  ["cite", "every citation"],
+/** The set-wide checks a stop runs when a collection document changed, as the briefing names them. */
+const PAGE_WIDE: ReadonlyArray<readonly [Domain, string]> = [
   ["term", "the glossary"],
   ["graph", "the graph"],
 ];
@@ -201,11 +200,13 @@ function prose(items: readonly string[], conjunction: string): string {
 export function agentLines(report: StatusReport): string {
   const names = prose(report.collections.map((c) => c.name), "or");
   const inPlay = new Set(report.domains.filter((d) => d.status === "in-play").map((d) => d.name));
-  const setWide = SET_WIDE.filter(([domain]) => inPlay.has(domain)).map(([, what]) => what);
-  const plus = setWide.length === 0 ? "" : `, plus ${prose(setWide, "and")}`;
+  // A stop checks every citation whenever the tree changed: a source edit can drift any of them.
+  const plus = inPlay.has("cite") ? ", plus every citation" : "";
+  const pageWide = PAGE_WIDE.filter(([domain]) => inPlay.has(domain)).map(([, what]) => what);
+  const also = pageWide.length === 0 ? "" : ` It checks ${prose(pageWide, "and")} too when you changed a page.`;
   return [
     `After you edit a file in ${names}, manni check runs on it, and errors come back to you at once.`,
-    `Before you finish, manni check runs on every file you changed${plus}. You get one repair pass.`,
+    `Before you finish, manni check runs on every file you changed${plus}.${also} You get one repair pass.`,
     `The ${FIX_SKILL} skill says how to repair each finding.`,
   ].join("\n");
 }

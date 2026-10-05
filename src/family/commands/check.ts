@@ -12,7 +12,8 @@
  *   Each domain runs bare, exactly as its own CI step would.
  * - `paths`: the per-file checks on the collection members among the paths.
  * - `changed`: the per-file checks on the git working tree's changes, plus
- *   every set-wide check. A clean tree runs nothing.
+ *   `cite` set-wide. `term` and `graph` run set-wide too when a collection
+ *   document changed or was removed. A clean tree runs nothing.
  *
  * `cite` is per-file on paths and set-wide otherwise: a source edit can drift
  * any page's citation, so after a session the whole set is what is checked.
@@ -270,9 +271,18 @@ export async function runFamilyCheck(opts: FamilyCheckOptions): Promise<FamilyCh
     case "changed": {
       const changed = await changedFiles(cwd);
       if (!changed.dirty) return { status: "pass", files: [], checks: [] };
-      files = changed.files.map((path) => labelFrom(cwd, path)).filter((l) => isDocument(l) && isMember(l));
+      const memberDocuments = (paths: string[]): string[] =>
+        paths.map((path) => labelFrom(cwd, path)).filter((l) => isDocument(l) && isMember(l));
+      files = memberDocuments(changed.files);
       inputs = files;
-      domains = [...(files.length > 0 ? (["meta", "lint", "docevals"] as const) : []), "cite", "term", "graph"];
+      // term and graph read only collection documents, so a session that
+      // changed or removed none of them leaves both as they were.
+      const pageChanged = files.length > 0 || memberDocuments(changed.removed).length > 0;
+      domains = [
+        ...(files.length > 0 ? (["meta", "lint", "docevals"] as const) : []),
+        "cite",
+        ...(pageChanged ? (["term", "graph"] as const) : []),
+      ];
       break;
     }
   }

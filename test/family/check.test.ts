@@ -209,13 +209,21 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
     }
   });
 
-  it("changed: a source edit runs only the set-wide checks", async () => {
+  it("changed: a source edit runs every citation, and leaves the glossary and the graph alone", async () => {
     dir = fixtureRepo("everything");
     edit(dir, "src/limits.ts", (t) => t.replace("FETCH_TIMEOUT_MS = 10_000", "FETCH_TIMEOUT_MS = 20_000"));
     const run = await runFamilyCheck({ cwd: dir, scope: { kind: "changed" } });
     expect(run.files).toEqual([]);
-    expect(run.checks.map((c) => c.command)).toEqual(["cite check", "term check", "graph check"]);
+    expect(run.checks.map((c) => c.command)).toEqual(["cite check"]);
     expect(byCommand(run, "cite check").status).toBe("fail");
+  });
+
+  it("changed: a deleted page still runs the glossary and the graph", async () => {
+    dir = fixtureRepo("everything");
+    rmSync(join(dir, "docs/glossary/timeout.md"));
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "changed" } });
+    expect(run.files).toEqual([]);
+    expect(run.checks.map((c) => c.command)).toEqual(["cite check", "term check", "graph check"]);
   });
 
   it("no config is an operational error the hook answers with silence", async () => {

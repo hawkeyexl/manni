@@ -90,8 +90,8 @@ up. This is detection, not a switch, so there is no config key.
 | cite | The page carries citations, as markers or a `citations` manifest | `cite check` on the page | `cite check` over every page with citations. A source edit can drift any of them. |
 | lint | `lint:` exists | `lint check` | |
 | docevals | `docevals:` exists, or the page declares evals. "No evals resolved" counts as not in play. | `docevals run --deterministic-only --no-generate --no-execution` | |
-| term | The collections hold at least one term. "No terms found" means not in play. | | `term check` |
-| graph | `graph:` exists | | `graph build` in memory, writing no file, then `graph check` |
+| term | The collections hold at least one term. "No terms found" means not in play. | | `term check`. At a stop, only when a collection document changed. |
+| graph | `graph:` exists | | `graph build` in memory, writing no file, then `graph check`. At a stop, only when a collection document changed. |
 | a11y, tracevals | Never. They need a browser, a running site, recorded sessions or an LLM. | | |
 
 A file is checked only if it is a member of a declared collection. Other files
@@ -106,7 +106,7 @@ fail.
 | nothing | Every in-play check over every collection, per-file and set-wide. This is the CI gate. |
 | paths | The per-file checks on those files |
 | a `PostToolUse` envelope for `Edit`, `Write`, `MultiEdit` or `NotebookEdit` | The per-file checks on `tool_input.file_path`, or `notebook_path` |
-| a `Stop` envelope | The per-file checks on the working tree's changes against `HEAD`, plus every set-wide check. A clean tree runs nothing. |
+| a `Stop` envelope | The per-file checks on the working tree's changes against `HEAD`, plus `cite check` over every page with citations. `term check` and the graph run too when a collection document changed or was removed, since they read nothing else. A clean tree runs nothing. |
 
 Positional paths win over an envelope. Unlike `meta validate`, `-` is not
 read, because stdin carries the envelope and the checks read files on disk.

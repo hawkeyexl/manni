@@ -132,23 +132,26 @@ when you named it.
 | nothing | Every in-play check over every collection. This is the CI gate. | |
 | paths | `meta`, `cite`, `lint` and `docevals` on the documents among the paths that belong to a collection. | none |
 | a `PostToolUse` hook for `Edit`, `Write`, `MultiEdit` or `NotebookEdit` | `meta`, `cite`, `lint` and `docevals` on the edited file. | none |
-| a `Stop` hook | `meta`, `lint` and `docevals` on the working tree's changed members. | `cite`, `term` and `graph`. |
+| a `Stop` hook | `meta`, `lint` and `docevals` on the working tree's changed members. | `cite`. `term` and `graph` too, when a collection document changed or was removed. |
 
 With paths, `cite check` runs on the named pages. On a bare run or at a `Stop`,
 it runs over every page that carries citations, since a source edit can drift
-any of them. `term check` and `graph check` always cover the whole set, so they
-run on a bare `check` and at a `Stop`, and not when you name files.
+any of them. `term check` and `graph check` always cover the whole set. They
+run on a bare `check`, and not when you name files. At a `Stop` they run only
+when the session changed or removed a collection document, since they read
+nothing else. A session that changed only source code runs `cite check` alone.
 
 The working tree's changed members are the files `git status` reports against
 `HEAD` that belong to a collection and have a supported document extension.
 That covers modified, added, renamed and untracked files. A deleted file is not
-among them, but a deletion still counts as a change, so the whole-set checks run.
+among them, but a deletion still counts as a change, so `cite check` runs. A
+deleted or renamed collection document also runs `term check` and `graph check`.
 A clean tree runs nothing, including the whole-set checks.
 
 Checks run, and print, in a fixed order. For a bare run and for paths it is
 `meta validate`, `cite check`, `lint check`, `docevals run`, `term check`, then
 `graph check`. At a `Stop` it is `meta validate`, `lint check`, `docevals run`,
-`cite check`, `term check`, then `graph check`.
+`cite check`, `term check`, then `graph check`, leaving out any that do not run.
 
 ## Output
 
@@ -290,7 +293,7 @@ context.
 
 | Situation | Exit | Output |
 |---|---|---|
-| At least one domain in play | `0` | stdout: the `pretty` table, a blank line, then three lines that say when `check` runs and which skill repairs a finding. The stop line names only the whole-set checks in play. |
+| At least one domain in play | `0` | stdout: the `pretty` table, a blank line, then three lines that say when `check` runs and which skill repairs a finding. The stop line names only the whole-set checks in play, and says the glossary and the graph run when a page changed. |
 | No domain in play, or no collection | `0` | stdout: the table alone, since there is no check to promise. |
 | No config, or a config that cannot be read | `0` | nothing |
 
