@@ -567,7 +567,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/commands/check.ts
         lines: 158
         integrity: sha256-f0d7c4113ba9a6747b06ff8837f89d040ebda589671c393e0dae9b458b8ff4cd
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: score-formula
       claim:
         lines: 254
@@ -601,7 +601,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/commands/check.ts
         lines: 157-163
         integrity: sha256-e50f3517c28c0f3debc8f49bdcc4b430a227b0bfbf459ec4dc48fafc23b8fea2
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: pretty-header-pages-footer
       claim:
         integrity: sha256-82ea6eb0e4cbeda9a60db051e46de576eb36c7dec9dcdaa0f834001fa5daacdb
@@ -769,7 +769,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/commands/check.ts
         lines: 183
         integrity: sha256-2114294809a775a9002744457d176f2d49999ba4275657dfdcaa2842479918d8
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: summary-skipped
       claim:
         lines: 421
@@ -796,7 +796,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/commands/check.ts
         lines: 158
         integrity: sha256-f0d7c4113ba9a6747b06ff8837f89d040ebda589671c393e0dae9b458b8ff4cd
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: summary-failed-exit-1
       claim:
         lines: 425
@@ -814,7 +814,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/commands/check.ts
         lines: 176-179
         integrity: sha256-a59346dac5f145a9bee0ee7a3f386b4ea946aa47599dcc977ad6116c7e76c04a
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: summary-by-severity-keys
       claim:
         lines: 427
@@ -823,7 +823,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/commands/check.ts
         lines: 171
         integrity: sha256-7664be76a6b67c8431bfc6cb0f6dd51a0b93fed085c21289c66f9f243a66ab4a
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: summary-sitemap
       claim:
         lines: 425-430
@@ -963,7 +963,7 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         file: src/a11y/commands/check.ts
         lines: 158
         integrity: sha256-f0d7c4113ba9a6747b06ff8837f89d040ebda589671c393e0dae9b458b8ff4cd
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: exit-1-cli
       claim:
         lines: 507

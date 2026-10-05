@@ -151,7 +151,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         file: src/a11y/commands/check.ts
         lines: 139-166
         integrity: sha256-5d5adf02913dbd80cd4de967f50ee7e2a1f1001ffc1ec9c69969fa2932b99f72
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: exit-0-severity-floor
       claim:
         lines: 155
@@ -169,7 +169,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         file: src/a11y/commands/check.ts
         lines: 158
         integrity: sha256-f0d7c4113ba9a6747b06ff8837f89d040ebda589671c393e0dae9b458b8ff4cd
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: exit-1-failed-pages
       claim:
         lines: 156
@@ -178,7 +178,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         file: src/a11y/commands/check.ts
         lines: 158
         integrity: sha256-f0d7c4113ba9a6747b06ff8837f89d040ebda589671c393e0dae9b458b8ff4cd
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: exit-2-bad-flag-value
       claim:
         lines: 157
@@ -239,7 +239,7 @@ docs/src/content/docs/a11y/ci/index.mdx:
         file: src/a11y/commands/check.ts
         lines: 158
         integrity: sha256-f0d7c4113ba9a6747b06ff8837f89d040ebda589671c393e0dae9b458b8ff4cd
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: pages-checked-sequentially
       claim:
         integrity: sha256-f629dc747e2aa306d001c2fdea2bba14152265f4273f084ad7cc94ae1c80ff06

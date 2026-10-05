@@ -227,7 +227,7 @@ docs/src/content/docs/a11y/fix/index.mdx:
         file: src/a11y/types.ts
         lines: 165-170
         integrity: sha256-d5cc5806f9670c0953ece0ce561468009da6c5125757b8cb454b6293e46c1437
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: json-node-html
       claim:
         lines: 91-93
@@ -305,7 +305,7 @@ docs/src/content/docs/a11y/fix/index.mdx:
         file: src/a11y/commands/check.ts
         lines: 158
         integrity: sha256-f0d7c4113ba9a6747b06ff8837f89d040ebda589671c393e0dae9b458b8ff4cd
-        commit-sha: 461f1267ba3d4aaa7e95845b7a3638ed3c9587d3
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: incomplete-json-only
       claim:
         lines: 157
