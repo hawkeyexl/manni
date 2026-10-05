@@ -80,6 +80,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0061](0061-lint-template-grammar.md) | The lint template format is an ordered list of rules rather than a map. It gains one occurrence vocabulary, heading alternation and repeating groups. A matcher aligns sections to rules by cost | Sara · S7 / Maya · M10 / Theo · T5 | Implemented (#11) |
 | [0062](0062-dita-ot-answers-structure.md) | DITA Open Toolkit becomes a second tool for the structure job, not a new verb. It catches what lives between files: conref, keyref, xref and image targets. The parser also gains a `.ditamap` vocabulary | Maya · M10 / Devin · D9 / Theo · T5 | Implemented (#11) |
 | [0063](0063-the-graph-vocabulary.md) | The `graph` vocabulary. The page block `kg:` becomes `graph:`, defined by `manni:graph:1.0.0-proposal.1`, which is the kg draft renamed. `manni term` reads `graph.concepts`, and the kg drafts stay as the family's history | Sara · S1 / Maya · M1 | Proposed |
+| [0064](0064-severity-and-the-exit-code.md) | a11y's severity floor is also its exit-code gate, deliberately, because axe assigns the level and no config moves one | Devin · D7 | Implemented |
 | [0065](0065-content-model.md) | One content model for the family. It names the block kinds a page is made of, for `manni lint` and Doc Detective alike. It also gives the method for naming the next one | all (the body of a page) | Implemented for lint (#11) |
 | [0066](0066-strict-vocabulary-overlays.md) | Strict overlays for the proposed vocabularies. Each draft gets `manni:<family>-strict:1.0.0-proposal.1`, which holds only the constraints strict adds, such as BCP 47 for `language`. A team stacks it beside the open draft | Sara · S1 | Implemented (#129); superseded in part by [0067](0067-registering-the-vocabularies.md) |
 | [0067](0067-registering-the-vocabularies.md) | Registering the vocabularies. The eleven vocabularies and their strict overlays register as built-ins at `1.0.0`, 22 ids in all. Core drops `locale`, and the default set does not change | Sara · S1 / Maya · M1 | Implemented (#130); superseded in part by [0070](0070-defaults-register-strict.md) |
@@ -203,6 +204,9 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
        │                  new rule joins; its no-model promise narrows to `check`)
 0017 ──┤                 (the egress analysis, and fill's provider flags reused as they are)
 0036 ──┘                 (the fill-shaped proposal it asked for, with the model outside the gate)
+
+0035 ──┬─> 0064          (a11y's exit-code contract, whose floor this confirms as the gate)
+0044 ──┘                 (cite's per-rule severity, the second reading of the scale)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.
