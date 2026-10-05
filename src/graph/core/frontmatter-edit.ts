@@ -4,9 +4,13 @@
  * byte-for-byte, and untouched YAML keeps its comments and ordering. When a
  * file has no frontmatter, a new block holding only the `graph` key is created.
  * YAML frontmatter only; TOML/JSON frontmatter cannot be edited in place.
+ * `writeGraphFields` routes every other format to meta's writer.
  */
 import { Document, YAMLMap, YAMLSeq, isMap, parseDocument } from "yaml";
 import { GraphError } from "../types.js";
+import { extractorFor, metadataOf, type DocFormat } from "./analyze.js";
+
+const GRAPH_KEY = "graph";
 
 interface Split {
   /** The opening fence line including its newline (plus any BOM). */
@@ -116,10 +120,7 @@ export function applyGraphFields(
   values: Record<string, unknown>,
   options: GraphApplyOptions = {},
 ): GraphApplyResult {
-  const entries = Object.entries(values).filter(
-    ([, v]) =>
-      v !== undefined && v !== null && !(Array.isArray(v) && v.length === 0),
-  );
+  const entries = writable(values);
   const pageEntries = Object.entries(options.page ?? {});
   if (entries.length === 0 && pageEntries.length === 0) {
     return { content, applied: [], skipped: [] };
@@ -181,6 +182,44 @@ export function applyGraphFields(
   }
   const graphMap = (graph ?? doc.createNode({})) as YAMLMap;
 
+  const { applied, skipped } = mergeFields(doc, graphMap, entries, options.force);
+
+  // Top-level keys, after the graph map so a new `graph` sorts where it always
+  // did.
+  // Block style, not `flowSeqs`: this is a record a reviewer reads and edits
+  // by hand, one entry per line, not a value the graph derives from.
+  for (const [key, value] of pageEntries) {
+    doc.set(key, doc.createNode(value));
+  }
+
+  if (applied.length === 0 && pageEntries.length === 0) {
+    return { content, applied, skipped };
+  }
+
+  let newBlock = doc.toString();
+  if (split.eol === "\r\n") newBlock = newBlock.replace(/(?<!\r)\n/g, "\r\n");
+  return { content: split.open + newBlock + split.suffix, applied, skipped };
+}
+
+/** The proposed values worth writing: no empty value and no empty list. */
+function writable(values: Record<string, unknown>): Array<[string, unknown]> {
+  return Object.entries(values).filter(
+    ([, v]) =>
+      v !== undefined && v !== null && !(Array.isArray(v) && v.length === 0),
+  );
+}
+
+/**
+ * Merge `entries` into a page's `graph` map. This is the rule for what a fill
+ * may change, and both writers run it: a human-set value stays unless `force`,
+ * decided at the leaf, and a non-map where a map must go is left alone.
+ */
+function mergeFields(
+  doc: Document,
+  graphMap: YAMLMap,
+  entries: ReadonlyArray<[string, unknown]>,
+  force: boolean | undefined,
+): { applied: string[]; skipped: string[] } {
   const applied: string[] = [];
   const skipped: string[] = [];
   for (const [field, value] of entries) {
@@ -213,29 +252,66 @@ export function applyGraphFields(
       skipped.push(field);
       continue;
     }
-    if (target.has(leaf) && !options.force) {
+    if (target.has(leaf) && !force) {
       skipped.push(field);
       continue;
     }
     setField(doc, target, leaf, value);
     applied.push(field);
   }
+  return { applied, skipped };
+}
 
-  // Top-level keys, after the graph map so a new `graph` sorts where it always
-  // did.
-  // Block style, not `flowSeqs`: this is a record a reviewer reads and edits
-  // by hand, one entry per line, not a value the graph derives from.
-  for (const [key, value] of pageEntries) {
-    doc.set(key, doc.createNode(value));
+/**
+ * Write a proposal into a page of any format: the one writer `fill`'s real
+ * write, its guard's simulation and its manifest merge all use, so what is
+ * vetted is what is written.
+ *
+ * Markdown and MDX keep graph's YAML editor above. Every other format is
+ * written by its meta extractor's `apply`, with the page's `graph` map merged
+ * by the same rule, so HTML gets a `<meta name="graph">`, DITA an
+ * `<othermeta>`, and a fenced AsciiDoc or reStructuredText page its fence
+ * (proposal 0077 §4). A page that writer cannot take throws meta's
+ * `DocmetaError`, in meta's words.
+ */
+export function writeGraphFields(
+  content: string,
+  path: string,
+  format: DocFormat,
+  values: Record<string, unknown>,
+  options: GraphApplyOptions = {},
+): GraphApplyResult {
+  if (format === "markdown" || format === "mdx") {
+    return applyGraphFields(content, path, values, options);
   }
-
-  if (applied.length === 0 && pageEntries.length === 0) {
-    return { content, applied, skipped };
+  const entries = writable(values);
+  const patch: Record<string, unknown> = {};
+  let applied: string[] = [];
+  let skipped: string[] = [];
+  if (entries.length > 0) {
+    // The page's map, held as a YAML document so the merge is the one the
+    // Markdown writer runs on its frontmatter, not a second spelling of it.
+    const doc = new Document(
+      metadataOf(content, path, format).data[GRAPH_KEY] ?? {},
+    );
+    if (!isMap(doc.contents)) {
+      throw new GraphError(`${path}: metadata key "graph" is not a map`);
+    }
+    ({ applied, skipped } = mergeFields(
+      doc,
+      doc.contents,
+      entries,
+      options.force,
+    ));
+    if (applied.length > 0) patch[GRAPH_KEY] = doc.toJS();
   }
-
-  let newBlock = doc.toString();
-  if (split.eol === "\r\n") newBlock = newBlock.replace(/(?<!\r)\n/g, "\r\n");
-  return { content: split.open + newBlock + split.suffix, applied, skipped };
+  Object.assign(patch, options.page);
+  if (Object.keys(patch).length === 0) return { content, applied, skipped };
+  const apply = extractorFor(format)?.apply;
+  if (apply === undefined) {
+    throw new GraphError(`${path}: manni cannot write ${format} metadata`);
+  }
+  return { content: apply(content, patch, { filePath: path }), applied, skipped };
 }
 
 /** The doc's parsed frontmatter as plain data, `{}` when there is none. */

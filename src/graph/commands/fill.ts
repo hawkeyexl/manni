@@ -9,7 +9,12 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import { analyzeDoc, formatOf, type DocFormat } from "../core/analyze.js";
+import {
+  analyzeDoc,
+  formatOf,
+  metadataOf,
+  type DocFormat,
+} from "../core/analyze.js";
 import { loadRunConfig, type FillField } from "../core/config.js";
 import type { DocModel } from "../types.js";
 import {
@@ -24,9 +29,8 @@ import {
 import { STDIN_PATH } from "../core/iri.js";
 import {
   applyGraphFields,
-  existingGraphFields,
-  existingMetaProvenance,
   frontmatterKind,
+  writeGraphFields,
 } from "../core/frontmatter-edit.js";
 import { writeFileAtomic } from "../../meta/index.js";
 import {
@@ -37,7 +41,7 @@ import {
   type MetaPageView,
 } from "../../meta/internal.js";
 import { isMissing } from "../../shared/manifest-cas.js";
-import { mergePage, openMetaView, ownMetadata } from "../core/external.js";
+import { mergePage, openMetaView } from "../core/external.js";
 import { FillGuard } from "../core/fill-guard.js";
 import { byCodeUnit } from "../core/sort.js";
 import { bundledShapesPath } from "../core/pkg.js";
@@ -528,7 +532,14 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     absPath: string | undefined,
     content: string,
   ): Promise<FillDocResult & { filledContent?: string }> {
-    if (frontmatterKind(content) === "unsupported") {
+    // `--as` is how every input parses, the stdin page included.
+    const pageFormat = formatOf(path, format);
+    // Refused before a turn is spent. graph's YAML editor is the Markdown
+    // writer; every other format's writer is meta's, which refuses for itself.
+    if (
+      (pageFormat === "markdown" || pageFormat === "mdx") &&
+      frontmatterKind(content) === "unsupported"
+    ) {
       throw new GraphError(
         "only YAML frontmatter can be edited (found a TOML/JSON fence) — exclude this file or convert its frontmatter",
       );
@@ -547,7 +558,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // collision. meta's merge keeps the page's block, so a fill written to
     // the manifest would never reach `build`. Refused before any turn is spent.
     if (absPath !== undefined) {
-      const own = ownMetadata(content).data;
+      const own = metadataOf(content, path, pageFormat).data;
       if (GRAPH_KEY in own) {
         const home = await view.home(path, own, GRAPH_KEY);
         if (home.kind !== "unowned") {
@@ -557,7 +568,14 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         }
       }
     }
-    const present = new Set(existingGraphFields(effective));
+    // What the page already holds, read as `build` reads its format.
+    const held = metadataOf(effective, path, pageFormat).data;
+    const heldGraph = held[GRAPH_KEY];
+    const present = new Set(
+      heldGraph !== null && typeof heldGraph === "object" && !Array.isArray(heldGraph)
+        ? Object.keys(heldGraph)
+        : [],
+    );
     const missing = opts.force ? fields : fields.filter((f) => !present.has(f));
     // With --sections, a document whose own fields are complete may still have
     // unfilled sections, so completeness at document level is not completeness
@@ -778,9 +796,11 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       // Only record a score the model actually gave. `?? 0` stamped a
       // confidence of 0.00 the model never asserted whenever it omitted one,
       // which `fill.confidenceThreshold: 0` makes reachable.
-      const held = existingMetaProvenance(effective);
-      const priorEntry = Array.isArray(held)
-        ? (held as unknown[]).find(
+      // As held, uncoerced: `mergeMetaProvenance` decides what a non-list
+      // means, and carries through every key of an entry it does not know.
+      const heldProvenance = held[META_PROVENANCE_KEY];
+      const priorEntry = Array.isArray(heldProvenance)
+        ? (heldProvenance as unknown[]).find(
             (e): e is Record<string, unknown> =>
               !!e &&
               typeof e === "object" &&
@@ -806,7 +826,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
         )
         .map(([, name]) => name);
       const merged = mergeMetaProvenance(
-        held,
+        heldProvenance,
         identity.model,
         "fields",
         proposed,
@@ -825,7 +845,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
 
     // Applied to the page as meta reads it, so a value a manifest holds is
     // preserved exactly as one on the page would be.
-    const applied = applyGraphFields(effective, path, narrowed, {
+    const applied = writeGraphFields(effective, path, pageFormat, narrowed, {
       force: opts.force,
     });
     const reportedFields = applied.applied;
@@ -847,7 +867,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     // `manni meta fill` follows: a key a local manifest owns goes to the page's
     // entry there, and every other key stays on the page. A page from stdin
     // has no manifest, so everything it gets is in the text printed back.
-    const own = ownMetadata(content).data;
+    const own = metadataOf(content, path, pageFormat).data;
     const graphHome =
       absPath === undefined ? undefined : await view.home(path, own, GRAPH_KEY);
     const provenanceHome =
@@ -869,9 +889,10 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     if (provenanceList !== undefined && provenanceTarget === null) {
       pageKeys[META_PROVENANCE_KEY] = provenanceList;
     }
-    const pageContent = applyGraphFields(
+    const pageContent = writeGraphFields(
       content,
       path,
+      pageFormat,
       graphTarget === null ? narrowed : {},
       { force: opts.force, page: pageKeys },
     ).content;
@@ -884,7 +905,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       manifestWrites.push({
         home: graphTarget,
         key: GRAPH_KEY,
-        value: ownMetadata(applied.content).data[GRAPH_KEY],
+        value: metadataOf(applied.content, path, pageFormat).data[GRAPH_KEY],
       });
     }
     if (provenanceList !== undefined && provenanceTarget !== null) {
@@ -1008,9 +1029,10 @@ async function spliceAll(
 }
 
 /**
- * `content` with every key its manifests supply written into its frontmatter,
+ * `content` with every key its manifests supply written into its metadata,
  * so it reads as meta reads the page. `content` itself when none does. A
- * frontmatter graph cannot edit is left alone, and `fill` refuses that page.
+ * Markdown frontmatter graph cannot edit is left alone, and `fill` refuses
+ * that page.
  */
 async function mergedText(
   view: MetaPageView,
@@ -1018,17 +1040,23 @@ async function mergedText(
   content: string,
   format: DocFormat,
 ): Promise<string> {
-  if (frontmatterKind(content) === "unsupported") return content;
-  let own: ReturnType<typeof ownMetadata>;
-  try {
-    own = ownMetadata(content);
-  } catch (e) {
-    // The extractor knows the bytes, not the file.
-    throw new GraphError(`${path}: ${errorMessage(e)}`);
-  }
+  const markdown = format === "markdown" || format === "mdx";
+  if (markdown && frontmatterKind(content) === "unsupported") return content;
+  const own = metadataOf(content, path, format);
   const { supplied } = await mergePage(view, path, own.data, own.present, format);
   if (Object.keys(supplied).length === 0) return content;
-  return applyGraphFields(content, path, {}, { page: supplied }).content;
+  try {
+    return writeGraphFields(content, path, format, {}, { page: supplied })
+      .content;
+  } catch (e) {
+    // An AsciiDoc or reStructuredText page with no fence cannot take a write,
+    // and need not when its manifest holds every key fill writes. This text
+    // is read, never written, and both readers read a YAML fence, so a new
+    // one reads as meta's merge does. A key whose home is the page still
+    // meets meta's refusal when it is written.
+    if (format !== "asciidoc" && format !== "rst") throw e;
+    return applyGraphFields(content, path, {}, { page: supplied }).content;
+  }
 }
 
 /**

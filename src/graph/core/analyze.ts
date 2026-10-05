@@ -17,6 +17,7 @@ import GithubSlugger from "github-slugger";
 import {
   extractFrontmatter,
   extractorForExtension,
+  type MetadataExtractor,
 } from "../../meta/index.js";
 import { parserByName, parserForExtension } from "../../lint/parsers/index.js";
 import type {
@@ -411,6 +412,40 @@ function classifyImage(docPath: string, rawTarget: string): DocImage {
   return { raw: rawTarget, target: resolved ?? rawTarget, external: false };
 }
 
+/**
+ * meta's extractor for a non-Markdown format. Lint's parser names are meta's
+ * extractor names, so the parser's own extension finds the extractor under
+ * `--as` too, where the path's would not.
+ */
+export function extractorFor(format: TreeFormat): MetadataExtractor | undefined {
+  return extractorForExtension(parserByName(format)?.extensions[0] ?? "");
+}
+
+/**
+ * A page's own metadata, as `manni meta validate` reads it. `build` reads a
+ * page with it and `fill` reads what a page already holds with it, so the two
+ * cannot disagree about a format.
+ */
+export function metadataOf(
+  content: string,
+  path: string,
+  format: DocFormat,
+): { data: Record<string, unknown>; present: boolean } {
+  try {
+    const meta =
+      format === "markdown" || format === "mdx"
+        ? extractFrontmatter(content, "markdown")
+        : extractorFor(format)?.extract(content, path);
+    return meta === undefined
+      ? { data: {}, present: false }
+      : { data: meta.data, present: meta.present };
+  } catch (error) {
+    // The extractor knows the bytes, not the file. Left as it is, build and
+    // fill would report a YAML error with no hint of which page carries it.
+    throw new GraphError(`${path}: ${errorMessage(error)}`);
+  }
+}
+
 /** Analyze one document. `allPaths` is the discovered corpus for link resolution. */
 export function analyzeDoc(
   content: string,
@@ -424,14 +459,7 @@ export function analyzeDoc(
   if (format !== "markdown" && format !== "mdx") {
     return analyzeTreeDoc(content, path, format, allPaths, routes);
   }
-  let meta: ReturnType<typeof extractFrontmatter>;
-  try {
-    meta = extractFrontmatter(content, "markdown");
-  } catch (error) {
-    // The extractor knows the bytes, not the file. Left as it is, build and
-    // fill would report a YAML error with no hint of which page carries it.
-    throw new GraphError(`${path}: ${errorMessage(error)}`);
-  }
+  const meta = metadataOf(content, path, format);
   const isMdx = format === "mdx";
   let tree: Root;
   try {
@@ -738,23 +766,7 @@ function analyzeTreeDoc(
   // Parsed first, so a malformed page is reported as a parse failure rather
   // than as whatever the metadata reader tripped on.
   const tree = parseTree(content, path, format);
-  // Lint's parser names are meta's extractor names, so the parser's own
-  // extension finds the extractor under `--as` too, where the path's would not.
-  const extractor = extractorForExtension(
-    parserByName(format)?.extensions[0] ?? "",
-  );
-  let meta: { data: Record<string, unknown>; present: boolean } = {
-    data: {},
-    present: false,
-  };
-  if (extractor !== undefined) {
-    try {
-      meta = extractor.extract(content, path);
-    } catch (error) {
-      // As for Markdown: the extractor knows the bytes, not the file.
-      throw new GraphError(`${path}: ${errorMessage(error)}`);
-    }
-  }
+  const meta = metadataOf(content, path, format);
   const minted = mintTreeSections(tree.sections);
 
   const links: DocLink[] = [];

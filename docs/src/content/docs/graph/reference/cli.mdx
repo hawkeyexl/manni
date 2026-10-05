@@ -222,7 +222,7 @@ may carry.
 
 ## `graph fill`
 
-Proposes `graph:` frontmatter fields from each page's content and writes the ones
+Proposes `graph` metadata fields from each page's content and writes the ones
 that clear a confidence gate. This is the one verb that reaches a model.
 
 ```sh
@@ -242,6 +242,17 @@ key is written where `meta fill` would write it. A key a manifest owns goes to
 the page's entry there, and every other key goes to the page. A page that
 carries `graph:` while a manifest owns it is that page's error, in the words
 `meta validate` uses for the collision.
+
+A key that goes to the page is written in the page's own format, where
+`meta fill` writes it. Markdown and MDX get YAML frontmatter. HTML gets one
+`<meta name="graph">` in `<head>`, the block as one line of YAML flow. A DITA
+topic gets an `<othermeta name="graph">` in its `<prolog>`. A fenced AsciiDoc or
+reStructuredText page has its fence edited in place. `meta-provenance` goes the
+same way. Two kinds of page cannot take a write: an AsciiDoc or
+reStructuredText page with no fenced block, and an HTML page with no `<head>`.
+Each is that page's `error`, in `meta fill`'s words, and is left unchanged. The
+run exits 1. A page whose manifest owns every key written is not refused. See
+[the formats reference](/manni/meta/reference/formats/).
 
 The graph check vets each proposal against the whole configured corpus. A
 corpus page it cannot read is left out, and one warning lists it. A named page

@@ -19,7 +19,6 @@
  * graph never decrypts, so the graph carries the `~…` token.
  */
 import { resolve } from "node:path";
-import { extractFrontmatter } from "../../meta/index.js";
 import { metaPageView, type MetaPageView } from "../../meta/internal.js";
 import { errorMessage } from "../../shared/errors.js";
 import { GraphError, type DocModel } from "../types.js";
@@ -123,13 +122,4 @@ export async function withExternalMetadata(
     out.push(data === doc.frontmatter ? doc : { ...doc, frontmatter: data });
   }
   return out;
-}
-
-/** The frontmatter of `content` as meta's extractor reads it. */
-export function ownMetadata(content: string): {
-  data: Record<string, unknown>;
-  present: boolean;
-} {
-  const meta = extractFrontmatter(content, "markdown");
-  return { data: meta.data, present: meta.present };
 }

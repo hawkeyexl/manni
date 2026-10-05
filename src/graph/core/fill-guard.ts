@@ -10,10 +10,15 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { DataFactory, Store } from "n3";
 import type { DocModel } from "../types.js";
-import { analyzeDoc, type AnalyzeOptions, type DocFormat } from "./analyze.js";
+import {
+  analyzeDoc,
+  formatOf,
+  type AnalyzeOptions,
+  type DocFormat,
+} from "./analyze.js";
 import type { DeriveSource, GraphConfig } from "./config.js";
 import { deriveGraph, type Quad } from "./derive.js";
-import { applyGraphFields } from "./frontmatter-edit.js";
+import { writeGraphFields } from "./frontmatter-edit.js";
 import { validateGraph, type CheckFinding } from "./shacl.js";
 import { byCodeUnit } from "./sort.js";
 import { NS } from "./vocab.js";
@@ -254,9 +259,13 @@ export class FillGuard {
     const baseline = await this.baseline();
     // Each pass drops at least one field, so this terminates.
     while (guarded().length > 0) {
-      const applied = applyGraphFields(content, path, current, {
-        force: this.force,
-      });
+      const applied = writeGraphFields(
+        content,
+        path,
+        formatOf(path, this.analyzeOptions.format),
+        current,
+        { force: this.force },
+      );
       const model = analyzeDoc(
         applied.content,
         path,

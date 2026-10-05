@@ -194,6 +194,29 @@ provenance key of its own, so this record is the only one.
 
 Set `fill.writeProvenance: false` and the record is not written. Do not.
 
+## Where the fields land
+
+`fill` writes each page in its own format, where `manni meta fill` would, so
+the page's own tooling reads what was written:
+
+| Page | Where `graph` and `meta-provenance` go |
+|---|---|
+| Markdown, MDX | YAML frontmatter, created when the page has none. |
+| HTML | One `<meta name="graph">` in `<head>`, the block as one line of YAML flow. |
+| DITA | An `<othermeta name="graph">` in the topic's `<prolog>`. |
+| AsciiDoc, reStructuredText | The page's YAML fence, edited in place. |
+
+A key an external-metadata manifest owns goes to the page's entry there,
+whatever the page's format.
+
+Two kinds of page cannot take a write. An AsciiDoc or reStructuredText page
+with no fence has nowhere safe to put one, because a bare `---` changes how
+both render. An HTML page with no `<head>` has no place for a `<meta>` tag.
+Each is reported as an `error` line in `manni meta fill`'s words, its bytes are
+left alone, and the run exits 1. Add a fence or a `<head>`, or keep the page's
+`graph` block in a manifest. The
+[formats reference](/manni/meta/reference/formats/) has the detail.
+
 ## A page's own fields win
 
 A `graph` field a human set is left alone. `--force` overwrites it, and it is
