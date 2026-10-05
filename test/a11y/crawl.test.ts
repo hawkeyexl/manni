@@ -482,3 +482,184 @@ describe("crawl progress", () => {
     expect(out.pages).toHaveLength(1);
   });
 });
+
+describe("crawl and pages that redirect in the browser", () => {
+  it("records the redirect, keeps it out of pages, and checks the destination", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/old`] },
+      [`${S}/old`]: { redirect: `${S}/new` },
+      [`${S}/new`]: {},
+    };
+    const out = await crawl(options({}), fakeAnalyzer(site));
+    expect(out.pages.map((p) => [p.url, p.source])).toEqual([
+      [`${S}/`, "seed"],
+      [`${S}/new`, "link"],
+    ]);
+    expect(out.redirects).toEqual([{ url: `${S}/old`, to: `${S}/new`, source: "link" }]);
+    expect(out).toMatchObject({ discovered: 3, skipped: 0, duplicates: 0 });
+  });
+
+  it("checks a destination once when it is also linked directly", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/old`, `${S}/new`] },
+      [`${S}/old`]: { redirect: `${S}/new/` },
+      [`${S}/new`]: {},
+    };
+    const analyzer = fakeAnalyzer(site);
+    const out = await crawl(options({}), analyzer);
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/`, `${S}/old`, `${S}/new`]);
+    expect(out.redirects).toEqual([{ url: `${S}/old`, to: `${S}/new/`, source: "link" }]);
+    expect(out).toMatchObject({ discovered: 3, skipped: 0, duplicates: 0 });
+  });
+
+  it("does not check a destination again when it was already visited", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/new`, `${S}/old`] },
+      [`${S}/old`]: { redirect: `${S}/new` },
+      [`${S}/new`]: {},
+    };
+    const analyzer = fakeAnalyzer(site);
+    const out = await crawl(options({}), analyzer);
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/`, `${S}/new`, `${S}/old`]);
+    expect(out.pages.map((p) => p.url)).toEqual([`${S}/`, `${S}/new`]);
+    expect(out).toMatchObject({ discovered: 3, skipped: 0, duplicates: 0 });
+    expect(out.redirects).toHaveLength(1);
+  });
+
+  it("gives the destination the redirecting page's source", async () => {
+    const site: FakeSite = {
+      [`${S}/old`]: { redirect: `${S}/new` },
+      [`${S}/map`]: { redirect: `${S}/mapped` },
+      [`${S}/new`]: {},
+      [`${S}/mapped`]: {},
+    };
+    const out = await crawl(options({ seeds: [`${S}/old`], extra: [`${S}/map`] }), fakeAnalyzer(site));
+    expect(out.pages.map((p) => [p.url, p.source])).toEqual([
+      [`${S}/new`, "seed"],
+      [`${S}/mapped`, "sitemap"],
+    ]);
+    expect(out.redirects.map((r) => r.source)).toEqual(["seed", "sitemap"]);
+  });
+
+  it("follows a redirect under crawl: false, and no links", async () => {
+    const site: FakeSite = {
+      [`${S}/old`]: { redirect: `${S}/new` },
+      [`${S}/new`]: { links: [`${S}/elsewhere`] },
+    };
+    const analyzer = fakeAnalyzer(site);
+    const out = await crawl(options({ seeds: [`${S}/old`], crawl: false }), analyzer);
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/old`, `${S}/new`]);
+    expect(out.pages.map((p) => [p.url, p.source])).toEqual([[`${S}/new`, "seed"]]);
+  });
+
+  it("does not spend the page cap on a redirect", async () => {
+    const site: FakeSite = {
+      [`${S}/old`]: { redirect: `${S}/new` },
+      [`${S}/new`]: { links: [`${S}/a`] },
+      [`${S}/a`]: {},
+    };
+    const out = await crawl(options({ seeds: [`${S}/old`], maxPages: 1 }), fakeAnalyzer(site));
+    expect(out.pages.map((p) => p.url)).toEqual([`${S}/new`]);
+    expect(out).toMatchObject({ discovered: 3, skipped: 1, duplicates: 0 });
+  });
+
+  it("keeps checked + skipped + duplicates + redirects equal to discovered", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/r`, `${S}/z`, `${S}/old`, `${S}/a`, `${S}/b`] },
+      [`${S}/r`]: { finalUrl: `${S}/z/` },
+      [`${S}/old`]: { redirect: `${S}/c` },
+      [`${S}/a`]: {},
+      [`${S}/b`]: {},
+      [`${S}/c`]: {},
+    };
+    const out = await crawl(options({ maxPages: 3 }), fakeAnalyzer(site));
+    const { discovered, skipped, duplicates, redirects } = out;
+    expect(out.pages.length + skipped + duplicates + redirects.length).toBe(discovered);
+    expect(out).toMatchObject({ discovered: 7, skipped: 2, duplicates: 1 });
+    expect(redirects).toHaveLength(1);
+  });
+
+  it("refuses a seed that redirects to another host", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/old`]: { redirect: "https://example.com/new/" } });
+    await expect(crawl(options({ seeds: [`${S}/old`] }), analyzer)).rejects.toThrow(
+      new A11yError(
+        `${S}/old redirects to https://example.com/new/, which is on another host. Check https://example.com/new/ instead.`,
+      ),
+    );
+  });
+
+  it("refuses a seed that redirects to an excluded path", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/old`]: { redirect: `${S}/legacy/new/` } });
+    const exclude = createExcludeFilter(flagGlobs("/legacy/**"));
+    await expect(crawl(options({ seeds: [`${S}/old`], exclude }), analyzer)).rejects.toThrow(
+      new A11yError(`--exclude "/legacy/**" excludes ${S}/legacy/new/, where the seed ${S}/old redirects.`),
+    );
+  });
+
+  it("refuses a seed that redirects to an excluded path under crawl: false too", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/old`]: { redirect: `${S}/legacy/new/` } });
+    const exclude = createExcludeFilter(flagGlobs("/legacy/**"));
+    await expect(
+      crawl(options({ seeds: [`${S}/old`], exclude, crawl: false }), analyzer),
+    ).rejects.toThrow(/excludes .*, where the seed/);
+  });
+
+  it("refuses a seed that redirects to a URL that is not http(s)", async () => {
+    const analyzer = fakeAnalyzer({ [`${S}/old`]: { redirect: "javascript:void(0)" } });
+    await expect(crawl(options({ seeds: [`${S}/old`] }), analyzer)).rejects.toThrow(
+      new A11yError(`${S}/old redirects to javascript:void(0), which is not an http(s) URL.`),
+    );
+  });
+
+  it("announces the browser once when the first page redirects", async () => {
+    const site: FakeSite = { [`${S}/old`]: { redirect: `${S}/new` }, [`${S}/new`]: {} };
+    const events: ProgressEvent[] = [];
+    await crawl(options({ seeds: [`${S}/old`], onProgress: (e) => events.push(e) }), fakeAnalyzer(site));
+    expect(events.filter((e) => e.kind === "browser")).toHaveLength(1);
+  });
+
+  it("counts a crawled page that redirects off-host, and checks nothing there", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/out`] },
+      [`${S}/out`]: { redirect: "https://example.com/" },
+    };
+    const analyzer = fakeAnalyzer(site);
+    const out = await crawl(options({}), analyzer);
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/`, `${S}/out`]);
+    expect(out.redirects).toEqual([{ url: `${S}/out`, to: "https://example.com/", source: "link" }]);
+    expect(out).toMatchObject({ discovered: 2, skipped: 0, duplicates: 0 });
+  });
+
+  it("ends a redirect loop with both pages counted and nothing checked", async () => {
+    const site: FakeSite = {
+      [`${S}/a`]: { redirect: `${S}/b` },
+      [`${S}/b`]: { redirect: `${S}/a` },
+    };
+    const analyzer = fakeAnalyzer(site);
+    const out = await crawl(options({ seeds: [`${S}/a`] }), analyzer);
+    expect(analyzer.calls.map((c) => c.url)).toEqual([`${S}/a`, `${S}/b`]);
+    expect(out.pages).toEqual([]);
+    expect(out.redirects.map((r) => r.url)).toEqual([`${S}/a`, `${S}/b`]);
+    expect(out).toMatchObject({ discovered: 2, skipped: 0, duplicates: 0 });
+  });
+
+  it("reports redirected in place of checked, and reuses the index", async () => {
+    const site: FakeSite = {
+      [`${S}/`]: { links: [`${S}/old`] },
+      [`${S}/old`]: { redirect: `${S}/new` },
+      [`${S}/new`]: {},
+    };
+    const events: ProgressEvent[] = [];
+    await crawl(options({ onProgress: (e) => events.push(e) }), fakeAnalyzer(site));
+    expect(events).toEqual([
+      { kind: "browser" },
+      { kind: "page", index: 1, queued: 1, url: `${S}/` },
+      { kind: "checked", index: 1, url: `${S}/`, violations: 0 },
+      { kind: "page", index: 2, queued: 2, url: `${S}/old` },
+      { kind: "redirected", index: 2, url: `${S}/old`, to: `${S}/new` },
+      { kind: "page", index: 2, queued: 3, url: `${S}/new` },
+      { kind: "checked", index: 2, url: `${S}/new`, violations: 0 },
+      { kind: "done", checked: 2, skipped: 0 },
+    ]);
+  });
+});

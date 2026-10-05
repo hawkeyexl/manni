@@ -8,7 +8,7 @@ docs/src/content/docs/meta/reference/glossary/override.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 264-275
         integrity: sha256-8076723b61abc464a9c0b625cd2c47b62a561da9389b74064519fa29efdd0796
-        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: schema-resolution-precedence-chain
       claim:
         lines: 10-15
@@ -17,4 +17,4 @@ docs/src/content/docs/meta/reference/glossary/override.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 551-610
         integrity: sha256-6fb09f29f342076634fd2a5b5360017ebf8764e897dba65fb192ca2b23584538
-        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c

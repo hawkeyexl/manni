@@ -11,7 +11,7 @@ lifecycle: published
 applies-to: ["domain:a11y"]
 sample-questions: ["What flags does manni a11y check accept?", "Where do the seed URLs come from?", "Which a11y config keys can I set?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-09-18
+last-updated: 2026-10-04
 tags:
   - cli
   - accessibility
@@ -188,18 +188,42 @@ The frontier is filled in this order:
 {/* cite dedupe-trailing-slash */}
 Each normalized URL enters the frontier once, and a trailing slash does not make
 a second page. `/install` and `/install/` are one entry, under whichever
-spelling arrived first. Where the browser lands after a redirect counts as
-visited too. A queued spelling of that page is then dropped without loading and
+spelling arrived first. Where the browser lands after an HTTP redirect counts
+as visited too. A queued spelling of that page is then dropped without loading and
 reported as a `duplicate`. Pages are analyzed sequentially, in discovery order,
 and every result records its `source`: `seed`, `sitemap`, or `link`. The run
 goes on until the frontier is empty. With `--max-pages`, it stops once that many
 pages have been checked, and the frontier left behind is the `skipped` count.
+
+{/* cite browser-redirect-joins-frontier */}
+A page that redirects in the browser is not checked. That covers a meta refresh
+to another page, and a page that navigates away while it is read. Its
+destination joins the frontier with the same `source`, under the same scope and
+exclusion rules, and is checked once. It is followed under `--no-crawl` too,
+because it is the page you named under a new address. The redirecting page does
+not count toward `--max-pages`, and `summary.redirects` counts it. A crawled
+page that redirects off-host or to an excluded path is still counted, and its
+destination is not checked.
 
 {/* cite failures-seed-vs-crawled */}
 Failures split by where they happen. A seed that fails to load or analyze stops
 the run with exit `2`, because nothing was checked. A crawled page that fails is
 recorded with an `error` on that page, the crawl continues, and the page counts
 as failed for the exit code.
+
+{/* cite seed-redirect-exit-2 */}
+A seed can also redirect in the browser to a URL that is not `http(s)`, to
+another host, or to an excluded path. That stops the run with exit `2` too. Nothing on the seed's host would be checked,
+and the message names the destination.
+
+```
+manni: http://127.0.0.1:4321/old/ redirects to javascript:void(0), which is not an http(s) URL.
+manni: http://127.0.0.1:4321/old/ redirects to https://example.com/new/, which is on another host. Check https://example.com/new/ instead.
+manni: --exclude "/legacy/**" excludes http://127.0.0.1:4321/legacy/new/, where the seed http://127.0.0.1:4321/old/ redirects.
+```
+
+The last message names where its pattern came from, as the
+[seed exclusion message](#what-a-pattern-matches) does.
 
 ### What a pattern matches
 
@@ -319,6 +343,13 @@ could not load prints `could not load: <reason>`. The footer adds
 when a redirect landed on a page that was also queued under another spelling.
 `-q` hides pages with no remaining violations.
 
+{/* cite pretty-redirect-lines */}
+A page that redirected in the browser gets one line after the page lines, in
+the order it was visited. It reads
+`↪ http://127.0.0.1:4173/old.html  redirects to http://127.0.0.1:4173/new.html`,
+with `↪` dim and the URLs cyan. `-q` hides these lines too. The footer then
+adds `; N redirects` after the duplicates clause.
+
 {/* cite json-whole-run */}
 **`json`** prints one object, the whole run, for scripts:
 
@@ -364,11 +395,13 @@ when a redirect landed on a page that was also queued under another spelling.
       "score": 94
     }
   ],
+  "redirects": [],
   "summary": {
     "discovered": 3,
     "checked": 1,
     "skipped": 2,
     "duplicates": 0,
+    "redirects": 0,
     "excluded": 0,
     "failed": 1,
     "violations": 1,
@@ -401,6 +434,17 @@ Each entry of `results[]`:
 | `score` | integer \| `null` | See [the score](#the-score). `null` when the page did not load or no rule applied. |
 | `error` | string, optional | Present when the page could not be loaded or analyzed. The page counts as failed. |
 
+{/* cite json-redirects-array */}
+Each entry of `redirects[]` is a page that redirected in the browser, in the
+order it was visited. A redirecting page is never in `results[]`. The array is
+empty when no page redirected.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `url` | string | The page that redirected, as queued. |
+| `to` | string | Where it redirects, normalized. Present whether or not the destination was checked. |
+| `source` | `"seed"` \| `"sitemap"` \| `"link"` | How the redirecting page entered the run. Its destination inherits it. |
+
 And `summary`:
 
 | Field | Type | Meaning |
@@ -408,7 +452,8 @@ And `summary`:
 | `discovered` | integer | Distinct URLs that entered the frontier, whether seeds, sitemap entries, or links. |
 | `checked` | integer | Pages actually analyzed. |
 | `skipped` | integer | Discovered but not checked because `--max-pages` was reached. `0` when no cap is set. |
-| `duplicates` | integer | Discovered, then dropped without loading because a redirect had already landed on the same page under another spelling. `checked + skipped + duplicates` equals `discovered`. |
+| `duplicates` | integer | Discovered, then dropped without loading because a redirect had already landed on the same page under another spelling. |
+| `redirects` | integer | Discovered, then not analyzed because the page redirects in the browser. `checked + skipped + duplicates + redirects` equals `discovered`. |
 | `excluded` | integer | Distinct URLs an [exclusion pattern](#what-a-pattern-matches) kept out of the crawl, counted once each however many pages linked to them. It sits outside the identity above, because an excluded URL never entered the frontier. This is the authoritative total for a finished run, and it can exceed what the [progress](#progress) line reported. `0` when nothing was excluded. |
 | `failed` | integer | Pages with at least one remaining violation or an `error`. Drives exit `1`. |
 | `violations` | integer | Remaining violations across all pages, counted per rule rather than per node. |
@@ -460,6 +505,20 @@ it was. Pass `--progress` to see it in a CI log anyway. Pass `--no-progress`
 to silence it. Either way stdout carries the report alone, so
 `-f json | jq` keeps working.
 
+{/* cite progress-redirected-line */}
+A page that redirects in the browser gets a line in place of its result. The
+counter counts checked pages, so the next page reuses the number. Off a
+terminal the lines read:
+
+```
+manni: [3/52] http://127.0.0.1:4321/manni/meta/proposals/ai-context/
+manni: [3/52] ↪ redirects to http://127.0.0.1:4321/manni/meta/reference/schemas/manni-ai-context/
+manni: [3/53] http://127.0.0.1:4321/manni/meta/reference/schemas/manni-ai-context/
+```
+
+On a terminal the status line reads `[3/52] ↪ redirects to` and the
+destination, with `↪` dim and the URL cyan.
+
 An exclusion gets one line of its own, written once discovery settles and only
 when something was kept out. It reads `manni: excluded 41 pages (2 patterns)`.
 There is no line per excluded URL, because a pattern that removes four hundred
@@ -479,7 +538,7 @@ finished run.
 |---|---|
 | `0` | Every page loaded and none has a violation at or above the severity floor. |
 | `1` | At least one page has a remaining violation, or a crawled page failed to load. `summary.failed` is greater than zero. |
-| `2` | Usage or operational error. The causes are an unknown flag value, a non-`http(s)` URL, or no URLs and no config. They also include a seed that could not be loaded, or no browser found. Most print one line on stderr prefixed `manni: `. A missing or unknown subcommand prints the help or commander's own message instead. |
+| `2` | Usage or operational error. The causes are an unknown flag value, a non-`http(s)` URL, or no URLs and no config. They also include a seed that could not be loaded, or no browser found. So is a seed that redirects to a non-`http(s)` URL, another host or an excluded path. Most print one line on stderr prefixed `manni: `. A missing or unknown subcommand prints the help or commander's own message instead. |
 
 ### Examples
 

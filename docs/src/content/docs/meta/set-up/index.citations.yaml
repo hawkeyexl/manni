@@ -35,7 +35,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 298-302
         integrity: sha256-73d56d153f0de0ed6e64cb6ade7318f324b35250a12838d444586b957050d6c4
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: config-discovered-as-manni-config-yaml
       claim:
         lines: 63
@@ -53,7 +53,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 590-600
         integrity: sha256-b01c18f9e05654a4cfb97c7817650fdabd59e2014546ec6925b09f2c4fd4d0d7
-        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: bare-validate-reads-every-collection
       claim:
         lines: 53
@@ -62,7 +62,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/config.ts
         lines: 1897-1905
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: every-file-satisfies-every-schema
       claim:
         lines: 53
@@ -71,7 +71,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/validator.ts
         lines: 797-804
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: explicit-file-bypasses-ext-filter
       claim:
         lines: 32
@@ -89,7 +89,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: package.json
         lines: 46-48
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: okf-requires-type
       claim:
         lines: 9

@@ -32,7 +32,7 @@ docs/src/content/docs/meta/schemas/index.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 1242-1246
         integrity: sha256-58dcb64f18f7ddeb4a5175d21bb6cb92ee33e473384c5aaca08a9395140bea5e
-        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: the-three-reference-kinds
       claim:
         integrity: sha256-a4fd7bcc0a486a118551bbf7e3bbabc59aa43f8d0e60ef4a49045d1be70dec66
@@ -40,7 +40,7 @@ docs/src/content/docs/meta/schemas/index.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 418-431
         integrity: sha256-2f40a8e1715136cf70277d50252b4172f3fd9106e42a5fccd6914c78d0d6f32c
-        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: document-names-its-own-schema
       claim:
         integrity: sha256-2e9e70750388d767b7562acdee44aca8ea482909e69207e404a25dca04fc9d7b
@@ -48,7 +48,7 @@ docs/src/content/docs/meta/schemas/index.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 555-569
         integrity: sha256-f2f0f059fc3071a4b70c5250f321704087ab164b35f97ed69bc2f26c8342f090
-        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: x-manni-location-keyword
       claim:
         integrity: sha256-6f3824dbf475407aa72146239f3a512a039e282999b13a2640f6577607d1ecb2
@@ -98,18 +98,18 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-eb3aef28393ddf13615cb1e5c7470c838934c6fd868a03667b88e7a2d620f4ea
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 82-135
-        integrity: sha256-f231ea994e5403ad6644182767cb8d52fa6d341f943909b8cfa3ccaa3793fddb
-        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
+        lines: 81-131
+        integrity: sha256-b70ffb8c7c31cf749ddc88c0c2f42d247087fa2bc804f8efa873264a6215c179
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: builtin-ids-are-bundled-not-registered
       claim:
         lines: 182
         integrity: sha256-d1974a43b00c7b305c06a0d0973b8cb5ca61f1b20d6018cb5008e33a5c2da6cb
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 82-135
-        integrity: sha256-f231ea994e5403ad6644182767cb8d52fa6d341f943909b8cfa3ccaa3793fddb
-        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
+        lines: 81-131
+        integrity: sha256-b70ffb8c7c31cf749ddc88c0c2f42d247087fa2bc804f8efa873264a6215c179
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: okf-tolerates-unknown-keys
       claim:
         lines: 180
@@ -135,7 +135,7 @@ docs/src/content/docs/meta/schemas/index.mdx:
         file: src/meta/core/resolve-schema.ts
         lines: 30-53
         integrity: sha256-1aa0f1e245948ef818b4c35cd639db898025b1e29c1ee964fd94c9fdb4a997e8
-        commit-sha: 7aa9a5632411b78d43c793baf6f8f48f0b9db79f
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: fixture-title-must-be-non-empty-string
       claim:
         lines: 32
@@ -161,7 +161,7 @@ docs/src/content/docs/meta/schemas/index.mdx:
         file: src/meta/core/validator.ts
         lines: 94
         integrity: sha256-13cad13b9da05a87f1d7e4ed101397327ec94367e2c9e0f6eba648bb4109934b
-        commit-sha: 7aa9a5632411b78d43c793baf6f8f48f0b9db79f
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: schema-key-stripped-before-validating
       claim:
         lines: 127
@@ -170,7 +170,7 @@ docs/src/content/docs/meta/schemas/index.mdx:
         file: src/meta/core/validator.ts
         lines: 791-793
         integrity: sha256-b8f39d6d21f30a400cabe25059d553fc2d70ec3f6633292881c053d55975c4ca
-        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: tgdp-25-template-slugs
       claim:
         lines: 210

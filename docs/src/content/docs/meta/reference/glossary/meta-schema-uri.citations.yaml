@@ -7,4 +7,4 @@ docs/src/content/docs/meta/reference/glossary/meta-schema-uri.mdx:
         file: src/meta/core/validator.ts
         lines: 569
         integrity: sha256-9acaebdbf14119a3153f5ec79f6676abc0c7c0957737e1e7dcb88cc4705f339c
-        commit-sha: bf9623071fe810685c89a6232dd534de5e1a9441
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c

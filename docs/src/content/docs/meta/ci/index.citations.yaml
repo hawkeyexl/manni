@@ -15,7 +15,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 950-961
         integrity: sha256-ecdb7f2b79f4cf95fbd52ff4b2b06deb9ab5d22218f6953b83e3af0726fd9bea
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: collection-flag-is-repeatable
       claim:
         integrity: sha256-2de948433473766b2903499c362d68fce2e45b42c7dc76650fb9f0e51302e824
@@ -31,7 +31,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: src/meta/core/config.ts
         lines: 1897-1905
         integrity: sha256-a25173e88e325e9018ce01428895706356f063070cd986fe69698790dc264ad8
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: github-format-one-command-per-error
       claim:
         lines: 56-58
@@ -66,7 +66,7 @@ docs/src/content/docs/meta/ci/index.mdx:
         file: package.json
         lines: 46-48
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: action-inputs-lines-or-spaces
       claim:
         lines: 25-28

@@ -7,7 +7,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: package.json
         lines: 47
         integrity: sha256-3f1eeebc0910c73dfab1013efd6c1309935f09b9ec2dc222b904e3c2432b4064
-        commit-sha: 4361d6aa05463cfc6ecf943102e2471bbc21768b
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: summary-green-follows-exit-code
       claim:
         integrity: sha256-369507c6dc33f81889b07da8b4d09a206daee4c6e5c97ba18ae13c81b7981e89
@@ -32,7 +32,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 1085
         integrity: sha256-5a747f3719f7b94468316a11359c5c20bec812149e4567499530387997f30763
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: summary-failed-is-files-with-errors
       claim:
         lines: 137
@@ -41,7 +41,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 1076
         integrity: sha256-11e63cff120ee33b4c6ab5973adecba3549f1192bc0c720863f506d6ad9e6777
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: summary-files-is-resolved-count
       claim:
         lines: 135
@@ -50,7 +50,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 1082
         integrity: sha256-d57f0feffc745c09869811b0410b200aed12376a25fb3320e3f7b42090eeec14
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: summary-line-shape
       claim:
         integrity: sha256-82cf14992026f2dda2307208f8892645ab134077755f316a669bdcb85fc8d045
@@ -67,7 +67,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 830-831
         integrity: sha256-3ef67f71b6dd6d13aa8db8c7e567afcb9df863c1d137c5597d3a9fd7de40c6fa
-        commit-sha: 8de24bcd69cb0b7a46d876b64577a7c160b192b8
+        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
     - id: error-line-parts
       claim:
         integrity: sha256-cf6f5ea2062c78d9deb2fbb4fb72a66993427ff0b87ff0e64efb2a369bf4c70d

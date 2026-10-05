@@ -90,6 +90,20 @@ export interface PageResult {
   error?: string;
 }
 
+/**
+ * A page that sent the browser elsewhere once it had loaded, by a meta refresh
+ * or a script. It is not analyzed and is not a result: its destination joins
+ * the crawl in its place, under the same rules as any other URL.
+ */
+export interface Redirect {
+  /** The page that redirected, as queued. */
+  url: string;
+  /** Where it redirects, normalized. Present whether or not the destination was checked. */
+  to: string;
+  /** How the redirecting page entered the run. Its destination inherits it. */
+  source: PageResult["source"];
+}
+
 export interface CheckSummary {
   /** Distinct URLs that entered the frontier (seeds + sitemap + links). */
   discovered: number;
@@ -100,9 +114,15 @@ export interface CheckSummary {
   /**
    * Discovered, then dropped unloaded because the browser had already landed
    * on the same page under another spelling (a redirect target). Neither
-   * checked nor skipped: `checked + skipped + duplicates === discovered`.
+   * checked nor skipped:
+   * `checked + skipped + duplicates + redirects === discovered`.
    */
   duplicates: number;
+  /**
+   * Pages discovered, then not analyzed because they redirect in the browser
+   * (a meta refresh or a script). Each one is listed in `CheckRun.redirects`.
+   */
+  redirects: number;
   /**
    * Distinct URLs an `--exclude` pattern kept out of the crawl, counted once
    * each however many pages linked to them, and keyed the way the frontier
@@ -140,14 +160,16 @@ export interface CheckSummary {
 
 export interface CheckRun {
   results: PageResult[];
+  /** Pages that redirected in the browser, in visit order. Never in `results`. */
+  redirects: Redirect[];
   summary: CheckSummary;
 }
 
 /**
  * What a run says while it is still running. The crawl emits these in order
- * (`browser`, then `page`/`checked` per page, then `done`); the check core
- * adds `sitemap` before them when it crawls. A listener is optional, and
- * nothing is emitted without one.
+ * (`browser`, then `page` and `checked` or `redirected` per page, then
+ * `done`); the check core adds `sitemap` before them when it crawls. A
+ * listener is optional, and nothing is emitted without one.
  */
 export type ProgressEvent =
   /** About to launch the browser, before the first page. */
@@ -175,6 +197,12 @@ export type ProgressEvent =
    * fails ends the run instead, and is reported as the run's error.
    */
   | { kind: "checked"; index: number; url: string; violations: number; error?: string }
+  /**
+   * Page `index` sent the browser to `to` once loaded, so it was not
+   * analyzed. Emitted in place of `checked`; the counter counts checked
+   * pages, so the next page reuses `index`.
+   */
+  | { kind: "redirected"; index: number; url: string; to: string }
   /** The crawl is over: pages analyzed, and pages left in the frontier. */
   | { kind: "done"; checked: number; skipped: number };
 
