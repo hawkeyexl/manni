@@ -42,8 +42,8 @@ docs/src/content/docs/meta/reference/cli.mdx:
       source:
         file: src/meta/core/load-files.ts
         lines: 16
-        integrity: sha256-84752dfdaf912a4e2ffe61f21e2984820d5364e5329ac0d8f36bd8290e6971e4
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        integrity: sha256-ff2d1966e27b4ba5da2346d39a2cfd154b335f989818dfdaaa561b9e4132d6e8
+        commit-sha: 58a96dd31adb6ab1d2f640b34cf13b71b00f0385
     - id: dotfiles-excluded-from-walks
       claim:
         integrity: sha256-4b7072e0824b9802c23527d16007368964f5065eedf2e1ac81fe5e8a98d7eb77

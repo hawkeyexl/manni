@@ -13,9 +13,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-7d0655d425264f026c5f5d326f212ee791e1abffd5be4c9c1888551df0e07087
       source:
         file: src/shared/tools.ts
-        lines: 146-150
-        integrity: sha256-e031656b7d919f957129e2cb6d1848230e626368ce9b7ab0878bdd22a7114185
-        commit-sha: 53b5c8412b0b5c3fd8e884a05b237e8f1cc0c0c5
+        lines: 151-155
+        integrity: sha256-5ccf0ef6937eea39ae3b48b100b143fb976177263f0bfe234391c668ed5863a5
+        commit-sha: 58a96dd31adb6ab1d2f640b34cf13b71b00f0385
     - id: empty-term-section-no-keys
       claim:
         integrity: sha256-7d0655d425264f026c5f5d326f212ee791e1abffd5be4c9c1888551df0e07087
@@ -85,9 +85,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-9c5cab61e3f16882afd2267e1200f1bd9637a91a3c7fb08d64925d17f8e48a07
       source:
         file: src/shared/tools.ts
-        lines: 141-150
-        integrity: sha256-6aff5155a3feb38d23abf880bb71b1217811969f279e30e8827145c91bd18ba5
-        commit-sha: 53b5c8412b0b5c3fd8e884a05b237e8f1cc0c0c5
+        lines: 146-155
+        integrity: sha256-825c348e3e8fa3b182253fae34b3d332fe6fe52aec666e2dd5d14cc9ffba29b1
+        commit-sha: 58a96dd31adb6ab1d2f640b34cf13b71b00f0385
     - id: manifests-list-of-paths
       claim:
         lines: 65

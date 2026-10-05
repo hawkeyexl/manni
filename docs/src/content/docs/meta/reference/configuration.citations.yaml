@@ -299,8 +299,8 @@ docs/src/content/docs/meta/reference/configuration.mdx:
       source:
         file: src/meta/core/load-files.ts
         lines: 16
-        integrity: sha256-84752dfdaf912a4e2ffe61f21e2984820d5364e5329ac0d8f36bd8290e6971e4
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        integrity: sha256-ff2d1966e27b4ba5da2346d39a2cfd154b335f989818dfdaaa561b9e4132d6e8
+        commit-sha: 58a96dd31adb6ab1d2f640b34cf13b71b00f0385
     - id: url-is-where-the-collection-is-published
       claim:
         integrity: sha256-4c817dc1da81b7fae1f03ceead41ee7f611e75963d4795b81d6bc964ea9c3444
@@ -1172,9 +1172,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-37884aceebadf79a78d801577742cd7f54ce5064943a7ebbd08ae3a192df6e20
       source:
         file: src/shared/tools.ts
-        lines: 146-150
-        integrity: sha256-e031656b7d919f957129e2cb6d1848230e626368ce9b7ab0878bdd22a7114185
-        commit-sha: fb809efb98e409ba809c018ef009a4a8094d1c2e
+        lines: 151-155
+        integrity: sha256-5ccf0ef6937eea39ae3b48b100b143fb976177263f0bfe234391c668ed5863a5
+        commit-sha: 58a96dd31adb6ab1d2f640b34cf13b71b00f0385
     - id: tools-key-counts-for-discovery
       claim:
         lines: 1414-1416
@@ -2907,6 +2907,6 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-4f44866cf03d816cb920734f87b68a4689bab7d6fcc019b965b3f5ee15694c39
       source:
         file: src/shared/tools.ts
-        lines: 146-150
-        integrity: sha256-e031656b7d919f957129e2cb6d1848230e626368ce9b7ab0878bdd22a7114185
-        commit-sha: 53b5c8412b0b5c3fd8e884a05b237e8f1cc0c0c5
+        lines: 151-155
+        integrity: sha256-5ccf0ef6937eea39ae3b48b100b143fb976177263f0bfe234391c668ed5863a5
+        commit-sha: 58a96dd31adb6ab1d2f640b34cf13b71b00f0385
