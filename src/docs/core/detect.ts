@@ -89,7 +89,13 @@ function mintlify(s: Site): string | null {
 function zensical(s: Site): string | null {
   if (has(s.dir, "zensical.toml")) return "zensical.toml";
   if (!has(s.dir, "mkdocs.yml")) return null;
-  const files = readdirSync(s.dir).filter((f) => /^requirements.*\.txt$/.test(f) || f === "pyproject.toml");
+  let files: string[];
+  try {
+    files = readdirSync(s.dir).filter((f) => /^requirements.*\.txt$/.test(f) || f === "pyproject.toml");
+  } catch {
+    // An unlistable directory names no Python deps; it reads as plain MkDocs.
+    return null;
+  }
   return files.some((f) => /\bzensical\b/.test(read(join(s.dir, f)))) ? "mkdocs.yml" : null;
 }
 
@@ -141,7 +147,7 @@ const FRAMEWORKS: Framework[] = [
     runner: "node",
     pkg: () => "vitepress",
     commands: (s) =>
-      node("vitepress", "docs:dev", "docs:build", "docs:preview", has(s.dir, ".vitepress") || !has(s.dir, "docs", ".vitepress") ? [] : ["docs"]),
+      node("vitepress", "docs:dev", "docs:build", "docs:preview", (has(s.dir, ".vitepress") || !has(s.dir, "docs", ".vitepress")) ? [] : ["docs"]),
     hostFlag: "--host",
     defaultPort: 5173,
   },
@@ -226,6 +232,7 @@ const FRAMEWORKS: Framework[] = [
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 const STATIC_HOST = "127.0.0.1";
+// Only the name error messages show; discovery reads FAMILY_CONFIG_NAMES itself.
 const CONFIG_NAME = FAMILY_CONFIG_NAMES[0] ?? "manni.config.yaml";
 
 type PackageManager = "npm" | "pnpm" | "yarn" | "bun";
@@ -447,7 +454,8 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
       if (flagHost !== undefined && fw.hostFlag === null) {
         throw new DocsError(`${fw.name}'s dev server takes no host option. Drop --host.`);
       }
-      const url = flagPort !== undefined && flagHost !== undefined ? { base: "/" } : collectionAddress(config.collections, fw.name, flagPort !== undefined);
+      // Always read the url: its path is the mount point even when both flags set host and port.
+      const url = collectionAddress(config.collections, fw.name, flagPort !== undefined);
       address = { host: flagHost ?? url.host, port: flagPort ?? url.port, base: url.base };
     }
 

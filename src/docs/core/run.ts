@@ -78,17 +78,18 @@ function exitOf(
 }
 
 /**
- * One step. A step that is not the last must exit 0. The last one is the
- * server: while it runs this process ignores SIGINT itself (the terminal
- * delivers Ctrl-C to the whole process group, child included) and forwards
- * SIGTERM, which reaches this process alone. An exit after either is a stop
- * the user asked for, so it is 0 whatever code the child chose.
+ * One step; resolves true when the user stopped it. While any step runs this
+ * process ignores SIGINT itself (the terminal delivers Ctrl-C to the whole
+ * process group, child included) and forwards SIGTERM, which reaches this
+ * process alone, so a cancelled build is not left running. An exit after
+ * either is a stop the user asked for, so it is not a failure whatever code
+ * the child chose. Otherwise the step must exit 0.
  */
-async function runStep(planned: PlannedStep, final: boolean): Promise<void> {
+async function runStep(planned: PlannedStep): Promise<boolean> {
   const { step } = planned;
   if (step.kind === "static") {
     await serveStatic(step);
-    return;
+    return true;
   }
   const child =
     step.kind === "exec"
@@ -103,13 +104,12 @@ async function runStep(planned: PlannedStep, final: boolean): Promise<void> {
     signal.received = true;
     child.kill("SIGTERM");
   };
-  if (final) {
-    process.on("SIGINT", onInt);
-    process.on("SIGTERM", onTerm);
-  }
+  process.on("SIGINT", onInt);
+  process.on("SIGTERM", onTerm);
   try {
     const exit = await exitOf(planned, child);
-    if (exit.code === 0 || signal.received) return;
+    if (signal.received) return true;
+    if (exit.code === 0) return false;
     throw new DocsError(
       exit.code === null
         ? `${planned.display} was stopped by ${String(exit.signal)}.`
@@ -123,9 +123,10 @@ async function runStep(planned: PlannedStep, final: boolean): Promise<void> {
 
 /** Run every step in order. Resolves the exit code, 0; a failure throws `DocsError`. */
 export async function runPlan(plan: Plan): Promise<number> {
-  for (const [i, planned] of plan.steps.entries()) {
+  for (const planned of plan.steps) {
     if (planned.announce !== "") notice(planned.announce);
-    await runStep(planned, i === plan.steps.length - 1);
+    // A stop during the build ends the run there: nothing is served.
+    if (await runStep(planned)) break;
   }
   return 0;
 }

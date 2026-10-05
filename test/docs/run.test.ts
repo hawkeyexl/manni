@@ -120,6 +120,21 @@ describe("running a plan", () => {
     expect(process.listenerCount("SIGTERM")).toBe(0);
   });
 
+  it("forwards SIGTERM during the build and runs no later step", async () => {
+    const marker = join(tmpdir(), `manni-run-${String(process.pid)}-never`);
+    const run = runPlan({
+      steps: [
+        nodeStep("setInterval(() => {}, 1000)", "npm run build"),
+        nodeStep(`require("node:fs").writeFileSync(${JSON.stringify(marker)}, "")`),
+      ],
+    });
+    await new Promise((done) => setTimeout(done, 300));
+    process.emit("SIGTERM");
+    await expect(run).resolves.toBe(0);
+    expect(existsSync(marker)).toBe(false);
+    expect(process.listenerCount("SIGTERM")).toBe(0);
+  });
+
   it.skipIf(process.platform === "win32")(
     "names the signal when the child is killed by one we did not send",
     async () => {

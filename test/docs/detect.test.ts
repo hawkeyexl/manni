@@ -332,6 +332,22 @@ describe("the collection url", () => {
     });
   });
 
+  it("keeps the url's path when --port and --host are both given", () => {
+    const dir = site("mkdocs", {
+      files: {
+        "manni.config.yaml":
+          "collections:\n  - name: site\n    paths: [docs]\n    url: http://localhost:8123/handbook/\n",
+      },
+    });
+    expect(steps("preview", dir, { port: "8001", host: "0.0.0.0" })[1]).toEqual({
+      kind: "static",
+      root: join(dir, "site"),
+      host: "0.0.0.0",
+      port: 8001,
+      base: "/handbook/",
+    });
+  });
+
   it("is not local on a public host", () => {
     const dir = site("mkdocs", {
       files: {

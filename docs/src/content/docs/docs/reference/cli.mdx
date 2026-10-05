@@ -268,7 +268,7 @@ framework's own output and the built-in server's URL.
 | Before a detected command runs | `manni: Starlight in docs/. Running npm run dev -- --host 127.0.0.1 --port 4321` | n/a |
 | Before a configured command runs | `manni: Running docs.commands.start in docs/: pnpm dev --port 4000` | n/a |
 | The built-in server is listening (stdout) | `http://127.0.0.1:8000/` | n/a |
-| Ctrl-C or SIGTERM stops a server | nothing | `0` |
+| Ctrl-C or SIGTERM stops a server, or `preview` during its build | nothing | `0` |
 | A build succeeded | the framework's output | `0` |
 | Local collection URLs disagree (a warning) | `manni: collections site and api name different local URLs. Using Starlight's default port; pass --port to pick one.` | n/a |
 | No site found | `manni: no docs site found in ./, docs/, website/ or site/. Pass the site's directory, or set docs.commands.start in manni.config.yaml.` | `2` |

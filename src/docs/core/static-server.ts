@@ -86,6 +86,8 @@ function redirect(res: ServerResponse, status: 301 | 302, location: string): voi
  * names nothing inside it. The URL parser has already collapsed `..` and
  * `%2e%2e` segments; what it leaves are encoded separators (`..%2f`, `..%5c`),
  * so the decoded path is checked for `..` segments and then for containment.
+ * Both layers are needed: the parser normalises before it decodes, so a `..`
+ * hidden behind an encoded separator only appears after this decode.
  */
 function inside(root: string, rest: string): string | undefined {
   let decoded: string;
