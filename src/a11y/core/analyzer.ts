@@ -158,7 +158,9 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
       const page = await context.newPage();
       const previous = current;
       current = page;
-      // Its outcome is settled; a failure to close it is not this URL's.
+      // Its outcome is settled; a failure to close it is not this URL's. Not
+      // reentrant: an overlapping call would close a page still being read,
+      // so the caller (the crawl, one page at a time) sequences its calls.
       await previous?.close().catch(() => undefined);
       // Every navigation the main frame starts, first hop only, so the one
       // that follows the load can be named even when it never commits (an
