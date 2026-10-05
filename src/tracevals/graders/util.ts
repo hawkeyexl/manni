@@ -127,8 +127,11 @@ export function requireOneOf(options: Options, keys: string[]): OptionCheck {
  * branch, and project rules govern the whole session.
  */
 export interface TraceWindow {
-  /** Which rule produced this window. */
-  scope: "session" | "skill" | "agent" | "slash-command";
+  /**
+   * Which rule produced this window. `turn` is the last turn of a session or
+   * a subagent's whole run, cut by `rules/turn.ts` (proposal 0079).
+   */
+  scope: "session" | "skill" | "agent" | "slash-command" | "turn";
   /** Names the window in reasons and in the judge digest. */
   label: string;
   /**
@@ -150,13 +153,21 @@ export interface TraceWindow {
 }
 
 /** Half-open ordinal range over `trace.events`; `end` may be Infinity. */
-interface Span {
+export interface Span {
   start: number;
   end: number;
 }
 
 export function windowFor(trace: Trace, plan: EvalPlan): TraceWindow {
-  const { name, type } = plan.artifact;
+  return windowOf(trace, plan.artifact);
+}
+
+/** `windowFor` keyed on the artifact alone, for callers with no eval plan. */
+export function windowOf(
+  trace: Trace,
+  artifact: Pick<EvalPlan["artifact"], "name" | "type">,
+): TraceWindow {
+  const { name, type } = artifact;
   if (type === "skill") return skillWindow(trace, name);
   if (type === "agent") return agentWindow(trace, name);
   if (type === "slash-command") return slashCommandWindow(trace, name);
@@ -279,7 +290,7 @@ function agentWindow(trace: Trace, name: string): TraceWindow {
   );
 }
 
-function emptyWindow(
+export function emptyWindow(
   scope: TraceWindow["scope"],
   label: string,
   reason: string,
@@ -309,7 +320,7 @@ function emptyWindow(
  * are taken from that chain alone, so a subagent spawned inside the window
  * contributes tool calls and file accesses but not turns.
  */
-function materialize(
+export function materialize(
   trace: Trace,
   scope: TraceWindow["scope"],
   label: string,
