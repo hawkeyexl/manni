@@ -159,6 +159,12 @@ export function renderStatus(report: StatusReport, format: StatusFormat): string
   return [head, "", ...rows].join("\n");
 }
 
+/**
+ * The plugin skill the briefing points an agent at, as `<plugin>:<skill>`.
+ * `test/plugin.test.ts` checks both halves against `plugin/manni`.
+ */
+export const FIX_SKILL = "manni:fix";
+
 /** The set-wide checks a stop runs, as the briefing names them. */
 const SET_WIDE: ReadonlyArray<readonly [Domain, string]> = [
   ["cite", "every citation"],
@@ -182,7 +188,7 @@ export function agentLines(report: StatusReport): string {
   return [
     `After you edit a file in ${names}, manni check runs on it, and errors come back to you at once.`,
     `Before you finish, manni check runs on every file you changed${plus}. You get one repair pass.`,
-    "The manni:fix skill says how to repair each finding.",
+    `The ${FIX_SKILL} skill says how to repair each finding.`,
   ].join("\n");
 }
 

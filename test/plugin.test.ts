@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import type { Command } from "commander";
 import { buildProgram } from "../src/cli.js";
 import { EDIT_TOOLS } from "../src/family/commands/check.js";
+import { FIX_SKILL } from "../src/family/commands/status.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
 
@@ -77,6 +78,15 @@ describe("manni plugin", () => {
       const args = command.slice(prefix.length).split(/\s+/).filter(Boolean);
       expect(resolves(args), command).toBe(true);
     }
+  });
+
+  // The session briefing names a skill by `<plugin>:<skill>`; both halves
+  // are names the plugin owns, so the reference is checked against them.
+  it("the skill the session briefing names exists in the plugin", () => {
+    const plugin = JSON.parse(readFileSync(join(pluginDir, ".claude-plugin/plugin.json"), "utf8")) as { name: string };
+    const [prefix, skill] = FIX_SKILL.split(":");
+    expect(prefix).toBe(plugin.name);
+    expect(existsSync(join(pluginDir, "skills", skill ?? "", "SKILL.md"))).toBe(true);
   });
 
   it("every skill has a SKILL.md with a name and a description", () => {
