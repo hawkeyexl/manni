@@ -108,8 +108,8 @@ docs/src/content/docs/a11y/get-started/index.mdx:
       source:
         file: src/a11y/commands/check.ts
         lines: 157-158
-        integrity: sha256-add7334db1f5ab42b8d15200d4e88c7714628a18c798a0f559cdd1999b6b069d
-        commit-sha: f0c617a65230e141b73778b3dd2ac2687caf4fc3
+        integrity: sha256-ec29a8bc2acf6a9ac57faf24e95e763c8097f71f24afdc8b3997191f4c0f3049
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
     - id: report-header
       claim:
         lines: 114
@@ -307,5 +307,5 @@ docs/src/content/docs/a11y/get-started/index.mdx:
       source:
         file: src/a11y/commands/check.ts
         lines: 157-158
-        integrity: sha256-add7334db1f5ab42b8d15200d4e88c7714628a18c798a0f559cdd1999b6b069d
-        commit-sha: f0c617a65230e141b73778b3dd2ac2687caf4fc3
+        integrity: sha256-ec29a8bc2acf6a9ac57faf24e95e763c8097f71f24afdc8b3997191f4c0f3049
+        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
