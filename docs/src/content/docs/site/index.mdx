@@ -1,31 +1,31 @@
 ---
-title: manni docs
+title: manni site
 description: "Start, build and preview the docs site with one command per job, whatever framework it runs on, on the port the collection url names."
 tableOfContents: false
 hero:
   tagline: Start, build and preview the docs site, whatever framework it runs on.
   actions:
     - text: CLI reference
-      link: /manni/docs/reference/cli/
+      link: /manni/site/reference/cli/
       icon: right-arrow
       variant: primary
     - text: How the site is found
-      link: /manni/docs/#how-the-site-is-found
+      link: /manni/site/#how-the-site-is-found
       icon: magnifier
       variant: minimal
-id: "docs"
+id: "site"
 type: "overview"
-keywords: ["docs start", "docs build", "docs preview", "dev server", "framework detection", "collection url"]
+keywords: ["site start", "site build", "site preview", "dev server", "framework detection", "collection url"]
 language: en
 audiences: ["docs-engineers", "ci-engineers", "contributors"]
-intent: "Understand what manni docs start, build and preview do, how they find the site and its framework, and where the port comes from."
+intent: "Understand what manni site start, build and preview do, how they find the site and its framework, and where the port comes from."
 lifecycle: published
-applies-to: ["domain:docs"]
-next-steps: ["docs-reference-cli", "a11y-get-started"]
+applies-to: ["domain:site"]
+next-steps: ["site-reference-cli", "a11y-get-started"]
 related-pages: ["a11y-ci", "meta-reference-configuration"]
 risks: ["idempotent"]
-sample-questions: ["How do I run the docs site locally without knowing its framework?", "Which port does manni docs preview serve on?", "How do I run a framework manni does not detect?"]
-graph: { label: "manni docs", type: concept }
+sample-questions: ["How do I run the docs site locally without knowing its framework?", "Which port does manni site preview serve on?", "How do I run a framework manni does not detect?"]
+graph: { label: "manni site", type: concept }
 last-updated: 2026-10-05
 tags:
   - docs-site
@@ -39,17 +39,17 @@ action: understand
 import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <Aside type="note" title="Beta">
-`manni docs` is in beta. Its commands, config keys and output can change in
+`manni site` is in beta. Its commands, config keys and output can change in
 any release, without notice.
 </Aside>
 
 Every docs framework starts its site differently. Mintlify is `mint dev`,
 Starlight is `astro dev`, MkDocs is `mkdocs serve`, and each picks its own
-port. `manni docs` finds the site, detects its framework from its files, and
+port. `manni site` finds the site, detects its framework from its files, and
 runs that framework's own command. One command per job works in every docs
 repository manni detects.
 
-`manni docs` is not a document tool. It runs the site that every other domain
+`manni site` is not a document tool. It runs the site that every other domain
 checks. `manni a11y check` crawls the site it serves, on the URL your
 collection already names.
 
@@ -57,11 +57,11 @@ collection already names.
 
 | Command | Does |
 | --- | --- |
-| `manni docs start [dir]` | Runs the framework's dev server, with hot reload, until Ctrl-C. |
-| `manni docs build [dir]` | Runs the framework's production build once. |
-| `manni docs preview [dir]` | Runs `build`, then serves the output until Ctrl-C. It always builds first, so it never serves stale output. |
+| `manni site start [dir]` | Runs the framework's dev server, with hot reload, until Ctrl-C. |
+| `manni site build [dir]` | Runs the framework's production build once. |
+| `manni site preview [dir]` | Runs `build`, then serves the output until Ctrl-C. It always builds first, so it never serves stale output. |
 
-There is no default subcommand. `manni docs` alone prints usage and exits `2`.
+There is no default subcommand. `manni site` alone prints usage and exits `2`.
 Each command prints one line on stderr before it runs anything. The line names
 the framework, the directory and the exact command. After that the output is
 the framework's own.
@@ -69,11 +69,11 @@ the framework's own.
 ## A 30-second proof
 
 This repository's site is Starlight, in `docs/`. Its `manni.config.yaml` has no
-`docs:` section, only a collection whose `url:` is
+`site:` section, only a collection whose `url:` is
 `http://127.0.0.1:4321/manni/`. Build and serve the site:
 
 ```console
-$ manni docs preview
+$ manni site preview
 manni: Starlight in docs/. Running npm run build
 manni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321
 ```
@@ -90,8 +90,8 @@ Ctrl-C stops the server, exit `0`.
 
 ## How the site is found
 
-1. The directory you pass, as in `manni docs start website`.
-2. Else `docs.dir` in `manni.config.yaml`.
+1. The directory you pass, as in `manni site start website`.
+2. Else `site.dir` in `manni.config.yaml`.
 3. Else a search, where the first match wins. It looks in the config file's
    directory, or the working directory when there is no config. Then it looks
    in that directory's `docs/`, `website/` and `site/`.
@@ -106,7 +106,7 @@ both and asks for an override.
 
 manni detects Mintlify, Fern, Starlight, Docusaurus, VitePress, Nextra,
 Fumadocs, Rspress, MkDocs, Zensical, Sphinx, Hugo and Jekyll. The
-[framework table](/manni/docs/reference/cli/#frameworks) has each one's
+[framework table](/manni/site/reference/cli/#frameworks) has each one's
 marker, commands and default port.
 
 - **A Node framework** runs the project's own script when `package.json` has
@@ -119,13 +119,13 @@ marker, commands and default port.
   MkDocs, Zensical, Sphinx, Hugo and Jekyll are in this group. `preview` serves
   that directory with a small server built into manni, bound to `127.0.0.1`.
 
-Mintlify and Fern have no local build, so `manni docs build` and
-`manni docs preview` stop with exit `2` there. `manni docs start` works.
+Mintlify and Fern have no local build, so `manni site build` and
+`manni site preview` stop with exit `2` there. `manni site start` works.
 
 ## The port comes from the collection
 
 `manni a11y check` reads a collection's `url:` as the place to start its crawl.
-`manni docs start` and `manni docs preview` read the same `url:` for the port
+`manni site start` and `manni site preview` read the same `url:` for the port
 and host to bind, so the two agree without being told:
 
 ```yaml title="manni.config.yaml"
@@ -147,8 +147,8 @@ Write the commands in `manni.config.yaml`. Each one is a whole command line,
 run through the shell in the site's directory:
 
 ```yaml title="manni.config.yaml"
-docs:
-  dir: site
+site:
+  dir: handbook
   commands:
     start: pnpm dev --port 4000
     build: pnpm build
@@ -163,13 +163,13 @@ is set, nothing is detected, so any framework works this way. `--port` and
 <CardGrid>
   <LinkCard
     title="CLI reference"
-    href="/manni/docs/reference/cli/"
-    description="Every argument and flag of start, build and preview, the framework table, the docs: config keys, and every message with its exit code."
+    href="/manni/site/reference/cli/"
+    description="Every argument and flag of start, build and preview, the framework table, the site: config keys, and every message with its exit code."
   />
   <LinkCard
     title="Get started with a11y"
     href="/manni/a11y/get-started/"
-    description="Serve a local build with manni docs preview, crawl it with manni a11y check, and fix what it finds."
+    description="Serve a local build with manni site preview, crawl it with manni a11y check, and fix what it finds."
   />
   <LinkCard
     title="Gate accessibility in CI"
@@ -179,6 +179,6 @@ is set, nothing is detected, so any framework works this way. `--port` and
   <LinkCard
     title="Collections"
     href="/manni/meta/reference/configuration/#collections"
-    description="The family-level document sets, and the url: key that a11y seeds from and docs binds to."
+    description="The family-level document sets, and the url: key that a11y seeds from and site binds to."
   />
 </CardGrid>

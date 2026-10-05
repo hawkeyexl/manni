@@ -14,11 +14,11 @@ import pkg from "../package.json" with { type: "json" };
 import { buildProgram as buildA11y } from "./a11y/cli.js";
 import { buildProgram as buildCite } from "./cite/cli.js";
 import { buildProgram as buildDocevals } from "./docevals/cli.js";
-import { buildProgram as buildDocs } from "./docs/cli.js";
 import { buildProgram as buildKey } from "./key/cli.js";
 import { buildProgram as buildGraph } from "./graph/cli.js";
 import { buildProgram as buildMeta } from "./meta/cli.js";
 import { buildProgram as buildLint } from "./lint/cli.js";
+import { buildProgram as buildSite } from "./site/cli.js";
 import { buildProgram as buildTerm } from "./term/index.js";
 import { buildProgram as buildTracevals } from "./tracevals/cli.js";
 import { runIfMain } from "./shared/run.js";
@@ -113,7 +113,7 @@ export function buildProgram(): Command {
       .description("Set and rotate the family key that encrypted values are encrypted with."),
   );
   // A family resource with verbs, as `key` is (proposal 0077).
-  program.addCommand(buildDocs().name("docs").description("Start, build and preview the docs site"));
+  program.addCommand(buildSite().name("site").description("Start, build and preview the docs site"));
   return program;
 }
 

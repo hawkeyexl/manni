@@ -1,18 +1,18 @@
-docs/src/content/docs/docs/index.mdx:
+docs/src/content/docs/site/index.mdx:
   personas: ["maya", "devin", "theo"]
   journeys: ["m24", "m7", "d7", "t3"]
   visibility: public
   review-interval: P180D
   source-of-truth:
-    - path: "src/docs/"
-  eval-suite: docs
+    - path: "src/site/"
+  eval-suite: site
   evals:
     - id: run-the-site
-      assertion: "A reader can start, build and preview a docs site with manni docs, and say what each verb runs."
+      assertion: "A reader can start, build and preview a docs site with manni site, and say what each verb runs."
       type: capability
       grader: ai
     - id: port-from-collection
-      assertion: "A reader can say where manni docs takes its port from, and why manni a11y check then needs no URL."
+      assertion: "A reader can say where manni site takes its port from, and why manni a11y check then needs no URL."
       type: capability
       grader: ai
   owner:
@@ -21,4 +21,4 @@ docs/src/content/docs/docs/index.mdx:
   provenance:
     - generated-by: Claude Opus 5.5
       lines: 2-147
-      integrity: sha256-76ea561f32d98e7b7994b03e4c3eed0ab15bbb05a4a632841f7d1bd40a4e8318
+      integrity: sha256-ae95fa57c259446bbac68c62c5e422a2b6bda636afa8956d49d911c662117786

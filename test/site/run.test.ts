@@ -9,9 +9,9 @@ import {
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DocsError } from "../../src/docs/errors.js";
-import { runPlan } from "../../src/docs/core/run.js";
-import type { PlannedStep, Step } from "../../src/docs/types.js";
+import { SiteError } from "../../src/site/errors.js";
+import { runPlan } from "../../src/site/core/run.js";
+import type { PlannedStep, Step } from "../../src/site/types.js";
 
 const node = process.execPath;
 const cwd = process.cwd();
@@ -52,7 +52,7 @@ describe("running a plan", () => {
 
   it("names the command and its code when the final step fails", async () => {
     const run = runPlan({ steps: [nodeStep("process.exit(3)", "npm run build")] });
-    await expect(run).rejects.toThrow(DocsError);
+    await expect(run).rejects.toThrow(SiteError);
     await expect(run).rejects.toThrow("npm run build exited with code 3.");
   });
 
@@ -99,7 +99,7 @@ describe("running a plan", () => {
       "mint dev",
     );
     const run = runPlan({ steps: [step] });
-    await expect(run).rejects.toThrow(DocsError);
+    await expect(run).rejects.toThrow(SiteError);
     await expect(run).rejects.toThrow("mint dev not found on PATH.");
   });
 

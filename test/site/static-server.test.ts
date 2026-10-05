@@ -2,10 +2,10 @@ import { createServer, get, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DocsError } from "../../src/docs/errors.js";
-import { startStaticServer } from "../../src/docs/core/static-server.js";
+import { SiteError } from "../../src/site/errors.js";
+import { startStaticServer } from "../../src/site/core/static-server.js";
 
-const root = fileURLToPath(new URL("../fixtures/docs/static-site/", import.meta.url));
+const root = fileURLToPath(new URL("../fixtures/site/static-site/", import.meta.url));
 
 interface Reply {
   status: number;
@@ -128,7 +128,7 @@ describe("the built-in static server", () => {
     await new Promise<void>((done) => holder.listen(0, "127.0.0.1", done));
     const port = (holder.address() as AddressInfo).port;
     const started = startStaticServer({ root, host: "127.0.0.1", port, base: "/" });
-    await expect(started).rejects.toThrow(DocsError);
+    await expect(started).rejects.toThrow(SiteError);
     await expect(started).rejects.toThrow(
       `port ${String(port)} is in use. Pass --port, or stop the process holding it.`,
     );

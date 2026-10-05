@@ -1,6 +1,6 @@
 /**
- * `resolvePlan`: from a directory to the commands `manni docs` runs. Each
- * fixture under test/fixtures/docs/ holds a framework's markers and nothing
+ * `resolvePlan`: from a directory to the commands `manni site` runs. Each
+ * fixture under test/fixtures/site/ holds a framework's markers and nothing
  * else. Tests copy one into a temp directory with its own `.git`, so the
  * lockfile and node_modules walks stop there instead of reaching this repo's
  * own package-lock.json and node_modules. node_modules is built at runtime
@@ -10,12 +10,12 @@ import { cpSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } f
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { resolvePlan } from "../../src/docs/core/detect.js";
-import { DocsError } from "../../src/docs/errors.js";
-import type { Plan, Step, Verb } from "../../src/docs/types.js";
+import { resolvePlan } from "../../src/site/core/detect.js";
+import { SiteError } from "../../src/site/errors.js";
+import type { Plan, Step, Verb } from "../../src/site/types.js";
 import { resetWarnings } from "../../src/shared/warn.js";
 
-const FIXTURES = join(import.meta.dirname, "..", "fixtures", "docs");
+const FIXTURES = join(import.meta.dirname, "..", "fixtures", "site");
 
 let root: string | undefined;
 
@@ -29,7 +29,7 @@ interface SiteOptions {
 }
 
 function site(fixture: string, opts: SiteOptions = {}): string {
-  root = realpathSync(mkdtempSync(join(tmpdir(), "manni-docs-")));
+  root = realpathSync(mkdtempSync(join(tmpdir(), "manni-site-")));
   mkdirSync(join(root, ".git"));
   const at = join(root, opts.at ?? ".");
   cpSync(join(FIXTURES, fixture), at, { recursive: true });
@@ -67,10 +67,10 @@ function error(fn: () => unknown): string {
   try {
     fn();
   } catch (e) {
-    expect(e).toBeInstanceOf(DocsError);
+    expect(e).toBeInstanceOf(SiteError);
     return (e as Error).message;
   }
-  throw new Error("expected a DocsError");
+  throw new Error("expected a SiteError");
 }
 
 describe("Node frameworks", () => {
@@ -100,7 +100,7 @@ describe("Node frameworks", () => {
     expect(first?.announce).toBe("Starlight in docs/. Running npm run dev");
     expect(first?.display).toBe("npm run dev");
     expect(first?.notFound).toBe(
-      "npm not found on PATH. Install Starlight's CLI, or set docs.commands.start.",
+      "npm not found on PATH. Install Starlight's CLI, or set site.commands.start.",
     );
   });
 
@@ -179,7 +179,7 @@ describe("Mintlify and Fern", () => {
     expect(argv("start", dir)).toEqual([["mint", "dev"]]);
     expect(argv("start", dir, { port: "3000" })).toEqual([["mint", "dev", "--port", "3000"]]);
     expect(plan("start", dir).steps[0]?.notFound).toBe(
-      "mint not found on PATH. Install Mintlify's CLI, or set docs.commands.start.",
+      "mint not found on PATH. Install Mintlify's CLI, or set site.commands.start.",
     );
   });
 
@@ -189,7 +189,7 @@ describe("Mintlify and Fern", () => {
 
   it("has no local build", () => {
     const dir = site("mintlify");
-    const message = "Mintlify has no local build. Run manni docs start, or set docs.commands.build.";
+    const message = "Mintlify has no local build. Run manni site start, or set site.commands.build.";
     expect(error(() => plan("build", dir))).toBe(message);
     expect(error(() => plan("preview", dir))).toBe(message);
   });
@@ -381,7 +381,7 @@ describe("the collection url", () => {
   });
 });
 
-describe("docs.commands", () => {
+describe("site.commands", () => {
   it("replaces the detected command, in the detected directory", () => {
     const dir = site("override");
     const [first] = plan("start", dir).steps;
@@ -390,30 +390,30 @@ describe("docs.commands", () => {
       command: "pnpm dev --port 4000",
       cwd: join(dir, "docs"),
     });
-    expect(first?.announce).toBe("Running docs.commands.start in docs/: pnpm dev --port 4000");
+    expect(first?.announce).toBe("Running site.commands.start in docs/: pnpm dev --port 4000");
     expect(first?.display).toBe("pnpm dev --port 4000");
   });
 
   it("refuses --port and --host, which it cannot place", () => {
     const dir = site("override");
     expect(error(() => plan("start", dir, { port: "4000" }))).toBe(
-      "--port does not apply to docs.commands.start. Put the port in that command.",
+      "--port does not apply to site.commands.start. Put the port in that command.",
     );
     expect(error(() => plan("start", dir, { host: "0.0.0.0" }))).toBe(
-      "--host does not apply to docs.commands.start. Put the host in that command.",
+      "--host does not apply to site.commands.start. Put the host in that command.",
     );
   });
 
   it("runs in the config file's directory when nothing is detected", () => {
     const dir = site("nothing", {
-      files: { "manni.config.yaml": "docs:\n  commands:\n    build: make html\n" },
+      files: { "manni.config.yaml": "site:\n  commands:\n    build: make html\n" },
     });
     expect(steps("build", dir)).toEqual([{ kind: "shell", command: "make html", cwd: dir }]);
   });
 
   it("leaves the other verbs detected: preview builds with the override", () => {
     const dir = site("mkdocs", {
-      files: { "manni.config.yaml": "docs:\n  commands:\n    build: make docs\n" },
+      files: { "manni.config.yaml": "site:\n  commands:\n    build: make docs\n" },
     });
     expect(steps("preview", dir)).toEqual([
       { kind: "shell", command: "make docs", cwd: dir },
@@ -421,17 +421,17 @@ describe("docs.commands", () => {
     ]);
   });
 
-  it("takes the site directory from docs.dir", () => {
+  it("takes the site directory from site.dir", () => {
     const dir = site("hugo", {
       at: "handbook",
-      files: { "manni.config.yaml": "docs:\n  dir: handbook\n" },
+      files: { "manni.config.yaml": "site:\n  dir: handbook\n" },
     });
     expect(steps("build", dir)).toEqual([{ kind: "exec", argv: ["hugo"], cwd: join(dir, "handbook") }]);
   });
 
   it("reads -c", () => {
     const dir = site("hugo", {
-      files: { "ci/manni.config.yaml": "docs:\n  commands:\n    build: hugo --minify\n" },
+      files: { "ci/manni.config.yaml": "site:\n  commands:\n    build: hugo --minify\n" },
     });
     expect(steps("build", dir, { configPath: "ci/manni.config.yaml", dir: "." })).toEqual([
       { kind: "shell", command: "hugo --minify", cwd: dir },
@@ -442,14 +442,14 @@ describe("docs.commands", () => {
 describe("refusals", () => {
   it("says where it looked when nothing is found", () => {
     expect(error(() => plan("start", site("nothing")))).toBe(
-      "no docs site found in ./, docs/, website/ or site/. Pass the site's directory, or set docs.commands.start in manni.config.yaml.",
+      "no docs site found in ./, docs/, website/ or site/. Pass the site's directory, or set site.commands.start in manni.config.yaml.",
     );
   });
 
   it("names a directory with no markers", () => {
     const dir = site("nothing", { at: "website" });
     expect(error(() => plan("build", dir, { dir: "website" }))).toBe(
-      "no docs framework detected in website/. Set docs.commands.build in manni.config.yaml.",
+      "no docs framework detected in website/. Set site.commands.build in manni.config.yaml.",
     );
   });
 
@@ -462,7 +462,7 @@ describe("refusals", () => {
   it("names both sites when one directory holds two", () => {
     const dir = site("ambiguous", { at: "docs" });
     expect(error(() => plan("start", dir))).toBe(
-      "docs/ holds more than one docs site: Docusaurus (@docusaurus/core), MkDocs (mkdocs.yml). Set docs.commands.start in manni.config.yaml.",
+      "docs/ holds more than one docs site: Docusaurus (@docusaurus/core), MkDocs (mkdocs.yml). Set site.commands.start in manni.config.yaml.",
     );
   });
 

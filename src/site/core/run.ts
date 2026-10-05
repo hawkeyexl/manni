@@ -8,7 +8,7 @@ import { accessSync, constants, statSync } from "node:fs";
 import { delimiter, resolve } from "node:path";
 import { launcherCommandLine } from "../../shared/batch-launcher.js";
 import { notice } from "../../shared/warn.js";
-import { DocsError } from "../errors.js";
+import { SiteError } from "../errors.js";
 import type { Plan, PlannedStep, Step } from "../types.js";
 import { serveStatic } from "./static-server.js";
 
@@ -50,11 +50,11 @@ function findOnPath(name: string, cwd: string): string | undefined {
 function startExec(planned: PlannedStep, step: Extract<Step, { kind: "exec" }>): ChildProcess {
   const [name, ...args] = step.argv;
   const binary = name === undefined ? undefined : findOnPath(name, step.cwd);
-  if (binary === undefined) throw new DocsError(planned.notFound);
+  if (binary === undefined) throw new SiteError(planned.notFound);
   const line = launcherCommandLine(
     binary,
     args,
-    (value) => new DocsError(`${planned.display} cannot be given an argument containing a quote: ${value}`),
+    (value) => new SiteError(`${planned.display} cannot be given an argument containing a quote: ${value}`),
   );
   return spawn(line.command, line.argv, {
     cwd: step.cwd,
@@ -69,7 +69,7 @@ function exitOf(
 ): Promise<{ code: number | null; signal: NodeJS.Signals | null }> {
   return new Promise((settle, reject) => {
     child.once("error", (err: NodeJS.ErrnoException) => {
-      reject(err.code === "ENOENT" ? new DocsError(planned.notFound) : err);
+      reject(err.code === "ENOENT" ? new SiteError(planned.notFound) : err);
     });
     child.once("exit", (code, signal) => {
       settle({ code, signal });
@@ -110,7 +110,7 @@ async function runStep(planned: PlannedStep): Promise<boolean> {
     const exit = await exitOf(planned, child);
     if (signal.received) return true;
     if (exit.code === 0) return false;
-    throw new DocsError(
+    throw new SiteError(
       exit.code === null
         ? `${planned.display} was stopped by ${String(exit.signal)}.`
         : `${planned.display} exited with code ${String(exit.code)}.`,
@@ -121,7 +121,7 @@ async function runStep(planned: PlannedStep): Promise<boolean> {
   }
 }
 
-/** Run every step in order. Resolves the exit code, 0; a failure throws `DocsError`. */
+/** Run every step in order. Resolves the exit code, 0; a failure throws `SiteError`. */
 export async function runPlan(plan: Plan): Promise<number> {
   for (const planned of plan.steps) {
     if (planned.announce !== "") notice(planned.announce);

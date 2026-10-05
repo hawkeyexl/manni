@@ -75,7 +75,7 @@ edited in a year.
 ## Check a pull request before it deploys
 
 To catch a finding before it ships, build and serve the site in the pull
-request with [`manni docs preview`](/manni/docs/). It detects the framework,
+request with [`manni site preview`](/manni/site/). It detects the framework,
 runs its build, and serves the output. Then wait for the port, and point the
 check at it.
 
@@ -96,7 +96,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Build and serve the site
-        run: npx @hawkeyexl/manni docs preview --host 127.0.0.1 --port 4173 > preview.log 2>&1 &
+        run: npx @hawkeyexl/manni site preview --host 127.0.0.1 --port 4173 > preview.log 2>&1 &
       - name: Wait for the server
         run: |
           tries=0

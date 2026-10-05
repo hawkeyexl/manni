@@ -244,23 +244,6 @@ export default defineConfig({
             },
           ],
         },
-        // `docs` runs the site every other domain checks (proposal 0077). A
-        // family resource like `key`, so an overview and a reference shelf.
-        // Its directory is docs/src/content/docs/docs/: the site lives in
-        // docs/, and the domain is named docs.
-        {
-          label: "docs",
-          collapsed: true,
-          badge: BETA,
-          items: [
-            { label: "Overview", link: "/docs/" },
-            {
-              label: "Reference",
-              collapsed: true,
-              items: [{ autogenerate: { directory: "docs/reference" } }],
-            },
-          ],
-        },
         // The knowledge-graph tool. Section order and labels follow its content
         // set in docs/content-strategy/information-architecture.md (`graph/`).
         {
@@ -407,6 +390,21 @@ export default defineConfig({
               label: "Reference",
               collapsed: true,
               items: [{ autogenerate: { directory: "meta/reference" } }],
+            },
+          ],
+        },
+        // `site` runs the site every other domain checks (proposal 0077). A
+        // family resource like `key`, so an overview and a reference shelf.
+        {
+          label: "site",
+          collapsed: true,
+          badge: BETA,
+          items: [
+            { label: "Overview", link: "/site/" },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "site/reference" } }],
             },
           ],
         },

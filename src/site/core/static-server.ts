@@ -1,5 +1,5 @@
 /**
- * The built-in static server `manni docs preview` uses for frameworks whose
+ * The built-in static server `manni site preview` uses for frameworks whose
  * own CLI has no preview (MkDocs, Zensical, Sphinx, Hugo, Jekyll). It serves a
  * build output directory, mounted at the collection `url:` path, until the
  * process is stopped. `node:http` and `node:fs` only.
@@ -10,7 +10,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 import { extname, join, relative, resolve, sep } from "node:path";
 import { errorMessage } from "../../shared/errors.js";
-import { DocsError } from "../errors.js";
+import { SiteError } from "../errors.js";
 
 export interface StaticOptions {
   root: string;
@@ -146,7 +146,7 @@ export async function startStaticServer(opts: StaticOptions): Promise<Server> {
   const root = resolve(opts.root);
   if ((await kindOf(root)) !== "dir") {
     const shown = relative(process.cwd(), root).split(sep).join("/") || ".";
-    throw new DocsError(`${shown}/ does not exist.`);
+    throw new SiteError(`${shown}/ does not exist.`);
   }
   const base = normalizeBase(opts.base);
   const handle = handler(root, base);
@@ -156,7 +156,7 @@ export async function startStaticServer(opts: StaticOptions): Promise<Server> {
   await new Promise<void>((settle, reject) => {
     server.once("error", (err: NodeJS.ErrnoException) => {
       reject(
-        new DocsError(
+        new SiteError(
           err.code === "EADDRINUSE"
             ? `port ${String(opts.port)} is in use. Pass --port, or stop the process holding it.`
             : `cannot listen on ${urlOf(opts.host, opts.port, "")}: ${errorMessage(err)}`,

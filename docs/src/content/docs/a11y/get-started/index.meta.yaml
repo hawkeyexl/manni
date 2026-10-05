@@ -56,13 +56,13 @@ docs/src/content/docs/a11y/get-started/index.mdx:
       integrity: sha256-8af8182ab1e8f509cf81961103ae39b0aa62a55a70dfd31bb9437408df4b7c20
     - generated-by: Claude Opus 5.5
       lines: 60
-      integrity: sha256-0b8fd121a71296fa4e268177f74c80842b7de37a47065e35ac152f984f2243d0
+      integrity: sha256-9f3168919d972fdb2faad343c8cf8c11a91657262ad2e7f8cc25d37184fea831
     - generated-by: Claude Fable 5.1
       lines: 61
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Opus 5.5
       lines: 63-70
-      integrity: sha256-284e80a2cd331ad460f24ab241b781d85ca72f4aae79f0c61317791a545fee4f
+      integrity: sha256-b9f2c03ff160d3db3f5b3c18a3dfa046220580a1def83de361170120d6a01402
     - generated-by: Claude Fable 5.1
       lines: 72-78
       integrity: sha256-1db5a97889f10b64f8c1f3e5d3fd9ec9aff58bcb736a58c8f496ae6aab9f3247

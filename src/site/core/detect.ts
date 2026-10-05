@@ -1,7 +1,7 @@
 /**
- * From a directory to the commands `manni docs` runs (proposal 0077). The
+ * From a directory to the commands `manni site` runs (proposal 0077). The
  * site is found, its framework read from marker files (detect, don't switch),
- * and each verb resolved to argv, a `docs.commands` override, or the built-in
+ * and each verb resolved to argv, a `site.commands` override, or the built-in
  * static server. Everything that can fail before a process starts fails here.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -10,9 +10,9 @@ import type { CollectionConfig } from "../../shared/collections.js";
 import { FAMILY_CONFIG_NAMES } from "../../shared/config-file.js";
 import { searchPath } from "../../shared/git-root.js";
 import { warn } from "../../shared/warn.js";
-import { DocsError } from "../errors.js";
+import { SiteError } from "../errors.js";
 import type { Plan, PlannedStep, Verb } from "../types.js";
-import { loadDocsConfig } from "./config.js";
+import { loadSiteConfig } from "./config.js";
 
 export interface ResolveOptions {
   cwd: string;
@@ -319,7 +319,7 @@ function isDirectory(path: string): boolean {
 function parsePort(raw: string): number {
   const port = /^\d+$/.test(raw) ? Number(raw) : NaN;
   if (!(port >= 1 && port <= 65535)) {
-    throw new DocsError(`--port must be an integer from 1 to 65535, got "${raw}".`);
+    throw new SiteError(`--port must be an integer from 1 to 65535, got "${raw}".`);
   }
   return port;
 }
@@ -368,7 +368,7 @@ function addressArgs(fw: Framework, host: string | undefined, port: number | und
 }
 
 export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
-  const config = loadDocsConfig(opts.cwd, opts.configPath);
+  const config = loadSiteConfig(opts.cwd, opts.configPath);
   const shown = (dir: string): string => {
     const rel = relative(opts.cwd, dir).replace(/\\/g, "/");
     return rel === "" ? "./" : `${rel}/`;
@@ -380,23 +380,23 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
   const flagHost = serving !== null ? opts.host : undefined;
   if (serving !== null && config.commands[serving] !== undefined) {
     if (flagPort !== undefined) {
-      throw new DocsError(`--port does not apply to docs.commands.${serving}. Put the port in that command.`);
+      throw new SiteError(`--port does not apply to site.commands.${serving}. Put the port in that command.`);
     }
     if (flagHost !== undefined) {
-      throw new DocsError(`--host does not apply to docs.commands.${serving}. Put the host in that command.`);
+      throw new SiteError(`--host does not apply to site.commands.${serving}. Put the host in that command.`);
     }
   }
 
   const needed: Verb[] = verb === "preview" ? ["build", "preview"] : [verb];
   const missing = needed.find((v) => config.commands[v] === undefined);
-  const key = `docs.commands.${missing ?? verb} in ${CONFIG_NAME}`;
+  const key = `site.commands.${missing ?? verb} in ${CONFIG_NAME}`;
   const setIt = `Set ${key}.`;
 
   // Find the site.
   let site: Site | undefined;
   const explicit = opts.dir !== undefined ? resolve(opts.cwd, opts.dir) : config.dir;
   if (explicit !== undefined) {
-    if (!isDirectory(explicit)) throw new DocsError(`${shown(explicit)} does not exist.`);
+    if (!isDirectory(explicit)) throw new SiteError(`${shown(explicit)} does not exist.`);
     // Fern's site is the folder above `fern/`, wherever the user points.
     const dir = has(explicit, "fern.config.json") && !has(explicit, "fern", "fern.config.json") ? dirname(explicit) : explicit;
     site = siteAt(dir);
@@ -414,7 +414,7 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
     if (site === undefined) {
       if (missing !== undefined) {
         const names = candidates.map(shown);
-        throw new DocsError(
+        throw new SiteError(
           `no docs site found in ${names.slice(0, -1).join(", ")} or ${names.at(-1) ?? ""}. Pass the site's directory, or set ${key}.`,
         );
       }
@@ -431,10 +431,10 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
   });
   let fw: Framework | undefined;
   if (missing !== undefined) {
-    if (matches.length === 0) throw new DocsError(`no docs framework detected in ${where}. ${setIt}`);
+    if (matches.length === 0) throw new SiteError(`no docs framework detected in ${where}. ${setIt}`);
     if (matches.length > 1) {
       const list = matches.map((m) => `${m.fw.name} (${m.marker})`).join(", ");
-      throw new DocsError(`${where} holds more than one docs site: ${list}. ${setIt}`);
+      throw new SiteError(`${where} holds more than one docs site: ${list}. ${setIt}`);
     }
     fw = matches[0]?.fw;
   }
@@ -447,23 +447,23 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
     if (override !== undefined) {
       const command = [override, ...extra].join(" ");
       return {
-        announce: `Running docs.commands.${v} in ${where}: ${command}`,
+        announce: `Running site.commands.${v} in ${where}: ${command}`,
         display: command,
         notFound: "",
         step: { kind: "shell", command, cwd: found.dir },
       };
     }
-    if (fw === undefined) throw new DocsError(`no docs framework detected in ${where}. ${setIt}`);
+    if (fw === undefined) throw new SiteError(`no docs framework detected in ${where}. ${setIt}`);
     const cmds = fw.commands(found);
     const cmd = cmds[v];
     if (v === "build" && cmd === undefined) {
-      throw new DocsError(`${fw.name} has no local build. Run manni docs start, or set docs.commands.build.`);
+      throw new SiteError(`${fw.name} has no local build. Run manni site start, or set site.commands.build.`);
     }
 
     let address: Address = { base: "/" };
     if (isServe) {
       if (flagHost !== undefined && fw.hostFlag === null) {
-        throw new DocsError(`${fw.name}'s dev server takes no host option. Drop --host.`);
+        throw new SiteError(`${fw.name}'s dev server takes no host option. Drop --host.`);
       }
       // Always read the url: its path is the mount point even when both flags set host and port.
       const url = collectionAddress(config.collections, fw.name, flagPort !== undefined);
@@ -472,10 +472,10 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
 
     if (cmd === undefined) {
       if (cmds.out === undefined) {
-        throw new DocsError(`${fw.name} has no local preview. Run manni docs start, or set docs.commands.preview.`);
+        throw new SiteError(`${fw.name} has no local preview. Run manni site start, or set site.commands.preview.`);
       }
       if (extra.length > 0) {
-        throw new DocsError(`${fw.name} previews through manni's built-in server, which takes no extra arguments. Drop the arguments after --.`);
+        throw new SiteError(`${fw.name} previews through manni's built-in server, which takes no extra arguments. Drop the arguments after --.`);
       }
       return {
         announce: "",
@@ -508,7 +508,7 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
     return {
       announce: `${fw.name} in ${where}. Running ${display}`,
       display,
-      notFound: `${argv[0] ?? ""} not found on PATH. Install ${fw.name}'s CLI, or set docs.commands.${v}.`,
+      notFound: `${argv[0] ?? ""} not found on PATH. Install ${fw.name}'s CLI, or set site.commands.${v}.`,
       step: { kind: "exec", argv, cwd: found.dir },
     };
   });
@@ -528,5 +528,5 @@ function requireInstalled(fw: Framework, site: Site, pm: PackageManager, where: 
   if (chain.some((d) => has(d, "node_modules", pkg, "package.json"))) return;
   const npmLock = chain.some((d) => has(d, "package-lock.json") || has(d, "npm-shrinkwrap.json"));
   const install = pm === "npm" ? (npmLock ? "npm ci" : "npm install") : `${pm} install`;
-  throw new DocsError(`${pkg} is not installed for ${where}. Run ${install} in ${where} first.`);
+  throw new SiteError(`${pkg} is not installed for ${where}. Run ${install} in ${where} first.`);
 }

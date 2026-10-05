@@ -137,13 +137,13 @@ Key layers:
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
   cite's re-encryption, and the one ciphertext format lives in
   `src/shared/encryption.ts`.
-- `src/docs/`: the docs site's domain, `manni docs start`, `build` and
+- `src/site/`: the docs site's domain, `manni site start`, `build` and
   `preview` (proposal 0077). It detects the site's framework and runs that
-  framework's own commands. `docs.commands` overrides any of them.
-  - `src/docs/core/`: the `docs:` config loader, the framework table and
+  framework's own commands. `site.commands` overrides any of them.
+  - `src/site/core/`: the `site:` config loader, the framework table and
     site search (`detect.ts`), the long-running child runner, and the
     built-in static server `preview` uses for frameworks without one.
-  - `src/docs/cli.ts`: thin commander wrapper exported as `buildProgram()`
+  - `src/site/cli.ts`: thin commander wrapper exported as `buildProgram()`
     and mounted by `src/cli.ts`. No entry point of its own.
 - `src/index.ts`: the programmatic API, re-exporting `src/meta/index.ts`.
 

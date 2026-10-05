@@ -7,7 +7,7 @@ import { resolvePlan, type ResolveOptions } from "../core/detect.js";
 import { runPlan } from "../core/run.js";
 import type { Verb } from "../types.js";
 
-/** Resolves the exit code, 0; anything operational throws `DocsError`. */
-export async function runDocs(verb: Verb, opts: ResolveOptions): Promise<number> {
+/** Resolves the exit code, 0; anything operational throws `SiteError`. */
+export async function runSite(verb: Verb, opts: ResolveOptions): Promise<number> {
   return runPlan(resolvePlan(verb, opts));
 }

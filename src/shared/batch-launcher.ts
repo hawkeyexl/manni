@@ -10,7 +10,7 @@
  * second time. The next reader will find `shell: true` simpler; it is also the
  * version with the hole in it.
  *
- * Shared by `lint`'s DITA-OT seam (`dita.bat`) and `docs`' runner (`npm.cmd`
+ * Shared by `lint`'s DITA-OT seam (`dita.bat`) and `site`' runner (`npm.cmd`
  * and every other Node CLI shim).
  */
 

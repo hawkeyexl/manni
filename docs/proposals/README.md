@@ -93,7 +93,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0074](0074-stewardship-graph-output.md) | Stewardship 1.1.0 keeps people out of published graphs. It marks `owner`, `stakeholders` and `reviewed-by` `x-manni-graph-output: false`, the default set moves to it, and `graph build` reads its marks from the set meta resolves, so `graph.schemas` goes | Maya · M18 / Sara · S1 | Implemented |
 | [0075](0075-time-windows-and-execution-in-the-evals-domains.md) | Time windows and execution in the evals domains. Both select by age with `--newer-than <duration>`, both run command evals by default, and config and flags only narrow what runs | Devin · D10, D11 / Maya · M11 | Proposed |
 | [0076](0076-artifact-evals-1-1-0-tool-order.md) | artifact-evals 1.1.0 names `tool-order`. Both artifact-evals ids register again at `1.1.0` beside `1.0.0`, strict names eleven graders, and tracevals reads `1.1.0` | Sara · S14, S3 / Maya · M21 | Proposed |
-| [0077](0077-a-docs-domain-runs-the-site.md) | A docs domain runs the site. `manni docs start`, `build` and `preview` detect the framework from the site's files and run its command. The port comes from the local collection `url:`, and `docs.commands` overrides any verb | Maya · M24, M7 / Devin · D7 / Theo · T3 | Proposed |
+| [0077](0077-a-site-domain-runs-the-docs-site.md) | A site domain runs the docs site. `manni site start`, `build` and `preview` detect the framework from the site's files and run its command. The port comes from the local collection `url:`, and `site.commands` overrides any verb | Maya · M24, M7 / Devin · D7 / Theo · T3 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -209,7 +209,7 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
 0035 ──┬─> 0064          (a11y's exit-code contract, whose floor this confirms as the gate)
 0044 ──┘                 (cite's per-rule severity, the second reading of the scale)
 
-0045 ──┬─> 0077          (a domain is a tool or a family resource with verbs; docs is the second)
+0045 ──┬─> 0077          (a domain is a tool or a family resource with verbs; site is the second)
 0041 ──┤                 (the collection url: a11y seeds from, read here for the port and host)
 0034 ──┘                 (three spelled verbs, no default subcommand, argv after --)
 ```

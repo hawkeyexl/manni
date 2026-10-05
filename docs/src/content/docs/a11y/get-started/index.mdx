@@ -85,16 +85,16 @@ The check reads a URL, never a directory. Build the site and serve the output
 with one command:
 
 ```sh
-npx @hawkeyexl/manni docs preview --host 127.0.0.1 --port 4173
+npx @hawkeyexl/manni site preview --host 127.0.0.1 --port 4173
 ```
 
-[`manni docs preview`](/manni/docs/) detects the site's framework, runs its
+[`manni site preview`](/manni/site/) detects the site's framework, runs its
 build, and then serves what the build wrote. Leave it running and open a second
 terminal for the rest of this page. The port only has to match the URL you
 check.
 
-For a framework `manni docs` does not detect, set its commands under
-[`docs.commands`](/manni/docs/reference/cli/#configuration), or serve the
+For a framework `manni site` does not detect, set its commands under
+[`site.commands`](/manni/site/reference/cli/#configuration), or serve the
 output with any static server.
 
 <Aside type="tip" title="Checking a deployed site instead">

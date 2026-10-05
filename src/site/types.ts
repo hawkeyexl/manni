@@ -1,4 +1,4 @@
-/** The three jobs `manni docs` runs. */
+/** The three jobs `manni site` runs. */
 export type Verb = "start" | "build" | "preview";
 
 /**
@@ -22,7 +22,7 @@ export interface PlannedStep {
   display: string;
   /**
    * The whole message when an `exec` step's binary is not on PATH, e.g.
-   * `mint not found on PATH. Install Mintlify's CLI, or set docs.commands.start.`
+   * `mint not found on PATH. Install Mintlify's CLI, or set site.commands.start.`
    */
   notFound: string;
   step: Step;

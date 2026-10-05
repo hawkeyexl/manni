@@ -1,6 +1,6 @@
 /**
- * The `docs` domain's commander program. Mounted by `src/cli.ts` under
- * `manni docs`; no entry point of its own. Like `key` (proposal 0045), `docs`
+ * The `site` domain's commander program. Mounted by `src/cli.ts` under
+ * `manni site`; no entry point of its own. Like `key` (proposal 0045), `site`
  * is a family resource with verbs: the site every other domain checks
  * (proposal 0077). Three verbs, no default subcommand.
  *
@@ -11,11 +11,11 @@
 import { Command } from "commander";
 import pkg from "../../package.json" with { type: "json" };
 import { fail } from "../shared/run.js";
-import { runDocs } from "./commands/run.js";
+import { runSite } from "./commands/run.js";
 import type { Verb } from "./types.js";
 
 /** What commander hands each verb's action. */
-interface DocsCliOptions {
+interface SiteCliOptions {
   /** `-c, --config <file>`. */
   config?: string;
   /** `--port <n>` as typed; `resolvePlan` validates it. start and preview only. */
@@ -48,7 +48,7 @@ function splitOperands(args: readonly string[]): { dir: string | undefined; pass
 export function buildProgram(): Command {
   const program = new Command();
   program
-    .name("docs")
+    .name("site")
     .description("Start, build and preview the docs site")
     .version(pkg.version, "-V, --version")
     // A pointer, not the whole help screen: the message that precedes it
@@ -64,7 +64,7 @@ export function buildProgram(): Command {
     const cmd = program
       .command(name)
       .description(description)
-      .argument("[dir]", "the site's directory (default: docs.dir, else found by search)")
+      .argument("[dir]", "the site's directory (default: site.dir, else found by search)")
       // Everything after `--` arrives as operands; splitOperands sorts them.
       .allowExcessArguments();
     if (serves) {
@@ -74,7 +74,7 @@ export function buildProgram(): Command {
     }
     cmd
       .option("-c, --config <file>", "path to a manni config file")
-      .action(async (_dir: string | undefined, options: DocsCliOptions, self: Command) => {
+      .action(async (_dir: string | undefined, options: SiteCliOptions, self: Command) => {
         const { dir, passthrough, extra } = splitOperands(self.args);
         if (extra > 1) {
           self.error(
@@ -83,7 +83,7 @@ export function buildProgram(): Command {
           );
         }
         try {
-          process.exitCode = await runDocs(name, {
+          process.exitCode = await runSite(name, {
             cwd: process.cwd(),
             dir,
             configPath: options.config,
@@ -106,10 +106,10 @@ export function buildProgram(): Command {
     [
       "",
       "Examples:",
-      "  manni docs start                      # detect the framework, run its dev server",
-      "  manni docs build",
-      "  manni docs preview --port 4000        # build, then serve the output",
-      "  manni docs start website -- --open    # arguments after -- go to the framework",
+      "  manni site start                      # detect the framework, run its dev server",
+      "  manni site build",
+      "  manni site preview --port 4000        # build, then serve the output",
+      "  manni site start website -- --open    # arguments after -- go to the framework",
     ].join("\n"),
   );
 

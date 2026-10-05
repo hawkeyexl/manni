@@ -1,16 +1,16 @@
 ---
 title: CLI reference
-description: "Every manni docs command, argument and flag (start, build and preview), with the frameworks detected, the docs: config keys, every message and the exit codes."
-id: "docs-reference-cli"
+description: "Every manni site command, argument and flag (start, build and preview), with the frameworks detected, the site: config keys, every message and the exit codes."
+id: "site-reference-cli"
 type: "reference"
-keywords: ["docs start", "docs build", "docs preview", "frameworks", "docs.commands", "exit codes"]
+keywords: ["site start", "site build", "site preview", "frameworks", "site.commands", "exit codes"]
 language: en
 audiences: ["docs-engineers", "ci-engineers"]
-intent: "Look up every argument, flag, detected framework, config key, message and exit code of manni docs start, build and preview."
+intent: "Look up every argument, flag, detected framework, config key, message and exit code of manni site start, build and preview."
 lifecycle: published
-applies-to: ["domain:docs"]
+applies-to: ["domain:site"]
 risks: ["idempotent"]
-sample-questions: ["What flags do manni docs start and manni docs preview accept?", "Which frameworks does manni docs detect, and what does it run for each?", "Why did manni docs exit 2?"]
+sample-questions: ["What flags do manni site start and manni site preview accept?", "Which frameworks does manni site detect, and what does it run for each?", "Why did manni site exit 2?"]
 graph: { label: "CLI reference", type: reference }
 last-updated: 2026-10-05
 tags:
@@ -20,27 +20,27 @@ tags:
   - dev-server
 action: remember
 prerequisites:
-  - /manni/docs/
+  - /manni/site/
 next-steps:
   - a11y-ci
 related-pages:
-  - docs
+  - site
   - a11y-get-started
   - meta-reference-configuration
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
-    against src/docs/cli.ts by scripts/check-cli-reference.mjs (npm run
+    against src/site/cli.ts by scripts/check-cli-reference.mjs (npm run
     docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
     sync with the code; descriptions are free-form. */}
 
-manni docs exposes three verbs, [`start`](#docs-start), [`build`](#docs-build)
-and [`preview`](#docs-preview). Each one finds the site, detects its framework,
-and runs the framework's own command with inherited stdio. `docs` has no
-default subcommand. A bare `manni docs` prints usage and exits `2`.
+manni site exposes three verbs, [`start`](#site-start), [`build`](#site-build)
+and [`preview`](#site-preview). Each one finds the site, detects its framework,
+and runs the framework's own command with inherited stdio. `site` has no
+default subcommand. A bare `manni site` prints usage and exits `2`.
 
 ```sh
-manni docs [options] <command> [command options] [dir] [-- <args...>]
+manni site [options] <command> [command options] [dir] [-- <args...>]
 ```
 
 ## Global options
@@ -52,30 +52,30 @@ Global options are accepted before the subcommand.
 | `-V, --version` | Print the manni version and exit. |
 | `-h, --help` | Print help for the program or a subcommand. |
 
-## `docs`
+## `site`
 
 Start, build and preview the docs site. Every command on this page lives under
-it. `docs` accepts its own `-V, --version`, which reports the manni version,
+it. `site` accepts its own `-V, --version`, which reports the manni version,
 and `-h, --help`. Run with no subcommand it prints usage, exit `2`.
 
 ```sh
-manni docs [options] <command> [command options] [dir] [-- <args...>]
+manni site [options] <command> [command options] [dir] [-- <args...>]
 ```
 
-## `docs start`
+## `site start`
 
 Run the framework's dev server, with hot reload, until Ctrl-C or SIGTERM stops
 it. A stop by signal exits `0`.
 
 ```sh
-manni docs start [dir] [options] [-- <args...>]
+manni site start [dir] [options] [-- <args...>]
 ```
 
 ### Arguments
 
 | Argument | Required | Description |
 |---|---|---|
-| `[dir]` | no | The site's directory. Omitted: `docs.dir`, else [found by search](#how-the-site-is-found). One directory, not a list. |
+| `[dir]` | no | The site's directory. Omitted: `site.dir`, else [found by search](#how-the-site-is-found). One directory, not a list. |
 
 ### Options
 
@@ -85,7 +85,7 @@ manni docs start [dir] [options] [-- <args...>]
 | `--host` | `<host>` | none | The host to bind. Without it, the host of a local collection `url:`, else the framework's default. Refused for Mintlify and Fern, whose dev servers take no host. |
 | `-c, --config` | `<file>` | discovered | Path to a manni config file. |
 
-## `docs build`
+## `site build`
 
 Run the framework's production build once. A build that fails exits `2`, and
 the framework's own output above the last line says why. Mintlify and Fern
@@ -93,14 +93,14 @@ have no local build, so `build` stops with exit `2` there. `build` takes no
 `--port` or `--host`, because nothing is served.
 
 ```sh
-manni docs build [dir] [options] [-- <args...>]
+manni site build [dir] [options] [-- <args...>]
 ```
 
 ### Arguments
 
 | Argument | Required | Description |
 |---|---|---|
-| `[dir]` | no | The site's directory. Omitted: `docs.dir`, else [found by search](#how-the-site-is-found). |
+| `[dir]` | no | The site's directory. Omitted: `site.dir`, else [found by search](#how-the-site-is-found). |
 
 ### Options
 
@@ -108,7 +108,7 @@ manni docs build [dir] [options] [-- <args...>]
 |---|---|---|---|
 | `-c, --config` | `<file>` | discovered | Path to a manni config file. |
 
-## `docs preview`
+## `site preview`
 
 Run `build`, then serve the output until Ctrl-C or SIGTERM stops it. It always
 builds first, so it never serves stale output. A build that fails exits `2`
@@ -117,14 +117,14 @@ command, or the [built-in server](#the-built-in-server) for a framework that
 has none.
 
 ```sh
-manni docs preview [dir] [options] [-- <args...>]
+manni site preview [dir] [options] [-- <args...>]
 ```
 
 ### Arguments
 
 | Argument | Required | Description |
 |---|---|---|
-| `[dir]` | no | The site's directory. Omitted: `docs.dir`, else [found by search](#how-the-site-is-found). |
+| `[dir]` | no | The site's directory. Omitted: `site.dir`, else [found by search](#how-the-site-is-found). |
 
 ### Options
 
@@ -139,12 +139,12 @@ manni docs preview [dir] [options] [-- <args...>]
 Everything after `--` is appended verbatim to the command manni runs, after
 npm's own `--` where one is needed. The arguments are space-separated, because
 they are argv. Under `preview` they go to the serve step, not the build. A
-build's flags belong in [`docs.commands.build`](#configuration). The
+build's flags belong in [`site.commands.build`](#configuration). The
 [built-in server](#the-built-in-server) takes no arguments, so `preview` with
 arguments after `--` is refused there, exit `2`.
 
 ```console
-$ manni docs preview -- --open
+$ manni site preview -- --open
 manni: Starlight in docs/. Running npm run build
 manni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321 --open
 ```
@@ -155,7 +155,7 @@ own output is the output.
 ## How the site is found
 
 1. `[dir]` when it is given.
-2. Else `docs.dir`, resolved against the config file's directory.
+2. Else `site.dir`, resolved against the config file's directory.
 3. Else a search, where the first match wins. It looks in the config file's
    directory, or the working directory when there is no config. Then it looks
    in that directory's `docs/`, `website/` and `site/`.
@@ -164,7 +164,7 @@ In a directory, the markers in the [framework table](#frameworks) decide the
 framework. Fern is the exception to "in a directory". Its marker is
 `fern/fern.config.json`, and the site's directory is the parent of `fern/`.
 Two frameworks in one directory are refused, exit `2`. A `[dir]` with no
-marker is refused too, unless `docs.commands` sets every command the verb
+marker is refused too, unless `site.commands` sets every command the verb
 needs.
 
 ## Frameworks
@@ -199,7 +199,7 @@ directory's `package.json`.
   `bundle exec`.
 - **Output directories.** The built-in server reads the framework's default
   output directory. A custom `site_dir` or `publishDir` needs
-  `docs.commands.preview`.
+  `site.commands.preview`.
 
 ## The port and host
 
@@ -214,7 +214,7 @@ directory's `package.json`.
 The `url:` is the one `manni a11y check` seeds its crawl from, so the served
 site and the crawl agree. When several collections name different local host
 and port pairs, manni warns and uses the framework's default. Neither flag
-applies to a command set in `docs.commands`, and passing one is refused.
+applies to a command set in `site.commands`, and passing one is refused.
 
 ## The built-in server
 
@@ -231,11 +231,11 @@ manni.
 
 ## Configuration
 
-Every key under `docs:` is optional. This repository's own config has no
-`docs:` section, because detection finds Starlight in `docs/`.
+Every key under `site:` is optional. This repository's own config has no
+`site:` section, because detection finds Starlight in `docs/`.
 
 ```yaml title="manni.config.yaml"
-docs:
+site:
   # The site's directory, relative to this file.
   dir: docs
   # Whole command lines, run through the shell in `dir`.
@@ -247,15 +247,15 @@ docs:
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `docs.dir` | string | detected | The site's directory, resolved against the config file. |
-| `docs.commands.start` | string | detected | Replaces the dev-server command. |
-| `docs.commands.build` | string | detected | Replaces the build command. `preview` runs it too. |
-| `docs.commands.preview` | string | detected | Replaces the serve step of `preview`. The build still runs first. |
+| `site.dir` | string | detected | The site's directory, resolved against the config file. |
+| `site.commands.start` | string | detected | Replaces the dev-server command. |
+| `site.commands.build` | string | detected | Replaces the build command. `preview` runs it too. |
+| `site.commands.preview` | string | detected | Replaces the serve step of `preview`. The build still runs first. |
 
 A set command replaces the detected one for its verb, and the others stay
 detected. When every command a verb needs is set, detection is skipped. So a
 framework the table does not list works through config alone, and `dir` then
-defaults to the config file's directory. Any other key under `docs:` is
+defaults to the config file's directory. Any other key under `site:` is
 refused, exit `2`.
 
 ## Messages and exit codes
@@ -266,31 +266,31 @@ framework's own output and the built-in server's URL.
 | When | Line | Exit |
 |---|---|---|
 | Before a detected command runs | `manni: Starlight in docs/. Running npm run dev -- --host 127.0.0.1 --port 4321` | n/a |
-| Before a configured command runs | `manni: Running docs.commands.start in docs/: pnpm dev --port 4000` | n/a |
+| Before a configured command runs | `manni: Running site.commands.start in docs/: pnpm dev --port 4000` | n/a |
 | The built-in server is listening (stdout) | `http://127.0.0.1:8000/` | n/a |
 | Ctrl-C or SIGTERM stops a server, or `preview` during its build | nothing | `0` |
 | A build succeeded | the framework's output | `0` |
 | Local collection URLs disagree (a warning) | `manni: collections site and api name different local URLs. Using Starlight's default port; pass --port to pick one.` | n/a |
-| No site found | `manni: no docs site found in ./, docs/, website/ or site/. Pass the site's directory, or set docs.commands.start in manni.config.yaml.` | `2` |
-| `[dir]` has no marker | `manni: no docs framework detected in website/. Set docs.commands.build in manni.config.yaml.` | `2` |
-| Two frameworks in one directory | `manni: docs/ holds more than one docs site: Docusaurus (@docusaurus/core), MkDocs (mkdocs.yml). Set docs.commands.start in manni.config.yaml.` | `2` |
-| No local build (Mintlify, Fern) | `manni: Mintlify has no local build. Run manni docs start, or set docs.commands.build.` | `2` |
-| The binary is not installed | `manni: mint not found on PATH. Install Mintlify's CLI, or set docs.commands.start.` | `2` |
+| No site found | `manni: no docs site found in ./, docs/, website/ or site/. Pass the site's directory, or set site.commands.start in manni.config.yaml.` | `2` |
+| `[dir]` has no marker | `manni: no docs framework detected in website/. Set site.commands.build in manni.config.yaml.` | `2` |
+| Two frameworks in one directory | `manni: docs/ holds more than one docs site: Docusaurus (@docusaurus/core), MkDocs (mkdocs.yml). Set site.commands.start in manni.config.yaml.` | `2` |
+| No local build (Mintlify, Fern) | `manni: Mintlify has no local build. Run manni site start, or set site.commands.build.` | `2` |
+| The binary is not installed | `manni: mint not found on PATH. Install Mintlify's CLI, or set site.commands.start.` | `2` |
 | Node dependencies are not installed | `manni: astro is not installed for docs/. Run npm ci in docs/ first.` | `2` |
 | The command failed | `manni: npm run build exited with code 1.` | `2` |
 | The port is taken (built-in server) | `manni: port 8000 is in use. Pass --port, or stop the process holding it.` | `2` |
 | A bad `--port` | `manni: --port must be an integer from 1 to 65535, got "abc".` | `2` |
-| `--port` with a configured command | `manni: --port does not apply to docs.commands.start. Put the port in that command.` | `2` |
-| `--host` with a configured command | `manni: --host does not apply to docs.commands.start. Put the host in that command.` | `2` |
+| `--port` with a configured command | `manni: --port does not apply to site.commands.start. Put the port in that command.` | `2` |
+| `--host` with a configured command | `manni: --host does not apply to site.commands.start. Put the host in that command.` | `2` |
 | `--host` on Mintlify or Fern | `manni: Mintlify's dev server takes no host option. Drop --host.` | `2` |
-| `preview` on Mintlify or Fern, with only `docs.commands.build` set | `manni: Mintlify has no local preview. Run manni docs start, or set docs.commands.preview.` | `2` |
+| `preview` on Mintlify or Fern, with only `site.commands.build` set | `manni: Mintlify has no local preview. Run manni site start, or set site.commands.preview.` | `2` |
 | Arguments after `--` for the built-in server | `manni: MkDocs previews through manni's built-in server, which takes no extra arguments. Drop the arguments after --.` | `2` |
 | A `-c` file that does not exist | `manni: Config file not found: "ci/manni.config.yaml".` | `2` |
 | `[dir]` does not exist | `manni: website/ does not exist.` | `2` |
-| An unknown config key | ``manni.config.yaml: `docs:` has unknown key "framework". Supported keys: dir, commands.`` | `2` |
-| A config value of the wrong type | `manni.config.yaml: docs.commands.start must be a string.` | `2` |
+| An unknown config key | ``manni.config.yaml: `site:` has unknown key "framework". Supported keys: dir, commands.`` | `2` |
+| A config value of the wrong type | `manni.config.yaml: site.commands.start must be a string.` | `2` |
 
-A hint that names `docs.commands.<verb>` names the verb that ran. The current
+A hint that names `site.commands.<verb>` names the verb that ran. The current
 directory shows as `./`, as in `Starlight in ./.` for a site at the root. Two
 Node frameworks in one directory are named by their package, in table order.
 The missing-dependencies hint names the install command of the package
@@ -310,33 +310,33 @@ In this repository unless noted.
 
 ```text
 # The dev server, on the port the collection url: names
-$ manni docs start
+$ manni site start
 manni: Starlight in docs/. Running npm run dev -- --host 127.0.0.1 --port 4321
 
 # A production build only
-$ manni docs build
+$ manni site build
 manni: Starlight in docs/. Running npm run build
 
 # Build, then serve; a11y check in another terminal needs no flags
-$ manni docs preview
+$ manni site preview
 manni: Starlight in docs/. Running npm run build
 manni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321
 
 # A directory named, and a port chosen (a Docusaurus repository)
-$ manni docs start website --port 3001
+$ manni site start website --port 3001
 manni: Docusaurus in website/. Running npm run start -- --port 3001
 
 # The built-in server (an MkDocs repository with uv)
-$ manni docs preview
+$ manni site preview
 manni: MkDocs in docs/. Running uv run mkdocs build
 http://127.0.0.1:8000/
 
-# A configured command (docs.commands.start: pnpm dev --port 4000)
-$ manni docs start
-manni: Running docs.commands.start in docs/: pnpm dev --port 4000
+# A configured command (site.commands.start: pnpm dev --port 4000)
+$ manni site start
+manni: Running site.commands.start in docs/: pnpm dev --port 4000
 
 # Everything at once
-$ manni docs preview docs -c ci/manni.config.yaml --host 0.0.0.0 --port 4000 -- --open
+$ manni site preview docs -c ci/manni.config.yaml --host 0.0.0.0 --port 4000 -- --open
 manni: Starlight in docs/. Running npm run build
 manni: Starlight in docs/. Running npm run preview -- --host 0.0.0.0 --port 4000 --open
 ```
@@ -345,7 +345,7 @@ In CI, start `preview` in the background and wait for the port before the
 crawl. A server started with `&` returns at once, and the build runs first:
 
 ```yaml
-- run: npx @hawkeyexl/manni docs preview > preview.log 2>&1 &
+- run: npx @hawkeyexl/manni site preview > preview.log 2>&1 &
 - run: until curl -fsS http://127.0.0.1:4321/manni/ > /dev/null; do sleep 1; done
 - run: npx @hawkeyexl/manni a11y check -f github
 ```
