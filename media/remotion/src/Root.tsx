@@ -12,6 +12,7 @@ import { beats as a11yBeats, totalFrames as a11yTotalFrames, TYPING_MS as a11yTy
 import { beats as lintBeats, totalFrames as lintTotalFrames, TYPING_MS as lintTypingMs } from "./lint/beats";
 import { beats as graphBeats, totalFrames as graphTotalFrames, TYPING_MS as graphTypingMs } from "./graph/beats";
 import { beats as tracevalsBeats, totalFrames as tracevalsTotalFrames, TYPING_MS as tracevalsTypingMs } from "./tracevals/beats";
+import { beats as familyCheckBeats, totalFrames as familyCheckTotalFrames, TYPING_MS as familyCheckTypingMs } from "./family-check/beats";
 import { beats as graphImpactBeats, totalFrames as graphImpactTotalFrames, TYPING_MS as graphImpactTypingMs } from "./graph-impact/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
@@ -53,6 +54,9 @@ const DemoGraph: React.FC = () => <DemoView beats={graphBeats} fontPx={22} lineP
 const DemoTracevals: React.FC = () => <DemoView beats={tracevalsBeats} fontPx={26} linePx={36} cols={66} typingMs={tracevalsTypingMs} />;
 /** graph-impact-1x1: 23 px / 72 columns, derived in media/graph/graph-impact-1x1.script.md (media/graph/graph-impact-cols.mjs). */
 const DemoGraphImpact: React.FC = () => <DemoView beats={graphImpactBeats} fontPx={22} linePx={31} cols={75} typingMs={graphImpactTypingMs} />;
+
+/** family-check-1x1: 25 px / 69 columns, derived in media/family-check/family-check-1x1.script.md (media/family-check/capture/cols.mjs). */
+const DemoFamilyCheck: React.FC = () => <DemoView beats={familyCheckBeats} fontPx={25} linePx={35} cols={69} typingMs={familyCheckTypingMs} ligatures={false} />;
 
 export const Root: React.FC = () => (
   <>
@@ -151,6 +155,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={graphImpactTotalFrames}
+    />
+    <Composition
+      id="FamilyCheckDemo"
+      component={DemoFamilyCheck}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={familyCheckTotalFrames}
     />
   </>
 );
