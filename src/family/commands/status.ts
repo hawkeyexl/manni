@@ -172,7 +172,6 @@ const SET_WIDE: ReadonlyArray<readonly [Domain, string]> = [
   ["graph", "the graph"],
 ];
 
-/** What an agent is told at the start of a session, after the table. */
 /** `a`, `a or b`, `a, b or c`: a list in prose, joined by `conjunction`. */
 function prose(items: readonly string[], conjunction: string): string {
   return items.length <= 1
@@ -180,6 +179,7 @@ function prose(items: readonly string[], conjunction: string): string {
     : `${items.slice(0, -1).join(", ")} ${conjunction} ${items.at(-1) ?? ""}`;
 }
 
+/** What an agent is told at the start of a session, after the table. */
 export function agentLines(report: StatusReport): string {
   const names = prose(report.collections.map((c) => c.name), "or");
   const inPlay = new Set(report.domains.filter((d) => d.status === "in-play").map((d) => d.name));
