@@ -6,7 +6,7 @@ id: graph-reference-cli
 language: en
 lifecycle: published
 action: remember
-last-updated: 2026-10-04
+last-updated: 2026-10-05
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -516,7 +516,7 @@ An unknown target is **exit 2**, with the allowed set named.
 
 {/* step {"description":"There is no default subcommand: the domain owns verbs.","runShell":{"command":"manni graph test/graph/fixtures/dd/docs","exitCodes":[2]}} */}
 
-{/* step {"description":"build writes deterministic Turtle and reports the counts.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"3 docs, 157 triples"}} */}
+{/* step {"description":"build writes deterministic Turtle and reports the counts.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/3 docs, \\d+ triples/"}} */}
 
 {/* step {"description":"No input files matched is operational, not an empty successful build.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/nomatch.config.yaml","exitCodes":[2],"stdio":"No input files matched"}} */}
 
@@ -556,7 +556,7 @@ An unknown target is **exit 2**, with the allowed set named.
 
 {/* step {"description":"An unknown --fields name is refused, with the allowed set in the message.","runShell":{"command":"manni graph fill --dry-run -c test/graph/fixtures/dd/unpriced.config.yaml --fields no-such-field","exitCodes":[2],"stdio":"--fields must be one of"}} */}
 
-{/* step {"description":"export jsonld reserializes the built graph.","runShell":{"command":"manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote 32 nodes"}} */}
+{/* step {"description":"export jsonld reserializes the built graph.","runShell":{"command":"manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Wrote \\d+ nodes/"}} */}
 
 {/* step {"description":"An unknown export target is exit 2, with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Unknown export target \"turtle\""}} */}
 

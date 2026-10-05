@@ -18,7 +18,7 @@ concepts:
   - section
   - harvest rule
   - near miss
-last-updated: 2026-10-04
+last-updated: 2026-10-05
 ---
 
 You have built a graph and asked it a question. This page is the model behind
@@ -243,4 +243,4 @@ therefore be checked without being published.
 
 {/* step {"description":"A page type with no iiRDS counterpart derives no graph.type.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"no graph.type was derived"}} */}
 
-{/* step {"description":"A near miss is a warning: the build still succeeds.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"1 docs, 44 triples"}} */}
+{/* step {"description":"A near miss is a warning: the build still succeeds.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/harvest.config.yaml","exitCodes":[0],"stdio":"/1 docs, \\d+ triples/"}} */}

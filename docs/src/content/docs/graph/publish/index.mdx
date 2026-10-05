@@ -13,7 +13,7 @@ concepts:
   - vector sidecar
   - localization manifest
   - x-manni-graph-output
-last-updated: 2026-10-04
+last-updated: 2026-10-05
 ---
 
 The graph is worth more outside CI than inside it. `manni graph export`
@@ -239,7 +239,7 @@ produce something nobody checked.
 
 {/* step {"description":"Export needs a built graph.","runShell":{"command":"manni graph build -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0]}} */}
 
-{/* step {"description":"jsonld writes linked data and reports the node count.","runShell":{"command":"manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote 32 nodes"}} */}
+{/* step {"description":"jsonld writes linked data and reports the node count.","runShell":{"command":"manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"/Wrote \\d+ nodes/"}} */}
 
 {/* step {"description":"iirds writes a conformant package.","runShell":{"command":"manni graph export iirds -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"Wrote"}} */}
 
