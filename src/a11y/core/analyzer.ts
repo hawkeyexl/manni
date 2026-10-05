@@ -7,7 +7,14 @@
  * implementation lives here too, behind the same interface.
  */
 import { AxeBuilder } from "@axe-core/playwright";
-import { chromium, type Browser, type Page, type Request, type Response } from "playwright-core";
+import {
+  chromium,
+  type Browser,
+  type BrowserContext,
+  type Page,
+  type Request,
+  type Response,
+} from "playwright-core";
 import {
   A11yError,
   isAxeImpact,
@@ -108,12 +115,15 @@ type AxeNode = AxeResult["nodes"][number];
 
 interface Session {
   browser: Browser;
-  page: Page;
+  context: BrowserContext;
 }
 
 /**
  * Playwright-backed analyzer. Lazy: the browser launches on the first
- * `analyze`, one context and one page are reused for every URL.
+ * `analyze`, and one context is reused for every URL. Each URL gets a page
+ * of its own, closed once it is analyzed. A navigation a page starts late (a
+ * script redirect after axe returned, or a meta refresh reported without
+ * waiting for it) then dies with that page instead of aborting the next load.
  * - `page.goto(url, { waitUntil: "load", timeout })`; `finalUrl` is `page.url()` after it
  * - one in-page evaluation reads every `a[href]`'s absolute `href` and the
  *   first meta refresh; a refresh to another page (by `dedupeKey`) is a
@@ -134,15 +144,15 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
       const found = await launchAny();
       if (found === null) throw new A11yError(NO_BROWSER_MESSAGE);
       const context = await found.browser.newContext();
-      const page = await context.newPage();
-      return { browser: found.browser, page };
+      return { browser: found.browser, context };
     })();
     return session;
   };
 
   return {
     async analyze(url, opts) {
-      const { page } = await open();
+      const { context } = await open();
+      const page = await context.newPage();
       // Every navigation the main frame starts, first hop only, so the one
       // that follows the load can be named even when it never commits (an
       // unresolvable host leaves the browser on its own error page).
@@ -160,7 +170,7 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
       try {
         return await analyzePage(page, url, opts, navigations);
       } finally {
-        page.off("request", onRequest);
+        await page.close();
       }
     },
 
@@ -179,7 +189,7 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
 }
 
 /**
- * One `analyze`, on the session's page. `navigations` is filled while it
+ * One `analyze`, on a page of its own. `navigations` is filled while it
  * runs: the first hop of every main-frame navigation, in order.
  */
 async function analyzePage(
