@@ -68,10 +68,10 @@ describe("graph build reads stdin", () => {
   });
 
   it("refuses an unknown --as, exit 2", () => {
-    const r = graph(["build", "guides", "--as", "rst"], collections);
+    const r = graph(["build", "guides", "--as", "docx"], collections);
     expect(r.status).toBe(2);
     expect(r.stderr).toBe(
-      'manni: Unknown format "rst". Known formats: markdown, mdx.\n',
+      'manni: Unknown format "docx". Known formats: asciidoc, html, markdown, mdx, rst, xml.\n',
     );
   });
 

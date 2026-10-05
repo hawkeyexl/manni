@@ -210,7 +210,10 @@ function documentInputs(command: Command, verb: string): Command {
       [],
     )
     .option("--exclude <glob>", "Glob to exclude (repeatable)", collect, [])
-    .option("--as <format>", "force an input format (markdown, mdx)")
+    .option(
+      "--as <format>",
+      "Parse every input as asciidoc, html, markdown, mdx, rst or xml, whatever its extension. Required with -.",
+    )
     .option(
       "--ext <list>",
       "comma-separated extensions for directory walks",

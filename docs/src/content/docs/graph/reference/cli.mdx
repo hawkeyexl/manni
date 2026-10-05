@@ -53,8 +53,8 @@ Turtle file at `graph.out`, or the one `-g` names. Build first, then ask.
 | `--no-config` | same as above | Ignore any discovered config file and run on built-in defaults. It shares one option with `-c`, so the one written later wins. |
 | `--collection <name>` | `build`, `fill` | Read only this configured collection. Repeatable, one name per occurrence, never comma-separated. It cannot be combined with positional paths, and it needs a config file to select from. Each of those is **exit 2**. |
 | `--exclude <glob>` | same as above | Glob to exclude. Repeatable, one glob per occurrence. |
-| `--as <format>` | same as above | Parse every input as `markdown` or `mdx`, whatever its extension. Required with `-`. Another value is **exit 2**. |
-| `--ext <list>` | same as above | Extensions a directory walk or a glob keeps, comma-separated and given once. A file named outright is kept whatever this says. |
+| `--as <format>` | same as above | Parse every input as `asciidoc`, `html`, `markdown`, `mdx`, `rst` or `xml`, whatever its extension. Required with `-`. Another value is **exit 2**. |
+| `--ext <list>` | same as above | Extensions a directory walk or a glob keeps, comma-separated and given once. A file named outright is kept whatever this says, when a parser reads its extension. A named file none reads is skipped with a warning. |
 | `--allow-empty` | same as above | Treat zero matched files as success. |
 | `-g, --graph <path>` | the graph readers | The built Turtle file. Defaults to the resolved `graph.out`. |
 | `-f, --format <format>` | every verb that reports | `pretty` or `json`; `check` adds `github`. An unknown value is refused while the options are parsed. A typo therefore costs a message rather than a graph load: **exit 2**, with the allowed set named. |
@@ -152,8 +152,8 @@ changes the exit code.
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
-| `--as` | `<format>` | by extension | Parse every input as `markdown` or `mdx`. Required with `-`. |
-| `--ext` | `<list>` | `.md,.mdx,.markdown` | Extensions for directory walks and globs, comma-separated. |
+| `--as` | `<format>` | by extension | Parse every input as `asciidoc`, `html`, `markdown`, `mdx`, `rst` or `xml`. Required with `-`. |
+| `--ext` | `<list>` | `.md,.markdown,.mdx,.html,.htm,.adoc,.asciidoc,.rst,.dita,.ditamap` | Extensions for directory walks and globs, comma-separated. |
 | `--allow-empty` | n/a | off | Zero matched files writes an empty graph and exits 0. |
 | `-o, --out` | `<path>` | config `out`, else `graph/graph.ttl` | Where to write the Turtle. The directory is created if it does not exist. |
 
@@ -265,8 +265,8 @@ model and the fields. See
 | `--no-config` | n/a | off | Ignore any discovered config file. |
 | `--collection` | `<name>` | every collection | Read only this configured collection. Repeatable. |
 | `--exclude` | `<glob>` | n/a | Glob to exclude. Repeatable. |
-| `--as` | `<format>` | by extension | Parse every input as `markdown` or `mdx`. Required with `-`. |
-| `--ext` | `<list>` | `.md,.mdx,.markdown` | Extensions for directory walks and globs, comma-separated. |
+| `--as` | `<format>` | by extension | Parse every input as `asciidoc`, `html`, `markdown`, `mdx`, `rst` or `xml`. Required with `-`. |
+| `--ext` | `<list>` | `.md,.markdown,.mdx,.html,.htm,.adoc,.asciidoc,.rst,.dita,.ditamap` | Extensions for directory walks and globs, comma-separated. |
 | `--allow-empty` | n/a | off | Zero matched files is an empty report and exit 0. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 | `--dry-run` | n/a | off | Report proposals without writing files. |

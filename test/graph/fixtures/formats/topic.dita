@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE concept PUBLIC "-//OASIS//DTD DITA Concept//EN" "concept.dtd">
+<concept id="sdk-concept">
+  <title>SDK concept</title>
+  <prolog>
+    <metadata>
+      <othermeta name="description" content="What the SDK is, in DITA."/>
+    </metadata>
+  </prolog>
+  <conbody>
+    <p>The SDK is installed by the <xref href="guide.html#install-the-sdk">install guide</xref>.</p>
+    <section id="GUID-A1B2-C3D4">
+      <title>How it works</title>
+      <p>See the <xref href="https://example.com/docs#section/sub" scope="external" format="html">upstream docs</xref>
+        and the <xref keyref="glossary-sdk"/> entry.</p>
+    </section>
+  </conbody>
+</concept>

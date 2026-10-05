@@ -1,0 +1,11 @@
+# One page per format graph reads (proposal 0077), linked across formats in
+# both directions. The collection is the default walk, so it also proves the
+# walk set: every format but .xml.
+collections:
+  - name: formats
+    paths:
+      - "."
+
+graph:
+  baseIri: https://example.com/formats/
+  out: graph.ttl

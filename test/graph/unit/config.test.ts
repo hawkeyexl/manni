@@ -345,7 +345,19 @@ describe("parseConfig", () => {
       {
         basePath: "/docs",
         root: "docs/pages",
-        extensions: [".md", ".mdx", ".markdown"],
+        // Proposal 0077 §3: every format graph reads, Markdown first.
+        extensions: [
+          ".md",
+          ".mdx",
+          ".markdown",
+          ".html",
+          ".htm",
+          ".adoc",
+          ".asciidoc",
+          ".rst",
+          ".dita",
+          ".ditamap",
+        ],
         indexFiles: ["index", "README"],
       },
     ]);
