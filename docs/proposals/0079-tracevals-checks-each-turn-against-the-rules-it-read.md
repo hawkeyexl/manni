@@ -80,7 +80,7 @@ different models.
 | Out of the loop | Rule extraction, `prepare`, `check` by hand, `run` and `fill` | `tracevals.provider` and `tracevals.model`, the keys that exist today |
 | In the loop | Judging a turn inside a Stop or SubagentStop hook | `tracevals.conformance.hook.provider` and `.model`, falling back to the out-of-loop keys |
 
-A hosted setup puts Sonnet out of the loop and Haiku in it. A local setup can
+A hosted setup can put Sonnet out of the loop and Haiku in it. A local setup can
 use Qwen3.5-4B for both. Whether a run is in the loop is detected from the hook
 envelope. No flag switches it.
 
