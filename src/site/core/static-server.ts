@@ -112,7 +112,7 @@ function handler(root: string, base: string) {
     const url = new URL(req.url ?? "/", "http://localhost");
     const { pathname } = url;
     if (base !== "/" && (pathname === "/" || pathname === base.slice(0, -1))) {
-      redirect(res, pathname === "/" ? 302 : 301, base);
+      redirect(res, pathname === "/" ? 302 : 301, `${base}${url.search}`);
       return;
     }
     const path = pathname.startsWith(base) ? inside(root, pathname.slice(base.length)) : undefined;

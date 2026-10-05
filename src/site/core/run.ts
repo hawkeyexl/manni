@@ -69,7 +69,11 @@ function exitOf(
 ): Promise<{ code: number | null; signal: NodeJS.Signals | null }> {
   return new Promise((settle, reject) => {
     child.once("error", (err: NodeJS.ErrnoException) => {
-      reject(err.code === "ENOENT" ? new SiteError(planned.notFound) : err);
+      reject(
+        err.code === "ENOENT"
+          ? new SiteError(planned.notFound)
+          : new SiteError(`${planned.display} could not start: ${err.message}`),
+      );
     });
     child.once("exit", (code, signal) => {
       settle({ code, signal });

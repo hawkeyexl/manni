@@ -88,6 +88,8 @@ describe("the built-in static server", () => {
     const top = await request(port, "/");
     expect(top.status).toBe(302);
     expect(top.headers.location).toBe("/manni/");
+    const query = await request(port, "/?q=x");
+    expect(query.headers.location).toBe("/manni/?q=x");
   });
 
   it("answers outside the base, and a missing page, with 404.html", async () => {

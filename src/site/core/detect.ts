@@ -291,7 +291,7 @@ function packageManager(dir: string): PackageManager {
   for (const d of chain) {
     const field = readPackageJson(d)?.packageManager;
     const name = typeof field === "string" ? field.split("@")[0] : undefined;
-    if (name !== undefined && name in EXEC) return name as PackageManager;
+    if (name !== undefined && Object.hasOwn(EXEC, name)) return name as PackageManager;
   }
   for (const d of chain) {
     const hit = LOCKFILES.find(([file]) => has(d, file));
@@ -322,6 +322,15 @@ function parsePort(raw: string): number {
     throw new SiteError(`--port must be an integer from 1 to 65535, got "${raw}".`);
   }
   return port;
+}
+
+/**
+ * One argument for the shell an override runs in, so `-- --title "My Docs"`
+ * stays one argument. Plain tokens pass unchanged.
+ */
+function shellQuote(arg: string): string {
+  if (/^[\w@%+=:,./-]+$/.test(arg)) return arg;
+  return process.platform === "win32" ? `"${arg.replace(/"/g, '\\"')}"` : `'${arg.replace(/'/g, "'\\''")}'`;
 }
 
 const andList = (items: string[]): string =>
@@ -445,7 +454,7 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
     // Passthrough goes to the verb's own step: the serve step, for preview.
     const extra = v === verb ? opts.passthrough : [];
     if (override !== undefined) {
-      const command = [override, ...extra].join(" ");
+      const command = [override, ...extra.map(shellQuote)].join(" ");
       return {
         announce: `Running site.commands.${v} in ${where}: ${command}`,
         display: command,
@@ -505,10 +514,13 @@ export function resolvePlan(verb: Verb, opts: ResolveOptions): Plan {
       argv = [...prefix, ...cmd.argv, ...flags];
     }
     const display = argv.join(" ");
+    const bin = argv[0] ?? "";
+    // A prefix manni added (npm, uv, bundle...) is its own install, not the framework's.
+    const install = bin === cmd.argv[0] ? `${fw.name}'s CLI` : bin;
     return {
       announce: `${fw.name} in ${where}. Running ${display}`,
       display,
-      notFound: `${argv[0] ?? ""} not found on PATH. Install ${fw.name}'s CLI, or set site.commands.${v}.`,
+      notFound: `${bin} not found on PATH. Install ${install}, or set site.commands.${v}.`,
       step: { kind: "exec", argv, cwd: found.dir },
     };
   });
@@ -526,6 +538,8 @@ function requireInstalled(fw: Framework, site: Site, pm: PackageManager, where: 
   if (pkg === undefined) return;
   const chain = searchPath(site.dir);
   if (chain.some((d) => has(d, "node_modules", pkg, "package.json"))) return;
+  // Yarn Plug'n'Play keeps no node_modules; its loader resolves the package.
+  if (chain.some((d) => has(d, ".pnp.cjs") || has(d, ".pnp.js"))) return;
   const npmLock = chain.some((d) => has(d, "package-lock.json") || has(d, "npm-shrinkwrap.json"));
   const install = pm === "npm" ? (npmLock ? "npm ci" : "npm install") : `${pm} install`;
   throw new SiteError(`${pkg} is not installed for ${where}. Run ${install} in ${where} first.`);

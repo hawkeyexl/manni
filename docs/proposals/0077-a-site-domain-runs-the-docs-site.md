@@ -213,6 +213,8 @@ child's own output, through inherited stdio, plus the built-in server's URL.
 | Two frameworks in one directory | `manni: docs/ holds more than one docs site: Docusaurus (@docusaurus/core), MkDocs (mkdocs.yml). Set site.commands.start in manni.config.yaml.` | 2 |
 | No local build (Mintlify, Fern) | `manni: Mintlify has no local build. Run manni site start, or set site.commands.build.` | 2 |
 | The binary is missing | `manni: mint not found on PATH. Install Mintlify's CLI, or set site.commands.start.` | 2 |
+| A runner manni adds is missing | `manni: uv not found on PATH. Install uv, or set site.commands.start.` | 2 |
+| The binary cannot start | `manni: hugo could not start: spawn EACCES` | 2 |
 | Node dependencies are missing | `manni: astro is not installed for docs/. Run npm ci in docs/ first.` | 2 |
 | The child failed | `manni: npm run build exited with code 1.` | 2 |
 | The port is taken (built-in server) | `manni: port 8000 is in use. Pass --port, or stop the process holding it.` | 2 |
@@ -226,6 +228,7 @@ child's own output, through inherited stdio, plus the built-in server's URL.
 | `[dir]` is missing | `manni: website/ does not exist.` | 2 |
 | An unknown config key | ``manni.config.yaml: `site:` has unknown key "framework". Supported keys: dir, commands.`` | 2 |
 | A wrong type | `manni.config.yaml: site.commands.start must be a string.` | 2 |
+| An empty command | `manni.config.yaml: site.commands.build must not be empty.` | 2 |
 
 The verb in a `site.commands.<verb>` hint is the verb that ran. The current
 directory shows as `./`. The missing-dependencies hint names the install

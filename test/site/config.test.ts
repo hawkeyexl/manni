@@ -29,6 +29,7 @@ describe("parseSiteConfig", () => {
     [{ framework: "astro" }, '`site:` has unknown key "framework". Supported keys: dir, commands.'],
     [{ commands: { serve: "x" } }, '`site.commands:` has unknown key "serve". Supported keys: start, build, preview.'],
     [{ commands: { start: 1 } }, "site.commands.start must be a string."],
+    [{ commands: { build: "  " } }, "site.commands.build must not be empty."],
     [{ dir: ["docs"] }, "site.dir must be a string."],
     [{ commands: "pnpm dev" }, "`site.commands:` must be a mapping."],
     ["docs", "`site:` must be a mapping."],

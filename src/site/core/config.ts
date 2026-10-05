@@ -64,7 +64,12 @@ export function parseSiteConfig(
   for (const verb of COMMAND_KEYS) {
     const command = commands[verb];
     if (command !== undefined) {
-      config.commands[verb] = asString(command, `commands.${verb}`, source);
+      const line = asString(command, `commands.${verb}`, source);
+      // A blank line runs as a shell no-op that exits 0: a build that never built.
+      if (line.trim() === "") {
+        throw new SiteError(`${source}: ${SECTION}.commands.${verb} must not be empty.`);
+      }
+      config.commands[verb] = line;
     }
   }
   return config;

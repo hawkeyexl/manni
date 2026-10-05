@@ -100,8 +100,28 @@ describe("Node frameworks", () => {
     expect(first?.announce).toBe("Starlight in docs/. Running npm run dev");
     expect(first?.display).toBe("npm run dev");
     expect(first?.notFound).toBe(
-      "npm not found on PATH. Install Starlight's CLI, or set site.commands.start.",
+      "npm not found on PATH. Install npm, or set site.commands.start.",
     );
+  });
+
+  it("accepts a Yarn Plug'n'Play install, which has no node_modules", () => {
+    const dir = site("nested", { files: { "docs/.pnp.cjs": "", "docs/yarn.lock": "" } });
+    expect(argv("start", dir)).toEqual([["yarn", "run", "dev"]]);
+  });
+
+  it("does not take a prototype key for a package manager", () => {
+    const dir = site("nested", {
+      files: {
+        "docs/package.json": JSON.stringify({
+          packageManager: "constructor@1",
+          scripts: { dev: "astro dev" },
+          dependencies: { "@astrojs/starlight": "*" },
+        }),
+        "docs/pnpm-lock.yaml": "",
+        "docs/node_modules/astro/package.json": "{}",
+      },
+    });
+    expect(argv("start", dir)).toEqual([["pnpm", "run", "dev"]]);
   });
 
   it("runs the binary through npx when package.json has no script", () => {
@@ -401,6 +421,23 @@ describe("site.commands", () => {
     );
     expect(error(() => plan("start", dir, { host: "0.0.0.0" }))).toBe(
       "--host does not apply to site.commands.start. Put the host in that command.",
+    );
+  });
+
+  it("quotes passthrough args that the shell would split", () => {
+    const dir = site("override");
+    const [first] = plan("start", dir, { passthrough: ["--title", "My Docs"] }).steps;
+    const quoted = process.platform === "win32" ? '"My Docs"' : "'My Docs'";
+    expect(first?.step).toMatchObject({ command: `pnpm dev --port 4000 --title ${quoted}` });
+  });
+
+  it("names a prefix binary, not the framework, when the prefix is missing", () => {
+    const dir = site("mkdocs", { files: { "uv.lock": "" } });
+    expect(plan("start", dir).steps[0]?.notFound).toBe(
+      "uv not found on PATH. Install uv, or set site.commands.start.",
+    );
+    expect(plan("start", site("mkdocs")).steps[0]?.notFound).toBe(
+      "mkdocs not found on PATH. Install MkDocs's CLI, or set site.commands.start.",
     );
   });
 

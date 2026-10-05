@@ -138,7 +138,8 @@ manni site preview [dir] [options] [-- <args...>]
 
 Everything after `--` is appended verbatim to the command manni runs, after
 npm's own `--` where one is needed. The arguments are space-separated, because
-they are argv. Under `preview` they go to the serve step, not the build. A
+they are argv. An argument the shell would split, such as `"My Docs"`, is quoted
+for a configured command, so it arrives as one argument. Under `preview` they go to the serve step, not the build. A
 build's flags belong in [`site.commands.build`](#configuration). The
 [built-in server](#the-built-in-server) takes no arguments, so `preview` with
 arguments after `--` is refused there, exit `2`.
@@ -276,6 +277,8 @@ framework's own output and the built-in server's URL.
 | Two frameworks in one directory | `manni: docs/ holds more than one docs site: Docusaurus (@docusaurus/core), MkDocs (mkdocs.yml). Set site.commands.start in manni.config.yaml.` | `2` |
 | No local build (Mintlify, Fern) | `manni: Mintlify has no local build. Run manni site start, or set site.commands.build.` | `2` |
 | The binary is not installed | `manni: mint not found on PATH. Install Mintlify's CLI, or set site.commands.start.` | `2` |
+| A runner manni adds is not installed | `manni: uv not found on PATH. Install uv, or set site.commands.start.` | `2` |
+| The binary cannot start | `manni: hugo could not start: spawn EACCES` | `2` |
 | Node dependencies are not installed | `manni: astro is not installed for docs/. Run npm ci in docs/ first.` | `2` |
 | The command failed | `manni: npm run build exited with code 1.` | `2` |
 | The port is taken (built-in server) | `manni: port 8000 is in use. Pass --port, or stop the process holding it.` | `2` |
@@ -289,6 +292,7 @@ framework's own output and the built-in server's URL.
 | `[dir]` does not exist | `manni: website/ does not exist.` | `2` |
 | An unknown config key | ``manni.config.yaml: `site:` has unknown key "framework". Supported keys: dir, commands.`` | `2` |
 | A config value of the wrong type | `manni.config.yaml: site.commands.start must be a string.` | `2` |
+| An empty configured command | `manni.config.yaml: site.commands.build must not be empty.` | `2` |
 
 A hint that names `site.commands.<verb>` names the verb that ran. The current
 directory shows as `./`, as in `Starlight in ./.` for a site at the root. Two
