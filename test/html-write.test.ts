@@ -11,6 +11,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
+import { stringify as stringifyYaml } from "yaml";
 import { applyHtml } from "../src/meta/extractors/html-write.js";
 import { htmlExtractor } from "../src/meta/extractors/html.js";
 import { DocmetaError } from "../src/meta/types.js";
@@ -172,11 +173,77 @@ describe("applyHtml — fidelity", () => {
     expect(read(out).version).toBe("2");
   });
 
-  it("refuses a value that cannot fit on one line", () => {
-    // An array or a multi-line string emits as block YAML, which an attribute
-    // cannot carry. Refusing beats truncating.
+  it("refuses a string that needs more than one line", () => {
+    // Flow style puts a collection on one line, but a newline inside a string
+    // survives into the output whatever the style. Refusing beats truncating.
     const src = '<html><head><meta name="type" content="a"></head></html>';
-    expect(() => applyHtml(src, { tags: ["a", "b"] })).toThrow(DocmetaError);
+    expect(() => applyHtml(src, { summary: "one\ntwo" })).toThrow(
+      'Refusing to write "summary": the value needs more than one line, which an HTML attribute cannot hold. Set it manually.',
+    );
+    expect(() => applyHtml(src, { graph: { label: "one\ntwo" } })).toThrow(
+      "needs more than one line",
+    );
+  });
+});
+
+describe("applyHtml — collection values", () => {
+  // `manni graph fill` writes a nested `graph:` block through this writer, so a
+  // map or a list has to fit the one line a `content` attribute holds.
+  const src = '<html><head><meta name="type" content="a"></head></html>';
+  const graph = {
+    label: "Install",
+    "alt-labels": ["setup", "configure"],
+    sections: { prereq: { label: "Prerequisites" } },
+  };
+
+  it("writes a nested map on one line, and reads it back", () => {
+    const out = applyHtml(src, { graph });
+    expect(read(out).graph).toEqual(graph);
+    expect(out).toContain(
+      '<meta name="graph" content="{ label: Install, alt-labels: [ setup, configure ], sections: { prereq: { label: Prerequisites } } }">',
+    );
+  });
+
+  it("writes a list, and reads it back", () => {
+    const out = applyHtml(src, { tags: ["a", "b"] });
+    expect(read(out).tags).toEqual(["a", "b"]);
+  });
+
+  it("replaces an existing collection in place", () => {
+    const out = applyHtml(applyHtml(src, { graph }), {
+      graph: { ...graph, label: "Set up" },
+    });
+    expect(read(out).graph).toEqual({ ...graph, label: "Set up" });
+    expect(out.match(/name="graph"/g)).toHaveLength(1);
+  });
+
+  it("escapes markup and quotes in nested strings", () => {
+    const value = { label: 'Tom & "Jerry" <b>', alt: ["it's", "a > b"] };
+    const out = applyHtml(src, { graph: value });
+    expect(read(out).graph).toEqual(value);
+    expect(out).toContain("Tom &amp; &quot;Jerry&quot; &lt;b&gt;");
+  });
+
+  it("writes a long string without folding it", () => {
+    // The YAML stringifier folds at 80 columns by default, which made any long
+    // value a "needs more than one line" refusal.
+    const long = "word ".repeat(30).trim();
+    expect(read(applyHtml(src, { description: long })).description).toBe(long);
+    expect(read(applyHtml(src, { graph: { alt: [long] } })).graph).toEqual({
+      alt: [long],
+    });
+  });
+
+  it("emits a scalar exactly as before", () => {
+    const scalars: unknown[] = [
+      "plain", "2", "", "a: b", "#c", "true", "null", 42, 1.5, true, false,
+      null, "2024-03-01", "2024-03-01T00:00:00Z",
+    ];
+    for (const value of scalars) {
+      const out = applyHtml(src, { k: value });
+      const before = stringifyYaml(value).replace(/\n$/, "");
+      expect(out).toContain(`<meta name="k" content="${before.replace(/"/g, "&quot;")}">`);
+    }
   });
 });
 

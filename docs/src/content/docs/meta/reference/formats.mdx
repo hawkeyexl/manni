@@ -111,6 +111,11 @@ re-serializing would turn `&nbsp;` into `&amp;nbsp;`, and splicing cannot. A new
 A new XML attribute is added to the root element's start tag. A page with no
 `<head>` of its own is refused rather than guessed at.
 
+An attribute holds one line, so a map or a list is written as
+one line of YAML flow style, `{ label: Install, alt-labels: [ setup ] }`, which
+the read side parses back to the same value. A string holding a line break
+cannot fit and is refused.
+
 {/* cite formats-schemas-reports-writability */}
 Run `manni meta schemas` to see the current writability of each format. A file
 manni meta cannot write is reported as a per-file error, and the rest of the run

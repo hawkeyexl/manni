@@ -205,9 +205,43 @@ describe("applyXml — no-ops and refusals", () => {
     expect(read(out)["dc.title"]).toBe("v");
   });
 
-  it("refuses a value that cannot fit on one line", () => {
+  it("refuses a string that needs more than one line", () => {
     const content = fx("bad-timestamp.xml");
-    expect(() => applyXml(content, { tags: ["a", "b"] })).toThrow(DocmetaError);
+    expect(() => applyXml(content, { summary: "one\ntwo" })).toThrow(
+      'Refusing to write "summary": the value needs more than one line, which an XML attribute cannot hold. Set it manually.',
+    );
+  });
+});
+
+describe("applyXml — collection values", () => {
+  // A root attribute holds one line, so a map or a list is written in YAML
+  // flow style, which the reader parses back to the same value.
+  const graph = {
+    label: "Install",
+    "alt-labels": ["setup", "configure"],
+    sections: { prereq: { label: "Prerequisites" } },
+  };
+
+  it("writes a nested map as one attribute, and reads it back", () => {
+    const out = applyXml(fx("bad-timestamp.xml"), { graph });
+    expect(read(out).graph).toEqual(graph);
+    expect(out).toContain(
+      'graph="{ label: Install, alt-labels: [ setup, configure ], sections: { prereq: { label: Prerequisites } } }"',
+    );
+  });
+
+  it("writes a list, and replaces an existing one in place", () => {
+    const once = applyXml(fx("bad-timestamp.xml"), { tags: ["a", "b"] });
+    expect(read(once).tags).toEqual(["a", "b"]);
+    const twice = applyXml(once, { tags: ["c"] });
+    expect(read(twice).tags).toEqual(["c"]);
+    expect(twice.match(/tags=/g)).toHaveLength(1);
+  });
+
+  it("escapes markup and quotes in nested strings", () => {
+    const value = { label: 'Tom & "Jerry" <b>', alt: ["it's", "a > b"] };
+    const out = applyXml("<doc type='concept'/>", { graph: value });
+    expect(read(out).graph).toEqual(value);
   });
 });
 
