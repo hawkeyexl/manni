@@ -39,6 +39,7 @@ import {
   type Domain,
   type Family,
 } from "../core/in-play.js";
+import { withSharedWalks } from "../../meta/core/load-files.js";
 
 export const CHECK_FORMATS = ["pretty", "json", "github"] as const;
 export type CheckFormat = (typeof CHECK_FORMATS)[number];
@@ -236,7 +237,12 @@ function isDocument(label: string): boolean {
   return supportedExtensions().includes(extname(label).toLowerCase());
 }
 
-export async function runFamilyCheck(opts: FamilyCheckOptions): Promise<FamilyCheckRun> {
+/** Every domain walks the same collections, so the run shares one walk per target set. */
+export function runFamilyCheck(opts: FamilyCheckOptions): Promise<FamilyCheckRun> {
+  return withSharedWalks(() => checkUnshared(opts));
+}
+
+async function checkUnshared(opts: FamilyCheckOptions): Promise<FamilyCheckRun> {
   const cwd = resolve(opts.cwd ?? process.cwd());
   const onNotice = opts.onNotice ?? ((): void => undefined);
   const family = await loadFamily(cwd, opts.configPath);

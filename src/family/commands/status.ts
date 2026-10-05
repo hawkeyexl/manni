@@ -24,6 +24,7 @@ import {
   type Domain,
   type Family,
 } from "../core/in-play.js";
+import { withSharedWalks } from "../../meta/core/load-files.js";
 
 export const STATUS_FORMATS = ["pretty", "json"] as const;
 export type StatusFormat = (typeof STATUS_FORMATS)[number];
@@ -123,7 +124,12 @@ async function row(domain: Domain, family: Family, cwd: string, members: readonl
   }
 }
 
-export async function runStatus(opts: StatusOptions = {}): Promise<StatusReport> {
+/** Every domain walks the same collections, so the run shares one walk per target set. */
+export function runStatus(opts: StatusOptions = {}): Promise<StatusReport> {
+  return withSharedWalks(() => statusUnshared(opts));
+}
+
+async function statusUnshared(opts: StatusOptions): Promise<StatusReport> {
   const cwd = resolve(opts.cwd ?? process.cwd());
   const family = await loadFamily(cwd, opts.configPath);
   const members = family.collections.length === 0 ? [] : await listMembers(family, cwd);
