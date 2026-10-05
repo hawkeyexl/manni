@@ -164,10 +164,15 @@ export async function runTest(opts: RunTestOptions = {}): Promise<TestRunResult>
     throw new TestError("--collection needs a config file to select from.");
   }
 
-  const ddConfig = file === null ? undefined : docDetectiveConfigPath(file.tools, file.dir);
-  if (file !== null && ddConfig !== undefined && !existsSync(ddConfig)) {
-    const written = file.tools["doc-detective"]?.config ?? ddConfig;
-    throw new TestError(`${file.source}: tools.doc-detective.config "${written}" does not exist.`);
+  // The path as written names the file in the refusal; the resolved one is
+  // what Doc Detective is given.
+  const written = file?.tools["doc-detective"]?.config;
+  let ddConfig: string | undefined;
+  if (file !== null && written !== undefined) {
+    ddConfig = docDetectiveConfigPath(file.tools, file.dir);
+    if (ddConfig !== undefined && !existsSync(ddConfig)) {
+      throw new TestError(`${file.source}: tools.doc-detective.config "${written}" does not exist.`);
+    }
   }
 
   let inputs: string[] | undefined;
