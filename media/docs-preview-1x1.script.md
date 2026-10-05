@@ -65,8 +65,8 @@ scratch repository: the material is this repository and one fixture.
   printed 295 lines. Lines 5 to 285 of `media/capture-docs/preview.ans` are
   astro's build log. The replay draws one marker in their place:
   `... 281 lines of astro build output cut (15.4 s) ...`. It is in the accent
-  colour and in italics, which no tool output in frame uses, so it reads as an
-  edit and not as bytes. Every other line is kept, in order, with its colour.
+  colour and in italics. No tool output in frame uses either, so it reads as
+  an edit and not as bytes. Every other line is kept, in order, with its colour.
   `media/remotion/scripts/captures-docs.mjs` does the cut and computes both
   numbers from the capture.
 - **The build wait is compressed, and its real time is on screen twice.** The
@@ -78,9 +78,9 @@ scratch repository: the material is this repository and one fixture.
   between Enter and the output. `time` is typed, and its three lines are in
   frame unedited, which design.md names the strongest form of disclosure.
 - **Every other offset is real, at 1x.** `capture.sh` stamps each preview line
-  with its millisecond after Enter. The first announce lands at 1148 ms, the
-  second at 16777 ms (the build's 15.4 s compressed as above), and astro's
-  `Local` line 127 ms after that. The Hugo refusal lands at 1080 ms.
+  with its millisecond after Enter. The first announce lands at 1148 ms and
+  the second at 16777 ms, with the build's 15.4 s compressed as above. Astro's
+  `Local` line follows 127 ms after that. The Hugo refusal lands at 1080 ms.
 
 ### Rendering
 
@@ -137,7 +137,7 @@ Beat 1 highlights the `run: npx astro preview` line. Beat 2 highlights both
 `4m36.662s`.
 
 "13 frameworks" is the only claim not shown on screen. It is carried as
-caption, and it is checked against `src/docs/core/detect.ts`, which lists
+caption. It is checked against `src/docs/core/detect.ts`, which lists
 Mintlify, Fern, Starlight, Docusaurus, VitePress, Nextra, Fumadocs, Rspress,
 MkDocs, Zensical, Sphinx, Hugo and Jekyll.
 
