@@ -53,6 +53,17 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
     }
   });
 
+  it("sets nothing up when the config declares no collections", async () => {
+    dir = fixtureRepo("everything");
+    const config = join(dir, "manni.config.yaml");
+    writeFileSync(config, readFileSync(config, "utf8").replace(/^collections:[\s\S]*?(?=^\S)/m, ""));
+    const report = await runStatus({ cwd: dir });
+    expect(report.collections).toEqual([]);
+    for (const d of report.domains.filter((x) => x.status !== "not-checked")) {
+      expect(d).toEqual({ name: d.name, status: "not-set-up", reason: "no collections: in manni.config.yaml" });
+    }
+  });
+
   it("puts meta in play for a page that names its own $schema", async () => {
     dir = fixtureRepo("only-citations");
     writeFileSync(join(dir, "docs/own.md"), "---\n$schema: manni:core:1.0.0\ntitle: Own\n---\n# Own\n");

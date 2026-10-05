@@ -110,6 +110,12 @@ export async function runStatus(opts: StatusOptions = {}): Promise<StatusReport>
   const members = family.collections.length === 0 ? [] : await listMembers(family, cwd);
   const domains: DomainRow[] = [];
   for (const domain of ["meta", "cite", "lint", "docevals", "term", "graph"] as const) {
+    // `check` only reads collection members, so with no collections every
+    // domain has nothing to check, whatever sections the config carries.
+    if (family.collections.length === 0) {
+      domains.push({ name: domain, status: "not-set-up", reason: "no collections: in manni.config.yaml" });
+      continue;
+    }
     try {
       domains.push(await row(domain, family, cwd, members));
     } catch (err) {
