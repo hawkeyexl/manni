@@ -335,6 +335,6 @@ function normalizeExamples(
 
 function anchorList(raw: unknown): string[] | undefined {
   if (typeof raw === "string") return [raw];
-  if (Array.isArray(raw)) return raw as string[];
+  if (Array.isArray(raw)) return raw.filter((e): e is string => typeof e === "string");
   return undefined;
 }
