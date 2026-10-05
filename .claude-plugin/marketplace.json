@@ -1,0 +1,12 @@
+{
+  "name": "manni",
+  "owner": { "name": "hawkeyexl" },
+  "metadata": { "description": "Claude Code plugins for the manni family of documentation tools." },
+  "plugins": [
+    {
+      "name": "manni",
+      "source": "./plugin/manni",
+      "description": "Keeps the docs an agent writes green: status at session start, a check after each edit, a gate before it stops, and skills to set up, fix and author."
+    }
+  ]
+}

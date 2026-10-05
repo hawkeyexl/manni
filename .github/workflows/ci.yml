@@ -105,6 +105,13 @@ jobs:
       # above all a Dependabot bump to a workflow's action, whose PR goes red
       # here with the command that fixes it.
       - run: npm run docs:check-versions
+      # The plugin is a public surface Claude Code reads, so it is validated by
+      # the program that reads it: the plugin's own manifest, hooks and skills,
+      # then the marketplace at the repository root.
+      - name: Validate the Claude Code plugin and marketplace
+        run: |
+          npx -y @anthropic-ai/claude-code plugin validate --strict plugin/manni
+          npx -y @anthropic-ai/claude-code plugin validate --strict .
       # A GFM table row has to be one source line. #154 reflowed fifteen of
       # them onto a second line and every gate here stayed green, because the
       # site still built and every link still resolved — the cells just
