@@ -121,7 +121,7 @@ jobs:
       # empty: `list` prints nothing, and a `run --all-projects` exits 2 with no
       # traces matched. The tracevals pages say this is what the workflow does,
       # so the two must stay in step.
-      - uses: doc-detective/github-action@a2a4f5ceb1abfa55d567e4f6766223082ece2c18 # v1
+      - uses: doc-detective/github-action@49c73785b0ff864356ec2ef71b728f0623a8621d # v1
         env:
           CLAUDE_CONFIG_DIR: test/tracevals/fixtures/home/.claude
         with:
