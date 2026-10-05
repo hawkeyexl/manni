@@ -13,7 +13,7 @@ Imported from [hawkeyexl/moose-tracevals](https://github.com/hawkeyexl/moose-tra
 at fed983b. Its sources live under `src/tracevals/`, its tests under
 `test/tracevals/{unit,integration,fixtures}` with `test/tracevals/helpers.ts`,
 its imported ADR log (closed at 01033) under `docs/proposals/tracevals/`, its
-`SessionStart` hook under `plugin/tracevals/hooks/`, and its site under
+`SessionStart` hook under `plugin/manni/hooks/`, and its site under
 `docs/src/content/docs/tracevals/`. Its content strategy is the family's, in
 `docs/content-strategy/`. It ships no schema file: artifacts validate against
 the registered `manni:artifact-evals:1.1.0` in `src/meta/schemas/`, bundled

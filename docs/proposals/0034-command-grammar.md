@@ -1,6 +1,6 @@
 # 0034: The command grammar
 
-- **Status:** Accepted
+- **Status:** Superseded in part by [0078](0078-family-check-status-and-claude-code-plugin.md)
 - **Serves:** Every persona; it is the shape of the CLI surface, as
   [0005](0005-command-parity.md) and [0016](0016-flag-ownership.md) are
 - **Depends on:** [0033](0033-manni-monorepo.md), the umbrella this grammar
