@@ -1010,17 +1010,17 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-62db5bca580e41b7ecbc387dba1966ed1b56f1cdc447d663750b06bfedc5a1b1
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 519
+        lines: 531
         integrity: sha256-b9df48677e4346781aca47216155b78c26d5ed6e97f080f0ea53d5e5fa1e30be
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 84030a1550dcfc98e97878357efaf5dae19365eb
     - id: derive-provenance-from-on-moved-or-stale
       claim:
         integrity: sha256-62db5bca580e41b7ecbc387dba1966ed1b56f1cdc447d663750b06bfedc5a1b1
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 772
+        lines: 784
         integrity: sha256-731f33be45282b9fe7d97b8a6319358ea8ee05d74b15c493815ffc3376c5348e
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 84030a1550dcfc98e97878357efaf5dae19365eb
     - id: derive-summary-counts-ranges
       claim:
         integrity: sha256-7e87bbc3d6650b0aa21256f435767ea8de4ae227867c718c674deedfdba67462
@@ -1136,9 +1136,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-483eaf04d4dd779a79ee563f6a5152b636f5208c3600a792479777e30002f1c8
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 702-751
+        lines: 714-763
         integrity: sha256-bfcc91cc1e5f0b57f4cc7db89cdeb2f79f98263265d569c6b976f943d278c6d6
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 84030a1550dcfc98e97878357efaf5dae19365eb
     - id: managed-field-written-when-non-null-and-different
       claim:
         integrity: sha256-c7380e6ed1c09acaa9f23460aff9428fcb46ba4a3bd2b2af4ec2a691182fd9d3
@@ -1214,9 +1214,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-b8fc1f95a86e27962d2280bfa36efc3ac0479fe4d8b332aa5438003315848170
       source:
         file: src/meta/core/derive/provenance.ts
-        lines: 866-868
+        lines: 878-880
         integrity: sha256-ca0a636ac51279dde536411183c5abfeb21354d081a7f8742a0b5155d1a4b8b8
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 84030a1550dcfc98e97878357efaf5dae19365eb
     - id: generated-by-falls-back-to-the-env-var
       claim:
         lines: 1016
