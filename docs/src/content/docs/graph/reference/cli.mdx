@@ -138,6 +138,13 @@ is still a successful one. A repository git cannot read warns once and builds
 the rest. A near-miss frontmatter key warns and derives nothing. Neither
 changes the exit code.
 
+Each page's parsed body is cached in `.manni/graph/analyze-cache/` under the
+working directory, one file per page. A page is parsed again only when its
+bytes, its path, its `--as` format or the manni version changed. Links resolve
+against the current pages on every run, so the cache never changes the Turtle.
+A damaged entry is parsed afresh, and deleting the directory is always safe.
+The graph check in `manni check` reads the same cache.
+
 ### Arguments
 
 | Argument | Description |
