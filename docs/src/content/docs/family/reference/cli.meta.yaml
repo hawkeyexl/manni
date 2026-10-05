@@ -19,8 +19,9 @@ docs/src/content/docs/family/reference/cli.mdx:
       type: capability
       grader: ai
   provenance:
-    - generated-by: Claude Sonnet 5.5
-      lines: 2-396
-      integrity: sha256-402e14ea69a08c65f503a1e34fd4189a6ae3dade69f97f6368e946c84549c4fa
+    - generated-by: Claude Opus 5.5
+      lines: 2-399
+      integrity: sha256-1e51f19100cdf2cb7e1b64b4b26e1583a49b0098b9c32c683360b57df9ab3a8b
   owner:
     - "@hawkeyexl"
+  created: 2026-10-05
