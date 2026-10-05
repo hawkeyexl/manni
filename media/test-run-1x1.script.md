@@ -45,8 +45,8 @@ in for "the documented command is wrong" without needing a network or an app.
 
 - **`--no-progress` is typed, not hidden.** On a terminal, `manni test run`
   streams Doc Detective's own log to stderr by default. For this one page that
-  log is about 78 KB, most of it schema strict-mode warnings from Doc
-  Detective's validator, ahead of the report. `--no-progress` is what a person
+  log is about 78 KB, ahead of the report. Most of it is schema strict-mode
+  warnings from Doc Detective's validator. `--no-progress` is what a person
   types to get the report alone, so it is what the frame shows.
 - **The wait is compressed, and the real time is on screen.** Each run takes
   7.8 to 8.0 s (`capture-test/latency.txt`), nearly all of it Doc Detective
