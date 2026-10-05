@@ -67,12 +67,10 @@ const DEFAULT_IGNORE = ["**/node_modules/**", "**/.git/**"];
 
 const NO_RESULTS = "Doc Detective wrote no results to read. Run doc-detective directly to see why.";
 
-const EMPTY: TestRunResult = {
-  results: null,
-  findings: [],
-  tests: { pass: 0, fail: 0, warning: 0, skipped: 0 },
-  exitCode: 0,
-};
+/** A run with nothing to report; a fresh object each time, so no caller shares one. */
+function empty(results: DocDetectiveResults | null = null): TestRunResult {
+  return { results, findings: [], tests: { pass: 0, fail: 0, warning: 0, skipped: 0 }, exitCode: 0 };
+}
 
 const toError = (message: string): Error => new TestError(message);
 
@@ -176,7 +174,7 @@ export async function runTest(opts: RunTestOptions = {}): Promise<TestRunResult>
   if (paths.length > 0) {
     inputs = await positionalInputs(paths, cwd, allowEmpty);
     if (inputs.length === 0) {
-      if (allowEmpty) return EMPTY;
+      if (allowEmpty) return empty();
       const tried = paths.map((p) => `"${p}"`).join(", ");
       throw new TestError(
         `No files matched. Patterns tried: ${tried}. Pass --allow-empty if that is expected.`,
@@ -185,7 +183,7 @@ export async function runTest(opts: RunTestOptions = {}): Promise<TestRunResult>
   } else if (file !== null && wanted.length > 0) {
     inputs = await collectionInputs(file, wanted, cwd, allowEmpty);
     if (inputs.length === 0) {
-      if (allowEmpty) return EMPTY;
+      if (allowEmpty) return empty();
       throw new TestError("--collection matched no files. Pass --allow-empty if that is expected.");
     }
   } else if (
@@ -219,8 +217,9 @@ export async function runTest(opts: RunTestOptions = {}): Promise<TestRunResult>
     const results = await readResults(outDir);
     const tests = testCounts(results);
     const total = tests.pass + tests.fail + tests.warning + tests.skipped;
-    if (results === null || total === 0) {
-      if (allowEmpty) return { ...EMPTY, results };
+    // A `null` results file counts as zero tests, so `total` covers it.
+    if (total === 0) {
+      if (allowEmpty) return empty(results);
       throw new TestError(
         "Doc Detective found no tests in the inputs. Pass --allow-empty if that is expected.",
       );

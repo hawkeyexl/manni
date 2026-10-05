@@ -172,6 +172,16 @@ describe("runTest: --collection", () => {
     expect(calls).toHaveLength(0);
   });
 
+  it("gives each empty run its own result, so one caller's edit reaches no other", async () => {
+    const opts = { collection: ["empty"], allowEmpty: true, cwd, spawn: fakeSpawn(null, calls) };
+    const first = await runTest(opts);
+    first.findings.push({ file: "x.md", result: "FAIL", description: "x" });
+    first.tests.fail += 1;
+    const second = await runTest(opts);
+    expect(second.findings).toEqual([]);
+    expect(second.tests.fail).toBe(0);
+  });
+
   it("refuses an unknown name with the shared message", async () => {
     await expect(
       runTest({ collection: ["Site"], cwd, spawn: fakeSpawn(null, calls) }),

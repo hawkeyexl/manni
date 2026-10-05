@@ -88,6 +88,8 @@ export function collectFindings(results: DocDetectiveResults | null, cwd: string
   for (const spec of records(results["specs"])) {
     for (const test of records(spec["tests"])) {
       const contentPath = test["contentPath"] ?? spec["contentPath"];
+      // Without a contentPath the file is unknown, and `""` says so: the
+      // github reporter then leaves `file=` off the annotation.
       const file =
         typeof contentPath === "string"
           ? relative(cwd, contentPath).replace(/\\/g, "/")

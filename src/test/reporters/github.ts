@@ -9,8 +9,12 @@ import { summaryLine } from "./summary.js";
 export function renderGithub(result: TestRunResult): string {
   const commands = result.findings.map((f) => {
     const level = f.result === "FAIL" ? "error" : "warning";
-    const line = f.line === undefined ? "" : `,line=${String(f.line)}`;
-    return `::${level} file=${escapeWorkflowCommandProperty(f.file)}${line},title=Doc Detective::${escapeWorkflowCommandMessage(f.description)}`;
+    const props = [
+      ...(f.file === "" ? [] : [`file=${escapeWorkflowCommandProperty(f.file)}`]),
+      ...(f.line === undefined ? [] : [`line=${String(f.line)}`]),
+      "title=Doc Detective",
+    ].join(",");
+    return `::${level} ${props}::${escapeWorkflowCommandMessage(f.description)}`;
   });
   return [...commands, summaryLine(result.tests)].join("\n");
 }

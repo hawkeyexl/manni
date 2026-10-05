@@ -14,7 +14,7 @@ const failing: TestRunResult = {
     { file: "docs/guide.md", line: 12, result: "FAIL", description: "Returned exit code 1. Expected one of [0]." },
     { file: "docs/guide.md", line: 30, result: "WARNING", description: "Took 4100ms; the timeout is 3000ms." },
   ],
-  tests: { pass: 1, fail: 1, warning: 0, skipped: 0 },
+  tests: { pass: 0, fail: 1, warning: 1, skipped: 0 },
   exitCode: 1,
 };
 
@@ -33,7 +33,7 @@ describe("renderPretty", () => {
         "  12  FAIL     Returned exit code 1. Expected one of [0].",
         "  30  WARNING  Took 4100ms; the timeout is 3000ms.",
         "",
-        "2 tests: 1 passed, 1 failed, 0 warnings, 0 skipped",
+        "2 tests: 0 passed, 1 failed, 1 warning, 0 skipped",
       ].join("\n"),
     );
   });
@@ -99,9 +99,17 @@ describe("renderGithub", () => {
       [
         "::error file=docs/guide.md,line=12,title=Doc Detective::Returned exit code 1. Expected one of [0].",
         "::warning file=docs/guide.md,line=30,title=Doc Detective::Took 4100ms; the timeout is 3000ms.",
-        "2 tests: 1 passed, 1 failed, 0 warnings, 0 skipped",
+        "2 tests: 0 passed, 1 failed, 1 warning, 0 skipped",
       ].join("\n"),
     );
+  });
+
+  it("leaves file= off a step whose page Doc Detective did not name", () => {
+    const unknown: TestRunResult = {
+      ...failing,
+      findings: [{ file: "", line: 3, result: "FAIL", description: "broke" }],
+    };
+    expect(renderGithub(unknown).split("\n")[0]).toBe("::error line=3,title=Doc Detective::broke");
   });
 
   it("escapes the file property and the message", () => {
