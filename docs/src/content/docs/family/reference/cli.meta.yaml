@@ -41,8 +41,8 @@ docs/src/content/docs/family/reference/cli.mdx:
       lines: 243-261
       integrity: sha256-2b81895df38769ce74e154e182deeb576989ca378fea33a974004e5cb626d9ce
     - generated-by: Claude Opus 5.5
-      lines: 263-268
-      integrity: sha256-77bfaa220114c89448ae2657cc609f8afcea63349d8cbea80209c843c6dd204e
+      lines: 264-268
+      integrity: sha256-bbf4c605fce49507091b387b2e299c1984b58d12724b6e037d27857dc2fc479a
     - generated-by: Claude Opus 5.5
       lines: 271-401
       integrity: sha256-10c7a58417e592e4d017a835e4a5f1c447ca7e9773e93b59a46160fc1bb1e1ce
