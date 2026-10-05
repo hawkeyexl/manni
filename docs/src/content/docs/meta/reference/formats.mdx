@@ -26,7 +26,7 @@ sample-questions:
 graph:
   label: Supported formats reference
   type: reference
-last-updated: 2026-09-26
+last-updated: 2026-10-05
 tags:
   - formats
   - extractors
@@ -112,8 +112,8 @@ A new XML attribute is added to the root element's start tag. A page with no
 `<head>` of its own is refused rather than guessed at.
 
 An attribute holds one line, so a map or a list is written as
-one line of YAML flow style, `{ label: Install, alt-labels: [ setup ] }`, which
-the read side parses back to the same value. A string holding a line break
+one line of YAML flow style: `{ label: Install, alt-labels: [ setup ] }`. The
+read side parses that back to the same value. A string holding a line break
 cannot fit and is refused.
 
 {/* cite formats-schemas-reports-writability */}

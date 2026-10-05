@@ -2,8 +2,8 @@
 
 - **Status:** Proposed
 - **Serves:** Maya · M18, "See the docset as a graph, and find what nothing
-  links to", M19, "See what a change to one page affects before making it",
-  and M20, "Fill the categorization nobody wrote", for docsets that are not
+  links to". M19, "See what a change to one page affects before making it".
+  M20, "Fill the categorization nobody wrote". Each for a docset that is not
   Markdown.
 - **Depends on:** [0051](0051-graph-domain.md), the domain and its input
   surface. [0020](0020-element-metadata.md), for where HTML and DITA metadata
@@ -16,11 +16,11 @@
   the only edit. [0046](0046-provenance-pins.md), for the sentence that
   leaves `meta-provenance` out of HTML and XML pages because an attribute
   cannot hold a list. § 4 below makes the list fit.
-- **Touches:** `src/lint/types.ts`, `src/lint/parsers/{index,sectionize,metadata,html,xml,asciidoc,rst}.ts`,
-  `src/lint/commands/lint.ts`, `src/meta/extractors/{html-write,xml-write}.ts`,
-  `src/graph/core/{analyze,discover,config,search-index,iirds-package,external,fill-guard}.ts`,
+- **Touches:** `src/lint/types.ts`, `src/lint/parsers/{index,sectionize,metadata,markdown,html,xml,asciidoc,rst}.ts`,
+  `src/lint/commands/{lint,templates}.ts`, `src/meta/extractors/{html-write,xml-write,dita-write}.ts`,
+  `src/graph/core/{analyze,discover,config,search-index,iirds-package,external,fill-guard,frontmatter-edit}.ts`,
   `src/graph/commands/fill.ts`, `src/graph/cli.ts`, `test/**`,
-  `docs/src/content/docs/graph/**`
+  `docs/src/content/docs/{graph,meta/reference}/**`
 - **Verdict:** graph reads HTML, XML (DITA, DITA maps and DocBook), AsciiDoc
   and reStructuredText through lint's parsers. Markdown and MDX keep graph's
   own reader and every golden. `--ext` defaults to lint's walk set. `fill`
@@ -83,7 +83,7 @@ Markdown and MDX keep graph's mdast walk. It is what every golden pins, and
 it reads link references and JSX attributes that lint's tree flattens.
 
 Every other format takes lint's tree, meta's extractor for its metadata, and
-graph's `classifyLink` for its links, so a link resolves the same way
+graph's `classifyLink` for its links. A link therefore resolves the same way
 whatever page it was written in. A section's anchor is the source's id
 verbatim when an IRI fragment accepts it unchanged, else the slugged title.
 `GUID-A1B2-C3D4` stays `GUID-A1B2-C3D4`, so a link written to it reaches it.
@@ -115,9 +115,9 @@ document.
 ### 4. `fill` writes through meta
 
 Page writes for Markdown and MDX keep graph's YAML editor. Every other format
-goes through its meta extractor's `apply`, with the merged `graph` map, so
-HTML gets a `<meta name="graph">`, DITA an `<othermeta>`, and a fenced
-AsciiDoc or reStructuredText page its fence. The fill guard simulates with
+goes through its meta extractor's `apply`, with the merged `graph` map. HTML
+gets a `<meta name="graph">`, DITA an `<othermeta>`, and a fenced AsciiDoc or
+reStructuredText page its fence. The fill guard simulates with
 the same function, so what is checked is what is written. A writer's refusal
 becomes that page's `error`, with meta's message verbatim.
 
@@ -173,8 +173,8 @@ with `--ext`.
 ### 4. Why not write fill output to `{page}.meta.yaml` for every non-Markdown page?
 
 It would be the smaller change. It would also put a page's categorization in
-a second file the page's own tooling never reads, when meta already writes
-each format in its native place.
+a second file the page's own tooling never reads. meta already writes each
+format in its native place.
 
 ## Consequences
 
