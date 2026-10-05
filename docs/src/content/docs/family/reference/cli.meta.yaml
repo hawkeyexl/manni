@@ -20,8 +20,23 @@ docs/src/content/docs/family/reference/cli.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-399
-      integrity: sha256-1e51f19100cdf2cb7e1b64b4b26e1583a49b0098b9c32c683360b57df9ab3a8b
+      lines: 2-101
+      integrity: sha256-8680067da5278319797246fa205e5e8115925cf1f2524c7f3bb525dad7d4461e
+    - generated-by: Claude Opus 5.5
+      lines: 103-113
+      integrity: sha256-c4f5c41727388fb1a89fd855fd77af4a73521d9695f1e331482ba73222e60a39
+    - generated-by: Claude Opus 5.5
+      lines: 117-241
+      integrity: sha256-37ea81adea1041252ecca2ae44aab6f71a7eb1c272166b002bb213bd752f1cd3
+    - generated-by: Claude Opus 5.5
+      lines: 243-261
+      integrity: sha256-2b81895df38769ce74e154e182deeb576989ca378fea33a974004e5cb626d9ce
+    - generated-by: Claude Opus 5.5
+      lines: 263-268
+      integrity: sha256-77bfaa220114c89448ae2657cc609f8afcea63349d8cbea80209c843c6dd204e
+    - generated-by: Claude Opus 5.5
+      lines: 271-401
+      integrity: sha256-10c7a58417e592e4d017a835e4a5f1c447ca7e9773e93b59a46160fc1bb1e1ce
   owner:
     - "@hawkeyexl"
   created: 2026-10-05

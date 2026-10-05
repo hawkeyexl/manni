@@ -6,7 +6,7 @@
  * their own reporters' output, so a report is compared against the domain
  * core's own `-f json` where the output is deterministic.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -98,6 +98,29 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
     edit(dir, "src/limits.ts", (t) => t.replace("FETCH_TIMEOUT_MS = 10_000", "FETCH_TIMEOUT_MS = 20_000"));
     const drifted = await runFamilyCheck({ cwd: dir, scope: { kind: "all" } });
     expect(byCommand(drifted, "cite check").status).toBe("fail");
+  });
+
+  it("a session that only deletes a cited source still runs the set-wide checks", async () => {
+    dir = fixtureRepo("only-citations");
+    rmSync(join(dir, "src/limits.ts"));
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "changed" } });
+    expect(byCommand(run, "cite check").status).toBe("fail");
+  });
+
+  it("a page that does not parse fails nothing where meta is not set up", async () => {
+    dir = fixtureRepo("only-docevals");
+    writeFileSync(join(dir, "docs/broken.md"), "---\ntitle: [unclosed\n---\n# Broken\n");
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "paths", paths: ["docs/broken.md"] } });
+    expect(byCommand(run, "meta validate").status).toBe("skipped");
+  });
+
+  it("a member that is not a document is left out of the per-file checks", async () => {
+    dir = fixtureRepo("only-docevals");
+    edit(dir, "manni.config.yaml", (t) => t.replace('"docs/**/*.md"', '"docs/**"'));
+    writeFileSync(join(dir, "docs/diagram.svg"), "<svg/>\n");
+    const run = await runFamilyCheck({ cwd: dir, scope: { kind: "paths", paths: ["docs/diagram.svg", "docs/page.md"] } });
+    expect(run.files).toEqual(["docs/page.md"]);
+    expect(run.checks.filter((c) => c.status === "error")).toEqual([]);
   });
 
   it("only graph: graph builds in memory and checks, writing no file", async () => {
@@ -291,6 +314,15 @@ describe.skipIf(!gitAvailable())("hookReply", () => {
     const doc = JSON.parse(reply.stdout ?? "") as { decision: string; reason: string };
     expect(doc.decision).toBe("block");
     expect(doc.reason.startsWith("manni found errors in the files you changed. Fix them, then finish.\n\nmeta validate\n")).toBe(true);
+  });
+
+  it("a block carries the failing checks' reports, not the passing ones", () => {
+    const mixed: FamilyCheckRun = {
+      ...failing,
+      checks: [...failing.checks, { command: "docevals run", status: "pass", render: () => "PASSING OUTPUT" }],
+    };
+    expect(hookReply(mixed, env("post-tool-use-member")).stderr).not.toContain("PASSING OUTPUT");
+    expect(hookReply(mixed, env("stop")).stdout).not.toContain("PASSING OUTPUT");
   });
 
   it("before stopping after one repair pass, the user gets a message and the agent stops", () => {

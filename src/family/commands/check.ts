@@ -43,6 +43,7 @@ import { changedFiles } from "../core/changed.js";
 import type { Envelope } from "../core/envelope.js";
 import {
   COMMANDS,
+  DOMAINS,
   META_DEFAULTS_ONLY,
   NOT_SET_UP,
   collectionsOf,
@@ -231,7 +232,7 @@ export async function runFamilyCheck(opts: FamilyCheckOptions): Promise<FamilyCh
     case "all":
       files = await listMembers(family, cwd);
       inputs = [];
-      domains = ["meta", "cite", "lint", "docevals", "term", "graph"];
+      domains = [...DOMAINS];
       break;
     case "paths": {
       const { files: named } = await resolveTargetSet({
@@ -243,15 +244,16 @@ export async function runFamilyCheck(opts: FamilyCheckOptions): Promise<FamilyCh
       if (outside.length > 0) {
         onNotice(`Skipped ${plural(outside.length, "file")} outside every collection: ${outside.join(", ")}`);
       }
-      files = named.filter(isMember);
+      // A collection globbed wide holds assets too; only documents are checked.
+      files = named.filter((label) => isMember(label) && isDocument(label));
       inputs = files;
       domains = files.length > 0 ? ["meta", "cite", "lint", "docevals"] : [];
       break;
     }
     case "changed": {
       const changed = await changedFiles(cwd);
-      if (changed.length === 0) return { status: "pass", files: [], checks: [] };
-      files = changed.map((path) => labelFrom(cwd, path)).filter((l) => isDocument(l) && isMember(l));
+      if (!changed.dirty) return { status: "pass", files: [], checks: [] };
+      files = changed.files.map((path) => labelFrom(cwd, path)).filter((l) => isDocument(l) && isMember(l));
       inputs = files;
       domains = [...(files.length > 0 ? (["meta", "lint", "docevals"] as const) : []), "cite", "term", "graph"];
       break;
@@ -283,6 +285,14 @@ function isRan(check: CheckOutcome): check is RanCheck {
 /** The first line of a message, for a one-line context. */
 function firstLine(message: string): string {
   return message.split("\n", 1)[0] ?? "";
+}
+
+/** What an agent is handed when a hook blocks: the failing checks' reports, nothing else. */
+function renderFailures(run: FamilyCheckRun): string {
+  return run.checks
+    .filter((c): c is RanCheck => c.status === "fail")
+    .map((c) => `${c.command}\n${c.render("pretty", false)}`)
+    .join("\n\n");
 }
 
 export function renderPretty(run: FamilyCheckRun, color: boolean): string {
@@ -360,7 +370,7 @@ export function hookReply(run: FamilyCheckRun, envelope: Envelope): HookReply {
     if (failed) {
       return {
         exitCode: 2,
-        stderr: `manni found errors in ${files}. Fix them before you continue.\n\n${renderPretty(run, false)}\n`,
+        stderr: `manni found errors in ${files}. Fix them before you continue.\n\n${renderFailures(run)}\n`,
       };
     }
     const errors = run.checks.filter((c): c is NotRunCheck => c.status === "error");
@@ -378,7 +388,7 @@ export function hookReply(run: FamilyCheckRun, envelope: Envelope): HookReply {
       ? { systemMessage: "manni still reports errors after one repair pass. Run manni check to see them." }
       : {
           decision: "block",
-          reason: `manni found errors in the files you changed. Fix them, then finish.\n\n${renderPretty(run, false)}`,
+          reason: `manni found errors in the files you changed. Fix them, then finish.\n\n${renderFailures(run)}`,
         };
     return { exitCode: 0, stdout: `${JSON.stringify(reply)}\n` };
   }

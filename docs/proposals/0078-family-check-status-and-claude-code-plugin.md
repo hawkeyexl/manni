@@ -124,7 +124,7 @@ errors must never use it.
 
 | Situation | Exit | Output |
 |---|---|---|
-| After an edit, errors | 2 | stderr, `manni found errors in docs/limits.md. Fix them before you continue.`, then the pretty report with color off |
+| After an edit, errors | 2 | stderr, `manni found errors in docs/limits.md. Fix them before you continue.`, then the failing checks' pretty reports with color off |
 | After an edit, a check could not run | 0 | stdout, a `hookSpecificOutput` object with `additionalContext` naming the check and its first error line |
 | Before stopping, errors, `stop_hook_active` false | 0 | stdout, `{"decision":"block","reason":"..."}` with the report |
 | Before stopping, errors, `stop_hook_active` true | 0 | stdout, a `systemMessage` saying errors remain after one repair pass. The agent stops and the user sees it. |

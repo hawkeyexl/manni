@@ -17,6 +17,7 @@ import { runList as listTerms } from "../../term/commands/list.js";
 import type { Envelope } from "../core/envelope.js";
 import {
   COMMANDS,
+  DOMAINS,
   NOT_CHECKED,
   NOT_SET_UP,
   collectionsOf,
@@ -109,7 +110,7 @@ export async function runStatus(opts: StatusOptions = {}): Promise<StatusReport>
   const family = await loadFamily(cwd, opts.configPath);
   const members = family.collections.length === 0 ? [] : await listMembers(family, cwd);
   const domains: DomainRow[] = [];
-  for (const domain of ["meta", "cite", "lint", "docevals", "term", "graph"] as const) {
+  for (const domain of DOMAINS) {
     // `check` only reads collection members, so with no collections every
     // domain has nothing to check, whatever sections the config carries.
     if (family.collections.length === 0) {
@@ -156,18 +157,31 @@ export function renderStatus(report: StatusReport, format: StatusFormat): string
   return [head, "", ...rows].join("\n");
 }
 
+/** The set-wide checks a stop runs, as the briefing names them. */
+const SET_WIDE: ReadonlyArray<readonly [Domain, string]> = [
+  ["cite", "every citation"],
+  ["term", "the glossary"],
+  ["graph", "the graph"],
+];
+
 /** What an agent is told at the start of a session, after the table. */
 export function agentLines(report: StatusReport): string {
   const names = report.collections.map((c) => c.name).join(" or ");
+  const inPlay = new Set(report.domains.filter((d) => d.status === "in-play").map((d) => d.name));
+  const setWide = SET_WIDE.filter(([domain]) => inPlay.has(domain)).map(([, what]) => what);
+  const plus =
+    setWide.length === 0
+      ? ""
+      : `, plus ${setWide.length === 1 ? (setWide[0] ?? "") : `${setWide.slice(0, -1).join(", ")} and ${setWide.at(-1) ?? ""}`}`;
   return [
     `After you edit a file in ${names}, manni check runs on it, and errors come back to you at once.`,
-    "Before you finish, manni check runs on every file you changed, plus every citation, the glossary and the graph. You get one repair pass.",
+    `Before you finish, manni check runs on every file you changed${plus}. You get one repair pass.`,
     "The manni:fix skill says how to repair each finding.",
   ].join("\n");
 }
 
 /** A model id as Claude Code spells one, and nothing a shell would read as more. */
-const MODEL_ID = /^[A-Za-z0-9._:/@[\]-]+$/;
+const MODEL_ID = /^[A-Za-z0-9._:/@-]+$/;
 
 /**
  * Append `export MANNI_GENERATED_BY=<model>` to `$CLAUDE_ENV_FILE`, so every
@@ -176,7 +190,8 @@ const MODEL_ID = /^[A-Za-z0-9._:/@[\]-]+$/;
  */
 export function exportGeneratedBy(envelope: Envelope, env: NodeJS.ProcessEnv = process.env): boolean {
   const file = env.CLAUDE_ENV_FILE;
-  const model = envelope.model;
+  // A context-window suffix such as `[1m]` is a session setting, not the model.
+  const model = envelope.model?.replace(/\[[^\]]*\]$/, "");
   if (model === undefined || !MODEL_ID.test(model)) return false;
   if (file === undefined || file === "" || env.MANNI_GENERATED_BY !== undefined) return false;
   const existing = existsSync(file) ? readFileSync(file, "utf8") : "";

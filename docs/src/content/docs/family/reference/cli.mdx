@@ -130,7 +130,7 @@ when you named it.
 | Input | Per-file checks | Whole-set checks |
 |---|---|---|
 | nothing | Every in-play check over every collection. This is the CI gate. | |
-| paths | `meta`, `cite`, `lint` and `docevals` on the collection members among the paths. | none |
+| paths | `meta`, `cite`, `lint` and `docevals` on the documents among the paths that belong to a collection. | none |
 | a `PostToolUse` hook for `Edit`, `Write`, `MultiEdit` or `NotebookEdit` | `meta`, `cite`, `lint` and `docevals` on the edited file. | none |
 | a `Stop` hook | `meta`, `lint` and `docevals` on the working tree's changed members. | `cite`, `term` and `graph`. |
 
@@ -142,7 +142,8 @@ run on a bare `check` and at a `Stop`, and not when you name files.
 The working tree's changed members are the files `git status` reports against
 `HEAD` that belong to a collection and have a supported document extension.
 That covers modified, added, renamed and untracked files. A deleted file is not
-among them. A clean tree runs nothing, including the whole-set checks.
+among them, but a deletion still counts as a change, so the whole-set checks run.
+A clean tree runs nothing, including the whole-set checks.
 
 Checks run, and print, in a fixed order. For a bare run and for paths it is
 `meta validate`, `cite check`, `lint check`, `docevals run`, `term check`, then
@@ -269,7 +270,7 @@ notices from the domains are dropped.
 
 | Hook event | Situation | Exit | Output |
 |---|---|---|---|
-| `PostToolUse` | Errors in the edited file | `2` | stderr: `manni found errors in <file>. Fix them before you continue.`, a blank line, then the `pretty` report with color off. |
+| `PostToolUse` | Errors in the edited file | `2` | stderr: `manni found errors in <file>. Fix them before you continue.`, a blank line, then the failing checks' `pretty` reports with color off. |
 | `PostToolUse` | A check could not run | `0` | stdout: `{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"manni <check> could not check <file>: <first line of the cause>"}}`. One line per check. |
 | `PostToolUse` | The run itself failed, such as an unreadable config | `0` | stdout: the same `additionalContext`, as `manni check could not check <file>: <first line>`. |
 | `Stop` | Errors, `stop_hook_active` false | `0` | stdout: `{"decision":"block","reason":"manni found errors in the files you changed. Fix them, then finish.\n\n<report>"}` |
@@ -289,14 +290,15 @@ context.
 
 | Situation | Exit | Output |
 |---|---|---|
-| A config with at least one collection | `0` | stdout: the `pretty` table, a blank line, then three lines that say when `check` runs and which skill repairs a finding. |
+| A config with at least one collection | `0` | stdout: the `pretty` table, a blank line, then three lines that say when `check` runs and which skill repairs a finding. The stop line names only the whole-set checks in play. |
 | A config with no collection | `0` | stdout: the table alone. |
 | No config, or a config that cannot be read | `0` | nothing |
 
 After the table, `status` also appends `export MANNI_GENERATED_BY=<model>` to the
 file `CLAUDE_ENV_FILE` names. That happens only when the envelope carries a
 `model`, `CLAUDE_ENV_FILE` is set, and `MANNI_GENERATED_BY` is not already set.
-`model` is a string, or an object with an `id`. A value that holds characters
+`model` is a string, or an object with an `id`. A trailing context-window suffix
+such as `[1m]` is dropped, since it names no model. A value that holds characters
 outside a model id, such as spaces or quotes, is not written.
 
 ## Exit codes

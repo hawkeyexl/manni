@@ -100,12 +100,23 @@ describe("renderStatus", () => {
     expect(JSON.parse(renderStatus(report, "json"))).toEqual(report);
   });
 
-  it("tells an agent what will happen", () => {
+  it("tells an agent what will happen, naming only the set-wide checks in play", () => {
     expect(agentLines(report).split("\n")).toEqual([
       "After you edit a file in site, manni check runs on it, and errors come back to you at once.",
-      "Before you finish, manni check runs on every file you changed, plus every citation, the glossary and the graph. You get one repair pass.",
+      "Before you finish, manni check runs on every file you changed. You get one repair pass.",
       "The manni:fix skill says how to repair each finding.",
     ]);
+    const everything: StatusReport = {
+      ...report,
+      domains: ["cite", "term", "graph"].map((name) => ({ name, status: "in-play" as const, reason: "" })),
+    };
+    expect(agentLines(everything).split("\n")[1]).toBe(
+      "Before you finish, manni check runs on every file you changed, plus every citation, the glossary and the graph. You get one repair pass.",
+    );
+    const citeOnly: StatusReport = { ...report, domains: [{ name: "cite", status: "in-play", reason: "" }] };
+    expect(agentLines(citeOnly).split("\n")[1]).toBe(
+      "Before you finish, manni check runs on every file you changed, plus every citation. You get one repair pass.",
+    );
   });
 });
 
@@ -143,6 +154,14 @@ describe("exportGeneratedBy", () => {
       exportGeneratedBy(env("session-start-model"), { CLAUDE_ENV_FILE: file, MANNI_GENERATED_BY: "someone" }),
     ).toBe(false);
     expect(readFileSync(file, "utf8")).toBe("");
+  });
+
+  it("drops a context-window suffix, which names no model", () => {
+    const file = envFile();
+    const long = parseEnvelope(JSON.stringify({ hook_event_name: "SessionStart", model: "claude-opus-5-5[1m]" }));
+    if (long === undefined) throw new Error("not an envelope");
+    expect(exportGeneratedBy(long, { CLAUDE_ENV_FILE: file })).toBe(true);
+    expect(readFileSync(file, "utf8")).toBe("export MANNI_GENERATED_BY=claude-opus-5-5\n");
   });
 
   it("writes nothing a shell would read as more than a model id", () => {

@@ -26,7 +26,14 @@ describe.skipIf(!gitAvailable())("changedFiles", () => {
   it("is empty on a clean tree", async () => {
     dir = makeTempRepo({ files: { "a.md": "a\n" } });
     commitAll(dir, "init");
-    expect(await changedFiles(dir)).toEqual([]);
+    expect(await changedFiles(dir)).toEqual({ files: [], dirty: false });
+  });
+
+  it("counts a deletion alone as a change, with no file left to check", async () => {
+    dir = makeTempRepo({ files: { "a.md": "a\n", "b.md": "b\n" } });
+    commitAll(dir, "init");
+    rmSync(join(dir, "b.md"));
+    expect(await changedFiles(dir)).toEqual({ files: [], dirty: true });
   });
 
   it("names every change against HEAD, absolute, from a subdirectory too", async () => {
@@ -39,7 +46,8 @@ describe.skipIf(!gitAvailable())("changedFiles", () => {
     writeFileSync(join(dir, "docs/new.md"), "new\n");
 
     const changed = await changedFiles(join(dir, "docs"));
-    expect(changed.sort()).toEqual(
+    expect(changed.dirty).toBe(true);
+    expect(changed.files.sort()).toEqual(
       ["docs/a.md", "docs/new.md", "docs/renamed.md"].map((p) => join(dir ?? "", p)).sort(),
     );
   });

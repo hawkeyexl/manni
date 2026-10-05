@@ -514,6 +514,24 @@ export async function runValidate(
   const results: ValidationResult[] = [];
   /** Files `skipDefaultOnly` left out, so a corpus check's finding on one is dropped with it. */
   const skippedDefaultOnly = new Set<string>();
+  /** Whether the config alone gives `label` only the built-in default set. */
+  const defaultOnly = (label: string, members: readonly string[]): boolean => {
+    try {
+      return (
+        resolveSchemaSetWithSource({
+          filePath: label,
+          fileSchema: undefined,
+          cliSchemas: opts.cliSchemas,
+          config,
+          memberOf: members,
+          fileBase: cwd,
+          trustRoot,
+        }).source === "default"
+      );
+    } catch {
+      return false;
+    }
+  };
   // Field-joined entries each document matched (0039), keyed by field then
   // value: the duplicate finding and the post-loop orphan check both need
   // to know which documents claimed which value.
@@ -685,6 +703,12 @@ export async function runValidate(
       // A `DocmetaError` out of an extractor is operational, not a bad
       // document — it aborts the run rather than counting as a file failure.
       if (err instanceof DocmetaError) throw err;
+      // A page that does not parse names no `$schema`, so `skipDefaultOnly`
+      // judges it by what the config alone would apply to it.
+      if (opts.skipDefaultOnly === true && defaultOnly(label, members)) {
+        skippedDefaultOnly.add(label);
+        return;
+      }
       results.push(
         parseErrorResult(label, extractor.name, errorMessage(err), "parse"),
       );

@@ -40,7 +40,17 @@ export function parsePorcelain(output: string): string[] {
   return paths;
 }
 
-export async function changedFiles(cwd: string): Promise<string[]> {
+export interface ChangedTree {
+  /** The changed files left to check, absolute. */
+  files: string[];
+  /**
+   * Whether the tree differs from `HEAD` at all. A deletion alone leaves no
+   * file to check, but it can still break a citation to what it removed.
+   */
+  dirty: boolean;
+}
+
+export async function changedFiles(cwd: string): Promise<ChangedTree> {
   // Rebased through `cwd`'s own prefix rather than resolved from the
   // top-level git prints: on Windows that is the long spelling of a path the
   // caller may hold in its 8.3 short form, and the two would never compare.
@@ -49,5 +59,8 @@ export async function changedFiles(cwd: string): Promise<string[]> {
     ["status", "--porcelain=v1", "-z", "--untracked-files=all"],
     cwd,
   );
-  return parsePorcelain(status).map((path) => resolve(cwd, posix.relative(prefix, path)));
+  return {
+    files: parsePorcelain(status).map((path) => resolve(cwd, posix.relative(prefix, path))),
+    dirty: status.length > 0,
+  };
 }
