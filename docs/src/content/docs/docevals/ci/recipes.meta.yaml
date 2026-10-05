@@ -7,16 +7,25 @@ docs/src/content/docs/docevals/ci/recipes.mdx:
       lines: 68
       integrity: sha256-f9ee1f84295b677b7a645a234ff589c6a2746efb4de2499f017a9b21bd162c75
     - generated-by: Claude Fable 5.1
-      lines: 69-90
-      integrity: sha256-b83f71aaaab1df7132b09e253b01b1d8cb2ab125f50fa2e4fb0010e730a5d7e7
+      lines: 69-74
+      integrity: sha256-23c3c795d1e81a70dc94c233800377feb65ea39dc3a048633dd0e7947528021d
+    - generated-by: Claude Opus 5.5
+      lines: 76-78
+      integrity: sha256-a722f102d631f1c1db6e7f8ff43d9c91b23ef5a1aa07c8e3b8ce88e111a67f91
+    - generated-by: Claude Fable 5.1
+      lines: 80-91
+      integrity: sha256-e1385e1feca3793105eb27c36a2d3be628f51f9e4e97b94891b3255df5dbb087
     - generated-by: Claude Opus 5
-      lines: 92
+      lines: 93
       integrity: sha256-3b6f00aa3b55d0fd86889a911bddedd9ff583f8b0b34ce7666eca73230ef58f2
     - generated-by: Claude Fable 5.1
-      lines: 93-94
+      lines: 94-95
       integrity: sha256-9e100178efb471634fce2b46ad139f674b99d040bc596076e68ab654e1e7d837
+    - generated-by: Claude Opus 5.5
+      lines: 97-99
+      integrity: sha256-f434e032b9081d600461c96a048a0198738654c167eb5004fa2ffef0954d1944
     - generated-by: Claude Fable 5.1
-      lines: 99-104
+      lines: 101-106
       integrity: sha256-38baee021eaf732e6416f768c58a5ab90926bf75fbc684e5c6b9b94fad7314f3
   owner:
     - "@hawkeyexl"

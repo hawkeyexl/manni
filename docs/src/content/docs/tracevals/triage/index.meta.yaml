@@ -1,0 +1,33 @@
+docs/src/content/docs/tracevals/triage/index.mdx:
+  personas: ["theo"]
+  journeys: ["t8"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/reporters/pretty.ts"
+    - path: "src/tracevals/types.ts"
+  eval-suite: tracevals
+  evals:
+    - id: decide-next-step
+      assertion: "A reader can read a FAIL, ERROR, REVIEW or SKIP line and say what to do next."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-112
+      integrity: sha256-60b6509d9013705206a8235d842f96d51860dab5f38bdbabd8f7994576ec22d9
+    - generated-by: Claude Opus 5.5
+      lines: 114
+      integrity: sha256-e6f6e182876177c668f665aa9f2c58d6cf931847127a66136dec1932fc081b72
+    - generated-by: Claude Opus 5
+      lines: 115-122
+      integrity: sha256-06a0778d32a478cb207a93f1662aa4fdbf270b2d562b021fc0c097e5c37df23b
+    - generated-by: Claude Opus 5.5
+      lines: 123
+      integrity: sha256-c634c4e0f6e9b4487d35353f6b687888f2698369c5e3e938cf5c4be4354db187
+    - generated-by: Claude Opus 5
+      lines: 125-202
+      integrity: sha256-0a3d50fa673bf3fa4f9526612a99c266247804169609aa52a3246ea2d8b13d31
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

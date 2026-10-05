@@ -3,13 +3,13 @@
  *
  * Content reaches a shell through a `command` eval declared in page
  * frontmatter, or through page-authored `options.command` argv handed to a
- * grader. The old `scripts.allow-frontmatter-commands` boolean covered the
- * first and defaulted to **true**. Both are now default-deny behind one grant,
- * `frontmatter-commands`, the only one there is.
+ * grader. Both sit behind one grant, `frontmatter-commands`, the only one
+ * there is. Everything available runs unless the operator narrows it
+ * (proposal 0075): `execution.allow` absent holds every grant, `[]` holds
+ * none, and the flags only ever narrow what the config holds.
  *
  * This is defense in depth, not a replacement for restricting untrusted pull
- * requests — a grant says "this corpus is trusted to execute", and a fork's
- * pages are not this corpus.
+ * requests. An untrusted pull request's run passes `--no-execution`.
  */
 import { describe, it, expect } from "vitest";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -36,8 +36,11 @@ registerGrader({
   },
 });
 
-/** A page carrying a frontmatter command eval. */
-function scaffold(allow: string[]): string {
+/**
+ * A page carrying a frontmatter command eval. `allow` is the configured
+ * `execution.allow`; `undefined` leaves the key out.
+ */
+function scaffold(allow: string[] | undefined): string {
   const root = mkdtempSync(join(tmpdir(), "manni-docevals-grant-"));
   mkdirSync(join(root, "docs"), { recursive: true });
   writeFileSync(
@@ -62,9 +65,9 @@ function scaffold(allow: string[]): string {
       "collections:",
       "  - name: pages",
       '    paths: ["docs/**/*.md"]',
-      "docevals:",
-      "  execution:",
-      `    allow: [${allow.join(", ")}]`,
+      ...(allow === undefined
+        ? ["docevals: {}"]
+        : ["docevals:", "  execution:", `    allow: [${allow.join(", ")}]`]),
       "",
     ].join("\n"),
   );
@@ -84,7 +87,7 @@ const fakeExec = (): Promise<{
 }> => Promise.resolve({ code: 0, stdout: "[]", stderr: "", timedOut: false });
 
 const skipReasons = async (
-  allow: string[],
+  allow: string[] | undefined,
   options: Record<string, unknown> = {},
 ) => {
   const report = await runEvals({
@@ -100,14 +103,26 @@ const skipReasons = async (
 };
 
 describe("execution grant", () => {
-  it("denies frontmatter commands by default", async () => {
-    const reasons = await skipReasons([]);
-    expect(reasons["runs-a-command"]).toContain("frontmatter commands not granted");
+  it("runs frontmatter commands when execution.allow is absent", async () => {
+    const reasons = await skipReasons(undefined);
+    expect(reasons["runs-a-command"]).not.toContain("not granted");
   });
 
-  it("runs them once frontmatter-commands is granted", async () => {
+  it("runs nothing under execution.allow: []", async () => {
+    const reasons = await skipReasons([]);
+    expect(reasons["runs-a-command"]).toBe(
+      "frontmatter commands not granted (execution.allow: [frontmatter-commands])",
+    );
+  });
+
+  it("runs them when frontmatter-commands is listed", async () => {
     const reasons = await skipReasons(["frontmatter-commands"]);
     expect(reasons["runs-a-command"]).not.toContain("not granted");
+  });
+
+  it("--no-execution clears the default for one run", async () => {
+    const reasons = await skipReasons(undefined, { execution: false });
+    expect(reasons["runs-a-command"]).toContain("frontmatter commands not granted");
   });
 
   it("--no-execution clears a configured grant for one run", async () => {
@@ -117,11 +132,38 @@ describe("execution grant", () => {
     expect(reasons["runs-a-command"]).toContain("frontmatter commands not granted");
   });
 
-  it("--allow-execution grants without touching the config", async () => {
-    const reasons = await skipReasons([], {
+  it("--allow-execution keeps a grant the config holds", async () => {
+    const reasons = await skipReasons(undefined, {
       allowExecution: ["frontmatter-commands"],
     });
     expect(reasons["runs-a-command"]).not.toContain("not granted");
+  });
+
+  it("--allow-execution never widens what the config narrowed", async () => {
+    const reasons = await skipReasons([], {
+      allowExecution: ["frontmatter-commands"],
+    });
+    expect(reasons["runs-a-command"]).toContain("frontmatter commands not granted");
+  });
+
+  it("an empty programmatic allowExecution runs nothing", async () => {
+    const reasons = await skipReasons(undefined, { allowExecution: [] });
+    expect(reasons["runs-a-command"]).toContain("frontmatter commands not granted");
+  });
+});
+
+describe("the config default", () => {
+  it("holds every grant when execution.allow is absent", () => {
+    const config = parseConfig("docevals: {}\n", "/fake/manni.config.yaml");
+    expect(config.execution.allow).toEqual(["frontmatter-commands"]);
+  });
+
+  it("holds none under execution.allow: []", () => {
+    const config = parseConfig(
+      ["docevals:", "  execution:", "    allow: []"].join("\n"),
+      "/fake/manni.config.yaml",
+    );
+    expect(config.execution.allow).toEqual([]);
   });
 });
 
@@ -145,16 +187,17 @@ describe("the --allow-execution flag", () => {
   it("names its one value in its help", () => {
     const run = buildProgram().commands.find((c) => c.name() === "run");
     const flag = run?.options.find((o) => o.long === "--allow-execution");
-    expect(flag?.description).toBe("Grant content-authored execution: frontmatter-commands");
+    expect(flag?.description).toBe(
+      "Run only these execution grants (repeatable): frontmatter-commands",
+    );
   });
+
 });
 
 describe("the removed boolean", () => {
   it("names its replacement instead of failing as an unknown key", () => {
     // Ajv would say "must NOT have additional properties" against `scripts`,
-    // leaving the reader to find which child. It also flipped default — the
-    // old key defaulted to true and the grant is default-deny — so a silent
-    // migration would quietly stop running checks.
+    // leaving the reader to find which child.
     expect(() =>
       parseConfig(
         [
@@ -173,7 +216,7 @@ describe("the options.command bypass", () => {
    * A registered grader may accept an `options.command` argv override and
    * hand it to `exec`. That is a second spelling of "run this command",
    * reached without the `command` grader and so without the grant check that
-   * guards it — which makes the default-deny posture decorative: a page that
+   * guards it — which makes the grant decorative: a page that
    * cannot say `grader: command` could say `grader: tool:argv-runner` with
    * the same argv and get the same shell.
    *

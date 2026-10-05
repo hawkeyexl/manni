@@ -1,0 +1,76 @@
+manni tracevals, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 34.0 s. Every terminal line is real output of cat and of
+`node dist/cli.js tracevals run ...` (typed as manni), run inside a demo repository
+staged by media/capture-tracevals/capture.sh from test/tracevals/fixtures/traces/
+claude-session.jsonl and test/tracevals/fixtures/project/.
+
+[0:00-0:08] Title: The rules, and the checks (1 / 3)
+$ cat CLAUDE.md
+---
+metadata:
+  evals:
+    - id: read-before-edit
+      assertion: The session read a source file before editing one.
+      grader: tool-usage
+      options: { tool: Read, expect: used }
+    - id: source-edits-use-the-skill
+      assertion: A session that edits source files invokes the fix-bug skill.
+      grader: skill-invoked
+      options: { skill: fix-bug, expect: used, when: { file-access: "src/**" } }
+---
+
+# House rules
+
+- Read a file before you edit it.
+- Source edits go through the fix-bug skill.
+Highlighted rows: lines containing "- Source edits go through the fix-bug skill.", "id: source-edits-use-the-skill"
+Caption: CLAUDE.md states two house rules. It now carries the evals that encode them.
+
+[0:08-0:21] Title: Grade a real session (2 / 3)
+$ manni tracevals run session-1.jsonl --deterministic-only
+manni tracevals — C:\Users\hawkeyexl\demo\session-1.jsonl
+claude-code · claude-opus-4-8 · 1 turn(s) · C:\Users\hawkeyexl\demo
+
+  PASS   CLAUDE.md › read-before-edit   (green)
+  FAIL   CLAUDE.md › source-edits-use-the-skill   (red)
+         [error] skill fix-bug was never invoked
+
+Artifact coverage
+  ✓ project-rules: project rules   (green check)
+
+Availability
+  1 skill(s) offered, 0 used, 1 never used
+  0 agent(s) offered, 0 used, 0 never used
+  pass --report-unused-artifacts to list them
+
+2 eval(s): 1 pass, 1 fail, 0 error, 0 needs-review, 0 skipped   (pass count green, fail count red)
+$ echo $?
+1
+Highlighted rows: lines containing "FAIL", "skill fix-bug was never invoked"
+Caption: It read before editing. It edited src/ without the skill. One eval fails, exit 1.
+
+[0:21-0:34] Title: The next session (3 / 3)
+$ manni tracevals run session-2.jsonl --deterministic-only
+manni tracevals — C:\Users\hawkeyexl\demo\session-2.jsonl
+claude-code · claude-opus-4-8 · 1 turn(s) · C:\Users\hawkeyexl\demo
+
+  PASS   CLAUDE.md › read-before-edit   (green)
+  PASS   CLAUDE.md › source-edits-use-the-skill   (green)
+  SKIP   fix-bug › adheres-to-artifact (implicit)   (dim)
+         ai evals skipped (deterministic-only run)
+
+Artifact coverage
+  ✓ skill: fix-bug C:\Users\hawkeyexl\demo\.claude\skills\fix-bug\SKILL.md   (green check)
+  ✓ project-rules: project rules   (green check)
+
+Availability
+  1 skill(s) offered, 1 used, 0 never used
+  0 agent(s) offered, 0 used, 0 never used
+
+3 eval(s): 2 pass, 0 fail, 0 error, 0 needs-review, 1 skipped   (pass count green, fail count red)
+$ echo $?
+0
+Highlighted rows: lines containing "PASS", "2 pass"
+Caption: Same rules, same gate. This session used the skill: both evals pass, exit 0.
+

@@ -1,0 +1,17 @@
+---
+metadata:
+  evals:
+    - id: read-before-edit
+      assertion: The session read a source file before editing one.
+      grader: tool-usage
+      options: { tool: Read, expect: used }
+    - id: source-edits-use-the-skill
+      assertion: A session that edits source files invokes the fix-bug skill.
+      grader: skill-invoked
+      options: { skill: fix-bug, expect: used, when: { file-access: "src/**" } }
+---
+
+# House rules
+
+- Read a file before you edit it.
+- Source edits go through the fix-bug skill.

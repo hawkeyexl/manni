@@ -1,0 +1,81 @@
+docs/src/content/docs/tracevals/reference/evals-schema.mdx:
+  personas: ["maya", "sara"]
+  journeys: ["m21", "s14"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/meta/schemas/artifact-evals/1.1.0.json"
+    - path: "src/tracevals/evals/extract.ts"
+  eval-suite: tracevals
+  evals:
+    - id: block-shape
+      assertion: "A reader can write a valid metadata.evals block and say where else it may live."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-5
+      integrity: sha256-ac2c4bebbacd1898a85ea43fd469fe067f561f4c3af88de2cc40b9bda63f34a0
+    - generated-by: Claude Opus 5.5
+      lines: 6
+      integrity: sha256-5ef66f5dcced3582b856ca6fc84b7d5c90596e81d5f1071960da47fe1feb4ba8
+    - generated-by: Claude Opus 5
+      lines: 8
+      integrity: sha256-3383630f820029b632404966145fb4add3b7a686ffd5285f330cbd20583e9367
+    - generated-by: Claude Opus 5.5
+      lines: 10-11
+      integrity: sha256-a98679a1d25f6e7d48a346b052f5168e26571a9d29454564d5f131921862af33
+    - generated-by: Claude Opus 5
+      lines: 12-13
+      integrity: sha256-9987abaebd4bbb62218a6a4a5484214d5f822d8a5ee89d396c62802fa87f6a5d
+    - generated-by: Claude Opus 5.5
+      lines: 14-19
+      integrity: sha256-a27dd8460c4432d19fe7f22e6e0fd5415b26bd5c4da758630dc9e691b1a8a6c7
+    - generated-by: Claude Opus 5
+      lines: 21-46
+      integrity: sha256-a169a033e115f9e91d7f66850af525a9067276a9bd34e93c8552c26505b73628
+    - generated-by: Claude Opus 5.5
+      lines: 48
+      integrity: sha256-eb22fe2b423f0d305b73b03ae70569538a74260514705974a7c2011d86d59736
+    - generated-by: Claude Opus 5
+      lines: 49-56
+      integrity: sha256-c32df192cf05d429c1cb2c395fd963bf0f3430b9e1f4ab5d334f9bfe6827734a
+    - generated-by: Claude Opus 5.5
+      lines: 58-62
+      integrity: sha256-6a618531512402661e4c3972beedb6e0f0dea67b0e451807ff7116dae868c22b
+    - generated-by: Claude Opus 5
+      lines: 64-176
+      integrity: sha256-05d394b3721be01c1df75c94d3c5daf9cdd30b1a496b63c452004cd1b4e74c6b
+    - generated-by: Claude Opus 5.5
+      lines: 177
+      integrity: sha256-f284ea918ac1a02e2bd76e49e87c265c6cb4fe0cbaca9db4c8d8fc559b64ce66
+    - generated-by: Claude Opus 5
+      lines: 178-200
+      integrity: sha256-3927e56b75dbf2ffefecc18d98703b72b8d4f72698235cb2f73f29e5ac75aeb9
+    - generated-by: Claude Opus 5.5
+      lines: 201
+      integrity: sha256-bc41a5536d8a31de41e650c0e256edc03423137c6c2a60bdceb1823197e49f47
+    - generated-by: Claude Opus 5
+      lines: 203-236
+      integrity: sha256-afdd41bf2efc358c285a251c238c9f2e75b24167fc64eaa1d96288aa12ab13c1
+    - generated-by: Claude Opus 5.5
+      lines: 238-242
+      integrity: sha256-df79f7046c53f7ec81d57274172ec2d5b4b3f3835aa871e9caa491af35d8b587
+    - generated-by: Claude Opus 5
+      lines: 244-252
+      integrity: sha256-0d8197c7b7c93e525e2fbeda1dba26261e1289658deaea75623e1ebb65ce63d9
+    - generated-by: Claude Opus 5.5
+      lines: 254
+      integrity: sha256-47e6c39a8cedfd8c751bce0bfe049251b862ae01114c647a0da2dca5c00eecda
+    - generated-by: Claude Opus 5
+      lines: 255-264
+      integrity: sha256-a7588c06e825d354c38630196576d04f73e1284808da6e123346d78ac7365d93
+    - generated-by: Claude Opus 5.5
+      lines: 266
+      integrity: sha256-62879ded900229456460753584f8a87a6c5d441783dd8b6fd6c6f1a865d8c1f9
+    - generated-by: Claude Opus 5
+      lines: 267-275
+      integrity: sha256-b390e59a6526b220da02da80ee173f21719021cbe1495353066670c994dd3145
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

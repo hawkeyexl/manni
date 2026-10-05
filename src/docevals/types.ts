@@ -79,6 +79,17 @@ export interface EvalResult {
   type: EvalType;
   grader: GraderKind;
   file: string;
+  /**
+   * Where the page declares the eval: the item of its `evals` key that names
+   * it, in the page or in the manifest that supplied the key (proposal 0037).
+   * A suite eval the page never names points at its `eval-suite` key, or at
+   * the page alone when the suite is the config's default. `file` is spelled
+   * like `file`, and `line` is 1-based and absent when nothing records one.
+   *
+   * Stamped centrally by the engine, like `suite`, on every result it
+   * reports.
+   */
+  location?: { file: string; line?: number };
   outcome: "pass" | "fail" | "needs-review" | "skipped" | "error";
   /** Present for ai-graded evals. */
   consensus?: ConsensusResult;

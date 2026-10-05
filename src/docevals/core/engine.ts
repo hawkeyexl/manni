@@ -12,10 +12,15 @@ import type {
   RunReport,
   SuiteSummary,
 } from "../types.js";
-import { loadRunConfig, type DocevalsConfig, type ExecutionGrant } from "./config.js";
+import { loadRunConfig, type DocevalsConfig } from "./config.js";
+import {
+  grantsFor,
+  NOT_GRANTED_REASON,
+  type ExecutionGrant,
+} from "../../shared/execution.js";
 import { discoverPages } from "./discover.js";
 import { withExternalMetadata } from "./external.js";
-import { resolvePages, type ResolvedPagePlan } from "./resolve.js";
+import { resolvePages, type EvalLocation, type ResolvedPagePlan } from "./resolve.js";
 import {
   applyBaseline,
   buildBaseline,
@@ -28,9 +33,11 @@ import {
   type FingerprintContext,
 } from "./baseline.js";
 import { changedFilesSince, changedKey } from "./since.js";
+import { pageAges } from "./newer-than.js";
+import { parseDuration } from "../../shared/duration.js";
 import { graderFor } from "../graders/registry.js";
 import { assertRegisteredGraders, checkFeasibility } from "./feasibility.js";
-import { realExec } from "../graders/exec.js";
+import { realExec } from "../../shared/exec.js";
 import { groupTargetsByEval, type ExecFn, type GraderTarget } from "../graders/types.js";
 import { sha256 } from "../judge/cache.js";
 import { isTurnBudgetSkip } from "../judge/budget.js";
@@ -59,6 +66,12 @@ export interface EngineReport extends RunReport {
    * what the reporters print.
    */
   since?: { ref: string; pagesSelected: number; pagesTotal: number };
+  /**
+   * Present only under `--newer-than`. `pagesSelected` is the count of pages
+   * this run graded: those that changed inside the window and, when `--since`
+   * is given too, since the ref as well. Both blocks then carry that one count.
+   */
+  newerThan?: { duration: string; pagesSelected: number; pagesTotal: number };
 }
 
 export interface JudgeOptions {
@@ -125,7 +138,10 @@ export interface RunOptions {
   cwd?: string;
   deterministicOnly?: boolean;
   aiOnly?: boolean;
-  /** Additional execution grants for this run; never widens beyond these. */
+  /**
+   * Run only these grants, of those the config holds. Absent keeps them all;
+   * `[]` runs nothing. Never widens past `execution.allow`.
+   */
   allowExecution?: ExecutionGrant[];
   /** `false` clears every grant for this run. */
   execution?: boolean;
@@ -138,6 +154,13 @@ export interface RunOptions {
    * `evalNames`, an empty match is *not* a usage error (ADR 01040).
    */
   since?: string;
+  /**
+   * Evaluate only pages whose file or eval manifest changed within this
+   * duration back from now, such as `7d`. A committed page's age is its last
+   * commit's date; any other page's is its mtime. With `since`, a page must
+   * satisfy both. Like `since`, an empty match is not a usage error.
+   */
+  newerThan?: string;
   /**
    * Baseline in four states, like the metadata tool's: `undefined` leaves the config in
    * charge, a string names a file, `true` means "use the resolved path even if
@@ -231,11 +254,13 @@ function stampSuites(
 ): void {
   const suiteOf = new Map<string, string>();
   const weightOf = new Map<string, number>();
+  const locationOf = new Map<string, EvalLocation>();
   for (const plan of plans) {
     for (const ev of plan.evals) {
       const key = resultKey(plan.page.file, ev.name);
       suiteOf.set(key, ev.suite);
       weightOf.set(key, ev.weight);
+      locationOf.set(key, ev.location);
     }
   }
   for (const r of results) {
@@ -245,6 +270,9 @@ function stampSuites(
     // counts as 1 rather than 0 — dropping it out of the denominator would let
     // an unresolvable eval quietly raise a suite's rate.
     r.weight = weightOf.get(key) ?? 1;
+    // A result with no plan entry has no declaring entry to point at, so it
+    // names its page alone, as every result did before locations.
+    r.location = locationOf.get(key) ?? { file: r.file };
   }
 }
 
@@ -489,19 +517,58 @@ export function applySinceScope(
   plans: ResolvedPagePlan[],
   changed: Set<string>,
 ): { pagesSelected: number } {
+  return applyScope(plans, (plan) => sinceSelects(plan, changed));
+}
+
+/**
+ * The files whose change counts as the page's: its own, then every manifest
+ * that supplied one of its eval keys. `external` is absent when the run loaded
+ * no manifest at all (`withExternalMetadata` returns such pages untouched).
+ */
+function scopeManifests(plan: ResolvedPagePlan): readonly string[] {
+  return plan.page.external?.evalManifests ?? [];
+}
+
+function sinceSelects(plan: ResolvedPagePlan, changed: Set<string>): boolean {
+  return [plan.page.absPath, ...scopeManifests(plan)].some((f) =>
+    changed.has(changedKey(f)),
+  );
+}
+
+/**
+ * Empty `plan.evals` on every page `keep` rejects, in place, and count the
+ * rest. `--since` and `--newer-than` both narrow through it, so a page under
+ * both keeps its evals only when both select it.
+ */
+function applyScope(
+  plans: ResolvedPagePlan[],
+  keep: (plan: ResolvedPagePlan) => boolean,
+): { pagesSelected: number } {
   let pagesSelected = 0;
   for (const plan of plans) {
-    // `external` is absent when the run loaded no manifest at all
-    // (`withExternalMetadata` returns such pages untouched). Then only the
-    // page's own file can select it.
-    const files = [plan.page.absPath, ...(plan.page.external?.evalManifests ?? [])];
-    if (files.some((f) => changed.has(changedKey(f)))) {
+    if (keep(plan)) {
       pagesSelected += 1;
       continue;
     }
     plan.evals = [];
   }
   return { pagesSelected };
+}
+
+/** The plans whose page or eval manifest changed inside the last `windowMs`. */
+async function recentPages(
+  plans: ResolvedPagePlan[],
+  windowMs: number,
+  cwd: string,
+  exec: ExecFn,
+): Promise<Set<ResolvedPagePlan>> {
+  const floor = Date.now() - windowMs;
+  const ages = await pageAges(
+    plans.map((p) => ({ page: p.page.absPath, manifests: scopeManifests(p) })),
+    cwd,
+    exec,
+  );
+  return new Set(plans.filter((_, i) => (ages[i] ?? Number.NEGATIVE_INFINITY) >= floor));
 }
 
 /**
@@ -685,12 +752,13 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
     options.writeBaseline !== false &&
     ((options.evalNames?.some((n) => n.trim() !== "") ?? false) ||
       options.suite !== undefined ||
-      options.since !== undefined)
+      options.since !== undefined ||
+      options.newerThan !== undefined)
   ) {
     throw new DocevalsError(
       "--write-baseline records the whole corpus, so it cannot be combined with " +
-        "--eval, --suite or --since: the re-record would drop every finding the " +
-        "narrowing excluded. Re-run without it to record.",
+        "--eval, --suite, --since or --newer-than: the re-record would drop every " +
+        "finding the narrowing excluded. Re-run without it to record.",
     );
   }
 
@@ -701,6 +769,13 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
   // Blank and option-shaped refs are rejected inside `changedFilesSince`, at
   // the seam, so a library caller gets the same guard the CLI does.
   const sinceRef = options.since;
+  // Parsed before git is asked anything, so a bad duration is a usage error
+  // that spawns no subprocess.
+  const newerThan = options.newerThan;
+  const windowMs =
+    newerThan === undefined
+      ? undefined
+      : parseDuration(newerThan, (message) => new DocevalsError(message));
   const changed =
     sinceRef === undefined ? null : await changedFilesSince(sinceRef, cwd, exec);
 
@@ -755,7 +830,7 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
   // empty and the config's own validity — a malformed grader option, an unknown
   // key — would go unchecked, exiting 0. The one flag meant for CI would make a
   // config-only change the least examined kind of change there is.
-  let scope: { ref: string; pagesSelected: number; pagesTotal: number } | null = null;
+  let scope: { pagesSelected: number; pagesTotal: number } | null = null;
   const judgeOptions = options.judgeOptions ?? {};
 
   const problems: RunProblem[] = plans.flatMap((p) =>
@@ -777,14 +852,16 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
   /** "<file> <evalName>" keys whose check script this run generated. */
   const generatedThisRun = new Set<string>();
 
-  // Default deny, with the CLI able to withhold a configured grant but never
-  // to widen one: `--allow-execution` on the command line is still an operator
-  // act, so it grants; `--no-execution` clears everything for one run.
-  const granted = new Set<ExecutionGrant>([
-    ...config.execution.allow,
-    ...(options.allowExecution ?? []),
-  ]);
-  if (options.execution === false) granted.clear();
+  // Everything available runs unless the operator narrows it (proposal 0075).
+  // The config holds every grant unless `execution.allow` lists fewer;
+  // `--allow-execution` keeps only the named ones it already holds, and
+  // `--no-execution` clears them all for one run. Nothing here widens.
+  const granted = grantsFor(config.execution.allow, {
+    ...(options.allowExecution === undefined
+      ? {}
+      : { allowExecution: options.allowExecution }),
+    ...(options.execution === undefined ? {} : { execution: options.execution }),
+  });
   const allowFrontmatterCommands = granted.has("frontmatter-commands");
 
   // Before anything is dispatched: an eval that cannot reach a verdict as
@@ -801,11 +878,18 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
 
   // Now that every page has been diagnosed, narrow what will actually be
   // graded. See the declaration above for why this cannot move earlier.
-  if (changed !== null && sinceRef !== undefined) {
+  if (changed !== null || windowMs !== undefined) {
+    // Ages are read only when asked for, and after every page was diagnosed.
+    const recent =
+      windowMs === undefined ? null : await recentPages(plans, windowMs, cwd, exec);
     scope = {
-      ref: sinceRef,
       pagesTotal: plans.length,
-      ...applySinceScope(plans, changed),
+      ...applyScope(
+        plans,
+        (plan) =>
+          (changed === null || sinceSelects(plan, changed)) &&
+          (recent === null || recent.has(plan)),
+      ),
     };
   }
 
@@ -850,7 +934,7 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
       // it in `command`; a registered grader may also accept an
       // `options.command` override and hand it to the same `exec`. Gating
       // only the grader left a second spelling of "run this" that reached a
-      // shell ungated, which made default-deny decorative — a page that cannot
+      // shell ungated, which made the grant decorative — a page that cannot
       // say `grader: command` could name such a grader with the same argv.
       // Config-authored argv is the operator's own and is not content, so the
       // gate is on `source === "page"` rather than on the key's presence.
@@ -862,7 +946,7 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
           skippedResult(
             plan,
             ev,
-            "frontmatter commands not granted (execution.allow: [frontmatter-commands])",
+            NOT_GRANTED_REASON,
           ),
         );
         continue;
@@ -1229,6 +1313,9 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
     exitCode: hasFailure ? 1 : 0,
     problems,
     ...(baselineOutcome.summary ? { baseline: baselineOutcome.summary } : {}),
-    ...(scope ? { since: scope } : {}),
+    ...(scope && sinceRef !== undefined ? { since: { ref: sinceRef, ...scope } } : {}),
+    ...(scope && newerThan !== undefined
+      ? { newerThan: { duration: newerThan, ...scope } }
+      : {}),
   };
 }

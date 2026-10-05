@@ -151,11 +151,8 @@ docs/src/content/docs/graph/publish/index.mdx:
       lines: 215-219
       integrity: sha256-53c51130ab8458fec187a8ef2fa60b84b85864e82bffd02d1bcfdd6f8c221ffd
     - generated-by: Claude Opus 5.5
-      lines: 221-223
-      integrity: sha256-6c43fd1d5bb14733d29a336eb333c26712bb3a06c3c7699fcca7dfcc06ce1501
-    - generated-by: Claude Opus 5.5
-      lines: 227-233
-      integrity: sha256-df2d69b8a714f7ca75bd66441003ee037f12fb559c8235aa7f61b47e3c856c9e
+      lines: 221-233
+      integrity: sha256-f754758b4e69ac74aca8f0c9a7a53f54785bc64e173b13a5268d07612fb0129e
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

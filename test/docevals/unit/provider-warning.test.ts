@@ -203,9 +203,8 @@ describe("run: generation without a provider", () => {
       cwd: needsGeneration(),
       deterministicOnly: true,
       generate: true,
-      // Default deny (ADR 01025): without the grant the page-authored command
-      // eval is skipped before it can become a generation target, so the grant
-      // is what puts this test on the path it is about.
+      // The grant (proposal 0075) puts the page-authored command eval on the
+      // path to becoming a generation target, the path this test is about.
       allowExecution: ["frontmatter-commands"],
     });
     const result = report.evalResults.find((r) => r.evalName === "has-heading");

@@ -15,7 +15,8 @@
  * in whatever an owning manifest supplies, so a page whose `evals` live in a
  * manifest resolves the plan it declares rather than none. What the page
  * itself carries and what a manifest supplied are told apart only when a
- * problem has to name a place: `locationOf` below.
+ * problem or an eval's location has to name a place: `locationOf` and
+ * `declaredLocation` below, both through meta's `declaredAt`.
  */
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { ErrorObject } from "ajv";
@@ -30,6 +31,7 @@ import {
 import type { PageFile } from "./discover.js";
 import type { EvalTarget } from "./target.js";
 import { warn } from "../../shared/warn.js";
+import { declaredAt } from "../../meta/internal.js";
 import { isRegisteredGrader } from "../graders/registry.js";
 
 export interface ResolvedEval {
@@ -65,6 +67,21 @@ export interface ResolvedEval {
   /** Where the eval definition came from. */
   source: "config" | "page";
   skip: boolean;
+  /**
+   * Where the page declares the eval: the item of its `evals` key that names
+   * it, in the page or in the manifest that supplied the key. A suite eval
+   * the page never names is attached by its `eval-suite` key, so it points
+   * there, or at the page alone when the suite is the config's default. The
+   * file is spelled like the page's, and `line` is absent when nothing
+   * records one.
+   */
+  location: EvalLocation;
+}
+
+/** A file, and the 1-based line in it when one is known. */
+export interface EvalLocation {
+  file: string;
+  line?: number;
 }
 
 export interface PageProblem {
@@ -138,8 +155,10 @@ function fromDef(
   suite: string,
   def: EvalDef,
   source: "config" | "page",
+  location: EvalLocation,
 ): ResolvedEval {
   return {
+    location,
     name,
     suite,
     assertion: def.assertion,
@@ -219,9 +238,28 @@ function locationOf(
   page: PageFile,
   pointer: string,
 ): Pick<PageProblem, "file" | "line"> {
-  const where = page.external?.locate(pointer);
-  if (where === undefined) return { line: page.frontmatter.lineFor(pointer) ?? 1 };
-  return { file: where.file, ...(where.line === undefined ? {} : { line: where.line }) };
+  const at = declaredAt(page.file, pointer, metadataOf(page));
+  // A manifest's spelling is never the page's, and a problem about the page
+  // always has a line: the block's first when nothing nearer is recorded.
+  return at.file === page.file ? { line: at.line ?? 1 } : at;
+}
+
+/** The page's merged metadata, as `declaredAt` reads it. */
+function metadataOf(page: PageFile): Parameters<typeof declaredAt>[2] {
+  return {
+    extracted: page.frontmatter,
+    ...(page.external === undefined ? {} : { locate: page.external.locate }),
+  };
+}
+
+/**
+ * Where the page declares a key it carries, in the page or its manifest. A
+ * key the page does not carry has no line: `lineFor` would answer the block's
+ * first line for it, which is not where anything is declared.
+ */
+function declaredLocation(page: PageFile, pointer: string, key: string): EvalLocation {
+  if (!(key in page.frontmatter.data)) return { file: page.file };
+  return declaredAt(page.file, pointer, metadataOf(page));
 }
 
 /** Resolve one page's plan. Never throws; problems are collected per page. */
@@ -286,12 +324,14 @@ export function resolvePage(
 
   const resolved = new Map<string, ResolvedEval>();
 
-  // 1. Suite evals from the central config.
+  // 1. Suite evals from the central config. The page attaches them by naming
+  // the suite, so that is where they are declared for this page.
   if (suiteName) {
     const suite = config.suites[suiteName];
+    const attached = declaredLocation(page, "/eval-suite", "eval-suite");
     for (const name of suite?.evals ?? []) {
       const def = config.evals[name];
-      if (def) resolved.set(name, fromDef(name, suiteName, def, "config"));
+      if (def) resolved.set(name, fromDef(name, suiteName, def, "config", attached));
     }
   }
 
@@ -306,7 +346,10 @@ export function resolvePage(
     claimed.add("use" in entry ? entry.use : entry.id);
   }
   for (const [i, entry] of evalEntries(fm.evals).entries()) {
-    const linePtr = `/evals/${i}`;
+    const linePtr = `/evals/${String(i)}`;
+    // A string block is one entry at index 0, and the pointer walks up to the
+    // block's own line.
+    const entryAt = declaredLocation(page, linePtr, "evals");
     if (typeof entry === "string") {
       // String shorthand: an ai-judged assertion at error severity.
       //
@@ -330,7 +373,7 @@ export function resolvePage(
       claimed.add(name);
       resolved.set(
         name,
-        fromDef(name, reportSuite, { assertion: entry }, "page"),
+        fromDef(name, reportSuite, { assertion: entry }, "page", entryAt),
       );
       continue;
     }
@@ -346,9 +389,10 @@ export function resolvePage(
         continue;
       }
       const base =
-        resolved.get(ref.use) ?? fromDef(ref.use, reportSuite, def, "config");
+        resolved.get(ref.use) ?? fromDef(ref.use, reportSuite, def, "config", entryAt);
       resolved.set(ref.use, {
         ...base,
+        location: entryAt,
         type: ref.type ?? base.type,
         severity: ref.severity ?? base.severity,
         weight: ref.weight ?? base.weight,
@@ -370,7 +414,7 @@ export function resolvePage(
         ...locationOf(page, linePtr),
       });
     }
-    const ev = fromDef(inline.id, reportSuite, normalizeEvalDef(inline), "page");
+    const ev = fromDef(inline.id, reportSuite, normalizeEvalDef(inline), "page", entryAt);
     ev.skip = inline.skip ?? false;
     resolved.set(inline.id, ev);
     // The shared vocabulary still allows `severity-map`, so a page carrying

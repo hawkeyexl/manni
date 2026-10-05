@@ -28,6 +28,7 @@
   "files": [
     "dist",
     "schemas",
+    "plugin",
     "shapes",
     "templates"
   ],
@@ -97,6 +98,7 @@
     "@asciidoctor/core": "^3.0.4",
     "@axe-core/playwright": "^4.13.0",
     "@hawkeyexl/inference": "^0.4.0",
+    "@inquirer/prompts": "^7.10.1",
     "@types/n3": "^1.26.3",
     "@xmldom/xmldom": "^0.9.12",
     "ajv": "^8.17.1",

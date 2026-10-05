@@ -1,0 +1,25 @@
+docs/src/content/docs/tracevals/reference/glossary.mdx:
+  personas: ["maya", "devin", "sara", "theo"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/types.ts"
+  eval-suite: tracevals
+  evals:
+    - id: define-a-term
+      assertion: "A reader can find the definition of any term a tracevals report uses."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-191
+      integrity: sha256-85ff041d08e7f05defa1517596be2c39580f8262835fb3078fae2ae3aa0e80cd
+    - generated-by: Claude Opus 5.5
+      lines: 192-193
+      integrity: sha256-8c241a915dd91d521db198abe21290a7fa2103b360ac363deff3997f95550340
+    - generated-by: Claude Opus 5
+      lines: 194-230
+      integrity: sha256-3237c36e58fbc54fc6d572403a2205b5e4940fa56e646c953ee2488fae3d22c2
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

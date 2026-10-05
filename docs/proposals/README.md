@@ -90,6 +90,8 @@ These came out of a review of the shipped product against the intent recorded in
 | [0072](0072-derived-dates-are-utc-days.md) | Derived dates are UTC days. A commit's author date names its day in UTC, and today is the UTC day. A stamp derived in the author's offset reads stale once | Devin · D4 / Maya · M2 | Implemented (#147) |
 | [0073](0073-docevals-grades-what-no-other-domain-owns.md) | docevals grades only what no other domain owns. The registry is `ai`, `command`, `human` and `tool:regex`, an unregistered grader is a usage error, and pages validate against the shipped `manni:evals:1.0.0` | Maya · M11 / Devin · D11 | Proposed |
 | [0074](0074-stewardship-graph-output.md) | Stewardship 1.1.0 keeps people out of published graphs. It marks `owner`, `stakeholders` and `reviewed-by` `x-manni-graph-output: false`, the default set moves to it, and `graph build` reads its marks from the set meta resolves, so `graph.schemas` goes | Maya · M18 / Sara · S1 | Implemented |
+| [0075](0075-time-windows-and-execution-in-the-evals-domains.md) | Time windows and execution in the evals domains. Both select by age with `--newer-than <duration>`, both run command evals by default, and config and flags only narrow what runs | Devin · D10, D11 / Maya · M11 | Proposed |
+| [0076](0076-artifact-evals-1-1-0-tool-order.md) | artifact-evals 1.1.0 names `tool-order`. Both artifact-evals ids register again at `1.1.0` beside `1.0.0`, strict names eleven graders, and tracevals reads `1.1.0` | Sara · S14, S3 / Maya · M21 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -110,6 +112,7 @@ proposal above is what states how the tool works inside manni.
 | docevals | [docevals/](docevals/README.md) | 00001–00004 and 01000–01045, imported from moose-docevals at 670e62b. Closed at 01045 by [0048](0048-docevals-domain.md); later docevals decisions are in this series |
 | lint | [lint/](lint/README.md) | 01001–01008, imported with the tool. 01007 is superseded by [0050](0050-lint-domain.md) |
 | graph | [graph/](graph/README.md) | 01000–01040, imported from moose-kg at 9f14ba6, with [`DESIGN.md`](graph/DESIGN.md), the phase roadmap those ADRs were taken under. Closed at 01040 by [0051](0051-graph-domain.md); later graph decisions are in this series |
+| tracevals | [tracevals/](tracevals/README.md) | 01000–01033, imported from moose-tracevals at fed983b. Closed at 01033 by [0049](0049-tracevals-domain.md); later tracevals decisions are in this series |
 
 ## Dependency order
 

@@ -103,8 +103,8 @@ manni docevals run [paths...] [options]
 | `-f, --format` | `<pretty\|json\|markdown\|github\|sarif\|junit\|html>` | `pretty` | Output format. An unknown value is a usage error (exit 2). |
 | `--deterministic-only` | n/a | off | Run only `command` and `tool:regex` graders. AI-graded evals report as `skipped`. No provider needed. This is the offline path. |
 | `--ai-only` | n/a | off | Run only AI-judged evals; skip deterministic graders. |
-| `--allow-execution` | `<kind>` | n/a | Grant content-authored execution: `frontmatter-commands`. That lets `command` evals declared in page frontmatter run. Adds to `execution.allow` for this run. Any other kind is a usage error (exit 2). |
-| `--no-execution` | n/a | off | Clear every execution grant for this run, whatever the config says. |
+| `--allow-execution` | `<kind>` | every configured grant | Keep only this execution grant for this run. Repeatable. `frontmatter-commands` is the one kind, and it lets `command` evals declared in page frontmatter run. It narrows `execution.allow` and never widens it. Any other kind is a usage error (exit 2). |
+| `--no-execution` | n/a | off | Run no `command` eval declared in page frontmatter for this run, whatever the config says. |
 | `--no-generate` | n/a | off | Do not generate scripts for command evals that lack a `command`. |
 | `--no-cache` | n/a | off | Bypass the judge response cache. |
 | `--fail-on-review` | n/a | off | Exit 1 when any eval lands in the human-review zone. |
@@ -116,6 +116,7 @@ manni docevals run [paths...] [options]
 | `--eval` | `<name>` | n/a | Run only this eval. Repeat the flag for more than one (`--eval a --eval b`). Names are **not** space-separated, because a variadic flag would swallow the following glob. **Suite targets are not evaluated while a filter is active**; see below. A name that matches nothing is a usage error: **exit 2**. |
 | `--suite` | `<name>` | n/a | Run only the evals that report under the named suite. Same suspension of suite targets. A suite the config does not define is **exit 2**, with the defined names in the message. |
 | `--since` | `<ref>` | n/a | Evaluate only pages whose file or eval manifest changed between this git ref and `HEAD`. Suite targets are suspended **when the scope leaves pages out**. Nothing changed is **exit 0**, not an error; see below. |
+| `--newer-than` | `<duration>` | n/a | Evaluate only pages whose file or eval manifest changed within this window: a count, then `m`, `h`, `d` or `w`, such as `30m`, `24h`, `7d` or `2w`. With `--since`, a page must satisfy both. Any other value is a usage error (exit 2). See below. |
 | `--max-turns` | `<n>` | config `judge.maxTurns` | Stop judging after this many uncached **ensemble runs**. One ai eval spends `judge.ensembleRuns` turns; a cached ensemble spends none. A run may make a second provider call when the first response fails schema validation. This is therefore a floor on API calls rather than an exact count. Unbounded by default. |
 | `--baseline` | `[path]` | n/a | Fail only on findings a recorded baseline does not already hold. With no path, the configured `baseline:`, then `.manni-docevals-baseline.json`. |
 | `--no-baseline` | n/a | off | Ignore the configured `baseline:` for this run, so the full backlog reports again. |
@@ -258,6 +259,46 @@ In GitHub Actions, `actions/checkout` clones with `fetch-depth: 1`, so
 none. It selects work for one invocation rather than setting policy, and the
 ref you compare against belongs to the job, not to the repository. `list`
 takes no `--since`.
+
+#### Scoping by age with `--newer-than`
+
+`--newer-than <duration>` grades only the pages that changed inside a window
+back from now. It is the local and scheduled question, such as what changed
+this morning. A pull request has a ref, so CI prefers `--since`.
+
+```console
+$ manni docevals run --newer-than 2h --deterministic-only
+```
+
+A duration is a count, which may carry a fraction, then one unit: `m`
+minutes, `h` hours, `d` days or `w` weeks. Anything else is **exit 2**:
+
+```console
+manni: --newer-than must be a duration such as 30m, 24h, 7d or 2w, got "7y"
+```
+
+The same files count as for `--since`, meaning the page and any manifest
+that supplies its eval keys. How old they are depends on the working tree.
+
+- A page is clean when git tracks it and neither it nor its manifests hold
+  an uncommitted change. A clean page takes the committer date of the last
+  commit that touched any of them. A fresh clone stamps every file with the clone's time, so reading
+  mtime there would select every page.
+- Any other page takes the newest file modification time among them. That
+  covers an untracked page, a modified one, and a directory outside a
+  repository. An edit you have not committed is therefore in scope.
+
+Given both flags, a page must satisfy both, and the scope line names both:
+
+```console
+Scoped to 2 of 40 page(s) changed since origin/main and in the last 7d.
+```
+
+Everything else matches `--since`. Nothing in the window is **exit 0** with
+the sentence `No pages changed in the last 2h — nothing was evaluated.`
+Suite targets are withheld when the window left pages out.
+`--write-baseline` is refused. `--newer-than` has no config key, and `list`
+does not take it.
 
 `--since` and the [judge cache](/manni/docevals/ci/cost-and-caching/) are
 complements. `--since` avoids dispatching work on a page that did not change.
@@ -613,3 +654,7 @@ Full detail in
 {/* step {"description":"A collection the config does not declare is exit 2, and the message names the declared ones.","runShell":{"command":"manni docevals list --collection no-such-collection","exitCodes":[2],"stdio":"no collection named \"no-such-collection\""}} */}
 
 {/* step {"description":"list takes no --since.","runShell":{"command":"manni docevals list --since HEAD","exitCodes":[2],"stdio":"unknown option"}} */}
+
+{/* step {"description":"A --newer-than value that is not a duration is a usage error.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run --deterministic-only --no-generate --newer-than 7y","exitCodes":[2],"stdio":"must be a duration such as 30m"}} */}
+
+{/* step {"description":"--newer-than cannot be combined with --write-baseline.","runShell":{"workingDirectory":"test/docevals/fixtures/pages","command":"manni docevals run --deterministic-only --newer-than 1h --write-baseline","exitCodes":[2],"stdio":"cannot be combined"}} */}

@@ -184,11 +184,11 @@ and Node touch.
   under concurrency (ADR 01019). Never reimplement a provider, ensemble,
   cache, or price table here. Three copies of that code drifted apart once
   already, and a fix belongs upstream.
-- `src/docevals/graders/exec.ts` re-exports the library's `realExec`, so the
+- `src/shared/exec.ts` re-exports the library's `realExec`, so the
   subprocess provider and the `command` grader share one cross-spawn
   wrapper. That wrapper owns npm `.cmd` shim resolution, stdin piping past the
-  ~32K command-line limit, and StringDecoder-backed output. `outputTail` stays
-  local.
+  ~32K command-line limit, and StringDecoder-backed output. `outputTail` lives
+  beside it.
 - `src/docevals/graders/scriptgen.ts` + `src/docevals/core/frontmatter-edit.ts`
   write LLM-generated check scripts to `{docDir}/manni-docevals/`, with the
   command reference persisted via surgical YAML edits.
@@ -251,6 +251,13 @@ and Node touch.
   records those manifests on the page as `external.evalManifests`, read off
   the merge's `locate`, so the scope never re-derives a manifest path. Any
   change to such a file selects the page; nothing diffs the YAML by key.
+- **`--newer-than <duration>` narrows the same way, by age.** A page's age is
+  detected in `src/docevals/core/newer-than.ts`, never switched. A page git
+  tracks with no uncommitted change, in it or its eval manifests, takes the
+  committer date of the last commit touching them. Any other page takes the
+  newest mtime among them. A fresh clone stamps every file with the clone's
+  time, which is why committed pages never read mtime. With `--since` too, a
+  page must satisfy both, through the one `applyScope`.
 - **Grader failures are isolated per eval group, in the engine** (ADR 01042).
   `runEvals` drives `groupTargetsByEval` and calls `grader.grade()` once per
   group with the `try`/`catch` around each call. Do not move that boundary
@@ -296,15 +303,19 @@ and Node touch.
   **attach** what it defines (ADR 01041): the guard is a bare page run through
   `runList`/`runEvals`, not an assertion about the file's text.
 - Content files drive arbitrary code execution by **one** path: `command`
-  evals declared in page frontmatter or a manifest. It is default-deny behind
-  one operator grant, `docevals.execution.allow: [frontmatter-commands]` (CLI
-  `--allow-execution`, `--no-execution`). The gate is on the eval's source
-  being the page, not on the grader, so any page-authored argv is covered.
-  Any change near command graders or script generation must preserve it.
-  **The grant is defense in depth, never sufficient on its own.** A grant says "this corpus is trusted
-  to execute", and a fork's pages are not this corpus. The only complete
-  control is restricting the job to same-repo pull requests; the
-  docs-as-tests workflow carries that gate. Never remove it.
+  evals declared in page frontmatter or a manifest. It sits behind one grant,
+  `frontmatter-commands`, from `src/shared/execution.ts`, and it is **on by
+  default** (proposal 0075). Everything available runs unless the operator
+  narrows it. `docevals.execution.allow` lists fewer grants, `[]` runs none,
+  `--allow-execution` keeps only the named ones the config holds, and
+  `--no-execution` runs none for one run. No flag widens what the config
+  narrowed. The gate is on the eval's source being the page, not on the
+  grader, so any page-authored argv is covered. Any change near command
+  graders or script generation must preserve it.
+  **The grant is defense in depth, never sufficient on its own.** A fork's
+  pages are not this corpus, so a run over an untrusted pull request passes
+  `--no-execution`. The complete control is restricting the job to same-repo
+  pull requests; the docs-as-tests workflow carries that gate. Never remove it.
 - The page vocabulary is the shipped **`manni:evals:1.0.0`**, published by the
   metadata tool (proposal 0023) and implemented here (ADR 01009, proposal
   0073). `src/docevals/schema.ts` imports it from

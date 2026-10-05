@@ -41,10 +41,16 @@ describe("deterministic run over fixtures", () => {
     expect(concepts?.findings?.[0]?.severity).toBe("warning");
     expect(concepts?.findings?.[0]?.line).toBe(21);
 
-    // Missing command with generation disabled errors.
-    expect(
-      byKey.get("docs/get-started/installation.mdx install-command-present")?.outcome,
-    ).toBe("error");
+    // The result also names the entry that declares the eval.
+    expect(goTo?.location).toEqual({ file: "docs/actions/goTo.mdx", line: 7 });
+
+    // Missing command with generation disabled errors, at its declaring entry.
+    const install = byKey.get("docs/get-started/installation.mdx install-command-present");
+    expect(install?.outcome).toBe("error");
+    expect(install?.location).toEqual({
+      file: "docs/get-started/installation.mdx",
+      line: 17,
+    });
 
     // AI evals are skipped under --deterministic-only.
     expect(byKey.get("docs/get-started/concepts.md defines-core-terms")?.outcome).toBe(

@@ -10,9 +10,9 @@ import { terminalConfirm } from "../shared/prompt.js";
 import { collect, configOption } from "../shared/cli-options.js";
 import { LOCAL_FLAG_HELP } from "../shared/providers.js";
 import type { DocumentInputOptions } from "./core/discover.js";
-import { palette, shouldColor } from "../shared/color.js";
+import { colorFor, palette } from "../shared/color.js";
 import { DocevalsError } from "./types.js";
-import { EXECUTION_GRANTS } from "./core/config.js";
+import { allowExecutionMessage, isExecutionGrant } from "../shared/execution.js";
 import { runList, renderList } from "./commands/list.js";
 import { runRun } from "./commands/run.js";
 import { runGenerate } from "./commands/generate.js";
@@ -35,34 +35,10 @@ import {
 } from "./reporters/index.js";
 
 /**
- * Whether `command`'s output gets colour: this domain's `--no-color` and
- * `NO_COLOR` turn it off, and otherwise only a TTY turns it on
- * (`shouldColor`). `isTTY` is passed uncoerced: Node leaves it undefined off
- * a terminal, never false, and `shouldColor` reads a missing one as "not a
- * terminal". The same rule as `manni cite`, whose `colorFor` this mirrors.
+ * Whether `command`'s output gets colour: the family's rule, read off this
+ * domain's `--no-color`. Exported for the tests that pin it.
  */
-export function colorFor(
-  command: Command,
-  isTTY: boolean | undefined,
-  env?: NodeJS.ProcessEnv,
-): boolean {
-  // commander maps --no-color to opts.color === false, on the command that
-  // declares it.
-  const noColor = colorOwner(command).opts().color === false;
-  return shouldColor({ noColor, isTTY, env });
-}
-
-/**
- * The nearest command, this one or an ancestor, that declares `--no-color`:
- * the `docevals` program, wherever it is mounted. Not the root: under the
- * umbrella that is `manni`, which has no `--no-color` of its own.
- */
-function colorOwner(command: Command): Command {
-  for (let c: Command | null = command; c !== null; c = c.parent) {
-    if (c.options.some((o) => o.long === "--no-color")) return c;
-  }
-  return command;
-}
+export { colorFor };
 
 export function buildProgram(): Command {
   const program = new Command();
@@ -92,12 +68,8 @@ export function buildProgram(): Command {
    * is clean" rather than "you misspelled a flag".
    */
   function collectGrant(value: string, previous: string[]): string[] {
-    if (!(EXECUTION_GRANTS as readonly string[]).includes(value)) {
-      fail(
-        new DocevalsError(
-          `--allow-execution must be one of ${EXECUTION_GRANTS.join(" | ")}, got "${value}"`,
-        ),
-      );
+    if (!isExecutionGrant(value)) {
+      fail(new DocevalsError(allowExecutionMessage(value)));
     }
     return [...previous, value];
   }
@@ -251,7 +223,7 @@ export function buildProgram(): Command {
       // frontmatter-commands docs/**` would silently swallow the glob and run
       // over the default file set instead. Repeat the flag to grant twice.
       "--allow-execution <kind>",
-      "Grant content-authored execution: frontmatter-commands",
+      "Run only these execution grants (repeatable): frontmatter-commands",
       collectGrant,
       [],
     )
@@ -280,6 +252,11 @@ export function buildProgram(): Command {
       "Evaluate only pages whose file or eval manifest changed between this git ref and HEAD",
     )
     .option(
+      "--newer-than <duration>",
+      "Evaluate only pages whose file or eval manifest changed within this window, " +
+        "such as 30m, 24h, 7d or 2w; in CI, prefer --since",
+    )
+    .option(
       "--max-turns <n>",
       "Stop after this many ensemble runs (a cached ensemble costs none)",
       parseIntArg("--max-turns"),
@@ -306,7 +283,12 @@ export function buildProgram(): Command {
           format: opts.format as ReportFormat,
           deterministicOnly: opts.deterministicOnly as boolean | undefined,
           aiOnly: opts.aiOnly as boolean | undefined,
-          allowExecution: opts.allowExecution as string[] | undefined,
+          // Commander's default is `[]`, which is "no flag", not "run nothing":
+          // only a list someone typed narrows the run.
+          allowExecution:
+            (opts.allowExecution as string[]).length > 0
+              ? (opts.allowExecution as string[])
+              : undefined,
           execution: opts.execution as boolean | undefined,
           generate: opts.generate as boolean | undefined,
           cache: opts.cache as boolean | undefined,
@@ -320,6 +302,7 @@ export function buildProgram(): Command {
           evalNames: opts.eval as string[] | undefined,
           suite: opts.suite as string | undefined,
           since: opts.since as string | undefined,
+          newerThan: opts.newerThan as string | undefined,
           // commander collapses `--baseline` to true and `--no-baseline` to
           // false on the same key; a string is an explicit path.
           baseline: opts.baseline as string | boolean | undefined,

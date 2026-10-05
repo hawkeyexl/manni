@@ -1,7 +1,9 @@
 /** Pretty (terminal) reporter: `--format pretty`, the default. */
+import { scopeLine } from "./scope.js";
 import { palette, type Colors } from "../../shared/color.js";
 import type { EvalResult } from "../types.js";
 import type { EngineReport } from "../core/engine.js";
+import { declaringEntry, locationLabel } from "./location.js";
 
 function outcomeTag(r: EvalResult, pc: Colors): string {
   switch (r.outcome) {
@@ -43,7 +45,8 @@ export function renderPretty(
       const zone = r.consensus ? pc.dim(` [${r.consensus.zone}]`) : "";
       const via = r.via ? pc.dim(" (human-reviewed)") : "";
       const gen = r.generated ? pc.cyan(" (generated)") : "";
-      lines.push(`  ${outcomeTag(r, pc)} ${r.evalName}${zone}${via}${gen}`);
+      const entry = pc.dim(locationLabel(declaringEntry(r)));
+      lines.push(`  ${outcomeTag(r, pc)} ${r.evalName}${zone}${via}${gen}  ${entry}`);
       if (r.skipReason && r.outcome !== "pass") {
         lines.push(pc.dim(`       ${r.skipReason}`));
       }
@@ -109,16 +112,10 @@ export function renderPretty(
   // What `--since` scoped the run to. The zero case gets its own line, in
   // yellow, because a clean-tree run is otherwise an indistinguishable green:
   // same exit code, same empty body, nothing saying that nothing ran.
-  const sc = report.since;
+  const sc = scopeLine(report);
   if (sc) {
     lines.push("");
-    lines.push(
-      sc.pagesSelected === 0
-        ? pc.yellow(`No pages changed since ${sc.ref} — nothing was evaluated.`)
-        : pc.dim(
-            `Scoped to ${sc.pagesSelected} of ${sc.pagesTotal} page(s) changed since ${sc.ref}.`,
-          ),
-    );
+    lines.push(sc.empty ? pc.yellow(sc.text()) : pc.dim(sc.text()));
   }
 
   // The baseline's line in the summary. `removed` is the load-bearing number

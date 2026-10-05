@@ -46,3 +46,7 @@ media/scratch-*/
 # the Docs workflow fails when it no longer matches the glossary.
 .vale/styles/*
 !.vale/styles/Terms/
+
+# Two documented procedures write a report into .tmp/ when a reader follows
+# them, and so does the docs-as-tests run of those pages.
+.tmp/

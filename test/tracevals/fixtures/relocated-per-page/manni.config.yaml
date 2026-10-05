@@ -1,0 +1,16 @@
+# One manifest per artifact (proposal 0058), with no `keys` (proposal 0068).
+# Each manifest owns what its artifact's schemas mark external, and
+# artifact-evals marks the whole `metadata` block.
+collections:
+  - name: agents
+    paths: [".claude/skills/**/SKILL.md"]
+    externalMetadata:
+      - file: "{page}.meta.yaml"
+
+meta:
+  overrides:
+    - collection: agents
+      schemas: ["manni:artifact-evals:1.0.0"]
+
+tracevals:
+  failOnReview: false

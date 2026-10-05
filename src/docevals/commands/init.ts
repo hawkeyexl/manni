@@ -58,10 +58,10 @@ docevals:
     cacheDir: .manni/docevals/cache
 
   execution:
-    # Default deny. Grant frontmatter-commands only if you trust whoever can
-    # edit this corpus's pages: it lets command evals declared in page
-    # frontmatter run.
-    allow: []
+    # Every grant holds unless this list narrows it. frontmatter-commands lets
+    # command evals declared in page frontmatter run. Write [] if you do not
+    # trust whoever can edit this corpus's pages.
+    allow: [frontmatter-commands]
 
   scripts:
     dir: "{docDir}/manni-docevals" # generated check scripts live beside the docs

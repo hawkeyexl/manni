@@ -17,15 +17,21 @@ import type { InferenceProvider } from "@hawkeyexl/inference";
 import { makeGenerateScripts } from "../graders/scriptgen.js";
 import type { GenerateFn } from "../core/engine.js";
 import { DocevalsError } from "../types.js";
-import { EXECUTION_GRANTS, unknownGrantsMessage } from "../core/config.js";
-import type { ExecutionGrant } from "../core/config.js";
+import {
+  isExecutionGrant,
+  unknownGrantsMessage,
+  type ExecutionGrant,
+} from "../../shared/execution.js";
 import { warn } from "../../shared/warn.js";
 
 export interface RunCommandOptions extends DocumentInputOptions {
   format?: ReportFormat;
   deterministicOnly?: boolean;
   aiOnly?: boolean;
-  /** Extra execution grants for this run. */
+  /**
+   * Run only these execution grants, of those the config holds. Absent keeps
+   * every grant `execution.allow` holds, which is every grant by default.
+   */
   allowExecution?: string[];
   /** `false` clears every grant for this run. */
   execution?: boolean;
@@ -43,6 +49,11 @@ export interface RunCommandOptions extends DocumentInputOptions {
   suite?: string;
   /** Evaluate only pages that differ between this git ref and HEAD (ADR 01040). */
   since?: string;
+  /**
+   * Evaluate only pages whose file or eval manifest changed within this
+   * duration back from now, such as `7d`. With `since`, a page must satisfy both.
+   */
+  newerThan?: string;
   baseline?: string | boolean;
   writeBaseline?: string | boolean;
   toolVersion?: string;
@@ -53,16 +64,13 @@ export interface RunCommandOptions extends DocumentInputOptions {
  * Grants, checked rather than asserted.
  *
  * The CLI validates in `collectGrant`, but this is also the entry point for
- * programmatic callers, and an unknown grant that silently does nothing is the
- * exact failure the default-deny posture exists to avoid: the run skips every
- * command eval and exits 0, which reads as a clean corpus rather than a
- * misspelled grant.
+ * programmatic callers. An unknown grant that silently matched nothing would
+ * narrow the run to no grant at all: every command eval skipped, exit 0, which
+ * reads as a clean corpus rather than a misspelled grant.
  */
 function asGrants(values: string[] | undefined): ExecutionGrant[] | undefined {
   if (values === undefined) return undefined;
-  const unknown = values.filter(
-    (v) => !(EXECUTION_GRANTS as readonly string[]).includes(v),
-  );
+  const unknown = values.filter((v) => !isExecutionGrant(v));
   if (unknown.length > 0) {
     throw new DocevalsError(unknownGrantsMessage(unknown));
   }
@@ -158,6 +166,7 @@ export async function runRun(
     evalNames: options.evalNames,
     suite: options.suite,
     since: options.since,
+    newerThan: options.newerThan,
     baseline: options.baseline,
     writeBaseline: options.writeBaseline,
     toolVersion: options.toolVersion,

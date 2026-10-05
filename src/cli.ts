@@ -19,6 +19,7 @@ import { buildProgram as buildGraph } from "./graph/cli.js";
 import { buildProgram as buildMeta } from "./meta/cli.js";
 import { buildProgram as buildLint } from "./lint/cli.js";
 import { buildProgram as buildTerm } from "./term/index.js";
+import { buildProgram as buildTracevals } from "./tracevals/cli.js";
 import { runIfMain } from "./shared/run.js";
 
 export function buildProgram(): Command {
@@ -95,6 +96,13 @@ export function buildProgram(): Command {
       .name("graph")
       .description(
         "Deterministic knowledge graphs derived from documentation frontmatter and formatting",
+      ),
+  );
+  program.addCommand(
+    buildTracevals()
+      .name("tracevals")
+      .description(
+        "Deterministic and LLM-as-judge adherence evals for AI agent session traces",
       ),
   );
   // Not a tool but a family resource with verbs (proposal 0045).

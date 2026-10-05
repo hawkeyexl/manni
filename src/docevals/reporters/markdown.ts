@@ -1,5 +1,7 @@
 /** Markdown reporter: PR-comment-friendly summary. */
+import { scopeLine } from "./scope.js";
 import type { EngineReport } from "../core/engine.js";
+import { declaringEntry, locationLabel } from "./location.js";
 
 const OUTCOME_ICON: Record<string, string> = {
   pass: "✅",
@@ -28,15 +30,11 @@ export function renderMarkdown(report: EngineReport): string {
   // What `--since` scoped the run to. This matters most in the CI formats: a
   // clean-tree run is otherwise an empty table nobody can tell apart from a
   // corpus that passed (ADR 01040).
-  const sc = report.since;
+  const sc = scopeLine(report);
   if (sc) {
+    const text = sc.text((s) => `\`${s}\``);
     lines.push("");
-    lines.push(
-      sc.pagesSelected === 0
-        ? `> **No pages changed since \`${sc.ref}\` — nothing was evaluated.**`
-        : `_Scoped to ${sc.pagesSelected} of ${sc.pagesTotal} page(s) changed since ` +
-          `\`${sc.ref}\`._`,
-    );
+    lines.push(sc.empty ? `> **${text}**` : `_${text}_`);
   }
 
   // The baseline line belongs in the CI formats above all: `removed` is the
@@ -74,7 +72,14 @@ export function renderMarkdown(report: EngineReport): string {
     lines.push("", "### Findings", "");
     for (const r of notable) {
       const icon = OUTCOME_ICON[r.outcome] ?? "";
-      lines.push(`- ${icon} **${r.evalName}** — \`${r.file}\``);
+      // The page, then the entry that declares the eval. When the page
+      // declares it, the one label says both.
+      const entry = declaringEntry(r);
+      const where =
+        entry.file === r.file
+          ? `\`${locationLabel(entry)}\``
+          : `\`${r.file}\` · \`${locationLabel(entry)}\``;
+      lines.push(`- ${icon} **${r.evalName}** — ${where}`);
       for (const f of r.findings ?? []) {
         const loc = f.line != null ? `:${f.line}` : "";
         lines.push(`  - ${f.severity}${loc}: ${f.message}`);

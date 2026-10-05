@@ -35,8 +35,8 @@ docevals:
     cacheDir: .manni/docevals/cache
 
   # The corpus declares command evals in page frontmatter (installation.mdx,
-  # find.mdx), so this run lets them execute. Grant it only to a corpus whose
-  # editors you trust.
+  # find.mdx), and this run lets them execute. That is the default too; the
+  # key is spelled out so the fixture says so.
   execution:
     allow: [frontmatter-commands]
 

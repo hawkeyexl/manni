@@ -1,0 +1,27 @@
+docs/src/content/docs/tracevals/declare/index.mdx:
+  personas: ["maya"]
+  journeys: ["m21"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/meta/schemas/artifact-evals/1.1.0.json"
+    - path: "src/tracevals/evals/extract.ts"
+  eval-suite: tracevals
+  evals:
+    - id: declare-an-eval
+      assertion: "A reader can write a metadata.evals entry with an id, an assertion and a grader, and choose its severity."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-79
+      integrity: sha256-7a3b96c86f288e765d322aec8c5973d9b9b3b18cfdf87b5ba1a4402d8529172c
+    - generated-by: Claude Opus 5.5
+      lines: 80
+      integrity: sha256-6ca6eea69d1ecb3ef1eeb081929787d797a60ebc90618720919b82a6b68f00dc
+    - generated-by: Claude Opus 5
+      lines: 81-201
+      integrity: sha256-6945b9c45c4e2f9acd697d99e3107f7cf3b47280ed57b7d2a3173bf3945e9b71
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

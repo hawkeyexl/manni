@@ -61,6 +61,16 @@ passing on the deterministic evals alone. `--since` selects a page when its own 
 also selects a page when a manifest that supplies its `evals`, `eval-suite` or `eval-skip` changed.
 The [CLI reference](/manni/docevals/reference/cli/#scoping-a-run-to-what-changed) has the rule.
 
+`--since` reads commits, so a page you edited and have not committed is left out. While you write,
+scope by age instead:
+
+```bash
+npx @hawkeyexl/manni docevals run --ai-only --newer-than 2h
+```
+
+`--newer-than` takes the modification time of a page with uncommitted changes, so the page on
+your screen is in scope. A clean, committed page takes its last commit's date.
+
 ### Use a hosted provider in CI
 
 An `anthropic` or `openai` provider, or `claude-cli`, puts no inference load on the runner. It

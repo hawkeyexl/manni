@@ -1,0 +1,21 @@
+docs/src/content/docs/tracevals/declare/coverage.mdx:
+  personas: ["maya"]
+  journeys: ["m23"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/artifacts/resolve.ts"
+    - path: "src/tracevals/reporters/coverage.ts"
+  eval-suite: tracevals
+  evals:
+    - id: read-coverage
+      assertion: "A reader can read a coverage row and say why an artifact did or did not resolve."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-397
+      integrity: sha256-968385eee94d6f257bcf7eb861c371cca6877e1ddb1cf06dea446b74f3c7367c
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

@@ -1,0 +1,56 @@
+docs/src/content/docs/tracevals/reference/api.mdx:
+  personas: ["devin"]
+  journeys: ["d15"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/index.ts"
+  eval-suite: tracevals
+  evals:
+    - id: find-an-export
+      assertion: "A reader can find the export for a tracevals command and name its options."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-36
+      integrity: sha256-304b330c09c5b4c9a0c41d7034965865d9b78e51315d7629689f89711c74842f
+    - generated-by: Claude Opus 5.5
+      lines: 37
+      integrity: sha256-5fab2a02bfde2ceac91ea3a67a86738fc3393588fa70dd58071d2d49138bf74e
+    - generated-by: Claude Opus 5
+      lines: 38-41
+      integrity: sha256-25f08197fba35916ca356aeeb99026309141b1df754f88d161f16484d6cd8b0b
+    - generated-by: Claude Opus 5.5
+      lines: 43-49
+      integrity: sha256-be97fc5ae3861b3bec81dce3a43642c9594f0dcaa944cb885614fed91e05b98a
+    - generated-by: Claude Opus 5
+      lines: 51-87
+      integrity: sha256-c4d882359bb0098b62d89202d105613c5b1b7587fffa562e0763465ea8d3b49c
+    - generated-by: Claude Opus 5.5
+      lines: 88
+      integrity: sha256-8f73a88b17685698a38efc26c999344a93fc046dff749436c70b71def3e31c33
+    - generated-by: Claude Opus 5
+      lines: 89-94
+      integrity: sha256-0dc4c0fa2b19b2bdff2141b19b98acbd8d52550be3ceafd4fa46683cfe98633f
+    - generated-by: Claude Opus 5.5
+      lines: 95
+      integrity: sha256-4a3cdd6113476e029f4c7b519186ee2034d0eec6797047dafa8de55aec0bf9a0
+    - generated-by: Claude Opus 5
+      lines: 96-101
+      integrity: sha256-6f058acdd24305cfb3796247b163b7d97c928ffe4cbb979ad16dcae49cc2d88d
+    - generated-by: Claude Opus 5.5
+      lines: 102
+      integrity: sha256-6eb86e017f9d25944a509fdb1720955c9f214091b0aa2b50d75b3f937732e5c0
+    - generated-by: Claude Opus 5
+      lines: 103-158
+      integrity: sha256-a98b4b9cb105c7db6e0469e2a82c9bea041be4cac1a4f137b257fb8d1dee2f22
+    - generated-by: Claude Opus 5.5
+      lines: 159
+      integrity: sha256-6ca7aa368af6177af80da1517f436fd81c77096722bf914bef2d296bda69f898
+    - generated-by: Claude Opus 5
+      lines: 160-205
+      integrity: sha256-2f197a1f0a7e4e030a246ae06c113a076972af81ec7dda9ca0cf462810cba4a3
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

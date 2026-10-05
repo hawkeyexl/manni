@@ -1,0 +1,16 @@
+# fix-bug's `metadata` block, in a manifest that names no keys.
+.claude/skills/fix-bug/SKILL.md:
+  metadata:
+    evals:
+      - id: used-read
+        assertion: The session read at least one source file before editing.
+        grader: tool-usage
+        options:
+          tool: Read
+          expect: used
+      - id: stayed-out-of-the-shell
+        assertion: The session never ran shell commands; this skill is edit-only.
+        grader: tool-usage
+        options:
+          tool: Bash
+          expect: not-used

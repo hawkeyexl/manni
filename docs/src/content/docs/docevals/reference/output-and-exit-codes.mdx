@@ -2,7 +2,7 @@
 title: Output and exit codes
 description: The pretty, json, markdown, github, sarif, junit, and html report shapes, and what each exit code means.
 type: reference
-last-updated: 2026-10-02
+last-updated: 2026-10-04
 ---
 
 Verified against `src/docevals/reporters/` and `src/docevals/types.ts`, with samples captured from real runs against
@@ -39,7 +39,7 @@ checked" through a config file rather than a flag does not make it a passing bui
 Two empty runs are **not** errors, because both are choices rather than misconfigurations:
 
 - Every page carrying `eval-skip`. Pages you skipped are not counted.
-- A `--since` scope that selects no pages (see [Scoping a run to what
+- A `--since` or `--newer-than` scope that selects no pages (see [Scoping a run to what
   changed](/manni/docevals/reference/cli/#scoping-a-run-to-what-changed)).
 
 Neither passes in silence. Whenever no eval reaches a verdict, the report carries a warning saying
@@ -157,17 +157,18 @@ The default. Per page, one line per eval; then per-suite aggregates.
 ```console
 $ manni docevals run docs/actions/goTo.mdx --deterministic-only --no-generate
 docs/actions/goTo.mdx
-  skip no-future-promises
+  skip no-future-promises  docs/actions/goTo.mdx:5
        judge skipped (--deterministic-only)
-  pass names-an-action
-  FAIL no-todo-markers
+  pass names-an-action  docs/actions/goTo.mdx:5
+  FAIL no-todo-markers  docs/actions/goTo.mdx:7
        error:14 [regex/found] Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
 
 Suites
   reference: 1/2 passed — 0% vs target 100% below target (1 skipped)
 ```
 
-The finding line is `severity:line [ruleId] message`. Colour is applied only on a TTY, and never
+Each eval line ends with its [`location`](#location), the file and line that declare the eval. The
+finding line is `severity:line [ruleId] message`. Colour is applied only on a TTY, and never
 under `NO_COLOR` or `--no-color`. The other formats carry no colour.
 
 A finding may also carry `"diagnostic": true`, which appears in `--format json` and `sarif`. It
@@ -205,7 +206,8 @@ One object, for programmatic consumers.
       ],
       "durationMs": 0,
       "suite": "reference",
-      "weight": 1
+      "weight": 1,
+      "location": { "file": "docs/actions/goTo.mdx", "line": 7 }
     }
   ],
   "suites": [
@@ -244,8 +246,24 @@ passing `names-an-action`.
 | `via` | `"human-review"` when a persisted review resolved the outcome. |
 | `selfPreference` | `{axis, model}` when the model that judged the eval also produced what it graded (`axis: "content"`) or proposed the eval (`axis: "criterion"`). Absent otherwise. See [Self-preference](/manni/docevals/judge/#self-preference). |
 | `suite`, `weight` | The suite the result reports under, and its weight in that suite's rate. |
+| `location` | `{ file, line? }`, where the page declares the eval. See [below](#location). |
 | `baselined` | Count of findings a [baseline](#baseline) suppressed on this eval. Present only when a baseline was in effect, so its absence means "no baseline", not "nothing was forgiven". |
 | `skipReason`, `durationMs` | |
+
+### `location`
+
+The entry that declares the eval, so a fix starts on the right line:
+
+- An item of the page's `evals` key names its own line. That covers an inline eval, a `use:`
+  reference, and the string shorthand.
+- A suite eval the page never names is declared by the page's `eval-suite` key, so it names that
+  line. With the suite set by `defaults.suite`, it names the page alone, with no `line`.
+- When a [manifest](/manni/docevals/reference/frontmatter/#where-evals-live) supplies the key, `file`
+  is the manifest and `line` is the entry's line in it.
+
+`file` is spelled the way `file` is, relative to the run's directory. In the sample above,
+`no-todo-markers` is declared by the `use:` item on line 7 of the page, and the finding it raised is
+on line 14.
 
 ### `suites[]`
 
@@ -255,7 +273,7 @@ nothing was graded. A scored criterion counts once, by its own weight, in place 
 when the suite lists criteria.
 
 `partial` is present, and `true`, only when `--eval` or `--suite` filtered the run, or `--since`
-left pages out. It says the run
+or `--newer-than` left pages out. It says the run
 measured part of the suite, so the summary carries numbers but no verdict:
 
 ```json
@@ -286,6 +304,24 @@ Each criterion is suspended, because the filter left one of its two members ungr
 a failing suite. An unfiltered run omits the key entirely, so `partial !== true` is the test for
 "this verdict is real". See
 [Selecting evals suspends suite enforcement](/manni/docevals/reference/cli/#selecting-evals-suspends-suite-enforcement).
+
+### `since` and `newerThan`
+
+A scoped run carries one block per scoping flag. Each is absent when its flag was not given.
+
+```json
+"since": { "ref": "origin/main", "pagesSelected": 2, "pagesTotal": 40 },
+"newerThan": { "duration": "7d", "pagesSelected": 2, "pagesTotal": 40 }
+```
+
+`pagesSelected` counts the pages the run evaluated, out of `pagesTotal` discovered. With both
+flags, both blocks carry the one combined count, the pages that satisfied both. The `pretty`,
+`markdown` and `github` formats print the scope as one line:
+
+```text
+Scoped to 2 of 40 page(s) changed since origin/main and in the last 7d.
+No pages changed in the last 7d — nothing was evaluated.
+```
 
 ### `problems[]`
 
@@ -369,7 +405,7 @@ both annotates the diff and works as `$GITHUB_STEP_SUMMARY`.
 
 ### Findings
 
-- ❌ **no-todo-markers** — `docs/actions/goTo.mdx`
+- ❌ **no-todo-markers** — `docs/actions/goTo.mdx:7`
   - error:14: Pattern /\b(TODO|TBD|FIXME)\b/ found in body, expected absent
 ```
 
@@ -377,12 +413,19 @@ Severity maps to the annotation level: `error` → `::error`, `warning` → `::w
 `::notice`. Values are escaped per GitHub's rules. That covers `%`, CR, and LF in data, plus `:` and
 `,` in properties, which is why the title reads `manni docevals%3A`.
 
-A failing **ai** eval annotates the file with the mean confidence and the judge's reasoning, since
-it has no line to point at:
+A finding with a line of its own keeps it, as `no-todo-markers` does above. Anything else lands on
+the eval's [`location`](#location). A failing **ai** eval has no content line, so it annotates the
+entry that declares it, with the mean confidence and the judge's reasoning. So does a finding that
+carries no line:
 
 ```text
-::error file=...,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). <reasoning>
+::error file=docs/actions/goTo.mdx,line=5,title=manni docevals%3A no-future-promises::AI judge: fail (confidence 0.93). <reasoning>
 ```
+
+An errored eval with no findings annotates the same entry, with the reason it could not run.
+
+When a manifest declares the eval, `file` is the manifest. The markdown summary names the page and
+then the manifest entry, as `` `docs/install.md` · `site.metadata.yaml:4` ``.
 
 ## `--format html`
 
@@ -398,7 +441,8 @@ Self-containment is the point. The file is meant to survive being attached to a 
 mailed, or opened from a CI artifact directory. All of those strip or block external requests, and
 any of them would otherwise render it unstyled. It follows the reader's `prefers-color-scheme`.
 
-It carries the judge's `observed` quotation alongside each verdict, because a verdict without the
+Each eval shows its [`location`](#location) beside its name. It carries the judge's `observed`
+quotation alongside each verdict, because a verdict without the
 text it rests on is not reviewable. It also carries findings grouped by page, the weighted suite
 summary including criteria, and baseline and review state. A self-preference marker appears when the
 judging model also produced what it graded.
@@ -425,13 +469,18 @@ Two properties are load-bearing, and both are asserted in CI:
 A failing ai-graded eval appears as a result too, with the judge's confidence and reasoning. It
 has no `Finding`, and omitting it would read as "the AI evals all passed".
 
+A finding with a line keeps its own file and `region`. A judged failure, an errored eval and a
+finding with no line take the eval's [`location`](#location), with its line as `region.startLine`.
+A location with no line has no `region`.
+
 ## `--format junit`
 
 JUnit XML, which every CI system already knows how to render as a test report.
 
 One `<testsuite>` per eval suite, one `<testcase>` per (page, eval) pair, with `classname` as the
 page and `name` as the eval. That is the grouping JUnit viewers offer, so you expand a file and see
-its checks.
+its checks. Each `<testcase>` also carries `file` and `line`, the eval's [`location`](#location).
+`line` is left out when the location has none.
 
 ```bash
 npx @hawkeyexl/manni docevals run --format junit > docevals.junit.xml

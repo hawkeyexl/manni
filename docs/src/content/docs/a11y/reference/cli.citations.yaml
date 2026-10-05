@@ -14,9 +14,9 @@ docs/src/content/docs/a11y/reference/cli.mdx:
         integrity: sha256-891d411f58e499190f69e91063f8b4322b70b261b4e5bba190135a0f6bc73311
       source:
         file: src/shared/color.ts
-        lines: 26-29
+        lines: 27-30
         integrity: sha256-d0d4f7d9f92ac72bdfd18d58bf6ba26c73fe6b72cfd05e9a941f78b1f26360cf
-        commit-sha: 8116e443d96187971e6f417b92952362a3f1219b
+        commit-sha: d1cee1c05e9237e34c393656a14b7281b4b409c2
     - id: no-color-palette-meanings
       claim:
         lines: 44

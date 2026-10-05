@@ -1425,9 +1425,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-a0445253f21233dd09149c4dcbb9ca1f871514f2a509d21ee22874f7f3acf86b
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1004-1012
+        lines: 1010-1018
         integrity: sha256-0fdd2bc93eb0acbc84d62eaaf5f1c7ec2795441da58714327642a7d7ee77c36c
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: offline-flag-is-per-run
       claim:
         integrity: sha256-50cc1fbd993bc5e2a23e9cdb9373a16358550f893478fc626477be551f7abcc7
@@ -2688,9 +2688,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-70b4c7f27e7da21f034f9cd4d2accbbe37b03f5b55c28255f5e0497d21019f9a
       source:
         file: src/shared/manifest-cas.ts
-        lines: 215-221
+        lines: 216-222
         integrity: sha256-e28ab7e1db6bbae1774098dc07fa358866954c2786ec2c271f74fe3439c89763
-        commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: page-manifest-missing-reads-empty
       claim:
         integrity: sha256-86afe833f2e1c77c5941a713f350cb3869ebc80285642b757845bde4bfbe6aaa

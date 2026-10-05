@@ -1,0 +1,13 @@
+# A field-joined manifest (proposal 0039): entries are keyed on the artifact's
+# own `name` rather than on its path, so the evals follow the skill when it
+# moves.
+collections:
+  - name: agents
+    paths: [".claude/skills/**/SKILL.md"]
+    externalMetadata:
+      - file: ./artifact-evals.yaml
+        keys: [metadata]
+        join: name
+
+tracevals:
+  failOnReview: false

@@ -1,0 +1,5 @@
+# A config directory whose only job is to stop `command` execution, so the
+# flagless path (config alone, no `--no-execution`) has something to prove.
+tracevals:
+  execution:
+    allow: []

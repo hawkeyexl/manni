@@ -8,7 +8,7 @@ The site is organized by user intent, not by document type. Each top-level secti
 
 ## Domains
 
-manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Eight domains ship today, so the site has eight top-level sections: `meta/`, `cite/`, `key/`, `a11y/`, `term/`, `lint/`, `docevals/` and `graph/`. The same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
+manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Nine domains ship today, so the site has nine top-level sections: `meta/`, `cite/`, `key/`, `a11y/`, `term/`, `lint/`, `docevals/`, `graph/` and `tracevals/`. The same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
 
 The `lint/` section is the sixth. It carries four journey pages and a reference shelf. It serves Maya (M10), Devin (D9), Theo (T5) and Sara (S7). Maya holds every page to the shape its doctype promises. Devin runs the CI gate, Theo reads one structure failure, and Sara describes a doctype as a template. Proposal 0050 folded the domain in, and 0061 made the template format a grammar. That is what earned Sara a set-up track. Writing a template is a job with steps now, rather than a key list to read once. The `lint/` content set is below, after `a11y/`.
 
@@ -19,6 +19,8 @@ The `term/` section serves four journeys. Sara defines the terms (S6), Maya keep
 The `docevals/` section arrived with a strategy of its own, six personas and twelve journeys. Three of those personas were already these people by name, Devin, Sara and Theo. The other three were Priya, Nate and Iris. They are Maya as a platform lead, as the only person writing the docs, and as the one handed a corpus she did not write. They were folded into her entry in `personas.md` rather than added, for the same reason a11y added no persona. The journeys became M11–M15, D10–D11, S8–S11 and T6. M16 was added later, when the eval keys gained a home outside the page. Its content set is below, after `term/`.
 
 The `graph/` section is the eighth. It serves Maya (M18–M20), Devin (D12–D13), Sara (S12) and Theo (T7). Maya sees the docset as a graph, walks what a change affects, and fills the categorization nobody wrote. Devin gates the graph and publishes it. Sara extends the shapes it is checked against, and Theo fixes a red `graph check`. Proposal 0051 folded the domain in. Its content set is below, after `docevals/`.
+
+The `tracevals/` section is the ninth. It arrived as `docevals/` did, with five audiences of its own. They were artifact authors, an eval-standard owner, platform and CI, run triagers, and a toolsmith named Rin. Rin wants the library rather than the binary. Four of the five were already these people by name. Rin was the only genuinely new shape. He is Devin reading the JSON report and calling the namespace export. So he folded into D15 and the API reference rather than becoming a sixth persona. Upstream's nine journeys became M17, M21–M23, D14–D15, S13–S14 and T8. They took the next free ids, because docevals, lint and graph already held the lower ones. Its content set is last, after `graph/`. No per-tool strategy directory came over: `cujs.md`, `personas.md` and this file carry the whole family.
 
 ---
 
@@ -340,6 +342,55 @@ The section has no glossary page of its own. `manni term` owns the glossary (pro
 | Configuration reference (`graph/reference/configuration.mdx`) | All | ★ | Every `graph:` key with type and default, in camelCase. Then how the family's `collections:` and `providers:` reach this tool, and the keys that moved or went. Guarded by two drift tests. Source of truth: `src/graph/core/{config,config-schema.json}`, `src/shared/{collections,providers}.ts`. |
 | Library API reference (`graph/reference/library-api.mdx`) | D13 | ★ | The `graph` namespace, and the dependency-free browser runtime published beside it. Guarded by the coverage-symbol drift test. That is why the entry point re-exports `SECTION_COVERAGE_FIELDS`. Source of truth: `src/graph/index.ts`, `src/graph/runtime/index.ts`, `src/graph/embed/index.ts`. |
 
+### `tracevals/` (adherence evals for agent session traces)
+
+The ninth domain's content set, under `docs/src/content/docs/tracevals/`, imported from moose-tracevals with the tool. The section order is the one it arrived with and is kept, because it is a journey order rather than an alphabet. The nav gains a `tracevals` group after `graph`, with an Overview link and seven groups autogenerated from the matching directories:
+
+```
+Overview — "What do you want to do?" router + a 30-second proof
+│
+├─ Get started           (Maya)    → M17
+├─ Declare what to check (Maya)    → M21, M22, M23
+├─ Run it in CI          (Devin)   → D14, D15
+├─ Trust the judge       (Sara)    → S13, S14
+├─ Read a failing eval   (Theo)    → T8   (highest traffic; no prerequisites)
+├─ Build on tracevals    (Devin)   → D15
+└─ Reference             (lookup shelf)
+```
+
+Three placements carry their own reasoning. `declare/` holds three pages rather than one. Declaring an eval, proposing evals in bulk and accounting for coverage are three journeys that share a vocabulary, not three sections of one. `triage/` is shallow and top-level for the same reason docevals' `fix/` is. Its reader arrives from a red annotation and never sees the rest of the tree. So the page must be complete on its own, with *artifact*, *eval* and *outcome* defined in place. `extend/` stays separate from `ci/consume-results` because Devin wants a file he can forward and the toolsmith wants to skip the CLI. Serving both to the end on one page serves neither.
+
+Four constraints hold across the section. No page prints a dollar figure for what tracevals itself spends. That is because its budget is counted in turns and its telemetry reports no cost. The one exception is the `cost` grader, whose finding is about the **graded session's** spend and keeps its dollar text. No page names a default model id, because none is hardcoded: the provider comes from the family's top-level `providers:` map through `tracevals.provider`. No page shows `manni tracevals <trace>` without the verb, because 0034 removed the default subcommand. And pages that present a command carry inline Doc Detective steps, which the docs-as-tests workflow runs against the fixture session store under `test/tracevals/fixtures/`.
+
+★ follows the rule above. The imported strategy's backbone and P0 pages carry it.
+
+| Page | CUJ | ★ | Notes |
+|---|---|---|---|
+| Overview (`tracevals/index.mdx`) | All | ★ | Mirrors the sibling overviews' hero. What a trace, an artifact and an eval are, the 30-second proof from a real `--deterministic-only` run, and a router into the six sections. |
+| Get started (`tracevals/get-started/index.mdx`) | M17 | ★ | The backbone. Install, `list` a real session, one offline run, a line-by-line read of the report including artifact coverage, and the exit code. Ends in a fork rather than one next step, because Maya leaves toward `declare/` and Devin toward `ci/`. |
+| Declare what to check (`tracevals/declare/index.mdx`) | M21 | ★ | The `metadata.evals` block, colocated with the instruction it checks. The judged-or-deterministic decision, the third answer (not testable at all), and severity as a deliberate choice, since only `error` fails. |
+| Propose evals with `fill` (`tracevals/declare/fill.mdx`) | M22 | ★ | The one write path, so trust is the whole page. `--dry-run` first, the gate in order with confidence last, the needs-sharpening notes as a to-do list. `--max-turns` in inference calls, and why project rules are proposed but never written. `fill` records what it wrote in `metadata.meta-provenance`. |
+| Artifact coverage (`tracevals/declare/coverage.mdx`) | M23 | ★ | The six states a coverage row can be in, and the resolution order for skills, agents, slash commands and project rules. How to diagnose an unresolved reference from the `tried` list. Coverage is the honest answer to "what did you not check?". |
+| Run it in CI (`tracevals/ci/index.mdx`) | D14 | ★ | Leads with the offline answer rather than arriving at it. `--deterministic-only` as a complete mode, `--local` for runs that must not leave the runner, and `CLAUDE_CONFIG_DIR` pinned on a shared runner. Recipes with every third-party action pinned to a full SHA. |
+| Exit codes and reports (`tracevals/ci/exit-codes-and-reports.mdx`) | D14, T8 | ★ | The exit-code contract as the API, `1` against `2`, and `needs-review` as a policy decision taken up front rather than met as an unexplained red build. |
+| Consume results (`tracevals/ci/consume-results.mdx`) | D15 | | `-f json`, `-o`, the history file, and a regression as a defined event: a check that passed before and does not now. Carries the caveat that history is local, so an ephemeral runner starts empty. Hands off to `extend/`. |
+| Trust the judge (`tracevals/judge/index.mdx`) | S13 | ★ | The arithmetic, not adjectives: ensemble, consensus, zones, and a worked example. The invariant that an errored run counts against consensus and can never round into a silent pass. Provider choice through the family `providers:` map, with `--local`. The self-preference check's two axes, `session` and `criterion`, the second reading `meta-provenance`. |
+| Calibrate (`tracevals/judge/calibrate.mdx`) | S13 | | The labels file, the numbers, and which eval disagreed. `--sweep` re-scores cached verdicts for free. Disagreement exits `0`; an eval that never armed stays out of the denominator. `--max-turns` replaces the price table, so no ceiling can be silently disabled by unknown pricing. The stale-cache trap and the prompt version in the cache key. |
+| Schema versioning (`tracevals/judge/schema-versioning.mdx`) | S14 | | The evals block as a published contract at `manni:artifact-evals:1.0.0-proposal.3`. What proposal.3 changed and why (`notice` for `info`, `meta-provenance` for `eval-provenance`, the `^eval-(?!skip$)` guard). `capability` against `regression`, and why enforcement deliberately does not change. The staged ratchet. |
+| Read a failing eval (`tracevals/triage/index.mdx`) | T8 | ★ | Complete in one page, with no subject dependencies. The five outcomes kept distinct, and the several unrelated causes of `SKIP` kept apart. A coverage row named as not an outcome, and "the eval is wrong" named beside "fix the behavior" and "escalate". |
+| FAQ (`tracevals/triage/faq.mdx`) | T8 | | The follow-up shelf, deliberately a second page so the first keeps its length discipline. |
+| Build on tracevals (`tracevals/extend/index.mdx`) | D15 | | The `tracevals` namespace export from `@hawkeyexl/manni`, and the plugin seam. |
+| Custom graders (`tracevals/extend/custom-graders.mdx`) | D15 | | Writing a grader, registering it through the namespace import, and loading it with `--require <module>`, repeatable, one module per occurrence. |
+| Reference (`tracevals/reference/index.mdx`) | Navigation | ★ | The shelf index. |
+| CLI reference (`tracevals/reference/cli.mdx`) | All | ★ | Every command and flag. Guarded by `npm run docs:check-cli`. Source of truth: `src/tracevals/cli.ts`. |
+| Configuration reference (`tracevals/reference/configuration.mdx`) | M21, D14, S13 | ★ | Every `tracevals:` key with type and default, in camelCase, including `provider`, `model`, `judge.maxTurns` and `fill.maxTurns`. Points at meta's configuration page for the family `providers:` map rather than duplicating it. Carries the two config error hints: the old `provider:` object, and a kebab-case key. |
+| Evals schema (`tracevals/reference/evals-schema.mdx`) | M21, S14 | ★ | The full `metadata.evals` block shape at proposal.3, `severity` as `error \| warning \| notice`, `metadata.eval-skip`, and the reserved `eval-` prefix. No schema copy ships in the package. |
+| Graders reference (`tracevals/reference/graders.mdx`) | M21, D14 | ★ | Every grader kind with its options, including the deterministic set decidable from the trace alone, the `command` grader behind `graders.command.enabled`, and `cost` with `maxUsd` and `maxTokens`. |
+| Report and exit codes (`tracevals/reference/report-and-exit-codes.mdx`) | D14, D15, T8 | ★ | The three formats (`pretty`, `json`, `markdown`), the JSON shape field by field, turn counts in telemetry, `reason: "turn budget"` on a skip, and the exit codes. |
+| Traces (`tracevals/reference/traces.mdx`) | M17, D14 | | Where a session store lives, `CLAUDE_CONFIG_DIR` and the `~/.claude` fallback, what `list` and `capture` do, and how artifacts are resolved from a trace. |
+| API reference (`tracevals/reference/api.mdx`) | D15 | | The `tracevals` namespace export. Where upstream's toolsmith lands. Guarded by `npm run docs:check-api`. |
+| Glossary (`tracevals/reference/glossary.mdx`) | Vocabulary | | trace, artifact, eval, grader, finding, outcome, implicit eval, coverage, ensemble, consensus, confidence zone, turn budget, capability and regression. |
+
 ### Supporting / project
 
 | Page | CUJ | ★ | Notes |
@@ -407,6 +458,15 @@ Reference pages must never contradict the source code. Before writing any Refere
 | `graph` govern (`graph/govern/index.mdx`) | `shapes/graph/shapes-1.0.0.ttl`, `src/graph/core/shacl.ts` for the severity mapping and the two SKOS integrity checks, `src/graph/core/graph-output.ts` for `x-manni-graph-output` |
 | `graph` journey pages (overview, get started, how it works, explore, impact, fill, CI, publish, fix) | `src/graph/commands/` for behaviour, `src/graph/core/{analyze,derive,harvest}.ts` for what becomes a triple, `src/graph/reporters/` and `test/graph/` for the exact emitted strings; sample output captured from the built binary over `test/graph/fixtures/dd/` |
 | The graph namespace document | `ns/graph/ns-<version>.ttl` is the source; `docs/public/graph/ns.ttl` is the copy the IRI `https://hawkeyexl.github.io/manni/graph/ns#` dereferences to, and `test/graph/unit/vocabulary.test.ts` asserts they are byte-identical |
+| `tracevals` CLI reference (`tracevals/reference/cli.mdx`) | `src/tracevals/cli.ts`, guarded by `scripts/check-cli-reference.mjs` |
+| `tracevals` configuration reference (`tracevals/reference/configuration.mdx`) | `src/tracevals/core/config.ts`, `src/shared/providers.ts` (the family `providers:` map and the precedence chain) |
+| `tracevals` evals schema (`tracevals/reference/evals-schema.mdx`) | `docs/proposals/0023/schemas/artifact-evals/1.0.0-proposal.3.json` (the vocabulary, bundled at build time), `src/tracevals/evals/`, `src/shared/severity.ts` |
+| `tracevals` graders reference (`tracevals/reference/graders.mdx`) | `src/tracevals/graders/registry.ts`, each grader under `src/tracevals/graders/` |
+| `tracevals` report and exit codes (`tracevals/reference/report-and-exit-codes.mdx`) | `src/tracevals/reporters/`, `src/tracevals/aggregate.ts`, `src/shared/run.ts`, `src/shared/severity.ts` |
+| `tracevals` traces reference (`tracevals/reference/traces.mdx`) | `src/tracevals/trace/` (discovery and parsing, including `CLAUDE_CONFIG_DIR`), `src/tracevals/artifacts/` (resolution), `src/tracevals/capture/` |
+| `tracevals` API reference (`tracevals/reference/api.mdx`) | `src/tracevals/index.ts` re-exported from `src/index.ts`, the built `dist/index.d.ts` (guarded by `scripts/check-api-reference.mjs`) |
+| `tracevals` judge pages (trust the judge, calibrate, schema versioning) | `src/tracevals/judge/trace-judge.ts`, `src/tracevals/judge/verdict-schema.json`, `src/tracevals/judge/prompt.ts` (the prompt version in the cache key), `src/shared/providers.ts`, `src/tracevals/calibrate/` |
+| `tracevals` journey pages (overview, get started, declare, fill, coverage, CI, triage, extend) | `src/tracevals/commands/` for behaviour, `src/tracevals/fill/` for the proposal gate, `src/tracevals/history.ts` for the regression definition, `test/tracevals/` for the exact emitted strings; sample output captured from the built binary over `test/tracevals/fixtures/` |
 | `a11y` journey pages (get started, CI, fix) | `src/a11y/commands/check.ts` for behaviour, `src/a11y/core/{crawl,seeds,sitemap,url}.ts` for the crawl, `src/a11y/core/analyzer.ts` for the browser seam. `src/a11y/reporters/{pretty,github,json}.ts` for the exact emitted strings, captured from a real run, because no Doc Detective step can crawl here |
 
 ---

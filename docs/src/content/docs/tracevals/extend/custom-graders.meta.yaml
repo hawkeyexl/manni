@@ -1,0 +1,21 @@
+docs/src/content/docs/tracevals/extend/custom-graders.mdx:
+  personas: ["devin"]
+  journeys: ["d15"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/graders/registry.ts"
+    - path: "src/tracevals/graders/plugins.ts"
+  eval-suite: tracevals
+  evals:
+    - id: register-grader
+      assertion: "A reader can write a grader with grade and validateOptions and load it with --require."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-254
+      integrity: sha256-4ef991cdd7dd2b0513d6ff2f327bba8a0edd8f306a5686c748f9c24f79ac9c30
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

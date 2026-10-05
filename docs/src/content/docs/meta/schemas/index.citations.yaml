@@ -30,17 +30,17 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-546c0aaae16911ec5ea485d3e113abd28e488fd018c3337df2e9a3fba3a4ee89
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1236-1240
+        lines: 1242-1246
         integrity: sha256-58dcb64f18f7ddeb4a5175d21bb6cb92ee33e473384c5aaca08a9395140bea5e
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: the-three-reference-kinds
       claim:
         integrity: sha256-a4fd7bcc0a486a118551bbf7e3bbabc59aa43f8d0e60ef4a49045d1be70dec66
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 412-425
+        lines: 418-431
         integrity: sha256-2f40a8e1715136cf70277d50252b4172f3fd9106e42a5fccd6914c78d0d6f32c
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: document-names-its-own-schema
       claim:
         integrity: sha256-2e9e70750388d767b7562acdee44aca8ea482909e69207e404a25dca04fc9d7b
@@ -95,12 +95,12 @@ docs/src/content/docs/meta/schemas/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: manni-ships-45-builtin-schemas
       claim:
-        integrity: sha256-d8b0f7c6863f305104a5b07540d5d96ee9781c4abba95d310355bbe11cf940a3
+        integrity: sha256-eb3aef28393ddf13615cb1e5c7470c838934c6fd868a03667b88e7a2d620f4ea
       source:
         file: src/meta/core/schema-registry.ts
         lines: 81-131
-        integrity: sha256-a704c5e7f4c99812eb53ea0b48faa524598f9471492b4b7a93e22cfa116b6452
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        integrity: sha256-b70ffb8c7c31cf749ddc88c0c2f42d247087fa2bc804f8efa873264a6215c179
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: builtin-ids-are-bundled-not-registered
       claim:
         lines: 182
@@ -108,8 +108,8 @@ docs/src/content/docs/meta/schemas/index.mdx:
       source:
         file: src/meta/core/schema-registry.ts
         lines: 81-131
-        integrity: sha256-a704c5e7f4c99812eb53ea0b48faa524598f9471492b4b7a93e22cfa116b6452
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        integrity: sha256-b70ffb8c7c31cf749ddc88c0c2f42d247087fa2bc804f8efa873264a6215c179
+        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
     - id: okf-tolerates-unknown-keys
       claim:
         lines: 180

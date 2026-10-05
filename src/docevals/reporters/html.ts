@@ -13,6 +13,7 @@
  * also why everything is inline rather than clever.
  */
 import type { EngineReport } from "../core/engine.js";
+import { declaringEntry, locationLabel } from "./location.js";
 import type { EvalResult } from "../types.js";
 
 const OUTCOME_LABEL: Record<string, string> = {
@@ -66,7 +67,7 @@ function evalBlock(r: EvalResult): string {
       `<div class="eh"><span class="badge ${esc(r.outcome)}">${esc(
         OUTCOME_LABEL[r.outcome] ?? r.outcome,
       )}</span> <code>${esc(r.evalName)}</code>` +
-      `<span class="muted"> · ${esc(r.grader)}${
+      `<span class="muted"> · ${esc(locationLabel(declaringEntry(r)))} · ${esc(r.grader)}${
         r.weight !== undefined && r.weight !== 1
           ? ` · weight ${String(r.weight)}`
           : ""

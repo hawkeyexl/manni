@@ -429,14 +429,52 @@ export default defineConfig({
             },
           ],
         },
-        // An IN_DEV group is a tool still on its `tool/<name>` branch, so main
-        // carries only an overview page. The branch brings the rest of the
-        // section, and the badge, when it merges.
+        // The trace-adherence tool. Section order and labels are the ones it
+        // arrived with, recorded in
+        // docs/content-strategy/information-architecture.md (`tracevals/`):
+        // get started, declare, CI, judge, triage, extend, reference.
         {
           label: "tracevals",
           collapsed: true,
-          badge: IN_DEV,
-          items: [{ label: "Overview", link: "/tracevals/" }],
+          badge: BETA,
+          items: [
+            { label: "Overview", link: "/tracevals/" },
+            {
+              label: "Get started",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "tracevals/get-started" } }],
+            },
+            {
+              label: "Declare what to check",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "tracevals/declare" } }],
+            },
+            {
+              label: "Run it in CI",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "tracevals/ci" } }],
+            },
+            {
+              label: "Trust the judge",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "tracevals/judge" } }],
+            },
+            {
+              label: "Read a failing eval",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "tracevals/triage" } }],
+            },
+            {
+              label: "Build on tracevals",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "tracevals/extend" } }],
+            },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "tracevals/reference" } }],
+            },
+          ],
         },
       ],
     }),

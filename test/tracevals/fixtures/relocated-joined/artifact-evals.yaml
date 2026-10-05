@@ -1,0 +1,16 @@
+# fix-bug's `metadata` block, keyed on the skill's `name`.
+fix-bug:
+  metadata:
+    evals:
+      - id: used-read
+        assertion: The session read at least one source file before editing.
+        grader: tool-usage
+        options:
+          tool: Read
+          expect: used
+      - id: stayed-out-of-the-shell
+        assertion: The session never ran shell commands; this skill is edit-only.
+        grader: tool-usage
+        options:
+          tool: Bash
+          expect: not-used

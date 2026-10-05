@@ -1,16 +1,32 @@
 docs/src/content/docs/tracevals/index.mdx:
+  personas: ["maya", "devin", "sara", "theo"]
+  journeys: ["m17", "d14", "s13", "t8"]
   visibility: public
   review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/cli.ts"
   eval-suite: tracevals
   evals:
     - id: what-it-does
-      assertion: "A reader can say what manni tracevals evaluates and that it is not in the published package."
+      assertion: "A reader can say what manni tracevals evaluates and which page to open for their next step."
       type: capability
       grader: ai
   provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-75
+      integrity: sha256-93c06c265b3bd2660ae4b1d8be5b2b55844bf181d456712ac65b0ba1a0fc05d3
     - generated-by: Claude Opus 5.5
-      lines: 2-8
-      integrity: sha256-32701b284d327e80afd9129ada965e825b861889e699c6d4d76c6b04ce319285
+      lines: 76
+      integrity: sha256-e0cd8dd7cf2d8a61c2523ea3b07cea7958ecce605d53b5da1ef22e4b3c372841
+    - generated-by: Claude Opus 5
+      lines: 78-91
+      integrity: sha256-7b20d8f300b2b48c7be07aa4983bc382801d927cad6a0bbf6993dab015ed30fa
+    - generated-by: Claude Opus 5.5
+      lines: 92
+      integrity: sha256-012733308ebaa770df3a2a90b506c61efd74d8f91ad9453c46a173316760140f
+    - generated-by: Claude Opus 5
+      lines: 93-122
+      integrity: sha256-82141f1a0e9d7f27496275ed047a05d1c5deecbb4db37ac15bc462d5b510d7a9
   owner:
     - "@hawkeyexl"
   created: 2026-09-24

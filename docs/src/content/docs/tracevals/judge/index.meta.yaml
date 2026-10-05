@@ -1,0 +1,21 @@
+docs/src/content/docs/tracevals/judge/index.mdx:
+  personas: ["sara"]
+  journeys: ["s13"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/judge/trace-judge.ts"
+    - path: "src/tracevals/judge/provider.ts"
+  eval-suite: tracevals
+  evals:
+    - id: judge-arithmetic
+      assertion: "A reader can explain how ensemble runs and confidence zones combine into pass, fail or needs-review."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5
+      lines: 2-333
+      integrity: sha256-8df43ffcc073f9978eea7f710bc6108ae4c40d5cb48491a04227a2f22ada6f9c
+  owner:
+    - "@hawkeyexl"
+  created: 2026-09-16

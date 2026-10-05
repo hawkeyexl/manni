@@ -1,6 +1,6 @@
 ---
 title: manni
-description: One command line for documentation that is meant to be checked. It validates metadata and page structure, checks citations against their source, runs evals over documentation pages, and checks sites for accessibility.
+description: One command line for documentation that is meant to be checked. It validates metadata and page structure, checks citations against their source, runs evals over documentation pages, grades an agent session against the instructions it ran on, and checks sites for accessibility.
 tableOfContents: false
 hero:
   tagline: One command line for documentation that is meant to be checked.
@@ -83,6 +83,11 @@ npx @hawkeyexl/manni docevals run docs/ --deterministic-only
     description="Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter. Code first, an AI judge second, a human last."
   />
   <LinkCard
+    title="tracevals"
+    href="/manni/tracevals/"
+    description="Adherence evals for AI agent session traces. You wrote the instructions; point it at a session that already happened and find out whether the agent followed them."
+  />
+  <LinkCard
     title="graph"
     href="/manni/graph/"
     description="Derive a knowledge graph from documentation frontmatter and formatting, check it against SHACL shapes, and publish it for retrieval. Deterministic, with no model in the loop."
@@ -102,14 +107,16 @@ npx @hawkeyexl/manni docevals run docs/ --deterministic-only
 `meta` checks what a page says about itself. `lint` checks whether it is shaped
 like what it says it is. `cite` checks that what a page says about the code is
 still true. `docevals` checks that a page still meets the quality bar its team
-wrote down. `term` checks that the terms a page names are defined, and carries
-those terms into Vale and translation. `graph` checks what the pages say about each
-other, which is the only question no single file can answer. `key` sets and
+wrote down. `tracevals` checks that an agent session followed the instructions
+it ran on. `term` checks that the terms a page names are defined, and carries
+those terms into Vale and translation. `graph` checks what the pages say about
+each other, which is the only question no single file can answer. `key` sets and
 rotates the one encryption key that `meta` and `cite` encrypt values with.
 `manni --help` lists exactly the tools the package carries.
 
-`cite`, `docevals`, `key`, `term`, `lint` and `graph` are in beta. Their commands,
-config keys and output can change in any release, without notice.
+`cite`, `docevals`, `tracevals`, `key`, `term`, `lint` and `graph` are in beta.
+Their commands, config keys and output can change in any release, without
+notice.
 
 ## Coming from docmeta?
 
