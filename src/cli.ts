@@ -19,6 +19,7 @@ import { buildProgram as buildGraph } from "./graph/cli.js";
 import { buildProgram as buildMeta } from "./meta/cli.js";
 import { buildProgram as buildLint } from "./lint/cli.js";
 import { buildProgram as buildTerm } from "./term/index.js";
+import { buildProgram as buildTest } from "./test/cli.js";
 import { buildProgram as buildTracevals } from "./tracevals/cli.js";
 import { runIfMain } from "./shared/run.js";
 
@@ -90,6 +91,11 @@ export function buildProgram(): Command {
     buildTerm()
       .name("term")
       .description("Check, lint and render a docset's terms and the references into them"),
+  );
+  program.addCommand(
+    buildTest()
+      .name("test")
+      .description("Run the docs' procedure tests with Doc Detective and report in the family contract"),
   );
   program.addCommand(
     buildGraph()

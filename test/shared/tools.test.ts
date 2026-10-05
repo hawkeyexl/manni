@@ -6,7 +6,7 @@
  */
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ditaOtHome, parseTools, valeConfigPath } from "../../src/shared/tools.js";
+import { ditaOtHome, docDetectiveConfigPath, parseTools, valeConfigPath } from "../../src/shared/tools.js";
 
 const SOURCE = "manni.config.yaml";
 const toError = (message: string): Error => new Error(message);
@@ -40,7 +40,7 @@ describe("parseTools", () => {
 
   it("refuses a tool it does not know, naming the ones it does", () => {
     expect(() => parse({ prettier: {} })).toThrow(
-      `${SOURCE}: tools has unknown key "prettier". Supported keys: vale, dita-ot.`,
+      `${SOURCE}: tools has unknown key "prettier". Supported keys: vale, dita-ot, doc-detective.`,
     );
   });
 
@@ -148,5 +148,57 @@ describe("ditaOtHome", () => {
   it("is undefined when no home is set", () => {
     expect(ditaOtHome({}, dir)).toBeUndefined();
     expect(ditaOtHome({ "dita-ot": {} }, dir)).toBeUndefined();
+  });
+});
+
+describe("parseTools: Doc Detective", () => {
+  it("reads the config path", () => {
+    expect(parse({ "doc-detective": { config: ".doc-detective.json" } })).toEqual({
+      "doc-detective": { config: ".doc-detective.json" },
+    });
+  });
+
+  it("accepts the namespace with no keys", () => {
+    expect(parse({ "doc-detective": {} })).toEqual({ "doc-detective": {} });
+  });
+
+  it("refuses a key it never reads", () => {
+    expect(() => parse({ "doc-detective": { input: "docs" } })).toThrow(
+      `${SOURCE}: tools.doc-detective has unknown key "input". Supported keys: config.`,
+    );
+  });
+
+  it("refuses a config that is not a usable string", () => {
+    for (const config of ["", "   ", 7, null, []]) {
+      expect(() => parse({ "doc-detective": { config } })).toThrow(
+        `${SOURCE}: tools.doc-detective.config must be a non-empty string.`,
+      );
+    }
+  });
+
+  it("refuses a namespace that is not a mapping", () => {
+    expect(() => parse({ "doc-detective": ".doc-detective.json" })).toThrow(
+      `${SOURCE}: tools.doc-detective must be a mapping.`,
+    );
+  });
+});
+
+describe("docDetectiveConfigPath", () => {
+  const dir = join(process.cwd(), "repo", "root");
+
+  it("resolves a relative path against the config file's directory", () => {
+    expect(
+      docDetectiveConfigPath({ "doc-detective": { config: "ci/.doc-detective.json" } }, dir),
+    ).toBe(join(dir, "ci", ".doc-detective.json"));
+  });
+
+  it("keeps an absolute path as written", () => {
+    const absolute = join(process.cwd(), "dd.json");
+    expect(docDetectiveConfigPath({ "doc-detective": { config: absolute } }, dir)).toBe(absolute);
+  });
+
+  it("is undefined when no path is set, so Doc Detective finds its own", () => {
+    expect(docDetectiveConfigPath({}, dir)).toBeUndefined();
+    expect(docDetectiveConfigPath({ "doc-detective": {} }, dir)).toBeUndefined();
   });
 });

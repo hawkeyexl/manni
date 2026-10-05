@@ -1,0 +1,329 @@
+---
+title: CLI reference
+description: "Every manni test command, argument, and flag (run), with the input precedence, the output formats, the exit codes, every message, and the examples."
+id: "test-reference-cli"
+type: "reference"
+keywords: ["test run", "options", "output formats", "exit codes", "Doc Detective"]
+language: en
+audiences: ["ci-engineers", "docs-engineers"]
+intent: "Look up every argument, flag, output format, exit code and message of manni test run."
+lifecycle: published
+applies-to: ["domain:test"]
+risks: ["open-world"]
+sample-questions: ["What flags does manni test run accept?", "Which inputs does manni test run test when I give it no paths?", "Why did manni test run exit 2?"]
+graph: { label: "CLI reference", type: reference }
+last-updated: 2026-10-05
+tags:
+  - cli
+  - testing
+  - doc-detective
+  - reference
+  - exit-codes
+action: remember
+prerequisites:
+  - test
+related-pages:
+  - meta-reference-configuration
+---
+
+{/* The command, argument, and option tables on this page are drift-checked
+    against src/test/cli.ts by scripts/check-cli-reference.mjs (npm run
+    docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
+    sync with the code; descriptions are free-form. */}
+
+manni test exposes one subcommand, [`run`](#test-run). It runs Doc Detective
+over the docs and reports the results in the family contract. There is no
+default subcommand. `manni test docs/` is a usage error, and the verb is
+always spelled.
+
+```sh
+manni test [options] run [paths...] [command options]
+```
+
+## Global options
+
+Global options are accepted before the subcommand.
+
+| Option | Description |
+|---|---|
+| `-V, --version` | Print the manni version and exit. |
+| `-h, --help` | Print help for the program or a subcommand. |
+
+## `test`
+
+The procedure-test domain. Every command on this page lives under it. `test`
+accepts its own `-V, --version`, which reports the manni version, and
+`-h, --help`. Run with no subcommand it prints usage, exit `2`.
+
+```sh
+manni test [options] <command> [command options] [arguments]
+```
+
+`test` has no options of its own beyond those two.
+
+## `test run`
+
+Start Doc Detective, read the results file it writes, and report every
+failing or warning step. Doc Detective's exit code says only whether it ran.
+The verdict comes from its results.
+
+```sh
+manni test run [paths...] [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|---|---|---|
+| `[paths...]` | no | Files, directories and globs to test. A file or directory goes to Doc Detective as typed, and Doc Detective walks a directory itself. manni expands a glob. Omitted: `--collection`, else Doc Detective's config `input`. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `--collection` | `<name>` | none | A collection declared in `manni.config.yaml` to test. Repeatable, one name per occurrence. Cannot be combined with paths. |
+| `-c, --config` | `<path>` | the nearest `manni.config.yaml` | The manni config file to read. It supplies `collections:` and `tools.doc-detective.config`. |
+| `-f, --format` | `<format>` | `pretty` | Output format: `pretty`, `json` or `github`. See [output formats](#output-formats). |
+| `--allow-empty` | n/a | off | Treat finding no tests, or no files, as success, exit `0`. |
+| `--progress` | n/a | on a terminal | Stream Doc Detective's log to stderr as it runs. |
+| `--no-progress` | n/a | off | Never stream Doc Detective's log. It is captured, and its tail is printed only when Doc Detective fails. |
+| `--no-color` | n/a | off | Disable colored output. Color applies to the `pretty` output only, on a TTY, and never under `NO_COLOR`; the same [rules](/manni/meta/reference/output-and-exit-codes/#color-behavior) as the metadata tool. |
+
+### Input precedence
+
+A run tests the first of these that is present.
+
+1. **Positional paths.** Each must exist, because Doc Detective skips a
+   missing path without a word. A glob that matches nothing is refused too.
+2. **`--collection <name>`.** The named collections' `paths:` minus their
+   `exclude:`, resolved against the config file's directory. The file list
+   replaces Doc Detective's `input`.
+3. **Doc Detective's own `input`.** From the file `tools.doc-detective.config`
+   names, else from the `.doc-detective.json`, `.doc-detective.yaml` or
+   `.doc-detective.yml` Doc Detective finds in the working directory.
+
+With no `--collection`, collections are not read. That differs from
+`manni meta validate` and `manni lint check`, on purpose. Doc Detective's
+config already says what to test, and it is this domain's default input.
+
+Every other key in Doc Detective's config still applies, whichever rung
+supplies the inputs. That covers `fileTypes`, `beforeAny` and
+`loadVariables`.
+
+### What manni passes Doc Detective
+
+```sh
+doc-detective -i <a>,<b>,<c> [-c <config>] -r json -o <temp dir>
+```
+
+`-i` is one comma-joined list, and appears only when manni names the inputs.
+`-c` appears only when `tools.doc-detective.config` is set. manni reads the
+newest `testResults-*.json` from the temporary directory, then removes the
+directory. It never passes `-e`.
+
+On Windows, manni runs Doc Detective's bin script with `node` directly rather
+than through the `.cmd` shim npm installs. That lifts the command-line limit
+from 8,191 characters to 32,767. A run whose inputs pass it is refused with
+exit `2`.
+
+### Parity with the other domains
+
+Three inputs other commands take do not apply here.
+
+- **`-` for stdin.** Doc Detective reads files and has no stdin, so `-` is a
+  usage error.
+- **`--as` and `--ext`.** Doc Detective's `fileTypes` decides which files hold
+  tests and how to read them.
+- **`--exclude`.** Doc Detective's config owns that too. A collection's own
+  `exclude:` still applies, because the collection is the list.
+
+### Output formats
+
+All output goes to stdout. Doc Detective's log, with `--progress`, and every
+error go to stderr.
+
+**`pretty`** lists only `FAIL` and `WARNING` steps. They are grouped by page,
+relative to the working directory, with the step's line when Doc Detective
+reports one. A summary line of test counts follows.
+
+```console
+$ manni test run test/test/fixtures/fail.md
+test/test/fixtures/fail.md
+  4  FAIL     Returned exit code 1. Expected one of [0]
+
+1 test: 0 passed, 1 failed, 0 warnings, 0 skipped
+```
+
+A run with no failing or warning step prints the summary line alone:
+
+```console
+$ manni test run test/test/fixtures/pass.md
+1 test: 1 passed, 0 failed, 0 warnings, 0 skipped
+```
+
+The counts are tests, from Doc Detective's `summary.tests`. A count of one
+takes the singular, as in `1 test` and `1 warning`.
+
+**`github`** writes one workflow command per listed step, `::error` for a
+`FAIL` and `::warning` for a `WARNING`, then the summary line. GitHub turns
+each command into an annotation on the page and line.
+
+{/* test {"testId":"test-reference-cli","description":"The reference's examples: the github format on fail.md exits 1, pass.md exits 0, and stdin is a usage error."} */}
+{/* step {"description":"The github format writes an error annotation on the failing line, exit 1.","runShell":{"command":"npx @hawkeyexl/manni test run test/test/fixtures/fail.md -f github --no-progress","exitCodes":[1],"stdio":"::error file=test/test/fixtures/fail.md,line=4"}} */}
+{/* step {"description":"A passing page exits 0 in the github format, with the summary line alone.","runShell":{"command":"npx @hawkeyexl/manni test run test/test/fixtures/pass.md -f github --no-progress","exitCodes":[0],"stdio":"1 test: 1 passed"}} */}
+{/* step {"description":"Stdin is a usage error, exit 2.","runShell":{"command":"npx @hawkeyexl/manni test run -","exitCodes":[2],"stdio":"Doc Detective has no stdin"}} */}
+{/* test end */}
+
+```console
+$ manni test run test/test/fixtures/fail.md -f github
+::error file=test/test/fixtures/fail.md,line=4,title=Doc Detective::Returned exit code 1. Expected one of [0]
+1 test: 0 passed, 1 failed, 0 warnings, 0 skipped
+```
+
+**`json`** prints Doc Detective's results object, verbatim. It carries
+`summary`, with `pass`, `fail`, `warning` and `skipped` counts for specs,
+tests, contexts and steps, and `specs[].tests[].contexts[].steps[]`. A script
+written against Doc Detective's report reads it unchanged. It prints `null`
+when a run with `--allow-empty` found no tests. Shortened:
+
+```json
+{
+  "summary": {
+    "specs": { "pass": 1, "fail": 0, "warning": 0, "skipped": 0 },
+    "tests": { "pass": 1, "fail": 0, "warning": 0, "skipped": 0 },
+    "contexts": { "pass": 1, "fail": 0, "warning": 0, "skipped": 0 },
+    "steps": { "pass": 1, "fail": 0, "warning": 0, "skipped": 0 }
+  },
+  "specs": [
+    {
+      "specId": "test/test/fixtures/pass.md",
+      "tests": [
+        {
+          "testId": "echo-ok",
+          "contexts": [
+            {
+              "contextId": "default",
+              "steps": [
+                {
+                  "runShell": { "command": "echo hello", "exitCodes": [0] },
+                  "location": { "line": 4 },
+                  "result": "PASS"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+The shape is Doc Detective's, so it follows Doc Detective's releases.
+
+### Progress
+
+With progress on, Doc Detective's log streams to stderr as it runs. Progress
+is on by default when stderr is a terminal. `--progress` turns it on anywhere,
+which is how a CI job sees the log live. `--no-progress` turns it off. The log
+is then captured, and its tail is printed only when Doc Detective exits
+non-zero. stdout carries only the report either way, so `-f json` stays
+parseable.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Nothing failed. `WARNING` and `SKIPPED` pass, as they do in Doc Detective. Also a run with `--allow-empty` that found no tests or no files. |
+| `1` | Doc Detective's `summary` counts a failure at one of its levels, which are specs, tests, contexts and steps. The report on stdout lists the failing steps. |
+| `2` | Usage or operational error. One line on stderr, prefixed `manni: `. A missing or unknown subcommand prints the help or commander's own message instead. |
+
+### Messages
+
+Every message below exits `2` and is printed on stderr, prefixed `manni: `.
+
+| When | Message |
+|---|---|
+| `doc-detective` is not on `PATH` | `doc-detective is not on PATH. Install Doc Detective (npm install -g doc-detective) to run doc tests.` |
+| No paths, no `--collection`, and no Doc Detective config | `test run needs paths or a Doc Detective config. Pass paths, or add .doc-detective.json.` |
+| A named path does not exist | `File not found: "<path>".`, or `Files not found: "<a>", "<b>".` for more than one |
+| The paths match no files | `No files matched. Patterns tried: "<path>". Pass --allow-empty if that is expected.` |
+| `-` is given | `test run reads files; Doc Detective has no stdin. Pass a path.` |
+| `--collection` with paths | `--collection selects a configured collection; it cannot be combined with paths.` |
+| `--collection` with no manni config | `--collection needs a config file to select from.` |
+| An unknown collection | `no collection named "<name>" in manni.config.yaml. Configured: site.`, with a `did you mean` hint for a name that differs only in case |
+| The collections match no files | `--collection matched no files. Pass --allow-empty if that is expected.` |
+| `tools.doc-detective.config` names a missing file | `manni.config.yaml: tools.doc-detective.config "<path>" does not exist.` |
+| Doc Detective exits non-zero | `Doc Detective failed (exit <n>):`, then the tail of its output. `killed before exiting` replaces `exit <n>` when it had no exit code. |
+| No results file, or one that does not parse | `Doc Detective wrote no results to read. Run doc-detective directly to see why.` |
+| No tests in the inputs | `Doc Detective found no tests in the inputs. Pass --allow-empty if that is expected.` |
+| The inputs pass the Windows command-line limit | `the selected inputs exceed the command-line limit. Narrow the collection, or set input in the Doc Detective config.` |
+| An unknown `--format` | `Unknown --format "<format>". Use pretty \| json \| github.` |
+
+With `--allow-empty`, a missing path is skipped. Paths or collections that
+match no files, and a run that found no tests, then exit `0`.
+
+A malformed `tools.doc-detective` key stops every command that reads the
+config. The [configuration reference](/manni/meta/reference/configuration/#tools)
+lists those messages.
+
+### Examples
+
+The minimum, one page:
+
+```sh
+manni test run docs/guide.md
+```
+
+Doc Detective's config input, from `.doc-detective.json` in the working
+directory or from `tools.doc-detective.config`:
+
+```sh
+manni test run
+```
+
+The pages a configured collection names, with every other setting from Doc
+Detective's config:
+
+```sh
+manni test run --collection site
+```
+
+The CI form, with annotations and a live log:
+
+```sh
+manni test run -f github --progress
+```
+
+The scripting form. Doc Detective's report is on stdout, and the exit code is
+the verdict:
+
+```sh
+manni test run -f json > results.json
+```
+
+Every option at once. Positional paths are the alternative to `--collection`:
+
+```sh
+manni test run --collection site --collection guides -c ci/manni.config.yaml -f github --allow-empty --no-progress --no-color
+```
+
+The usage errors, each exit `2`:
+
+```console
+$ manni test run
+manni: test run needs paths or a Doc Detective config. Pass paths, or add .doc-detective.json.
+$ manni test run -
+manni: test run reads files; Doc Detective has no stdin. Pass a path.
+$ manni test run docs/ --collection site
+manni: --collection selects a configured collection; it cannot be combined with paths.
+$ manni test run --collection Site
+manni: no collection named "Site" in manni.config.yaml. Configured: site. Names are case-sensitive; did you mean "site"?
+$ manni test run docs/ -f sarif
+manni: Unknown --format "sarif". Use pretty | json | github.
+$ manni test run docs/
+manni: doc-detective is not on PATH. Install Doc Detective (npm install -g doc-detective) to run doc tests.
+```
+
+The first runs in a directory with no Doc Detective config, and the last on a
+machine without Doc Detective.

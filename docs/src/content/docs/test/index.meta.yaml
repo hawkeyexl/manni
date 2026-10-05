@@ -1,0 +1,25 @@
+docs/src/content/docs/test/index.mdx:
+  personas: ["devin", "maya"]
+  journeys: ["d16"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/test/commands/run.ts"
+    - path: "src/test/core/doc-detective.ts"
+    - path: "src/test/reporters/"
+  eval-suite: test
+  evals:
+    - id: input-precedence
+      assertion: "A reader can say which files manni test run tests when given paths, a collection, or nothing."
+      type: capability
+      grader: ai
+    - id: gate-in-ci
+      assertion: "A reader can add manni test run to a CI job and say what each of its exit codes means."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-152
+      integrity: sha256-8b7fc378a339af77cf59745426df9d4cec93de0841d71fee3ca1fb5fd02bb1fa
+  owner:
+    - "@hawkeyexl"

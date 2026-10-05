@@ -1,0 +1,6 @@
+::error file=fail.md,line=4,title=Doc Detective::Returned exit code 1. Expected one of [0]
+1 test: 0 passed, 1 failed, 0 warnings, 0 skipped
+
+real	0m8.013s
+user	0m0.000s
+sys	0m0.000s

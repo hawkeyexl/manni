@@ -336,6 +336,16 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 
 ---
 
+### D16 · Gate the docs' procedure tests with the same contract
+
+**Outcome.** The Doc Detective tests embedded in the docs run in CI as one more `manni` step. A failing step annotates the page and line that broke, and the exit code says whose problem it is.
+
+**Steps.** Devin installs Doc Detective with `npm install -g doc-detective`, beside the manni install he already has. He adds `manni test run -f github --progress` with no paths, because the repository's `.doc-detective.json` already names the input. `--progress` streams Doc Detective's log into the job output, which is not a terminal. When the job runs from a subdirectory, he points `tools.doc-detective.config` at the config file, because Doc Detective searches only the working directory. He learns that a bare run does not read `collections:`, unlike meta and lint. `--collection site` is how he hands manni's document set to Doc Detective instead. He learns the contract. Exit `0` means no step failed, and warnings and skips pass. `1` means a step failed, and it is the author's. `2` is his, such as Doc Detective missing from PATH, a typo'd path, or a run that found no tests. That last one would pass silently under Doc Detective alone. `--allow-empty` is for the repository that expects it. For a dashboard he runs `-f json`, which is Doc Detective's own report, unchanged. He gates the job to same-repository pull requests, because the tests run shell commands written in the pages.
+
+**What success looks like.** The docs gate reads like every other gate in the pipeline. A broken procedure is an annotation on its page, not a line buried in a log.
+
+---
+
 ## Sara, Schema Author
 
 ### S1 · Define our metadata standard as a schema

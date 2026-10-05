@@ -6,7 +6,8 @@ name: Docs as tests
 # any published package, prefetches and caches a local model so even the
 # `fill` procedures execute end to end with no credentials, and then replays
 # the inline tests embedded in the docs (.mdx) under docs/src/content/docs/.
-# Doc Detective is the runner; the thing being tested is the documentation.
+# Doc Detective is the runner, reached through `manni test run`; the thing
+# being tested is the documentation.
 # The build + link steps are required: dist/ is gitignored and manni is
 # unpublished, so the tests would have nothing to run without them.
 #
@@ -21,6 +22,8 @@ on:
       # The docevals pages' steps run against this corpus and its config.
       - "test/docevals/fixtures/**"
       - "test/tracevals/fixtures/**"
+      # The test pages' steps run `manni test run` on these.
+      - "test/test/fixtures/**"
       - ".doc-detective.json"
       - ".github/workflows/docs-as-tests.yml"
       # A dependency bump can change what a documented command does or costs,
@@ -113,17 +116,21 @@ jobs:
           --provider llama-cpp
           --model granite-4.1-3b-q2
           --fields title --dry-run --no-cache
-      # Third-party action pinned to a full commit SHA (supply-chain hardening).
-      #
+      # `manni test run` is the runner's front end (proposal 0077): it runs
+      # Doc Detective, which reads .doc-detective.json from the repo root, and
+      # turns each failing step into an annotation on the page that broke.
+      # `--progress` streams Doc Detective's own log into the job output, which
+      # is not a terminal, so it would otherwise be captured until the end.
+      # Doc Detective is installed at its latest release, like any tool a
+      # contributor installs by hand to run these pages locally.
+      - run: npm install -g doc-detective
       # CLAUDE_CONFIG_DIR points trace discovery at the committed fixture
       # session store, so the tracevals pages grade the same sessions on every
       # runner. Without it they would read the runner's own ~/.claude, which is
       # empty: `list` prints nothing, and a `run --all-projects` exits 2 with no
       # traces matched. The tracevals pages say this is what the workflow does,
       # so the two must stay in step.
-      - uses: doc-detective/github-action@a2a4f5ceb1abfa55d567e4f6766223082ece2c18 # v1
+      - name: Run the docs' tests
+        run: manni test run -f github --progress
         env:
           CLAUDE_CONFIG_DIR: test/tracevals/fixtures/home/.claude
-        with:
-          config: .doc-detective.json
-          exit_on_fail: true

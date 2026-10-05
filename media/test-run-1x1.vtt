@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Captions are burned into test-run-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:05.967
+A page that tests itself
+fail.md carries an inline Doc Detective test. Its step runs exit 1 and expects 0.
+
+2
+00:00:05.967 --> 00:00:17.900
+Run the page
+manni test run names the file, line 4 and Doc Detective's reason. Exit 1.
+
+3
+00:00:17.900 --> 00:00:27.133
+Annotations for CI
+With -f github, the same failure is an annotation on fail.md, line 4.
+
+4
+00:00:27.133 --> 00:00:40.900
+Fix the page, rerun
+Correct line 4 and rerun. One test passed, exit 0.
+
