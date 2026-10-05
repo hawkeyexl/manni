@@ -290,8 +290,8 @@ context.
 
 | Situation | Exit | Output |
 |---|---|---|
-| A config with at least one collection | `0` | stdout: the `pretty` table, a blank line, then three lines that say when `check` runs and which skill repairs a finding. The stop line names only the whole-set checks in play. |
-| A config with no collection | `0` | stdout: the table alone. |
+| At least one domain in play | `0` | stdout: the `pretty` table, a blank line, then three lines that say when `check` runs and which skill repairs a finding. The stop line names only the whole-set checks in play. |
+| No domain in play, or no collection | `0` | stdout: the table alone, since there is no check to promise. |
 | No config, or a config that cannot be read | `0` | nothing |
 
 After the table, `status` also appends `export MANNI_GENERATED_BY=<model>` to the

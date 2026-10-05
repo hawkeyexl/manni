@@ -294,6 +294,16 @@ describe.skipIf(!gitAvailable())("manni status", () => {
       expect(readFileSync(file, "utf8")).toBe("");
     });
 
+    it("prints the table without the agent lines when nothing is set up", () => {
+      dir = fixtureRepo("only-graph");
+      const config = join(dir, "manni.config.yaml");
+      writeFileSync(config, readFileSync(config, "utf8").replace(/^graph:[\s\S]*$/m, ""));
+      const r = run(["status"], dir, envelope("session-start", dir));
+      expect(r.status).toBe(0);
+      expect(r.stdout).toMatch(/^graph {6}not set up/m);
+      expect(r.stdout).not.toContain("manni check runs on it");
+    });
+
     it("says nothing with no config", () => {
       const bare = realpathSync(mkdtempSync(join(tmpdir(), "manni-family-bare-")));
       dir = bare;

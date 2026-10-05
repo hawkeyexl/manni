@@ -155,7 +155,8 @@ export function buildStatus(): Command {
       if (envelope?.event === "SessionStart") {
         try {
           const report = await runStatus({ cwd: resolve(envelope.cwd ?? process.cwd()), ...configOption });
-          const lines = report.collections.length > 0 ? `\n\n${agentLines(report)}` : "";
+          // The agent lines promise checks, so they need a domain in play to be true.
+          const lines = report.domains.some((d) => d.status === "in-play") ? `\n\n${agentLines(report)}` : "";
           process.stdout.write(`${renderStatus(report, "pretty")}${lines}\n`);
           exportGeneratedBy(envelope);
         } catch {
