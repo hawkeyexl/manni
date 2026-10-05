@@ -15,7 +15,7 @@
  */
 import type { Trace, TraceEvent } from "../trace/types.js";
 import type { EvalPlan } from "../core/plan.js";
-import { windowFor } from "../graders/util.js";
+import { windowFor, type TraceWindow } from "../graders/util.js";
 import { makeRedactor } from "./redact.js";
 
 export interface RenderOptions {
@@ -28,9 +28,20 @@ export interface RenderOptions {
    * than instead of them. Sources are compiled with the `g` flag.
    */
   redact?: string[];
+  /**
+   * A window cut elsewhere, such as the turn a Stop judges (proposal 0079).
+   * It takes the place of the plan's window when both are given.
+   */
+  window?: TraceWindow;
+  /**
+   * Called when `maxTotalChars` cut the digest: the header, the timeline, or
+   * both. The cut is already visible as a marker in the text; this lets a
+   * caller say so in a warning as well.
+   */
+  onTruncated?: () => void;
 }
 
-const DEFAULTS: Required<RenderOptions> = {
+const DEFAULTS: Required<Omit<RenderOptions, "window" | "onTruncated">> = {
   maxBlockChars: 2_000,
   maxTotalChars: 150_000,
   redact: [],
@@ -64,7 +75,8 @@ export function renderTrace(
     if (safe.length <= max) return safe;
     return `${safe.slice(0, max)} [... truncated ${safe.length - max} chars ...]`;
   };
-  const window = plan === undefined ? undefined : windowFor(trace, plan);
+  const window =
+    options.window ?? (plan === undefined ? undefined : windowFor(trace, plan));
   // Project rules govern the whole session, so their digest is the session's —
   // byte-identical to an unscoped render, and cached as such.
   const scoped =
@@ -134,6 +146,7 @@ export function renderTrace(
     maxTotalChars - TIMELINE_SHELL.length - MIN_TIMELINE_CHARS,
     0,
   );
+  if (fullHeader.length > headerRoom) options.onTruncated?.();
   const header =
     fullHeader.length <= headerRoom
       ? fullHeader
@@ -215,6 +228,7 @@ export function renderTrace(
     MIN_TIMELINE_CHARS,
   );
   if (timeline.length > budget) {
+    options.onTruncated?.();
     // The marker counts against the budget, so the digest never exceeds what
     // the caller asked for. `omitted` is at most `timeline.length`, so the
     // width reserved for it is always enough.
