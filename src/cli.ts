@@ -20,6 +20,7 @@ import { buildProgram as buildMeta } from "./meta/cli.js";
 import { buildProgram as buildLint } from "./lint/cli.js";
 import { buildProgram as buildTerm } from "./term/index.js";
 import { buildProgram as buildTracevals } from "./tracevals/cli.js";
+import { buildCheck, buildStatus } from "./family/cli.js";
 import { runIfMain } from "./shared/run.js";
 
 export function buildProgram(): Command {
@@ -111,6 +112,10 @@ export function buildProgram(): Command {
       .name("key")
       .description("Set and rotate the family key that encrypted values are encrypted with."),
   );
+  // The two family verbs (proposal 0078), and the only verbs the umbrella
+  // carries: each runs other domains' command cores and owns no checks.
+  program.addCommand(buildCheck());
+  program.addCommand(buildStatus());
   return program;
 }
 

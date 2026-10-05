@@ -71,7 +71,23 @@ export interface BuildResult {
   warnings: string[];
 }
 
+/** The build with its Turtle in hand, before anything is written. */
+export interface BuiltGraph extends BuildResult {
+  turtle: string;
+}
+
 export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
+  const { turtle, ...result } = await buildGraph(opts);
+  mkdirSync(dirname(result.outPath), { recursive: true });
+  writeFileSync(result.outPath, turtle, "utf8");
+  return result;
+}
+
+/**
+ * `runBuild` without the write: the graph as Turtle, in memory. `manni check`
+ * builds the graph this way and checks it, writing no file.
+ */
+export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
   const cwd = opts.cwd ?? process.cwd();
   const config = loadRunConfig(
     {
@@ -94,9 +110,7 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
     if (opts.allowEmpty) {
       // Zero documents is an empty graph, written where the graph goes, so a
       // later step that reads it finds a file rather than a stale one.
-      mkdirSync(dirname(outPath), { recursive: true });
-      writeFileSync(outPath, emitTurtle([]), "utf8");
-      return { outPath, docs: 0, quads: 0, warnings: [] };
+      return { outPath, docs: 0, quads: 0, warnings: [], turtle: emitTurtle([]) };
     }
     throw new GraphError(
       `No input files matched: ${documentSetPatterns(config, opts).join(", ")} (cwd: ${cwd})`,
@@ -172,8 +186,5 @@ export async function runBuild(opts: BuildOptions = {}): Promise<BuildResult> {
   });
   const turtle = emitTurtle(quads);
 
-  mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, turtle, "utf8");
-
-  return { outPath, docs: docs.length, quads: quads.length, warnings };
+  return { outPath, docs: docs.length, quads: quads.length, warnings, turtle };
 }

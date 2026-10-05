@@ -1,0 +1,396 @@
+/**
+ * `manni check`: every check the repository has set up, and nothing else.
+ *
+ * It owns no checks. Each one is a domain's own command core, run in process
+ * with the family config handed to it, and each report is that domain's own
+ * reporter's output. What this adds is the choice of what runs (`in-play.ts`),
+ * the scope, and one verdict over all of it.
+ *
+ * Scope:
+ *
+ * - `all`: every in-play check over every collection, per-file and set-wide.
+ *   Each domain runs bare, exactly as its own CI step would.
+ * - `paths`: the per-file checks on the collection members among the paths.
+ * - `changed`: the per-file checks on the git working tree's changes, plus
+ *   every set-wide check. A clean tree runs nothing.
+ *
+ * `cite` is per-file on paths and set-wide otherwise: a source edit can drift
+ * any page's citation, so after a session the whole set is what is checked.
+ */
+import { extname, resolve } from "node:path";
+import pkg from "../../../package.json" with { type: "json" };
+import { errorMessage } from "../../shared/errors.js";
+import { runValidate } from "../../meta/commands/validate.js";
+import { render as renderMeta } from "../../meta/reporters/index.js";
+import { resolveTargetSet } from "../../meta/internal.js";
+import { supportedExtensions } from "../../meta/extractors/index.js";
+import { runCheck as runCite } from "../../cite/commands/check.js";
+import { renderCheckPretty as citePretty } from "../../cite/reporters/pretty.js";
+import { renderCheckJson as citeJson } from "../../cite/reporters/json.js";
+import { renderCheckGithub as citeGithub } from "../../cite/reporters/github.js";
+import { runLint } from "../../lint/commands/lint.js";
+import { render as renderLint } from "../../lint/reporters/index.js";
+import { runRun as runDocevals } from "../../docevals/commands/run.js";
+import { render as renderDocevals } from "../../docevals/reporters/index.js";
+import { DocevalsError } from "../../docevals/types.js";
+import { runCheck as runTerm } from "../../term/commands/check.js";
+import { renderFindingsPretty as termPretty } from "../../term/reporters/pretty.js";
+import { renderFindingsJson as termJson } from "../../term/reporters/json.js";
+import { renderFindingsGithub as termGithub } from "../../term/reporters/github.js";
+import { buildGraph } from "../../graph/commands/build.js";
+import { runCheck as runGraph, renderCheck as renderGraph } from "../../graph/commands/check.js";
+import { changedFiles } from "../core/changed.js";
+import type { Envelope } from "../core/envelope.js";
+import {
+  COMMANDS,
+  META_DEFAULTS_ONLY,
+  NOT_SET_UP,
+  collectionsOf,
+  labelFrom,
+  listMembers,
+  loadFamily,
+  nothingSetUpError,
+  plural,
+  type Domain,
+  type Family,
+} from "../core/in-play.js";
+
+export const CHECK_FORMATS = ["pretty", "json", "github"] as const;
+export type CheckFormat = (typeof CHECK_FORMATS)[number];
+
+export type Scope =
+  | { kind: "all" }
+  | { kind: "paths"; paths: string[] }
+  | { kind: "changed" };
+
+export interface FamilyCheckOptions {
+  /** Where paths resolve and the domains run. Default `process.cwd()`. */
+  cwd?: string;
+  /** `-c, --config`. */
+  configPath?: string;
+  scope: Scope;
+  /**
+   * Leave out a named path that does not exist, rather than failing on it. A
+   * hook names a file the edit may have just removed.
+   */
+  allowMissing?: boolean;
+  /** Diagnostics: the outside-every-collection notice, and the domains' own. */
+  onNotice?: (message: string) => void;
+}
+
+/** A check that ran. `render` is the domain's own reporter. */
+export interface RanCheck {
+  command: string;
+  status: "pass" | "fail";
+  render: (format: CheckFormat, color: boolean) => string;
+}
+
+/** A check that did not run: not in play, or it could not. */
+export interface NotRunCheck {
+  command: string;
+  status: "skipped" | "error";
+  message: string;
+}
+
+export type CheckOutcome = RanCheck | NotRunCheck;
+
+export interface FamilyCheckRun {
+  status: "pass" | "fail";
+  /** The collection members the per-file checks covered, labelled from `cwd`. */
+  files: string[];
+  checks: CheckOutcome[];
+}
+
+type Outcome =
+  | { skipped: string }
+  | { failed: boolean; render: (format: CheckFormat, color: boolean) => string };
+
+interface Context {
+  family: Family;
+  cwd: string;
+  /** The per-file inputs, or `[]` for a bare run over the collections. */
+  inputs: string[];
+  onNotice: (message: string) => void;
+}
+
+const DOCEVALS_NOTHING_RESOLVED = "No evals resolved";
+
+async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
+  const { family, cwd, inputs, onNotice } = ctx;
+  const configPath = family.configPath;
+  switch (domain) {
+    case "meta": {
+      const run = await runValidate({ inputs, configPath, cwd, skipDefaultOnly: true, onNotice });
+      if (run.results.length === 0) {
+        return { skipped: family.sections.has("meta") ? META_DEFAULTS_ONLY : NOT_SET_UP.meta };
+      }
+      return {
+        failed: run.summary.failed > 0,
+        render: (format, color) =>
+          renderMeta(format, run.results, run.summary, { color, quiet: true, frame: run.frame, onNotice }),
+      };
+    }
+    case "cite": {
+      const run = await runCite({ inputs, configPath, cwd, onNotice });
+      if (!run.pages.some((p) => p.citations.length > 0 || p.findings.length > 0)) {
+        return { skipped: NOT_SET_UP.cite };
+      }
+      return {
+        failed: run.summary.failed > 0,
+        render: (format, color) =>
+          format === "json"
+            ? citeJson(run)
+            : format === "github"
+              ? citeGithub(run)
+              : citePretty(run, { color, quiet: true }),
+      };
+    }
+    case "lint": {
+      if (!family.sections.has("lint")) return { skipped: NOT_SET_UP.lint };
+      const run = await runLint({ inputs, configPath, cwd, onNotice });
+      return {
+        failed: run.summary.failed > 0,
+        render: (format, color) => renderLint(run, format, { color }),
+      };
+    }
+    case "docevals": {
+      let report;
+      try {
+        report = await runDocevals(inputs, {
+          config: configPath,
+          cwd,
+          deterministicOnly: true,
+          generate: false,
+          execution: false,
+          toolVersion: pkg.version,
+        });
+      } catch (err) {
+        if (err instanceof DocevalsError && err.message.startsWith(DOCEVALS_NOTHING_RESOLVED)) {
+          return { skipped: NOT_SET_UP.docevals };
+        }
+        throw err;
+      }
+      return {
+        failed: report.exitCode !== 0,
+        render: (format, color) => renderDocevals(report, format, { color }),
+      };
+    }
+    case "term": {
+      const report = await runTerm({ inputs, configPath, cwd, allowEmpty: true, onNotice });
+      if (report.terms === 0) return { skipped: NOT_SET_UP.term };
+      return {
+        failed: report.summary.failed > 0,
+        render: (format, color) =>
+          format === "json"
+            ? termJson(report)
+            : format === "github"
+              ? termGithub(report)
+              : termPretty(report, { color, references: true }),
+      };
+    }
+    case "graph": {
+      if (!family.sections.has("graph")) return { skipped: NOT_SET_UP.graph };
+      const built = await buildGraph({ config: configPath, cwd });
+      for (const warning of built.warnings) onNotice(warning);
+      const report = await runGraph({ config: configPath, cwd, turtle: built.turtle });
+      return {
+        failed: report.exitCode !== 0,
+        render: (format) => renderGraph(report, format),
+      };
+    }
+  }
+}
+
+async function outcome(domain: Domain, ctx: Context): Promise<CheckOutcome> {
+  const command = COMMANDS[domain];
+  try {
+    const result = await runDomain(domain, ctx);
+    if ("skipped" in result) return { command, status: "skipped", message: result.skipped };
+    return { command, status: result.failed ? "fail" : "pass", render: result.render };
+  } catch (err) {
+    return { command, status: "error", message: errorMessage(err) };
+  }
+}
+
+/** A hook or a git status names files by any extension; a walk keeps the documents. */
+function isDocument(label: string): boolean {
+  return supportedExtensions().includes(extname(label).toLowerCase());
+}
+
+export async function runFamilyCheck(opts: FamilyCheckOptions): Promise<FamilyCheckRun> {
+  const cwd = resolve(opts.cwd ?? process.cwd());
+  const onNotice = opts.onNotice ?? ((): void => undefined);
+  const family = await loadFamily(cwd, opts.configPath);
+  if (family.collections.length === 0) throw nothingSetUpError();
+  const isMember = (label: string): boolean => collectionsOf(family, cwd, label).length > 0;
+
+  let files: string[];
+  let domains: Domain[];
+  let inputs: string[];
+  switch (opts.scope.kind) {
+    case "all":
+      files = await listMembers(family, cwd);
+      inputs = [];
+      domains = ["meta", "cite", "lint", "docevals", "term", "graph"];
+      break;
+    case "paths": {
+      const { files: named } = await resolveTargetSet({
+        inputs: opts.scope.paths,
+        cwd,
+        ...(opts.allowMissing === true ? { allowEmpty: true } : {}),
+      });
+      const outside = named.filter((label) => !isMember(label));
+      if (outside.length > 0) {
+        onNotice(`Skipped ${plural(outside.length, "file")} outside every collection: ${outside.join(", ")}`);
+      }
+      files = named.filter(isMember);
+      inputs = files;
+      domains = files.length > 0 ? ["meta", "cite", "lint", "docevals"] : [];
+      break;
+    }
+    case "changed": {
+      const changed = await changedFiles(cwd);
+      if (changed.length === 0) return { status: "pass", files: [], checks: [] };
+      files = changed.map((path) => labelFrom(cwd, path)).filter((l) => isDocument(l) && isMember(l));
+      inputs = files;
+      domains = [...(files.length > 0 ? (["meta", "lint", "docevals"] as const) : []), "cite", "term", "graph"];
+      break;
+    }
+  }
+
+  const checks: CheckOutcome[] = [];
+  for (const domain of domains) {
+    // The set-wide checks run bare, over every collection, whatever the scope.
+    const setWide = domain === "term" || domain === "graph" || (domain === "cite" && opts.scope.kind !== "paths");
+    checks.push(await outcome(domain, { family, cwd, inputs: setWide ? [] : inputs, onNotice }));
+  }
+  if (opts.scope.kind === "all" && checks.every((c) => c.status === "skipped")) {
+    throw nothingSetUpError();
+  }
+  return { status: checks.some((c) => c.status === "fail") ? "fail" : "pass", files, checks };
+}
+
+/** The exit code a run by hand ends with: 2 when a check could not run. */
+export function exitCodeFor(run: FamilyCheckRun): 0 | 1 | 2 {
+  if (run.checks.some((c) => c.status === "error")) return 2;
+  return run.status === "fail" ? 1 : 0;
+}
+
+function isRan(check: CheckOutcome): check is RanCheck {
+  return check.status === "pass" || check.status === "fail";
+}
+
+/** The first line of a message, for a one-line context. */
+function firstLine(message: string): string {
+  return message.split("\n", 1)[0] ?? "";
+}
+
+export function renderPretty(run: FamilyCheckRun, color: boolean): string {
+  const blocks: string[] = [];
+  for (const check of run.checks) {
+    if (isRan(check)) blocks.push(`${check.command}\n${check.render("pretty", color)}`);
+  }
+  const notRun = run.checks.filter((c): c is NotRunCheck => !isRan(c));
+  if (notRun.length > 0) {
+    const width = Math.max(...notRun.map((c) => c.command.length)) + 3;
+    blocks.push(
+      notRun
+        .map((c) => `${c.status.padEnd(9)}${c.command.padEnd(width)}${firstLine(c.message)}`)
+        .join("\n"),
+    );
+  }
+  const count = (status: CheckOutcome["status"]): number =>
+    run.checks.filter((c) => c.status === status).length;
+  const errors = count("error");
+  blocks.push(
+    `${plural(run.checks.length, "check")} over ${plural(run.files.length, "file")}: ` +
+      `${String(count("fail"))} failed, ${String(count("skipped"))} skipped` +
+      (errors > 0 ? `, ${String(errors)} could not run` : ""),
+  );
+  return blocks.join("\n\n");
+}
+
+export function renderJson(run: FamilyCheckRun): string {
+  return JSON.stringify(
+    {
+      status: run.status,
+      files: run.files,
+      checks: run.checks.map((c) =>
+        isRan(c)
+          ? { command: c.command, status: c.status, report: JSON.parse(c.render("json", false)) as unknown }
+          : { command: c.command, status: c.status, message: c.message },
+      ),
+    },
+    null,
+    2,
+  );
+}
+
+export function renderGithub(run: FamilyCheckRun): string {
+  return run.checks
+    .filter(isRan)
+    .map((c) => c.render("github", false))
+    .filter((text) => text.length > 0)
+    .join("\n");
+}
+
+export function render(run: FamilyCheckRun, format: CheckFormat, color: boolean): string {
+  return format === "json" ? renderJson(run) : format === "github" ? renderGithub(run) : renderPretty(run, color);
+}
+
+/** What a hook command ends with: its exit code, and what it prints where. */
+export interface HookReply {
+  exitCode: 0 | 2;
+  stdout?: string;
+  stderr?: string;
+}
+
+/** The PostToolUse tools whose edit `check` answers. */
+export const EDIT_TOOLS: readonly string[] = ["Edit", "Write", "MultiEdit", "NotebookEdit"];
+
+/**
+ * The hook protocol's answer to a run. Never exit 2 for a check that could
+ * not run: 2 means "block" to Claude Code, and an operational error is not
+ * the agent's to fix.
+ */
+export function hookReply(run: FamilyCheckRun, envelope: Envelope): HookReply {
+  const failed = run.status === "fail";
+  if (envelope.event === "PostToolUse") {
+    const files = run.files.join(", ");
+    if (failed) {
+      return {
+        exitCode: 2,
+        stderr: `manni found errors in ${files}. Fix them before you continue.\n\n${renderPretty(run, false)}\n`,
+      };
+    }
+    const errors = run.checks.filter((c): c is NotRunCheck => c.status === "error");
+    if (errors.length === 0) return { exitCode: 0 };
+    const additionalContext = errors
+      .map((c) => `manni ${c.command} could not check ${files}: ${firstLine(c.message)}`)
+      .join("\n");
+    return {
+      exitCode: 0,
+      stdout: `${JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext } })}\n`,
+    };
+  }
+  if (envelope.event === "Stop" && failed) {
+    const reply = envelope.stopHookActive
+      ? { systemMessage: "manni still reports errors after one repair pass. Run manni check to see them." }
+      : {
+          decision: "block",
+          reason: `manni found errors in the files you changed. Fix them, then finish.\n\n${renderPretty(run, false)}`,
+        };
+    return { exitCode: 0, stdout: `${JSON.stringify(reply)}\n` };
+  }
+  return { exitCode: 0 };
+}
+
+/** The reply when the run itself could not happen, under a hook. */
+export function hookFailure(message: string, envelope: Envelope, file: string | undefined): HookReply {
+  if (envelope.event !== "PostToolUse" || file === undefined) return { exitCode: 0 };
+  const additionalContext = `manni check could not check ${file}: ${firstLine(message)}`;
+  return {
+    exitCode: 0,
+    stdout: `${JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext } })}\n`,
+  };
+}

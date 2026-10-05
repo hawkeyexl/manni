@@ -189,6 +189,13 @@ export interface ValidateOptions {
   derive?: boolean;
   /** The clock an uncommitted body change is dated by. Test seam; default `new Date()`. */
   now?: () => Date;
+  /**
+   * Leave out a file judged by the built-in default set alone: no `$schema`
+   * of its own, and no `schemas:` or `overrides:` entry covering it. Such a
+   * file gets no result and is not counted. `manni check` sets this, because
+   * a default it would apply is not something the project set up.
+   */
+  skipDefaultOnly?: boolean;
 }
 
 export interface ValidateRun {
@@ -505,6 +512,8 @@ export async function runValidate(
   };
 
   const results: ValidationResult[] = [];
+  /** Files `skipDefaultOnly` left out, so a corpus check's finding on one is dropped with it. */
+  const skippedDefaultOnly = new Set<string>();
   // Field-joined entries each document matched (0039), keyed by field then
   // value: the duplicate finding and the post-loop orphan check both need
   // to know which documents claimed which value.
@@ -784,6 +793,10 @@ export async function runValidate(
       return;
     }
 
+    if (opts.skipDefaultOnly === true && resolved.source === "default") {
+      skippedDefaultOnly.add(label);
+      return;
+    }
     const schemaSet = resolved.schemas;
     // The merge-safe default (0069): this page manages what its schemas claim.
     // A set that fails to load claims nothing, and validation says why.
@@ -984,6 +997,7 @@ export async function runValidate(
         // which is a subset of `results` by construction — but a missed merge
         // must be a loud failure, not findings silently dropped.
         const result = byFile.get(file);
+        if (!result && skippedDefaultOnly.has(file)) continue;
         if (!result) {
           throw new DocmetaError(
             `check findings for "${file}" have no validation result to attach to.`,

@@ -7,7 +7,7 @@
 import { resolve } from "node:path";
 import type { Severity } from "../../shared/severity.js";
 import { loadRunConfig } from "../core/config.js";
-import { loadGraph, compactIri } from "../core/load.js";
+import { loadGraph, compactIri, parseGraph } from "../core/load.js";
 import { bundledShapesPath } from "../core/pkg.js";
 import { validateGraph, type CheckFinding } from "../core/shacl.js";
 import { renderCheckGithub } from "../reporters/github.js";
@@ -22,6 +22,11 @@ export interface CheckOptions {
   /** Shapes .ttl paths (default: config `check.shapes`, then bundled). */
   shapes?: string[];
   cwd?: string;
+  /**
+   * The graph as Turtle, in place of reading `graph`: what `buildGraph`
+   * returns, so `manni check` checks a build it never wrote.
+   */
+  turtle?: string;
 }
 
 export interface CheckReport {
@@ -44,7 +49,10 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
     },
     cwd,
   );
-  const store = loadGraph(resolve(cwd, opts.graph ?? config.out));
+  const store =
+    opts.turtle === undefined
+      ? loadGraph(resolve(cwd, opts.graph ?? config.out))
+      : parseGraph(opts.turtle, "the built graph");
 
   // CLI flag over config over the bundled contract — same precedence as
   // every other knob.
