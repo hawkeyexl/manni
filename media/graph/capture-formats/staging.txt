@@ -1,0 +1,9 @@
+staged pages == test/graph/fixtures/formats/ (byte for byte)
+guide.html
+index.md
+manni.config.yaml
+map.ditamap
+notes.adoc
+pom.xml
+ref.rst
+topic.dita
