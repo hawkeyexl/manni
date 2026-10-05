@@ -179,13 +179,19 @@ function positionOf(node: Located): Position {
   };
 }
 
-/** Concatenated text of a subtree, markup and all, verbatim. */
-function rawText(node: Node): string {
+/**
+ * Concatenated text of a subtree, markup and all, verbatim. `skipHref` drops
+ * an `<a>` linking exactly there, which is how a heading leaves out its own
+ * permalink glyph.
+ */
+function rawText(node: Node, skipHref?: string): string {
   if (defaultTreeAdapter.isTextNode(node)) return node.value;
   if (!defaultTreeAdapter.isElementNode(node)) return "";
-  if (NON_TEXT_TAGS.has(tagOf(node))) return "";
+  const tag = tagOf(node);
+  if (NON_TEXT_TAGS.has(tag)) return "";
+  if (skipHref !== undefined && tag === "a" && attrOf(node, "href") === skipHref) return "";
   let out = "";
-  for (const child of node.childNodes) out += rawText(child);
+  for (const child of node.childNodes) out += rawText(child, skipHref);
   return out;
 }
 
@@ -199,8 +205,8 @@ function rawText(node: Node): string {
  * where a title was built from `children.map(c => c.value)` and every inline
  * element vanished.
  */
-function flatText(node: Node): string {
-  return rawText(node).replace(/\s+/g, " ").trim();
+function flatText(node: Node, skipHref?: string): string {
+  return rawText(node, skipHref).replace(/\s+/g, " ").trim();
 }
 
 /** `language-x` from a `class`, per the HTML5 convention for code blocks. */
@@ -631,7 +637,9 @@ function walk(parent: ParentNode, out: Fragment[], ids: HeadingIds): void {
       out.push({
         type: "heading",
         level: HEADING_LEVELS.get(tag) ?? 1,
-        title: flatText(child),
+        // The self-permalink is dropped from the title as it is from the links:
+        // Sphinx's `¶` is a widget, and "Install the SDK¶" is no reader's title.
+        title: flatText(child, id !== undefined ? `#${id}` : undefined),
         position: positionOf(child),
         ...(id !== undefined ? { id } : {}),
       });

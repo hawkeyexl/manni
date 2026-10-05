@@ -67,6 +67,7 @@ describe("html links and ids", () => {
       `<h2 id="install">Install <a href="#install">¶</a> <a href="#other">o</a></h2>`,
     );
     expect(targets(tree)).toEqual(["#other"]);
+    expect(at(tree.sections, 0, "section").title).toBe("Install o");
   });
 
   it("drops a permalink to an id the heading inherited from its section", () => {
@@ -74,8 +75,10 @@ describe("html links and ids", () => {
       `<section id="setup"><h2>Setup<a class="headerlink" href="#setup">¶</a></h2></section>`,
     );
     expect(targets(tree)).toEqual([]);
-    // The pilcrow stays in the title: what a heading's text is did not change.
-    expect(section(tree, "Setup¶").id).toBe("setup");
+    // The glyph is a widget, not the title, and the slug follows the title.
+    const s = section(tree, "Setup");
+    expect(s.id).toBe("setup");
+    expect(s.slug).toBe("setup");
   });
 
   it("gives a heading its own id attribute, and leaves the slug alone", () => {
