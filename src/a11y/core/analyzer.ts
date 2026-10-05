@@ -121,9 +121,11 @@ interface Session {
 /**
  * Playwright-backed analyzer. Lazy: the browser launches on the first
  * `analyze`, and one context is reused for every URL. Each URL gets a page
- * of its own, closed once it is analyzed. A navigation a page starts late (a
- * script redirect after axe returned, or a meta refresh reported without
- * waiting for it) then dies with that page instead of aborting the next load.
+ * of its own, so a navigation a page starts late (a script redirect after axe
+ * returned, or a meta refresh reported without waiting for it) stays in that
+ * page's tab instead of aborting the next load. A page is closed once the
+ * next one exists, never before: Chrome can drop a context left with no page,
+ * and `newPage` then fails with "Failed to open a new tab".
  * - `page.goto(url, { waitUntil: "load", timeout })`; `finalUrl` is `page.url()` after it
  * - one in-page evaluation reads every `a[href]`'s absolute `href` and the
  *   first meta refresh; a refresh to another page (by `dedupeKey`) is a
@@ -138,6 +140,7 @@ interface Session {
  */
 export function createPlaywrightAnalyzer(): PageAnalyzer {
   let session: Promise<Session> | null = null;
+  let current: Page | null = null;
 
   const open = (): Promise<Session> => {
     session ??= (async () => {
@@ -153,6 +156,10 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
     async analyze(url, opts) {
       const { context } = await open();
       const page = await context.newPage();
+      const previous = current;
+      current = page;
+      // Its outcome is settled; a failure to close it is not this URL's.
+      await previous?.close().catch(() => undefined);
       // Every navigation the main frame starts, first hop only, so the one
       // that follows the load can be named even when it never commits (an
       // unresolvable host leaves the browser on its own error page).
@@ -170,7 +177,7 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
       try {
         return await analyzePage(page, url, opts, navigations);
       } finally {
-        await page.close();
+        page.off("request", onRequest);
       }
     },
 
@@ -178,6 +185,7 @@ export function createPlaywrightAnalyzer(): PageAnalyzer {
       if (session === null) return;
       const pending = session;
       session = null;
+      current = null;
       try {
         const { browser } = await pending;
         await browser.close();

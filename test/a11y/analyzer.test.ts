@@ -81,7 +81,8 @@ describe.skipIf(browser === null)("one page's navigation and the next page (real
       const first = await analyzer.analyze(`${server.url}/late.html`, opts);
       expect("result" in first).toBe(true);
       const next = await analyzer.analyze(`${server.url}/next.html`, opts);
-      expect("redirect" in next ? next.redirect : next.finalUrl).toBe(`${server.url}/next.html`);
+      if ("redirect" in next) expect.fail(`/next.html was redirected to ${next.redirect}`);
+      expect(next.finalUrl).toBe(`${server.url}/next.html`);
     } finally {
       await analyzer.close();
       await server.close();
