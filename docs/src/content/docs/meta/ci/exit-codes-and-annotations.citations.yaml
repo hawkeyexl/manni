@@ -39,7 +39,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/meta/reporters/junit.ts
         lines: 65-90
         integrity: sha256-e6925ff3917828e85cbd57d2d4e0f5546e6ace89fad4b4a6e38f0cc2793e3b97
-        commit-sha: d1cee1c05e9237e34c393656a14b7281b4b409c2
+        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
     - id: github-clean-run-prints-nothing
       claim:
         integrity: sha256-388655c63f783ba7c1cd880d94476131f8adc760bd3238136b24da672c97d141
@@ -277,7 +277,7 @@ docs/src/content/docs/meta/ci/exit-codes-and-annotations.mdx:
         file: src/shared/color.ts
         lines: 22-31
         integrity: sha256-ca72fadee46d1fc4c4d7e26d30e05006c5afbb1e10f9312530eda2361f43e849
-        commit-sha: d1cee1c05e9237e34c393656a14b7281b4b409c2
+        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
     - id: no-color-is-a-top-level-option
       claim:
         lines: 354-355

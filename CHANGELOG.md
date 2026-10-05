@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.3.0](https://github.com/hawkeyexl/manni/compare/v4.2.0...v4.3.0) (2026-10-05)
+
+
+### Features
+
+* **tracevals:** fold moose-tracevals in as `manni tracevals` ([#12](https://github.com/hawkeyexl/manni/issues/12)) ([922dea4](https://github.com/hawkeyexl/manni/commit/922dea44962f188cfa8119a67aa5c744ce824710))
+
 # [4.2.0](https://github.com/hawkeyexl/manni/compare/v4.1.0...v4.2.0) (2026-10-04)
 
 

@@ -31,7 +31,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: src/meta/reporters/junit.ts
         lines: 65-66
         integrity: sha256-3a8e64040d3aed8a31fd02a30d8adb9db95dfff0dff326d774ff2439cffed180
-        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
+        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
     - id: recipes-exit-0-and-1
       claim:
         integrity: sha256-fecd0355b9b7433272aeb0bfbae1007c1c662a434f9324138e958cbd97fe335c
@@ -92,7 +92,7 @@ docs/src/content/docs/meta/ci/recipes.mdx:
         file: package.json
         lines: 46-48
         integrity: sha256-2de8e81748272b9a64ecbd0ef087b7b148d787302d6d51977510a7c17687ae12
-        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
+        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
     - id: cite-hook-checks-staged-pages
       claim:
         integrity: sha256-a0542930798b64c6850202ea0ea7e170a89469a24a7ecb8bd3c00d4e93aa98f4

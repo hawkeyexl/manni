@@ -661,7 +661,7 @@ docs/src/content/docs/cite/reference/citations.mdx:
         file: src/meta/reporters/junit.ts
         lines: 87-92
         integrity: sha256-00a1a3b23e6af764fa3b7adef5cd982f9c2c930a98ba18caeef6e168ba1fc48b
-        commit-sha: d1cee1c05e9237e34c393656a14b7281b4b409c2
+        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
     - id: severity-github-level
       claim:
         lines: 522

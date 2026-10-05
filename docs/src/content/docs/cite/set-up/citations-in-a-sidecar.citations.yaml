@@ -201,7 +201,7 @@ docs/src/content/docs/cite/set-up/citations-in-a-sidecar.mdx:
         file: src/shared/manifest-cas.ts
         lines: 216-222
         integrity: sha256-e28ab7e1db6bbae1774098dc07fa358866954c2786ec2c271f74fe3439c89763
-        commit-sha: d1cee1c05e9237e34c393656a14b7281b4b409c2
+        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
     - id: page-manifest-missing-reads-empty
       claim:
         integrity: sha256-ae7191a2eb66ade00be7619c590be4140a6be5a3e4aff2bd003219c51df40eae

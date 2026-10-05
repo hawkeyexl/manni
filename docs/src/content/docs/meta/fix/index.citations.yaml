@@ -125,7 +125,7 @@ docs/src/content/docs/meta/fix/index.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 1135-1141
         integrity: sha256-32f532eec4d87ee764584428f50c80c02ce2af2b1bd3f803c01ccec9ae0daf6d
-        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
+        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
     - id: derive-rereads-git-blame
       claim:
         integrity: sha256-2a92270a056121c9517f9f40032ce7b62e09aacc74668d10a25ea220748cdc48

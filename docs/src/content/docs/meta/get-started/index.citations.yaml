@@ -7,7 +7,7 @@ docs/src/content/docs/meta/get-started/index.mdx:
         file: package.json
         lines: 47
         integrity: sha256-3f1eeebc0910c73dfab1013efd6c1309935f09b9ec2dc222b904e3c2432b4064
-        commit-sha: 7e9df30f168d8cb4b63d8ade085e459f8d0d6054
+        commit-sha: 922dea44962f188cfa8119a67aa5c744ce824710
     - id: summary-green-follows-exit-code
       claim:
         integrity: sha256-369507c6dc33f81889b07da8b4d09a206daee4c6e5c97ba18ae13c81b7981e89
