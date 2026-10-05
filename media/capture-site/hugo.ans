@@ -1,0 +1,2 @@
+manni: Hugo in test/fixtures/site/hugo/. Running hugo
+manni: hugo not found on PATH. Install Hugo's CLI, or set site.commands.build.

@@ -1,5 +1,5 @@
 // Plain-text transcript: titles, every typed command, the real output (ANSI stripped), captions.
-const b = require("./out-docs/docs/beats.js");
+const b = require("./out-site/site/beats.js");
 const fs = require("node:fs");
 const fps = b.FPS;
 const mmss = (f) => { const s = Math.round(f / fps); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
@@ -11,15 +11,21 @@ const body = (out) => strip(out).replace(/\n$/, "").split("\n").map((raw) => {
   if (/^\d+ violations? on /.test(l)) return `${l}   (the whole line in green)`;
   return l;
 }).join("\n") + "\n";
-let out = `manni docs preview, demo video transcript (silent video; text describes what is on screen)
+// The measured numbers come from the captures, so a re-shoot cannot leave stale ones here.
+const cap = require("./out-site/site/captures.json");
+const builtIn = (strip(cap.preview.chunks.map((c) => c.output).join("")).match(/\d+ page\(s\) built in \S+/) ?? [])[0];
+const realTime = (strip(cap.a11y).match(/^real\s+(\S+)/m) ?? [])[1];
+const pages = (strip(cap.a11y).match(/^Checked (\d+) of/m) ?? [])[1];
+if (!builtIn || !realTime || !pages) throw new Error("transcript: a measured number is missing from the captures");
+let out = `manni site preview, demo video transcript (silent video; text describes what is on screen)
 
 Frame: 1080x1080, 30 fps, ${total} s. Every terminal line is real output, captured by
-media/capture-docs/capture.sh at the root of the manni checkout. \`manni\` is the built CLI
+media/capture-site/capture.sh at the root of the manni checkout. \`manni\` is the built CLI
 (node dist/cli.js). The shell had its AI-agent variables removed, so Astro printed what a person sees.
 
-Two waits are compressed, and the real time stays on screen. The astro build took 15.4 s and is
-shown for 1.2 s; its 281 log lines are replaced by one marker line that says so, and astro's own
-"239 page(s) built in 11.45s" line is kept. The accessibility crawl took 4m36.662s over 238 pages and
+Two waits are compressed, and the real time stays on screen. The astro build took ${cap.preview.cutSeconds} s and is
+shown for 1.2 s; its ${cap.preview.cutLines} log lines are replaced by one marker line that says so, and astro's own
+"${builtIn}" line is kept. The accessibility crawl took ${realTime} over ${pages} pages and
 is shown for 2 s; bash's own \`time\` output is on screen, unedited. Everything else is real time.
 
 `;
@@ -38,5 +44,5 @@ b.beats.forEach((beat, i) => {
   out += `Caption: ${beat.caption}\n\n`;
   t += d;
 });
-fs.writeFileSync("../docs-preview-1x1.transcript.txt", out);
+fs.writeFileSync("../site-preview-1x1.transcript.txt", out);
 console.log(out);

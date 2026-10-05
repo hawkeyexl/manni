@@ -5,7 +5,7 @@
 //
 // A line that starts with CUT is not output. It stands for output the edit
 // left out, and is drawn as chrome (accent, italic) so it cannot be read as
-// bytes the tool printed. See docs-preview-1x1.script.md.
+// bytes the tool printed. See site-preview-1x1.script.md.
 
 export interface Span {
   text: string;

@@ -1,10 +1,10 @@
-// Turn the real captures in media/capture-docs/ into JSON the composition imports.
+// Turn the real captures in media/capture-site/ into JSON the composition imports.
 // No output byte is edited. Three normalisations, each one the terminal's own
 // rendering of bytes the replay does not implement, plus one disclosed cut:
 //   - CRLF to LF.
 //   - Tabs to the terminal's 8-column stops (`ls -C` and bash's `time`).
 //   - Carriage return and erase-line: keep what follows the last `\r`.
-//   - The cut. `manni docs preview` prints 295 lines; 281 of them are astro's
+//   - The cut. `manni site preview` prints 295 lines; 281 of them are astro's
 //     build log. Lines 5 to 285 of preview.ans are replaced by ONE marker line,
 //     which src/ansi.ts draws as chrome (accent, italic), never as output. It
 //     states how many lines went and how long they took, measured from
@@ -18,7 +18,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const capture = join(here, "..", "..", "capture-docs");
+const capture = join(here, "..", "..", "capture-site");
 
 function expandTabs(text) {
   return text
@@ -112,7 +112,7 @@ const out = {
   exits: { hugo: read("hugo.exit").trim(), a11y: read("a11y.exit").trim() },
 };
 
-mkdirSync(join(here, "..", "src", "docs"), { recursive: true });
-writeFileSync(join(here, "..", "src", "docs", "captures.json"), JSON.stringify(out, null, 2));
-console.log("wrote src/docs/captures.json");
+mkdirSync(join(here, "..", "src", "site"), { recursive: true });
+writeFileSync(join(here, "..", "src", "site", "captures.json"), JSON.stringify(out, null, 2));
+console.log("wrote src/site/captures.json");
 console.log(preview.chunks.map((c) => `${c.ms}ms ${JSON.stringify(c.output.slice(0, 60))}`).join("\n"));

@@ -1,2 +1,0 @@
-manni: Hugo in test/fixtures/docs/hugo/. Running hugo
-manni: hugo not found on PATH. Install Hugo's CLI, or set docs.commands.build.

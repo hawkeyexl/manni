@@ -3,7 +3,7 @@
 # the shell a person has. Astro 7 reads these through `am-i-vibing` and, inside
 # an agent, backgrounds `astro preview` and prints JSON instead of its normal
 # output. The demo shows what a person sees, so the capture runs without them.
-# Usage: bash media/capture-docs/clean-env.sh <command...>
+# Usage: bash media/capture-site/clean-env.sh <command...>
 unset_args=()
 for v in $(compgen -e); do
   case "$v" in

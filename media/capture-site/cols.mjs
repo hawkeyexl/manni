@@ -1,17 +1,17 @@
 // Font-size derivation (design.md "Capture geometry"): the largest size at which every
 // real line either fits or wraps at a space, never inside a token, and the tallest
 // screen fits the 878 px terminal box. The wrap is the replay's own (src/Demo.tsx wrapLine).
-// Run from media/remotion, after scripts/captures-docs.mjs: node ../capture-docs/cols.mjs [px]
+// Run from media/remotion, after scripts/captures-site.mjs: node ../capture-site/cols.mjs [px]
 import { readFileSync } from "node:fs";
-const cap = JSON.parse(readFileSync("src/docs/captures.json", "utf8"));
+const cap = JSON.parse(readFileSync("src/site/captures.json", "utf8"));
 const strip = (s) => s.replace(/\x1b\[[0-9;]*m/g, "").replace(/^@@cut@@/, "");
 const lines = (s) => s.replace(/\n$/, "").split("\n").map(strip);
 
 const c = {
   ls: "ls docs",
   grep: 'git grep -h "npx astro" main -- .github',
-  preview: "manni docs preview",
-  hugo: "manni docs build test/fixtures/docs/hugo",
+  preview: "manni site preview",
+  hugo: "manni site build test/fixtures/site/hugo",
   a11y: "time manni a11y check -q --no-progress",
 };
 const beats = {

@@ -1,5 +1,5 @@
 // WebVTT sidecar from the same beat timings the composition burns in.
-const b = require("./out-docs/docs/beats.js");
+const b = require("./out-site/site/beats.js");
 const fs = require("node:fs");
 const fps = b.FPS;
 const ts = (f) => { const s = f / fps; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = (s % 60).toFixed(3).padStart(6, "0"); return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${sec}`; };
@@ -10,6 +10,6 @@ b.beats.forEach((beat, i) => {
   out += `${i + 1}\n${ts(t)} --> ${ts(t + d)}\n${beat.title}${/[?.!]$/.test(beat.title) ? "" : ":"} ${beat.caption}\n\n`;
   t += d;
 });
-fs.writeFileSync("../docs-preview-1x1.vtt", out);
+fs.writeFileSync("../site-preview-1x1.vtt", out);
 console.log(out);
 console.log(`total ${(b.totalFrames / fps).toFixed(2)}s (${b.totalFrames} frames)`);
