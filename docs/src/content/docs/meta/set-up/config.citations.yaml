@@ -137,9 +137,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-6db4d5d084e63d6301555a29399627c768a89ea90219446ce59f29e70f534908
       source:
         file: src/meta/commands/validate.ts
-        lines: 317-320
+        lines: 324-327
         integrity: sha256-7f1973d8b0245da7e1deff8552f047c5e989da046b9bd61a922b7a1d15eef004
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: exclude-flag-filters-a-typed-path
       claim:
         lines: 116
@@ -212,9 +212,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
       source:
         file: src/meta/commands/validate.ts
-        lines: 951-961
+        lines: 964-974
         integrity: sha256-a534dc72a969d7026f974ba01d23c808d84e76f62ccb179329f8412cb4fcd8e4
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: notices-go-to-stderr
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146

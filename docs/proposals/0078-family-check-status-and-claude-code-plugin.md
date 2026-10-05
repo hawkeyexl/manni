@@ -86,7 +86,7 @@ up. This is detection, not a switch, so there is no config key.
 
 | Domain | In play when | Per-file checks | Set-wide checks |
 |---|---|---|---|
-| meta | `meta:` exists, or a legacy `docmeta.config.yaml`, or the page names its own `$schema`. A file covered only by built-in default schemas is skipped. | `meta validate` | |
+| meta | `meta:` exists, or the page names its own `$schema`. A file covered only by built-in default schemas is skipped. | `meta validate` | |
 | cite | The page carries citations, as markers or a `citations` manifest | `cite check` on the page | `cite check` over every page with citations. A source edit can drift any of them. |
 | lint | `lint:` exists | `lint check` | |
 | docevals | `docevals:` exists, or the page declares evals. "No evals resolved" counts as not in play. | `docevals run --deterministic-only --no-generate --no-execution` | |

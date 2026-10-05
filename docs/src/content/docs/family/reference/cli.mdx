@@ -1,0 +1,430 @@
+---
+title: CLI reference
+description: "Every manni check and manni status argument, option, output shape, exit code and message, what each scope runs, and how both read a Claude Code hook."
+sidebar:
+  order: 1
+id: "family-reference-cli"
+type: "reference"
+keywords: ["manni check", "manni status", "hook protocol", "exit codes", "scope", "in play"]
+language: en
+audiences: ["ci-engineers", "docs-engineers"]
+intent: "Look up every argument, option, output shape, exit code and message of manni check and manni status."
+lifecycle: published
+applies-to: ["domain:family"]
+next-steps: ["family-check", "family-claude-code"]
+sample-questions: ["What does manni check run when I name files?", "What exit code does manni check use under a Claude Code hook?", "What does the manni check JSON report look like?"]
+graph: { label: "CLI reference", type: reference }
+last-updated: 2026-10-05
+tags:
+  - cli
+  - exit-codes
+  - hooks
+  - reference
+action: remember
+prerequisites:
+  - family-check
+related-pages:
+  - family-check
+  - family-claude-code
+  - meta-reference-output-and-exit-codes
+  - meta-reference-configuration
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+{/* The command, argument, and option tables on this page are drift-checked
+    against src/family/cli.ts by scripts/check-cli-reference.mjs (npm run
+    docs:check-cli), enforced in CI. Keep flags, arguments, and defaults in
+    sync with the code; descriptions are free-form. */}
+
+`manni check` and `manni status` are the two verbs of the umbrella that belong
+to no single domain. Both call other domains' command cores in process and own
+no checks of their own. [`check`](#check) runs the checks a repository has set
+up. [`status`](#status) says which those are.
+
+```sh
+manni check [options] [paths...]
+manni status [options]
+```
+
+## Global options
+
+Global options are accepted before the subcommand.
+
+| Option | Description |
+|---|---|
+| `-V, --version` | Print the manni version and exit. |
+| `-h, --help` | Print help for the program or a subcommand. |
+
+## `check`
+
+Run every check the repository has set up, and nothing else. A domain is in
+play when its own section of `manni.config.yaml` exists or when the pages carry
+its declarations. [What puts a domain in play](#what-puts-a-domain-in-play) has
+the rule for each. Only error-level findings fail the run, which is the rule
+each domain applies to its own exit code.
+
+```sh
+manni check [paths...] [options]
+```
+
+### Arguments
+
+| Argument | Required | Description |
+|---|---|---|
+| `[paths...]` | no | Files, directories or globs, space-separated. The per-file checks run on the collection members among them. Without any, every in-play check runs over every collection. |
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to a manni config file, instead of discovery. |
+| `-f, --format` | `<format>` | `pretty` | `pretty`, `json` or `github`. Any other value is refused (exit 2). Not read under a [hook](#hook-protocol). |
+| `--no-color` | n/a | color on a TTY | Disable colored output. Color applies to the `pretty` output only, on a TTY, and never under `NO_COLOR`. The same [rules](/manni/meta/reference/output-and-exit-codes/#color-behavior) as every domain. |
+
+`check` reads no stdin as an input. Unlike `meta validate`, `-` does not name
+standard input. Stdin is read only to look for a [hook envelope](#hook-protocol).
+A stream that stays silent for 1.5 seconds counts as nothing piped in.
+
+## `status`
+
+Say what is set up, and so what `manni check` runs. It reads the config and the
+pages and runs no check. It always exits `0`, except with no config, which exits
+`2` with the message `check` uses.
+
+```sh
+manni status [options]
+```
+
+### Options
+
+| Option | Argument | Default | Description |
+|---|---|---|---|
+| `-c, --config` | `<path>` | discovered | Path to a manni config file, instead of discovery. |
+| `-f, --format` | `<format>` | `pretty` | `pretty` or `json`. Any other value is refused (exit 2). |
+
+## What puts a domain in play
+
+There are no config keys for this. A domain is in play when its own config
+section exists, or when the content carries its declarations. Nothing manni
+would apply by default counts as set up. Each row also names the command `check`
+runs and the reason `status` and the skipped line print when the domain is not
+in play.
+
+| Domain | In play when | Check | Reason when not in play |
+|---|---|---|---|
+| `meta` | `meta:` exists, or a page names its own `$schema`. A file covered only by the built-in default schemas is skipped. | `meta validate` | `no meta: section`. With `meta:` present: `only the built-in default schemas cover these files`. |
+| `cite` | A page carries citations, as markers or in a `citations` manifest. | `cite check` | `no page carries citations` |
+| `lint` | `lint:` exists. | `lint check` | `no lint: section` |
+| `docevals` | `docevals:` exists, or a page declares evals. A run that resolves no evals counts as not in play. | `docevals run`, with `--deterministic-only`, no generation and no execution | `no page resolves any evals` |
+| `term` | The collections hold at least one term. | `term check` | `no terms in any collection` |
+| `graph` | `graph:` exists. | `graph build` in memory, writing no file, then `graph check` | `no graph: section` |
+| `a11y`, `tracevals` | Never. `check` does not run them, since they need a built site and a browser, or recorded sessions and a model. | none | `run manni a11y check against a running site`, `run manni tracevals run over sessions` |
+
+`check` reads only the files that belong to a collection declared under
+`collections:`. A file outside every collection passes silently, with one notice
+when you named it.
+
+## What each scope runs
+
+| Input | Per-file checks | Whole-set checks |
+|---|---|---|
+| nothing | Every in-play check over every collection. This is the CI gate. | |
+| paths | `meta`, `cite`, `lint` and `docevals` on the collection members among the paths. | none |
+| a `PostToolUse` hook for `Edit`, `Write`, `MultiEdit` or `NotebookEdit` | `meta`, `cite`, `lint` and `docevals` on the edited file. | none |
+| a `Stop` hook | `meta`, `lint` and `docevals` on the working tree's changed members. | `cite`, `term` and `graph`. |
+
+With paths, `cite check` runs on the named pages. On a bare run or at a `Stop`,
+it runs over every page that carries citations, since a source edit can drift
+any of them. `term check` and `graph check` always cover the whole set, so they
+run on a bare `check` and at a `Stop`, and not when you name files.
+
+The working tree's changed members are the files `git status` reports against
+`HEAD` that belong to a collection and have a supported document extension.
+That covers modified, added, renamed and untracked files. A deleted file is not
+among them. A clean tree runs nothing, including the whole-set checks.
+
+Checks run, and print, in a fixed order. For a bare run and for paths it is
+`meta validate`, `cite check`, `lint check`, `docevals run`, `term check`, then
+`graph check`. At a `Stop` it is `meta validate`, `lint check`, `docevals run`,
+`cite check`, `term check`, then `graph check`.
+
+## Output
+
+### `pretty`
+
+The default. Each check that ran prints its own domain's report under the
+check's name. The checks that did not run follow, one line each, then a summary.
+
+```console
+$ manni check docs/limits.md
+meta validate
+✗ docs/limits.md
+    (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]
+
+1 file checked, 0 passed, 1 failed, 1 error
+
+skipped  cite check     no page carries citations
+skipped  lint check     no lint: section
+skipped  docevals run   no page resolves any evals
+
+4 checks over 1 file: 1 failed, 3 skipped
+# exit 1
+```
+
+A line for a check that did not run starts with `skipped` or `error`, then the
+check, then the first line of its message. The summary counts every check, the
+failed ones, the skipped ones, and, only when there are any, the ones that could
+not run: `4 checks over 1 file: 0 failed, 2 skipped, 1 could not run`.
+
+### `github`
+
+The `github` output of each check that ran, concatenated: one `::error` or
+`::warning` annotation per finding. A skipped check and a check that could not
+run print nothing to stdout.
+
+```console
+$ manni check -f github
+::error file=docs/limits.md,line=1::[./schemas/page.schema.json] (root) must have required property 'description'
+# exit 1
+```
+
+### `json`
+
+One object. Each `report` is that domain's own `-f json` output, unchanged.
+
+```json
+{
+  "status": "fail",
+  "files": ["docs/limits.md"],
+  "checks": [
+    { "command": "meta validate", "status": "fail", "report": { "summary": { "files": 1, "passed": 0, "failed": 1, "errors": 1 }, "results": [ … ] } },
+    { "command": "cite check", "status": "skipped", "message": "no page carries citations" }
+  ]
+}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `status` | `pass` or `fail` | `fail` when any check failed. A check that could not run does not make it `fail`, and the exit code is still `2`. |
+| `files` | string[] | The collection members the per-file checks covered, relative to the working directory. On a bare run, every member of every collection. |
+| `checks[].command` | string | The check, such as `meta validate`. |
+| `checks[].status` | `pass`, `fail`, `error` or `skipped` | `error` means the check could not run. |
+| `checks[].report` | object | On `pass` and `fail`. The domain's own JSON report. |
+| `checks[].message` | string | On `error` and `skipped`. Why the check did not run. |
+
+### `status` output
+
+```console
+$ manni status
+manni 4.3.0   config manni.config.yaml   collection site (2 files)
+
+meta       in play       meta: section
+cite       not set up    no page carries citations
+lint       not set up    no lint: section
+docevals   not set up    no page resolves any evals
+term       not set up    no terms in any collection
+graph      not set up    no graph: section
+a11y       not checked   run manni a11y check against a running site
+tracevals  not checked   run manni tracevals run over sessions
+# exit 0
+```
+
+The first line names the manni version, the config file and each collection with
+its file count. `-f json` prints the same facts:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `version` | string | The manni version. |
+| `config` | string | The config file, as discovery found it or as `-c` named it. |
+| `collections[]` | `{ name, files }` | Each declared collection and the number of files it holds. |
+| `domains[]` | `{ name, status, reason }` | One row per domain. `status` is `in-play`, `not-set-up` or `not-checked`. |
+
+<Aside type="note" title="A domain that cannot read its setup">
+`status` runs no check, so a domain that cannot read its own setup stays in the
+table. Its row is `in play`, and the reason reads `manni <check> could not run`
+followed by the cause.
+</Aside>
+
+A config with no `collections:` gives `check` no files to read. Every domain
+row is then `not set up`, with the reason `no collections: in manni.config.yaml`.
+
+## Hook protocol
+
+A Claude Code hook gives its command one JSON object on stdin. When stdin is not
+a terminal and holds an object with a string `hook_event_name`, both verbs treat
+it as a hook envelope. Detection is by content, so no flag turns it on. Anything
+else is a run by hand.
+
+An envelope narrows the scope as [the table above](#what-each-scope-runs) says,
+and it switches the output to the hook protocol. It never changes what is
+checked beyond the scope. Positional paths win over an envelope's own scope.
+
+The protocol exists because exit `2` means "block" to a hook. An operational
+error must never use it, so under an envelope `check` exits `0` for every case
+except errors found after an edit. `-f` and `--no-color` are not read, and
+notices from the domains are dropped.
+
+### `check`
+
+| Hook event | Situation | Exit | Output |
+|---|---|---|---|
+| `PostToolUse` | Errors in the edited file | `2` | stderr: `manni found errors in <file>. Fix them before you continue.`, a blank line, then the `pretty` report with color off. |
+| `PostToolUse` | A check could not run | `0` | stdout: `{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"manni <check> could not check <file>: <first line of the cause>"}}`. One line per check. |
+| `PostToolUse` | The run itself failed, such as an unreadable config | `0` | stdout: the same `additionalContext`, as `manni check could not check <file>: <first line>`. |
+| `Stop` | Errors, `stop_hook_active` false | `0` | stdout: `{"decision":"block","reason":"manni found errors in the files you changed. Fix them, then finish.\n\n<report>"}` |
+| `Stop` | Errors, `stop_hook_active` true | `0` | stdout: `{"systemMessage":"manni still reports errors after one repair pass. Run manni check to see them."}`. The agent stops and you see the message. |
+| any | Clean, the file is not a collection member, no config, nothing set up, a tool other than the four, or any other event | `0` | nothing |
+
+The `PostToolUse` file is `tool_input.file_path`, or `tool_input.notebook_path`
+for `NotebookEdit`. It is shown relative to the hook's `cwd`. Relative paths
+resolve from `cwd`, which is the working directory when the envelope names none.
+
+The `Stop` run needs git. Outside a repository it prints nothing and exits `0`.
+
+### `status`
+
+Only a `SessionStart` envelope changes `status`. Its stdout becomes the agent's
+context.
+
+| Situation | Exit | Output |
+|---|---|---|
+| A config with at least one collection | `0` | stdout: the `pretty` table, a blank line, then three lines that say when `check` runs and which skill repairs a finding. |
+| A config with no collection | `0` | stdout: the table alone. |
+| No config, or a config that cannot be read | `0` | nothing |
+
+After the table, `status` also appends `export MANNI_GENERATED_BY=<model>` to the
+file `CLAUDE_ENV_FILE` names. That happens only when the envelope carries a
+`model`, `CLAUDE_ENV_FILE` is set, and `MANNI_GENERATED_BY` is not already set.
+`model` is a string, or an object with an `id`. A value that holds characters
+outside a model id, such as spaces or quotes, is not written.
+
+## Exit codes
+
+| Code | `check` | `status` |
+|---|---|---|
+| `0` | Every check that ran passed, or nothing needed to run. Skipped checks do not change this. | The report printed. |
+| `1` | At least one check that ran found an error-level problem. | n/a |
+| `2` | Usage or operational error, or a check could not run. See [messages](#messages). Never used for an operational error under a hook. | Usage or operational error. |
+
+## Messages
+
+Each line goes to stderr and starts with `manni: ` unless it is a usage error.
+
+| Message | Exit |
+|---|---|
+| `Skipped 1 file outside every collection: README.md`, a notice naming each file you passed that is outside every collection. The run continues. | unchanged |
+| `No manni.config.yaml found from <cwd> up to the repository root. manni check runs the checks it sets up.` | `2` |
+| `Nothing is set up to check in manni.config.yaml. manni status says what each domain needs.` Printed when no collection is declared, and when a bare run finds every check skipped. | `2` |
+| `manni <check> could not run: <its error>`. That check prints as `error`, and the other checks still run. | `2` |
+| `Config file not found: "<path>".` for a `-c` path that does not exist. | `2` |
+| `File not found: "<path>".` for a named path that does not exist. | `2` |
+| `error: option '-f, --format <format>' argument 'sarif' is invalid. Allowed choices are pretty, json, github.` Unlike the lines above, it has no `manni: ` prefix, and `(add --help for usage)` follows. `status` lists `pretty, json`. | `2` |
+
+## Examples
+
+From the bare minimum to every option at once, then the usage errors. Each rung
+shows the command, what it prints, and the exit code.
+
+```console
+$ manni status
+manni 4.3.0   config manni.config.yaml   collection site (2 files)
+
+meta       in play       meta: section
+cite       not set up    no page carries citations
+lint       not set up    no lint: section
+docevals   not set up    no page resolves any evals
+term       not set up    no terms in any collection
+graph      not set up    no graph: section
+a11y       not checked   run manni a11y check against a running site
+tracevals  not checked   run manni tracevals run over sessions
+# exit 0
+
+$ manni check
+meta validate
+✗ docs/limits.md
+    (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]
+
+2 files checked, 1 passed, 1 failed, 1 error
+
+skipped  cite check     no page carries citations
+skipped  lint check     no lint: section
+skipped  docevals run   no page resolves any evals
+skipped  term check     no terms in any collection
+skipped  graph check    no graph: section
+
+6 checks over 2 files: 1 failed, 5 skipped
+# exit 1
+
+$ manni check docs/index.md
+meta validate
+1 file checked, 1 passed, 0 failed, 0 errors
+
+skipped  cite check     no page carries citations
+skipped  lint check     no lint: section
+skipped  docevals run   no page resolves any evals
+
+4 checks over 1 file: 0 failed, 3 skipped
+# exit 0
+
+$ manni check -f github
+::error file=docs/limits.md,line=1::[./schemas/page.schema.json] (root) must have required property 'description'
+# exit 1
+
+$ manni check docs/ -f json --no-color
+{ "status": "fail", "files": ["docs/index.md", "docs/limits.md"], "checks": [ … ] }
+# exit 1
+
+$ manni check "docs/**/*.md" -c ci/manni.config.yaml -f json --no-color
+{ "status": "pass", "files": ["docs/index.md", "docs/limits.md"], "checks": [ … ] }
+# exit 0
+```
+
+What a `PostToolUse` hook runs, after an agent edits a page that now fails:
+
+```console
+$ echo '{"hook_event_name":"PostToolUse","tool_name":"Edit","tool_input":{"file_path":"docs/limits.md"},"cwd":"."}' | manni check
+manni found errors in docs/limits.md. Fix them before you continue.
+
+meta validate
+✗ docs/limits.md
+    (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]
+
+1 file checked, 0 passed, 1 failed, 1 error
+
+skipped  cite check     no page carries citations
+skipped  lint check     no lint: section
+skipped  docevals run   no page resolves any evals
+
+4 checks over 1 file: 1 failed, 3 skipped
+# exit 2
+```
+
+The same run at a second `Stop`, with errors still outstanding:
+
+```console
+$ echo '{"hook_event_name":"Stop","stop_hook_active":true,"cwd":"."}' | manni check
+{"systemMessage":"manni still reports errors after one repair pass. Run manni check to see them."}
+# exit 0
+```
+
+Usage errors, each with its stderr line:
+
+```console
+$ manni check -f sarif
+error: option '-f, --format <format>' argument 'sarif' is invalid. Allowed choices are pretty, json, github.
+(add --help for usage)
+# exit 2
+
+$ manni check
+manni: No manni.config.yaml found from /work/demo up to the repository root. manni check runs the checks it sets up.
+# exit 2
+
+$ manni check docs/nope.md
+manni: File not found: "docs/nope.md".
+# exit 2
+
+$ manni check -c nope.yaml
+manni: Config file not found: "nope.yaml".
+# exit 2
+```

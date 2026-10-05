@@ -159,6 +159,9 @@ line in a repository's agent instructions.
 export MANNI_GENERATED_BY=claude-fable-5
 ```
 
+In Claude Code, the [`manni` plugin](/manni/family/claude-code/#what-happens-at-session-start)
+exports it for the session from the model's own id, so the line is not needed.
+
 The agent rewrites lines 9 to 11 of `docs/limits.md`. With the variable set,
 `derive` attributes the uncommitted lines:
 

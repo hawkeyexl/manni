@@ -33,9 +33,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-0a46ee5ce50526220582cbb1b40c4e9cfb1cb51b4b85ca7ee52b68094f53fe1b
       source:
         file: src/meta/commands/validate.ts
-        lines: 298-302
+        lines: 305-309
         integrity: sha256-73d56d153f0de0ed6e64cb6ade7318f324b35250a12838d444586b957050d6c4
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: config-discovered-as-manni-config-yaml
       claim:
         lines: 63

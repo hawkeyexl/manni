@@ -13,9 +13,9 @@ docs/src/content/docs/meta/ci/index.mdx:
         integrity: sha256-0cd301c79f776f15eafb0ef08236fdf158c5107697a27f3a8cfc2b14fe1624c4
       source:
         file: src/meta/commands/validate.ts
-        lines: 950-961
+        lines: 963-974
         integrity: sha256-ecdb7f2b79f4cf95fbd52ff4b2b06deb9ab5d22218f6953b83e3af0726fd9bea
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: collection-flag-is-repeatable
       claim:
         integrity: sha256-2de948433473766b2903499c362d68fce2e45b42c7dc76650fb9f0e51302e824

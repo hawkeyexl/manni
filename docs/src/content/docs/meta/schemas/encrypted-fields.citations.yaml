@@ -30,9 +30,9 @@ docs/src/content/docs/meta/schemas/encrypted-fields.mdx:
         integrity: sha256-c3e09a4eb152037e2465c346d0c138fed65606504e8311614ceb8d51e629aeb4
       source:
         file: src/meta/commands/validate.ts
-        lines: 445-452
+        lines: 452-459
         integrity: sha256-1973f37dd5436ece748c776b24dbfea838d2cad07428841d9036551a77a89caa
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: sarif-rule-id-for-encrypted-plain
       claim:
         lines: 196

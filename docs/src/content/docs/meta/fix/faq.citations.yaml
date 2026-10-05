@@ -6,9 +6,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-f440f8b42570c5d3bd7279d08964942f75cede46980d7b3d9d98e6a1277eb57e
       source:
         file: src/meta/commands/validate.ts
-        lines: 317-320
+        lines: 324-327
         integrity: sha256-7f1973d8b0245da7e1deff8552f047c5e989da046b9bd61a922b7a1d15eef004
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: bare-run-reads-collections
       claim:
         integrity: sha256-260592ebe1bbe0fcd2ac71cdaf1e80ed4d3ed937fd1b57c4c5ec35b2a36139e1
@@ -22,9 +22,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-ee93e2db9a2938c61ffd479a629cd57afd2f8b896c2e578e0089fb307ee398aa
       source:
         file: src/meta/commands/validate.ts
-        lines: 337
+        lines: 344
         integrity: sha256-6aa21a84b00caf708e8ab2fa9e36ee4e9398277ebe111bc1a754483c2e96f724
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: exclude-merges-with-default-ignores
       claim:
         integrity: sha256-4ad98f541fbbf16ce90e957bd9e2a0c5a770d704b5d89943ffc60c99702920ed
@@ -54,9 +54,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-782ab4ac1013665270894cbe4ffa9c05abf1359dd60ca63574ce6a6afb9ffdc6
       source:
         file: src/meta/commands/validate.ts
-        lines: 830-831
+        lines: 843-844
         integrity: sha256-3ef67f71b6dd6d13aa8db8c7e567afcb9df863c1d137c5597d3a9fd7de40c6fa
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: faq-exit-2-operational
       claim:
         lines: 116
@@ -140,9 +140,9 @@ docs/src/content/docs/meta/fix/faq.mdx:
         integrity: sha256-435ce80083a89db75c417d16d53588c95303b8d80cf96aa14c58bbb9c82e5533
       source:
         file: src/meta/commands/validate.ts
-        lines: 890-893
+        lines: 903-906
         integrity: sha256-e6543749701ab9d312659c052be04ac7257124d88d57b9fd371807a9de234581
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: dash-is-the-stdin-token
       claim:
         integrity: sha256-f5e69cb7591833d7fc747a3ee8e4085cb05fd2156bf7c00dde83a4c8e6ab82a8

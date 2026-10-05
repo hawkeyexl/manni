@@ -242,7 +242,7 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: generated-by-attributes-all-uncommitted-lines
       claim:
-        lines: 165
+        lines: 168
         integrity: sha256-c977abf34b42b07cffbb41f1b7ca7b487184be50e80f61c231cdd52f0a6ba6ad
       source:
         file: src/meta/core/derive/provenance.ts
@@ -314,9 +314,9 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         integrity: sha256-6fedd5181bee831ead0082f85c35f9fc1c3fa914171509b11b5e96544abcce95
       source:
         file: src/meta/commands/validate.ts
-        lines: 578-587
+        lines: 587-596
         integrity: sha256-6f9df11dc130841f621a9207a00e82ce264cc4ac92855aad30d05ff540127df1
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: changed-pin-finding-at-first-file-line
       claim:
         integrity: sha256-6fedd5181bee831ead0082f85c35f9fc1c3fa914171509b11b5e96544abcce95
@@ -343,7 +343,7 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: no-evidence-is-not-a-contradiction
       claim:
-        lines: 301-304
+        lines: 304-307
         integrity: sha256-9f6a3599eaab1305d8f93cf5e62c5cac66236b5191c83fe894a62da1c83e9b22
       source:
         file: src/meta/core/derive/provenance.ts

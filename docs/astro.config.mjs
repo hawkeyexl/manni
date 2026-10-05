@@ -476,6 +476,23 @@ export default defineConfig({
             },
           ],
         },
+        // `family` is not a domain. It documents the two verbs the umbrella
+        // carries, `manni check` and `manni status`, and the Claude Code
+        // plugin that runs them (proposal 0078). Two journey pages and a
+        // reference page, so no overview and no sub-groups.
+        {
+          label: "family",
+          collapsed: true,
+          items: [
+            { label: "Gate every check", link: "/family/check/" },
+            { label: "Keep an agent's docs green", link: "/family/claude-code/" },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "family/reference" } }],
+            },
+          ],
+        },
       ],
     }),
   ],

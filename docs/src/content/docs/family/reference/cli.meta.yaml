@@ -1,0 +1,26 @@
+docs/src/content/docs/family/reference/cli.mdx:
+  personas: ["devin", "maya"]
+  journeys: ["d16", "m24"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/family/cli.ts"
+    - path: "src/family/commands/check.ts"
+    - path: "src/family/commands/status.ts"
+    - path: "src/family/core/in-play.ts"
+  eval-suite: family
+  evals:
+    - id: compose-command
+      assertion: "A reader can compose a manni check command from the documented arguments and options."
+      type: capability
+      grader: ai
+    - id: read-hook-exit
+      assertion: "A reader can say which exit code manni check uses under a Claude Code hook and why."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Sonnet 5.5
+      lines: 2-396
+      integrity: sha256-402e14ea69a08c65f503a1e34fd4189a6ae3dade69f97f6368e946c84549c4fa
+  owner:
+    - "@hawkeyexl"

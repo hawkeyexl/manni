@@ -6,9 +6,9 @@ docs/src/content/docs/meta/index.mdx:
         integrity: sha256-51deef4abb34be45aea7bddc2af2800a193cdc7ce9380a757913e5717f68ae9f
       source:
         file: src/meta/commands/validate.ts
-        lines: 830-831
+        lines: 843-844
         integrity: sha256-3ef67f71b6dd6d13aa8db8c7e567afcb9df863c1d137c5597d3a9fd7de40c6fa
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: formats-enforced-by-ajv-formats
       claim:
         lines: 95-96

@@ -47,9 +47,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-2677eb6d7a6765f13cc493817052e1a39e51136d6266f8d0c9f35b48299eced3
       source:
         file: src/meta/commands/validate.ts
-        lines: 445-450
+        lines: 452-457
         integrity: sha256-322c785e2c90e19dccc0203214bfcfda36622ae1d2bf7b2715ee0fb9e978d19a
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: output-derive-source-errors
       claim:
         lines: 708-745
@@ -281,9 +281,9 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         integrity: sha256-a30f8c40d884446ee776b51c0efd006a998ed961667935685d91da44da2874d4
       source:
         file: src/meta/commands/validate.ts
-        lines: 445-450
+        lines: 452-457
         integrity: sha256-322c785e2c90e19dccc0203214bfcfda36622ae1d2bf7b2715ee0fb9e978d19a
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: output-which-tool-emits-which
       claim:
         lines: 429-434

@@ -195,9 +195,9 @@ docs/src/content/docs/meta/fix/index.mdx:
         integrity: sha256-aaa718e4387400f40c085ef29f7d77eab6d31f497b2f9ab4fca7422a7393bed7
       source:
         file: src/meta/commands/validate.ts
-        lines: 228
+        lines: 235
         integrity: sha256-8f9a593b5a19e02ab19d9c188e11f60930c4d5f7d4e7a4dd35dc8d021de14d4d
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: frontmatter-must-be-first
       claim:
         lines: 158-160

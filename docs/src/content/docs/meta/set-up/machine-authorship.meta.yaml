@@ -29,28 +29,34 @@ docs/src/content/docs/meta/set-up/machine-authorship.mdx:
       lines: 2-80
       integrity: sha256-484d227460c373bba1d45f6ce143cd2befcadc31c1195f1a6f893f0cf42a7cac
     - generated-by: Claude Opus 5
-      lines: 82-181
-      integrity: sha256-11ab78b0926015d1620d9148a11a372bdfb875bbbd031055dc2519b4d5578ba2
+      lines: 82-113
+      integrity: sha256-dbf9200e5cbd00e4b2a98f1f6df974f24f502ae6406e188175674461d8d01961
+    - generated-by: Claude Sonnet 5.5
+      lines: 115-116
+      integrity: sha256-31fd115080026c7758250e508b925cef2561f64e4b806e3504e31b671d5952cf
     - generated-by: Claude Opus 5
-      lines: 185-287
+      lines: 118-184
+      integrity: sha256-6f7c0a6af12406d50a4c214018fa018512ad1f670649f9ba49c3c1bf9c1d333e
+    - generated-by: Claude Opus 5
+      lines: 188-290
       integrity: sha256-a0873b331758988a60b81fca2c1e420816cb10528eb8b0633d7947a96e98241e
     - generated-by: Claude Opus 5
-      lines: 292-301
+      lines: 295-304
       integrity: sha256-8fb40e40a71d3ef4bf6d4a93291bd16f5cc245d1d67be286fe71d1c3b07549e2
     - generated-by: Claude Opus 5
-      lines: 305-353
+      lines: 308-356
       integrity: sha256-ee18a5c15401e092b780fe25f8edc724540e64df89775c7179f041eb2c0939ac
     - generated-by: Claude Opus 5.5
-      lines: 355
+      lines: 358
       integrity: sha256-2efa8a4c5123ac0edbdb694ff37fbeb921890b0dffdb0f7ac829acebda7ff899
     - generated-by: Claude Opus 5
-      lines: 356-404
+      lines: 359-407
       integrity: sha256-3a86bb375f779b3751f84a2f1b429b94479df076057a1f45480bcb4ecd910d2b
     - generated-by: Claude Opus 5.5
-      lines: 405
+      lines: 408
       integrity: sha256-574d8cbcb2cd30532f9e0da02b4dc01e6ca79cfe13b6ba0297d696cc7143fa9b
     - generated-by: Claude Opus 5
-      lines: 406-467
+      lines: 409-470
       integrity: sha256-896493af231f1b82b51ae6a5effd801c86d0a2235816f06d6a346fa529ce7243
   owner:
     - "@hawkeyexl"
