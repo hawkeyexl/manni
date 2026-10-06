@@ -360,6 +360,9 @@ function jsonEntry(c: CheckOutcome): object {
     return { command: c.command, status: c.status, report: JSON.parse(c.render("json", false)) as unknown };
   } catch {
     // One reporter's bad output must not take the other checks' reports with it.
+    // `error` on purpose, whatever the run's own status: with no report to
+    // embed, a `pass` or `fail` here would be a verdict nobody can inspect.
+    // The reference documents `error` for this case too.
     return { command: c.command, status: "error", message: `${c.command} -f json printed output that is not JSON` };
   }
 }
