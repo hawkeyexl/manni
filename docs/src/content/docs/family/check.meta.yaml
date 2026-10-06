@@ -1,0 +1,24 @@
+docs/src/content/docs/family/check.mdx:
+  personas: ["devin"]
+  journeys: ["d16"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/family/"
+  eval-suite: family
+  evals:
+    - id: replace-steps
+      assertion: "A reader can replace one workflow step per domain with a single manni check step."
+      type: capability
+      grader: ai
+    - id: read-skipped
+      assertion: "A reader can say what a skipped line in the manni check report means and what exit code 2 means."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Sonnet 5.5
+      lines: 2-218
+      integrity: sha256-200aa5d57d90b491522b38629c3f37156b201efbe94f139040df6c732eafa62b
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-05

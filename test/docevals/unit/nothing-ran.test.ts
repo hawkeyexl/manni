@@ -104,6 +104,13 @@ describe("a run that resolved no evals at all", () => {
     await expect(run(root)).rejects.toThrow(DocevalsError);
   });
 
+  // `manni check` reads this as "docevals is not set up", so it carries a
+  // code a caller tests rather than message text it would have to match.
+  it("carries the nothing-resolved code", async () => {
+    const root = scaffold([{ name: "a.md", frontmatter: ["title: A"] }]);
+    await expect(run(root)).rejects.toMatchObject({ code: "nothing-resolved" });
+  });
+
   // The whole population of this error is a config that selects nothing, so
   // the message has to name the two keys that would attach an eval, and the
   // command that shows the resolved plan.

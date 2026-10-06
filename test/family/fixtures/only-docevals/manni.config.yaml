@@ -1,0 +1,21 @@
+# Only docevals is set up. There is no meta: section, so meta's built-in
+# default schemas never judge a page here: an untyped page with no
+# description passes.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+docevals:
+  defaults:
+    suite: site
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: '\b(TODO|TBD|FIXME)\b'
+        match: not-contains
+      severity: error
+  suites:
+    site: { target-pass-rate: 1.0, evals: [no-todo-markers] }

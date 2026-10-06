@@ -1,0 +1,15 @@
+manni found errors in docs/limits.md. Fix them before you continue.
+
+meta validate
+✗ docs/limits.md
+    (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]
+
+1 file checked, 0 passed, 1 failed, 1 error
+
+cite check
+1 file checked, 1 passed, 0 failed, 0 findings
+
+skipped  lint check     no lint: section
+skipped  docevals run   no page resolves any evals
+
+4 checks over 1 file: 1 failed, 2 skipped

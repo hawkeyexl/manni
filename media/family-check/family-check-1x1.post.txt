@@ -1,0 +1,3 @@
+One workflow step per docs tool means the gate only knows about the tools someone remembered to add. `manni check` runs every check your repository has actually set up, and nothing else. `manni status` tells you which ones those are. Here a repo uses schemas and citations, so those two run. A page is missing its description: exit 1. Lint, terms, evals and the graph were never set up, so they are listed as skipped and never block. The same command runs as a Claude Code hook. After an agent edits a page with an error, it exits 2 and the agent fixes the page before it moves on.
+
+npm i -D @hawkeyexl/manni · manni status · manni check

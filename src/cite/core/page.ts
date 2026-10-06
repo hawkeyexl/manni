@@ -68,6 +68,11 @@ export interface ReadPageOptions {
    * the discarded value would be exactly the one nobody checked.
    */
   owned?: { file: string; collection: string };
+  /**
+   * `false` reads the entries alone, for a caller that only counts them: no
+   * marker is parsed, so no marker finding is raised and none is anchored.
+   */
+  markers?: boolean;
 }
 
 /** Meta's `external:owned` sentence, said by `cite check` under `entry-invalid`. */
@@ -369,10 +374,8 @@ export function readPage(
 
   // Markers.
   const body = content.slice(bodyOffset);
-  const statements = parseStatements(body, format, {
-    offset: bodyOffset,
-    line: bodyLine,
-  });
+  const statements =
+    opts?.markers === false ? [] : parseStatements(body, format, { offset: bodyOffset, line: bodyLine });
   if (statements.length > MAX_MARKERS_PER_PAGE) {
     findings.push(
       finding(

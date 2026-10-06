@@ -1,0 +1,6 @@
+# Only citations: no domain section at all. cite is in play because a page
+# carries one.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"

@@ -8,7 +8,7 @@ The site is organized by user intent, not by document type. Each top-level secti
 
 ## Domains
 
-manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Ten domains ship today, so the site has ten top-level sections: `meta/`, `cite/`, `key/`, `site/`, `a11y/`, `term/`, `lint/`, `docevals/`, `graph/` and `tracevals/`. The same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
+manni is one bin with one domain per tool (proposals 0033 and 0034), and the site follows the bin. Ten domains ship today, and each has a top-level section of the site: `meta/`, `cite/`, `key/`, `site/`, `a11y/`, `term/`, `lint/`, `docevals/`, `graph/` and `tracevals/`. The same intent-based tree applies inside each. That tree is an overview that routes by job-to-be-done, and journey pages per persona. It ends in a flat reference shelf the journeys deep-link into. The navigation tree and content set below are the `meta/` section, the one with enough pages to need them. Every directory in the mapping table lives under `meta/`.
 
 The `lint/` section is the sixth. It carries four journey pages and a reference shelf. It serves Maya (M10), Devin (D9), Theo (T5) and Sara (S7). Maya holds every page to the shape its doctype promises. Devin runs the CI gate, Theo reads one structure failure, and Sara describes a doctype as a template. Proposal 0050 folded the domain in, and 0061 made the template format a grammar. That is what earned Sara a set-up track. Writing a template is a job with steps now, rather than a key list to read once. The `lint/` content set is below, after `a11y/`.
 
@@ -22,7 +22,9 @@ The `graph/` section is the eighth. It serves Maya (M18–M20), Devin (D12–D13
 
 The `tracevals/` section is the ninth. It arrived as `docevals/` did, with five audiences of its own. They were artifact authors, an eval-standard owner, platform and CI, run triagers, and a toolsmith named Rin. Rin wants the library rather than the binary. Four of the five were already these people by name. Rin was the only genuinely new shape. He is Devin reading the JSON report and calling the namespace export. So he folded into D15 and the API reference rather than becoming a sixth persona. Upstream's nine journeys became M17, M21–M23, D14–D15, S13–S14 and T8. They took the next free ids, because docevals, lint and graph already held the lower ones. Its content set is last, after `graph/`. No per-tool strategy directory came over: `cujs.md`, `personas.md` and this file carry the whole family.
 
-The `site/` section is the tenth. Like `key/`, it is a family resource rather than a tool (proposal 0077). The resource is the site itself, which every other domain checks. It serves Maya (M24, running the site locally, and M7) and Devin (D7, the one-command serve step in CI). It serves Theo too (T3, seeing the page in a repository he does not own). It has an overview and a reference page, and no journey pages yet. One command per job leaves no path long enough to need one. Its content set is below, after `key/`.
+The `site/` section is the tenth. Like `key/`, it is a family resource rather than a tool (proposal 0077). The resource is the site itself, which every other domain checks. It serves Maya (M25, running the site locally, and M7) and Devin (D7, the one-command serve step in CI). It serves Theo too (T3, seeing the page in a repository he does not own). It has an overview and a reference page, and no journey pages yet. One command per job leaves no path long enough to need one. Its content set is below, after `key/`.
+
+The `family/` section is an eleventh, and it is not a domain. It documents the two top-level verbs, `manni check` and `manni status`, and the Claude Code plugin that runs them (proposal 0078). It serves Devin (D16), who gates every check a repo has set up with one command. It also serves Maya (M24), whose agent keeps the docs green while it writes them. Its content set is last, after `tracevals/`.
 
 ---
 
@@ -178,8 +180,8 @@ The tenth domain's content set, under `docs/src/content/docs/site/`. `site` is n
 
 | Page | CUJ | ★ | Notes |
 |---|---|---|---|
-| Overview (`site/index.mdx`) | M24, M7, D7, T3 | ★ | What each verb does, how the site and its framework are found, and why the port comes from the collection `url:`. A 30-second proof in this repository: `manni site preview`, then `manni a11y check` with no flags. Source of truth: `src/site/core/detect.ts`, `src/site/commands/`. |
-| CLI reference (`site/reference/cli.mdx`) | M24, D7 | ★ | `start`/`build`/`preview`; every argument and flag. The framework table with markers, commands and default ports. The `site:` config keys, the built-in server, and every message with its exit code. Guarded by `npm run docs:check-cli`. Source of truth: `src/site/cli.ts`, `src/site/core/config.ts`, `src/site/core/detect.ts`. |
+| Overview (`site/index.mdx`) | M25, M7, D7, T3 | ★ | What each verb does, how the site and its framework are found, and why the port comes from the collection `url:`. A 30-second proof in this repository: `manni site preview`, then `manni a11y check` with no flags. Source of truth: `src/site/core/detect.ts`, `src/site/commands/`. |
+| CLI reference (`site/reference/cli.mdx`) | M25, D7 | ★ | `start`/`build`/`preview`; every argument and flag. The framework table with markers, commands and default ports. The `site:` config keys, the built-in server, and every message with its exit code. Guarded by `npm run docs:check-cli`. Source of truth: `src/site/cli.ts`, `src/site/core/config.ts`, `src/site/core/detect.ts`. |
 
 ### `a11y/` (accessibility)
 
@@ -401,6 +403,16 @@ Four constraints hold across the section. No page prints a dollar figure for wha
 | Traces (`tracevals/reference/traces.mdx`) | M17, D14 | | Where a session store lives, `CLAUDE_CONFIG_DIR` and the `~/.claude` fallback, what `list` and `capture` do, and how artifacts are resolved from a trace. |
 | API reference (`tracevals/reference/api.mdx`) | D15 | | The `tracevals` namespace export. Where upstream's toolsmith lands. Guarded by `npm run docs:check-api`. |
 | Glossary (`tracevals/reference/glossary.mdx`) | Vocabulary | | trace, artifact, eval, grader, finding, outcome, implicit eval, coverage, ensemble, consensus, confidence zone, turn budget, capability and regression. |
+
+### `family/` (the family verbs and the Claude Code plugin)
+
+The tenth section, under `docs/src/content/docs/family/`. It holds what belongs to no single domain. `manni check` runs the checks a repo has set up, and `manni status` says which those are. The `manni` plugin runs both inside a Claude Code session. The nav gains a `family` group after `tracevals`. Every page carries `title` and `description`.
+
+| Page | CUJ | ★ | Notes |
+|---|---|---|---|
+| Gate every check (`family/check.mdx`) | D16 | ★ | Leads with the problem, a pipeline with one hand-written step per domain. `manni status` to read what is in play, then `manni check` as the one gate. The exit codes, the skipped lines in the report, and the `github` and `json` formats. Says plainly that `a11y` and `tracevals` stay their own steps. Source of truth: `src/family/`. |
+| Keep an agent's docs green (`family/claude-code.mdx`) | M24 | ★ | The two install commands and the project-level opt-in. What the agent sees at session start, what runs after an edit and before a stop, and the one repair pass. The four skills, and what `fix` forbids. The `MANNI_GENERATED_BY` export. Source of truth: `plugin/manni/`. |
+| CLI reference (`family/reference/cli.mdx`) | D16, M24 | ★ | `check` and `status`: every argument and flag, the exit codes, and the hook-protocol table. The in-play rule per domain, and the ladder from minimal to maximal. Guarded by `npm run docs:check-cli`. Source of truth: `src/family/`. |
 
 ### Supporting / project
 

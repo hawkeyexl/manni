@@ -217,6 +217,7 @@ docevals:
     a11y: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     cite: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     docevals: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    family: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     graph: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     key: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     lint: { target-pass-rate: 1.0, evals: [no-todo-markers] }

@@ -1194,9 +1194,8 @@ function strayManifests(
       const resolved = pageManifestPath(manifest.file, configDir, pageAbs);
       if (!("outside" in resolved)) read.add(resolved.abs);
     }
-    const found = findPageManifests(manifest.file, configDir, (rel) => isMember(collection, rel));
+    const found = findPageManifests(manifest.file, configDir, (rel) => isMember(collection, rel), read);
     for (const { abs, entries } of found) {
-      if (read.has(abs)) continue;
       const file = reportedPath(abs, base);
       for (const entry of entries) {
         if (loaded.has(entry.pageAbs)) continue;

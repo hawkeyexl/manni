@@ -42,6 +42,30 @@ export interface AnalyzeOptions {
    * path is MDX and anything else is markdown.
    */
   format?: DocFormat;
+  /**
+   * How the body is parsed. Absent, `parseBody`. `graph build` passes a cache's
+   * `parse` here, which returns what `parseBody` would (`analyze-cache.ts`).
+   */
+  parse?: (content: string, path: string, format: DocFormat) => DocBody;
+}
+
+/**
+ * What a page's body yields before anything else in the corpus is consulted:
+ * headings, and link and image targets as written, in document order.
+ *
+ * A pure function of the bytes and the format, so it can be cached across
+ * runs. Resolving a target needs the rest of the corpus and the routes, so
+ * that happens after, in `analyzeDoc`.
+ */
+export interface DocBody {
+  firstH1?: string;
+  sections: Section[];
+  /** Raw link targets: links, resolved link references, and JSX `href`s. */
+  linkTargets: string[];
+  /** Raw image targets: images, resolved image references, and JSX `src`s. */
+  imageTargets: string[];
+  /** Code fence languages, sorted and distinct. */
+  codeLanguages: string[];
 }
 
 const processor = unified()
@@ -403,6 +427,41 @@ export function analyzeDoc(
     throw new GraphError(`${path}: ${errorMessage(error)}`);
   }
   const format = formatOf(path, options.format);
+  const body = (options.parse ?? parseBody)(content, path, format);
+
+  const links: DocLink[] = [];
+  for (const target of body.linkTargets) {
+    const link = classifyLink(path, target, allPaths, routes);
+    if (link) links.push(link);
+  }
+  const routeLanguage = routeLanguageFor(path, routes);
+
+  return {
+    path,
+    frontmatter: meta.data,
+    frontmatterPresent: meta.present,
+    format,
+    firstH1: body.firstH1,
+    sections: body.sections,
+    links,
+    images: body.imageTargets.map((target) => classifyImage(path, target)),
+    codeLanguages: body.codeLanguages,
+    // Omitted rather than set to undefined, so a doc under no localized route
+    // carries no key at all — `routeLanguage` in JSON output means something.
+    ...(routeLanguage === undefined ? {} : { routeLanguage }),
+    // Over the content as read — line endings included, so the digest is
+    // byte-faithful and equals `sha256sum <file>` for any valid-UTF-8 file
+    // (ADR 01036). The CRLF corpus fixture depends on this not normalizing.
+    contentHash: createHash("sha256").update(content, "utf8").digest("hex"),
+  };
+}
+
+/** Parse a page's body into its `DocBody`. `path` only names the page in an error. */
+export function parseBody(
+  content: string,
+  path: string,
+  format: DocFormat,
+): DocBody {
   const isMdx = format === "mdx";
   let tree: Root;
   try {
@@ -419,8 +478,8 @@ export function analyzeDoc(
   }
 
   const sections: Section[] = [];
-  const links: DocLink[] = [];
-  const images: DocImage[] = [];
+  const linkTargets: string[] = [];
+  const imageTargets: string[] = [];
   const codeLanguages = new Set<string>();
   const definitions = new Map<string, Definition>();
   let firstH1: string | undefined;
@@ -464,34 +523,25 @@ export function analyzeDoc(
         break;
       }
       case "link": {
-        const link = classifyLink(
-          path,
-          (node as { url: string }).url,
-          allPaths,
-          routes,
-        );
-        if (link) links.push(link);
+        linkTargets.push((node as { url: string }).url);
         break;
       }
       case "linkReference": {
         const def = definitions.get(
           (node as { identifier: string }).identifier,
         );
-        if (def) {
-          const link = classifyLink(path, def.url, allPaths, routes);
-          if (link) links.push(link);
-        }
+        if (def) linkTargets.push(def.url);
         break;
       }
       case "image": {
-        images.push(classifyImage(path, (node as { url: string }).url));
+        imageTargets.push((node as { url: string }).url);
         break;
       }
       case "imageReference": {
         const def = definitions.get(
           (node as { identifier: string }).identifier,
         );
-        if (def) images.push(classifyImage(path, def.url));
+        if (def) imageTargets.push(def.url);
         break;
       }
       case "code": {
@@ -505,39 +555,23 @@ export function analyzeDoc(
       case "mdxJsxFlowElement":
       case "mdxJsxTextElement": {
         const href = jsxAttributeValue(node, "href");
-        if (href !== undefined) {
-          const link = classifyLink(path, href, allPaths, routes);
-          if (link) links.push(link);
-        }
+        if (href !== undefined) linkTargets.push(href);
         const name = (node as { name?: string | null }).name ?? "";
         if (IMAGE_ELEMENTS.has(name.toLowerCase())) {
           const src = jsxAttributeValue(node, "src");
-          if (src !== undefined) images.push(classifyImage(path, src));
+          if (src !== undefined) imageTargets.push(src);
         }
         break;
       }
     }
   });
 
-  const routeLanguage = routeLanguageFor(path, routes);
-
   return {
-    path,
-    frontmatter: meta.data,
-    frontmatterPresent: meta.present,
-    format,
     firstH1,
     sections,
-    links,
-    images,
+    linkTargets,
+    imageTargets,
     codeLanguages: [...codeLanguages].sort(),
-    // Omitted rather than set to undefined, so a doc under no localized route
-    // carries no key at all — `routeLanguage` in JSON output means something.
-    ...(routeLanguage === undefined ? {} : { routeLanguage }),
-    // Over the content as read — line endings included, so the digest is
-    // byte-faithful and equals `sha256sum <file>` for any valid-UTF-8 file
-    // (ADR 01036). The CRLF corpus fixture depends on this not normalizing.
-    contentHash: createHash("sha256").update(content, "utf8").digest("hex"),
   };
 }
 

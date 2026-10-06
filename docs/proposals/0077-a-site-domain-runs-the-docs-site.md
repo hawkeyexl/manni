@@ -2,7 +2,7 @@
 
 - **Status:** Proposed
 - **Serves:** Three people, four journeys.
-  - Maya · M24, "Run the docs site locally", a new journey. One command
+  - Maya · M25, "Run the docs site locally", a new journey. One command
     serves the site in any docs repository, whatever framework it runs on.
   - Maya · M7, "Make the published site pass its accessibility check". The
     site has to be running before `manni a11y check` can read it.
@@ -482,7 +482,7 @@ On the pull request, the Docs workflow's `a11y` job runs `manni site preview`.
 - Bad, because `preview` costs a full build on every run.
 - The domain ships its docs section, an overview and `reference/cli.mdx`,
   verified by `docs:check-cli`. The IA gains the tenth domain, and the CUJs
-  gain M24 and a one-command serve step in D7.
+  gain M25 and a one-command serve step in D7.
 - The `feat` ships a demo video. It shows `manni site start` detecting
   Starlight in this repository, then `manni site preview` and
   `manni a11y check`. The accent follows `docs/content-strategy/design.md`.

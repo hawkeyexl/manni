@@ -24,7 +24,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 77-78
         integrity: sha256-3a0636f0eaf41741936dcf42a3b5851b1a8db2f01cbf7bde0d21354dbd022355
-        commit-sha: 41463ae66c6241a55f4c99c4d5ce9a8ae5b3d0e7
+        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
     - id: no-browser-message
       claim:
         integrity: sha256-e54af0bdabd2995b4c6bfa3d95d91171f037b785fd317a6099a56037140829f1
@@ -32,7 +32,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 74-75
         integrity: sha256-788b2a76c88ddbef9d8580e38c5d634e8629ff840368a418c11e3a94afeb40a7
-        commit-sha: 41463ae66c6241a55f4c99c4d5ce9a8ae5b3d0e7
+        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
     - id: no-browser-before-page
       claim:
         lines: 42-46
@@ -41,7 +41,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/core/analyzer.ts
         lines: 145-148
         integrity: sha256-afbde11586384b5b22eebcfc3548f538603de13df38ae3ca8fb083ef742144d3
-        commit-sha: 41463ae66c6241a55f4c99c4d5ce9a8ae5b3d0e7
+        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
     - id: no-browser-exit-2
       claim:
         integrity: sha256-6fc17d690a173d593ae62170b0fdb81c169999f634caeae1696b052a3d6d3273
@@ -109,7 +109,7 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/commands/check.ts
         lines: 157-158
         integrity: sha256-ec29a8bc2acf6a9ac57faf24e95e763c8097f71f24afdc8b3997191f4c0f3049
-        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
+        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
     - id: report-header
       claim:
         lines: 119
@@ -308,4 +308,4 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         file: src/a11y/commands/check.ts
         lines: 157-158
         integrity: sha256-ec29a8bc2acf6a9ac57faf24e95e763c8097f71f24afdc8b3997191f4c0f3049
-        commit-sha: 0d290ac9d56ad9664a92d6e6cdba742ef090cfce
+        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9

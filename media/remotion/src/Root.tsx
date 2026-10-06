@@ -12,6 +12,7 @@ import { beats as a11yBeats, totalFrames as a11yTotalFrames, TYPING_MS as a11yTy
 import { beats as lintBeats, totalFrames as lintTotalFrames, TYPING_MS as lintTypingMs } from "./lint/beats";
 import { beats as graphBeats, totalFrames as graphTotalFrames, TYPING_MS as graphTypingMs } from "./graph/beats";
 import { beats as tracevalsBeats, totalFrames as tracevalsTotalFrames, TYPING_MS as tracevalsTypingMs } from "./tracevals/beats";
+import { beats as familyCheckBeats, totalFrames as familyCheckTotalFrames, TYPING_MS as familyCheckTypingMs } from "./family-check/beats";
 import { beats as graphImpactBeats, totalFrames as graphImpactTotalFrames, TYPING_MS as graphImpactTypingMs } from "./graph-impact/beats";
 import { beats as siteBeats, totalFrames as siteTotalFrames, TYPING_MS as siteTypingMs } from "./site/beats";
 
@@ -60,6 +61,9 @@ const DemoGraphImpact: React.FC = () => <DemoView beats={graphImpactBeats} fontP
  * (media/capture-site/cols.mjs). Ligatures off: `://`, `--` and `...` are characters in a terminal.
  */
 const DemoSite: React.FC = () => <DemoView beats={siteBeats} fontPx={28} linePx={39} cols={61} typingMs={siteTypingMs} ligatures={false} />;
+
+/** family-check-1x1: 25 px / 69 columns, derived in media/family-check/family-check-1x1.script.md (media/family-check/capture/cols.mjs). */
+const DemoFamilyCheck: React.FC = () => <DemoView beats={familyCheckBeats} fontPx={25} linePx={35} cols={69} typingMs={familyCheckTypingMs} ligatures={false} />;
 
 export const Root: React.FC = () => (
   <>
@@ -166,6 +170,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={siteTotalFrames}
+    />
+    <Composition
+      id="FamilyCheckDemo"
+      component={DemoFamilyCheck}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={familyCheckTotalFrames}
     />
   </>
 );

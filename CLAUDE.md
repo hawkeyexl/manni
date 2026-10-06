@@ -131,8 +131,6 @@ Key layers:
     cores and the output formats.
   - `src/tracevals/cli.ts`: thin commander wrapper exported as
     `buildProgram()` and mounted by `src/cli.ts`. No entry point of its own.
-  - `plugin/tracevals/`: the Claude Code plugin whose SessionStart hook runs
-    `manni tracevals capture`.
 - `src/key/`: the family key's domain, `manni key set` and `manni key rotate`
   (proposal 0045). It owns no cryptography. `rotate` orchestrates meta's and
   cite's re-encryption, and the one ciphertext format lives in
@@ -145,6 +143,14 @@ Key layers:
     built-in static server `preview` uses for frameworks without one.
   - `src/site/cli.ts`: thin commander wrapper exported as `buildProgram()`
     and mounted by `src/cli.ts`. No entry point of its own.
+- `src/family/`: the two family verbs, `manni check` and `manni status`
+  (proposal 0078). It owns in-play detection, Claude Code hook-envelope
+  detection and the orchestration of the domains' command cores. It owns no
+  checks of its own, and `src/cli.ts` mounts its two commands.
+- `plugin/manni/`: the Claude Code plugin. SessionStart runs
+  `manni tracevals capture` and `manni status`, and PostToolUse and Stop run
+  `manni check`. Its skills are `setup`, `check`, `fix` and `evals`. The
+  marketplace is `.claude-plugin/marketplace.json`.
 - `src/index.ts`: the programmatic API, re-exporting `src/meta/index.ts`.
 
 The metadata tool's tests stay flat under `test/`; each later tool adds
@@ -201,12 +207,19 @@ the commit `feat!:` / `BREAKING CHANGE:` so the release says so.
 
 ### Every command lives under a domain
 
-The umbrella in `src/cli.ts` owns no verbs and no flags beyond `--version` and
-`--help`. A domain is a tool mounted with `addCommand`, and its verbs are
-subcommands of the domain. A third level groups related verbs under a noun, as
-`meta schemas vendor` does. There are no top-level verbs and no domain-less
+The umbrella in `src/cli.ts` owns two family verbs, `check` and `status`, and
+no flags beyond `--version` and `--help`. A domain is a tool mounted with
+`addCommand`, and its verbs are subcommands of the domain. A third level groups
+related verbs under a noun, as `meta schemas vendor` does. Apart from the two
+family verbs there are no top-level verbs, and there are no domain-less
 aliases. `manni validate` is not a shortcut for `manni meta validate`. When
 someone types it, the umbrella's only job is to say where the command went.
+
+`check` and `status` are the only two top-level verbs, and proposal 0078 is the
+record. One command has to run everything a repo set up, the same for a person,
+CI and an agent, and no single domain owns that. They call the domains' command
+cores in-process and own no checks of their own, as `key rotate` does. A third
+top-level verb needs a proposal that supersedes 0078.
 
 One thing does not fit. `manni meta docs/` runs `validate`, because
 `docmeta docs/` did and the scripts written against it are honored. That
@@ -353,7 +366,7 @@ stdin/parse cases.
 Before any user-facing writing or docs task, consult `docs/content-strategy/`:
 
 1. Identify the **persona** the page serves: Maya (docs engineer), Devin (CI engineer), Sara (schema author), or Theo (contributor fixing a failure). See `personas.md`.
-2. Find the matching **CUJ** in `cujs.md` (M1–M24, D1–D15, S1–S14, T1–T8). Structure the content around reaching that outcome, not by document type or Diátaxis category.
+2. Find the matching **CUJ** in `cujs.md` (M1–M25, D1–D16, S1–S14, T1–T8). Structure the content around reaching that outcome, not by document type or Diátaxis category.
 3. Link into the **Reference shelf** (`reference/`) for exhaustive detail (flag tables, config keys, precedence chain). Journey pages explain the path; they don't duplicate reference.
 4. Check `information-architecture.md` for the page's place in the content set and its ★ launch status.
 5. Every page in `docs/src/content/docs/**` needs `title` and `description` frontmatter.

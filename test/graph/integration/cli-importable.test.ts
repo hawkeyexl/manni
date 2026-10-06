@@ -41,7 +41,7 @@ describe("dist/cli.js as an importable module", () => {
   it("mounts a populated graph program on the umbrella", () => {
     const r = evaluate(
       `const m = await import(${JSON.stringify(cliUrl)});
-       const graph = m.buildProgram().commands.find((c) => c.name() === "graph");
+       const graph = (await m.buildProgram()).commands.find((c) => c.name() === "graph");
        console.log(JSON.stringify({
          count: graph.commands.length,
          hasBuild: graph.commands.some((c) => c.name() === "build"),

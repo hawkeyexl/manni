@@ -208,7 +208,17 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 ---
 
-### M24 · Run the docs site locally
+### M24 · Let an agent keep the docs green while it writes them
+
+**Outcome.** Maya's agent finds out about a broken page at the edit that broke it. It cannot finish with an error outstanding in a domain her project set up. Domains she never set up do not block it.
+
+**Steps.** Her trigger is the pull request that went red after the agent had said it was done. She installs the `manni` plugin with two commands, or offers it to her contributors from `.claude/settings.json`. She runs `manni status` and reads which domains are in play and why. That table is also what the agent sees at the start of every session. She learns the rule behind it. A domain counts as set up only when its own config section exists or the page carries its declarations. A repo that only uses docevals is never failed by meta's defaults. She watches one edit. The agent removes a `description:`, the check runs on that file, and the finding comes back before the agent moves on. Before it stops, the check runs again over every file it changed, plus every citation, the glossary and the graph. The agent gets one repair pass. If errors remain, it stops and she sees a message. A failure that predates the session cannot trap it. She reads the `fix` skill to see what the agent may do and what it may not. It never loosens a schema, config or eval to pass, and never accepts a changed citation unread. She finds that `MANNI_GENERATED_BY` is exported for her. Machine authorship is recorded without a line in the agent instructions.
+
+**What success looks like.** A pull request that is green because the agent was told at each edit. Turning a domain off means deleting its config.
+
+---
+
+### M25 · Run the docs site locally
 
 **Outcome.** Maya has the docs site running on her machine, in any repository, without first reading the framework's own docs.
 
@@ -343,6 +353,16 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 **Steps.** The gate has been quiet for weeks and someone asks the follow-up. He emits the full result with `-f json` and `-o <file>`: trace metadata, per-eval outcomes with findings and consensus, artifact coverage, warnings, summary counts, turn counts and duration. The shape is documented well enough that he never opens the source to parse it. He appends runs to the history file and compares each run against the previous one for the same session. That turns "did it pass?" into "did it get worse?". He learns that a regression is a defined event, a check that passed before and does not now. That definition is what makes an alert trustworthy rather than noisy. He reads the caveat rather than discovering it. History is a local file, so an ephemeral runner starts empty every time. It has nothing to compare against unless the file is persisted. Where he would rather skip the CLI, the `tracevals` namespace export from `@hawkeyexl/manni` is the same pipeline as a library. A custom grader registered through `--require` puts his own house rule in the same report. This is where the toolsmith who wants the library rather than the binary is served.
 
 **What success looks like.** A dashboard fed by a file the pipeline already writes, and an alert that fires on a regression rather than on a total.
+
+---
+
+### D16 · Gate every check a repo has set up, with one command
+
+**Outcome.** One pipeline step runs every check the repository has set up, and a check added later is gated without anyone editing the pipeline.
+
+**Steps.** His trigger is a workflow with six hand-written steps, one per domain. A seventh domain was set up last month, and the workflow never learned about it. He runs `manni status` and reads what is in play and what is not, with the reason for each. He replaces the steps with `manni check`. The exit code follows the family contract. `0` is clean. `1` is an error-level finding in a check that ran. `2` is manni itself failing to run, so he can tell a bad page from a broken setup. He reads the skipped lines in the report, which are the honest answer to "what did you not check?". He picks the output for his platform. `-f github` gives annotations. `-f json` gives a script each check's report, which is that domain's own JSON unchanged. `check` never runs `a11y` or `tracevals`, since they need a browser or recorded sessions. He keeps those as their own steps. A bare `check` covers every collection, while paths narrow it to the per-file checks on those files.
+
+**What success looks like.** A pipeline with one manni step, and a repo where setting up a domain is what puts it in the gate.
 
 ---
 

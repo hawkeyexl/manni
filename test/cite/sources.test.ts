@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createRequire } from "node:module";
-import { mkdirSync, rmSync, symlinkSync } from "node:fs";
+import { mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { buildSourceIndex, decryptSourcePath, encryptSourcePath, readSource } from "../../src/cite/core/sources.js";
+import {
+  buildSourceIndex,
+  createSourceCache,
+  decryptSourcePath,
+  encryptSourcePath,
+  readSource,
+} from "../../src/cite/core/sources.js";
 import { parseSrc } from "../../src/cite/core/range.js";
 import type { GitClient } from "../../src/cite/types.js";
 import { encryptValue } from "../../src/shared/encryption.js";
@@ -321,5 +327,70 @@ describe("readSource", () => {
       kind: "missing",
       reason: "unreadable",
     });
+  });
+});
+
+describe("readSource with a cache", () => {
+  let repo: string | undefined;
+  afterEach(() => {
+    removeTempRepo(repo);
+    repo = undefined;
+  });
+
+  it("reads a file once, and hands back its lines split once", async () => {
+    repo = makeTempRepo({ init: false, files: { "a.txt": "x\r\ny\n" } });
+    const index = await buildSourceIndex(repo);
+    const cache = createSourceCache();
+    const first = await readSource(repo, index, parseSrc("a.txt:1"), undefined, cache);
+    writeFileSync(join(repo, "a.txt"), "changed\n");
+    const second = await readSource(repo, index, parseSrc("a.txt:2"), undefined, cache);
+    expect(first).toEqual({ kind: "ok", resolvedPath: "a.txt", text: "x\r\ny\n", lines: ["x", "y"] });
+    expect(second).toEqual(first);
+    if (first.kind === "ok" && second.kind === "ok") expect(second.lines).toBe(first.lines);
+  });
+
+  it("reads afresh with no cache, and with a new one", async () => {
+    repo = makeTempRepo({ init: false, files: { "a.txt": "x\n" } });
+    const index = await buildSourceIndex(repo);
+    const cache = createSourceCache();
+    await readSource(repo, index, parseSrc("a.txt"), undefined, cache);
+    writeFileSync(join(repo, "a.txt"), "changed\n");
+    await expect(readSource(repo, index, parseSrc("a.txt"))).resolves.toMatchObject({ text: "changed\n" });
+    await expect(readSource(repo, index, parseSrc("a.txt"), undefined, createSourceCache())).resolves.toMatchObject({
+      text: "changed\n",
+    });
+  });
+
+  it("keys an encrypted source by its decrypted path, and keeps refusals out of the cache", async () => {
+    repo = makeTempRepo({ init: false, files: { "a.txt": "x\n" } });
+    const index = await buildSourceIndex(repo);
+    const cache = createSourceCache();
+    const token = encryptSourcePath("a.txt", KEY);
+    await expect(readSource(repo, index, parseSrc(token), undefined, cache)).resolves.toEqual({
+      kind: "missing",
+      reason: "no-key",
+    });
+    await expect(readSource(repo, index, parseSrc(token), KEY, cache)).resolves.toMatchObject({
+      kind: "ok",
+      resolvedPath: "a.txt",
+    });
+    await expect(readSource(repo, index, parseSrc("a.txt"), undefined, cache)).resolves.toMatchObject({
+      kind: "ok",
+      text: "x\n",
+    });
+  });
+
+  it("caches an unreadable file as unreadable", async () => {
+    repo = makeTempRepo({ init: false, files: { "a.txt": "a\n" } });
+    const index = await buildSourceIndex(repo);
+    const cache = createSourceCache();
+    rmSync(join(repo, "a.txt"));
+    mkdirSync(join(repo, "a.txt"));
+    for (let i = 0; i < 2; i++) {
+      await expect(readSource(repo, index, parseSrc("a.txt"), undefined, cache)).resolves.toEqual({
+        kind: "missing",
+        reason: "unreadable",
+      });
+    }
   });
 });
