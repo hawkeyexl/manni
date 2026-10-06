@@ -21,10 +21,12 @@ import {
 } from "../judge/provider.js";
 import { renderCheck } from "../reporters/conformance.js";
 import type { SummaryFormat } from "../reporters/index.js";
-import { hostSetting, queued, QUEUE_WAIT_MS } from "../rules/host.js";
+import { hostHolds, hostSetting, queued, QUEUE_WAIT_MS, type HostApi } from "../rules/host.js";
 import {
+  allVerdictsCached,
   applicableRules,
   judgeTurn,
+  StateLimits,
   TurnCache,
   type TurnFinding,
   type TurnJudgement,
@@ -108,6 +110,8 @@ interface Seams {
   /** The extraction model, in place of the out-of-loop provider. */
   extractor?: InferenceProvider;
   localModels?: LocalModels;
+  /** The model host's calls, in place of the library's. */
+  hostApi?: HostApi;
 }
 
 interface Params extends Seams {
@@ -206,7 +210,12 @@ async function conform(p: Params): Promise<Outcome> {
     }
     if (ex.identity.provider === "llama-cpp") {
       if (p.inLoop) {
-        const skip = await localGate(local, ex.identity.model, ["downloading", "not-downloaded", "memory"]);
+        const skip = await localGate(
+          local,
+          ex.identity.model,
+          ["downloading", "not-downloaded", "memory"],
+          () => hostHolds(ex.identity.model, p.hostApi),
+        );
         if (skip !== undefined) return { kind: "gate", skip };
       } else {
         await assertDownloaded(local, ex.identity.model);
@@ -238,12 +247,43 @@ async function conform(p: Params): Promise<Outcome> {
   if (p.offline && isNetworkProvider(judgeId.provider)) {
     throw offlineRefusal("the judge", judgeId);
   }
-  // Gates 7 and 8, model on disk and memory. The verdict cache is gate 9, and
-  // it lives inside judgeTurn: reading it needs the provider's state limit,
-  // and a local provider loads its model to report one, so these come first.
+  // The session ledger: read in both modes, written only by the hook. It is
+  // part of each rule's verdict key, so it is read before the gates below.
+  const ledgerFile = ledgerPath(p.projectDir, p.sessionId, p.agentId);
+  const ledger = await readLedger(ledgerFile);
+  const cacheRoot = resolve(p.configDir, config.judge.cacheDir);
+  const limits = new StateLimits(resolve(cacheRoot, "limits"), !p.noCache);
+  const plan = {
+    trace: p.trace,
+    turn,
+    rules,
+    runs: p.runs,
+    temperature: config.judge.temperature,
+    zones: config.judge.zones,
+    render: {
+      maxBlockChars: config.render.maxBlockChars,
+      maxTotalChars: config.render.maxTotalChars,
+      redact: config.judge.redact,
+    },
+    ...(p.lastAssistantMessage !== undefined ? { lastAssistantMessage: p.lastAssistantMessage } : {}),
+    ledger,
+    cache: new TurnCache(resolve(cacheRoot, "turns"), !p.noCache),
+  };
+
+  // Gates 7 and 8, model on disk and memory. The memory probe is skipped when
+  // the model will not be loaded or is loaded already: every applicable
+  // rule's verdict is cached (gate 9, read from the remembered state limit
+  // without a provider), or the host holds the model. The verdict cache is
+  // otherwise read inside judgeTurn, once the provider reports its limit.
   if (judgeIsLocal) {
     if (p.inLoop) {
-      const skip = await localGate(local, judgeId.model, ["not-downloaded", "memory"]);
+      const skip = await localGate(
+        local,
+        judgeId.model,
+        ["not-downloaded", "memory"],
+        async () =>
+          allVerdictsCached({ ...plan, limits }, judgeId) || (await hostHolds(judgeId.model, p.hostApi)),
+      );
       if (skip !== undefined) return { kind: "gate", skip };
     } else {
       await assertDownloaded(local, judgeId.model);
@@ -256,31 +296,10 @@ async function conform(p: Params): Promise<Outcome> {
     (judgeId.provider === "mock"
       ? mockTurnJudge(judgeId.model)
       : constructProvider(config, judgeId, { host }));
-  // The session ledger: read in both modes, written only by the hook.
-  const ledgerFile = ledgerPath(p.projectDir, p.sessionId, p.agentId);
-  const ledger = await readLedger(ledgerFile);
   let ran: Awaited<ReturnType<typeof queued<TurnJudgement>>>;
   try {
     ran = await queued(judgeId.model, () =>
-      judgeTurn({
-        trace: p.trace,
-        turn,
-        rules,
-        provider,
-        runs: p.runs,
-        temperature: config.judge.temperature,
-        zones: config.judge.zones,
-        render: {
-          maxBlockChars: config.render.maxBlockChars,
-          maxTotalChars: config.render.maxTotalChars,
-          redact: config.judge.redact,
-        },
-        ...(p.lastAssistantMessage !== undefined
-          ? { lastAssistantMessage: p.lastAssistantMessage }
-          : {}),
-        ledger,
-        cache: new TurnCache(resolve(p.configDir, config.judge.cacheDir, "turns"), !p.noCache),
-      }),
+      judgeTurn({ ...plan, provider, limits }),
     );
   } catch (err) {
     if (err instanceof TracevalsError) throw err;
@@ -404,6 +423,7 @@ function seamsOf(s: Seams): Seams {
     ...(s.judge !== undefined ? { judge: s.judge } : {}),
     ...(s.extractor !== undefined ? { extractor: s.extractor } : {}),
     ...(s.localModels !== undefined ? { localModels: s.localModels } : {}),
+    ...(s.hostApi !== undefined ? { hostApi: s.hostApi } : {}),
   };
 }
 

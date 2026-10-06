@@ -258,11 +258,14 @@ gate that finds nothing to do ends the run.
 | 5 | Still downloading | The library reports the local model as `downloading` | One message per session |
 | 6 | Not applicable | Every in-scope rule's `when` fails over the turn | Silent. Each rule counts as `skipped`, never `pass`. |
 | 7 | Model not on disk | The local model or runtime is missing | One message per session. Nothing downloads. |
-| 8 | Not enough memory | The library's memory probe, the one `auto` tiering uses | One message per session |
+| 8 | Not enough memory | The library's memory probe, the one `auto` tiering uses | One message per session. The probe is not run when the model host already holds the model, or when gate 9 would find every rule's verdict cached. |
 | 9 | Already judged | The verdict cache holds this turn, rule and model | The cached verdict is reused, rule by rule. The key is the provider, model, mode, runs, temperature and prompt version. It also holds a sha256 of the rendered turn, and one of the rule's source, id, text and ledger history. |
 
 The cache is read last, because its key needs the model's state limit. A
-local model can only report that once it is on disk. Under a hook, a local extraction
+local model can only report that once it is on disk. The hook remembers the
+limit for each provider and model, so a repeat Stop can read the cache before
+gate 8 without loading the model. The probe forks a worker and initializes the
+GPU, and a model that will not load needs no memory. Under a hook, a local extraction
 model meets gates 5, 7 and 8 before any uncached extraction. So nothing
 downloads. A hosted model skips those three gates.
 
@@ -316,7 +319,7 @@ in. A rule with history in [the ledger](#the-ledger) carries its block next.
 
 <the ledger's block, when the rule has one>
 
-First say in one or two sentences what the transcript shows about this rule. Then score. Score how strongly the transcript shows each, as a whole number from 0 to 100: the rule does not apply to this turn; the rule applies and the turn followed it; the rule applies and the turn broke it.
+First say in one sentence of at most 30 words what the transcript shows about this rule. Then score. Score how strongly the transcript shows each, as a whole number from 0 to 100: the rule does not apply to this turn; the rule applies and the turn followed it; the rule applies and the turn broke it.
 ```
 
 Every provider that generates answers each item under one schema. That covers
@@ -328,7 +331,7 @@ Every provider that generates answers each item under one schema. That covers
   "required": ["reasoning", "not-applicable", "followed", "not-followed"],
   "additionalProperties": false,
   "properties": {
-    "reasoning": { "type": "string" },
+    "reasoning": { "type": "string", "maxLength": 240 },
     "not-applicable": { "type": "integer", "minimum": 0, "maximum": 100 },
     "followed": { "type": "integer", "minimum": 0, "maximum": 100 },
     "not-followed": { "type": "integer", "minimum": 0, "maximum": 100 }
@@ -339,7 +342,8 @@ Every provider that generates answers each item under one schema. That covers
 `reasoning` is declared first and always required, so the model says what the
 transcript shows before it scores. On the conformance fixtures, this was the
 only variant with no false failure that still caught every true one. The item
-asks for one or two sentences, which bounds the latency it adds. A finding's
+asks for one sentence of at most 30 words, and the schema caps it at 240
+characters. That bounds the latency it adds. A finding's
 `observed` carries the scores and then the reasoning.
 
 The three scores are independent and need not sum to anything. A model can

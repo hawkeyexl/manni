@@ -11,7 +11,7 @@ import type { DecideQuestion } from "@hawkeyexl/inference";
  * reaches a provider changes. `test/tracevals/unit/rules-judge.test.ts` pins it
  * to a digest of the surface, so the pair has to move together.
  */
-export const TURN_JUDGE_PROMPT_VERSION = 3;
+export const TURN_JUDGE_PROMPT_VERSION = 4;
 
 export const TURN_JUDGE_SYSTEM_PROMPT = [
   "You check one turn of an AI coding agent's session against one rule.",
@@ -32,13 +32,20 @@ const SCORE = { type: "integer", minimum: 0, maximum: 100 } as const;
 
 /**
  * `reasoning` is declared first and always required, so a model writing the
- * object in order says what it saw before it commits to a score.
+ * object in order says what it saw before it commits to a score. It is capped
+ * at 240 characters, which a sentence of 30 words fits, because every word of
+ * it is generated before the scores are.
  */
 export const TURN_SCHEMA = {
   type: "object",
   required: ["reasoning", ...TURN_SCORES],
   additionalProperties: false,
-  properties: { reasoning: { type: "string" }, "not-applicable": SCORE, followed: SCORE, "not-followed": SCORE },
+  properties: {
+    reasoning: { type: "string", maxLength: 240 },
+    "not-applicable": SCORE,
+    followed: SCORE,
+    "not-followed": SCORE,
+  },
 };
 
 /** Decision-only providers: the three options, one per score. */
@@ -73,7 +80,7 @@ export function buildRuleItem(
     `${ruleKey(displayPath, rule.id)}: ${rule.text}`,
     "",
     ...(history !== "" ? [history, ""] : []),
-    "First say in one or two sentences what the transcript shows about this rule. Then score. " +
+    "First say in one sentence of at most 30 words what the transcript shows about this rule. Then score. " +
       "Score how strongly the transcript shows each, as a whole number from 0 to 100: the rule does not apply to this turn; the rule applies and the turn followed it; the rule applies and the turn broke it.",
   ].join("\n");
 }

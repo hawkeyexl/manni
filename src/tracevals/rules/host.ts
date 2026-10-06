@@ -125,6 +125,18 @@ export async function hostStatus(api: HostApi = library): Promise<HostStatus | n
 }
 
 /**
+ * Whether the host already holds `model` loaded. A host that cannot be
+ * reached, or that errors, holds nothing as far as a caller can tell.
+ */
+export async function hostHolds(model: string, api: HostApi = library): Promise<boolean> {
+  try {
+    return (await hostStatus(api))?.models.some((m) => m.model === model) ?? false;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Run a request for `model`. The host's queue lives inside the provider, so
  * `busy` is its `ModelHostBusyError`: the call waited `QUEUE_WAIT_MS` and
  * nothing ran.

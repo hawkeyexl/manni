@@ -159,6 +159,36 @@ export class TurnCache {
   }
 }
 
+export interface ModelId {
+  provider: string;
+  model: string;
+}
+
+/**
+ * What a provider's `stateLimit()` last said, per provider and model, with
+ * `null` for one that has no limit. A local model loads to report it, and the
+ * limit sets how much of the turn is rendered, which the verdict key hashes. So
+ * "is every verdict cached?" could not be answered without loading the model
+ * until this remembered the answer. A stale limit costs a miss, never a wrong
+ * verdict, because a hit is keyed by the text it was scored on.
+ */
+export class StateLimits {
+  private readonly store: JsonCache<unknown>;
+
+  constructor(dir: string, enabled = true) {
+    this.store = new JsonCache<unknown>(dir, enabled, "manni-tracevals");
+  }
+
+  get(id: ModelId): number | null | undefined {
+    const v = this.store.get(buildCacheKey([id.provider, id.model]));
+    return isRecord(v) && (v.limit === null || typeof v.limit === "number") ? v.limit : undefined;
+  }
+
+  set(id: ModelId, limit: number | null): void {
+    this.store.set(buildCacheKey([id.provider, id.model]), { limit });
+  }
+}
+
 /** Gate 6: a rule whose `when` fails over the turn is skipped, never passed. */
 export function applicableRules(
   rules: TurnRule[],
@@ -191,24 +221,34 @@ function decisionOnly(provider: InferenceProvider): DecisionProvider | undefined
     : undefined;
 }
 
-export async function judgeTurn(input: TurnJudgeInput): Promise<TurnJudgement> {
-  const { provider, zones } = input;
-  const decider = decisionOnly(provider);
-  const mode = decider !== undefined ? "decision" : "generative";
-  const runs = decider !== undefined ? 1 : input.runs;
-  const { applicable, notApplicable } = applicableRules(input.rules, input.turn.window);
+/** The input without the provider, which a gate can use before one is built. */
+export type TurnPlanInput = Omit<TurnJudgeInput, "provider">;
+
+interface Plan {
+  planned: Planned[];
+  turnText: string;
+  warnings: string[];
+  hits: Map<Planned, Verdict>;
+  todo: Planned[];
+  keyOf: (p: Planned) => string;
+}
+
+/**
+ * Everything short of the model call: each rule's item, the turn rendered to
+ * `limit` (undefined for no limit), and the verdict cache read. `decisionOnly`
+ * and `limit` are all that come from the provider, so a caller that knows both
+ * can plan without one.
+ */
+function planTurn(
+  input: TurnPlanInput,
+  id: ModelId,
+  decisionOnly: boolean,
+  limit: number | undefined,
+): Plan {
+  const runs = decisionOnly ? 1 : input.runs;
+  const { applicable } = applicableRules(input.rules, input.turn.window);
   const warnings: string[] = [];
-  const result: TurnJudgement = {
-    mode,
-    runs,
-    findings: [],
-    verdicts: [],
-    judged: applicable.length,
-    notApplicable,
-    cached: false,
-    warnings,
-  };
-  if (applicable.length === 0) return result;
+  const hits = new Map<Planned, Verdict>();
 
   // Indexed over every input source, so a question id does not move when a
   // farther source's rules happen not to apply.
@@ -219,7 +259,7 @@ export async function judgeTurn(input: TurnJudgeInput): Promise<TurnJudgement> {
   }
   const planned: Planned[] = applicable.map(({ source, rule }) => {
     const history =
-      decider === undefined && input.ledger !== undefined
+      !decisionOnly && input.ledger !== undefined
         ? historyBlock(input.ledger, ruleKey(source.displayPath, rule.id), rule.text, input.turn.from)
         : "";
     return {
@@ -231,23 +271,23 @@ export async function judgeTurn(input: TurnJudgeInput): Promise<TurnJudgement> {
       item: buildRuleItem(source.displayPath, rule, history),
     };
   });
+  if (planned.length === 0) {
+    return { planned, turnText: "", warnings, hits, todo: [], keyOf: () => "" };
+  }
 
   // Render the turn, to the state limit when there is one. Every rule counts
   // toward the longest, cached or not, so the render and its key stay put.
   const tail = lastMessageLine(input);
   let budget = input.render.maxTotalChars;
-  let limit: number | undefined;
-  if (canDecide(provider)) {
-    limit = await provider.stateLimit();
+  if (limit !== undefined) {
     const longest = Math.max(
       ...planned.map((p) =>
-        decider !== undefined ? JSON.stringify(questionFor(p.source, p)).length : p.item.length,
+        decisionOnly ? JSON.stringify(questionFor(p.source, p)).length : p.item.length,
       ),
     );
-    const fixed =
-      decider !== undefined
-        ? buildDecisionState("").length
-        : TURN_JUDGE_SYSTEM_PROMPT.length + buildTurnShared("").length;
+    const fixed = decisionOnly
+      ? buildDecisionState("").length
+      : TURN_JUDGE_SYSTEM_PROMPT.length + buildTurnShared("").length;
     budget = Math.min(budget, limit * CHARS_PER_TOKEN - longest - fixed);
   }
   const cut = { happened: false };
@@ -264,16 +304,16 @@ export async function judgeTurn(input: TurnJudgeInput): Promise<TurnJudgement> {
   if (cut.happened) {
     warnings.push(
       limit !== undefined && budget < input.render.maxTotalChars
-        ? `the turn was cut to fit the state limit of ${String(limit)} tokens of ${provider.provider()}/${provider.modelName()}; the judge saw its head and tail`
+        ? `the turn was cut to fit the state limit of ${String(limit)} tokens of ${id.provider}/${id.model}; the judge saw its head and tail`
         : `the turn was cut to the render cap of ${String(input.render.maxTotalChars)} characters; the judge saw its head and tail`,
     );
   }
 
   // Gate 9: the same turn, rule and model reuse the verdict.
   const base = [
-    provider.provider(),
-    provider.modelName(),
-    mode,
+    id.provider,
+    id.model,
+    decisionOnly ? "decision" : "generative",
     `r${String(runs)}`,
     `t${String(input.temperature)}`,
     `turn-v${String(TURN_JUDGE_PROMPT_VERSION)}`,
@@ -281,14 +321,74 @@ export async function judgeTurn(input: TurnJudgeInput): Promise<TurnJudgement> {
   ];
   const keyOf = (p: Planned): string =>
     buildCacheKey([...base, sha256(JSON.stringify([p.source, p.id, p.text, p.history]))]);
-
-  const verdicts = new Map<Planned, Verdict>();
   const todo: Planned[] = [];
   for (const p of planned) {
     const hit = input.cache?.get(keyOf(p));
-    if (hit !== undefined) verdicts.set(p, { runs: hit });
+    if (hit !== undefined) hits.set(p, { runs: hit });
     else todo.push(p);
   }
+  return { planned, turnText, warnings, hits, todo, keyOf };
+}
+
+/**
+ * Whether every applicable rule already has its verdict, answered without a
+ * provider and so without loading a local model. The render depends on the
+ * provider's state limit, which `StateLimits` remembers from the last
+ * judgement, so a model never judged with is unknown and the answer is no.
+ * A decision-only provider is never asked here: it is not a local model.
+ */
+export function allVerdictsCached(
+  input: TurnPlanInput & { limits: StateLimits },
+  id: ModelId,
+): boolean {
+  const limit = input.limits.get(id);
+  if (limit === undefined || DECISION_ONLY_PROVIDERS.has(id.provider)) return false;
+  const plan = planTurn(input, id, false, limit ?? undefined);
+  return plan.planned.length > 0 && plan.todo.length === 0;
+}
+
+export async function judgeTurn(
+  input: TurnJudgeInput & { limits?: StateLimits },
+): Promise<TurnJudgement> {
+  const { provider, zones } = input;
+  const decider = decisionOnly(provider);
+  const mode = decider !== undefined ? "decision" : "generative";
+  const runs = decider !== undefined ? 1 : input.runs;
+  const id: ModelId = { provider: provider.provider(), model: provider.modelName() };
+  const { applicable, notApplicable } = applicableRules(input.rules, input.turn.window);
+  const result: TurnJudgement = {
+    mode,
+    runs,
+    findings: [],
+    verdicts: [],
+    judged: applicable.length,
+    notApplicable,
+    cached: false,
+    warnings: [],
+  };
+  if (applicable.length === 0) return result;
+
+  // The provider's limit, remembered. A remembered one lets a fully cached
+  // turn finish without asking the provider at all; any miss asks for the real
+  // one, which refreshes the memory, and plans again if it moved.
+  const fresh = async (): Promise<number | null> => {
+    const real = canDecide(provider) ? await provider.stateLimit() : null;
+    input.limits?.set(id, real);
+    return real;
+  };
+  const remembered = input.limits?.get(id);
+  let limit = remembered ?? (await fresh());
+  let plan = planTurn(input, id, decider !== undefined, limit ?? undefined);
+  if (remembered !== undefined && plan.todo.length > 0) {
+    const real = await fresh();
+    if (real !== limit) {
+      limit = real;
+      plan = planTurn(input, id, decider !== undefined, limit ?? undefined);
+    }
+  }
+  const { planned, hits: verdicts, todo, keyOf, turnText } = plan;
+  const warnings = plan.warnings;
+  result.warnings = warnings;
   result.cached = todo.length === 0;
   if (todo.length > 0) {
     const fresh =
@@ -441,7 +541,7 @@ function findingOf(
  * Stop. The payload's copy is appended when the window does not end with it,
  * scrubbed and clipped as every rendered block is.
  */
-function lastMessageLine(input: TurnJudgeInput): string {
+function lastMessageLine(input: TurnPlanInput): string {
   const message = input.lastAssistantMessage?.trim();
   if (message === undefined || message === "") return "";
   if (input.turn.window.assistantTexts.at(-1)?.trim() === message) return "";

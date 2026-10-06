@@ -177,11 +177,16 @@ const wholeGb = (bytes: number): number => Math.round(bytes / GB);
  * Gates 5, 7 and 8 for one local model, in that order, each asked only when
  * listed. Nothing here loads or fetches a model: a runtime that is absent is
  * gate 7, and the memory probe is asked only once the runtime is there.
+ *
+ * The probe forks a worker and initializes the GPU to read free memory, which
+ * costs most of a second. `memoryUnneeded` is asked first and, when it says so,
+ * the probe is not run: memory only matters to a model about to be loaded.
  */
 export async function localGate(
   local: LocalModels,
   model: string,
   gates: readonly LocalGate[],
+  memoryUnneeded?: () => boolean | Promise<boolean>,
 ): Promise<GateSkip<LocalGate> | undefined> {
   const state = await local.state(model);
   if (gates.includes("downloading") && state === "downloading") {
@@ -193,7 +198,7 @@ export async function localGate(
       message: `tracevals skipped this turn: ${model} is not downloaded yet. Run manni tracevals prepare to fetch it.`,
     };
   }
-  if (gates.includes("memory")) {
+  if (gates.includes("memory") && !(await memoryUnneeded?.())) {
     const fit = await local.fits(model);
     if (!fit.fits) {
       return {

@@ -325,14 +325,101 @@ describe("checkTurn, inside a hook", () => {
     const tight = localModels({
       fits: () => Promise.resolve({ fits: false, needBytes: 10.2 * GiB, freeBytes: 6.4 * GiB }),
     });
-    expect((await hook("breaks", { judge: llama(), localModels: tight })).skipped).toEqual({
+    expect((await hook("breaks", { judge: llama(), localModels: tight, hostApi: noHost })).skipped).toEqual({
       gate: "memory",
       message: "tracevals skipped this turn: qwen3.5-4b needs about 10 GB and 6 GB is free.",
     });
   });
 
+  describe("the memory gate is skipped when it cannot matter", () => {
+    const boom = localModels({ fits: () => Promise.reject(new Error("fits must not be called")) });
+    const counted = (): { local: LocalModels; fits: ReturnType<typeof vi.fn> } => {
+      const fits = vi.fn(() => Promise.resolve({ fits: true, needBytes: 1, freeBytes: 2 }));
+      return { local: localModels({ fits }), fits };
+    };
+    const holding: HostApi = {
+      ...noHost,
+      status: () =>
+        Promise.resolve({
+          pid: 1,
+          models: [{ model: "qwen3.5-4b", sessions: 1, idleMs: 0, queued: 0 }],
+        } as Awaited<ReturnType<HostApi["status"]>>),
+    };
+
+    it("never probes memory for a turn whose every verdict is cached", async () => {
+      const first = await hook("breaks", { judge: llama(), localModels: localModels(), hostApi: noHost });
+      expect(first.judgement?.cached).toBe(false);
+      const again = await hook("breaks", { judge: llama(), localModels: boom, hostApi: noHost });
+      expect(again.skipped).toBeUndefined();
+      expect(again.judgement?.cached).toBe(true);
+      expect(again.exitCode).toBe(1);
+    });
+
+    it("keeps a remembered state limit, so a cached turn never asks the provider", async () => {
+      let asked = 0;
+      const limited = (): InferenceProvider =>
+        Object.assign(llama(), {
+          stateLimit: () => {
+            asked += 1;
+            return Promise.resolve(8192);
+          },
+          decide: () => Promise.reject(new Error("generative path only")),
+        });
+      await hook("breaks", { judge: limited(), localModels: localModels(), hostApi: noHost });
+      expect(asked).toBe(1);
+      const again = await hook("breaks", { judge: limited(), localModels: boom, hostApi: noHost });
+      expect(again.judgement?.cached).toBe(true);
+      expect(asked).toBe(1);
+    });
+
+    it("probes memory when a verdict is missing, as before", async () => {
+      const first = counted();
+      await hook("breaks", { judge: llama(), localModels: first.local, hostApi: noHost });
+      expect(first.fits).toHaveBeenCalledTimes(1);
+      // A different model has nothing cached, so it is probed again.
+      const other = counted();
+      await hook("breaks", {
+        judge: mockTurnJudge("other-model", "llama-cpp"),
+        localModels: other.local,
+        hostApi: noHost,
+      });
+      expect(other.fits).toHaveBeenCalledTimes(1);
+    });
+
+    it("never probes memory when the host already holds the model", async () => {
+      const result = await hook("breaks", { judge: llama(), localModels: boom, hostApi: holding });
+      expect(result.skipped).toBeUndefined();
+      expect(result.judgement?.cached).toBe(false);
+    });
+
+    it("probes memory when the host holds a different model", async () => {
+      const probe = counted();
+      const other: HostApi = {
+        ...noHost,
+        status: () =>
+          Promise.resolve({
+            pid: 1,
+            models: [{ model: "something-else", sessions: 1, idleMs: 0, queued: 0 }],
+          } as Awaited<ReturnType<HostApi["status"]>>),
+      };
+      await hook("breaks", { judge: llama(), localModels: probe.local, hostApi: other });
+      expect(probe.fits).toHaveBeenCalledTimes(1);
+    });
+
+    it("keeps the memory message, whatever the cache holds", async () => {
+      const GiB = 1024 ** 3;
+      const tight = localModels({
+        fits: () => Promise.resolve({ fits: false, needBytes: 10.2 * GiB, freeBytes: 6.4 * GiB }),
+      });
+      const result = await hook("breaks", { judge: llama(), localModels: tight, hostApi: noHost });
+      expect(result.skipped?.message).toBe(
+        "tracevals skipped this turn: qwen3.5-4b needs about 10 GB and 6 GB is free.",
+      );
+    });
+  });
+
   it("judges a local model that is ready, scoring each rule", async () => {
-    const result = await hook("breaks", { judge: llama(), localModels: localModels() });
+    const result = await hook("breaks", { judge: llama(), localModels: localModels(), hostApi: noHost });
     expect(result.report?.judge).toMatchObject({ provider: "llama-cpp", mode: "generative", runs: 1 });
     expect(result.exitCode).toBe(1);
   });
