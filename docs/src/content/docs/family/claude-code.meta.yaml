@@ -18,13 +18,19 @@ docs/src/content/docs/family/claude-code.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Sonnet 5.5
-      lines: 2-73
-      integrity: sha256-d0938a04732decf72d72dc7fbf5262d2b7529f3388b6b3593c8c3a16469b61e3
+      lines: 2-37
+      integrity: sha256-10dafdbad2952008eaec67ace6403b3822265c7020546a2a6010d86a8945c15a
+    - generated-by: Claude Opus 5.5
+      lines: 39-44
+      integrity: sha256-b419c0cde5a4a2ba07e9a320787671032901d2c432fc71c6ab12dee7ff3933e6
     - generated-by: Claude Sonnet 5.5
-      lines: 75-127
+      lines: 46-76
+      integrity: sha256-d05dd7d71069c3b532e29866700479d26ad54dffadef28823827452c5aadebb2
+    - generated-by: Claude Sonnet 5.5
+      lines: 78-130
       integrity: sha256-3d5d2ce1f62dc2525e57815afc20f1722b4116d1080c09a9c81f8eba12a512b3
     - generated-by: Claude Sonnet 5.5
-      lines: 135-197
+      lines: 138-200
       integrity: sha256-13dd7cc98622f105270643167891de087593e375951353248d76e19925f55561
   owner:
     - "@hawkeyexl"
