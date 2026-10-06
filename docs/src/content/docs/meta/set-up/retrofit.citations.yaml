@@ -7,7 +7,7 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         file: src/meta/commands/fill.ts
         lines: 261-265
         integrity: sha256-9e2b9ac542ee48a8f0ed3c9c4867b50acec76d2bca3bdb00c31b003abff2483b
-        commit-sha: e7dd1089550bbee8c728ac158583408866077d49
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: confidence-gate-skips-below-threshold
       claim:
         integrity: sha256-41593122f94befb57ec4d9d88620053959aabb7d1ced18284efb28756315c068
@@ -15,7 +15,7 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         file: src/meta/commands/fill.ts
         lines: 1992-1999
         integrity: sha256-41bef07e2a42a2f8e3472bc67309bb608695859b813489cda6aea5485599c378
-        commit-sha: e7dd1089550bbee8c728ac158583408866077d49
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: low-confidence-fields-listed-with-scores
       claim:
         integrity: sha256-41593122f94befb57ec4d9d88620053959aabb7d1ced18284efb28756315c068
@@ -39,7 +39,7 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         file: src/meta/commands/fill.ts
         lines: 1615-1619
         integrity: sha256-7e674a8f3a0a6f11a07039363cf3d5bae0d27b9bb12e0e3f4969e1ef8fc9e4f2
-        commit-sha: e7dd1089550bbee8c728ac158583408866077d49
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: meta-provenance-skipped-on-schema-mismatch
       claim:
         integrity: sha256-88e08c91d8f138cb3243f2f700d7eb4483bfcbfea2b70d65752e5e2139913bcb
@@ -72,7 +72,7 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         file: src/meta/commands/fill.ts
         lines: 180
         integrity: sha256-b08b0888f8a25130aba9749d34f337ba927f983f56f5abb32a6d2bb5beba5ccb
-        commit-sha: e7dd1089550bbee8c728ac158583408866077d49
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: fill-uses-validate-schema-resolution
       claim:
         integrity: sha256-129ba97597f17f735a9cbf31de18de292ee027257dc0824bdbf8a51b419a4fdd
@@ -80,7 +80,7 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         file: src/meta/commands/fill.ts
         lines: 753-760
         integrity: sha256-64c15ece18ff7766d3093291822e0f136cfc2211d26bab2fd6181d94507e09f6
-        commit-sha: e7dd1089550bbee8c728ac158583408866077d49
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: fill-candidates-are-missing-or-invalid
       claim:
         integrity: sha256-129ba97597f17f735a9cbf31de18de292ee027257dc0824bdbf8a51b419a4fdd
@@ -88,7 +88,7 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         file: src/meta/commands/fill.ts
         lines: 1745-1746
         integrity: sha256-d19e8e456bc7fa207f429c489335bc4b2b40ad51a6852aeaa3a6d7c998d39f5a
-        commit-sha: e7dd1089550bbee8c728ac158583408866077d49
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: fill-candidates-come-from-schema-properties
       claim:
         integrity: sha256-129ba97597f17f735a9cbf31de18de292ee027257dc0824bdbf8a51b419a4fdd
@@ -96,7 +96,7 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         file: src/meta/commands/fill.ts
         lines: 1719-1724
         integrity: sha256-a698aeb66ec58d2b251f3d3d529c83e1417187ab67171c100874e7f6079e9242
-        commit-sha: e7dd1089550bbee8c728ac158583408866077d49
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: baseline-debt-printed-on-every-run
       claim:
         integrity: sha256-17cd8d4365ad9189035a0380e44bdf1612c7599414ff4120277b5998f9a62b47
@@ -161,7 +161,7 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         file: src/meta/commands/validate.ts
         lines: 324-327
         integrity: sha256-7f1973d8b0245da7e1deff8552f047c5e989da046b9bd61a922b7a1d15eef004
-        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: collection-exclude-applies-on-a-collection-run
       claim:
         lines: 155
@@ -170,7 +170,7 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         file: src/meta/commands/validate.ts
         lines: 340-344
         integrity: sha256-3e37842784cbe6627a93f287b54a47f31340c33daf9a4e3749468d20cf91d6a2
-        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: exclude-flag-filters-a-typed-path
       claim:
         lines: 155
@@ -186,9 +186,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-b434cb91645fc3c84066f41be4d26f16a21838ce807764daf2b443931b3738bd
       source:
         file: CHANGELOG.md
-        lines: 989-992
+        lines: 996-999
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: collection-exclude-removes-from-paths
       claim:
         lines: 138
@@ -206,7 +206,7 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         file: src/meta/core/load-files.ts
         lines: 17
         integrity: sha256-84752dfdaf912a4e2ffe61f21e2984820d5364e5329ac0d8f36bd8290e6971e4
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: builtin-ignores-prepended-to-exclude
       claim:
         lines: 138
@@ -215,7 +215,7 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         file: src/meta/core/load-files.ts
         lines: 273
         integrity: sha256-062dfc0e8704a9f5cfab261efdea54ca2e9e82c088fa4257187e47da6a73fc6c
-        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: bare-run-reads-collection-paths
       claim:
         lines: 129

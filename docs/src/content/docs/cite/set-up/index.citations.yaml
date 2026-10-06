@@ -125,7 +125,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/cite/core/sources.ts
         lines: 163
         integrity: sha256-77702f30bfc199d991dacb9a334b9a6236b5f10b764fbe43ea57c82ff4ec3e4d
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: sources-tracked-files-only
       claim:
         lines: 70-74
@@ -134,7 +134,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/cite/core/sources.ts
         lines: 75-79
         integrity: sha256-e4efebe2b16abb8156015879a7470029e1c49b4a304b6bc62c025732307bcb7f
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: sources-realpath-contained
       claim:
         lines: 70-74
@@ -143,7 +143,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/cite/core/sources.ts
         lines: 63-73
         integrity: sha256-a5a497574dde56bb912c6b50b76cc6ccbde1b56bd7545000ddb405e96f2312bd
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: uncommitted-source-missing
       claim:
         lines: 71-74
@@ -152,7 +152,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/cite/core/sources.ts
         lines: 163
         integrity: sha256-77702f30bfc199d991dacb9a334b9a6236b5f10b764fbe43ea57c82ff4ec3e4d
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: root-flag-reaches-checkout
       claim:
         lines: 74
@@ -265,7 +265,7 @@ docs/src/content/docs/cite/set-up/index.mdx:
         file: src/cite/core/sources.ts
         lines: 75-87
         integrity: sha256-b960a34be4d9a85928499280cb124a5134df47c5bd8ea8fd21b5534b3b5f215b
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: root-defaults-to-git-root
       claim:
         lines: 20

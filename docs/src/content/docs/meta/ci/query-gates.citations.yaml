@@ -88,7 +88,7 @@ docs/src/content/docs/meta/ci/query-gates.mdx:
         file: src/meta/commands/validate.ts
         lines: 987-998
         integrity: sha256-ecdb7f2b79f4cf95fbd52ff4b2b06deb9ab5d22218f6953b83e3af0726fd9bea
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: no-checks-opts-out
       claim:
         lines: 189
@@ -106,7 +106,7 @@ docs/src/content/docs/meta/ci/query-gates.mdx:
         file: src/meta/commands/validate.ts
         lines: 992-997
         integrity: sha256-ef8f14f3064a97fd9d002f55074b1c0a615e99172873b34a1dea71f4859983d3
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: check-findings-ride-the-baseline
       claim:
         lines: 198-199
@@ -115,7 +115,7 @@ docs/src/content/docs/meta/ci/query-gates.mdx:
         file: src/meta/commands/validate.ts
         lines: 1025-1032
         integrity: sha256-4367f248468a5dac9bf56d4650b0bb5d24ad2bd67c458000625b4e43335d3aa6
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: adhoc-check-findings-are-named-check-query
       claim:
         lines: 205

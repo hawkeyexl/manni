@@ -92,7 +92,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/commands/check.ts
         lines: 361-363
         integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: exit-two-no-inputs
       claim:
         lines: 24
@@ -137,7 +137,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/core/check-page.ts
         lines: 403-409
         integrity: sha256-3849602b3122eb1b1b5b858d50850009800c2d3de6fd03fd5c74c397e3736a23
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: format-sarif-meta-renderer
       claim:
         lines: 73-74
@@ -256,7 +256,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/core/classify.ts
         lines: 347-350
         integrity: sha256-a909c9a31155f4140101bedad6d76b632625f5cfe2100c940d5b2b5a991034ac
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: show-diff-from-commit
       claim:
         integrity: sha256-9055fd61ec88b6da68589469c0332bf4954d9af905a595d38f2a2921bdbbf01e
@@ -272,7 +272,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/core/classify.ts
         lines: 351-352
         integrity: sha256-e3548519f38f33970cf4e73eedce393ba2d649ae41eaa05b0784c7a91653a9cd
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: shallow-clone-notice
       claim:
         lines: 104
@@ -281,7 +281,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/core/check-page.ts
         lines: 350-355
         integrity: sha256-9919a40a4a84c69dc3e4d9cc253c28a74894023e0f1ae04fc24e2afa98c97d88
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: shallow-clone-status
       claim:
         lines: 106
@@ -298,7 +298,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/core/classify.ts
         lines: 351-352
         integrity: sha256-e3548519f38f33970cf4e73eedce393ba2d649ae41eaa05b0784c7a91653a9cd
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: shallow-still-error
       claim:
         integrity: sha256-6cd781084d1cb253d0a0ba2b8903c211d687211658c2ed920049c084917fe13b
@@ -330,7 +330,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/core/sources.ts
         lines: 75-87
         integrity: sha256-b960a34be4d9a85928499280cb124a5134df47c5bd8ea8fd21b5534b3b5f215b
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: no-git-notice
       claim:
         lines: 126
@@ -347,7 +347,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/core/check-page.ts
         lines: 322-325
         integrity: sha256-4f108691b1360dd83a7d5dbbc3831747b5b122839d966916542910c2119c64ec
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: no-git-notice-show-diff
       claim:
         integrity: sha256-e65fea832a3e2fe3a5a00d2f1b2aea62c897d1cf7020a071e2e822bbc0109392
@@ -355,7 +355,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/commands/check.ts
         lines: 342-345
         integrity: sha256-df9e2099e2cacae4348d2fafecabf6ffe16e6f7a0c74f462c0d0edd44d388b2a
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: collections-fallback-no-args
       claim:
         lines: 170-171
@@ -417,7 +417,7 @@ docs/src/content/docs/cite/ci/index.mdx:
         file: src/cite/commands/check.ts
         lines: 361-363
         integrity: sha256-d51b978f9fa088753d24578d22c1dbbd55f75f157ec76b756d82b78ad164740e
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: baseline-optional-path
       claim:
         lines: 326
