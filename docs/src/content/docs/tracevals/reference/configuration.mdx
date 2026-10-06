@@ -237,6 +237,7 @@ tracevals:
       runs: 1
     include: []
     exclude: []
+    plans: []
 ```
 
 Everything tracevals writes sits under **`.manni/tracevals/`**: the judge cache, the fill cache, the
@@ -393,6 +394,7 @@ the Claude Code hooks. Absent, tracevals stays out of them. The journey is in
 | `conformance.hook.runs` | integer ≥ 1 | no | `1` | none |
 | `conformance.include` | array of globs | no | `[]` | none |
 | `conformance.exclude` | array of globs | no | `[]` | none |
+| `conformance.plans` | array of globs | no | `[]` | none |
 
 - **`hook.provider`** is the provider that judges inside a Stop or SubagentStop hook. It is one of
   `auto`, `anthropic`, `openai`, `claude-cli`, `llama-cpp` or `jev`. `jev` answers decisions only,
@@ -404,7 +406,18 @@ the Claude Code hooks. Absent, tracevals stays out of them. The journey is in
 - **`include`** names files that govern agents beyond the known formats, such as a house style
   guide. Each applies to every turn, read or not. Globs are relative to the project root.
 - **`exclude`** names files never treated as rule sources, in any format, such as a product docs
-  tree or a stale `.cursor/rules` file.
+  tree or a stale `.cursor/rules` file. It removes plan and spec files too. The typed prompts are
+  not a file, so no glob removes them.
+- **`plans`** names files that say what to build, beyond the known spec formats. Each is a rule
+  source once the session touches it. Globs are relative to the project root. A folder of plans
+  holds plans for other work too, so a file counts only when touched. That is why it is not
+  `include`, which names files that govern the agent on every turn.
+
+```yaml title="manni.config.yaml"
+tracevals:
+  conformance:
+    plans: [docs/plans/*.md]
+```
 
 ### Two model roles
 

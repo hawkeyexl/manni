@@ -422,8 +422,12 @@ CLAUDE.md
   ✖ never-use-innerhtml-in-components  Never use `innerHTML` in components.
       not-followed 100, followed 0, not-applicable 0. The turn shows `innerHTML`. (1.00)
 
-Last turn of 3b265d00: 7 rules from 5 files. 2 broken, 1 needs review.
+Last turn of 3b265d00: 7 rules from 6 sources. 2 broken, 1 needs review.
 ```
+
+Findings are grouped under the source each rule came from. A source that is not a file prints under
+its format's name. The rules taken from your typed prompts print under `prompt`, and a plan given only
+as input prints under `plan`. The closing line counts sources rather than files for the same reason.
 
 ### Arguments
 
@@ -456,9 +460,9 @@ applied:
 
 | Closing line | Exit |
 |---|---|
-| `Last turn of <session>: <n> rules from <n> files. None broken.` | `0` |
-| `Last turn of <session>: <n> rules from <n> files. <n> broken, <n> needs review.` | `1` when any is broken |
-| `Last turn of <session>: <n> rules from <n> files, none apply to this turn.` | `0` |
+| `Last turn of <session>: <n> rules from <n> sources. None broken.` | `0` |
+| `Last turn of <session>: <n> rules from <n> sources. <n> broken, <n> needs review.` | `1` when any is broken |
+| `Last turn of <session>: <n> rules from <n> sources, none apply to this turn.` | `0` |
 | `Last turn of <session>: no rule sources governed it.` | `0` |
 | `Last turn of <session>: nothing happened after the last prompt.` | `0` |
 

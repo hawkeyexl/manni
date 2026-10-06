@@ -5,12 +5,12 @@ sidebar:
   order: 1
 id: "tracevals-conformance"
 type: "how-to"
-keywords: ["conformance", "hook", "Stop", "SubagentStop", "rules", "CLAUDE.md", "AGENTS.md", "check"]
+keywords: ["conformance", "hook", "Stop", "SubagentStop", "rules", "CLAUDE.md", "AGENTS.md", "check", "prompts", "plan", "specs", "procedure"]
 language: en
 intent: "Set up tracevals so an agent hears about a broken rule at the end of the turn that broke it."
 lifecycle: published
 applies-to: ["domain:tracevals"]
-sample-questions: ["How do I make an agent follow my CLAUDE.md?", "Which files does tracevals check an agent against?", "What does the agent see when it breaks a rule?"]
+sample-questions: ["How do I make an agent follow my CLAUDE.md?", "Which files does tracevals check an agent against?", "What does the agent see when it breaks a rule?", "Does tracevals check that the agent built what I asked for?", "Are the steps of a skill checked in order?"]
 graph: { label: "Catch a broken rule before the agent hands back", type: task }
 last-updated: 2026-10-06
 ---
@@ -25,7 +25,8 @@ import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components'
     offline on a runner that has neither a key nor a local model. Config:
     .doc-detective.json. */}
 
-**Scope:** judging the turn that just ended against the rules your repository declares for agents.
+**Scope:** judging the turn that just ended against the rules your repository declares for agents,
+and against what you asked for.
 It serves Maya, and it follows [the post-hoc run](/manni/tracevals/get-started/), which grades a
 whole session after the fact. For the files a session used, see
 [artifact coverage](/manni/tracevals/declare/coverage/).
@@ -35,8 +36,12 @@ You wrote the rules. The agent read them. It still ran `npm test` in a fresh wor
 sat in the agent's context the whole time, and nothing told it.
 
 `tracevals` can check at the end of every turn instead. It reads the rules files that govern the
-agent, judges what the turn did, and names each broken rule with the file it came from. The agent
-fixes the work, or says why the rule does not apply, before the turn reaches you.
+agent, and what you asked it to do. It judges the last turn against the session so far, and names
+each broken rule with the source it came from. The agent fixes the work, or says why the rule does
+not apply, before the turn reaches you.
+
+The same check catches a settings toggle you asked for and never got. It catches a task ticked with
+no work behind it, and a skill's step run out of order.
 
 ## Set it up
 
@@ -101,10 +106,10 @@ Jev only decides, so it can judge inside a hook and can never be `tracevals.prov
 from `TYPESAFE_API_KEY`. Every key is in the
 [configuration reference](/manni/tracevals/reference/configuration/#conformance).
 
-## Which files count
+## Which sources count
 
-Resolution is deterministic, from the filesystem and the trace. No model decides which files count.
-A model only reads the files that do and returns their rules.
+Resolution is deterministic, from the filesystem and the trace. No model decides which sources count.
+A model only reads the sources that do and returns their rules.
 
 The list of formats is closed. Each one is scoped by its own trigger, as the tool that owns it scopes
 it.
@@ -120,13 +125,13 @@ it.
 | Spec Kit constitution | `.specify/memory/constitution.md` | Always |
 | OpenSpec project | `openspec/project.md` | Once the agent reads it |
 | Imports | Files an `@path` line pulls into a memory file, up to four hops | With the importing file |
-| Skills, commands, agents | An invoked skill's `SKILL.md` and every file read under its directory, a slash command, and the running subagent's definition | Their windows, as in `run` |
+| Skills, commands, agents | An invoked skill's `SKILL.md` and every file read under its directory, a slash command, and the running subagent's definition | A skill or command from its first invocation to the end of the session. A subagent's definition for its own run. |
 | Designated | Files matching `conformance.include` | Always |
 
 To touch a file is to read, write or edit it. That is Claude Code's own trigger for path-scoped
 rules. `paths:`, `globs` and `fileMatchPattern` each accept one glob or a list. A nearer file
-overrides a farther one, and a prompt you typed in the turn overrides any file. Doing what you asked
-is never a violation.
+overrides a farther one, and a prompt you typed overrides any rule. Doing what you asked is never a
+violation.
 
 ### Reading a file never makes it a rule
 
@@ -142,18 +147,19 @@ out.
   nothing. A skill reference that documents an API yields no rules, though its skill counts.
 
 `exclude` removes a file from every row, for a product docs tree or a stale `.cursor/rules` file.
+That covers plan and spec files too.
 
 ### Spec-driven toolkits
 
-Three spec-driven toolkits keep agent guidance apart from specs. tracevals reads the guidance.
-Spec Kit's constitution, Kiro's steering files and OpenSpec's `project.md` count. Their specs are
-left out on purpose, because checking code against a spec is a different job. That covers `spec.md`,
-`plan.md` and `tasks.md`, Kiro's `requirements.md` and `design.md`, and OpenSpec's `specs/` and
-`changes/`.
+Three spec-driven toolkits keep agent guidance apart from specs, and tracevals reads both. Spec Kit's
+constitution, Kiro's steering files and OpenSpec's `project.md` govern the agent, as the table above
+says. Their specs say what to build. Each counts once the session touches it, as
+[What the session was asked](#what-the-session-was-asked) says.
 
 ### What a rule looks like
 
-Each rule has a kebab-case id, its text, and a `when`. The `when` uses the same grammar as
+Each rule has an id, its text, and a `when`. The id is kebab-case, or a spec's own id. The `when`
+uses the same grammar as
 [conditional triggers](/manni/tracevals/reference/graders/#conditional-triggers), so a rule about
 commands arms only for the turns that ran one.
 
@@ -165,15 +171,78 @@ commands arms only for the turns that ran one.
 
 A rule a transcript cannot show, such as "prefer boring code", is dropped. A file that declares its
 own `ai` evals is not extracted. Its eval assertions are its rules, with their own `when`.
-Extraction is cached under `.manni/tracevals/cache/rules`. The key is the provider, the model and the
-sha256 of the whole file, so a file pays for extraction once per version.
+Extraction is cached under `.manni/tracevals/cache/rules`. The key is the provider, the model, the
+extraction prompt and the sha256 of the whole source. So a source pays for extraction once per
+version. Rules files and the sources from what you asked are read by two different prompts.
+
+## What the session was asked
+
+A rules file says how to work. What you asked for says what to build, and a turn can call that work
+done when it is not. Six more formats carry it.
+
+| Format | Source | In scope when |
+|---|---|---|
+| Typed prompts | Every prompt you typed in the session, read as one numbered sequence | Always |
+| Approved plan | The plan of the last approved `ExitPlanMode`, from its input or the plan file written before it | From the approval on |
+| Spec Kit spec | `specs/<feature>/spec.md`, `plan.md` and `tasks.md` | Once the session touches a file under `specs/<feature>/` |
+| Kiro spec | `.kiro/specs/<name>/requirements.md`, `design.md` and `tasks.md` | Once the session touches a file under that directory |
+| OpenSpec change | Every `.md` file under `openspec/changes/<id>/` | Once the session touches a file under that change. An archived change never counts. |
+| Plans | A file that `conformance.plans` names | Once the session touches it |
+
+- **Prompts.** Extraction returns the items that stand after your last prompt, so "forget the toggle"
+  drops the toggle. A question with nothing to build yields no rules. Each new prompt costs one
+  extraction.
+- **A plan.** A later approval replaces the plan. A rejected plan never counts.
+- **Specs.** Only a touched feature counts, so a tree of many specs brings in only the one in play.
+  A rule keeps the spec's own id, such as `FR-001`, `T014` or `1.2`.
+
+Plans in a format of your own go in `conformance.plans`. A folder of plans holds plans for other work
+too, so a file counts only once the session touches it. `include` is for files that govern every
+turn, which is why plans have a key of their own.
+
+```yaml title="manni.config.yaml"
+tracevals:
+  conformance:
+    plans: [docs/plans/*.md]
+```
+
+`exclude` removes a plan or spec file here too. Your typed prompts are not a file, so no glob
+removes them.
+
+A rule from what you asked is judged like any other. "Add a dark mode toggle" does not apply yet
+while the work goes on. It is followed once the toggle exists. It is broken on the turn that says
+the work is done without one.
+
+### Ticks
+
+A ticked task is the agent saying that task is done. An Edit that turns `- [ ] T014 …` into
+`- [x] T014 …` is a tick. Spec Kit, Kiro and OpenSpec all keep tasks this way. The judge sees each
+earlier tick by its id, so a tick with nothing behind it reads as a claim to check. A `Write` that
+rewrites the whole tasks file is not read as a tick.
+
+## Procedures are rules
+
+A skill's procedure is rules too. Extraction keeps its sentences about the order of steps, a gate one
+step must pass before another, and a route a step's result chooses. It also keeps a condition that
+calls for a step, a required step, and the step that comes last. The judge reads each one against
+what the session did, which names every skill call and every agent spawn with its result.
+
+```json
+{ "id": "follow-reviewer-route",
+  "text": "Send the draft to the pass the Reviewer names in route_to." }
+```
+
+A skill's rules stay in scope from its first invocation to the end of the session. A skill it calls
+partway through does not end that. A slash command's rules work the same way. The post-hoc
+`manni tracevals run` still grades each skill against its own window.
 
 ## Run it by hand
 
 `manni tracevals check` judges the last turn of one session. A turn starts at the last prompt you
 typed, and tool results do not start one. Run it on yesterday's session to see what the hook would
 have said. The examples below run from the committed conformance fixture, a small project with a
-`CLAUDE.md` that declares two rules and one `AGENTS.md`.
+`CLAUDE.md` that declares two rules and one `AGENTS.md`. Your typed prompts are a source on every
+turn, so the count includes them.
 
 ```console
 $ cd test/tracevals/fixtures/conformance/project
@@ -187,12 +256,12 @@ CLAUDE.md
   ✖ never-use-innerhtml-in-components  Never use `innerHTML` in components.
       not-followed 100, followed 0, not-applicable 0. The turn shows `innerHTML`. (1.00)
 
-Last turn of 3b265d00: 7 rules from 5 files. 2 broken, 1 needs review.
+Last turn of 3b265d00: 7 rules from 6 sources. 2 broken, 1 needs review.
 ```
 
 The fixture's config judges with a test provider that scores each rule 0 or 100. A real model
 scores in between, from what the turn shows. Each finding names the rule's id, its text, its three
-scores and the judge's reasoning, grouped under the file the rule came from. The number in parentheses is the
+scores and the judge's reasoning, grouped under the source the rule came from. The number in parentheses is the
 not-followed score as a fraction. The `?` row is a rule the judge could not settle. The `✖` rows
 are broken, so the command exits `1`.
 
@@ -202,13 +271,34 @@ are broken, so the command exits `1`.
 {/* step {"description":"A turn that followed every rule exits 0.","runShell":{"command":"manni tracevals check ../traces/follows.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"None broken"}} */}
 {/* test end */}
 
+A rule from what you asked prints under its format's name. In the fixture's second project, a later
+prompt said not to edit `src/legacy.ts`, and the last turn edited it.
+
+```console
+$ cd ../requests
+$ manni tracevals check ../traces/requests.jsonl --project . --no-cache
+prompt
+  ✖ do-not-edit-src-legacy  Do not edit `src/legacy.ts`.
+      not-followed 100, followed 0, not-applicable 0. The turn shows `src/legacy.ts`. (1.00)
+
+Last turn of 3b265d00: 14 rules from 10 sources. 1 broken.
+```
+
+Its other sources are the approved plan, the touched Spec Kit and Kiro specs, an OpenSpec change and
+a file under `docs/plans/`. `-f json` lists each one with its trigger.
+
+{/* test {"testId":"conformance-requests","description":"check holds a turn to the prompts, the approved plan and the touched specs."} */}
+{/* step {"description":"A rule from a typed prompt prints under prompt, and its break exits 1.","runShell":{"command":"manni tracevals check ../traces/requests.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/requests","exitCodes":[1],"stdio":"do-not-edit-src-legacy"}} */}
+{/* step {"description":"A touched file that conformance.plans names is a source.","runShell":{"command":"manni tracevals check ../traces/requests.jsonl --project . --no-cache -f json","workingDirectory":"test/tracevals/fixtures/conformance/requests","exitCodes":[1],"stdio":"touched docs/plans/reset.md"}} */}
+{/* test end */}
+
 The other closing lines all exit `0`.
 
 | Closing line | What it means |
 |---|---|
-| `Last turn of 3b265d00: 4 rules from 2 files. None broken.` | Every rule that applied was followed. |
-| `Last turn of 3b265d00: 2 rules from 1 file, none apply to this turn.` | Each rule's `when` failed over the turn. A rule that never armed is skipped, never passed. |
-| `Last turn of 3b265d00: no rule sources governed it.` | No file in the closed list was in scope. |
+| `Last turn of 3b265d00: 4 rules from 2 sources. None broken.` | Every rule that applied was followed. |
+| `Last turn of 3b265d00: 2 rules from 1 source, none apply to this turn.` | Each rule's `when` failed over the turn. A rule that never armed is skipped, never passed. |
+| `Last turn of 3b265d00: no rule sources governed it.` | No source was in scope. Your typed prompts are one, so this is rare. |
 | `Last turn of 3b265d00: nothing happened after the last prompt.` | The turn is empty. |
 
 {/* test {"testId":"conformance-quiet-turns","description":"A turn with nothing to judge says why and exits 0."} */}
@@ -217,7 +307,7 @@ The other closing lines all exit `0`.
 {/* test end */}
 
 For a script, `-f json` prints the whole report and `-o` also writes it to a file. It lists every
-file that was in scope and why, so a rule you expected and did not get is easy to trace. Its fields
+source that was in scope and why, so a rule you expected and did not get is easy to trace. Its fields
 are in [Report and exit codes](/manni/tracevals/reference/report-and-exit-codes/#check-reports).
 
 ```console
@@ -239,23 +329,44 @@ At Stop, the hook judges the turn with the in-loop model. Only a confident viola
   It names `manni tracevals check` and the transcript, so you can read what remains.
 
 ```json
-{"decision":"block","reason":"This turn broke 1 rule from the files that governed it. Fix the work, or say why the rule does not apply here, then finish.\n\n<report>"}
+{"decision":"block","reason":"This turn broke 1 rule from the files and requests that governed it. Fix the work, or say why the rule does not apply here, then finish.\n\n<report>"}
 ```
 
 The repair pass judges the whole turn once more. The turn has grown, so the verdict cache misses, and
 the pass costs one call. It is the only way to tell you a rule is still broken.
 
-The judge asks about each rule on its own. It sees the turn and that one rule. It first says in a
-sentence or two what the transcript shows about the rule. Then it returns three scores from 0 to
-100: not applicable, followed, and not followed. The three are independent, so a model can score a
-rule high on both followed and not followed.
+The judge asks about each rule on its own. It sees the last turn, what the session did before it,
+and that one rule. It first says in a sentence or two what the session shows about the rule. Then
+it returns three scores from 0 to 100: not applicable, followed, and not followed.
 
-Some rules cover a procedure that spans turns, such as running `npm ci` once before any test. So the
-hook keeps a ledger for each session. It records what every turn ran, wrote and read, judged or
-not, and the judge sees that list for the turns before this one. So `npm ci` run three turns ago
-still counts. Each rule also shows the judge its earlier results, and keeps its first `followed`
-and every `broken` one in view. The ledger marks a stretch of turns that left the rule's file
-out of scope. So the judge can tell a gap from a quiet history. A subagent keeps a ledger of its own.
+The scores read different spans. A rule applies once the session does the kind of work it covers,
+and followed reads the whole session. Not followed reads only the last turn. A rule is broken for
+what the last turn did, or for the last turn saying the work is done without it. So an old break
+blocks once. A later turn that neither repeats it nor claims the work is done does not block again.
+The three are independent, so a long record of keeping a rule never hides a break in the last turn.
+
+Some rules cover a procedure that spans turns, such as running `npm ci` once before any test. So
+every call opens with what the session did before the last turn, read from the transcript. Each
+earlier turn gets a line with its commands, the files it wrote, the rule files it read and its skill
+calls. The line also names each agent it spawned, with the first line of the result. It names a
+question to you, each task it ticked and a plan you approved. So `npm ci` run three turns ago still
+counts.
+
+```text
+# Earlier in this session
+
+- turn 40: ran npm ci; ran skill authoring-workflow
+- turn 52: spawned technical-nonfiction-reviewer, which returned {"route_to":"writer","issues":[…
+- turn 61: wrote specs/001-login/tasks.md; ticked T014 in specs/001-login/tasks.md
+```
+
+That block takes at most a quarter of the judge's budget. In a long session its oldest lines go
+first, and a marker line says which turns went.
+
+The hook also keeps a ledger for each session. It records each turn's facts and each judged rule's
+results. Each rule shows the judge its earlier results, and keeps its first `followed` and every
+`broken` one in view. The ledger marks a stretch of turns that left the rule's file out of scope.
+So the judge can tell a gap from a quiet history. A subagent keeps a ledger of its own.
 
 `manni tracevals check` reads a session's ledger and never writes it. Its `Session so far` section
 names each rule that was ever broken or needed review, and counts the rest.
@@ -289,7 +400,8 @@ the run. Most of them are silent.
 - No `conformance` section means tracevals never runs.
 - A judge's own session never judges itself. tracevals sets `MANNI_TRACEVALS_JUDGE` on every process
   it spawns, so a `claude-cli` judge cannot set off the hook again.
-- An empty turn, or one with no rule source in scope, ends the run.
+- An empty turn, or one with no rule source in scope, ends the run. Your typed prompts are a
+  source, so a turn rarely has none.
 - A turn where every rule's `when` fails is skipped, never passed.
 - A turn already judged, with the same rules, history and model, reuses its cached verdict.
 
@@ -301,7 +413,8 @@ all three.
 
 `manni tracevals prepare` fetches a local model that is not on disk and extracts the rules of every
 file that applies to every session. The plugin runs it in the background at session start, so it
-never holds the session up. The first turn then finds both ready.
+never holds the session up. The first turn then finds both ready. Prompts, plans and specs are not
+known at session start, so the turn that first has them extracts them.
 
 A local model loads once and stays loaded in a **model host**. That is one background process per
 machine and user. Every hook is its client, and requests queue in the order they arrive. Without the
