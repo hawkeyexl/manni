@@ -266,4 +266,4 @@ docs/src/content/docs/term/get-started/index.mdx:
         file: src/cli.ts
         lines: 86-94
         integrity: sha256-4e7412594a55c18b0c135a52a429229cb8081a5249235a35b33b968f991c7678
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e

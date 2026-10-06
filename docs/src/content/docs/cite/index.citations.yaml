@@ -23,7 +23,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/core/classify.ts
         lines: 128-139
         integrity: sha256-04d9e06a35ed6b02a63c035d059b9cd71b6abd1eaafb867d4f52b3748a6ec986
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: gained-neighbours-moved
       claim:
         integrity: sha256-3c334acf66c513f2b73cc29805693432ae81ed0a3a606ea17e2e04cf5c534136
@@ -31,7 +31,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/core/classify.ts
         lines: 147-163
         integrity: sha256-29073eebca3a72776183f8234723ce220649edf068646d29d3c7289dd12b68dd
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: moved-one-command
       claim:
         integrity: sha256-3c334acf66c513f2b73cc29805693432ae81ed0a3a606ea17e2e04cf5c534136
@@ -47,7 +47,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/core/classify.ts
         lines: 175-182
         integrity: sha256-584e6a4a7e6dfec5d9a1c350480448cd50de744a5155ac8c39fddc1adfbbf5a4
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: add-frontmatter-or-manifest
       claim:
         lines: 36
@@ -116,7 +116,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/core/check-page.ts
         lines: 191-195
         integrity: sha256-f06d4497b84aab6ded5bdfc22e8479d95b7516902a7de5c24d884fa6cd4f48d3
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: exit-one-on-error
       claim:
         integrity: sha256-d5fb505c9df0a4192666318d524ce9673afad6bc01f9b3f4f222740fc3e4481d
@@ -133,7 +133,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/core/classify.ts
         lines: 128-139
         integrity: sha256-04d9e06a35ed6b02a63c035d059b9cd71b6abd1eaafb867d4f52b3748a6ec986
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: checks-claim-bytes
       claim:
         lines: 123-124
@@ -151,7 +151,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/core/classify.ts
         lines: 155-163
         integrity: sha256-188c8876310f19cadfed669d3008192154797bccbfb7b7fecab93a08054b2b80
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: checks-claim-moved
       claim:
         lines: 124-125
@@ -169,7 +169,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/core/classify.ts
         lines: 175-182
         integrity: sha256-584e6a4a7e6dfec5d9a1c350480448cd50de744a5155ac8c39fddc1adfbbf5a4
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: marker-names-real-entry
       claim:
         lines: 126
@@ -178,7 +178,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/core/page.ts
         lines: 406-417
         integrity: sha256-71ec1f6ed602c908f3c72c22dce660fb03692bc2e26acd4cbaad0b94a6774952
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: entry-one-anchor
       claim:
         lines: 126-127
@@ -187,7 +187,7 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/core/page.ts
         lines: 471-483
         integrity: sha256-44e15517046895a8cacb23ce883f38f9b44106ce33befb919a46d63ef0305249
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: own-config-key
       claim:
         integrity: sha256-e96aa481717ef656198fcbc98f3e1348cee4a3ee66f87c8340d00bec782ff418
@@ -235,4 +235,4 @@ docs/src/content/docs/cite/index.mdx:
         file: src/cite/core/check-page.ts
         lines: 268-275
         integrity: sha256-bafb8e3a9a6a8b7546da1d9761a5363a7362978cc1d692fea02671f8e834051e
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e

@@ -49,7 +49,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         file: src/meta/commands/validate.ts
         lines: 452-457
         integrity: sha256-322c785e2c90e19dccc0203214bfcfda36622ae1d2bf7b2715ee0fb9e978d19a
-        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: output-derive-source-errors
       claim:
         lines: 708-745
@@ -125,7 +125,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         file: src/meta/core/load-files.ts
         lines: 394-430
         integrity: sha256-2c850bc72c67ae7942ad990cbb181ec2a9e766749960fa3777d9b494697292ab
-        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: output-empty-input-messages
       claim:
         lines: 601-604
@@ -134,7 +134,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         file: src/meta/core/load-files.ts
         lines: 344-351
         integrity: sha256-de94a3ac6c72c9b355f97324523ded63d67f5dc836f1e9550676c517a0d1fd18
-        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: output-zero-files-is-exit-2
       claim:
         integrity: sha256-4b3e18ac67f597f3165b47187d1e9e5a8008019fa49a0abedbe34e5b84e53ce5
@@ -142,7 +142,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         file: src/meta/core/load-files.ts
         lines: 399-430
         integrity: sha256-c7134bb61b7c846ac9ea078cb391ee795fb7f408ed7c07091baab8d8bccab2db
-        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: output-fingerprint-includes-the-schema-ref
       claim:
         integrity: sha256-a62694f5b0f545613fd629388361a6b6324f95d848a7918f07857b9390d3f236
@@ -283,7 +283,7 @@ docs/src/content/docs/meta/reference/output-and-exit-codes.mdx:
         file: src/meta/commands/validate.ts
         lines: 452-457
         integrity: sha256-322c785e2c90e19dccc0203214bfcfda36622ae1d2bf7b2715ee0fb9e978d19a
-        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: output-which-tool-emits-which
       claim:
         lines: 429-434

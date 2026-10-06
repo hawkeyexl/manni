@@ -48,7 +48,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/commands/check.ts
         lines: 351-353
         integrity: sha256-0a4f4dccaddbfdd95eb105f949b21ff2bfb9b42d54823f065cdbbcdbe64b854a
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: collection-exclude-applies
       claim:
         lines: 101
@@ -93,7 +93,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/commands/check.ts
         lines: 351-360
         integrity: sha256-5faef009131bf21231bee5de4de132e40d927f520d3646436f3d28769c2c1b12
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: write-baseline-wins
       claim:
         lines: 110
@@ -120,7 +120,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/core/check-page.ts
         lines: 403-409
         integrity: sha256-3849602b3122eb1b1b5b858d50850009800c2d3de6fd03fd5c74c397e3736a23
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: collection-refusals
       claim:
         lines: 99
@@ -180,7 +180,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/commands/check.ts
         lines: 368-379
         integrity: sha256-dafdb3bff0227b2b53e09abb9355f7f2c62460b4192bafa6958242580e3a7284
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: json-citation-sample
       claim:
         lines: 214-216
@@ -271,7 +271,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/commands/check.ts
         lines: 356-360
         integrity: sha256-4f728827732715424b3b5d2103ae826d9d5f634d4aadbd212eb5490278dd4154
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: sources-tracked-only
       claim:
         integrity: sha256-4a52c7808a47c01350abb9772811b12c93c0b6d8e57e011648f97fba189c5e31
@@ -279,7 +279,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/core/sources.ts
         lines: 75-87
         integrity: sha256-b960a34be4d9a85928499280cb124a5134df47c5bd8ea8fd21b5534b3b5f215b
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: sources-realpath-containment
       claim:
         integrity: sha256-4a52c7808a47c01350abb9772811b12c93c0b6d8e57e011648f97fba189c5e31
@@ -287,7 +287,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/core/sources.ts
         lines: 57-73
         integrity: sha256-33a25c672328c50f525981937d6b01979c5df8f87e38ed3266392395f7c06405
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: add-records-head
       claim:
         integrity: sha256-788d8e506fd90ea2c59afae576fe323958ab2f17806fd7dafa61541a458d5fc8
@@ -596,7 +596,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/core/sources.ts
         lines: 113-120
         integrity: sha256-655510c99cfc05d9f114f7a082489617a09f94d4c9bcdd3ed708e8d34a58603a
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: check-exit-2-unknown-key
       claim:
         lines: 339
@@ -614,7 +614,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/core/page.ts
         lines: 240-244
         integrity: sha256-b04799a1055a24a811289a4dde7ed426dc54a5c301a215eae397d6d0fe87bde3
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: check-exit-1-error-rules
       claim:
         lines: 338
@@ -722,7 +722,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/types.ts
         lines: 550-594
         integrity: sha256-142328dddac18b1932cb78535fdce6a9a32157c88c5b46b585aa5708fb3e165b
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: json-page-fields
       claim:
         integrity: sha256-3d12300291cb75284d4a2fd8615b4e0fd2cd4453a843632316e9b15b30dfd509
@@ -810,7 +810,7 @@ docs/src/content/docs/cite/reference/cli.mdx:
         file: src/cite/core/sources.ts
         lines: 113-120
         integrity: sha256-655510c99cfc05d9f114f7a082489617a09f94d4c9bcdd3ed708e8d34a58603a
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: update-only-ids
       claim:
         lines: 599-603
