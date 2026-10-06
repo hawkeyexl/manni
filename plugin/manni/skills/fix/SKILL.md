@@ -1,12 +1,12 @@
 ---
 name: fix
 description: Repair manni findings in docs. Use after manni check or a hook reports errors in metadata, citations, terms, structure, evals or the graph.
-allowed-tools: Bash(npx manni *), Bash(npx --no @hawkeyexl/manni *)
+allowed-tools: Bash(npx manni *), Bash(node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" *)
 ---
 
 # Repair manni findings
 
-Start from the report of `npx --no @hawkeyexl/manni check`. Each section names the check. Match it to a repair below.
+Start from the report of `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" check`. Each section names the check. Match it to a repair below.
 
 ## Guardrails
 
@@ -19,7 +19,7 @@ Start from the report of `npx --no @hawkeyexl/manni check`. Each section names t
 
 The finding names a field path, such as `/description`. Edit the page frontmatter so the field is present and valid.
 
-Some fields are managed. Stamp them from history with `npx --no @hawkeyexl/manni meta derive <path>`. Add `--check` to see which are stale without writing.
+Some fields are managed. Stamp them from history with `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" meta derive <path>`. Add `--check` to see which are stale without writing.
 Do not hand-edit a managed field. `derive` writes it.
 
 ## cite check

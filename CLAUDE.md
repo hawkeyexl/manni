@@ -150,7 +150,10 @@ Key layers:
 - `plugin/manni/`: the Claude Code plugin. SessionStart runs
   `manni tracevals capture` and `manni status`, and PostToolUse and Stop run
   `manni check`. Its skills are `setup`, `check`, `fix` and `evals`. The
-  marketplace is `.claude-plugin/marketplace.json`.
+  marketplace is `.claude-plugin/marketplace.json`. Hooks and skills go
+  through `hooks/manni.mjs`, which runs this checkout's own `dist/cli.js`
+  here, so this repo enables the plugin in `.claude/settings.json`. Run
+  `npm run build` after a change, or the hooks check with the old build.
 - `src/index.ts`: the programmatic API, re-exporting `src/meta/index.ts`.
 
 The metadata tool's tests stay flat under `test/`; each later tool adds

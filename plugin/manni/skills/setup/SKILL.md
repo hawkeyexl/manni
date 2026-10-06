@@ -1,7 +1,7 @@
 ---
 name: setup
 description: Set up manni in a repository. Use when there is no manni.config.yaml, when the user asks to add manni, or when manni check reports that nothing is set up.
-allowed-tools: Bash(npm *), Bash(npx manni *), Bash(npx --no @hawkeyexl/manni *)
+allowed-tools: Bash(npm *), Bash(npx manni *), Bash(node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" *)
 ---
 
 # Set up manni
@@ -35,7 +35,7 @@ collections:
 Run `manni docevals init` only when no config file exists. It refuses an existing one. With a config in place, write the `docevals:` section by hand.
 Citations and terms need no section. They are in play when the pages carry them.
 
-5. Run `npx --no @hawkeyexl/manni status` and show the user the table.
-6. Run `npx --no @hawkeyexl/manni check`. Report the result and use the `fix` skill for any error.
+5. Run `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" status` and show the user the table.
+6. Run `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" check`. Report the result and use the `fix` skill for any error.
 
 Do not add a section for a domain the user declined. A section that exists turns that domain's checks on.
