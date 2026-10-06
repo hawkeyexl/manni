@@ -66,9 +66,12 @@ contributor who opens the repository.
 }
 ```
 
-The hooks run `npx --no @hawkeyexl/manni`. The `--no` stops npx from downloading
-anything, so manni has to be installed already. Install it in the project, or
-globally.
+The hooks and skills never download manni, so it has to be installed already.
+Install it in the project, or globally. They run the first manni they find:
+
+1. In the manni repository itself, that checkout's own build, `dist/cli.js`.
+2. The copy the project installed, found by walking up through `node_modules`.
+3. A global install, through `npx --no @hawkeyexl/manni`.
 
 ```sh
 npm install --save-dev @hawkeyexl/manni

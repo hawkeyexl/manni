@@ -1,7 +1,7 @@
 ---
 name: evals
 description: Author evals for docs pages or for agent artifacts such as CLAUDE.md, skills and subagents. Use when asked to add, propose or promote evals.
-allowed-tools: Bash(npx manni *), Bash(npx --no @hawkeyexl/manni *)
+allowed-tools: Bash(npx manni *), Bash(node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" *)
 ---
 
 # Author evals
@@ -10,7 +10,7 @@ Evals declare what a page or an agent artifact must satisfy. Propose them, show 
 
 ## Pages
 
-1. Run `npx --no @hawkeyexl/manni docevals list` to see the evals each page resolves.
+1. Run `node "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs" docevals list` to see the evals each page resolves.
 2. Run `manni docevals fill <path>` to have the model propose frontmatter evals. It writes only proposals above the confidence threshold.
 3. Run `manni docevals generate <path>` to write check scripts for command evals that have an assertion but no command.
 4. Run `manni docevals promote` to find model-graded evals that a deterministic check can express. Add `--write` to convert them.
