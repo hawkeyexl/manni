@@ -24,7 +24,7 @@ docs/src/content/docs/family/claude-code.mdx:
       lines: 75-127
       integrity: sha256-3d5d2ce1f62dc2525e57815afc20f1722b4116d1080c09a9c81f8eba12a512b3
     - generated-by: Claude Sonnet 5.5
-      lines: 134-196
+      lines: 135-197
       integrity: sha256-13dd7cc98622f105270643167891de087593e375951353248d76e19925f55561
   owner:
     - "@hawkeyexl"
