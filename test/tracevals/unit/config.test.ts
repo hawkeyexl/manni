@@ -115,6 +115,7 @@ describe("parseConfig", () => {
         hook: { provider: null, model: null, runs: 1 },
         include: [],
         exclude: [],
+        plans: [],
       });
     });
 
@@ -125,12 +126,14 @@ describe("parseConfig", () => {
             hook: { provider: "anthropic", model: "claude-x", runs: 3 },
             include: ["docs/content-strategy/**"],
             exclude: [".cursor/rules/old.mdc"],
+            plans: ["docs/plans/*.md"],
           },
         }).conformance,
       ).toEqual({
         hook: { provider: "anthropic", model: "claude-x", runs: 3 },
         include: ["docs/content-strategy/**"],
         exclude: [".cursor/rules/old.mdc"],
+        plans: ["docs/plans/*.md"],
       });
     });
 
@@ -156,6 +159,8 @@ describe("parseConfig", () => {
       expect(() => parseConfig({ conformance: { hook: { runs: 1.5 } } })).toThrow(TracevalsError);
       expect(() => parseConfig({ conformance: { include: "docs/**" } })).toThrow(TracevalsError);
       expect(() => parseConfig({ conformance: { exclude: [""] } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ conformance: { plans: "docs/plans/*.md" } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ conformance: { plans: [""] } })).toThrow(TracevalsError);
       expect(() => parseConfig({ conformance: { hook: { model: "" } } })).toThrow(TracevalsError);
     });
 

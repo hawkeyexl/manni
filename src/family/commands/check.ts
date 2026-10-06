@@ -471,7 +471,7 @@ export function turnReply(
       );
     } else {
       reasons.push(
-        `This turn broke ${plural(rules, "rule")} from the files that governed it. ` +
+        `This turn broke ${plural(rules, "rule")} from the files and requests that governed it. ` +
           `Fix the work, or say why the rule does not apply here, then finish.\n\n${report}`,
       );
     }

@@ -233,7 +233,7 @@ describe("manni check, judging the turn", () => {
   const trace = (name: string): string => join(conformance, "traces", `${name}.jsonl`);
   // The count follows the fixture's rules; the sentence around it is fixed.
   const BROKE =
-    /This turn broke \d+ rules? from the files that governed it\. Fix the work, or say why the rule does not apply here, then finish\.\n\n/;
+    /This turn broke \d+ rules? from the files and requests that governed it\. Fix the work, or say why the rule does not apply here, then finish\.\n\n/;
   const BROKE_FIRST = new RegExp(`^${BROKE.source}`);
 
   /** tracevals' conformance project, in a temp directory, with a home of its own. */

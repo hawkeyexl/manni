@@ -344,7 +344,8 @@ describe("sources a turn brings into scope", () => {
       { read: ".kiro/specs/feature/requirements.md" },
     ]);
     expect(paths(read.sources)).toContain(".kiro/steering/manual.md");
-    expect(paths(read.sources)).not.toContain(".kiro/specs/feature/requirements.md");
+    // A spec is no steering file. Touched, it says what to build (proposal 0080).
+    expect(byPath(read.sources).get(".kiro/specs/feature/requirements.md")?.format).toBe("kiro-spec");
   });
 
   it("takes OpenSpec's project.md once read, and never its specs", async () => {

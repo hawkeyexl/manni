@@ -10,6 +10,11 @@
  *
  * To touch a file is to Read, Write or Edit it, anywhere in the session up to
  * the turn's end, which is Claude Code's own trigger for path-scoped rules.
+ *
+ * Six more formats say what the session was asked (proposal 0080): the typed
+ * prompts, the approved plan, a touched Spec Kit feature, Kiro spec or live
+ * OpenSpec change, and a touched file `conformance.plans` names. None is known
+ * at session start, so only a turn resolves them, and none declares evals.
  */
 import { createHash } from "node:crypto";
 import { homedir } from "node:os";
@@ -23,6 +28,7 @@ import { extractEvals } from "../evals/extract.js";
 import { windowOf } from "../graders/util.js";
 import { configDir } from "../trace/discover.js";
 import type { Trace } from "../trace/types.js";
+import { isTypedPrompt } from "./turn.js";
 
 export type RuleFormat =
   | "claude-md"
@@ -37,7 +43,13 @@ export type RuleFormat =
   | "skill"
   | "slash-command"
   | "agent"
-  | "designated";
+  | "designated"
+  | "prompt"
+  | "plan"
+  | "speckit-spec"
+  | "kiro-spec"
+  | "openspec-change"
+  | "plans";
 
 /** An `ai` eval a source declares; its assertion is the rule (proposal 0079). */
 export interface DeclaredRule {
@@ -47,7 +59,7 @@ export interface DeclaredRule {
 }
 
 export interface RuleSource {
-  /** Absolute path on disk. */
+  /** Absolute path on disk, or `""` for the typed prompts and a plan given only as input. */
   path: string;
   /** Relative to the project root with forward slashes, or `~/…` under home. */
   displayPath: string;
@@ -74,6 +86,8 @@ export interface SourceOptions {
   include?: string[];
   /** `conformance.exclude`: globs never treated as sources, in any row. */
   exclude?: string[];
+  /** `conformance.plans`: globs, relative to the project root, in scope once touched. */
+  plans?: string[];
   /** Set under SubagentStop: the subagent type whose definition governs the run. */
   agentType?: string;
 }
@@ -186,6 +200,25 @@ class Collector {
     return source;
   }
 
+  /**
+   * Adds a source that says what the session was asked. These never declare
+   * evals. With no file, its display path is its format, and no glob removes it.
+   */
+  addRequest(file: string | null, content: string, format: RuleFormat, trigger: string): void {
+    if (file !== null) {
+      if (this.has(file) || this.excluded(file)) return;
+      this.seen.add(key(file));
+    }
+    this.sources.push({
+      path: file ?? "",
+      displayPath: file === null ? format : this.display(file),
+      format,
+      trigger,
+      content,
+      sha256: createHash("sha256").update(content).digest("hex"),
+    });
+  }
+
   private declared(path: string, content: string): DeclaredRule[] | undefined {
     const fm = this.front(path, content);
     if (fm === null) return undefined;
@@ -275,7 +308,126 @@ export async function resolveTurnSources(
   await addWindowed(c, trace, turn, touches, opts);
 
   await addDesignated(c, opts);
+
+  addPrompts(c, trace, turn);
+  await addPlan(c, trace, turn, opts);
+  await addSpecs(c, touches, opts.plans ?? []);
   return { sources: c.sources, warnings: c.warnings };
+}
+
+// ── What the session was asked ───────────────────────────────────
+
+/**
+ * Every prompt typed up to the turn's end, as one numbered sequence. A
+ * subagent's own run has only sidechain prompts, and its task is its request.
+ */
+function addPrompts(c: Collector, trace: Trace, turn: TurnBounds): void {
+  const typed = trace.events.filter((e) => e.index <= turn.to && isTypedPrompt(e));
+  const main = typed.filter((e) => e.sidechain !== true);
+  const prompts = main.length > 0 ? main : typed;
+  if (prompts.length === 0) return;
+  const content = prompts
+    .map((p, i) => `${String(i + 1)}. ${(p.text ?? "").trim()}`)
+    .join("\n\n");
+  c.addRequest(null, content, "prompt", `typed prompts 1-${String(prompts.length)}`);
+}
+
+/**
+ * The plan of the last approved `ExitPlanMode` at or before the turn's end.
+ * A call is approved when its result is not an error. The plan is the call's
+ * `plan` input, or else the file the session last wrote under the user's
+ * `plans/` directory before the call.
+ */
+async function addPlan(c: Collector, trace: Trace, turn: TurnBounds, opts: SourceOptions): Promise<void> {
+  const approved = trace.toolCalls
+    .filter((call) => call.name === "ExitPlanMode" && call.index <= turn.to)
+    .filter((call) => isApproved(trace, call.index, turn.to))
+    .at(-1);
+  if (approved === undefined) return;
+  const trigger = `approved at turn ${String(approved.index)}`;
+  const plan = approved.input.plan;
+  if (typeof plan === "string" && plan.trim() !== "") {
+    c.addRequest(null, plan, "plan", trigger);
+    return;
+  }
+  const plansDir = join(configDir(opts.env), "plans");
+  const file = trace.fileAccesses
+    .filter((a) => a.op !== "read" && a.index < approved.index)
+    .map((a) => resolve(c.cwd, a.path))
+    .filter((abs) => relPosix(plansDir, abs) !== null)
+    .at(-1);
+  if (file === undefined) return;
+  const content = await safeRead(file);
+  if (content !== null) c.addRequest(file, content, "plan", trigger);
+}
+
+/** Whether the tool call at `index` has a result by `to` that is not an error. */
+function isApproved(trace: Trace, index: number, to: number): boolean {
+  const id = trace.events.find((e) => e.index === index)?.raw.id;
+  if (typeof id !== "string") return false;
+  for (const event of trace.events) {
+    if (event.kind !== "tool_result" || event.index <= index || event.index > to) continue;
+    const message = event.raw.message;
+    const blocks: unknown = isRecord(message) ? message.content : undefined;
+    if (!Array.isArray(blocks)) continue;
+    for (const block of blocks as unknown[]) {
+      if (isRecord(block) && block.type === "tool_result" && block.tool_use_id === id) {
+        return block.is_error !== true;
+      }
+    }
+  }
+  return false;
+}
+
+/** The files each spec format reads from a touched directory. */
+const SPEC_FILES: Record<"speckit-spec" | "kiro-spec", string[]> = {
+  "speckit-spec": ["spec.md", "plan.md", "tasks.md"],
+  "kiro-spec": ["requirements.md", "design.md", "tasks.md"],
+};
+
+/** The spec directory a project-relative path lies under, and its format. */
+function specDirOf(rel: string): { dir: string; format: "speckit-spec" | "kiro-spec" | "openspec-change" } | null {
+  const parts = rel.split("/");
+  const [first, second, third] = parts;
+  if (first === "specs" && second !== undefined && parts.length > 2) {
+    return { dir: `specs/${second}`, format: "speckit-spec" };
+  }
+  if (first === ".kiro" && second === "specs" && third !== undefined && parts.length > 3) {
+    return { dir: `.kiro/specs/${third}`, format: "kiro-spec" };
+  }
+  // An archived change is done, so it never counts.
+  if (first === "openspec" && second === "changes" && third !== undefined && third !== "archive" && parts.length > 3) {
+    return { dir: `openspec/changes/${third}`, format: "openspec-change" };
+  }
+  return null;
+}
+
+/** A touched spec brings in its directory's files; a touched `plans` file brings in itself. */
+async function addSpecs(c: Collector, touches: Touch[], plans: string[]): Promise<void> {
+  const isPlan = plans.length > 0 ? picomatch(plans, { dot: true }) : null;
+  const done = new Set<string>();
+  for (const touch of touches) {
+    const { rel } = touch;
+    if (rel === null) continue;
+    const trigger = `touched ${rel}`;
+    const spec = specDirOf(rel);
+    if (spec !== null && !done.has(spec.dir)) {
+      done.add(spec.dir);
+      const dir = join(c.root, ...spec.dir.split("/"));
+      const files =
+        spec.format === "openspec-change"
+          ? await listInTree(dir, (p) => p.endsWith(".md"))
+          : SPEC_FILES[spec.format].map((name) => join(dir, name));
+      for (const file of files) {
+        const content = await safeRead(file);
+        if (content !== null) c.addRequest(file, content, spec.format, trigger);
+      }
+    }
+    if (isPlan?.(rel) === true) {
+      const content = await safeRead(touch.abs);
+      if (content !== null) c.addRequest(touch.abs, content, "plans", trigger);
+    }
+  }
 }
 
 /**

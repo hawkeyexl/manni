@@ -18,6 +18,21 @@ import { Ajv2020 } from "ajv/dist/2020.js";
  */
 export const RULES_PROMPT_VERSION = 2;
 
+/** The `when` field and its conditions, which the requirements prompt shares. */
+export const WHEN_GUIDE: readonly string[] = [
+  "- `when` (optional): a trigger saying which turns the rule concerns. Every",
+  "  listed condition must hold. The only conditions are:",
+  "  - `file-access`: a glob. The turn read, wrote or edited a matching file.",
+  "  - `tool-used`: a tool name. The turn called that tool.",
+  "  - `prompt-matches`: a regular expression. A prompt the user typed matches.",
+  "  - `turn-count-above`: a whole number. The session has more turns than that.",
+  "  - `command-matches`: a regular expression. A Bash command in the turn matches.",
+  "",
+  "Omit `when` unless the rule clearly concerns only certain files, tools or",
+  "commands. A trigger that is too narrow hides violations, and a rule with no",
+  "`when` is simply checked on every turn. When in doubt, leave it out.",
+];
+
 export const RULES_SYSTEM_PROMPT = [
   "You extract rules from a file that governs an AI agent working in a repository.",
   "",
@@ -46,17 +61,7 @@ export const RULES_SYSTEM_PROMPT = [
   "- `id`: a short kebab-case identifier, unique within this file.",
   "- `text`: one imperative sentence, faithful to the file. Do not strengthen,",
   "  soften or merge directives, and do not invent ones the file lacks.",
-  "- `when` (optional): a trigger saying which turns the rule concerns. Every",
-  "  listed condition must hold. The only conditions are:",
-  "  - `file-access`: a glob. The turn read, wrote or edited a matching file.",
-  "  - `tool-used`: a tool name. The turn called that tool.",
-  "  - `prompt-matches`: a regular expression. A prompt the user typed matches.",
-  "  - `turn-count-above`: a whole number. The session has more turns than that.",
-  "  - `command-matches`: a regular expression. A Bash command in the turn matches.",
-  "",
-  "Omit `when` unless the rule clearly concerns only certain files, tools or",
-  "commands. A trigger that is too narrow hides violations, and a rule with no",
-  "`when` is simply checked on every turn. When in doubt, leave it out.",
+  ...WHEN_GUIDE,
   "",
   "Return none at all when nothing qualifies.",
 ].join("\n");

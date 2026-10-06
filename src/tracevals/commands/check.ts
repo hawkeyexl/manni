@@ -240,6 +240,7 @@ async function judgeTurnOf(p: Params, ledger: Ledger, seen: Seen): Promise<Outco
     ...(p.env !== undefined ? { env: p.env } : {}),
     include: conformance.include,
     exclude: conformance.exclude,
+    plans: conformance.plans,
     ...(p.agentType !== undefined ? { agentType: p.agentType } : {}),
   });
   report.warnings.push(...resolved.warnings);

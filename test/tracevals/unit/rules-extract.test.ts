@@ -5,7 +5,9 @@ import { MockProvider, sha256 } from "@hawkeyexl/inference";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { RulesCache } from "../../../src/tracevals/rules/cache.js";
 import { extractRules, type ExtractSource } from "../../../src/tracevals/rules/extract.js";
-import { mockRulesResponse } from "../../../src/tracevals/rules/mock.js";
+import { mockRequestsResponse, mockRulesResponse } from "../../../src/tracevals/rules/mock.js";
+import { RULES_SYSTEM_PROMPT } from "../../../src/tracevals/rules/prompt.js";
+import { REQUIREMENTS_SYSTEM_PROMPT } from "../../../src/tracevals/rules/requests-prompt.js";
 
 const content = [
   "# Rules",
@@ -142,6 +144,88 @@ describe("mockRulesResponse", () => {
         text: "Run npm ci first when working in a worktree.",
       },
       { id: "never-use-red-as-an", text: "Never use red as an accent colour." },
+    ]);
+  });
+});
+
+describe("what the session was asked (proposal 0080)", () => {
+  const tasks = "- [x] T014 Write the reset-password test.\n";
+  const spec: ExtractSource = {
+    path: "specs/001-login/tasks.md",
+    format: "speckit-spec",
+    content: tasks,
+    sha256: sha256(tasks),
+  };
+
+  it("reads a request format with the requirements prompt, and a rule file with the rules prompt", async () => {
+    const asked = new MockProvider([{ json: { rules: [] } }]);
+    await extractRules(spec, { provider: asked });
+    expect(asked.requests[0]?.system).toBe(REQUIREMENTS_SYSTEM_PROMPT);
+    expect(asked.requests[0]?.user).toContain("format: speckit-spec");
+
+    const governed = new MockProvider([{ json: { rules: [] } }]);
+    await extractRules(source, { provider: governed });
+    expect(governed.requests[0]?.system).toBe(RULES_SYSTEM_PROMPT);
+  });
+
+  it("keeps a spec's own ids as written, and still drops one that is no id", async () => {
+    const provider = new MockProvider([
+      {
+        json: {
+          rules: [
+            { id: "T014", text: "Write the reset-password test." },
+            { id: "FR-001", text: "Let a user reset their password." },
+            { id: "1.2", text: "Send the reset link by email." },
+            { id: "keep-labels", text: "Keep the login form's labels." },
+            { id: "has space", text: "Bad id." },
+            { id: "-lead", text: "Bad id." },
+          ],
+        },
+      },
+    ]);
+    const out = await extractRules(spec, { provider });
+    expect(out.rules.map((r) => r.id)).toEqual(["T014", "FR-001", "1.2", "keep-labels"]);
+    expect(out.dropped.map((d) => d.id)).toEqual(["has space", "-lead"]);
+  });
+
+  it("keeps the two prompts' readings of one content apart in the cache", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "manni-tracevals-requests-extract-"));
+    try {
+      const cache = new RulesCache(dir, true);
+      const provider = new MockProvider([
+        { json: { rules: [{ id: "T014", text: "Write the reset-password test." }] } },
+        { json: { rules: [] } },
+      ]);
+      const asked = await extractRules(spec, { provider, cache });
+      const governed = await extractRules({ ...spec, format: "claude-md" }, { provider, cache });
+      expect(asked.rules).toHaveLength(1);
+      expect(governed.cached).toBe(false);
+      expect(governed.rules).toEqual([]);
+      expect(provider.requests).toHaveLength(2);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("mockRequestsResponse", () => {
+  it("keeps a spec id, reads numbered prompts and ticked tasks, and skips the rest", () => {
+    const { json } = mockRequestsResponse(
+      [
+        "1. Add a reset-password link to the login form.",
+        "",
+        "2. What does the login page do today?",
+        "- [x] T014 Write the reset-password test.",
+        "- **FR-001**: Let a user reset their password.",
+        "- [ ] 1.2 Send the reset link by email.",
+        "The login page is old.",
+      ].join("\n"),
+    );
+    expect(json.rules).toEqual([
+      { id: "add-a-reset-password-link", text: "Add a reset-password link to the login form." },
+      { id: "T014", text: "Write the reset-password test." },
+      { id: "FR-001", text: "Let a user reset their password." },
+      { id: "1.2", text: "Send the reset link by email." },
     ]);
   });
 });
