@@ -4,7 +4,7 @@
  * rest of the specs being absent, which would report their stamps stale.
  */
 import { describe, expect, it } from "vitest";
-import { parseSpecBatch } from "../src/meta/core/derive/git.js";
+import { parseSpecBatch, yamlOnce } from "../src/meta/core/derive/git.js";
 
 const SHA = "a".repeat(40);
 const batch = (...parts: string[]): Buffer => Buffer.from(parts.join(""), "utf8");
@@ -31,5 +31,21 @@ describe("parseSpecBatch", () => {
     expect(() => parseSpecBatch(out, ["HEAD:a.md", "HEAD:b.md"])).toThrow(
       "the answer ends before HEAD:b.md",
     );
+  });
+});
+
+describe("yamlOnce", () => {
+  it("parses the same manifest text once, and different text again", () => {
+    const parse = yamlOnce();
+    const first = parse("a.md:\n  created: 2020-01-02\n");
+    expect(first).toEqual({ "a.md": { created: "2020-01-02" } });
+    expect(parse("a.md:\n  created: 2020-01-02\n")).toBe(first);
+    expect(parse("b.md: {}\n")).toEqual({ "b.md": {} });
+  });
+
+  it("answers undefined for text that does not parse, every time", () => {
+    const parse = yamlOnce();
+    expect(parse("a: [unclosed\n")).toBeUndefined();
+    expect(parse("a: [unclosed\n")).toBeUndefined();
   });
 });

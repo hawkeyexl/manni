@@ -14,13 +14,18 @@ export function loadGraph(ttlPath: string): Store {
       `Graph not found: ${ttlPath} — run \`manni graph build\` first.`,
     );
   }
+  return parseGraph(readFileSync(ttlPath, "utf8"), ttlPath);
+}
+
+/** Turtle already in memory into a store; `label` names it in an error. */
+export function parseGraph(turtle: string, label: string): Store {
   const parser = new Parser({ format: "text/turtle" });
   let quads;
   try {
-    quads = parser.parse(readFileSync(ttlPath, "utf8"));
+    quads = parser.parse(turtle);
   } catch (e) {
     throw new GraphError(
-      `Failed to parse ${ttlPath}: ${errorMessage(e)}`,
+      `Failed to parse ${label}: ${errorMessage(e)}`,
     );
   }
   return new Store(quads);

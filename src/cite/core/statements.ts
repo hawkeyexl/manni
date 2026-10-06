@@ -787,23 +787,45 @@ export function anchoredLines(
   return line === undefined ? undefined : fenceSpanAt(text, line, format);
 }
 
+/**
+ * The offset of every LF in a text, so a line number is a lookup rather than
+ * a scan from the start. A page asks `lineAt` and `offsetOfLine` once per
+ * citation, and a scan per question made a page of hundreds of citations
+ * quadratic. Only the last few texts are kept, and the index is a pure
+ * function of the text, so nothing carries from one run to the next.
+ */
+const LINE_INDEX_SLOTS = 4;
+const lineIndexes: { text: string; newlines: number[] }[] = [];
+
+function newlinesOf(content: string): readonly number[] {
+  const hit = lineIndexes.findIndex((entry) => entry.text === content);
+  const found = hit === -1 ? undefined : lineIndexes[hit];
+  if (found !== undefined) return found.newlines;
+  const newlines: number[] = [];
+  for (let at = content.indexOf("\n"); at !== -1; at = content.indexOf("\n", at + 1)) newlines.push(at);
+  lineIndexes.unshift({ text: content, newlines });
+  lineIndexes.length = Math.min(lineIndexes.length, LINE_INDEX_SLOTS);
+  return newlines;
+}
+
 /** 1-based file line of a file offset, counting CRLF once. */
 export function lineAt(content: string, offset: number): number {
   const stop = Math.min(offset, content.length);
-  let line = 1;
-  for (let i = 0; i < stop; i++) {
-    if (content.charCodeAt(i) === 10) line++;
+  const newlines = newlinesOf(content);
+  // The number of LFs before `stop`: a binary search for the first one at or past it.
+  let low = 0;
+  let high = newlines.length;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if ((newlines[mid] ?? Infinity) < stop) low = mid + 1;
+    else high = mid;
   }
-  return line;
+  return low + 1;
 }
 
 /** File offset of the first character of a 1-based line (the length when past the end). */
 export function offsetOfLine(content: string, line: number): number {
-  let pos = 0;
-  for (let n = 1; n < line; n++) {
-    const nl = content.indexOf("\n", pos);
-    if (nl === -1) return content.length;
-    pos = nl + 1;
-  }
-  return pos;
+  if (line <= 1) return 0;
+  const before = newlinesOf(content)[line - 2];
+  return before === undefined ? content.length : before + 1;
 }

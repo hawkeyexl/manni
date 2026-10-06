@@ -27,7 +27,9 @@ One graph, built from documents, with a deterministic IRI for every node.
 
 - `src/graph/core/analyze.ts` reads one document into a `DocModel`: frontmatter,
   headings with slugs and nesting, links with their resolution, images, code
-  blocks.
+  blocks. Its corpus-free half, `parseBody`, is cached across runs by
+  `src/graph/core/analyze-cache.ts`. Bump `ENTRY_VERSION` there whenever
+  `parseBody` changes what it returns.
 - `src/graph/core/derive.ts` is the vocabulary mapping: the rules that turn
   `DocModel[]` into `Quad[]`. This is where a new predicate is decided, and the
   file to read before adding one.

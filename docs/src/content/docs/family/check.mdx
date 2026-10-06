@@ -1,0 +1,247 @@
+---
+title: Gate every check a repo has set up
+description: "Replace one workflow step per domain with manni check, read what is in play with manni status, and know what the skipped lines and exit codes mean."
+sidebar:
+  order: 1
+id: "family-check"
+type: "how-to"
+keywords: ["manni check", "manni status", "CI gate", "in play", "skipped", "exit codes"]
+language: en
+audiences: ["ci-engineers"]
+intent: "Run every check a repository has set up as one CI step, and read what it ran and what it skipped."
+lifecycle: published
+applies-to: ["domain:family"]
+prerequisites: ["meta-reference-configuration"]
+next-steps: ["family-claude-code", "family-reference-cli"]
+sample-questions: ["How do I run every manni check in one CI step?", "What does a skipped line in the manni check report mean?", "Why did manni check skip meta in my repository?"]
+graph: { label: "Gate every check a repo has set up", type: task }
+last-updated: 2026-10-05
+tags:
+  - ci-cd
+  - cli
+  - exit-codes
+  - github-actions
+action: develop
+related-pages:
+  - family-reference-cli
+  - meta-reference-output-and-exit-codes
+  - cite-ci
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+A repository that uses several manni tools usually gates them one workflow step
+at a time. There is a step for `meta validate`, another for `cite check`, and
+one for each domain after that. Set up a new domain and the workflow does not
+learn about it. Nothing fails. The check is missing.
+
+`manni check` runs the checks the repository has set up and nothing else. It
+reads the same `manni.config.yaml` every tool reads, so setting up a domain is
+what puts it in the gate. `manni status` says which domains that is.
+
+## Read what is in play
+
+Run `manni status` from anywhere in the repository. It reads the config and the
+pages, runs no check, and always exits `0`.
+
+```console
+$ manni status
+manni 4.3.0   config manni.config.yaml   collection site (2 files)
+
+meta       in play       meta: section
+cite       not set up    no page carries citations
+lint       not set up    no lint: section
+docevals   not set up    no page resolves any evals
+term       not set up    no terms in any collection
+graph      not set up    no graph: section
+a11y       not checked   run manni a11y check against a running site
+tracevals  not checked   run manni tracevals run over sessions
+# exit 0
+```
+
+Each row has one of three states.
+
+- **In play.** The domain is set up, and `manni check` runs it.
+- **Not set up.** Nothing in the repository asks for the domain. The reason says what would.
+- **Not checked.** `manni check` never runs this domain, whatever the repository holds.
+
+## What puts a domain in play
+
+There are no config keys for this. A domain is in play when its own section of
+`manni.config.yaml` exists, or when the pages carry its declarations. Nothing
+manni would apply by default counts as set up.
+
+| Domain | In play when | Runs |
+|---|---|---|
+| `meta` | `meta:` exists, or a page names its own `$schema`. A file covered only by the built-in default schemas is skipped. | `meta validate` |
+| `cite` | A page carries citations, as markers or in a `citations` manifest. | `cite check` |
+| `lint` | `lint:` exists. | `lint check` |
+| `docevals` | `docevals:` exists, or a page declares evals. A run that resolves no evals counts as not in play. | `docevals run`, deterministic evals only |
+| `term` | The collections hold at least one term. | `term check` |
+| `graph` | `graph:` exists. | `graph build` in memory, then `graph check` |
+
+The built-in default schemas are the reason `meta` has a rule of its own. A
+repository that only uses `docevals` would otherwise fail every page that has no
+`type`. The gate would block on a check nobody chose.
+
+`manni check` also reads only the files in a declared collection. A `README.md`
+outside every collection passes without a word.
+
+## Run the gate
+
+```console
+$ manni check
+meta validate
+✗ docs/limits.md
+    (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]
+
+2 files checked, 1 passed, 1 failed, 1 error
+
+skipped  cite check     no page carries citations
+skipped  lint check     no lint: section
+skipped  docevals run   no page resolves any evals
+skipped  term check     no terms in any collection
+skipped  graph check    no graph: section
+
+6 checks over 2 files: 1 failed, 5 skipped
+# exit 1
+```
+
+Each block is the domain's own report, under the name of the check that made
+it. Only error-level findings fail the run. A warning or a notice never does,
+which is the rule each domain applies to its own exit code.
+
+### Read the skipped lines
+
+The skipped lines answer "what did you not check?". Each names a check and the
+reason it did not run. Here `meta` ran, and five checks were skipped because the
+repository has not set those domains up.
+
+A skipped line is not a failure. If a skipped line surprises you, `manni status`
+shows the same reason and what would put the domain in play.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Every check that ran passed. Skipped checks do not change this. |
+| `1` | At least one check that ran found an error-level problem. |
+| `2` | manni could not run, or a check could not run. This is not a bad page. |
+
+The split lets a pipeline tell a bad page from a broken setup. When a check
+cannot run, the others still do. Its line reads `error`, the cause goes to
+stderr, and the exit code is `2` even if nothing else failed.
+
+```console
+$ manni check docs/index.md
+manni lint check could not run: Unknown key "bogus" under lint: in manni.config.yaml. Supported keys: allowEmpty, overrides, structure, template, templates, types.
+meta validate
+1 file checked, 1 passed, 0 failed, 0 errors
+
+skipped  cite check     no page carries citations
+error    lint check     Unknown key "bogus" under lint: in manni.config.yaml. Supported keys: allowEmpty, overrides, structure, template, templates, types.
+skipped  docevals run   no page resolves any evals
+
+4 checks over 1 file: 0 failed, 2 skipped, 1 could not run
+# exit 2
+```
+
+A repository with no `manni.config.yaml`, or one where nothing is set up, also
+exits `2`. The message says to run `manni status`.
+
+## Run it in CI
+
+Replace the per-domain steps with one. `-f github` prints each domain's own
+`github` output, so findings appear as annotations on the line that caused them.
+
+```yaml title=".github/workflows/docs.yml"
+jobs:
+  manni:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # cite check reads the commit each pin was minted at
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Run every manni check
+        run: npx -y @hawkeyexl/manni check -f github
+```
+
+The checkout needs the full history. `manni cite check` compares each pin with
+the file as it was at the commit that minted it, and a shallow clone cannot
+supply that. The [cite CI page](/manni/cite/ci/) has the details.
+
+For a script, `-f json` prints one object. Each `report` is that domain's own
+`-f json` output, unchanged.
+
+```console
+$ manni check docs/limits.md -f json
+{
+  "status": "fail",
+  "files": ["docs/limits.md"],
+  "checks": [
+    { "command": "meta validate", "status": "fail", "report": { … } },
+    { "command": "cite check", "status": "skipped", "message": "no page carries citations" },
+    …
+  ]
+}
+```
+
+A check's `status` is `pass`, `fail`, `error` or `skipped`. The last two carry a
+`message` in place of a `report`. The top-level `status` is `pass` or `fail`.
+
+## Narrow the run to some files
+
+Name files, directories or globs and `manni check` runs the per-file checks on
+the collection members among them. A file outside every collection is skipped
+with one notice on stderr.
+
+```console
+$ manni check docs/limits.md README.md
+manni: Skipped 1 file outside every collection: README.md
+meta validate
+✗ docs/limits.md
+    (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]
+
+1 file checked, 0 passed, 1 failed, 1 error
+
+skipped  cite check     no page carries citations
+skipped  lint check     no lint: section
+skipped  docevals run   no page resolves any evals
+
+4 checks over 1 file: 1 failed, 3 skipped
+# exit 1
+```
+
+Two checks cover the whole set rather than single files. `term check` and
+`graph check` run on a bare `manni check` and not when you name files, because
+one page can move the glossary or the graph. `cite check` follows the same split.
+It checks the named pages, or every page with citations on a bare run.
+
+## What stays its own step
+
+`manni check` never runs `a11y` or `tracevals`. `a11y` needs a built site and a
+browser. `tracevals` needs recorded sessions and, for judged evals, a model.
+`manni status` lists both as not checked. Keep each as its own workflow step.
+
+<CardGrid>
+  <LinkCard
+    title="CLI reference"
+    href="/manni/family/reference/cli/"
+    description="Every argument, option, output shape and message of manni check and manni status, with the examples from minimal to maximal."
+  />
+  <LinkCard
+    title="Keep an agent's docs green"
+    href="/manni/family/claude-code/"
+    description="The Claude Code plugin that runs the same check after each edit an agent makes and before it stops."
+  />
+  <LinkCard
+    title="Output formats and exit codes"
+    href="/manni/meta/reference/output-and-exit-codes/"
+    description="The family exit-code contract and the three severity levels every domain maps onto."
+  />
+</CardGrid>

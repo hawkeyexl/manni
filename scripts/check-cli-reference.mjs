@@ -12,6 +12,11 @@
  *   key  → docs/src/content/docs/key/reference/cli.mdx
  *   term → docs/src/content/docs/term/reference/cli.mdx
  *   test → docs/src/content/docs/test/reference/cli.mdx
+ *   family → docs/src/content/docs/family/reference/cli.mdx
+ *
+ * `family` is not a domain. It stands for the two verbs the umbrella carries
+ * itself, `check` and `status`, so its page is compared against those two
+ * top-level commands rather than against a mounted subtree.
  *
  * Descriptions stay hand-authored; this only guards the machine-checkable
  * surface so a page cannot silently drift from the code. The umbrella's own
@@ -21,7 +26,7 @@
  * Usage:
  *   node scripts/check-cli-reference.mjs [domain...]
  * With no arguments every domain in the map is checked; with arguments each
- * is a domain name (`meta`, `a11y`, `cite`, `key`, `term`, `test`).
+ * is a domain name (`meta`, `a11y`, `cite`, `key`, `term`, `test`) or `family`.
  * Requires `npm run build` first (imports dist/cli.js).
  * Exit 0 = every page in sync, 1 = drift found on any page, 2 = setup error
  * (unknown domain, domain not mounted on the built program, page missing).
@@ -44,7 +49,11 @@ const PAGES = new Map([
   ["term", "docs/src/content/docs/term/reference/cli.mdx"],
   ["test", "docs/src/content/docs/test/reference/cli.mdx"],
   ["tracevals", "docs/src/content/docs/tracevals/reference/cli.mdx"],
+  ["family", "docs/src/content/docs/family/reference/cli.mdx"],
 ]);
+
+/** The umbrella's own verbs, documented on the `family` page. */
+const FAMILY_VERBS = ["check", "status"];
 
 const requested = process.argv.slice(2);
 const domains = requested.length > 0 ? requested : [...PAGES.keys()];
@@ -68,7 +77,7 @@ const stripDashes = (long) => long.replace(/^--/, "");
 // ---------------------------------------------------------------------------
 // 1. Canonical surface from the commander program.
 // ---------------------------------------------------------------------------
-const program = buildProgram();
+const program = await buildProgram();
 
 function optionLongs(cmd) {
   return cmd.options
@@ -130,7 +139,10 @@ for (const domain of domains) {
     );
     continue;
   }
-  const mounted = program.commands.find((c) => c.name() === domain);
+  const mounted =
+    domain === "family"
+      ? program
+      : program.commands.find((c) => c.name() === domain);
   if (!mounted) {
     setupProblems.push(
       `domain \`${domain}\` is not mounted on the built program (expected src/cli.ts to addCommand it from src/${domain}/cli.ts)`,
@@ -144,7 +156,20 @@ for (const domain of domains) {
   }
   if (!mounted || !existsSync(docPath)) continue;
   const codeCommands = new Map(); // qualified name -> { options:Set, args:[{name,required,variadic}], defaults:Map }
-  collectCommand(mounted, domain, codeCommands);
+  if (domain === "family") {
+    for (const verb of FAMILY_VERBS) {
+      const cmd = program.commands.find((c) => c.name() === verb);
+      if (!cmd) {
+        setupProblems.push(
+          `family verb \`${verb}\` is not mounted on the built program (expected src/cli.ts to addCommand it from src/family/cli.ts)`,
+        );
+        continue;
+      }
+      collectCommand(cmd, verb, codeCommands);
+    }
+  } else {
+    collectCommand(mounted, domain, codeCommands);
+  }
   targets.push({ domain, docPath, codeCommands });
 }
 

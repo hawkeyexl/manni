@@ -94,6 +94,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0075](0075-time-windows-and-execution-in-the-evals-domains.md) | Time windows and execution in the evals domains. Both select by age with `--newer-than <duration>`, both run command evals by default, and config and flags only narrow what runs | Devin · D10, D11 / Maya · M11 | Proposed |
 | [0076](0076-artifact-evals-1-1-0-tool-order.md) | artifact-evals 1.1.0 names `tool-order`. Both artifact-evals ids register again at `1.1.0` beside `1.0.0`, strict names eleven graders, and tracevals reads `1.1.0` | Sara · S14, S3 / Maya · M21 | Proposed |
 | [0077](0077-test-domain-runs-doc-detective.md) | The `test` domain runs Doc Detective. `manni test run` reports in the family's exit codes and formats. Doc Detective's config supplies the input, and the docs-as-tests workflow runs the command | Devin · D16 / Maya | Proposed |
+| [0078](0078-family-check-status-and-claude-code-plugin.md) | Two family verbs, `manni check` and `manni status`, and a Claude Code plugin. `check` runs every check a repo has set up, `status` says which those are, and a hook envelope on stdin changes the scope and output. It never changes the checks | Devin · D16 / Maya · M24 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 

@@ -2,7 +2,7 @@
 
 - **Status:** Proposed
 - **Serves:** Two people.
-  - Devin · D16, "Gate the docs' procedure tests with the same contract". He
+  - Devin · D17, "Gate the docs' procedure tests with the same contract". He
     wires Doc Detective into CI today as a step that follows none of the
     family's rules.
   - Maya, who writes the inline tests and runs them on her own machine. She
@@ -367,5 +367,5 @@ directory needs no manni config at all.
 - Bad, because the docs-as-tests workflow loses the dependabot review of its
   Doc Detective step.
 - Bad, because `-f json` inherits Doc Detective's schema and its changes.
-- CUJ D16 joins Devin's journeys, and the site gains a `test/` section with an
+- CUJ D17 joins Devin's journeys, and the site gains a `test/` section with an
   overview and a CLI reference.

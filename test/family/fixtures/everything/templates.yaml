@@ -1,0 +1,11 @@
+# The lint templates the everything fixture routes by: a term page has no
+# heading, and a concept holds a paragraph.
+templates:
+  term:
+    types: [term]
+    heading: false
+  concept:
+    types: [concept]
+    contains:
+      paragraphs:
+        min: 1

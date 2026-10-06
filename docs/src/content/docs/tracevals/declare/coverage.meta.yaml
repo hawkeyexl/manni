@@ -14,8 +14,14 @@ docs/src/content/docs/tracevals/declare/coverage.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-397
-      integrity: sha256-968385eee94d6f257bcf7eb861c371cca6877e1ddb1cf06dea446b74f3c7367c
+      lines: 2-276
+      integrity: sha256-0b4ca87c13e4f4adb67409b76e4bc236355893db2d30bd5610ff7508734c3406
+    - generated-by: Claude Sonnet 5.5
+      lines: 278-279
+      integrity: sha256-730d9fbf0a4c10c6711be438545bd81fdcc5af3861bdbf461b7b828dbeab65d8
+    - generated-by: Claude Opus 5
+      lines: 280-398
+      integrity: sha256-887591bb4d9a1fc0a5e36a6299a3cdca01b45e1b203584b9275a042614c89e59
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

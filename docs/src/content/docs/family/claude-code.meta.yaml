@@ -1,0 +1,31 @@
+docs/src/content/docs/family/claude-code.mdx:
+  personas: ["maya"]
+  journeys: ["m24"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "plugin/manni/"
+    - path: "src/family/"
+  eval-suite: family
+  evals:
+    - id: install-plugin
+      assertion: "A reader can install the manni plugin, for themselves and for a team through .claude/settings.json."
+      type: capability
+      grader: ai
+    - id: explain-stop
+      assertion: "A reader can say when the plugin blocks an agent and why a failure that predates the session cannot trap it."
+      type: capability
+      grader: ai
+  provenance:
+    - generated-by: Claude Sonnet 5.5
+      lines: 2-73
+      integrity: sha256-d0938a04732decf72d72dc7fbf5262d2b7529f3388b6b3593c8c3a16469b61e3
+    - generated-by: Claude Sonnet 5.5
+      lines: 75-127
+      integrity: sha256-3d5d2ce1f62dc2525e57815afc20f1722b4116d1080c09a9c81f8eba12a512b3
+    - generated-by: Claude Sonnet 5.5
+      lines: 135-197
+      integrity: sha256-13dd7cc98622f105270643167891de087593e375951353248d76e19925f55561
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-05

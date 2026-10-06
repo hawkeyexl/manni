@@ -28,7 +28,8 @@
  *    is unaffected, so the body still indexes the original file. Both readings
  *    run, and the results merge.
  */
-import asciidoctor from "@asciidoctor/core";
+import { createRequire } from "node:module";
+import type asciidoctor from "@asciidoctor/core";
 import { extractFrontmatter, extractorForExtension } from "../../meta/index.js";
 import type {
   AdmonitionNode,
@@ -66,8 +67,21 @@ import {
  * promise, and `DocumentParser.parse` is synchronous for every format. Moving
  * to it would also drop `@asciidoctor/opal-runtime` and with it the deprecated
  * `glob`/`inflight` pair, which 3.x still brings in on its own.
+ *
+ * Required on the first `.adoc` file rather than imported: Asciidoctor and the
+ * Opal runtime cost every `manni lint` and `manni check` run a tenth of a
+ * second, and most never read AsciiDoc. `parse` is synchronous, so this is
+ * the package's own CommonJS build through `require`, not `await import()`.
  */
-const processor = asciidoctor();
+let processor: ReturnType<typeof asciidoctor> | undefined;
+
+function getProcessor(): ReturnType<typeof asciidoctor> {
+  if (processor === undefined) {
+    const factory = createRequire(import.meta.url)("@asciidoctor/core") as typeof asciidoctor;
+    processor = factory();
+  }
+  return processor;
+}
 
 /**
  * Minimal structural view of an Asciidoctor node.
@@ -807,8 +821,9 @@ function metadata(content: string, filePath: string, index: LineIndex): Metadata
 // ---------------------------------------------------------------------------
 
 function load(content: string, filePath: string): AdocDocument {
+  const asciidoc = getProcessor();
   try {
-    return processor.load(content, {
+    return asciidoc.load(content, {
       // Without this every block's `getLineNumber()` is undefined and there are
       // no positions to derive at all.
       sourcemap: true,
