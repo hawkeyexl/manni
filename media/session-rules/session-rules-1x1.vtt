@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Captions are burned into session-rules-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:06.733
+What you asked
+Two prompts. The second: do not edit src/legacy.ts.
+
+2
+00:00:06.733 --> 00:00:18.100
+The agent said it was done
+It edited src/legacy.ts anyway, then said done.
+
+3
+00:00:18.100 --> 00:00:29.300
+Hold it to what it was asked
+The broken request, under its source: prompt. Exit 1.
+
+4
+00:00:29.300 --> 00:00:39.433
+Every source it was asked by
+Prompts, the approved plan, and every spec it touched.
+

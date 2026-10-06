@@ -14,6 +14,7 @@ import { beats as graphBeats, totalFrames as graphTotalFrames, TYPING_MS as grap
 import { beats as tracevalsBeats, totalFrames as tracevalsTotalFrames, TYPING_MS as tracevalsTypingMs } from "./tracevals/beats";
 import { beats as familyCheckBeats, totalFrames as familyCheckTotalFrames, TYPING_MS as familyCheckTypingMs } from "./family-check/beats";
 import { beats as conformanceBeats, totalFrames as conformanceTotalFrames, TYPING_MS as conformanceTypingMs } from "./conformance/beats";
+import { beats as sessionRulesBeats, totalFrames as sessionRulesTotalFrames, TYPING_MS as sessionRulesTypingMs } from "./session-rules/beats";
 import { beats as graphImpactBeats, totalFrames as graphImpactTotalFrames, TYPING_MS as graphImpactTypingMs } from "./graph-impact/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
@@ -64,6 +65,9 @@ const DemoFamilyCheck: React.FC = () => <DemoView beats={familyCheckBeats} fontP
  * (media/conformance/capture/cols.mjs). Ligatures off: CLAUDE.md's frontmatter fences are `---`.
  */
 const DemoConformance: React.FC = () => <DemoView beats={conformanceBeats} fontPx={23} linePx={32} cols={75} typingMs={conformanceTypingMs} ligatures={false} />;
+
+/** session-rules-1x1: 27 px / 64 columns, derived in media/session-rules/session-rules-1x1.script.md (media/session-rules/capture/cols.mjs). */
+const DemoSessionRules: React.FC = () => <DemoView beats={sessionRulesBeats} fontPx={27} linePx={38} cols={64} typingMs={sessionRulesTypingMs} />;
 
 export const Root: React.FC = () => (
   <>
@@ -178,6 +182,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={conformanceTotalFrames}
+    />
+    <Composition
+      id="SessionRulesDemo"
+      component={DemoSessionRules}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={sessionRulesTotalFrames}
     />
   </>
 );

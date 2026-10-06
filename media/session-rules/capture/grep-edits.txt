@@ -1,0 +1,2 @@
+"Edit","input":{"file_path":"specs/001-login/tasks.md"
+"Edit","input":{"file_path":"src/legacy.ts"
