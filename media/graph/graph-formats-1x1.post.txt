@@ -4,6 +4,6 @@ Point it at a folder of HTML, DITA, AsciiDoc and reStructuredText pages and it w
 
 manni graph now reads every format manni lint parses: HTML, XML (DITA topics, DITA maps, DocBook), AsciiDoc and reStructuredText, next to Markdown and MDX. No flag needed. Six pages in six formats, six documents in the graph.
 
-Links resolve across formats in both directions, and section anchors keep the source's own ids, so topic.dita#GUID-A1B2-C3D4 stays exactly that. Ask what depends on a Markdown page and the answer includes the HTML guide, the AsciiDoc release notes, the RST reference and the DITA map behind them.
+Links resolve across formats in both directions. Section anchors keep the source's own ids, so topic.dita#GUID-A1B2-C3D4 stays exactly that. Ask what depends on a Markdown page. The answer includes the HTML guide, the AsciiDoc release notes, the RST reference and the DITA map behind them.
 
 #docsascode #technicalwriting #dita #knowledgegraph

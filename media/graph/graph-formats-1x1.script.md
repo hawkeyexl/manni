@@ -5,14 +5,14 @@ proposal 0077, a directory walk collected `.md`, `.mdx` and `.markdown` and
 nothing else, so an HTML, DITA, AsciiDoc or reStructuredText page never
 reached the graph. Nothing failed: the links into those pages just looked
 broken. Now `graph build` with no flag reads all of them, and links resolve
-across formats in both directions, so `graph traverse --impact` on a Markdown
+across formats in both directions. `graph traverse --impact` on a Markdown
 page answers with pages in four other formats.
 
 **Format:** 1080x1080, 30 fps, silent, captions burned in (LinkedIn autoplays muted).
 **Duration:** 34.75 s (spec: 20-45 s).
-**Audience:** docs engineers whose docset is not (only) Markdown, such as a
-Sphinx HTML build, a DITA map, or AsciiDoc release notes (Maya, M18 and M19
-in proposal 0077's "Serves" line).
+**Audience:** docs engineers whose docset is not only Markdown. Think of a
+Sphinx HTML build, a DITA map, or AsciiDoc release notes. That is Maya, M18
+and M19 in proposal 0077's "Serves" line.
 **Feature:** `feat(graph): read html, xml, asciidoc and restructuredtext`
 (`17cf2de0`), on branch `claude/graph-input-formats-66ec60`, filmed at
 `d5b258e7`. Proposal: `docs/proposals/0077-graph-reads-every-format-lint-parses.md`.
@@ -49,8 +49,8 @@ from this branch's `dist/`. The typed command reads `manni`, the name
   `media/graph/graph-formats-capture.sh`. It is the record of the staging.
 - **`media/scratch-formats/` is the demo repository.** It has its own
   `git init` and one commit, by a pinned author (Sam Rivera) and date
-  (2026-10-01T09:00:00Z). `graph build` reads git history: a corpus with none
-  prints a no-history notice on stderr, and a corpus inside the manni worktree
+  (2026-10-01T09:00:00Z). `graph build` reads git history. A corpus with none
+  prints a no-history notice on stderr. A corpus inside the manni worktree
   would stamp manni's own commits. `media/scratch-*` is gitignored.
 - **The pages are `test/graph/fixtures/formats/` verbatim**, config included.
   That is `index.md`, `guide.html`, `topic.dita`, `map.ditamap`, `notes.adoc`,
@@ -121,9 +121,9 @@ Derived with `node graph/graph-formats-cols.mjs 27 64`, run from `media/`.
 
 The sweep: 28 px gives 61 columns, which still fits every output row (the
 longest is the 61-character `map.ditamap` traverse row). But it breaks the
-102-character traverse command into three rows, with `manni graph traverse`
-stranded alone on the first. At 27 px / 64 columns the command wraps once, IRI
-on row one and the whole flag set on row two, and no output row wraps at all.
+102-character traverse command into three rows. `manni graph traverse` is
+stranded alone on the first. At 27 px / 64 columns the command wraps once: IRI
+on row one, the whole flag set on row two. No output row wraps at all.
 Below 28 px nothing wraps except that command. Above it, three output rows wrap
 and orphan a single word.
 
