@@ -5,7 +5,7 @@
  * through, since the hook envelope and exit 2 are the protocol.
  */
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -13,6 +13,9 @@ import pkg from "../package.json" with { type: "json" };
 
 const ROOT = resolve(import.meta.dirname, "..");
 const LAUNCHER = join(ROOT, "plugin/manni/hooks/manni.mjs");
+const PLUGIN_SPEC = `@hawkeyexl/manni@${
+  (JSON.parse(readFileSync(join(ROOT, "plugin/manni/.claude-plugin/plugin.json"), "utf8")) as { version: string }).version
+}`;
 
 let dirs: string[] = [];
 afterEach(() => {
@@ -125,10 +128,22 @@ describe("plugin hook launcher", () => {
     const dir = tempDir();
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "docs-site", private: true }));
     writeFileSync(join(dir, "manni.config.yaml"), "collections:\n  - name: site\n    paths: [\"docs/**/*.md\"]\n");
-    const r = launch(dir, ["check"], "", offline());
+    // A skill passes the agent's own paths, which may hold a space.
+    const r = launch(dir, ["check", "docs/my page.md"], "", { ...offline(), npm_config_loglevel: "silly" });
     expect(r.status).not.toBe(2);
-    // It went to the registry, for exactly the version the plugin ships at.
-    expect(r.stderr).not.toMatch(/canceled/i);
     expect(r.stderr).toMatch(/127\.0\.0\.1|ECONNREFUSED/);
+    // npm logs its argv one quoted word at a time: the pinned spec, and the
+    // path as one argument rather than split at the space.
+    const argv = /npm verbose argv (.*)/.exec(r.stderr)?.[1] ?? "";
+    expect(argv).toContain(`"${PLUGIN_SPEC}" "check" "docs/my page.md"`);
+  });
+
+  it("runs nothing in manni's own repository before it is built", () => {
+    const dir = tempDir();
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@hawkeyexl/manni", bin: { manni: "dist/cli.js" } }));
+    writeFileSync(join(dir, "manni.config.yaml"), "collections: []\n");
+    // Not the published release over the checkout's own code: nothing at all.
+    const r = launch(dir, ["check"], "", offline());
+    expect(r).toMatchObject({ status: 0, stdout: "", stderr: "" });
   });
 });

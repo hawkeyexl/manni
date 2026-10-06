@@ -69,6 +69,7 @@ contributor who opens the repository.
 The hooks and skills run the first manni they find:
 
 1. In the manni repository itself, that checkout's own build, `dist/cli.js`.
+   Before `npm run build`, nothing runs there.
 2. The copy the project installed, found by walking up through `node_modules`.
 3. A global install, found under `npm root -g`.
 4. In a repository with a `manni.config.yaml` and no manni at all, the version

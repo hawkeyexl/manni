@@ -3,13 +3,15 @@
 //
 // In order:
 // 1. the project's own build when the project is @hawkeyexl/manni, since a
-//    package cannot depend on itself;
+//    package cannot depend on itself. Before it is built, nothing runs;
 // 2. the copy the project installed, found the way Node finds a dependency,
 //    by walking up through node_modules;
-// 3. a global install, under `npm root -g`;
-// 4. where the project has a manni config, `npx --yes` at the plugin's own
-//    version, which downloads it into npx's cache once.
-// Otherwise it exits quietly. No step before 4 touches the network:
+// 3. a global install in npm's default global directory;
+// and only where the project has a manni config:
+// 4. a global install wherever `npm root -g` says, which costs an npm start;
+// 5. `npx --yes` at the plugin's own version, which downloads it into npx's
+//    cache once.
+// Otherwise it exits quietly. No step before 5 touches the network:
 // `npx --no` would ask the registry on every hook in every repository
 // without manni. Running node on a found bin also skips npx's start-up.
 //
@@ -48,12 +50,17 @@ function* upward(dir) {
   }
 }
 
+/**
+ * In manni's own checkout, its bin once built and `false` before: the
+ * published release would check the branch with code it does not have.
+ * `undefined` anywhere else.
+ */
 function ownBuild() {
   for (const d of upward(project)) {
     const manifest = join(d, "package.json");
     if (!existsSync(manifest)) continue;
     // The nearest package.json decides: this project is manni or it is not.
-    return readJson(manifest)?.name === PACKAGE ? binOf(manifest) : undefined;
+    return readJson(manifest)?.name === PACKAGE ? (binOf(manifest) ?? false) : undefined;
   }
   return undefined;
 }
@@ -66,17 +73,42 @@ function installed() {
   return undefined;
 }
 
-function globalInstall() {
+/** A global install in `root`, the directory global packages live in. */
+function globalIn(root) {
+  const manifest = join(root, PACKAGE, "package.json");
+  return root !== "" && existsSync(manifest) ? binOf(manifest) : undefined;
+}
+
+/** Where npm puts global packages by default, worked out without starting npm. */
+function defaultGlobalRoot() {
+  const prefix =
+    process.env.npm_config_prefix ?? (windows ? dirname(process.execPath) : dirname(dirname(process.execPath)));
+  return windows ? join(prefix, "node_modules") : join(prefix, "lib", "node_modules");
+}
+
+/** What `npm root -g` says, for a prefix set only in an npmrc. Costs an npm start-up. */
+function npmGlobalRoot() {
   // npm is a .cmd shim on Windows, which only a shell can start.
   const out = spawnSync(windows ? "npm root -g" : "npm", windows ? [] : ["root", "-g"], {
     encoding: "utf8",
     shell: windows,
     windowsHide: true,
   });
-  const root = out.status === 0 ? out.stdout.trim() : "";
-  if (root === "") return undefined;
-  const manifest = join(root, PACKAGE, "package.json");
-  return existsSync(manifest) ? binOf(manifest) : undefined;
+  return out.status === 0 ? out.stdout.trim() : "";
+}
+
+/**
+ * npx, with no shell between it and the arguments: a skill passes the
+ * agent's paths, which may hold a space or a cmd metacharacter. On Windows
+ * npx is a .cmd shim, so its own script runs under node instead.
+ */
+function npx(words) {
+  const script = join(dirname(process.execPath), "node_modules", "npm", "bin", "npx-cli.js");
+  if (windows && existsSync(script)) return spawn(process.execPath, [script, ...words], { stdio: "inherit" });
+  if (!windows) return spawn("npx", words, { stdio: "inherit" });
+  // Last resort on an unusual Windows layout: each word quoted for cmd.
+  const quoted = words.map((w) => `"${w.replaceAll('"', '""')}"`).join(" ");
+  return spawn(`npx ${quoted}`, { stdio: "inherit", shell: true });
 }
 
 /** Whether the project has a manni config, found as manni finds one: up to the repository root. */
@@ -95,21 +127,23 @@ function pluginVersion() {
   return typeof version === "string" ? version : undefined;
 }
 
-const args = process.argv.slice(2);
-const cli = ownBuild() ?? installed() ?? globalInstall();
-let child;
-if (cli !== undefined) {
-  child = spawn(process.execPath, [cli, ...args], { stdio: "inherit" });
-} else if (configured()) {
+function launch() {
+  const args = process.argv.slice(2);
+  const own = ownBuild();
+  if (own === false) return undefined;
+  const run = (cli) => spawn(process.execPath, [cli, ...args], { stdio: "inherit" });
+  const found = own ?? installed() ?? globalIn(defaultGlobalRoot());
+  if (found !== undefined) return run(found);
+  // Without a config manni has nothing to do here, so neither an npm
+  // start-up nor a download is worth paying for.
+  if (!configured()) return undefined;
+  const configuredGlobal = globalIn(npmGlobalRoot());
+  if (configuredGlobal !== undefined) return run(configuredGlobal);
   const version = pluginVersion();
-  const spec = version === undefined ? PACKAGE : `${PACKAGE}@${version}`;
-  // The words are the hook's own fixed arguments and a package spec, so
-  // nothing needs quoting for the shell Windows needs to start npx.
-  const words = ["--yes", spec, ...args];
-  child = windows
-    ? spawn(`npx ${words.join(" ")}`, { stdio: "inherit", shell: true })
-    : spawn("npx", words, { stdio: "inherit" });
+  return npx(["--yes", version === undefined ? PACKAGE : `${PACKAGE}@${version}`, ...args]);
 }
+
+const child = launch();
 if (child === undefined) process.exit(0);
 child.on("error", () => {
   process.exitCode = 1;
