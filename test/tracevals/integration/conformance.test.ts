@@ -37,6 +37,7 @@ afterEach(async () => {
 function manni(
   args: string[],
   stdin = "",
+  env: Record<string, string> = {},
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   const child = execFile("node", [cli, "tracevals", ...args], {
     cwd: project,
@@ -46,6 +47,8 @@ function manni(
       HOME: home,
       USERPROFILE: home,
       MANNI_TRACEVALS_JUDGE: "",
+      MANNI_TRACEVALS_REASONING: "",
+      ...env,
     },
   });
   child.stdin?.end(stdin);
@@ -84,7 +87,7 @@ describe.skipIf(!built)("tracevals check", () => {
     expect(report).toMatchObject({
       sessionId: "3b265d00-0000-4000-8000-000000000001",
       agentId: null,
-      judge: { provider: "mock", model: "mock-model", mode: "decision", runs: 1 },
+      judge: { provider: "mock", model: "mock-model", mode: "generative", runs: 3 },
       extraction: { provider: "mock", model: "mock-model" },
       summary: { sources: 5, rules: 7, fail: 2, needsReview: 1 },
       skipped: null,
@@ -94,6 +97,21 @@ describe.skipIf(!built)("tracevals check", () => {
       "trace", "sessionId", "agentId", "turn", "judge", "extraction",
       "sources", "findings", "summary", "skipped", "warnings", "exitCode",
     ]);
+  });
+
+  it("carries the judge's reasoning under MANNI_TRACEVALS_REASONING=1", async () => {
+    const { code, stdout } = await manni(
+      ["check", trace("breaks"), "--project", project, "-f", "json"],
+      "",
+      { MANNI_TRACEVALS_REASONING: "1" },
+    );
+    expect(code).toBe(1);
+    const { findings } = JSON.parse(stdout) as { findings: { observed: string; reasoning?: string }[] };
+    expect(findings.length).toBeGreaterThan(0);
+    for (const f of findings) {
+      expect(f.reasoning).toBe("Scored by the mock judge.");
+      expect(f.observed.endsWith(". Scored by the mock judge.")).toBe(true);
+    }
   });
 
   it("exits 0 when every rule was followed", async () => {

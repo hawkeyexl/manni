@@ -415,12 +415,12 @@ $ cd test/tracevals/fixtures/conformance/project
 $ manni tracevals check ../traces/breaks.jsonl --project . --no-cache
 CLAUDE.md
   ? run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.
-      unclear with probability 1.00 (1.00)
+      not-followed 0, followed 0, not-applicable 0 (0.00)
   ✖ no-force-push  Never run `git push --force`.
-      violated with probability 1.00 (1.00)
+      not-followed 100, followed 0, not-applicable 0 (1.00)
 .cursor/rules/web.mdc
   ✖ never-use-innerhtml-in-components  Never use `innerHTML` in components.
-      violated with probability 1.00 (1.00)
+      not-followed 100, followed 0, not-applicable 0 (1.00)
 
 Last turn of 3b265d00: 7 rules from 5 files. 2 broken, 1 needs review.
 ```
@@ -441,7 +441,7 @@ Last turn of 3b265d00: 7 rules from 5 files. 2 broken, 1 needs review.
 | `--provider` | `<name>` | config `provider`, else `auto` | Judge provider: `auto`, `anthropic`, `openai`, `claude-cli`, `jev`, or `llama-cpp`. |
 | `--model` | `<model>` | config `model`, else the provider's default | Judge model. Needs a named provider. |
 | `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over every configured choice. |
-| `--runs` | `<n>` | config `judge.ensembleRuns`, which is `3` | Generative runs per turn. A whole number of at least 1; anything else is **exit 2**. Decision providers ignore it. |
+| `--runs` | `<n>` | config `judge.ensembleRuns`, which is `3` | Judge calls per rule. A whole number of at least 1; anything else is **exit 2**. `jev` makes one call and ignores it. |
 | `--no-cache` | n/a | off | Bypass the rules cache and the verdict cache. |
 | `--offline` | n/a | off | Refuse network providers. Judge and extract with local models only. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |

@@ -180,6 +180,9 @@ describe("prepare and check around the host", () => {
       provider: () => "llama-cpp",
       modelName: () => "qwen3.5-4b",
       completeJSON: () => Promise.reject(new ModelHostBusyError("waited")),
+      // llama-cpp answers shared-prefix requests natively, so a busy host
+      // rejects the whole call rather than each item.
+      completeJSONShared: () => Promise.reject(new ModelHostBusyError("waited")),
       decide: () => Promise.reject(new ModelHostBusyError("waited")),
       stateLimit: () => Promise.resolve(8192),
     } as unknown as InferenceProvider;

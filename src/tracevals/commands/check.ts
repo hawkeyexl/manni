@@ -25,12 +25,13 @@ import {
   applicableRules,
   judgeTurn,
   TurnCache,
+  REASONING_ENV,
   type TurnFinding,
   type TurnJudgement,
   type TurnRule,
 } from "../rules/judge.js";
 import { libraryLocalModels, type LocalModels } from "../rules/local.js";
-import { mockTurnDecisions } from "../rules/mock.js";
+import { mockTurnJudge } from "../rules/mock.js";
 import { resolveTurnSources, type RuleSource } from "../rules/sources.js";
 import { lastTurn, subagentTurn, type TurnSlice } from "../rules/turn.js";
 import { parseTraceFile } from "../trace/claude.js";
@@ -236,11 +237,9 @@ async function conform(p: Params): Promise<Outcome> {
   markJudgeProcess();
   const provider =
     p.judge ??
-    constructProvider(config, judgeId, {
-      mockDecisions: mockTurnDecisions,
-      mockResponses: [{ json: { violations: [], unclear: [] } }],
-      host,
-    });
+    (judgeId.provider === "mock"
+      ? mockTurnJudge(judgeId.model)
+      : constructProvider(config, judgeId, { host }));
   let ran: Awaited<ReturnType<typeof queued<TurnJudgement>>>;
   try {
     ran = await queued(judgeId.model, () =>
@@ -260,6 +259,7 @@ async function conform(p: Params): Promise<Outcome> {
         ...(p.lastAssistantMessage !== undefined
           ? { lastAssistantMessage: p.lastAssistantMessage }
           : {}),
+        reasoning: (p.env ?? process.env)[REASONING_ENV] === "1",
         cache: new TurnCache(resolve(p.configDir, config.judge.cacheDir, "turns"), !p.noCache),
       }),
     );

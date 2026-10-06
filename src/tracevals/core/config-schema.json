@@ -166,7 +166,7 @@
             "runs": {
               "type": "integer",
               "minimum": 1,
-              "description": "Generative calls per turn inside a hook. A block needs every run to agree. Decision providers ignore it. Default 1."
+              "description": "Judge calls per rule inside a hook. A rule blocks only when every run scores it not followed at the bar. jev makes one call and ignores it. Default 1."
             }
           }
         },

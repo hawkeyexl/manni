@@ -9,12 +9,7 @@
 import { cp, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import {
-  MockProvider,
-  type CompleteJSONRequest,
-  type DecideRequest,
-  type InferenceProvider,
-} from "@hawkeyexl/inference";
+import type { InferenceProvider } from "@hawkeyexl/inference";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { hookScope } from "../../src/family/cli.js";
 import {
@@ -25,7 +20,7 @@ import {
 import { parseEnvelope, type Envelope } from "../../src/family/core/envelope.js";
 import { sayOnce, saidPath } from "../../src/family/core/said-once.js";
 import type { LocalModels } from "../../src/tracevals/rules/local.js";
-import { mockTurnDecisions } from "../../src/tracevals/rules/mock.js";
+import { mockTurnJudge } from "../../src/tracevals/rules/mock.js";
 import { envelope } from "./helpers.js";
 
 const CONFORMANCE = join(import.meta.dirname, "..", "tracevals", "fixtures", "conformance");
@@ -209,17 +204,9 @@ describe("sayOnce", () => {
   });
 });
 
-/** A local decider, without a runtime: mock decisions under llama-cpp's name. */
+/** A local judge, without a runtime: mock scores under llama-cpp's name. */
 function llama(): InferenceProvider {
-  const inner = new MockProvider([{ json: {} }], "qwen3.5-4b", { decisions: mockTurnDecisions });
-  const provider: InferenceProvider & Pick<MockProvider, "decide" | "stateLimit"> = {
-    provider: () => "llama-cpp",
-    modelName: () => "qwen3.5-4b",
-    completeJSON: (req: CompleteJSONRequest) => inner.completeJSON(req),
-    decide: (req: DecideRequest) => inner.decide(req),
-    stateLimit: () => inner.stateLimit(),
-  };
-  return provider;
+  return mockTurnJudge("qwen3.5-4b", "llama-cpp");
 }
 
 function downloading(): LocalModels {

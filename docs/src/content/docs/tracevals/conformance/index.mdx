@@ -180,20 +180,21 @@ $ cd test/tracevals/fixtures/conformance/project
 $ manni tracevals check ../traces/breaks.jsonl --project . --no-cache
 CLAUDE.md
   ? run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.
-      unclear with probability 1.00 (1.00)
+      not-followed 0, followed 0, not-applicable 0 (0.00)
   ✖ no-force-push  Never run `git push --force`.
-      violated with probability 1.00 (1.00)
+      not-followed 100, followed 0, not-applicable 0 (1.00)
 .cursor/rules/web.mdc
   ✖ never-use-innerhtml-in-components  Never use `innerHTML` in components.
-      violated with probability 1.00 (1.00)
+      not-followed 100, followed 0, not-applicable 0 (1.00)
 
 Last turn of 3b265d00: 7 rules from 5 files. 2 broken, 1 needs review.
 ```
 
-The fixture's config scripts these verdicts with a test provider, which is why every probability is
-`1.00`. A real model gives its own reasons, such as the command it saw. Each finding names the rule's id, its text, and
-what the turn did, grouped under the file the rule came from. The `?` row is a rule the model could
-not settle. The `✖` rows are broken, so the command exits `1`.
+The fixture's config judges with a test provider that scores each rule 0 or 100. A real model
+scores in between, from what the turn shows. Each finding names the rule's id, its text and its
+three scores, grouped under the file the rule came from. The number in parentheses is the
+not-followed score as a fraction. The `?` row is a rule the judge could not settle. The `✖` rows
+are broken, so the command exits `1`.
 
 {/* test {"testId":"conformance-check","description":"check judges the last turn of a fixture session and exits by what it finds."} */}
 {/* step {"description":"A turn that broke two rules exits 1 and counts them.","runShell":{"command":"manni tracevals check ../traces/breaks.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[1],"stdio":"2 broken, 1 needs review"}} */}
@@ -244,11 +245,16 @@ At Stop, the hook judges the turn with the in-loop model. Only a confident viola
 The repair pass judges the whole turn once more. The turn has grown, so the verdict cache misses, and
 the pass costs one call. It is the only way to tell you a rule is still broken.
 
-Small models are confidently wrong when the evidence is missing. So the judge has an explicit
-`unclear` option, and only violations block. A rule blocks when the model picks `violated` and its
-probability reaches [`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge). A
-provider that cannot return probabilities makes one call per run and needs every run to agree
-at the same bar. `conformance.hook.runs` sets the number of runs, and it defaults to `1`.
+The judge asks about each rule on its own. It sees the turn and that one rule, and it returns three
+scores from 0 to 100: followed, not followed, and not applicable. The three are independent, so a
+model can score a rule high on both followed and not followed.
+
+Only a confident violation blocks. A rule blocks when its not-followed score reaches
+[`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge) as a percentage, in every
+run, and no run errored. It passes when its not-applicable or followed score reaches
+`judge.zones.autoPass` in every run. Anything else needs review, including a rule the judge errored
+on. `conformance.hook.runs` sets the number of runs in a hook, and it defaults to `1`. Jev only
+returns probabilities, so it makes one call, and each option's probability becomes its score.
 
 <Aside type="note" title="A subagent is judged on its own">
 SubagentStop judges the subagent's whole run, alone, with the same rules and the same bar. The

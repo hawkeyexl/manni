@@ -19,7 +19,6 @@ import {
   makeProvider as makeInferenceProvider,
   mockVerdict,
   type InferenceProvider,
-  type MockDecisions,
   type MockResponse,
   type ProviderName as ConcreteProvider,
   type ProviderSelector,
@@ -66,8 +65,6 @@ export interface JudgeProviderOptions {
    * offered, so nothing that lists providers mentions it.
    */
   mockResponses?: MockResponse[];
-  /** Scripted decisions for the `mock` seam, which the turn judge asks. */
-  mockDecisions?: MockDecisions;
   /**
    * How a `llama-cpp` provider reaches the model host. Unset, it connects to
    * a running host and never starts one, which is every run by hand.
@@ -188,7 +185,6 @@ export function providerSpecFor(
       return {
         ...spec,
         mockResponses: options.mockResponses ?? [mockVerdict("pass", 0.95)],
-        ...(options.mockDecisions !== undefined ? { mockDecisions: options.mockDecisions } : {}),
       };
     default:
       return spec;

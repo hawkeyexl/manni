@@ -535,7 +535,7 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
   "sessionId": "3b265d00-0000-4000-8000-000000000001",
   "agentId": null,
   "turn": { "from": 4, "to": 15 },
-  "judge": { "provider": "mock", "model": "mock-model", "mode": "decision", "runs": 1 },
+  "judge": { "provider": "mock", "model": "mock-model", "mode": "generative", "runs": 3 },
   "extraction": { "provider": "mock", "model": "mock-model" },
   "sources": [
     { "path": "CLAUDE.md", "format": "claude-md", "trigger": "always",
@@ -546,7 +546,7 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
   "findings": [
     { "source": "CLAUDE.md", "rule": "no-force-push",
       "text": "Never run `git push --force`.", "outcome": "fail",
-      "observed": "violated with probability 1.00", "confidence": 1 }
+      "observed": "not-followed 100, followed 0, not-applicable 0", "confidence": 1 }
   ],
   "summary": { "sources": 5, "rules": 7, "notApplicable": 0, "fail": 2, "needsReview": 1 },
   "skipped": null,
@@ -562,17 +562,18 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
 | `agentId` | string or null | The subagent a SubagentStop judged. `null` for the main session. |
 | `turn` | `{from, to}` | The turn's first and last event, as ordinals in the trace. |
 | `judge` | object or null | The provider and model that judged, its `mode`, and `runs`. `null` when the run stopped before a judge was asked. |
-| `judge.mode` | `decision` or `generative` | Detected from the provider. In decision mode `confidence` is the chosen option's probability and `runs` is `1`. |
+| `judge.mode` | `decision` or `generative` | Detected from the provider. `decision` is a decision-only provider such as `jev`, which makes one call, so `runs` is `1`. Every other provider is `generative`, and scores each rule in each run. |
 | `extraction` | object or null | The out-of-loop provider and model. `null` when no source needed them. |
 | `sources[]` | object | One entry per file in scope: `path`, `format`, `trigger`, `rules`, `origin`, and `skill` for a skill's files. `trigger` says why the file was in scope. `origin` is `declared` for a file's own `ai` evals, and `extracted` otherwise. |
-| `findings[]` | object | Only `fail` and `needs-review` outcomes, each with its `source`, `rule`, `text`, `observed` and `confidence`. A rule left out was followed or did not apply. |
+| `findings[]` | object | Only `fail` and `needs-review` outcomes, each with its `source`, `rule`, `text`, `observed` and `confidence`. `observed` gives the rule's three scores, averaged over the runs. `confidence` is the not-followed score as a fraction. `reasoning` is present only under [`MANNI_TRACEVALS_REASONING`](/manni/tracevals/reference/configuration/#manni_tracevals_reasoning). A rule left out was followed or did not apply. |
 | `summary` | object | The counts of `sources`, `rules`, `notApplicable`, `fail` and `needsReview`. |
 | `skipped` | string or null | `null`, `empty-turn`, `no-sources` or `not-applicable`. The other gates apply only under a hook. |
 | `warnings` | array | Strings, such as a rules file whose front matter does not parse. |
 | `exitCode` | number | `0`, or `1` when `summary.fail` is above zero. |
 
-Only a confident violation counts as `fail`. A rule the model could not settle is `needs-review`,
-which never fails `check`. The bar is [`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge).
+Only a confident violation counts as `fail`: a not-followed score at
+[`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge), as a percentage, in every
+run. A rule the judge could not settle, or errored on, is `needs-review`, which never fails `check`.
 
 ## `--output`
 

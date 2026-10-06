@@ -2,26 +2,28 @@
  * The turn judge (proposal 0079, "The judge, decisions first" and "The block
  * bar"). It checks one turn against the rules that governed it.
  *
- * Which mode runs is detected from the provider, never configured. A provider
- * that can decide gets one `decide` call, one question per rule, branching
- * from the rendered turn. Any other provider gets `runs` generative calls,
- * each returning only the rules the turn broke or could not settle.
+ * Each rule is judged on its own, against the rendered turn. Which path runs
+ * is detected from the provider, never configured. A decision-only provider
+ * gets one `decide` call, one question per rule, branching from the turn.
+ * Every provider that generates gets `runs` calls of `completeJSONShared`, one
+ * item per rule, each answered with three independent scores.
  *
  * Only a confident violation blocks. Everything short of that is
- * `needs-review`, and an errored run can only push a rule there, never to a
- * silent pass and never to a fail.
+ * `needs-review`, and an errored rule can only go there, never to a silent
+ * pass and never to a fail.
  */
 import {
   JsonCache,
   buildCacheKey,
   canDecide,
-  completeValidatedJSON,
+  completeJSONShared,
   sha256,
   type DecideAnswer,
-  type DecideQuestion,
+  type DecisionProvider,
   type InferenceProvider,
   type ZoneThresholds,
 } from "@hawkeyexl/inference";
+import { DECISION_ONLY_PROVIDERS } from "../../shared/providers.js";
 import type { TraceWindow } from "../graders/util.js";
 import { evaluateWhen } from "../graders/when.js";
 import { makeRedactor } from "../judge/redact.js";
@@ -29,21 +31,27 @@ import { renderTrace } from "../judge/render.js";
 import type { Trace } from "../trace/types.js";
 import type { Rule } from "./extract.js";
 import {
-  TURN_CRITERIA,
   TURN_JUDGE_PROMPT_VERSION,
   TURN_JUDGE_SYSTEM_PROMPT,
-  TURN_SCHEMA,
+  TURN_SCORES,
   buildDecisionState,
-  buildTurnUser,
+  buildRuleItem,
+  buildTurnShared,
   questionFor,
-  ruleKey,
-  type RuleGroup,
+  turnSchema,
+  type TurnScore,
 } from "./judge-prompt.js";
 import type { RuleSource } from "./sources.js";
 import type { TurnSlice } from "./turn.js";
 
 /** Default location, under the tool's per-project cache directory. */
 export const DEFAULT_TURN_CACHE_DIR = ".manni/tracevals/cache/turns";
+
+/**
+ * Set to `1`, the judge also asks for a sentence of reasoning per rule. A
+ * development aid: it changes the schema, the findings and the cache key.
+ */
+export const REASONING_ENV = "MANNI_TRACEVALS_REASONING";
 
 /**
  * Characters per token when fitting a provider's state limit. Prose and code
@@ -64,13 +72,15 @@ export interface TurnJudgeInput {
   /** Every in-scope rule, sources ordered farthest to nearest. */
   rules: TurnRule[];
   provider: InferenceProvider;
-  /** Generative runs. Decision mode makes one call and reports 1. */
+  /** Scored runs. A decision-only provider makes one call and reports 1. */
   runs: number;
   temperature: number;
   zones: ZoneThresholds;
   render: { maxBlockChars: number; maxTotalChars: number; redact: string[] };
   /** The Stop payload's `last_assistant_message`, appended when the transcript lags. */
   lastAssistantMessage?: string;
+  /** Ask for `reasoning` with the scores. Ignored by a decision-only provider. */
+  reasoning?: boolean;
   cache?: TurnCache;
 }
 
@@ -81,6 +91,8 @@ export interface TurnFinding {
   outcome: "fail" | "needs-review";
   observed: string;
   confidence: number;
+  /** Only when reasoning was asked for. */
+  reasoning?: string;
 }
 
 export interface TurnJudgement {
@@ -90,37 +102,33 @@ export interface TurnJudgement {
   findings: TurnFinding[];
   /** Rules sent to the judge. */
   judged: number;
-  /** Rules whose `when` failed over the turn, plus decisions of `not_applicable`. */
+  /** Rules whose `when` failed over the turn, plus those scored not applicable. */
   notApplicable: number;
+  /** Every rule's verdict came from the cache. */
   cached: boolean;
   warnings: string[];
 }
 
-interface Entry {
-  rule: string;
-  observed: string;
-  confidence: number;
+type Scores = Record<TurnScore, number> & { reasoning?: string };
+
+/** One rule's answers: a score set per run that answered. */
+interface Verdict {
+  runs: Scores[];
+  error?: string;
 }
 
-interface TurnAnswer {
-  violations: Entry[];
-  unclear: Entry[];
-}
-
-type TurnCacheEntry =
-  | { answers: Record<string, DecideAnswer> }
-  | { runs: TurnAnswer[] };
+type Outcome = "fail" | "not-applicable" | "followed" | "needs-review";
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
-function isTurnAnswer(v: unknown): v is TurnAnswer {
-  return isRecord(v) && Array.isArray(v.violations) && Array.isArray(v.unclear);
+function isScores(v: unknown): v is Scores {
+  return isRecord(v) && TURN_SCORES.every((s) => typeof v[s] === "number");
 }
 
 /**
- * Raw judge answers per turn, before the block bar is applied, so a change of
- * `zones` reuses them. An answer with an errored run is never written.
+ * Raw scores per rule and turn, before the block bar is applied, so a change
+ * of `zones` reuses them. A rule with an errored run is never written.
  */
 export class TurnCache {
   private readonly store: JsonCache<unknown>;
@@ -130,16 +138,15 @@ export class TurnCache {
   }
 
   /** An entry of any other shape, from an older version, is a miss. */
-  get(key: string): TurnCacheEntry | undefined {
+  get(key: string): Scores[] | undefined {
     const v = this.store.get(key);
-    if (!isRecord(v)) return undefined;
-    if (isRecord(v.answers)) return { answers: v.answers as Record<string, DecideAnswer> };
-    if (Array.isArray(v.runs) && v.runs.every(isTurnAnswer)) return { runs: v.runs };
-    return undefined;
+    if (!isRecord(v) || !Array.isArray(v.runs) || v.runs.length === 0) return undefined;
+    const runs: unknown[] = v.runs;
+    return runs.every(isScores) ? runs : undefined;
   }
 
-  set(key: string, entry: TurnCacheEntry): void {
-    this.store.set(key, entry);
+  set(key: string, runs: Scores[]): void {
+    this.store.set(key, { runs });
   }
 }
 
@@ -157,20 +164,28 @@ export function applicableRules(
 interface Planned {
   /** Decision question id: source index among every input source, then rule id. */
   qid: string;
-  /** How the generative mode names the rule. */
-  key: string;
   source: string;
   id: string;
   text: string;
+  /** The scored path's item for this rule. */
+  item: string;
 }
 
 const round = (n: number): number => Math.round(n * 100) / 100;
 
+/** Decision-only providers decide; every provider that generates is scored. */
+function decisionOnly(provider: InferenceProvider): DecisionProvider | undefined {
+  return DECISION_ONLY_PROVIDERS.has(provider.provider()) && canDecide(provider)
+    ? provider
+    : undefined;
+}
+
 export async function judgeTurn(input: TurnJudgeInput): Promise<TurnJudgement> {
   const { provider, zones } = input;
-  const decider = canDecide(provider) ? provider : undefined;
+  const decider = decisionOnly(provider);
   const mode = decider !== undefined ? "decision" : "generative";
   const runs = decider !== undefined ? 1 : input.runs;
+  const reasoning = decider === undefined && input.reasoning === true;
   const { applicable, notApplicable } = applicableRules(input.rules, input.turn.window);
   const warnings: string[] = [];
   const result: TurnJudgement = {
@@ -191,35 +206,30 @@ export async function judgeTurn(input: TurnJudgeInput): Promise<TurnJudgement> {
     const path = r.source.displayPath;
     if (!sourceIndex.has(path)) sourceIndex.set(path, sourceIndex.size);
   }
-  const groups: RuleGroup[] = [];
-  for (const { source, rule } of applicable) {
-    let group = groups.find((g) => g.displayPath === source.displayPath);
-    if (group === undefined) {
-      group = { displayPath: source.displayPath, rules: [] };
-      groups.push(group);
-    }
-    group.rules.push({ id: rule.id, text: rule.text });
-  }
-  const planned: Planned[] = groups.flatMap((g) =>
-    g.rules.map((r) => ({
-      qid: `${String(sourceIndex.get(g.displayPath))}:${r.id}`,
-      key: ruleKey(g.displayPath, r.id),
-      source: g.displayPath,
-      id: r.id,
-      text: r.text,
-    })),
-  );
+  const planned: Planned[] = applicable.map(({ source, rule }) => ({
+    qid: `${String(sourceIndex.get(source.displayPath))}:${rule.id}`,
+    source: source.displayPath,
+    id: rule.id,
+    text: rule.text,
+    item: buildRuleItem(source.displayPath, rule),
+  }));
 
-  // Render the turn, to the state limit when there is one.
+  // Render the turn, to the state limit when there is one. Every rule counts
+  // toward the longest, cached or not, so the render and its key stay put.
   const tail = lastMessageLine(input);
   let budget = input.render.maxTotalChars;
   let limit: number | undefined;
-  let questions: Record<string, DecideQuestion> | undefined;
-  if (decider !== undefined) {
-    questions = Object.fromEntries(planned.map((p) => [p.qid, questionFor(p.source, p)]));
-    limit = await decider.stateLimit();
-    const longest = Math.max(...Object.values(questions).map((q) => JSON.stringify(q).length));
-    const fixed = buildDecisionState(groups, "").length;
+  if (canDecide(provider)) {
+    limit = await provider.stateLimit();
+    const longest = Math.max(
+      ...planned.map((p) =>
+        decider !== undefined ? JSON.stringify(questionFor(p.source, p)).length : p.item.length,
+      ),
+    );
+    const fixed =
+      decider !== undefined
+        ? buildDecisionState("").length
+        : TURN_JUDGE_SYSTEM_PROMPT.length + buildTurnShared("").length;
     budget = Math.min(budget, limit * CHARS_PER_TOKEN - longest - fixed);
   }
   const cut = { happened: false };
@@ -241,107 +251,165 @@ export async function judgeTurn(input: TurnJudgeInput): Promise<TurnJudgement> {
     );
   }
 
-  // Gate 9: the same turn, rule set and model reuse the verdict.
-  const key = buildCacheKey([
+  // Gate 9: the same turn, rule and model reuse the verdict.
+  const base = [
     provider.provider(),
     provider.modelName(),
     mode,
     `r${String(runs)}`,
     `t${String(input.temperature)}`,
     `turn-v${String(TURN_JUDGE_PROMPT_VERSION)}`,
+    reasoning ? "reasoning" : "scores",
     sha256(turnText),
-    sha256(JSON.stringify(groups)),
-  ]);
-  const hit = input.cache?.get(key);
+  ];
+  const keyOf = (p: Planned): string =>
+    buildCacheKey([...base, sha256(JSON.stringify([p.source, p.id, p.text]))]);
 
-  if (decider !== undefined && questions !== undefined) {
-    let answers = hit !== undefined && "answers" in hit ? hit.answers : undefined;
-    result.cached = answers !== undefined;
-    if (answers === undefined) {
-      const response = await decider.decide({
-        state: buildDecisionState(groups, turnText),
-        questions,
-      });
-      answers = response.answers;
-      // A missing answer is an errored question, so the whole set stays out.
-      if (planned.every((p) => answers?.[p.qid] !== undefined)) {
-        input.cache?.set(key, { answers });
-      }
-    }
-    for (const p of planned) {
-      const answer = answers[p.qid];
-      const choice = answer?.choice;
-      if (answer === undefined || choice === undefined || !(choice in TURN_CRITERIA)) {
-        result.findings.push(finding(p, "needs-review", "the judge returned no answer for this rule", 0));
-        continue;
-      }
-      if (choice === "followed") continue;
-      if (choice === "not_applicable") {
-        result.notApplicable += 1;
-        continue;
-      }
-      const observed = `${choice} with probability ${answer.confidence.toFixed(2)}`;
-      const blocks = choice === "violated" && answer.confidence >= zones.autoFail;
-      result.findings.push(
-        finding(p, blocks ? "fail" : "needs-review", observed, round(answer.confidence)),
-      );
-    }
-    return result;
-  }
-
-  let answers = hit !== undefined && "runs" in hit ? hit.runs : undefined;
-  result.cached = answers !== undefined;
-  const errors: string[] = [];
-  if (answers === undefined) {
-    answers = [];
-    for (let i = 0; i < runs; i++) {
-      const run = await completeValidatedJSON<TurnAnswer>({
-        provider,
-        system: TURN_JUDGE_SYSTEM_PROMPT,
-        user: buildTurnUser(groups, turnText),
-        schema: TURN_SCHEMA,
-        temperature: input.temperature,
-      });
-      if (run.result === undefined) errors.push(run.error ?? "the judge returned nothing");
-      else answers.push(run.result);
-    }
-    if (answers.length === 0) throw new Error(errors[0] ?? "every judge run errored");
-    if (errors.length > 0) {
-      warnings.push(
-        `${String(errors.length)} of ${String(runs)} judge runs errored, so no rule could fail: ${errors[0] ?? ""}`,
-      );
-    } else {
-      input.cache?.set(key, { runs: answers });
-    }
-  }
+  const verdicts = new Map<Planned, Verdict>();
+  const todo: Planned[] = [];
   for (const p of planned) {
-    const flags = answers.map((a) => {
-      const violated = a.violations.find((e) => e.rule === p.key);
-      if (violated !== undefined) return { violated: true, ...violated };
-      const unclear = a.unclear.find((e) => e.rule === p.key);
-      return unclear === undefined ? undefined : { violated: false, ...unclear };
+    const hit = input.cache?.get(keyOf(p));
+    if (hit !== undefined) verdicts.set(p, { runs: hit });
+    else todo.push(p);
+  }
+  result.cached = todo.length === 0;
+  if (todo.length > 0) {
+    const fresh =
+      decider !== undefined
+        ? await decide(decider, todo, turnText)
+        : await score(provider, todo, turnText, runs, input.temperature, reasoning);
+    if (fresh.every((v) => v.runs.length === 0)) {
+      throw new Error(fresh.find((v) => v.error !== undefined)?.error ?? "every judge call errored");
+    }
+    const errored = fresh.filter((v) => v.error !== undefined);
+    if (errored.length > 0) {
+      warnings.push(
+        `the judge errored on ${String(errored.length)} of ${String(todo.length)} rules, so they need review: ${errored[0]?.error ?? ""}`,
+      );
+    }
+    todo.forEach((p, i) => {
+      const v = fresh[i] ?? { runs: [], error: "the judge returned nothing" };
+      verdicts.set(p, v);
+      if (v.error === undefined) input.cache?.set(keyOf(p), v.runs);
     });
-    const flagged = flags.filter((f) => f !== undefined);
-    const first = flagged.find((f) => f.violated) ?? flagged[0];
-    if (first === undefined) continue;
-    const unanimous =
-      errors.length === 0 &&
-      flags.every((f) => f !== undefined && f.violated && f.confidence >= zones.autoFail);
-    const mean = flagged.reduce((sum, f) => sum + f.confidence, 0) / flagged.length;
-    result.findings.push(
-      finding(p, unanimous ? "fail" : "needs-review", first.observed, round(mean)),
-    );
+  }
+
+  for (const p of planned) {
+    const v = verdicts.get(p) ?? { runs: [], error: "the judge returned nothing" };
+    const outcome = outcomeOf(v, runs, zones);
+    if (outcome === "not-applicable") result.notApplicable += 1;
+    else if (outcome !== "followed") result.findings.push(findingOf(p, outcome, v, runs));
   }
   return result;
 }
 
-function finding(
+/** One `decide` call; each option's probability becomes its score. */
+async function decide(
+  decider: DecisionProvider,
+  todo: Planned[],
+  turnText: string,
+): Promise<Verdict[]> {
+  const response = await decider.decide({
+    state: buildDecisionState(turnText),
+    questions: Object.fromEntries(todo.map((p) => [p.qid, questionFor(p.source, p)])),
+  });
+  const answers: Record<string, DecideAnswer | undefined> = response.answers;
+  return todo.map((p) => {
+    const answer = answers[p.qid];
+    if (answer === undefined) return { runs: [], error: "the judge returned no answer for this rule" };
+    const pct = (s: TurnScore): number => Math.round((answer.probabilities[s] ?? 0) * 100);
+    return {
+      runs: [
+        {
+          followed: pct("followed"),
+          "not-followed": pct("not-followed"),
+          "not-applicable": pct("not-applicable"),
+        },
+      ],
+    };
+  });
+}
+
+/** `runs` shared-prefix calls, one item per rule. */
+async function score(
+  provider: InferenceProvider,
+  todo: Planned[],
+  turnText: string,
+  runs: number,
+  temperature: number,
+  reasoning: boolean,
+): Promise<Verdict[]> {
+  const verdicts: Verdict[] = todo.map(() => ({ runs: [] }));
+  const errors = todo.map(() => 0);
+  for (let run = 0; run < runs; run++) {
+    const response = await completeJSONShared(provider, {
+      system: TURN_JUDGE_SYSTEM_PROMPT,
+      shared: buildTurnShared(turnText),
+      items: todo.map((p) => p.item),
+      schema: turnSchema(reasoning),
+      temperature,
+    });
+    verdicts.forEach((v, i) => {
+      const answer = response.answers[i];
+      if (answer !== undefined && "json" in answer && isScores(answer.json)) {
+        v.runs.push(answer.json);
+        return;
+      }
+      errors[i] = (errors[i] ?? 0) + 1;
+      v.error ??= answer !== undefined && "error" in answer ? answer.error : "the judge returned nothing";
+    });
+  }
+  return verdicts.map((v, i) =>
+    v.error === undefined || v.runs.length === 0
+      ? v
+      : { ...v, error: `${String(errors[i] ?? 0)} of ${String(runs)} runs errored: ${v.error}` },
+  );
+}
+
+function classify(s: Scores, zones: ZoneThresholds): Outcome {
+  // An integer over 100 lands on the same double as the zone's literal, where
+  // the zone times 100 can miss it (0.7 * 100 is 70.00000000000001).
+  if (s["not-followed"] / 100 >= zones.autoFail) return "fail";
+  if (s["not-applicable"] / 100 >= zones.autoPass) return "not-applicable";
+  if (s.followed / 100 >= zones.autoPass) return "followed";
+  return "needs-review";
+}
+
+/** Every run has to agree: a split ensemble, or any error, is review. */
+function outcomeOf(v: Verdict, runs: number, zones: ZoneThresholds): Outcome {
+  if (v.error !== undefined || v.runs.length < runs) return "needs-review";
+  const each = v.runs.map((s) => classify(s, zones));
+  if (each.every((c) => c === "fail")) return "fail";
+  if (each.every((c) => c === "not-applicable")) return "not-applicable";
+  if (each.every((c) => c === "not-applicable" || c === "followed")) return "followed";
+  return "needs-review";
+}
+
+function findingOf(
   p: Planned,
   outcome: TurnFinding["outcome"],
-  observed: string,
-  confidence: number,
+  v: Verdict,
+  runs: number,
 ): TurnFinding {
-  return { source: p.source, rule: p.id, text: p.text, outcome, observed, confidence };
+  const base = { source: p.source, rule: p.id, text: p.text, outcome };
+  if (v.runs.length === 0) {
+    return {
+      ...base,
+      observed: `the judge returned no answer for this rule: ${v.error ?? ""}`,
+      confidence: 0,
+    };
+  }
+  const mean = (s: TurnScore): number =>
+    Math.round(v.runs.reduce((sum, r) => sum + r[s], 0) / v.runs.length);
+  const scores = `not-followed ${String(mean("not-followed"))}, followed ${String(mean("followed"))}, not-applicable ${String(mean("not-applicable"))}`;
+  const errored = v.error !== undefined && runs > 1 ? `; ${v.error}` : "";
+  const reasoning = v.runs.find((r) => typeof r.reasoning === "string")?.reasoning;
+  return {
+    ...base,
+    observed: `${scores}${errored}${reasoning !== undefined ? `. ${reasoning}` : ""}`,
+    confidence: round(mean("not-followed") / 100),
+    ...(reasoning !== undefined ? { reasoning } : {}),
+  };
 }
 
 /**

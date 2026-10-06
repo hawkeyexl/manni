@@ -399,12 +399,23 @@ the Claude Code hooks. Absent, tracevals stays out of them. The journey is in
   so it is accepted here and nowhere else.
 - **`hook.model`** is the model that judges inside a hook. As everywhere, a model stays with the
   provider named at the same level, so write it beside `hook.provider`.
-- **`hook.runs`** is the number of generative calls per turn inside a hook. A block needs every
-  run to agree. A decision provider ignores it.
+- **`hook.runs`** is the number of judge calls per rule inside a hook. A rule blocks only when
+  every run scores it not followed at the bar. `jev` makes one call and ignores it.
 - **`include`** names files that govern agents beyond the known formats, such as a house style
   guide. Each applies to every turn, read or not. Globs are relative to the project root.
 - **`exclude`** names files never treated as rule sources, in any format, such as a product docs
   tree or a stale `.cursor/rules` file.
+
+### `MANNI_TRACEVALS_REASONING`
+
+A development aid for reading the judge's verdicts, not a setting. Set to `1`, it asks the judge for
+a sentence of reasoning after each rule's three scores. Each finding carries it as `reasoning`, and
+`observed` ends with it. The verdict cache keeps the two apart, so turning it on judges again. A
+decision-only provider such as `jev` returns no reasoning.
+
+```sh
+MANNI_TRACEVALS_REASONING=1 manni tracevals check s.jsonl -f json
+```
 
 ### Two model roles
 

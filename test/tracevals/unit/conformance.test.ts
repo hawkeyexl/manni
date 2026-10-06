@@ -11,9 +11,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   MockProvider,
   type CompleteJSONRequest,
-  type DecideRequest,
   type InferenceProvider,
-  type MockResponse,
 } from "@hawkeyexl/inference";
 import { checkTurn, runCheck, type CheckOptions } from "../../../src/tracevals/commands/check.js";
 import { JUDGE_ENV } from "../../../src/tracevals/commands/conformance.js";
@@ -22,7 +20,7 @@ import { runRelease } from "../../../src/tracevals/commands/release.js";
 import { renderRelease } from "../../../src/tracevals/reporters/conformance.js";
 import type { HostApi } from "../../../src/tracevals/rules/host.js";
 import type { LocalModels } from "../../../src/tracevals/rules/local.js";
-import { mockTurnDecisions } from "../../../src/tracevals/rules/mock.js";
+import { mockTurnJudge, mockTurnScores } from "../../../src/tracevals/rules/mock.js";
 import { JEV_OUT_OF_LOOP } from "../../../src/tracevals/judge/provider.js";
 import { resetWarnings } from "../../../src/shared/warn.js";
 
@@ -68,28 +66,25 @@ async function config(yaml: string): Promise<void> {
   await writeFile(join(project, "manni.config.yaml"), yaml);
 }
 
-/** A provider that can only generate, so the judge runs in generative mode. */
-function generative(responses: MockResponse[]): InferenceProvider & { requests: CompleteJSONRequest[] } {
-  const inner = new MockProvider(responses);
+/** A provider that can only generate, answering each call from its request. */
+function generative(
+  answer: (req: CompleteJSONRequest) => unknown,
+): InferenceProvider & { requests: CompleteJSONRequest[] } {
+  const requests: CompleteJSONRequest[] = [];
   return {
-    requests: inner.requests,
+    requests,
     provider: () => "mock",
     modelName: () => "mock-model",
-    completeJSON: (req) => inner.completeJSON(req),
+    completeJSON: (req) => {
+      requests.push(req);
+      return Promise.resolve({ json: answer(req) });
+    },
   };
 }
 
-/** A local decider, without a runtime: mock decisions under llama-cpp's name. */
+/** A local judge, without a runtime: mock scores under llama-cpp's name. */
 function llama(): InferenceProvider {
-  const inner = new MockProvider([{ json: {} }], "qwen3.5-4b", { decisions: mockTurnDecisions });
-  const provider: InferenceProvider & Pick<MockProvider, "decide" | "stateLimit"> = {
-    provider: () => "llama-cpp",
-    modelName: () => "qwen3.5-4b",
-    completeJSON: (req: CompleteJSONRequest) => inner.completeJSON(req),
-    decide: (req: DecideRequest) => inner.decide(req),
-    stateLimit: () => inner.stateLimit(),
-  };
-  return provider;
+  return mockTurnJudge("qwen3.5-4b", "llama-cpp");
 }
 
 /** No model host running, and nothing a test can start. */
@@ -121,7 +116,7 @@ describe("check by hand", () => {
     expect(report.skipped).toBeNull();
     expect(report.sessionId).toBe("3b265d00-0000-4000-8000-000000000001");
     expect(report.agentId).toBeNull();
-    expect(report.judge).toEqual({ provider: "mock", model: "mock-model", mode: "decision", runs: 1 });
+    expect(report.judge).toEqual({ provider: "mock", model: "mock-model", mode: "generative", runs: 3 });
     expect(report.extraction).toEqual({ provider: "mock", model: "mock-model" });
     const byPath = Object.fromEntries(report.sources.map((s) => [s.path, s]));
     expect(byPath["CLAUDE.md"]).toMatchObject({ format: "claude-md", trigger: "always", rules: 2, origin: "declared" });
@@ -138,7 +133,7 @@ describe("check by hand", () => {
     expect(outcomes).toContain(".cursor/rules/web.mdc#never-use-innerhtml-in-components:fail");
     expect(report.summary).toMatchObject({ fail: 2, needsReview: 1, sources: report.sources.length });
     expect(rendered).toContain(
-      "CLAUDE.md\n  ? run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.\n      unclear with probability 1.00 (1.00)\n  ✖ no-force-push  Never run `git push --force`.",
+      "CLAUDE.md\n  ? run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.\n      not-followed 0, followed 0, not-applicable 0 (0.00)\n  ✖ no-force-push  Never run `git push --force`.",
     );
     expect(rendered.split("\n").at(-1)).toBe(
       `Last turn of 3b265d00: ${String(report.summary.rules)} rules from ${String(report.sources.length)} files. 2 broken, 1 needs review.`,
@@ -186,7 +181,7 @@ describe("check by hand", () => {
 
   it("lets flags choose the judge and never the extraction model", async () => {
     const { report } = await check("breaks", { provider: "mock", model: "other-model", runs: 5 });
-    expect(report.judge).toMatchObject({ provider: "mock", model: "other-model", runs: 1 });
+    expect(report.judge).toMatchObject({ provider: "mock", model: "other-model", runs: 5 });
     expect(report.extraction).toEqual({ provider: "mock", model: "mock-model" });
   });
 
@@ -202,24 +197,23 @@ describe("check by hand", () => {
     await expect(check("breaks", { provider: "mock" })).rejects.toThrow(JEV_OUT_OF_LOOP);
   });
 
-  it("judges generatively with a provider that cannot decide, every run agreeing", async () => {
-    const violation = {
-      json: {
-        violations: [{ rule: "CLAUDE.md#no-force-push", observed: "Force-pushed main.", confidence: 0.95 }],
-        unclear: [],
-      },
-    };
-    const judge = generative([violation, violation, violation]);
+  it("scores each rule in every run with a provider that cannot decide", async () => {
+    const judge = generative((req) =>
+      req.user.includes("CLAUDE.md#no-force-push:")
+        ? { followed: 5, "not-followed": 95, "not-applicable": 0 }
+        : { followed: 100, "not-followed": 0, "not-applicable": 0 },
+    );
     const { report } = await check("breaks", { judge, runs: 3 });
     expect(report.judge).toMatchObject({ mode: "generative", runs: 3 });
-    expect(judge.requests).toHaveLength(3);
+    const pushCalls = judge.requests.filter((r) => r.user.includes("CLAUDE.md#no-force-push:"));
+    expect(pushCalls).toHaveLength(3);
     expect(report.findings).toEqual([
       {
         source: "CLAUDE.md",
         rule: "no-force-push",
         text: "Never run `git push --force`.",
         outcome: "fail",
-        observed: "Force-pushed main.",
+        observed: "not-followed 95, followed 5, not-applicable 0",
         confidence: 0.95,
       },
     ]);
@@ -335,9 +329,9 @@ describe("checkTurn, inside a hook", () => {
     });
   });
 
-  it("judges a local model that is ready, in decision mode", async () => {
+  it("judges a local model that is ready, scoring each rule", async () => {
     const result = await hook("breaks", { judge: llama(), localModels: localModels() });
-    expect(result.report?.judge).toMatchObject({ provider: "llama-cpp", mode: "decision", runs: 1 });
+    expect(result.report?.judge).toMatchObject({ provider: "llama-cpp", mode: "generative", runs: 1 });
     expect(result.exitCode).toBe(1);
   });
 
@@ -464,18 +458,23 @@ describe("release", () => {
   });
 });
 
-describe("mockTurnDecisions", () => {
+describe("mockTurnScores", () => {
   const ask = (rule: string, turn: string) =>
-    mockTurnDecisions("q", { instructions: `Did this turn follow x? The rule: ${rule}` }, `# Rules\n- ${rule}\n\n# The turn\n${turn}`);
-
-  it("reads a prohibition's code span from the turn only", () => {
-    expect(ask("Never run `git push --force`.", "git push --force origin")).toBe("violated");
-    expect(ask("Never run `git push --force`.", "git push origin")).toBe("followed");
+    mockTurnScores(`# The turn\n\n${turn}\n\n# The rule\n\nCLAUDE.md#x: ${rule}\n\nScore it.`);
+  const scores = (followed: number, notFollowed: number) => ({
+    followed,
+    "not-followed": notFollowed,
+    "not-applicable": 0,
   });
 
-  it("reads any other rule's span as followed or unclear", () => {
-    expect(ask("Run `npm ci` first.", "npm ci && npm test")).toBe("followed");
-    expect(ask("Run `npm ci` first.", "npm test")).toBe("unclear");
-    expect(ask("Keep commits small.", "anything")).toBe("followed");
+  it("reads a prohibition's code span from the turn only", () => {
+    expect(ask("Never run `git push --force`.", "git push --force origin")).toEqual(scores(0, 100));
+    expect(ask("Never run `git push --force`.", "git push origin")).toEqual(scores(100, 0));
+  });
+
+  it("scores any other rule followed when its span shows, and nothing when it does not", () => {
+    expect(ask("Run `npm ci` first.", "npm ci && npm test")).toEqual(scores(100, 0));
+    expect(ask("Run `npm ci` first.", "npm test")).toEqual(scores(0, 0));
+    expect(ask("Keep commits small.", "anything")).toEqual(scores(100, 0));
   });
 });

@@ -28,5 +28,35 @@ docs/src/content/docs/tracevals/conformance/index.mdx:
       lines: 108
       integrity: sha256-d15e5059fe25c759c2212b0d5606f7ad7bcfcc04d27482a7d0613dca5c5faee7
     - generated-by: Claude Sonnet 5.5
-      lines: 110-297
-      integrity: sha256-d2bd7ac65c6ecfa802169c4de7875df8eca3882503f4991f2afcae85c523c6b9
+      lines: 110-166
+      integrity: sha256-1fb16ca3cfd0f3c4e7b4fb6f3699d298de0058ca62b219f5415428acb5793bbd
+    - generated-by: Claude Opus 5.5
+      lines: 167
+      integrity: sha256-768972885ff06f3cf071521ea61c84e6746dbf01f954703dbb526383d8d2df94
+    - generated-by: Claude Sonnet 5.5
+      lines: 168
+      integrity: sha256-76c5e3b7b724e932acfb765cdec5e8b69e512a258c00d826c324baa1b59370da
+    - generated-by: Claude Opus 5.5
+      lines: 169
+      integrity: sha256-e343d8b0b6f5a023b5ec1ac5f67b4cf5ceb30f1fcc60c657333d57a3587e8fd3
+    - generated-by: Claude Sonnet 5.5
+      lines: 170-171
+      integrity: sha256-c588a300015bd962c4c0ccaab2779e7f0734b645879184927da19bb413ebce6f
+    - generated-by: Claude Opus 5.5
+      lines: 172
+      integrity: sha256-e343d8b0b6f5a023b5ec1ac5f67b4cf5ceb30f1fcc60c657333d57a3587e8fd3
+    - generated-by: Claude Sonnet 5.5
+      lines: 174-175
+      integrity: sha256-d5862e3bae0e49b7a41abe84eb1c47d044ee18e9db70d434d9700d05026e7200
+    - generated-by: Claude Opus 5.5
+      lines: 177-181
+      integrity: sha256-53fb530aa093e56c5f5ef1ba2dccdd96c2efe18ecae4e169415e30d39f56bbc8
+    - generated-by: Claude Sonnet 5.5
+      lines: 183-230
+      integrity: sha256-a30660d09216a9b78891310134c61dad9654933dfbdf45b7fc43ce60447a96a0
+    - generated-by: Claude Opus 5.5
+      lines: 232-241
+      integrity: sha256-d7b590a67d7097bce61243470c4bcaaf4c3458e1c3764539fb8d9683c6b499f4
+    - generated-by: Claude Sonnet 5.5
+      lines: 243-303
+      integrity: sha256-24c1ee0eedcc1a92974fbeb288dd4d9775f6ea8b17e4ba065ac860dcbee3aee4

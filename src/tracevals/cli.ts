@@ -670,7 +670,7 @@ addConfigFlags(
   )
   .option("--model <model>", "Judge model; needs a named provider, from here or config")
   .option("--local", LOCAL_FLAG_HELP)
-  .option("--runs <n>", "generative runs per turn (overrides judge.ensembleRuns)", (v) => Number(v))
+  .option("--runs <n>", "judge calls per rule (overrides judge.ensembleRuns)", (v) => Number(v))
   .option("--no-cache", "bypass the rules cache and the verdict cache")
   .option("--offline", "refuse network providers; judge and extract with local models only")
   .option(
