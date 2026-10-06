@@ -309,7 +309,8 @@ function planTurn(
   const sources = [
     ...new Map(
       input.rules.flatMap(({ source: { path, displayPath } }) =>
-        path !== undefined ? [[displayPath, { path, displayPath }] as const] : [],
+        // A source with no file (the typed prompts, an inline plan) is never read.
+        path !== undefined && path !== "" ? [[displayPath, { path, displayPath }] as const] : [],
       ),
     ).values(),
   ];

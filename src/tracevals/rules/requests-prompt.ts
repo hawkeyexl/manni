@@ -74,7 +74,8 @@ export interface RequirementsUserOptions {
 export function buildRequirementsUser(options: RequirementsUserOptions): string {
   return [
     "# Request source",
-    `path: ${options.path}`,
+    // Callers pass the display path (`prompt`, `plan`); a blank one names the format.
+    `path: ${options.path !== "" ? options.path : options.format}`,
     `format: ${options.format}`,
     "",
     "# Content",

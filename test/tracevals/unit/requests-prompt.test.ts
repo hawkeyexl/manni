@@ -36,6 +36,7 @@ describe("requirements prompt", () => {
     const content = `1. Add a toggle.\n${"x".repeat(50_000)}\nlast line`;
     const user = buildRequirementsUser({ path: "prompt", format: "prompt", content });
     expect(user).toContain("path: prompt");
+    expect(buildRequirementsUser({ path: "", format: "plan", content })).toContain("path: plan\n");
     expect(user).toContain("format: prompt");
     expect(user).toContain("last line");
   });
