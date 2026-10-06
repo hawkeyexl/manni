@@ -373,7 +373,7 @@ in. A rule with history in [the ledger](#the-ledger) carries its block next.
 
 <the ledger's block, when the rule has one>
 
-First say in one sentence of at most 30 words what the transcript shows about this rule. Then score. Score how strongly the transcript shows each, as a whole number from 0 to 100: the rule does not apply to this turn; the rule applies and the turn followed it; the rule applies and the turn broke it.
+First say in one or two sentences what the transcript shows about this rule. Then score. Score how strongly the transcript shows each, as a whole number from 0 to 100: the rule does not apply to this turn; the rule applies and the turn followed it; the rule applies and the turn broke it.
 ```
 
 Every provider that generates answers each item under one schema. That covers
@@ -396,8 +396,9 @@ Every provider that generates answers each item under one schema. That covers
 `reasoning` is declared first and always required, so the model says what the
 transcript shows before it scores. On the conformance fixtures, this was the
 only variant with no false failure that still caught every true one. The item
-asks for one sentence of at most 30 words, and the schema caps it at 240
-characters. That bounds the latency it adds. A finding's
+asks for one or two sentences, and the schema sets no length. A cap of one
+30-word sentence, 240 characters, was measured. It halved the reasoning tokens,
+and on the fixtures it added false failures for both Qwen and Haiku. A finding's
 `observed` carries the scores and then the reasoning.
 
 The three scores are independent and need not sum to anything. A model can
