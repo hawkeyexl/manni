@@ -356,6 +356,15 @@ export interface SourceIndex {
   has(path: string): boolean;
 }
 
+/**
+ * What one run has read so far: each tracked file once, with its lines split
+ * once. A run makes one with `createSourceCache` and passes it to every
+ * `readSource` it makes, so a source cited a hundred times is read once. It
+ * holds whatever the files said when first read, so a run that rewrites files
+ * it may later read as sources makes none.
+ */
+export type SourceCache = Map<string, Promise<{ text: string; lines: readonly string[] } | undefined>>;
+
 export interface CheckPageOptions {
   /** Absolute directory source paths resolve from. */
   root: string;
@@ -384,6 +393,8 @@ export interface CheckPageOptions {
   /** How many commits the claim history walk reads. Defaults to `MAX_PAGE_COMMITS`. */
   pageCommitCap?: number;
   sourceIndex?: SourceIndex;
+  /** Source files already read this run (`createSourceCache`); absent, each citation reads its own. */
+  sourceCache?: SourceCache;
   /**
    * The page's citations as merged from a manifest, each with where it sits.
    * Given, the page's own frontmatter `citations` is not read. Without it, a

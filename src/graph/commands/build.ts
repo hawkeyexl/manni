@@ -7,6 +7,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { GraphError } from "../types.js";
 import { analyzeDoc } from "../core/analyze.js";
+import { ANALYZE_CACHE_DIR, AnalyzeCache } from "../core/analyze-cache.js";
 import { loadRunConfig } from "../core/config.js";
 import { deriveGraph } from "../core/derive.js";
 import {
@@ -121,9 +122,13 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
   }
 
   const allPaths = new Set(usingStdin ? [...files, STDIN_PATH] : files);
+  // Each page's body parse is cached across runs (`analyze-cache.ts`). Link
+  // resolution against `allPaths` and `routes` still runs on every build.
+  const cache = new AnalyzeCache(resolve(cwd, ANALYZE_CACHE_DIR));
   const analyzeOptions = {
     routes: routesFrom(config, base),
     ...(format === undefined ? {} : { format }),
+    parse: cache.parse,
   };
   const read = files.map((path) =>
     analyzeDoc(readFileSync(resolve(base, path), "utf8"), path, allPaths, analyzeOptions),
@@ -185,6 +190,7 @@ export async function buildGraph(opts: BuildOptions = {}): Promise<BuiltGraph> {
     qualified: config.provenance.qualified,
   });
   const turtle = emitTurtle(quads);
+  await cache.flush();
 
   return { outPath, docs: docs.length, quads: quads.length, warnings, turtle };
 }

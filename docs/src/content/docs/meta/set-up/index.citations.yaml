@@ -78,9 +78,9 @@ docs/src/content/docs/meta/set-up/index.mdx:
         integrity: sha256-afd83372c654d12b38041a076d67122d4c8faedfd948fd30f6e288425b62517e
       source:
         file: src/meta/core/load-files.ts
-        lines: 269-272
+        lines: 308-311
         integrity: sha256-4599d601ad8068f93a532f63eb18d8e223706720fc069d02d27c2a17f0a63699
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
     - id: node-24-floor
       claim:
         lines: 14

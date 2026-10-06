@@ -4,6 +4,7 @@
  * Directory and glob expansion is restricted to the given extensions; explicit
  * file arguments are always included so the user can target any single file.
  */
+import { AsyncLocalStorage } from "node:async_hooks";
 import { stat } from "node:fs/promises";
 import { extname, relative, resolve } from "node:path";
 import fg from "fast-glob";
@@ -224,9 +225,47 @@ export async function resolveTargets(opts: ResolveOptions): Promise<string[]> {
   return (await resolveTargetSet(opts)).files;
 }
 
+/**
+ * One walk per distinct target set while `fn` runs. `manni check` hands every
+ * domain the same collections, and each would otherwise glob them and spawn
+ * its own `git check-ignore`. Scoped to the call, so nothing outlives a run
+ * and no other caller ever sees a cached list.
+ */
+export function withSharedWalks<T>(fn: () => Promise<T>): Promise<T> {
+  return sharedWalks.run(new Map(), fn);
+}
+
+const sharedWalks = new AsyncLocalStorage<Map<string, Promise<ResolvedTargets>>>();
+
 export async function resolveTargetSet(
   opts: ResolveOptions,
 ): Promise<ResolvedTargets> {
+  const memo = sharedWalks.getStore();
+  if (memo === undefined) return walkTargetSet(opts);
+  // Everything that changes the answer. The unavailable-gitignore callback
+  // only reports, and a run says it once anyway, so a shared walk fires the
+  // first caller's alone. A new ResolveOptions field that changes the walk
+  // must join this key, or two callers would share a wrong list.
+  const key = JSON.stringify([
+    resolve(opts.cwd ?? process.cwd()),
+    opts.inputs,
+    opts.exts ?? null,
+    opts.exclude ?? [],
+    opts.allowEmpty ?? false,
+    opts.respectGitignore ?? true,
+  ]);
+  let walk = memo.get(key);
+  if (walk === undefined) {
+    walk = walkTargetSet(opts);
+    memo.set(key, walk);
+    // A failed walk is the caller's error to report, not an answer to keep.
+    walk.catch(() => memo.delete(key));
+  }
+  // Each caller gets its own copy, so one domain cannot edit another's list.
+  return structuredClone(await walk);
+}
+
+async function walkTargetSet(opts: ResolveOptions): Promise<ResolvedTargets> {
   const cwd = opts.cwd ?? process.cwd();
   const exts = (opts.exts ?? supportedExtensions()).map((e) =>
     e.toLowerCase().startsWith(".") ? e.toLowerCase() : `.${e.toLowerCase()}`,

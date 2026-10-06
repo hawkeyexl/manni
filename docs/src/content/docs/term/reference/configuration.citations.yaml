@@ -175,9 +175,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-31a0f0677ce0c33c466b7d6770d3274086cfa3684bf486277b2eac20571c2780
       source:
         file: src/meta/core/load-files.ts
-        lines: 211
+        lines: 212
         integrity: sha256-ee02e578540932639c3aa659c0568d487c6d8a4293633f28b18dd4ff557ad7f9
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
     - id: respect-gitignore-no-gitignore
       claim:
         lines: 70
@@ -438,18 +438,18 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-e3fddc012ce5bb146ba5bd067310adbaab7a06782d884e4ffbca13ca5adb8d11
       source:
         file: src/meta/core/load-files.ts
-        lines: 305
+        lines: 344
         integrity: sha256-e875231ef845ad664fc8dde395cd7cae437ab1a0eda11a486fcd2cbd153fabc5
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
     - id: allow-empty-no-matched-files
       claim:
         lines: 69
         integrity: sha256-e3fddc012ce5bb146ba5bd067310adbaab7a06782d884e4ffbca13ca5adb8d11
       source:
         file: src/meta/core/load-files.ts
-        lines: 363
+        lines: 402
         integrity: sha256-da70dbb9bcc1db6c1d1532237399e11fa14a9f72563d7fca972d0bb400e2e69f
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
     - id: duplicate-id-on-every-entry
       claim:
         integrity: sha256-44ef57a62c574467369a2141e4e556b88bba96ee6875dd0337e0ae01896c92b1

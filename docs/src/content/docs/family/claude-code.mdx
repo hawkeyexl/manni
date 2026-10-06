@@ -160,13 +160,18 @@ error.
 ## What happens before the agent stops
 
 When the agent tries to finish, the plugin runs `manni check` over what it
-changed. When `tracevals.conformance` exists, it also judges the turn that just ended against the
-rules your repository declares for agents, with the fast in-loop model. That is the per-file checks on every file the git working tree changed
-against `HEAD`, whether modified, added, renamed or untracked. It also runs the
-checks that cover the whole set: every citation, the glossary and the graph.
-A source edit can drift a citation on a page the agent never opened.
+changed. That is the per-file checks on every file the git working tree changed
+against `HEAD`, whether modified, added, renamed or untracked. It also checks
+every citation, since a source edit can drift one on a page the agent never
+opened. The glossary and the graph read only collection documents. So they are
+checked when the agent changed or removed one, and skipped when it changed only
+code.
 
-With a clean working tree, nothing runs.
+When `tracevals.conformance` exists, it also judges the turn that just ended
+against the rules your repository declares for agents, with the fast in-loop
+model.
+
+With a clean working tree, no file check runs.
 
 If errors remain, the stop is blocked once. The agent gets the report and one
 repair pass.

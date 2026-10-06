@@ -432,6 +432,54 @@ describe("detectEol, lineAt and offsetOfLine", () => {
   });
 });
 
+describe("lineAt and offsetOfLine against a plain scan", () => {
+  // The definitions the index-backed versions must keep, written the slow way.
+  const slowLineAt = (text: string, offset: number): number => {
+    let line = 1;
+    for (let i = 0; i < Math.min(offset, text.length); i++) if (text.charCodeAt(i) === 10) line++;
+    return line;
+  };
+  const slowOffsetOfLine = (text: string, line: number): number => {
+    let pos = 0;
+    for (let n = 1; n < line; n++) {
+      const nl = text.indexOf("\n", pos);
+      if (nl === -1) return text.length;
+      pos = nl + 1;
+    }
+    return pos;
+  };
+  const texts = ["", "\n", "abc", "a\nb\nc", "a\r\nb\r\n\r\nc\r\n", "\n\n\nx", "tail\n"];
+
+  it("agrees at every offset, including negative and past the end", () => {
+    for (const text of texts) {
+      for (let offset = -2; offset <= text.length + 3; offset++) {
+        expect(lineAt(text, offset), `${JSON.stringify(text)} @${String(offset)}`).toBe(slowLineAt(text, offset));
+      }
+    }
+  });
+
+  it("agrees at every line, including zero and past the end", () => {
+    for (const text of texts) {
+      for (let line = 0; line <= text.length + 3; line++) {
+        expect(offsetOfLine(text, line), `${JSON.stringify(text)} L${String(line)}`).toBe(
+          slowOffsetOfLine(text, line),
+        );
+      }
+    }
+  });
+
+  it("stays right when two texts are asked in turn", () => {
+    const a = "one\ntwo\nthree\n";
+    const b = "x\ny\n";
+    for (let i = 0; i < 3; i++) {
+      expect(lineAt(a, a.length)).toBe(4);
+      expect(lineAt(b, b.length)).toBe(3);
+      expect(offsetOfLine(a, 3)).toBe(8);
+      expect(offsetOfLine(b, 3)).toBe(4);
+    }
+  });
+});
+
 describe("paragraphAfter", () => {
   it("skips blank lines and spans the run of non-blank lines", () => {
     const content = "x\n\n\nFirst line\nsecond line\n\nnext\n";

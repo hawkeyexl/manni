@@ -1379,8 +1379,8 @@ describe("manni cite --no-color (resolution)", () => {
     return check;
   }
 
-  const umbrellaCheck = (args: string[]): Promise<Command> => {
-    const program = buildUmbrella();
+  const umbrellaCheck = async (args: string[]): Promise<Command> => {
+    const program = await buildUmbrella();
     return parsedCheck(program, find(find(program, "cite"), "check"), ["node", "manni", "cite", ...args]);
   };
 

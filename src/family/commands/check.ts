@@ -12,7 +12,8 @@
  *   Each domain runs bare, exactly as its own CI step would.
  * - `paths`: the per-file checks on the collection members among the paths.
  * - `changed`: the per-file checks on the git working tree's changes, plus
- *   every set-wide check. A clean tree runs nothing.
+ *   `cite` set-wide. `term` and `graph` run set-wide too when a collection
+ *   document changed or was removed. A clean tree runs nothing.
  *
  * `cite` is per-file on paths and set-wide otherwise: a source edit can drift
  * any page's citation, so after a session the whole set is what is checked.
@@ -20,27 +21,9 @@
 import { basename, extname, resolve } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
-import { runValidate } from "../../meta/commands/validate.js";
-import { render as renderMeta } from "../../meta/reporters/index.js";
 import { resolveTargetSet } from "../../meta/internal.js";
 import { supportedExtensions } from "../../meta/extractors/index.js";
-import { runCheck as runCite } from "../../cite/commands/check.js";
-import { renderCheckPretty as citePretty } from "../../cite/reporters/pretty.js";
-import { renderCheckJson as citeJson } from "../../cite/reporters/json.js";
-import { renderCheckGithub as citeGithub } from "../../cite/reporters/github.js";
-import { runLint } from "../../lint/commands/lint.js";
-import { render as renderLint } from "../../lint/reporters/index.js";
-import { runRun as runDocevals } from "../../docevals/commands/run.js";
-import { render as renderDocevals } from "../../docevals/reporters/index.js";
-import { DocevalsError } from "../../docevals/types.js";
-import { runCheck as runTerm } from "../../term/commands/check.js";
-import { renderFindingsPretty as termPretty } from "../../term/reporters/pretty.js";
-import { renderFindingsJson as termJson } from "../../term/reporters/json.js";
-import { renderFindingsGithub as termGithub } from "../../term/reporters/github.js";
-import { buildGraph } from "../../graph/commands/build.js";
-import { runCheck as runGraph, renderCheck as renderGraph } from "../../graph/commands/check.js";
-import { checkTurn, type TurnCheckInput, type TurnCheckResult } from "../../tracevals/commands/check.js";
-import { renderCheck as renderTurn } from "../../tracevals/reporters/conformance.js";
+import type { TurnCheckInput, TurnCheckResult } from "../../tracevals/commands/check.js";
 import { changedFiles } from "../core/changed.js";
 import { sayOnce } from "../core/said-once.js";
 import type { Envelope } from "../core/envelope.js";
@@ -58,6 +41,7 @@ import {
   type Domain,
   type Family,
 } from "../core/in-play.js";
+import { withSharedWalks } from "../../meta/core/load-files.js";
 
 export const CHECK_FORMATS = ["pretty", "json", "github"] as const;
 export type CheckFormat = (typeof CHECK_FORMATS)[number];
@@ -117,11 +101,20 @@ interface Context {
   onNotice: (message: string) => void;
 }
 
+/**
+ * Each domain's command core and reporter are imported where it runs: a hook
+ * checks one page with four domains, and the other two (the RDF stack among
+ * them) are worth not loading.
+ */
 async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
   const { family, cwd, inputs, onNotice } = ctx;
   const configPath = family.configPath;
   switch (domain) {
     case "meta": {
+      const [{ runValidate }, { render: renderMeta }] = await Promise.all([
+        import("../../meta/commands/validate.js"),
+        import("../../meta/reporters/index.js"),
+      ]);
       const run = await runValidate({ inputs, configPath, cwd, skipDefaultOnly: true, onNotice });
       if (run.results.length === 0) {
         return { skipped: family.sections.has("meta") ? META_DEFAULTS_ONLY : NOT_SET_UP.meta };
@@ -133,6 +126,13 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       };
     }
     case "cite": {
+      const [{ runCheck: runCite }, { renderCheckPretty: citePretty }, { renderCheckJson: citeJson }, { renderCheckGithub: citeGithub }] =
+        await Promise.all([
+          import("../../cite/commands/check.js"),
+          import("../../cite/reporters/pretty.js"),
+          import("../../cite/reporters/json.js"),
+          import("../../cite/reporters/github.js"),
+        ]);
       const run = await runCite({ inputs, configPath, cwd, onNotice });
       if (!run.pages.some((p) => p.citations.length > 0 || p.findings.length > 0)) {
         return { skipped: NOT_SET_UP.cite };
@@ -149,6 +149,10 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
     }
     case "lint": {
       if (!family.sections.has("lint")) return { skipped: NOT_SET_UP.lint };
+      const [{ runLint }, { render: renderLint }] = await Promise.all([
+        import("../../lint/commands/lint.js"),
+        import("../../lint/reporters/index.js"),
+      ]);
       const run = await runLint({ inputs, configPath, cwd, onNotice });
       return {
         failed: run.summary.failed > 0,
@@ -156,6 +160,11 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       };
     }
     case "docevals": {
+      const [{ runRun: runDocevals }, { render: renderDocevals }, { DocevalsError }] = await Promise.all([
+        import("../../docevals/commands/run.js"),
+        import("../../docevals/reporters/index.js"),
+        import("../../docevals/types.js"),
+      ]);
       let report;
       try {
         report = await runDocevals(inputs, {
@@ -178,6 +187,13 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
       };
     }
     case "term": {
+      const [{ runCheck: runTerm }, { renderFindingsPretty: termPretty }, { renderFindingsJson: termJson }, { renderFindingsGithub: termGithub }] =
+        await Promise.all([
+          import("../../term/commands/check.js"),
+          import("../../term/reporters/pretty.js"),
+          import("../../term/reporters/json.js"),
+          import("../../term/reporters/github.js"),
+        ]);
       const report = await runTerm({ inputs, configPath, cwd, allowEmpty: true, onNotice });
       if (report.terms === 0) return { skipped: NOT_SET_UP.term };
       return {
@@ -192,6 +208,10 @@ async function runDomain(domain: Domain, ctx: Context): Promise<Outcome> {
     }
     case "graph": {
       if (!family.sections.has("graph")) return { skipped: NOT_SET_UP.graph };
+      const [{ buildGraph }, { runCheck: runGraph, renderCheck: renderGraph }] = await Promise.all([
+        import("../../graph/commands/build.js"),
+        import("../../graph/commands/check.js"),
+      ]);
       const built = await buildGraph({ config: configPath, cwd });
       for (const warning of built.warnings) onNotice(warning);
       const report = await runGraph({ config: configPath, cwd, turtle: built.turtle });
@@ -219,7 +239,12 @@ function isDocument(label: string): boolean {
   return supportedExtensions().includes(extname(label).toLowerCase());
 }
 
-export async function runFamilyCheck(opts: FamilyCheckOptions): Promise<FamilyCheckRun> {
+/** Every domain walks the same collections, so the run shares one walk per target set. */
+export function runFamilyCheck(opts: FamilyCheckOptions): Promise<FamilyCheckRun> {
+  return withSharedWalks(() => checkUnshared(opts));
+}
+
+async function checkUnshared(opts: FamilyCheckOptions): Promise<FamilyCheckRun> {
   const cwd = resolve(opts.cwd ?? process.cwd());
   const onNotice = opts.onNotice ?? ((): void => undefined);
   const family = await loadFamily(cwd, opts.configPath);
@@ -254,9 +279,18 @@ export async function runFamilyCheck(opts: FamilyCheckOptions): Promise<FamilyCh
     case "changed": {
       const changed = await changedFiles(cwd);
       if (!changed.dirty) return { status: "pass", files: [], checks: [] };
-      files = changed.files.map((path) => labelFrom(cwd, path)).filter((l) => isDocument(l) && isMember(l));
+      const memberDocuments = (paths: string[]): string[] =>
+        paths.map((path) => labelFrom(cwd, path)).filter((l) => isDocument(l) && isMember(l));
+      files = memberDocuments(changed.files);
       inputs = files;
-      domains = [...(files.length > 0 ? (["meta", "lint", "docevals"] as const) : []), "cite", "term", "graph"];
+      // term and graph read only collection documents, so a session that
+      // changed or removed none of them leaves both as they were.
+      const pageChanged = files.length > 0 || memberDocuments(changed.removed).length > 0;
+      domains = [
+        ...(files.length > 0 ? (["meta", "lint", "docevals"] as const) : []),
+        "cite",
+        ...(pageChanged ? (["term", "graph"] as const) : []),
+      ];
       break;
     }
   }
@@ -328,6 +362,9 @@ function jsonEntry(c: CheckOutcome): object {
     return { command: c.command, status: c.status, report: JSON.parse(c.render("json", false)) as unknown };
   } catch {
     // One reporter's bad output must not take the other checks' reports with it.
+    // `error` on purpose, whatever the run's own status: with no report to
+    // embed, a `pass` or `fail` here would be a verdict nobody can inspect.
+    // The reference documents `error` for this case too.
     return { command: c.command, status: "error", message: `${c.command} -f json printed output that is not JSON` };
   }
 }
@@ -463,6 +500,12 @@ export async function runTurnCheck(
   if (judged === undefined) return undefined;
   const trace = resolve(cwd, judged);
   const sessionId = envelope.sessionId ?? basename(trace, ".jsonl");
+  // Loaded here, as every domain is, so a run that never judges a turn never
+  // loads tracevals.
+  const [{ checkTurn }, { renderCheck: renderTurn }] = await Promise.all([
+    import("../../tracevals/commands/check.js"),
+    import("../../tracevals/reporters/conformance.js"),
+  ]);
   let result: TurnCheckResult;
   try {
     result = await checkTurn({

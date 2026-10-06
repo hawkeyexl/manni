@@ -75,7 +75,7 @@ const stripDashes = (long) => long.replace(/^--/, "");
 // ---------------------------------------------------------------------------
 // 1. Canonical surface from the commander program.
 // ---------------------------------------------------------------------------
-const program = buildProgram();
+const program = await buildProgram();
 
 function optionLongs(cmd) {
   return cmd.options

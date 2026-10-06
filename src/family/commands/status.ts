@@ -11,17 +11,7 @@ import { extname, resolve } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 import { extractorForExtension } from "../../meta/extractors/index.js";
-import { runCheck as runCite } from "../../cite/commands/check.js";
-import { runList as listEvals } from "../../docevals/commands/list.js";
-import { runList as listTerms } from "../../term/commands/list.js";
-import { discoverConfig } from "../../tracevals/core/config.js";
-import {
-  assertProviderSelection,
-  resolveSelectionIdentity,
-  selectHookProvider,
-  selectProvider,
-} from "../../tracevals/judge/provider.js";
-import { hostStatus, type HostStatus } from "../../tracevals/rules/host.js";
+import type { HostStatus } from "../../tracevals/rules/host.js";
 import type { Envelope } from "../core/envelope.js";
 import {
   COMMANDS,
@@ -35,6 +25,7 @@ import {
   type Domain,
   type Family,
 } from "../core/in-play.js";
+import { withSharedWalks } from "../../meta/core/load-files.js";
 
 export const STATUS_FORMATS = ["pretty", "json"] as const;
 export type StatusFormat = (typeof STATUS_FORMATS)[number];
@@ -77,6 +68,15 @@ export interface StatusOptions {
  */
 async function tracevalsRow(cwd: string, opts: StatusOptions): Promise<DomainRow> {
   try {
+    const [
+      { discoverConfig },
+      { assertProviderSelection, resolveSelectionIdentity, selectHookProvider, selectProvider },
+      { hostStatus },
+    ] = await Promise.all([
+      import("../../tracevals/core/config.js"),
+      import("../../tracevals/judge/provider.js"),
+      import("../../tracevals/rules/host.js"),
+    ]);
     const { config } = await discoverConfig(cwd, opts.configPath === undefined ? {} : { configPath: opts.configPath });
     const hook = await resolveSelectionIdentity(config, selectHookProvider(config));
     const selection = selectProvider(config);
@@ -120,6 +120,26 @@ function ownSchemaCount(cwd: string, members: readonly string[]): number {
   return n;
 }
 
+/**
+ * The pages carrying citations, read the way `cite check` reads them: its
+ * targets, its manifests, its entry rules. Nothing is classified, so no claim
+ * or source is looked at and no git history is read.
+ */
+async function citedPages(cwd: string, configPath: string): Promise<number> {
+  // Imported where they run, so `manni check` never loads them.
+  const { prepareRun, readTarget } = await import("../../cite/commands/check.js");
+  const { readPage } = await import("../../cite/core/page.js");
+  const prepared = await prepareRun({ inputs: [], configPath, cwd, checkSources: false }, "checked", "check");
+  let n = 0;
+  for (const file of prepared.files) {
+    const content = await readTarget(prepared.run, file);
+    const { citations } = (await prepared.setupFor(file, content)).options;
+    const read = readPage(file, content, { markers: false, ...(citations === undefined ? {} : { citations }) });
+    if (read.citations.length > 0) n++;
+  }
+  return n;
+}
+
 async function row(domain: Domain, family: Family, cwd: string, members: readonly string[]): Promise<DomainRow> {
   const configPath = family.configPath;
   const inPlay = (reason: string): DomainRow => ({ name: domain, status: "in-play", reason });
@@ -132,17 +152,18 @@ async function row(domain: Domain, family: Family, cwd: string, members: readonl
       return n > 0 ? inPlay(pages(n, "names its own $schema", "name their own $schema")) : notSetUp;
     }
     case "cite": {
-      const run = await runCite({ inputs: [], configPath, cwd, checkSources: false });
-      const n = run.pages.filter((p) => p.citations.length > 0).length;
+      const n = await citedPages(cwd, configPath);
       return n > 0 ? inPlay(pages(n, "carries citations", "carry citations")) : notSetUp;
     }
     case "docevals": {
+      const { runList: listEvals } = await import("../../docevals/commands/list.js");
       const { plans } = await listEvals([], { config: configPath, cwd });
       const n = plans.filter((p) => !p.skip && p.evals.length > 0).length;
       if (n === 0) return notSetUp;
       return inPlay(section ? "docevals: section" : pages(n, "declares evals", "declare evals"));
     }
     case "term": {
+      const { runList: listTerms } = await import("../../term/commands/list.js");
       const { terms } = await listTerms({ inputs: [], configPath, cwd, allowEmpty: true });
       return terms.length > 0 ? inPlay(plural(terms.length, "term")) : notSetUp;
     }
@@ -152,7 +173,12 @@ async function row(domain: Domain, family: Family, cwd: string, members: readonl
   }
 }
 
-export async function runStatus(opts: StatusOptions = {}): Promise<StatusReport> {
+/** Every domain walks the same collections, so the run shares one walk per target set. */
+export function runStatus(opts: StatusOptions = {}): Promise<StatusReport> {
+  return withSharedWalks(() => statusUnshared(opts));
+}
+
+async function statusUnshared(opts: StatusOptions): Promise<StatusReport> {
   const cwd = resolve(opts.cwd ?? process.cwd());
   const family = await loadFamily(cwd, opts.configPath);
   const members = family.collections.length === 0 ? [] : await listMembers(family, cwd);
@@ -226,14 +252,12 @@ export function renderStatus(report: StatusReport, format: StatusFormat): string
  */
 export const FIX_SKILL = "manni:fix";
 
-/** The set-wide checks a stop runs, as the briefing names them. */
-const SET_WIDE: ReadonlyArray<readonly [Domain, string]> = [
-  ["cite", "every citation"],
+/** The set-wide checks a stop runs when a collection document changed, as the briefing names them. */
+const PAGE_WIDE: ReadonlyArray<readonly [Domain, string]> = [
   ["term", "the glossary"],
   ["graph", "the graph"],
 ];
 
-/** What an agent is told at the start of a session, after the table. */
 /** `a`, `a or b`, `a, b or c`: a list in prose, joined by `conjunction`. */
 function prose(items: readonly string[], conjunction: string): string {
   return items.length <= 1
@@ -241,14 +265,17 @@ function prose(items: readonly string[], conjunction: string): string {
     : `${items.slice(0, -1).join(", ")} ${conjunction} ${items.at(-1) ?? ""}`;
 }
 
+/** What an agent is told at the start of a session, after the table. */
 export function agentLines(report: StatusReport): string {
   const names = prose(report.collections.map((c) => c.name), "or");
   const inPlay = new Set(report.domains.filter((d) => d.status === "in-play").map((d) => d.name));
-  const setWide = SET_WIDE.filter(([domain]) => inPlay.has(domain)).map(([, what]) => what);
-  const plus = setWide.length === 0 ? "" : `, plus ${prose(setWide, "and")}`;
+  // A stop checks every citation whenever the tree changed: a source edit can drift any of them.
+  const plus = inPlay.has("cite") ? ", plus every citation" : "";
+  const pageWide = PAGE_WIDE.filter(([domain]) => inPlay.has(domain)).map(([, what]) => what);
+  const also = pageWide.length === 0 ? "" : ` It checks ${prose(pageWide, "and")} too when you changed a page.`;
   return [
     `After you edit a file in ${names}, manni check runs on it, and errors come back to you at once.`,
-    `Before you finish, manni check runs on every file you changed${plus}. You get one repair pass.`,
+    `Before you finish, manni check runs on every file you changed${plus}.${also} You get one repair pass.`,
     `The ${FIX_SKILL} skill says how to repair each finding.`,
   ].join("\n");
 }
