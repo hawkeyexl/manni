@@ -15,7 +15,7 @@ import { discoverConfig } from "../core/config.js";
 import { resolveSelectionIdentity, selectHookProvider } from "../judge/provider.js";
 import { NOT_SET_UP, renderPrepare } from "../reporters/conformance.js";
 import type { SummaryFormat } from "../reporters/index.js";
-import { warmModel } from "../rules/host.js";
+import { hostSetting, warmModel, type HostApi } from "../rules/host.js";
 import { libraryLocalModels, type LocalModels } from "../rules/local.js";
 import { resolveAlwaysSources } from "../rules/sources.js";
 import { TracevalsError } from "../types.js";
@@ -67,6 +67,8 @@ export interface PrepareOptions {
   /** Test seams. */
   localModels?: LocalModels;
   extractor?: InferenceProvider;
+  /** The model host's calls, in place of the library's. */
+  hostApi?: HostApi;
 }
 
 export interface PrepareResult {
@@ -106,7 +108,13 @@ export async function runPrepare(options: PrepareOptions = {}): Promise<PrepareR
   }
 
   const local = options.localModels ?? libraryLocalModels(config.providers);
-  const ex = await extraction(config, rulesCacheFor(config, configDir, options.noCache === true), options.extractor);
+  const keepAlive = config.providers["llama-cpp"]?.keepAlive;
+  const ex = await extraction(
+    config,
+    rulesCacheFor(config, configDir, options.noCache === true),
+    options.extractor,
+    hostSetting(hookMode, payload.sessionId, keepAlive),
+  );
   const roles: [PrepareModel["role"], Identity][] = [
     ["hook", await resolveSelectionIdentity(config, selectHookProvider(config))],
     ["extraction", ex.identity],
@@ -137,11 +145,17 @@ export async function runPrepare(options: PrepareOptions = {}): Promise<PrepareR
       role === "hook" &&
       payload.hookEvent === "SessionStart" &&
       payload.sessionId !== undefined &&
-      (await warmModel({
-        sessionId: payload.sessionId,
-        model: id.model,
-        keepAliveMs: config.providers["llama-cpp"]?.keepAlive ?? DEFAULT_KEEP_ALIVE_MS,
-      }))
+      (await warmModel(
+        {
+          sessionId: payload.sessionId,
+          model: id.model,
+          keepAliveMs: keepAlive ?? DEFAULT_KEEP_ALIVE_MS,
+          ...(config.providers["llama-cpp"]?.modelsDir !== undefined
+            ? { modelsDirectory: config.providers["llama-cpp"].modelsDir }
+            : {}),
+        },
+        options.hostApi,
+      ))
     ) {
       entry.state = "loaded";
     }

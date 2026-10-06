@@ -26,6 +26,7 @@ import {
   type ProviderSpec,
 } from "@hawkeyexl/inference";
 import { TracevalsError } from "../types.js";
+import type { HostSetting } from "../rules/host.js";
 import type { TracevalsConfig } from "../core/config.js";
 import {
   assertKnownProvider,
@@ -67,6 +68,11 @@ export interface JudgeProviderOptions {
   mockResponses?: MockResponse[];
   /** Scripted decisions for the `mock` seam, which the turn judge asks. */
   mockDecisions?: MockDecisions;
+  /**
+   * How a `llama-cpp` provider reaches the model host. Unset, it connects to
+   * a running host and never starts one, which is every run by hand.
+   */
+  host?: HostSetting;
 }
 
 /**
@@ -173,6 +179,11 @@ export function providerSpecFor(
       return { ...spec, anthropic: { toolName: "record_verdict" } };
     case "openai":
       return { ...spec, openai: { schemaName: "verdict" } };
+    case "llama-cpp":
+      return {
+        ...spec,
+        llamaCpp: { ...spec.llamaCpp, ...(options.host ?? { host: "connect" }) },
+      };
     case "mock":
       return {
         ...spec,

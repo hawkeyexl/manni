@@ -20,6 +20,7 @@ import { JUDGE_ENV } from "../../../src/tracevals/commands/conformance.js";
 import { runPrepare } from "../../../src/tracevals/commands/prepare.js";
 import { runRelease } from "../../../src/tracevals/commands/release.js";
 import { renderRelease } from "../../../src/tracevals/reporters/conformance.js";
+import type { HostApi } from "../../../src/tracevals/rules/host.js";
 import type { LocalModels } from "../../../src/tracevals/rules/local.js";
 import { mockTurnDecisions } from "../../../src/tracevals/rules/mock.js";
 import { JEV_OUT_OF_LOOP } from "../../../src/tracevals/judge/provider.js";
@@ -90,6 +91,13 @@ function llama(): InferenceProvider {
   };
   return provider;
 }
+
+/** No model host running, and nothing a test can start. */
+const noHost: HostApi = {
+  lease: () => Promise.resolve(null),
+  status: () => Promise.resolve(null),
+  release: () => Promise.resolve({ released: [], unloaded: [], hostStopped: false }),
+};
 
 function localModels(overrides: Partial<LocalModels> = {}): LocalModels & { ensured: string[] } {
   const ensured: string[] = [];
@@ -429,16 +437,16 @@ describe("prepare", () => {
 
 describe("release", () => {
   it("says no host is running, with --all", async () => {
-    const result = await runRelease({ stdin: "", all: true });
+    const result = await runRelease({ stdin: "", all: true, hostApi: noHost });
     expect(result.stdout).toBe("No model host is running.");
     expect(result.report).toEqual({ released: [], unloaded: [], hostStopped: false, exitCode: 0 });
-    const json = await runRelease({ stdin: "", all: true, format: "json" });
+    const json = await runRelease({ stdin: "", all: true, format: "json", hostApi: noHost });
     expect(JSON.parse(json.stdout)).toEqual(result.report);
   });
 
   it("releases the envelope's session, writing nothing to stdout", async () => {
     const stdin = JSON.stringify({ session_id: "s1", hook_event_name: "SessionEnd" });
-    const result = await runRelease({ stdin });
+    const result = await runRelease({ stdin, hostApi: noHost });
     expect(result.stdout).toBe("");
     expect(result.exitCode).toBe(0);
   });

@@ -20,7 +20,7 @@ import {
 } from "../judge/provider.js";
 import { renderCheck } from "../reporters/conformance.js";
 import type { SummaryFormat } from "../reporters/index.js";
-import { queued, QUEUE_WAIT_MS } from "../rules/host.js";
+import { hostSetting, queued, QUEUE_WAIT_MS } from "../rules/host.js";
 import {
   applicableRules,
   judgeTurn,
@@ -180,7 +180,8 @@ async function conform(p: Params): Promise<Outcome> {
   }
 
   // Extraction, between gates 4 and 6, with the out-of-loop model always.
-  const ex = await extraction(config, rulesCacheFor(config, p.configDir, p.noCache), p.extractor);
+  const host = hostSetting(p.inLoop, p.sessionId, config.providers["llama-cpp"]?.keepAlive);
+  const ex = await extraction(config, rulesCacheFor(config, p.configDir, p.noCache), p.extractor, host);
   if (sources.some((s) => ex.needs(s))) {
     report.extraction = { provider: ex.identity.provider, model: ex.identity.model };
     if (p.offline && isNetworkProvider(ex.identity.provider)) {
@@ -238,6 +239,7 @@ async function conform(p: Params): Promise<Outcome> {
     constructProvider(config, judgeId, {
       mockDecisions: mockTurnDecisions,
       mockResponses: [{ json: { violations: [], unclear: [] } }],
+      host,
     });
   let ran: Awaited<ReturnType<typeof queued<TurnJudgement>>>;
   try {

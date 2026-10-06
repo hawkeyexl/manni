@@ -14,6 +14,7 @@ import {
   selectProvider,
 } from "../judge/provider.js";
 import { RulesCache, rulesCacheKey } from "../rules/cache.js";
+import type { HostSetting } from "../rules/host.js";
 import { extractRules, type Rule } from "../rules/extract.js";
 import { GB, type LocalModels } from "../rules/local.js";
 import { mockRulesResponse } from "../rules/mock.js";
@@ -97,6 +98,7 @@ export async function extraction(
   config: TracevalsConfig,
   cache: RulesCache,
   injected?: InferenceProvider,
+  host?: HostSetting,
 ): Promise<Extraction> {
   let identity: Identity;
   if (injected !== undefined) {
@@ -115,7 +117,7 @@ export async function extraction(
         mockResponses: [mockRulesResponse(source.content)],
       });
     }
-    built = constructProvider(config, identity);
+    built = constructProvider(config, identity, host === undefined ? {} : { host });
     return built;
   };
   const keyOf = (source: RuleSource): string =>

@@ -7,7 +7,7 @@
 import { parseHookPayload, readStdin } from "../capture/hook.js";
 import { renderRelease } from "../reporters/conformance.js";
 import type { SummaryFormat } from "../reporters/index.js";
-import { releaseHost, type ReleaseResult } from "../rules/host.js";
+import { releaseHost, type HostApi, type ReleaseResult } from "../rules/host.js";
 import { TracevalsError } from "../types.js";
 
 export interface ReleaseReport extends ReleaseResult {
@@ -20,6 +20,8 @@ export interface ReleaseOptions {
   /** Drop every lease, unload every model and stop the host. */
   all?: boolean;
   format?: SummaryFormat;
+  /** The model host's calls, in place of the library's. */
+  hostApi?: HostApi;
 }
 
 export interface ReleaseCommandResult {
@@ -35,8 +37,8 @@ export async function runRelease(options: ReleaseOptions = {}): Promise<ReleaseC
   const hookMode = raw.trim() !== "";
   const sessionId = hookMode ? parseHookPayload(raw).sessionId : undefined;
   let result: ReleaseResult;
-  if (options.all === true) result = await releaseHost({ all: true });
-  else if (sessionId !== undefined) result = await releaseHost({ sessionId });
+  if (options.all === true) result = await releaseHost({ all: true }, options.hostApi);
+  else if (sessionId !== undefined) result = await releaseHost({ sessionId }, options.hostApi);
   else throw new TracevalsError("release needs a session from a SessionEnd hook, or --all");
   const report: ReleaseReport = { ...result, exitCode: 0 };
   const rendered =
