@@ -202,12 +202,14 @@ gate that finds nothing to do ends the run.
 | 4 | No rule sources | The sources table resolves nothing for this turn | Silent |
 | 5 | Still downloading | The library reports the local model as `downloading` | One message per session |
 | 6 | Not applicable | Every in-scope rule's `when` fails over the turn | Silent. Each rule counts as `skipped`, never `pass`. |
-| 7 | Already judged | The verdict cache holds this turn, rule set and model | The cached verdict is reused. |
-| 8 | Model not on disk | The local model or runtime is missing | One message per session. Nothing downloads. |
-| 9 | Not enough memory | The library's memory probe, the one `auto` tiering uses | One message per session |
+| 7 | Model not on disk | The local model or runtime is missing | One message per session. Nothing downloads. |
+| 8 | Not enough memory | The library's memory probe, the one `auto` tiering uses | One message per session |
+| 9 | Already judged | The verdict cache holds this turn, rule set and model | The cached verdict is reused. |
 
-Extraction for an uncached source runs between gates 4 and 6. A hosted model
-skips gates 5, 8 and 9. Only after gate 9 does a request reach a local model.
+The cache is read last, because its key needs the model's state limit. A
+local model can only report that once it is on disk. Under a hook, a local extraction
+model meets gates 5, 7 and 8 before any uncached extraction. So nothing
+downloads. A hosted model skips those three gates.
 
 ### `when` on every rule, and `command-matches`
 
@@ -394,7 +396,9 @@ tracevals:
 ```
 
 `jev` joins the family's provider kinds. It only decides, so it can judge
-inside a hook but never serve as `tracevals.provider`. Its connection settings
+inside a hook but never serve as `tracevals.provider`. Every tool that
+generates leaves it out of its provider list, and naming it there answers
+`Provider "jev" answers decisions only, so it cannot generate.` with the list. Its connection settings
 sit in the top-level `providers:` map, as every provider's do. `llama-cpp`
 gains `keepAlive` there, because the host belongs to the shared inference
 layer.
@@ -461,8 +465,9 @@ $ manni tracevals prepare --project . -c manni.config.yaml --no-cache -f json
 }
 ```
 
-A model's `state` is `downloaded`, `ready`, `loaded` or `hosted`. `extraction`
-is `null` under `--offline` with a hosted extraction model.
+A model's `state` is `downloaded`, `ready`, `loaded` or `hosted`, and a hosted
+model's `bytes` is `null`. `extraction` is `null` under `--offline` with a hosted
+extraction model. With `-f json`, the not-set-up message goes in `warnings`.
 
 | Message | Stream | Exit |
 |---|---|---|
@@ -529,8 +534,9 @@ The other closing lines are these.
 - `Last turn of 3b265d00: 14 rules from 5 files. None broken.`
 - `Last turn of 3b265d00: 14 rules from 5 files, none apply to this turn.`
 - `Last turn of 3b265d00: no rule sources governed it.`
+- `Last turn of 3b265d00: nothing happened after the last prompt.`
 
-All three exit 0.
+All four exit 0.
 
 | Situation | Message on stderr, exit 2 |
 |---|---|
@@ -541,6 +547,7 @@ All three exit 0.
 | A local model not on disk | `manni: qwen3.5-4b is not downloaded; run manni tracevals prepare` |
 | Jev out of the loop | `manni: jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.conformance.hook.provider.` |
 | No Jev key | `manni: jev needs an API key in TYPESAFE_API_KEY` |
+| `--offline` with a hosted role | `manni: --offline runs no network provider, and the judge uses anthropic` (or `extraction uses`) |
 | A provider failure | `manni: could not judge the last turn: <first line of the error>` |
 
 The Jev message also answers `run` and `fill` given `--provider jev`.
@@ -586,6 +593,8 @@ The Jev message also answers `run` and `fill` given `--provider jev`.
   scope.
 - `judge.mode` is `decision` or `generative`. In decision mode, `confidence` is
   the option's probability and `runs` is 1.
+- `judge` is `null` when no judge ran, and `extraction` is `null` when no
+  source needed the model.
 - `skipped` is `null`, `"empty-turn"`, `"no-sources"` or `"not-applicable"`.
   The other gates only act under a hook.
 
@@ -648,8 +657,8 @@ Every reply exits 0 and writes JSON to stdout.
 | A broken rule after the repair pass | `{"systemMessage":"tracevals still finds broken rules after one repair pass. Run manni tracevals check <transcript_path> to see them."}` |
 | Gate 5 | `{"systemMessage":"tracevals skipped this turn: qwen3.5-4b is still downloading."}` |
 | Queued for 120 seconds | `{"systemMessage":"tracevals skipped this turn: qwen3.5-4b was busy with other judgements for 2 minutes."}` |
-| Gate 8 | `{"systemMessage":"tracevals skipped this turn: qwen3.5-4b is not downloaded yet. Run manni tracevals prepare to fetch it."}` |
-| Gate 9 | `{"systemMessage":"tracevals skipped this turn: qwen3.5-4b needs about 10 GB and 6 GB is free."}` |
+| Gate 7 | `{"systemMessage":"tracevals skipped this turn: qwen3.5-4b is not downloaded yet. Run manni tracevals prepare to fetch it."}` |
+| Gate 8 | `{"systemMessage":"tracevals skipped this turn: qwen3.5-4b needs about 10 GB and 6 GB is free."}` |
 | Needs-review, clean, or an operational failure | Nothing, as 0078's Stop failures are silent |
 
 The report in a block is the pretty report with color off. When 0078's file
@@ -682,8 +691,8 @@ manni moves its version range, and adds no dependency of its own.
 | `jev` | A decide-only provider. It posts to `/v1/systemone` with a bearer key from `TYPESAFE_API_KEY`. | Hosted decisions |
 | `stateLimit` | The largest state a provider and model accept | Rendering the turn to fit. A cut is a visible marker and a warning, never silent. |
 | `ensureModel` | Fetches the runtime and model without loading them, behind a download lock | `prepare` |
-| `modelState` | `ready`, `downloading` or `missing`, read without loading | Gates 5 and 8 |
-| `fits` | The memory probe `auto` tiering uses, for one named model | Gate 9 |
+| `modelState` | `ready`, `downloading` or `missing`, read without loading | Gates 5 and 7 |
+| `fits` | The memory probe `auto` tiering uses, for one named model | Gate 8 |
 | Model host | The process, its queue, leases and `keepAlive` | Loading a model once, for every hook |
 
 ## Alternatives considered
