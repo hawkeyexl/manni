@@ -94,7 +94,7 @@ describe.skipIf(!built)("tracevals check", () => {
     });
     expect(Object.keys(report)).toEqual([
       "trace", "sessionId", "agentId", "turn", "judge", "extraction",
-      "sources", "findings", "summary", "skipped", "warnings", "exitCode",
+      "sources", "findings", "summary", "session", "skipped", "warnings", "exitCode",
     ]);
   });
 

@@ -457,14 +457,110 @@ describe("the session ledger", () => {
     expect((await read()).rules[PUSH]?.entries).toEqual([{ turn: from, outcome: "followed", note: "Fixed." }]);
   });
 
+  it("records the facts of a judged turn, and the repair pass replaces them", async () => {
+    const first = await hook("breaks");
+    const from = first.report?.turn.from ?? -1;
+    const [facts] = (await read()).turns;
+    expect(facts).toMatchObject({ turn: from, inScope: true });
+    expect(facts?.sources).toContain("CLAUDE.md");
+    expect(facts?.commands).toContainEqual(expect.stringContaining("git push --force"));
+    await hook("breaks", { judge: followedBy("repair-model") });
+    expect((await read()).turns.map((t) => t.turn)).toEqual([from]);
+  });
+
+  it("records a turn that ends at gates 3, 4 and 6, with no judge call", async () => {
+    const judge = generative(() => {
+      throw new Error("the judge must not be asked");
+    });
+    expect((await hook("empty-turn", { judge })).skipped).toEqual({ gate: "empty-turn" });
+    expect((await read()).turns).toEqual([
+      expect.objectContaining({ inScope: false, sources: [], commands: [], wrote: [] }),
+    ]);
+
+    const bare = join(dir, "bare");
+    await mkdir(bare);
+    await writeFile(join(bare, "manni.config.yaml"), "tracevals:\n  provider: mock\n  conformance: {}\n");
+    expect((await hook("follows", { cwd: bare, judge })).skipped).toEqual({ gate: "no-sources" });
+    const [none] = (JSON.parse(await readFile(ledgerPath(bare, SESSION, null), "utf-8")) as Ledger).turns;
+    expect(none).toMatchObject({ inScope: false, sources: [] });
+    expect(none?.commands.length).toBeGreaterThan(0);
+
+    await config("tracevals:\n  provider: mock\n  conformance:\n    exclude: [AGENTS.md, .cursor/rules/stale.mdc]\n");
+    expect((await hook("untouched", { judge })).skipped).toEqual({ gate: "not-applicable" });
+    const ledger = await read();
+    expect(ledger.turns).toContainEqual(
+      expect.objectContaining({ inScope: true, sources: expect.arrayContaining(["CLAUDE.md"]) as unknown }),
+    );
+    expect(ledger.rules).toEqual({});
+    expect(judge.requests).toHaveLength(0);
+  });
+
   it("keeps a subagent's ledger apart from the session's", async () => {
     await hook("follows", { agentTranscriptPath: trace("breaks"), agentId: "a1b2" });
-    expect((await read("a1b2")).rules[PUSH]?.entries[0]?.outcome).toBe("broken");
+    const agent = await read("a1b2");
+    expect(agent.rules[PUSH]?.entries[0]?.outcome).toBe("broken");
+    expect(agent.turns).toHaveLength(1);
     await expect(read()).rejects.toThrow(/ENOENT/);
   });
 
+  it("shares earlier turns' facts with the judge by hand, ignoring this turn and later", async () => {
+    const { report: probe } = await check("breaks");
+    const from = probe.turn.from;
+    const at = (turn: number, commands: string[]) => ({
+      turn, inScope: true, sources: ["CLAUDE.md"], commands, wrote: [], read: [], skills: [], agents: [],
+    });
+    const earlier: Ledger = { version: 1, turns: [at(0, ["npm ci"]), at(from, ["npm run this-turn"])], rules: {} };
+    await writeLedger(ledgerPath(project, SESSION, null), earlier);
+    const judge = generative(() => ({ reasoning: "Fine.", "not-applicable": 0, followed: 100, "not-followed": 0 }));
+    await check("breaks", { judge, noCache: true });
+    expect(judge.requests.length).toBeGreaterThan(0);
+    for (const r of judge.requests) {
+      expect(r.user.startsWith("# Earlier in this session\n\n- turn 0: ran npm ci\n\n# The turn\n\n")).toBe(true);
+      expect(r.user).not.toContain("this-turn");
+    }
+    expect(await read()).toEqual(earlier);
+  });
+
+  it("sums the session up by hand, in pretty and JSON", async () => {
+    let ledger: Ledger = {
+      version: 1,
+      turns: [0, 1, 2].map((turn) => ({
+        turn, inScope: true, sources: ["CLAUDE.md"], commands: [], wrote: [], read: [], skills: [], agents: [],
+      })),
+      rules: {},
+    };
+    ledger = recordTurn(ledger, 0, [{ key: PUSH, text: PUSH_TEXT, outcome: "broken", note: "" }]);
+    ledger = recordTurn(ledger, 1, [{ key: PUSH, text: PUSH_TEXT, outcome: "followed", note: "" }]);
+    ledger = recordTurn(ledger, 1, [{ key: "CLAUDE.md#run-npm-ci-first", text: "x", outcome: "followed", note: "" }]);
+    ledger = recordTurn(ledger, 2, [{ key: "AGENTS.md#one-change", text: "y", outcome: "not-applicable", note: "" }]);
+    await writeLedger(ledgerPath(project, SESSION, null), ledger);
+    const { report, rendered } = await check("follows");
+    expect(report.session).toEqual({
+      turns: 3,
+      rules: [
+        expect.objectContaining({ source: "CLAUDE.md", rule: "no-force-push", broken: 1, repaired: 1, followed: 1, notInScope: 0 }),
+        expect.objectContaining({ source: "CLAUDE.md", rule: "run-npm-ci-first", followed: 1 }),
+        expect.objectContaining({ source: "AGENTS.md", rule: "one-change", notApplicable: 1, notInScope: 3 }),
+      ],
+    });
+    expect(rendered).toContain(
+      "Session so far\n  CLAUDE.md#no-force-push  broken 1, repaired 1, followed 1\n  2 rules held every turn they applied to.\n",
+    );
+    const json = await check("follows", { format: "json" });
+    expect((JSON.parse(json.rendered) as { session: unknown }).session).toEqual(report.session);
+  });
+
+  it("reports no session when there is no ledger, and leaves it out of the hook's report", async () => {
+    const { report, rendered } = await check("follows", { format: "json" });
+    expect(report.session).toBeNull();
+    expect(rendered).toContain('"session": null');
+    await hook("breaks");
+    const second = await hook("breaks");
+    expect(second.report?.session).toBeNull();
+  });
+
   it("shows a rule's earlier turns to the judge by hand, and never writes the ledger", async () => {
-    const earlier = recordTurn({ version: 1, rules: {} }, 0, [
+    const earlier = recordTurn({ version: 1, turns: [], rules: {} }, 0, [
       { key: PUSH, text: PUSH_TEXT, outcome: "broken", note: "Forced a push." },
     ]);
     await writeLedger(ledgerPath(project, SESSION, null), earlier);
@@ -472,7 +568,7 @@ describe("the session ledger", () => {
     const { report } = await check("breaks", { judge });
     expect(report.turn.from).toBeGreaterThan(0);
     const push = judge.requests.find((r) => r.user.includes(`# The rule\n\n${PUSH}:`));
-    expect(push?.user).toContain(`${PUSH_TEXT}\n\n# Earlier in this session\n\n- turn 0: broken. Forced a push.\n\nFirst say`);
+    expect(push?.user).toContain(`${PUSH_TEXT}\n\n# This rule earlier in this session\n\n- turn 0: broken. Forced a push.\n\nFirst say`);
     expect(await read()).toEqual(earlier);
   });
 

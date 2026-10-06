@@ -47,7 +47,8 @@ const PROHIBITION = /^(?:never|don't|do not|avoid)\b/i;
  */
 export function mockTurnScores(user: string): Record<string, string | number> {
   const marker = user.lastIndexOf("# The rule\n\n");
-  const turn = user.slice(0, marker);
+  // The turn alone: what earlier turns did is not this turn's evidence.
+  const turn = user.slice(Math.max(0, user.indexOf("# The turn\n\n")), marker);
   const line = user.slice(marker).split("\n")[2] ?? "";
   const text = line.slice(line.indexOf(": ") + 2);
   const span = /`([^`]+)`/.exec(text)?.[1];

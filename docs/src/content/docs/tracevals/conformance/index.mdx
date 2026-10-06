@@ -251,9 +251,22 @@ sentence or two what the transcript shows about the rule. Then it returns three 
 rule high on both followed and not followed.
 
 Some rules cover a procedure that spans turns, such as running `npm ci` once before any test. So the
-hook keeps a ledger for each session, and the judge sees each rule's last few results from earlier
-turns. A subagent keeps a ledger of its own. `manni tracevals check` reads a session's ledger and
-never writes it. The ledger's shape is in
+hook keeps a ledger for each session. It records what every turn ran, wrote and read, judged or
+not, and the judge sees that list for the turns before this one. So `npm ci` run three turns ago
+still counts. Each rule also shows the judge its earlier results, and keeps its first `followed`
+and every `broken` one in view. The ledger marks a stretch of turns that left the rule's file
+out of scope. So the judge can tell a gap from a quiet history. A subagent keeps a ledger of its own.
+
+`manni tracevals check` reads a session's ledger and never writes it. Its `Session so far` section
+names each rule that was ever broken or needed review, and counts the rest.
+
+```text
+Session so far
+  CLAUDE.md#run-npm-ci-first  broken 1, repaired 1, followed 6
+  31 rules held every turn they applied to.
+```
+
+The ledger's shape is in
 [Report and exit codes](/manni/tracevals/reference/report-and-exit-codes/#the-session-ledger).
 
 Only a confident violation blocks. A rule blocks when its not-followed score reaches

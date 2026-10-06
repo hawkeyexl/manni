@@ -28,7 +28,14 @@ import {
   questionFor,
   TURN_SCHEMA,
 } from "../../../src/tracevals/rules/judge-prompt.js";
-import { recordTurn, type Ledger } from "../../../src/tracevals/rules/ledger.js";
+import {
+  earlierBlock,
+  historyBlock,
+  recordFacts,
+  recordTurn,
+  type Ledger,
+  type TurnFacts,
+} from "../../../src/tracevals/rules/ledger.js";
 import type { Trace } from "../../../src/tracevals/trace/types.js";
 
 const TRACES = join(import.meta.dirname, "..", "fixtures", "rules", "traces");
@@ -84,6 +91,19 @@ function input(
     ...overrides,
   };
 }
+
+/** One turn's facts, in scope under CLAUDE.md unless overridden. */
+const facts = (turn: number, over: Partial<TurnFacts> = {}): TurnFacts => ({
+  turn,
+  inScope: true,
+  sources: ["CLAUDE.md"],
+  commands: [],
+  wrote: [],
+  read: [],
+  skills: [],
+  agents: [],
+  ...over,
+});
 
 type Reply = Record<string, unknown> | { error: string };
 type Script = (rule: string, call: number) => Reply | undefined;
@@ -150,20 +170,28 @@ function decisionOnly(decisions: MockDecisions, stateLimit?: number): {
 describe("the turn judge prompt", () => {
   it("moves TURN_JUDGE_PROMPT_VERSION with the prompt surface", () => {
     const rule = { id: "a", text: "Do a." };
+    // The ledger's blocks reach the provider too, so their wording is pinned here.
+    let ledger = recordFacts({ version: 1, turns: [], rules: {} }, facts(1, { commands: ["c"], wrote: ["w"], read: ["r"], skills: ["s"], agents: ["g"] }));
+    ledger = recordFacts(ledger, facts(2, { inScope: false, sources: [], commands: ["c"] }));
+    ledger = recordTurn(ledger, 1, [{ key: "CLAUDE.md#a", text: rule.text, outcome: "broken", note: "N" }]);
     const surface = [
       TURN_JUDGE_SYSTEM_PROMPT,
       buildTurnShared("TURN"),
+      buildTurnShared("TURN", "EARLIER"),
+      earlierBlock(ledger, 9),
+      historyBlock(ledger, "CLAUDE.md#a", rule.text, 9),
       buildRuleItem("CLAUDE.md", rule),
       buildRuleItem("CLAUDE.md", rule, "HISTORY"),
       buildDecisionState("TURN"),
+      buildDecisionState("TURN", "EARLIER"),
       JSON.stringify(questionFor("CLAUDE.md", rule)),
       JSON.stringify(TURN_CRITERIA),
       JSON.stringify(TURN_SCHEMA),
     ].join("\n---\n");
     const digest = createHash("sha256").update(surface).digest("hex").slice(0, 12);
     expect({ version: TURN_JUDGE_PROMPT_VERSION, digest }).toEqual({
-      version: 4,
-      digest: "4174fc0a80c3",
+      version: 5,
+      digest: "b708130b9333",
     });
   });
 
@@ -376,7 +404,7 @@ describe("judgeTurn, scored", () => {
   it("puts a rule's earlier turns in its item, ignoring the current turn and later", async () => {
     const from = lastTurn(trace).from;
     expect(from).toBeGreaterThan(1);
-    let ledger: Ledger = { version: 1, rules: {} };
+    let ledger: Ledger = { version: 1, turns: [], rules: {} };
     const ciText = RULES[0]?.rule.text ?? "";
     ledger = recordTurn(ledger, from - 2, [{ key: CI, text: ciText, outcome: "broken", note: "Skipped npm ci." }]);
     ledger = recordTurn(ledger, from, [{ key: CI, text: ciText, outcome: "followed", note: "Now." }]);
@@ -385,17 +413,17 @@ describe("judgeTurn, scored", () => {
     await judgeTurn(input(provider, { ledger }));
     const item = (key: string) => requests.find((r) => r.user.includes(`# The rule\n\n${key}:`))?.user ?? "";
     expect(item(CI)).toContain(
-      `${CI}: ${ciText}\n\n# Earlier in this session\n\n- turn ${String(from - 2)}: broken. Skipped npm ci.\n\nFirst say`,
+      `${CI}: ${ciText}\n\n# This rule earlier in this session\n\n- turn ${String(from - 2)}: broken. Skipped npm ci.\n\nFirst say`,
     );
     expect(item(CI)).not.toContain("Now.");
-    expect(item(PUSH)).not.toContain("# Earlier in this session");
+    expect(item(PUSH)).not.toContain("earlier in this session");
   });
 
   it("judges a rule again when its history changes, and reuses the rest", async () => {
     const cache = new TurnCache(join(dir, "history"));
     await judgeTurn(input(scorer().provider, { cache }));
     const ciText = RULES[0]?.rule.text ?? "";
-    const ledger = recordTurn({ version: 1, rules: {} }, 0, [{ key: CI, text: ciText, outcome: "broken", note: "" }]);
+    const ledger = recordTurn({ version: 1, turns: [], rules: {} }, 0, [{ key: CI, text: ciText, outcome: "broken", note: "" }]);
     const again = scorer();
     const result = await judgeTurn(input(again.provider, { cache, ledger }));
     expect(again.requests.map((r) => /# The rule\n\n(\S+):/.exec(r.user)?.[1])).toEqual([CI]);
@@ -403,6 +431,47 @@ describe("judgeTurn, scored", () => {
     const replay = scorer();
     expect((await judgeTurn(input(replay.provider, { cache, ledger }))).cached).toBe(true);
     expect(replay.requests).toHaveLength(0);
+  });
+
+  it("shares what earlier turns did before the turn, newest last, ignoring the current turn", async () => {
+    const from = lastTurn(trace).from;
+    let ledger: Ledger = { version: 1, turns: [], rules: {} };
+    ledger = recordFacts(ledger, facts(from - 2, { commands: ["npm ci"], wrote: ["src/a.ts"] }));
+    ledger = recordFacts(ledger, facts(from - 1, { inScope: false, sources: [], skills: ["demo"] }));
+    ledger = recordFacts(ledger, facts(from, { commands: ["npm run now"] }));
+    const { provider, requests } = scorer();
+    await judgeTurn(input(provider, { ledger }));
+    expect(requests).toHaveLength(2);
+    for (const r of requests) {
+      expect(r.user.startsWith(
+        `# Earlier in this session\n\n- turn ${String(from - 2)}: ran npm ci; wrote src/a.ts\n` +
+          `- turn ${String(from - 1)}: used skill demo (no rules in scope)\n\n# The turn\n\n`,
+      )).toBe(true);
+      expect(r.user).not.toContain("npm run now");
+    }
+  });
+
+  it("judges again when earlier turns' facts change", async () => {
+    const cache = new TurnCache(join(dir, "facts"));
+    await judgeTurn(input(scorer().provider, { cache }));
+    const ledger = recordFacts({ version: 1, turns: [], rules: {} }, facts(0, { commands: ["npm ci"] }));
+    const again = scorer();
+    expect((await judgeTurn(input(again.provider, { cache, ledger }))).cached).toBe(false);
+    expect(again.requests).toHaveLength(2);
+    const replay = scorer();
+    expect((await judgeTurn(input(replay.provider, { cache, ledger }))).cached).toBe(true);
+  });
+
+  it("gives earlier turns at most a quarter of the render budget, dropping the oldest", async () => {
+    let ledger: Ledger = { version: 1, turns: [], rules: {} };
+    const from = lastTurn(trace).from;
+    for (let t = 0; t < from; t++) ledger = recordFacts(ledger, facts(t, { commands: [`echo ${"x".repeat(100)} ${String(t)}`] }));
+    const { provider, requests } = scorer();
+    await judgeTurn(input(provider, { ledger, render: { maxBlockChars: 2_000, maxTotalChars: 2_000, redact: [] } }));
+    const earlier = requests[0]?.user.split("\n\n# The turn")[0] ?? "";
+    expect(earlier.length).toBeLessThanOrEqual(500);
+    expect(earlier).toContain(`x ${String(from - 1)}`);
+    expect(earlier).not.toContain("- turn 0:");
   });
 
   it("makes no call when no rule applies", async () => {
@@ -443,7 +512,7 @@ describe("judgeTurn on a decision-only provider", () => {
       [PUSH_Q]: "followed",
     });
     const ciText = RULES[0]?.rule.text ?? "";
-    const ledger = recordTurn({ version: 1, rules: {} }, 0, [{ key: CI, text: ciText, outcome: "broken", note: "" }]);
+    const ledger = recordTurn({ version: 1, turns: [], rules: {} }, 0, [{ key: CI, text: ciText, outcome: "broken", note: "" }]);
     const result = await judgeTurn(input(provider, { runs: 3, ledger }));
     expect(mock.decideRequests).toHaveLength(1);
     expect(mock.requests).toHaveLength(0);
@@ -465,6 +534,19 @@ describe("judgeTurn on a decision-only provider", () => {
     const state = typeof req?.state === "string" ? req.state : "";
     expect(state.startsWith(`${TURN_JUDGE_SYSTEM_PROMPT}\n\n# The turn\n\n`)).toBe(true);
     expect(state).toContain("[user] Now run the tests.");
+  });
+
+  it("carries earlier turns' facts in its state, and no rule's history", async () => {
+    const { provider, mock } = decisionOnly({ [CI_Q]: "followed", [PUSH_Q]: "followed" });
+    const ciText = RULES[0]?.rule.text ?? "";
+    let ledger = recordFacts({ version: 1, turns: [], rules: {} }, facts(0, { commands: ["npm ci"] }));
+    ledger = recordTurn(ledger, 0, [{ key: CI, text: ciText, outcome: "broken", note: "" }]);
+    await judgeTurn(input(provider, { ledger }));
+    const state = mock.decideRequests[0]?.state;
+    expect(typeof state === "string" && state.startsWith(
+      `${TURN_JUDGE_SYSTEM_PROMPT}\n\n# Earlier in this session\n\n- turn 0: ran npm ci\n\n# The turn\n\n`,
+    )).toBe(true);
+    expect(JSON.stringify(mock.decideRequests[0]?.questions)).not.toContain("earlier in this session");
   });
 
   it("applies the same bar to probabilities", async () => {

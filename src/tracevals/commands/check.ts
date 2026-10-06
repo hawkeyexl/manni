@@ -6,7 +6,8 @@
  *
  * Both are read-only over the trace and the sources. What they write is the
  * rules cache and the verdict cache, under `judge.cacheDir`. The hook also
- * writes the session ledger, which `check` by hand only reads.
+ * writes the session ledger, for every turn it parses, which `check` by hand
+ * only reads and sums up.
  */
 import { writeFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
@@ -36,9 +37,14 @@ import { ruleKey } from "../rules/judge-prompt.js";
 import {
   ledgerPath,
   readLedger,
+  recordFacts,
   recordTurn,
+  rollup,
+  turnFacts,
   writeLedger,
+  type Ledger,
   type LedgerOutcome,
+  type SessionRollup,
 } from "../rules/ledger.js";
 import { warn } from "../../shared/warn.js";
 import { libraryLocalModels, type LocalModels } from "../rules/local.js";
@@ -98,6 +104,8 @@ export interface CheckReport {
   /** Only `fail` and `needs-review`. */
   findings: TurnFinding[];
   summary: { sources: number; rules: number; notApplicable: number; fail: number; needsReview: number };
+  /** By hand, the session ledger summed up per rule. Null when it holds nothing, and under a hook. */
+  session: SessionRollup | null;
   skipped: CheckSkip | null;
   warnings: string[];
   exitCode: number;
@@ -149,8 +157,56 @@ const LEDGER_OUTCOME: Record<TurnJudgement["verdicts"][number]["outcome"], Ledge
   "not-applicable": "not-applicable",
 };
 
-/** The pipeline both modes run: sources, extraction, the judge. */
+/** How far a run got, for the ledger. */
+interface Seen {
+  sources: RuleSource[];
+  judgement?: TurnJudgement;
+}
+
+/**
+ * The pipeline both modes run, with the session ledger around it. The hook
+ * records every turn it parses, judged or not. By hand the ledger is only
+ * read, and summed up for the report.
+ */
 async function conform(p: Params): Promise<Outcome> {
+  const ledgerFile = ledgerPath(p.projectDir, p.sessionId, p.agentId);
+  const ledger = await readLedger(ledgerFile);
+  const seen: Seen = { sources: [] };
+  const outcome = await judgeTurnOf(p, ledger, seen);
+  if (p.inLoop) await record(p, ledgerFile, ledger, seen);
+  else if (outcome.kind === "report") outcome.report.session = rollup(ledger);
+  return outcome;
+}
+
+/** This turn's facts, and its verdicts when it was judged. A failed write warns. */
+async function record(p: Params, file: string, ledger: Ledger, seen: Seen): Promise<void> {
+  const facts = turnFacts(p.trace, p.turn, seen.sources, {
+    cwd: p.projectDir,
+    root: p.projectRoot ?? p.projectDir,
+    redact: p.config.judge.redact,
+  });
+  let next = recordFacts(ledger, facts);
+  if (seen.judgement !== undefined) {
+    next = recordTurn(
+      next,
+      p.turn.from,
+      seen.judgement.verdicts.map((v) => ({
+        key: ruleKey(v.source, v.rule),
+        text: v.text,
+        outcome: LEDGER_OUTCOME[v.outcome],
+        note: v.reasoning ?? "",
+      })),
+    );
+  }
+  try {
+    await writeLedger(file, next);
+  } catch (err) {
+    warn(`could not write the session ledger ${file}: ${firstLine(err)}`);
+  }
+}
+
+/** Sources, extraction, the judge. */
+async function judgeTurnOf(p: Params, ledger: Ledger, seen: Seen): Promise<Outcome> {
   const { config, turn } = p;
   const conformance = conformanceOf(config);
   const local = p.localModels ?? libraryLocalModels(config.providers);
@@ -164,6 +220,7 @@ async function conform(p: Params): Promise<Outcome> {
     sources: [],
     findings: [],
     summary: { sources: 0, rules: 0, notApplicable: 0, fail: 0, needsReview: 0 },
+    session: null,
     skipped: null,
     warnings: [...p.trace.warnings],
     exitCode: 0,
@@ -187,6 +244,7 @@ async function conform(p: Params): Promise<Outcome> {
   });
   report.warnings.push(...resolved.warnings);
   const { sources } = resolved;
+  seen.sources = sources;
   report.summary.sources = sources.length;
   if (sources.length === 0) return stop("no-sources");
 
@@ -247,10 +305,6 @@ async function conform(p: Params): Promise<Outcome> {
   if (p.offline && isNetworkProvider(judgeId.provider)) {
     throw offlineRefusal("the judge", judgeId);
   }
-  // The session ledger: read in both modes, written only by the hook. It is
-  // part of each rule's verdict key, so it is read before the gates below.
-  const ledgerFile = ledgerPath(p.projectDir, p.sessionId, p.agentId);
-  const ledger = await readLedger(ledgerFile);
   const cacheRoot = resolve(p.configDir, config.judge.cacheDir);
   const limits = new StateLimits(resolve(cacheRoot, "limits"), !p.noCache);
   const plan = {
@@ -315,19 +369,7 @@ async function conform(p: Params): Promise<Outcome> {
     };
   }
   const judgement = ran.value;
-  if (p.inLoop) {
-    const results = judgement.verdicts.map((v) => ({
-      key: ruleKey(v.source, v.rule),
-      text: v.text,
-      outcome: LEDGER_OUTCOME[v.outcome],
-      note: v.reasoning ?? "",
-    }));
-    try {
-      await writeLedger(ledgerFile, recordTurn(ledger, turn.from, results));
-    } catch (err) {
-      warn(`could not write the session ledger ${ledgerFile}: ${firstLine(err)}`);
-    }
-  }
+  seen.judgement = judgement;
   report.judge = {
     provider: judgeId.provider,
     model: judgeId.model,

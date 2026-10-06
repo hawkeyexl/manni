@@ -550,6 +550,14 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
       "confidence": 1, "reasoning": "The turn shows `git push --force`." }
   ],
   "summary": { "sources": 5, "rules": 7, "notApplicable": 0, "fail": 2, "needsReview": 1 },
+  "session": {
+    "turns": 6,
+    "rules": [
+      { "source": "CLAUDE.md", "rule": "no-force-push", "followed": 4, "broken": 1,
+        "repaired": 1, "needsReview": 0, "notApplicable": 1, "notInScope": 0,
+        "last": { "turn": 3, "outcome": "followed" } }
+    ]
+  },
   "skipped": null,
   "warnings": [],
   "exitCode": 1
@@ -568,6 +576,9 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
 | `sources[]` | object | One entry per file in scope: `path`, `format`, `trigger`, `rules`, `origin`, and `skill` for a skill's files. `trigger` says why the file was in scope. `origin` is `declared` for a file's own `ai` evals, and `extracted` otherwise. |
 | `findings[]` | object | Only `fail` and `needs-review` outcomes, each with its `source`, `rule`, `text`, `observed` and `confidence`. `observed` gives the rule's three scores, averaged over the runs. `confidence` is the not-followed score as a fraction. `reasoning` is the judge's sentence or two on what the transcript shows, and `observed` ends with it. A decision-only provider such as `jev` gives none. A rule left out was followed or did not apply. |
 | `summary` | object | The counts of `sources`, `rules`, `notApplicable`, `fail` and `needsReview`. |
+| `session` | object or null | What the hook recorded for this session in [the session ledger](#the-session-ledger), summed up per rule. `null` when the session has no ledger. |
+| `session.turns` | number | The turns the ledger records. |
+| `session.rules[]` | object | One entry per rule the ledger holds, with its `source` and `rule`. `followed`, `broken`, `needsReview` and `notApplicable` count its entries. `repaired` counts the `broken` entries that a later `followed` entry came after. `notInScope` counts the recorded turns where the rule's file was not in scope. `last` is its latest entry's `turn` and `outcome`. |
 | `skipped` | string or null | `null`, `empty-turn`, `no-sources` or `not-applicable`. The other gates apply only under a hook. |
 | `warnings` | array | Strings, such as a rules file whose front matter does not parse. |
 | `exitCode` | number | `0`, or `1` when `summary.fail` is above zero. |
@@ -578,15 +589,21 @@ run. A rule the judge could not settle, or errored on, is `needs-review`, which 
 
 ### The session ledger
 
-After the hook judges a turn, it records each judged rule's result, so the judge sees what earlier
-turns found. The main session writes `.manni/tracevals/sessions/<session hash>.ledger.json` under
-the project. A subagent writes `<session hash>.<agent id hash>.ledger.json`, so parallel subagents
-never share a file. `manni tracevals check` reads the ledger of the session it judges and never
-writes it.
+The hook records each turn it sees, so the judge knows what earlier turns did and found. That
+covers a turn that ended before the judge was asked, such as one with no rules in scope. A
+judged turn also records each judged rule's result. The main session writes
+`.manni/tracevals/sessions/<session hash>.ledger.json` under the project. A subagent writes
+`<session hash>.<agent id hash>.ledger.json`, so parallel subagents never share a file.
+`manni tracevals check` reads the ledger of the session it judges and never writes it.
 
 ```json
 {
   "version": 1,
+  "turns": [
+    { "turn": 3, "inScope": true, "sources": ["CLAUDE.md"],
+      "commands": ["npm ci", "git push --force origin main"], "wrote": ["src/web/App.tsx"],
+      "read": ["CLAUDE.md"], "skills": [], "agents": [] }
+  ],
   "rules": {
     "CLAUDE.md#no-force-push": {
       "text": "<sha256 of the rule text>",
@@ -600,16 +617,40 @@ writes it.
 
 | Field | Type | Meaning |
 |---|---|---|
+| `turns[]` | object | One record per turn, oldest first. The ledger keeps the last 30. Recording a turn again replaces its record. |
+| `turns[].turn` | number | The turn's first event, as an ordinal in the trace. |
+| `turns[].inScope` | boolean | Whether any rules file governed the turn. An empty turn records `false`. |
+| `turns[].sources` | array | The rules files in scope, by path. |
+| `turns[].commands` | array | Up to 10 Bash commands, each on one line and cut to 120 characters. |
+| `turns[].wrote` | array | Up to 10 files written or edited, relative to the project. |
+| `turns[].read` | array | Up to 5 rules files the turn read. |
+| `turns[].skills` | array | The skills the turn ran. |
+| `turns[].agents` | array | The subagent types the turn spawned. |
 | `rules` | object | One entry per rule, keyed by its file and id. |
 | `text` | string | A sha256 of the rule's text. An edited rule starts with no history. |
 | `entries[].turn` | number | The turn's first event, as an ordinal in the trace. Judging a turn again replaces its entry. |
 | `entries[].outcome` | string | `followed`, `broken`, `needs-review` or `not-applicable`. |
 | `entries[].note` | string | The judge's reasoning, cut to 200 characters. Empty for a decision-only provider. |
 
-Each rule keeps its last 10 entries. A rule's item shows the judge its last three results from
-earlier turns, leaving out the turns it did not apply to. A rule with only those has no history to
-show. The history is part of the verdict cache key. A missing or unreadable ledger is an empty
-history, and a ledger that cannot be written is a warning that never blocks.
+A turn's record is read from the transcript, with no model, and passes through the judge's
+redaction. Every call the judge makes for a turn opens with the earlier turns that did something,
+newest last. It shows at most the last 15, and a turn with no rules in scope says so.
+
+```text
+# Earlier in this session
+
+- turn 3: ran npm ci, git push --force origin main; wrote src/web/App.tsx; read CLAUDE.md
+- turn 9: ran ls (no rules in scope)
+```
+
+That block shares the render budget with the turn, and takes at most a quarter of it. Each rule
+keeps its last 10 entries. Its first `followed` entry and every `broken` entry stay, so the others
+go first. A rule's item shows the judge up to five results from earlier turns. Those are its first
+`followed`, its `broken` ones and its latest, leaving out the turns it did not apply to. A run of
+recorded turns where the rule's file was not in scope shows as `(turns 4–8: not in scope)`. A rule
+with only turns it did not apply to has no history to show. Both blocks are part of the verdict
+cache key. A missing or unreadable ledger is an empty history, and a ledger that cannot be written
+is a warning that never blocks.
 
 ## `--output`
 

@@ -193,18 +193,25 @@ it when the transcript lacks it.
 
 Some rules govern a procedure that spans turns, such as running `npm ci` once
 in a fresh worktree before any test. One turn alone cannot show whether it was
-followed. So the hook keeps a ledger per session, and the judge reads what
-earlier turns found.
+followed. So the hook keeps a ledger per session. It records what each turn
+did, and what the judge found for each rule.
 
-After a hook judges a turn, it writes each judged rule's result under the
-project, to `.manni/tracevals/sessions/<session hash>.ledger.json`. A
-subagent's run goes to `<session hash>.<agent id hash>.ledger.json`, so
-parallel SubagentStops never write one file. Both ids are hashed as the skip
-markers are. The ledger is written to a temp file and renamed into place.
+The hook writes it under the project, to
+`.manni/tracevals/sessions/<session hash>.ledger.json`. A subagent's run goes
+to `<session hash>.<agent id hash>.ledger.json`, so parallel SubagentStops
+never write one file. Both ids are hashed as the skip markers are. The ledger
+is written to a temp file and renamed into place.
 
 ```json
 {
   "version": 1,
+  "turns": [
+    { "turn": 120, "inScope": true, "sources": ["CLAUDE.md"],
+      "commands": ["npm ci", "npm test"], "wrote": ["src/a.ts"],
+      "read": ["CLAUDE.md"], "skills": [], "agents": [] },
+    { "turn": 300, "inScope": true, "sources": ["CLAUDE.md"],
+      "commands": ["git status"], "wrote": [], "read": [], "skills": [], "agents": [] }
+  ],
   "rules": {
     "CLAUDE.md#run-npm-ci-first": {
       "text": "<sha256 of the rule text>",
@@ -217,32 +224,78 @@ markers are. The ledger is written to a temp file and renamed into place.
 }
 ```
 
+`turns` holds one record per turn the hook parses. That includes a turn that
+ends at gate 3, 4 or 6, or at a model gate, and every judged turn. The record
+is read from the transcript, with no model call.
+
+- `turn` is the turn's first event, as an ordinal in the trace.
+- `inScope` says whether any rule source governed the turn. `sources` names
+  them by path. A turn that ends at gate 3 or 4 records none.
+- `commands` holds up to 10 Bash commands, each on one line and clipped to 120
+  characters.
+- `wrote` holds up to 10 files written or edited, relative to the project.
+- `read` holds up to 5 rule sources the turn read.
+- `skills` names the skills the turn ran. `agents` names the subagent types
+  it spawned.
+- Commands and paths pass through the judge's redaction before they are
+  written.
+- The ledger keeps the last 30 records. Recording a turn again replaces its
+  record, which is what the repair pass does.
+
+`rules` holds the judge's findings, and only a judged turn adds to it.
+
 - The key is the rule's `<file>#<id>`. `text` is a sha256 of the rule's text,
   so an edited rule starts with no history.
-- `turn` is the turn's first event, as an ordinal in the trace. `outcome` is
-  `followed`, `broken`, `needs-review` or `not-applicable`.
+- `outcome` is `followed`, `broken`, `needs-review` or `not-applicable`.
 - `note` is the judge's reasoning, cut to 200 characters. A decision-only
   provider gives none, so its notes are empty.
-- Each rule keeps its last 10 entries. Judging a turn again replaces that
-  turn's entry, which is what the repair pass does.
-- A rule judged not applicable is recorded, and counts as quiet history.
+- Each rule keeps 10 entries. Its first `followed` entry, every `broken` entry
+  and its latest are pinned. The trim drops the others first, oldest first, so
+  evidence from early in a session survives a long one.
+- Judging a turn again replaces that turn's entry.
 
-A rule's item gains its history when the ledger holds earlier turns for it that
-are not all quiet. The block holds the last three of those, and it sits before
-the instruction to score.
+The shared part of every call for a turn opens with what earlier turns did.
+It lists the last 15 records before this turn that hold any fact, newest last.
+A turn with no source in scope says so. The block is left out when no earlier
+turn did anything.
 
 ```text
 # Earlier in this session
 
-- turn 120: followed. The turn ran npm ci, then npm test.
+- turn 120: ran npm ci, npm test; wrote src/a.ts; read CLAUDE.md
+- turn 300: ran git status
+- turn 342: ran ls (no rules in scope)
 ```
 
-The block is part of the rule's verdict cache key, so different history never
+The block shares the render budget and the state limit with the turn. It
+takes at most a quarter of what the turn may use, and its oldest lines go
+first. A decision-only provider gets the same block in its state.
+
+A rule's item gains its history when the ledger holds earlier turns for it
+that are not all quiet. The block shows up to five entries, oldest first. They
+are its first `followed`, its `broken` ones from the newest back, and its
+latest. The ledger marks a run of recorded turns that left the rule's source out
+of scope. So the judge can tell a hole from quiet history. The block sits before
+the instruction to score.
+
+```text
+# This rule earlier in this session
+
+- turn 120: followed. The turn ran npm ci, then npm test.
+- (turns 150–280: not in scope)
+- turn 300: broken. The turn ran npm test in a new worktree with no npm ci.
+```
+
+Both blocks are part of the verdict cache key, so a different history never
 replays a cached verdict. A decision-only provider's questions carry no
-history. `check` by hand reads the ledger of the session it is given, and never
-writes it. It ignores entries for the turn it judges and for any later turn.
-A missing or unreadable ledger is an empty history. A ledger that cannot be
-written is a warning, and it never blocks.
+rule history. `check` by hand reads the ledger of the session it is given, and
+never writes it. It ignores records and entries for the turn it judges and for
+any later turn. A missing or unreadable ledger is an empty history. A ledger
+that cannot be written is a warning, and it never blocks.
+
+`check` by hand also sums the ledger up per rule, as [its report
+shows](#manni-tracevals-check-trace). The block reason under a hook leaves this
+out, so it stays on the turn.
 
 ### When tracevals stays out of the way
 
@@ -259,7 +312,7 @@ gate that finds nothing to do ends the run.
 | 6 | Not applicable | Every in-scope rule's `when` fails over the turn | Silent. Each rule counts as `skipped`, never `pass`. |
 | 7 | Model not on disk | The local model or runtime is missing | One message per session. Nothing downloads. |
 | 8 | Not enough memory | The library's memory probe, the one `auto` tiering uses | One message per session. The probe is not run when the model host already holds the model, or when gate 9 would find every rule's verdict cached. |
-| 9 | Already judged | The verdict cache holds this turn, rule and model | The cached verdict is reused, rule by rule. The key is the provider, model, mode, runs, temperature and prompt version. It also holds a sha256 of the rendered turn, and one of the rule's source, id, text and ledger history. |
+| 9 | Already judged | The verdict cache holds this turn, rule and model | The cached verdict is reused, rule by rule. The key is the provider, model, mode, runs, temperature and prompt version. It also holds a sha256 of the rendered turn and one of the earlier turns' block. A third covers the rule's source, id, text and ledger history. |
 
 The cache is read last, because its key needs the model's state limit. A
 local model can only report that once it is on disk. The hook remembers the
@@ -308,8 +361,9 @@ Judge only from what the transcript shows. Do not guess.
 A rule applies only when the turn did the kind of work it covers. A rule about work the turn never did does not apply, so it was neither followed nor broken.
 ```
 
-The shared part is `# The turn`, a blank line, the rendered turn and a blank
-line. Each item follows it directly, with the rule's file, id and text filled
+The shared part is the ledger's block of earlier turns and a blank line, when
+the ledger holds any. Then come `# The turn`, a blank line, the rendered turn
+and a blank line. Each item follows it directly, with the rule's file, id and text filled
 in. A rule with history in [the ledger](#the-ledger) carries its block next.
 
 ```text
@@ -352,8 +406,8 @@ score a turn 85 on followed and 85 on not followed. The library's
 once, and it generates each rule's answer from there under the schema's
 grammar. Any other provider gets one validated call per rule, a few at a time.
 
-A decision-only provider, which today is Jev, keeps `decide`. The rendered
-turn behind the same system prompt is the shared state. Each rule is one
+A decision-only provider, which today is Jev, keeps `decide`. The shared part
+behind the same system prompt is its state. Each rule is one
 `choice` question with three options.
 
 | Option | Meaning |
@@ -635,9 +689,19 @@ CLAUDE.md
 docs/content-strategy/design.md
   ? accent-not-red  The accent colour may not be red, green, yellow or cyan.
       not-followed 55, followed 40, not-applicable 0. The transcript does not show the colour. (0.55)
+Session so far
+  CLAUDE.md#run-npm-ci-first  broken 1, repaired 1, followed 6
+  docs/content-strategy/design.md#accent-not-red  needs review 2, followed 3
+  31 rules held every turn they applied to.
 
 Last turn of 3b265d00: 14 rules from 5 files. 1 broken, 1 needs review.
 ```
+
+`Session so far` appears when the session has a ledger. It lists each rule
+the ledger records as broken or needing review, one line each. A rule's
+counts are of the entries the ledger keeps, and `repaired` counts the broken
+entries a later `followed` entry came after. The last line counts every other
+rule. The section never changes the exit code.
 
 ```
 # Reproduce what the hook saw, with the hook's model
@@ -707,6 +771,15 @@ The Jev message also answers `run` and `fill` given `--provider jev`.
   ],
   "summary": { "sources": 5, "rules": 14, "notApplicable": 6,
                "fail": 1, "needsReview": 1 },
+  "session": {
+    "turns": 12,
+    "rules": [
+      { "source": "CLAUDE.md", "rule": "run-npm-ci-first",
+        "followed": 6, "broken": 1, "repaired": 1, "needsReview": 0,
+        "notApplicable": 2, "notInScope": 0,
+        "last": { "turn": 412, "outcome": "followed" } }
+    ]
+  },
   "skipped": null,
   "warnings": [],
   "exitCode": 1
@@ -728,6 +801,10 @@ The Jev message also answers `run` and `fill` given `--provider jev`.
   source needed the model.
 - `skipped` is `null`, `"empty-turn"`, `"no-sources"` or `"not-applicable"`.
   The other gates only act under a hook.
+- `session` sums up [the ledger](#the-ledger) per rule, and is `null` when the
+  session has none. `turns` counts the recorded turns. `notInScope` counts the
+  recorded turns where the rule's source was not in scope. `last` is the
+  rule's latest entry.
 
 ### `manni tracevals release`
 
@@ -935,8 +1012,9 @@ block, with every failing check in it.
     reasons. That is an honest record of what the agent was told.
 25. **A procedure that spans turns.** A rule says to run `npm ci` once in a
     fresh worktree before any test. Turn 1 runs both and is judged followed.
-    Turn 4 runs only the tests. Its item shows turn 1 as followed, so the judge
-    can see the step was taken before.
+    Turn 4 runs only the tests. Its item shows turn 1 as followed, and the
+    shared part lists `ran npm ci` for turn 1. So the judge can see the step was
+    taken before.
 26. **The repair pass.** The hook blocks a turn for a broken rule, and the
     agent fixes the work. The repair pass judges the same turn from the same
     start, so its entry replaces the broken one. The broken entry is for that
@@ -944,6 +1022,18 @@ block, with every failing check in it.
 27. **Parallel subagents.** Each SubagentStop writes the ledger of its own
     agent id, so no two write one file. A subagent reads no history from the
     main session or from another subagent.
+28. **A step taken in a turn the rule ignored.** Turn 2 runs `npm ci` and
+    touches nothing a test rule watches, so it stops at gate 6. The ledger still
+    records the command. Turn 5 runs the tests, and its shared part lists turn
+    2's `npm ci`.
+29. **A long session and an early step.** A rule is followed at turn 3 and
+    judged on 40 turns after. Its first `followed` entry is pinned, so the trim
+    keeps it, and the rule's item still shows it.
+30. **A rule whose file left scope.** A skill reference governs turns 10 to 14
+    and is out of scope from 15 to 30. Its history marks
+    `(turns 15–30: not in scope)`, so silence there is not read as compliance.
+31. **A secret in a command.** A Bash command carries a token. The ledger
+    records the command after redaction, the same as the judge's render.
 
 ## Consequences
 
@@ -962,8 +1052,15 @@ block, with every failing check in it.
 - The host is one process per machine. One slow request delays every
   session's judgement behind it.
 - A partial read holds the agent to the whole file.
-- The ledger holds verdicts, not events. A step taken in a turn the rule did
-  not apply to leaves only quiet history, which a later turn does not see.
+- The ledger records only what the hook saw. A turn recorded with no hook, or
+  past the last 30, leaves no facts. Each fact is clipped, so a long command
+  shows only its first 120 characters.
+- The session summary counts the entries each rule keeps, which is at most 10.
+  A long session's counts are of those entries, not of every turn.
+- Batch `run` judges a session-scoped eval once over the whole window. Past
+  the render cap of 150,000 characters it keeps only the head and tail. So a
+  violation in the middle of a long session is invisible to it. A session
+  recorded with no hook gets only that check.
 - A hosted judge is sent the turn once per rule, so a turn under many rules
   costs that many calls.
 - Files the agent prints through Bash, as with `cat`, are not seen as reads.
@@ -974,6 +1071,10 @@ block, with every failing check in it.
 
 ## Open questions
 
+- **Replaying a finished trace.** A mode could judge each turn of a finished
+  trace in order, building the ledger as the hook would. It would give a
+  session recorded with no hook the per-turn check. It costs a judgement per
+  turn.
 - **Needs-review in a hook.** It is silent today. A `systemMessage` would tell
   the user, at the cost of noise on most turns.
 - **Linked files.** An instruction file can link to a guide in prose without

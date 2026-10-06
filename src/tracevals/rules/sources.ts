@@ -610,6 +610,9 @@ function key(path: string): string {
   return process.platform === "win32" ? abs.toLowerCase() : abs;
 }
 
+/** A path as sources compare it: absolute, and case-folded on Windows. */
+export const pathKey = key;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -26,10 +26,33 @@ export function renderCheck(report: CheckReport, opts: { color?: boolean } = {})
       lines.push(`      ${pc.dim(`${f.observed} (${f.confidence.toFixed(2)})`)}`);
     }
   }
+  lines.push(...sessionSoFar(report));
   for (const warning of report.warnings) lines.push(`${pc.yellow("!")} ${warning}`);
   if (lines.length > 0) lines.push("");
   lines.push(closing(report));
   return lines.join("\n");
+}
+
+/** The ledger's rules that were ever broken or sent to review, and a count of the rest. */
+function sessionSoFar(report: CheckReport): string[] {
+  const rules = report.session?.rules ?? [];
+  if (rules.length === 0) return [];
+  const flagged = rules.filter((r) => r.broken > 0 || r.needsReview > 0);
+  const lines = flagged.map((r) => {
+    const counts = [
+      ["broken", r.broken],
+      ["repaired", r.repaired],
+      ["needs review", r.needsReview],
+      ["followed", r.followed],
+    ] as const;
+    const said = counts.filter(([, n]) => n > 0).map(([word, n]) => `${word} ${String(n)}`);
+    return `  ${r.source}#${r.rule}  ${said.join(", ")}`;
+  });
+  const held = rules.length - flagged.length;
+  if (held > 0) {
+    lines.push(`  ${count(held, "rule", "rules")} held every turn ${held === 1 ? "it" : "they"} applied to.`);
+  }
+  return ["Session so far", ...lines];
 }
 
 function closing(report: CheckReport): string {

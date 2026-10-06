@@ -1,7 +1,7 @@
 /**
  * The turn judge's prompt surface (proposal 0079, "The judge, decisions
- * first"). Each rule is judged on its own: the shared part is the rendered
- * turn, and each rule is one item appended to it. A decision-only provider
+ * first"). Each rule is judged on its own: the shared part is what earlier
+ * turns did and the rendered turn, and each rule is one item appended to it. A decision-only provider
  * gets the same text as its state and one question per rule.
  */
 import type { DecideQuestion } from "@hawkeyexl/inference";
@@ -11,7 +11,7 @@ import type { DecideQuestion } from "@hawkeyexl/inference";
  * reaches a provider changes. `test/tracevals/unit/rules-judge.test.ts` pins it
  * to a digest of the surface, so the pair has to move together.
  */
-export const TURN_JUDGE_PROMPT_VERSION = 4;
+export const TURN_JUDGE_PROMPT_VERSION = 5;
 
 export const TURN_JUDGE_SYSTEM_PROMPT = [
   "You check one turn of an AI coding agent's session against one rule.",
@@ -60,9 +60,12 @@ export function ruleKey(displayPath: string, id: string): string {
   return `${displayPath}#${id}`;
 }
 
-/** The part every rule's call shares. */
-export function buildTurnShared(turn: string): string {
-  return `# The turn\n\n${turn}\n\n`;
+/**
+ * The part every rule's call shares: what earlier turns did, when the ledger
+ * holds any, then the turn.
+ */
+export function buildTurnShared(turn: string, earlier = ""): string {
+  return `${earlier !== "" ? `${earlier}\n\n` : ""}# The turn\n\n${turn}\n\n`;
 }
 
 /**
@@ -85,9 +88,9 @@ export function buildRuleItem(
   ].join("\n");
 }
 
-/** A decision-only provider's state: the system prompt, then the turn. */
-export function buildDecisionState(turn: string): string {
-  return `${TURN_JUDGE_SYSTEM_PROMPT}\n\n${buildTurnShared(turn)}`;
+/** A decision-only provider's state: the system prompt, then the shared part. */
+export function buildDecisionState(turn: string, earlier = ""): string {
+  return `${TURN_JUDGE_SYSTEM_PROMPT}\n\n${buildTurnShared(turn, earlier)}`;
 }
 
 export function questionFor(

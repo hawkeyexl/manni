@@ -7,8 +7,8 @@
  * gets one `decide` call, one question per rule, branching from the turn.
  * Every provider that generates gets `runs` calls of `completeJSONShared`, one
  * item per rule, each answered with a sentence of reasoning and then three
- * independent scores. A scored rule's item carries what the session ledger
- * holds for it from earlier turns.
+ * independent scores. Both share what the session ledger records of earlier
+ * turns, and a scored rule's item carries what it holds for that rule.
  *
  * Only a confident violation blocks. Everything short of that is
  * `needs-review`, and an errored rule can only go there, never to a silent
@@ -44,7 +44,7 @@ import {
   TURN_SCHEMA,
   type TurnScore,
 } from "./judge-prompt.js";
-import { historyBlock, type Ledger } from "./ledger.js";
+import { earlierBlock, historyBlock, type Ledger } from "./ledger.js";
 import type { RuleSource } from "./sources.js";
 import type { TurnSlice } from "./turn.js";
 
@@ -77,7 +77,10 @@ export interface TurnJudgeInput {
   render: { maxBlockChars: number; maxTotalChars: number; redact: string[] };
   /** The Stop payload's `last_assistant_message`, appended when the transcript lags. */
   lastAssistantMessage?: string;
-  /** The session's earlier verdicts. Ignored by a decision-only provider. */
+  /**
+   * The session's earlier turns and verdicts. Every path shares what earlier
+   * turns did; only a scored rule's item carries its own history.
+   */
   ledger?: Ledger;
   cache?: TurnCache;
 }
@@ -227,6 +230,8 @@ export type TurnPlanInput = Omit<TurnJudgeInput, "provider">;
 interface Plan {
   planned: Planned[];
   turnText: string;
+  /** The ledger's account of earlier turns, "" for none. */
+  earlier: string;
   warnings: string[];
   hits: Map<Planned, Verdict>;
   todo: Planned[];
@@ -272,13 +277,14 @@ function planTurn(
     };
   });
   if (planned.length === 0) {
-    return { planned, turnText: "", warnings, hits, todo: [], keyOf: () => "" };
+    return { planned, turnText: "", earlier: "", warnings, hits, todo: [], keyOf: () => "" };
   }
 
   // Render the turn, to the state limit when there is one. Every rule counts
   // toward the longest, cached or not, so the render and its key stay put.
   const tail = lastMessageLine(input);
   let budget = input.render.maxTotalChars;
+  let byLimit = false;
   if (limit !== undefined) {
     const longest = Math.max(
       ...planned.map((p) =>
@@ -288,8 +294,17 @@ function planTurn(
     const fixed = decisionOnly
       ? buildDecisionState("").length
       : TURN_JUDGE_SYSTEM_PROMPT.length + buildTurnShared("").length;
-    budget = Math.min(budget, limit * CHARS_PER_TOKEN - longest - fixed);
+    const fit = limit * CHARS_PER_TOKEN - longest - fixed;
+    if (fit < budget) {
+      budget = fit;
+      byLimit = true;
+    }
   }
+  // Earlier turns share the budget with the turn, and take at most a quarter
+  // of it, so the turn itself is never crowded out.
+  const earlier =
+    input.ledger !== undefined ? earlierBlock(input.ledger, input.turn.from, Math.floor(budget / 4)) : "";
+  budget -= buildTurnShared("", earlier).length - buildTurnShared("").length;
   const cut = { happened: false };
   const turnText =
     renderTrace(input.trace, {
@@ -303,7 +318,7 @@ function planTurn(
     }) + tail;
   if (cut.happened) {
     warnings.push(
-      limit !== undefined && budget < input.render.maxTotalChars
+      byLimit
         ? `the turn was cut to fit the state limit of ${String(limit)} tokens of ${id.provider}/${id.model}; the judge saw its head and tail`
         : `the turn was cut to the render cap of ${String(input.render.maxTotalChars)} characters; the judge saw its head and tail`,
     );
@@ -318,6 +333,7 @@ function planTurn(
     `t${String(input.temperature)}`,
     `turn-v${String(TURN_JUDGE_PROMPT_VERSION)}`,
     sha256(turnText),
+    sha256(earlier),
   ];
   const keyOf = (p: Planned): string =>
     buildCacheKey([...base, sha256(JSON.stringify([p.source, p.id, p.text, p.history]))]);
@@ -327,7 +343,7 @@ function planTurn(
     if (hit !== undefined) hits.set(p, { runs: hit });
     else todo.push(p);
   }
-  return { planned, turnText, warnings, hits, todo, keyOf };
+  return { planned, turnText, earlier, warnings, hits, todo, keyOf };
 }
 
 /**
@@ -386,15 +402,15 @@ export async function judgeTurn(
       plan = planTurn(input, id, decider !== undefined, limit ?? undefined);
     }
   }
-  const { planned, hits: verdicts, todo, keyOf, turnText } = plan;
+  const { planned, hits: verdicts, todo, keyOf, turnText, earlier } = plan;
   const warnings = plan.warnings;
   result.warnings = warnings;
   result.cached = todo.length === 0;
   if (todo.length > 0) {
     const scored =
       decider !== undefined
-        ? await decide(decider, todo, turnText)
-        : await score(provider, todo, turnText, runs, input.temperature);
+        ? await decide(decider, todo, buildDecisionState(turnText, earlier))
+        : await score(provider, todo, buildTurnShared(turnText, earlier), runs, input.temperature);
     if (scored.every((v) => v.runs.length === 0)) {
       throw new Error(scored.find((v) => v.error !== undefined)?.error ?? "every judge call errored");
     }
@@ -432,10 +448,10 @@ export async function judgeTurn(
 async function decide(
   decider: DecisionProvider,
   todo: Planned[],
-  turnText: string,
+  state: string,
 ): Promise<Verdict[]> {
   const response = await decider.decide({
-    state: buildDecisionState(turnText),
+    state,
     questions: Object.fromEntries(todo.map((p) => [p.qid, questionFor(p.source, p)])),
   });
   const answers: Record<string, DecideAnswer | undefined> = response.answers;
@@ -459,7 +475,7 @@ async function decide(
 async function score(
   provider: InferenceProvider,
   todo: Planned[],
-  turnText: string,
+  shared: string,
   runs: number,
   temperature: number,
 ): Promise<Verdict[]> {
@@ -468,7 +484,7 @@ async function score(
   for (let run = 0; run < runs; run++) {
     const response = await completeJSONShared(provider, {
       system: TURN_JUDGE_SYSTEM_PROMPT,
-      shared: buildTurnShared(turnText),
+      shared,
       items: todo.map((p) => p.item),
       schema: TURN_SCHEMA,
       temperature,

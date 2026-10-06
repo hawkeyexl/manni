@@ -462,6 +462,17 @@ applied:
 | `Last turn of <session>: no rule sources governed it.` | `0` |
 | `Last turn of <session>: nothing happened after the last prompt.` | `0` |
 
+When the hook has kept a [session ledger](/manni/tracevals/reference/report-and-exit-codes/#the-session-ledger)
+for the session, a `Session so far` section follows the findings. It never changes the exit code.
+It lists each rule the ledger ever recorded as broken or needing review, on one line, then counts
+the rest.
+
+```text
+Session so far
+  CLAUDE.md#no-force-push  broken 1, repaired 1, followed 4
+  6 rules held every turn they applied to.
+```
+
 | Message on stderr | Exit |
 |---|---|
 | `manni: no trace given; pass a trace file or run manni tracevals list` | `2` |
