@@ -51,7 +51,11 @@ export function gateRules(
   const rules: Rule[] = [];
   const dropped: ExtractedRules["dropped"] = [];
   const seen = new Set<string>();
-  for (const rule of proposed) {
+  for (const proposedRule of proposed) {
+    // An empty `when` names no condition, which is what an absent one means.
+    // Local models write it that way, so it is read as absent, not refused.
+    const { when, ...bare } = proposedRule;
+    const rule: Rule = when === undefined || Object.keys(when).length === 0 ? bare : proposedRule;
     if (!KEBAB.test(rule.id)) {
       dropped.push({ id: rule.id, reason: "id is not kebab-case" });
     } else if (rule.text.trim() === "") {

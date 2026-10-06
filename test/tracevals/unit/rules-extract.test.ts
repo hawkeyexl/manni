@@ -48,7 +48,7 @@ describe("extractRules", () => {
     expect(provider.requests[0]?.user).toContain("manni.config.yaml");
   });
 
-  it("drops a rule with a bad id, empty text, repeated id or invalid when", async () => {
+  it("drops a rule with a bad id, empty text, repeated id or invalid when, and reads an empty when as none", async () => {
     const provider = new MockProvider([
       {
         json: {
@@ -65,14 +65,18 @@ describe("extractRules", () => {
       },
     ]);
     const out = await extractRules(source, { provider });
-    expect(out.rules.map((r) => r.id)).toEqual(["ok"]);
+    // Local models write `"when": {}` for "no condition". It means what an
+    // absent `when` means, so the rule is kept and applies to every turn.
+    expect(out.rules).toEqual([
+      { id: "ok", text: "Do the thing." },
+      { id: "empty-when", text: "Empty." },
+    ]);
     expect(out.dropped.map((d) => d.id)).toEqual([
       "Not Kebab",
       "blank",
       "ok",
       "bad-re",
       "bad-key",
-      "empty-when",
     ]);
     expect(out.dropped.every((d) => d.reason.length > 0)).toBe(true);
   });
