@@ -174,9 +174,9 @@ export interface GateSkip<G extends string = string> {
 const wholeGb = (bytes: number): number => Math.round(bytes / GB);
 
 /**
- * Gates 5, 8 and 9 for one local model, in that order, each asked only when
+ * Gates 5, 7 and 8 for one local model, in that order, each asked only when
  * listed. Nothing here loads or fetches a model: a runtime that is absent is
- * gate 8, and the memory probe is asked only once the runtime is there.
+ * gate 7, and the memory probe is asked only once the runtime is there.
  */
 export async function localGate(
   local: LocalModels,

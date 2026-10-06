@@ -221,9 +221,9 @@ async function conform(p: Params): Promise<Outcome> {
   if (p.offline && isNetworkProvider(judgeId.provider)) {
     throw offlineRefusal("the judge", judgeId);
   }
-  // Gates 8 and 9. Asked before the verdict cache (gate 7), because reading
-  // the cache needs the provider's state limit, and a local provider loads
-  // its model to report one.
+  // Gates 7 and 8, model on disk and memory. The verdict cache is gate 9, and
+  // it lives inside judgeTurn: reading it needs the provider's state limit,
+  // and a local provider loads its model to report one, so these come first.
   if (judgeIsLocal) {
     if (p.inLoop) {
       const skip = await localGate(local, judgeId.model, ["not-downloaded", "memory"]);

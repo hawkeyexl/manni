@@ -241,7 +241,7 @@ export async function judgeTurn(input: TurnJudgeInput): Promise<TurnJudgement> {
     );
   }
 
-  // Gate 7: the same turn, rule set and model reuse the verdict.
+  // Gate 9: the same turn, rule set and model reuse the verdict.
   const key = buildCacheKey([
     provider.provider(),
     provider.modelName(),
