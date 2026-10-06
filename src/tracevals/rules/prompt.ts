@@ -16,7 +16,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
  * `test/tracevals/unit/rules-prompt.test.ts` pins this to a digest of the
  * prompt surface so the pair has to move together.
  */
-export const RULES_PROMPT_VERSION = 1;
+export const RULES_PROMPT_VERSION = 2;
 
 export const RULES_SYSTEM_PROMPT = [
   "You extract rules from a file that governs an AI agent working in a repository.",
@@ -32,6 +32,11 @@ export const RULES_SYSTEM_PROMPT = [
   "- instructions written for end users or readers rather than the agent;",
   "- examples, sample output and code listings;",
   "- rules the file quotes from somewhere else, or reports as another party's.",
+  "",
+  "Keep a procedure's rules too, which a session shows across many turns:",
+  "the order of steps, a gate that one step must pass before another, a route",
+  "that a step's result chooses, a condition that calls for a step, a required",
+  "step, and the step that comes last. Write each as its own rule.",
   "",
   'Drop a directive a transcript cannot show, such as "prefer boring code" or',
   '"keep things simple". If you cannot say what a violation would look like in',

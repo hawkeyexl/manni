@@ -328,9 +328,11 @@ async function addWindowed(
       continue;
     }
     if (artifact.type !== "skill" && artifact.type !== "slash-command") continue;
+    // In scope from the first invocation to the end of the session (proposal
+    // 0080): a skill's procedure spans the turns after it, and the skills it
+    // calls partway through do not end it. Batch `run` keeps ADR 01015's window.
     const window = windowOf(trace, artifact);
-    const overlaps = window.events.some((e) => e.index >= turn.from && e.index <= turn.to);
-    if (!overlaps) continue;
+    if (!window.events.some((e) => e.index <= turn.to)) continue;
     if (artifact.type === "slash-command") {
       c.add(artifact.path, artifact.content, "slash-command", "slash command window");
       continue;
