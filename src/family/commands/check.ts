@@ -12,8 +12,9 @@
  *   Each domain runs bare, exactly as its own CI step would.
  * - `paths`: the per-file checks on the collection members among the paths.
  * - `changed`: the per-file checks on the git working tree's changes, plus
- *   `cite` set-wide. `term` and `graph` run set-wide too when a collection
- *   document changed or was removed. A clean tree runs nothing.
+ *   `cite` set-wide. `term` runs set-wide too when a collection document
+ *   changed or was removed. `graph` never runs here; only `all` checks it.
+ *   A clean tree runs nothing.
  *
  * `cite` is per-file on paths and set-wide otherwise: a source edit can drift
  * any page's citation, so after a session the whole set is what is checked.
@@ -283,13 +284,15 @@ async function checkUnshared(opts: FamilyCheckOptions): Promise<FamilyCheckRun> 
         paths.map((path) => labelFrom(cwd, path)).filter((l) => isDocument(l) && isMember(l));
       files = memberDocuments(changed.files);
       inputs = files;
-      // term and graph read only collection documents, so a session that
-      // changed or removed none of them leaves both as they were.
+      // term reads only collection documents, so a session that changed or
+      // removed none of them leaves the glossary as it was. graph never runs
+      // here: it is the slowest set-wide check, and its findings span pages
+      // rather than the one an agent just wrote, so a bare run (CI) owns it.
       const pageChanged = files.length > 0 || memberDocuments(changed.removed).length > 0;
       domains = [
         ...(files.length > 0 ? (["meta", "lint", "docevals"] as const) : []),
         "cite",
-        ...(pageChanged ? (["term", "graph"] as const) : []),
+        ...(pageChanged ? (["term"] as const) : []),
       ];
       break;
     }

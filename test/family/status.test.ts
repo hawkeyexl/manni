@@ -210,11 +210,11 @@ describe("renderStatus", () => {
       domains: ["cite", "term", "graph"].map((name) => ({ name, status: "in-play" as const, reason: "" })),
     };
     expect(agentLines(everything).split("\n")[1]).toBe(
-      "Before you finish, manni check runs on every file you changed, plus every citation. It checks the glossary and the graph too when you changed a page. You get one repair pass.",
+      "Before you finish, manni check runs on every file you changed, plus every citation. It checks the glossary too when you changed a page. You get one repair pass.",
     );
     const graphOnly: StatusReport = { ...report, domains: [{ name: "graph", status: "in-play", reason: "" }] };
     expect(agentLines(graphOnly).split("\n")[1]).toBe(
-      "Before you finish, manni check runs on every file you changed. It checks the graph too when you changed a page. You get one repair pass.",
+      "Before you finish, manni check runs on every file you changed. You get one repair pass.",
     );
     const three: StatusReport = {
       ...report,
