@@ -13,6 +13,7 @@ import { beats as lintBeats, totalFrames as lintTotalFrames, TYPING_MS as lintTy
 import { beats as graphBeats, totalFrames as graphTotalFrames, TYPING_MS as graphTypingMs } from "./graph/beats";
 import { beats as tracevalsBeats, totalFrames as tracevalsTotalFrames, TYPING_MS as tracevalsTypingMs } from "./tracevals/beats";
 import { beats as familyCheckBeats, totalFrames as familyCheckTotalFrames, TYPING_MS as familyCheckTypingMs } from "./family-check/beats";
+import { beats as conformanceBeats, totalFrames as conformanceTotalFrames, TYPING_MS as conformanceTypingMs } from "./conformance/beats";
 import { beats as graphImpactBeats, totalFrames as graphImpactTotalFrames, TYPING_MS as graphImpactTypingMs } from "./graph-impact/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
@@ -57,6 +58,12 @@ const DemoGraphImpact: React.FC = () => <DemoView beats={graphImpactBeats} fontP
 
 /** family-check-1x1: 25 px / 69 columns, derived in media/family-check/family-check-1x1.script.md (media/family-check/capture/cols.mjs). */
 const DemoFamilyCheck: React.FC = () => <DemoView beats={familyCheckBeats} fontPx={25} linePx={35} cols={69} typingMs={familyCheckTypingMs} ligatures={false} />;
+
+/**
+ * conformance-1x1: 23 px / 75 columns, derived in media/conformance/conformance-1x1.script.md
+ * (media/conformance/capture/cols.mjs). Ligatures off: CLAUDE.md's frontmatter fences are `---`.
+ */
+const DemoConformance: React.FC = () => <DemoView beats={conformanceBeats} fontPx={23} linePx={32} cols={75} typingMs={conformanceTypingMs} ligatures={false} />;
 
 export const Root: React.FC = () => (
   <>
@@ -163,6 +170,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={familyCheckTotalFrames}
+    />
+    <Composition
+      id="ConformanceDemo"
+      component={DemoConformance}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={conformanceTotalFrames}
     />
   </>
 );

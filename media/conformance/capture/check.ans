@@ -1,0 +1,10 @@
+CLAUDE.md
+  [33m?[39m run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.
+      [2munclear with probability 1.00 (1.00)[22m
+  [31m✖[39m no-force-push  Never run `git push --force`.
+      [2mviolated with probability 1.00 (1.00)[22m
+.cursor/rules/web.mdc
+  [31m✖[39m never-use-innerhtml-in-components  Never use `innerHTML` in components.
+      [2mviolated with probability 1.00 (1.00)[22m
+
+Last turn of 3b265d00: 7 rules from 5 files. 2 broken, 1 needs review.
