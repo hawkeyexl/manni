@@ -26,7 +26,10 @@ import {
   hookReply,
   render,
   runFamilyCheck,
+  runTurnCheck,
+  turnReply,
   type CheckFormat,
+  type FamilyCheckRun,
   type HookReply,
   type Scope,
 } from "./commands/check.js";
@@ -57,8 +60,11 @@ function send(reply: HookReply): void {
   process.exitCode = reply.exitCode;
 }
 
-/** The check a hook asks for, or `undefined` when this event is not one `check` answers. */
-function hookScope(envelope: Envelope, cwd: string): { scope: Scope; file?: string } | undefined {
+/**
+ * The file checks a hook asks for, or `undefined` when this event runs none.
+ * A SubagentStop runs none: its subagent's turn is judged alone.
+ */
+export function hookScope(envelope: Envelope, cwd: string): { scope: Scope; file?: string } | undefined {
   if (envelope.event === "Stop") return { scope: { kind: "changed" } };
   if (envelope.event !== "PostToolUse") return undefined;
   if (envelope.toolName === undefined || !EDIT_TOOLS.includes(envelope.toolName)) return undefined;
@@ -67,26 +73,40 @@ function hookScope(envelope: Envelope, cwd: string): { scope: Scope; file?: stri
   return { scope: { kind: "paths", paths: [file] }, file };
 }
 
+/** The events that end a turn, which tracevals judges (proposal 0079). */
+const TURN_EVENTS: readonly string[] = ["Stop", "SubagentStop"];
+
 async function checkUnderHook(paths: string[], options: CheckCliOptions, envelope: Envelope): Promise<void> {
   const cwd = resolve(envelope.cwd ?? process.cwd());
   // Positional paths win over the envelope's own scope.
   const asked: { scope: Scope; file?: string } | undefined =
     paths.length > 0 ? { scope: { kind: "paths", paths }, file: paths.join(", ") } : hookScope(envelope, cwd);
-  if (asked === undefined) return;
-  try {
-    const run = await runFamilyCheck({
-      cwd,
-      scope: asked.scope,
-      allowMissing: true,
-      ...(options.config === undefined ? {} : { configPath: options.config }),
-      // stdout and stderr are the hook's channels; a notice is not for the agent.
-      onNotice: () => undefined,
-    });
-    send(hookReply(run, envelope));
-  } catch (err) {
-    if (err instanceof FamilyError && err.quiet) return;
-    send(hookFailure(errorMessage(err), envelope, asked.file));
+  const turnEvent = TURN_EVENTS.includes(envelope.event);
+  if (asked === undefined && !turnEvent) return;
+  let run: FamilyCheckRun | undefined;
+  if (asked !== undefined) {
+    try {
+      run = await runFamilyCheck({
+        cwd,
+        scope: asked.scope,
+        allowMissing: true,
+        ...(options.config === undefined ? {} : { configPath: options.config }),
+        // stdout and stderr are the hook's channels; a notice is not for the agent.
+        onNotice: () => undefined,
+      });
+    } catch (err) {
+      // Nothing set up for the file checks is not the end of a turn's judgement.
+      if (!(err instanceof FamilyError && err.quiet) && !turnEvent) {
+        send(hookFailure(errorMessage(err), envelope, asked.file));
+        return;
+      }
+    }
   }
+  if (!turnEvent) {
+    if (run !== undefined) send(hookReply(run, envelope));
+    return;
+  }
+  send(turnReply(run, await runTurnCheck(envelope, cwd), envelope));
 }
 
 export function buildCheck(): Command {

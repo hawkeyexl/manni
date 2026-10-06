@@ -17,7 +17,7 @@
  * `cite` is per-file on paths and set-wide otherwise: a source edit can drift
  * any page's citation, so after a session the whole set is what is checked.
  */
-import { extname, resolve } from "node:path";
+import { basename, extname, resolve } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 import { runValidate } from "../../meta/commands/validate.js";
@@ -39,7 +39,10 @@ import { renderFindingsJson as termJson } from "../../term/reporters/json.js";
 import { renderFindingsGithub as termGithub } from "../../term/reporters/github.js";
 import { buildGraph } from "../../graph/commands/build.js";
 import { runCheck as runGraph, renderCheck as renderGraph } from "../../graph/commands/check.js";
+import { checkTurn, type TurnCheckInput, type TurnCheckResult } from "../../tracevals/commands/check.js";
+import { renderCheck as renderTurn } from "../../tracevals/reporters/conformance.js";
 import { changedFiles } from "../core/changed.js";
+import { sayOnce } from "../core/said-once.js";
 import type { Envelope } from "../core/envelope.js";
 import {
   COMMANDS,
@@ -388,16 +391,108 @@ export function hookReply(run: FamilyCheckRun, envelope: Envelope): HookReply {
       stdout: `${JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext } })}\n`,
     };
   }
-  if (envelope.event === "Stop" && failed) {
-    const reply = envelope.stopHookActive
-      ? { systemMessage: "manni still reports errors after one repair pass. Run manni check to see them." }
-      : {
-          decision: "block",
-          reason: `manni found errors in the files you changed. Fix them, then finish.\n\n${renderFailures(run)}`,
-        };
-    return { exitCode: 0, stdout: `${JSON.stringify(reply)}\n` };
-  }
+  if (envelope.event === "Stop") return turnReply(run, undefined, envelope);
   return { exitCode: 0 };
+}
+
+/** What tracevals found in the turn a Stop or SubagentStop ended, for the reply. */
+export interface TurnVerdict {
+  /** Rules broken with a confident verdict: how many, the report, the trace judged. */
+  broken?: { rules: number; report: string; trace: string };
+  /** A skip not yet said this session. */
+  skipMessage?: string;
+}
+
+/**
+ * The reply to a Stop or a SubagentStop: 0078's file checks first, then the
+ * turn. One block carries both reasons; after the repair pass, one message
+ * carries both sentences. Always exit 0, as 0078's Stop is.
+ */
+export function turnReply(
+  run: FamilyCheckRun | undefined,
+  turn: TurnVerdict | undefined,
+  envelope: Envelope,
+): HookReply {
+  const reasons: string[] = [];
+  const messages: string[] = [];
+  if (run?.status === "fail") {
+    if (envelope.stopHookActive) {
+      messages.push("manni still reports errors after one repair pass. Run manni check to see them.");
+    } else {
+      reasons.push(`manni found errors in the files you changed. Fix them, then finish.\n\n${renderFailures(run)}`);
+    }
+  }
+  if (turn?.broken !== undefined) {
+    const { rules, report, trace } = turn.broken;
+    if (envelope.stopHookActive) {
+      messages.push(
+        `tracevals still finds broken rules after one repair pass. Run manni tracevals check ${trace} to see them.`,
+      );
+    } else {
+      reasons.push(
+        `This turn broke ${plural(rules, "rule")} from the files that governed it. ` +
+          `Fix the work, or say why the rule does not apply here, then finish.\n\n${report}`,
+      );
+    }
+  }
+  if (turn?.skipMessage !== undefined) messages.push(turn.skipMessage);
+  if (reasons.length === 0 && messages.length === 0) return { exitCode: 0 };
+  const reply = {
+    ...(reasons.length > 0 ? { decision: "block", reason: reasons.join("\n\n") } : {}),
+    ...(messages.length > 0 ? { systemMessage: messages.join(" ") } : {}),
+  };
+  return { exitCode: 0, stdout: `${JSON.stringify(reply)}\n` };
+}
+
+/** Test seams `checkTurn` takes; production builds each from config. */
+export type TurnSeams = Partial<Pick<TurnCheckInput, "judge" | "extractor" | "localModels" | "env">>;
+
+/**
+ * Judge the turn a Stop or SubagentStop ended, with every gate of proposal
+ * 0079. Silent (`undefined`) when tracevals is not in play, the turn is clean
+ * or only needs review, a skip was already said this session, or the run
+ * could not happen: an operational failure is not the agent's to fix.
+ */
+export async function runTurnCheck(
+  envelope: Envelope,
+  cwd: string,
+  seams: TurnSeams = {},
+): Promise<TurnVerdict | undefined> {
+  const subagent = envelope.event === "SubagentStop";
+  const judged = subagent ? envelope.agentTranscriptPath : envelope.transcriptPath;
+  if (judged === undefined) return undefined;
+  const trace = resolve(cwd, judged);
+  const sessionId = envelope.sessionId ?? basename(trace, ".jsonl");
+  let result: TurnCheckResult;
+  try {
+    result = await checkTurn({
+      transcriptPath: resolve(cwd, envelope.transcriptPath ?? judged),
+      ...(subagent ? { agentTranscriptPath: trace } : {}),
+      ...(subagent && envelope.agentId !== undefined ? { agentId: envelope.agentId } : {}),
+      ...(subagent && envelope.agentType !== undefined ? { agentType: envelope.agentType } : {}),
+      ...(envelope.lastAssistantMessage !== undefined
+        ? { lastAssistantMessage: envelope.lastAssistantMessage }
+        : {}),
+      sessionId,
+      cwd,
+      inLoop: true,
+      ...seams,
+    });
+  } catch {
+    return undefined;
+  }
+  const { skipped } = result;
+  if (skipped?.message !== undefined) {
+    return sayOnce(cwd, sessionId, skipped.gate) ? { skipMessage: skipped.message } : undefined;
+  }
+  if (result.exitCode !== 1 || result.report === undefined) return undefined;
+  return {
+    broken: {
+      rules: result.report.summary.fail,
+      report: renderTurn(result.report, { color: false }),
+      trace: judged,
+    },
+  };
 }
 
 /** The reply when the run itself could not happen, under a hook. */

@@ -12,8 +12,23 @@ function readJson(path: string): unknown {
   return JSON.parse(readFileSync(join(ROOT, path), "utf8"));
 }
 
+interface Hook {
+  type: string;
+  command: string;
+  timeout?: number;
+  async?: boolean;
+}
 interface HookFile {
-  hooks: Record<string, { matcher?: string; hooks: { type: string; command: string }[] }[]>;
+  hooks: Record<string, { matcher?: string; hooks: Hook[] }[]>;
+}
+
+/** The hooks registered for `event` whose command is `command`, with their group's matcher. */
+function hooksFor(file: HookFile, event: string, command: string): (Hook & { matcher?: string })[] {
+  return (file.hooks[event] ?? []).flatMap((group) =>
+    group.hooks
+      .filter((h) => h.command === `npx --no @hawkeyexl/manni ${command}`)
+      .map((h) => ({ ...h, ...(group.matcher === undefined ? {} : { matcher: group.matcher }) })),
+  );
 }
 interface Marketplace {
   name: string;
@@ -48,6 +63,33 @@ describe("manni plugin", () => {
     for (const matcher of matchers) {
       expect(matcher.split("|").sort()).toEqual([...EDIT_TOOLS].sort());
     }
+  });
+
+  // Proposal 0079, "Under the hooks": tracevals prepares in the background,
+  // judges each subagent's run, and returns its lease when the session ends.
+  it("prepares tracevals at session start and resume, in the background", () => {
+    const hooks = JSON.parse(readFileSync(join(pluginDir, "hooks/hooks.json"), "utf8")) as HookFile;
+    const [prepare, ...more] = hooksFor(hooks, "SessionStart", "tracevals prepare");
+    expect(more).toEqual([]);
+    expect(prepare).toMatchObject({ type: "command", matcher: "startup|resume", async: true });
+    // 0078's session-start hooks run first, in their order.
+    const commands = (hooks.hooks.SessionStart ?? []).flatMap((g) => g.hooks.map((h) => h.command));
+    expect(commands.map((c) => c.replace("npx --no @hawkeyexl/manni ", ""))).toEqual([
+      "tracevals capture",
+      "status",
+      "tracevals prepare",
+    ]);
+  });
+
+  it("checks each subagent's run, and releases the model host at session end", () => {
+    const hooks = JSON.parse(readFileSync(join(pluginDir, "hooks/hooks.json"), "utf8")) as HookFile;
+    const [subagent] = hooksFor(hooks, "SubagentStop", "check");
+    expect(subagent).toMatchObject({ timeout: 600 });
+    expect(subagent?.matcher).toBeUndefined();
+    const [release] = hooksFor(hooks, "SessionEnd", "tracevals release");
+    expect(release).toMatchObject({ timeout: 10 });
+    expect(release?.matcher).toBeUndefined();
+    expect(hooksFor(hooks, "Stop", "check")).toHaveLength(1);
   });
 
   it("the marketplace entry points at a plugin directory with a manifest", () => {

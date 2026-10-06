@@ -14,6 +14,14 @@ import { extractorForExtension } from "../../meta/extractors/index.js";
 import { runCheck as runCite } from "../../cite/commands/check.js";
 import { runList as listEvals } from "../../docevals/commands/list.js";
 import { runList as listTerms } from "../../term/commands/list.js";
+import { discoverConfig } from "../../tracevals/core/config.js";
+import {
+  assertProviderSelection,
+  resolveSelectionIdentity,
+  selectHookProvider,
+  selectProvider,
+} from "../../tracevals/judge/provider.js";
+import { hostStatus, type HostStatus } from "../../tracevals/rules/host.js";
 import type { Envelope } from "../core/envelope.js";
 import {
   COMMANDS,
@@ -33,10 +41,19 @@ export type StatusFormat = (typeof STATUS_FORMATS)[number];
 
 export type DomainState = "in-play" | "not-set-up" | "not-checked" | "unknown";
 
+export interface ModelRole {
+  provider: string;
+  model: string;
+}
+
 export interface DomainRow {
   name: string;
   status: DomainState;
   reason: string;
+  /** tracevals in play: the model judging inside a hook, and the one extracting rules. */
+  models?: { hook: ModelRole; extraction: ModelRole };
+  /** tracevals in play with a model host running: each model it holds. */
+  host?: HostStatus["models"];
 }
 
 export interface StatusReport {
@@ -50,6 +67,36 @@ export interface StatusReport {
 export interface StatusOptions {
   cwd?: string;
   configPath?: string;
+  /** Test seam: the running model host. Default: ask the inference library. */
+  hostStatus?: () => Promise<HostStatus | null>;
+}
+
+/**
+ * tracevals' row when `tracevals.conformance` exists: both models, resolved
+ * the way `check` and `prepare` resolve them, and the host when one runs.
+ */
+async function tracevalsRow(cwd: string, opts: StatusOptions): Promise<DomainRow> {
+  try {
+    const { config } = await discoverConfig(cwd, opts.configPath === undefined ? {} : { configPath: opts.configPath });
+    const hook = await resolveSelectionIdentity(config, selectHookProvider(config));
+    const selection = selectProvider(config);
+    assertProviderSelection(selection);
+    const extraction = await resolveSelectionIdentity(config, selection);
+    const host = await (opts.hostStatus ?? hostStatus)().catch(() => null);
+    return {
+      name: "tracevals",
+      status: "in-play",
+      reason: `hook: ${hook.provider} ${hook.model} · extraction: ${extraction.provider} ${extraction.model}`,
+      models: {
+        hook: { provider: hook.provider, model: hook.model },
+        extraction: { provider: extraction.provider, model: extraction.model },
+      },
+      ...(host === null || host.models.length === 0 ? {} : { host: host.models }),
+    };
+  } catch (err) {
+    const message = errorMessage(err).split("\n", 1)[0] ?? "";
+    return { name: "tracevals", status: "unknown", reason: `manni tracevals check could not run: ${message}` };
+  }
 }
 
 /** `1 page names`, `3 pages name`: a count and the verb that agrees with it. */
@@ -127,7 +174,13 @@ export async function runStatus(opts: StatusOptions = {}): Promise<StatusReport>
       domains.push({ name: domain, status: "unknown", reason: `manni ${COMMANDS[domain]} could not run: ${message}` });
     }
   }
-  for (const [name, reason] of NOT_CHECKED) domains.push({ name, status: "not-checked", reason });
+  for (const [name, reason] of NOT_CHECKED) {
+    domains.push(
+      name === "tracevals" && family.conformance
+        ? await tracevalsRow(cwd, opts)
+        : { name, status: "not-checked", reason },
+    );
+  }
   return {
     version: pkg.version,
     config: family.file.source,
@@ -153,9 +206,17 @@ export function renderStatus(report: StatusReport, format: StatusFormat): string
     `config ${report.config}`,
     ...report.collections.map((c) => `collection ${c.name} (${plural(c.files, "file")})`),
   ].join("   ");
-  const rows = report.domains.map(
-    (d) => `${d.name.padEnd(11)}${STATE_LABEL[d.status].padEnd(14)}${d.reason}`,
-  );
+  // tracevals in play judges each turn, which is what its row says.
+  const label = (d: DomainRow): string => (d.models !== undefined ? "judges each turn" : STATE_LABEL[d.status]);
+  const width = Math.max(14, ...report.domains.map((d) => label(d).length + 3));
+  const rows = report.domains.flatMap((d) => [
+    `${d.name.padEnd(11)}${label(d).padEnd(width)}${d.reason}`,
+    ...(d.host ?? []).map(
+      (m) =>
+        `${"".padEnd(11)}${"model host".padEnd(width)}${m.model} loaded, ${plural(m.sessions, "session")}, ` +
+        `idle ${String(Math.floor(m.idleMs / 60_000))}m`,
+    ),
+  ]);
   return [head, "", ...rows].join("\n");
 }
 

@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -7,6 +7,7 @@ import {
   exportGeneratedBy,
   renderStatus,
   runStatus,
+  type DomainRow,
   type StatusReport,
 } from "../../src/family/commands/status.js";
 import { parseEnvelope, type Envelope } from "../../src/family/core/envelope.js";
@@ -74,6 +75,46 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
     expect(row?.reason).toMatch(/^manni docevals run could not run: /);
   });
 
+  it("puts tracevals in play when tracevals.conformance exists, naming both models", async () => {
+    dir = fixtureRepo("only-graph");
+    const config = join(dir, "manni.config.yaml");
+    writeFileSync(
+      config,
+      `${readFileSync(config, "utf8")}\ntracevals:\n  provider: mock\n  conformance:\n    hook: { model: hook-model }\n`,
+    );
+    const report = await runStatus({ cwd: dir, hostStatus: () => Promise.resolve(null) });
+    expect(report.domains.find((d) => d.name === "tracevals")).toEqual({
+      name: "tracevals",
+      status: "in-play",
+      reason: "hook: mock hook-model · extraction: mock mock-model",
+      models: { hook: { provider: "mock", model: "hook-model" }, extraction: { provider: "mock", model: "mock-model" } },
+    });
+    expect(statusOf(report, "a11y")).toBe("not-checked");
+  });
+
+  it("names the model host when one runs, even with no collections", async () => {
+    const bare = realpathSync(mkdtempSync(join(tmpdir(), "manni-family-status-")));
+    dir = bare;
+    writeFileSync(join(bare, "manni.config.yaml"), "tracevals:\n  provider: mock\n  conformance: {}\n");
+    const host = { pid: 1, models: [{ model: "qwen3.5-4b", sessions: 2, idleMs: 180_000, queued: 0 }] };
+    const report = await runStatus({ cwd: bare, hostStatus: () => Promise.resolve(host) });
+    const row = report.domains.find((d) => d.name === "tracevals");
+    expect(row?.status).toBe("in-play");
+    expect(row?.host).toEqual(host.models);
+  });
+
+  it("leaves tracevals not checked without tracevals.conformance", async () => {
+    dir = fixtureRepo("only-graph");
+    const config = join(dir, "manni.config.yaml");
+    writeFileSync(config, `${readFileSync(config, "utf8")}\ntracevals:\n  provider: mock\n`);
+    const report = await runStatus({ cwd: dir });
+    expect(report.domains.at(-1)).toEqual({
+      name: "tracevals",
+      status: "not-checked",
+      reason: "run manni tracevals run over sessions",
+    });
+  });
+
   it("puts meta in play for a page that names its own $schema", async () => {
     dir = fixtureRepo("only-citations");
     writeFileSync(join(dir, "docs/own.md"), "---\n$schema: manni:core:1.0.0\ntitle: Own\n---\n# Own\n");
@@ -104,6 +145,30 @@ describe("renderStatus", () => {
         "tracevals  not checked   run manni tracevals run over sessions",
       ].join("\n"),
     );
+  });
+
+  it("pretty: tracevals judging each turn, and the model host under it", () => {
+    const tracevals: DomainRow = {
+      name: "tracevals",
+      status: "in-play",
+      reason: "hook: llama-cpp qwen3.5-4b · extraction: anthropic claude-sonnet-5-5",
+      models: {
+        hook: { provider: "llama-cpp", model: "qwen3.5-4b" },
+        extraction: { provider: "anthropic", model: "claude-sonnet-5-5" },
+      },
+      host: [{ model: "qwen3.5-4b", sessions: 2, idleMs: 180_000, queued: 0 }],
+    };
+    const judging: StatusReport = {
+      ...report,
+      domains: [{ name: "meta", status: "in-play", reason: "meta: section" }, tracevals],
+    };
+    expect(renderStatus(judging, "pretty").split("\n").slice(2)).toEqual([
+      "meta       in play            meta: section",
+      "tracevals  judges each turn   hook: llama-cpp qwen3.5-4b · extraction: anthropic claude-sonnet-5-5",
+      "           model host         qwen3.5-4b loaded, 2 sessions, idle 3m",
+    ]);
+    const one = { ...judging, domains: [{ ...tracevals, host: [{ model: "m", sessions: 1, idleMs: 20_000, queued: 0 }] }] };
+    expect(renderStatus(one, "pretty").split("\n").at(-1)).toBe("           model host         m loaded, 1 session, idle 0m");
   });
 
   it("json: the report as it is", () => {

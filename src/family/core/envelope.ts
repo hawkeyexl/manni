@@ -23,6 +23,18 @@ export interface Envelope {
   stopHookActive: boolean;
   /** `model`, on `SessionStart`: a string, or an object carrying `id`. */
   model?: string;
+  /** `session_id`. */
+  sessionId?: string;
+  /** `transcript_path`: the session's own transcript. */
+  transcriptPath?: string;
+  /** `agent_transcript_path`, on `SubagentStop`: the subagent's own transcript. */
+  agentTranscriptPath?: string;
+  /** `agent_id`, on `SubagentStop`. */
+  agentId?: string;
+  /** `agent_type`, on `SubagentStop`. */
+  agentType?: string;
+  /** `last_assistant_message`, on `Stop` and `SubagentStop`. */
+  lastAssistantMessage?: string;
 }
 
 function str(value: unknown): string | undefined {
@@ -51,6 +63,17 @@ export function parseEnvelope(text: string): Envelope | undefined {
   const cwd = str(doc.cwd);
   const toolName = str(doc.tool_name);
   const model = str(doc.model) ?? str(record(doc.model)?.id);
+  const strings = {
+    sessionId: str(doc.session_id),
+    transcriptPath: str(doc.transcript_path),
+    agentTranscriptPath: str(doc.agent_transcript_path),
+    agentId: str(doc.agent_id),
+    agentType: str(doc.agent_type),
+    lastAssistantMessage: str(doc.last_assistant_message),
+  };
+  const given = Object.fromEntries(Object.entries(strings).filter(([, v]) => v !== undefined)) as Partial<
+    Record<keyof typeof strings, string>
+  >;
   return {
     event,
     stopHookActive: doc.stop_hook_active === true,
@@ -58,6 +81,7 @@ export function parseEnvelope(text: string): Envelope | undefined {
     ...(toolName === undefined ? {} : { toolName }),
     ...(filePath === undefined ? {} : { filePath }),
     ...(model === undefined ? {} : { model }),
+    ...given,
   };
 }
 

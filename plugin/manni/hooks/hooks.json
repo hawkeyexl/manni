@@ -21,6 +21,16 @@
             "statusMessage": "Reading what manni checks here…"
           }
         ]
+      },
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx --no @hawkeyexl/manni tracevals prepare",
+            "async": true
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -44,6 +54,29 @@
             "command": "npx --no @hawkeyexl/manni check",
             "timeout": 600,
             "statusMessage": "Checking every file you changed…"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx --no @hawkeyexl/manni check",
+            "timeout": 600,
+            "statusMessage": "Checking the subagent's turn against its rules…"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx --no @hawkeyexl/manni tracevals release",
+            "timeout": 10
           }
         ]
       }
