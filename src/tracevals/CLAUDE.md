@@ -276,6 +276,13 @@ trace itself records.
   deterministic, `ai` and `human` graders alike. A window is empty when a skill
   was never invoked, or an agent recorded no turns. Never a pass. `cost` and
   `json-output` are session-level by nature and stay unwindowed.
+- **The per-turn check scopes a skill differently** (proposal 0080). Under a
+  hook and in `tracevals check`, a skill's or slash command's rules apply from
+  its first invocation to the end of the session, because a procedure spans the
+  turns after it and the skills it calls do not end it. Every rule is judged
+  against the last turn plus the earlier-turns block read from the transcript,
+  and blocks only on what the last turn did or claimed. Batch `run` keeps ADR
+  01015's windows above. Do not merge the two rules.
 - Deterministic evals fail only on `error`-severity findings; `warning` and
   `notice` findings report but pass. The scale is the family's, from
   `src/shared/severity.ts`; the `info` the imported code used is gone.
