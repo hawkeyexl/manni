@@ -482,13 +482,24 @@ async function addWithImports(
 /** `@path` references outside code fences and code spans. */
 function importsOf(content: string): string[] {
   const refs: string[] = [];
-  let fenced = false;
+  // The open fence's character and length: CommonMark closes a fence only
+  // with the same character, at least as long, so a backtick line inside a
+  // tilde fence is text.
+  let fence: { char: string; length: number } | null = null;
   for (const line of content.split(/\r?\n/)) {
-    if (/^\s*(```|~~~)/.test(line)) {
-      fenced = !fenced;
-      continue;
+    const marker = /^\s*(`{3,}|~{3,})/.exec(line)?.[1];
+    if (marker !== undefined) {
+      const char = marker.charAt(0);
+      if (fence === null) {
+        fence = { char, length: marker.length };
+        continue;
+      }
+      if (char === fence.char && marker.length >= fence.length && line.trim() === marker) {
+        fence = null;
+        continue;
+      }
     }
-    if (fenced) continue;
+    if (fence !== null) continue;
     const prose = line.replace(/`[^`]*`/g, "");
     for (const m of prose.matchAll(/(?:^|\s)@([^\s`]+)/g)) {
       const ref = m[1]?.replace(/[.,;:!?)\]]+$/, "");

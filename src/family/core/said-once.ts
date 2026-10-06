@@ -2,26 +2,24 @@
  * What a hook has already told the user this session (proposal 0079: "A skip
  * message is said once per session").
  *
- * Each hook is a process of its own, so the memory is a file: the keys said,
- * as a JSON array, beside the session manifests `tracevals capture` writes.
+ * Each hook is a process of its own, and parallel subagents end in parallel
+ * SubagentStop hooks, so the memory is one marker file per message, created
+ * exclusively. The process whose create succeeds is the one that says it, so
+ * no two hooks can both read "not said yet".
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { DEFAULT_CAPTURE_DIR } from "../../tracevals/capture/types.js";
 
-/** `<project>/.manni/tracevals/sessions/<session>.said.json`. */
-export function saidPath(projectDir: string, sessionId: string): string {
-  // A session id names a file, so nothing in it may climb out of the directory.
-  return join(projectDir, DEFAULT_CAPTURE_DIR, `${sessionId.replace(/[^A-Za-z0-9._-]/g, "_")}.said.json`);
-}
-
-function said(path: string): string[] {
-  try {
-    const parsed = JSON.parse(readFileSync(path, "utf8")) as unknown;
-    return Array.isArray(parsed) ? parsed.filter((k): k is string => typeof k === "string") : [];
-  } catch {
-    return [];
-  }
+/**
+ * `<project>/.manni/tracevals/sessions/<session hash>.<key>.said`. The session
+ * id is hashed, so nothing in it can climb out of the directory and two ids
+ * never share a marker. The key is a gate name, which is already safe.
+ */
+export function saidPath(projectDir: string, sessionId: string, key: string): string {
+  const session = createHash("sha256").update(sessionId).digest("hex").slice(0, 32);
+  return join(projectDir, DEFAULT_CAPTURE_DIR, `${session}.${key}.said`);
 }
 
 /**
@@ -29,14 +27,14 @@ function said(path: string): string[] {
  * that cannot be written says the message rather than lose it.
  */
 export function sayOnce(projectDir: string, sessionId: string, key: string): boolean {
-  const path = saidPath(projectDir, sessionId);
-  const keys = said(path);
-  if (keys.includes(key)) return false;
+  const path = saidPath(projectDir, sessionId, key);
   try {
     mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, `${JSON.stringify([...keys, key])}\n`, "utf8");
-  } catch {
-    // ponytail: an unwritable project repeats the message each stop.
+    writeFileSync(path, "", { flag: "wx" });
+    return true;
+  } catch (err) {
+    // EEXIST: another hook said it first. Anything else is an unwritable
+    // project, which repeats the message each stop rather than lose it.
+    return (err as NodeJS.ErrnoException).code !== "EEXIST";
   }
-  return true;
 }

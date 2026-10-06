@@ -110,18 +110,28 @@ export async function extraction(
   }
   let built: InferenceProvider | undefined = injected;
   const providerFor = (source: RuleSource): InferenceProvider => {
-    if (built !== undefined) return built;
-    markJudgeProcess();
-    if (identity.provider === "mock") {
+    // Under `mock` each source gets a scripted reading of its own text, so a
+    // provider is built per source and never kept.
+    if (built === undefined && identity.provider === "mock") {
+      markJudgeProcess();
       return constructProvider(config, identity, {
         mockResponses: [mockRulesResponse(source.content)],
       });
     }
-    built = constructProvider(config, identity, host === undefined ? {} : { host });
+    // Every other provider is built once, on the first uncached source.
+    if (built === undefined) {
+      markJudgeProcess();
+      built = constructProvider(config, identity, host === undefined ? {} : { host });
+    }
     return built;
   };
   const keyOf = (source: RuleSource): string =>
-    rulesCacheKey({ provider: identity.provider, model: identity.model, sha256: source.sha256 });
+    rulesCacheKey({
+      provider: identity.provider,
+      model: identity.model,
+      temperature: config.judge.temperature,
+      sha256: source.sha256,
+    });
   return {
     identity,
     cache,

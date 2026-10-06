@@ -6,9 +6,9 @@
  * The turns are tracevals' own conformance fixtures, judged by the mock
  * provider, in a temp copy of their project.
  */
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import {
   MockProvider,
   type CompleteJSONRequest,
@@ -187,16 +187,25 @@ describe("sayOnce", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it("records what was said under the project's session directory", async () => {
+  it("records what was said under the project's session directory", () => {
     expect(sayOnce(dir, "s1", "downloading")).toBe(true);
     expect(sayOnce(dir, "s1", "downloading")).toBe(false);
     expect(sayOnce(dir, "s1", "memory")).toBe(true);
-    expect(saidPath(dir, "s1")).toBe(join(dir, ".manni", "tracevals", "sessions", "s1.said.json"));
-    expect(JSON.parse(await readFile(saidPath(dir, "s1"), "utf8"))).toEqual(["downloading", "memory"]);
+    expect(dirname(saidPath(dir, "s1", "memory"))).toBe(join(dir, ".manni", "tracevals", "sessions"));
   });
 
-  it("keeps a session id from leaving the directory", () => {
-    expect(saidPath(dir, "../x")).toBe(join(dir, ".manni", "tracevals", "sessions", ".._x.said.json"));
+  it("lets exactly one of many concurrent callers say it", async () => {
+    const said = await Promise.all(
+      Array.from({ length: 8 }, () => Promise.resolve().then(() => sayOnce(dir, "s1", "busy"))),
+    );
+    expect(said.filter(Boolean)).toHaveLength(1);
+  });
+
+  it("keeps a session id from leaving the directory, and two ids from sharing a marker", () => {
+    expect(dirname(saidPath(dir, "../x", "busy"))).toBe(join(dir, ".manni", "tracevals", "sessions"));
+    expect(saidPath(dir, "abc/def", "busy")).not.toBe(saidPath(dir, "abc!def", "busy"));
+    expect(sayOnce(dir, "abc/def", "busy")).toBe(true);
+    expect(sayOnce(dir, "abc!def", "busy")).toBe(true);
   });
 });
 

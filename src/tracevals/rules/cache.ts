@@ -24,6 +24,8 @@ export const DEFAULT_RULES_CACHE_DIR = ".manni/tracevals/cache/rules";
 export interface RulesCacheKeyParts {
   provider: string;
   model: string;
+  /** The extraction temperature, `judge.temperature`: another reading of one file. */
+  temperature: number;
   /** sha256 of the whole source file. */
   sha256: string;
 }
@@ -33,6 +35,7 @@ export function rulesCacheKey(parts: RulesCacheKeyParts): string {
     parts.provider,
     parts.model,
     `rules-v${RULES_PROMPT_VERSION}`,
+    `t${String(parts.temperature)}`,
     parts.sha256,
   ]);
 }

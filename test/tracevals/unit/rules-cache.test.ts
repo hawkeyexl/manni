@@ -15,18 +15,19 @@ describe("rules cache", () => {
   });
 
   const key = (over: Partial<Parameters<typeof rulesCacheKey>[0]> = {}) =>
-    rulesCacheKey({ provider: "mock", model: "m", sha256: "abc", ...over });
+    rulesCacheKey({ provider: "mock", model: "m", temperature: 0, sha256: "abc", ...over });
 
   it("is stable for identical inputs and moves with each part", () => {
     expect(key()).toBe(key());
     expect(key({ provider: "other" })).not.toBe(key());
     expect(key({ model: "other" })).not.toBe(key());
     expect(key({ sha256: "def" })).not.toBe(key());
+    expect(key({ temperature: 0.7 })).not.toBe(key());
   });
 
   it("has no path in the key, so identical content shares an entry", () => {
     // The parts type has no path field; two files with one hash are one key.
-    expect(Object.keys({ provider: "mock", model: "m", sha256: "abc" })).not.toContain(
+    expect(Object.keys({ provider: "mock", model: "m", temperature: 0, sha256: "abc" })).not.toContain(
       "path",
     );
     expect(key({ sha256: "abc" })).toBe(key());

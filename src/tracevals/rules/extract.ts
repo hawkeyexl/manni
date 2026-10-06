@@ -85,6 +85,7 @@ export async function extractRules(
   const key = rulesCacheKey({
     provider: provider.provider(),
     model: provider.modelName(),
+    temperature: deps.temperature ?? 0,
     sha256: source.sha256,
   });
 

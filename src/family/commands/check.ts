@@ -21,7 +21,8 @@
  */
 import { basename, extname, resolve } from "node:path";
 import pkg from "../../../package.json" with { type: "json" };
-import { errorMessage } from "../../shared/errors.js";
+import { ToolError, errorMessage } from "../../shared/errors.js";
+import { warn } from "../../shared/warn.js";
 import { resolveTargetSet } from "../../meta/internal.js";
 import { supportedExtensions } from "../../meta/extractors/index.js";
 import type { TurnCheckInput, TurnCheckResult } from "../../tracevals/commands/check.js";
@@ -503,14 +504,16 @@ export async function runTurnCheck(
   if (judged === undefined) return undefined;
   const trace = resolve(cwd, judged);
   const sessionId = envelope.sessionId ?? basename(trace, ".jsonl");
-  // Loaded here, as every domain is, so a run that never judges a turn never
-  // loads tracevals.
-  const [{ checkTurn }, { renderCheck: renderTurn }] = await Promise.all([
-    import("../../tracevals/commands/check.js"),
-    import("../../tracevals/reporters/conformance.js"),
-  ]);
   let result: TurnCheckResult;
+  let renderTurn: (typeof import("../../tracevals/reporters/conformance.js"))["renderCheck"];
   try {
+    // Loaded here, as every domain is, so a run that never judges a turn never
+    // loads tracevals.
+    const [{ checkTurn }, reporters] = await Promise.all([
+      import("../../tracevals/commands/check.js"),
+      import("../../tracevals/reporters/conformance.js"),
+    ]);
+    renderTurn = reporters.renderCheck;
     result = await checkTurn({
       transcriptPath: resolve(cwd, envelope.transcriptPath ?? judged),
       ...(subagent ? { agentTranscriptPath: trace } : {}),
@@ -524,7 +527,11 @@ export async function runTurnCheck(
       inLoop: true,
       ...seams,
     });
-  } catch {
+  } catch (err) {
+    // An operational failure is not the agent's to fix, so it stays silent, as
+    // 0078's Stop failures do. Anything else is a bug: say so on stderr, which
+    // a hook that exits 0 sends to the debug log, and still never block.
+    if (!(err instanceof ToolError)) warn(`the turn check failed unexpectedly: ${errorMessage(err)}`);
     return undefined;
   }
   const { skipped } = result;

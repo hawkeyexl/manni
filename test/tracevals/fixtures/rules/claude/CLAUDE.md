@@ -7,3 +7,8 @@ See @docs/style.md for the house style. Packages are published as `@scope/pkg`.
 ```text
 @docs/never.md is inside a code fence and is not an import.
 ```
+
+~~~text
+```
+@docs/never.md is inside a tilde fence, after a backtick line, and is not an import.
+~~~
