@@ -298,6 +298,24 @@ describe("checkTurn, inside a hook", () => {
     expect(result.judgement?.cached).toBe(false);
   });
 
+  it("brings a touched conformance.plans file in under the hook (proposal 0080)", async () => {
+    const asked = join(dir, "requests");
+    await cp(join(FIXTURE, "requests"), asked, { recursive: true });
+    const result = await checkTurn({
+      transcriptPath: trace("requests"),
+      sessionId: "3b265d00-0000-4000-8000-000000000002",
+      cwd: asked,
+      inLoop: true,
+      env,
+    });
+    const rows = result.report?.sources ?? [];
+    expect(rows.find((r) => r.path === "docs/plans/reset.md")).toMatchObject({
+      format: "plans",
+      trigger: "touched docs/plans/reset.md",
+    });
+    expect(rows.some((r) => r.path === "docs/plans/other.md")).toBe(false);
+  });
+
   it("reuses the verdict for the same turn, rules and model (gate 7)", async () => {
     await hook("breaks");
     const again = await hook("breaks");

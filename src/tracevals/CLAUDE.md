@@ -278,10 +278,10 @@ trace itself records.
   `json-output` are session-level by nature and stay unwindowed.
 - **The per-turn check scopes a skill differently** (proposal 0080). Under a
   hook and in `tracevals check`, a skill's or slash command's rules apply from
-  its first invocation to the end of the session, because a procedure spans the
-  turns after it and the skills it calls do not end it. Every rule is judged
-  against the last turn plus the earlier-turns block read from the transcript,
-  and blocks only on what the last turn did or claimed. Batch `run` keeps ADR
+  its first invocation to the end of the session. A procedure spans the turns
+  after it, and the skills it calls do not end it. Every rule is judged against
+  the last turn plus the earlier-turns block read from the transcript. It blocks
+  only on what the last turn did or claimed. Batch `run` keeps ADR
   01015's windows above. Do not merge the two rules.
 - Deterministic evals fail only on `error`-severity findings; `warning` and
   `notice` findings report but pass. The scale is the family's, from

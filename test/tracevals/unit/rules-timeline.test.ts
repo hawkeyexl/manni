@@ -167,4 +167,38 @@ describe("the earlier-turns timeline", () => {
     const trace = session([{ prompt: "Go." }, { tool: "Bash", input: { command: "ls" }, result: "ok" }], cwd);
     expect(timelineBlock(trace, 0, opts)).toBe("");
   });
+
+  it("finds an agent's result when the trace's events are not one per ordinal", () => {
+    const trace = session(
+      [
+        { prompt: "Look." },
+        { say: "Spawning." },
+        { tool: "Agent", input: { subagent_type: "Explore", prompt: "look" }, result: "found it" },
+        { prompt: "Next." },
+      ],
+      cwd,
+    );
+    const said = trace.events.find((e) => e.kind !== "user" && e.index > 0 && e.index < 2);
+    expect(said).toBeDefined();
+    // Drop the reply, so array positions no longer equal ordinals, and make
+    // the lookup go through the call's own event rather than the spawn's id.
+    const sparse: Trace = {
+      ...trace,
+      events: trace.events.filter((e) => e !== said),
+      agentSpawns: trace.agentSpawns.map(({ toolUseId: _, ...a }) => a),
+    };
+    const block = timelineBlock(sparse, starts(trace).at(-1) ?? 0, opts);
+    expect(block).toContain("spawned Explore, which returned found it");
+  });
+
+  it("has no earlier turns when every prompt is a subagent's own", () => {
+    const steps: SessionStep[] = [
+      { prompt: "Look." },
+      { tool: "Bash", input: { command: "ls" }, result: "ok" },
+      { prompt: "Again." },
+    ];
+    const trace = session(steps, cwd, { sidechain: true });
+    const last = trace.events.filter((e) => isTypedPrompt(e)).at(-1)?.index ?? 0;
+    expect(timelineBlock(trace, last, opts)).toBe("");
+  });
 });

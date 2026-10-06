@@ -233,7 +233,9 @@ export function turnFacts(
       LIMIT.wrote,
     ),
     read: take(
-      sources.filter((s) => reads.has(pathKey(s.path))).map((s) => s.displayPath),
+      // A source with no file (the typed prompts, an inline plan) has path "",
+      // which would resolve to the cwd; it is never read.
+      sources.filter((s) => s.path !== "" && reads.has(pathKey(s.path))).map((s) => s.displayPath),
       LIMIT.read,
     ),
     skills: take(

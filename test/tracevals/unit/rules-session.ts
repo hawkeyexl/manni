@@ -12,14 +12,15 @@ export type SessionStep =
 
 export const SESSION_CWD = "C:\\work\\demo";
 
-export function session(steps: SessionStep[], cwd = SESSION_CWD): Trace {
+/** `sidechain` records every step as a subagent's own, as its sidecar transcript does. */
+export function session(steps: SessionStep[], cwd = SESSION_CWD, { sidechain = false } = {}): Trace {
   const lines: Record<string, unknown>[] = [];
   let parent: string | null = null;
   const push = (rec: Record<string, unknown>): void => {
     const uuid = `rec-${String(lines.length + 1)}`;
     lines.push({
       parentUuid: parent,
-      isSidechain: false,
+      isSidechain: sidechain,
       uuid,
       timestamp: `2026-10-05T10:00:${String(lines.length).padStart(2, "0")}.000Z`,
       sessionId: "80808080-0000-0000-0000-000000000000",

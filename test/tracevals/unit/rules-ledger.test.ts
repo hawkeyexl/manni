@@ -189,6 +189,15 @@ describe("turnFacts", () => {
     expect(f.wrote).toEqual(["src/a.ts", "src/[redacted].ts"]);
   });
 
+  it("never counts a read for a source with no file, such as the typed prompts", () => {
+    // A synthetic source's path is "", which resolves to the process's cwd.
+    const atCwd = { ...slice, window: { ...window, fileAccesses: [{ path: process.cwd(), op: "read" as const, index: 31 }] } };
+    const prompt = { path: "", displayPath: "prompt" };
+    const f = turnFacts(trace, atCwd, [...sources, prompt], { ...opts, cwd: process.cwd() });
+    expect(f.read).not.toContain("prompt");
+    expect(f.sources).toContain("prompt");
+  });
+
   it("clips and redacts each command, on one line", () => {
     const long = { ...slice, window: { ...window, toolCalls: [call("Bash", { command: `echo SECRET-xyz\n${"y".repeat(300)}` }, 11)] } };
     const [command] = turnFacts(trace, long, sources, opts).commands;

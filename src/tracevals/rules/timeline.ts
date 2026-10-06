@@ -67,7 +67,8 @@ function toolResults(trace: Trace): Map<string, ToolResult> {
 
 /** The `tool_use` id of the call at `index`, read from its event. */
 function callId(trace: Trace, index: number): string | undefined {
-  const id = trace.events[index]?.raw.id;
+  // Find by ordinal: the event array need not hold one event per ordinal.
+  const id = trace.events.find((e) => e.index === index)?.raw.id;
   return typeof id === "string" ? id : undefined;
 }
 
