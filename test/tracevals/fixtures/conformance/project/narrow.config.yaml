@@ -1,0 +1,8 @@
+# The same project with only CLAUDE.md in scope, whose rules each carry a
+# `when`, so a turn that touches none of them has nothing to judge.
+tracevals:
+  provider: mock
+  conformance:
+    exclude:
+      - AGENTS.md
+      - .cursor/rules/stale.mdc

@@ -10,6 +10,7 @@
  */
 import { resolve } from "node:path";
 import {
+  DEFAULT_JEV_BASE_URL,
   DEFAULT_MODELS,
   DEFAULT_OPENAI_BASE_URL,
   InferenceError,
@@ -18,6 +19,7 @@ import {
   type ProviderSelector,
   type ProviderSpec,
 } from "@hawkeyexl/inference";
+import { parseDuration } from "./duration.js";
 import { errorMessage } from "./errors.js";
 
 /** Builds the caller's own error from a message. */
@@ -33,12 +35,19 @@ export type ToErrorFn = (message: string) => Error;
 export const DEFAULT_PROVIDER = "auto";
 
 /**
- * Provider names the inference layer accepts, taken from the library rather
- * than copied. A hardcoded list silently went stale when `llama-cpp` was added
+ * Providers that answer decisions and never generate text. Every family tool
+ * but one generates, so these are refused unless the caller asks for decisions,
+ * as tracevals' in-loop judge does (proposal 0079).
+ */
+export const DECISION_ONLY_PROVIDERS: ReadonlySet<string> = new Set(["jev"]);
+
+/**
+ * Provider names the inference layer accepts for generation, taken from the
+ * library rather than copied. A hardcoded list silently went stale when `llama-cpp` was added
  * upstream; deriving it means a new provider works the day it ships.
  */
 export const PROVIDERS: ReadonlySet<string> = new Set<string>([
-  ...Object.keys(DEFAULT_MODELS),
+  ...Object.keys(DEFAULT_MODELS).filter((name) => !DECISION_ONLY_PROVIDERS.has(name)),
   DEFAULT_PROVIDER,
 ]);
 
@@ -48,14 +57,24 @@ export const PROVIDERS: ReadonlySet<string> = new Set<string>([
  * suite and the docs' own tests can run without a provider, but never offered.
  */
 const NAMEABLE_PROVIDERS: readonly string[] = Object.keys(DEFAULT_MODELS).filter(
-  (name) => name !== "mock",
+  (name) => name !== "mock" && !DECISION_ONLY_PROVIDERS.has(name),
 );
 
-/** Refuse a name the library does not offer. */
+/**
+ * Refuse a name the library does not offer, or a decision-only provider where
+ * the caller generates.
+ */
 export function assertKnownProvider(
   name: string,
   toError: ToErrorFn,
+  options: { decisions?: boolean } = {},
 ): asserts name is ProviderSelector {
+  if (DECISION_ONLY_PROVIDERS.has(name)) {
+    if (options.decisions === true) return;
+    throw toError(
+      `Provider "${name}" answers decisions only, so it cannot generate. Available: ${[...NAMEABLE_PROVIDERS, DEFAULT_PROVIDER].join(", ")}.`,
+    );
+  }
   if (PROVIDERS.has(name)) return;
   throw toError(
     `Unknown provider "${name}". Available: ${[...NAMEABLE_PROVIDERS, DEFAULT_PROVIDER].join(", ")}.`,
@@ -99,8 +118,15 @@ export interface ProviderConnections {
   anthropic?: { apiKeyEnv?: string };
   openai?: { baseUrl?: string; apiKeyEnv?: string };
   "claude-cli"?: { command?: string };
-  /** `modelsDir` is absolute: resolved against the config file's directory. */
-  "llama-cpp"?: { modelsDir?: string; thoughtTokens?: number };
+  /** A decide-only provider: it judges, and never generates. */
+  jev?: { apiKeyEnv?: string; baseUrl?: string };
+  /**
+   * `modelsDir` is absolute: resolved against the config file's directory.
+   * `keepAlive` is milliseconds, parsed from a duration; `0` unloads a model
+   * as soon as no session holds it. It belongs to the model host, so it
+   * never reaches a provider spec.
+   */
+  "llama-cpp"?: { modelsDir?: string; thoughtTokens?: number; keepAlive?: number };
 }
 
 /** The family's top-level `providers:` map, parsed. */
@@ -119,7 +145,8 @@ const CONNECTION_KEYS = {
   anthropic: ["apiKeyEnv"],
   openai: ["baseUrl", "apiKeyEnv"],
   "claude-cli": ["command"],
-  "llama-cpp": ["modelsDir", "thoughtTokens"],
+  jev: ["apiKeyEnv", "baseUrl"],
+  "llama-cpp": ["modelsDir", "thoughtTokens", "keepAlive"],
 } as const;
 
 type ConnectionName = keyof typeof CONNECTION_KEYS;
@@ -221,6 +248,15 @@ export function parseProviders(
         parsed["claude-cli"] = command === undefined ? {} : { command };
         break;
       }
+      case "jev": {
+        const apiKeyEnv = field("apiKeyEnv");
+        const baseUrl = field("baseUrl");
+        parsed.jev = {
+          ...(apiKeyEnv !== undefined ? { apiKeyEnv } : {}),
+          ...(baseUrl !== undefined ? { baseUrl } : {}),
+        };
+        break;
+      }
       case "llama-cpp": {
         const modelsDir = field("modelsDir");
         const thoughtTokens = section["thoughtTokens"];
@@ -232,15 +268,40 @@ export function parseProviders(
             `${source}: "${label}.thoughtTokens" must be a whole number of 0 or more, got ${JSON.stringify(thoughtTokens)}.`,
           );
         }
+        const keepAlive = keepAliveOf(section["keepAlive"], `${label}.keepAlive`, source, toError);
         parsed["llama-cpp"] = {
           ...(modelsDir !== undefined ? { modelsDir: resolve(dir, modelsDir) } : {}),
           ...(thoughtTokens !== undefined ? { thoughtTokens } : {}),
+          ...(keepAlive !== undefined ? { keepAlive } : {}),
         };
         break;
       }
     }
   }
   return parsed;
+}
+
+/** `providers.llama-cpp.keepAlive` when unset: ten minutes. */
+export const DEFAULT_KEEP_ALIVE_MS = 10 * 60_000;
+
+/**
+ * `keepAlive`, in milliseconds: `0`, or a duration as `--newer-than` takes
+ * one. YAML reads a bare `0` as a number, so both spellings of zero count.
+ */
+function keepAliveOf(
+  value: unknown,
+  label: string,
+  source: string,
+  toError: ToErrorFn,
+): number | undefined {
+  if (value === undefined) return undefined;
+  if (value === 0 || value === "0") return 0;
+  const refuse = (): Error =>
+    toError(
+      `${source}: "${label}" must be 0 or a duration such as 30m, 24h, 7d or 2w, got "${typeof value === "string" ? value : JSON.stringify(value)}"`,
+    );
+  if (typeof value !== "string") throw refuse();
+  return parseDuration(value, refuse);
 }
 
 /** A provider and a model as one level states them; either half may be absent. */
@@ -408,6 +469,13 @@ export function providerSpecFor(
       };
     case "claude-cli":
       return { provider, model, command: connections["claude-cli"]?.command ?? "claude" };
+    case "jev":
+      return {
+        provider,
+        model,
+        apiKeyEnv: connections.jev?.apiKeyEnv ?? "TYPESAFE_API_KEY",
+        baseUrl: connections.jev?.baseUrl ?? DEFAULT_JEV_BASE_URL,
+      };
     case "llama-cpp":
       // Local weights, in-process: no API key, and no network once they are
       // downloaded.

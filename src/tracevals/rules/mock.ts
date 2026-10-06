@@ -32,3 +32,26 @@ export function mockRulesResponse(content: string): {
   }
   return { json: { rules } };
 }
+
+const PROHIBITION = /^(?:never|don't|do not|avoid)\b/i;
+
+/**
+ * Deterministic turn decisions for `--provider mock`, read from the rule's
+ * first code span as crudely as `mockRulesResponse` reads a file. A
+ * prohibition is `violated` when the turn shows its span and `followed`
+ * otherwise. Any other rule is `followed` when the turn shows its span and
+ * `unclear` when it does not. A rule with no code span is `followed`.
+ */
+export function mockTurnDecisions(
+  _id: string,
+  question: { instructions: string },
+  state: unknown,
+): "followed" | "violated" | "unclear" {
+  const shared = typeof state === "string" ? state : JSON.stringify(state);
+  const text = question.instructions.split("The rule: ").at(-1) ?? "";
+  const span = /`([^`]+)`/.exec(text)?.[1];
+  if (span === undefined) return "followed";
+  const shown = shared.slice(shared.lastIndexOf("# The turn")).includes(span);
+  if (PROHIBITION.test(text.trim())) return shown ? "violated" : "followed";
+  return shown ? "followed" : "unclear";
+}

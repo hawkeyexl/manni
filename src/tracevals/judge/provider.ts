@@ -19,6 +19,7 @@ import {
   makeProvider as makeInferenceProvider,
   mockVerdict,
   type InferenceProvider,
+  type MockDecisions,
   type MockResponse,
   type ProviderName as ConcreteProvider,
   type ProviderSelector,
@@ -43,6 +44,13 @@ import { noticeOnce } from "../../shared/warn.js";
 
 export type { MockResponse, ProviderChoice, ProviderFlags, ProviderSelection };
 
+/** The decide-only provider (proposal 0079). */
+export const JEV = "jev";
+
+/** Why jev cannot serve out of the loop, and where it goes instead. */
+export const JEV_OUT_OF_LOOP =
+  "jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.conformance.hook.provider.";
+
 /** The key a tracevals user writes, named by the refusal a bare model gets. */
 const CONFIG_KEY = "tracevals.provider";
 
@@ -57,6 +65,8 @@ export interface JudgeProviderOptions {
    * offered, so nothing that lists providers mentions it.
    */
   mockResponses?: MockResponse[];
+  /** Scripted decisions for the `mock` seam, which the turn judge asks. */
+  mockDecisions?: MockDecisions;
 }
 
 /**
@@ -82,6 +92,32 @@ export function selectProvider(
       ...(ev.model !== undefined ? { model: ev.model } : {}),
       ...(ev.origin !== undefined ? { origin: ev.origin } : {}),
     },
+    ...configLevels(config),
+  ]);
+}
+
+/**
+ * The judge inside a hook (proposal 0079, "Two model roles"):
+ * `conformance.hook.provider`/`model`, then `tracevals.provider`/`model`, then
+ * the family's `providers:`, then `auto`. No flag reaches it, because a hook
+ * has no command line. A hook level naming only a model lends it to whichever
+ * provider wins, as every level does.
+ */
+export function selectHookProvider(config: TracevalsConfig): ProviderSelection {
+  const hook = config.conformance?.hook;
+  return selectFromLevels({}, [
+    {
+      ...(hook?.provider != null ? { provider: hook.provider } : {}),
+      ...(hook?.model != null ? { model: hook.model } : {}),
+      origin: "tracevals.conformance.hook.provider",
+    },
+    ...configLevels(config),
+  ]);
+}
+
+/** `tracevals.provider`/`model`, then the family's `providers:`. */
+function configLevels(config: TracevalsConfig): ProviderChoice[] {
+  return [
     {
       ...(config.provider !== null ? { provider: config.provider } : {}),
       ...(config.model !== null ? { model: config.model } : {}),
@@ -94,7 +130,7 @@ export function selectProvider(
       ...(config.providers.model !== undefined ? { model: config.providers.model } : {}),
       origin: "providers.provider",
     },
-  ]);
+  ];
 }
 
 /**
@@ -113,6 +149,9 @@ export function announceSelection(selection: ProviderSelection): void {
  * is what maps them to exit 2.
  */
 export function assertProviderSelection(selection: ProviderSelection): void {
+  // Every caller of this check generates: `run`'s and `calibrate`'s verdicts,
+  // `fill`'s proposals, and rule extraction. Only the turn judge may decide.
+  if (selection.provider === JEV) throw new TracevalsError(JEV_OUT_OF_LOOP);
   assertKnownProvider(selection.provider, toTracevalsError);
   assertModelHasProvider(selection.provider, selection.model, CONFIG_KEY, toTracevalsError);
 }
@@ -138,6 +177,7 @@ export function providerSpecFor(
       return {
         ...spec,
         mockResponses: options.mockResponses ?? [mockVerdict("pass", 0.95)],
+        ...(options.mockDecisions !== undefined ? { mockDecisions: options.mockDecisions } : {}),
       };
     default:
       return spec;
@@ -159,9 +199,22 @@ export async function resolveProviderIdentity(
   flags: ProviderFlags = {},
   ev: ProviderChoice = {},
 ): Promise<{ provider: ConcreteProvider; model: string }> {
+  // Every caller of this generates, so jev is refused here as well as where
+  // a command checks its selection up front.
   const selection = selectProvider(config, flags, ev);
+  assertProviderSelection(selection);
+  return resolveSelectionIdentity(config, selection);
+}
+
+/** `resolveProviderIdentity` for a selection already made. */
+export async function resolveSelectionIdentity(
+  config: TracevalsConfig,
+  selection: ProviderSelection,
+): Promise<{ provider: ConcreteProvider; model: string }> {
   const { provider, model } = selection;
-  assertKnownProvider(provider, toTracevalsError);
+  // Generating callers refused jev in assertProviderSelection; reaching here
+  // with it means the turn judge, which decides.
+  assertKnownProvider(provider, toTracevalsError, { decisions: true });
   assertModelHasProvider(provider, model, CONFIG_KEY, toTracevalsError);
   announceSelection(selection);
   return resolveIdentity(
@@ -176,6 +229,15 @@ export function constructProvider(
   identity: { provider: ConcreteProvider; model: string },
   options: JudgeProviderOptions = {},
 ): InferenceProvider {
+  if (identity.provider === JEV) {
+    // Checked here, so the message names the variable a user sets rather than
+    // the library's wording for it.
+    const keyEnv = config.providers.jev?.apiKeyEnv ?? "TYPESAFE_API_KEY";
+    const key = process.env[keyEnv];
+    if (key === undefined || key === "") {
+      throw new TracevalsError(`jev needs an API key in ${keyEnv}`);
+    }
+  }
   try {
     return makeInferenceProvider(providerSpecFor(config, identity, options));
   } catch (e) {
