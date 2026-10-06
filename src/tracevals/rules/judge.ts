@@ -391,21 +391,21 @@ export async function judgeTurn(
   result.warnings = warnings;
   result.cached = todo.length === 0;
   if (todo.length > 0) {
-    const fresh =
+    const scored =
       decider !== undefined
         ? await decide(decider, todo, turnText)
         : await score(provider, todo, turnText, runs, input.temperature);
-    if (fresh.every((v) => v.runs.length === 0)) {
-      throw new Error(fresh.find((v) => v.error !== undefined)?.error ?? "every judge call errored");
+    if (scored.every((v) => v.runs.length === 0)) {
+      throw new Error(scored.find((v) => v.error !== undefined)?.error ?? "every judge call errored");
     }
-    const errored = fresh.filter((v) => v.error !== undefined);
+    const errored = scored.filter((v) => v.error !== undefined);
     if (errored.length > 0) {
       warnings.push(
         `the judge errored on ${String(errored.length)} of ${String(todo.length)} rules, so they need review: ${errored[0]?.error ?? ""}`,
       );
     }
     todo.forEach((p, i) => {
-      const v = fresh[i] ?? { runs: [], error: "the judge returned nothing" };
+      const v = scored[i] ?? { runs: [], error: "the judge returned nothing" };
       verdicts.set(p, v);
       if (v.error === undefined) input.cache?.set(keyOf(p), v.runs);
     });
