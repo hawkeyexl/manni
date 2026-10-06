@@ -624,7 +624,6 @@ Unloaded qwen3.5-4b and stopped the model host. 2 sessions held it.
 |---|---|---|
 | `No model host is running.` | stdout | 0 |
 | `manni: release needs a session from a SessionEnd hook, or --all` | stderr | 2 |
-| `manni: the model host at <socket> does not answer; remove <lock> if no manni process is running` | stderr | 2 |
 
 ### Under the hooks
 
