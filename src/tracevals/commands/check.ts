@@ -321,6 +321,7 @@ async function judgeTurnOf(p: Params, ledger: Ledger, seen: Seen): Promise<Outco
     },
     ...(p.lastAssistantMessage !== undefined ? { lastAssistantMessage: p.lastAssistantMessage } : {}),
     ledger,
+    project: { cwd: p.projectDir, root: p.projectRoot ?? p.projectDir },
     cache: new TurnCache(resolve(cacheRoot, "turns"), !p.noCache),
   };
 

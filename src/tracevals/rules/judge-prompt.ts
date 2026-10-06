@@ -1,6 +1,7 @@
 /**
  * The turn judge's prompt surface (proposal 0079, "The judge, decisions
- * first"). Each rule is judged on its own: the shared part is what earlier
+ * first", reworded by proposal 0080 to judge the last turn against the
+ * session). Each rule is judged on its own: the shared part is what earlier
  * turns did and the rendered turn, and each rule is one item appended to it. A decision-only provider
  * gets the same text as its state and one question per rule.
  */
@@ -11,17 +12,19 @@ import type { DecideQuestion } from "@hawkeyexl/inference";
  * reaches a provider changes. `test/tracevals/unit/rules-judge.test.ts` pins it
  * to a digest of the surface, so the pair has to move together.
  */
-export const TURN_JUDGE_PROMPT_VERSION = 6;
+export const TURN_JUDGE_PROMPT_VERSION = 7;
 
 export const TURN_JUDGE_SYSTEM_PROMPT = [
-  "You check one turn of an AI coding agent's session against one rule.",
-  "A turn starts at the last prompt the user typed and runs to the end of the transcript.",
+  "You check the last turn of an AI coding agent's session against one rule.",
+  "The last turn starts at the last prompt the user typed and runs to the end of the transcript.",
   "The transcript shows the user's prompts, the agent's tool calls with their inputs, and its replies.",
+  '"Earlier in this session" lists what the session did before the last turn.',
   "",
-  "A prompt the user typed in the turn overrides any rule. Doing what the user explicitly asked is never a violation.",
+  "A prompt the user typed overrides any rule. Doing what the user explicitly asked is never a violation.",
   "",
-  "Judge only from what the transcript shows. Do not guess.",
-  "A rule applies only when the turn did the kind of work it covers. A rule about work the turn never did does not apply, so it was neither followed nor broken.",
+  "Judge only from what the transcript and the earlier turns show. Do not guess.",
+  "A rule applies only once the session does the kind of work it covers.",
+  "Score it broken only for what the last turn did, or for the last turn saying the work is done without it.",
 ].join("\n");
 
 /** The three scores, each independent of the others, 0 to 100. */
@@ -50,9 +53,10 @@ export const TURN_SCHEMA = {
 
 /** Decision-only providers: the three options, one per score. */
 export const TURN_CRITERIA: Record<TurnScore, string> = {
-  followed: "The turn did what the rule asks.",
-  "not-followed": "The turn did what the rule forbids, or skipped what it requires.",
-  "not-applicable": "The rule had nothing to say about this turn.",
+  followed: "The session does what the rule asks.",
+  "not-followed":
+    "The last turn did what the rule forbids, skipped what it requires, or said the work is done without it.",
+  "not-applicable": "The rule does not apply yet, or the last turn did nothing it covers.",
 };
 
 /** How a rule is named to a model. */
@@ -61,8 +65,8 @@ export function ruleKey(displayPath: string, id: string): string {
 }
 
 /**
- * The part every rule's call shares: what earlier turns did, when the ledger
- * holds any, then the turn.
+ * The part every rule's call shares: what earlier turns of the transcript
+ * did, when any did something, then the turn.
  */
 export function buildTurnShared(turn: string, earlier = ""): string {
   return `${earlier !== "" ? `${earlier}\n\n` : ""}# The turn\n\n${turn}\n\n`;
@@ -83,8 +87,8 @@ export function buildRuleItem(
     `${ruleKey(displayPath, rule.id)}: ${rule.text}`,
     "",
     ...(history !== "" ? [history, ""] : []),
-    "First say in one or two sentences what the transcript shows about this rule. Then score. " +
-      "Score how strongly the transcript shows each, as a whole number from 0 to 100: the rule does not apply to this turn; the rule applies and the turn followed it; the rule applies and the turn broke it.",
+    "First say in one or two sentences what the session shows about this rule. Then score each as a whole number from 0 to 100: " +
+      "the rule does not apply yet, or the last turn did nothing it covers; the session follows it; the last turn broke it, or the last turn says the work is done without it.",
   ].join("\n");
 }
 

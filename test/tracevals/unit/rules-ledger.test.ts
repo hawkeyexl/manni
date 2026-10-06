@@ -5,7 +5,6 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { emptyWindow } from "../../../src/tracevals/graders/util.js";
 import {
   COMMAND_CHARS,
-  earlierBlock,
   historyBlock,
   ledgerPath,
   readLedger,
@@ -201,39 +200,6 @@ describe("turnFacts", () => {
   it("is out of scope, and empty, for a turn that stopped before its sources", () => {
     const none: TurnSlice = { window: emptyWindow("turn", "last turn", "nothing"), from: 12, to: 11, sessionTurnCount: 1 };
     expect(turnFacts(trace, none, [], opts)).toEqual(facts(12, { inScope: false, sources: [] }));
-  });
-});
-
-describe("earlierBlock", () => {
-  it("lists earlier turns that did anything, newest last, before the current turn", () => {
-    let ledger = recordFacts(empty, facts(1, { commands: ["npm ci"], wrote: ["src/a.ts"] }));
-    ledger = recordFacts(ledger, facts(2));
-    ledger = recordFacts(ledger, facts(3, { inScope: false, sources: [], commands: ["ls"] }));
-    ledger = recordFacts(ledger, facts(4, { read: ["CLAUDE.md"], skills: ["a", "b"], agents: ["Explore"] }));
-    ledger = recordFacts(ledger, facts(5, { commands: ["npm test"] }));
-    expect(earlierBlock(ledger, 5)).toBe(
-      "# Earlier in this session\n\n" +
-        "- turn 1: ran npm ci; wrote src/a.ts\n" +
-        "- turn 3: ran ls (no rules in scope)\n" +
-        "- turn 4: read CLAUDE.md; used skills a, b; spawned agent Explore",
-    );
-  });
-
-  it("is empty with no earlier facts", () => {
-    expect(earlierBlock(empty, 9)).toBe("");
-    expect(earlierBlock(recordFacts(empty, facts(1)), 9)).toBe("");
-    expect(earlierBlock(recordFacts(empty, facts(9, { commands: ["x"] })), 9)).toBe("");
-  });
-
-  it("shows at most the last 15 turns, and cuts the oldest to fit", () => {
-    let ledger = empty;
-    for (let turn = 0; turn < 20; turn++) ledger = recordFacts(ledger, facts(turn, { commands: [`c${String(turn)}`] }));
-    const lines = earlierBlock(ledger, 99).split("\n").slice(2);
-    expect(lines).toHaveLength(15);
-    expect(lines[0]).toBe("- turn 5: ran c5");
-    const cut = earlierBlock(ledger, 99, 80);
-    expect(cut.length).toBeLessThanOrEqual(80);
-    expect(cut.endsWith("- turn 19: ran c19")).toBe(true);
   });
 });
 

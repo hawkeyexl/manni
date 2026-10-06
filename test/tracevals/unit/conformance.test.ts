@@ -503,20 +503,40 @@ describe("the session ledger", () => {
     await expect(read()).rejects.toThrow(/ENOENT/);
   });
 
-  it("shares earlier turns' facts with the judge by hand, ignoring this turn and later", async () => {
-    const { report: probe } = await check("breaks");
-    const from = probe.turn.from;
-    const at = (turn: number, commands: string[]) => ({
-      turn, inScope: true, sources: ["CLAUDE.md"], commands, wrote: [], read: [], skills: [], agents: [],
+  it("shares earlier turns of the transcript with the judge by hand, paths relative to the project", async () => {
+    // breaks.jsonl with two more steps in its first turn.
+    const lines = (await readFile(trace("breaks"), "utf-8")).split("\n").filter((l) => l.trim() !== "");
+    const first = JSON.parse(lines[0] ?? "{}") as Record<string, unknown>;
+    const step = (id: string, name: string, input: Record<string, unknown>) =>
+      JSON.stringify({
+        ...first,
+        uuid: id,
+        type: "assistant",
+        message: { role: "assistant", content: [{ type: "tool_use", id, name, input }] },
+      });
+    const longer = join(dir, "earlier.jsonl");
+    await writeFile(
+      longer,
+      [
+        lines[0],
+        step("pre-1", "Bash", { command: "npm ci" }),
+        step("pre-2", "Write", { file_path: join(project, "src", "x.ts"), content: "" }),
+        ...lines.slice(1),
+      ].join("\n"),
+    );
+    const at = (turn: number, inScope: boolean) => ({
+      turn, inScope, sources: inScope ? ["CLAUDE.md"] : [], commands: [], wrote: [], read: [], skills: [], agents: [],
     });
-    const earlier: Ledger = { version: 1, turns: [at(0, ["npm ci"]), at(from, ["npm run this-turn"])], rules: {} };
+    const earlier: Ledger = { version: 1, turns: [at(0, false)], rules: {} };
     await writeLedger(ledgerPath(project, SESSION, null), earlier);
     const judge = generative(() => ({ reasoning: "Fine.", "not-applicable": 0, followed: 100, "not-followed": 0 }));
-    await check("breaks", { judge, noCache: true });
+    await runCheck({ tracePath: longer, project, configDir: project, env, judge, noCache: true });
     expect(judge.requests.length).toBeGreaterThan(0);
     for (const r of judge.requests) {
-      expect(r.user.startsWith("# Earlier in this session\n\n- turn 0: ran npm ci\n\n# The turn\n\n")).toBe(true);
-      expect(r.user).not.toContain("this-turn");
+      expect(r.user.startsWith(
+        "# Earlier in this session\n\n- turn 0: ran npm ci; wrote src/x.ts (no rules in scope)\n\n# The turn\n\n",
+      )).toBe(true);
+      expect(r.user.split("# The turn")[0]).not.toContain("git push");
     }
     expect(await read()).toEqual(earlier);
   });
