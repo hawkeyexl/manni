@@ -130,22 +130,27 @@ last. A line now names five more kinds of fact.
 | A task ticked | `ticked T014 in specs/001-login/tasks.md` |
 | A plan approved | `had a plan approved` |
 
+- **Order.** A line lists commands, files written, rule sources read, skill
+  calls, spawns, a question, ticks and an approval, in that order.
 - **Agent results.** An agent's result is its first line, clipped to 120
-  characters. It is redacted like everything else in the block.
-- **Ticks.** A task is ticked when an Edit's old string has a line `- [ ] <text>`
-  and its new string has `- [x] <text>`. Spec Kit, Kiro and OpenSpec all keep
-  tasks this way.
+  characters. It is redacted like everything else in the block. A line names
+  up to 10 spawns, and a spawn with no result is `spawned <type>`.
+- **Ticks.** A task is ticked when an Edit's or a MultiEdit's old string has a
+  line `- [ ] <text>` and its new string has `- [x] <text>`. Spec Kit, Kiro and
+  OpenSpec all keep tasks this way. The line names the task's leading id, or
+  its text clipped to 60 characters when it has none.
 - **The budget.** The block keeps 0079's share of the render budget, a quarter
   of what the turn may use. Its oldest lines go first. A marker line says how
-  many went, as in `- (turns 1–40: 52 lines left out)`.
+  many went, as in `- (turns 1–40: 52 lines left out)`, or
+  `- (turn 3: 1 line left out)` for one.
 
 ```text
 # Earlier in this session
 
 - turn 52: spawned technical-nonfiction-planner, which returned {"status":"done","files_created":["notes/Outline.md"]…
-- turn 140: spawned technical-nonfiction-writer, which returned {"status":"done"…; wrote ch3-tests.md
+- turn 140: wrote ch3-tests.md; spawned technical-nonfiction-writer, which returned {"status":"done"…
 - turn 260: spawned technical-nonfiction-reviewer, which returned {"route_to":"writer","issues":[…
-- turn 301: ran npm test; ticked T014 in specs/001-login/tasks.md
+- turn 301: ran npm test; wrote specs/001-login/tasks.md; ticked T014 in specs/001-login/tasks.md
 ```
 
 The ledger keeps its records, which still say which turns had which sources in
@@ -184,8 +189,9 @@ From the repo copy of authoring-workflow and its agents:
 The copy that ran is the copy judged. The resolution is 0079's, so the 6-pass
 plugin copy and the 8-pass repo copy never mix.
 
-**The window under hooks.** A skill's and a slash command's sources stay in
-scope from the first invocation to the end of the session. The skills a skill
+**The window under hooks.** This window holds under hooks and in
+`tracevals check`. A skill's and a slash command's sources stay in scope from
+the first invocation to the end of the session. The skills a skill
 calls do not end it. ADR 01015's window still governs batch `run`, which this
 proposal does not change.
 
@@ -194,12 +200,13 @@ proposal does not change.
 Six formats join the sources table. A second extraction prompt reads them. It
 asks what the session is to build or keep, and returns rules in 0079's shape. It
 keeps a spec's own ids, such as `FR-001`, `T014` or `1.2`. Its version is
-`REQUIREMENTS_PROMPT_VERSION = 1`, and it shares the rules cache.
+`REQUIREMENTS_PROMPT_VERSION = 1`. It shares the rules cache under a key slot
+of its own, so a rules file keeps its entries.
 
 | Format | Files | In scope when |
 |---|---|---|
-| `prompt` | Every prompt the user typed in the session, in order | Always |
-| `plan` | The plan of the last approved `ExitPlanMode`. That is its `plan` input, or the plan file the session wrote before it. | From the approval on |
+| `prompt` | Every prompt the user typed in the session, in order. A subagent's own run has only its sidechain prompts, so those are its sequence. | Always |
+| `plan` | The plan of the last approved `ExitPlanMode`. That is its `plan` input, or else the last file the session wrote under the Claude config directory's `plans/` before the call. | From the approval on |
 | `speckit-spec` | `specs/<feature>/spec.md`, `plan.md`, `tasks.md` | Once the session touches a file under `specs/<feature>/` |
 | `kiro-spec` | `.kiro/specs/<name>/requirements.md`, `design.md`, `tasks.md` | Once the session touches a file under that directory |
 | `openspec-change` | Every `.md` file under `openspec/changes/<id>/`, never under `changes/archive/` | Once the session touches a file under that change |
@@ -210,7 +217,8 @@ keeps a spec's own ids, such as `FR-001`, `T014` or `1.2`. Its version is
   earlier item. The sequence's sha256 is the cache key, so each new prompt
   costs one extraction. A question with nothing to build yields no rules.
 - **An approved plan.** An `ExitPlanMode` call is approved when its result is
-  not a rejection. A later approval replaces the plan.
+  not an error, which is how a rejection is recorded. A later approval replaces
+  the plan. The trigger's turn number is the call's ordinal in the trace.
 - **Specs.** A spec tree holds many features, so only a touched one counts.
   An archived OpenSpec change is done, and never counts.
 - **Exclusion.** `conformance.exclude` removes a plan file or a spec file from
@@ -321,6 +329,9 @@ the files and requests that governed it".
 ```json
 {"decision":"block","reason":"This turn broke 3 rules from the files and requests that governed it. Fix the work, or say why the rule does not apply here, then finish.\n\n<report>"}
 ```
+
+Every turn has a typed prompt, which is a source, so gate 4 rarely stops a turn
+and gate 6 decides.
 
 `prepare` extracts 0079's always-on sources again, once, under the new
 `RULES_PROMPT_VERSION`. Prompts and specs are not known at session start, so it
