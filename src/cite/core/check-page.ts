@@ -24,6 +24,7 @@ import type {
   PageCitationReport,
   PageCitations,
   PageLines,
+  SourceCache,
   SourceEnd,
   SourceIndex,
 } from "../types.js";
@@ -62,6 +63,7 @@ interface QuoteInput {
   root: string;
   index: Parameters<typeof readSource>[1];
   key?: string;
+  cache?: SourceCache;
   checkSources: boolean;
 }
 
@@ -72,12 +74,12 @@ async function citedNow(
   entry: PageCitation,
 ): Promise<string | undefined> {
   const range = sourceRange(entry.citation.source);
-  const read = await readSource(input.root, input.index, range, input.key);
+  const read = await readSource(input.root, input.index, range, input.key, input.cache);
   if (read.kind === "missing") return undefined;
   // After a move the bytes live at the new range; compare against those.
   const at = source.status === "moved" && source.newSrc !== undefined ? parseSrc(source.newSrc) : range;
   try {
-    return sliceLines(splitLines(read.text), at);
+    return sliceLines(read.lines ?? splitLines(read.text), at);
   } catch {
     return undefined;
   }
@@ -235,9 +237,13 @@ export async function checkCitations(
   const classifyOpts =
     index === undefined
       ? undefined
-      : ({ root: opts.root, index, git: client, ...(opts.key === undefined ? {} : { key: opts.key }) } satisfies Parameters<
-          typeof classifyCitation
-        >[1]);
+      : ({
+          root: opts.root,
+          index,
+          git: client,
+          ...(opts.key === undefined ? {} : { key: opts.key }),
+          ...(opts.sourceCache === undefined ? {} : { cache: opts.sourceCache }),
+        } satisfies Parameters<typeof classifyCitation>[1]);
 
   // A quote is judged page-side even with the sources off, so this stands
   // whether or not there is an index; `quoteFindings` reads a source only
@@ -249,6 +255,7 @@ export async function checkCitations(
     index: index ?? emptyIndex,
     checkSources,
     ...(opts.key === undefined ? {} : { key: opts.key }),
+    ...(opts.sourceCache === undefined ? {} : { cache: opts.sourceCache }),
   };
 
   // Every marker line that splits a paragraph, read once for the page: its

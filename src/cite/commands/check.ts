@@ -40,7 +40,7 @@ import {
   type CitationSidecars,
   type PageSidecar,
 } from "../core/sidecar.js";
-import { sourceIndexFor } from "../core/sources.js";
+import { createSourceCache, sourceIndexFor } from "../core/sources.js";
 import { warn } from "../../shared/warn.js";
 import { CiteError } from "../errors.js";
 import type {
@@ -327,6 +327,8 @@ export async function runCheck(opts: CheckOptions): Promise<CheckRun> {
   const { cwd, run, files, gitignoreSkipped, usingStdin, forced, pageOptions, git } = prepared;
   await assertNoOrphans(prepared);
   const hits = joinHits();
+  // A check writes nothing, so a source read for one page is still true for the next.
+  pageOptions.sourceCache = createSourceCache();
 
   const pages: PageCitationReport[] = [];
   const checkOne = async (label: string, content: string): Promise<void> => {

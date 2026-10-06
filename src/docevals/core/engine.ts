@@ -819,6 +819,7 @@ export async function runEvals(options: RunOptions = {}): Promise<EngineReport> 
         `Point \`defaults.suite\` at a suite in ${config.configPath}, or give ` +
         `the pages an \`eval-suite\` or \`evals\` frontmatter key. Run ` +
         `\`manni docevals list\` to see the resolved plan.`,
+      "nothing-resolved",
     );
   }
   const filtered = applySelection(plans, config, options);

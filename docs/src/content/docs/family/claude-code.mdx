@@ -1,0 +1,227 @@
+---
+title: Keep an agent's docs green
+description: "Install the manni plugin for Claude Code so an agent hears about a broken page at the edit that broke it, and cannot finish with an error outstanding."
+sidebar:
+  order: 2
+id: "family-claude-code"
+type: "how-to"
+keywords: ["Claude Code", "plugin", "hooks", "marketplace", "MANNI_GENERATED_BY", "skills"]
+language: en
+audiences: ["docs-engineers"]
+intent: "Install the manni Claude Code plugin and know what it checks at session start, after each edit and before the agent stops."
+lifecycle: published
+applies-to: ["domain:family"]
+prerequisites: ["family-check"]
+next-steps: ["family-check", "family-reference-cli", "meta-set-up-machine-authorship"]
+sample-questions: ["How do I install the manni plugin for Claude Code?", "What happens when an agent edits a page and the check fails?", "How do I turn the manni plugin off?"]
+graph: { label: "Keep an agent's docs green", type: task }
+last-updated: 2026-10-06
+tags:
+  - claude-code
+  - agents
+  - hooks
+  - plugin
+action: develop
+related-pages:
+  - family-check
+  - family-reference-cli
+  - tracevals-declare-coverage
+  - meta-set-up-machine-authorship
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+An agent edits a page and stops. The pull request then goes red, and you paste
+the log into a new session and wait for a second round. The plugin closes that
+loop. The agent hears about a broken page at the edit that broke it, and it
+cannot finish while an error is outstanding.
+
+The plugin runs [`manni check`](/manni/family/check/) for the agent. It checks
+only what your repository has set up. A domain you never set up never blocks the
+agent, so a repository that only uses `docevals` is not failed by `meta`.
+
+## Install the plugin
+
+Two commands add the marketplace and install the plugin.
+
+```sh
+claude plugin marketplace add hawkeyexl/manni
+claude plugin install manni@manni
+```
+
+To offer it to everyone who opens the repository in Claude Code, commit it to
+`.claude/settings.json`. Claude Code then offers the plugin to each
+contributor who opens the repository.
+
+```json title=".claude/settings.json"
+{
+  "extraKnownMarketplaces": {
+    "manni": {
+      "source": { "source": "github", "repo": "hawkeyexl/manni" }
+    }
+  },
+  "enabledPlugins": {
+    "manni@manni": true
+  }
+}
+```
+
+The hooks run `npx --no @hawkeyexl/manni`. The `--no` stops npx from downloading
+anything, so manni has to be installed already. Install it in the project, or
+globally.
+
+```sh
+npm install --save-dev @hawkeyexl/manni
+```
+
+Where manni is not installed, a hook fails fast and prints nothing to the agent.
+
+## What happens at session start
+
+Two hooks run when a session starts.
+
+`manni tracevals capture` records a manifest of the session under
+`.manni/tracevals/sessions/`. It stores the hash of every instruction artifact
+the project holds, so [`tracevals`](/manni/tracevals/declare/coverage/) can tell
+whether one changed after the session began. It runs at startup only.
+
+`manni status` prints what is in play, and Claude Code adds that to the agent's
+context. With no `manni.config.yaml` it prints nothing.
+
+```text
+manni 4.3.0   config manni.config.yaml   collection site (2 files)
+
+meta       in play       meta: section
+cite       not set up    no page carries citations
+lint       not set up    no lint: section
+docevals   not set up    no page resolves any evals
+term       not set up    no terms in any collection
+graph      not set up    no graph: section
+a11y       not checked   run manni a11y check against a running site
+tracevals  not checked   run manni tracevals run over sessions
+
+After you edit a file in site, manni check runs on it, and errors come back to you at once.
+Before you finish, manni check runs on every file you changed. You get one repair pass.
+The manni:fix skill says how to repair each finding.
+```
+
+The same table is what you see when you run `manni status` yourself, so you and
+the agent read one answer.
+
+The status hook also exports `MANNI_GENERATED_BY` for the session. It appends
+`export MANNI_GENERATED_BY=<model>` to the file Claude Code names in
+`CLAUDE_ENV_FILE`, using the model id from the session. It does nothing when the
+variable is already set, so a value you chose wins. Every command the agent runs
+afterwards records which model wrote the uncommitted lines, with no line about it
+in your agent instructions. See
+[Record an agent's edit](/manni/meta/set-up/machine-authorship/#record-an-agents-edit).
+
+## What happens after an edit
+
+When the agent uses `Edit`, `Write`, `MultiEdit` or `NotebookEdit`, the plugin
+runs `manni check` on that one file. The checks are the per-file checks of each
+domain in play: `meta`, `cite`, `lint` and `docevals`.
+
+A file outside every collection passes without a word, so an edit to
+`CLAUDE.md` or to source code runs nothing.
+
+When the check finds an error, the hook exits `2`. Claude Code treats that as a
+block and shows the agent what was written to stderr.
+
+```text
+manni found errors in docs/limits.md. Fix them before you continue.
+
+meta validate
+✗ docs/limits.md
+    (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]
+
+1 file checked, 0 passed, 1 failed, 1 error
+
+skipped  cite check     no page carries citations
+skipped  lint check     no lint: section
+skipped  docevals run   no page resolves any evals
+
+4 checks over 1 file: 1 failed, 3 skipped
+```
+
+The agent fixes the file before it moves on. Warnings and notices never block.
+
+If a check cannot run, the hook does not block, because exit `2` would blame the
+agent for manni's own fault. The agent gets one line of context instead, such as
+`manni lint check could not check docs/limits.md`, with the first line of the
+error.
+
+## What happens before the agent stops
+
+When the agent tries to finish, the plugin runs `manni check` over what it
+changed. That is the per-file checks on every file the git working tree changed
+against `HEAD`, whether modified, added, renamed or untracked. It also checks
+every citation, since a source edit can drift one on a page the agent never
+opened. The glossary reads only collection documents, so it is checked when
+the agent changed or removed one, and skipped when it changed only code. The
+graph is never checked here. It is the slowest whole-set check, and its
+findings span pages, so CI checks it with a bare `manni check`.
+
+With a clean working tree, nothing runs.
+
+If errors remain, the stop is blocked once. The agent gets the report and one
+repair pass.
+
+```json
+{"decision":"block","reason":"manni found errors in the files you changed. Fix them, then finish.\n\nmeta validate\n✗ docs/limits.md\n …"}
+```
+
+If errors remain after that pass, the agent stops, and you see a message.
+
+```json
+{"systemMessage":"manni still reports errors after one repair pass. Run manni check to see them."}
+```
+
+One pass bounds the loop. A failure that predates the session cannot hold an
+agent forever.
+
+## The four skills
+
+The plugin ships four skills. Claude uses them when the task matches, or you can
+call one by name.
+
+| Skill | What it does |
+|---|---|
+| `manni:setup` | Installs `@hawkeyexl/manni` as a dev dependency and writes `manni.config.yaml` with a `collections:` entry for the docs it finds. It asks which domains to set up, then ends with `manni status` and `manni check`. |
+| `manni:check` | Runs `manni check` and walks the findings, one check at a time. |
+| `manni:fix` | Maps each finding to its repair. A `meta` finding is a page edit, or `meta derive` for a managed field. A `cite` finding is `cite update` for moved lines. |
+| `manni:evals` | Authors evals with `docevals generate`, `fill` and `promote` for pages, and `tracevals fill` for agent artifacts. It shows the diff for review. |
+
+`manni:fix` carries two rules. The agent never loosens a schema, a config key or
+an eval to make a check pass. It also never runs `cite update --accept` on a
+changed citation before it reads the changed source lines.
+
+## Turn it off
+
+Disable the plugin and every hook stops.
+
+```sh
+claude plugin disable manni@manni
+```
+
+To keep the plugin but stop one domain from blocking, remove that domain's
+section from `manni.config.yaml`. A domain counts as set up only when its config
+or its content says so, so the next `manni status` shows it as not set up.
+
+<CardGrid>
+  <LinkCard
+    title="Gate every check"
+    href="/manni/family/check/"
+    description="Run the same check by hand or in CI, read the skipped lines, and use the exit codes."
+  />
+  <LinkCard
+    title="CLI reference"
+    href="/manni/family/reference/cli/#hook-protocol"
+    description="The hook protocol: what manni check reads from a hook, where it writes, and what each exit code means."
+  />
+  <LinkCard
+    title="Artifact coverage"
+    href="/manni/tracevals/declare/coverage/"
+    description="What tracevals does with the session manifest the plugin writes."
+  />
+</CardGrid>

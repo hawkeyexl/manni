@@ -1,0 +1,90 @@
+manni check and manni status, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 41.7 s. Every terminal line is real output of cat, sed and
+`node dist/cli.js status|check` (typed as manni), run inside a demo repository staged
+by media/family-check/capture/capture.sh from media/family-check/repo/.
+
+[0:00-0:07] Title: What this repo set up (1 / 4)
+$ manni status
+manni 4.3.0   config manni.config.yaml   collection site (2 files)
+
+meta       in play       meta: section
+cite       in play       1 page carries citations
+lint       not set up    no lint: section
+docevals   not set up    no page resolves any evals
+term       not set up    no terms in any collection
+graph      not set up    no graph: section
+a11y       not checked   run manni a11y check against a running site
+tracevals  not checked   run manni tracevals run over sessions
+Highlighted rows: lines containing "in play"
+Caption: manni status reads the config and the pages. Two checks are in play here.
+
+[0:07-0:17] Title: One command runs them (2 / 4)
+$ manni check
+meta validate
+✗ docs/limits.md   (red cross)
+    (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]   (field cyan, detail dim)
+
+2 files checked, 1 passed, 1 failed, 1 error
+
+cite check
+2 files checked, 2 passed, 0 failed, 0 findings
+
+skipped  lint check     no lint: section
+skipped  docevals run   no page resolves any evals
+skipped  term check     no terms in any collection
+skipped  graph check    no graph: section
+
+6 checks over 2 files: 1 failed, 4 skipped
+$ echo $?
+1
+Highlighted rows: lines containing "must have required property 'description'", "skipped  "
+Caption: A page has no description, so exit 1. What was never set up is skipped.
+
+[0:17-0:29] Title: The same check, as a hook (3 / 4)
+$ cat hook-edit.json
+{"hook_event_name": "PostToolUse", "tool_name": "Edit",
+ "tool_input": {"file_path": "docs/limits.md"}}
+$ manni check < hook-edit.json
+manni found errors in docs/limits.md. Fix them before you continue.
+
+meta validate
+✗ docs/limits.md
+    (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]
+
+1 file checked, 0 passed, 1 failed, 1 error
+
+cite check
+1 file checked, 1 passed, 0 failed, 0 findings
+
+skipped  lint check     no lint: section
+skipped  docevals run   no page resolves any evals
+
+4 checks over 1 file: 1 failed, 2 skipped
+$ echo $?
+2
+Highlighted rows: lines containing "Fix them before you continue."
+Caption: Claude Code sends this after an agent's edit. Exit 2 blocks the agent.
+
+[0:29-0:42] Title: Fix the page, pass the gate (4 / 4)
+$ sed -i '2a description: Timeouts and retries.' docs/limits.md
+$ manni check
+meta validate
+2 files checked, 2 passed, 0 failed, 0 errors
+
+cite check
+2 files checked, 2 passed, 0 failed, 0 findings
+
+skipped  lint check     no lint: section
+skipped  docevals run   no page resolves any evals
+skipped  term check     no terms in any collection
+skipped  graph check    no graph: section
+
+6 checks over 2 files: 0 failed, 4 skipped
+$ echo $?
+0
+Highlighted rows: lines containing "0 failed"
+Caption: Add the field. Every check in play passes, exit 0.
+
+Colour: in beats 2 and 4, a domain's summary line is red when it failed and green when it passed.
+The hook run in beat 3 prints without colour, because it writes for an agent, not a terminal.

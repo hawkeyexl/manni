@@ -1,0 +1,13 @@
+{
+    "status": "manni 4.3.0   config manni.config.yaml   collection site (2 files)\n\nmeta       in play       meta: section\ncite       in play       1 page carries citations\nlint       not set up    no lint: section\ndocevals   not set up    no page resolves any evals\nterm       not set up    no terms in any collection\ngraph      not set up    no graph: section\na11y       not checked   run manni a11y check against a running site\ntracevals  not checked   run manni tracevals run over sessions\n",
+    "check1": "meta validate\n\u001b[31m✗\u001b[39m docs/limits.md\n    \u001b[36m(root)\u001b[39m  must have required property 'description'\u001b[2m  (line 1)\u001b[22m  \u001b[2m[./schemas/page.schema.json]\u001b[22m\n\n\u001b[31m2 files checked, 1 passed, 1 failed, 1 error\u001b[39m\n\ncite check\n\u001b[32m2 files checked, 2 passed, 0 failed, 0 findings\u001b[39m\n\nskipped  lint check     no lint: section\nskipped  docevals run   no page resolves any evals\nskipped  term check     no terms in any collection\nskipped  graph check    no graph: section\n\n6 checks over 2 files: 1 failed, 4 skipped\n",
+    "cat hook-edit.json": "{\"hook_event_name\": \"PostToolUse\", \"tool_name\": \"Edit\",\n \"tool_input\": {\"file_path\": \"docs/limits.md\"}}\n",
+    "hook": "manni found errors in docs/limits.md. Fix them before you continue.\n\nmeta validate\n✗ docs/limits.md\n    (root)  must have required property 'description'  (line 1)  [./schemas/page.schema.json]\n\n1 file checked, 0 passed, 1 failed, 1 error\n\ncite check\n1 file checked, 1 passed, 0 failed, 0 findings\n\nskipped  lint check     no lint: section\nskipped  docevals run   no page resolves any evals\n\n4 checks over 1 file: 1 failed, 2 skipped\n",
+    "check2": "meta validate\n\u001b[32m2 files checked, 2 passed, 0 failed, 0 errors\u001b[39m\n\ncite check\n\u001b[32m2 files checked, 2 passed, 0 failed, 0 findings\u001b[39m\n\nskipped  lint check     no lint: section\nskipped  docevals run   no page resolves any evals\nskipped  term check     no terms in any collection\nskipped  graph check    no graph: section\n\n6 checks over 2 files: 0 failed, 4 skipped\n",
+    "exits": {
+        "status": "0",
+        "check1": "1",
+        "hook": "2",
+        "check2": "0"
+    }
+}

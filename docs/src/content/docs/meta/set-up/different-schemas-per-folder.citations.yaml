@@ -108,27 +108,27 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-8ef158887c0342d376ac5675a9777bb3b95a54ff9833be27e322455d7e02cc2a
       source:
         file: src/meta/core/load-files.ts
-        lines: 269-272
+        lines: 308-311
         integrity: sha256-4599d601ad8068f93a532f63eb18d8e223706720fc069d02d27c2a17f0a63699
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
     - id: directory-walk-skips-dot-entries
       claim:
         lines: 104
         integrity: sha256-bc936dc954459bbedd45b77656574fb1b1dcbefa1c61273a764f02100214f1a6
       source:
         file: src/meta/core/load-files.ts
-        lines: 122-131
+        lines: 123-132
         integrity: sha256-2494e1f08546e9c1cadb0355550e2537d2ed316eec1b92c36b68e5d9e3df5c05
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
     - id: overrides-do-not-affect-file-discovery
       claim:
         lines: 104
         integrity: sha256-bc936dc954459bbedd45b77656574fb1b1dcbefa1c61273a764f02100214f1a6
       source:
         file: src/meta/commands/validate.ts
-        lines: 321-326
+        lines: 328-333
         integrity: sha256-b9909f90ce53a01707f10cda095ef0087f97d534b1f34fd343a25db300a03bf9
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
     - id: files-list-matches-any-glob
       claim:
         integrity: sha256-5016b54663c9c20a6570cafba73c2ddf8523598a8384b88d8b51bd55ac882754

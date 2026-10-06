@@ -22,6 +22,9 @@ The `graph/` section is the eighth. It serves Maya (M18–M20), Devin (D12–D13
 
 The `tracevals/` section is the ninth. It arrived as `docevals/` did, with five audiences of its own. They were artifact authors, an eval-standard owner, platform and CI, run triagers, and a toolsmith named Rin. Rin wants the library rather than the binary. Four of the five were already these people by name. Rin was the only genuinely new shape. He is Devin reading the JSON report and calling the namespace export. So he folded into D15 and the API reference rather than becoming a sixth persona. Upstream's nine journeys became M17, M21–M23, D14–D15, S13–S14 and T8. They took the next free ids, because docevals, lint and graph already held the lower ones. Its content set is last, after `graph/`. No per-tool strategy directory came over: `cujs.md`, `personas.md` and this file carry the whole family.
 
+
+The `family/` section is a tenth, and it is not a domain. It documents the two top-level verbs, `manni check` and `manni status`, and the Claude Code plugin that runs them (proposal 0078). It serves Devin (D16), who gates every check a repo has set up with one command. It also serves Maya (M24), whose agent keeps the docs green while it writes them. Its content set is last, after `tracevals/`.
+
 ---
 
 ## Navigation tree
@@ -390,6 +393,16 @@ Four constraints hold across the section. No page prints a dollar figure for wha
 | Traces (`tracevals/reference/traces.mdx`) | M17, D14 | | Where a session store lives, `CLAUDE_CONFIG_DIR` and the `~/.claude` fallback, what `list` and `capture` do, and how artifacts are resolved from a trace. |
 | API reference (`tracevals/reference/api.mdx`) | D15 | | The `tracevals` namespace export. Where upstream's toolsmith lands. Guarded by `npm run docs:check-api`. |
 | Glossary (`tracevals/reference/glossary.mdx`) | Vocabulary | | trace, artifact, eval, grader, finding, outcome, implicit eval, coverage, ensemble, consensus, confidence zone, turn budget, capability and regression. |
+
+### `family/` (the family verbs and the Claude Code plugin)
+
+The tenth section, under `docs/src/content/docs/family/`. It holds what belongs to no single domain. `manni check` runs the checks a repo has set up, and `manni status` says which those are. The `manni` plugin runs both inside a Claude Code session. The nav gains a `family` group after `tracevals`. Every page carries `title` and `description`.
+
+| Page | CUJ | ★ | Notes |
+|---|---|---|---|
+| Gate every check (`family/check.mdx`) | D16 | ★ | Leads with the problem, a pipeline with one hand-written step per domain. `manni status` to read what is in play, then `manni check` as the one gate. The exit codes, the skipped lines in the report, and the `github` and `json` formats. Says plainly that `a11y` and `tracevals` stay their own steps. Source of truth: `src/family/`. |
+| Keep an agent's docs green (`family/claude-code.mdx`) | M24 | ★ | The two install commands and the project-level opt-in. What the agent sees at session start, what runs after an edit and before a stop, and the one repair pass. The four skills, and what `fix` forbids. The `MANNI_GENERATED_BY` export. Source of truth: `plugin/manni/`. |
+| CLI reference (`family/reference/cli.mdx`) | D16, M24 | ★ | `check` and `status`: every argument and flag, the exit codes, and the hook-protocol table. The in-play rule per domain, and the ladder from minimal to maximal. Guarded by `npm run docs:check-cli`. Source of truth: `src/family/`. |
 
 ### Supporting / project
 

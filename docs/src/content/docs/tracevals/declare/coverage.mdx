@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What does an unresolved coverage row mean?", "How are skills resolved from a trace?"]
 graph: { label: "Account for every artifact", type: concept }
-last-updated: 2026-09-16
+last-updated: 2026-10-05
 ---
 
 import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -291,7 +291,8 @@ its `tried` list but no note. The common case is a built-in, which is not a gap 
 
 Everything above is a guess, and the section below is how you stop guessing.
 
-Run [`manni tracevals capture`](/manni/tracevals/reference/cli/#tracevals-capture) from a `SessionStart` hook.
+The [`manni` Claude Code plugin](/manni/family/claude-code/) runs [`manni tracevals capture`](/manni/tracevals/reference/cli/#tracevals-capture) at the start of every session.
+Without the plugin, [wire it as a `SessionStart` hook](/manni/tracevals/reference/cli/#wire-it-up) yourself.
 Before the session does any work it records the **sha256 of every instruction artifact in the
 project**, plus the **git SHA** it ran against. `run` finds that manifest and compares. The
 comparison is content identity, not a timestamp:

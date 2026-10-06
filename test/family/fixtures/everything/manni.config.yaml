@@ -1,0 +1,33 @@
+# Every domain manni check runs is set up: a meta: override, citations, a
+# lint: section, docevals:, a term and graph:. The term page is covered by
+# the built-in default schemas alone, so meta validate leaves it out.
+collections:
+  - name: site
+    paths:
+      - "docs/**/*.md"
+
+meta:
+  overrides:
+    - files: "docs/*.md"
+      schemas:
+        - manni:core:1.0.0
+
+lint:
+  templates: [./templates.yaml]
+
+docevals:
+  defaults:
+    suite: site
+  evals:
+    no-todo-markers:
+      assertion: The page carries no TODO, TBD or FIXME markers.
+      grader: tool:regex
+      options:
+        pattern: '\b(TODO|TBD|FIXME)\b'
+        match: not-contains
+      severity: error
+  suites:
+    site: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+
+graph:
+  baseIri: https://example.com/everything/

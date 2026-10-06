@@ -41,8 +41,9 @@ risks: read-only
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-Every command reads `manni <domain> <subcommand> [<subcommand>] [<arguments>]`,
-and the domain is the tool. `manni meta validate docs/` runs the metadata
+Almost every command reads `manni <domain> <subcommand> [<subcommand>] [<arguments>]`,
+and the domain is the tool. The two exceptions run across the tools, and the
+next section covers them. `manni meta validate docs/` runs the metadata
 tool's `validate` against `docs/`, and `manni meta schemas vendor` reaches a
 verb one level down. Each tool has its own commands, its own section of this
 site, and its own key in one shared config file, `manni.config.yaml`. Install
@@ -53,6 +54,31 @@ npm install -D @hawkeyexl/manni
 npx @hawkeyexl/manni meta validate docs/
 npx @hawkeyexl/manni docevals run docs/ --deterministic-only
 ```
+
+## Everything a repository set up, in one command
+
+`manni status` says which tools a repository set up. `manni check` runs every
+check they carry, and skips the rest. It is the same command in CI, by hand,
+and in an agent session. There, the manni plugin for Claude Code runs it after
+each edit.
+
+```sh
+npx @hawkeyexl/manni status
+npx @hawkeyexl/manni check
+```
+
+<CardGrid>
+  <LinkCard
+    title="manni check"
+    href="/manni/family/check/"
+    description="Gate everything a repository set up with one command, locally and in CI. Tools nobody set up are listed as skipped and never block."
+  />
+  <LinkCard
+    title="Claude Code plugin"
+    href="/manni/family/claude-code/"
+    description="Install the manni plugin, and an agent gets each error at the edit that caused it and can't finish with one outstanding."
+  />
+</CardGrid>
 
 ## The tools
 

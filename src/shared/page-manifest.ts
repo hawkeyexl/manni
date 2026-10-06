@@ -128,12 +128,15 @@ export interface FoundPageManifest {
  * parsed is not recognizably a manifest, and is skipped.
  *
  * Synchronous, so a synchronous orphan check can call it. It runs once per
- * whole-corpus run, never for a run given paths.
+ * whole-corpus run, never for a run given paths. A match in `skip` (absolute
+ * paths) is neither read nor returned: the orphan check passes the manifests
+ * the run already loaded, which would otherwise be parsed a second time.
  */
 export function findPageManifests(
   file: string,
   configDir: string,
   isMember: (relPath: string) => boolean,
+  skip: ReadonlySet<string> = new Set(),
 ): FoundPageManifest[] {
   const matched = fg
     .sync(strayManifestGlob(file), {
@@ -147,6 +150,7 @@ export function findPageManifests(
     .sort();
   const found: FoundPageManifest[] = [];
   for (const abs of matched) {
+    if (skip.has(abs)) continue;
     const entries = ownEntries(abs, file, configDir, isMember);
     if (entries.length > 0) found.push({ abs, entries });
   }

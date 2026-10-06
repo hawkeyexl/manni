@@ -8,27 +8,153 @@
  *
  * Tools land here one at a time, on their own branches; until one merges its
  * subcommand does not exist.
+ *
+ * Every domain is imported on demand. A domain's module graph is its whole
+ * dependency tree (Playwright, axe, Asciidoctor, the RDF stack, ajv), and a
+ * hook runs `manni check` after every edit, so the bin mounts only the domain
+ * argv names. `--version` mounts none. Anything else (`--help`, a bare
+ * `manni`, a typo) mounts them all, so help and "unknown command" read as
+ * they always did.
  */
 import { Command } from "commander";
 import pkg from "../package.json" with { type: "json" };
-import { buildProgram as buildA11y } from "./a11y/cli.js";
-import { buildProgram as buildCite } from "./cite/cli.js";
-import { buildProgram as buildDocevals } from "./docevals/cli.js";
-import { buildProgram as buildKey } from "./key/cli.js";
-import { buildProgram as buildGraph } from "./graph/cli.js";
-import { buildProgram as buildMeta } from "./meta/cli.js";
-import { buildProgram as buildLint } from "./lint/cli.js";
-import { buildProgram as buildTerm } from "./term/index.js";
-import { buildProgram as buildTracevals } from "./tracevals/cli.js";
 import { runIfMain } from "./shared/run.js";
 
-export function buildProgram(): Command {
-  const meta = buildMeta()
-    .name("meta")
-    .description(
-      "Validate, read, query and fill document metadata against JSON Schema",
-    );
-  const metaCommands = new Set(meta.commands.map((c) => c.name()));
+interface Domain {
+  /** The command names the loader mounts, known before it is loaded. */
+  names: readonly string[];
+  load: () => Promise<Command[]>;
+}
+
+// In the order `manni --help` lists them.
+const DOMAINS: readonly Domain[] = [
+  {
+    names: ["meta"],
+    load: async () => [
+      (await import("./meta/cli.js"))
+        .buildProgram()
+        .name("meta")
+        .description(
+          "Validate, read, query and fill document metadata against JSON Schema",
+        ),
+    ],
+  },
+  {
+    names: ["a11y"],
+    load: async () => [
+      (await import("./a11y/cli.js"))
+        .buildProgram()
+        .name("a11y")
+        .description(
+          "Crawl a site and check every page for accessibility violations with axe-core",
+        ),
+    ],
+  },
+  {
+    names: ["cite"],
+    load: async () => [
+      (await import("./cite/cli.js"))
+        .buildProgram()
+        .name("cite")
+        .description(
+          "Track citations from doc claims to source lines and check them for drift",
+        ),
+    ],
+  },
+  {
+    names: ["lint"],
+    load: async () => [
+      (await import("./lint/cli.js"))
+        .buildProgram()
+        .name("lint")
+        .description(
+          "Validate document structure against doctype templates, routed by a page's type",
+        ),
+    ],
+  },
+  {
+    names: ["docevals"],
+    load: async () => [
+      (await import("./docevals/cli.js"))
+        .buildProgram()
+        .name("docevals")
+        .description(
+          "Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter",
+        ),
+    ],
+  },
+  {
+    names: ["term"],
+    load: async () => [
+      (await import("./term/index.js"))
+        .buildProgram()
+        .name("term")
+        .description("Check, lint and render a docset's terms and the references into them"),
+    ],
+  },
+  {
+    names: ["graph"],
+    load: async () => [
+      (await import("./graph/cli.js"))
+        .buildProgram()
+        .name("graph")
+        .description(
+          "Deterministic knowledge graphs derived from documentation frontmatter and formatting",
+        ),
+    ],
+  },
+  {
+    names: ["tracevals"],
+    load: async () => [
+      (await import("./tracevals/cli.js"))
+        .buildProgram()
+        .name("tracevals")
+        .description(
+          "Deterministic and LLM-as-judge adherence evals for AI agent session traces",
+        ),
+    ],
+  },
+  // Not a tool but a family resource with verbs (proposal 0045).
+  {
+    names: ["key"],
+    load: async () => [
+      (await import("./key/cli.js"))
+        .buildProgram()
+        .name("key")
+        .description("Set and rotate the family key that encrypted values are encrypted with."),
+    ],
+  },
+  // The two family verbs (proposal 0078), and the only verbs the umbrella
+  // carries: each runs other domains' command cores and owns no checks.
+  {
+    names: ["check", "status"],
+    load: async () => {
+      const { buildCheck, buildStatus } = await import("./family/cli.js");
+      return [buildCheck(), buildStatus()];
+    },
+  },
+];
+
+const VERSION_FLAGS = new Set(["-V", "--version"]);
+
+/**
+ * The domains a run with these arguments (argv after the script) dispatches
+ * to. The umbrella's only options are `--version` and `--help`, so the first
+ * argument is one of them or the command commander will look up.
+ */
+function domainsFor(args: readonly string[]): readonly Domain[] {
+  const first = args[0];
+  if (first === undefined) return DOMAINS;
+  if (VERSION_FLAGS.has(first)) return [];
+  const named = DOMAINS.find((d) => d.names.includes(first));
+  return named === undefined ? DOMAINS : [named];
+}
+
+async function mount(domains: readonly Domain[]): Promise<Command> {
+  const mounted = (await Promise.all(domains.map((d) => d.load()))).flat();
+  const metaCommands = new Set(
+    mounted.find((c) => c.name() === "meta")?.commands.map((c) => c.name()),
+  );
 
   const program = new Command();
   program
@@ -57,61 +183,18 @@ export function buildProgram(): Command {
       },
     });
 
-  program.addCommand(meta);
-  program.addCommand(
-    buildA11y()
-      .name("a11y")
-      .description(
-        "Crawl a site and check every page for accessibility violations with axe-core",
-      ),
-  );
-  program.addCommand(
-    buildCite()
-      .name("cite")
-      .description(
-        "Track citations from doc claims to source lines and check them for drift",
-      ),
-  );
-  program.addCommand(
-    buildLint()
-      .name("lint")
-      .description(
-        "Validate document structure against doctype templates, routed by a page's type",
-      ),
-  );
-  program.addCommand(
-    buildDocevals()
-      .name("docevals")
-      .description(
-        "Deterministic and LLM-as-judge evals for documentation pages, driven by frontmatter",
-      ),
-  );
-  program.addCommand(
-    buildTerm()
-      .name("term")
-      .description("Check, lint and render a docset's terms and the references into them"),
-  );
-  program.addCommand(
-    buildGraph()
-      .name("graph")
-      .description(
-        "Deterministic knowledge graphs derived from documentation frontmatter and formatting",
-      ),
-  );
-  program.addCommand(
-    buildTracevals()
-      .name("tracevals")
-      .description(
-        "Deterministic and LLM-as-judge adherence evals for AI agent session traces",
-      ),
-  );
-  // Not a tool but a family resource with verbs (proposal 0045).
-  program.addCommand(
-    buildKey()
-      .name("key")
-      .description("Set and rotate the family key that encrypted values are encrypted with."),
-  );
+  for (const command of mounted) program.addCommand(command);
   return program;
 }
 
-runIfMain(import.meta.url, buildProgram);
+/** The whole command tree, every domain mounted. */
+export function buildProgram(): Promise<Command> {
+  return mount(DOMAINS);
+}
+
+/** The tree a run with these arguments needs: the one domain they name, or all of them. */
+export function buildProgramFor(args: readonly string[]): Promise<Command> {
+  return mount(domainsFor(args));
+}
+
+runIfMain(import.meta.url, () => buildProgramFor(process.argv.slice(2)));

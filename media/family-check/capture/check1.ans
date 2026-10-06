@@ -1,0 +1,15 @@
+meta validate
+[31m✗[39m docs/limits.md
+    [36m(root)[39m  must have required property 'description'[2m  (line 1)[22m  [2m[./schemas/page.schema.json][22m
+
+[31m2 files checked, 1 passed, 1 failed, 1 error[39m
+
+cite check
+[32m2 files checked, 2 passed, 0 failed, 0 findings[39m
+
+skipped  lint check     no lint: section
+skipped  docevals run   no page resolves any evals
+skipped  term check     no terms in any collection
+skipped  graph check    no graph: section
+
+6 checks over 2 files: 1 failed, 4 skipped

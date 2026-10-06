@@ -132,4 +132,20 @@ describe("strayManifestGlob", () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  // The orphan check passes the manifests the loader already read, so the
+  // walk does not parse them a second time.
+  it("does not read a manifest it is told to skip", () => {
+    const dir = mkdtempSync(join(tmpdir(), "manni-page-skip-"));
+    try {
+      mkdirSync(join(dir, "docs"), { recursive: true });
+      writeFileSync(join(dir, "docs", "a.citations.yaml"), "docs/a.md:\n  citations: []\n");
+      writeFileSync(join(dir, "docs", "b.citations.yaml"), "docs/b.md:\n  citations: []\n");
+      const skip = new Set([resolve(dir, "docs", "a.citations.yaml")]);
+      const found = findPageManifests("{page}.citations.yaml", dir, () => true, skip);
+      expect(found.map((f) => f.entries.map((e) => e.spelled))).toEqual([["docs/b.md"]]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
