@@ -66,18 +66,24 @@ contributor who opens the repository.
 }
 ```
 
-The hooks and skills never download manni, so it has to be installed already.
-Install it in the project, or globally. They run the first manni they find:
+The hooks and skills run the first manni they find:
 
 1. In the manni repository itself, that checkout's own build, `dist/cli.js`.
 2. The copy the project installed, found by walking up through `node_modules`.
-3. A global install, through `npx --no @hawkeyexl/manni`.
+3. A global install, found under `npm root -g`.
+4. In a repository with a `manni.config.yaml` and no manni at all, the version
+   the plugin ships at, through `npx --yes`. npx downloads it into its own
+   cache on first use, so the first hook waits for that download.
+
+A repository with no manni config and no manni gets nothing, and no step asks
+the registry. Pinning a version yourself means installing it in the project.
 
 ```sh
 npm install --save-dev @hawkeyexl/manni
 ```
 
-Where manni is not installed, a hook fails fast and prints nothing to the agent.
+With no manni config and no manni, a hook exits at once and prints nothing to
+the agent.
 
 ## What happens at session start
 

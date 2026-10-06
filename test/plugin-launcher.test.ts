@@ -27,11 +27,18 @@ function tempDir(): string {
 }
 
 function launch(projectDir: string, args: string[], input = "", env: NodeJS.ProcessEnv = {}) {
+  // Windows names are case-insensitive, and npm run exports NPM_CONFIG_*
+  // in capitals, so an override must replace the inherited name, not sit
+  // beside it.
+  const overridden = new Set(Object.keys(env).map((k) => k.toLowerCase()));
+  const inherited = Object.fromEntries(
+    Object.entries(process.env).filter(([k]) => !overridden.has(k.toLowerCase())),
+  );
   return spawnSync(process.execPath, [LAUNCHER, ...args], {
     cwd: projectDir,
     input,
     encoding: "utf8",
-    env: { ...process.env, CLAUDE_PROJECT_DIR: projectDir, ...env },
+    env: { ...inherited, CLAUDE_PROJECT_DIR: projectDir, ...env },
   });
 }
 
@@ -78,12 +85,50 @@ describe("plugin hook launcher", () => {
     expect(JSON.parse(r.stdout)).toMatchObject({ args: ["status"] });
   });
 
-  it("never answers with exit 2 when no manni can be found", () => {
+  // npm pointed at a registry nothing listens on, with an empty cache and
+  // global prefix, so no test ever reaches the network or a real install.
+  // npm run exports npm_config_global_prefix, which `npm root -g` prefers
+  // over npm_config_prefix, so both name the same empty directory.
+  const offline = (prefix = tempDir()): NodeJS.ProcessEnv => ({
+    npm_config_prefix: prefix,
+    npm_config_global_prefix: prefix,
+    npm_config_cache: tempDir(),
+    npm_config_registry: "http://127.0.0.1:9/",
+    npm_config_fetch_retries: "0",
+    npm_config_fetch_timeout: "2000",
+  });
+
+  it("touches no registry and exits quietly where manni is not set up or installed", () => {
     const dir = tempDir();
     writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "elsewhere", private: true }));
-    // An empty global prefix, so npx finds no global install either.
-    const r = launch(dir, ["check"], "", { npm_config_prefix: tempDir() });
+    const r = launch(dir, ["check"], "", offline());
+    expect(r).toMatchObject({ status: 0, stdout: "", stderr: "" });
+  });
+
+  it("runs a global install, found without asking the registry", () => {
+    const dir = tempDir();
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "elsewhere", private: true }));
+    const env = offline();
+    const prefix = env.npm_config_prefix ?? "";
+    // Where `npm root -g` puts global packages for that prefix.
+    const root = process.platform === "win32" ? join(prefix, "node_modules") : join(prefix, "lib/node_modules");
+    const stub = join(root, "@hawkeyexl/manni");
+    mkdirSync(stub, { recursive: true });
+    writeFileSync(join(stub, "package.json"), JSON.stringify({ name: "@hawkeyexl/manni", bin: { manni: "bin.js" } }));
+    writeFileSync(join(stub, "bin.js"), "process.stdout.write(JSON.stringify(process.argv.slice(2)));");
+    const r = launch(dir, ["tracevals", "capture"], "", env);
+    expect(r.status).toBe(0);
+    expect(JSON.parse(r.stdout)).toEqual(["tracevals", "capture"]);
+  });
+
+  it("fetches the plugin's own version where manni is set up but not installed", () => {
+    const dir = tempDir();
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "docs-site", private: true }));
+    writeFileSync(join(dir, "manni.config.yaml"), "collections:\n  - name: site\n    paths: [\"docs/**/*.md\"]\n");
+    const r = launch(dir, ["check"], "", offline());
     expect(r.status).not.toBe(2);
-    expect(r.stdout).toBe("");
+    // It went to the registry, for exactly the version the plugin ships at.
+    expect(r.stderr).not.toMatch(/canceled/i);
+    expect(r.stderr).toMatch(/127\.0\.0\.1|ECONNREFUSED/);
   });
 });
