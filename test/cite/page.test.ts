@@ -345,6 +345,16 @@ describe("readPage: markers", () => {
     expect(page.statements[0]?.anchorLine).toBe(16);
   });
 
+  it("markers: false reads the same entries and parses no marker", () => {
+    const content = readFixture("marker-orphan.md");
+    const full = readPage("p.md", content);
+    const entries = readPage("p.md", content, { markers: false });
+    expect(full.statements).not.toEqual([]);
+    expect(entries.statements).toEqual([]);
+    expect(entries.citations.map((c) => c.citation)).toEqual(full.citations.map((c) => c.citation));
+    expect(rules(entries.findings)).not.toContain("marker-orphan");
+  });
+
   it("reports a marker naming no entry", () => {
     const page = fixture("marker-orphan.md");
     expect(page.citations).toHaveLength(1);

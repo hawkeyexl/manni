@@ -9,7 +9,7 @@
  * promises the two produce the same history.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mkdtempSync, readFileSync, realpathSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -750,6 +750,60 @@ describe.each(forms)("deriveFromGit provenance ($name)", ({ opts }) => {
     expect(result.status.available).toBe(false);
     expect(result.status.reason).toContain("git blame could not read a.md");
     expect(result.status.reason).toContain("unknown date format bogus");
+  });
+
+  /** Pages each holding their record in a manifest of their own, written by the second commit. */
+  const manifestPages = (names: readonly string[], padding = ""): { dir: string; inputs: DeriveInput[] } => {
+    const files: Record<string, string> = {};
+    for (const n of names) files[`${n}.md`] = doc("title: t", "one\ntwo");
+    const dir = tempRepo(files);
+    commit(dir, "add", { authorDate: D1 });
+    for (const n of names) {
+      writeFile(dir, `${n}.md`, doc("title: t", "one\nTWO"));
+      writeFile(
+        dir,
+        `private/${n}.yaml`,
+        `${padding}${n}.md:\n  provenance:\n    - generated-by: ${FABLE}\n      lines: 3\n      integrity: ${pin("TWO")}\n`,
+      );
+    }
+    commit(dir, "agent edit", { authorDate: D2 });
+    const inputs = names.map((n) => ({
+      ...input(dir, `${n}.md`),
+      provenanceManifest: { absPath: join(dir, "private", `${n}.yaml`), entry: `${n}.md`, join: "path" },
+    }));
+    return { dir, inputs };
+  };
+
+  it("reads every page's blobs at its blamed commits in one batch, however many pages", async () => {
+    const batches = async (names: readonly string[]): Promise<number> => {
+      const { dir, inputs } = manifestPages(names);
+      // A directory makes git write one trace file per process, so blames
+      // running at once cannot interleave into each other's lines.
+      const trace = join(dir, ".git", "trace2");
+      mkdirSync(trace);
+      vi.stubEnv("GIT_TRACE2_EVENT", trace);
+      try {
+        const result = await deriveFromGit(inputs, withProvenance(dir));
+        expect(result.status).toEqual({ available: true });
+        for (const n of names) expect(result.records.get(`${n}.md`)?.provenance?.value).toHaveLength(1);
+      } finally {
+        vi.unstubAllEnvs();
+      }
+      return readdirSync(trace).filter((f) =>
+        readFileSync(join(trace, f), "utf8").includes('"argv":["git","cat-file","--batch"]'),
+      ).length;
+    };
+    expect(await batches(["a", "b", "c"])).toBe(await batches(["a"]));
+  });
+
+  it("splits the shared batch when one answer would pass the read cap", async () => {
+    // Each manifest fits under the cap on its own; the two together do not.
+    const { dir, inputs } = manifestPages(["a", "b"], `# ${"x".repeat(3000)}\n`);
+    const uncapped = await deriveFromGit(inputs, withProvenance(dir));
+    const capped = await deriveFromGit(inputs, withProvenance(dir, { maxOutputBytes: 5000 }));
+    expect(capped.status).toEqual({ available: true });
+    expect(capped.records).toEqual(uncapped.records);
+    expect(capped.records.get("b.md")?.provenance?.value).toHaveLength(1);
   });
 });
 

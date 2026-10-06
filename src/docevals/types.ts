@@ -194,7 +194,14 @@ export interface RunReport {
 
 /** Operational/usage error → exit code 2. */
 export class DocevalsError extends ToolError {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    /**
+     * Set where a caller acts on the kind of error rather than reporting it.
+     * `nothing-resolved`: no page this run would check resolves an eval.
+     */
+    readonly code?: "nothing-resolved",
+  ) {
     super(message);
     this.name = "DocevalsError";
   }

@@ -36,6 +36,7 @@ import type {
   GitClient,
   PageCitation,
   PageLines,
+  SourceCache,
   SourceEnd,
   SourceIndex,
   SourceRange,
@@ -64,6 +65,8 @@ export interface ClassifyOptions {
   key?: string;
   /** Hashing budget for the blind move search, in bytes. Default `MOVE_BUDGET_BYTES`. */
   budget?: number;
+  /** Source files already read this run, so a source cited many times is read once. */
+  cache?: SourceCache;
 }
 
 /**
@@ -240,8 +243,8 @@ export async function classifyCitation(
   // The path may be gone, which is a verdict that now waits: `git show` reads
   // the file at the recorded commit rather than from disk, so a rename is
   // still answerable.
-  const source = await readSource(opts.root, opts.index, range, opts.key);
-  const lines = source.kind === "ok" ? splitLines(source.text) : undefined;
+  const source = await readSource(opts.root, opts.index, range, opts.key, opts.cache);
+  const lines = source.kind === "ok" ? (source.lines ?? splitLines(source.text)) : undefined;
   if (source.kind === "missing") result.missingReason = source.reason;
   else result.resolvedPath = source.resolvedPath;
 

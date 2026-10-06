@@ -80,6 +80,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0061](0061-lint-template-grammar.md) | The lint template format is an ordered list of rules rather than a map. It gains one occurrence vocabulary, heading alternation and repeating groups. A matcher aligns sections to rules by cost | Sara · S7 / Maya · M10 / Theo · T5 | Implemented (#11) |
 | [0062](0062-dita-ot-answers-structure.md) | DITA Open Toolkit becomes a second tool for the structure job, not a new verb. It catches what lives between files: conref, keyref, xref and image targets. The parser also gains a `.ditamap` vocabulary | Maya · M10 / Devin · D9 / Theo · T5 | Implemented (#11) |
 | [0063](0063-the-graph-vocabulary.md) | The `graph` vocabulary. The page block `kg:` becomes `graph:`, defined by `manni:graph:1.0.0-proposal.1`, which is the kg draft renamed. `manni term` reads `graph.concepts`, and the kg drafts stay as the family's history | Sara · S1 / Maya · M1 | Proposed |
+| [0064](0064-severity-and-the-exit-code.md) | a11y's severity floor is also its exit-code gate, deliberately, because axe assigns the level and no config moves one | Devin · D7 | Implemented |
 | [0065](0065-content-model.md) | One content model for the family. It names the block kinds a page is made of, for `manni lint` and Doc Detective alike. It also gives the method for naming the next one | all (the body of a page) | Implemented for lint (#11) |
 | [0066](0066-strict-vocabulary-overlays.md) | Strict overlays for the proposed vocabularies. Each draft gets `manni:<family>-strict:1.0.0-proposal.1`, which holds only the constraints strict adds, such as BCP 47 for `language`. A team stacks it beside the open draft | Sara · S1 | Implemented (#129); superseded in part by [0067](0067-registering-the-vocabularies.md) |
 | [0067](0067-registering-the-vocabularies.md) | Registering the vocabularies. The eleven vocabularies and their strict overlays register as built-ins at `1.0.0`, 22 ids in all. Core drops `locale`, and the default set does not change | Sara · S1 / Maya · M1 | Implemented (#130); superseded in part by [0070](0070-defaults-register-strict.md) |
@@ -93,6 +94,7 @@ These came out of a review of the shipped product against the intent recorded in
 | [0075](0075-time-windows-and-execution-in-the-evals-domains.md) | Time windows and execution in the evals domains. Both select by age with `--newer-than <duration>`, both run command evals by default, and config and flags only narrow what runs | Devin · D10, D11 / Maya · M11 | Proposed |
 | [0076](0076-artifact-evals-1-1-0-tool-order.md) | artifact-evals 1.1.0 names `tool-order`. Both artifact-evals ids register again at `1.1.0` beside `1.0.0`, strict names eleven graders, and tracevals reads `1.1.0` | Sara · S14, S3 / Maya · M21 | Proposed |
 | [0077](0077-graph-reads-every-format-lint-parses.md) | graph reads every format lint parses. HTML, XML, AsciiDoc and reStructuredText build through lint's parsers, `--ext` defaults to lint's walk set, and `fill` writes through meta's writers | Maya · M18, M19, M20 | Proposed |
+| [0078](0078-family-check-status-and-claude-code-plugin.md) | Two family verbs, `manni check` and `manni status`, and a Claude Code plugin. `check` runs every check a repo has set up, `status` says which those are, and a hook envelope on stdin changes the scope and output. It never changes the checks | Devin · D16 / Maya · M24 | Proposed |
 
 0014 was not in the original review. It surfaced while stress-testing 0004, and is the most severe item in the set. **docmeta currently exits `0` when it validates nothing at all**, including when an explicitly named file does not exist.
 
@@ -204,6 +206,9 @@ At a glance, so a planning pass does not have to reconstruct it from 29 headers.
        │                  new rule joins; its no-model promise narrows to `check`)
 0017 ──┤                 (the egress analysis, and fill's provider flags reused as they are)
 0036 ──┘                 (the fill-shaped proposal it asked for, with the model outside the gate)
+
+0035 ──┬─> 0064          (a11y's exit-code contract, whose floor this confirms as the gate)
+0044 ──┘                 (cite's per-rule severity, the second reading of the scale)
 ```
 
 The four `Proposed` SQL items (0026–0029) are independent of each other, with one exception. 0026 and 0029 both grow `query`'s `-f` value list. Each specifies the combined six-value surface, and whichever is implemented second merges into the one const. Recommended implementation order is 0026 → 0029 → 0027 → 0028, which is impact-first. The two config-touching ones (0026, 0027) land apart, so the second rebases trivially.

@@ -29,9 +29,9 @@ docs/src/content/docs/key/index.mdx:
         integrity: sha256-341c2c8261af93f0f4a88013f7ec8d3d231356da2e7e1913e8f5428f67598142
       source:
         file: src/meta/commands/validate.ts
-        lines: 903-905
+        lines: 940-942
         integrity: sha256-beeb884d4016a47d5cd408fecc74625687215f383f3e39ea7f02a956d976deb6
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: cite-add-encrypts-with-key
       claim:
         integrity: sha256-2dab680b74eb6573fae9f60cbdeecb8164eb1c72f70c22d8a49955da44cd04e2
@@ -263,9 +263,9 @@ docs/src/content/docs/key/index.mdx:
         integrity: sha256-fdb7c8726e42bc24878dbce8018e33becdabef72af42ce6a96a674b32da01df7
       source:
         file: src/meta/commands/validate.ts
-        lines: 903-905
+        lines: 940-942
         integrity: sha256-beeb884d4016a47d5cd408fecc74625687215f383f3e39ea7f02a956d976deb6
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: env-rotate-needs-to
       claim:
         integrity: sha256-fdb7c8726e42bc24878dbce8018e33becdabef72af42ce6a96a674b32da01df7

@@ -10,7 +10,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What flags does manni tracevals run take?", "What does --newer-than accept?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-04
+last-updated: 2026-10-05
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -327,8 +327,11 @@ manni tracevals capture [options]
 
 ### Wire it up
 
-`capture` takes its payload on stdin, which is what a `SessionStart` hook
-supplies:
+The `manni` Claude Code plugin runs `capture` at the start of every session, so
+there is nothing to wire. [Install the plugin](/manni/family/claude-code/#install-the-plugin)
+and the manifest is written for you. To run `capture` without the plugin, add a
+hook to `.claude/settings.json`. `capture` takes its payload on stdin, which is
+what a `SessionStart` hook supplies:
 
 ```json
 {

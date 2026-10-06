@@ -39,6 +39,14 @@ npx @hawkeyexl/manni meta validate "**/*.md"
 
 Requires Node.js 24 or later.
 
+Once a repository sets up a few of the tools, `manni status` says which are in
+play and `manni check` runs all of them as one gate. In Claude Code, the
+`manni` plugin runs the same check after each edit an agent makes. Install it
+with `claude plugin marketplace add hawkeyexl/manni`, then
+`claude plugin install manni@manni`. See
+[Gate every check](https://hawkeyexl.github.io/manni/family/check/) and
+[Keep an agent's docs green](https://hawkeyexl.github.io/manni/family/claude-code/).
+
 ## Coming from docmeta?
 
 The metadata tool used to be the whole package. Three things changed:
@@ -102,7 +110,7 @@ actually reads rather than hand-written:
 ```yaml
 repos:
   - repo: https://github.com/hawkeyexl/manni
-    rev: v4.3.0
+    rev: v4.4.1
     hooks:
       - id: manni-meta
 ```

@@ -21,8 +21,10 @@
  */
 import { constants as bufferConstants } from "node:buffer";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { availableParallelism } from "node:os";
 import { dirname, extname, isAbsolute, posix, relative, sep } from "node:path";
 import { parse as parseYaml } from "yaml";
+import { mapConcurrent } from "../../../shared/concurrency.js";
 import { findGitRoot } from "../../../shared/git-root.js";
 import { locateFrontmatter } from "../../extractors/frontmatter.js";
 import {
@@ -221,6 +223,7 @@ export async function deriveFromGit(
   const machines = opts.machines ?? DEFAULT_MACHINES;
   const wantsProvenance = opts.fields?.includes(PROVENANCE_FIELD) ?? false;
   const maxBytes = opts.maxOutputBytes ?? MAX_GIT_OUTPUT_BYTES;
+  const parse = yamlOnce();
   const reasons: string[] = [];
   for (const [root, bucket] of byRoot) {
     const run: GitRun = (args, stdin) => runGit(args, root, stdin, maxBytes);
@@ -258,29 +261,47 @@ export async function deriveFromGit(
         reasons.push(`git could not read the history at ${root}`);
         continue;
       }
-      const manifestStamps = await stampsInManifests(run, root, bucket, found, blobs);
+      const manifestStamps = await stampsInManifests(run, root, bucket, found, blobs, parse);
 
-      for (const entry of bucket) {
-        const history = found.get(entry.rel) ?? [];
-        const facts = judge(
+      const facts = bucket.map((entry) =>
+        judge(
           entry.input,
           root,
-          history,
+          found.get(entry.rel) ?? [],
           blobs,
           opts.now,
           machines,
           manifestStamps.get(entry.input.label),
-        );
-        if (wantsProvenance) {
-          const derived = await provenanceFor(run, root, entry, history, blobs, {
-            machines,
-            ...(opts.generatedBy !== undefined ? { generatedBy: opts.generatedBy } : {}),
-          });
-          facts.provenance = derived.value;
-          facts.provenanceDerivation = derived.derivation;
-        }
-        records.set(entry.input.label, facts);
+        ),
+      );
+      if (wantsProvenance) {
+        // Blame is one git process a page, and no page's depends on another's.
+        // Run a few at once: one at a time, process start-up dominates, worst
+        // on Windows. What the blames name is then read for the whole root at
+        // once. Results keep input order whatever finishes first.
+        const pages = await mapConcurrent(bucket, GIT_CONCURRENCY, async (entry) => ({
+          entry,
+          blame: await blameOf(run, entry.rel, entry.input.content),
+          history: found.get(entry.rel) ?? [],
+        }));
+        const evidence = await commitEvidence(run, root, pages, blobs, parse);
+        const provenanceRun: ProvenanceRun = {
+          machines,
+          ...(opts.generatedBy !== undefined ? { generatedBy: opts.generatedBy } : {}),
+        };
+        pages.forEach((page, i) => {
+          const judged = facts[i];
+          const commits = evidence[i];
+          if (judged === undefined || commits === undefined) return;
+          const derived = provenanceFor(page.entry, page.blame, commits, provenanceRun);
+          judged.provenance = derived.value;
+          judged.provenanceDerivation = derived.derivation;
+        });
       }
+      bucket.forEach((entry, i) => {
+        const judged = facts[i];
+        if (judged !== undefined) records.set(entry.input.label, judged);
+      });
     } catch (err) {
       if (err instanceof BlobsUnreadable) {
         reasons.push(`git cat-file could not read the history (${root}): ${err.detail}`);
@@ -812,6 +833,7 @@ async function stampsInManifests(
   bucket: readonly RootEntry[],
   histories: ReadonlyMap<string, FileHistory[]>,
   blobs: ReadonlyMap<string, string>,
+  parse: ParseYaml,
 ): Promise<Map<string, ManifestStamp>> {
   interface Read {
     label: string;
@@ -845,7 +867,7 @@ async function stampsInManifests(
   const values = new Map<string, unknown>();
   const keyOf = (label: string, field: string, rev: string): string => `${label}\0${field}\0${rev}`;
   for (const r of reads) {
-    values.set(keyOf(r.label, r.field, r.rev), manifestValue(fetched.get(r.spec), r.key, r.join, r.field));
+    values.set(keyOf(r.label, r.field, r.rev), manifestValue(fetched.get(r.spec), r.key, r.join, r.field, parse));
   }
   for (const label of new Set(reads.map((r) => r.label))) {
     out.set(label, (field, rev) => values.get(keyOf(label, field, rev)));
@@ -1017,21 +1039,17 @@ interface ProvenanceRun {
 }
 
 /**
- * One page's provenance: blame once, then each blamed commit's trailers and
- * the page (or manifest) blob at it, then the evidence rules.
+ * One page's provenance from its blame and what each blamed commit offers
+ * (its trailers and the page or manifest blob at it): the evidence rules.
  */
-async function provenanceFor(
-  run: GitRun,
-  root: string,
+function provenanceFor(
   entry: RootEntry,
-  history: readonly FileHistory[],
-  blobs: ReadonlyMap<string, string>,
+  blame: BlameLine[],
+  commits: Map<string, CommitEvidence>,
   opts: ProvenanceRun,
-): Promise<{ value: DerivedValue | null; derivation: ProvenanceDerivation }> {
-  const { input, rel } = entry;
+): { value: DerivedValue | null; derivation: ProvenanceDerivation } {
+  const { input } = entry;
   const fenced = provenanceFenced(input.extracted);
-  const blame = await blameOf(run, rel, input.content);
-  const commits = await commitEvidence(run, root, entry, blame, history, blobs, input.provenanceManifest);
   const base = { content: input.content, commits, machines: opts.machines, fenced };
 
   let derivation: ProvenanceDerivation;
@@ -1159,80 +1177,95 @@ async function blameOf(run: GitRun, rel: string, content: string): Promise<Blame
   return parseLinePorcelain(text(out));
 }
 
+/** One page's blame, with the history already read for it. */
+interface BlamedPage {
+  entry: RootEntry;
+  blame: BlameLine[];
+  history: readonly FileHistory[];
+}
+
 /**
- * What each blamed commit offers: its trailers, from the history already
- * read or one `git log --no-walk` for a commit it lacks, and the page's text
- * at that commit, from the blobs already read or one `git cat-file --batch`
- * by `<sha>:<path>`. When a manifest holds the record, the stamp is read from
- * the manifest's blob at the same commit, under the page's entry as it was
- * keyed then: for a `path` join, the page's path at that commit, so a stamp
- * written before a rename is still found under the old key.
+ * What each blamed commit offers each page: its trailers, from the page's
+ * history or else `git log --no-walk` for a commit it lacks, and the page's
+ * text at that commit, from the blobs already read or else `git cat-file
+ * --batch` by `<sha>:<path>`. When a manifest holds the record, the stamp is
+ * read from the manifest's blob at the same commit, under the page's entry as
+ * it was keyed then: for a `path` join, the page's path at that commit, so a
+ * stamp written before a rename is still found under the old key. Every page
+ * of the root is read in one log and one batch, not one of each per page; the
+ * answer is one map per page, in input order.
  */
 async function commitEvidence(
   run: GitRun,
   root: string,
-  entry: RootEntry,
-  blame: readonly BlameLine[],
-  history: readonly FileHistory[],
+  pages: readonly BlamedPage[],
   blobs: ReadonlyMap<string, string>,
-  manifest: ManifestRef | undefined,
-): Promise<Map<string, CommitEvidence>> {
-  const pathAt = new Map<string, string>();
-  for (const line of blame) {
-    if (!line.uncommitted && !pathAt.has(line.sha)) pathAt.set(line.sha, unquotePath(line.filename));
-  }
-  const shas = [...pathAt.keys()];
-  const commits = new Map<string, CommitEvidence>();
-  if (shas.length === 0) return commits;
+  parse: ParseYaml,
+): Promise<Map<string, CommitEvidence>[]> {
+  const plans = pages.map(({ entry, blame, history }) => {
+    const pathAt = new Map<string, string>();
+    for (const line of blame) {
+      if (!line.uncommitted && !pathAt.has(line.sha)) pathAt.set(line.sha, unquotePath(line.filename));
+    }
+    const trailers = new Map<string, CommitEvidence["trailers"]>();
+    const pageBlob = new Map<string, string>();
+    for (const h of history) {
+      trailers.set(h.sha, { generatedBy: h.generatedBy, coAuthoredBy: h.coAuthors });
+      const blob = h.newBlob === null ? undefined : blobs.get(h.newBlob);
+      if (blob !== undefined) pageBlob.set(h.sha, blob);
+    }
+    const manifest = entry.input.provenanceManifest;
+    const manifestRel = manifest === undefined ? undefined : insideRoot(root, manifest.absPath);
+    return { entry, pathAt, trailers, pageBlob, manifest, manifestRel };
+  });
 
-  const trailers = new Map<string, CommitEvidence["trailers"]>();
-  const pageBlob = new Map<string, string>();
-  for (const h of history) {
-    trailers.set(h.sha, { generatedBy: h.generatedBy, coAuthoredBy: h.coAuthors });
-    const blob = h.newBlob === null ? undefined : blobs.get(h.newBlob);
-    if (blob !== undefined) pageBlob.set(h.sha, blob);
-  }
-  const unlogged = shas.filter((sha) => !trailers.has(sha));
-  if (unlogged.length > 0) {
-    const out = await run(["log", "--no-walk=unsorted", RECORD_FORMAT, ...unlogged]);
-    if (out.tooLarge) throw new HistoryTooLarge();
-    if (out.code !== 0) throw new BlobsUnreadable(`git log exit ${String(out.code)}`);
-    for (const record of parseLog(text(out))) {
-      trailers.set(record.sha, { generatedBy: record.generatedBy, coAuthoredBy: record.coAuthors });
+  const unlogged = new Set<string>();
+  const specs = new Set<string>();
+  for (const { pathAt, trailers, pageBlob, manifestRel } of plans) {
+    for (const [sha, path] of pathAt) {
+      if (!trailers.has(sha)) unlogged.add(sha);
+      if (!pageBlob.has(sha)) specs.add(`${sha}:${path}`);
+      if (manifestRel !== undefined) specs.add(`${sha}:${manifestRel}`);
     }
   }
 
-  const manifestRel = manifest === undefined ? undefined : insideRoot(root, manifest.absPath);
-  const specs: string[] = [];
-  for (const sha of shas) {
-    if (!pageBlob.has(sha)) specs.push(`${sha}:${pathAt.get(sha) ?? ""}`);
-    if (manifestRel !== undefined) specs.push(`${sha}:${manifestRel}`);
+  const logged = new Map<string, CommitEvidence["trailers"]>();
+  if (unlogged.size > 0) {
+    // On stdin, so a whole root's shas cannot outgrow the command line.
+    const out = await run(["log", "--no-walk=unsorted", "--stdin", RECORD_FORMAT], `${[...unlogged].join("\n")}\n`);
+    if (out.tooLarge) throw new HistoryTooLarge();
+    if (out.code !== 0) throw new BlobsUnreadable(`git log exit ${String(out.code)}`);
+    for (const record of parseLog(text(out))) {
+      logged.set(record.sha, { generatedBy: record.generatedBy, coAuthoredBy: record.coAuthors });
+    }
   }
-  const fetched = await fetchSpecs(run, specs);
+  const fetched = await fetchSpecs(run, [...specs]);
 
-  for (const sha of shas) {
-    const blob = pageBlob.get(sha) ?? fetched.get(`${sha}:${pathAt.get(sha) ?? ""}`);
-    commits.set(sha, {
-      sha,
-      trailers: trailers.get(sha) ?? { generatedBy: [], coAuthoredBy: [] },
-      ...(blob !== undefined ? { blob } : {}),
-      ...(manifest !== undefined
-        ? {
-            stamp:
-              manifestRel === undefined
-                ? []
-                : manifestStamp(
-                    fetched.get(`${sha}:${manifestRel}`),
-                    manifest.join === "path"
-                      ? entryAt(manifest.entry, entry.rel, pathAt.get(sha) ?? entry.rel)
-                      : manifest.entry,
-                    manifest.join,
-                  ),
-          }
-        : {}),
-    });
-  }
-  return commits;
+  return plans.map(({ entry, pathAt, trailers, pageBlob, manifest, manifestRel }) => {
+    const commits = new Map<string, CommitEvidence>();
+    for (const [sha, path] of pathAt) {
+      const blob = pageBlob.get(sha) ?? fetched.get(`${sha}:${path}`);
+      commits.set(sha, {
+        sha,
+        trailers: trailers.get(sha) ?? logged.get(sha) ?? { generatedBy: [], coAuthoredBy: [] },
+        ...(blob !== undefined ? { blob } : {}),
+        ...(manifest !== undefined
+          ? {
+              stamp:
+                manifestRel === undefined
+                  ? []
+                  : manifestStamp(
+                      fetched.get(`${sha}:${manifestRel}`),
+                      manifest.join === "path" ? entryAt(manifest.entry, entry.rel, path) : manifest.entry,
+                      manifest.join,
+                      parse,
+                    ),
+            }
+          : {}),
+      });
+    }
+    return commits;
+  });
 }
 
 /** A path under the root as git names it, or undefined outside the root. */
@@ -1265,8 +1298,32 @@ function manifestStamp(
   text: string | undefined,
   key: string,
   join: ManifestRef["join"],
+  parse: ParseYaml,
 ): ProvenanceEntry[] {
-  return provenanceEntries(manifestValue(text, key, join, PROVENANCE_FIELD));
+  return provenanceEntries(manifestValue(text, key, join, PROVENANCE_FIELD, parse));
+}
+
+/** Manifest text to its parsed data, or undefined when it does not parse. */
+type ParseYaml = (text: string) => unknown;
+
+/**
+ * A `ParseYaml` that parses each distinct text once. A manifest's blob is
+ * read for every page it holds and at every commit a page's blame names, and
+ * it is mostly the same bytes each time. One per run, so nothing outlives it.
+ */
+export function yamlOnce(): ParseYaml {
+  const parsed = new Map<string, unknown>();
+  return (text) => {
+    if (parsed.has(text)) return parsed.get(text);
+    let data: unknown;
+    try {
+      data = parseYaml(text);
+    } catch {
+      data = undefined;
+    }
+    parsed.set(text, data);
+    return data;
+  };
 }
 
 /**
@@ -1279,14 +1336,10 @@ function manifestValue(
   key: string,
   join: ManifestRef["join"],
   field: string,
+  parse: ParseYaml,
 ): unknown {
   if (text === undefined) return undefined;
-  let data: unknown;
-  try {
-    data = parseYaml(text);
-  } catch {
-    return undefined;
-  }
+  const data = parse(text);
   if (!isRecord(data)) return undefined;
   for (const [candidate, value] of Object.entries(data)) {
     const same =
@@ -1303,12 +1356,20 @@ function isRecord(x: unknown): x is Record<string, unknown> {
 /**
  * `git cat-file --batch` by `<rev>:<path>`, keyed by the spec. The output
  * header names the object, not the spec, so it is read in input order; a
- * spec that names nothing answers `<spec> missing` and yields nothing.
+ * spec that names nothing answers `<spec> missing` and yields nothing. An
+ * answer past the read cap is asked for again in halves, since one batch now
+ * serves a whole root; only one object past the cap is too large.
  */
 async function fetchSpecs(run: GitRun, specs: readonly string[]): Promise<Map<string, string>> {
   const found = new Map<string, string>();
   if (specs.length === 0) return found;
   const out = await run(["cat-file", "--batch"], `${specs.join("\n")}\n`);
+  if (out.tooLarge && specs.length > 1) {
+    const half = Math.ceil(specs.length / 2);
+    const first = await fetchSpecs(run, specs.slice(0, half));
+    const rest = await fetchSpecs(run, specs.slice(half));
+    return new Map([...first, ...rest]);
+  }
   if (out.tooLarge) throw new HistoryTooLarge();
   if (out.code !== 0) throw new BlobsUnreadable(`exit ${String(out.code)}`);
   for (const [spec, content] of parseSpecBatch(out.raw, specs)) found.set(spec, content);
@@ -1436,6 +1497,12 @@ const MAX_STDERR_BYTES = 16 * 1024;
 
 /** One git command in a fixed root, with the run's byte cap bound in. */
 type GitRun = (args: string[], stdin?: string) => Promise<GitOutput>;
+
+/**
+ * How many pages derive reads from git at once. Past eight, a measured run of
+ * 239 blames gained little (2.1s at 8, 1.7s at 24, 12s one at a time).
+ */
+const GIT_CONCURRENCY = Math.min(8, availableParallelism());
 
 /**
  * Decode stdout as UTF-8. The cap keeps the byte count under V8's string

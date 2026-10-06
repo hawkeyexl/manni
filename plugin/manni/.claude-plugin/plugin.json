@@ -1,0 +1,9 @@
+{
+  "name": "manni",
+  "description": "Checks the docs an agent edits against everything the repository set up in manni, blocks on errors, and records the session manifest tracevals reads.",
+  "version": "4.4.1",
+  "author": { "name": "hawkeyexl" },
+  "homepage": "https://hawkeyexl.github.io/manni/",
+  "repository": "https://github.com/hawkeyexl/manni",
+  "license": "MIT"
+}

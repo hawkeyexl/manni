@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Captions are burned into family-check-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:07.100
+What this repo set up
+manni status reads the config and the pages. Two checks are in play here.
+
+2
+00:00:07.100 --> 00:00:16.867
+One command runs them
+A page has no description, so exit 1. What was never set up is skipped.
+
+3
+00:00:16.867 --> 00:00:29.367
+The same check, as a hook
+Claude Code sends this after an agent's edit. Exit 2 blocks the agent.
+
+4
+00:00:29.367 --> 00:00:41.700
+Fix the page, pass the gate
+Add the field. Every check in play passes, exit 0.
+

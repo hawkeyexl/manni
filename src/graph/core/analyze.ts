@@ -49,6 +49,10 @@ export type DocFormat = (typeof DOC_FORMATS)[number];
 /** The formats read through lint's tree rather than graph's mdast walk. */
 export type TreeFormat = Exclude<DocFormat, "markdown" | "mdx">;
 
+export function isTreeFormat(format: DocFormat): format is TreeFormat {
+  return format !== "markdown" && format !== "mdx";
+}
+
 export function isDocFormat(name: string): name is DocFormat {
   return (DOC_FORMATS as readonly string[]).includes(name);
 }
@@ -69,6 +73,30 @@ export interface AnalyzeOptions {
   routes?: RouteMapping[];
   /** `--as`: parse as this format whatever the path says. Absent, see `formatOf`. */
   format?: DocFormat;
+  /**
+   * How the body is parsed. Absent, `parseBody`. `graph build` passes a cache's
+   * `parse` here, which returns what `parseBody` would (`analyze-cache.ts`).
+   */
+  parse?: (content: string, path: string, format: DocFormat) => DocBody;
+}
+
+/**
+ * What a page's body yields before anything else in the corpus is consulted:
+ * headings, and link and image targets as written, in document order.
+ *
+ * A pure function of the bytes and the format, so it can be cached across
+ * runs. Resolving a target needs the rest of the corpus and the routes, so
+ * that happens after, in `analyzeDoc`.
+ */
+export interface DocBody {
+  firstH1?: string;
+  sections: Section[];
+  /** Raw link targets: links, resolved link references, and JSX `href`s. */
+  linkTargets: string[];
+  /** Raw image targets: images, resolved image references, and JSX `src`s. */
+  imageTargets: string[];
+  /** Code fence languages, sorted and distinct. */
+  codeLanguages: string[];
 }
 
 const processor = unified()
@@ -456,10 +484,48 @@ export function analyzeDoc(
   const routes = options.routes ?? [];
   const path = normalizeDocPath(relPath);
   const format = formatOf(path, options.format);
-  if (format !== "markdown" && format !== "mdx") {
-    return analyzeTreeDoc(content, path, format, allPaths, routes);
-  }
+  const parse = options.parse ?? parseBody;
+  // A tree format is parsed first, so a malformed page is reported as a parse
+  // failure rather than as whatever the metadata reader tripped on. Markdown
+  // keeps its order: its parse cannot fail where its frontmatter can.
+  let body = isTreeFormat(format) ? parse(content, path, format) : undefined;
   const meta = metadataOf(content, path, format);
+  body ??= parse(content, path, format);
+
+  const links: DocLink[] = [];
+  for (const target of body.linkTargets) {
+    const link = classifyLink(path, target, allPaths, routes);
+    if (link) links.push(link);
+  }
+  const routeLanguage = routeLanguageFor(path, routes);
+
+  return {
+    path,
+    frontmatter: meta.data,
+    frontmatterPresent: meta.present,
+    format,
+    firstH1: body.firstH1,
+    sections: body.sections,
+    links,
+    images: body.imageTargets.map((target) => classifyImage(path, target)),
+    codeLanguages: body.codeLanguages,
+    // Omitted rather than set to undefined, so a doc under no localized route
+    // carries no key at all — `routeLanguage` in JSON output means something.
+    ...(routeLanguage === undefined ? {} : { routeLanguage }),
+    // Over the content as read — line endings included, so the digest is
+    // byte-faithful and equals `sha256sum <file>` for any valid-UTF-8 file
+    // (ADR 01036). The CRLF corpus fixture depends on this not normalizing.
+    contentHash: createHash("sha256").update(content, "utf8").digest("hex"),
+  };
+}
+
+/** Parse a page's body into its `DocBody`. `path` only names the page in an error. */
+export function parseBody(
+  content: string,
+  path: string,
+  format: DocFormat,
+): DocBody {
+  if (isTreeFormat(format)) return parseTreeBody(content, path, format);
   const isMdx = format === "mdx";
   let tree: Root;
   try {
@@ -476,8 +542,8 @@ export function analyzeDoc(
   }
 
   const sections: Section[] = [];
-  const links: DocLink[] = [];
-  const images: DocImage[] = [];
+  const linkTargets: string[] = [];
+  const imageTargets: string[] = [];
   const codeLanguages = new Set<string>();
   const definitions = new Map<string, Definition>();
   let firstH1: string | undefined;
@@ -521,34 +587,25 @@ export function analyzeDoc(
         break;
       }
       case "link": {
-        const link = classifyLink(
-          path,
-          (node as { url: string }).url,
-          allPaths,
-          routes,
-        );
-        if (link) links.push(link);
+        linkTargets.push((node as { url: string }).url);
         break;
       }
       case "linkReference": {
         const def = definitions.get(
           (node as { identifier: string }).identifier,
         );
-        if (def) {
-          const link = classifyLink(path, def.url, allPaths, routes);
-          if (link) links.push(link);
-        }
+        if (def) linkTargets.push(def.url);
         break;
       }
       case "image": {
-        images.push(classifyImage(path, (node as { url: string }).url));
+        imageTargets.push((node as { url: string }).url);
         break;
       }
       case "imageReference": {
         const def = definitions.get(
           (node as { identifier: string }).identifier,
         );
-        if (def) images.push(classifyImage(path, def.url));
+        if (def) imageTargets.push(def.url);
         break;
       }
       case "code": {
@@ -562,14 +619,11 @@ export function analyzeDoc(
       case "mdxJsxFlowElement":
       case "mdxJsxTextElement": {
         const href = jsxAttributeValue(node, "href");
-        if (href !== undefined) {
-          const link = classifyLink(path, href, allPaths, routes);
-          if (link) links.push(link);
-        }
+        if (href !== undefined) linkTargets.push(href);
         const name = (node as { name?: string | null }).name ?? "";
         if (IMAGE_ELEMENTS.has(name.toLowerCase())) {
           const src = jsxAttributeValue(node, "src");
-          if (src !== undefined) images.push(classifyImage(path, src));
+          if (src !== undefined) imageTargets.push(src);
         }
         break;
       }
@@ -577,34 +631,11 @@ export function analyzeDoc(
   });
 
   return {
-    path,
-    frontmatter: meta.data,
-    frontmatterPresent: meta.present,
-    format,
     firstH1,
     sections,
-    links,
-    images,
+    linkTargets,
+    imageTargets,
     codeLanguages: [...codeLanguages].sort(),
-    ...sourceFacts(content, path, routes),
-  };
-}
-
-/** What every format's `DocModel` derives from the path and the bytes alone. */
-function sourceFacts(
-  content: string,
-  path: string,
-  routes: RouteMapping[],
-): Pick<DocModel, "routeLanguage" | "contentHash"> {
-  const routeLanguage = routeLanguageFor(path, routes);
-  return {
-    // Omitted rather than set to undefined, so a doc under no localized route
-    // carries no key at all — `routeLanguage` in JSON output means something.
-    ...(routeLanguage === undefined ? {} : { routeLanguage }),
-    // Over the content as read — line endings included, so the digest is
-    // byte-faithful and equals `sha256sum <file>` for any valid-UTF-8 file
-    // (ADR 01036). The CRLF corpus fixture depends on this not normalizing.
-    contentHash: createHash("sha256").update(content, "utf8").digest("hex"),
   };
 }
 
@@ -755,45 +786,28 @@ function treeContent(sections: readonly SectionNode[]): ContentNode[] {
   return sections.flatMap((s) => [...s.children, ...treeContent(s.sections)]);
 }
 
-/** A non-Markdown document, read through lint's tree and meta's extractor. */
-function analyzeTreeDoc(
+/** A non-Markdown page's body, from lint's tree. */
+function parseTreeBody(
   content: string,
   path: string,
   format: TreeFormat,
-  allPaths: ReadonlySet<string>,
-  routes: RouteMapping[],
-): DocModel {
-  // Parsed first, so a malformed page is reported as a parse failure rather
-  // than as whatever the metadata reader tripped on.
+): DocBody {
   const tree = parseTree(content, path, format);
-  const meta = metadataOf(content, path, format);
   const minted = mintTreeSections(tree.sections);
-
-  const links: DocLink[] = [];
-  for (const { target } of tree.links) {
-    const link = classifyLink(path, target, allPaths, routes);
-    if (link) links.push(link);
-  }
-  const images: DocImage[] = [];
+  const imageTargets: string[] = [];
   const codeLanguages = new Set<string>();
   eachContent(treeContent(tree.sections), (node) => {
-    if (node.kind === "image") images.push(classifyImage(path, node.url));
+    if (node.kind === "image") imageTargets.push(node.url);
     else if (node.kind === "codeBlock" && node.language) {
       codeLanguages.add(node.language);
     }
   });
-
   return {
-    path,
-    frontmatter: meta.data,
-    frontmatterPresent: meta.present,
-    format,
-    firstH1: minted.firstH1,
+    ...(minted.firstH1 === undefined ? {} : { firstH1: minted.firstH1 }),
     sections: minted.sections,
-    links,
-    images,
+    linkTargets: tree.links.map((l) => l.target),
+    imageTargets,
     codeLanguages: [...codeLanguages].sort(),
-    ...sourceFacts(content, path, routes),
   };
 }
 

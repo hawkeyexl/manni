@@ -22,26 +22,26 @@ docs/src/content/docs/a11y/get-started/index.mdx:
         integrity: sha256-396e8d96921572f27d6b6f58c61c2222b61b688b7096e5c3c890292aed962853
       source:
         file: src/a11y/core/analyzer.ts
-        lines: 70-71
+        lines: 77-78
         integrity: sha256-3a0636f0eaf41741936dcf42a3b5851b1a8db2f01cbf7bde0d21354dbd022355
-        commit-sha: f0c617a65230e141b73778b3dd2ac2687caf4fc3
+        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
     - id: no-browser-message
       claim:
         integrity: sha256-e54af0bdabd2995b4c6bfa3d95d91171f037b785fd317a6099a56037140829f1
       source:
         file: src/a11y/core/analyzer.ts
-        lines: 67-68
+        lines: 74-75
         integrity: sha256-788b2a76c88ddbef9d8580e38c5d634e8629ff840368a418c11e3a94afeb40a7
-        commit-sha: f0c617a65230e141b73778b3dd2ac2687caf4fc3
+        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
     - id: no-browser-before-page
       claim:
         lines: 42-46
         integrity: sha256-a05f5a975e07696a54da8bc0ee1f5992e86da4c4ab2555297bf8320d4f47b25d
       source:
         file: src/a11y/core/analyzer.ts
-        lines: 132-135
+        lines: 145-148
         integrity: sha256-afbde11586384b5b22eebcfc3548f538603de13df38ae3ca8fb083ef742144d3
-        commit-sha: f0c617a65230e141b73778b3dd2ac2687caf4fc3
+        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
     - id: no-browser-exit-2
       claim:
         integrity: sha256-6fc17d690a173d593ae62170b0fdb81c169999f634caeae1696b052a3d6d3273
@@ -108,8 +108,8 @@ docs/src/content/docs/a11y/get-started/index.mdx:
       source:
         file: src/a11y/commands/check.ts
         lines: 157-158
-        integrity: sha256-add7334db1f5ab42b8d15200d4e88c7714628a18c798a0f559cdd1999b6b069d
-        commit-sha: f0c617a65230e141b73778b3dd2ac2687caf4fc3
+        integrity: sha256-ec29a8bc2acf6a9ac57faf24e95e763c8097f71f24afdc8b3997191f4c0f3049
+        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
     - id: report-header
       claim:
         lines: 114
@@ -307,5 +307,5 @@ docs/src/content/docs/a11y/get-started/index.mdx:
       source:
         file: src/a11y/commands/check.ts
         lines: 157-158
-        integrity: sha256-add7334db1f5ab42b8d15200d4e88c7714628a18c798a0f559cdd1999b6b069d
-        commit-sha: f0c617a65230e141b73778b3dd2ac2687caf4fc3
+        integrity: sha256-ec29a8bc2acf6a9ac57faf24e95e763c8097f71f24afdc8b3997191f4c0f3049
+        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9

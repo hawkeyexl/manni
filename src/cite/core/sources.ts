@@ -17,7 +17,8 @@ import { lstat, readFile, realpath } from "node:fs/promises";
 import { join, sep } from "node:path";
 import { decryptValue, encryptValue } from "../../shared/encryption.js";
 import { CiteError } from "../errors.js";
-import type { GitClient, MissingReason, SourceIndex, SourceRange } from "../types.js";
+import type { GitClient, MissingReason, SourceCache, SourceIndex, SourceRange } from "../types.js";
+import { splitLines } from "./hash.js";
 import { SRC_PATTERN } from "./range.js";
 
 /** The one context cite encrypts in, bound as associated data. */
@@ -119,7 +120,7 @@ export async function sourceIndexFor(root: string, client: GitClient): Promise<S
 }
 
 export type ReadSourceResult =
-  | { kind: "ok"; resolvedPath: string; text: string }
+  | { kind: "ok"; resolvedPath: string; text: string; lines?: readonly string[] }
   | { kind: "missing"; reason: MissingReason };
 
 /**
@@ -139,6 +140,11 @@ export function resolveSourcePath(
   return path === undefined ? { reason: "undecryptable" } : { path };
 }
 
+/** An empty cache for one run's `readSource` calls. */
+export function createSourceCache(): SourceCache {
+  return new Map();
+}
+
 /**
  * Read the file a range names. An encrypted source is decrypted under `key`
  * first: with no key it is `no-key`, under another key `undecryptable`. Never
@@ -149,15 +155,30 @@ export async function readSource(
   index: SourceIndex,
   range: SourceRange,
   key?: string,
+  cache?: SourceCache,
 ): Promise<ReadSourceResult> {
   const resolved = resolveSourcePath(range, key);
   if ("reason" in resolved) return { kind: "missing", reason: resolved.reason };
   const resolvedPath = resolved.path;
   if (!index.has(resolvedPath)) return { kind: "missing", reason: "untracked" };
-  const text = await readTracked(root, resolvedPath);
-  return text === undefined
+  if (cache === undefined) {
+    const text = await readTracked(root, resolvedPath);
+    return text === undefined
+      ? { kind: "missing", reason: "unreadable" }
+      : { kind: "ok", resolvedPath, text };
+  }
+  const slot = JSON.stringify([root, resolvedPath]);
+  let read = cache.get(slot);
+  if (read === undefined) {
+    read = readTracked(root, resolvedPath).then((text) =>
+      text === undefined ? undefined : { text, lines: splitLines(text) },
+    );
+    cache.set(slot, read);
+  }
+  const file = await read;
+  return file === undefined
     ? { kind: "missing", reason: "unreadable" }
-    : { kind: "ok", resolvedPath, text };
+    : { kind: "ok", resolvedPath, text: file.text, lines: file.lines };
 }
 
 /**
