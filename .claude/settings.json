@@ -2,9 +2,13 @@
   "extraKnownMarketplaces": {
     "agent-tools": {
       "source": { "source": "github", "repo": "vale-cli/agent-tools" }
+    },
+    "manni": {
+      "source": { "source": "github", "repo": "hawkeyexl/manni" }
     }
   },
   "enabledPlugins": {
-    "vale@agent-tools": true
+    "vale@agent-tools": true,
+    "manni@manni": true
   }
 }
