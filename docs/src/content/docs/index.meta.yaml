@@ -52,26 +52,35 @@ docs/src/content/docs/index.mdx:
     - generated-by: Claude Opus 5.5
       lines: 77-78
       integrity: sha256-86a70236b5b985274948371bfb96cc879810998d7bfd219fdf2167bd483058f9
-    - generated-by: Claude Fable 5.1
+    - generated-by: Claude Opus 5.5
       lines: 81-85
+      integrity: sha256-07f42b41ab60b588368289d1cc6f15db8a828db3a31c95c318a6874ff6be108e
+    - generated-by: Claude Fable 5.1
+      lines: 86-90
       integrity: sha256-2a9506997edcf0973bd654abba0b7e24e14d365794e657deca614c1e1d8b8e16
     - generated-by: Claude Opus 5
-      lines: 86-90
+      lines: 91-95
       integrity: sha256-be91386a716c40a4d984e7246374375922e2065d09b17bb228d4d12f7d6f1c7a
     - generated-by: Claude Opus 4.8
-      lines: 91
+      lines: 96
       integrity: sha256-582ebf3ded795155d25105b5debae773505eca9fc278cf38d08fe470dff25f81
     - generated-by: Claude Opus 5
-      lines: 93-94
+      lines: 98-99
       integrity: sha256-592519714fe4ee9f5e8aabda01d63ae1cbecfe101c723557ec27e36d63a5de1f
+    - generated-by: Claude Opus 5.5
+      lines: 106-107
+      integrity: sha256-198d1b29f5c52885d1452fd00c8dee70ab6a040abc7f539b85ee461c471ae808
+    - generated-by: Claude Opus 5.5
+      lines: 110-111
+      integrity: sha256-5cb0dcc994723f85c40d6da272e287df036a5afd71ce2133bed4891ff4099881
     - generated-by: Claude Fable 5.1
-      lines: 107-117
+      lines: 115-125
       integrity: sha256-eb894ad7d475c33df77cc37fa0d2679ad1b8973e6992ffdf6eab06cb1abac655
     - generated-by: Claude Fable 5.1
-      lines: 120-121
+      lines: 128-129
       integrity: sha256-22ce86ce09a39ce17edb6a75a512ad70e2f70411dfedde4daff639fb7391d7b7
     - generated-by: Claude Opus 5.5
-      lines: 122
+      lines: 130
       integrity: sha256-4155a00325cda3ba9494efe1e67fab63f5905b52ba9057000f576a9520f6ffb6
   owner:
     - "@hawkeyexl"
