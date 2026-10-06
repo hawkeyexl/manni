@@ -34,7 +34,6 @@ function hooksFor(file: HookFile, event: string, command: string): (Hook & { mat
       .map((h) => ({ ...h, ...(group.matcher === undefined ? {} : { matcher: group.matcher }) })),
   );
 }
-}
 interface Marketplace {
   name: string;
   owner: { name: string };
