@@ -243,7 +243,9 @@ export async function resolveTargetSet(
   const memo = sharedWalks.getStore();
   if (memo === undefined) return walkTargetSet(opts);
   // Everything that changes the answer. The unavailable-gitignore callback
-  // only reports, and a run says it once anyway.
+  // only reports, and a run says it once anyway, so a shared walk fires the
+  // first caller's alone. A new ResolveOptions field that changes the walk
+  // must join this key, or two callers would share a wrong list.
   const key = JSON.stringify([
     resolve(opts.cwd ?? process.cwd()),
     opts.inputs,

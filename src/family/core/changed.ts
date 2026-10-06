@@ -40,6 +40,8 @@ export function parsePorcelain(output: string): { files: string[]; removed: stri
       i++;
       if (xy.includes("R")) removed.push(fields[i] ?? "");
     }
+    // `RD`, a staged rename then deleted in the tree, removes both names:
+    // the old one above and the new one here. Two files, not one twice.
     if (xy.includes("D")) removed.push(path);
     else files.push(path);
   }
