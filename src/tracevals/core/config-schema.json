@@ -172,7 +172,7 @@
         },
         "include": {
           "type": "array",
-          "description": "Globs, relative to the project root, naming files that govern agents beyond the known formats. Each applies once the agent reads it.",
+          "description": "Globs, relative to the project root, naming files that govern agents beyond the known formats. Each applies to every turn.",
           "items": { "type": "string", "minLength": 1 }
         },
         "exclude": {
