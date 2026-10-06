@@ -190,10 +190,7 @@ export function renderStatus(report: StatusReport, format: StatusFormat): string
 export const FIX_SKILL = "manni:fix";
 
 /** The set-wide checks a stop runs when a collection document changed, as the briefing names them. */
-const PAGE_WIDE: ReadonlyArray<readonly [Domain, string]> = [
-  ["term", "the glossary"],
-  ["graph", "the graph"],
-];
+const PAGE_WIDE: ReadonlyArray<readonly [Domain, string]> = [["term", "the glossary"]];
 
 /** `a`, `a or b`, `a, b or c`: a list in prose, joined by `conjunction`. */
 function prose(items: readonly string[], conjunction: string): string {

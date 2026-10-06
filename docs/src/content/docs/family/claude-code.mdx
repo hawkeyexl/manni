@@ -157,9 +157,10 @@ When the agent tries to finish, the plugin runs `manni check` over what it
 changed. That is the per-file checks on every file the git working tree changed
 against `HEAD`, whether modified, added, renamed or untracked. It also checks
 every citation, since a source edit can drift one on a page the agent never
-opened. The glossary and the graph read only collection documents. So they are
-checked when the agent changed or removed one, and skipped when it changed only
-code.
+opened. The glossary reads only collection documents, so it is checked when
+the agent changed or removed one, and skipped when it changed only code. The
+graph is never checked here. It is the slowest whole-set check, and its
+findings span pages, so CI checks it with a bare `manni check`.
 
 With a clean working tree, nothing runs.
 

@@ -198,18 +198,19 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
     expect(run).toEqual({ status: "pass", files: [], checks: [] });
   });
 
-  it("changed: the per-file checks on the changes, plus every set-wide check", async () => {
+  it("changed: the per-file checks on the changes, every citation and the glossary, never the graph", async () => {
     dir = fixtureRepo("everything");
     edit(dir, "docs/limits.md", (t) => t.replace(/^description:.*\n/m, ""));
     const run = await runFamilyCheck({ cwd: dir, scope: { kind: "changed" } });
     expect(run.files).toEqual(["docs/limits.md"]);
     expect(byCommand(run, "meta validate").status).toBe("fail");
-    for (const setWide of ["cite check", "term check", "graph check"]) {
+    for (const setWide of ["cite check", "term check"]) {
       expect(run.checks.map((c) => c.command)).toContain(setWide);
     }
+    expect(run.checks.map((c) => c.command)).not.toContain("graph check");
   });
 
-  it("changed: a source edit runs every citation, and leaves the glossary and the graph alone", async () => {
+  it("changed: a source edit runs every citation, and leaves the glossary alone", async () => {
     dir = fixtureRepo("everything");
     edit(dir, "src/limits.ts", (t) => t.replace("FETCH_TIMEOUT_MS = 10_000", "FETCH_TIMEOUT_MS = 20_000"));
     const run = await runFamilyCheck({ cwd: dir, scope: { kind: "changed" } });
@@ -218,12 +219,12 @@ describe.skipIf(!gitAvailable())("runFamilyCheck", () => {
     expect(byCommand(run, "cite check").status).toBe("fail");
   });
 
-  it("changed: a deleted page still runs the glossary and the graph", async () => {
+  it("changed: a deleted page still runs the glossary", async () => {
     dir = fixtureRepo("everything");
     rmSync(join(dir, "docs/glossary/timeout.md"));
     const run = await runFamilyCheck({ cwd: dir, scope: { kind: "changed" } });
     expect(run.files).toEqual([]);
-    expect(run.checks.map((c) => c.command)).toEqual(["cite check", "term check", "graph check"]);
+    expect(run.checks.map((c) => c.command)).toEqual(["cite check", "term check"]);
   });
 
   it("no config is an operational error the hook answers with silence", async () => {
