@@ -259,7 +259,7 @@ async function conform(p: Params): Promise<Outcome> {
   // The session ledger: read in both modes, written only by the hook.
   const ledgerFile = ledgerPath(p.projectDir, p.sessionId, p.agentId);
   const ledger = await readLedger(ledgerFile);
-  let ran:Awaited<ReturnType<typeof queued<TurnJudgement>>>;
+  let ran: Awaited<ReturnType<typeof queued<TurnJudgement>>>;
   try {
     ran = await queued(judgeId.model, () =>
       judgeTurn({
