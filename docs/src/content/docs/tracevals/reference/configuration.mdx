@@ -402,7 +402,7 @@ the Claude Code hooks. Absent, tracevals stays out of them. The journey is in
 - **`hook.runs`** is the number of generative calls per turn inside a hook. A block needs every
   run to agree. A decision provider ignores it.
 - **`include`** names files that govern agents beyond the known formats, such as a house style
-  guide. Each applies once the agent reads it. Globs are relative to the project root.
+  guide. Each applies to every turn, read or not. Globs are relative to the project root.
 - **`exclude`** names files never treated as rule sources, in any format, such as a product docs
   tree or a stale `.cursor/rules` file.
 

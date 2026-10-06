@@ -217,6 +217,7 @@ export async function resolveAlwaysSources(opts: SourceOptions): Promise<Resolve
   for (const candidate of await catalog(c, opts)) {
     if (candidate.trigger.kind === "always") await addWithImports(c, candidate, "always");
   }
+  await addDesignated(c, opts);
   return { sources: c.sources, warnings: c.warnings };
 }
 
@@ -273,21 +274,32 @@ export async function resolveTurnSources(
 
   await addWindowed(c, trace, turn, touches, opts);
 
-  const include = opts.include ?? [];
-  if (include.length > 0) {
-    const match = picomatch(include, { dot: true });
-    for (const touch of touches) {
-      if (!touch.read || touch.rel === null || !match(touch.rel) || c.has(touch.abs)) continue;
-      const content = await safeRead(touch.abs);
-      if (content === null) {
-        c.warnings.push(`${touch.rel}: matched conformance.include but could not be read`);
-        continue;
-      }
-      c.add(touch.abs, content, "designated", "read");
-    }
-  }
-
+  await addDesignated(c, opts);
   return { sources: c.sources, warnings: c.warnings };
+}
+
+/**
+ * Files named in `conformance.include`. A person chose each one to govern the
+ * agent, so it applies to every turn, as a `CLAUDE.md` does. Waiting for the
+ * agent to read one would let a turn that skipped it escape its rules.
+ */
+async function addDesignated(c: Collector, opts: SourceOptions): Promise<void> {
+  const include = opts.include ?? [];
+  if (include.length === 0) return;
+  const match = picomatch(include, { dot: true });
+  const found = await listInTree(c.root, (abs) => {
+    const rel = relPosix(c.root, abs);
+    return rel !== null && match(rel);
+  });
+  for (const abs of found) {
+    if (c.has(abs)) continue;
+    const content = await safeRead(abs);
+    if (content === null) {
+      c.warnings.push(`${c.display(abs)}: matched conformance.include but could not be read`);
+      continue;
+    }
+    c.add(abs, content, "designated", "always");
+  }
 }
 
 // ── Skills, slash commands and the agent ─────────────────────────

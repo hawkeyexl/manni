@@ -22,5 +22,11 @@ docs/src/content/docs/tracevals/conformance/index.mdx:
   created: 2026-10-05
   provenance:
     - generated-by: Claude Sonnet 5.5
-      lines: 2-297
-      integrity: sha256-7c537caf0716f2d5fef06b7d812740d668c14374c0db4736b8ddc4cee631d918
+      lines: 2-107
+      integrity: sha256-110e8edd74999675e0a43268f2c5d7da7dbd6e3d44901bb9bed806267a3fe92d
+    - generated-by: Claude Opus 5.5
+      lines: 108
+      integrity: sha256-d15e5059fe25c759c2212b0d5606f7ad7bcfcc04d27482a7d0613dca5c5faee7
+    - generated-by: Claude Sonnet 5.5
+      lines: 110-297
+      integrity: sha256-d2bd7ac65c6ecfa802169c4de7875df8eca3882503f4991f2afcae85c523c6b9

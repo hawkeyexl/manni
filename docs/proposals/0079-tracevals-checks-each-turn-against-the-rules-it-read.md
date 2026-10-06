@@ -101,10 +101,10 @@ count. A model only extracts rules from them.
 | `kiro-steering` | `.kiro/steering/*.md`, user `~/.kiro/steering/*.md` | `inclusion: always`, or no frontmatter, means always. `fileMatch` follows `fileMatchPattern`. `manual` and `auto` apply once the agent reads them. |
 | `speckit-constitution` | `.specify/memory/constitution.md` | Always |
 | `openspec-project` | `openspec/project.md` | Once the agent reads it |
-| `import` | Files an `@path` line pulls into a `claude-md` or `gemini-md` file, up to four hops | With the importing file |
+| `import` | Files an `@path` line pulls into a `claude-md` or `gemini-md` file, up to four hops, the depth at which Claude Code stops expanding them | With the importing file |
 | `skill` | An invoked skill's `SKILL.md`, and every file read under its directory | The skill's window, as today |
 | `slash-command`, `agent` | As today. The agent's definition applies under SubagentStop. | Their windows, as today |
-| `designated` | A file named in `conformance.include` | Once the agent reads it |
+| `designated` | A file named in `conformance.include` | Always. A person chose it to govern the agent, so a turn that skipped reading it is still held to it. |
 
 To touch a file is to Read, Write or Edit it. That is Claude Code's own trigger
 for path-scoped rules. `paths:`, `globs` and `fileMatchPattern` each accept a
@@ -197,14 +197,14 @@ gate that finds nothing to do ends the run.
 | # | Gate | Decided by | When it stops the run |
 |---|---|---|---|
 | 1 | Not in play | No `tracevals.conformance` section | Silent. The transcript is not parsed. |
-| 2 | A judge's own session | `MANNI_TRACEVALS_JUDGE` in the environment | Silent. tracevals sets it on every process it spawns, so a `claude-cli` judge cannot set off this hook again. |
+| 2 | A judge's own session | `MANNI_TRACEVALS_JUDGE` in the environment | Silent. tracevals sets it in its own environment before it spawns anything, so every child inherits it from the start. A `claude-cli` judge cannot set off this hook again. |
 | 3 | Empty turn | Nothing after the last typed prompt | Silent |
 | 4 | No rule sources | The sources table resolves nothing for this turn | Silent |
 | 5 | Still downloading | The library reports the local model as `downloading` | One message per session |
 | 6 | Not applicable | Every in-scope rule's `when` fails over the turn | Silent. Each rule counts as `skipped`, never `pass`. |
 | 7 | Model not on disk | The local model or runtime is missing | One message per session. Nothing downloads. |
 | 8 | Not enough memory | The library's memory probe, the one `auto` tiering uses | One message per session |
-| 9 | Already judged | The verdict cache holds this turn, rule set and model | The cached verdict is reused. |
+| 9 | Already judged | The verdict cache holds this turn, rule set and model | The cached verdict is reused. The key is the provider, model, mode, runs, temperature and prompt version. It also holds a sha256 of the rendered turn, and one of the rules with their sources, ids and text. |
 
 The cache is read last, because its key needs the model's state limit. A
 local model can only report that once it is on disk. Under a hook, a local extraction
@@ -263,7 +263,9 @@ violations block.
 
 - **Decision mode.** A rule blocks when `violated` is the top option and its
   probability reaches `judge.zones.autoFail`.
-- **Generative mode.** Every run must say `fail`, at the same bar.
+- **Generative mode.** A rule blocks only when every run lists that same rule
+  as violated, each at the bar, and no run errored. A rule some runs flag and
+  others leave out is `needs-review`.
 - **Anything else** is `needs-review`. It never blocks, and it never fails
   `tracevals check`.
 
@@ -359,8 +361,8 @@ tracevals:
 | `conformance` | object | absent | Present, even as `{}`, puts tracevals in play under hooks. Absent, tracevals stays `not checked`. |
 | `conformance.hook.provider` | string | `tracevals.provider` | The provider that judges inside a hook |
 | `conformance.hook.model` | string | `tracevals.model` | The model that judges inside a hook |
-| `conformance.hook.runs` | integer, at least 1 | 1 | Generative calls per turn inside a hook. A block needs every run to agree. Decision providers ignore it. |
-| `conformance.include` | list of globs | `[]` | Files that govern agents beyond the known formats, such as a house style guide. Each applies once the agent reads it. |
+| `conformance.hook.runs` | integer, at least 1 | 1 | Generative calls per turn inside a hook. A rule blocks only when every run names that same rule as violated, at the bar. Decision providers ignore it. |
+| `conformance.include` | list of globs | `[]` | Files that govern agents beyond the known formats, such as a house style guide. Each applies to every turn. |
 | `conformance.exclude` | list of globs | `[]` | Files never treated as rule sources, in any row. A product docs tree or a stale `.cursor/rules` are examples. |
 
 Inside a hook, the provider comes from `conformance.hook`, then `tracevals`,

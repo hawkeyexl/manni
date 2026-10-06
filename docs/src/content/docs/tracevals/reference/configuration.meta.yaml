@@ -59,8 +59,14 @@ docs/src/content/docs/tracevals/reference/configuration.mdx:
       lines: 273-363
       integrity: sha256-90680c81a8cc3f1f7de75ce73399d298f2858432aa95f0945824bfe0d4c76b0d
     - generated-by: Claude Sonnet 5.5
-      lines: 365-443
-      integrity: sha256-2690bb429b1a8b856609b39c30adbbdc4389c44b7243301e6a8e8933670deb15
+      lines: 365-388
+      integrity: sha256-af0159a53f182eb8ceb320edb24c39a1efe21844c549de7ecf6e08e2bf07035e
+    - generated-by: Claude Opus 5.5
+      lines: 389
+      integrity: sha256-dbc7bc186a919eb65d175761cf1a0c29f8b72eeceefbc5de095b2ae39454447b
+    - generated-by: Claude Sonnet 5.5
+      lines: 390-443
+      integrity: sha256-bfdc69c4b56df86c1d01b4b75f44a63abb297fb92ef7de9932ddace1c29fcb1c
     - generated-by: Claude Opus 5.5
       lines: 445-448
       integrity: sha256-d8f8efd9a8da642ccdf024ab6430ee9cfd2162041299de8851dde963b0d1924d

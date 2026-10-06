@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How do I make an agent follow my CLAUDE.md?", "Which files does tracevals check an agent against?", "What does the agent see when it breaks a rule?"]
 graph: { label: "Catch a broken rule before the agent hands back", type: task }
-last-updated: 2026-10-05
+last-updated: 2026-10-06
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
@@ -121,7 +121,7 @@ it.
 | OpenSpec project | `openspec/project.md` | Once the agent reads it |
 | Imports | Files an `@path` line pulls into a memory file, up to four hops | With the importing file |
 | Skills, commands, agents | An invoked skill's `SKILL.md` and every file read under its directory, a slash command, and the running subagent's definition | Their windows, as in `run` |
-| Designated | Files matching `conformance.include` | Once the agent reads them |
+| Designated | Files matching `conformance.include` | Always |
 
 To touch a file is to read, write or edit it. That is Claude Code's own trigger for path-scoped
 rules. `paths:`, `globs` and `fileMatchPattern` each accept one glob or a list. A nearer file

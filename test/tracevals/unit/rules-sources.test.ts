@@ -236,15 +236,15 @@ describe("sources a turn brings into scope", () => {
     expect(paths(sources)).not.toContain("docs/guide/getting-started.md");
   });
 
-  it("adds an included file once it is read, and exclude still wins", async () => {
+  it("applies an included file to every turn, read or not, and exclude still wins", async () => {
     const include = ["docs/content-strategy/**"];
     const unread = await turnSources("claude", [{ say: "hi" }], { include });
-    expect(paths(unread.sources)).not.toContain("docs/content-strategy/personas.md");
-
-    const read = await turnSources("claude", [{ read: "docs/content-strategy/personas.md" }], { include });
-    const designated = byPath(read.sources).get("docs/content-strategy/personas.md");
+    const designated = byPath(unread.sources).get("docs/content-strategy/personas.md");
     expect(designated?.format).toBe("designated");
-    expect(designated?.trigger).toBe("read");
+    expect(designated?.trigger).toBe("always");
+
+    const always = await resolveAlwaysSources({ ...repo("claude"), include });
+    expect(paths(always.sources)).toContain("docs/content-strategy/personas.md");
 
     const excluded = await turnSources(
       "claude",
