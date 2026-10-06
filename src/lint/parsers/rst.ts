@@ -1289,10 +1289,21 @@ function collectLinks(src: Source, from: number, code: Set<number>): DocumentTre
   for (let line = from; line < src.text.length; line++) {
     for (const m of (src.text[line] ?? "").matchAll(EMBEDDED)) {
       const name = refName(m[1] ?? "");
-      if (m[3] === "_" && name !== "" && !targets.has(name)) targets.set(name, m[2] ?? "");
+      if (m[3] === "_" && name !== "" && !targets.has(name)) {
+        targets.set(name, (m[2] ?? "").replace(/\s+/g, ""));
+      }
     }
   }
-  const resolve = (name: string): string | undefined => targets.get(refName(name));
+  // A value ending in `_` (`<Python_>`, `.. _home: Python_`) names another
+  // target rather than being a URI, so the chain is followed to a URI. One
+  // that never reaches one, a cycle included, resolves to nothing.
+  const resolve = (name: string): string | undefined => {
+    let uri = targets.get(refName(name));
+    for (let hops = 0; uri?.endsWith("_") && hops < targets.size; hops++) {
+      uri = targets.get(refName(uri.slice(0, -1)));
+    }
+    return uri?.endsWith("_") ? undefined : uri;
+  };
 
   const links: DocumentTree["links"] = [];
   for (let line = from; line < src.text.length; line++) {

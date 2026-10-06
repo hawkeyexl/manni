@@ -281,6 +281,25 @@ describe("rst links and ids", () => {
     expect(targets(tree)).toEqual(["https://python.org", "https://docs.example"]);
   });
 
+  it("follows an alias to the URI it names, never to the alias itself", () => {
+    // `<Python_>` and `.. _home: Python_` are references to a target, not
+    // URIs. A later use of either name resolves through to the target's URI.
+    const tree = parse(
+      "Title\n=====\n\n`Python docs <Python_>`_, `Python docs`_ and home_.\n\n" +
+        ".. _Python: https://python.org\n.. _home: Python_\n",
+    );
+    expect(targets(tree)).toEqual([
+      "https://python.org",
+      "https://python.org",
+      "https://python.org",
+    ]);
+  });
+
+  it("gives an alias that never reaches a URI no link, cycles included", () => {
+    const tree = parse("Title\n=====\n\nSee a_ and b_ and c_.\n\n.. _a: b_\n.. _b: a_\n.. _c: nowhere_\n");
+    expect(targets(tree)).toEqual([]);
+  });
+
   it("gives an unresolved named reference no link", () => {
     const tree = parse("Title\n=====\n\nUse nowhere_ and `no target`_ and snake_case.\n");
     expect(targets(tree)).toEqual([]);
