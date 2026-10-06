@@ -39,7 +39,7 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
       { name: "docevals", status: "in-play", reason: "docevals: section" },
       { name: "term", status: "in-play", reason: "1 term" },
       { name: "graph", status: "in-play", reason: "graph: section" },
-      { name: "a11y", status: "not-checked", reason: "run manni a11y check against a running site" },
+      { name: "a11y", status: "not-checked", reason: "run manni site preview, then manni a11y check" },
       { name: "tracevals", status: "not-checked", reason: "run manni tracevals run over sessions" },
     ]);
   });

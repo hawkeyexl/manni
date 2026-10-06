@@ -18,8 +18,14 @@ docs/src/content/docs/family/claude-code.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Sonnet 5.5
-      lines: 2-73
-      integrity: sha256-d0938a04732decf72d72dc7fbf5262d2b7529f3388b6b3593c8c3a16469b61e3
+      lines: 2-69
+      integrity: sha256-fba64aad0f1994862e5e0e0af6f63e3b80fa7215803d5eb3a9efd5d3ef2dd08c
+    - generated-by: Claude Opus 5.5
+      lines: 70
+      integrity: sha256-6f835e8af2d644ae9642463f802c0e368d05d7ae16256f49657d96ed03a22ef4
+    - generated-by: Claude Sonnet 5.5
+      lines: 71-73
+      integrity: sha256-a3ce48f8e958a5c2f6cc2e90a8709ddf8becf91c4203835f3ee937a2070b8c78
     - generated-by: Claude Sonnet 5.5
       lines: 75-127
       integrity: sha256-3d5d2ce1f62dc2525e57815afc20f1722b4116d1080c09a9c81f8eba12a512b3

@@ -84,7 +84,7 @@ export const META_DEFAULTS_ONLY = "only the built-in default schemas cover these
 
 /** The two domains `check` never runs, and what to run instead. */
 export const NOT_CHECKED: ReadonlyArray<readonly [string, string]> = [
-  ["a11y", "run manni a11y check against a running site"],
+  ["a11y", "run manni site preview, then manni a11y check"],
   ["tracevals", "run manni tracevals run over sessions"],
 ];
 
