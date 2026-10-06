@@ -108,9 +108,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-8ef158887c0342d376ac5675a9777bb3b95a54ff9833be27e322455d7e02cc2a
       source:
         file: src/meta/core/load-files.ts
-        lines: 306-309
+        lines: 308-311
         integrity: sha256-4599d601ad8068f93a532f63eb18d8e223706720fc069d02d27c2a17f0a63699
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
     - id: directory-walk-skips-dot-entries
       claim:
         lines: 104

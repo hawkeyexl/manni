@@ -213,9 +213,9 @@ docs/src/content/docs/meta/set-up/retrofit.mdx:
         integrity: sha256-34d06175df2d3c4a067c289ab6895666a8773e56f1bd646e1bf68cad76beed95
       source:
         file: src/meta/core/load-files.ts
-        lines: 271
+        lines: 273
         integrity: sha256-062dfc0e8704a9f5cfab261efdea54ca2e9e82c088fa4257187e47da6a73fc6c
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
     - id: bare-run-reads-collection-paths
       claim:
         lines: 129

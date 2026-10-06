@@ -280,9 +280,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-82b3d6a2e48d5f7c499791ba2d8bf2937c01a040643546fa5ae0e4e88e7ae8c7
       source:
         file: src/meta/core/load-files.ts
-        lines: 271
+        lines: 273
         integrity: sha256-062dfc0e8704a9f5cfab261efdea54ca2e9e82c088fa4257187e47da6a73fc6c
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
     - id: excluded-file-is-not-read
       claim:
         lines: 246-249
@@ -1306,9 +1306,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-0a0e1eb42907b7b80b9c2ca95fe19c949eeb3255f49fd3387bcfa881291b3fb4
       source:
         file: src/meta/core/load-files.ts
-        lines: 399-400
+        lines: 401-402
         integrity: sha256-fe70e2a6e37e41b892f66e1cb51aa030b785c4dd34ed5c29169ac290c6901a3d
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
     - id: unknown-key-rule-applies-to-nested-mappings
       claim:
         integrity: sha256-aeb0a709c72ec2f4b66561390db840eb4bc1d3ca59fa2f91ff025ec1dbbf0fa4
@@ -2602,18 +2602,18 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-b2354f18808b0855ea46daac7ca4360a230a60ae278a6d95df12faf727ac57e1
       source:
         file: src/meta/core/load-files.ts
-        lines: 271
+        lines: 273
         integrity: sha256-062dfc0e8704a9f5cfab261efdea54ca2e9e82c088fa4257187e47da6a73fc6c
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
     - id: allow-empty-flag-overrides-config
       claim:
         lines: 2773
         integrity: sha256-84d7c8fcb1fe06c11cbae99f0d48d547ec8a404411bcad82f28acccb177f75e1
       source:
         file: src/meta/core/load-files.ts
-        lines: 399-400
+        lines: 401-402
         integrity: sha256-fe70e2a6e37e41b892f66e1cb51aa030b785c4dd34ed5c29169ac290c6901a3d
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
     - id: unknown-tools-key-is-exit-2
       claim:
         lines: 1406-1408
