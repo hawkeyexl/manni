@@ -33,6 +33,7 @@ import {
   writeGraphFields,
 } from "../core/frontmatter-edit.js";
 import { writeFileAtomic } from "../../meta/index.js";
+import { DocmetaError } from "../../meta/types.js";
 import {
   mergeMetaProvenance,
   spliceManifestValue,
@@ -1053,8 +1054,11 @@ async function mergedText(
     // and need not when its manifest holds every key fill writes. This text
     // is read, never written, and both readers read a YAML fence, so a new
     // one reads as meta's merge does. A key whose home is the page still
-    // meets meta's refusal when it is written.
-    if (format !== "asciidoc" && format !== "rst") throw e;
+    // meets meta's refusal when it is written. Only that refusal falls back:
+    // anything else is the page's own problem, and a new fence would hide it.
+    const noFence =
+      (format === "asciidoc" || format === "rst") && e instanceof DocmetaError;
+    if (!noFence) throw e;
     return applyGraphFields(content, path, {}, { page: supplied }).content;
   }
 }

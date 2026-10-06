@@ -939,7 +939,6 @@ function parse(content: string, filePath: string): DocumentTree {
       target,
       position: { start: index.start(line), end: index.endOfLine(line) },
     }));
-  harvested = [];
 
   const meta = metadata(content, filePath, index);
   const end = index.documentEnd();

@@ -708,7 +708,9 @@ class HeadingIds {
  * A heading's self-permalink is left out: Sphinx, MkDocs and Docusaurus append
  * `<a href="#install">¶</a>` to every heading, and a graph that kept them would
  * give each section an edge to itself. Only an exact `#<that heading's id>` is
- * dropped; a heading linking anywhere else keeps the link.
+ * dropped; a heading linking anywhere else keeps the link. Only an `<a>`
+ * inside the heading is checked: a permalink placed beside the heading, as a
+ * sibling, is kept as a link to its own section.
  */
 function collectLinks(
   parent: ParentNode,

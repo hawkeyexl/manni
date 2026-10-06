@@ -254,6 +254,34 @@ describe("graph fill writes each format through meta", () => {
     expect(read(dir, "notes.meta.yaml")).toContain("label: Notes");
   });
 
+  it("reports a fenced page whose graph is not a map, rather than writing past it", async () => {
+    // mergedText falls back to a new fence only for meta's no-fence refusal.
+    // Any other failure is the page's own problem and must reach the report.
+    const page = "---\ngraph: 5\n---\n= Notes\n\nBody.\n";
+    const dir = copy({
+      "manni.config.yaml": [
+        "collections:",
+        "  - name: formats",
+        '    paths: ["*.adoc"]',
+        "    externalMetadata:",
+        '      - file: "{page}.meta.yaml"',
+        "        keys: [meta-provenance]",
+        "graph:",
+        "  baseIri: https://example.com/formats/",
+        "",
+      ].join("\n"),
+      "fenced.adoc": page,
+      "fenced.meta.yaml": "fenced.adoc:\n  meta-provenance: []\n",
+    });
+    const report = await fill(dir, ["fenced.adoc"], [LABELS]);
+    expect(report.exitCode).toBe(1);
+    expect(report.results[0]).toMatchObject({
+      status: "error",
+      error: 'fenced.adoc: metadata key "graph" is not a map',
+    });
+    expect(read(dir, "fenced.adoc")).toBe(page);
+  });
+
   it("refuses an HTML page with no <head> in meta's words", async () => {
     const page = "<html><body><h1>Bare</h1><p>No head.</p></body></html>\n";
     const dir = copy({ "bare.html": page });

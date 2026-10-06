@@ -715,7 +715,8 @@ export function mintTreeSections(roots: SectionNode[]): TreeSections {
       return anchor;
     }
     // The slugger dedupes against its own output only, so a slug an earlier
-    // verbatim id took is asked for again until it is free.
+    // verbatim id took is asked for again until it is free. Each call advances
+    // the slugger's suffix (-1, -2, ...), which is what ends the loop.
     let anchor = slugger.slug(node.title);
     while (taken.has(anchor)) anchor = slugger.slug(node.title);
     taken.add(anchor);
