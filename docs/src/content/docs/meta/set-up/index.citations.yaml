@@ -35,7 +35,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/commands/validate.ts
         lines: 305-309
         integrity: sha256-73d56d153f0de0ed6e64cb6ade7318f324b35250a12838d444586b957050d6c4
-        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: config-discovered-as-manni-config-yaml
       claim:
         lines: 63
@@ -80,7 +80,7 @@ docs/src/content/docs/meta/set-up/index.mdx:
         file: src/meta/core/load-files.ts
         lines: 308-311
         integrity: sha256-4599d601ad8068f93a532f63eb18d8e223706720fc069d02d27c2a17f0a63699
-        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: node-24-floor
       claim:
         lines: 14

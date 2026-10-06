@@ -630,13 +630,14 @@ Unloaded qwen3.5-4b and stopped the model host. 2 sessions held it.
 ### Under the hooks
 
 `plugin/manni/hooks/hooks.json` gains three entries. Stop is unchanged and
-already runs `manni check`.
+already runs `manni check`. Each entry runs through the plugin's launcher,
+`hooks/manni.mjs`, which runs the first manni it finds.
 
 | Event | Matcher | Command | Timeout (s) |
 |---|---|---|---|
-| SessionStart | `startup\|resume` | `npx --no @hawkeyexl/manni tracevals prepare`, with `"async": true` | not enforced |
-| SubagentStop | all | `npx --no @hawkeyexl/manni check` | 600 |
-| SessionEnd | all | `npx --no @hawkeyexl/manni tracevals release` | 10 |
+| SessionStart | `startup\|resume` | `manni tracevals prepare`, with `"async": true` | not enforced |
+| SubagentStop | all | `manni check` | 600 |
+| SessionEnd | all | `manni tracevals release` | 10 |
 
 An async hook never blocks the session, and Claude Code does not enforce its
 timeout. SessionEnd allows 1.5 seconds unless a hook sets more. `release` sets

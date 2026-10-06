@@ -293,14 +293,15 @@ The `Stop` run needs git. Outside a repository it prints nothing and exits `0`.
 ### `tracevals` under hooks
 
 When `tracevals.conformance` exists in `manni.config.yaml`, `manni check` also runs tracevals under a
-hook envelope. The plugin's hooks are these.
+hook envelope. The plugin's hooks are these. Each runs the first manni the plugin's launcher
+finds, as [Claude Code](/manni/family/claude-code/) describes.
 
 | Event | Matcher | Command | Timeout (s) |
 |---|---|---|---|
-| `SessionStart` | `startup\|resume` | `npx --no @hawkeyexl/manni tracevals prepare`, async | not enforced |
-| `Stop` | all | `npx --no @hawkeyexl/manni check` | 600 |
-| `SubagentStop` | all | `npx --no @hawkeyexl/manni check` | 600 |
-| `SessionEnd` | all | `npx --no @hawkeyexl/manni tracevals release` | 10 |
+| `SessionStart` | `startup\|resume` | `manni tracevals prepare`, async | not enforced |
+| `Stop` | all | `manni check` | 600 |
+| `SubagentStop` | all | `manni check` | 600 |
+| `SessionEnd` | all | `manni tracevals release` | 10 |
 
 An async hook never blocks the session, and Claude Code does not enforce its timeout.
 

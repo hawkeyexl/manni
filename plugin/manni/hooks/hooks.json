@@ -6,7 +6,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no @hawkeyexl/manni tracevals capture",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs",
+              "tracevals",
+              "capture"
+            ],
             "timeout": 60,
             "statusMessage": "Recording the session manifest…"
           }
@@ -16,7 +21,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no @hawkeyexl/manni status",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs",
+              "status"
+            ],
             "timeout": 30,
             "statusMessage": "Reading what manni checks here…"
           }
@@ -27,7 +36,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no @hawkeyexl/manni tracevals prepare",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs",
+              "tracevals",
+              "prepare"
+            ],
             "async": true
           }
         ]
@@ -39,7 +53,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no @hawkeyexl/manni check",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs",
+              "check"
+            ],
             "timeout": 120,
             "statusMessage": "Checking the edited file…"
           }
@@ -51,7 +69,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no @hawkeyexl/manni check",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs",
+              "check"
+            ],
             "timeout": 600,
             "statusMessage": "Checking every file you changed…"
           }
@@ -63,7 +85,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no @hawkeyexl/manni check",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs",
+              "check"
+            ],
             "timeout": 600,
             "statusMessage": "Checking the subagent's turn against its rules…"
           }
@@ -75,7 +101,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx --no @hawkeyexl/manni tracevals release",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs",
+              "tracevals",
+              "release"
+            ],
             "timeout": 10
           }
         ]
