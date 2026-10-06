@@ -17,6 +17,7 @@ import {
   MockProvider,
   type InferenceProvider,
 } from "@hawkeyexl/inference";
+import { DECISION_ONLY_PROVIDERS } from "../src/shared/providers.js";
 import {
   runFill,
   collectCandidates,
@@ -1717,9 +1718,13 @@ describe("provider selection", () => {
     await expect(runWith({ provider: "auto" })).resolves.toBeDefined();
   });
 
-  it("accepts every provider the library actually offers", async () => {
+  it("accepts every generating provider the library offers, and refuses a decision-only one", async () => {
     for (const name of Object.keys(DEFAULT_MODELS)) {
-      await expect(runWith({ provider: name })).resolves.toBeDefined();
+      if (DECISION_ONLY_PROVIDERS.has(name)) {
+        await expect(runWith({ provider: name })).rejects.toThrow(/answers decisions only/);
+      } else {
+        await expect(runWith({ provider: name })).resolves.toBeDefined();
+      }
     }
   });
 
