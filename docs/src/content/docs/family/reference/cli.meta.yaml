@@ -59,16 +59,22 @@ docs/src/content/docs/family/reference/cli.mdx:
       lines: 250-260
       integrity: sha256-a4c239f3e1576f3c2c1f16ce00af02c06bc9940a84cbd7f4cb3bc8e23cc0b385
     - generated-by: Claude Sonnet 5.5
-      lines: 262-310
-      integrity: sha256-3d260fd05c2619703d70c19bcbb3924549a82dc78c41113f982856bfbe512b56
+      lines: 262-264
+      integrity: sha256-272c25e2b0aadd19431953c10b36c88910179c7530ec5956fdd17a029ec8428c
+    - generated-by: Claude Sonnet 5.5
+      lines: 268-269
+      integrity: sha256-0206559185dfea6d528f293cd9997c7ddc49673e9cbd52add392f024158a46f0
+    - generated-by: Claude Sonnet 5.5
+      lines: 275-311
+      integrity: sha256-db0141c38ed94556c95abaf14f876db36c4bdbd9ded693fbe6643872119a55f6
     - generated-by: Claude Opus 5.5
-      lines: 312-318
+      lines: 313-319
       integrity: sha256-116f19ad01457ad3584d051f48bd26863d4e406ea995c187b27087379426dccd
     - generated-by: Claude Opus 5.5
-      lines: 321-325
+      lines: 322-326
       integrity: sha256-bbf4c605fce49507091b387b2e299c1984b58d12724b6e037d27857dc2fc479a
     - generated-by: Claude Opus 5.5
-      lines: 328-458
+      lines: 329-459
       integrity: sha256-10c7a58417e592e4d017a835e4a5f1c447ca7e9773e93b59a46160fc1bb1e1ce
   owner:
     - "@hawkeyexl"
