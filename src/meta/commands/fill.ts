@@ -1402,8 +1402,8 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         elements,
       });
     } catch (err) {
-      // A format whose writer cannot hold the entry (an HTML attribute holds
-      // one line) still gets its fields.
+      // A page whose writer refuses the entry still gets its fields. An HTML
+      // or XML attribute holds the list on one line, but not a newline in it.
       const withoutEntry = metaProvenance?.written === true && metaWrite === undefined
         ? tryApply(extractor, content, withoutKey(pagePatch, META_PROVENANCE_KEY), {
             filePath: label,

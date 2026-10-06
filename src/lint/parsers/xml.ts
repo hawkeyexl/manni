@@ -220,6 +220,23 @@ export interface XmlVocabulary {
   definitionTerms?: readonly string[];
   /** Elements that carry an entry's definition body. */
   definitionBodies?: readonly string[];
+
+  /**
+   * Where a link target is written: an attribute, matched by local name (so
+   * `href` also finds DocBook's `xlink:href`), on any of `elements`. `idref`
+   * marks an attribute holding a bare id rather than a URL - DocBook's
+   * `linkend` - which is emitted as `#<id>`. Read from the whole document,
+   * skipped subtrees included, because a DITA `<related-links>` is where a
+   * topic keeps most of its links. Not counted when choosing a vocabulary.
+   */
+  links?: readonly { elements: readonly string[]; attribute: string; idref?: boolean }[];
+  /**
+   * DITA addressing. A same-scheme href names an element as
+   * `file.dita#topicid/elementid`, where the rest of the web would write
+   * `file.dita#elementid`, so the fragment is cut to its last segment. Never
+   * applied to an href with a scheme, whose fragment means what its site says.
+   */
+  ditaHrefs?: boolean;
 }
 
 /**
@@ -309,6 +326,12 @@ const DITA: XmlVocabulary = {
   definitionItems: ["dlentry"],
   definitionTerms: ["dt"],
   definitionBodies: ["dd"],
+
+  // `keyref`, `conkeyref` and `conref` are not here: a key resolves only
+  // against a map at build time, and a conref pulls content in rather than
+  // pointing a reader anywhere.
+  links: [{ elements: ["xref", "link"], attribute: "href" }],
+  ditaHrefs: true,
 };
 
 /**
@@ -384,7 +407,36 @@ const DOCBOOK: XmlVocabulary = {
   // DocBook reuses `<listitem>` for a variable list's own body, distinct from
   // the `listItems` bucket above which reads it inside `<itemizedlist>`.
   definitionBodies: ["listitem"],
+
+  links: [
+    { elements: ["link"], attribute: "href" },
+    { elements: ["ulink"], attribute: "url" },
+    { elements: ["xref", "link"], attribute: "linkend", idref: true },
+  ],
 };
+
+/** A map's navigation entries: each is a section, and each one's `href` a link. */
+const MAP_ENTRIES = [
+  "map",
+  "bookmap",
+  "topicref",
+  "topichead",
+  "mapref",
+  "glossref",
+  "anchorref",
+  "navref",
+  "topicset",
+  "topicsetref",
+  "chapter",
+  "part",
+  "appendix",
+  "appendices",
+  "preface",
+  "notices",
+  "dedication",
+  "colophon",
+  "amendments",
+];
 
 /**
  * DITA maps, `<map>` and `<bookmap>`. No namespace to detect on, as with DITA
@@ -428,27 +480,7 @@ const DITAMAP: XmlVocabulary = {
   label: "DITA map",
   namespaces: [],
   roots: ["map", "bookmap"],
-  sections: [
-    "map",
-    "bookmap",
-    "topicref",
-    "topichead",
-    "mapref",
-    "glossref",
-    "anchorref",
-    "navref",
-    "topicset",
-    "topicsetref",
-    "chapter",
-    "part",
-    "appendix",
-    "appendices",
-    "preface",
-    "notices",
-    "dedication",
-    "colophon",
-    "amendments",
-  ],
+  sections: MAP_ENTRIES,
   // `navtitle` sits in both buckets on purpose, because DITA spells it either
   // way. The element form wins: `headingOf` asks `titleOf` first, so
   // `@navtitle` is read only when the entry has no `<topicmeta><navtitle>`.
@@ -469,6 +501,12 @@ const DITAMAP: XmlVocabulary = {
   unorderedLists: [],
   orderedLists: [],
   listItems: [],
+
+  // Every navigation entry's `href`. `<keydef>` is not an entry - it binds a
+  // key to a resource and never appears in a table of contents - so its
+  // `href` is not a link, for the reason it is not a section.
+  links: [{ elements: MAP_ENTRIES, attribute: "href" }],
+  ditaHrefs: true,
 };
 
 /**
@@ -507,6 +545,7 @@ interface Compiled {
   definitionItems: Set<string>;
   definitionTerms: Set<string>;
   definitionBodies: Set<string>;
+  links: { elements: Set<string>; attribute: string; idref: boolean }[];
   /** Every name the vocabulary claims, for scoring. */
   known: Set<string>;
 }
@@ -540,6 +579,11 @@ function compile(vocab: XmlVocabulary): Compiled {
     definitionItems: lower(vocab.definitionItems),
     definitionTerms: lower(vocab.definitionTerms),
     definitionBodies: lower(vocab.definitionBodies),
+    links: (vocab.links ?? []).map((l) => ({
+      elements: lower(l.elements),
+      attribute: l.attribute.toLowerCase(),
+      idref: l.idref ?? false,
+    })),
     known: new Set(),
   };
   for (const set of [
@@ -585,6 +629,23 @@ function* elementChildren(el: XmlNode): Generator<XmlElement> {
   for (let child = el.firstChild; child; child = child.nextSibling) {
     if (child.nodeType === ELEMENT_NODE) yield child as XmlElement;
   }
+}
+
+/** An attribute's value by lowercased local name, any prefix: `id` finds `xml:id`. */
+function attributeByLocalName(el: XmlElement, name: string): string | null {
+  for (let i = 0; i < el.attributes.length; i++) {
+    const attr = el.attributes.item(i);
+    if (attr && localName(attr) === name) return attr.value;
+  }
+  return null;
+}
+
+/** `file.dita#topic/element` -> `file.dita#element`; see `XmlVocabulary.ditaHrefs`. */
+function ditaTarget(href: string): string {
+  if (/^[a-z][a-z0-9+.-]*:/i.test(href)) return href;
+  const hash = href.indexOf("#");
+  const slash = href.lastIndexOf("/");
+  return hash === -1 || slash < hash ? href : href.slice(0, hash + 1) + href.slice(slash + 1);
 }
 
 /** First direct child matching one of `names`, or null. */
@@ -866,10 +927,12 @@ class Flattener {
         return;
       }
       const next = Math.min(level + 1, 6);
+      const id = attributeByLocalName(el, "id");
       this.fragments.push({
         type: "heading",
         level: next,
         title: heading.title,
+        ...(id ? { id } : {}),
         // From the container's start tag through the end of its title: the
         // container is the section, so a section that began at its `<title>`
         // would leave its own opening tag outside itself and stop adjacent
@@ -888,6 +951,28 @@ class Flattener {
     const node = this.content(el);
     if (node) this.fragments.push({ type: "content", node });
     // Unmapped: skipped with its subtree, like a Markdown blockquote.
+  }
+
+  /**
+   * Every link target under `el`, in document order. A walk of its own rather
+   * than part of `visit`, because `visit` skips unmapped subtrees and
+   * `<related-links>` is one of them.
+   */
+  links(el: XmlElement, out: DocumentTree["links"] = []): DocumentTree["links"] {
+    const name = localName(el);
+    for (const source of this.c.links) {
+      if (!source.elements.has(name)) continue;
+      const value = attributeByLocalName(el, source.attribute);
+      if (!value) continue;
+      const target = source.idref
+        ? `#${value}`
+        : this.c.vocab.ditaHrefs
+          ? ditaTarget(value)
+          : value;
+      out.push({ target, position: this.span(el) });
+    }
+    for (const child of elementChildren(el)) this.links(child, out);
+    return out;
   }
 
   private walkChildren(el: XmlElement, level: number): void {
@@ -1351,6 +1436,7 @@ export function parseXml(
         }
       : null,
     sections: sectionize(fragments, map.docEnd),
+    links: flattener.links(root),
   };
 }
 

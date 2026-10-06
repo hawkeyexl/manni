@@ -72,6 +72,8 @@ function parseWith(
       withFrontmatterTitle(toFragments(tree), frontmatter, metaPosition),
       documentEnd(tree),
     ),
+    // Markdown's links are read from mdast by `manni graph` itself.
+    links: [],
   };
 }
 

@@ -40,6 +40,34 @@ answer is traceable to a line in a file. The cost is that categorization has to
 be written down, which is what [`graph fill`](/manni/graph/fill/) exists to help
 with.
 
+## What graph reads
+
+A docset is read in its own format. graph uses the same parsers as
+[`manni lint`](/manni/lint/), and the same metadata reader as
+`manni meta validate`:
+
+| Format | Extensions | Sections come from | Links come from |
+|---|---|---|---|
+| Markdown, MDX | `.md`, `.markdown`, `.mdx` | headings | links, link references, and `href` on any JSX element |
+| HTML | `.html`, `.htm` | `h1`–`h6` | `href` on `<a>` and `<area>`, never on `<link>` |
+| DITA, DITA map, DocBook | `.dita`, `.ditamap`, `.xml` | topics and sections | `<xref>`, `<link>`, a map's `<topicref>`, DocBook `<link>` and `linkend` |
+| AsciiDoc | `.adoc`, `.asciidoc` | section titles | `xref:`, `link:` and URLs |
+| reStructuredText | `.rst` | section titles | embedded URIs, named references and `:doc:` |
+
+A directory walk collects every extension in the table but `.xml`, which is
+read when you name the file. That keeps a `pom.xml` out of the graph.
+
+**A section's anchor is the one the source declares.** A Markdown heading has
+none, so its slug is made from its title. An HTML `id`, a DITA `@id`, an
+AsciiDoc `[[id]]` and a reStructuredText `.. _label:` are kept verbatim, so a
+link written to `topic.dita#GUID-A1B2-C3D4` reaches that section. An id holding
+a space or a non-ASCII character is slugged instead.
+
+**Indirection derives nothing.** A DITA `keyref` or `conref`, a
+reStructuredText `:ref:` and an AsciiDoc `include::` produce no edge, and no
+broken link either. Includes are never read, so a graph depends only on the
+files it was given.
+
 ## What becomes a node
 
 | Node | Minted from |

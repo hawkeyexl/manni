@@ -29,6 +29,8 @@ import { byCodeUnit } from "./sort.js";
 import { NS } from "./vocab.js";
 import { canonicalLanguageTag, UNDETERMINED } from "./localizations.js";
 import type { GraphIndex } from "../runtime/graph.js";
+import type { ContentNode } from "../../lint/types.js";
+import { formatOf, mintTreeSections, parseTree } from "./analyze.js";
 import {
   documentPreamble,
   sectionOccurrences,
@@ -99,6 +101,41 @@ function stripFrontmatter(markdown: string): string {
   return markdown.replace(FRONTMATTER, "");
 }
 
+/** A non-Markdown document's text, per node, read from lint's tree. */
+interface TreeText {
+  /** The prose no section owns: the lead's, or the whole body when sectionless. */
+  doc: string | undefined;
+  /** Each section's own prose, by its anchor. */
+  sections: Map<string, string>;
+}
+
+/** Content nodes' plain text, one block each, LF only. */
+function plainText(nodes: readonly ContentNode[]): string[] {
+  return nodes
+    .map((n) => n.text.replace(/\r\n/g, "\n").trim())
+    .filter((t) => t !== "");
+}
+
+/**
+ * The text a non-Markdown document's nodes own, or undefined for Markdown and
+ * MDX, which keep the line slicers their goldens pin. Sections are minted by
+ * the analyzer's own function, so each text lands on the anchor `build` gave
+ * that section. A section's text starts with its title, as a Markdown slice
+ * starts at its heading line.
+ */
+function treeText(source: string, path: string): TreeText | undefined {
+  const format = formatOf(path);
+  if (format === "markdown" || format === "mdx") return undefined;
+  const minted = mintTreeSections(parseTree(source, path, format).sections);
+  const sections = new Map<string, string>();
+  for (const [n, section] of minted.sections.entries()) {
+    const own = plainText(minted.owned[n] ?? []);
+    sections.set(section.slug, [section.title, ...own].join("\n\n"));
+  }
+  const lead = plainText(minted.unowned);
+  return { doc: lead.length > 0 ? lead.join("\n\n") : undefined, sections };
+}
+
 /** Drop undefined fields so entries serialize identically for equal inputs. */
 function entry(
   id: string,
@@ -128,6 +165,7 @@ export function buildSearchIndex(
 
   const entries: SearchEntry[] = [];
   const sourceOf = new Map<string, string | undefined>();
+  const treeTextOf = new Map<string, TreeText>();
 
   // Group sections by their parent document once. Re-scanning every section per
   // document is quadratic across the corpus, and the section loop below needs
@@ -162,12 +200,18 @@ export function buildSearchIndex(
     // Newlines normalized to LF: section slices and `documentPreamble` already
     // re-join on "\n", so without this a sectionless CRLF document is the one
     // entry in the artifact carrying "\r\n".
+    const tree =
+      source === undefined || path === undefined
+        ? undefined
+        : treeText(source, path);
+    if (tree) treeTextOf.set(doc, tree);
     const body =
       source === undefined
         ? undefined
         : stripFrontmatter(source).replace(/\r\n/g, "\n");
-    const text =
-      body === undefined
+    const text = tree
+      ? tree.doc
+      : body === undefined
         ? undefined
         : (sectionsOf.get(doc)?.length ?? 0) > 0
           ? documentPreamble(body)
@@ -203,8 +247,10 @@ export function buildSearchIndex(
 
     // Heading text repeats (the corpus has two `## Install`), so the section's
     // occurrence disambiguates which slice is actually its own.
-    const text =
-      source !== undefined && title !== undefined
+    const tree = treeTextOf.get(doc);
+    const text = tree
+      ? tree.sections.get(section.slice(hash + 1))
+      : source !== undefined && title !== undefined
         ? sectionOwnText(source, title, level, occurrences.get(section) ?? 0)
         : undefined;
 

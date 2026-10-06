@@ -134,8 +134,8 @@ describe("graph document set: the refusals", () => {
   it("refuses an unknown --as, listing the known formats", () => {
     const config = defaultConfig(collections);
     expect(() =>
-      resolveDocumentSet(config, { paths: ["guides"], as: "rst" }, "build", collections),
-    ).toThrow('Unknown format "rst". Known formats: markdown, mdx.');
+      resolveDocumentSet(config, { paths: ["guides"], as: "docx" }, "build", collections),
+    ).toThrow('Unknown format "docx". Known formats: asciidoc, html, markdown, mdx, rst, xml.');
   });
 
   it("reads `-` alongside named paths, and never falls back to collections", () => {

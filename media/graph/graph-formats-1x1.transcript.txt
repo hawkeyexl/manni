@@ -1,0 +1,57 @@
+manni graph reads every format, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 34.7 s. Every terminal line is real output of
+`node dist/cli.js graph ...` (typed as manni) run inside media/scratch-formats, a git repository
+holding test/graph/fixtures/formats/ byte for byte, staged by media/graph/graph-formats-capture.sh.
+The two builds print nothing because their stdout is redirected to /dev/null on screen; the
+line they would have printed is kept in media/graph/capture-formats/build-*.stdout.
+
+[0:00-0:12] Title: Markdown only (1 / 3)
+$ manni graph build --ext .md,.mdx,.markdown > /dev/null
+$ manni graph stats --top 6 | head -13
+Triples:    43
+Documents:  1
+Sections:   1
+Concepts:   0
+References: 0
+
+Most connected:
+  (none)
+
+Orphan docs (1):
+  index.md
+
+Broken internal links (8):
+Highlighted rows: lines containing "Documents:", "Broken internal links"
+Caption: The old Markdown-only walk reads 1 page of 6. Its 8 links into the other formats look broken.
+
+[0:12-0:23] Title: Every format, no flag (2 / 3)
+$ manni graph build > /dev/null
+$ manni graph stats --top 6 | head -13
+Triples:    185
+Documents:  6
+Sections:   11
+Concepts:   0
+References: 18
+
+Most connected:
+  index.md (11)
+  guide.html (8)
+  topic.dita (6)
+  notes.adoc (4)
+  ref.rst (4)
+  map.ditamap (2)
+Highlighted rows: lines containing "Documents:", "guide.html", "topic.dita", "notes.adoc", "ref.rst", "map.ditamap"
+Caption: With no --ext, graph build also reads HTML, DITA, AsciiDoc and reStructuredText. 6 pages.
+
+[0:23-0:35] Title: Links cross formats (3 / 3)
+$ manni graph traverse https://example.com/formats/doc/index.md --predicates dcterms:references --impact
+  https://example.com/formats/doc/guide.html — Install guide
+  https://example.com/formats/doc/notes.adoc — Release notes
+  https://example.com/formats/doc/ref.rst — Reference
+    https://example.com/formats/doc/map.ditamap — Formats map
+
+4 nodes, 8 hops, 0 excluded
+Highlighted rows: lines containing "guide.html", "notes.adoc", "ref.rst", "map.ditamap"
+Caption: What depends on the Markdown page: HTML, AsciiDoc and RST pages, and a DITA map one hop out.
+

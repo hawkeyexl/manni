@@ -196,10 +196,28 @@ describe("DITA — fidelity and refusals", () => {
     expect(out).toContain("</Metadata>");
   });
 
-  it("refuses a value that cannot fit on one line", () => {
+  it("refuses a string that needs more than one line", () => {
     expect(() =>
-      write(fx("with-othermeta.dita"), { tags: ["a", "b"] }),
+      write(fx("with-othermeta.dita"), { summary: "one\ntwo" }),
     ).toThrow(DocmetaError);
+  });
+
+  it("writes a nested map into one othermeta, and reads it back", () => {
+    const graph = {
+      label: "Install",
+      "alt-labels": ["setup", "configure"],
+      sections: { prereq: { label: 'Tom & "Jerry" <b>' } },
+    };
+    const once = write(fx("with-othermeta.dita"), { graph });
+    expect(read(once).graph).toEqual(graph);
+    const twice = write(once, { graph: { ...graph, label: "Set up" } });
+    expect(read(twice).graph).toEqual({ ...graph, label: "Set up" });
+    expect(twice.match(/name="graph"/g)).toHaveLength(1);
+  });
+
+  it("writes a list into one othermeta, and reads it back", () => {
+    const out = write(fx("with-othermeta.dita"), { tags: ["a", "b"] });
+    expect(read(out).tags).toEqual(["a", "b"]);
   });
 
   it("escapes markup characters in a written value", () => {

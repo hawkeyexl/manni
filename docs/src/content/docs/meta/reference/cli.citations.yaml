@@ -1344,7 +1344,7 @@ docs/src/content/docs/meta/reference/cli.mdx:
     - id: meta-provenance-skip-reasons
       claim:
         lines: 951-953
-        integrity: sha256-5aa456428896ca4b510dda5188af64b84278fc35dd34c7298728941fac86f8f6
+        integrity: sha256-17e11004cbf5fa92dc38e0a23fd087b8f79b235916d12fcd78d39b84c62dd1b9
       source:
         file: src/meta/commands/fill-types.ts
         lines: 110-117

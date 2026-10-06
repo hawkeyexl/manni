@@ -29,6 +29,7 @@ import { compileWithFormats } from "../src/meta/core/validator.js";
 import { runValidate } from "../src/meta/commands/validate.js";
 import { DEFAULT_SCHEMAS } from "../src/meta/core/resolve-schema.js";
 import { DocmetaError } from "../src/meta/types.js";
+import { htmlExtractor } from "../src/meta/extractors/html.js";
 import { startSchemaServer } from "./helpers/schema-server.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -2401,7 +2402,9 @@ describe("runFill — meta-provenance (0046)", () => {
     expect(data["a/b~c"]).toBe("x");
   });
 
-  it("still writes the fields where the format cannot hold the entry", async () => {
+  it("writes the entry into an HTML page as one flow-style attribute", async () => {
+    // The list of entries is a collection, which the HTML writer emits in YAML
+    // flow style so it fits the one line a `content` attribute holds.
     const file = await stage("head-with-meta.html");
     const { results, summary } = await runFill({
       ...base,
@@ -2411,12 +2414,17 @@ describe("runFill — meta-provenance (0046)", () => {
         description: { value: "A short summary.", confidence: 0.95 },
       }),
     });
+    const entry = {
+      "generated-by": MODEL,
+      fields: ["/description"],
+      confidence: { "/description": 0.95 },
+    };
     expect(results[0]?.error).toBeUndefined();
-    expect(results[0]?.metaProvenance).toEqual({ written: false, skipReason: "unwritable" });
+    expect(results[0]?.metaProvenance).toEqual({ written: true, entry });
     expect(summary.errors).toBe(0);
     const after = await readFile(join(dir, file), "utf8");
     expect(after).toContain('<meta name="description" content="A short summary.">');
-    expect(after).not.toContain("meta-provenance");
+    expect(htmlExtractor.extract(after, file).data["meta-provenance"]).toEqual([entry]);
   });
 
   it("reports the entry under --dry-run and writes nothing", async () => {

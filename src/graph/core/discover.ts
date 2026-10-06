@@ -13,10 +13,16 @@
 import { statSync } from "node:fs";
 import { extname, relative, resolve } from "node:path";
 import fg from "fast-glob";
+import {
+  parserForExtension,
+  supportedExtensions,
+  unsupportedFormatMessage,
+} from "../../lint/parsers/index.js";
 import { STDIN_REQUIRES_AS } from "../../shared/cli-options.js";
 import { selectCollections } from "../../shared/collections.js";
+import { warn } from "../../shared/warn.js";
 import { GraphError } from "../types.js";
-import { DOC_FORMATS, type DocFormat } from "./analyze.js";
+import { DOC_FORMATS, isDocFormat, type DocFormat } from "./analyze.js";
 import {
   assertCollectionWithoutPaths,
   DEFAULT_CONFIG_FILENAME,
@@ -50,20 +56,15 @@ export function discoverFiles(
 const FAMILY_EXCLUDE = ["**/node_modules/**", "**/.git/**"];
 
 /**
- * What graph can read. `analyzeDoc` parses markdown, and MDX when the path or
- * `--as` says so; nothing else is a document. A file named on the command line
- * is kept when its extension is one of these, or when `--as` names its format.
+ * What a directory walk or a glob keeps when `--ext` is not given: lint's walk
+ * set, read from its registry so the two domains cannot drift (proposal 0077
+ * §3). The filter matters because a positional path may be a *directory*,
+ * which expands to everything beneath it. Without it, `manni graph build docs`
+ * would mint a graph node for every image and data file in the tree, and a
+ * node's IRI is the part of the output a consumer stores. `.xml` is not in
+ * it, so a `pom.xml` is never swept in; a named one is still read.
  */
-const SUPPORTED_EXTENSIONS = new Set([".md", ".markdown", ".mdx"]);
-
-/**
- * What a directory walk or a glob keeps when `--ext` is not given. The filter
- * matters because a positional path may be a *directory*, which expands to
- * everything beneath it. Without it, `manni graph build docs` would mint a
- * graph node for every image and data file in the tree, and a node's IRI is
- * the part of the output a consumer stores.
- */
-export const DEFAULT_EXTENSIONS = [".md", ".mdx", ".markdown"];
+export const DEFAULT_EXTENSIONS = supportedExtensions();
 
 /** The positional that reads stdin. One more input, never instead of the rest. */
 export const STDIN = "-";
@@ -77,15 +78,16 @@ export function assertInputFormat(
   paths: readonly string[],
   as: string | undefined,
 ): DocFormat | undefined {
-  if (as !== undefined && !(DOC_FORMATS as readonly string[]).includes(as)) {
+  if (as === undefined) {
+    if (paths.includes(STDIN)) throw new GraphError(STDIN_REQUIRES_AS);
+    return undefined;
+  }
+  if (!isDocFormat(as)) {
     throw new GraphError(
       `Unknown format "${as}". Known formats: ${DOC_FORMATS.join(", ")}.`,
     );
   }
-  if (paths.includes(STDIN) && as === undefined) {
-    throw new GraphError(STDIN_REQUIRES_AS);
-  }
-  return as as DocFormat | undefined;
+  return as;
 }
 
 /** The word the empty-input message uses for what the command would do. */
@@ -107,7 +109,7 @@ export interface DocumentSetOptions {
   exclude?: string[];
   /**
    * `--ext <list>`: what a directory walk or a glob keeps. Absent means
-   * `.md,.mdx,.markdown`. A file named outright is never filtered by it.
+   * `DEFAULT_EXTENSIONS`. A file named outright is never filtered by it.
    */
   ext?: string[];
   /** `--as <format>`: parse every input as this format. Required with `-`. */
@@ -243,8 +245,18 @@ export function resolveDocumentSet(
   }
 
   const exts = normalizeExtensions(options.ext ?? DEFAULT_EXTENSIONS);
-  const keepNamed = (p: string): boolean =>
-    format !== undefined || SUPPORTED_EXTENSIONS.has(extname(p).toLowerCase());
+  // A named file is read when a parser claims it, or when `--as` picks one.
+  // Anything else is skipped by name, with lint's sentence for it, so the
+  // run's "No input files matched" never hides a file the user did name.
+  const keepNamed = (p: string): boolean => {
+    const ext = extname(p);
+    if (format !== undefined || parserForExtension(ext) !== undefined) {
+      return true;
+    }
+    const label = relative(base, p).replace(/\\/g, "/");
+    warn(`skipped ${label}: ${unsupportedFormatMessage(ext || label)}`);
+    return false;
+  };
   const keepWalked = (p: string): boolean => exts.has(extname(p).toLowerCase());
   return [
     ...new Set(

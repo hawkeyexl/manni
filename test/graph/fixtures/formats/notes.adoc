@@ -1,0 +1,19 @@
+= Release notes
+:description: What changed, in AsciiDoc.
+
+The notes start with a link:index.md[home page] link.
+
+include::missing.adoc[]
+
+== Upgrade
+
+Follow the link:guide.html#install-the-sdk[install guide] again.
+
+[source,python]
+----
+print("upgraded")
+----
+
+== Known issues
+
+None yet.
