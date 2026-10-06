@@ -218,6 +218,16 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 ---
 
+### M25 · Catch a broken rule before the agent hands back
+
+**Outcome.** Maya's agent hears that the turn it just finished broke a rule, before the turn reaches her. The report names the rule and the file it came from. The rules are the ones her repo already declares for agents, in whichever format.
+
+**Steps.** Her trigger is a diff that ignored a line of `CLAUDE.md`, found at review, after M17's post-hoc run could only say so later. She adds one `tracevals.conformance` section to `manni.config.yaml`. That section is what puts tracevals in play, and the `manni` plugin from M24 does the rest. She picks the two models. A hosted setup puts a stronger model out of the loop, for extracting rules, and a fast one in it, for judging each turn. A local setup uses one small model for both, and a decision-only provider can judge in the loop. She learns which files count. They are a closed list of agent rules formats, each scoped by its own trigger. Those are `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.claude/rules`, Cursor rules, Kiro steering, and the Spec Kit constitution and OpenSpec project file, plus a skill and the files it reads. A README or a docs page never counts because the agent read it. A file she wants held to a rule goes in `include`, and one she wants ignored goes in `exclude`. Spec-driven specs are left out on purpose. She runs `manni tracevals check` by hand on yesterday's session, to see what the hook would have said. A rule that is broken blocks. One the model cannot settle is marked needs-review, and it never blocks. The agent gets one repair pass, and then Maya sees a message naming the command that shows what remains. She runs `manni tracevals prepare` once, so the first turn finds its rules cached and its local model downloaded. A model host keeps a local model loaded across turns and parallel subagents. `manni tracevals release` hands it back at session end.
+
+**What success looks like.** A pull request in which the rules she wrote were followed, or the agent said why one did not apply. Turning the check off means deleting `tracevals.conformance`. Related journeys are M17 (the post-hoc run), M23 (which artifacts a session used) and M24 (the plugin that carries the hook).
+
+---
+
 ## Devin, Platform / CI Engineer
 
 ### D1 · Add the gate to our CI platform

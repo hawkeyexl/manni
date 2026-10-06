@@ -20,31 +20,46 @@ docs/src/content/docs/family/reference/cli.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-101
-      integrity: sha256-8680067da5278319797246fa205e5e8115925cf1f2524c7f3bb525dad7d4461e
+      lines: 2-90
+      integrity: sha256-788a960231ab010c50b4464902f77d4ca4189365262b0beaa001adda111adedd
+    - generated-by: Claude Sonnet 5.5
+      lines: 91-92
+      integrity: sha256-cac954c9477bc6a8937ec45ee807f0348d9c1dce2c582ad1119866ec7b49f857
     - generated-by: Claude Opus 5.5
-      lines: 103-113
+      lines: 94-102
+      integrity: sha256-3dc0251c999e6180d1d08130f4045abcba5582d3c3fcc60719d885d28cdee8c3
+    - generated-by: Claude Opus 5.5
+      lines: 104-114
       integrity: sha256-c4f5c41727388fb1a89fd855fd77af4a73521d9695f1e331482ba73222e60a39
     - generated-by: Claude Opus 5.5
-      lines: 117-181
+      lines: 118-182
       integrity: sha256-4cd1bbf471dc16c1e8c32343792a194fe8ca12a0d143a8e51b553fd9162f82bd
     - generated-by: Claude Opus 5.5
-      lines: 183-210
+      lines: 184-211
       integrity: sha256-1b7cce83d976b10c36eff97708e3495f5a7cc02b36536b511fed23ef1db953aa
+    - generated-by: Claude Sonnet 5.5
+      lines: 212
+      integrity: sha256-4ffa9cdc3401e1d0722a1c11032ff3a4e78ba4ac7a33d88fe39ccc00aa0d534e
     - generated-by: Claude Opus 5.5
-      lines: 213-214
+      lines: 214-215
       integrity: sha256-9c6fa305118f1229da2b2df13bb34b1712bd233e9a965b5cc7777dcdc00fd54b
     - generated-by: Claude Opus 5.5
-      lines: 217-241
+      lines: 218-242
       integrity: sha256-dad816d93c9ec3ab5adaeec73587c66b522493488a191d0d92ce76a2939eae5a
     - generated-by: Claude Opus 5.5
-      lines: 243-261
-      integrity: sha256-2b81895df38769ce74e154e182deeb576989ca378fea33a974004e5cb626d9ce
+      lines: 244-254
+      integrity: sha256-a4c239f3e1576f3c2c1f16ce00af02c06bc9940a84cbd7f4cb3bc8e23cc0b385
+    - generated-by: Claude Sonnet 5.5
+      lines: 256-304
+      integrity: sha256-3d260fd05c2619703d70c19bcbb3924549a82dc78c41113f982856bfbe512b56
     - generated-by: Claude Opus 5.5
-      lines: 263-268
+      lines: 306-312
+      integrity: sha256-116f19ad01457ad3584d051f48bd26863d4e406ea995c187b27087379426dccd
+    - generated-by: Claude Opus 5.5
+      lines: 314-319
       integrity: sha256-77bfaa220114c89448ae2657cc609f8afcea63349d8cbea80209c843c6dd204e
     - generated-by: Claude Opus 5.5
-      lines: 271-401
+      lines: 322-452
       integrity: sha256-10c7a58417e592e4d017a835e4a5f1c447ca7e9773e93b59a46160fc1bb1e1ce
   owner:
     - "@hawkeyexl"

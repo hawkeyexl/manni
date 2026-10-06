@@ -14,11 +14,23 @@ docs/src/content/docs/tracevals/reference/report-and-exit-codes.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-7
-      integrity: sha256-b7c8ed14540c403c2232d15dc7f00ba94337764f416c330d3a7ac820d8bee52a
+      lines: 2
+      integrity: sha256-76b2a53f73519706f7f8e310aaf9fa64424820e3ce6b4fb1164c503e20efd9d8
+    - generated-by: Claude Sonnet 5.5
+      lines: 4
+      integrity: sha256-2230a9369630e17fe4d75ad8fef7edacbacc925e51c55b1c7240b3c188e5b263
+    - generated-by: Claude Opus 5
+      lines: 5-7
+      integrity: sha256-9a92eb62643229afe655ea825cca7591feb50f9d1ad80d74f0e9ba07f07058ef
     - generated-by: Claude Opus 5.5
-      lines: 9-11
-      integrity: sha256-e722fd9aa5e5151c59cea90d3f7b76911487e7e82afd27182990878e3214a047
+      lines: 9
+      integrity: sha256-d44b07889be1d7aca1aa48ab982723b7e0239963788574a8200f5f927fd07a1d
+    - generated-by: Claude Sonnet 5.5
+      lines: 10
+      integrity: sha256-4e7bec7a23949593009343a9f02510d5ce5ef76cb0d1eb71164d25ae9d374a8d
+    - generated-by: Claude Opus 5.5
+      lines: 11
+      integrity: sha256-2a7a4349c2115f1998569b19491c19eca756870100d8deebaac3ca3e12f47556
     - generated-by: Claude Opus 5
       lines: 13-17
       integrity: sha256-a5c91f726a86daddd4efcb6e13b6741513d90fea729e921d5fec210e38d924f3
@@ -98,8 +110,14 @@ docs/src/content/docs/tracevals/reference/report-and-exit-codes.mdx:
       lines: 310
       integrity: sha256-4e514ba77a5bee94c2385f301289f0bd9c33bb3d0a624b789e8f2ff3b757ee3a
     - generated-by: Claude Opus 5
-      lines: 311-557
-      integrity: sha256-4f5265a5e736987880a1a2d2dff94aac0584e31f533292137dd77fa015018f38
+      lines: 311-508
+      integrity: sha256-7c509e4a356f103c6316cb35ac89cc9109b98de5b1340e67a51bb6646ccb96c9
+    - generated-by: Claude Sonnet 5.5
+      lines: 510-559
+      integrity: sha256-60544105003ef5021a79e014e179a150984af55c2c1c7c740bf54f13bc9af5b8
+    - generated-by: Claude Opus 5
+      lines: 561-608
+      integrity: sha256-e4170278a3bd633c6b5d78cb0e8e5235ce97d2e4069668e7d9b055990a69ab74
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

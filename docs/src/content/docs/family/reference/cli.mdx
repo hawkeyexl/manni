@@ -14,7 +14,7 @@ applies-to: ["domain:family"]
 next-steps: ["family-check", "family-claude-code"]
 sample-questions: ["What does manni check run when I name files?", "What exit code does manni check use under a Claude Code hook?", "What does the manni check JSON report look like?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-05
+last-updated: 2026-10-06
 tags:
   - cli
   - exit-codes
@@ -119,7 +119,8 @@ in play.
 | `docevals` | `docevals:` exists, or a page declares evals. A run that resolves no evals counts as not in play. | `docevals run`, with `--deterministic-only`, no generation and no execution | `no page resolves any evals` |
 | `term` | The collections hold at least one term. | `term check` | `no terms in any collection` |
 | `graph` | `graph:` exists. | `graph build` in memory, writing no file, then `graph check` | `no graph: section` |
-| `a11y`, `tracevals` | Never. `check` does not run them, since they need a built site and a browser, or recorded sessions and a model. | none | `run manni a11y check against a running site`, `run manni tracevals run over sessions` |
+| `a11y` | Never. `check` does not run it, since it needs a built site and a browser. | none | `run manni a11y check against a running site` |
+| `tracevals` | Only under a Claude Code hook, and only when `tracevals:` holds a `conformance:` section. A bare `check` never runs it, since it needs recorded sessions and a model. | none on the command line | `run manni tracevals run over sessions` |
 
 `check` reads only the files that belong to a collection declared under
 `collections:`. A file outside every collection passes silently, with one notice
@@ -239,7 +240,7 @@ its file count. `-f json` prints the same facts:
 | `version` | string | The manni version. |
 | `config` | string | The config file, as discovery found it or as `-c` named it. |
 | `collections[]` | `{ name, files }` | Each declared collection and the number of files it holds. |
-| `domains[]` | `{ name, status, reason }` | One row per domain. `status` is `in-play`, `not-set-up`, `not-checked` or `unknown`. |
+| `domains[]` | `{ name, status, reason }` | One row per domain. `status` is `in-play`, `not-set-up`, `not-checked` or `unknown`. A `tracevals` row in play also carries `models`, the hook and extraction `{ provider, model }` pairs, and `host` when a model host runs. |
 
 <Aside type="note" title="A domain that cannot read its setup">
 `status` runs no check, so a domain that cannot read its own setup stays in the
@@ -282,6 +283,56 @@ for `NotebookEdit`. It is shown relative to the hook's `cwd`. Relative paths
 resolve from `cwd`, which is the working directory when the envelope names none.
 
 The `Stop` run needs git. Outside a repository it prints nothing and exits `0`.
+
+### `tracevals` under hooks
+
+When `tracevals.conformance` exists in `manni.config.yaml`, `manni check` also runs tracevals under a
+hook envelope. The plugin's hooks are these.
+
+| Event | Matcher | Command | Timeout (s) |
+|---|---|---|---|
+| `SessionStart` | `startup\|resume` | `npx --no @hawkeyexl/manni tracevals prepare`, async | not enforced |
+| `Stop` | all | `npx --no @hawkeyexl/manni check` | 600 |
+| `SubagentStop` | all | `npx --no @hawkeyexl/manni check` | 600 |
+| `SessionEnd` | all | `npx --no @hawkeyexl/manni tracevals release` | 10 |
+
+An async hook never blocks the session, and Claude Code does not enforce its timeout.
+
+| Envelope | What runs when `conformance` exists |
+|---|---|
+| `SessionStart` | `tracevals prepare`, in the background. |
+| `Stop` | The file checks above, then a judgement of `transcript_path` with the hook model. |
+| `SubagentStop` | A judgement of `agent_transcript_path` alone, with the hook model. |
+| `SessionEnd` | `tracevals release` for the session. |
+| none | `manni check` does not run tracevals, because there is no session to judge. |
+
+Without a `conformance` section the judgement never runs, and the `tracevals` row of `status` stays
+`not checked`. Every reply below exits `0` and writes JSON to stdout.
+
+| Situation | Reply |
+|---|---|
+| A rule broken, first stop | `{"decision":"block","reason":"This turn broke 1 rule from the files that governed it. Fix the work, or say why the rule does not apply here, then finish.\n\n<report>"}` |
+| A rule still broken after the repair pass | `{"systemMessage":"tracevals still finds broken rules after one repair pass. Run manni tracevals check <transcript_path> to see them."}` |
+| The local model is still downloading | `{"systemMessage":"tracevals skipped this turn: <model> is still downloading."}` |
+| The model is busy for 120 seconds | `{"systemMessage":"tracevals skipped this turn: <model> was busy with other judgements for 2 minutes."}` |
+| The local model is not on disk | `{"systemMessage":"tracevals skipped this turn: <model> is not downloaded yet. Run manni tracevals prepare to fetch it."}` |
+| The model does not fit in memory | `{"systemMessage":"tracevals skipped this turn: <model> needs about <n> GB and <n> GB is free."}` |
+| Needs review, a clean turn, or an operational failure | nothing |
+
+The report in a block is the `pretty` report of
+[`tracevals check`](/manni/tracevals/reference/cli/#tracevals-check) with color off. When the file
+checks fail too, the reason carries their paragraph first. After the repair pass, one message carries
+both sentences. A skip message is said once per session, and a block carries it as a `systemMessage`
+beside the `reason`. A tracevals judgement needs no collection, because it judges a turn rather than
+files.
+
+In `status`, a `tracevals` row replaces `not checked` when the section exists. It names both models,
+and the model host when one runs.
+
+```text
+tracevals  judges each turn   hook: llama-cpp qwen3.5-4b · extraction: anthropic claude-sonnet-5-5
+           model host         qwen3.5-4b loaded, 2 sessions, idle 3m
+```
 
 ### `status`
 

@@ -1554,18 +1554,18 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-a679cbb0aa2eaf2006243003e4e7f1afb7405559c65c67879da924edf6d9767c
       source:
         file: src/shared/providers.ts
-        lines: 301-309
+        lines: 362-370
         integrity: sha256-7105b738025a26859a5af23fd41baf980be1b6f15c00772b692f0ae33b477c4d
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 26fc280285f6a731e66abeb279f19b7213edd90c
     - id: fill-local-without-a-model-is-exit-2
       claim:
         lines: 767
         integrity: sha256-a679cbb0aa2eaf2006243003e4e7f1afb7405559c65c67879da924edf6d9767c
       source:
         file: src/shared/providers.ts
-        lines: 442-457
+        lines: 510-525
         integrity: sha256-fff49a7f70030059998d23546decc38a8aef4efac26a872dd8e5fcdbe1751714
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 26fc280285f6a731e66abeb279f19b7213edd90c
     - id: fill-no-cache-bypasses-the-proposal-cache
       claim:
         lines: 766
@@ -1581,18 +1581,18 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-ab843f31778d112a9b8e5c9fe39c34dc6900c06250bc33fac4652013ed5e69a1
       source:
         file: src/shared/providers.ts
-        lines: 83-91
+        lines: 102-110
         integrity: sha256-c43272fc358fe1f0f72087521a22285b48ce20ec30d67edf10f3e67355d1469d
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 26fc280285f6a731e66abeb279f19b7213edd90c
     - id: fill-unknown-provider-is-exit-2
       claim:
         lines: 764
         integrity: sha256-1f67a004be3d67c73d1b2532a574dc5b1439ddc4ac7db05338842ffedc7a6e22
       source:
         file: src/shared/providers.ts
-        lines: 55-63
-        integrity: sha256-9dbb7d08911ccb8d4d6ab5ee084756e820ada6b7dc5fe25a56ac2f738f991858
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        lines: 67-82
+        integrity: sha256-22fc52bdb0f865cc0080d1ac242dbea797ba2eb05b52d4a990859c9f190cf472
+        commit-sha: 26fc280285f6a731e66abeb279f19b7213edd90c
     - id: fill-confidence-default
       claim:
         lines: 762

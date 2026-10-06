@@ -1,0 +1,313 @@
+---
+title: Catch a broken rule before the agent hands back
+description: "Put each turn of an agent session through the rules your repository declares for agents, so a broken rule reaches the agent before it reaches you."
+sidebar:
+  order: 1
+id: "tracevals-conformance"
+type: "how-to"
+keywords: ["conformance", "hook", "Stop", "SubagentStop", "rules", "CLAUDE.md", "AGENTS.md", "check"]
+language: en
+intent: "Set up tracevals so an agent hears about a broken rule at the end of the turn that broke it."
+lifecycle: published
+applies-to: ["domain:tracevals"]
+sample-questions: ["How do I make an agent follow my CLAUDE.md?", "Which files does tracevals check an agent against?", "What does the agent see when it breaks a rule?"]
+graph: { label: "Catch a broken rule before the agent hands back", type: task }
+last-updated: 2026-10-05
+---
+
+import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+{/* Doc Detective inline tests. The docs-as-tests workflow exposes the local
+    build as `manni` via `npm link`. Every step runs from the committed
+    conformance fixture project, with `--no-cache` so nothing is written into
+    the tree. The mock provider extracts and judges, which is a test seam rather
+    than a documented provider. It is what makes a verdict deterministic and
+    offline on a runner that has neither a key nor a local model. Config:
+    .doc-detective.json. */}
+
+**Scope:** judging the turn that just ended against the rules your repository declares for agents.
+It serves Maya, and it follows [the post-hoc run](/manni/tracevals/get-started/), which grades a
+whole session after the fact. For the files a session used, see
+[artifact coverage](/manni/tracevals/declare/coverage/).
+
+You wrote the rules. The agent read them. It still ran `npm test` in a fresh worktree before
+`npm ci`, and you found out in the diff. Fixing it costs a review cycle and a new prompt. The rule
+sat in the agent's context the whole time, and nothing told it.
+
+`tracevals` can check at the end of every turn instead. It reads the rules files that govern the
+agent, judges what the turn did, and names each broken rule with the file it came from. The agent
+fixes the work, or says why the rule does not apply, before the turn reaches you.
+
+## Set it up
+
+<Steps>
+
+1. Install the [`manni` plugin](/manni/family/claude-code/). It carries the hooks that run the check.
+   To run the check by hand, skip this step.
+
+2. Add one section to `manni.config.yaml`. An empty one is enough, and its presence is the switch.
+
+   ```yaml title="manni.config.yaml"
+   tracevals:
+     conformance: {}
+   ```
+
+3. Choose the models. Two roles do different work, so each gets a model of its own.
+
+4. Run `manni tracevals prepare` once. The first turn then finds its rules cached and its local model
+   on disk.
+
+</Steps>
+
+Without a `conformance` section, tracevals stays out of every hook and `manni status` shows it as not
+checked. To turn the check off, delete the section.
+
+### Choose the models
+
+Work inside the loop and outside it have different budgets.
+
+| Role | Does | Set by |
+|---|---|---|
+| Out of the loop | Extracts rules from files, runs `prepare`, and judges `check` by hand | `tracevals.provider` and `tracevals.model` |
+| In the loop | Judges a turn inside a Stop or SubagentStop hook | `tracevals.conformance.hook`, then the keys above |
+
+The hook runs on every turn, so it wants a fast model. Extraction runs once per file version, so it
+can afford a stronger one. These recipes are examples. tracevals pins no model.
+
+```yaml title="Hosted: Sonnet out of the loop, Haiku in it"
+tracevals:
+  provider: anthropic
+  model: claude-sonnet-5-5
+  conformance:
+    hook: { provider: anthropic, model: claude-haiku-4-5 }
+```
+
+```yaml title="Local: one model for both roles"
+tracevals:
+  provider: llama-cpp
+  model: qwen3.5-4b
+  conformance: {}
+```
+
+```yaml title="Jev judges each turn, a hosted model extracts"
+tracevals:
+  provider: anthropic
+  model: claude-sonnet-5-5
+  conformance:
+    hook: { provider: jev, model: jev-latest }
+```
+
+Jev only decides, so it can judge inside a hook and can never be `tracevals.provider`. Its key comes
+from `TYPESAFE_API_KEY`. Every key is in the
+[configuration reference](/manni/tracevals/reference/configuration/#conformance).
+
+## Which files count
+
+Resolution is deterministic, from the filesystem and the trace. No model decides which files count.
+A model only reads the files that do and returns their rules.
+
+The list of formats is closed. Each one is scoped by its own trigger, as the tool that owns it scopes
+it.
+
+| Format | Files | In scope when |
+|---|---|---|
+| Claude memory | `CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`, and the one in your Claude config directory | Always for the working directory and its ancestors. A subdirectory's file applies once the session touches a file under it. |
+| Claude rules | `.claude/rules/**/*.md`, and the same under your Claude config directory | Without `paths:`, always. With `paths:`, once the session touches a match. |
+| `AGENTS.md` | `AGENTS.md` and `.claude/AGENTS.md`, nested too | As for Claude memory. |
+| `GEMINI.md` | `GEMINI.md`, the one in `~/.gemini`, nested too | As for Claude memory. |
+| Cursor rules | `.cursor/rules/**/*.mdc`, and `.md` files there with front matter | `alwaysApply: true` means always. `globs` means once the session touches a match. Others apply once the agent reads them. |
+| Kiro steering | `.kiro/steering/*.md`, and the same under `~/.kiro` | `inclusion: always`, or none, means always. `fileMatch` follows `fileMatchPattern`. Others apply once read. |
+| Spec Kit constitution | `.specify/memory/constitution.md` | Always |
+| OpenSpec project | `openspec/project.md` | Once the agent reads it |
+| Imports | Files an `@path` line pulls into a memory file, up to four hops | With the importing file |
+| Skills, commands, agents | An invoked skill's `SKILL.md` and every file read under its directory, a slash command, and the running subagent's definition | Their windows, as in `run` |
+| Designated | Files matching `conformance.include` | Once the agent reads them |
+
+To touch a file is to read, write or edit it. That is Claude Code's own trigger for path-scoped
+rules. `paths:`, `globs` and `fileMatchPattern` each accept one glob or a list. A nearer file
+overrides a farther one, and a prompt you typed in the turn overrides any file. Doing what you asked
+is never a violation.
+
+### Reading a file never makes it a rule
+
+A README, a docs page, a design note or an API reference describes other systems or other readers.
+Judging the agent against one would fail it for sentences never meant for it. Two things keep those
+out.
+
+- **The list of files.** It is closed. `include` adds files you name, and it is empty by default.
+  A repository whose `CLAUDE.md` tells agents to consult `docs/content-strategy/` would name that
+  tree there.
+- **The sentences.** Extraction keeps only directives addressed to the agent working in the repo.
+  A description of a system, an instruction for end users, an example or a quoted rule yields
+  nothing. A skill reference that documents an API yields no rules, though its skill counts.
+
+`exclude` removes a file from every row, for a product docs tree or a stale `.cursor/rules` file.
+
+### Spec-driven toolkits
+
+Three spec-driven toolkits keep agent guidance apart from specs. tracevals reads the guidance.
+Spec Kit's constitution, Kiro's steering files and OpenSpec's `project.md` count. Their specs are
+left out on purpose, because checking code against a spec is a different job. That covers `spec.md`,
+`plan.md` and `tasks.md`, Kiro's `requirements.md` and `design.md`, and OpenSpec's `specs/` and
+`changes/`.
+
+### What a rule looks like
+
+Each rule has a kebab-case id, its text, and a `when`. The `when` uses the same grammar as
+[conditional triggers](/manni/tracevals/reference/graders/#conditional-triggers), so a rule about
+commands arms only for the turns that ran one.
+
+```json
+{ "id": "run-npm-ci-first",
+  "text": "Run npm ci first when working in a worktree.",
+  "when": { "command-matches": "\\bnpm (test|run)\\b" } }
+```
+
+A rule a transcript cannot show, such as "prefer boring code", is dropped. A file that declares its
+own `ai` evals is not extracted. Its eval assertions are its rules, with their own `when`.
+Extraction is cached under `.manni/tracevals/cache/rules`. The key is the provider, the model and the
+sha256 of the whole file, so a file pays for extraction once per version.
+
+## Run it by hand
+
+`manni tracevals check` judges the last turn of one session. A turn starts at the last prompt you
+typed, and tool results do not start one. Run it on yesterday's session to see what the hook would
+have said. The examples below run from the committed conformance fixture, a small project with a
+`CLAUDE.md` that declares two rules and one `AGENTS.md`.
+
+```console
+$ cd test/tracevals/fixtures/conformance/project
+$ manni tracevals check ../traces/breaks.jsonl --project . --no-cache
+CLAUDE.md
+  ? run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.
+      unclear with probability 1.00 (1.00)
+  ✖ no-force-push  Never run `git push --force`.
+      violated with probability 1.00 (1.00)
+.cursor/rules/web.mdc
+  ✖ never-use-innerhtml-in-components  Never use `innerHTML` in components.
+      violated with probability 1.00 (1.00)
+
+Last turn of 3b265d00: 7 rules from 5 files. 2 broken, 1 needs review.
+```
+
+The fixture's config scripts these verdicts with a test provider, which is why every probability is
+`1.00`. A real model gives its own reasons, such as the command it saw. Each finding names the rule's id, its text, and
+what the turn did, grouped under the file the rule came from. The `?` row is a rule the model could
+not settle. The `✖` rows are broken, so the command exits `1`.
+
+{/* test {"testId":"conformance-check","description":"check judges the last turn of a fixture session and exits by what it finds."} */}
+{/* step {"description":"A turn that broke two rules exits 1 and counts them.","runShell":{"command":"manni tracevals check ../traces/breaks.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[1],"stdio":"2 broken, 1 needs review"}} */}
+{/* step {"description":"A finding names its rule under the file it came from.","runShell":{"command":"manni tracevals check ../traces/breaks.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[1],"stdio":"never-use-innerhtml-in-components"}} */}
+{/* step {"description":"A turn that followed every rule exits 0.","runShell":{"command":"manni tracevals check ../traces/follows.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"None broken"}} */}
+{/* test end */}
+
+The other closing lines all exit `0`.
+
+| Closing line | What it means |
+|---|---|
+| `Last turn of 3b265d00: 4 rules from 2 files. None broken.` | Every rule that applied was followed. |
+| `Last turn of 3b265d00: 2 rules from 1 file, none apply to this turn.` | Each rule's `when` failed over the turn. A rule that never armed is skipped, never passed. |
+| `Last turn of 3b265d00: no rule sources governed it.` | No file in the closed list was in scope. |
+| `Last turn of 3b265d00: nothing happened after the last prompt.` | The turn is empty. |
+
+{/* test {"testId":"conformance-quiet-turns","description":"A turn with nothing to judge says why and exits 0."} */}
+{/* step {"description":"A turn that touches nothing a rule watches has nothing to judge.","runShell":{"command":"manni tracevals check ../traces/untouched.jsonl --project . -c narrow.config.yaml --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"none apply to this turn"}} */}
+{/* step {"description":"An empty turn is reported, not judged.","runShell":{"command":"manni tracevals check ../traces/empty-turn.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"nothing happened after the last prompt"}} */}
+{/* test end */}
+
+For a script, `-f json` prints the whole report and `-o` also writes it to a file. It lists every
+file that was in scope and why, so a rule you expected and did not get is easy to trace. Its fields
+are in [Report and exit codes](/manni/tracevals/reference/report-and-exit-codes/#check-reports).
+
+```console
+$ manni tracevals check ../traces/breaks.jsonl --project . --no-cache -f json
+```
+
+`--provider`, `--model`, `--local` and `--runs` change the judge only. Extraction keeps its own model,
+so `prepare`, the hook and `check` share one cache.
+
+## What the agent sees
+
+At Stop, the hook judges the turn with the in-loop model. Only a confident violation blocks.
+
+- **A broken rule.** The hook blocks the stop once. The reason is the report above, with color off.
+  The agent fixes the work, or says why the rule does not apply here, and finishes.
+- **A rule the model could not settle.** It shows as needs-review in `check`. It never blocks, and it
+  never fails `check`.
+- **A rule still broken after the repair pass.** The agent stops, and you see one message.
+  It names `manni tracevals check` and the transcript, so you can read what remains.
+
+```json
+{"decision":"block","reason":"This turn broke 1 rule from the files that governed it. Fix the work, or say why the rule does not apply here, then finish.\n\n<report>"}
+```
+
+The repair pass judges the whole turn once more. The turn has grown, so the verdict cache misses, and
+the pass costs one call. It is the only way to tell you a rule is still broken.
+
+Small models are confidently wrong when the evidence is missing. So the judge has an explicit
+`unclear` option, and only violations block. A rule blocks when the model picks `violated` and its
+probability reaches [`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge). A
+provider that cannot return probabilities makes one call per run and needs every run to agree
+at the same bar. `conformance.hook.runs` sets the number of runs, and it defaults to `1`.
+
+<Aside type="note" title="A subagent is judged on its own">
+SubagentStop judges the subagent's whole run, alone, with the same rules and the same bar. The
+agent's own definition counts as a rule source for that run. Parallel subagents each get a judgement.
+</Aside>
+
+### When tracevals stays out of the way
+
+A Stop runs a short list of cheap checks in order, and the first one that finds nothing to do ends
+the run. Most of them are silent.
+
+- No `conformance` section means tracevals never runs.
+- A judge's own session never judges itself. tracevals sets `MANNI_TRACEVALS_JUDGE` on every process
+  it spawns, so a `claude-cli` judge cannot set off the hook again.
+- An empty turn, or one with no rule source in scope, ends the run.
+- A turn where every rule's `when` fails is skipped, never passed.
+- A turn already judged, with the same rules and model, reuses its cached verdict.
+
+Three local-model cases speak, once per session, and judge nothing. The model is still downloading,
+or it is not on disk, or it does not fit in free memory. Each message says which. A hosted model skips
+all three.
+
+## Prepare, release and the model host
+
+`manni tracevals prepare` fetches a local model that is not on disk and extracts the rules of every
+file that applies to every session. The plugin runs it in the background at session start, so it
+never holds the session up. The first turn then finds both ready.
+
+A local model loads once and stays loaded in a **model host**. That is one background process per
+machine and user. Every hook is its client, and requests queue in the order they arrive. Without the
+host, each Stop would pay a model load, and parallel subagents would each load their own copy.
+
+A session takes a lease on the host when it starts, and `manni tracevals release` returns it at
+session end. A model stays loaded while a lease is held and used within `providers.llama-cpp.keepAlive`,
+which defaults to `10m`. A crashed session's lease lapses when it goes idle. With no lease left, the
+model unloads, and the host exits when nothing is loaded.
+
+By hand, `check` uses a host that is running and never starts one, so CI and one-off runs leave no
+process behind. To free the memory right now, run `manni tracevals release --all`.
+
+{/* test {"testId":"conformance-prepare","description":"prepare extracts the rules of every file that applies to every session."} */}
+{/* step {"description":"prepare reads the files that apply to every session and extracts their rules.","runShell":{"command":"manni tracevals prepare --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"Extracted 2 rules from 1 file that applies to every session."}} */}
+{/* step {"description":"prepare says so when conformance is not set up.","runShell":{"command":"manni tracevals prepare --project . --no-config","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"tracevals conformance is not set up; nothing to prepare."}} */}
+{/* test end */}
+
+<CardGrid>
+  <LinkCard
+    title="CLI reference"
+    href="/manni/tracevals/reference/cli/#tracevals-check"
+    description="Every flag of check, prepare and release, with the messages and exit codes."
+  />
+  <LinkCard
+    title="Configuration"
+    href="/manni/tracevals/reference/configuration/#conformance"
+    description="Every conformance key, the two model roles and the provider precedence."
+  />
+  <LinkCard
+    title="Keep an agent's docs green"
+    href="/manni/family/claude-code/"
+    description="The plugin whose hooks run the check at Stop and SubagentStop."
+  />
+</CardGrid>

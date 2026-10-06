@@ -64,7 +64,7 @@ Before drafting or editing any page under
 - `docs/content-strategy/personas.md`, the four personas. tracevals folded its
   own five into them. Priya became Maya, Sam became Sara, and its Devin and Theo
   became the family's. Rin, the toolsmith, is D15 and the API reference.
-- `docs/content-strategy/cujs.md`, the journeys. tracevals's are M17, M21–M23, D14,
+- `docs/content-strategy/cujs.md`, the journeys. tracevals's are M17, M21–M23, M25, D14,
   D15, S13, S14 and T8.
 - `docs/content-strategy/information-architecture.md`, the content set, with the
   `tracevals/` section's tree and its source-of-truth mapping.

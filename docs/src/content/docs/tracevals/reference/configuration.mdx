@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What does execution.allow do?", "Where do relocated evals live?"]
 graph: { label: "Configuration reference", type: reference }
-last-updated: 2026-10-04
+last-updated: 2026-10-06
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -42,8 +42,9 @@ the working directory and then in each parent directory in turn. The first file 
 search stops there. Configs are never merged, so a `manni.config.yaml` inside `docs/` shadows the
 one at the repository root for runs started inside `docs/`.
 
-`--no-config` skips discovery entirely and runs on defaults. `run`, `calibrate`, `fill`, and
-`capture` all take both flags. `list` reads no config and takes neither.
+`--no-config` skips discovery entirely and runs on defaults. `run`, `calibrate`, `fill`,
+`capture`, `prepare` and `check` all take both flags. `list` and `release` read no config and take
+neither.
 
 <Aside type="caution" title="There is no per-tool config file">
 `manni.config.yaml` is the only file read, found by walking up from the working directory, with one
@@ -227,6 +228,15 @@ tracevals:
   failOnReview: true
   plugins: []                    # grader modules to import before evals are planned
   reportUnusedArtifacts: false
+  # conformance has no default and is absent unless you write it. Present, even as {},
+  # it puts tracevals in play under hooks.
+  conformance:
+    hook:
+      provider: anthropic        # default: provider
+      model: <model-id>          # default: model
+      runs: 1
+    include: []
+    exclude: []
 ```
 
 Everything tracevals writes sits under **`.manni/tracevals/`**: the judge cache, the fill cache, the
@@ -244,6 +254,10 @@ Two optional strings. They say **which** provider judges; they never say how to 
 
 - **`provider`** is one of `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. Set, it
   overrides the family's `providers.provider` for tracevals only. Unknown names are **exit 2**.
+  `jev` answers decisions only, so it is refused here with **exit 2**. Name it as
+  [`conformance.hook.provider`](#conformance) instead.
+- **Out of the loop**, this provider and model also extract rules from rules files and serve
+  `prepare` and `check` by hand.
 - **`model`** is the model within `provider`, and needs a provider named at this level. manni pins
   no model id anywhere: unset, the inference library's default for the winning provider is used.
 
@@ -267,6 +281,10 @@ providers:
   llama-cpp:
     modelsDir: models
     thoughtTokens: 0
+    keepAlive: 10m                   # how long the model host keeps a model loaded
+  jev:
+    apiKeyEnv: TYPESAFE_API_KEY      # decisions only; see conformance.hook
+    baseUrl: https://api.typesafe.ai
 
 tracevals:
   provider: anthropic                # wins over providers.provider, for tracevals only
@@ -359,6 +377,86 @@ Three things to know:
 
 See [What leaves the machine](/manni/tracevals/judge/#what-leaves-the-machine) for the full list of
 what a judged run sends, redacted or not.
+
+## `conformance`
+
+Checking each turn against the rules the files that govern the agent declare. The section is
+optional, and its presence is the switch. Present, even as `{}`, it puts tracevals in play under
+the Claude Code hooks. Absent, tracevals stays out of them. The journey is in
+[Check each turn](/manni/tracevals/conformance/).
+
+| Key | Type | Required | Default | CLI |
+|---|---|---|---|---|
+| `conformance` | object | no | *(absent)* | none |
+| `conformance.hook.provider` | string | no | `provider` | none |
+| `conformance.hook.model` | string | no | `model` | none |
+| `conformance.hook.runs` | integer ≥ 1 | no | `1` | none |
+| `conformance.include` | array of globs | no | `[]` | none |
+| `conformance.exclude` | array of globs | no | `[]` | none |
+
+- **`hook.provider`** is the provider that judges inside a Stop or SubagentStop hook. It is one of
+  `auto`, `anthropic`, `openai`, `claude-cli`, `llama-cpp` or `jev`. `jev` answers decisions only,
+  so it is accepted here and nowhere else.
+- **`hook.model`** is the model that judges inside a hook. As everywhere, a model stays with the
+  provider named at the same level, so write it beside `hook.provider`.
+- **`hook.runs`** is the number of generative calls per turn inside a hook. A block needs every
+  run to agree. A decision provider ignores it.
+- **`include`** names files that govern agents beyond the known formats, such as a house style
+  guide. Each applies once the agent reads it. Globs are relative to the project root.
+- **`exclude`** names files never treated as rule sources, in any format, such as a product docs
+  tree or a stale `.cursor/rules` file.
+
+### Two model roles
+
+Work inside the loop and work outside it have different budgets, so they get different models.
+
+| Role | Does | Configured by |
+|---|---|---|
+| Out of the loop | Rule extraction, `prepare`, `check` by hand, `run` and `fill` | `provider` and `model` |
+| In the loop | Judging a turn inside a Stop or SubagentStop hook | `conformance.hook.provider` and `.model`, falling back to the keys above |
+
+Inside a hook, the provider comes from `conformance.hook`, then `tracevals`, then
+`providers.provider`, then `auto`. Outside one, the flags come first and then the chain in
+[Which provider judges](#which-provider-judges). Extraction always uses the out-of-loop model, so
+`prepare`, the hook and `check` share one rules cache. Whether a run is in the loop is detected from
+the hook payload, and no flag switches it.
+
+These recipes are examples, and tracevals pins no model. The ids are the ones a provider offers
+today.
+
+```yaml title="manni.config.yaml"
+# Hosted. A stronger model out of the loop, a fast one in it.
+tracevals:
+  provider: anthropic
+  model: claude-sonnet-5-5
+  conformance:
+    hook: { provider: anthropic, model: claude-haiku-4-5 }
+```
+
+```yaml title="manni.config.yaml"
+# Local, with a GPU. One model for both roles.
+tracevals:
+  provider: llama-cpp
+  model: qwen3.5-4b
+  conformance: {}
+```
+
+```yaml title="manni.config.yaml"
+# Jev judges each turn. A hosted model extracts.
+tracevals:
+  provider: anthropic
+  model: claude-sonnet-5-5
+  conformance:
+    hook: { provider: jev, model: jev-latest }
+providers:
+  jev:
+    apiKeyEnv: TYPESAFE_API_KEY      # default shown
+    baseUrl: https://api.typesafe.ai # default shown
+```
+
+`providers.llama-cpp.keepAlive` sets how long the model host keeps a local model loaded. It
+defaults to `10m`. The [shared providers reference](/manni/meta/reference/configuration/#providers)
+lists it with every other connection key.
 
 ## `execution`
 
@@ -551,7 +649,7 @@ what it *decides*. The summary counts and the exit code are identical either way
 
 Worth knowing, because they can only be changed in the config file:
 
-`judge.temperature` · `judge.zones.autoPass` · `judge.zones.autoFail` · `judge.cacheDir` ·
+`conformance.*` · `judge.temperature` · `judge.zones.autoPass` · `judge.zones.autoFail` · `judge.cacheDir` ·
 `judge.redact` · `render.maxBlockChars` · `render.maxTotalChars` · `history.file` ·
 `capture.dir` · `fill.temperature` · `fill.cacheDir` · `calibrate.sweep.ensembleRuns` ·
 `calibrate.sweep.autoPass` · `calibrate.sweep.autoFail`

@@ -12,18 +12,18 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What does the JSON report contain?", "How does SARIF name its rules?"]
 graph: { label: "Reports & exit codes", type: reference }
-last-updated: 2026-10-04
+last-updated: 2026-10-06
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-**Scope:** everything `run` and `calibrate` emit. The policy discussion, meaning what to do about
+**Scope:** everything `run`, `calibrate` and `check` emit. The policy discussion, meaning what to do about
 `needs-review` in a pipeline, is in [Add tracevals to CI](/manni/tracevals/ci/). Source of truth:
 `src/tracevals/types.ts`, `src/tracevals/calibrate/types.ts`, `src/tracevals/reporters/`, and
 `src/tracevals/history.ts`. The verdict schema's `$id` is `manni:tracevals:verdict`.
 
 `-f, --format` on `run` is `pretty | json | markdown | github | sarif | junit`, default `pretty`. On
-`calibrate` it is `pretty | json | markdown`. On `fill`, `capture`, and `list` it is `pretty | json`.
+`calibrate` it is `pretty | json | markdown`. On `fill`, `capture`, `prepare`, `check`, `release`, and `list` it is `pretty | json`.
 Every default is `pretty`.
 
 ## Exit codes
@@ -522,6 +522,57 @@ It answers *was it right?*, so it leads with the two kinds of mistake rather tha
 The pretty and markdown forms carry the same content. That is the headline counts, the disagreement
 list with its evidence and notes, and the unscored rows with their skip reasons. It also covers the
 sweep table and the thresholds. See [Calibrate the judge](/manni/tracevals/judge/calibrate/).
+
+## `check` reports
+
+`manni tracevals check` judges one turn rather than a whole session, so its report has a shape of
+its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pretty form is in the
+[`check` reference](/manni/tracevals/reference/cli/#tracevals-check).
+
+```json
+{
+  "trace": "/abs/3b265d00.jsonl",
+  "sessionId": "3b265d00-0000-4000-8000-000000000001",
+  "agentId": null,
+  "turn": { "from": 4, "to": 15 },
+  "judge": { "provider": "mock", "model": "mock-model", "mode": "decision", "runs": 1 },
+  "extraction": { "provider": "mock", "model": "mock-model" },
+  "sources": [
+    { "path": "CLAUDE.md", "format": "claude-md", "trigger": "always",
+      "rules": 2, "origin": "declared" },
+    { "path": ".cursor/rules/web.mdc", "format": "cursor-rule",
+      "trigger": "globs matched src/web/App.tsx", "rules": 1, "origin": "extracted" }
+  ],
+  "findings": [
+    { "source": "CLAUDE.md", "rule": "no-force-push",
+      "text": "Never run `git push --force`.", "outcome": "fail",
+      "observed": "violated with probability 1.00", "confidence": 1 }
+  ],
+  "summary": { "sources": 5, "rules": 7, "notApplicable": 0, "fail": 2, "needsReview": 1 },
+  "skipped": null,
+  "warnings": [],
+  "exitCode": 1
+}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `trace` | string | The transcript that was judged, as an absolute path. |
+| `sessionId` | string | The session's id. The closing line shows its first eight characters. |
+| `agentId` | string or null | The subagent a SubagentStop judged. `null` for the main session. |
+| `turn` | `{from, to}` | The turn's first and last event, as ordinals in the trace. |
+| `judge` | object or null | The provider and model that judged, its `mode`, and `runs`. `null` when the run stopped before a judge was asked. |
+| `judge.mode` | `decision` or `generative` | Detected from the provider. In decision mode `confidence` is the chosen option's probability and `runs` is `1`. |
+| `extraction` | object or null | The out-of-loop provider and model. `null` when no source needed them. |
+| `sources[]` | object | One entry per file in scope: `path`, `format`, `trigger`, `rules`, `origin`, and `skill` for a skill's files. `trigger` says why the file was in scope. `origin` is `declared` for a file's own `ai` evals, and `extracted` otherwise. |
+| `findings[]` | object | Only `fail` and `needs-review` outcomes, each with its `source`, `rule`, `text`, `observed` and `confidence`. A rule left out was followed or did not apply. |
+| `summary` | object | The counts of `sources`, `rules`, `notApplicable`, `fail` and `needsReview`. |
+| `skipped` | string or null | `null`, `empty-turn`, `no-sources` or `not-applicable`. The other gates apply only under a hook. |
+| `warnings` | array | Strings, such as a rules file whose front matter does not parse. |
+| `exitCode` | number | `0`, or `1` when `summary.fail` is above zero. |
+
+Only a confident violation counts as `fail`. A rule the model could not settle is `needs-review`,
+which never fails `check`. The bar is [`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge).
 
 ## `--output`
 

@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What is a trace?", "What is the difference between an outcome and a finding?"]
 graph: { label: "Glossary", type: reference }
-last-updated: 2026-10-04
+last-updated: 2026-10-06
 ---
 
 **Scope:** one authority for the vocabulary every other page assumes. Terms are grouped by where
@@ -48,7 +48,8 @@ an agent definition, whose window *is* a branch. There the branch's calls are th
 always counted. `turnCount` counts only non-sidechain user prompts.
 
 **Turn**
-: One non-sidechain user prompt. What `turn-count` measures.
+: One non-sidechain user prompt. What `turn-count` measures. `check` reads it as the span from
+the last prompt the user typed to the end.
 
 **Session manifest**
 : The record `manni tracevals capture` writes when a session ends, naming the artifacts it used and
@@ -215,6 +216,27 @@ the previous one for the same session.
 
 **Regression**
 : A defined event: an eval that was `pass` in the previous run and is now `fail` or `error`.
+
+---
+
+## Checking each turn
+
+**Rule source**
+: A file that governs an agent, from a closed list of formats such as `CLAUDE.md`, `AGENTS.md` and
+Cursor rules. Reading a file never makes it one. See
+[Which files count](/manni/tracevals/conformance/#which-files-count).
+
+**Conformance**
+: The `tracevals.conformance` config section. Present, it puts tracevals in play under Claude Code
+hooks, where each turn is judged against its rule sources.
+
+**Hook model**
+: The model that judges a turn inside a Stop or SubagentStop hook. It is set apart from the
+out-of-loop model that extracts rules, and falls back to it.
+
+**Model host**
+: The background process, one per machine and user, that keeps a local model loaded for every hook.
+A session holds a lease on it until `manni tracevals release` returns it.
 
 ---
 
