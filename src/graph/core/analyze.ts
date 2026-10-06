@@ -1,11 +1,12 @@
 /**
- * Markdown analysis: one source file → a `DocModel`. Frontmatter data comes
- * from the metadata tool's extractor (the same one `manni meta validate`
- * reads a page with);
- * body structure (headings, links, images, code fences) comes from a
- * remark/mdast walk with positions in document order.
+ * Document analysis: one source file → a `DocModel`. Metadata comes from the
+ * metadata tool's extractor (the same one `manni meta validate` reads a page
+ * with). Markdown and MDX body structure (headings, links, images, code
+ * fences) comes from a remark/mdast walk in document order; every other format
+ * comes from lint's section tree (proposal 0077 §2).
  */
 import { createHash } from "node:crypto";
+import { extname } from "node:path";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
@@ -13,7 +14,17 @@ import remarkFrontmatter from "remark-frontmatter";
 import remarkMdx from "remark-mdx";
 import { toString as mdastToString } from "mdast-util-to-string";
 import GithubSlugger from "github-slugger";
-import { extractFrontmatter } from "../../meta/index.js";
+import {
+  extractFrontmatter,
+  extractorForExtension,
+  type MetadataExtractor,
+} from "../../meta/index.js";
+import { parserByName, parserForExtension } from "../../lint/parsers/index.js";
+import type {
+  ContentNode,
+  DocumentTree,
+  SectionNode,
+} from "../../lint/types.js";
 import type { Root, RootContent, Definition } from "mdast";
 import { errorMessage } from "../../shared/errors.js";
 import { GraphError } from "../types.js";
@@ -25,22 +36,42 @@ import {
 } from "./config.js";
 import { normalizeDocPath } from "./iri.js";
 
-/** The formats graph parses, as `--as` names them. */
-export const DOC_FORMATS = ["markdown", "mdx"] as const;
+/** The formats graph parses, as `--as` names them: lint's parser names. */
+export const DOC_FORMATS = [
+  "asciidoc",
+  "html",
+  "markdown",
+  "mdx",
+  "rst",
+  "xml",
+] as const;
 export type DocFormat = (typeof DOC_FORMATS)[number];
+/** The formats read through lint's tree rather than graph's mdast walk. */
+export type TreeFormat = Exclude<DocFormat, "markdown" | "mdx">;
 
-/** The format a page parses as: `format` (`--as`) when given, else its extension. */
+export function isTreeFormat(format: DocFormat): format is TreeFormat {
+  return format !== "markdown" && format !== "mdx";
+}
+
+export function isDocFormat(name: string): name is DocFormat {
+  return (DOC_FORMATS as readonly string[]).includes(name);
+}
+
+/**
+ * The format a page parses as: `format` (`--as`) when given, else the lint
+ * parser claiming its extension. An extension nobody claims reaches here only
+ * through `--ext`, and reads as markdown, as every page did before 0077.
+ */
 export function formatOf(path: string, format?: DocFormat): DocFormat {
-  return format ?? (path.endsWith(".mdx") ? "mdx" : "markdown");
+  if (format !== undefined) return format;
+  const name = parserForExtension(extname(path))?.name;
+  return name !== undefined && isDocFormat(name) ? name : "markdown";
 }
 
 export interface AnalyzeOptions {
   /** Site-route mappings for resolving root-absolute links. */
   routes?: RouteMapping[];
-  /**
-   * `--as`: parse as this format whatever the path says. Absent, a `.mdx`
-   * path is MDX and anything else is markdown.
-   */
+  /** `--as`: parse as this format whatever the path says. Absent, see `formatOf`. */
   format?: DocFormat;
   /**
    * How the body is parsed. Absent, `parseBody`. `graph build` passes a cache's
@@ -409,7 +440,41 @@ function classifyImage(docPath: string, rawTarget: string): DocImage {
   return { raw: rawTarget, target: resolved ?? rawTarget, external: false };
 }
 
-/** Analyze one Markdown file. `allPaths` is the discovered corpus for link resolution. */
+/**
+ * meta's extractor for a non-Markdown format. Lint's parser names are meta's
+ * extractor names, so the parser's own extension finds the extractor under
+ * `--as` too, where the path's would not.
+ */
+export function extractorFor(format: TreeFormat): MetadataExtractor | undefined {
+  return extractorForExtension(parserByName(format)?.extensions[0] ?? "");
+}
+
+/**
+ * A page's own metadata, as `manni meta validate` reads it. `build` reads a
+ * page with it and `fill` reads what a page already holds with it, so the two
+ * cannot disagree about a format.
+ */
+export function metadataOf(
+  content: string,
+  path: string,
+  format: DocFormat,
+): { data: Record<string, unknown>; present: boolean } {
+  try {
+    const meta =
+      format === "markdown" || format === "mdx"
+        ? extractFrontmatter(content, "markdown")
+        : extractorFor(format)?.extract(content, path);
+    return meta === undefined
+      ? { data: {}, present: false }
+      : { data: meta.data, present: meta.present };
+  } catch (error) {
+    // The extractor knows the bytes, not the file. Left as it is, build and
+    // fill would report a YAML error with no hint of which page carries it.
+    throw new GraphError(`${path}: ${errorMessage(error)}`);
+  }
+}
+
+/** Analyze one document. `allPaths` is the discovered corpus for link resolution. */
 export function analyzeDoc(
   content: string,
   relPath: string,
@@ -418,16 +483,14 @@ export function analyzeDoc(
 ): DocModel {
   const routes = options.routes ?? [];
   const path = normalizeDocPath(relPath);
-  let meta: ReturnType<typeof extractFrontmatter>;
-  try {
-    meta = extractFrontmatter(content, "markdown");
-  } catch (error) {
-    // The extractor knows the bytes, not the file. Left as it is, build and
-    // fill would report a YAML error with no hint of which page carries it.
-    throw new GraphError(`${path}: ${errorMessage(error)}`);
-  }
   const format = formatOf(path, options.format);
-  const body = (options.parse ?? parseBody)(content, path, format);
+  const parse = options.parse ?? parseBody;
+  // A tree format is parsed first, so a malformed page is reported as a parse
+  // failure rather than as whatever the metadata reader tripped on. Markdown
+  // keeps its order: its parse cannot fail where its frontmatter can.
+  let body = isTreeFormat(format) ? parse(content, path, format) : undefined;
+  const meta = metadataOf(content, path, format);
+  body ??= parse(content, path, format);
 
   const links: DocLink[] = [];
   for (const target of body.linkTargets) {
@@ -462,6 +525,7 @@ export function parseBody(
   path: string,
   format: DocFormat,
 ): DocBody {
+  if (isTreeFormat(format)) return parseTreeBody(content, path, format);
   const isMdx = format === "mdx";
   let tree: Root;
   try {
@@ -570,6 +634,179 @@ export function parseBody(
     firstH1,
     sections,
     linkTargets,
+    imageTargets,
+    codeLanguages: [...codeLanguages].sort(),
+  };
+}
+
+/**
+ * Lint's tree for `content`, parsed as `format`. A parser's throw names the
+ * format and the file, and exits 2, as an MDX parse failure does.
+ */
+export function parseTree(
+  content: string,
+  path: string,
+  format: TreeFormat,
+): DocumentTree {
+  const parser = parserByName(format);
+  if (parser === undefined) {
+    throw new GraphError(`No parser reads ${format}.`);
+  }
+  try {
+    return parser.parse(content, path);
+  } catch (error) {
+    throw new GraphError(
+      `Could not parse ${format} in ${path}: ${errorMessage(error)}`,
+    );
+  }
+}
+
+/**
+ * Characters an IRI fragment accepts unchanged: the XML NCName set plus `:`,
+ * which covers HTML ids, DITA `@id`, `xml:id`, Asciidoctor's `_install` and
+ * Sphinx labels. Anything else is slugged, because a section IRI is never
+ * percent-encoded.
+ */
+const IRI_SAFE_ID = /^[A-Za-z_][A-Za-z0-9_.:-]*$/;
+
+/** The sections minted from a lint tree, and the content each one owns. */
+export interface TreeSections {
+  sections: Section[];
+  /** The content each section owns, parallel to `sections`. */
+  owned: ContentNode[][];
+  /** Content no minted section owns: the lead's, and a skipped heading's. */
+  unowned: ContentNode[];
+  firstH1: string | undefined;
+}
+
+/**
+ * Mint graph sections from lint's tree, in document order. `analyzeDoc` and
+ * the search index both call it, so their anchors agree.
+ *
+ * The anchor is the source's own id verbatim when it is IRI-safe, so a link
+ * written to `#GUID-A1B2-C3D4` reaches the section; else the slugged title.
+ * Ids and slugs share one namespace per document, so a duplicate of either
+ * kind gains a `-N` suffix rather than merging two sections into one node.
+ *
+ * The level-0 lead, a heading lint made from a metadata title, and an
+ * untitled heading (a DITA map's `topicref` without a navtitle) are not
+ * sections. Each is transparent: its content belongs to the document, and its
+ * subsections nest under its own parent, as Markdown's do under no heading.
+ */
+export function mintTreeSections(roots: SectionNode[]): TreeSections {
+  const out: TreeSections = {
+    sections: [],
+    owned: [],
+    unowned: [],
+    firstH1: undefined,
+  };
+  const slugger = new GithubSlugger();
+  const taken = new Set<string>();
+  const childCount = new Map<string, number>();
+
+  const anchorFor = (node: SectionNode): string => {
+    const id = node.id;
+    // `prov.` fragments are the provenance nodes' (derive.ts), minted with a
+    // dot precisely because a slug never holds one. A verbatim id may.
+    if (id !== undefined && IRI_SAFE_ID.test(id) && !id.startsWith("prov.")) {
+      let anchor = id;
+      for (let n = 1; taken.has(anchor); n++) anchor = `${id}-${String(n)}`;
+      taken.add(anchor);
+      return anchor;
+    }
+    // The slugger dedupes against its own output only, so a slug an earlier
+    // verbatim id took is asked for again until it is free. Each call advances
+    // the slugger's suffix (-1, -2, ...), which is what ends the loop.
+    let anchor = slugger.slug(node.title);
+    while (taken.has(anchor)) anchor = slugger.slug(node.title);
+    taken.add(anchor);
+    return anchor;
+  };
+
+  const walk = (nodes: SectionNode[], parentSlug: string | null): void => {
+    for (const node of nodes) {
+      if (node.level === 0 || node.synthetic || node.title.trim() === "") {
+        out.unowned.push(...node.children);
+        walk(node.sections, parentSlug);
+        continue;
+      }
+      const slug = anchorFor(node);
+      if (node.level === 1 && out.firstH1 === undefined) {
+        out.firstH1 = node.title;
+      }
+      const parentKey = parentSlug ?? "";
+      const order = (childCount.get(parentKey) ?? 0) + 1;
+      childCount.set(parentKey, order);
+      out.sections.push({
+        slug,
+        title: node.title,
+        level: node.level,
+        order,
+        parentSlug,
+      });
+      out.owned.push(node.children);
+      walk(node.sections, slug);
+    }
+  };
+  walk(roots, null);
+  return out;
+}
+
+/** Every content node, nested ones included, in document order. */
+function eachContent(
+  nodes: readonly ContentNode[],
+  fn: (node: ContentNode) => void,
+): void {
+  for (const node of nodes) {
+    fn(node);
+    switch (node.kind) {
+      case "list":
+        for (const item of node.items) eachContent(item.children, fn);
+        break;
+      case "table":
+        for (const row of node.children) {
+          for (const cell of row.children) eachContent(cell.children, fn);
+        }
+        break;
+      case "definitionList":
+        for (const item of node.children) eachContent(item.definition, fn);
+        break;
+      case "admonition":
+      case "blockquote":
+      case "element":
+        eachContent(node.children, fn);
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+/** Every content node a tree's sections own directly, whichever section. */
+function treeContent(sections: readonly SectionNode[]): ContentNode[] {
+  return sections.flatMap((s) => [...s.children, ...treeContent(s.sections)]);
+}
+
+/** A non-Markdown page's body, from lint's tree. */
+function parseTreeBody(
+  content: string,
+  path: string,
+  format: TreeFormat,
+): DocBody {
+  const tree = parseTree(content, path, format);
+  const minted = mintTreeSections(tree.sections);
+  const imageTargets: string[] = [];
+  const codeLanguages = new Set<string>();
+  eachContent(treeContent(tree.sections), (node) => {
+    if (node.kind === "image") imageTargets.push(node.url);
+    else if (node.kind === "codeBlock" && node.language) {
+      codeLanguages.add(node.language);
+    }
+  });
+  return {
+    ...(minted.firstH1 === undefined ? {} : { firstH1: minted.firstH1 }),
+    sections: minted.sections,
+    linkTargets: tree.links.map((l) => l.target),
     imageTargets,
     codeLanguages: [...codeLanguages].sort(),
   };

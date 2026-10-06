@@ -28,7 +28,7 @@ import type { DocumentParser, DocumentTree } from "../types.js";
 import {
   parserByName,
   parserForExtension,
-  supportedExtensions,
+  unsupportedFormatMessage,
 } from "../parsers/index.js";
 import {
   assertTemplateName,
@@ -174,10 +174,7 @@ function parserFor(page: string, as: string | undefined): DocumentParser {
   const ext = extname(page);
   const parser = parserForExtension(ext);
   if (parser) return parser;
-  throw new LintError(
-    `no parser is registered for "${ext || page}". Supported extensions: ` +
-      `${supportedExtensions().join(", ")}. Use --as to override.`,
-  );
+  throw new LintError(unsupportedFormatMessage(ext || page));
 }
 
 /**

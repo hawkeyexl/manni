@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "https://example.com/formats/doc/guide.html",
+      "type": "graph:Document",
+      "title": "Install guide",
+      "description": "Install the SDK from a Sphinx-built page."
+    },
+    {
+      "id": "https://example.com/formats/doc/guide.html#install-the-sdk",
+      "type": "graph:Section",
+      "title": "Install the SDK",
+      "text": "Install the SDK\n\nRun the installer, then go back to the home page.\n\nnpm install sdk"
+    },
+    {
+      "id": "https://example.com/formats/doc/guide.html#verify",
+      "type": "graph:Section",
+      "title": "Verify the install",
+      "text": "Verify the install\n\nThe concept section explains what you see."
+    },
+    {
+      "id": "https://example.com/formats/doc/index.md",
+      "type": "graph:Document",
+      "title": "Formats home",
+      "description": "One page per format, linked in both directions."
+    },
+    {
+      "id": "https://example.com/formats/doc/index.md#formats-home",
+      "type": "graph:Section",
+      "title": "Formats home",
+      "text": "# Formats home\n\nStart with [the install guide](guide.html), then\n[install the SDK](guide.html#install-the-sdk).\n\nRead [the concept](topic.dita) and its\n[GUID section](topic.dita#GUID-A1B2-C3D4).\n\nThe [release notes](notes.adoc) and their\n[upgrade steps](notes.adoc#_upgrade) cover what changed.\n\nThe [reference](ref.rst) explains the [options](ref.rst#install-ref)."
+    },
+    {
+      "id": "https://example.com/formats/doc/map.ditamap",
+      "type": "graph:Document",
+      "title": "Formats map"
+    },
+    {
+      "id": "https://example.com/formats/doc/map.ditamap#formats-map",
+      "type": "graph:Section",
+      "title": "Formats map",
+      "text": "Formats map"
+    },
+    {
+      "id": "https://example.com/formats/doc/notes.adoc",
+      "type": "graph:Document",
+      "title": "Release notes",
+      "description": "What changed, in AsciiDoc."
+    },
+    {
+      "id": "https://example.com/formats/doc/notes.adoc#_known_issues",
+      "type": "graph:Section",
+      "title": "Known issues",
+      "text": "Known issues\n\nNone yet."
+    },
+    {
+      "id": "https://example.com/formats/doc/notes.adoc#_upgrade",
+      "type": "graph:Section",
+      "title": "Upgrade",
+      "text": "Upgrade\n\nFollow the install guide again.\n\nprint(\"upgraded\")"
+    },
+    {
+      "id": "https://example.com/formats/doc/notes.adoc#release-notes",
+      "type": "graph:Section",
+      "title": "Release notes",
+      "text": "Release notes\n\nThe notes start with a home page link.\n\nmissing.adoc"
+    },
+    {
+      "id": "https://example.com/formats/doc/ref.rst",
+      "type": "graph:Document",
+      "title": "Reference",
+      "description": "Reference, in reStructuredText."
+    },
+    {
+      "id": "https://example.com/formats/doc/ref.rst#install-ref",
+      "type": "graph:Section",
+      "title": "Defaults",
+      "text": "Defaults\n\nThe defaults live in guide."
+    },
+    {
+      "id": "https://example.com/formats/doc/ref.rst#reference",
+      "type": "graph:Section",
+      "title": "Reference",
+      "text": "Reference\n\nOptions are set at install time. See the guide and\nhome."
+    },
+    {
+      "id": "https://example.com/formats/doc/topic.dita",
+      "type": "graph:Document",
+      "title": "SDK concept",
+      "description": "What the SDK is, in DITA."
+    },
+    {
+      "id": "https://example.com/formats/doc/topic.dita#GUID-A1B2-C3D4",
+      "type": "graph:Section",
+      "title": "How it works",
+      "text": "How it works\n\nSee the upstream docs and the entry."
+    },
+    {
+      "id": "https://example.com/formats/doc/topic.dita#sdk-concept",
+      "type": "graph:Section",
+      "title": "SDK concept",
+      "text": "SDK concept\n\nThe SDK is installed by the install guide."
+    }
+  ]
+}

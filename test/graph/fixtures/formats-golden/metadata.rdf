@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+  xmlns:dcterms="http://purl.org/dc/terms/"
+  xmlns:iirds="http://iirds.tekom.de/iirds#"
+  xmlns:iirdsSft="http://iirds.tekom.de/iirds/domain/software#"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:vcard="http://www.w3.org/2006/vcard/ns#">
+  <rdf:Description rdf:about="https://example.com/formats/doc/guide.html">
+    <iirds:has-rendition rdf:resource="https://example.com/formats/doc/guide.html/rendition"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/formats/package"/>
+    <iirds:title>Install guide</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/formats/doc/guide.html/rendition">
+    <iirds:format>text/html</iirds:format>
+    <iirds:source>content/guide.html</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/formats/doc/index.md">
+    <iirds:has-rendition rdf:resource="https://example.com/formats/doc/index.md/rendition"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/formats/package"/>
+    <iirds:title>Formats home</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/formats/doc/index.md/rendition">
+    <iirds:format>text/markdown</iirds:format>
+    <iirds:source>content/index.md</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/formats/doc/map.ditamap">
+    <iirds:has-rendition rdf:resource="https://example.com/formats/doc/map.ditamap/rendition"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/formats/package"/>
+    <iirds:title>Formats map</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/formats/doc/map.ditamap/rendition">
+    <iirds:format>application/dita+xml</iirds:format>
+    <iirds:source>content/map.ditamap</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/formats/doc/notes.adoc">
+    <iirds:has-rendition rdf:resource="https://example.com/formats/doc/notes.adoc/rendition"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/formats/package"/>
+    <iirds:title>Release notes</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/formats/doc/notes.adoc/rendition">
+    <iirds:format>text/asciidoc</iirds:format>
+    <iirds:source>content/notes.adoc</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/formats/doc/ref.rst">
+    <iirds:has-rendition rdf:resource="https://example.com/formats/doc/ref.rst/rendition"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/formats/package"/>
+    <iirds:title>Reference</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/formats/doc/ref.rst/rendition">
+    <iirds:format>text/x-rst</iirds:format>
+    <iirds:source>content/ref.rst</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/formats/doc/topic.dita">
+    <iirds:has-rendition rdf:resource="https://example.com/formats/doc/topic.dita/rendition"/>
+    <iirds:is-part-of-package rdf:resource="https://example.com/formats/package"/>
+    <iirds:title>SDK concept</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Topic"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/formats/doc/topic.dita/rendition">
+    <iirds:format>application/dita+xml</iirds:format>
+    <iirds:source>content/topic.dita</iirds:source>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Rendition"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="https://example.com/formats/package">
+    <iirds:iiRDSVersion>1.3</iirds:iiRDSVersion>
+    <iirds:title>manni graph export</iirds:title>
+    <rdf:type rdf:resource="http://iirds.tekom.de/iirds#Package"/>
+  </rdf:Description>
+</rdf:RDF>

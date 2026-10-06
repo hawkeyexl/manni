@@ -1,5 +1,5 @@
 /**
- * From a directory to the commands `manni site` runs (proposal 0077). The
+ * From a directory to the commands `manni site` runs (proposal 0081). The
  * site is found, its framework read from marker files (detect, don't switch),
  * and each verb resolved to argv, a `site.commands` override, or the built-in
  * static server. Everything that can fail before a process starts fails here.

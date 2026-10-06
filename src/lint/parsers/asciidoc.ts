@@ -93,6 +93,7 @@ function getProcessor(): ReturnType<typeof asciidoctor> {
  */
 interface AdocNode {
   getContext(): string;
+  getId?(): string | undefined;
   getLineNumber?(): number | undefined;
   getBlocks?(): unknown[];
   getLevel?(): number;
@@ -241,8 +242,11 @@ const NAMED_ENTITIES: Record<string, string> = {
  */
 function flattenInline(html: string | undefined): string {
   if (!html) return "";
-  return html
-    .replace(/<[^>]*>/g, "")
+  return decodeEntities(html.replace(/<[^>]*>/g, ""));
+}
+
+function decodeEntities(text: string): string {
+  return text
     .replace(/&#(\d+);/g, (_, dec: string) => String.fromCodePoint(Number(dec)))
     .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) =>
       String.fromCodePoint(Number.parseInt(hex, 16)),
@@ -251,6 +255,45 @@ function flattenInline(html: string | undefined): string {
       /&([a-z]+);/gi,
       (whole: string, name: string) => NAMED_ENTITIES[name.toLowerCase()] ?? whole,
     );
+}
+
+/** A link target found in converted inline HTML, with the line of the block it came from. */
+interface Harvested {
+  target: string;
+  line: number;
+}
+
+/**
+ * Link targets harvested by `inline` during the current `parse`. Module state
+ * rather than a parameter threaded through every draft function, which is
+ * safe only because `parse` is synchronous and never re-entered: it resets
+ * this on the way in and reads it on the way out.
+ */
+let harvested: Harvested[] = [];
+
+const ANCHOR = /<a\s([^>]*)>/gi;
+const HREF = /(?:^|\s)href="([^"]*)"/;
+const CLASS = /(?:^|\s)class="([^"]*)"/;
+
+/**
+ * `flattenInline`, after taking the `href` of every anchor in the HTML.
+ *
+ * The converted HTML is the only place Asciidoctor says where a link goes, and
+ * flattening is where that is lost, so the targets are taken here or nowhere.
+ * Two kinds of anchor are not links: `include`, which is how secure mode
+ * renders an `include::` it refused to read, and `footnote`, which points at
+ * the footnote list a full HTML conversion would append, not at any section.
+ */
+function inline(html: string | undefined, line: number): string {
+  for (const match of (html ?? "").matchAll(ANCHOR)) {
+    const attrs = match[1] ?? "";
+    const href = HREF.exec(attrs)?.[1];
+    if (href === undefined) continue;
+    const classes = (CLASS.exec(attrs)?.[1] ?? "").split(/\s+/);
+    if (classes.includes("include") || classes.includes("footnote")) continue;
+    harvested.push({ target: decodeEntities(href), line });
+  }
+  return flattenInline(html);
 }
 
 // ---------------------------------------------------------------------------
@@ -265,7 +308,7 @@ function flattenInline(html: string | undefined): string {
  * flat. So the walk emits drafts and `place` closes them.
  */
 type Draft =
-  | { kind: "heading"; line: number; level: number; title: string }
+  | { kind: "heading"; line: number; level: number; title: string; id?: string }
   | { kind: "paragraph"; line: number; text: string }
   | { kind: "codeBlock"; line: number; text: string; language?: string }
   | { kind: "list"; line: number; ordered: boolean; items: DraftItem[] }
@@ -319,7 +362,7 @@ function draftList(node: AdocNode, ordered: boolean): Draft {
     if (!item) continue;
 
     const line = lineOf(item);
-    const text = flattenInline(item.getText());
+    const text = inline(item.getText(), line);
     const children: Draft[] = [];
 
     // An item's principal text is not one of its blocks, but mdast puts it in
@@ -382,7 +425,7 @@ function admonitionVariant(node: AdocNode): AdmonitionNode["variant"] | null {
 function draftAdmonition(node: AdocNode, variant: AdmonitionNode["variant"]): Draft {
   const children = draftChildren(node);
   if (children.length === 0) {
-    const text = flattenInline(node.getContent?.());
+    const text = inline(node.getContent?.(), lineOf(node));
     if (text.length > 0) children.push({ kind: "paragraph", line: lineOf(node), text });
   }
   return { kind: "admonition", line: lineOf(node), variant, children };
@@ -392,7 +435,7 @@ function draftAdmonition(node: AdocNode, variant: AdmonitionNode["variant"]): Dr
 function draftBlockquote(node: AdocNode): Draft {
   const children = draftChildren(node);
   if (children.length === 0) {
-    const text = flattenInline(node.getContent?.());
+    const text = inline(node.getContent?.(), lineOf(node));
     if (text.length > 0) children.push({ kind: "paragraph", line: lineOf(node), text });
   }
   return { kind: "blockquote", line: lineOf(node), children };
@@ -403,10 +446,10 @@ function draftTable(node: AdocNode): Draft {
   const toRow = (header: boolean) => (cells: AdocCell[]): DraftRow => ({
     line: cells[0]?.getLineNumber?.() ?? lineOf(node),
     header,
-    cells: cells.map((cell) => ({
-      line: cell.getLineNumber?.() ?? lineOf(node),
-      text: flattenInline(cell.getText()),
-    })),
+    cells: cells.map((cell) => {
+      const line = cell.getLineNumber?.() ?? lineOf(node);
+      return { line, text: inline(cell.getText(), line) };
+    }),
   });
   return {
     kind: "table",
@@ -443,7 +486,7 @@ function draftDefinitionList(node: AdocNode): Draft {
     const children: Draft[] = [];
     const desc = asItem(rawDesc);
     if (desc) {
-      const text = flattenInline(desc.getText());
+      const text = inline(desc.getText(), lineOf(desc));
       if (text.length > 0) children.push({ kind: "paragraph", line: lineOf(desc), text });
       collect(
         desc.getBlocks().map(asNode).filter((n): n is AdocNode => n !== null),
@@ -453,7 +496,7 @@ function draftDefinitionList(node: AdocNode): Draft {
 
     items.push({
       line: lineOf(first),
-      term: terms.map((t) => flattenInline(t.getText())).join(", "),
+      term: terms.map((t) => inline(t.getText(), lineOf(t))).join(", "),
       children,
     });
   }
@@ -468,7 +511,7 @@ function draftOf(node: AdocNode): Draft | null {
       return {
         kind: "paragraph",
         line: lineOf(node),
-        text: flattenInline(node.getContent?.()),
+        text: inline(node.getContent?.(), lineOf(node)),
       };
     case "listing":
     case "literal": {
@@ -495,7 +538,7 @@ function draftOf(node: AdocNode): Draft | null {
     case "image": {
       const url = stringAttribute(node, "target");
       if (!url) return null;
-      const title = flattenInline(node.getTitle?.());
+      const title = inline(node.getTitle?.(), lineOf(node));
       return {
         kind: "image",
         line: lineOf(node),
@@ -541,13 +584,17 @@ function collect(nodes: AdocNode[], out: Draft[]): void {
     const context = node.getContext();
 
     if (context === "section") {
+      // Explicit (`[[id]]`, `[#id]`) or the one Asciidoctor generated
+      // (`_install`): either way, the anchor an `xref` to it resolves to.
+      const id = node.getId?.();
       out.push({
         kind: "heading",
         line: lineOf(node),
         // Asciidoctor's `=` title is level 0, so every level is one shallower
         // than the heading level the rest of the tool speaks in.
         level: (node.getLevel?.() ?? 0) + 1,
-        title: flattenInline(node.getTitle?.()),
+        title: inline(node.getTitle?.(), lineOf(node)),
+        ...(id ? { id } : {}),
       });
       collect(childrenOf(node), out);
       continue;
@@ -586,6 +633,7 @@ function place(drafts: Draft[], end: Point, index: LineIndex): Fragment[] {
         type: "heading",
         level: draft.level,
         title: draft.title,
+        ...(draft.id !== undefined ? { id: draft.id } : {}),
         position: {
           start: index.start(draft.line),
           end: index.endOfLine(draft.line),
@@ -827,9 +875,18 @@ function load(content: string, filePath: string): AdocDocument {
       // Without this every block's `getLineNumber()` is undefined and there are
       // no positions to derive at all.
       sourcemap: true,
-      // A leading `---` fence is a thematic break in AsciiDoc; this consumes it
-      // as metadata instead, without disturbing line numbering.
-      attributes: { "skip-front-matter": true },
+      // Asciidoctor.js's default already, pinned because it is what keeps
+      // `include::` from reading the disk: a refused include renders as a link
+      // to its target, which `inline` then drops.
+      safe: "secure",
+      attributes: {
+        // A leading `---` fence is a thematic break in AsciiDoc; this consumes
+        // it as metadata instead, without disturbing line numbering.
+        "skip-front-matter": true,
+        // `xref:other.adoc[]` keeps its source suffix rather than becoming
+        // `other.html`, so a harvested link names the file that exists.
+        relfilesuffix: ".adoc",
+      },
     }) as unknown as AdocDocument;
   } catch (err) {
     // Asciidoctor recovers from malformed *documents* - it warns about an
@@ -855,7 +912,7 @@ function headerDraft(doc: AdocDocument): Draft | null {
   if (!doc.hasHeader()) return null;
   const header = asNode(doc.getHeader());
   if (!header) return null;
-  const title = flattenInline(header.getTitle?.());
+  const title = inline(header.getTitle?.(), lineOf(header));
   if (title.length === 0) return null;
   return {
     kind: "heading",
@@ -869,10 +926,19 @@ function parse(content: string, filePath: string): DocumentTree {
   const doc = load(content, filePath);
   const index = lineIndex(content);
 
+  harvested = [];
   const drafts: Draft[] = [];
   const header = headerDraft(doc);
   if (header) drafts.push(header);
   collect(childrenOf(doc), drafts);
+  // Stable, so links on one line keep their order. Needed at all because a
+  // description list's terms are read after its body.
+  const links = harvested
+    .sort((a, b) => a.line - b.line)
+    .map(({ target, line }) => ({
+      target,
+      position: { start: index.start(line), end: index.endOfLine(line) },
+    }));
 
   const meta = metadata(content, filePath, index);
   const end = index.documentEnd();
@@ -886,6 +952,7 @@ function parse(content: string, filePath: string): DocumentTree {
       withFrontmatterTitle(place(drafts, end, index), meta.data, meta.position),
       end,
     ),
+    links,
   };
 }
 

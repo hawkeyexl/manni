@@ -163,7 +163,7 @@ jobs:
         run: npm ci
         working-directory: docs
 
-      # `manni site preview` (proposal 0077) dogfoods the site domain: it
+      # `manni site preview` (proposal 0081) dogfoods the site domain: it
       # detects Starlight in docs/, builds the site, then runs `astro preview`
       # on the host and port the `site` collection's url: names. No separate
       # build step, because preview always builds first. `astro preview`

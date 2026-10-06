@@ -9,7 +9,7 @@
  * types. Deterministic: baseIri-derived IRIs (no random UUIDs), no blank nodes.
  */
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { extname, resolve } from "node:path";
 import { DataFactory, type Store } from "n3";
 import { GraphError } from "../types.js";
 import type { Quad, Term } from "./derive.js";
@@ -44,6 +44,27 @@ import {
 
 const GRAPH_DOCUMENT = `${NS.graph}Document`;
 const XSD_STRING = `${NS.xsd}string`;
+
+/**
+ * A rendition's media type, by its source's extension (proposal 0077 §2).
+ * The graph keeps a page's path and not the format it was parsed as, so a
+ * page read under `--as` from an unclaimed extension falls back to Markdown,
+ * the one format every such page was before 0077.
+ */
+const MEDIA_TYPES: Readonly<Record<string, string>> = {
+  ".html": "text/html",
+  ".htm": "text/html",
+  ".adoc": "text/asciidoc",
+  ".asciidoc": "text/asciidoc",
+  ".rst": "text/x-rst",
+  ".dita": "application/dita+xml",
+  ".ditamap": "application/dita+xml",
+  ".xml": "application/xml",
+};
+
+function mediaTypeOf(path: string): string {
+  return MEDIA_TYPES[extname(path).toLowerCase()] ?? "text/markdown";
+}
 
 /** iiRDS classification edges carried from each Document verbatim. */
 const CARRIED = [
@@ -156,7 +177,7 @@ export function projectPackage(
       add(doc, IIRDS_HAS_RENDITION, iri(rendition));
       add(rendition, RDF_TYPE, iri(IIRDS_RENDITION));
       add(rendition, IIRDS_SOURCE, lit(zipPath));
-      add(rendition, IIRDS_FORMAT, lit("text/markdown"));
+      add(rendition, IIRDS_FORMAT, lit(mediaTypeOf(path)));
       contentFiles.push({ zipPath, absPath });
     } else {
       warnings.push(

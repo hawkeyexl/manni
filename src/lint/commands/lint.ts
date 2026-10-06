@@ -22,7 +22,7 @@ import {
 import {
   parserByName,
   parserForExtension,
-  supportedExtensions,
+  unsupportedFormatMessage,
 } from "../parsers/index.js";
 import type { Template, TemplateFile } from "../core/template.js";
 import {
@@ -693,12 +693,7 @@ async function lintWithManni(run: ManniRun): Promise<LintFileResult[]> {
     // whole run down with it: exit 2 and no verdict for any of the pages after
     // it, instead of one skip line and a report.
     if (!parser) {
-      results.push(
-        skip(
-          file,
-          `no parser is registered for "${ext || file}". Supported extensions: ${supportedExtensions().join(", ")}. Use --as to override.`,
-        ),
-      );
+      results.push(skip(file, unsupportedFormatMessage(ext || file)));
       continue;
     }
     let content: string;

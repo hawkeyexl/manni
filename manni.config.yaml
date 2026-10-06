@@ -38,7 +38,7 @@ collections:
     # local preview rather than the deployed site, because the point of the
     # check is the build a pull request produces, before it deploys. To run it
     # by hand: `manni site preview`, then `manni a11y check` from another
-    # terminal (proposal 0077). `preview` finds Starlight in docs/, builds it,
+    # terminal (proposal 0081). `preview` finds Starlight in docs/, builds it,
     # and serves it on the host and port this url names, so neither command
     # takes a flag and this file needs no `site:` section. The Docs workflow's
     # `a11y` job runs exactly that. To check the live site instead, name it:

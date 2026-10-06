@@ -33,9 +33,9 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         integrity: sha256-6ece46f25d5a8351d7c009cd703996cbcf2fbfa00e847a91682fadb98b29815f
       source:
         file: src/meta/extractors/dita-write.ts
-        lines: 114-124
+        lines: 113-123
         integrity: sha256-dc6b21e611d7e21e985b82817ec797294dfd573337811074a5ced4f3dde00c5f
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 8a17cb0b4c75d8a20aaab511304693e2db6e9249
     - id: dita-naming-rule-applies-one-level-down
       claim:
         lines: 165-169
@@ -69,27 +69,27 @@ docs/src/content/docs/meta/reference/schemas/oasis-dita-metadata.mdx:
         integrity: sha256-66e8803fb6ad1a8c2c8d1df50722d0fb6b607495159d44c8e4cf53843809adef
       source:
         file: src/meta/extractors/dita-write.ts
-        lines: 107-113
+        lines: 106-112
         integrity: sha256-617abafc17366bbc7ef0f0a1f24e8177de7bcac169219284b473e9e1e4a15cf2
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 8a17cb0b4c75d8a20aaab511304693e2db6e9249
     - id: dita-missing-element-created-in-model-order
       claim:
         lines: 151-153
         integrity: sha256-0bdf8d34d38c8770beea329ef59639aa73ce7097ec18df122d2dbc90cbc564a7
       source:
         file: src/meta/extractors/dita-write.ts
-        lines: 179-202
+        lines: 178-201
         integrity: sha256-7b31acb77d1949c360ebb8f52e42e8aebca58fd4b705dce7af45c3d3f91e9832
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 8a17cb0b4c75d8a20aaab511304693e2db6e9249
     - id: dita-existing-element-has-its-value-replaced
       claim:
         lines: 148-150
         integrity: sha256-c7d866b013d0f2970559bb65be6c509c1dc26d502a5991b20ddec3f460b4dbe3
       source:
         file: src/meta/extractors/dita-write.ts
-        lines: 99-106
+        lines: 98-105
         integrity: sha256-28a44c86158433dd9b9df1e14a1d793721e191f21ccfe07287fd99ee01c5d8bf
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 8a17cb0b4c75d8a20aaab511304693e2db6e9249
     - id: dita-othermeta-names-are-not-described-here
       claim:
         lines: 139-140

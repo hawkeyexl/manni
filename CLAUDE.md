@@ -136,7 +136,7 @@ Key layers:
   cite's re-encryption, and the one ciphertext format lives in
   `src/shared/encryption.ts`.
 - `src/site/`: the docs site's domain, `manni site start`, `build` and
-  `preview` (proposal 0077). It detects the site's framework and runs that
+  `preview` (proposal 0081). It detects the site's framework and runs that
   framework's own commands. `site.commands` overrides any of them.
   - `src/site/core/`: the `site:` config loader, the framework table and
     site search (`detect.ts`), the long-running child runner, and the

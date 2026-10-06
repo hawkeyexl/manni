@@ -393,7 +393,7 @@ export default defineConfig({
             },
           ],
         },
-        // `site` runs the site every other domain checks (proposal 0077). A
+        // `site` runs the site every other domain checks (proposal 0081). A
         // family resource like `key`, so an overview and a reference shelf.
         {
           label: "site",

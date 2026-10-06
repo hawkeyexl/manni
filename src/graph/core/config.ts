@@ -251,8 +251,25 @@ export const ALL_DERIVE_SOURCES: DeriveSource[] = [
   "provenance",
 ];
 
-/** Default candidates for extensionless link targets (routes AND relative links). */
-export const DEFAULT_LINK_EXTENSIONS = [".md", ".mdx", ".markdown"];
+/**
+ * Default candidates for extensionless link targets (routes AND relative
+ * links), and the extensions that name a document rather than an asset.
+ * Markdown first, so a tree holding `install.md` and a built `install.html`
+ * resolves a pretty URL to the source. No `.xml`: a link to `pom.xml` is an
+ * asset, as a walk never collects one (proposal 0077 §3).
+ */
+export const DEFAULT_LINK_EXTENSIONS = [
+  ".md",
+  ".mdx",
+  ".markdown",
+  ".html",
+  ".htm",
+  ".adoc",
+  ".asciidoc",
+  ".rst",
+  ".dita",
+  ".ditamap",
+];
 export const DEFAULT_INDEX_FILES = ["index", "README"];
 
 /** `/docs/` -> `/docs`; `/` or `` -> `` (site root). */

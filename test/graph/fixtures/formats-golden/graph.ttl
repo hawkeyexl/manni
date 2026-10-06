@@ -1,0 +1,135 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix graph: <https://hawkeyexl.github.io/manni/graph/ns#> .
+@prefix iirds: <http://iirds.tekom.de/iirds#> .
+@prefix iirdsSft: <http://iirds.tekom.de/iirds/domain/software#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix schema: <https://schema.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.com/formats/activity/build> a prov:Activity ;
+  prov:qualifiedAssociation <https://example.com/formats/activity/build.assoc.manni> ;
+  prov:used <https://example.com/formats/doc/guide.html>, <https://example.com/formats/doc/index.md>, <https://example.com/formats/doc/map.ditamap>, <https://example.com/formats/doc/notes.adoc>, <https://example.com/formats/doc/ref.rst>, <https://example.com/formats/doc/topic.dita> ;
+  prov:wasAssociatedWith <https://example.com/formats/agent/software/manni> .
+
+<https://example.com/formats/activity/build.assoc.manni> a prov:Association ;
+  prov:agent <https://example.com/formats/agent/software/manni> ;
+  prov:hadRole graph:toolRole .
+
+<https://example.com/formats/agent/software/manni> a prov:SoftwareAgent ;
+  foaf:name "manni" ;
+  graph:version "4.3.0" .
+
+<https://example.com/formats/doc/guide.html> a prov:Entity, graph:Document ;
+  dcterms:description "Install the SDK from a Sphinx-built page." ;
+  dcterms:hasPart <https://example.com/formats/doc/guide.html#install-the-sdk> ;
+  dcterms:references <https://example.com/formats/doc/index.md>, <https://example.com/formats/doc/topic.dita#GUID-A1B2-C3D4> ;
+  dcterms:title "Install guide" ;
+  graph:codeLanguage "bash" ;
+  graph:contentHash "8fe848ed4ad97f8ce03af99386dca5c1eff1f97577fe47db2ae96fd85019c1dc" ;
+  graph:path "guide.html" ;
+  schema:image <https://example.com/formats/file/images/check.png> .
+
+<https://example.com/formats/doc/guide.html#install-the-sdk> a graph:Section ;
+  dcterms:hasPart <https://example.com/formats/doc/guide.html#verify> ;
+  dcterms:title "Install the SDK" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/formats/doc/guide.html#verify> a graph:Section ;
+  dcterms:title "Verify the install" ;
+  graph:level 2 ;
+  graph:order 1 .
+
+<https://example.com/formats/doc/index.md> a prov:Entity, graph:Document ;
+  dcterms:description "One page per format, linked in both directions." ;
+  dcterms:hasPart <https://example.com/formats/doc/index.md#formats-home> ;
+  dcterms:references <https://example.com/formats/doc/guide.html>, <https://example.com/formats/doc/guide.html#install-the-sdk>, <https://example.com/formats/doc/notes.adoc>, <https://example.com/formats/doc/notes.adoc#_upgrade>, <https://example.com/formats/doc/ref.rst>, <https://example.com/formats/doc/ref.rst#install-ref>, <https://example.com/formats/doc/topic.dita>, <https://example.com/formats/doc/topic.dita#GUID-A1B2-C3D4> ;
+  dcterms:title "Formats home" ;
+  graph:contentHash "961963f218d58f1ef68a54da69d452743ca8213b07f5cfddecb18aaca15c901b" ;
+  graph:path "index.md" .
+
+<https://example.com/formats/doc/index.md#formats-home> a graph:Section ;
+  dcterms:title "Formats home" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/formats/doc/map.ditamap> a prov:Entity, graph:Document ;
+  dcterms:hasPart <https://example.com/formats/doc/map.ditamap#formats-map> ;
+  dcterms:references <https://example.com/formats/doc/guide.html>, <https://example.com/formats/doc/topic.dita> ;
+  dcterms:title "Formats map" ;
+  graph:contentHash "5f76131a1d302f0a0cfc687238e34619281b10a554c147620272af55f7abc285" ;
+  graph:path "map.ditamap" .
+
+<https://example.com/formats/doc/map.ditamap#formats-map> a graph:Section ;
+  dcterms:title "Formats map" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/formats/doc/notes.adoc> a prov:Entity, graph:Document ;
+  dcterms:description "What changed, in AsciiDoc." ;
+  dcterms:hasPart <https://example.com/formats/doc/notes.adoc#release-notes> ;
+  dcterms:references <https://example.com/formats/doc/guide.html#install-the-sdk>, <https://example.com/formats/doc/index.md> ;
+  dcterms:title "Release notes" ;
+  graph:codeLanguage "python" ;
+  graph:contentHash "8b4313b0f8f25f3cdfdfb39fc021f5e317539de3607e5f6f7e0a356e10396467" ;
+  graph:path "notes.adoc" .
+
+<https://example.com/formats/doc/notes.adoc#_known_issues> a graph:Section ;
+  dcterms:title "Known issues" ;
+  graph:level 2 ;
+  graph:order 2 .
+
+<https://example.com/formats/doc/notes.adoc#_upgrade> a graph:Section ;
+  dcterms:title "Upgrade" ;
+  graph:level 2 ;
+  graph:order 1 .
+
+<https://example.com/formats/doc/notes.adoc#release-notes> a graph:Section ;
+  dcterms:hasPart <https://example.com/formats/doc/notes.adoc#_known_issues>, <https://example.com/formats/doc/notes.adoc#_upgrade> ;
+  dcterms:title "Release notes" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/formats/doc/ref.rst> a prov:Entity, graph:Document ;
+  dcterms:description "Reference, in reStructuredText." ;
+  dcterms:hasPart <https://example.com/formats/doc/ref.rst#reference> ;
+  dcterms:references <https://example.com/formats/doc/guide.html>, <https://example.com/formats/doc/index.md> ;
+  dcterms:title "Reference" ;
+  graph:contentHash "49c212fb1423463e70a5155190ac309b1eca7ca0589ccc773b145bb7a56b08fa" ;
+  graph:path "ref.rst" .
+
+<https://example.com/formats/doc/ref.rst#install-ref> a graph:Section ;
+  dcterms:title "Defaults" ;
+  graph:level 2 ;
+  graph:order 1 .
+
+<https://example.com/formats/doc/ref.rst#reference> a graph:Section ;
+  dcterms:hasPart <https://example.com/formats/doc/ref.rst#install-ref> ;
+  dcterms:title "Reference" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/formats/doc/topic.dita> a prov:Entity, graph:Document ;
+  dcterms:description "What the SDK is, in DITA." ;
+  dcterms:hasPart <https://example.com/formats/doc/topic.dita#sdk-concept> ;
+  dcterms:references <https://example.com/docs#section/sub>, <https://example.com/formats/doc/guide.html#install-the-sdk> ;
+  dcterms:title "SDK concept" ;
+  graph:contentHash "a00899c008023e0e61d96de9363b3dd9f0af3658fe901d0b87a77d2edd24d9a0" ;
+  graph:path "topic.dita" .
+
+<https://example.com/formats/doc/topic.dita#GUID-A1B2-C3D4> a graph:Section ;
+  dcterms:title "How it works" ;
+  graph:level 2 ;
+  graph:order 1 .
+
+<https://example.com/formats/doc/topic.dita#sdk-concept> a graph:Section ;
+  dcterms:hasPart <https://example.com/formats/doc/topic.dita#GUID-A1B2-C3D4> ;
+  dcterms:title "SDK concept" ;
+  graph:level 1 ;
+  graph:order 1 .
+
+<https://example.com/formats/graph> a prov:Entity ;
+  prov:wasGeneratedBy <https://example.com/formats/activity/build> .

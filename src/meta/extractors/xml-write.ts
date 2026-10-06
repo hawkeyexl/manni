@@ -224,9 +224,13 @@ function assertNoElementCollision(key: string, root: XmlElement): void {
   );
 }
 
-/** Emit a value the way the reader will parse it back: as a YAML scalar. */
+/**
+ * Emit a value the way the reader will parse it back: as YAML on one line.
+ * Flow style and no folding, for the reasons given in `html-write.ts`.
+ */
 function emitScalar(key: string, value: unknown): string {
-  const text = stringifyYaml(value).replace(/\n$/, "");
+  const text = stringifyYaml(value, { collectionStyle: "flow", lineWidth: 0 })
+    .replace(/\n$/, "");
   if (text.includes("\n")) {
     throw new DocmetaError(
       `Refusing to write "${key}": the value needs more than one line, which an XML attribute cannot hold. Set it manually.`,

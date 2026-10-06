@@ -1,6 +1,6 @@
 # 0051: the `graph` domain: the knowledge graph joins the family
 
-- **Status:** Proposed
+- **Status:** Proposed; superseded in part by [0077](0077-graph-reads-every-format-lint-parses.md)
 - **Serves:** Maya · M18–M20 · Devin · D12, D13 · Sara · S12 · Theo · T7
 - **Depends on:** [0033](0033-manni-monorepo.md), the umbrella this domain
   mounts on and the import recipe it follows. [0034](0034-command-grammar.md),
