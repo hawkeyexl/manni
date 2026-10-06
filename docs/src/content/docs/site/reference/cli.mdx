@@ -12,7 +12,7 @@ applies-to: ["domain:site"]
 risks: ["idempotent"]
 sample-questions: ["What flags do manni site start and manni site preview accept?", "Which frameworks does manni site detect, and what does it run for each?", "Why did manni site exit 2?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-05
+last-updated: 2026-10-06
 tags:
   - cli
   - reference
@@ -225,7 +225,9 @@ manni.
 
 - It binds `127.0.0.1`, or the host chosen above.
 - It mounts the output at the collection `url:` path when there is one, so a
-  site built under `/manni/` answers there.
+  site built under `/manni/` answers there. Collections that share one local
+  server mount at the path they have in common, such as `/manni/` for
+  `/manni/guides/` and `/manni/api/`.
 - It serves `index.html` for a directory, and `404.html` for a missing path
   when the output has one.
 - It prints its URL to stdout, as `http://127.0.0.1:8000/`.

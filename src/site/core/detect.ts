@@ -330,7 +330,8 @@ function parsePort(raw: string): number {
  */
 function shellQuote(arg: string): string {
   if (/^[\w@%+=:,./-]+$/.test(arg)) return arg;
-  return process.platform === "win32" ? `"${arg.replace(/"/g, '\\"')}"` : `'${arg.replace(/'/g, "'\\''")}'`;
+  // cmd.exe doubles a quote inside quotes; POSIX closes, escapes and reopens.
+  return process.platform === "win32" ? `"${arg.replace(/"/g, '""')}"` : `'${arg.replace(/'/g, "'\\''")}'`;
 }
 
 const andList = (items: string[]): string =>
@@ -361,7 +362,20 @@ function collectionAddress(collections: CollectionConfig[], framework: string, p
     }
     return { base: "/" };
   }
-  return first;
+  // Collections on one server are sections of one site: it mounts where they all live.
+  return { ...first, base: sharedPath(local.map((l) => l.base)) };
+}
+
+/** The longest leading run of whole path segments every path shares, as `/a/b/`. */
+function sharedPath(paths: string[]): string {
+  const split = paths.map((p) => p.split("/").filter((s) => s !== ""));
+  const [head = [], ...rest] = split;
+  const shared: string[] = [];
+  for (const [i, segment] of head.entries()) {
+    if (!rest.every((p) => p[i] === segment)) break;
+    shared.push(segment);
+  }
+  return shared.length === 0 ? "/" : `/${shared.join("/")}/`;
 }
 
 function addressArgs(fw: Framework, host: string | undefined, port: number | undefined): string[] {

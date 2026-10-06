@@ -352,6 +352,16 @@ describe("the collection url", () => {
     });
   });
 
+  it("mounts at the path that collections on one server share", () => {
+    const dir = site("mkdocs", {
+      files: {
+        "manni.config.yaml":
+          "collections:\n  - name: guides\n    paths: [docs/guides]\n    url: http://localhost:8123/handbook/guides/\n  - name: api\n    paths: [docs/api]\n    url: http://localhost:8123/handbook/api/\n",
+      },
+    });
+    expect(steps("preview", dir)[1]).toMatchObject({ kind: "static", port: 8123, base: "/handbook/" });
+  });
+
   it("keeps the url's path when --port and --host are both given", () => {
     const dir = site("mkdocs", {
       files: {
