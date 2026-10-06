@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.4.0](https://github.com/hawkeyexl/manni/compare/v4.3.1...v4.4.0) (2026-10-06)
+
+
+### Features
+
+* manni check, manni status and the manni Claude Code plugin ([#162](https://github.com/hawkeyexl/manni/issues/162)) ([0589010](https://github.com/hawkeyexl/manni/commit/0589010cca6fee14110a88dcf0c7e2c60fd0377e))
+
 ## [4.3.1](https://github.com/hawkeyexl/manni/compare/v4.3.0...v4.3.1) (2026-10-05)
 
 

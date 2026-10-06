@@ -1278,7 +1278,7 @@ docs/src/content/docs/meta/reference/query.mdx:
         file: src/meta/core/load-files.ts
         lines: 27
         integrity: sha256-e487862019990cb347daf040e75d3104e4ef41f5263492b6f3ee7bedeb46d4a7
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: present-column-is-one-or-zero
       claim:
         lines: 48

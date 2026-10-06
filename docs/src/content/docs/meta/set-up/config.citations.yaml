@@ -17,7 +17,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/core/load-files.ts
         lines: 273
         integrity: sha256-062dfc0e8704a9f5cfab261efdea54ca2e9e82c088fa4257187e47da6a73fc6c
-        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: collection-flag-narrows-run
       claim:
         lines: 245
@@ -139,7 +139,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/commands/validate.ts
         lines: 324-327
         integrity: sha256-7f1973d8b0245da7e1deff8552f047c5e989da046b9bd61a922b7a1d15eef004
-        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: exclude-flag-filters-a-typed-path
       claim:
         lines: 116
@@ -148,16 +148,16 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/core/load-files.ts
         lines: 273
         integrity: sha256-062dfc0e8704a9f5cfab261efdea54ca2e9e82c088fa4257187e47da6a73fc6c
-        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: config-exclude-stopped-filtering-typed-paths-in-1-0
       claim:
         lines: 116
         integrity: sha256-6db4d5d084e63d6301555a29399627c768a89ea90219446ce59f29e70f534908
       source:
         file: CHANGELOG.md
-        lines: 989-992
+        lines: 996-999
         integrity: sha256-45e8f8c4528f6e8164bb9f060cb05f911f235aec5b19ef2d7c4001423d3c47e5
-        commit-sha: a47a74489105e77a82f35af1613faddc7a0670d9
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: collection-flag-refuses-positional-paths
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146
@@ -214,7 +214,7 @@ docs/src/content/docs/meta/set-up/config.mdx:
         file: src/meta/commands/validate.ts
         lines: 988-998
         integrity: sha256-a534dc72a969d7026f974ba01d23c808d84e76f62ccb179329f8412cb4fcd8e4
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: notices-go-to-stderr
       claim:
         integrity: sha256-733c0b2524ed1903bd3560cdcfd64a88195eabb411d4f725708cc91cfbf30146

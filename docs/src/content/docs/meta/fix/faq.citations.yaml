@@ -8,7 +8,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/commands/validate.ts
         lines: 324-327
         integrity: sha256-7f1973d8b0245da7e1deff8552f047c5e989da046b9bd61a922b7a1d15eef004
-        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: bare-run-reads-collections
       claim:
         integrity: sha256-260592ebe1bbe0fcd2ac71cdaf1e80ed4d3ed937fd1b57c4c5ec35b2a36139e1
@@ -24,7 +24,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/commands/validate.ts
         lines: 344
         integrity: sha256-6aa21a84b00caf708e8ab2fa9e36ee4e9398277ebe111bc1a754483c2e96f724
-        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: exclude-merges-with-default-ignores
       claim:
         integrity: sha256-4ad98f541fbbf16ce90e957bd9e2a0c5a770d704b5d89943ffc60c99702920ed
@@ -32,7 +32,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/core/load-files.ts
         lines: 273
         integrity: sha256-062dfc0e8704a9f5cfab261efdea54ca2e9e82c088fa4257187e47da6a73fc6c
-        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: exclude-is-repeatable
       claim:
         integrity: sha256-4ad98f541fbbf16ce90e957bd9e2a0c5a770d704b5d89943ffc60c99702920ed
@@ -56,7 +56,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/commands/validate.ts
         lines: 867-868
         integrity: sha256-3ef67f71b6dd6d13aa8db8c7e567afcb9df863c1d137c5597d3a9fd7de40c6fa
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: faq-exit-2-operational
       claim:
         lines: 116
@@ -101,7 +101,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/core/load-files.ts
         lines: 308-311
         integrity: sha256-4599d601ad8068f93a532f63eb18d8e223706720fc069d02d27c2a17f0a63699
-        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: ext-filters-glob-walk-results
       claim:
         lines: 104
@@ -110,7 +110,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/core/load-files.ts
         lines: 314-316
         integrity: sha256-e7be5c7abce25fb3997d5d337ebd2ad01d26883f6671994695d7366de9357d60
-        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: ext-keeps-only-listed-extensions
       claim:
         integrity: sha256-9aad5ceb3060601aca4cdcdc349a155c4f7b1e673604550a4b7c2bedcca3dd02
@@ -118,7 +118,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/core/load-files.ts
         lines: 281-282
         integrity: sha256-c24837967e61283e2c58e578df51bfd7cabbdd6c0b9528dedad3cdb850451b4c
-        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: ext-list-is-comma-separated
       claim:
         integrity: sha256-9aad5ceb3060601aca4cdcdc349a155c4f7b1e673604550a4b7c2bedcca3dd02
@@ -142,7 +142,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/commands/validate.ts
         lines: 927-930
         integrity: sha256-e6543749701ab9d312659c052be04ac7257124d88d57b9fd371807a9de234581
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: dash-is-the-stdin-token
       claim:
         integrity: sha256-f5e69cb7591833d7fc747a3ee8e4085cb05fd2156bf7c00dde83a4c8e6ab82a8
@@ -150,7 +150,7 @@ docs/src/content/docs/meta/fix/faq.mdx:
         file: src/meta/core/load-files.ts
         lines: 19
         integrity: sha256-207aa4b9243aa69cc6c8226702671ec6a33e4c2060706368ecf79aae007f4c25
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: get-extracts-without-validating
       claim:
         integrity: sha256-0347e3aff508e2a1d1aaa2b6dbd5276cdc03c1944e1b261a1a7ce1daae94caf1

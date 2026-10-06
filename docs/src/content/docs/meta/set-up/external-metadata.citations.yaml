@@ -154,7 +154,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/commands/fill.ts
         lines: 856-863
         integrity: sha256-8f25f70238b0f937a411e472485286c894e20f83830eecd701ba73a80a7fbfd9
-        commit-sha: e7dd1089550bbee8c728ac158583408866077d49
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: query-change-line-names-manifest
       claim:
         integrity: sha256-756a1eb87c6a14d7fbd92fc09a0b513c213db34ea64626596c3884017ef52bec
@@ -226,7 +226,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/commands/validate.ts
         lines: 968-971
         integrity: sha256-15eb1c514f47db5c21da24214ca2c2de8dd87ac75b8fd7dc9e3b97a5f19f1dc0
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: orphan-join-entry-checked-after-all-pages
       claim:
         integrity: sha256-9ead88eb08e5be260af97472c4dc500b6aff19f6c30e9e8f661542386660f130
@@ -234,7 +234,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/commands/validate.ts
         lines: 977-980
         integrity: sha256-92bf0115ace0ca73879b59f942210d9f5308cf637b752edd6a2099408a651bda
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: duplicate-join-pages-still-merge-entry
       claim:
         integrity: sha256-3608f2f276b5f30f08b3371ce7bb0d2df0a9f83c1a821eb4b5566f4f8bf200ad
@@ -250,7 +250,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/commands/validate.ts
         lines: 963-970
         integrity: sha256-507b72419a167b6891bfac1469d6b293dcb66e299202c50a10c595453dd6a8bc
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: page-missing-join-field-matches-nothing-silently
       claim:
         lines: 510
@@ -300,7 +300,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/commands/validate.ts
         lines: 360-362
         integrity: sha256-c901661494183417f63496993776f9be81dad8d45ba18326fdf91ae786e39cd3
-        commit-sha: 6a98dfeeba586d4f693ff7a43a99cee32204694b
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: token-env-unset-message
       claim:
         integrity: sha256-c37761397921c720870a3cb66467667541d94c800939429c81990cc53cb37e8c
@@ -415,7 +415,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/core/external-metadata.ts
         lines: 1228-1233
         integrity: sha256-18d6e9a25475575ae19a8fed06a29041f7c75a7da3b224dc9729515b3713f577
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: positional-path-run-skips-orphan-check
       claim:
         lines: 191
@@ -424,7 +424,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/commands/validate.ts
         lines: 574-576
         integrity: sha256-b732d6d692691a39e35ba0585036ce312b076ddbf616b19c515a23829cc8a394
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: orphan-path-entry-checked-on-corpus-run
       claim:
         integrity: sha256-6dcf9dc0a8a2adbfbf1d501496f2ea9debace81becfe031c8dc4fd745a01a280
@@ -432,7 +432,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/commands/validate.ts
         lines: 583-586
         integrity: sha256-387d97470ad19c9666d48cef930ec5b2b90f2a3e1323a6bb9102094b8f66b3d7
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: github-format-annotates-manifest-file
       claim:
         integrity: sha256-312f0485854c4b39438e45a31f72245401843d988d1ba3b97aea031ceac86bd6
@@ -464,7 +464,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/commands/validate.ts
         lines: 907-912
         integrity: sha256-89a6c3b17b64b7213bdd96234a8917f435b11c0f55021668ca999a1950715924
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: pretty-report-shows-manifest-location
       claim:
         integrity: sha256-b703fb189e7b60d9d5e33c0c7a1508869101ab61fb8f444b79b2d85f005a5332
@@ -533,7 +533,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/commands/validate.ts
         lines: 905-912
         integrity: sha256-067c45a5863482c20d5ad31594f97abe8be5053a5a34e71b1845f0edcd133960
-        commit-sha: 49a4a81a214bdafceb6bbd9308e37b5978d9933c
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: manifest-entries-take-no-globs
       claim:
         lines: 72
@@ -593,7 +593,7 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/core/external-metadata.ts
         lines: 1263-1268
         integrity: sha256-f72d2cac2a3aed9fa1604762aff6b650eb001d624856ff552361750733a02afb
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: path-entry-orphaned-by-absolute-path-lookup
       claim:
         integrity: sha256-fbaf89eb7558e62999d0f8f8c9a2da2065c7c224f764a11461caf95e8ef3282f
@@ -609,4 +609,4 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         file: src/meta/core/external-metadata.ts
         lines: 1261-1268
         integrity: sha256-740f5f08ff708565c31cee8293b251f119b026a036b47135f4514457a3dd08f6
-        commit-sha: a81ceb664be81c0d560c66cb9fb03c56eb03d4d8
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e

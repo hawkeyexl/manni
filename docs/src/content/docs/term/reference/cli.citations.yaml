@@ -783,7 +783,7 @@ docs/src/content/docs/term/reference/cli.mdx:
         file: src/meta/core/load-files.ts
         lines: 344
         integrity: sha256-e875231ef845ad664fc8dde395cd7cae437ab1a0eda11a486fcd2cbd153fabc5
-        commit-sha: 151a289c1d7b8b3448e12b199268bacd9e33a148
+        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
     - id: allow-empty-no-matched-files
       claim:
         lines: 99
