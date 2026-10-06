@@ -30,6 +30,10 @@ export interface HeadingFragment {
   level: number;
   title: string;
   position: Position;
+  /** The source's own anchor for this heading; copied to `SectionNode.id`. */
+  id?: string;
+  /** Made by `withMetadataTitle`, not written; copied to `SectionNode.synthetic`. */
+  synthetic?: true;
 }
 
 export interface ContentFragment {
@@ -109,6 +113,8 @@ export function sectionize(fragments: Fragment[], docEnd: Position["end"]): Sect
         order: 0,
         parentSlug: null,
         titlePosition: { ...fragment.position },
+        ...(fragment.id !== undefined ? { id: fragment.id } : {}),
+        ...(fragment.synthetic ? { synthetic: true as const } : {}),
         position: { start: { ...fragment.position.start }, end: { ...fragment.position.end } },
         children: [],
         sections: [],

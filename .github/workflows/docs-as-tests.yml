@@ -116,7 +116,7 @@ jobs:
           --provider llama-cpp
           --model granite-4.1-3b-q2
           --fields title --dry-run --no-cache
-      # `manni test run` is the runner's front end (proposal 0077): it runs
+      # `manni test run` is the runner's front end (proposal 0079): it runs
       # Doc Detective, which reads .doc-detective.json from the repo root, and
       # turns each failing step into an annotation on the page that broke.
       # `--progress` streams Doc Detective's own log into the job output, which

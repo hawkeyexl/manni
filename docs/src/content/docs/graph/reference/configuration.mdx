@@ -10,7 +10,7 @@ concepts:
   - base IRI
   - turn
   - confidence
-last-updated: 2026-10-04
+last-updated: 2026-10-05
 ---
 
 manni graph reads one file, `manni.config.yaml`, and one key in it, `graph:`. Two
@@ -53,7 +53,7 @@ graph:
   routes:
     - basePath: /
       root: docs
-      extensions: [".md", ".mdx", ".markdown"]
+      extensions: [".md", ".mdx", ".markdown", ".html", ".htm", ".adoc", ".asciidoc", ".rst", ".dita", ".ditamap"]
       indexFiles: ["index", "README"]
       language: en
 
@@ -164,7 +164,7 @@ sees it resolves to the page that serves it. Each entry is an object; only
 |---|---|---|---|
 | `basePath` | string | `/` | The site prefix this route serves. Normalized to a leading `/` and no trailing one; `/` means the site root. |
 | `root` | string | required | The directory that prefix resolves into, relative to the config file. |
-| `extensions` | list of strings | `[".md", ".mdx", ".markdown"]` | Extensions to try when a route names a page without one. Each must start with a dot. |
+| `extensions` | list of strings | `[".md", ".mdx", ".markdown", ".html", ".htm", ".adoc", ".asciidoc", ".rst", ".dita", ".ditamap"]` | Extensions to try, in order, when a route names a page without one. Markdown comes first, so a tree holding `install.md` and a built `install.html` resolves to the source. Each must start with a dot. |
 | `indexFiles` | list of strings | `["index", "README"]` | Basenames to try for a directory route such as `/guides/`. |
 | `language` | BCP-47 tag | unset | The language of every document under `root`. A page's own `lang` or `language` frontmatter wins; absent that, the nearest enclosing route that declares one applies. Unset, the route says nothing about language. |
 

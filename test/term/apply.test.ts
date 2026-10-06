@@ -259,7 +259,7 @@ describe("a page", () => {
     const input = inputOf(readFileSync(path, "utf8"), path);
     const [page] = r.read(input).terms;
     if (page === undefined) throw new Error("no page term");
-    expect(() => applyOf(r)(input, [{ ...page, record: { ...page.record, "alt-labels": ["A", "B"] } }])).toThrow(
+    expect(() => applyOf(r)(input, [{ ...page, record: { ...page.record, definition: "One line.\nTwo lines." } }])).toThrow(
       /^readers\/page\/term\.html: /,
     );
   });

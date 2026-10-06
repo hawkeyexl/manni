@@ -58,9 +58,9 @@ docs/src/content/docs/meta/reference/element-metadata.mdx:
         integrity: sha256-9ac3e4f228c0304389b1bfdf10e988122c7261b681d110a20195ff3a8cd27a2a
       source:
         file: src/meta/extractors/dita-write.ts
-        lines: 179-202
+        lines: 178-201
         integrity: sha256-7b31acb77d1949c360ebb8f52e42e8aebca58fd4b705dce7af45c3d3f91e9832
-        commit-sha: e4bf26f5c23964811b3288069585a4fef5c6591d
+        commit-sha: 8a17cb0b4c75d8a20aaab511304693e2db6e9249
     - id: element-updating-cannot-change-validity
       claim:
         lines: 195-197

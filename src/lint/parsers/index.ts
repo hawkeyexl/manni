@@ -50,6 +50,15 @@ export function supportedExtensions(): string[] {
   return PARSERS.flatMap((p) => p.walkExtensions ?? p.extensions);
 }
 
+/**
+ * Why a file no parser claims is skipped. One sentence for every command that
+ * says it, so `lint` and `templates` cannot drift apart. `name` is the
+ * extension, or the file itself when it has none.
+ */
+export function unsupportedFormatMessage(name: string): string {
+  return `no parser is registered for "${name}". Supported extensions: ${supportedExtensions().join(", ")}. Use --as to override.`;
+}
+
 /** Every format the tool reads, for `manni lint tools`. */
 export function listFormats(): {
   name: string;

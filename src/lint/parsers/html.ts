@@ -179,13 +179,19 @@ function positionOf(node: Located): Position {
   };
 }
 
-/** Concatenated text of a subtree, markup and all, verbatim. */
-function rawText(node: Node): string {
+/**
+ * Concatenated text of a subtree, markup and all, verbatim. `skipHref` drops
+ * an `<a>` linking exactly there, which is how a heading leaves out its own
+ * permalink glyph.
+ */
+function rawText(node: Node, skipHref?: string): string {
   if (defaultTreeAdapter.isTextNode(node)) return node.value;
   if (!defaultTreeAdapter.isElementNode(node)) return "";
-  if (NON_TEXT_TAGS.has(tagOf(node))) return "";
+  const tag = tagOf(node);
+  if (NON_TEXT_TAGS.has(tag)) return "";
+  if (skipHref !== undefined && tag === "a" && attrOf(node, "href") === skipHref) return "";
   let out = "";
-  for (const child of node.childNodes) out += rawText(child);
+  for (const child of node.childNodes) out += rawText(child, skipHref);
   return out;
 }
 
@@ -199,8 +205,8 @@ function rawText(node: Node): string {
  * where a title was built from `children.map(c => c.value)` and every inline
  * element vanished.
  */
-function flatText(node: Node): string {
-  return rawText(node).replace(/\s+/g, " ").trim();
+function flatText(node: Node, skipHref?: string): string {
+  return rawText(node, skipHref).replace(/\s+/g, " ").trim();
 }
 
 /** `language-x` from a `class`, per the HTML5 convention for code blocks. */
@@ -620,18 +626,22 @@ function contentIn(parent: ParentNode): ContentNode[] {
  *    point of writing it - honoring it changes nothing. It could only ever
  *    matter when it disagrees, and there the headings are what the reader sees.
  */
-function walk(parent: ParentNode, out: Fragment[]): void {
+function walk(parent: ParentNode, out: Fragment[], ids: HeadingIds): void {
   for (const child of parent.childNodes) {
     if (!defaultTreeAdapter.isElementNode(child)) continue;
     const tag = tagOf(child);
     const role = roleOf(child, tag);
 
     if (role === "heading") {
+      const id = ids.claim(child);
       out.push({
         type: "heading",
         level: HEADING_LEVELS.get(tag) ?? 1,
-        title: flatText(child),
+        // The self-permalink is dropped from the title as it is from the links:
+        // Sphinx's `¶` is a widget, and "Install the SDK¶" is no reader's title.
+        title: flatText(child, id !== undefined ? `#${id}` : undefined),
         position: positionOf(child),
+        ...(id !== undefined ? { id } : {}),
       });
       continue;
     }
@@ -644,7 +654,79 @@ function walk(parent: ParentNode, out: Fragment[]): void {
 
     if (role === "opaque") continue;
 
-    walk(child, out);
+    if (ID_CARRIERS.has(tag)) {
+      ids.enter(child);
+      walk(child, out, ids);
+      ids.leave();
+      continue;
+    }
+    walk(child, out, ids);
+  }
+}
+
+/** Elements whose `id` the first heading inside them inherits. */
+const ID_CARRIERS = new Set(["section", "article"]);
+
+/**
+ * Which id each heading answers to.
+ *
+ * A heading's own `id` first. Failing that, the `id` of the nearest enclosing
+ * `<section>`/`<article>` - the shape Sphinx and a hand-written page both
+ * produce, `<section id="install"><h2>Install</h2>` - but only for the first
+ * heading inside it, since the id names the section and a later sibling
+ * heading is not that section's title. Every enclosing carrier is spent by
+ * that first heading, nested or not, so an outer one cannot pass its id to a
+ * heading that follows an inner one.
+ */
+class HeadingIds {
+  private readonly open: { id: string | undefined; spent: boolean }[] = [];
+  readonly byHeading = new Map<Element, string>();
+
+  enter(el: Element): void {
+    this.open.push({ id: attrOf(el, "id"), spent: false });
+  }
+
+  leave(): void {
+    this.open.pop();
+  }
+
+  claim(heading: Element): string | undefined {
+    const nearest = this.open.at(-1);
+    const inherited = nearest && !nearest.spent ? nearest.id : undefined;
+    for (const carrier of this.open) carrier.spent = true;
+    const id = attrOf(heading, "id") ?? inherited;
+    if (id !== undefined) this.byHeading.set(heading, id);
+    return id;
+  }
+}
+
+/**
+ * Every `<a href>` and `<area href>`, in document order - and nothing else
+ * that carries an `href`. `<link rel="stylesheet">` and `<base>` name
+ * resources and a URL base, not places a reader can go.
+ *
+ * A heading's self-permalink is left out: Sphinx, MkDocs and Docusaurus append
+ * `<a href="#install">¶</a>` to every heading, and a graph that kept them would
+ * give each section an edge to itself. Only an exact `#<that heading's id>` is
+ * dropped; a heading linking anywhere else keeps the link. Only an `<a>`
+ * inside the heading is checked: a permalink placed beside the heading, as a
+ * sibling, is kept as a link to its own section.
+ */
+function collectLinks(
+  parent: ParentNode,
+  ids: Map<Element, string>,
+  heading: string | undefined,
+  out: DocumentTree["links"],
+): void {
+  for (const child of parent.childNodes) {
+    if (!defaultTreeAdapter.isElementNode(child)) continue;
+    const tag = tagOf(child);
+    if (tag === "a" || tag === "area") {
+      const href = attrOf(child, "href");
+      const permalink = heading !== undefined && href === `#${heading}`;
+      if (href !== undefined && !permalink) out.push({ target: href, position: positionOf(child) });
+    }
+    collectLinks(child, ids, HEADING_LEVELS.has(tag) ? ids.get(child) : heading, out);
   }
 }
 
@@ -734,7 +816,10 @@ function findHead(doc: DefaultTreeAdapterTypes.Document): Element | undefined {
 function parseHtml(content: string, filePath: string): DocumentTree {
   const doc = parse(content, { sourceCodeLocationInfo: true });
   const fragments: Fragment[] = [];
-  walk(doc, fragments);
+  const ids = new HeadingIds();
+  walk(doc, fragments, ids);
+  const links: DocumentTree["links"] = [];
+  collectLinks(doc, ids.byHeading, undefined, links);
 
   const { frontmatter, position } = metadataOf(content, filePath, doc);
 
@@ -747,6 +832,7 @@ function parseHtml(content: string, filePath: string): DocumentTree {
       withMetadataTitle(fragments, frontmatter, position),
       documentEnd(content),
     ),
+    links,
   };
 }
 

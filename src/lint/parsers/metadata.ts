@@ -79,7 +79,7 @@ export function withMetadataTitle(
   if (position === null) return fragments;
   if (fragments.some((b) => b.type === "heading" && b.level === 1)) return fragments;
 
-  return [{ type: "heading", level: 1, title, position }, ...fragments];
+  return [{ type: "heading", level: 1, title, position, synthetic: true }, ...fragments];
 }
 
 /**

@@ -477,7 +477,7 @@ export default defineConfig({
           ],
         },
         // `test` runs the docs' procedure tests with Doc Detective (proposal
-        // 0077). One verb, so an overview and a reference shelf of one.
+        // 0079). One verb, so an overview and a reference shelf of one.
         {
           label: "test",
           collapsed: true,

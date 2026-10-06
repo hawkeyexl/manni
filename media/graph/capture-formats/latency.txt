@@ -1,0 +1,8 @@
+build-md 0 1129ms
+stats-md 0 993ms
+build-all 0 1169ms
+stats-all 0 999ms
+traverse 0 1010ms
+timing1 build-md 1128ms stats-md 996ms build-all 1175ms stats-all 1002ms traverse 1002ms
+timing2 build-md 1124ms stats-md 996ms build-all 1158ms stats-all 999ms traverse 1009ms
+timing3 build-md 1126ms stats-md 1005ms build-all 1171ms stats-all 997ms traverse 999ms

@@ -85,9 +85,8 @@ export function ditaEdits(
     const source = read.sources.get(key);
     // Emitted per branch rather than up front. A list-valued key — `author*` in
     // the content model — is emitted one item at a time by `elementEdits`;
-    // emitting the whole array here would serialize it as a YAML block, hit the
-    // "needs more than one line" guard, and refuse a write that is perfectly
-    // expressible as two `<author>` elements.
+    // emitting the whole array here would write one flow list where the
+    // document has two `<author>` elements.
     if (source?.kind === "attr") {
       edits.push(
         attributeEdit(content, starts, root, source.name, emit(key, raw), escape),

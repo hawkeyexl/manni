@@ -15,10 +15,10 @@
  * tag the reader actually honors sitting right beside the correction — green
  * report, wrong page. A write lands on whatever the read took its value from.
  *
- * Values are emitted as YAML scalars because that is how they are read back
+ * Values are emitted as one line of YAML because that is how they are read back
  * (`typeValue`). The string "2" therefore emits with its quotes and survives the
- * round trip; a value needing more than one line cannot fit in an attribute at
- * all and is refused rather than truncated.
+ * round trip, and a map or a list emits in flow style. A string with a newline
+ * in it cannot fit in an attribute at all and is refused rather than truncated.
  */
 import { stringify as stringifyYaml } from "yaml";
 import {
@@ -69,9 +69,8 @@ export function applyHtml(
   for (const [key, value] of Object.entries(clean)) {
     const source = before.sources.get(key);
     // Emitted per branch rather than up front. A list-valued key is emitted one
-    // item at a time below; emitting the whole array here would serialize it as
-    // a YAML block and refuse it as "needs more than one line" — a write that
-    // is perfectly expressible as one value per element.
+    // item at a time below; emitting the whole array here would put one flow
+    // list in the first element instead of one value in each.
     if (source === undefined) {
       const name = escapeAttr(key, DQ);
       inserts.push(
@@ -280,9 +279,17 @@ function attrValueSpan(
   return { start: i, end, quote: DQ, wrap: true };
 }
 
-/** Emit a value the way the reader will parse it back: as a YAML scalar. */
+/**
+ * Emit a value the way the reader will parse it back: as YAML on one line.
+ *
+ * Flow style is what lets a map or a list fit an attribute at all; block style,
+ * the default, gives every entry its own line. `lineWidth: 0` stops the
+ * stringifier folding a long value at 80 columns. Neither option changes a
+ * scalar that already fit on one line, so those emit exactly as they did.
+ */
 function emitScalar(key: string, value: unknown): string {
-  const text = stringifyYaml(value).replace(/\n$/, "");
+  const text = stringifyYaml(value, { collectionStyle: "flow", lineWidth: 0 })
+    .replace(/\n$/, "");
   if (text.includes("\n")) {
     throw new DocmetaError(
       `Refusing to write "${key}": the value needs more than one line, which an HTML attribute cannot hold. Set it manually.`,

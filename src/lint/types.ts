@@ -204,6 +204,21 @@ export interface SectionNode {
   parentSlug: string | null;
   /** Span of the title itself. Null for the implicit lead section. */
   titlePosition: Position | null;
+  /**
+   * The anchor the source itself gives this section, verbatim - an HTML `id`,
+   * a DITA `@id`, an AsciiDoc `[[id]]`, a reST `.. _label:` - when it gives
+   * one. `slug` stays the slugged title either way: a link written against
+   * the source's own id resolves through this, and nothing lint matches on
+   * reads it.
+   */
+  id?: string;
+  /**
+   * Set on the level-1 section `withMetadataTitle` made from a metadata
+   * `title`, so a consumer can tell it from a heading the author wrote. Its
+   * `titlePosition` is not enough: a reST title read back as docinfo shares
+   * its span with the frontmatter, written or not.
+   */
+  synthetic?: true;
   /** Span of the whole section: its heading through the last node before the next sibling heading. */
   position: Position;
   /** Direct content, in document order, excluding anything owned by a subsection. */
@@ -224,6 +239,13 @@ export interface DocumentTree {
   frontmatterPosition: Position | null;
   /** Top-level sections, in document order. */
   sections: SectionNode[];
+  /**
+   * Link targets exactly as the source wrote them, in document order, for
+   * `manni graph`. No lint rule reads them. Each parser decides what counts:
+   * an anchor to elsewhere does, and a stylesheet, a heading's own permalink,
+   * or a key reference resolved only at build time does not.
+   */
+  links: { target: string; position: Position }[];
 }
 
 /**

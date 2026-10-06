@@ -1,0 +1,14 @@
+{
+    "buildMd": "",
+    "statsMd": "Triples:    43\nDocuments:  1\nSections:   1\nConcepts:   0\nReferences: 0\n\nMost connected:\n  (none)\n\nOrphan docs (1):\n  index.md\n\nBroken internal links (8):\n",
+    "buildAll": "",
+    "statsAll": "Triples:    185\nDocuments:  6\nSections:   11\nConcepts:   0\nReferences: 18\n\nMost connected:\n  index.md (11)\n  guide.html (8)\n  topic.dita (6)\n  notes.adoc (4)\n  ref.rst (4)\n  map.ditamap (2)\n",
+    "traverse": "  https://example.com/formats/doc/guide.html — Install guide\n  https://example.com/formats/doc/notes.adoc — Release notes\n  https://example.com/formats/doc/ref.rst — Reference\n    https://example.com/formats/doc/map.ditamap — Formats map\n\n4 nodes, 8 hops, 0 excluded\n",
+    "exits": {
+        "buildMd": "0",
+        "statsMd": "0",
+        "buildAll": "0",
+        "statsAll": "0",
+        "traverse": "0"
+    }
+}

@@ -1,0 +1,9 @@
+Not every docset is Markdown. Until now, manni graph acted as if it were.
+
+Point it at a folder of HTML, DITA, AsciiDoc and reStructuredText pages and it walked only the .md files. The rest never reached the graph. Nothing failed. The links into those pages simply showed up as broken.
+
+manni graph now reads every format manni lint parses: HTML, XML (DITA topics, DITA maps, DocBook), AsciiDoc and reStructuredText, next to Markdown and MDX. No flag needed. Six pages in six formats, six documents in the graph.
+
+Links resolve across formats in both directions. Section anchors keep the source's own ids, so topic.dita#GUID-A1B2-C3D4 stays exactly that. Ask what depends on a Markdown page. The answer includes the HTML guide, the AsciiDoc release notes, the RST reference and the DITA map behind them.
+
+#docsascode #technicalwriting #dita #knowledgegraph

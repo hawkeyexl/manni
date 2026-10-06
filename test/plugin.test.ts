@@ -13,7 +13,7 @@ function readJson(path: string): unknown {
 }
 
 interface HookFile {
-  hooks: Record<string, { matcher?: string; hooks: { type: string; command: string }[] }[]>;
+  hooks: Record<string, { matcher?: string; hooks: { type: string; command: string; args?: string[] }[] }[]>;
 }
 interface Marketplace {
   name: string;
@@ -63,20 +63,21 @@ describe("manni plugin", () => {
     expect(manifest.name).toBe(entry?.name);
   });
 
-  it("every hook runs a command the manni umbrella mounts", async () => {
+  // Exec form, so no shell parses the command on any platform, through the
+  // launcher that finds the project's own manni.
+  it("every hook runs the launcher on a command the manni umbrella mounts", async () => {
     const { hooks } = readJson(
       `${entry?.source.replace(/^\.\//, "") ?? ""}/hooks/hooks.json`,
     ) as HookFile;
-    const commands = Object.values(hooks)
+    const all = Object.values(hooks)
       .flat()
-      .flatMap((g) => g.hooks)
-      .map((h) => h.command);
-    expect(commands.length).toBeGreaterThan(0);
-    for (const command of commands) {
-      const prefix = "npx --no @hawkeyexl/manni ";
-      expect(command.startsWith(prefix), command).toBe(true);
-      const args = command.slice(prefix.length).split(/\s+/).filter(Boolean);
-      expect(await resolves(args), command).toBe(true);
+      .flatMap((g) => g.hooks);
+    expect(all.length).toBeGreaterThan(0);
+    for (const hook of all) {
+      expect(hook.command).toBe("node");
+      const [launcher, ...args] = hook.args ?? [];
+      expect(launcher).toBe("${CLAUDE_PLUGIN_ROOT}/hooks/manni.mjs");
+      expect(await resolves(args), args.join(" ")).toBe(true);
     }
   });
 

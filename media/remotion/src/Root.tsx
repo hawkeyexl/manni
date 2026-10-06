@@ -15,6 +15,7 @@ import { beats as tracevalsBeats, totalFrames as tracevalsTotalFrames, TYPING_MS
 import { beats as familyCheckBeats, totalFrames as familyCheckTotalFrames, TYPING_MS as familyCheckTypingMs } from "./family-check/beats";
 import { beats as graphImpactBeats, totalFrames as graphImpactTotalFrames, TYPING_MS as graphImpactTypingMs } from "./graph-impact/beats";
 import { beats as testBeats, totalFrames as testTotalFrames, TYPING_MS as testTypingMs } from "./test/beats";
+import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYPING_MS as graphFormatsTypingMs } from "./graph-formats/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
 const DemoUrl: React.FC = () => <DemoView beats={urlBeats} fontPx={23} linePx={32} cols={75} />;
@@ -55,6 +56,11 @@ const DemoGraph: React.FC = () => <DemoView beats={graphBeats} fontPx={22} lineP
 const DemoTracevals: React.FC = () => <DemoView beats={tracevalsBeats} fontPx={26} linePx={36} cols={66} typingMs={tracevalsTypingMs} />;
 /** graph-impact-1x1: 23 px / 72 columns, derived in media/graph/graph-impact-1x1.script.md (media/graph/graph-impact-cols.mjs). */
 const DemoGraphImpact: React.FC = () => <DemoView beats={graphImpactBeats} fontPx={22} linePx={31} cols={75} typingMs={graphImpactTypingMs} />;
+/**
+ * graph-formats-1x1: 27 px / 64 columns, derived in media/graph/graph-formats-1x1.script.md
+ * (media/graph/graph-formats-cols.mjs). Ligatures off: a terminal prints `--` and `//` as two glyphs.
+ */
+const DemoGraphFormats: React.FC = () => <DemoView beats={graphFormatsBeats} fontPx={27} linePx={38} cols={64} typingMs={graphFormatsTypingMs} ligatures={false} />;
 
 /**
  * test-run-1x1: 27 px / 64 columns, derived in media/test-run-1x1.script.md
@@ -170,6 +176,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={testTotalFrames}
+    />
+    <Composition
+      id="GraphFormatsDemo"
+      component={DemoGraphFormats}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={graphFormatsTotalFrames}
     />
     <Composition
       id="FamilyCheckDemo"

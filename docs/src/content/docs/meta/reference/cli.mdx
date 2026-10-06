@@ -29,7 +29,7 @@ sample-questions:
 graph:
   label: CLI reference
   type: reference
-last-updated: 2026-10-04
+last-updated: 2026-10-05
 tags:
   - cli
   - command-reference
@@ -1003,7 +1003,7 @@ Three cases leave it out while the fields are still written. In `json`,
 |---|---|---|
 | Checked with the entry and without it, the page's schemas report an error only the entry brings, such as `additionalProperties`, `unevaluatedProperties` or `propertyNames`. | `meta-provenance not written: this page's schemas do not allow it` | `schema-mismatch` |
 | A URL manifest in one of the page's collections owns `meta-provenance`. | `meta-provenance not written: owned by manifest https://example.com/meta.yaml, which is fetched and cannot be written` | `manifest-owned` |
-| The format's writer cannot hold a list of entries, as in an HTML or XML attribute. | `meta-provenance not written: html metadata cannot hold it` | `unwritable` |
+| The format's writer refuses the entry, as an HTML or XML attribute refuses a value holding a line break. | `meta-provenance not written: html metadata cannot hold it` | `unwritable` |
 
 {/* cite meta-provenance-never-a-candidate */}
 {/* cite provenance-keys-kept-out-of-the-prompt */}
