@@ -240,7 +240,7 @@ tracevals:
 ```
 
 Everything tracevals writes sits under **`.manni/tracevals/`**: the judge cache, the fill cache, the
-history file, and captured session manifests. One gitignored directory per repository, shared in
+history file, captured session manifests, and the conformance hook's session ledgers. One gitignored directory per repository, shared in
 shape with every other tool's `.manni/<tool>/`.
 
 ## `provider` and `model`
@@ -405,17 +405,6 @@ the Claude Code hooks. Absent, tracevals stays out of them. The journey is in
   guide. Each applies to every turn, read or not. Globs are relative to the project root.
 - **`exclude`** names files never treated as rule sources, in any format, such as a product docs
   tree or a stale `.cursor/rules` file.
-
-### `MANNI_TRACEVALS_REASONING`
-
-A development aid for reading the judge's verdicts, not a setting. Set to `1`, it asks the judge for
-a sentence of reasoning after each rule's three scores. Each finding carries it as `reasoning`, and
-`observed` ends with it. The verdict cache keeps the two apart, so turning it on judges again. A
-decision-only provider such as `jev` returns no reasoning.
-
-```sh
-MANNI_TRACEVALS_REASONING=1 manni tracevals check s.jsonl -f json
-```
 
 ### Two model roles
 

@@ -7,10 +7,10 @@
  * exclusively. The process whose create succeeds is the one that says it, so
  * no two hooks can both read "not said yet".
  */
-import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { DEFAULT_CAPTURE_DIR } from "../../tracevals/capture/types.js";
+import { idHash } from "../../tracevals/rules/ledger.js";
 
 /**
  * `<project>/.manni/tracevals/sessions/<session hash>.<key>.said`. The session
@@ -18,8 +18,7 @@ import { DEFAULT_CAPTURE_DIR } from "../../tracevals/capture/types.js";
  * never share a marker. The key is a gate name, which is already safe.
  */
 export function saidPath(projectDir: string, sessionId: string, key: string): string {
-  const session = createHash("sha256").update(sessionId).digest("hex").slice(0, 32);
-  return join(projectDir, DEFAULT_CAPTURE_DIR, `${session}.${key}.said`);
+  return join(projectDir, DEFAULT_CAPTURE_DIR, `${idHash(sessionId)}.${key}.said`);
 }
 
 /**

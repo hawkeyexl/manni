@@ -122,19 +122,19 @@ docs/src/content/docs/tracevals/reference/cli.mdx:
       integrity: sha256-b486c623ff0a92e3ca01909006c7954096d8a892ee444a783126fc55590e8ea0
     - generated-by: Claude Opus 5.5
       lines: 404
-      integrity: sha256-768972885ff06f3cf071521ea61c84e6746dbf01f954703dbb526383d8d2df94
+      integrity: sha256-a80313d2b220ee619590f5c439040e68d460827696b374f2de9c1bfcb6f4956d
     - generated-by: Claude Sonnet 5.5
       lines: 405
       integrity: sha256-76c5e3b7b724e932acfb765cdec5e8b69e512a258c00d826c324baa1b59370da
     - generated-by: Claude Opus 5.5
       lines: 406
-      integrity: sha256-e343d8b0b6f5a023b5ec1ac5f67b4cf5ceb30f1fcc60c657333d57a3587e8fd3
+      integrity: sha256-5ee83a04ec7150acbfef72e5d9d657d747ba6c44cb3f5777791b2c7e2a28e800
     - generated-by: Claude Sonnet 5.5
       lines: 407-408
       integrity: sha256-c588a300015bd962c4c0ccaab2779e7f0734b645879184927da19bb413ebce6f
     - generated-by: Claude Opus 5.5
       lines: 409
-      integrity: sha256-e343d8b0b6f5a023b5ec1ac5f67b4cf5ceb30f1fcc60c657333d57a3587e8fd3
+      integrity: sha256-0b81c7cc206c7e82b8506a8755b1fadf9066253a0bc03bf670fae4ba39d5ffbb
     - generated-by: Claude Sonnet 5.5
       lines: 411-429
       integrity: sha256-763b3c98653fe1e096868993d0b9335bd3acc99553c121e6a24e03c63b47e3e2

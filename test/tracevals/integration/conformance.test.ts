@@ -7,7 +7,7 @@
  */
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,7 +47,6 @@ function manni(
       HOME: home,
       USERPROFILE: home,
       MANNI_TRACEVALS_JUDGE: "",
-      MANNI_TRACEVALS_REASONING: "",
       ...env,
     },
   });
@@ -99,19 +98,22 @@ describe.skipIf(!built)("tracevals check", () => {
     ]);
   });
 
-  it("carries the judge's reasoning under MANNI_TRACEVALS_REASONING=1", async () => {
-    const { code, stdout } = await manni(
-      ["check", trace("breaks"), "--project", project, "-f", "json"],
-      "",
-      { MANNI_TRACEVALS_REASONING: "1" },
-    );
+  it("carries the judge's reasoning in every finding", async () => {
+    const { code, stdout } = await manni(["check", trace("breaks"), "--project", project, "-f", "json"]);
     expect(code).toBe(1);
     const { findings } = JSON.parse(stdout) as { findings: { observed: string; reasoning?: string }[] };
     expect(findings.length).toBeGreaterThan(0);
     for (const f of findings) {
-      expect(f.reasoning).toBe("Scored by the mock judge.");
-      expect(f.observed.endsWith(". Scored by the mock judge.")).toBe(true);
+      expect(f.reasoning).toMatch(/^The turn (?:does not show|shows) `[^`]+`\.$/);
+      expect(f.observed.endsWith(`. ${f.reasoning ?? ""}`)).toBe(true);
     }
+  });
+
+  it("never writes the session ledger by hand", async () => {
+    await manni(["check", trace("breaks"), "--project", project]);
+    const sessions = join(project, ".manni", "tracevals", "sessions");
+    const files = await readdir(sessions).catch(() => [] as string[]);
+    expect(files.filter((f) => f.endsWith(".ledger.json"))).toEqual([]);
   });
 
   it("exits 0 when every rule was followed", async () => {

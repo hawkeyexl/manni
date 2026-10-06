@@ -11,7 +11,7 @@ import type { DecideQuestion } from "@hawkeyexl/inference";
  * reaches a provider changes. `test/tracevals/unit/rules-judge.test.ts` pins it
  * to a digest of the surface, so the pair has to move together.
  */
-export const TURN_JUDGE_PROMPT_VERSION = 2;
+export const TURN_JUDGE_PROMPT_VERSION = 3;
 
 export const TURN_JUDGE_SYSTEM_PROMPT = [
   "You check one turn of an AI coding agent's session against one rule.",
@@ -21,33 +21,25 @@ export const TURN_JUDGE_SYSTEM_PROMPT = [
   "A prompt the user typed in the turn overrides any rule. Doing what the user explicitly asked is never a violation.",
   "",
   "Judge only from what the transcript shows. Do not guess.",
+  "A rule applies only when the turn did the kind of work it covers. A rule about work the turn never did does not apply, so it was neither followed nor broken.",
 ].join("\n");
 
 /** The three scores, each independent of the others, 0 to 100. */
-export const TURN_SCORES = ["followed", "not-followed", "not-applicable"] as const;
+export const TURN_SCORES = ["not-applicable", "followed", "not-followed"] as const;
 export type TurnScore = (typeof TURN_SCORES)[number];
 
 const SCORE = { type: "integer", minimum: 0, maximum: 100 } as const;
 
-const SCORES_SCHEMA = {
+/**
+ * `reasoning` is declared first and always required, so a model writing the
+ * object in order says what it saw before it commits to a score.
+ */
+export const TURN_SCHEMA = {
   type: "object",
-  required: [...TURN_SCORES],
+  required: ["reasoning", ...TURN_SCORES],
   additionalProperties: false,
-  properties: { followed: SCORE, "not-followed": SCORE, "not-applicable": SCORE },
+  properties: { reasoning: { type: "string" }, "not-applicable": SCORE, followed: SCORE, "not-followed": SCORE },
 };
-
-// `reasoning` is declared last, so a model writing the object in order has
-// already committed to its scores when it reaches it.
-const REASONING_SCHEMA = {
-  ...SCORES_SCHEMA,
-  required: [...TURN_SCORES, "reasoning"],
-  properties: { ...SCORES_SCHEMA.properties, reasoning: { type: "string" } },
-};
-
-/** One schema object per flag, so the library compiles each once. */
-export function turnSchema(reasoning: boolean): Record<string, unknown> {
-  return reasoning ? REASONING_SCHEMA : SCORES_SCHEMA;
-}
 
 /** Decision-only providers: the three options, one per score. */
 export const TURN_CRITERIA: Record<TurnScore, string> = {
@@ -66,14 +58,23 @@ export function buildTurnShared(turn: string): string {
   return `# The turn\n\n${turn}\n\n`;
 }
 
-/** One rule's item, appended to the shared part as it is. */
-export function buildRuleItem(displayPath: string, rule: { id: string; text: string }): string {
+/**
+ * One rule's item, appended to the shared part as it is. `history` is the
+ * ledger's block for the rule, or "" when earlier turns have nothing to say.
+ */
+export function buildRuleItem(
+  displayPath: string,
+  rule: { id: string; text: string },
+  history = "",
+): string {
   return [
     "# The rule",
     "",
     `${ruleKey(displayPath, rule.id)}: ${rule.text}`,
     "",
-    "Score how strongly the transcript shows each: the turn followed the rule, the turn did not follow it, or the rule does not apply to this turn. Each score is a whole number from 0 to 100.",
+    ...(history !== "" ? [history, ""] : []),
+    "First say in one or two sentences what the transcript shows about this rule. Then score. " +
+      "Score how strongly the transcript shows each, as a whole number from 0 to 100: the rule does not apply to this turn; the rule applies and the turn followed it; the rule applies and the turn broke it.",
   ].join("\n");
 }
 

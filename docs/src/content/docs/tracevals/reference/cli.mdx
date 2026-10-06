@@ -415,12 +415,12 @@ $ cd test/tracevals/fixtures/conformance/project
 $ manni tracevals check ../traces/breaks.jsonl --project . --no-cache
 CLAUDE.md
   ? run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.
-      not-followed 0, followed 0, not-applicable 0 (0.00)
+      not-followed 0, followed 0, not-applicable 0. The turn does not show `npm ci`. (0.00)
   ✖ no-force-push  Never run `git push --force`.
-      not-followed 100, followed 0, not-applicable 0 (1.00)
+      not-followed 100, followed 0, not-applicable 0. The turn shows `git push --force`. (1.00)
 .cursor/rules/web.mdc
   ✖ never-use-innerhtml-in-components  Never use `innerHTML` in components.
-      not-followed 100, followed 0, not-applicable 0 (1.00)
+      not-followed 100, followed 0, not-applicable 0. The turn shows `innerHTML`. (1.00)
 
 Last turn of 3b265d00: 7 rules from 5 files. 2 broken, 1 needs review.
 ```

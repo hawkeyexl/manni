@@ -4,10 +4,10 @@
  * rules and verdict caches they write never reach the committed tree, and the
  * user-level sources come from an empty home.
  */
-import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   MockProvider,
   type CompleteJSONRequest,
@@ -21,6 +21,7 @@ import { renderRelease } from "../../../src/tracevals/reporters/conformance.js";
 import type { HostApi } from "../../../src/tracevals/rules/host.js";
 import type { LocalModels } from "../../../src/tracevals/rules/local.js";
 import { mockTurnJudge, mockTurnScores } from "../../../src/tracevals/rules/mock.js";
+import { ledgerPath, recordTurn, writeLedger, type Ledger } from "../../../src/tracevals/rules/ledger.js";
 import { JEV_OUT_OF_LOOP } from "../../../src/tracevals/judge/provider.js";
 import { resetWarnings } from "../../../src/shared/warn.js";
 
@@ -133,7 +134,7 @@ describe("check by hand", () => {
     expect(outcomes).toContain(".cursor/rules/web.mdc#never-use-innerhtml-in-components:fail");
     expect(report.summary).toMatchObject({ fail: 2, needsReview: 1, sources: report.sources.length });
     expect(rendered).toContain(
-      "CLAUDE.md\n  ? run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.\n      not-followed 0, followed 0, not-applicable 0 (0.00)\n  ✖ no-force-push  Never run `git push --force`.",
+      "CLAUDE.md\n  ? run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.\n      not-followed 0, followed 0, not-applicable 0. The turn does not show `npm ci`. (0.00)\n  ✖ no-force-push  Never run `git push --force`.",
     );
     expect(rendered.split("\n").at(-1)).toBe(
       `Last turn of 3b265d00: ${String(report.summary.rules)} rules from ${String(report.sources.length)} files. 2 broken, 1 needs review.`,
@@ -200,8 +201,8 @@ describe("check by hand", () => {
   it("scores each rule in every run with a provider that cannot decide", async () => {
     const judge = generative((req) =>
       req.user.includes("CLAUDE.md#no-force-push:")
-        ? { followed: 5, "not-followed": 95, "not-applicable": 0 }
-        : { followed: 100, "not-followed": 0, "not-applicable": 0 },
+        ? { reasoning: "Pushed with --force.", "not-applicable": 0, followed: 5, "not-followed": 95 }
+        : { reasoning: "Fine.", "not-applicable": 0, followed: 100, "not-followed": 0 },
     );
     const { report } = await check("breaks", { judge, runs: 3 });
     expect(report.judge).toMatchObject({ mode: "generative", runs: 3 });
@@ -213,8 +214,9 @@ describe("check by hand", () => {
         rule: "no-force-push",
         text: "Never run `git push --force`.",
         outcome: "fail",
-        observed: "not-followed 95, followed 5, not-applicable 0",
+        observed: "not-followed 95, followed 5, not-applicable 0. Pushed with --force.",
         confidence: 0.95,
+        reasoning: "Pushed with --force.",
       },
     ]);
   });
@@ -345,6 +347,69 @@ describe("checkTurn, inside a hook", () => {
   });
 });
 
+describe("the session ledger", () => {
+  const SESSION = "3b265d00-0000-4000-8000-000000000001";
+  const PUSH = "CLAUDE.md#no-force-push";
+  const PUSH_TEXT = "Never run `git push --force`.";
+  const read = async (agent: string | null = null): Promise<Ledger> =>
+    JSON.parse(await readFile(ledgerPath(project, SESSION, agent), "utf-8")) as Ledger;
+  const followedBy = (model: string): InferenceProvider => ({
+    ...generative(() => ({ reasoning: "Fixed.", "not-applicable": 0, followed: 100, "not-followed": 0 })),
+    modelName: () => model,
+  });
+
+  it("records each judged rule after a hook, and the repair pass replaces the turn", async () => {
+    const first = await hook("breaks");
+    const from = first.report?.turn.from ?? -1;
+    const ledger = await read();
+    expect(ledger.rules[PUSH]?.entries).toEqual([
+      { turn: from, outcome: "broken", note: "The turn shows `git push --force`." },
+    ]);
+    expect(Object.keys(ledger.rules)).toHaveLength(first.judgement?.judged ?? -1);
+    await hook("breaks", { judge: followedBy("repair-model") });
+    expect((await read()).rules[PUSH]?.entries).toEqual([{ turn: from, outcome: "followed", note: "Fixed." }]);
+  });
+
+  it("keeps a subagent's ledger apart from the session's", async () => {
+    await hook("follows", { agentTranscriptPath: trace("breaks"), agentId: "a1b2" });
+    expect((await read("a1b2")).rules[PUSH]?.entries[0]?.outcome).toBe("broken");
+    await expect(read()).rejects.toThrow(/ENOENT/);
+  });
+
+  it("shows a rule's earlier turns to the judge by hand, and never writes the ledger", async () => {
+    const earlier = recordTurn({ version: 1, rules: {} }, 0, [
+      { key: PUSH, text: PUSH_TEXT, outcome: "broken", note: "Forced a push." },
+    ]);
+    await writeLedger(ledgerPath(project, SESSION, null), earlier);
+    const judge = generative(() => ({ reasoning: "Fine.", "not-applicable": 0, followed: 100, "not-followed": 0 }));
+    const { report } = await check("breaks", { judge });
+    expect(report.turn.from).toBeGreaterThan(0);
+    const push = judge.requests.find((r) => r.user.includes(`# The rule\n\n${PUSH}:`));
+    expect(push?.user).toContain(`${PUSH_TEXT}\n\n# Earlier in this session\n\n- turn 0: broken. Forced a push.\n\nFirst say`);
+    expect(await read()).toEqual(earlier);
+  });
+
+  it("writes nothing by hand when there is no ledger", async () => {
+    await check("breaks");
+    await expect(read()).rejects.toThrow(/ENOENT/);
+  });
+
+  it("warns when it cannot write the ledger, and still judges", async () => {
+    // A directory where the file goes: it reads as no history and cannot be replaced.
+    await mkdir(ledgerPath(project, SESSION, null), { recursive: true });
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      const result = await hook("breaks");
+      expect(result.exitCode).toBe(1);
+      expect(stderr.mock.calls.map((c) => String(c[0]))).toContainEqual(
+        expect.stringMatching(/could not write the session ledger .*\.ledger\.json: /),
+      );
+    } finally {
+      stderr.mockRestore();
+    }
+  });
+});
+
 describe("prepare", () => {
   it("says so when conformance is not set up", async () => {
     await config("tracevals:\n  provider: mock\n");
@@ -461,20 +526,25 @@ describe("release", () => {
 describe("mockTurnScores", () => {
   const ask = (rule: string, turn: string) =>
     mockTurnScores(`# The turn\n\n${turn}\n\n# The rule\n\nCLAUDE.md#x: ${rule}\n\nScore it.`);
-  const scores = (followed: number, notFollowed: number) => ({
+  const scores = (reasoning: string, followed: number, notFollowed: number) => ({
+    reasoning,
+    "not-applicable": 0,
     followed,
     "not-followed": notFollowed,
-    "not-applicable": 0,
   });
 
   it("reads a prohibition's code span from the turn only", () => {
-    expect(ask("Never run `git push --force`.", "git push --force origin")).toEqual(scores(0, 100));
-    expect(ask("Never run `git push --force`.", "git push origin")).toEqual(scores(100, 0));
+    expect(ask("Never run `git push --force`.", "git push --force origin")).toEqual(
+      scores("The turn shows `git push --force`.", 0, 100),
+    );
+    expect(ask("Never run `git push --force`.", "git push origin")).toEqual(
+      scores("The turn does not show `git push --force`.", 100, 0),
+    );
   });
 
   it("scores any other rule followed when its span shows, and nothing when it does not", () => {
-    expect(ask("Run `npm ci` first.", "npm ci && npm test")).toEqual(scores(100, 0));
-    expect(ask("Run `npm ci` first.", "npm test")).toEqual(scores(0, 0));
-    expect(ask("Keep commits small.", "anything")).toEqual(scores(100, 0));
+    expect(ask("Run `npm ci` first.", "npm ci && npm test")).toEqual(scores("The turn shows `npm ci`.", 100, 0));
+    expect(ask("Run `npm ci` first.", "npm test")).toEqual(scores("The turn does not show `npm ci`.", 0, 0));
+    expect(ask("Keep commits small.", "anything")).toEqual(scores("The rule names nothing to look for.", 100, 0));
   });
 });

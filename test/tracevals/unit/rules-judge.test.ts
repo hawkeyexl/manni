@@ -26,8 +26,9 @@ import {
   buildRuleItem,
   buildTurnShared,
   questionFor,
-  turnSchema,
+  TURN_SCHEMA,
 } from "../../../src/tracevals/rules/judge-prompt.js";
+import { recordTurn, type Ledger } from "../../../src/tracevals/rules/ledger.js";
 import type { Trace } from "../../../src/tracevals/trace/types.js";
 
 const TRACES = join(import.meta.dirname, "..", "fixtures", "rules", "traces");
@@ -87,10 +88,11 @@ function input(
 type Reply = Record<string, unknown> | { error: string };
 type Script = (rule: string, call: number) => Reply | undefined;
 
-const scores = (followed: number, notFollowed: number, notApplicable: number) => ({
+const scores = (followed: number, notFollowed: number, notApplicable: number, reasoning = "Seen.") => ({
+  reasoning,
+  "not-applicable": notApplicable,
   followed,
   "not-followed": notFollowed,
-  "not-applicable": notApplicable,
 });
 const FOLLOWED = scores(95, 2, 1);
 
@@ -152,16 +154,16 @@ describe("the turn judge prompt", () => {
       TURN_JUDGE_SYSTEM_PROMPT,
       buildTurnShared("TURN"),
       buildRuleItem("CLAUDE.md", rule),
+      buildRuleItem("CLAUDE.md", rule, "HISTORY"),
       buildDecisionState("TURN"),
       JSON.stringify(questionFor("CLAUDE.md", rule)),
       JSON.stringify(TURN_CRITERIA),
-      JSON.stringify(turnSchema(false)),
-      JSON.stringify(turnSchema(true)),
+      JSON.stringify(TURN_SCHEMA),
     ].join("\n---\n");
     const digest = createHash("sha256").update(surface).digest("hex").slice(0, 12);
     expect({ version: TURN_JUDGE_PROMPT_VERSION, digest }).toEqual({
-      version: 2,
-      digest: "048c8e9f2004",
+      version: 3,
+      digest: "3d2fa6d96c45",
     });
   });
 
@@ -173,31 +175,28 @@ describe("the turn judge prompt", () => {
         "\n" +
         "A prompt the user typed in the turn overrides any rule. Doing what the user explicitly asked is never a violation.\n" +
         "\n" +
-        "Judge only from what the transcript shows. Do not guess.",
+        "Judge only from what the transcript shows. Do not guess.\n" +
+        "A rule applies only when the turn did the kind of work it covers. A rule about work the turn never did does not apply, so it was neither followed nor broken.",
     );
     expect(buildTurnShared("TURN")).toBe("# The turn\n\nTURN\n\n");
-    expect(buildRuleItem("CLAUDE.md", { id: "a", text: "Do a." })).toBe(
-      "# The rule\n\nCLAUDE.md#a: Do a.\n\n" +
-        "Score how strongly the transcript shows each: the turn followed the rule, the turn did not follow it, or the rule does not apply to this turn. Each score is a whole number from 0 to 100.",
+    const ask =
+      "First say in one or two sentences what the transcript shows about this rule. Then score. " +
+      "Score how strongly the transcript shows each, as a whole number from 0 to 100: the rule does not apply to this turn; the rule applies and the turn followed it; the rule applies and the turn broke it.";
+    expect(buildRuleItem("CLAUDE.md", { id: "a", text: "Do a." })).toBe(`# The rule\n\nCLAUDE.md#a: Do a.\n\n${ask}`);
+    expect(buildRuleItem("CLAUDE.md", { id: "a", text: "Do a." }, "# Earlier in this session\n\n- turn 3: broken.")).toBe(
+      `# The rule\n\nCLAUDE.md#a: Do a.\n\n# Earlier in this session\n\n- turn 3: broken.\n\n${ask}`,
     );
   });
 
-  it("scores three independent integers, and adds reasoning last only when asked", () => {
+  it("asks for reasoning first, always, then three independent integers", () => {
     const score = { type: "integer", minimum: 0, maximum: 100 };
-    expect(turnSchema(false)).toEqual({
+    expect(TURN_SCHEMA).toEqual({
       type: "object",
-      required: ["followed", "not-followed", "not-applicable"],
+      required: ["reasoning", "not-applicable", "followed", "not-followed"],
       additionalProperties: false,
-      properties: { followed: score, "not-followed": score, "not-applicable": score },
+      properties: { reasoning: { type: "string" }, "not-applicable": score, followed: score, "not-followed": score },
     });
-    const withReasoning = turnSchema(true) as { required: string[]; properties: object };
-    expect(withReasoning.required).toEqual(["followed", "not-followed", "not-applicable", "reasoning"]);
-    expect(Object.keys(withReasoning.properties)).toEqual([
-      "followed",
-      "not-followed",
-      "not-applicable",
-      "reasoning",
-    ]);
+    expect(Object.keys(TURN_SCHEMA.properties)).toEqual(["reasoning", "not-applicable", "followed", "not-followed"]);
   });
 
   it("offers decision-only providers the same three options", () => {
@@ -232,13 +231,14 @@ describe("judgeTurn, scored", () => {
         rule: "run-npm-ci-first",
         text: "Run npm ci first when working in a worktree.",
         outcome: "fail",
-        observed: "not-followed 91, followed 4, not-applicable 2",
+        observed: "not-followed 91, followed 4, not-applicable 2. Seen.",
         confidence: 0.91,
+        reasoning: "Seen.",
       },
     ]);
     const [first, second] = requests;
     expect(first?.system).toBe(TURN_JUDGE_SYSTEM_PROMPT);
-    expect(first?.schema).toBe(turnSchema(false));
+    expect(first?.schema).toBe(TURN_SCHEMA);
     const shared = first?.user.slice(0, first.user.indexOf("# The rule")) ?? "";
     expect(shared.startsWith("# The turn\n\n")).toBe(true);
     expect(shared).toContain("[user] Now run the tests.");
@@ -268,7 +268,7 @@ describe("judgeTurn, scored", () => {
 
   it("reads the scores independently: a violation blocks even when followed is high too", async () => {
     const result = await judgeTurn(input(scorer((r) => (r === CI ? scores(85, 85, 0) : undefined)).provider));
-    expect(result.findings[0]).toMatchObject({ outcome: "fail", observed: "not-followed 85, followed 85, not-applicable 0" });
+    expect(result.findings[0]).toMatchObject({ outcome: "fail", observed: "not-followed 85, followed 85, not-applicable 0. Seen." });
   });
 
   it("counts not-applicable at the pass bar, passes followed at it, and reviews the rest", async () => {
@@ -295,7 +295,7 @@ describe("judgeTurn, scored", () => {
     const result = await judgeTurn(input(split.provider, { runs: 3 }));
     expect(result.findings[0]).toMatchObject({
       outcome: "needs-review",
-      observed: "not-followed 62, followed 33, not-applicable 0",
+      observed: "not-followed 62, followed 33, not-applicable 0. Seen.",
     });
   });
 
@@ -323,7 +323,7 @@ describe("judgeTurn, scored", () => {
     const script: Script = (r, call) => (r === CI ? (call === 0 ? scores(0, 95, 0) : { error: "timeout" }) : undefined);
     const result = await judgeTurn(input(scorer(script).provider, { runs: 2 }));
     expect(result.findings[0]).toMatchObject({ outcome: "needs-review" });
-    expect(result.findings[0]?.observed).toMatch(/^not-followed 95, followed 0, not-applicable 0; 1 of 2 runs errored: .*timeout/);
+    expect(result.findings[0]?.observed).toMatch(/^not-followed 95, followed 0, not-applicable 0; 1 of 2 runs errored: .*timeout.*\. Seen\.$/);
   });
 
   it("throws when every rule errors in every run", async () => {
@@ -358,24 +358,51 @@ describe("judgeTurn, scored", () => {
     expect(third.cached).toBe(false);
   });
 
-  it("asks for reasoning only when enabled, carries it, and keys the cache on it", async () => {
-    const cache = new TurnCache(join(dir, "reasoning"));
-    const script: Script = (r) => (r === CI ? { ...scores(3, 92, 0), reasoning: "Ran npm test with no npm ci." } : undefined);
-    const off = scorer((r) => (r === CI ? scores(3, 92, 0) : undefined));
-    const plain = await judgeTurn(input(off.provider, { cache }));
-    expect(off.requests[0]?.schema).toBe(turnSchema(false));
-    expect(plain.findings[0]).not.toHaveProperty("reasoning");
-
-    const on = scorer((r, call) => script(r, call) ?? { ...FOLLOWED, reasoning: "Fine." });
-    const reasoned = await judgeTurn(input(on.provider, { cache, reasoning: true }));
-    expect(on.requests).toHaveLength(2);
-    expect(on.requests[0]?.schema).toBe(turnSchema(true));
-    expect(reasoned.cached).toBe(false);
-    expect(reasoned.findings[0]).toMatchObject({
+  it("carries the judge's reasoning in observed, and every judged rule in verdicts", async () => {
+    const script: Script = (r) =>
+      r === CI ? scores(3, 92, 0, "Ran npm test with no npm ci.") : scores(2, 0, 90, "No push.");
+    const result = await judgeTurn(input(scorer(script).provider));
+    expect(result.findings[0]).toMatchObject({
       outcome: "fail",
       observed: "not-followed 92, followed 3, not-applicable 0. Ran npm test with no npm ci.",
       reasoning: "Ran npm test with no npm ci.",
     });
+    expect(result.verdicts).toEqual([
+      { source: "CLAUDE.md", rule: "run-npm-ci-first", text: RULES[0]?.rule.text, outcome: "fail", reasoning: "Ran npm test with no npm ci." },
+      { source: "CLAUDE.md", rule: "no-force-push", text: "Never force-push.", outcome: "not-applicable", reasoning: "No push." },
+    ]);
+  });
+
+  it("puts a rule's earlier turns in its item, ignoring the current turn and later", async () => {
+    const from = lastTurn(trace).from;
+    expect(from).toBeGreaterThan(1);
+    let ledger: Ledger = { version: 1, rules: {} };
+    const ciText = RULES[0]?.rule.text ?? "";
+    ledger = recordTurn(ledger, from - 2, [{ key: CI, text: ciText, outcome: "broken", note: "Skipped npm ci." }]);
+    ledger = recordTurn(ledger, from, [{ key: CI, text: ciText, outcome: "followed", note: "Now." }]);
+    ledger = recordTurn(ledger, from - 1, [{ key: PUSH, text: "Never force-push.", outcome: "not-applicable", note: "" }]);
+    const { provider, requests } = scorer();
+    await judgeTurn(input(provider, { ledger }));
+    const item = (key: string) => requests.find((r) => r.user.includes(`# The rule\n\n${key}:`))?.user ?? "";
+    expect(item(CI)).toContain(
+      `${CI}: ${ciText}\n\n# Earlier in this session\n\n- turn ${String(from - 2)}: broken. Skipped npm ci.\n\nFirst say`,
+    );
+    expect(item(CI)).not.toContain("Now.");
+    expect(item(PUSH)).not.toContain("# Earlier in this session");
+  });
+
+  it("judges a rule again when its history changes, and reuses the rest", async () => {
+    const cache = new TurnCache(join(dir, "history"));
+    await judgeTurn(input(scorer().provider, { cache }));
+    const ciText = RULES[0]?.rule.text ?? "";
+    const ledger = recordTurn({ version: 1, rules: {} }, 0, [{ key: CI, text: ciText, outcome: "broken", note: "" }]);
+    const again = scorer();
+    const result = await judgeTurn(input(again.provider, { cache, ledger }));
+    expect(again.requests.map((r) => /# The rule\n\n(\S+):/.exec(r.user)?.[1])).toEqual([CI]);
+    expect(result.cached).toBe(false);
+    const replay = scorer();
+    expect((await judgeTurn(input(replay.provider, { cache, ledger }))).cached).toBe(true);
+    expect(replay.requests).toHaveLength(0);
   });
 
   it("makes no call when no rule applies", async () => {
@@ -415,7 +442,9 @@ describe("judgeTurn on a decision-only provider", () => {
       [CI_Q]: { "not-followed": 0.91, followed: 0.06, "not-applicable": 0.03 },
       [PUSH_Q]: "followed",
     });
-    const result = await judgeTurn(input(provider, { runs: 3, reasoning: true }));
+    const ciText = RULES[0]?.rule.text ?? "";
+    const ledger = recordTurn({ version: 1, rules: {} }, 0, [{ key: CI, text: ciText, outcome: "broken", note: "" }]);
+    const result = await judgeTurn(input(provider, { runs: 3, ledger }));
     expect(mock.decideRequests).toHaveLength(1);
     expect(mock.requests).toHaveLength(0);
     expect(result).toMatchObject({ mode: "decision", runs: 1, judged: 2, notApplicable: 1 });
@@ -432,7 +461,7 @@ describe("judgeTurn on a decision-only provider", () => {
     const req = mock.decideRequests[0];
     expect(Object.keys(req?.questions ?? {})).toEqual([CI_Q, PUSH_Q]);
     expect(Object.keys(req?.questions[CI_Q]?.criteria ?? {})).toEqual(["followed", "not-followed", "not-applicable"]);
-    expect(req?.questions[CI_Q]?.instructions).toContain("Run npm ci first when working in a worktree.");
+    expect(req?.questions[CI_Q]).toEqual(questionFor("CLAUDE.md", { id: "run-npm-ci-first", text: ciText }));
     const state = typeof req?.state === "string" ? req.state : "";
     expect(state.startsWith(`${TURN_JUDGE_SYSTEM_PROMPT}\n\n# The turn\n\n`)).toBe(true);
     expect(state).toContain("[user] Now run the tests.");

@@ -180,19 +180,19 @@ $ cd test/tracevals/fixtures/conformance/project
 $ manni tracevals check ../traces/breaks.jsonl --project . --no-cache
 CLAUDE.md
   ? run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.
-      not-followed 0, followed 0, not-applicable 0 (0.00)
+      not-followed 0, followed 0, not-applicable 0. The turn does not show `npm ci`. (0.00)
   ✖ no-force-push  Never run `git push --force`.
-      not-followed 100, followed 0, not-applicable 0 (1.00)
+      not-followed 100, followed 0, not-applicable 0. The turn shows `git push --force`. (1.00)
 .cursor/rules/web.mdc
   ✖ never-use-innerhtml-in-components  Never use `innerHTML` in components.
-      not-followed 100, followed 0, not-applicable 0 (1.00)
+      not-followed 100, followed 0, not-applicable 0. The turn shows `innerHTML`. (1.00)
 
 Last turn of 3b265d00: 7 rules from 5 files. 2 broken, 1 needs review.
 ```
 
 The fixture's config judges with a test provider that scores each rule 0 or 100. A real model
-scores in between, from what the turn shows. Each finding names the rule's id, its text and its
-three scores, grouped under the file the rule came from. The number in parentheses is the
+scores in between, from what the turn shows. Each finding names the rule's id, its text, its three
+scores and the judge's reasoning, grouped under the file the rule came from. The number in parentheses is the
 not-followed score as a fraction. The `?` row is a rule the judge could not settle. The `✖` rows
 are broken, so the command exits `1`.
 
@@ -245,9 +245,16 @@ At Stop, the hook judges the turn with the in-loop model. Only a confident viola
 The repair pass judges the whole turn once more. The turn has grown, so the verdict cache misses, and
 the pass costs one call. It is the only way to tell you a rule is still broken.
 
-The judge asks about each rule on its own. It sees the turn and that one rule, and it returns three
-scores from 0 to 100: followed, not followed, and not applicable. The three are independent, so a
-model can score a rule high on both followed and not followed.
+The judge asks about each rule on its own. It sees the turn and that one rule. It first says in a
+sentence or two what the transcript shows about the rule. Then it returns three scores from 0 to
+100: not applicable, followed, and not followed. The three are independent, so a model can score a
+rule high on both followed and not followed.
+
+Some rules cover a procedure that spans turns, such as running `npm ci` once before any test. So the
+hook keeps a ledger for each session, and the judge sees each rule's last few results from earlier
+turns. A subagent keeps a ledger of its own. `manni tracevals check` reads a session's ledger and
+never writes it. The ledger's shape is in
+[Report and exit codes](/manni/tracevals/reference/report-and-exit-codes/#the-session-ledger).
 
 Only a confident violation blocks. A rule blocks when its not-followed score reaches
 [`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge) as a percentage, in every
@@ -271,7 +278,7 @@ the run. Most of them are silent.
   it spawns, so a `claude-cli` judge cannot set off the hook again.
 - An empty turn, or one with no rule source in scope, ends the run.
 - A turn where every rule's `when` fails is skipped, never passed.
-- A turn already judged, with the same rules and model, reuses its cached verdict.
+- A turn already judged, with the same rules, history and model, reuses its cached verdict.
 
 Three local-model cases speak, once per session, and judge nothing. The model is still downloading,
 or it is not on disk, or it does not fit in free memory. Each message says which. A hosted model skips

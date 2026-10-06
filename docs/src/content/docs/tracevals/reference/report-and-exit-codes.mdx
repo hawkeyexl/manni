@@ -546,7 +546,8 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
   "findings": [
     { "source": "CLAUDE.md", "rule": "no-force-push",
       "text": "Never run `git push --force`.", "outcome": "fail",
-      "observed": "not-followed 100, followed 0, not-applicable 0", "confidence": 1 }
+      "observed": "not-followed 100, followed 0, not-applicable 0. The turn shows `git push --force`.",
+      "confidence": 1, "reasoning": "The turn shows `git push --force`." }
   ],
   "summary": { "sources": 5, "rules": 7, "notApplicable": 0, "fail": 2, "needsReview": 1 },
   "skipped": null,
@@ -565,7 +566,7 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
 | `judge.mode` | `decision` or `generative` | Detected from the provider. `decision` is a decision-only provider such as `jev`, which makes one call, so `runs` is `1`. Every other provider is `generative`, and scores each rule in each run. |
 | `extraction` | object or null | The out-of-loop provider and model. `null` when no source needed them. |
 | `sources[]` | object | One entry per file in scope: `path`, `format`, `trigger`, `rules`, `origin`, and `skill` for a skill's files. `trigger` says why the file was in scope. `origin` is `declared` for a file's own `ai` evals, and `extracted` otherwise. |
-| `findings[]` | object | Only `fail` and `needs-review` outcomes, each with its `source`, `rule`, `text`, `observed` and `confidence`. `observed` gives the rule's three scores, averaged over the runs. `confidence` is the not-followed score as a fraction. `reasoning` is present only under [`MANNI_TRACEVALS_REASONING`](/manni/tracevals/reference/configuration/#manni_tracevals_reasoning). A rule left out was followed or did not apply. |
+| `findings[]` | object | Only `fail` and `needs-review` outcomes, each with its `source`, `rule`, `text`, `observed` and `confidence`. `observed` gives the rule's three scores, averaged over the runs. `confidence` is the not-followed score as a fraction. `reasoning` is the judge's sentence or two on what the transcript shows, and `observed` ends with it. A decision-only provider such as `jev` gives none. A rule left out was followed or did not apply. |
 | `summary` | object | The counts of `sources`, `rules`, `notApplicable`, `fail` and `needsReview`. |
 | `skipped` | string or null | `null`, `empty-turn`, `no-sources` or `not-applicable`. The other gates apply only under a hook. |
 | `warnings` | array | Strings, such as a rules file whose front matter does not parse. |
@@ -574,6 +575,41 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
 Only a confident violation counts as `fail`: a not-followed score at
 [`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge), as a percentage, in every
 run. A rule the judge could not settle, or errored on, is `needs-review`, which never fails `check`.
+
+### The session ledger
+
+After the hook judges a turn, it records each judged rule's result, so the judge sees what earlier
+turns found. The main session writes `.manni/tracevals/sessions/<session hash>.ledger.json` under
+the project. A subagent writes `<session hash>.<agent id hash>.ledger.json`, so parallel subagents
+never share a file. `manni tracevals check` reads the ledger of the session it judges and never
+writes it.
+
+```json
+{
+  "version": 1,
+  "rules": {
+    "CLAUDE.md#no-force-push": {
+      "text": "<sha256 of the rule text>",
+      "entries": [
+        { "turn": 3, "outcome": "broken", "note": "The turn shows `git push --force`." }
+      ]
+    }
+  }
+}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `rules` | object | One entry per rule, keyed by its file and id. |
+| `text` | string | A sha256 of the rule's text. An edited rule starts with no history. |
+| `entries[].turn` | number | The turn's first event, as an ordinal in the trace. Judging a turn again replaces its entry. |
+| `entries[].outcome` | string | `followed`, `broken`, `needs-review` or `not-applicable`. |
+| `entries[].note` | string | The judge's reasoning, cut to 200 characters. Empty for a decision-only provider. |
+
+Each rule keeps its last 10 entries. A rule's item shows the judge its last three results from
+earlier turns, leaving out the turns it did not apply to. A rule with only those has no history to
+show. The history is part of the verdict cache key. A missing or unreadable ledger is an empty
+history, and a ledger that cannot be written is a warning that never blocks.
 
 ## `--output`
 

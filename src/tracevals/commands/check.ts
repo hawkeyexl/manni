@@ -5,7 +5,8 @@
  * every gate of "When tracevals stays out of the way".
  *
  * Both are read-only over the trace and the sources. What they write is the
- * rules cache and the verdict cache, under `judge.cacheDir`.
+ * rules cache and the verdict cache, under `judge.cacheDir`. The hook also
+ * writes the session ledger, which `check` by hand only reads.
  */
 import { writeFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
@@ -25,11 +26,19 @@ import {
   applicableRules,
   judgeTurn,
   TurnCache,
-  REASONING_ENV,
   type TurnFinding,
   type TurnJudgement,
   type TurnRule,
 } from "../rules/judge.js";
+import { ruleKey } from "../rules/judge-prompt.js";
+import {
+  ledgerPath,
+  readLedger,
+  recordTurn,
+  writeLedger,
+  type LedgerOutcome,
+} from "../rules/ledger.js";
+import { warn } from "../../shared/warn.js";
 import { libraryLocalModels, type LocalModels } from "../rules/local.js";
 import { mockTurnJudge } from "../rules/mock.js";
 import { resolveTurnSources, type RuleSource } from "../rules/sources.js";
@@ -128,6 +137,13 @@ const idOf = (p: InferenceProvider): Identity => ({
   provider: p.provider() as ProviderName,
   model: p.modelName(),
 });
+
+const LEDGER_OUTCOME: Record<TurnJudgement["verdicts"][number]["outcome"], LedgerOutcome> = {
+  fail: "broken",
+  followed: "followed",
+  "needs-review": "needs-review",
+  "not-applicable": "not-applicable",
+};
 
 /** The pipeline both modes run: sources, extraction, the judge. */
 async function conform(p: Params): Promise<Outcome> {
@@ -240,7 +256,10 @@ async function conform(p: Params): Promise<Outcome> {
     (judgeId.provider === "mock"
       ? mockTurnJudge(judgeId.model)
       : constructProvider(config, judgeId, { host }));
-  let ran: Awaited<ReturnType<typeof queued<TurnJudgement>>>;
+  // The session ledger: read in both modes, written only by the hook.
+  const ledgerFile = ledgerPath(p.projectDir, p.sessionId, p.agentId);
+  const ledger = await readLedger(ledgerFile);
+  let ran:Awaited<ReturnType<typeof queued<TurnJudgement>>>;
   try {
     ran = await queued(judgeId.model, () =>
       judgeTurn({
@@ -259,7 +278,7 @@ async function conform(p: Params): Promise<Outcome> {
         ...(p.lastAssistantMessage !== undefined
           ? { lastAssistantMessage: p.lastAssistantMessage }
           : {}),
-        reasoning: (p.env ?? process.env)[REASONING_ENV] === "1",
+        ledger,
         cache: new TurnCache(resolve(p.configDir, config.judge.cacheDir, "turns"), !p.noCache),
       }),
     );
@@ -277,6 +296,19 @@ async function conform(p: Params): Promise<Outcome> {
     };
   }
   const judgement = ran.value;
+  if (p.inLoop) {
+    const results = judgement.verdicts.map((v) => ({
+      key: ruleKey(v.source, v.rule),
+      text: v.text,
+      outcome: LEDGER_OUTCOME[v.outcome],
+      note: v.reasoning ?? "",
+    }));
+    try {
+      await writeLedger(ledgerFile, recordTurn(ledger, turn.from, results));
+    } catch (err) {
+      warn(`could not write the session ledger ${ledgerFile}: ${firstLine(err)}`);
+    }
+  }
   report.judge = {
     provider: judgeId.provider,
     model: judgeId.model,

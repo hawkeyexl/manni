@@ -189,6 +189,61 @@ caps. Claude Code writes the transcript asynchronously, so its last message can
 lag. Stop and SubagentStop carry `last_assistant_message`, and tracevals appends
 it when the transcript lacks it.
 
+#### The ledger
+
+Some rules govern a procedure that spans turns, such as running `npm ci` once
+in a fresh worktree before any test. One turn alone cannot show whether it was
+followed. So the hook keeps a ledger per session, and the judge reads what
+earlier turns found.
+
+After a hook judges a turn, it writes each judged rule's result under the
+project, to `.manni/tracevals/sessions/<session hash>.ledger.json`. A
+subagent's run goes to `<session hash>.<agent id hash>.ledger.json`, so
+parallel SubagentStops never write one file. Both ids are hashed as the skip
+markers are. The ledger is written to a temp file and renamed into place.
+
+```json
+{
+  "version": 1,
+  "rules": {
+    "CLAUDE.md#run-npm-ci-first": {
+      "text": "<sha256 of the rule text>",
+      "entries": [
+        { "turn": 120, "outcome": "followed", "note": "The turn ran npm ci, then npm test." },
+        { "turn": 300, "outcome": "not-applicable", "note": "The turn ran no tests." }
+      ]
+    }
+  }
+}
+```
+
+- The key is the rule's `<file>#<id>`. `text` is a sha256 of the rule's text,
+  so an edited rule starts with no history.
+- `turn` is the turn's first event, as an ordinal in the trace. `outcome` is
+  `followed`, `broken`, `needs-review` or `not-applicable`.
+- `note` is the judge's reasoning, cut to 200 characters. A decision-only
+  provider gives none, so its notes are empty.
+- Each rule keeps its last 10 entries. Judging a turn again replaces that
+  turn's entry, which is what the repair pass does.
+- A rule judged not applicable is recorded, and counts as quiet history.
+
+A rule's item gains its history when the ledger holds earlier turns for it that
+are not all quiet. The block holds the last three of those, and it sits before
+the instruction to score.
+
+```text
+# Earlier in this session
+
+- turn 120: followed. The turn ran npm ci, then npm test.
+```
+
+The block is part of the rule's verdict cache key, so different history never
+replays a cached verdict. A decision-only provider's questions carry no
+history. `check` by hand reads the ledger of the session it is given, and never
+writes it. It ignores entries for the turn it judges and for any later turn.
+A missing or unreadable ledger is an empty history. A ledger that cannot be
+written is a warning, and it never blocks.
+
 ### When tracevals stays out of the way
 
 A Stop runs these gates in order. Each is deterministic and cheap. The first
@@ -204,7 +259,7 @@ gate that finds nothing to do ends the run.
 | 6 | Not applicable | Every in-scope rule's `when` fails over the turn | Silent. Each rule counts as `skipped`, never `pass`. |
 | 7 | Model not on disk | The local model or runtime is missing | One message per session. Nothing downloads. |
 | 8 | Not enough memory | The library's memory probe, the one `auto` tiering uses | One message per session |
-| 9 | Already judged | The verdict cache holds this turn, rule and model | The cached verdict is reused, rule by rule. The key is the provider, model, mode, runs, temperature, prompt version and reasoning flag. It also holds a sha256 of the rendered turn, and one of the rule's source, id and text. |
+| 9 | Already judged | The verdict cache holds this turn, rule and model | The cached verdict is reused, rule by rule. The key is the provider, model, mode, runs, temperature and prompt version. It also holds a sha256 of the rendered turn, and one of the rule's source, id, text and ledger history. |
 
 The cache is read last, because its key needs the model's state limit. A
 local model can only report that once it is on disk. Under a hook, a local extraction
@@ -247,18 +302,21 @@ The transcript shows the user's prompts, the agent's tool calls with their input
 A prompt the user typed in the turn overrides any rule. Doing what the user explicitly asked is never a violation.
 
 Judge only from what the transcript shows. Do not guess.
+A rule applies only when the turn did the kind of work it covers. A rule about work the turn never did does not apply, so it was neither followed nor broken.
 ```
 
 The shared part is `# The turn`, a blank line, the rendered turn and a blank
 line. Each item follows it directly, with the rule's file, id and text filled
-in.
+in. A rule with history in [the ledger](#the-ledger) carries its block next.
 
 ```text
 # The rule
 
 <file>#<id>: <rule text>
 
-Score how strongly the transcript shows each: the turn followed the rule, the turn did not follow it, or the rule does not apply to this turn. Each score is a whole number from 0 to 100.
+<the ledger's block, when the rule has one>
+
+First say in one or two sentences what the transcript shows about this rule. Then score. Score how strongly the transcript shows each, as a whole number from 0 to 100: the rule does not apply to this turn; the rule applies and the turn followed it; the rule applies and the turn broke it.
 ```
 
 Every provider that generates answers each item under one schema. That covers
@@ -267,26 +325,28 @@ Every provider that generates answers each item under one schema. That covers
 ```json
 {
   "type": "object",
-  "required": ["followed", "not-followed", "not-applicable"],
+  "required": ["reasoning", "not-applicable", "followed", "not-followed"],
   "additionalProperties": false,
   "properties": {
+    "reasoning": { "type": "string" },
+    "not-applicable": { "type": "integer", "minimum": 0, "maximum": 100 },
     "followed": { "type": "integer", "minimum": 0, "maximum": 100 },
-    "not-followed": { "type": "integer", "minimum": 0, "maximum": 100 },
-    "not-applicable": { "type": "integer", "minimum": 0, "maximum": 100 }
+    "not-followed": { "type": "integer", "minimum": 0, "maximum": 100 }
   }
 }
 ```
+
+`reasoning` is declared first and always required, so the model says what the
+transcript shows before it scores. On the conformance fixtures, this was the
+only variant with no false failure that still caught every true one. The item
+asks for one or two sentences, which bounds the latency it adds. A finding's
+`observed` carries the scores and then the reasoning.
 
 The three scores are independent and need not sum to anything. A model can
 score a turn 85 on followed and 85 on not followed. The library's
 `completeJSONShared` sends the calls. Under `llama-cpp` it evaluates the turn
 once, and it generates each rule's answer from there under the schema's
 grammar. Any other provider gets one validated call per rule, a few at a time.
-
-`MANNI_TRACEVALS_REASONING=1` adds a required `reasoning` string to the
-schema. It is declared last, so the scores are written before it. It is a
-development aid. The findings carry it, and it is part of the verdict cache
-key.
 
 A decision-only provider, which today is Jev, keeps `decide`. The rendered
 turn behind the same system prompt is the shared state. Each rule is one
@@ -567,10 +627,10 @@ error.
 $ manni tracevals check ~/.claude/projects/my-repo/3b265d00.jsonl
 CLAUDE.md
   ✖ run-npm-ci-first  Run npm ci first when working in a worktree.
-      not-followed 91, followed 4, not-applicable 2 (0.91)
+      not-followed 91, followed 4, not-applicable 2. The turn ran npm test with no npm ci. (0.91)
 docs/content-strategy/design.md
   ? accent-not-red  The accent colour may not be red, green, yellow or cyan.
-      not-followed 55, followed 40, not-applicable 0 (0.55)
+      not-followed 55, followed 40, not-applicable 0. The transcript does not show the colour. (0.55)
 
 Last turn of 3b265d00: 14 rules from 5 files. 1 broken, 1 needs review.
 ```
@@ -637,8 +697,9 @@ The Jev message also answers `run` and `fill` given `--provider jev`.
   "findings": [
     { "source": "CLAUDE.md", "rule": "run-npm-ci-first",
       "text": "Run npm ci first when working in a worktree.",
-      "outcome": "fail", "observed": "not-followed 91, followed 4, not-applicable 2",
-      "confidence": 0.91 }
+      "outcome": "fail",
+      "observed": "not-followed 91, followed 4, not-applicable 2. The turn ran npm test with no npm ci.",
+      "confidence": 0.91, "reasoning": "The turn ran npm test with no npm ci." }
   ],
   "summary": { "sources": 5, "rules": 14, "notApplicable": 6,
                "fail": 1, "needsReview": 1 },
@@ -656,8 +717,9 @@ The Jev message also answers `run` and `fill` given `--provider jev`.
   call, so `runs` is 1. Every other provider is `generative`, and scores each
   rule in each run.
 - `observed` gives a rule's three scores, averaged over the runs.
-  `confidence` is the not-followed score as a fraction. A finding carries
-  `reasoning` only under `MANNI_TRACEVALS_REASONING=1`.
+  `confidence` is the not-followed score as a fraction. `observed` ends with
+  the judge's reasoning, which a finding also carries as `reasoning`. A
+  decision-only provider gives none.
 - `judge` is `null` when no judge ran, and `extraction` is `null` when no
   source needed the model.
 - `skipped` is `null`, `"empty-turn"`, `"no-sources"` or `"not-applicable"`.
@@ -867,6 +929,17 @@ block, with every failing check in it.
     Passing the hook's model to `check` reproduces the hook.
 24. **A session later graded by `run`.** Its transcript holds the block
     reasons. That is an honest record of what the agent was told.
+25. **A procedure that spans turns.** A rule says to run `npm ci` once in a
+    fresh worktree before any test. Turn 1 runs both and is judged followed.
+    Turn 4 runs only the tests. Its item shows turn 1 as followed, so the judge
+    can see the step was taken before.
+26. **The repair pass.** The hook blocks a turn for a broken rule, and the
+    agent fixes the work. The repair pass judges the same turn from the same
+    start, so its entry replaces the broken one. The broken entry is for that
+    turn itself, so the repair pass does not read it as history.
+27. **Parallel subagents.** Each SubagentStop writes the ledger of its own
+    agent id, so no two write one file. A subagent reads no history from the
+    main session or from another subagent.
 
 ## Consequences
 
@@ -885,6 +958,8 @@ block, with every failing check in it.
 - The host is one process per machine. One slow request delays every
   session's judgement behind it.
 - A partial read holds the agent to the whole file.
+- The ledger holds verdicts, not events. A step taken in a turn the rule did
+  not apply to leaves only quiet history, which a later turn does not see.
 - A hosted judge is sent the turn once per rule, so a turn under many rules
   costs that many calls.
 - Files the agent prints through Bash, as with `cat`, are not seen as reads.
