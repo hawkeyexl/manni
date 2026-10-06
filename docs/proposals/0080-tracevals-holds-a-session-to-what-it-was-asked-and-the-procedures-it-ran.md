@@ -203,7 +203,7 @@ keeps a spec's own ids, such as `FR-001`, `T014` or `1.2`. Its version is
 `REQUIREMENTS_PROMPT_VERSION = 1`. It shares the rules cache under a key slot
 of its own, so a rules file keeps its entries.
 
-| Format | Files | In scope when |
+| Format | Content | In scope when |
 |---|---|---|
 | `prompt` | Every prompt the user typed in the session, in order. A subagent's own run has only its sidechain prompts, so those are its sequence. | Always |
 | `plan` | The plan of the last approved `ExitPlanMode`. That is its `plan` input, or else the last file the session wrote under the Claude config directory's `plans/` before the call. | From the approval on |
@@ -296,10 +296,12 @@ Last turn of 3b265d00: 21 rules from 6 sources. 3 broken.
 The closing lines say "sources" where 0079's said "files", because a prompt is
 not a file.
 
-- `Last turn of 3b265d00: 21 rules from 6 sources. None broken.`
-- `Last turn of 3b265d00: 21 rules from 6 sources, none apply to this turn.`
-- `Last turn of 3b265d00: no rule sources governed it.`
-- `Last turn of 3b265d00: nothing happened after the last prompt.`
+| Line | When |
+|---|---|
+| `Last turn of 3b265d00: 21 rules from 6 sources. None broken.` | The judge ran, and no rule reached the bar |
+| `Last turn of 3b265d00: 21 rules from 6 sources, none apply to this turn.` | Gate 6 stopped the run, so no judge ran |
+| `Last turn of 3b265d00: no rule sources governed it.` | Gate 4 stopped the run |
+| `Last turn of 3b265d00: nothing happened after the last prompt.` | Gate 3 stopped the run |
 
 All four exit 0. Exit 1 still means a rule broken with a confident verdict.
 
@@ -332,6 +334,12 @@ the files and requests that governed it".
 
 Every turn has a typed prompt, which is a source, so gate 4 rarely stops a turn
 and gate 6 decides.
+
+The new sources are extracted at the Stop or SubagentStop that first finds them
+in scope. That happens between gates 4 and 6, as for 0079's turn sources, and
+always with the out-of-loop model. A local extraction model meets gates 5, 7
+and 8 first, so nothing downloads in the loop. A prompt sequence or a spec file
+seen before is a cache hit and costs nothing.
 
 `prepare` extracts 0079's always-on sources again, once, under the new
 `RULES_PROMPT_VERSION`. Prompts and specs are not known at session start, so it

@@ -3,8 +3,9 @@
 - **Type:** feature demo, terminal session. No narration; captions only
   (LinkedIn autoplays muted).
 - **Feature:** proposal 0080. The per-turn check (0079) now also reads what
-  the session was asked: the prompts the user typed, an approved plan, and the
-  Spec Kit, Kiro, OpenSpec and plans files the session touched.
+  the session was asked. That covers the prompts the user typed and an approved
+  plan. It also covers the Spec Kit, Kiro, OpenSpec and plans files the session
+  touched.
 - **Audience:** engineers who let an agent work from prompts, plans and specs,
   and want "done" to mean done. Phone-sized, muted.
 - **Target:** 39.4 s, four beats, one caption each.
@@ -25,7 +26,7 @@
   `test/tracevals/integration/conformance.test.ts` runs ("what the session was
   asked"). Nothing adds output. Everything on screen is real execution of the
   built `dist/cli.js`.
-- **Judge: mock.** The fixture's `manni.config.yaml` sets `provider: mock`, as
+- **The judge is the mock.** The fixture's `manni.config.yaml` sets `provider: mock`, as
   `media/conformance/` did, so rules are extracted and judged offline and
   deterministically, as CI runs them. No model judged the filmed run.
 
