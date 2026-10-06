@@ -42,6 +42,11 @@ const INJECTED =
   /<(system-reminder|task-notification|ci-monitor-event|local-command-stdout|local-command-stderr|local-command-caveat)>[\s\S]*?<\/\1>/g;
 const MARKER =
   /^(?:Stop hook feedback:|SubagentStop hook feedback:|\[Request interrupted by user)/;
+/**
+ * Origins of a prompt a person sent: typed in the CLI, or sent through the SDK.
+ * Both record formats name it, as `origin.kind` or the older `turnOrigin`,
+ * and both are read against this one set.
+ */
 const TYPED_TURN_ORIGINS = new Set(["human", "sdk"]);
 const WORK = new Set<TraceEvent["kind"]>(["assistant", "tool_call", "tool_result"]);
 
@@ -56,7 +61,7 @@ export function isTypedPrompt(event: TraceEvent): boolean {
     "kind" in origin &&
     typeof origin.kind === "string"
   ) {
-    if (origin.kind !== "human") return false;
+    if (!TYPED_TURN_ORIGINS.has(origin.kind)) return false;
   } else if (
     typeof raw.turnOrigin === "string" &&
     !TYPED_TURN_ORIGINS.has(raw.turnOrigin)

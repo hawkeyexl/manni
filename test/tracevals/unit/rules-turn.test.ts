@@ -24,6 +24,19 @@ describe("the typed-prompt predicate", () => {
     expect(typed[1]?.text).toContain("Second, typed after a reminder.");
   });
 
+  it("reads the origin the same way in both record formats", () => {
+    const prompt = (raw: Record<string, unknown>) =>
+      isTypedPrompt({ kind: "user", text: "Ship it.", index: 0, raw });
+    for (const kind of ["human", "sdk"]) {
+      expect(prompt({ origin: { kind } }), `origin.kind ${kind}`).toBe(true);
+      expect(prompt({ turnOrigin: kind }), `turnOrigin ${kind}`).toBe(true);
+    }
+    for (const kind of ["peer", "task-notification", "scheduled"]) {
+      expect(prompt({ origin: { kind } }), `origin.kind ${kind}`).toBe(false);
+      expect(prompt({ turnOrigin: kind }), `turnOrigin ${kind}`).toBe(false);
+    }
+  });
+
   it("counts a slash command as a typed prompt", async () => {
     const trace = await load("slash-command.jsonl");
     const typed = trace.events.filter(isTypedPrompt);
