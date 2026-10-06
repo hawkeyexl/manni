@@ -90,6 +90,9 @@ describe("plugin hook launcher", () => {
 
   // npm pointed at a registry nothing listens on, with an empty cache and
   // global prefix, so no test ever reaches the network or a real install.
+  // The fetch case does open a loopback connection to port 9 (discard), and
+  // reads the refusal as proof that npx was asked to download. No retries
+  // and a 2s fetch timeout bound it if something there accepts instead.
   // npm run exports npm_config_global_prefix, which `npm root -g` prefers
   // over npm_config_prefix, so both name the same empty directory.
   const offline = (prefix = tempDir()): NodeJS.ProcessEnv => ({

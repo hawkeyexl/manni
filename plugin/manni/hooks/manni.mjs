@@ -120,7 +120,11 @@ function configured() {
   return false;
 }
 
-/** The plugin's own version, which the release keeps equal to manni's. */
+/**
+ * The plugin's own version, which the release keeps equal to manni's. Every
+ * installed plugin carries its plugin.json; were it missing, the caller asks
+ * for the bare package, so npx fetches the latest release, not a match.
+ */
 function pluginVersion() {
   const manifest = join(dirname(fileURLToPath(import.meta.url)), "..", ".claude-plugin", "plugin.json");
   const version = readJson(manifest)?.version;
