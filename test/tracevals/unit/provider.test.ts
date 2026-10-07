@@ -10,8 +10,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseConfig } from "../../../src/tracevals/core/config.js";
 import {
+  JEV_OUT_OF_LOOP,
   assertProviderSelection,
+  constructProvider,
   makeJudgeProvider,
+  selectHookProvider,
   providerSpecFor,
   resolveProviderIdentity,
   selectProvider,
@@ -205,8 +208,8 @@ describe("selectProvider under --local", () => {
 });
 
 describe("assertProviderSelection", () => {
-  it("accepts every name the shared list offers", () => {
-    for (const provider of PROVIDERS) {
+  it("accepts every name the shared list offers but jev", () => {
+    for (const provider of [...PROVIDERS].filter((p) => p !== "jev")) {
       expect(() => {
         assertProviderSelection({ provider, model: undefined });
       }).not.toThrow();
@@ -269,6 +272,89 @@ describe("providerSpecFor", () => {
       temperature: 0,
     });
     expect(response.json).toEqual({ custom: true });
+  });
+});
+
+describe("jev", () => {
+  it("is refused wherever a selection must generate", () => {
+    const refuse = (): void => {
+      assertProviderSelection({ provider: "jev", model: undefined });
+    };
+    expect(refuse).toThrow(TracevalsError);
+    expect(refuse).toThrow(JEV_OUT_OF_LOOP);
+    expect(JEV_OUT_OF_LOOP).toBe(
+      "jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.conformance.hook.provider.",
+    );
+  });
+
+  it("refuses --provider jev for run and fill, which generate", async () => {
+    await expect(makeJudgeProvider(parseConfig({}), { provider: "jev" })).rejects.toThrow(
+      JEV_OUT_OF_LOOP,
+    );
+  });
+
+  it("names the variable its key is missing from", () => {
+    delete process.env["TYPESAFE_API_KEY"];
+    const build = (): unknown =>
+      constructProvider(parseConfig({}), { provider: "jev", model: "jev-latest" });
+    expect(build).toThrow(TracevalsError);
+    expect(build).toThrow("jev needs an API key in TYPESAFE_API_KEY");
+    const custom = (): unknown =>
+      constructProvider(family({ jev: { apiKeyEnv: "MY_JEV" } }), {
+        provider: "jev",
+        model: "jev-latest",
+      });
+    expect(custom).toThrow("jev needs an API key in MY_JEV");
+  });
+
+  it("builds a decider once the key is set", () => {
+    process.env["TYPESAFE_API_KEY"] = "test-key";
+    const provider = constructProvider(parseConfig({}), { provider: "jev", model: "jev-latest" });
+    expect(provider.provider()).toBe("jev");
+  });
+});
+
+describe("selectHookProvider", () => {
+  it("takes conformance.hook first", () => {
+    const config = family(
+      { provider: "openai" },
+      {
+        provider: "anthropic",
+        model: "claude-big",
+        conformance: { hook: { provider: "llama-cpp", model: "qwen3.5-4b" } },
+      },
+    );
+    expect(selectHookProvider(config)).toEqual({ provider: "llama-cpp", model: "qwen3.5-4b" });
+  });
+
+  it("falls back to tracevals.provider, lending a hook-only model to it", () => {
+    const config = family(
+      {},
+      { provider: "anthropic", model: "claude-big", conformance: { hook: { model: "claude-small" } } },
+    );
+    expect(selectHookProvider(config)).toEqual({ provider: "anthropic", model: "claude-small" });
+    expect(
+      selectHookProvider(family({}, { provider: "anthropic", model: "claude-big", conformance: {} })),
+    ).toEqual({ provider: "anthropic", model: "claude-big" });
+  });
+
+  it("falls back to providers.provider, then auto", () => {
+    expect(selectHookProvider(family({ provider: "openai" }, { conformance: {} }))).toEqual({
+      provider: "openai",
+      model: undefined,
+    });
+    expect(selectHookProvider(family({}, { conformance: {} }))).toEqual({
+      provider: "auto",
+      model: undefined,
+    });
+  });
+
+  it("does not lend tracevals.model to a hook provider it does not belong to", () => {
+    const config = family(
+      {},
+      { provider: "anthropic", model: "claude-big", conformance: { hook: { provider: "jev" } } },
+    );
+    expect(selectHookProvider(config)).toEqual({ provider: "jev", model: undefined });
   });
 });
 

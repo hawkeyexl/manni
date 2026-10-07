@@ -106,6 +106,28 @@ describe("skill-invoked `when` triggers (ADR 01016)", () => {
     expect(unarmed.skipped).toContain("trigger not met");
   });
 
+  it("arms on a Bash command matching a regex", async () => {
+    const session = docsSession({
+      toolCalls: [
+        { name: "Bash", input: { command: "npm test -- --run" }, index: 1, sidechain: false },
+        // Only Bash commands count: an Edit that happens to carry a `command`.
+        { name: "Edit", input: { command: "git push" }, index: 2, sidechain: false },
+        { name: "Bash", input: { command: 42 }, index: 3, sidechain: false },
+      ],
+    });
+    const armed = await grade(session, {
+      skill: "ghost",
+      when: { "command-matches": "\\bnpm (test|run)\\b" },
+    });
+    expect(armed.findings).toHaveLength(1);
+    const unarmed = await grade(session, {
+      skill: "ghost",
+      when: { "command-matches": "git push" },
+    });
+    expect(unarmed.skipped).toContain("trigger not met");
+    expect(unarmed.skipped).toContain("no Bash command matched /git push/");
+  });
+
   it("arms above a turn-count floor", async () => {
     const unarmed = await grade(docsSession(), {
       skill: "ghost",
@@ -191,6 +213,10 @@ describe("skill-invoked `when` validation (ADR 01004)", () => {
     expect(invalid({ when: { "prompt-matches": "a(" } })).toContain(
       "valid regular expression",
     );
+    expect(invalid({ when: { "command-matches": "a(" } })).toContain(
+      "command-matches is not a valid regular expression",
+    );
+    expect(invalid({ when: { "command-matches": 3 } })).toContain("must be a string");
   });
 
   it("accepts a well-formed condition set", () => {
@@ -200,6 +226,7 @@ describe("skill-invoked `when` validation (ADR 01004)", () => {
           "file-access": "docs/**",
           "tool-used": "Edit",
           "prompt-matches": "docs?",
+          "command-matches": "^npm ",
           "turn-count-above": 2,
         },
       }),

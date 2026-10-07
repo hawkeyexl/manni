@@ -1,0 +1,7 @@
+# A project that puts tracevals in play under hooks. The mock provider
+# extracts and judges, so the corpus runs offline.
+tracevals:
+  provider: mock
+  conformance:
+    exclude:
+      - .cursor/rules/stale.mdc

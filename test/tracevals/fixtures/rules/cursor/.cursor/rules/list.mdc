@@ -1,0 +1,5 @@
+---
+globs:
+  - "test/**"
+---
+Name tests after behavior.

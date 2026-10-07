@@ -8,8 +8,13 @@
  */
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { DEFAULT_MODELS, DEFAULT_OPENAI_BASE_URL } from "@hawkeyexl/inference";
 import {
+  DEFAULT_JEV_BASE_URL,
+  DEFAULT_MODELS,
+  DEFAULT_OPENAI_BASE_URL,
+} from "@hawkeyexl/inference";
+import {
+  DECISION_ONLY_PROVIDERS,
   DEFAULT_PROVIDER,
   PROVIDERS,
   assertKnownProvider,
@@ -31,8 +36,16 @@ const toError = (message: string): Error => new ToolFailure(message);
 const LISTED = "anthropic, openai, claude-cli, llama-cpp, auto";
 
 describe("PROVIDERS", () => {
-  it("is the library's provider names plus auto", () => {
-    expect([...PROVIDERS]).toEqual([...Object.keys(DEFAULT_MODELS), "auto"]);
+  it("is the library's generating provider names plus auto", () => {
+    expect([...PROVIDERS]).toEqual([
+      ...Object.keys(DEFAULT_MODELS).filter((name) => !DECISION_ONLY_PROVIDERS.has(name)),
+      "auto",
+    ]);
+  });
+
+  it("refuses a decision-only provider unless the caller decides", () => {
+    expect(() => { assertKnownProvider("jev", toError); }).toThrow(/answers decisions only/);
+    expect(() => { assertKnownProvider("jev", toError, { decisions: true }); }).not.toThrow();
   });
 
   it("defaults to auto", () => {
@@ -158,7 +171,7 @@ describe("parseProviders", () => {
 
   it("refuses an unknown key, listing the supported ones", () => {
     expect(refusal({ gemini: {} })).toBe(
-      `${SOURCE}: "providers" has unknown key "gemini". Supported keys: provider, model, anthropic, openai, claude-cli, llama-cpp.`,
+      `${SOURCE}: "providers" has unknown key "gemini". Supported keys: provider, model, anthropic, openai, claude-cli, jev, llama-cpp.`,
     );
   });
 
@@ -173,7 +186,7 @@ describe("parseProviders", () => {
       `${SOURCE}: "providers.claude-cli" has unknown key "x". Supported keys: command.`,
     );
     expect(refusal({ "llama-cpp": { "models-dir": "w" } })).toBe(
-      `${SOURCE}: "providers.llama-cpp" has unknown key "models-dir". Supported keys: modelsDir, thoughtTokens.`,
+      `${SOURCE}: "providers.llama-cpp" has unknown key "models-dir". Supported keys: modelsDir, thoughtTokens, keepAlive.`,
     );
   });
 
@@ -211,6 +224,41 @@ describe("parseProviders", () => {
     );
     expect(refusal({ "llama-cpp": { thoughtTokens: "64" } })).toBe(
       `${SOURCE}: "providers.llama-cpp.thoughtTokens" must be a whole number of 0 or more, got "64".`,
+    );
+  });
+
+  it("reads jev's connection settings, applying no defaults of its own", () => {
+    expect(parse({ jev: {} })).toEqual({ jev: {} });
+    expect(parse({ jev: { apiKeyEnv: "J_KEY", baseUrl: "http://127.0.0.1:1" } })).toEqual({
+      jev: { apiKeyEnv: "J_KEY", baseUrl: "http://127.0.0.1:1" },
+    });
+    expect(refusal({ jev: { model: "x" } })).toBe(
+      `${SOURCE}: "providers.jev" has unknown key "model". Supported keys: apiKeyEnv, baseUrl.`,
+    );
+    expect(refusal({ jev: { apiKeyEnv: 1 } })).toBe(
+      `${SOURCE}: "providers.jev.apiKeyEnv" must be a string.`,
+    );
+  });
+
+  it("reads llama-cpp's keepAlive as milliseconds, admitting 0", () => {
+    expect(parse({ "llama-cpp": { keepAlive: "10m" } })["llama-cpp"]).toEqual({
+      keepAlive: 10 * 60_000,
+    });
+    expect(parse({ "llama-cpp": { keepAlive: "24h" } })["llama-cpp"]?.keepAlive).toBe(
+      24 * 60 * 60_000,
+    );
+    expect(parse({ "llama-cpp": { keepAlive: 0 } })["llama-cpp"]).toEqual({ keepAlive: 0 });
+    expect(parse({ "llama-cpp": { keepAlive: "0" } })["llama-cpp"]).toEqual({ keepAlive: 0 });
+  });
+
+  it("refuses a keepAlive that is not 0 or a duration, naming the key", () => {
+    for (const bad of ["7y", "10", "", "-1m"]) {
+      expect(refusal({ "llama-cpp": { keepAlive: bad } })).toBe(
+        `${SOURCE}: "providers.llama-cpp.keepAlive" must be 0 or a duration such as 30m, 24h, 7d or 2w, got "${bad}"`,
+      );
+    }
+    expect(refusal({ "llama-cpp": { keepAlive: 5 } })).toBe(
+      `${SOURCE}: "providers.llama-cpp.keepAlive" must be 0 or a duration such as 30m, 24h, 7d or 2w, got "5"`,
     );
   });
 
@@ -472,6 +520,32 @@ describe("providerSpecFor", () => {
     expect(providerSpecFor(CONNECTIONS, { provider: "mock", model: "m" })).toEqual({
       provider: "mock",
       model: "m",
+    });
+  });
+
+  it("hands jev its key variable and endpoint, defaults filled", () => {
+    expect(providerSpecFor({}, { provider: "jev", model: null })).toEqual({
+      provider: "jev",
+      model: null,
+      apiKeyEnv: "TYPESAFE_API_KEY",
+      baseUrl: DEFAULT_JEV_BASE_URL,
+    });
+    expect(
+      providerSpecFor(
+        { jev: { apiKeyEnv: "J_KEY", baseUrl: "http://127.0.0.1:1" } },
+        { provider: "jev", model: "jev-x" },
+      ),
+    ).toEqual({ provider: "jev", model: "jev-x", apiKeyEnv: "J_KEY", baseUrl: "http://127.0.0.1:1" });
+  });
+
+  it("keeps keepAlive out of the spec, and out of detection", () => {
+    const connections: ProviderConnections = { "llama-cpp": { keepAlive: 0 } };
+    expect(providerSpecFor(connections, { provider: "llama-cpp", model: null }).llamaCpp).toEqual({
+      thoughtTokens: 0,
+    });
+    expect(providerSpecFor(connections, { provider: "auto", model: null })).toEqual({
+      provider: "auto",
+      model: null,
     });
   });
 

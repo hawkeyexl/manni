@@ -1,0 +1,9 @@
+# A project that says what to build in specs and a plans folder (proposal
+# 0080). The mock provider extracts and judges, so the corpus runs offline.
+tracevals:
+  provider: mock
+  conformance:
+    plans:
+      - docs/plans/*.md
+    exclude:
+      - specs/001-login/plan.md

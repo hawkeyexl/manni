@@ -30,14 +30,14 @@ docs/src/content/docs/family/claude-code.mdx:
       lines: 52-54
       integrity: sha256-df685a2970b8b7c68901e88242d315805de017fe249f818d9e0b6a3a59437578
     - generated-by: Claude Sonnet 5.5
-      lines: 59-83
-      integrity: sha256-6686648e0d7f96f5518371db46cd5c55eee0bb0859e7c7897fa1e9fdfc21e43f
+      lines: 59-88
+      integrity: sha256-5c5d46d29310a140a02ac7717d094f7d260280e321d8f8943690366108d38db2
     - generated-by: Claude Sonnet 5.5
-      lines: 85-137
+      lines: 90-142
       integrity: sha256-3d5d2ce1f62dc2525e57815afc20f1722b4116d1080c09a9c81f8eba12a512b3
     - generated-by: Claude Sonnet 5.5
-      lines: 145-207
-      integrity: sha256-13dd7cc98622f105270643167891de087593e375951353248d76e19925f55561
+      lines: 156-237
+      integrity: sha256-22cd686817dbfcf630d308d20a634bf64e6c72ed895c297bb1dd1e4e1a1b3db2
   owner:
     - "@hawkeyexl"
   created: 2026-10-05

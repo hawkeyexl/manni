@@ -27,7 +27,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-10-05
+last-updated: 2026-10-06
 tags:
   - configuration
   - yaml
@@ -1330,8 +1330,11 @@ collections:
 | `providers.openai.baseUrl` | `string` | no | `https://api.openai.com/v1` | Any OpenAI-compatible endpoint, such as Ollama, vLLM or an internal gateway. |
 | `providers.openai.apiKeyEnv` | `string` | no | `OPENAI_API_KEY` | The environment variable that holds the key for that endpoint. |
 | `providers.claude-cli.command` | `string` | no | `claude` | The Claude CLI executable to run. |
+| `providers.jev.apiKeyEnv` | `string` | no | `TYPESAFE_API_KEY` | The environment variable that holds the Jev key. Jev answers decisions only, so only [`manni tracevals`](/manni/tracevals/reference/configuration/#conformance) uses it, as the judge inside a hook. |
+| `providers.jev.baseUrl` | `string` | no | `https://api.typesafe.ai` | The Jev endpoint. |
 | `providers.llama-cpp.modelsDir` | `string` | no | `~/.hawkeyexl-inference/models` | Where the local model's weights live. A relative path resolves from the config file's directory. With the key unset, `INFERENCE_MODELS_DIR` in the environment replaces the default. |
 | `providers.llama-cpp.thoughtTokens` | `integer` | no | `0` | Tokens the local model may spend thinking before its JSON answer, as a whole number of 0 or more. |
+| `providers.llama-cpp.keepAlive` | `string` | no | `10m` | How long the model host keeps a local model loaded after its last request, while a session holds it. A duration such as `30m` or `24h`, or `0` to unload a model as soon as no session holds it. |
 
 Every section is optional, and a section need carry only the keys you change.
 An unknown key at any level is an error (exit 2) that lists the keys the

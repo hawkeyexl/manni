@@ -1,0 +1,5 @@
+check 1 427ms
+sources 1 381ms
+timing1 check(cold) 410ms sources(warm) 378ms
+timing2 check(cold) 410ms sources(warm) 380ms
+timing3 check(cold) 401ms sources(warm) 393ms

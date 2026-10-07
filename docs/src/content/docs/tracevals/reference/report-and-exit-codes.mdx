@@ -12,18 +12,18 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What does the JSON report contain?", "How does SARIF name its rules?"]
 graph: { label: "Reports & exit codes", type: reference }
-last-updated: 2026-10-04
+last-updated: 2026-10-07
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-**Scope:** everything `run` and `calibrate` emit. The policy discussion, meaning what to do about
+**Scope:** everything `run`, `calibrate` and `check` emit. The policy discussion, meaning what to do about
 `needs-review` in a pipeline, is in [Add tracevals to CI](/manni/tracevals/ci/). Source of truth:
 `src/tracevals/types.ts`, `src/tracevals/calibrate/types.ts`, `src/tracevals/reporters/`, and
 `src/tracevals/history.ts`. The verdict schema's `$id` is `manni:tracevals:verdict`.
 
 `-f, --format` on `run` is `pretty | json | markdown | github | sarif | junit`, default `pretty`. On
-`calibrate` it is `pretty | json | markdown`. On `fill`, `capture`, and `list` it is `pretty | json`.
+`calibrate` it is `pretty | json | markdown`. On `fill`, `capture`, `prepare`, `check`, `release`, and `list` it is `pretty | json`.
 Every default is `pretty`.
 
 ## Exit codes
@@ -522,6 +522,176 @@ It answers *was it right?*, so it leads with the two kinds of mistake rather tha
 The pretty and markdown forms carry the same content. That is the headline counts, the disagreement
 list with its evidence and notes, and the unscored rows with their skip reasons. It also covers the
 sweep table and the thresholds. See [Calibrate the judge](/manni/tracevals/judge/calibrate/).
+
+## `check` reports
+
+`manni tracevals check` judges one turn rather than a whole session, so its report has a shape of
+its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pretty form is in the
+[`check` reference](/manni/tracevals/reference/cli/#tracevals-check).
+
+```json
+{
+  "trace": "/abs/3b265d00.jsonl",
+  "sessionId": "3b265d00-0000-4000-8000-000000000001",
+  "agentId": null,
+  "turn": { "from": 4, "to": 15 },
+  "judge": { "provider": "mock", "model": "mock-model", "mode": "generative", "runs": 3 },
+  "extraction": { "provider": "mock", "model": "mock-model" },
+  "sources": [
+    { "path": "CLAUDE.md", "format": "claude-md", "trigger": "always",
+      "rules": 2, "origin": "declared" },
+    { "path": ".cursor/rules/web.mdc", "format": "cursor-rule",
+      "trigger": "globs matched src/web/App.tsx", "rules": 1, "origin": "extracted" },
+    { "path": "prompt", "format": "prompt", "trigger": "typed prompts 1-2",
+      "rules": 0, "origin": "extracted" }
+  ],
+  "findings": [
+    { "source": "CLAUDE.md", "rule": "no-force-push",
+      "text": "Never run `git push --force`.", "outcome": "fail",
+      "observed": "not-followed 100, followed 0, not-applicable 0. The turn shows `git push --force`.",
+      "confidence": 1, "reasoning": "The turn shows `git push --force`." }
+  ],
+  "summary": { "sources": 6, "rules": 7, "notApplicable": 0, "fail": 2, "needsReview": 1 },
+  "session": {
+    "turns": 6,
+    "rules": [
+      { "source": "CLAUDE.md", "rule": "no-force-push", "followed": 4, "broken": 1,
+        "repaired": 1, "needsReview": 0, "notApplicable": 1, "notInScope": 0,
+        "last": { "turn": 3, "outcome": "followed" } }
+    ]
+  },
+  "skipped": null,
+  "warnings": [],
+  "exitCode": 1
+}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `trace` | string | The transcript that was judged, as an absolute path. |
+| `sessionId` | string | The session's id. The closing line shows its first eight characters. |
+| `agentId` | string or null | The subagent a SubagentStop judged. `null` for the main session. |
+| `turn` | `{from, to}` | The turn's first and last event, as ordinals in the trace. |
+| `judge` | object or null | The provider and model that judged, its `mode`, and `runs`. `null` when the run stopped before a judge was asked. |
+| `judge.mode` | `decision` or `generative` | Detected from the provider. `decision` is a decision-only provider such as `jev`, which makes one call, so `runs` is `1`. Every other provider is `generative`, and scores each rule in each run. |
+| `extraction` | object or null | The out-of-loop provider and model. `null` when no source needed them. |
+| `sources[]` | object | One entry per source in scope: `path`, `format`, `trigger`, `rules`, `origin`, and `skill` for a skill's files. `trigger` says why the source was in scope. `origin` is `declared` for a file's own `ai` evals, and `extracted` otherwise. Six formats say what the session was asked, in the table below. |
+| `findings[]` | object | Only `fail` and `needs-review` outcomes, each with its `source`, `rule`, `text`, `observed` and `confidence`. `observed` gives the rule's three scores, averaged over the runs. `confidence` is the not-followed score as a fraction. `reasoning` is the judge's sentence or two on what the transcript shows, and `observed` ends with it. A decision-only provider such as `jev` gives none. A rule left out was followed or did not apply. |
+| `summary` | object | The counts of `sources`, `rules`, `notApplicable`, `fail` and `needsReview`. |
+| `session` | object or null | What the hook recorded for this session in [the session ledger](#the-session-ledger), summed up per rule. `null` when the session has no ledger. |
+| `session.turns` | number | The turns the ledger records. |
+| `session.rules[]` | object | One entry per rule the ledger holds, with its `source` and `rule`. `followed`, `broken`, `needsReview` and `notApplicable` count its entries. `repaired` counts the `broken` entries that a later `followed` entry came after. `notInScope` counts the recorded turns where the rule's file was not in scope. `last` is its latest entry's `turn` and `outcome`. |
+| `skipped` | string or null | `null`, `empty-turn`, `no-sources` or `not-applicable`. The other gates apply only under a hook. |
+| `warnings` | array | Strings, such as a rules file whose front matter does not parse. |
+| `exitCode` | number | `0`, or `1` when `summary.fail` is above zero. |
+
+The six formats that say what the session was asked never declare evals, so their `origin` is
+always `extracted`.
+
+| `format` | `path` | `trigger` |
+|---|---|---|
+| `prompt` | `prompt` | `typed prompts 1-<n>`, every prompt typed up to the turn's end |
+| `plan` | The plan file under your Claude config directory, or `plan` when the plan came only as the call's input | `approved at turn <n>`, the ordinal of the last approved `ExitPlanMode` |
+| `speckit-spec` | `specs/<feature>/spec.md`, `plan.md` or `tasks.md` | `touched <path>`, the first file the session touched under `specs/<feature>/` |
+| `kiro-spec` | `.kiro/specs/<name>/requirements.md`, `design.md` or `tasks.md` | `touched <path>`, the first file touched under that directory |
+| `openspec-change` | A `.md` file under `openspec/changes/<id>/`, never under `changes/archive/` | `touched <path>`, the first file touched under that change |
+| `plans` | A file `conformance.plans` names | `touched <path>`, the file itself |
+
+`summary.sources` counts every row, so the closing line says "sources" rather than "files".
+
+Only a confident violation counts as `fail`: a not-followed score at
+[`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge), as a percentage, in every
+run. A rule the judge could not settle, or errored on, is `needs-review`, which never fails `check`.
+
+### The session ledger
+
+The hook records each turn it sees, so the judge knows what each rule found on earlier turns. That
+covers a turn that ended before the judge was asked, such as one with no rules in scope. A
+judged turn also records each judged rule's result. The main session writes
+`.manni/tracevals/sessions/<session hash>.ledger.json` under the project. A subagent writes
+`<session hash>.<agent id hash>.ledger.json`, so parallel subagents never share a file.
+`manni tracevals check` reads the ledger of the session it judges and never writes it.
+
+```json
+{
+  "version": 1,
+  "turns": [
+    { "turn": 3, "inScope": true, "sources": ["CLAUDE.md"],
+      "commands": ["npm ci", "git push --force origin main"], "wrote": ["src/web/App.tsx"],
+      "read": ["CLAUDE.md"], "skills": [], "agents": [] }
+  ],
+  "rules": {
+    "CLAUDE.md#no-force-push": {
+      "text": "<sha256 of the rule text>",
+      "entries": [
+        { "turn": 3, "outcome": "broken", "note": "The turn shows `git push --force`." }
+      ]
+    }
+  }
+}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `turns[]` | object | One record per turn, oldest first. The ledger keeps the last 30. Recording a turn again replaces its record. |
+| `turns[].turn` | number | The turn's first event, as an ordinal in the trace. |
+| `turns[].inScope` | boolean | Whether any rules file governed the turn. An empty turn records `false`. |
+| `turns[].sources` | array | The rules files in scope, by path. |
+| `turns[].commands` | array | Up to 10 Bash commands, each on one line and cut to 120 characters. |
+| `turns[].wrote` | array | Up to 10 files written or edited, relative to the project. |
+| `turns[].read` | array | Up to 5 rules files the turn read. |
+| `turns[].skills` | array | The skills the turn ran. |
+| `turns[].agents` | array | The subagent types the turn spawned. |
+| `rules` | object | One entry per rule, keyed by its file and id. |
+| `text` | string | A sha256 of the rule's text. An edited rule starts with no history. |
+| `entries[].turn` | number | The turn's first event, as an ordinal in the trace. Judging a turn again replaces its entry. |
+| `entries[].outcome` | string | `followed`, `broken`, `needs-review` or `not-applicable`. |
+| `entries[].note` | string | The judge's reasoning, cut to 200 characters. Empty for a decision-only provider. |
+
+Every call the judge makes for a turn opens with what the session did before it. That block is
+read from the transcript, with no model, so it covers turns the hook never saw. It gives every
+earlier turn that did something one line, newest last. The ledger only marks a turn it recorded with
+no rules in scope.
+
+```text
+# Earlier in this session
+
+- (turns 4–31: 12 lines left out)
+- turn 40: ran npm ci; wrote src/web/App.tsx; read CLAUDE.md; ran skill authoring-workflow
+- turn 52: spawned technical-nonfiction-reviewer, which returned {"route_to":"writer","issues":[…
+- turn 61: wrote specs/001-login/tasks.md; ticked T014 in specs/001-login/tasks.md
+- turn 70: asked the user; had a plan approved
+- turn 77: ran ls (no rules in scope)
+```
+
+A line joins its facts with `; `, in this order.
+
+| Fact | Line |
+|---|---|
+| Bash commands | `ran <command>, <command>`, up to 10, each on one line and cut to 120 characters |
+| Files written or edited | `wrote <path>, <path>`, up to 10, relative to the project |
+| Rule sources read | `read <path>`, up to 5. Other files the turn read are left out. |
+| A skill call | `ran skill <name>`, one per skill |
+| An agent spawn | `spawned <type>, which returned <first line>`, up to 10 per turn. The result's first line is cut to 120 characters. With no result, the line is `spawned <type>`. |
+| A question to the user | `asked the user` |
+| A task ticked | `ticked <id> in <path>` |
+| A plan approved | `had a plan approved`, for an `ExitPlanMode` whose result is not an error |
+
+A task is ticked when an Edit or MultiEdit turns a `- [ ] <text>` line into `- [x] <text>` with the
+same text. Spec Kit, Kiro and OpenSpec all keep tasks this way. The line names the task's leading
+id, such as `T014`, `FR-001` or `1.2`. A task with no id is named by its text, cut to 60
+characters. Commands, paths and results pass through the judge's redaction before they are cut.
+
+That block shares the render budget with the turn, and takes at most a quarter of it. Over that,
+its oldest lines go first, and a marker line in their place says which turns went, as
+`- (turns 4–31: 12 lines left out)` or `- (turn 4: 1 line left out)`. Each rule
+keeps its last 10 entries. Its first `followed` entry and every `broken` entry stay, so the others
+go first. A rule's item shows the judge up to five results from earlier turns. Those are its first
+`followed`, its `broken` ones and its latest, leaving out the turns it did not apply to. A run of
+recorded turns where the rule's file was not in scope shows as `(turns 4–8: not in scope)`. A rule
+with only turns it did not apply to has no history to show. Both blocks are part of the verdict
+cache key. A missing or unreadable ledger is an empty history, and a ledger that cannot be written
+is a warning that never blocks.
 
 ## `--output`
 

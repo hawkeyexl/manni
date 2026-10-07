@@ -612,6 +612,141 @@ addConfigFlags(
     }
   });
 
+// Proposal 0079. `prepare` is meant for a SessionStart hook as `capture` is,
+// so under an envelope its report goes to stderr; a SessionStart hook's
+// stdout becomes model context.
+addConfigFlags(
+  program
+    .command("prepare")
+    .description(
+      "Fetch the local models judging needs and extract the rules of every file that applies to every session",
+    ),
+)
+  .option("--project <dir>", "project root (default: the payload's cwd, else the current directory)")
+  .option("--no-cache", "extract again, even from cached sources")
+  .option("--offline", "refuse network providers, so only local models are fetched")
+  .option(
+    "-f, --format <format>",
+    `Output format: ${SUMMARY_FORMATS.join(" | ")}`,
+    parseFormatArg("--format", SUMMARY_FORMATS),
+    "pretty" as SummaryFormat,
+  )
+  .action(async (opts: ConfigFlags & {
+    project?: string;
+    cache?: boolean;
+    offline?: boolean;
+    format?: SummaryFormat;
+  }) => {
+    try {
+      const { runPrepare } = await import("./commands/prepare.js");
+      const result = await runPrepare({
+        ...configOptions(opts),
+        ...(opts.project !== undefined ? { project: opts.project } : {}),
+        ...(opts.cache === false ? { noCache: true } : {}),
+        ...(opts.offline === true ? { offline: true } : {}),
+        format: opts.format ?? "pretty",
+      });
+      if (result.stdout !== "") console.log(result.stdout);
+      if (result.stderr !== "") notice(result.stderr);
+      process.exitCode = result.exitCode;
+    } catch (e) {
+      fail(e);
+    }
+  });
+
+// `[traces...]` rather than `<trace>`, so a missing or second trace gets the
+// tool's own message and exit 2 instead of commander's.
+addConfigFlags(
+  program
+    .command("check [traces...]")
+    .description(
+      "Judge the last turn of one session against the rules that governed it",
+    ),
+)
+  .option("--project <dir>", "project root for resolving sources (default: the trace's recorded cwd)")
+  .option(
+    "--provider <name>",
+    "Judge provider: auto (default) | anthropic | openai | claude-cli | jev | llama-cpp",
+  )
+  .option("--model <model>", "Judge model; needs a named provider, from here or config")
+  .option("--local", LOCAL_FLAG_HELP)
+  .option("--runs <n>", "judge calls per rule (overrides judge.ensembleRuns)", (v) => Number(v))
+  .option("--no-cache", "bypass the rules cache and the verdict cache")
+  .option("--offline", "refuse network providers; judge and extract with local models only")
+  .option(
+    "-f, --format <format>",
+    `Output format: ${SUMMARY_FORMATS.join(" | ")}`,
+    parseFormatArg("--format", SUMMARY_FORMATS),
+    "pretty" as SummaryFormat,
+  )
+  .option("-o, --output <file>", "also write the report to a file")
+  .action(async (traces: string[], opts: ConfigFlags & {
+    project?: string;
+    provider?: string;
+    model?: string;
+    local?: boolean;
+    runs?: number;
+    cache?: boolean;
+    offline?: boolean;
+    format?: SummaryFormat;
+    output?: string;
+  }, command: Command) => {
+    try {
+      const trace = traces[0];
+      if (trace === undefined) {
+        throw new TracevalsError("no trace given; pass a trace file or run manni tracevals list");
+      }
+      if (traces.length > 1) {
+        throw new TracevalsError(`tracevals check takes one trace, got ${String(traces.length)}`);
+      }
+      whole("--runs", opts.runs, 1);
+      const { runCheck } = await import("./commands/check.js");
+      const { report, rendered } = await runCheck({
+        ...configOptions(opts),
+        tracePath: trace,
+        ...(opts.project !== undefined ? { project: opts.project } : {}),
+        ...(opts.provider !== undefined ? { provider: opts.provider } : {}),
+        ...(opts.model !== undefined ? { model: opts.model } : {}),
+        ...(opts.local !== undefined ? { local: opts.local } : {}),
+        ...(opts.runs !== undefined ? { runs: opts.runs } : {}),
+        ...(opts.cache === false ? { noCache: true } : {}),
+        ...(opts.offline === true ? { offline: true } : {}),
+        format: opts.format ?? "pretty",
+        ...(opts.output !== undefined ? { output: opts.output } : {}),
+        color: colorFor(command, process.stdout.isTTY),
+      });
+      console.log(rendered);
+      process.exitCode = report.exitCode;
+    } catch (e) {
+      fail(e);
+    }
+  });
+
+// No `-c`/`--no-config`: `release` reads no config, only the envelope.
+program
+  .command("release")
+  .description("Return a session's lease on the model host, or with --all stop the host")
+  .option("--all", "drop every lease, unload every model and stop the host")
+  .option(
+    "-f, --format <format>",
+    `Output format: ${SUMMARY_FORMATS.join(" | ")}`,
+    parseFormatArg("--format", SUMMARY_FORMATS),
+    "pretty" as SummaryFormat,
+  )
+  .action(async (opts: { all?: boolean; format?: SummaryFormat }) => {
+    try {
+      const { runRelease } = await import("./commands/release.js");
+      const result = await runRelease({
+        ...(opts.all === true ? { all: true } : {}),
+        format: opts.format ?? "pretty",
+      });
+      if (result.stdout !== "") console.log(result.stdout);
+      process.exitCode = result.exitCode;
+    } catch (e) {
+      fail(e);
+    }
+  });
+
 program
   .command("list")
   .description("List discoverable traces (Claude Code session files)")

@@ -1595,9 +1595,9 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         integrity: sha256-0b9505ad3de029d149a50f886873689a5369a2889e22563fd9770e8fd333b797
       source:
         file: src/shared/providers.ts
-        lines: 83-91
+        lines: 102-110
         integrity: sha256-c43272fc358fe1f0f72087521a22285b48ce20ec30d67edf10f3e67355d1469d
-        commit-sha: a589e08250dee7efaee7ed0f58df01986fad8d1d
+        commit-sha: 26fc280285f6a731e66abeb279f19b7213edd90c
     - id: fill-confidence-threshold-default
       claim:
         lines: 1847

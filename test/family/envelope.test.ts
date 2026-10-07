@@ -14,6 +14,7 @@ describe("parseEnvelope", () => {
   it("reads a PostToolUse edit's file and cwd", () => {
     expect(parseEnvelope(envelope("post-tool-use-member", "/repo"))).toEqual({
       event: "PostToolUse",
+      sessionId: "s1",
       cwd: "/repo",
       toolName: "Edit",
       filePath: "docs/page.md",
@@ -39,6 +40,32 @@ describe("parseEnvelope", () => {
     expect(
       parseEnvelope(JSON.stringify({ hook_event_name: "SessionStart", model: { id: "m-1" } }))?.model,
     ).toBe("m-1");
+  });
+
+  it("reads a Stop's session, transcript and last message", () => {
+    expect(parseEnvelope(envelope("stop-transcript"))).toEqual({
+      event: "Stop",
+      stopHookActive: false,
+      sessionId: "s1",
+      transcriptPath: "/home/maya/.claude/projects/repo/s1.jsonl",
+      lastAssistantMessage: "Done.",
+    });
+  });
+
+  it("reads a SubagentStop's agent and its own transcript", () => {
+    expect(parseEnvelope(envelope("subagent-stop"))).toMatchObject({
+      event: "SubagentStop",
+      sessionId: "s1",
+      transcriptPath: "/home/maya/.claude/projects/repo/s1.jsonl",
+      agentTranscriptPath: "/home/maya/.claude/projects/repo/s1/subagents/agent-a1b2.jsonl",
+      agentId: "a1b2",
+      agentType: "general-purpose",
+      lastAssistantMessage: "Done.",
+    });
+  });
+
+  it("reads a SessionEnd's session", () => {
+    expect(parseEnvelope(envelope("session-end"))).toMatchObject({ event: "SessionEnd", sessionId: "s1" });
   });
 
   it("is not an envelope without a hook_event_name, or when not a JSON object", () => {

@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What options does tool-order take?", "How do I stop command evals from running?"]
 graph: { label: "Grader reference", type: reference }
-last-updated: 2026-10-05
+last-updated: 2026-10-06
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -173,6 +173,7 @@ conditions must hold.
 | `file-access` | glob | Any file the window touched matches the glob. |
 | `tool-used` | string | That tool was called in the window. |
 | `prompt-matches` | regex | Any user prompt in the window matches. |
+| `command-matches` | regex | Any Bash command in the window matches. |
 | `turn-count-above` | integer | The window's turn count is **strictly** greater. |
 
 The glob understands `**` (spans directories, and matches the directory itself), `*` (within one
@@ -187,8 +188,13 @@ would leave the eval armed on every session, which is the exact failure `when` e
 ```
   ERROR  CLAUDE.md › docs-work-uses-the-writing-skill
          skill-invoked: options.when.file-acess is not a known condition; expected
-         one of: file-access, tool-used, prompt-matches, turn-count-above
+         one of: file-access, tool-used, prompt-matches, command-matches, turn-count-above
 ```
+
+`command-matches` is the condition for a rule about commands. `tool-used: Bash` holds on nearly
+every turn, so it filters nothing. A pattern such as `npm (test|run)` arms the eval only for
+the turns that ran one of those commands. The same grammar scopes the rules
+[`manni tracevals check`](/manni/tracevals/conformance/) extracts from a rules file.
 
 A `when: {}` with no conditions is rejected for the same reason. It arms always while reading as a
 scoped check.

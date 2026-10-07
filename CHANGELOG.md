@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.5.0](https://github.com/hawkeyexl/manni/compare/v4.4.1...v4.5.0) (2026-10-06)
+
+
+### Features
+
+* **graph:** read html, xml, asciidoc and restructuredtext ([#158](https://github.com/hawkeyexl/manni/issues/158)) ([0a24836](https://github.com/hawkeyexl/manni/commit/0a2483616fe8f79ac5f7ab88244a74e8c4e34759)), closes [#element](https://github.com/hawkeyexl/manni/issues/element)
+
 ## [4.4.1](https://github.com/hawkeyexl/manni/compare/v4.4.0...v4.4.1) (2026-10-06)
 
 

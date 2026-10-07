@@ -1,6 +1,6 @@
 {
   "name": "@hawkeyexl/manni",
-  "version": "4.4.1",
+  "version": "4.5.0",
   "description": "One command line for documentation that is meant to be checked. `manni meta` validates the presence and format of document metadata (Markdown frontmatter and more) against JSON Schema, built for CI. Formerly docmeta.",
   "type": "module",
   "bin": {
@@ -97,7 +97,7 @@
     "@apidevtools/json-schema-ref-parser": "^11.9.3",
     "@asciidoctor/core": "^3.0.4",
     "@axe-core/playwright": "^4.13.0",
-    "@hawkeyexl/inference": "^0.4.0",
+    "@hawkeyexl/inference": "^0.5.0",
     "@inquirer/prompts": "^7.10.1",
     "@types/n3": "^1.26.3",
     "@xmldom/xmldom": "^0.9.12",

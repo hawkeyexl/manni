@@ -102,6 +102,77 @@ describe("parseConfig", () => {
     expect(() => parseConfig({ unknownKey: true })).toThrow(TracevalsError);
   });
 
+  describe("conformance", () => {
+    const JEV_REFUSAL =
+      "jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.conformance.hook.provider.";
+
+    it("is null when absent, so tracevals stays out of play", () => {
+      expect(parseConfig({}).conformance).toBeNull();
+    });
+
+    it("puts tracevals in play as {}, every default filled", () => {
+      expect(parseConfig({ conformance: {} }).conformance).toEqual({
+        hook: { provider: null, model: null, runs: 1 },
+        include: [],
+        exclude: [],
+        plans: [],
+      });
+    });
+
+    it("keeps explicit values", () => {
+      expect(
+        parseConfig({
+          conformance: {
+            hook: { provider: "anthropic", model: "claude-x", runs: 3 },
+            include: ["docs/content-strategy/**"],
+            exclude: [".cursor/rules/old.mdc"],
+            plans: ["docs/plans/*.md"],
+          },
+        }).conformance,
+      ).toEqual({
+        hook: { provider: "anthropic", model: "claude-x", runs: 3 },
+        include: ["docs/content-strategy/**"],
+        exclude: [".cursor/rules/old.mdc"],
+        plans: ["docs/plans/*.md"],
+      });
+    });
+
+    it("accepts jev as the hook's provider", () => {
+      expect(
+        parseConfig({ conformance: { hook: { provider: "jev" } } }).conformance?.hook.provider,
+      ).toBe("jev");
+    });
+
+    it("refuses jev as tracevals.provider, saying where it goes", () => {
+      expect(() => parseConfig({ provider: "jev" })).toThrow(TracevalsError);
+      expect(() => parseConfig({ provider: "jev" })).toThrow(JEV_REFUSAL);
+    });
+
+    it("refuses an unknown hook provider with the shared message", () => {
+      expect(() => parseConfig({ conformance: { hook: { provider: "gemini" } } })).toThrow(
+        /Unknown provider "gemini"/,
+      );
+    });
+
+    it("refuses runs below 1 or fractional, and lists that are not globs", () => {
+      expect(() => parseConfig({ conformance: { hook: { runs: 0 } } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ conformance: { hook: { runs: 1.5 } } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ conformance: { include: "docs/**" } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ conformance: { exclude: [""] } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ conformance: { plans: "docs/plans/*.md" } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ conformance: { plans: [""] } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ conformance: { hook: { model: "" } } })).toThrow(TracevalsError);
+    });
+
+    it("refuses unknown keys, naming the camelCase one a kebab spelling meant", () => {
+      expect(() => parseConfig({ conformance: { hooks: {} } })).toThrow(/unknown key "hooks"/);
+      expect(() => parseConfig({ conformance: { hook: { timeout: 1 } } })).toThrow(
+        /unknown key "timeout"/,
+      );
+      expect(() => parseConfig({ conformance: [] })).toThrow(TracevalsError);
+    });
+  });
+
   describe("plugins", () => {
     it("defaults to an empty list, so the read site never sees a hole", () => {
       expect(parseConfig({}).plugins).toEqual([]);
