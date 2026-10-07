@@ -124,7 +124,7 @@ const DOMAINS: readonly Domain[] = [
         .description("Set and rotate the family key that encrypted values are encrypted with."),
     ],
   },
-  // The docs site, a family resource with verbs like `key` (proposal 0081).
+  // The docs site, a family resource with verbs like `key` (proposal 0082).
   {
     names: ["site"],
     load: async () => [

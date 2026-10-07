@@ -2,7 +2,7 @@
  * The `site` domain's commander program. Mounted by `src/cli.ts` under
  * `manni site`; no entry point of its own. Like `key` (proposal 0045), `site`
  * is a family resource with verbs: the site every other domain checks
- * (proposal 0081). Three verbs, no default subcommand.
+ * (proposal 0082). Three verbs, no default subcommand.
  *
  * These verbs print no report: the framework's output is the output, on the
  * inherited stdio. manni's own lines are diagnostics on stderr. Exit `0` done,

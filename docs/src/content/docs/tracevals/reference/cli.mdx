@@ -427,7 +427,7 @@ Last turn of 3b265d00: 7 rules from 6 sources. 2 broken, 1 needs review.
 
 Findings are grouped under the source each rule came from. A source that is not a file prints under
 its format's name. The rules taken from your typed prompts print under `prompt`, and a plan given only
-as input prints under `plan`. The closing line counts sources rather than files for the same reason.
+as input prints under `plan`, and the system prompt prints under `system-prompt`. The closing line counts sources rather than files for the same reason.
 
 ### Arguments
 
@@ -455,16 +455,20 @@ The flags override the judge only. Extraction always uses `tracevals.provider` a
 `tracevals.model`, so `prepare`, the hook and `check` share one rules cache.
 
 Exit `0` means no rule was broken with a confident verdict, `needs-review` included. Exit `1` means at
-least one was. Exit `2` is an operational or usage error. The closing line says which case
+least one was. A break of a rule from Claude Code's default system prompt is a warning. It prints
+with `!` in place of `✖`, counts as reported, and never exits `1`. Exit `2` is an operational or usage error. The closing line says which case
 applied:
 
 | Closing line | Exit |
 |---|---|
 | `Last turn of <session>: <n> rules from <n> sources. None broken.` | `0` |
-| `Last turn of <session>: <n> rules from <n> sources. <n> broken, <n> needs review.` | `1` when any is broken |
+| `Last turn of <session>: <n> rules from <n> sources. None broken, <n> needs review, <n> reported.` | `0` |
+| `Last turn of <session>: <n> rules from <n> sources. <n> broken, <n> needs review, <n> reported.` | `1` |
 | `Last turn of <session>: <n> rules from <n> sources, none apply to this turn.` | `0` |
 | `Last turn of <session>: no rule sources governed it.` | `0` |
 | `Last turn of <session>: nothing happened after the last prompt.` | `0` |
+
+The needs-review and reported counts are left out when they are zero.
 
 When the hook has kept a [session ledger](/manni/tracevals/reference/report-and-exit-codes/#the-session-ledger)
 for the session, a `Session so far` section follows the findings. It never changes the exit code.

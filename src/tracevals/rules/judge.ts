@@ -26,6 +26,7 @@ import {
   type ZoneThresholds,
 } from "@hawkeyexl/inference";
 import { DECISION_ONLY_PROVIDERS } from "../../shared/providers.js";
+import type { Severity } from "../../shared/severity.js";
 import type { TraceWindow } from "../graders/util.js";
 import { evaluateWhen } from "../graders/when.js";
 import { makeRedactor } from "../judge/redact.js";
@@ -61,8 +62,11 @@ export const DEFAULT_TURN_CACHE_DIR = ".manni/tracevals/cache/turns";
 export const CHARS_PER_TOKEN = 3;
 
 export interface TurnRule {
-  /** `path` lets the earlier turns say the session read the source. */
-  source: Pick<RuleSource, "displayPath"> & Partial<Pick<RuleSource, "path">>;
+  /**
+   * `path` lets the earlier turns say the session read the source. A source
+   * whose `blocks` is false gives warnings; one that leaves it out blocks.
+   */
+  source: Pick<RuleSource, "displayPath"> & Partial<Pick<RuleSource, "path" | "blocks">>;
   rule: Rule;
 }
 
@@ -94,6 +98,8 @@ export interface TurnFinding {
   rule: string;
   text: string;
   outcome: "fail" | "needs-review";
+  /** `error` when the rule's source blocks, `warning` when it is only reported. */
+  severity: Severity;
   observed: string;
   confidence: number;
   /** The judge's reasoning. A decision-only provider gives none. */
@@ -213,6 +219,7 @@ interface Planned {
   source: string;
   id: string;
   text: string;
+  severity: Severity;
   /** The ledger's block for this rule, "" for none and on the decision path. */
   history: string;
   /** The scored path's item for this rule. */
@@ -276,6 +283,7 @@ function planTurn(
       source: source.displayPath,
       id: rule.id,
       text: rule.text,
+      severity: source.blocks === false ? "warning" : "error",
       history,
       item: buildRuleItem(source.displayPath, rule, history),
     };
@@ -309,7 +317,8 @@ function planTurn(
   const sources = [
     ...new Map(
       input.rules.flatMap(({ source: { path, displayPath } }) =>
-        // A source with no file (the typed prompts, an inline plan) is never read.
+        // A source with no file (the typed prompts, an inline plan, the system
+        // prompt) is never read.
         path !== undefined && path !== "" ? [[displayPath, { path, displayPath }] as const] : [],
       ),
     ).values(),
@@ -549,7 +558,7 @@ function findingOf(
   v: Verdict,
   runs: number,
 ): TurnFinding {
-  const base = { source: p.source, rule: p.id, text: p.text, outcome };
+  const base = { source: p.source, rule: p.id, text: p.text, outcome, severity: p.severity };
   if (v.runs.length === 0) {
     return {
       ...base,

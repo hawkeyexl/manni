@@ -10,7 +10,7 @@ server with no flags: `0 violations on 0 of 238 pages`, exit 0.
 **Duration:** 34.9 s (spec: 20-45 s).
 **Audience:** Docs engineers who run the site locally (Maya), and CI engineers
 who serve it in a workflow before a check (Devin).
-**Feature:** proposal 0081, `docs/proposals/0081-a-site-domain-runs-the-docs-site.md`.
+**Feature:** proposal 0082, `docs/proposals/0082-a-site-domain-runs-the-docs-site.md`.
 Reference: `docs/src/content/docs/site/reference/cli.mdx`. Branch
 `claude/manni-docs-start-subcommand-54c600`, uncommitted on `13a58c0a`
 (manni 4.3.0, Node v24.11.0, Astro 7.2.9).

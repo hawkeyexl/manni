@@ -1,4 +1,4 @@
-# 0081: A site domain runs the docs site: `manni site start`, `build` and `preview`
+# 0082: A site domain runs the docs site: `manni site start`, `build` and `preview`
 
 - **Status:** Proposed
 - **Serves:** Three people, four journeys.
@@ -449,7 +449,7 @@ npm run build && npm run docs:check-cli                     # site/reference/cli
 node dist/cli.js meta validate && node dist/cli.js term check && node dist/cli.js cite check
 npm run docs:check-docevals                                 # the deterministic evals over the site
 cd docs && npm run build && cd .. && npm run docs:check-links
-vale docs/proposals/0081-a-site-domain-runs-the-docs-site.md docs/src/content/docs/site
+vale docs/proposals/0082-a-site-domain-runs-the-docs-site.md docs/src/content/docs/site
 ```
 
 By hand in this repository, on Windows for the `.cmd` launcher path:

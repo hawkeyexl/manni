@@ -1,6 +1,6 @@
 # 0079: tracevals checks each turn against the rules it read
 
-- **Status:** Superseded in part by [0080](0080-tracevals-holds-a-session-to-what-it-was-asked-and-the-procedures-it-ran.md)
+- **Status:** Implemented (#163). Superseded in part by [0080](0080-tracevals-holds-a-session-to-what-it-was-asked-and-the-procedures-it-ran.md)
 - **Serves:** Maya · M25, "Catch a broken rule before the agent hands back",
   which cross-references M17, M23 and M24.
 - **Depends on:** [0078](0078-family-check-status-and-claude-code-plugin.md),

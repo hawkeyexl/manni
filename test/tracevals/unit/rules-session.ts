@@ -8,6 +8,8 @@ import type { Trace } from "../../../src/tracevals/trace/types.js";
 export type SessionStep =
   | { prompt: string }
   | { say: string }
+  /** An `attachment` record, as Claude Code writes a prompt snapshot or an output style. */
+  | { attachment: Record<string, unknown>; version?: string }
   | { tool: string; input: Record<string, unknown>; result?: string; error?: boolean };
 
 export const SESSION_CWD = "C:\\work\\demo";
@@ -32,6 +34,12 @@ export function session(steps: SessionStep[], cwd = SESSION_CWD, { sidechain = f
   steps.forEach((step, i) => {
     if ("prompt" in step) {
       push({ type: "user", origin: { kind: "human" }, message: { role: "user", content: step.prompt } });
+    } else if ("attachment" in step) {
+      push({
+        type: "attachment",
+        attachment: step.attachment,
+        ...(step.version !== undefined ? { version: step.version } : {}),
+      });
     } else if ("say" in step) {
       push({ type: "assistant", message: { role: "assistant", content: [{ type: "text", text: step.say }] } });
     } else {
