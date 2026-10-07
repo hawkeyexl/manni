@@ -1,0 +1,7 @@
+Your agent said it was done. Was it what you asked for?
+
+`manni tracevals check` already held each Claude Code turn to CLAUDE.md and the rules files around it. Now it also holds the turn to what the session was asked. That means the prompts you typed, the plan you approved, and the Spec Kit, Kiro or OpenSpec specs it touched. Each rule is judged against the whole session, so a skill's multi-step procedure counts too.
+
+In the demo, the second prompt says "Do not edit src/legacy.ts." The agent edits it and says done. The check names the broken request under its source, `prompt`, and exits 1. As a Stop hook, the same check sends the agent back before it hands over.
+
+npm i -D @hawkeyexl/manni · manni tracevals check <trace>

@@ -15,9 +15,9 @@ import {
 } from "../judge/provider.js";
 import { RulesCache, rulesCacheKey } from "../rules/cache.js";
 import type { HostSetting } from "../rules/host.js";
-import { extractRules, type Rule } from "../rules/extract.js";
+import { extractRules, promptFor, type Rule } from "../rules/extract.js";
 import { GB, type LocalModels } from "../rules/local.js";
-import { mockRulesResponse } from "../rules/mock.js";
+import { mockRequestsResponse, mockRulesResponse } from "../rules/mock.js";
 import type { RuleSource } from "../rules/sources.js";
 import { TracevalsError } from "../types.js";
 
@@ -62,6 +62,7 @@ export function conformanceOf(config: TracevalsConfig): NonNullable<TracevalsCon
       hook: { provider: null, model: null, runs: 1 },
       include: [],
       exclude: [],
+      plans: [],
     }
   );
 }
@@ -114,9 +115,11 @@ export async function extraction(
     // provider is built per source and never kept.
     if (built === undefined && identity.provider === "mock") {
       markJudgeProcess();
-      return constructProvider(config, identity, {
-        mockResponses: [mockRulesResponse(source.content)],
-      });
+      const scripted =
+        promptFor(source.format) === "requests"
+          ? mockRequestsResponse(source.content)
+          : mockRulesResponse(source.content);
+      return constructProvider(config, identity, { mockResponses: [scripted] });
     }
     // Every other provider is built once, on the first uncached source.
     if (built === undefined) {
@@ -129,6 +132,7 @@ export async function extraction(
     rulesCacheKey({
       provider: identity.provider,
       model: identity.model,
+      prompt: promptFor(source.format),
       temperature: config.judge.temperature,
       sha256: source.sha256,
     });

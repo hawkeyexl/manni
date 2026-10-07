@@ -65,8 +65,14 @@ docs/src/content/docs/family/reference/cli.mdx:
       lines: 268-269
       integrity: sha256-0206559185dfea6d528f293cd9997c7ddc49673e9cbd52add392f024158a46f0
     - generated-by: Claude Sonnet 5.5
-      lines: 275-311
-      integrity: sha256-db0141c38ed94556c95abaf14f876db36c4bdbd9ded693fbe6643872119a55f6
+      lines: 275-289
+      integrity: sha256-12b36eabac62c3ca7f94d4145b71ca8b15e0ddd6b388f2c2976ee1913e362575
+    - generated-by: Claude Opus 5.5
+      lines: 290
+      integrity: sha256-7da23d0d7b900b6b94dd0e61eaead4f3be7a7d0ef9d734b003f95c6fcc03827b
+    - generated-by: Claude Sonnet 5.5
+      lines: 291-311
+      integrity: sha256-c60125d7baf2606439fd526a9bac58418e30f265757b7b1d7472501f60f7af2c
     - generated-by: Claude Opus 5.5
       lines: 313-319
       integrity: sha256-116f19ad01457ad3584d051f48bd26863d4e406ea995c187b27087379426dccd

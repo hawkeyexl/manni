@@ -17,7 +17,7 @@ import { checkTurn, runCheck, type CheckOptions } from "../../../src/tracevals/c
 import { JUDGE_ENV } from "../../../src/tracevals/commands/conformance.js";
 import { runPrepare } from "../../../src/tracevals/commands/prepare.js";
 import { runRelease } from "../../../src/tracevals/commands/release.js";
-import { renderRelease } from "../../../src/tracevals/reporters/conformance.js";
+import { renderCheck, renderRelease } from "../../../src/tracevals/reporters/conformance.js";
 import type { HostApi } from "../../../src/tracevals/rules/host.js";
 import type { LocalModels } from "../../../src/tracevals/rules/local.js";
 import { mockTurnJudge, mockTurnScores } from "../../../src/tracevals/rules/mock.js";
@@ -137,7 +137,7 @@ describe("check by hand", () => {
       "CLAUDE.md\n  ? run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.\n      not-followed 0, followed 0, not-applicable 0. The turn does not show `npm ci`. (0.00)\n  ✖ no-force-push  Never run `git push --force`.",
     );
     expect(rendered.split("\n").at(-1)).toBe(
-      `Last turn of 3b265d00: ${String(report.summary.rules)} rules from ${String(report.sources.length)} files. 2 broken, 1 needs review.`,
+      `Last turn of 3b265d00: ${String(report.summary.rules)} rules from ${String(report.sources.length)} sources. 2 broken, 1 needs review.`,
     );
   });
 
@@ -145,7 +145,7 @@ describe("check by hand", () => {
     const { report, rendered } = await check("follows");
     expect(report.exitCode).toBe(0);
     expect(report.findings).toEqual([]);
-    expect(rendered).toMatch(/^Last turn of 3b265d00: \d+ rules from \d+ files\. None broken\.$/);
+    expect(rendered).toMatch(/^Last turn of 3b265d00: \d+ rules from \d+ sources\. None broken\.$/);
   });
 
   it("skips a turn no rule applies to, counting every rule not applicable", async () => {
@@ -153,20 +153,32 @@ describe("check by hand", () => {
       config: join(project, "narrow.config.yaml"),
     });
     expect(report.skipped).toBe("not-applicable");
-    expect(report.summary).toMatchObject({ sources: 1, rules: 2, notApplicable: 2, fail: 0 });
+    // CLAUDE.md, and the typed prompts, which ask for nothing to build.
+    expect(report.summary).toMatchObject({ sources: 2, rules: 2, notApplicable: 2, fail: 0 });
+    expect(report.sources).toContainEqual({
+      path: "prompt",
+      format: "prompt",
+      trigger: "typed prompts 1-2",
+      rules: 0,
+      origin: "extracted",
+    });
     expect(report.judge).toBeNull();
     expect(report.exitCode).toBe(0);
-    expect(rendered).toBe("Last turn of 3b265d00: 2 rules from 1 file, none apply to this turn.");
+    expect(rendered).toBe("Last turn of 3b265d00: 2 rules from 2 sources, none apply to this turn.");
   });
 
-  it("skips an empty turn and a turn no source governed", async () => {
+  it("skips an empty turn, and says when no rule source governed one", async () => {
     const empty = await check("empty-turn");
     expect(empty.report.skipped).toBe("empty-turn");
+    // A turn has a typed prompt, so the prompts are always a source of it.
     const bare = join(dir, "bare");
     await mkdir(bare);
-    const none = await check("follows", { project: bare });
-    expect(none.report.skipped).toBe("no-sources");
-    expect(none.rendered).toBe("Last turn of 3b265d00: no rule sources governed it.");
+    const asked = await check("untouched", { project: bare });
+    expect(asked.report.sources.map((s) => s.format)).toEqual(["prompt"]);
+    expect(asked.report.skipped).toBe("not-applicable");
+    expect(asked.rendered).toBe("Last turn of 3b265d00: 0 rules from 1 source, none apply to this turn.");
+    const none = { ...asked.report, sources: [], skipped: "no-sources" as const };
+    expect(renderCheck(none)).toBe("Last turn of 3b265d00: no rule sources governed it.");
   });
 
   it("extracts a file once per version, and again under --no-cache", async () => {
@@ -264,7 +276,8 @@ describe("checkTurn, inside a hook", () => {
     const bare = join(dir, "bare");
     await mkdir(bare);
     await writeFile(join(bare, "manni.config.yaml"), "tracevals:\n  provider: mock\n  conformance: {}\n");
-    expect((await hook("follows", { cwd: bare })).skipped).toEqual({ gate: "no-sources" });
+    // The typed prompts are a source of every turn, and these ask for nothing.
+    expect((await hook("untouched", { cwd: bare })).skipped).toEqual({ gate: "not-applicable" });
     await config(
       "tracevals:\n  provider: mock\n  conformance:\n    exclude: [AGENTS.md, .cursor/rules/stale.mdc]\n",
     );
@@ -283,6 +296,24 @@ describe("checkTurn, inside a hook", () => {
     expect(result.report?.extraction).toEqual({ provider: "mock", model: "mock-model" });
     expect(result.findings.some((f) => f.rule === "no-force-push" && f.outcome === "fail")).toBe(true);
     expect(result.judgement?.cached).toBe(false);
+  });
+
+  it("brings a touched conformance.plans file in under the hook (proposal 0080)", async () => {
+    const asked = join(dir, "requests");
+    await cp(join(FIXTURE, "requests"), asked, { recursive: true });
+    const result = await checkTurn({
+      transcriptPath: trace("requests"),
+      sessionId: "3b265d00-0000-4000-8000-000000000002",
+      cwd: asked,
+      inLoop: true,
+      env,
+    });
+    const rows = result.report?.sources ?? [];
+    expect(rows.find((r) => r.path === "docs/plans/reset.md")).toMatchObject({
+      format: "plans",
+      trigger: "touched docs/plans/reset.md",
+    });
+    expect(rows.some((r) => r.path === "docs/plans/other.md")).toBe(false);
   });
 
   it("reuses the verdict for the same turn, rules and model (gate 7)", async () => {
@@ -480,10 +511,10 @@ describe("the session ledger", () => {
     const bare = join(dir, "bare");
     await mkdir(bare);
     await writeFile(join(bare, "manni.config.yaml"), "tracevals:\n  provider: mock\n  conformance: {}\n");
-    expect((await hook("follows", { cwd: bare, judge })).skipped).toEqual({ gate: "no-sources" });
-    const [none] = (JSON.parse(await readFile(ledgerPath(bare, SESSION, null), "utf-8")) as Ledger).turns;
-    expect(none).toMatchObject({ inScope: false, sources: [] });
-    expect(none?.commands.length).toBeGreaterThan(0);
+    // The typed prompts are the bare project's one source, and ask for nothing.
+    expect((await hook("untouched", { cwd: bare, judge })).skipped).toEqual({ gate: "not-applicable" });
+    const [asked] = (JSON.parse(await readFile(ledgerPath(bare, SESSION, null), "utf-8")) as Ledger).turns;
+    expect(asked).toMatchObject({ sources: ["prompt"] });
 
     await config("tracevals:\n  provider: mock\n  conformance:\n    exclude: [AGENTS.md, .cursor/rules/stale.mdc]\n");
     expect((await hook("untouched", { judge })).skipped).toEqual({ gate: "not-applicable" });
@@ -503,20 +534,40 @@ describe("the session ledger", () => {
     await expect(read()).rejects.toThrow(/ENOENT/);
   });
 
-  it("shares earlier turns' facts with the judge by hand, ignoring this turn and later", async () => {
-    const { report: probe } = await check("breaks");
-    const from = probe.turn.from;
-    const at = (turn: number, commands: string[]) => ({
-      turn, inScope: true, sources: ["CLAUDE.md"], commands, wrote: [], read: [], skills: [], agents: [],
+  it("shares earlier turns of the transcript with the judge by hand, paths relative to the project", async () => {
+    // breaks.jsonl with two more steps in its first turn.
+    const lines = (await readFile(trace("breaks"), "utf-8")).split("\n").filter((l) => l.trim() !== "");
+    const first = JSON.parse(lines[0] ?? "{}") as Record<string, unknown>;
+    const step = (id: string, name: string, input: Record<string, unknown>) =>
+      JSON.stringify({
+        ...first,
+        uuid: id,
+        type: "assistant",
+        message: { role: "assistant", content: [{ type: "tool_use", id, name, input }] },
+      });
+    const longer = join(dir, "earlier.jsonl");
+    await writeFile(
+      longer,
+      [
+        lines[0],
+        step("pre-1", "Bash", { command: "npm ci" }),
+        step("pre-2", "Write", { file_path: join(project, "src", "x.ts"), content: "" }),
+        ...lines.slice(1),
+      ].join("\n"),
+    );
+    const at = (turn: number, inScope: boolean) => ({
+      turn, inScope, sources: inScope ? ["CLAUDE.md"] : [], commands: [], wrote: [], read: [], skills: [], agents: [],
     });
-    const earlier: Ledger = { version: 1, turns: [at(0, ["npm ci"]), at(from, ["npm run this-turn"])], rules: {} };
+    const earlier: Ledger = { version: 1, turns: [at(0, false)], rules: {} };
     await writeLedger(ledgerPath(project, SESSION, null), earlier);
     const judge = generative(() => ({ reasoning: "Fine.", "not-applicable": 0, followed: 100, "not-followed": 0 }));
-    await check("breaks", { judge, noCache: true });
+    await runCheck({ tracePath: longer, project, configDir: project, env, judge, noCache: true });
     expect(judge.requests.length).toBeGreaterThan(0);
     for (const r of judge.requests) {
-      expect(r.user.startsWith("# Earlier in this session\n\n- turn 0: ran npm ci\n\n# The turn\n\n")).toBe(true);
-      expect(r.user).not.toContain("this-turn");
+      expect(r.user.startsWith(
+        "# Earlier in this session\n\n- turn 0: ran npm ci; wrote src/x.ts (no rules in scope)\n\n# The turn\n\n",
+      )).toBe(true);
+      expect(r.user.split("# The turn")[0]).not.toContain("git push");
     }
     expect(await read()).toEqual(earlier);
   });
@@ -620,10 +671,12 @@ describe("prepare", () => {
 
   it("warms the cache check reads", async () => {
     await runPrepare({ stdin: "", project, env });
-    const replay = new MockProvider([{ error: "should not be asked" }]);
+    const replay = new MockProvider([{ json: { rules: [] } }]);
     await check("follows", { extractor: replay, config: join(project, "manni.config.yaml") });
-    // AGENTS.md was prepared; the turn's other sources were declared.
-    expect(replay.requests).toHaveLength(0);
+    // AGENTS.md was prepared and the turn's other files were declared. Only the
+    // typed prompts, unknown at session start, needed the model.
+    expect(replay.requests).toHaveLength(1);
+    expect(replay.requests[0]?.user).toContain("format: prompt");
   });
 
   it("lists hosted models, and fetches a local one once", async () => {

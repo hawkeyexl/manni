@@ -284,11 +284,19 @@ describe("sources a turn brings into scope", () => {
     expect(paths(sources)).toContain(".claude/skills/demo/SKILL.md");
   });
 
-  it("leaves out a skill whose window closed before the turn", async () => {
+  it("keeps a skill in scope to the end of the session, past a later command", async () => {
+    // Proposal 0080: a skill's procedure spans the session, so the skills and
+    // commands it runs partway through do not end its window.
     const steps: Step[] = [{ skill: "demo" }, { command: "ship" }, { say: "b" }];
     const { sources } = await resolveTurnSources(traceOf("claude", steps), { from: 2, to: 2 }, repo("claude"));
-    expect(paths(sources)).not.toContain(".claude/skills/demo/SKILL.md");
+    expect(paths(sources)).toContain(".claude/skills/demo/SKILL.md");
     expect(byPath(sources).get(".claude/commands/ship.md")?.format).toBe("slash-command");
+  });
+
+  it("leaves out a skill first invoked after the turn", async () => {
+    const steps: Step[] = [{ say: "a" }, { skill: "demo" }];
+    const { sources } = await resolveTurnSources(traceOf("claude", steps), { from: 0, to: 0 }, repo("claude"));
+    expect(paths(sources)).not.toContain(".claude/skills/demo/SKILL.md");
   });
 
   it("adds the agent definition under a subagent run", async () => {
@@ -336,7 +344,8 @@ describe("sources a turn brings into scope", () => {
       { read: ".kiro/specs/feature/requirements.md" },
     ]);
     expect(paths(read.sources)).toContain(".kiro/steering/manual.md");
-    expect(paths(read.sources)).not.toContain(".kiro/specs/feature/requirements.md");
+    // A spec is no steering file. Touched, it says what to build (proposal 0080).
+    expect(byPath(read.sources).get(".kiro/specs/feature/requirements.md")?.format).toBe("kiro-spec");
   });
 
   it("takes OpenSpec's project.md once read, and never its specs", async () => {

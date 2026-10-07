@@ -240,6 +240,7 @@ async function judgeTurnOf(p: Params, ledger: Ledger, seen: Seen): Promise<Outco
     ...(p.env !== undefined ? { env: p.env } : {}),
     include: conformance.include,
     exclude: conformance.exclude,
+    plans: conformance.plans,
     ...(p.agentType !== undefined ? { agentType: p.agentType } : {}),
   });
   report.warnings.push(...resolved.warnings);
@@ -321,6 +322,7 @@ async function judgeTurnOf(p: Params, ledger: Ledger, seen: Seen): Promise<Outco
     },
     ...(p.lastAssistantMessage !== undefined ? { lastAssistantMessage: p.lastAssistantMessage } : {}),
     ledger,
+    project: { cwd: p.projectDir, root: p.projectRoot ?? p.projectDir },
     cache: new TurnCache(resolve(cacheRoot, "turns"), !p.noCache),
   };
 

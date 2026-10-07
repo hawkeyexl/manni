@@ -168,6 +168,8 @@ export interface ConformanceConfig {
   include: string[];
   /** Globs never treated as rule sources. */
   exclude: string[];
+  /** Globs of files that say what to build, in scope once touched (proposal 0080). */
+  plans: string[];
 }
 
 // `verbose` puts the parent schema on each error, so an unknown key can be
@@ -250,6 +252,7 @@ interface RawConfig {
     hook?: { provider?: string; model?: string; runs?: number };
     include?: string[];
     exclude?: string[];
+    plans?: string[];
   };
 }
 
@@ -386,6 +389,7 @@ export function parseConfig(
             },
             include: [...(r.conformance.include ?? [])],
             exclude: [...(r.conformance.exclude ?? [])],
+            plans: [...(r.conformance.plans ?? [])],
           },
   };
   // Compilability is not expressible in JSON Schema, and a pattern that cannot

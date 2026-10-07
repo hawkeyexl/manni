@@ -7,8 +7,8 @@
  * gets one `decide` call, one question per rule, branching from the turn.
  * Every provider that generates gets `runs` calls of `completeJSONShared`, one
  * item per rule, each answered with a sentence of reasoning and then three
- * independent scores. Both share what the session ledger records of earlier
- * turns, and a scored rule's item carries what it holds for that rule.
+ * independent scores. Both share what earlier turns of the transcript did,
+ * and a scored rule's item carries what the session ledger holds for it.
  *
  * Only a confident violation blocks. Everything short of that is
  * `needs-review`, and an errored rule can only go there, never to a silent
@@ -44,8 +44,9 @@ import {
   TURN_SCHEMA,
   type TurnScore,
 } from "./judge-prompt.js";
-import { earlierBlock, historyBlock, type Ledger } from "./ledger.js";
+import { historyBlock, type Ledger } from "./ledger.js";
 import type { RuleSource } from "./sources.js";
+import { timelineBlock } from "./timeline.js";
 import type { TurnSlice } from "./turn.js";
 
 /** Default location, under the tool's per-project cache directory. */
@@ -60,7 +61,8 @@ export const DEFAULT_TURN_CACHE_DIR = ".manni/tracevals/cache/turns";
 export const CHARS_PER_TOKEN = 3;
 
 export interface TurnRule {
-  source: Pick<RuleSource, "displayPath">;
+  /** `path` lets the earlier turns say the session read the source. */
+  source: Pick<RuleSource, "displayPath"> & Partial<Pick<RuleSource, "path">>;
   rule: Rule;
 }
 
@@ -78,10 +80,12 @@ export interface TurnJudgeInput {
   /** The Stop payload's `last_assistant_message`, appended when the transcript lags. */
   lastAssistantMessage?: string;
   /**
-   * The session's earlier turns and verdicts. Every path shares what earlier
-   * turns did; only a scored rule's item carries its own history.
+   * The session's earlier verdicts, and which earlier turns had no rule in
+   * scope. Only a scored rule's item carries its own history.
    */
   ledger?: Ledger;
+  /** Where paths in earlier turns are made relative; the trace's cwd by default. */
+  project?: { cwd: string; root: string };
   cache?: TurnCache;
 }
 
@@ -230,7 +234,7 @@ export type TurnPlanInput = Omit<TurnJudgeInput, "provider">;
 interface Plan {
   planned: Planned[];
   turnText: string;
-  /** The ledger's account of earlier turns, "" for none. */
+  /** The transcript's account of earlier turns, "" for none. */
   earlier: string;
   warnings: string[];
   hits: Map<Planned, Verdict>;
@@ -302,8 +306,22 @@ function planTurn(
   }
   // Earlier turns share the budget with the turn, and take at most a quarter
   // of it, so the turn itself is never crowded out.
-  const earlier =
-    input.ledger !== undefined ? earlierBlock(input.ledger, input.turn.from, Math.floor(budget / 4)) : "";
+  const sources = [
+    ...new Map(
+      input.rules.flatMap(({ source: { path, displayPath } }) =>
+        // A source with no file (the typed prompts, an inline plan) is never read.
+        path !== undefined && path !== "" ? [[displayPath, { path, displayPath }] as const] : [],
+      ),
+    ).values(),
+  ];
+  const earlier = timelineBlock(input.trace, input.turn.from, {
+    cwd: input.project?.cwd ?? input.trace.cwd,
+    root: input.project?.root ?? input.trace.cwd,
+    redact: input.render.redact,
+    sources,
+    ...(input.ledger !== undefined ? { ledger: input.ledger } : {}),
+    maxChars: Math.floor(budget / 4),
+  });
   budget -= buildTurnShared("", earlier).length - buildTurnShared("").length;
   const cut = { happened: false };
   const turnText =

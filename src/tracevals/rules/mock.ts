@@ -35,7 +35,36 @@ export function mockRulesResponse(content: string): {
   return { json: { rules } };
 }
 
-const PROHIBITION = /^(?:never|don't|do not|avoid)\b/i;
+const ITEM = /^\s*(?:[-*]|\d+\.)\s+(?:\[[ xX]\]\s+)?(.+)$/;
+const SPEC_ITEM = /^(?:\*\*)?([A-Z]+-\d+|T\d+|\d+(?:\.\d+)+)(?:\*\*)?:?\s+(.+)$/;
+
+/**
+ * The same crude reading for a source that says what the session was asked.
+ * A bullet, a numbered prompt or a task checkbox is an item. One that opens
+ * with a spec's own id (`FR-001`, `T014`, `1.2`) keeps that id, and any other
+ * is a rule only when it opens with an imperative verb.
+ */
+export function mockRequestsResponse(content: string): {
+  json: { rules: { id: string; text: string }[] };
+} {
+  const rules: { id: string; text: string }[] = [];
+  for (const line of content.split(/\r?\n/)) {
+    const item = ITEM.exec(line)?.[1]?.trim();
+    if (item === undefined) continue;
+    const spec = SPEC_ITEM.exec(item);
+    const specId = spec?.[1];
+    const specText = spec?.[2]?.trim();
+    if (specId !== undefined && specText !== undefined) {
+      rules.push({ id: specId, text: specText });
+    } else if (IMPERATIVE.test(item)) {
+      const id = kebab(item);
+      if (id !== "") rules.push({ id, text: item });
+    }
+  }
+  return { json: { rules } };
+}
+
+const PROHIBITION =/^(?:never|don't|do not|avoid)\b/i;
 
 /**
  * A deterministic turn answer for `--provider mock`, read from the rule's

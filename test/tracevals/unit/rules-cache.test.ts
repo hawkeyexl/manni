@@ -15,7 +15,7 @@ describe("rules cache", () => {
   });
 
   const key = (over: Partial<Parameters<typeof rulesCacheKey>[0]> = {}) =>
-    rulesCacheKey({ provider: "mock", model: "m", temperature: 0, sha256: "abc", ...over });
+    rulesCacheKey({ provider: "mock", model: "m", prompt: "rules", temperature: 0, sha256: "abc", ...over });
 
   it("is stable for identical inputs and moves with each part", () => {
     expect(key()).toBe(key());
@@ -23,6 +23,7 @@ describe("rules cache", () => {
     expect(key({ model: "other" })).not.toBe(key());
     expect(key({ sha256: "def" })).not.toBe(key());
     expect(key({ temperature: 0.7 })).not.toBe(key());
+    expect(key({ prompt: "requests" })).not.toBe(key());
   });
 
   it("has no path in the key, so identical content shares an entry", () => {

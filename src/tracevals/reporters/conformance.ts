@@ -58,7 +58,8 @@ function sessionSoFar(report: CheckReport): string[] {
 function closing(report: CheckReport): string {
   const head = `Last turn of ${report.sessionId.slice(0, 8)}:`;
   const { summary } = report;
-  const scope = `${count(summary.rules, "rule", "rules")} from ${count(summary.sources, "file", "files")}`;
+  // "sources", because a typed prompt is not a file (proposal 0080).
+  const scope = `${count(summary.rules, "rule", "rules")} from ${count(summary.sources, "source", "sources")}`;
   switch (report.skipped) {
     case "empty-turn":
       return `${head} nothing happened after the last prompt.`;

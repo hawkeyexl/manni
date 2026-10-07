@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   MockProvider,
@@ -10,7 +10,7 @@ import {
   type MockDecisions,
 } from "@hawkeyexl/inference";
 import { parseTraceFile } from "../../../src/tracevals/trace/claude.js";
-import { lastTurn } from "../../../src/tracevals/rules/turn.js";
+import { isTypedPrompt, lastTurn } from "../../../src/tracevals/rules/turn.js";
 import {
   TurnCache,
   applicableRules,
@@ -29,14 +29,15 @@ import {
   TURN_SCHEMA,
 } from "../../../src/tracevals/rules/judge-prompt.js";
 import {
-  earlierBlock,
   historyBlock,
   recordFacts,
   recordTurn,
   type Ledger,
   type TurnFacts,
 } from "../../../src/tracevals/rules/ledger.js";
+import { timelineBlock } from "../../../src/tracevals/rules/timeline.js";
 import type { Trace } from "../../../src/tracevals/trace/types.js";
+import { session, type SessionStep } from "./rules-session.js";
 
 const TRACES = join(import.meta.dirname, "..", "fixtures", "rules", "traces");
 
@@ -105,6 +106,27 @@ const facts = (turn: number, over: Partial<TurnFacts> = {}): TurnFacts => ({
   ...over,
 });
 
+/** Two earlier turns that did something, then the judged one. */
+const EARLIER: SessionStep[] = [
+  { prompt: "Set up." },
+  { tool: "Bash", input: { command: "npm ci" }, result: "ok" },
+  { tool: "Write", input: { file_path: "src/a.ts", content: "x" }, result: "ok" },
+  { prompt: "Review it." },
+  { tool: "Skill", input: { skill: "demo" }, result: "loaded" },
+  { tool: "Agent", input: { subagent_type: "Explore", prompt: "look" }, result: "Looks fine." },
+  { prompt: "Now run the tests." },
+  { tool: "Bash", input: { command: "npm run now" }, result: "ok" },
+  { say: "Done." },
+];
+
+/** A multi-turn trace, its turn starts, and judge input over its last turn. */
+function multi(steps: SessionStep[] = EARLIER) {
+  const t = session(steps);
+  const from = lastTurn(t).from;
+  const starts = t.events.filter(isTypedPrompt).map((e) => e.index);
+  return { trace: t, turn: lastTurn(t), from, starts };
+}
+
 type Reply = Record<string, unknown> | { error: string };
 type Script = (rule: string, call: number) => Reply | undefined;
 
@@ -171,14 +193,41 @@ describe("the turn judge prompt", () => {
   it("moves TURN_JUDGE_PROMPT_VERSION with the prompt surface", () => {
     const rule = { id: "a", text: "Do a." };
     // The ledger's blocks reach the provider too, so their wording is pinned here.
-    let ledger = recordFacts({ version: 1, turns: [], rules: {} }, facts(1, { commands: ["c"], wrote: ["w"], read: ["r"], skills: ["s"], agents: ["g"] }));
-    ledger = recordFacts(ledger, facts(2, { inScope: false, sources: [], commands: ["c"] }));
+    const every = multi([
+      { prompt: "One." },
+      { tool: "Bash", input: { command: "c" }, result: "ok" },
+      { tool: "Write", input: { file_path: "w", content: "" }, result: "ok" },
+      { tool: "Read", input: { file_path: "CLAUDE.md" }, result: "ok" },
+      { tool: "Skill", input: { skill: "s" }, result: "ok" },
+      { tool: "Agent", input: { subagent_type: "g", prompt: "p" }, result: "R" },
+      { tool: "Agent", input: { subagent_type: "h", prompt: "p" } },
+      { tool: "AskUserQuestion", input: { questions: [] }, result: "ok" },
+      { tool: "Edit", input: { file_path: "t.md", old_string: "- [ ] T1 a\n- [ ] b", new_string: "- [x] T1 a\n- [x] b" }, result: "ok" },
+      { tool: "ExitPlanMode", input: { plan: "p" }, result: "ok" },
+      { prompt: "Two." },
+      { tool: "Bash", input: { command: "c" }, result: "ok" },
+      { prompt: "Three." },
+      { tool: "Bash", input: { command: "c" }, result: "ok" },
+      { prompt: "Now." },
+    ]);
+    let ledger = recordFacts({ version: 1, turns: [], rules: {} }, facts(every.starts[1] ?? 0, { inScope: false, sources: [] }));
     ledger = recordTurn(ledger, 1, [{ key: "CLAUDE.md#a", text: rule.text, outcome: "broken", note: "N" }]);
+    const timeline = (maxChars?: number) =>
+      timelineBlock(every.trace, every.from, {
+        cwd: every.trace.cwd,
+        root: every.trace.cwd,
+        redact: [],
+        sources: [{ path: resolve(every.trace.cwd, "CLAUDE.md"), displayPath: "CLAUDE.md" }],
+        ledger,
+        ...(maxChars !== undefined ? { maxChars } : {}),
+      });
     const surface = [
       TURN_JUDGE_SYSTEM_PROMPT,
       buildTurnShared("TURN"),
       buildTurnShared("TURN", "EARLIER"),
-      earlierBlock(ledger, 9),
+      timeline(),
+      timeline(110),
+      timeline(80),
       historyBlock(ledger, "CLAUDE.md#a", rule.text, 9),
       buildRuleItem("CLAUDE.md", rule),
       buildRuleItem("CLAUDE.md", rule, "HISTORY"),
@@ -190,26 +239,28 @@ describe("the turn judge prompt", () => {
     ].join("\n---\n");
     const digest = createHash("sha256").update(surface).digest("hex").slice(0, 12);
     expect({ version: TURN_JUDGE_PROMPT_VERSION, digest }).toEqual({
-      version: 6,
-      digest: "b7311c6247bb",
+      version: 7,
+      digest: "4f29ae0da207",
     });
   });
 
   it("asks about one rule, lets the user override it, and lists no rules in the shared part", () => {
     expect(TURN_JUDGE_SYSTEM_PROMPT).toBe(
-      "You check one turn of an AI coding agent's session against one rule.\n" +
-        "A turn starts at the last prompt the user typed and runs to the end of the transcript.\n" +
+      "You check the last turn of an AI coding agent's session against one rule.\n" +
+        "The last turn starts at the last prompt the user typed and runs to the end of the transcript.\n" +
         "The transcript shows the user's prompts, the agent's tool calls with their inputs, and its replies.\n" +
+        '"Earlier in this session" lists what the session did before the last turn.\n' +
         "\n" +
-        "A prompt the user typed in the turn overrides any rule. Doing what the user explicitly asked is never a violation.\n" +
+        "A prompt the user typed overrides any rule. Doing what the user explicitly asked is never a violation.\n" +
         "\n" +
-        "Judge only from what the transcript shows. Do not guess.\n" +
-        "A rule applies only when the turn did the kind of work it covers. A rule about work the turn never did does not apply, so it was neither followed nor broken.",
+        "Judge only from what the transcript and the earlier turns show. Do not guess.\n" +
+        "A rule applies only once the session does the kind of work it covers.\n" +
+        "Score it broken only for what the last turn did, or for the last turn saying the work is done without it.",
     );
     expect(buildTurnShared("TURN")).toBe("# The turn\n\nTURN\n\n");
     const ask =
-      "First say in one or two sentences what the transcript shows about this rule. Then score. " +
-      "Score how strongly the transcript shows each, as a whole number from 0 to 100: the rule does not apply to this turn; the rule applies and the turn followed it; the rule applies and the turn broke it.";
+      "First say in one or two sentences what the session shows about this rule. Then score each as a whole number from 0 to 100: " +
+      "the rule does not apply yet, or the last turn did nothing it covers; the session follows it; the last turn broke it, or the last turn says the work is done without it.";
     expect(buildRuleItem("CLAUDE.md", { id: "a", text: "Do a." })).toBe(`# The rule\n\nCLAUDE.md#a: Do a.\n\n${ask}`);
     expect(buildRuleItem("CLAUDE.md", { id: "a", text: "Do a." }, "# Earlier in this session\n\n- turn 3: broken.")).toBe(
       `# The rule\n\nCLAUDE.md#a: Do a.\n\n# Earlier in this session\n\n- turn 3: broken.\n\n${ask}`,
@@ -228,6 +279,11 @@ describe("the turn judge prompt", () => {
   });
 
   it("offers decision-only providers the same three options", () => {
+    expect(TURN_CRITERIA).toEqual({
+      followed: "The session does what the rule asks.",
+      "not-followed": "The last turn did what the rule forbids, skipped what it requires, or said the work is done without it.",
+      "not-applicable": "The rule does not apply yet, or the last turn did nothing it covers.",
+    });
     expect(Object.keys(TURN_CRITERIA)).toEqual(["followed", "not-followed", "not-applicable"]);
   });
 });
@@ -433,45 +489,62 @@ describe("judgeTurn, scored", () => {
     expect(replay.requests).toHaveLength(0);
   });
 
-  it("shares what earlier turns did before the turn, newest last, ignoring the current turn", async () => {
-    const from = lastTurn(trace).from;
-    let ledger: Ledger = { version: 1, turns: [], rules: {} };
-    ledger = recordFacts(ledger, facts(from - 2, { commands: ["npm ci"], wrote: ["src/a.ts"] }));
-    ledger = recordFacts(ledger, facts(from - 1, { inScope: false, sources: [], skills: ["demo"] }));
-    ledger = recordFacts(ledger, facts(from, { commands: ["npm run now"] }));
+  it("shares what earlier turns of the transcript did before the turn, newest last", async () => {
+    const m = multi();
+    const [one, two] = m.starts;
+    const ledger = recordFacts({ version: 1, turns: [], rules: {} }, facts(two ?? 0, { inScope: false, sources: [] }));
     const { provider, requests } = scorer();
-    await judgeTurn(input(provider, { ledger }));
+    await judgeTurn(input(provider, { trace: m.trace, turn: m.turn, ledger }));
     expect(requests).toHaveLength(2);
     for (const r of requests) {
       expect(r.user.startsWith(
-        `# Earlier in this session\n\n- turn ${String(from - 2)}: ran npm ci; wrote src/a.ts\n` +
-          `- turn ${String(from - 1)}: used skill demo (no rules in scope)\n\n# The turn\n\n`,
+        `# Earlier in this session\n\n- turn ${String(one)}: ran npm ci; wrote src/a.ts\n` +
+          `- turn ${String(two)}: ran skill demo; spawned Explore, which returned Looks fine. (no rules in scope)\n\n# The turn\n\n`,
       )).toBe(true);
-      expect(r.user).not.toContain("npm run now");
+      expect(r.user.split("# The turn")[0]).not.toContain("npm run now");
     }
+  });
+
+  it("shares earlier turns without a ledger, and none when the turn is the first", async () => {
+    const m = multi();
+    const { provider, requests } = scorer();
+    await judgeTurn(input(provider, { trace: m.trace, turn: m.turn }));
+    expect(requests[0]?.user).toContain(`- turn ${String(m.starts[0])}: ran npm ci; wrote src/a.ts\n`);
+    const first = multi(EARLIER.slice(6));
+    const plain = scorer();
+    await judgeTurn(input(plain.provider, { trace: first.trace, turn: first.turn }));
+    expect(plain.requests[0]?.user.startsWith("# The turn\n\n")).toBe(true);
   });
 
   it("judges again when earlier turns' facts change", async () => {
     const cache = new TurnCache(join(dir, "facts"));
     await judgeTurn(input(scorer().provider, { cache }));
-    const ledger = recordFacts({ version: 1, turns: [], rules: {} }, facts(0, { commands: ["npm ci"] }));
+    const m = multi();
+    const on = { trace: m.trace, turn: m.turn, cache };
+    await judgeTurn(input(scorer().provider, on));
+    // The same transcript, with the earlier turn now marked out of scope.
+    const ledger = recordFacts({ version: 1, turns: [], rules: {} }, facts(m.starts[0] ?? 0, { inScope: false, sources: [] }));
     const again = scorer();
-    expect((await judgeTurn(input(again.provider, { cache, ledger }))).cached).toBe(false);
+    expect((await judgeTurn(input(again.provider, { ...on, ledger }))).cached).toBe(false);
     expect(again.requests).toHaveLength(2);
     const replay = scorer();
-    expect((await judgeTurn(input(replay.provider, { cache, ledger }))).cached).toBe(true);
+    expect((await judgeTurn(input(replay.provider, { ...on, ledger }))).cached).toBe(true);
   });
 
   it("gives earlier turns at most a quarter of the render budget, dropping the oldest", async () => {
-    let ledger: Ledger = { version: 1, turns: [], rules: {} };
-    const from = lastTurn(trace).from;
-    for (let t = 0; t < from; t++) ledger = recordFacts(ledger, facts(t, { commands: [`echo ${"x".repeat(100)} ${String(t)}`] }));
+    const steps: SessionStep[] = [];
+    for (let t = 0; t < 20; t++) {
+      steps.push({ prompt: `Turn ${String(t)}.` }, { tool: "Bash", input: { command: `echo ${"x".repeat(100)} ${String(t)}` }, result: "ok" });
+    }
+    steps.push({ prompt: "Now." }, { tool: "Bash", input: { command: "npm test" }, result: "ok" });
+    const m = multi(steps);
     const { provider, requests } = scorer();
-    await judgeTurn(input(provider, { ledger, render: { maxBlockChars: 2_000, maxTotalChars: 2_000, redact: [] } }));
+    await judgeTurn(input(provider, { trace: m.trace, turn: m.turn, render: { maxBlockChars: 2_000, maxTotalChars: 2_000, redact: [] } }));
     const earlier = requests[0]?.user.split("\n\n# The turn")[0] ?? "";
     expect(earlier.length).toBeLessThanOrEqual(500);
-    expect(earlier).toContain(`x ${String(from - 1)}`);
-    expect(earlier).not.toContain("- turn 0:");
+    expect(earlier).toContain("x 19");
+    expect(earlier).toMatch(/^# Earlier in this session\n\n- \(turns 0–\d+: \d+ lines left out\)\n/);
+    expect(earlier).not.toContain(`- turn ${String(m.starts[0])}:`);
   });
 
   it("makes no call when no rule applies", async () => {
@@ -539,12 +612,12 @@ describe("judgeTurn on a decision-only provider", () => {
   it("carries earlier turns' facts in its state, and no rule's history", async () => {
     const { provider, mock } = decisionOnly({ [CI_Q]: "followed", [PUSH_Q]: "followed" });
     const ciText = RULES[0]?.rule.text ?? "";
-    let ledger = recordFacts({ version: 1, turns: [], rules: {} }, facts(0, { commands: ["npm ci"] }));
-    ledger = recordTurn(ledger, 0, [{ key: CI, text: ciText, outcome: "broken", note: "" }]);
-    await judgeTurn(input(provider, { ledger }));
+    const m = multi(EARLIER.slice(0, 3).concat(EARLIER.slice(6)));
+    const ledger = recordTurn({ version: 1, turns: [], rules: {} }, 0, [{ key: CI, text: ciText, outcome: "broken", note: "" }]);
+    await judgeTurn(input(provider, { trace: m.trace, turn: m.turn, ledger }));
     const state = mock.decideRequests[0]?.state;
     expect(typeof state === "string" && state.startsWith(
-      `${TURN_JUDGE_SYSTEM_PROMPT}\n\n# Earlier in this session\n\n- turn 0: ran npm ci\n\n# The turn\n\n`,
+      `${TURN_JUDGE_SYSTEM_PROMPT}\n\n# Earlier in this session\n\n- turn 0: ran npm ci; wrote src/a.ts\n\n# The turn\n\n`,
     )).toBe(true);
     expect(JSON.stringify(mock.decideRequests[0]?.questions)).not.toContain("earlier in this session");
   });

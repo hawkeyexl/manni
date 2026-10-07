@@ -318,7 +318,7 @@ Without a `conformance` section the judgement never runs, and the `tracevals` ro
 
 | Situation | Reply |
 |---|---|
-| A rule broken, first stop | `{"decision":"block","reason":"This turn broke 1 rule from the files that governed it. Fix the work, or say why the rule does not apply here, then finish.\n\n<report>"}` |
+| A rule broken, first stop | `{"decision":"block","reason":"This turn broke 1 rule from the files and requests that governed it. Fix the work, or say why the rule does not apply here, then finish.\n\n<report>"}` |
 | A rule still broken after the repair pass | `{"systemMessage":"tracevals still finds broken rules after one repair pass. Run manni tracevals check <transcript_path> to see them."}` |
 | The local model is still downloading | `{"systemMessage":"tracevals skipped this turn: <model> is still downloading."}` |
 | The model is busy for 120 seconds | `{"systemMessage":"tracevals skipped this turn: <model> was busy with other judgements for 2 minutes."}` |

@@ -1,0 +1,10 @@
+{
+  "prompts": "\"content\":\"Add a reset-password flow to the login page.\"\n\"content\":\"Do not edit `src/legacy.ts`.\"\n",
+  "edits": "\"Edit\",\"input\":{\"file_path\":\"specs/001-login/tasks.md\"\n\"Edit\",\"input\":{\"file_path\":\"src/legacy.ts\"\n",
+  "done": "\"text\":\"Done. The reset flow is in.\"\n",
+  "check": "prompt\n  \u001b[31m✖\u001b[39m do-not-edit-src-legacy  Do not edit `src/legacy.ts`.\n      \u001b[2mnot-followed 100, followed 0, not-applicable 0. The turn shows `src/legacy.ts`. (1.00)\u001b[22m\n\nLast turn of 3b265d00: 14 rules from 10 sources. 1 broken.\n",
+  "sources": "      \"path\": \"CLAUDE.md\",\n      \"path\": \"prompt\",\n      \"path\": \"plan\",\n      \"path\": \"specs/001-login/spec.md\",\n      \"path\": \"specs/001-login/tasks.md\",\n      \"path\": \".kiro/specs/reset-password/requirements.md\",\n      \"path\": \".kiro/specs/reset-password/tasks.md\",\n      \"path\": \"openspec/changes/add-reset/proposal.md\",\n      \"path\": \"openspec/changes/add-reset/specs/auth/spec.md\",\n      \"path\": \"docs/plans/reset.md\",\n",
+  "exits": {
+    "check": "1"
+  }
+}

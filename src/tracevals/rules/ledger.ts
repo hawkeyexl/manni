@@ -56,7 +56,6 @@ export const LEDGER_ENTRIES = 10;
 export const HISTORY_ENTRIES = 5;
 export const NOTE_CHARS = 200;
 export const FACT_TURNS = 30;
-export const EARLIER_TURNS = 15;
 export const COMMAND_CHARS = 120;
 const LIMIT = { commands: 10, wrote: 10, read: 5, skills: 10, agents: 10 } as const;
 /** Runs of turns a rule's source missed, shown in its history. */
@@ -186,43 +185,18 @@ export function historyBlock(ledger: Ledger, key: string, text: string, before: 
   return `# This rule earlier in this session\n\n${lines.join("\n")}`;
 }
 
-const list = (verb: string, items: string[]): string | undefined =>
-  items.length > 0 ? `${verb} ${items.join(", ")}` : undefined;
-
-/** One turn's facts as a line, or undefined when the turn has none. */
-function factLine(t: TurnFacts): string | undefined {
-  const parts = [
-    list("ran", t.commands),
-    list("wrote", t.wrote),
-    list("read", t.read),
-    list(t.skills.length === 1 ? "used skill" : "used skills", t.skills),
-    list(t.agents.length === 1 ? "spawned agent" : "spawned agents", t.agents),
-  ].filter((p): p is string => p !== undefined);
-  if (parts.length === 0) return undefined;
-  return `- turn ${String(t.turn)}: ${parts.join("; ")}${t.inScope ? "" : " (no rules in scope)"}`;
-}
-
-/**
- * The shared part's account of earlier turns, newest last: at most the last
- * `EARLIER_TURNS` before `before` that did anything, cut oldest first to fit
- * `maxChars`. "" when none.
- */
-export function earlierBlock(
-  ledger: Ledger,
-  before: number,
-  maxChars = Number.POSITIVE_INFINITY,
-): string {
-  const lines = ledger.turns
-    .filter((t) => t.turn < before)
-    .map(factLine)
-    .filter((l): l is string => l !== undefined)
-    .slice(-EARLIER_TURNS);
-  const head = "# Earlier in this session\n\n";
-  while (lines.length > 0 && head.length + lines.join("\n").length > maxChars) lines.shift();
-  return lines.length > 0 ? `${head}${lines.join("\n")}` : "";
-}
-
 const posix = (p: string): string => p.split(sep).join("/");
+
+/** A path as the turn named it, relative to the project root when it is under it. */
+export function projectPath(path: string, cwd: string, root: string): string {
+  const abs = resolve(cwd, path);
+  const r = relative(root, abs);
+  return posix(r === "" || r.startsWith("..") || isAbsolute(r) ? abs : r);
+}
+
+/** `s` cut to at most `max` characters, the last an ellipsis when cut. */
+export const clipTo = (s: string, max: number): string =>
+  s.length <= max ? s : `${s.slice(0, max - 1)}…`;
 
 /**
  * What the turn did, read from its window. Commands and paths pass through
@@ -239,13 +213,8 @@ export function turnFacts(
   const scrub = makeRedactor(opts.redact);
   const take = (items: string[], n = Number.POSITIVE_INFINITY): string[] =>
     [...new Set(items)].slice(0, n);
-  const clip = (s: string): string =>
-    s.length <= COMMAND_CHARS ? s : `${s.slice(0, COMMAND_CHARS - 1)}…`;
-  const rel = (path: string): string => {
-    const abs = resolve(opts.cwd, path);
-    const r = relative(opts.root, abs);
-    return posix(r === "" || r.startsWith("..") || isAbsolute(r) ? abs : r);
-  };
+  const clip = (s: string): string => clipTo(s, COMMAND_CHARS);
+  const rel = (path: string): string => projectPath(path, opts.cwd, opts.root);
   const commands = w.toolCalls.flatMap((c) =>
     c.name === "Bash" && typeof c.input.command === "string"
       ? [clip(scrub(c.input.command.replace(/\s+/g, " ").trim()))]
@@ -264,7 +233,9 @@ export function turnFacts(
       LIMIT.wrote,
     ),
     read: take(
-      sources.filter((s) => reads.has(pathKey(s.path))).map((s) => s.displayPath),
+      // A source with no file (the typed prompts, an inline plan) has path "",
+      // which would resolve to the cwd; it is never read.
+      sources.filter((s) => s.path !== "" && reads.has(pathKey(s.path))).map((s) => s.displayPath),
       LIMIT.read,
     ),
     skills: take(

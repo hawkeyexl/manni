@@ -541,7 +541,9 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
     { "path": "CLAUDE.md", "format": "claude-md", "trigger": "always",
       "rules": 2, "origin": "declared" },
     { "path": ".cursor/rules/web.mdc", "format": "cursor-rule",
-      "trigger": "globs matched src/web/App.tsx", "rules": 1, "origin": "extracted" }
+      "trigger": "globs matched src/web/App.tsx", "rules": 1, "origin": "extracted" },
+    { "path": "prompt", "format": "prompt", "trigger": "typed prompts 1-2",
+      "rules": 0, "origin": "extracted" }
   ],
   "findings": [
     { "source": "CLAUDE.md", "rule": "no-force-push",
@@ -549,7 +551,7 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
       "observed": "not-followed 100, followed 0, not-applicable 0. The turn shows `git push --force`.",
       "confidence": 1, "reasoning": "The turn shows `git push --force`." }
   ],
-  "summary": { "sources": 5, "rules": 7, "notApplicable": 0, "fail": 2, "needsReview": 1 },
+  "summary": { "sources": 6, "rules": 7, "notApplicable": 0, "fail": 2, "needsReview": 1 },
   "session": {
     "turns": 6,
     "rules": [
@@ -573,7 +575,7 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
 | `judge` | object or null | The provider and model that judged, its `mode`, and `runs`. `null` when the run stopped before a judge was asked. |
 | `judge.mode` | `decision` or `generative` | Detected from the provider. `decision` is a decision-only provider such as `jev`, which makes one call, so `runs` is `1`. Every other provider is `generative`, and scores each rule in each run. |
 | `extraction` | object or null | The out-of-loop provider and model. `null` when no source needed them. |
-| `sources[]` | object | One entry per file in scope: `path`, `format`, `trigger`, `rules`, `origin`, and `skill` for a skill's files. `trigger` says why the file was in scope. `origin` is `declared` for a file's own `ai` evals, and `extracted` otherwise. |
+| `sources[]` | object | One entry per source in scope: `path`, `format`, `trigger`, `rules`, `origin`, and `skill` for a skill's files. `trigger` says why the source was in scope. `origin` is `declared` for a file's own `ai` evals, and `extracted` otherwise. Six formats say what the session was asked, in the table below. |
 | `findings[]` | object | Only `fail` and `needs-review` outcomes, each with its `source`, `rule`, `text`, `observed` and `confidence`. `observed` gives the rule's three scores, averaged over the runs. `confidence` is the not-followed score as a fraction. `reasoning` is the judge's sentence or two on what the transcript shows, and `observed` ends with it. A decision-only provider such as `jev` gives none. A rule left out was followed or did not apply. |
 | `summary` | object | The counts of `sources`, `rules`, `notApplicable`, `fail` and `needsReview`. |
 | `session` | object or null | What the hook recorded for this session in [the session ledger](#the-session-ledger), summed up per rule. `null` when the session has no ledger. |
@@ -583,13 +585,27 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
 | `warnings` | array | Strings, such as a rules file whose front matter does not parse. |
 | `exitCode` | number | `0`, or `1` when `summary.fail` is above zero. |
 
+The six formats that say what the session was asked never declare evals, so their `origin` is
+always `extracted`.
+
+| `format` | `path` | `trigger` |
+|---|---|---|
+| `prompt` | `prompt` | `typed prompts 1-<n>`, every prompt typed up to the turn's end |
+| `plan` | The plan file under your Claude config directory, or `plan` when the plan came only as the call's input | `approved at turn <n>`, the ordinal of the last approved `ExitPlanMode` |
+| `speckit-spec` | `specs/<feature>/spec.md`, `plan.md` or `tasks.md` | `touched <path>`, the first file the session touched under `specs/<feature>/` |
+| `kiro-spec` | `.kiro/specs/<name>/requirements.md`, `design.md` or `tasks.md` | `touched <path>`, the first file touched under that directory |
+| `openspec-change` | A `.md` file under `openspec/changes/<id>/`, never under `changes/archive/` | `touched <path>`, the first file touched under that change |
+| `plans` | A file `conformance.plans` names | `touched <path>`, the file itself |
+
+`summary.sources` counts every row, so the closing line says "sources" rather than "files".
+
 Only a confident violation counts as `fail`: a not-followed score at
 [`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge), as a percentage, in every
 run. A rule the judge could not settle, or errored on, is `needs-review`, which never fails `check`.
 
 ### The session ledger
 
-The hook records each turn it sees, so the judge knows what earlier turns did and found. That
+The hook records each turn it sees, so the judge knows what each rule found on earlier turns. That
 covers a turn that ended before the judge was asked, such as one with no rules in scope. A
 judged turn also records each judged rule's result. The main session writes
 `.manni/tracevals/sessions/<session hash>.ledger.json` under the project. A subagent writes
@@ -632,18 +648,43 @@ judged turn also records each judged rule's result. The main session writes
 | `entries[].outcome` | string | `followed`, `broken`, `needs-review` or `not-applicable`. |
 | `entries[].note` | string | The judge's reasoning, cut to 200 characters. Empty for a decision-only provider. |
 
-A turn's record is read from the transcript, with no model, and passes through the judge's
-redaction. Every call the judge makes for a turn opens with the earlier turns that did something,
-newest last. It shows at most the last 15, and a turn with no rules in scope says so.
+Every call the judge makes for a turn opens with what the session did before it. That block is
+read from the transcript, with no model, so it covers turns the hook never saw. It gives every
+earlier turn that did something one line, newest last. The ledger only marks a turn it recorded with
+no rules in scope.
 
 ```text
 # Earlier in this session
 
-- turn 3: ran npm ci, git push --force origin main; wrote src/web/App.tsx; read CLAUDE.md
-- turn 9: ran ls (no rules in scope)
+- (turns 4–31: 12 lines left out)
+- turn 40: ran npm ci; wrote src/web/App.tsx; read CLAUDE.md; ran skill authoring-workflow
+- turn 52: spawned technical-nonfiction-reviewer, which returned {"route_to":"writer","issues":[…
+- turn 61: wrote specs/001-login/tasks.md; ticked T014 in specs/001-login/tasks.md
+- turn 70: asked the user; had a plan approved
+- turn 77: ran ls (no rules in scope)
 ```
 
-That block shares the render budget with the turn, and takes at most a quarter of it. Each rule
+A line joins its facts with `; `, in this order.
+
+| Fact | Line |
+|---|---|
+| Bash commands | `ran <command>, <command>`, up to 10, each on one line and cut to 120 characters |
+| Files written or edited | `wrote <path>, <path>`, up to 10, relative to the project |
+| Rule sources read | `read <path>`, up to 5. Other files the turn read are left out. |
+| A skill call | `ran skill <name>`, one per skill |
+| An agent spawn | `spawned <type>, which returned <first line>`, up to 10 per turn. The result's first line is cut to 120 characters. With no result, the line is `spawned <type>`. |
+| A question to the user | `asked the user` |
+| A task ticked | `ticked <id> in <path>` |
+| A plan approved | `had a plan approved`, for an `ExitPlanMode` whose result is not an error |
+
+A task is ticked when an Edit or MultiEdit turns a `- [ ] <text>` line into `- [x] <text>` with the
+same text. Spec Kit, Kiro and OpenSpec all keep tasks this way. The line names the task's leading
+id, such as `T014`, `FR-001` or `1.2`. A task with no id is named by its text, cut to 60
+characters. Commands, paths and results pass through the judge's redaction before they are cut.
+
+That block shares the render budget with the turn, and takes at most a quarter of it. Over that,
+its oldest lines go first, and a marker line in their place says which turns went, as
+`- (turns 4–31: 12 lines left out)` or `- (turn 4: 1 line left out)`. Each rule
 keeps its last 10 entries. Its first `followed` entry and every `broken` entry stay, so the others
 go first. A rule's item shows the judge up to five results from earlier turns. Those are its first
 `followed`, its `broken` ones and its latest, leaving out the turns it did not apply to. A run of

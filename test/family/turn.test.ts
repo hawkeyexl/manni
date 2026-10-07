@@ -61,20 +61,20 @@ describe("turnReply", () => {
     expect(json(reply)).toEqual({
       decision: "block",
       reason:
-        "This turn broke 1 rule from the files that governed it. Fix the work, or say why the rule does not apply here, then finish.\n\nCLAUDE.md\n  ✖ no-force-push",
+        "This turn broke 1 rule from the files and requests that governed it. Fix the work, or say why the rule does not apply here, then finish.\n\nCLAUDE.md\n  ✖ no-force-push",
     });
   });
 
   it("counts rules in the plural", () => {
     const doc = json(turnReply(undefined, broken(3), env("stop-transcript")));
-    expect(doc.reason).toMatch(/^This turn broke 3 rules from the files that governed it\. /);
+    expect(doc.reason).toMatch(/^This turn broke 3 rules from the files and requests that governed it\. /);
   });
 
   it("file errors and a broken rule: one block, 0078's paragraph first", () => {
     const doc = json(turnReply(failing, broken(1), env("stop-transcript")));
     expect(doc.decision).toBe("block");
     expect(doc.reason).toBe(
-      `${FILES}\n\nThis turn broke 1 rule from the files that governed it. Fix the work, or say why the rule does not apply here, then finish.\n\nCLAUDE.md\n  ✖ no-force-push`,
+      `${FILES}\n\nThis turn broke 1 rule from the files and requests that governed it. Fix the work, or say why the rule does not apply here, then finish.\n\nCLAUDE.md\n  ✖ no-force-push`,
     );
   });
 

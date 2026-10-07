@@ -20,9 +20,15 @@ describe("rules prompt", () => {
       .digest("hex")
       .slice(0, 12);
     expect({ version: RULES_PROMPT_VERSION, digest }).toEqual({
-      version: 1,
-      digest: "eeb89385f095",
+      version: 2,
+      digest: "3dda0c638abd",
     });
+  });
+
+  it("keeps a procedure's sentences, which span many turns (proposal 0080)", () => {
+    for (const kind of ["order", "gate", "route", "condition", "required", "last"]) {
+      expect(RULES_SYSTEM_PROMPT.toLowerCase()).toContain(kind);
+    }
   });
 
   it("names every `when` condition the grammar accepts", () => {
