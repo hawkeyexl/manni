@@ -361,7 +361,11 @@ async function addPlan(c: Collector, trace: Trace, turn: TurnBounds, opts: Sourc
   if (content !== null) c.addRequest(file, content, "plan", trigger);
 }
 
-/** Whether the tool call at `index` has a result by `to` that is not an error. */
+/**
+ * Whether the tool call at `index` has a result by `to` that is not an error.
+ * A plan approved only after the turn ends is not yet a source; the next turn,
+ * whose bounds include the result, picks it up.
+ */
 function isApproved(trace: Trace, index: number, to: number): boolean {
   const id = trace.events.find((e) => e.index === index)?.raw.id;
   if (typeof id !== "string") return false;

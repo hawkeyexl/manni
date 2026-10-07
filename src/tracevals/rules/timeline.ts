@@ -107,6 +107,7 @@ export function timelineBlock(trace: Trace, before: number, opts: TimelineOption
   const lines = starts.flatMap((from, i) => {
     const end = starts[i + 1] ?? before;
     const window = materialize(trace, "turn", "earlier turn", [{ start: from, end }], undefined, new Set([undefined]));
+    // turnFacts reads only the window and bounds; 0 just satisfies TurnSlice.
     const facts = turnFacts(trace, { window, from, to: end - 1, sessionTurnCount: 0 }, opts.sources, opts);
     const spawns = trace.agentSpawns
       .filter((a) => a.index >= from && a.index < end)
