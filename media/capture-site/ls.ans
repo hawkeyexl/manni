@@ -1,0 +1,6 @@
+astro.config.mjs	     package-lock.json
+content-strategy	     package.json
+dist			     proposals
+doc-frontmatter.schema.json  public
+maintainers		     src
+node_modules		     tsconfig.json

@@ -1,0 +1,1 @@
+{ "scripts": { "dev": "astro dev" }, "dependencies": { "@astrojs/starlight": "*" } }

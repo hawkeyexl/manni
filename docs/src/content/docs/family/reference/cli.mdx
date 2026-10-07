@@ -119,7 +119,7 @@ in play.
 | `docevals` | `docevals:` exists, or a page declares evals. A run that resolves no evals counts as not in play. | `docevals run`, with `--deterministic-only`, no generation and no execution | `no page resolves any evals` |
 | `term` | The collections hold at least one term. | `term check` | `no terms in any collection` |
 | `graph` | `graph:` exists. | `graph build` in memory, writing no file, then `graph check` | `no graph: section` |
-| `a11y` | Never. `check` does not run it, since it needs a built site and a browser. | none | `run manni a11y check against a running site` |
+| `a11y` | Never. `check` does not run it, since it needs a built site and a browser. | none | `run manni site preview, then manni a11y check` |
 | `tracevals` | Only under a Claude Code hook, and only when `tracevals:` holds a `conformance:` section. A bare `check` never runs it, since it needs recorded sessions and a model. | none on the command line | `run manni tracevals run over sessions` |
 
 `check` reads only the files that belong to a collection declared under
@@ -233,7 +233,7 @@ lint       not set up    no lint: section
 docevals   not set up    no page resolves any evals
 term       not set up    no terms in any collection
 graph      not set up    no graph: section
-a11y       not checked   run manni a11y check against a running site
+a11y       not checked   run manni site preview, then manni a11y check
 tracevals  not checked   run manni tracevals run over sessions
 # exit 0
 ```
@@ -398,7 +398,7 @@ lint       not set up    no lint: section
 docevals   not set up    no page resolves any evals
 term       not set up    no terms in any collection
 graph      not set up    no graph: section
-a11y       not checked   run manni a11y check against a running site
+a11y       not checked   run manni site preview, then manni a11y check
 tracevals  not checked   run manni tracevals run over sessions
 # exit 0
 

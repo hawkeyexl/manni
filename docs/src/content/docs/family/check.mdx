@@ -15,7 +15,7 @@ prerequisites: ["meta-reference-configuration"]
 next-steps: ["family-claude-code", "family-reference-cli"]
 sample-questions: ["How do I run every manni check in one CI step?", "What does a skipped line in the manni check report mean?", "Why did manni check skip meta in my repository?"]
 graph: { label: "Gate every check a repo has set up", type: task }
-last-updated: 2026-10-06
+last-updated: 2026-10-07
 tags:
   - ci-cd
   - cli
@@ -54,7 +54,7 @@ lint       not set up    no lint: section
 docevals   not set up    no page resolves any evals
 term       not set up    no terms in any collection
 graph      not set up    no graph: section
-a11y       not checked   run manni a11y check against a running site
+a11y       not checked   run manni site preview, then manni a11y check
 tracevals  not checked   run manni tracevals run over sessions
 # exit 0
 ```

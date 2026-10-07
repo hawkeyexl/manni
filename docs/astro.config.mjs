@@ -398,6 +398,21 @@ export default defineConfig({
             },
           ],
         },
+        // `site` runs the site every other domain checks (proposal 0082). A
+        // family resource like `key`, so an overview and a reference shelf.
+        {
+          label: "site",
+          collapsed: true,
+          badge: BETA,
+          items: [
+            { label: "Overview", link: "/site/" },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "site/reference" } }],
+            },
+          ],
+        },
         // `term` is the terminology tool (proposal 0052). Same shape as
         // `cite`. Its vocabulary is meta's built-in `manni:terminology:1.0.0`,
         // documented under meta's reference.

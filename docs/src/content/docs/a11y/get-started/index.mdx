@@ -12,7 +12,7 @@ applies-to: ["domain:a11y"]
 next-steps: ["a11y-ci", "a11y-fix", "a11y", "a11y-reference-cli"]
 sample-questions: ["How do I run my first accessibility check on a local build?", "Which browser does manni a11y need, and how do I install it?", "How do I read the score and the findings?"]
 graph: { label: "Get started", type: learning }
-last-updated: 2026-09-17
+last-updated: 2026-10-05
 tags:
   - tutorial
   - getting-started
@@ -81,16 +81,21 @@ usually needs nothing beyond the package.
 ## Serve the build
 
 {/* cite url-not-directory */}
-The check reads a URL, never a directory. Build the site, then serve the output
-on a port of your choice:
+The check reads a URL, never a directory. Build the site and serve the output
+with one command:
 
 ```sh
-npm run build
-npx serve dist -l 4173
+npx @hawkeyexl/manni site preview --host 127.0.0.1 --port 4173
 ```
 
-Leave that running and open a second terminal for the rest of this page. Any
-static server will do. The port only has to match the URL you check.
+[`manni site preview`](/manni/site/) detects the site's framework, runs its
+build, and then serves what the build wrote. Leave it running and open a second
+terminal for the rest of this page. The port only has to match the URL you
+check.
+
+For a framework `manni site` does not detect, set its commands under
+[`site.commands`](/manni/site/reference/cli/#configuration), or serve the
+output with any static server.
 
 <Aside type="tip" title="Checking a deployed site instead">
 Point the command at the public URL and skip the build and the server. The

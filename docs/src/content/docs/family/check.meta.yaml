@@ -17,8 +17,14 @@ docs/src/content/docs/family/check.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Sonnet 5.5
-      lines: 2-225
-      integrity: sha256-639bd0f2cdd52beec3da703c2d104552cd7ec44e79af66fae80241e59dc2bcb4
+      lines: 2-27
+      integrity: sha256-b59f8e8e82243b7482d268afd6b0f8e02952dbce8166de247f235ebd82320725
+    - generated-by: Claude Opus 5.5
+      lines: 28
+      integrity: sha256-6f835e8af2d644ae9642463f802c0e368d05d7ae16256f49657d96ed03a22ef4
+    - generated-by: Claude Sonnet 5.5
+      lines: 29-225
+      integrity: sha256-09e4a9213a14bb90fb1f14c8454a2545f2c4522bbbd93394c4d4b89918839bda
   owner:
     - "@hawkeyexl"
   created: 2026-10-05
