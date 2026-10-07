@@ -167,6 +167,14 @@ describe("check by hand", () => {
     expect(rendered).toContain("system-prompt\n  ✖ ");
   });
 
+  it("leaves the default system prompt out under a hook, where it could never block", async () => {
+    const result = await hook("system-prompt");
+    expect((result.report?.sources ?? []).map((s) => s.path)).not.toContain("system-prompt");
+    expect(result.findings.some((f) => f.source === "system-prompt")).toBe(false);
+    const custom = await hook("system-prompt-custom");
+    expect((custom.report?.sources ?? []).map((s) => s.path)).toContain("system-prompt");
+  });
+
   it("drops the system prompt that exclude names", async () => {
     await config("tracevals:\n  provider: mock\n  conformance:\n    exclude: [system-prompt]\n");
     const { report } = await check("system-prompt-custom");
@@ -345,10 +353,10 @@ describe("checkTurn, inside a hook", () => {
     expect(result.judgement?.cached).toBe(false);
   });
 
-  it("exits 0 on a turn whose only breaks are reported, and 1 on a custom prompt's (proposal 0081)", async () => {
+  it("exits 0 on a default prompt's break, which it never judges, and 1 on a custom prompt's (proposal 0081)", async () => {
     const reported = await hook("system-prompt");
     expect(reported.exitCode).toBe(0);
-    expect(reported.findings.some((f) => f.outcome === "fail" && f.severity === "warning")).toBe(true);
+    expect(reported.findings.some((f) => f.severity === "warning")).toBe(false);
     const custom = await hook("system-prompt-custom");
     expect(custom.exitCode).toBe(1);
   });

@@ -253,7 +253,10 @@ async function judgeTurnOf(p: Params, ledger: Ledger, seen: Seen): Promise<Outco
     ...(p.agentType !== undefined ? { agentType: p.agentType } : {}),
   });
   report.warnings.push(...resolved.warnings);
-  const { sources } = resolved;
+  // Under a hook a source that never blocks (Claude Code's default system
+  // prompt) could only add judge calls, so it is neither extracted nor judged.
+  // By hand it is, and its breaks are reported.
+  const sources = p.inLoop ? resolved.sources.filter((s) => s.blocks) : resolved.sources;
   seen.sources = sources;
   report.summary.sources = sources.length;
   if (sources.length === 0) return stop("no-sources");

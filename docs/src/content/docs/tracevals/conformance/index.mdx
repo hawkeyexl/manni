@@ -231,7 +231,7 @@ Who wrote the prompt decides what a break does.
 
 | Prompt | How tracevals tells | A break |
 |---|---|---|
-| Claude Code's default | It holds Claude Code's boundary marker. | Reported with `!`. It never blocks and never fails `check`. |
+| Claude Code's default | It holds Claude Code's boundary marker. | Reported with `!` by `tracevals check`. It never blocks and never fails `check`. A hook skips it. |
 | Replaced, with `--system-prompt` or `--system-prompt-file` | The boundary marker is missing, and the trigger ends `, custom`. | Blocks, like any rule. |
 | A user output style | A file under `.claude/output-styles/` or `~/.claude/output-styles/` defines it. | Blocks, under the style file's path. |
 | Appended, with `--append-system-prompt` or `--append-system-prompt-file` | It cannot be told apart. It is a last block with no name, as the desktop app's own block is. | Counts as default, so it is reported. |
@@ -243,8 +243,8 @@ Who wrote the prompt decides what a break does.
   [`judge.redact`](/manni/tracevals/reference/configuration/#judge) scrubs the prompt and a style's
   text before extraction.
 - **Cost.** Extraction is cached by the redacted text, so one Claude Code version pays once per
-  project. The default prompt yields many rules, and each one costs a judge call per turn on a hosted
-  model.
+  project. The default prompt yields many rules. A Stop or SubagentStop hook never extracts or judges
+  them, because a warning could not block. Run `tracevals check` to see them.
 - **The judge.** A rule from the system prompt is a default. A rules file, or a prompt you typed,
   overrides it.
 

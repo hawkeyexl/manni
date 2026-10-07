@@ -116,10 +116,12 @@ The closing line counts warnings apart, after the needs-review count.
 - `Last turn of 3b265d00: 64 rules from 7 sources. None broken, 2 reported.`
 
 Exit 1 still means an `error` break with a confident verdict. A warning alone
-exits 0. The Stop hook blocks on `error` findings only. The report its reason
-embeds still shows a warning, marked `!`. The count sentence and the
-repair-pass message count errors only. The ledger records a warning's verdicts
-as it does any rule's.
+exits 0. The Stop hook blocks on `error` findings only.
+
+Under a hook, the default `system-prompt` is not extracted or judged at all. A
+warning can never block, so judging it there would only cost time on every
+Stop. `tracevals check` by hand reads it and reports its breaks. So the hook's
+ledger holds no verdicts for it.
 
 ### The judge
 

@@ -612,7 +612,7 @@ Only a confident violation counts as `fail`: a not-followed score at
 [`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge), as a percentage, in every
 run. A rule the judge could not settle, or errored on, is `needs-review`, which never fails `check`.
 Only an `error` break exits `1` or blocks a Stop. A confident `warning` break counts in `reported`
-and does neither.
+and does neither. A hook does not judge the default system prompt, so its report holds no warnings.
 
 ### The session ledger
 
