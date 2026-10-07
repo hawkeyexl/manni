@@ -1,0 +1,47 @@
+manni tracevals check reads the system prompt the session ran under, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 41.1 s. Every terminal line is real output of grep, tail and
+`node dist/cli.js tracevals check` (typed as manni), run in a copy of the committed fixture
+test/tracevals/fixtures/conformance/project/ with its system-prompt.jsonl and
+system-prompt-custom.jsonl traces, staged by media/system-prompt/capture/capture.sh. The
+fixture's config extracts and judges with the mock provider, offline and deterministic, as CI
+does. No model judged this run.
+
+[0:00-0:12] Title: The prompt it ran under (1 / 3)
+$ grep -o '"systemPrompt":[^]]*' system-prompt.jsonl | head -1
+"systemPrompt":["You are a synthetic coding agent, written for the tests.","__SYSTEM_PROMPT_DYNAMIC_BOUNDARY__","- Never say `Tests pass` without showing the test output.\n- Keep replies short."
+$ tail -1 system-prompt.jsonl | grep -o '"text":"[^"]*"'
+"text":"Tests pass, and the branch is pushed."
+Highlighted rows: lines containing "Never say", "\"text\":\"Tests pass"
+Caption: It bans an unshown Tests pass. The agent claims one.
+
+[0:12-0:24] Title: Claude Code's default prompt (2 / 3)
+$ manni tracevals check system-prompt.jsonl --project .
+system-prompt
+  ! never-say-tests-pass-without  Never say `Tests pass` without showing the test output.   (yellow mark)
+      not-followed 100, followed 0, not-applicable 0. The turn shows `Tests pass`. (1.00)   (dim)
+
+Last turn of 3b265d00: 7 rules from 4 sources. None broken, 1 reported.
+$ echo $?
+0
+Highlighted rows: lines containing "never-say-tests-pass-without", "None broken"
+Caption: Its break is reported with !, not blocked. Exit 0.
+
+[0:24-0:41] Title: A prompt you wrote (3 / 3)
+$ grep -o '"systemPrompt":[^]]*' system-prompt-custom.jsonl | head -1
+"systemPrompt":["- Never say `Tests pass` without showing the test output.\n- Keep replies short.","Web search is available."
+$ manni tracevals check system-prompt-custom.jsonl --project .
+system-prompt
+  ✖ never-say-tests-pass-without  Never say `Tests pass` without showing the test output.   (red cross)
+      not-followed 100, followed 0, not-applicable 0. The turn shows `Tests pass`. (1.00)   (dim)
+
+Last turn of 3b265d00: 7 rules from 4 sources. 1 broken.
+$ echo $?
+1
+Highlighted rows: lines containing "never-say-tests-pass-without", "1 broken"
+Caption: No default marker. Its break blocks with ✖. Exit 1.
+
+The two traces differ only in their recorded system prompt. The default one carries Claude Code's
+__SYSTEM_PROMPT_DYNAMIC_BOUNDARY__ marker, so its rules are reported as warnings and the check exits 0.
+The custom one has no marker, as a prompt replaced with --system-prompt has none, so its rules are errors
+and the check exits 1. The mock judge reads a rule's first code span and finds `Tests pass` in the turn.

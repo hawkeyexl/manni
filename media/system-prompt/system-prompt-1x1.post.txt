@@ -1,0 +1,9 @@
+Your agent ran under a system prompt. Did it follow it?
+
+`manni tracevals check` already held each Claude Code turn to CLAUDE.md, the rules files around it, and what the session was asked. Now it also reads the system prompt the session ran under. The transcript records a snapshot of it, so nothing has to be configured.
+
+Claude Code's own default prompt is not yours, so its rules are reported and never block. A prompt you wrote is held like any rule. That means a prompt replaced with --system-prompt, or an output style of your own.
+
+In the demo, the prompt bans saying "Tests pass" without the output. The agent says it anyway. Under the default prompt, the check marks it with ! and exits 0. Under a replaced prompt, the same break is an error, and the check exits 1.
+
+npm i -D @hawkeyexl/manni · manni tracevals check <trace>

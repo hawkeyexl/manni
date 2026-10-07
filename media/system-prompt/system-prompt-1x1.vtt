@@ -1,0 +1,19 @@
+WEBVTT
+
+NOTE Captions are burned into system-prompt-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:12.033
+The prompt it ran under
+It bans an unshown Tests pass. The agent claims one.
+
+2
+00:00:12.033 --> 00:00:23.633
+Claude Code's default prompt
+Its break is reported with !, not blocked. Exit 0.
+
+3
+00:00:23.633 --> 00:00:41.133
+A prompt you wrote
+No default marker. Its break blocks with ✖. Exit 1.
+
