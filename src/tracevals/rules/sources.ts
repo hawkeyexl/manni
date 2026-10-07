@@ -228,11 +228,12 @@ class Collector {
     trigger: string,
     blocks = true,
   ): void {
+    // A named source goes by its name whether or not a file holds it, so
+    // `exclude: [plan]` drops a plan file as it drops an inline plan.
+    if (EXCLUDABLE_BY_NAME.has(format) && this.excludedName(format)) return;
     if (file !== null) {
       if (this.has(file) || this.excluded(file)) return;
       this.seen.add(key(file));
-    } else if (this.excludedName(format)) {
-      return;
     }
     this.sources.push({
       path: file ?? "",
@@ -343,6 +344,9 @@ export async function resolveTurnSources(
 }
 
 // ── What the transcript recorded of the prompt ───────────────────
+
+/** The sources `conformance.exclude` matches by name (proposals 0080 and 0081). */
+const EXCLUDABLE_BY_NAME: ReadonlySet<RuleFormat> = new Set<RuleFormat>(["prompt", "plan", "system-prompt"]);
 
 /** Claude Code's own block in its default prompt; a replaced prompt has none. */
 const BOUNDARY_MARKER = "__SYSTEM_PROMPT_DYNAMIC_BOUNDARY__";

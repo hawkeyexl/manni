@@ -180,6 +180,14 @@ describe("the approved plan", () => {
     );
     expect(sources.map((s) => s.format)).not.toContain("plan");
   });
+
+  it("is removed by the name plan too, when it came from a file (proposal 0081)", async () => {
+    const sources = await sourcesOf(
+      [{ prompt: "Plan it." }, { writeAbs: join(CONFIG_DIR, "plans", "bright-otter.md") }, { exitPlan: "p1" }, { result: "p1" }],
+      { exclude: ["plan"] },
+    );
+    expect(sources.map((s) => s.format)).not.toContain("plan");
+  });
 });
 
 describe("touched specs and plans files", () => {
