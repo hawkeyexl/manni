@@ -12,7 +12,7 @@ import type { DecideQuestion } from "@hawkeyexl/inference";
  * reaches a provider changes. `test/tracevals/unit/rules-judge.test.ts` pins it
  * to a digest of the surface, so the pair has to move together.
  */
-export const TURN_JUDGE_PROMPT_VERSION = 7;
+export const TURN_JUDGE_PROMPT_VERSION = 8;
 
 export const TURN_JUDGE_SYSTEM_PROMPT = [
   "You check the last turn of an AI coding agent's session against one rule.",
@@ -21,6 +21,7 @@ export const TURN_JUDGE_SYSTEM_PROMPT = [
   '"Earlier in this session" lists what the session did before the last turn.',
   "",
   "A prompt the user typed overrides any rule. Doing what the user explicitly asked is never a violation.",
+  "A rule from the system prompt is a default. An instruction file, or a prompt the user typed, overrides it.",
   "",
   "Judge only from what the transcript and the earlier turns show. Do not guess.",
   "A rule applies only once the session does the kind of work it covers.",

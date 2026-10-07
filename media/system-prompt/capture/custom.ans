@@ -1,0 +1,5 @@
+system-prompt
+  [31m✖[39m never-say-tests-pass-without  Never say `Tests pass` without showing the test output.
+      [2mnot-followed 100, followed 0, not-applicable 0. The turn shows `Tests pass`. (1.00)[22m
+
+Last turn of 3b265d00: 7 rules from 4 sources. 1 broken.

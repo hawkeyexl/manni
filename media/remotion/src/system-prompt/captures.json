@@ -1,0 +1,11 @@
+{
+  "prompt": "\"systemPrompt\":[\"You are a synthetic coding agent, written for the tests.\",\"__SYSTEM_PROMPT_DYNAMIC_BOUNDARY__\",\"- Never say `Tests pass` without showing the test output.\\n- Keep replies short.\"\n",
+  "done": "\"text\":\"Tests pass, and the branch is pushed.\"\n",
+  "default": "system-prompt\n  \u001b[33m!\u001b[39m never-say-tests-pass-without  Never say `Tests pass` without showing the test output.\n      \u001b[2mnot-followed 100, followed 0, not-applicable 0. The turn shows `Tests pass`. (1.00)\u001b[22m\n\nLast turn of 3b265d00: 7 rules from 4 sources. None broken, 1 reported.\n",
+  "custom": "\"systemPrompt\":[\"- Never say `Tests pass` without showing the test output.\\n- Keep replies short.\",\"Web search is available.\"\n",
+  "customCheck": "system-prompt\n  \u001b[31m✖\u001b[39m never-say-tests-pass-without  Never say `Tests pass` without showing the test output.\n      \u001b[2mnot-followed 100, followed 0, not-applicable 0. The turn shows `Tests pass`. (1.00)\u001b[22m\n\nLast turn of 3b265d00: 7 rules from 4 sources. 1 broken.\n",
+  "exits": {
+    "default": "0",
+    "custom": "1"
+  }
+}

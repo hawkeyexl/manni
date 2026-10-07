@@ -15,6 +15,7 @@ import { beats as tracevalsBeats, totalFrames as tracevalsTotalFrames, TYPING_MS
 import { beats as familyCheckBeats, totalFrames as familyCheckTotalFrames, TYPING_MS as familyCheckTypingMs } from "./family-check/beats";
 import { beats as conformanceBeats, totalFrames as conformanceTotalFrames, TYPING_MS as conformanceTypingMs } from "./conformance/beats";
 import { beats as sessionRulesBeats, totalFrames as sessionRulesTotalFrames, TYPING_MS as sessionRulesTypingMs } from "./session-rules/beats";
+import { beats as systemPromptBeats, totalFrames as systemPromptTotalFrames, TYPING_MS as systemPromptTypingMs } from "./system-prompt/beats";
 import { beats as graphImpactBeats, totalFrames as graphImpactTotalFrames, TYPING_MS as graphImpactTypingMs } from "./graph-impact/beats";
 import { beats as testBeats, totalFrames as testTotalFrames, TYPING_MS as testTypingMs } from "./test/beats";
 import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYPING_MS as graphFormatsTypingMs } from "./graph-formats/beats";
@@ -81,6 +82,9 @@ const DemoConformance: React.FC = () => <DemoView beats={conformanceBeats} fontP
 
 /** session-rules-1x1: 27 px / 64 columns, derived in media/session-rules/session-rules-1x1.script.md (media/session-rules/capture/cols.mjs). */
 const DemoSessionRules: React.FC = () => <DemoView beats={sessionRulesBeats} fontPx={27} linePx={38} cols={64} typingMs={sessionRulesTypingMs} />;
+
+/** system-prompt-1x1: 24 px / 72 columns, derived in media/system-prompt/system-prompt-1x1.script.md (media/system-prompt/capture/cols.mjs). */
+const DemoSystemPrompt: React.FC = () => <DemoView beats={systemPromptBeats} fontPx={24} linePx={34} cols={72} typingMs={systemPromptTypingMs} />;
 
 export const Root: React.FC = () => (
   <>
@@ -219,6 +223,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={sessionRulesTotalFrames}
+    />
+    <Composition
+      id="SystemPromptDemo"
+      component={DemoSystemPrompt}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={systemPromptTotalFrames}
     />
   </>
 );

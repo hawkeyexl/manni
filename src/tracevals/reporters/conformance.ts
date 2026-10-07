@@ -21,7 +21,8 @@ export function renderCheck(report: CheckReport, opts: { color?: boolean } = {})
     if (findings.length === 0) continue;
     lines.push(source.path);
     for (const f of findings) {
-      const mark = f.outcome === "fail" ? pc.red("✖") : pc.yellow("?");
+      const mark =
+        f.outcome !== "fail" ? pc.yellow("?") : f.severity === "error" ? pc.red("✖") : pc.yellow("!");
       lines.push(`  ${mark} ${f.rule}  ${f.text}`);
       lines.push(`      ${pc.dim(`${f.observed} (${f.confidence.toFixed(2)})`)}`);
     }
@@ -70,7 +71,8 @@ function closing(report: CheckReport): string {
     case null: {
       const broken = summary.fail > 0 ? `${String(summary.fail)} broken` : "None broken";
       const review = summary.needsReview > 0 ? `, ${String(summary.needsReview)} needs review` : "";
-      return `${head} ${scope}. ${broken}${review}.`;
+      const reported = summary.reported > 0 ? `, ${String(summary.reported)} reported` : "";
+      return `${head} ${scope}. ${broken}${review}${reported}.`;
     }
   }
 }

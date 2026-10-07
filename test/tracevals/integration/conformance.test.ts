@@ -238,6 +238,53 @@ describe.skipIf(!built)("tracevals check, what the session was asked", () => {
   });
 });
 
+describe.skipIf(!built)("tracevals check, the system prompt the session ran under", () => {
+  interface Finding { source: string; rule: string; outcome: string; severity: string }
+  interface Report {
+    findings: Finding[];
+    summary: { fail: number; reported: number };
+    sources: { path: string; format: string; trigger: string }[];
+  }
+  const json = async (name: string) => {
+    const { code, stdout } = await manni(["check", trace(name), "--project", project, "-f", "json"]);
+    return { code, report: JSON.parse(stdout) as Report };
+  };
+
+  it("reports a break of Claude Code's default prompt as a warning, and exits 0", async () => {
+    const { code, report } = await json("system-prompt");
+    expect(code).toBe(0);
+    expect(report.sources.find((s) => s.path === "system-prompt")).toMatchObject({
+      format: "system-prompt",
+      trigger: "recorded at turn 1, Claude Code 2.1.292",
+    });
+    const warned = report.findings.filter((f) => f.source === "system-prompt" && f.outcome === "fail");
+    expect(warned.length).toBeGreaterThan(0);
+    expect(warned.every((f) => f.severity === "warning")).toBe(true);
+    expect(report.summary.reported).toBe(warned.length);
+
+    const pretty = await manni(["check", trace("system-prompt"), "--project", project]);
+    expect(pretty.code).toBe(0);
+    expect(pretty.stdout).toContain(`system-prompt\n  ! ${warned[0]?.rule ?? ""}  `);
+    expect(pretty.stdout.trimEnd().split("\n").at(-1)).toMatch(
+      /^Last turn of 3b265d00: \d+ rules from \d+ sources\. None broken, \d+ reported\.$/,
+    );
+  });
+
+  it("fails a break of a prompt the user wrote as an error, and exits 1", async () => {
+    const { code, report } = await json("system-prompt-custom");
+    expect(code).toBe(1);
+    expect(report.sources.find((s) => s.path === "system-prompt")?.trigger).toMatch(/, custom$/);
+    const broken = report.findings.filter((f) => f.source === "system-prompt" && f.outcome === "fail");
+    expect(broken.length).toBeGreaterThan(0);
+    expect(broken.every((f) => f.severity === "error")).toBe(true);
+    expect(report.summary.fail).toBeGreaterThanOrEqual(broken.length);
+
+    const pretty = await manni(["check", trace("system-prompt-custom"), "--project", project]);
+    expect(pretty.code).toBe(1);
+    expect(pretty.stdout).toContain(`system-prompt\n  ✖ ${broken[0]?.rule ?? ""}  `);
+  });
+});
+
 describe.skipIf(!built)("tracevals prepare", () => {
   it("extracts the always sources once, then finds them cached", async () => {
     const first = await manni(["prepare"]);

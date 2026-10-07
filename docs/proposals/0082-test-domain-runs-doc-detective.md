@@ -1,4 +1,4 @@
-# 0081: The `test` domain runs Doc Detective
+# 0082: The `test` domain runs Doc Detective
 
 - **Status:** Proposed
 - **Serves:** Two people.

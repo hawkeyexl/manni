@@ -25,7 +25,7 @@ The `tracevals/` section is the ninth. It arrived as `docevals/` did, with five 
 
 The `family/` section is a tenth, and it is not a domain. It documents the two top-level verbs, `manni check` and `manni status`, and the Claude Code plugin that runs them (proposal 0078). It serves Devin (D16), who gates every check a repo has set up with one command. It also serves Maya (M24), whose agent keeps the docs green while it writes them. Its content set is last, after `tracevals/`.
 
-The `test/` section is the eleventh, and the tenth domain. It serves Devin (D17), who gates the docs' procedure tests with the family's contract. It also serves Maya, who runs the same tests on her machine and reads the failing page and line. Proposal 0081 added the domain. It runs Doc Detective, so it is not a fold-in and brought no strategy of its own. Its content set is after `tracevals/`.
+The `test/` section is the eleventh, and the tenth domain. It serves Devin (D17), who gates the docs' procedure tests with the family's contract. It also serves Maya, who runs the same tests on her machine and reads the failing page and line. Proposal 0082 added the domain. It runs Doc Detective, so it is not a fold-in and brought no strategy of its own. Its content set is after `tracevals/`.
 
 ---
 
