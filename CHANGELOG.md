@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.6.0](https://github.com/hawkeyexl/manni/compare/v4.5.0...v4.6.0) (2026-10-07)
+
+
+### Features
+
+* **tracevals:** check each turn against the rules it read, and hold a session to what it was asked (0079, 0080) ([#163](https://github.com/hawkeyexl/manni/issues/163)) ([cd72f3a](https://github.com/hawkeyexl/manni/commit/cd72f3aabe74d9c450a9c34f12de8f1aef407391)), closes [#169](https://github.com/hawkeyexl/manni/issues/169)
+
 # [4.5.0](https://github.com/hawkeyexl/manni/compare/v4.4.1...v4.5.0) (2026-10-06)
 
 
