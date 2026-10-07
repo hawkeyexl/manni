@@ -391,13 +391,14 @@ async function addSystemPrompt(c: Collector, trace: Trace, turn: TurnBounds, opt
   const snapshot = lastAttachment(trace, turn, "prompt_snapshot");
   const recorded: unknown = snapshot?.attachment.systemPrompt;
   if (snapshot === undefined || !Array.isArray(recorded)) return;
-  const blocks = (recorded as unknown[]).filter((b): b is string => typeof b === "string");
+  const blocks = recorded.filter((b): b is string => typeof b === "string");
   const custom = !blocks.includes(BOUNDARY_MARKER);
   const content = scrub([...blocks, ...(builtIn !== undefined ? [builtIn] : [])].join("\n\n"));
   const { version } = snapshot.record;
   const by = typeof version === "string" ? `, Claude Code ${version}` : "";
   const trigger = `recorded at turn ${String(snapshot.index)}${by}${custom ? ", custom" : ""}`;
-  c.addRequest(null, content, "system-prompt", trigger, custom);
+  // A prompt the user replaced blocks; Claude Code's own default only reports.
+  c.addRequest(null, content, "system-prompt", trigger, /* blocks= */ custom);
 }
 
 /**
@@ -406,7 +407,9 @@ async function addSystemPrompt(c: Collector, trace: Trace, turn: TurnBounds, opt
  * its base name, matches.
  */
 async function userStyleFile(c: Collector, opts: SourceOptions, name: string): Promise<string | undefined> {
-  const dirs = [...new Set([c.root, c.cwd])].map((b) => join(b, ".claude", "output-styles"));
+  // Where Claude Code reads styles: the project (cwd first, then the git root)
+  // and the user. No ancestor walk, since Claude Code does none for styles.
+  const dirs = [...new Set([c.cwd, c.root])].map((b) => join(b, ".claude", "output-styles"));
   dirs.push(join(configDir(opts.env), "output-styles"));
   for (const dir of dirs) {
     for (const path of await listInTree(dir, (p) => p.endsWith(".md"), { maxDepth: 0 })) {

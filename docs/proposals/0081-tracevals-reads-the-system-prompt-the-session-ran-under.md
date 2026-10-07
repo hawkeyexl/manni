@@ -151,7 +151,7 @@ After:
 ```yaml
 tracevals:
   conformance:
-    exclude: [system-prompt]   # also matches prompt, plan and system-prompt
+    exclude: [system-prompt]   # prompt and plan are valid names too
 ```
 
 | Key | Type | Default | What it does |
@@ -177,6 +177,14 @@ are worth seeing, so they are reported.
 
 tracevals could ship the default prompt and call any other block custom. That
 copies text manni does not own, and it changes with every Claude Code release.
+
+### Treating the web search block as default
+
+A replaced prompt keeps one block of Claude Code's own, on web search. It could
+be found by its text and kept as default. That copies Claude Code's text, as
+the comparison above does, only less of it. The user who replaces the prompt
+chose to take it over. So the whole replaced prompt blocks, that block
+included.
 
 ### Calling an appended block custom
 
@@ -216,8 +224,8 @@ every turn, and none was asked for.
 
 - An appended system prompt counts as default, inline or from a file. It is
   reported and never blocks.
-- A replaced prompt keeps Claude Code's web search block. Its rules then count
-  as custom too.
+- A replaced prompt keeps Claude Code's web search block. Its rules block too,
+  by the decision above.
 - The default prompt adds many rules with no `when`. Each costs a judge call per
   Stop on a hosted model.
 - The Memory block differs per project, so each project extracts it once.

@@ -391,6 +391,8 @@ async function judgeTurnOf(p: Params, ledger: Ledger, seen: Seen): Promise<Outco
   report.summary.notApplicable = judgement.notApplicable;
   const fails = judgement.findings.filter((f) => f.outcome === "fail");
   report.summary.fail = fails.filter((f) => f.severity === "error").length;
+  // `reported` is confirmed breaks from sources that never block. A
+  // needs-review verdict from any source, those included, stays in needsReview.
   report.summary.reported = fails.length - report.summary.fail;
   report.summary.needsReview = judgement.findings.length - fails.length;
   report.warnings.push(...judgement.warnings);
