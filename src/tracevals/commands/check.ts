@@ -103,7 +103,15 @@ export interface CheckReport {
   sources: CheckSourceEntry[];
   /** Only `fail` and `needs-review`. */
   findings: TurnFinding[];
-  summary: { sources: number; rules: number; notApplicable: number; fail: number; needsReview: number };
+  /** `fail` counts `error` breaks; `reported` counts `warning` ones, which never fail a turn. */
+  summary: {
+    sources: number;
+    rules: number;
+    notApplicable: number;
+    fail: number;
+    needsReview: number;
+    reported: number;
+  };
   /** By hand, the session ledger summed up per rule. Null when it holds nothing, and under a hook. */
   session: SessionRollup | null;
   skipped: CheckSkip | null;
@@ -219,7 +227,7 @@ async function judgeTurnOf(p: Params, ledger: Ledger, seen: Seen): Promise<Outco
     extraction: null,
     sources: [],
     findings: [],
-    summary: { sources: 0, rules: 0, notApplicable: 0, fail: 0, needsReview: 0 },
+    summary: { sources: 0, rules: 0, notApplicable: 0, fail: 0, needsReview: 0, reported: 0 },
     session: null,
     skipped: null,
     warnings: [...p.trace.warnings],
@@ -241,10 +249,14 @@ async function judgeTurnOf(p: Params, ledger: Ledger, seen: Seen): Promise<Outco
     include: conformance.include,
     exclude: conformance.exclude,
     plans: conformance.plans,
+    redact: config.judge.redact,
     ...(p.agentType !== undefined ? { agentType: p.agentType } : {}),
   });
   report.warnings.push(...resolved.warnings);
-  const { sources } = resolved;
+  // Under a hook a source that never blocks (Claude Code's default system
+  // prompt) could only add judge calls, so it is neither extracted nor judged.
+  // By hand it is, and its breaks are reported.
+  const sources = p.inLoop ? resolved.sources.filter((s) => s.blocks) : resolved.sources;
   seen.sources = sources;
   report.summary.sources = sources.length;
   if (sources.length === 0) return stop("no-sources");
@@ -380,8 +392,12 @@ async function judgeTurnOf(p: Params, ledger: Ledger, seen: Seen): Promise<Outco
   };
   report.findings = judgement.findings;
   report.summary.notApplicable = judgement.notApplicable;
-  report.summary.fail = judgement.findings.filter((f) => f.outcome === "fail").length;
-  report.summary.needsReview = judgement.findings.length - report.summary.fail;
+  const fails = judgement.findings.filter((f) => f.outcome === "fail");
+  report.summary.fail = fails.filter((f) => f.severity === "error").length;
+  // `reported` is confirmed breaks from sources that never block. A
+  // needs-review verdict from any source, those included, stays in needsReview.
+  report.summary.reported = fails.length - report.summary.fail;
+  report.summary.needsReview = judgement.findings.length - fails.length;
   report.warnings.push(...judgement.warnings);
   report.exitCode = report.summary.fail > 0 ? 1 : 0;
   return { kind: "report", report, judgement };

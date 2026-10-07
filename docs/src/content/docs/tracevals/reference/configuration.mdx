@@ -406,8 +406,9 @@ the Claude Code hooks. Absent, tracevals stays out of them. The journey is in
 - **`include`** names files that govern agents beyond the known formats, such as a house style
   guide. Each applies to every turn, read or not. Globs are relative to the project root.
 - **`exclude`** names files never treated as rule sources, in any format, such as a product docs
-  tree or a stale `.cursor/rules` file. It removes plan and spec files too. The typed prompts are
-  not a file, so no glob removes them.
+  tree or a stale `.cursor/rules` file. It removes plan, spec and output style files too. It also
+  matches the sources `prompt`, `plan` and `system-prompt` by their whole name, never as a glob. So
+  `exclude: [system-prompt]` drops the system prompt, and `**` keeps it.
 - **`plans`** names files that say what to build, beyond the known spec formats. Each is a rule
   source once the session touches it. Globs are relative to the project root. A folder of plans
   holds plans for other work too, so a file counts only when touched. That is why it is not

@@ -5,12 +5,12 @@ sidebar:
   order: 1
 id: "tracevals-conformance"
 type: "how-to"
-keywords: ["conformance", "hook", "Stop", "SubagentStop", "rules", "CLAUDE.md", "AGENTS.md", "check", "prompts", "plan", "specs", "procedure"]
+keywords: ["conformance", "hook", "Stop", "SubagentStop", "rules", "CLAUDE.md", "AGENTS.md", "check", "prompts", "plan", "specs", "procedure", "system prompt", "output style"]
 language: en
 intent: "Set up tracevals so an agent hears about a broken rule at the end of the turn that broke it."
 lifecycle: published
 applies-to: ["domain:tracevals"]
-sample-questions: ["How do I make an agent follow my CLAUDE.md?", "Which files does tracevals check an agent against?", "What does the agent see when it breaks a rule?", "Does tracevals check that the agent built what I asked for?", "Are the steps of a skill checked in order?"]
+sample-questions: ["How do I make an agent follow my CLAUDE.md?", "Which files does tracevals check an agent against?", "What does the agent see when it breaks a rule?", "Does tracevals check that the agent built what I asked for?", "Are the steps of a skill checked in order?", "Does tracevals check the system prompt?"]
 graph: { label: "Catch a broken rule before the agent hands back", type: task }
 last-updated: 2026-10-07
 ---
@@ -147,7 +147,7 @@ out.
   nothing. A skill reference that documents an API yields no rules, though its skill counts.
 
 `exclude` removes a file from every row, for a product docs tree or a stale `.cursor/rules` file.
-That covers plan and spec files too.
+That covers plan, spec and output style files too.
 
 ### Spec-driven toolkits
 
@@ -206,8 +206,8 @@ tracevals:
     plans: [docs/plans/*.md]
 ```
 
-`exclude` removes a plan or spec file here too. Your typed prompts are not a file, so no glob
-removes them.
+`exclude` removes a plan or spec file here too. Your typed prompts are not a file, so a glob never
+matches them. `exclude` drops them by the name `prompt`, and a plan given only as input by `plan`.
 
 A rule from what you asked is judged like any other. "Add a dark mode toggle" does not apply yet
 while the work goes on. It is followed once the toggle exists. It is broken on the turn that says
@@ -219,6 +219,65 @@ A ticked task is the agent saying that task is done. An Edit that turns `- [ ] T
 `- [x] T014 …` is a tick. Spec Kit, Kiro and OpenSpec all keep tasks this way. The judge sees each
 earlier tick by its id, so a tick with nothing behind it reads as a claim to check. A `Write` that
 rewrites the whole tasks file is not read as a tick.
+
+## The system prompt the session ran under
+
+Claude Code records its system prompt in the transcript, as a `prompt_snapshot` entry. It writes one
+at session start, and again after a compaction or a resume. tracevals reads the last one at or before
+the turn as one more source, `system-prompt`. A session that records none has no such source, and
+there is nothing to configure.
+
+Who wrote the prompt decides what a break does.
+
+| Prompt | How tracevals tells | A break |
+|---|---|---|
+| Claude Code's default | It holds Claude Code's boundary marker. | Reported with `!` by `tracevals check`. It never blocks and never fails `check`. A hook skips it. |
+| Replaced, with `--system-prompt` or `--system-prompt-file` | The boundary marker is missing, and the trigger ends `, custom`. | Blocks, like any rule. |
+| A user output style | A file under `.claude/output-styles/` or `~/.claude/output-styles/` defines it. | Blocks, under the style file's path. |
+| Appended, with `--append-system-prompt` or `--append-system-prompt-file` | It cannot be told apart. It is a last block with no name, as the desktop app's own block is. | Counts as default, so it is reported. |
+
+- **An output style.** A user style is a source of its own, and its trigger is `style <name>`. Its
+  content is the text the transcript recorded, which is what the agent saw. A built-in style has no
+  user file, so its text joins the default prompt.
+- **Redaction.** The prompt names paths under your home directory. So
+  [`judge.redact`](/manni/tracevals/reference/configuration/#judge) scrubs the prompt and a style's
+  text before extraction.
+- **Cost.** Extraction is cached by the redacted text, so one Claude Code version pays once per
+  project. The default prompt yields many rules. A Stop or SubagentStop hook never extracts or judges
+  them, because a warning could not block. Run `tracevals check` to see them.
+- **The judge.** A rule from the system prompt is a default. A rules file, or a prompt you typed,
+  overrides it.
+
+The fixture's default prompt says never to claim the tests pass without showing them, and its last
+turn does.
+
+```console
+$ cd ../project
+$ manni tracevals check ../traces/system-prompt.jsonl --project . --no-cache
+system-prompt
+  ! never-say-tests-pass-without  Never say `Tests pass` without showing the test output.
+      not-followed 100, followed 0, not-applicable 0. The turn shows `Tests pass`. (1.00)
+
+Last turn of 3b265d00: 7 rules from 4 sources. None broken, 1 reported.
+```
+
+The `!` row is a confident break of a default rule. The closing line counts it as reported, and the
+command exits `0`. The same rule in a replaced prompt prints `✖`, and the command exits `1`.
+
+{/* test {"testId":"conformance-system-prompt","description":"check reads the system prompt the session ran under, and blocks only on a prompt the user wrote."} */}
+{/* step {"description":"A break of Claude Code's default prompt is reported and exits 0.","runShell":{"command":"manni tracevals check ../traces/system-prompt.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"None broken, 1 reported"}} */}
+{/* step {"description":"A break of a replaced prompt exits 1.","runShell":{"command":"manni tracevals check ../traces/system-prompt-custom.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[1],"stdio":"1 broken."}} */}
+{/* step {"description":"A replaced prompt's trigger says it is custom.","runShell":{"command":"manni tracevals check ../traces/system-prompt-custom.jsonl --project . --no-cache -f json","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[1],"stdio":"recorded at turn 1, Claude Code 2.1.292, custom"}} */}
+{/* test end */}
+
+To leave the system prompt out, name it in `exclude`. The names `prompt`, `plan` and
+`system-prompt` match as whole names, never as globs, so `**` keeps them.
+
+```yaml title="manni.config.yaml"
+tracevals:
+  conformance:
+    exclude: [system-prompt]
+```
 
 ## Procedures are rules
 
@@ -297,6 +356,7 @@ The other closing lines all exit `0`.
 | Closing line | What it means |
 |---|---|
 | `Last turn of 3b265d00: 4 rules from 2 sources. None broken.` | Every rule that applied was followed. |
+| `Last turn of 3b265d00: 7 rules from 4 sources. None broken, 1 reported.` | Each confident break came from Claude Code's default prompt. |
 | `Last turn of 3b265d00: 2 rules from 1 source, none apply to this turn.` | Each rule's `when` failed over the turn. A rule that never armed is skipped, never passed. |
 | `Last turn of 3b265d00: no rule sources governed it.` | No source was in scope. Your typed prompts are one, so this is rare. |
 | `Last turn of 3b265d00: nothing happened after the last prompt.` | The turn is empty. |
@@ -323,6 +383,8 @@ At Stop, the hook judges the turn with the in-loop model. Only a confident viola
 
 - **A broken rule.** The hook blocks the stop once. The reason is the report above, with color off.
   The agent fixes the work, or says why the rule does not apply here, and finishes.
+- **A broken default.** A rule from Claude Code's default prompt never blocks. When another rule
+  blocks, the report shows the default's break with `!`. The count in the reason leaves it out.
 - **A rule the model could not settle.** It shows as needs-review in `check`. It never blocks, and it
   never fails `check`.
 - **A rule still broken after the repair pass.** The agent stops, and you see one message.

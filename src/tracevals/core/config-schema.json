@@ -177,7 +177,7 @@
         },
         "exclude": {
           "type": "array",
-          "description": "Globs, relative to the project root, naming files never treated as rule sources, in any format. It removes plan and spec files too.",
+          "description": "Globs, relative to the project root, naming files never treated as rule sources, in any format. It removes plan, spec and output style files too. It also matches the sources `prompt`, `plan` and `system-prompt` by name.",
           "items": { "type": "string", "minLength": 1 }
         },
         "plans": {

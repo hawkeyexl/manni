@@ -1,6 +1,6 @@
 # 0080: tracevals holds a session to what it was asked and the procedures it ran
 
-- **Status:** Proposed
+- **Status:** Implemented (#163)
 - **Serves:** Maya · M25, "Catch a broken rule before the agent hands back".
   It widens the rules to what she asked for and the procedures her skills set.
 - **Depends on:** [0079](0079-tracevals-checks-each-turn-against-the-rules-it-read.md),

@@ -105,6 +105,7 @@ describe("the typed prompts", () => {
       trigger: "typed prompts 1-2",
       content,
       sha256: sha(content),
+      blocks: true,
     });
   });
 
@@ -120,9 +121,11 @@ describe("the typed prompts", () => {
     expect(byPath(run).get("prompt")?.content).toBe("1. Find the form.");
   });
 
-  it("are never removed by exclude", async () => {
-    const sources = await sourcesOf([{ prompt: "Add a reset link." }], { exclude: ["**", "prompt"] });
-    expect(sources.map((s) => s.format)).toContain("prompt");
+  it("are removed by exclude only by their name, never by a glob for files (proposal 0081)", async () => {
+    const kept = await sourcesOf([{ prompt: "Add a reset link." }], { exclude: ["**", "prompt*"] });
+    expect(kept.map((s) => s.format)).toContain("prompt");
+    const dropped = await sourcesOf([{ prompt: "Add a reset link." }], { exclude: ["prompt"] });
+    expect(dropped.map((s) => s.format)).not.toContain("prompt");
   });
 
   it("are not known at session start, so prepare never sees them", async () => {
@@ -174,6 +177,14 @@ describe("the approved plan", () => {
     const sources = await sourcesOf(
       [{ prompt: "Plan it." }, { writeAbs: join(CONFIG_DIR, "plans", "bright-otter.md") }, { exitPlan: "p1" }, { result: "p1" }],
       { exclude: ["~/.claude/plans/**"] },
+    );
+    expect(sources.map((s) => s.format)).not.toContain("plan");
+  });
+
+  it("is removed by the name plan too, when it came from a file (proposal 0081)", async () => {
+    const sources = await sourcesOf(
+      [{ prompt: "Plan it." }, { writeAbs: join(CONFIG_DIR, "plans", "bright-otter.md") }, { exitPlan: "p1" }, { result: "p1" }],
+      { exclude: ["plan"] },
     );
     expect(sources.map((s) => s.format)).not.toContain("plan");
   });

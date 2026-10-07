@@ -1,0 +1,5 @@
+default 0 398ms
+custom 1 382ms
+timing1 default(cold) 412ms custom(after default) 389ms
+timing2 default(cold) 400ms custom(after default) 405ms
+timing3 default(cold) 396ms custom(after default) 386ms
