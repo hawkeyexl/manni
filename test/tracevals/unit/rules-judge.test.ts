@@ -239,8 +239,8 @@ describe("the turn judge prompt", () => {
     ].join("\n---\n");
     const digest = createHash("sha256").update(surface).digest("hex").slice(0, 12);
     expect({ version: TURN_JUDGE_PROMPT_VERSION, digest }).toEqual({
-      version: 7,
-      digest: "4f29ae0da207",
+      version: 8,
+      digest: "62e8a0361d0d",
     });
   });
 
@@ -252,6 +252,7 @@ describe("the turn judge prompt", () => {
         '"Earlier in this session" lists what the session did before the last turn.\n' +
         "\n" +
         "A prompt the user typed overrides any rule. Doing what the user explicitly asked is never a violation.\n" +
+        "A rule from the system prompt is a default. An instruction file, or a prompt the user typed, overrides it.\n" +
         "\n" +
         "Judge only from what the transcript and the earlier turns show. Do not guess.\n" +
         "A rule applies only once the session does the kind of work it covers.\n" +
@@ -315,6 +316,7 @@ describe("judgeTurn, scored", () => {
         rule: "run-npm-ci-first",
         text: "Run npm ci first when working in a worktree.",
         outcome: "fail",
+        severity: "error",
         observed: "not-followed 91, followed 4, not-applicable 2. Seen.",
         confidence: 0.91,
         reasoning: "Seen.",
@@ -330,6 +332,20 @@ describe("judgeTurn, scored", () => {
     expect(shared).not.toContain("no-force-push");
     expect(first?.user).toBe(shared + buildRuleItem("CLAUDE.md", RULES[0]?.rule ?? { id: "", text: "" }));
     expect(second?.user).toBe(shared + buildRuleItem("CLAUDE.md", RULES[1]?.rule ?? { id: "", text: "" }));
+  });
+
+  it("rates a finding from a source that does not block a warning, and every other an error", async () => {
+    const system = { displayPath: "system-prompt", path: "", blocks: false };
+    const rules: TurnRule[] = [
+      { source: system, rule: { id: "keep-it-short", text: "Keep replies short." } },
+      { source: { ...claude, blocks: true }, rule: { id: "no-force-push", text: "Never force-push." } },
+    ];
+    const { provider } = scorer(() => scores(0, 95, 0));
+    const result = await judgeTurn(input(provider, { rules }));
+    expect(result.findings.map((f) => [f.source, f.outcome, f.severity])).toEqual([
+      ["system-prompt", "fail", "warning"],
+      ["CLAUDE.md", "fail", "error"],
+    ]);
   });
 
   it("takes the scored path on a provider that could also decide", async () => {
@@ -596,6 +612,7 @@ describe("judgeTurn on a decision-only provider", () => {
         rule: "run-npm-ci-first",
         text: "Run npm ci first when working in a worktree.",
         outcome: "fail",
+        severity: "error",
         observed: "not-followed 91, followed 6, not-applicable 3",
         confidence: 0.91,
       },

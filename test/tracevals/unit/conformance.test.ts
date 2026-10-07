@@ -141,6 +141,52 @@ describe("check by hand", () => {
     );
   });
 
+  it("reports a break of Claude Code's default system prompt, and passes the turn", async () => {
+    const { report, rendered } = await check("system-prompt");
+    expect(report.sources).toContainEqual(
+      expect.objectContaining({ path: "system-prompt", format: "system-prompt", trigger: "recorded at turn 1, Claude Code 2.1.292" }),
+    );
+    const finding = report.findings.find((f) => f.source === "system-prompt");
+    expect(finding).toMatchObject({ outcome: "fail", severity: "warning" });
+    expect(report.findings.every((f) => f.severity === "warning")).toBe(true);
+    expect(report.summary).toMatchObject({ fail: 0, reported: report.findings.length });
+    expect(report.exitCode).toBe(0);
+    expect(rendered).toContain(`system-prompt\n  ! ${finding?.rule ?? ""}  ${finding?.text ?? ""}`);
+    expect(rendered.split("\n").at(-1)).toMatch(/^Last turn of 3b265d00: \d+ rules from \d+ sources\. None broken, 1 reported\.$/);
+  });
+
+  it("fails a break of a system prompt the user wrote", async () => {
+    const { report, rendered } = await check("system-prompt-custom");
+    expect(report.sources.find((s) => s.path === "system-prompt")?.trigger).toBe(
+      "recorded at turn 1, Claude Code 2.1.292, custom",
+    );
+    expect(report.findings.find((f) => f.source === "system-prompt")).toMatchObject({ outcome: "fail", severity: "error" });
+    expect(report.summary).toMatchObject({ reported: 0 });
+    expect(report.summary.fail).toBeGreaterThan(0);
+    expect(report.exitCode).toBe(1);
+    expect(rendered).toContain("system-prompt\n  ✖ ");
+  });
+
+  it("drops the system prompt that exclude names", async () => {
+    await config("tracevals:\n  provider: mock\n  conformance:\n    exclude: [system-prompt]\n");
+    const { report } = await check("system-prompt-custom");
+    expect(report.sources.map((s) => s.path)).not.toContain("system-prompt");
+    expect(report.exitCode).toBe(0);
+  });
+
+  it("closes with the reported count after the broken and needs-review counts", () => {
+    const base = {
+      trace: "t", sessionId: "3b265d00-0000", agentId: null, turn: { from: 0, to: 1 }, judge: null,
+      extraction: null, sources: [], findings: [], session: null, skipped: null, warnings: [], exitCode: 1,
+    };
+    const line = (fail: number, needsReview: number, reported: number) =>
+      renderCheck({ ...base, summary: { sources: 7, rules: 64, notApplicable: 0, fail, needsReview, reported } });
+    expect(line(1, 0, 1)).toBe("Last turn of 3b265d00: 64 rules from 7 sources. 1 broken, 1 reported.");
+    expect(line(0, 0, 2)).toBe("Last turn of 3b265d00: 64 rules from 7 sources. None broken, 2 reported.");
+    expect(line(1, 1, 1)).toBe("Last turn of 3b265d00: 64 rules from 7 sources. 1 broken, 1 needs review, 1 reported.");
+    expect(line(1, 0, 0)).toBe("Last turn of 3b265d00: 64 rules from 7 sources. 1 broken.");
+  });
+
   it("passes a turn that followed every rule", async () => {
     const { report, rendered } = await check("follows");
     expect(report.exitCode).toBe(0);
@@ -226,6 +272,7 @@ describe("check by hand", () => {
         rule: "no-force-push",
         text: "Never run `git push --force`.",
         outcome: "fail",
+        severity: "error",
         observed: "not-followed 95, followed 5, not-applicable 0. Pushed with --force.",
         confidence: 0.95,
         reasoning: "Pushed with --force.",
@@ -296,6 +343,14 @@ describe("checkTurn, inside a hook", () => {
     expect(result.report?.extraction).toEqual({ provider: "mock", model: "mock-model" });
     expect(result.findings.some((f) => f.rule === "no-force-push" && f.outcome === "fail")).toBe(true);
     expect(result.judgement?.cached).toBe(false);
+  });
+
+  it("exits 0 on a turn whose only breaks are reported, and 1 on a custom prompt's (proposal 0081)", async () => {
+    const reported = await hook("system-prompt");
+    expect(reported.exitCode).toBe(0);
+    expect(reported.findings.some((f) => f.outcome === "fail" && f.severity === "warning")).toBe(true);
+    const custom = await hook("system-prompt-custom");
+    expect(custom.exitCode).toBe(1);
   });
 
   it("brings a touched conformance.plans file in under the hook (proposal 0080)", async () => {

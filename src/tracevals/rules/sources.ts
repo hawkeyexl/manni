@@ -15,6 +15,10 @@
  * prompts, the approved plan, a touched Spec Kit feature, Kiro spec or live
  * OpenSpec change, and a touched file `conformance.plans` names. None is known
  * at session start, so only a turn resolves them, and none declares evals.
+ *
+ * Two are read from the transcript itself (proposal 0081): the system prompt
+ * of the last prompt snapshot, and a user output style. Claude Code's own
+ * prompt is reported and never blocks; a prompt the user wrote blocks.
  */
 import { createHash } from "node:crypto";
 import { homedir } from "node:os";
@@ -26,6 +30,7 @@ import { resolveArtifacts } from "../artifacts/resolve.js";
 import { findGitRoot, listInTree, safeRead } from "../artifacts/fs.js";
 import { extractEvals } from "../evals/extract.js";
 import { windowOf } from "../graders/util.js";
+import { makeRedactor } from "../judge/redact.js";
 import { configDir } from "../trace/discover.js";
 import type { Trace } from "../trace/types.js";
 import { isTypedPrompt } from "./turn.js";
@@ -49,7 +54,9 @@ export type RuleFormat =
   | "speckit-spec"
   | "kiro-spec"
   | "openspec-change"
-  | "plans";
+  | "plans"
+  | "system-prompt"
+  | "output-style";
 
 /** An `ai` eval a source declares; its assertion is the rule (proposal 0079). */
 export interface DeclaredRule {
@@ -59,7 +66,7 @@ export interface DeclaredRule {
 }
 
 export interface RuleSource {
-  /** Absolute path on disk, or `""` for the typed prompts and a plan given only as input. */
+  /** Absolute path on disk, or `""` for the typed prompts, an inline plan and the system prompt. */
   path: string;
   /** Relative to the project root with forward slashes, or `~/…` under home. */
   displayPath: string;
@@ -73,6 +80,8 @@ export interface RuleSource {
   skill?: string;
   /** Present when the file declares `ai` evals; they replace extraction. */
   declaredRules?: DeclaredRule[];
+  /** False for Claude Code's default system prompt, whose rules are reported and never block. */
+  blocks: boolean;
 }
 
 export interface SourceOptions {
@@ -84,8 +93,10 @@ export interface SourceOptions {
   env?: Record<string, string | undefined>;
   /** `conformance.include`: globs, relative to the project root, in scope once read. */
   include?: string[];
-  /** `conformance.exclude`: globs never treated as sources, in any row. */
+  /** `conformance.exclude`: globs never treated as sources, in any row, and source names. */
   exclude?: string[];
+  /** `judge.redact`: patterns scrubbed from what the transcript records of the system prompt. */
+  redact?: string[];
   /** `conformance.plans`: globs, relative to the project root, in scope once touched. */
   plans?: string[];
   /** Set under SubagentStop: the subagent type whose definition governs the run. */
@@ -129,6 +140,8 @@ class Collector {
   private readonly seen = new Set<string>();
   private readonly parsed = new Map<string, ExtractedMetadata | null>();
   private readonly excluded: (path: string) => boolean;
+  /** Whether `exclude` lists, as it is, the name of a source with no file, such as `prompt`. */
+  readonly excludedName: (name: string) => boolean;
 
   constructor(
     readonly cwd: string,
@@ -138,6 +151,8 @@ class Collector {
   ) {
     const match = exclude.length > 0 ? picomatch(exclude, { dot: true }) : null;
     this.excluded = (path) => match !== null && match(this.display(path));
+    // The whole name, never a glob: `**` names files, and keeps the prompt.
+    this.excludedName = (name) => exclude.includes(name);
   }
 
   display(path: string): string {
@@ -192,6 +207,7 @@ class Collector {
       trigger,
       content,
       sha256: createHash("sha256").update(content).digest("hex"),
+      blocks: true,
     };
     if (skill !== undefined) source.skill = skill;
     const declared = this.declared(path, content);
@@ -201,13 +217,22 @@ class Collector {
   }
 
   /**
-   * Adds a source that says what the session was asked. These never declare
-   * evals. With no file, its display path is its format, and no glob removes it.
+   * Adds a source that says what the session was asked, or one the transcript
+   * recorded. These never declare evals. With no file, its display path is its
+   * format, and `exclude` matches that name.
    */
-  addRequest(file: string | null, content: string, format: RuleFormat, trigger: string): void {
+  addRequest(
+    file: string | null,
+    content: string,
+    format: RuleFormat,
+    trigger: string,
+    blocks = true,
+  ): void {
     if (file !== null) {
       if (this.has(file) || this.excluded(file)) return;
       this.seen.add(key(file));
+    } else if (this.excludedName(format)) {
+      return;
     }
     this.sources.push({
       path: file ?? "",
@@ -216,6 +241,7 @@ class Collector {
       trigger,
       content,
       sha256: createHash("sha256").update(content).digest("hex"),
+      blocks,
     });
   }
 
@@ -312,7 +338,79 @@ export async function resolveTurnSources(
   addPrompts(c, trace, turn);
   await addPlan(c, trace, turn, opts);
   await addSpecs(c, touches, opts.plans ?? []);
+  await addSystemPrompt(c, trace, turn, opts);
   return { sources: c.sources, warnings: c.warnings };
+}
+
+// ── What the transcript recorded of the prompt ───────────────────
+
+/** Claude Code's own block in its default prompt; a replaced prompt has none. */
+const BOUNDARY_MARKER = "__SYSTEM_PROMPT_DYNAMIC_BOUNDARY__";
+
+interface Recorded {
+  index: number;
+  record: Record<string, unknown>;
+  attachment: Record<string, unknown>;
+}
+
+/** The last attachment of `type` at or before the turn's end, with its record. */
+function lastAttachment(trace: Trace, turn: TurnBounds, type: string): Recorded | undefined {
+  for (let i = trace.events.length - 1; i >= 0; i -= 1) {
+    const event = trace.events[i];
+    if (event === undefined || event.kind !== "meta" || event.index > turn.to) continue;
+    const attachment = event.raw.attachment;
+    if (event.raw.type === "attachment" && isRecord(attachment) && attachment.type === type) {
+      return { index: event.index, record: event.raw, attachment };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The system prompt of the last `prompt_snapshot`, and the last output style.
+ * A style a user file defines is its own source, holding the text the agent
+ * saw; a built-in style's text joins the system prompt. The prompt is custom,
+ * and blocks, when Claude Code's boundary marker is missing.
+ */
+async function addSystemPrompt(c: Collector, trace: Trace, turn: TurnBounds, opts: SourceOptions): Promise<void> {
+  const scrub = makeRedactor(opts.redact ?? []);
+  const style = lastAttachment(trace, turn, "output_style_instructions")?.attachment.style;
+  const styleName = isRecord(style) && typeof style.name === "string" ? style.name : undefined;
+  const stylePrompt = isRecord(style) && typeof style.prompt === "string" ? style.prompt : undefined;
+  let builtIn: string | undefined;
+  if (styleName !== undefined && stylePrompt !== undefined) {
+    const file = await userStyleFile(c, opts, styleName);
+    if (file === undefined) builtIn = stylePrompt;
+    else c.addRequest(file, scrub(stylePrompt), "output-style", `style ${styleName}`);
+  }
+
+  const snapshot = lastAttachment(trace, turn, "prompt_snapshot");
+  const recorded: unknown = snapshot?.attachment.systemPrompt;
+  if (snapshot === undefined || !Array.isArray(recorded)) return;
+  const blocks = (recorded as unknown[]).filter((b): b is string => typeof b === "string");
+  const custom = !blocks.includes(BOUNDARY_MARKER);
+  const content = scrub([...blocks, ...(builtIn !== undefined ? [builtIn] : [])].join("\n\n"));
+  const { version } = snapshot.record;
+  const by = typeof version === "string" ? `, Claude Code ${version}` : "";
+  const trigger = `recorded at turn ${String(snapshot.index)}${by}${custom ? ", custom" : ""}`;
+  c.addRequest(null, content, "system-prompt", trigger, custom);
+}
+
+/**
+ * The user file that defines output style `name`: under the project's
+ * `.claude/output-styles/`, then the user's. Its front matter `name`, or
+ * its base name, matches.
+ */
+async function userStyleFile(c: Collector, opts: SourceOptions, name: string): Promise<string | undefined> {
+  const dirs = [...new Set([c.root, c.cwd])].map((b) => join(b, ".claude", "output-styles"));
+  dirs.push(join(configDir(opts.env), "output-styles"));
+  for (const dir of dirs) {
+    for (const path of await listInTree(dir, (p) => p.endsWith(".md"), { maxDepth: 0 })) {
+      const declared = (await frontOf(c, path))?.name;
+      if ((typeof declared === "string" ? declared : basename(path, ".md")) === name) return path;
+    }
+  }
+  return undefined;
 }
 
 // ── What the session was asked ───────────────────────────────────

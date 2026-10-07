@@ -136,6 +136,12 @@ describe("runTurnCheck", () => {
     expect(verdict?.broken?.trace).toBe(trace("breaks"));
   });
 
+  it("a turn that broke only rules of Claude Code's default prompt: nothing, so no block", async () => {
+    expect(await runTurnCheck(stop("system-prompt"), project, { env: homeEnv })).toBeUndefined();
+    const custom = await runTurnCheck(stop("system-prompt-custom"), project, { env: homeEnv });
+    expect(custom?.broken?.report).toContain("system-prompt\n  ✖ ");
+  });
+
   it("a turn that touched nothing, or followed the rules: nothing", async () => {
     expect(await runTurnCheck(stop("untouched"), project, { env: homeEnv })).toBeUndefined();
     expect(await runTurnCheck(stop("empty-turn"), project, { env: homeEnv })).toBeUndefined();
