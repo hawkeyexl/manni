@@ -147,6 +147,11 @@ export default defineConfig({
               items: [{ autogenerate: { directory: "a11y/get-started" } }],
             },
             {
+              label: "Check each turn",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "tracevals/conformance" } }],
+            },
+            {
               label: "Run it in CI",
               collapsed: true,
               items: [{ autogenerate: { directory: "a11y/ci" } }],
@@ -447,7 +452,7 @@ export default defineConfig({
         // The trace-adherence tool. Section order and labels are the ones it
         // arrived with, recorded in
         // docs/content-strategy/information-architecture.md (`tracevals/`):
-        // get started, declare, CI, judge, triage, extend, reference.
+        // get started, declare, check each turn, CI, judge, triage, extend, reference.
         {
           label: "tracevals",
           collapsed: true,

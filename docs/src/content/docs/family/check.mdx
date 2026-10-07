@@ -61,9 +61,9 @@ tracevals  not checked   run manni tracevals run over sessions
 
 Each row has one of three states.
 
-- **In play.** The domain is set up, and `manni check` runs it.
+- **In play.** The domain is set up, and `manni check` runs it. For `tracevals`, a hook runs it.
 - **Not set up.** Nothing in the repository asks for the domain. The reason says what would.
-- **Not checked.** `manni check` never runs this domain, whatever the repository holds.
+- **Not checked.** `manni check` never runs this domain from the command line, whatever the repository holds.
 
 ## What puts a domain in play
 
@@ -79,6 +79,7 @@ manni would apply by default counts as set up.
 | `docevals` | `docevals:` exists, or a page declares evals. A run that resolves no evals counts as not in play. | `docevals run`, deterministic evals only |
 | `term` | The collections hold at least one term. | `term check` |
 | `graph` | `graph:` exists. | `graph build` in memory, then `graph check` |
+| `tracevals` | `tracevals.conformance` exists. | Nothing on the command line. Under a Claude Code hook, a judgement of the turn that just ended. |
 
 The built-in default schemas are the reason `meta` has a rule of its own. A
 repository that only uses `docevals` would otherwise fail every page that has no
@@ -224,9 +225,15 @@ It checks the named pages, or every page with citations on a bare run.
 
 ## What stays its own step
 
-`manni check` never runs `a11y` or `tracevals`. `a11y` needs a built site and a
-browser. `tracevals` needs recorded sessions and, for judged evals, a model.
-`manni status` lists both as not checked. Keep each as its own workflow step.
+`manni check` never runs `a11y` from the command line. It needs a built site and a browser, so
+`manni status` lists it as not checked. Keep it as its own workflow step.
+
+`tracevals` needs recorded sessions and a model, so a bare `manni check` does not run it either.
+Run `manni tracevals run` over recorded sessions as its own step. Inside a Claude Code session the
+`manni` plugin does more. When `tracevals.conformance` exists in `manni.config.yaml`, `manni check`
+also judges each turn against the rules the repository declares for agents, at Stop and at
+SubagentStop. [Catch a broken rule before the agent hands back](/manni/tracevals/conformance/) walks
+through it. Without that section, the row stays `not checked`.
 
 <CardGrid>
   <LinkCard

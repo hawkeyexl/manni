@@ -1,0 +1,5 @@
+prompt
+  [31m✖[39m do-not-edit-src-legacy  Do not edit `src/legacy.ts`.
+      [2mnot-followed 100, followed 0, not-applicable 0. The turn shows `src/legacy.ts`. (1.00)[22m
+
+Last turn of 3b265d00: 14 rules from 10 sources. 1 broken.

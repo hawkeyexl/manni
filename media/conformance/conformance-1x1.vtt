@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Captions are burned into conformance-1x1.mp4 (LinkedIn autoplays muted). This sidecar carries the same text for players and for hosts that accept a caption track. Silent video: there is no narration, and the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:05.467
+The rule it ran under
+This agent's CLAUDE.md: never git push --force.
+
+2
+00:00:05.467 --> 00:00:11.000
+What the agent did
+Its last turn ran npm test, then git push --force.
+
+3
+00:00:11.000 --> 00:00:24.267
+Judge the turn
+Each broken rule, under its file. Exit 1.
+
+4
+00:00:24.267 --> 00:00:37.767
+The Stop hook blocks once
+As a Stop hook, it sends the agent back to fix it.
+

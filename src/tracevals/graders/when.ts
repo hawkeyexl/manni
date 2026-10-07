@@ -65,13 +65,13 @@ const stringValue =
  * work with no new answer. No `g` flag here, so a shared instance carries no
  * `lastIndex` between calls.
  */
-const prompts = new Map<string, RegExp>();
+const compiled = new Map<string, RegExp>();
 
-function promptRe(pattern: string): RegExp {
-  const cached = prompts.get(pattern);
+function compiledRe(pattern: string): RegExp {
+  const cached = compiled.get(pattern);
   if (cached !== undefined) return cached;
   const built = new RegExp(pattern);
-  prompts.set(pattern, built);
+  compiled.set(pattern, built);
   return built;
 }
 
@@ -99,10 +99,32 @@ const CONDITIONS = {
       return undefined;
     },
     test: (value, window) => {
-      const re = promptRe(value as string);
+      const re = compiledRe(value as string);
       return window.userMessages.some((text) => re.test(text));
     },
     reason: (value) => `no prompt matched /${value as string}/`,
+  },
+  "command-matches": {
+    validate: (value) => {
+      const shape = stringValue("command-matches")(value);
+      if (shape !== undefined) return shape;
+      try {
+        new RegExp(value as string);
+      } catch (err) {
+        return `options.when.command-matches is not a valid regular expression: ${(err as Error).message}`;
+      }
+      return undefined;
+    },
+    test: (value, window) => {
+      const re = compiledRe(value as string);
+      return window.toolCalls.some(
+        (c) =>
+          c.name === "Bash" &&
+          typeof c.input.command === "string" &&
+          re.test(c.input.command),
+      );
+    },
+    reason: (value) => `no Bash command matched /${value as string}/`,
   },
   "turn-count-above": {
     validate: (value) => {

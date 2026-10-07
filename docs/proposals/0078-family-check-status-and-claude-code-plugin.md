@@ -1,6 +1,6 @@
 # 0078: Two family verbs, `check` and `status`, and a Claude Code plugin
 
-- **Status:** Proposed
+- **Status:** Superseded in part by [0079](0079-tracevals-checks-each-turn-against-the-rules-it-read.md)
 - **Serves:** Devin · D16, "Gate every check a repo has set up, with one
   command". Maya · M24, "Let an agent keep the docs green while it writes
   them", which cross-references D14, M17 and M23.

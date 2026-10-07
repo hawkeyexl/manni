@@ -1,0 +1,5 @@
+---
+description: Web components
+globs: src/web/**
+---
+- Never use `innerHTML` in components.

@@ -1,6 +1,6 @@
 docs/src/content/docs/site/index.mdx:
   personas: ["maya", "devin", "theo"]
-  journeys: ["m25", "m7", "d7", "t3"]
+  journeys: ["m26", "m7", "d7", "t3"]
   visibility: public
   review-interval: P180D
   source-of-truth:

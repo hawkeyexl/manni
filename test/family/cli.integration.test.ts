@@ -9,7 +9,7 @@
  * waiting out the envelope timeout.
  */
 import { execSync, spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -225,6 +225,87 @@ describe.skipIf(!gitAvailable())("manni check, under a hook", () => {
     edit(dir, "docs/page.md", addTodo);
     const r = run(["check", "docs/page.md"], dir, envelope("post-tool-use-claude-md", dir));
     expect(r.status).toBe(2);
+  });
+});
+
+describe("manni check, judging the turn", () => {
+  const conformance = resolve(root, "test", "tracevals", "fixtures", "conformance");
+  const trace = (name: string): string => join(conformance, "traces", `${name}.jsonl`);
+  // The count follows the fixture's rules; the sentence around it is fixed.
+  const BROKE =
+    /This turn broke \d+ rules? from the files and requests that governed it\. Fix the work, or say why the rule does not apply here, then finish\.\n\n/;
+  const BROKE_FIRST = new RegExp(`^${BROKE.source}`);
+
+  /** tracevals' conformance project, in a temp directory, with a home of its own. */
+  function project(): { cwd: string; env: NodeJS.ProcessEnv } {
+    const tmp = realpathSync(mkdtempSync(join(tmpdir(), "manni-family-turn-")));
+    dir = tmp;
+    const cwd = join(tmp, "project");
+    cpSync(join(conformance, "project"), cwd, { recursive: true });
+    const home = join(tmp, "home");
+    return { cwd, env: { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home } };
+  }
+
+  it("Stop on a turn that broke a rule: one block naming the file and the rule, even with no collections", () => {
+    const { cwd, env } = project();
+    const r = run(["check"], cwd, envelope("stop-transcript", cwd, { transcript_path: trace("breaks") }), env);
+    expect(r.status).toBe(0);
+    expect(r.stderr).toBe("");
+    const doc = JSON.parse(r.stdout) as { decision: string; reason: string };
+    expect(doc.decision).toBe("block");
+    expect(doc.reason).toMatch(BROKE_FIRST);
+    expect(doc.reason).toContain("CLAUDE.md\n");
+    expect(doc.reason).toContain("no-force-push");
+  });
+
+  it("Stop after the repair pass: a message naming the trace", () => {
+    const { cwd, env } = project();
+    const input = envelope("stop-hook-active", cwd, { transcript_path: trace("breaks") });
+    expect(run(["check"], cwd, input, env)).toEqual({
+      stdout: `${JSON.stringify({
+        systemMessage: `tracevals still finds broken rules after one repair pass. Run manni tracevals check ${trace("breaks")} to see them.`,
+      })}\n`,
+      stderr: "",
+      status: 0,
+    });
+  });
+
+  it("Stop on a turn no rule applies to: exit 0 and nothing", () => {
+    const { cwd, env } = project();
+    const input = envelope("stop-transcript", cwd, { transcript_path: trace("untouched") });
+    expect(run(["check"], cwd, input, env)).toEqual({ stdout: "", stderr: "", status: 0 });
+  });
+
+  it("without tracevals.conformance: 0078's reply alone", () => {
+    const { cwd, env } = project();
+    writeFileSync(join(cwd, "manni.config.yaml"), "tracevals:\n  provider: mock\n");
+    const input = envelope("stop-transcript", cwd, { transcript_path: trace("breaks") });
+    expect(run(["check"], cwd, input, env)).toEqual({ stdout: "", stderr: "", status: 0 });
+  });
+
+  it("SubagentStop judges the agent's own transcript, and runs no file check", () => {
+    const { cwd, env } = project();
+    const input = envelope("subagent-stop", cwd, {
+      transcript_path: trace("follows"),
+      agent_transcript_path: trace("breaks"),
+    });
+    const r = run(["check"], cwd, input, env);
+    expect(r.status).toBe(0);
+    expect((JSON.parse(r.stdout) as { reason: string }).reason).toMatch(BROKE_FIRST);
+  });
+
+  it.skipIf(!gitAvailable())("Stop with file errors and a broken rule: 0078's paragraph first, in one block", () => {
+    dir = fixtureRepo("only-docevals");
+    const home = join(dir, ".home");
+    const env = { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home };
+    edit(dir, "docs/page.md", addTodo);
+    edit(dir, "manni.config.yaml", (t) => `${t}\ntracevals:\n  provider: mock\n  conformance: {}\n`);
+    cpSync(join(conformance, "project", "CLAUDE.md"), join(dir, "CLAUDE.md"));
+    const r = run(["check"], dir, envelope("stop-transcript", dir, { transcript_path: trace("breaks") }), env);
+    expect(r.status).toBe(0);
+    const { reason } = JSON.parse(r.stdout) as { reason: string };
+    expect(reason.startsWith("manni found errors in the files you changed. Fix them, then finish.\n\n")).toBe(true);
+    expect(reason).toMatch(new RegExp(`\\n\\n${BROKE.source}`));
   });
 });
 

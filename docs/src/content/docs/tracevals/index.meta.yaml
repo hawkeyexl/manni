@@ -13,19 +13,25 @@ docs/src/content/docs/tracevals/index.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-75
-      integrity: sha256-93c06c265b3bd2660ae4b1d8be5b2b55844bf181d456712ac65b0ba1a0fc05d3
+      lines: 2-25
+      integrity: sha256-dfae39779270ab7a7733833ca369a5473465ee5ceab5a9affe71641669ee1714
+    - generated-by: Claude Sonnet 5.5
+      lines: 26-30
+      integrity: sha256-9ce5e4849b942e98cb31af82cb7f6fd71f2de543ac20e785d064fb4180355bbf
+    - generated-by: Claude Opus 5
+      lines: 31-80
+      integrity: sha256-905ea8b32eb67d93a94d0c37ac984da34bf2baa13a664a9001ec4299f5acce86
     - generated-by: Claude Opus 5.5
-      lines: 76
+      lines: 81
       integrity: sha256-e0cd8dd7cf2d8a61c2523ea3b07cea7958ecce605d53b5da1ef22e4b3c372841
     - generated-by: Claude Opus 5
-      lines: 78-91
+      lines: 83-96
       integrity: sha256-7b20d8f300b2b48c7be07aa4983bc382801d927cad6a0bbf6993dab015ed30fa
     - generated-by: Claude Opus 5.5
-      lines: 92
+      lines: 97
       integrity: sha256-012733308ebaa770df3a2a90b506c61efd74d8f91ad9453c46a173316760140f
     - generated-by: Claude Opus 5
-      lines: 93-122
+      lines: 98-127
       integrity: sha256-82141f1a0e9d7f27496275ed047a05d1c5deecbb4db37ac15bc462d5b510d7a9
   owner:
     - "@hawkeyexl"

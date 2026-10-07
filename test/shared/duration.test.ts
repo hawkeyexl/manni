@@ -35,4 +35,13 @@ describe("parseDuration", () => {
       '--newer-than must be a duration such as 30m, 24h, 7d or 2w, got "x"',
     );
   });
+
+  it("names the flag or key the caller passes", () => {
+    expect(() => parseDuration("7y", raise, "--keep")).toThrow(
+      '--keep must be a duration such as 30m, 24h, 7d or 2w, got "7y"',
+    );
+    expect(durationMessage("x", "--keep")).toBe(
+      '--keep must be a duration such as 30m, 24h, 7d or 2w, got "x"',
+    );
+  });
 });

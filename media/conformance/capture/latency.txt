@@ -1,0 +1,5 @@
+check 1 3137ms
+hook 0 3152ms
+timing1 check(cold) 2724ms hook(warm) 2780ms
+timing2 check(cold) 2346ms hook(warm) 2274ms
+timing3 check(cold) 2136ms hook(warm) 2151ms

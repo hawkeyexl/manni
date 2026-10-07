@@ -1,6 +1,6 @@
 docs/src/content/docs/site/reference/cli.mdx:
   personas: ["maya", "devin"]
-  journeys: ["m25", "d7"]
+  journeys: ["m26", "d7"]
   visibility: public
   review-interval: P180D
   source-of-truth:

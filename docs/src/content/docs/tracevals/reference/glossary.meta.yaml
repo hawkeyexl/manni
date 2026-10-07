@@ -12,14 +12,32 @@ docs/src/content/docs/tracevals/reference/glossary.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Opus 5
-      lines: 2-191
-      integrity: sha256-85ff041d08e7f05defa1517596be2c39580f8262835fb3078fae2ae3aa0e80cd
+      lines: 2-34
+      integrity: sha256-e0b155ca6d182cff4fa824aa4787f423f36a70ddc068d8e512a25dd56d3fd5c7
+    - generated-by: Claude Sonnet 5.5
+      lines: 35-36
+      integrity: sha256-fe7efc441628dd5c9b07e454d2987cac17fab9925cbe6c8b52b9c482b08a3d0d
+    - generated-by: Claude Opus 5
+      lines: 38-192
+      integrity: sha256-9cdee0e42a02a1dbd43022852824b45ebd2d831c45902c1bceccebfa1f60d0b2
     - generated-by: Claude Opus 5.5
-      lines: 192-193
+      lines: 193-194
       integrity: sha256-8c241a915dd91d521db198abe21290a7fa2103b360ac363deff3997f95550340
     - generated-by: Claude Opus 5
-      lines: 194-230
-      integrity: sha256-3237c36e58fbc54fc6d572403a2205b5e4940fa56e646c953ee2488fae3d22c2
+      lines: 195-204
+      integrity: sha256-c7ff99c9ebac1a3af618232b32fc7a384f8126cedc168a500618aff00e1ddb96
+    - generated-by: Claude Sonnet 5.5
+      lines: 206-208
+      integrity: sha256-e8513a26fc3c7c67b73c0eb9bef53c9660e7453d47cd8e724139feba1e23d403
+    - generated-by: Claude Opus 5.5
+      lines: 209-212
+      integrity: sha256-0d3c59f628b20e1df98134d3fe6c91f2a2e57ebd866899d207b1ef5e9ca86c47
+    - generated-by: Claude Sonnet 5.5
+      lines: 214-226
+      integrity: sha256-147f7ad680060d7dfb5208923367f9f848213eb092a50ca4fc80bc8d5901e455
+    - generated-by: Claude Opus 5
+      lines: 228-253
+      integrity: sha256-b0e204832fa4a014776865e6fbb5b7c52130cbdafd7eec27839d8d911d7726ac
   owner:
     - "@hawkeyexl"
   created: 2026-09-16

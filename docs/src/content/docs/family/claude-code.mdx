@@ -26,6 +26,7 @@ related-pages:
   - family-check
   - family-reference-cli
   - tracevals-declare-coverage
+  - tracevals-conformance
   - meta-set-up-machine-authorship
 ---
 
@@ -88,12 +89,17 @@ the agent.
 
 ## What happens at session start
 
-Two hooks run when a session starts.
+Three hooks run when a session starts.
 
 `manni tracevals capture` records a manifest of the session under
 `.manni/tracevals/sessions/`. It stores the hash of every instruction artifact
 the project holds, so [`tracevals`](/manni/tracevals/declare/coverage/) can tell
 whether one changed after the session began. It runs at startup only.
+
+`manni tracevals prepare` runs in the background and never holds the session up. When
+`tracevals.conformance` exists, it fetches a local judge model that is not on disk yet. It also
+extracts the rules of every file that applies to every session. The first Stop then finds both ready. With no
+`conformance` section it prints one line and does nothing else.
 
 `manni status` prints what is in play, and Claude Code adds that to the agent's
 context. With no `manni.config.yaml` it prints nothing.
@@ -172,7 +178,11 @@ the agent changed or removed one, and skipped when it changed only code. The
 graph is never checked here. It is the slowest whole-set check, and its
 findings span pages, so CI checks it with a bare `manni check`.
 
-With a clean working tree, nothing runs.
+When `tracevals.conformance` exists, it also judges the turn that just ended
+against the rules your repository declares for agents, with the fast in-loop
+model.
+
+With a clean working tree, no file check runs.
 
 If errors remain, the stop is blocked once. The agent gets the report and one
 repair pass.
@@ -189,6 +199,22 @@ If errors remain after that pass, the agent stops, and you see a message.
 
 One pass bounds the loop. A failure that predates the session cannot hold an
 agent forever.
+
+A broken rule from the rules files arrives in the same reply. The report names the rule, the file it
+came from, and what the turn did. The agent fixes the work, or says why the rule does not apply, and
+then finishes. [Catch a broken rule before the agent hands back](/manni/tracevals/conformance/)
+covers what counts as a rule and how the model is chosen.
+
+## What happens when a subagent stops
+
+A subagent that finishes runs the same check over its own transcript alone. Parallel subagents each
+get a judgement of their own run, and an agent definition's rules apply to it. The repair pass works
+as it does for the main session.
+
+## What happens when the session ends
+
+A last hook runs `manni tracevals release`. It hands back the session's hold on the local model, so
+the model unloads once no session needs it.
 
 ## The four skills
 
@@ -228,6 +254,11 @@ or its content says so, so the next `manni status` shows it as not set up.
     title="CLI reference"
     href="/manni/family/reference/cli/#hook-protocol"
     description="The hook protocol: what manni check reads from a hook, where it writes, and what each exit code means."
+  />
+  <LinkCard
+    title="Catch a broken rule before the agent hands back"
+    href="/manni/tracevals/conformance/"
+    description="Set up the tracevals check that judges each turn against your repo's rules for agents."
   />
   <LinkCard
     title="Artifact coverage"
