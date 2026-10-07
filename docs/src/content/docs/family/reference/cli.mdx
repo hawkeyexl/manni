@@ -327,7 +327,10 @@ Without a `conformance` section the judgement never runs, and the `tracevals` ro
 | Needs review, a clean turn, or an operational failure | nothing |
 
 The report in a block is the `pretty` report of
-[`tracevals check`](/manni/tracevals/reference/cli/#tracevals-check) with color off. When the file
+[`tracevals check`](/manni/tracevals/reference/cli/#tracevals-check) with color off. Only an
+`error` break blocks. A break of Claude Code's default system prompt is a warning, and never blocks.
+A block's report still shows one, marked `!`. The count in the reason and the repair-pass message
+leave warnings out. When the file
 checks fail too, the reason carries their paragraph first. After the repair pass, one message carries
 both sentences. A skip message is said once per session, and a block carries it as a `systemMessage`
 beside the `reason`. A tracevals judgement needs no collection, because it judges a turn rather than

@@ -79,11 +79,13 @@ cannot.
   attachment recorded, which is what the agent saw.
 - **Triggers.** `system-prompt` reads `recorded at turn <ordinal>, Claude Code
   <version>`, with `, custom` added when the marker is missing.
-  `output-style` reads `style <name>`.
+  `, Claude Code <version>` is left out when the snapshot record has no
+  version. `output-style` reads `style <name>`.
 - **No snapshot.** A session before 2.1.260, or from another agent, has none.
   Nothing is configured, because the source is detected.
 - **Redaction and extraction.** The judge's redactor runs before extraction,
-  because the Memory block names a path under the user's home. Extraction uses
+  because the Memory block names a path under the user's home. It scrubs an
+  output style's text too. Extraction uses
   the rules prompt with no new version, since the system prompt governs the
   agent. It is cached by the sha256 of the redacted content, so one version in
   one project pays once.
@@ -97,7 +99,8 @@ A finding gains `severity`, from the family's scale in `src/shared/severity.ts`.
 - A rule from the default `system-prompt` is `warning`. Its break is reported,
   and never blocks.
 - `--format json` carries `severity` on every finding, and `summary` gains
-  `reported`, the count of warnings.
+  `reported`, the count of `warning` breaks. `summary.fail` counts `error`
+  breaks only. `needsReview` counts the unsettled rules of both severities.
 
 The pretty report marks a warning `!` where a break is `✖`.
 
@@ -113,8 +116,10 @@ The closing line counts warnings apart, after the needs-review count.
 - `Last turn of 3b265d00: 64 rules from 7 sources. None broken, 2 reported.`
 
 Exit 1 still means an `error` break with a confident verdict. A warning alone
-exits 0. The Stop hook blocks on `error` findings only, so its reason never
-counts a warning. The ledger records a warning's verdicts as it does any rule's.
+exits 0. The Stop hook blocks on `error` findings only. The report its reason
+embeds still shows a warning, marked `!`. The count sentence and the
+repair-pass message count errors only. The ledger records a warning's verdicts
+as it does any rule's.
 
 ### The judge
 
@@ -129,8 +134,8 @@ A rule from the system prompt is a default. An instruction file, or a prompt the
 ### Turning a source off
 
 `conformance.exclude` keeps its type, a list of globs. It now also matches a
-synthetic source by name. So `exclude: [system-prompt]` drops the system
-prompt, and the names `prompt` and `plan` drop 0080's request sources. That
+synthetic source by its exact name, never as a glob, so `**` keeps it. So
+`exclude: [system-prompt]` drops the system prompt, and the names `prompt` and `plan` drop 0080's request sources. That
 answers 0080's open question about an off switch.
 
 Before:
@@ -151,7 +156,7 @@ tracevals:
 
 | Key | Type | Default | What it does |
 |---|---|---|---|
-| `conformance.exclude` | list of globs | `[]` | Files never treated as sources, in any row. It also matches the sources `prompt`, `plan` and `system-prompt` by name. |
+| `conformance.exclude` | list of globs | `[]` | Files never treated as sources, in any row. It also matches the sources `prompt`, `plan` and `system-prompt` by exact name, never as a glob. |
 
 There are no new keys, flags or exit codes.
 

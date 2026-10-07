@@ -547,11 +547,12 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
   ],
   "findings": [
     { "source": "CLAUDE.md", "rule": "no-force-push",
-      "text": "Never run `git push --force`.", "outcome": "fail",
+      "text": "Never run `git push --force`.", "outcome": "fail", "severity": "error",
       "observed": "not-followed 100, followed 0, not-applicable 0. The turn shows `git push --force`.",
       "confidence": 1, "reasoning": "The turn shows `git push --force`." }
   ],
-  "summary": { "sources": 6, "rules": 7, "notApplicable": 0, "fail": 2, "needsReview": 1 },
+  "summary": { "sources": 6, "rules": 7, "notApplicable": 0, "fail": 2, "needsReview": 1,
+    "reported": 0 },
   "session": {
     "turns": 6,
     "rules": [
@@ -576,14 +577,14 @@ its own. `-f json` prints it, and `-o` writes the same bytes to a file. The pret
 | `judge.mode` | `decision` or `generative` | Detected from the provider. `decision` is a decision-only provider such as `jev`, which makes one call, so `runs` is `1`. Every other provider is `generative`, and scores each rule in each run. |
 | `extraction` | object or null | The out-of-loop provider and model. `null` when no source needed them. |
 | `sources[]` | object | One entry per source in scope: `path`, `format`, `trigger`, `rules`, `origin`, and `skill` for a skill's files. `trigger` says why the source was in scope. `origin` is `declared` for a file's own `ai` evals, and `extracted` otherwise. Six formats say what the session was asked, in the table below. |
-| `findings[]` | object | Only `fail` and `needs-review` outcomes, each with its `source`, `rule`, `text`, `observed` and `confidence`. `observed` gives the rule's three scores, averaged over the runs. `confidence` is the not-followed score as a fraction. `reasoning` is the judge's sentence or two on what the transcript shows, and `observed` ends with it. A decision-only provider such as `jev` gives none. A rule left out was followed or did not apply. |
-| `summary` | object | The counts of `sources`, `rules`, `notApplicable`, `fail` and `needsReview`. |
+| `findings[]` | object | Only `fail` and `needs-review` outcomes, each with its `source`, `rule`, `text`, `severity`, `observed` and `confidence`. `severity` is `error` when the rule's source blocks, and `warning` when it is only reported. Only Claude Code's default system prompt gives `warning`. `observed` gives the rule's three scores, averaged over the runs. `confidence` is the not-followed score as a fraction. `reasoning` is the judge's sentence or two on what the transcript shows, and `observed` ends with it. A decision-only provider such as `jev` gives none. A rule left out was followed or did not apply. |
+| `summary` | object | The counts of `sources`, `rules`, `notApplicable`, `fail`, `needsReview` and `reported`. `fail` counts the `error` breaks, and `reported` counts the `warning` breaks. `needsReview` counts the unsettled rules of both severities. |
 | `session` | object or null | What the hook recorded for this session in [the session ledger](#the-session-ledger), summed up per rule. `null` when the session has no ledger. |
 | `session.turns` | number | The turns the ledger records. |
 | `session.rules[]` | object | One entry per rule the ledger holds, with its `source` and `rule`. `followed`, `broken`, `needsReview` and `notApplicable` count its entries. `repaired` counts the `broken` entries that a later `followed` entry came after. `notInScope` counts the recorded turns where the rule's file was not in scope. `last` is its latest entry's `turn` and `outcome`. |
 | `skipped` | string or null | `null`, `empty-turn`, `no-sources` or `not-applicable`. The other gates apply only under a hook. |
 | `warnings` | array | Strings, such as a rules file whose front matter does not parse. |
-| `exitCode` | number | `0`, or `1` when `summary.fail` is above zero. |
+| `exitCode` | number | `0`, or `1` when `summary.fail` is above zero. A `warning` break alone exits `0`. |
 
 The six formats that say what the session was asked never declare evals, so their `origin` is
 always `extracted`.
@@ -597,11 +598,21 @@ always `extracted`.
 | `openspec-change` | A `.md` file under `openspec/changes/<id>/`, never under `changes/archive/` | `touched <path>`, the first file touched under that change |
 | `plans` | A file `conformance.plans` names | `touched <path>`, the file itself |
 
+Two more formats come from the transcript itself. They are read from the last record of their kind
+at or before the turn's end, and never declare evals.
+
+| `format` | `path` | `trigger` |
+|---|---|---|
+| `system-prompt` | `system-prompt` | `recorded at turn <n>, Claude Code <version>`, the ordinal of the last `prompt_snapshot`. `, Claude Code <version>` is left out when the record has no version. `, custom` ends it when the boundary marker is missing. |
+| `output-style` | The file that defines the style, relative to the project root or `~/…` under home | `style <name>`, the style's name as the transcript recorded it |
+
 `summary.sources` counts every row, so the closing line says "sources" rather than "files".
 
 Only a confident violation counts as `fail`: a not-followed score at
 [`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge), as a percentage, in every
 run. A rule the judge could not settle, or errored on, is `needs-review`, which never fails `check`.
+Only an `error` break exits `1` or blocks a Stop. A confident `warning` break counts in `reported`
+and does neither.
 
 ### The session ledger
 
