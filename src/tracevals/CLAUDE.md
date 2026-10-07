@@ -64,7 +64,7 @@ Before drafting or editing any page under
 - `docs/content-strategy/personas.md`, the four personas. tracevals folded its
   own five into them. Priya became Maya, Sam became Sara, and its Devin and Theo
   became the family's. Rin, the toolsmith, is D15 and the API reference.
-- `docs/content-strategy/cujs.md`, the journeys. tracevals's are M17, M21–M23, D14,
+- `docs/content-strategy/cujs.md`, the journeys. tracevals's are M17, M21–M23, M25, D14,
   D15, S13, S14 and T8.
 - `docs/content-strategy/information-architecture.md`, the content set, with the
   `tracevals/` section's tree and its source-of-truth mapping.
@@ -276,6 +276,13 @@ trace itself records.
   deterministic, `ai` and `human` graders alike. A window is empty when a skill
   was never invoked, or an agent recorded no turns. Never a pass. `cost` and
   `json-output` are session-level by nature and stay unwindowed.
+- **The per-turn check scopes a skill differently** (proposal 0080). Under a
+  hook and in `tracevals check`, a skill's or slash command's rules apply from
+  its first invocation to the end of the session. A procedure spans the turns
+  after it, and the skills it calls do not end it. Every rule is judged against
+  the last turn plus the earlier-turns block read from the transcript. It blocks
+  only on what the last turn did or claimed. Batch `run` keeps ADR
+  01015's windows above. Do not merge the two rules.
 - Deterministic evals fail only on `error`-severity findings; `warning` and
   `notice` findings report but pass. The scale is the family's, from
   `src/shared/severity.ts`; the `info` the imported code used is gone.

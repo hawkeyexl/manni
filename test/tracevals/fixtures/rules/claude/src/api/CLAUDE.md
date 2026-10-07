@@ -1,0 +1,1 @@
+Handlers validate their input.

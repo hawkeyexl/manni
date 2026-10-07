@@ -1,0 +1,5 @@
+---
+globs: **/*.ts
+alwaysApply: false
+---
+Prefer named exports.

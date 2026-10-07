@@ -1,0 +1,5 @@
+---
+description: Database migrations
+alwaysApply: false
+---
+Write reversible migrations.

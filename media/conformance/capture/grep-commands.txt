@@ -1,0 +1,2 @@
+"command": "npm test"
+"command": "git push --force origin main"

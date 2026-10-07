@@ -14,9 +14,12 @@ const UNITS: Readonly<Record<string, number>> = {
   w: 7 * 24 * 60 * 60_000,
 };
 
-/** The usage error for a value that is not a duration. */
-export function durationMessage(value: string): string {
-  return `--newer-than must be a duration such as 30m, 24h, 7d or 2w, got "${value}"`;
+/**
+ * The usage error for a value that is not a duration. `label` is what the
+ * user wrote it under, a flag or a config key.
+ */
+export function durationMessage(value: string, label = "--newer-than"): string {
+  return `${label} must be a duration such as 30m, 24h, 7d or 2w, got "${value}"`;
 }
 
 /**
@@ -27,13 +30,14 @@ export function durationMessage(value: string): string {
 export function parseDuration(
   text: string,
   makeError: (message: string) => Error,
+  label?: string,
 ): number {
   const match = /^(\d+(?:\.\d+)?)([mhdw])$/.exec(text.trim());
   const count = match?.[1];
   const unit = match?.[2];
   const ms = unit === undefined ? undefined : UNITS[unit];
   if (count === undefined || ms === undefined) {
-    throw makeError(durationMessage(text));
+    throw makeError(durationMessage(text, label));
   }
   return Number(count) * ms;
 }

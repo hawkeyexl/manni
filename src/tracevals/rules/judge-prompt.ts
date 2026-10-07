@@ -1,0 +1,109 @@
+/**
+ * The turn judge's prompt surface (proposal 0079, "The judge, decisions
+ * first", reworded by proposal 0080 to judge the last turn against the
+ * session). Each rule is judged on its own: the shared part is what earlier
+ * turns did and the rendered turn, and each rule is one item appended to it. A decision-only provider
+ * gets the same text as its state and one question per rule.
+ */
+import type { DecideQuestion } from "@hawkeyexl/inference";
+
+/**
+ * Part of the turn verdict cache key: bump whenever anything in this file that
+ * reaches a provider changes. `test/tracevals/unit/rules-judge.test.ts` pins it
+ * to a digest of the surface, so the pair has to move together.
+ */
+export const TURN_JUDGE_PROMPT_VERSION = 7;
+
+export const TURN_JUDGE_SYSTEM_PROMPT = [
+  "You check the last turn of an AI coding agent's session against one rule.",
+  "The last turn starts at the last prompt the user typed and runs to the end of the transcript.",
+  "The transcript shows the user's prompts, the agent's tool calls with their inputs, and its replies.",
+  '"Earlier in this session" lists what the session did before the last turn.',
+  "",
+  "A prompt the user typed overrides any rule. Doing what the user explicitly asked is never a violation.",
+  "",
+  "Judge only from what the transcript and the earlier turns show. Do not guess.",
+  "A rule applies only once the session does the kind of work it covers.",
+  "Score it broken only for what the last turn did, or for the last turn saying the work is done without it.",
+].join("\n");
+
+/** The three scores, each independent of the others, 0 to 100. */
+export const TURN_SCORES = ["not-applicable", "followed", "not-followed"] as const;
+export type TurnScore = (typeof TURN_SCORES)[number];
+
+const SCORE = { type: "integer", minimum: 0, maximum: 100 } as const;
+
+/**
+ * `reasoning` is declared first and always required, so a model writing the
+ * object in order says what it saw before it commits to a score. It is not
+ * length-capped: a 240-character cap was measured, and a model cut off
+ * mid-reasoning committed to wrong scores on the fixtures.
+ */
+export const TURN_SCHEMA = {
+  type: "object",
+  required: ["reasoning", ...TURN_SCORES],
+  additionalProperties: false,
+  properties: {
+    reasoning: { type: "string" },
+    "not-applicable": SCORE,
+    followed: SCORE,
+    "not-followed": SCORE,
+  },
+};
+
+/** Decision-only providers: the three options, one per score. */
+export const TURN_CRITERIA: Record<TurnScore, string> = {
+  followed: "The session does what the rule asks.",
+  "not-followed":
+    "The last turn did what the rule forbids, skipped what it requires, or said the work is done without it.",
+  "not-applicable": "The rule does not apply yet, or the last turn did nothing it covers.",
+};
+
+/** How a rule is named to a model. */
+export function ruleKey(displayPath: string, id: string): string {
+  return `${displayPath}#${id}`;
+}
+
+/**
+ * The part every rule's call shares: what earlier turns of the transcript
+ * did, when any did something, then the turn.
+ */
+export function buildTurnShared(turn: string, earlier = ""): string {
+  return `${earlier !== "" ? `${earlier}\n\n` : ""}# The turn\n\n${turn}\n\n`;
+}
+
+/**
+ * One rule's item, appended to the shared part as it is. `history` is the
+ * ledger's block for the rule, or "" when earlier turns have nothing to say.
+ */
+export function buildRuleItem(
+  displayPath: string,
+  rule: { id: string; text: string },
+  history = "",
+): string {
+  return [
+    "# The rule",
+    "",
+    `${ruleKey(displayPath, rule.id)}: ${rule.text}`,
+    "",
+    ...(history !== "" ? [history, ""] : []),
+    "First say in one or two sentences what the session shows about this rule. Then score each as a whole number from 0 to 100: " +
+      "the rule does not apply yet, or the last turn did nothing it covers; the session follows it; the last turn broke it, or the last turn says the work is done without it.",
+  ].join("\n");
+}
+
+/** A decision-only provider's state: the system prompt, then the shared part. */
+export function buildDecisionState(turn: string, earlier = ""): string {
+  return `${TURN_JUDGE_SYSTEM_PROMPT}\n\n${buildTurnShared(turn, earlier)}`;
+}
+
+export function questionFor(
+  displayPath: string,
+  rule: { id: string; text: string },
+): DecideQuestion {
+  return {
+    type: "choice",
+    instructions: `Did this turn follow ${ruleKey(displayPath, rule.id)}? The rule: ${rule.text}`,
+    criteria: { ...TURN_CRITERIA },
+  };
+}

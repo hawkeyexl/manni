@@ -28,7 +28,7 @@ tags:
   - adherence-checking
 action: understand
 risks: read-only
-last-updated: 2026-10-04
+last-updated: 2026-10-06
 ---
 
 import { Card, CardGrid, LinkCard, Aside } from '@astrojs/starlight/components';
@@ -54,6 +54,11 @@ artifacts**.
     title="Check one specific instruction"
     description="Declare an eval in an artifact's frontmatter and make it fail when it should."
     href="/manni/tracevals/declare/"
+  />
+  <LinkCard
+    title="Catch a broken rule before the agent hands back"
+    description="Judge each turn against the rules your repo declares for agents, from a Claude Code hook."
+    href="/manni/tracevals/conformance/"
   />
   <LinkCard
     title="Gate agent work in CI"

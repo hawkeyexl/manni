@@ -1,0 +1,5 @@
+Your agent read CLAUDE.md. Did it follow it? Now you find out before it hands back, not in review.
+
+At the end of every Claude Code turn, `manni check` runs as a Stop hook. It judges the turn against the rules in the files that governed it: CLAUDE.md, AGENTS.md, .cursor/rules and skills. A confident violation blocks the stop once, naming the rule and the file it came from. The agent fixes the work, or says why the rule does not apply. `manni tracevals check <trace>` runs the same judgement by hand, with exit 1 when a rule broke.
+
+npm i -D @hawkeyexl/manni · manni tracevals check <trace> · manni check

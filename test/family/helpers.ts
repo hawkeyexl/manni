@@ -27,8 +27,8 @@ export function fixtureRepo(name: FixtureRepo): string {
   return dir;
 }
 
-/** An envelope fixture's text, with `cwd` set when given. */
-export function envelope(name: string, cwd?: string): string {
+/** An envelope fixture's text, with `cwd` set when given, and any `extra` fields over it. */
+export function envelope(name: string, cwd?: string, extra: Record<string, unknown> = {}): string {
   const doc = JSON.parse(readFileSync(join(FIXTURES, "envelopes", `${name}.json`), "utf8")) as Record<string, unknown>;
-  return JSON.stringify(cwd === undefined ? doc : { ...doc, cwd });
+  return JSON.stringify({ ...doc, ...(cwd === undefined ? {} : { cwd }), ...extra });
 }

@@ -9,7 +9,7 @@
     "provider": {
       "type": "string",
       "minLength": 1,
-      "description": "Which provider judges: auto, anthropic, openai, claude-cli, or llama-cpp. Overrides the family's top-level `providers.provider` for tracevals only. Connection settings — an endpoint, an API key's environment variable, the Claude CLI command — live in that top-level `providers:` map, never here."
+      "description": "Which provider judges out of the loop, and extracts rules: auto, anthropic, openai, claude-cli, or llama-cpp. jev only decides, so it is refused here; name it as conformance.hook.provider. Overrides the family's top-level `providers.provider` for tracevals only. Connection settings — an endpoint, an API key's environment variable, the Claude CLI command — live in that top-level `providers:` map, never here."
     },
     "model": {
       "type": "string",
@@ -140,6 +140,51 @@
               "items": { "type": "number", "minimum": 0, "maximum": 1 }
             }
           }
+        }
+      }
+    },
+    "conformance": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Checking each turn against the rules the files that govern the agent declare. Present, even as {}, it puts tracevals in play under Claude Code hooks; absent, tracevals stays out of them.",
+      "properties": {
+        "hook": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "The judge inside a Stop or SubagentStop hook. Each key falls back to the top-level one of the same name.",
+          "properties": {
+            "provider": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The provider that judges inside a hook. Default: tracevals.provider. jev is accepted here, and only here."
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The model that judges inside a hook. Default: tracevals.model."
+            },
+            "runs": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Judge calls per rule inside a hook. A rule blocks only when every run scores it not followed at the bar. jev makes one call and ignores it. Default 1."
+            }
+          }
+        },
+        "include": {
+          "type": "array",
+          "description": "Globs, relative to the project root, naming files that govern agents beyond the known formats. Each applies to every turn.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "exclude": {
+          "type": "array",
+          "description": "Globs, relative to the project root, naming files never treated as rule sources, in any format. It removes plan and spec files too.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "plans": {
+          "type": "array",
+          "default": [],
+          "description": "Globs, relative to the project root, naming files that say what to build, beyond the known spec formats. Each is a rule source once the session touches it.",
+          "items": { "type": "string", "minLength": 1 }
         }
       }
     },

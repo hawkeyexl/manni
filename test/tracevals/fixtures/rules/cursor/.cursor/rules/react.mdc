@@ -1,0 +1,5 @@
+---
+globs: src/**/*.tsx, src/**/*.jsx
+alwaysApply: false
+---
+Use function components.

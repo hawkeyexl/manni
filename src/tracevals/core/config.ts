@@ -22,6 +22,7 @@ import {
   type ProvidersConfig,
 } from "../../shared/providers.js";
 import { compileRedactPatterns } from "../judge/redact.js";
+import { JEV, JEV_OUT_OF_LOOP } from "../judge/provider.js";
 import { DEFAULT_CAPTURE_DIR } from "../capture/types.js";
 import { DEFAULT_LABELS_FILE } from "../calibrate/labels.js";
 import { TracevalsError } from "../types.js";
@@ -152,6 +153,23 @@ export interface TracevalsConfig {
   plugins: string[];
   /** List offered-but-unused artifacts in coverage, not just count them. */
   reportUnusedArtifacts: boolean;
+  /**
+   * Checking each turn against its rule sources (proposal 0079). `null` when
+   * the section is absent, which keeps tracevals out of every hook; `{}` puts
+   * it in play with these defaults.
+   */
+  conformance: ConformanceConfig | null;
+}
+
+export interface ConformanceConfig {
+  /** The in-loop judge. `null` falls back to `tracevals.provider` / `model`. */
+  hook: { provider: string | null; model: string | null; runs: number };
+  /** Globs of designated rule sources, in scope once read. */
+  include: string[];
+  /** Globs never treated as rule sources. */
+  exclude: string[];
+  /** Globs of files that say what to build, in scope once touched (proposal 0080). */
+  plans: string[];
 }
 
 // `verbose` puts the parent schema on each error, so an unknown key can be
@@ -230,6 +248,12 @@ interface RawConfig {
   failOnReview?: boolean;
   plugins?: string[];
   reportUnusedArtifacts?: boolean;
+  conformance?: {
+    hook?: { provider?: string; model?: string; runs?: number };
+    include?: string[];
+    exclude?: string[];
+    plans?: string[];
+  };
 }
 
 /** What the file the section came from carries beside it. */
@@ -280,7 +304,14 @@ export function parseConfig(
   // provider a configured model needs.
   const provider = r.provider ?? null;
   if (provider !== null) {
+    // jev only decides. Out of the loop a provider extracts rules and writes
+    // verdicts, which are generations.
+    if (provider === JEV) throw new TracevalsError(JEV_OUT_OF_LOOP);
     assertKnownProvider(provider, (message) => new TracevalsError(message));
+  }
+  const hookProvider = r.conformance?.hook?.provider ?? null;
+  if (hookProvider !== null) {
+    assertKnownProvider(hookProvider, (message) => new TracevalsError(message), { decisions: true });
   }
   const config: TracevalsConfig = {
     provider,
@@ -347,6 +378,19 @@ export function parseConfig(
     // An observation, not a gate: listing it is opt-in because a real roster
     // runs to hundreds of skills (ADR 01016).
     reportUnusedArtifacts: r.reportUnusedArtifacts ?? false,
+    conformance:
+      r.conformance === undefined
+        ? null
+        : {
+            hook: {
+              provider: hookProvider,
+              model: r.conformance.hook?.model ?? null,
+              runs: r.conformance.hook?.runs ?? 1,
+            },
+            include: [...(r.conformance.include ?? [])],
+            exclude: [...(r.conformance.exclude ?? [])],
+            plans: [...(r.conformance.plans ?? [])],
+          },
   };
   // Compilability is not expressible in JSON Schema, and a pattern that cannot
   // compile must fail here rather than at the moment a digest is about to be
