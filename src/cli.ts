@@ -93,6 +93,15 @@ const DOMAINS: readonly Domain[] = [
     ],
   },
   {
+    names: ["test"],
+    load: async () => [
+      (await import("./test/cli.js"))
+        .buildProgram()
+        .name("test")
+        .description("Run the docs' procedure tests with Doc Detective and report in the family contract"),
+    ],
+  },
+  {
     names: ["graph"],
     load: async () => [
       (await import("./graph/cli.js"))

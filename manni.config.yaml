@@ -222,6 +222,7 @@ docevals:
     manni: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     meta: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     term: { target-pass-rate: 1.0, evals: [no-todo-markers] }
+    test: { target-pass-rate: 1.0, evals: [no-todo-markers] }
     tracevals: { target-pass-rate: 1.0, evals: [no-todo-markers] }
 
 # The graph tool over this site. Its own key, its own settings; the metadata

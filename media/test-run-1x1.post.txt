@@ -1,0 +1,9 @@
+Your docs say "run this command". Does it still work?
+
+Doc Detective already tests that, from steps written inline in the page. `manni test run` puts those tests under the same contract as the rest of manni. A failing step is reported at its file and line, with Doc Detective's reason. Exit 1 lets CI stop there. `-f github` turns the failure into an annotation on the line that broke.
+
+Here the page documents a command that exits 1 where the test expects 0. FAIL at fail.md line 4, exit 1. Fix the line, rerun: exit 0.
+
+Each run takes about 8 seconds, mostly Doc Detective starting up. The video shortens that wait, and the real time is on screen.
+
+npm i -g @hawkeyexl/manni · manni test run docs/

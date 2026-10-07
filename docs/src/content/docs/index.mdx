@@ -1,6 +1,6 @@
 ---
 title: manni
-description: One command line for documentation that is meant to be checked. It validates metadata and page structure, checks citations against their source, runs evals over documentation pages, grades an agent session against the instructions it ran on, and checks sites for accessibility.
+description: One command line for documentation that is meant to be checked. It validates metadata and page structure, checks citations against their source, runs evals over documentation pages, grades an agent session against the instructions it ran on, runs the procedure tests in the docs, and checks sites for accessibility.
 tableOfContents: false
 hero:
   tagline: One command line for documentation that is meant to be checked.
@@ -128,6 +128,11 @@ npx @hawkeyexl/manni check
     href="/manni/term/"
     description="Define a docset's terms, check every concepts: reference against them, generate a Vale style from them, and move the set between glossary formats, TBX and CSV."
   />
+  <LinkCard
+    title="test"
+    href="/manni/test/"
+    description="Run the Doc Detective tests embedded in the docs, and gate on them with the same exit codes and annotations as every other manni check."
+  />
 </CardGrid>
 
 `meta` checks what a page says about itself. `lint` checks whether it is shaped
@@ -138,11 +143,12 @@ it ran on. `term` checks that the terms a page names are defined, and carries
 those terms into Vale and translation. `graph` checks what the pages say about
 each other, which is the only question no single file can answer. `key` sets and
 rotates the one encryption key that `meta` and `cite` encrypt values with.
+`test` checks that a procedure still works when someone follows it.
 `manni --help` lists exactly the tools the package carries.
 
-`cite`, `docevals`, `tracevals`, `key`, `term`, `lint` and `graph` are in beta.
-Their commands, config keys and output can change in any release, without
-notice.
+`cite`, `docevals`, `tracevals`, `key`, `term`, `lint`, `graph` and `test` are in
+beta. Their commands, config keys and output can change in any release,
+without notice.
 
 ## Coming from docmeta?
 

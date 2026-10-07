@@ -11,6 +11,7 @@
  *   cite → docs/src/content/docs/cite/reference/cli.mdx
  *   key  → docs/src/content/docs/key/reference/cli.mdx
  *   term → docs/src/content/docs/term/reference/cli.mdx
+ *   test → docs/src/content/docs/test/reference/cli.mdx
  *   family → docs/src/content/docs/family/reference/cli.mdx
  *
  * `family` is not a domain. It stands for the two verbs the umbrella carries
@@ -25,7 +26,7 @@
  * Usage:
  *   node scripts/check-cli-reference.mjs [domain...]
  * With no arguments every domain in the map is checked; with arguments each
- * is a domain name (`meta`, `a11y`, `cite`, `key`, `term`) or `family`.
+ * is a domain name (`meta`, `a11y`, `cite`, `key`, `term`, `test`) or `family`.
  * Requires `npm run build` first (imports dist/cli.js).
  * Exit 0 = every page in sync, 1 = drift found on any page, 2 = setup error
  * (unknown domain, domain not mounted on the built program, page missing).
@@ -46,6 +47,7 @@ const PAGES = new Map([
   ["key", "docs/src/content/docs/key/reference/cli.mdx"],
   ["lint", "docs/src/content/docs/lint/reference/cli.mdx"],
   ["term", "docs/src/content/docs/term/reference/cli.mdx"],
+  ["test", "docs/src/content/docs/test/reference/cli.mdx"],
   ["tracevals", "docs/src/content/docs/tracevals/reference/cli.mdx"],
   ["family", "docs/src/content/docs/family/reference/cli.mdx"],
 ]);

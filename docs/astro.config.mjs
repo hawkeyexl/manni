@@ -481,6 +481,21 @@ export default defineConfig({
             },
           ],
         },
+        // `test` runs the docs' procedure tests with Doc Detective (proposal
+        // 0082). One verb, so an overview and a reference shelf of one.
+        {
+          label: "test",
+          collapsed: true,
+          badge: BETA,
+          items: [
+            { label: "Overview", link: "/test/" },
+            {
+              label: "Reference",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "test/reference" } }],
+            },
+          ],
+        },
         // `family` is not a domain. It documents the two verbs the umbrella
         // carries, `manni check` and `manni status`, and the Claude Code
         // plugin that runs them (proposal 0078). Two journey pages and a

@@ -37,15 +37,23 @@ export interface DitaOtToolConfig {
   home?: string;
 }
 
+/** Doc Detective's settings under `tools.doc-detective`. */
+export interface DocDetectiveToolConfig {
+  /**
+   * Doc Detective's config file, as written, relative to `manni.config.yaml`.
+   * Unset means Doc Detective finds its own in the working directory.
+   */
+  config?: string;
+}
+
 /** The document's top-level `tools:`, one namespace per outside tool. */
 export interface ToolsConfig {
   vale?: ValeToolConfig;
   "dita-ot"?: DitaOtToolConfig;
+  "doc-detective"?: DocDetectiveToolConfig;
 }
 
-const TOOL_KEYS = ["vale", "dita-ot"] as const;
-const VALE_KEYS = ["config"] as const;
-const DITA_OT_KEYS = ["home"] as const;
+const TOOL_KEYS = ["vale", "dita-ot", "doc-detective"] as const;
 
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -85,54 +93,54 @@ export function parseTools(
 
   const tools: ToolsConfig = {};
   if (Object.hasOwn(raw, "vale")) {
-    tools.vale = parseVale(raw["vale"], source, toError);
+    tools.vale = parseStringKey(raw["vale"], "vale", "config", source, toError);
   }
   if (Object.hasOwn(raw, "dita-ot")) {
-    tools["dita-ot"] = parseDitaOt(raw["dita-ot"], source, toError);
+    tools["dita-ot"] = parseStringKey(raw["dita-ot"], "dita-ot", "home", source, toError);
+  }
+  if (Object.hasOwn(raw, "doc-detective")) {
+    tools["doc-detective"] = parseStringKey(
+      raw["doc-detective"],
+      "doc-detective",
+      "config",
+      source,
+      toError,
+    );
   }
   return tools;
 }
 
-function parseVale(
+/**
+ * One tool's namespace, whose single key is a non-empty string. Every tool
+ * read today has that shape; a tool with a second key or another type gets a
+ * parser of its own.
+ */
+function parseStringKey<K extends string>(
   raw: unknown,
+  tool: string,
+  key: K,
   source: string,
   toError: (message: string) => Error,
-): ValeToolConfig {
+): Partial<Record<K, string>> {
   if (!isMapping(raw)) {
-    throw toError(`${source}: tools.vale must be a mapping.`);
+    throw toError(`${source}: tools.${tool} must be a mapping.`);
   }
-  rejectUnknownKeys(raw, VALE_KEYS, "tools.vale", source, toError);
+  rejectUnknownKeys(raw, [key], `tools.${tool}`, source, toError);
 
-  const vale: ValeToolConfig = {};
-  if (Object.hasOwn(raw, "config")) {
-    const config = raw["config"];
-    if (typeof config !== "string" || config.trim() === "") {
-      throw toError(`${source}: tools.vale.config must be a non-empty string.`);
+  const out: Partial<Record<K, string>> = {};
+  if (Object.hasOwn(raw, key)) {
+    const value = raw[key];
+    if (typeof value !== "string" || value.trim() === "") {
+      throw toError(`${source}: tools.${tool}.${key} must be a non-empty string.`);
     }
-    vale.config = config;
+    out[key] = value;
   }
-  return vale;
+  return out;
 }
 
-function parseDitaOt(
-  raw: unknown,
-  source: string,
-  toError: (message: string) => Error,
-): DitaOtToolConfig {
-  if (!isMapping(raw)) {
-    throw toError(`${source}: tools.dita-ot must be a mapping.`);
-  }
-  rejectUnknownKeys(raw, DITA_OT_KEYS, "tools.dita-ot", source, toError);
-
-  const ditaOt: DitaOtToolConfig = {};
-  if (Object.hasOwn(raw, "home")) {
-    const home = raw["home"];
-    if (typeof home !== "string" || home.trim() === "") {
-      throw toError(`${source}: tools.dita-ot.home must be a non-empty string.`);
-    }
-    ditaOt.home = home;
-  }
-  return ditaOt;
+/** A path as written in the config, made absolute against the config file's directory. */
+function fromConfigDir(path: string, configDir: string): string {
+  return isAbsolute(path) ? path : resolve(configDir, path);
 }
 
 /**
@@ -143,7 +151,7 @@ function parseDitaOt(
 export function valeConfigPath(tools: ToolsConfig, configDir: string): string | undefined {
   const config = tools.vale?.config;
   if (config === undefined) return undefined;
-  return isAbsolute(config) ? config : resolve(configDir, config);
+  return fromConfigDir(config, configDir);
 }
 
 /**
@@ -154,5 +162,19 @@ export function valeConfigPath(tools: ToolsConfig, configDir: string): string | 
 export function ditaOtHome(tools: ToolsConfig, configDir: string): string | undefined {
   const home = tools["dita-ot"]?.home;
   if (home === undefined) return undefined;
-  return isAbsolute(home) ? home : resolve(configDir, home);
+  return fromConfigDir(home, configDir);
+}
+
+/**
+ * The absolute path of Doc Detective's config file, resolved against the
+ * directory of the config file that declared it. `undefined` when none is set,
+ * which means Doc Detective finds its own in the working directory.
+ */
+export function docDetectiveConfigPath(
+  tools: ToolsConfig,
+  configDir: string,
+): string | undefined {
+  const config = tools["doc-detective"]?.config;
+  if (config === undefined) return undefined;
+  return fromConfigDir(config, configDir);
 }

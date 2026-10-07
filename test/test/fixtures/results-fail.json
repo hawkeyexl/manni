@@ -1,0 +1,134 @@
+{
+  "runId": "2026-10-05T13-25-57-379Z",
+  "runDir": "__CWD__/.doc-detective/runs/2026-10-05T13-25-57-379Z",
+  "summary": {
+    "specs": {
+      "pass": 1,
+      "fail": 1,
+      "warning": 0,
+      "skipped": 0
+    },
+    "tests": {
+      "pass": 1,
+      "fail": 1,
+      "warning": 0,
+      "skipped": 0
+    },
+    "contexts": {
+      "pass": 1,
+      "fail": 1,
+      "warning": 0,
+      "skipped": 0
+    },
+    "steps": {
+      "pass": 1,
+      "fail": 1,
+      "warning": 0,
+      "skipped": 0
+    }
+  },
+  "specs": [
+    {
+      "specId": "pass.md",
+      "contentPath": "__CWD__/docs/pass.md",
+      "tests": [
+        {
+          "testId": "echo-ok",
+          "contentPath": "__CWD__/docs/pass.md",
+          "contexts": [
+            {
+              "contextId": "default",
+              "platform": "windows",
+              "steps": [
+                {
+                  "runShell": {
+                    "command": "echo hello",
+                    "exitCodes": [
+                      0
+                    ]
+                  },
+                  "location": {
+                    "line": 4,
+                    "startIndex": 43,
+                    "endIndex": 110
+                  },
+                  "stepId": "echo-ok~s1f788a2e",
+                  "outputs": {
+                    "exitCode": 0,
+                    "stdio": {
+                      "stdout": "hello",
+                      "stderr": ""
+                    }
+                  },
+                  "assertions": [
+                    {
+                      "statement": "$$outputs.exitCode oneOf [0]",
+                      "source": "implicit",
+                      "result": "PASS"
+                    }
+                  ],
+                  "result": "PASS",
+                  "resultDescription": "Returned exit code 0."
+                }
+              ],
+              "result": "PASS"
+            }
+          ],
+          "result": "PASS"
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "specId": "fail.md",
+      "contentPath": "__CWD__/docs/fail.md",
+      "tests": [
+        {
+          "testId": "exit-one",
+          "contentPath": "__CWD__/docs/fail.md",
+          "contexts": [
+            {
+              "contextId": "default",
+              "platform": "windows",
+              "steps": [
+                {
+                  "runShell": {
+                    "command": "exit 1",
+                    "exitCodes": [
+                      0
+                    ]
+                  },
+                  "location": {
+                    "line": 4,
+                    "startIndex": 44,
+                    "endIndex": 107
+                  },
+                  "stepId": "exit-one~sff564a90",
+                  "outputs": {
+                    "exitCode": 1,
+                    "stdio": {
+                      "stdout": "",
+                      "stderr": ""
+                    }
+                  },
+                  "assertions": [
+                    {
+                      "statement": "$$outputs.exitCode oneOf [0]",
+                      "source": "implicit",
+                      "result": "FAIL"
+                    }
+                  ],
+                  "result": "FAIL",
+                  "resultDescription": "Returned exit code 1. Expected one of [0]"
+                }
+              ],
+              "result": "FAIL"
+            }
+          ],
+          "result": "FAIL"
+        }
+      ],
+      "result": "FAIL"
+    }
+  ]
+}

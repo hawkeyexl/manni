@@ -1,0 +1,84 @@
+{
+  "runId": "2026-10-05T13-25-57-379Z",
+  "runDir": "__CWD__/.doc-detective/runs/2026-10-05T13-25-57-379Z",
+  "summary": {
+    "specs": {
+      "pass": 0,
+      "fail": 0,
+      "warning": 1,
+      "skipped": 0
+    },
+    "tests": {
+      "pass": 0,
+      "fail": 0,
+      "warning": 1,
+      "skipped": 0
+    },
+    "contexts": {
+      "pass": 0,
+      "fail": 0,
+      "warning": 1,
+      "skipped": 0
+    },
+    "steps": {
+      "pass": 0,
+      "fail": 0,
+      "warning": 1,
+      "skipped": 0
+    }
+  },
+  "specs": [
+    {
+      "specId": "warn.md",
+      "contentPath": "__CWD__/docs/warn.md",
+      "tests": [
+        {
+          "testId": "slow-echo",
+          "contentPath": "__CWD__/docs/warn.md",
+          "contexts": [
+            {
+              "contextId": "default",
+              "platform": "windows",
+              "steps": [
+                {
+                  "runShell": {
+                    "command": "echo hello",
+                    "exitCodes": [
+                      0
+                    ],
+                    "timeout": 1000
+                  },
+                  "location": {
+                    "line": 7,
+                    "startIndex": 61,
+                    "endIndex": 140
+                  },
+                  "stepId": "slow-echo~s0000001",
+                  "outputs": {
+                    "exitCode": 0,
+                    "stdio": {
+                      "stdout": "hello",
+                      "stderr": ""
+                    }
+                  },
+                  "assertions": [
+                    {
+                      "statement": "$$outputs.exitCode oneOf [0]",
+                      "source": "implicit",
+                      "result": "PASS"
+                    }
+                  ],
+                  "result": "WARNING",
+                  "resultDescription": "Returned exit code 0. Command took longer than the 1000ms timeout."
+                }
+              ],
+              "result": "WARNING"
+            }
+          ],
+          "result": "WARNING"
+        }
+      ],
+      "result": "WARNING"
+    }
+  ]
+}

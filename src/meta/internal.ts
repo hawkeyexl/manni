@@ -15,7 +15,9 @@
 export { gitIgnored } from "./core/gitignore.js";
 export {
   assertNonEmpty,
+  DEFAULT_IGNORE,
   gitignoreOptions,
+  notFoundMessage,
   resolveTargetSet,
   resolveTargets,
   STDIN_LABEL,
