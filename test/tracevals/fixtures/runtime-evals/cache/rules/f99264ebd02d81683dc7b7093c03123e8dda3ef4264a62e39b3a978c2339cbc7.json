@@ -1,0 +1,10 @@
+[
+  {
+    "id": "push-feature-trim",
+    "text": "Push the feature/trim branch to the remote."
+  },
+  {
+    "id": "test-parse-trims-spaces",
+    "text": "Add a test verifying that parse trims the spaces around each item."
+  }
+]

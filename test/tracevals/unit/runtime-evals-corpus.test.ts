@@ -29,6 +29,7 @@ import {
 
 const REGENERATE = "regenerate it with `npm run build && node scripts/runtime-evals-freeze.mjs`, then relabel cases.json";
 const LABELS = new Set(["followed", "not-followed", "not-applicable"]);
+const SPLITS = new Set(["train", "test"]);
 
 const cases = loadCases();
 let config: TracevalsConfig;
@@ -89,8 +90,9 @@ describe("the benchmark's placement of a rule", () => {
 });
 
 describe.each(cases.map((c) => [c.id, c] as const))("runtime-evals case %s", (_id, c) => {
-  it("is described and labeled with known values", () => {
+  it("is described, split and labeled with known values", () => {
     expect(c.what).not.toBe("");
+    expect(SPLITS.has(c.split), `split: ${c.split}`).toBe(true);
     expect(Object.keys(c.labels).length).toBeGreaterThan(0);
     for (const [key, entry] of Object.entries(c.labels)) {
       expect(LABELS.has(entry.label), `${key}: ${entry.label}`).toBe(true);

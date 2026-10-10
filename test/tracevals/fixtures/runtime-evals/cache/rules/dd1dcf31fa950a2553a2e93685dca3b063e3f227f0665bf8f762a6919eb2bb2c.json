@@ -1,0 +1,22 @@
+[
+  {
+    "id": "run-tests-first",
+    "text": "Run `npm test` before making any release changes."
+  },
+  {
+    "id": "stop-on-test-failure",
+    "text": "Stop the release if any test fails."
+  },
+  {
+    "id": "move-unreleased-changelog",
+    "text": "Move the entries under `## Unreleased` in `CHANGELOG.md` to a heading for the new version before running `npm version`."
+  },
+  {
+    "id": "npm-version-bump",
+    "text": "Run `npm version <patch|minor|major>` to commit and tag the release after updating the changelog."
+  },
+  {
+    "id": "ask-before-push",
+    "text": "Ask the user before running `git push --follow-tags`."
+  }
+]

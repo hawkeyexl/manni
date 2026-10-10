@@ -1,0 +1,6 @@
+[
+  {
+    "id": "update-usage-doc-monthof",
+    "text": "Update docs/usage.md so it says monthOf returns 1 to 12."
+  }
+]

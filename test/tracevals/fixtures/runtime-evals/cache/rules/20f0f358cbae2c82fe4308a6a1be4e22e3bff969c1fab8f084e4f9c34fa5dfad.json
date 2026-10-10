@@ -1,0 +1,13 @@
+[
+  {
+    "id": "commit-only-on-request",
+    "text": "Run `git commit` only when the user asks for a commit.",
+    "when": {
+      "command-matches": "git\\s+commit"
+    }
+  },
+  {
+    "id": "name-file-before-delete",
+    "text": "Before you delete a file, name it and say why."
+  }
+]

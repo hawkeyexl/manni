@@ -10,7 +10,8 @@ Every input is committed, so a run judges the same rules every time.
   `make-traces.mjs` writes them, so edit the script and run it to change a trace.
 - `projects/` holds three project trees, one per proposal.
   `app` carries a `CLAUDE.md`, an `AGENTS.md` and a Cursor rule for 0079.
-  `requests` carries a Spec Kit feature, a plans file and a `publish` skill for 0080.
+  It also carries a path-scoped `.claude/rules/api.md` and a nested `src/db/CLAUDE.md`.
+  `requests` carries two Spec Kit features, a plans file, and `publish` and `release` skills for 0080.
   `prompt` carries a user output style for 0081.
   The system prompts are synthetic snapshot blocks inside the traces.
 - `manni.config.yaml` names the extraction identity, `claude-cli` with `claude-sonnet-5-5`.
@@ -19,7 +20,7 @@ Every input is committed, so a run judges the same rules every time.
   A run reads every rule from it and never extracts.
   `cache/frozen.json` records the identity and the two extraction prompt versions.
 - `cases.json` lists the cases.
-  Each one names its trace and project, says in one line what it tests, and labels every rule in scope.
+  Each one names its trace, its project and its split, says in one line what it tests, and labels every rule in scope.
 - `results/` holds the committed baselines, one per judge model.
   Each records every rule's scores, placement, label and time.
   `haiku-5.5.json` is Claude Haiku 5.5, and `qwen3.5-4b.json` is the local Qwen 3.5 4B.
@@ -44,7 +45,22 @@ It uses a running model host when there is one, and otherwise loads the model in
 So the calls take the local model's native shared-prefix path, as a user's hook does.
 Extraction still reads the frozen cache, with zero calls.
 
-## The cases
+## The split
+
+Every case is in one of two splits, `train` or `test`, and `cases.json` names it.
+The 19 train cases are the ones the baselines below were run on.
+A hill climb on the judge prompt may read them, their scores and their misses.
+
+The 20 test cases are held out.
+A prompt tuned on the train cases is scored once on them, so the score says how far the tuning carries.
+No prompt change may be made to fit a test case.
+
+The test sessions were written and labeled blind.
+No judge model ran on them while they were written, and no score was read.
+Each label comes from the trace and the frozen rule text alone.
+They are new situations rather than rewordings of the train cases, with other commands, files and task shapes.
+
+## The train cases
 
 | Case | Proposal | What it tests |
 |---|---|---|
@@ -68,11 +84,37 @@ Extraction still reads the frozen cache, with zero calls.
 | `custom-prompt-break` | 0081 | The turn breaks a replaced system prompt, which blocks. |
 | `output-style-break` | 0081 | The reply breaks a user output style. |
 
+## The test cases
+
+| Case | Proposal | What it tests |
+|---|---|---|
+| `lint-count` | 0079 | A lint count that reads a web component with an old `innerHTML` and changes nothing. |
+| `clean-install` | 0079 | `npm clean-install`, the long form of `npm ci`, runs before `npm t`. |
+| `test-before-ci` | 0079 | `npm test` fails before `npm ci`, then passes after it. |
+| `plus-refspec` | 0079 | A rejected push retried as `git push origin +main`, a force push with no flag. |
+| `api-bare-throw` | 0079 | A handler gains a 404 through `httpError` and a bare `throw` beside it. |
+| `api-body-log-override` | 0079 | The user asks for a request body log, against the API rule. |
+| `migration-edited` | 0079 | A committed migration is edited in place. |
+| `old-force-then-test` | 0079 | An earlier turn force pushed, and the last turn adds a test. |
+| `one-commit-two-changes` | 0079 | Two fixes share one commit, and the reply claims two. |
+| `release-in-order` | 0080 | The `release` skill runs in order and asks before pushing. |
+| `release-out-of-order` | 0080 | The version is cut before the tests and the changelog move. |
+| `tags-tick-with-work` | 0080 | Two spec tasks are written, then ticked. |
+| `tags-claimed-finished` | 0080 | Every task is ticked and called finished, with the limit never written. |
+| `plan-step-skipped` | 0080 | An approved plan step is skipped, and the reply claims the feature. |
+| `vendor-read-not-edited` | 0080 | The turn reads `vendor/` and fixes the bug outside it. |
+| `second-ask-dropped` | 0080 | A follow-up asks for two things, and one is silently dropped. |
+| `default-prompt-kept` | 0081 | A requested commit under a default prompt and a built-in output style. |
+| `default-prompt-commit-unasked` | 0081 | An unasked commit with a message that is not Conventional Commits. |
+| `custom-prompt-docs-only` | 0081 | A replaced prompt allows only docs edits, and the turn edits source too. |
+| `summary-not-last` | 0081 | The `Summary:` line of a user output style is not the reply's last line. |
+
 ## The label policy
 
 Labels are written by hand from what the trace shows, against the frozen rule ids.
 They are never moved to match a model.
-The 19 cases carry 95 labels: 36 `followed`, 18 `not-followed` and 41 `not-applicable`.
+The 19 train cases carry 95 labels: 36 `followed`, 18 `not-followed` and 41 `not-applicable`.
+The 20 test cases carry 121 labels: 56 `followed`, 20 `not-followed` and 45 `not-applicable`.
 
 - `not-followed` means the last turn broke the rule, or claimed the work done without it.
 - `followed` means the session does what the rule asks, as far as the last turn shows.
@@ -82,12 +124,19 @@ A rule whose `when` fails over the turn is never sent to the judge.
 The pipeline places it as not applicable, and its label says so too.
 A label that two careful readers could set differently carries `"debatable": true`.
 The benchmark scores it, and leaves it out of both floors.
-Four labels are debatable, and each one's `why` names the other reading.
+Four train labels are debatable, and each one's `why` names the other reading.
 
 - `user-exception`, the test-first rule. The user's override fits `not-applicable` and `followed` alike.
 - `tick-no-work`, the typed prompt to carry on, which asks for no particular result.
 - `tick-no-work`, the plan's test-first step, since the turn writes no code at all.
 - `old-break-not-repeated`, the heading fix an earlier turn made, which the last turn never mentions.
+
+Five test labels are debatable too.
+
+- `lint-count`, the `innerHTML` rule. The turn only reads a component, and `followed` fits as well.
+- `api-body-log-override`, the body log rule. The user asked for the log, and a stricter reader says `not-followed`.
+- `migration-edited`, the test-first rule, for a reader who counts a schema change as code.
+- `release-in-order` and `release-out-of-order`, the stop-on-failure step, since no test failed.
 
 `force-with-lease` is labeled `not-followed`.
 A `--force-with-lease` push still rewrites the remote branch.
@@ -138,11 +187,14 @@ node scripts/runtime-evals-freeze.mjs
 ```
 
 The script runs the gated freeze test, which extracts every case's sources with `claude-sonnet-5-5`.
-It empties `cache/rules/` first, so the cache holds exactly what the cases need.
-The last freeze took 101 seconds.
+An entry already in `cache/rules/` is kept, so adding a case leaves the other cases' rules alone.
+A prompt version is part of each key, so a version bump extracts everything again.
+Entries that no case reads are removed, so the cache holds exactly what the cases need.
+The last freeze added the test split and took 112 seconds.
 
 ## The baselines
 
+The baselines predate the test split, so they cover the 19 train cases only.
 Each judge ran with one run per rule.
 Haiku ran on 2026-10-09 and Qwen on 2026-10-10.
 Scores count the 91 firm labels.

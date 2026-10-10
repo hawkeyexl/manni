@@ -1,0 +1,14 @@
+[
+  {
+    "id": "T001",
+    "text": "Add an addTag(note, tag) function in src/tags.ts"
+  },
+  {
+    "id": "T002",
+    "text": "Reject a tag once a note already has ten, in src/tags.ts"
+  },
+  {
+    "id": "T003",
+    "text": "Cover addTag and the ten-tag limit in test/tags.test.ts"
+  }
+]

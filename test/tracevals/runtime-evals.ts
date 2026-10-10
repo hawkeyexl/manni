@@ -31,6 +31,9 @@ export const CORPUS = fileURLToPath(new URL("fixtures/runtime-evals", import.met
 
 export type Label = "followed" | "not-followed" | "not-applicable";
 
+/** Train cases tune the judge prompt. Test cases are held out, written and labeled blind. */
+export type Split = "train" | "test";
+
 export interface LabelEntry {
   label: Label;
   why: string;
@@ -41,6 +44,7 @@ export interface Case {
   id: string;
   trace: string;
   project: string;
+  split: Split;
   what: string;
   /** `"<source displayPath>#<rule id>"` to its label. */
   labels: Record<string, LabelEntry>;

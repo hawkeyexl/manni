@@ -1,0 +1,17 @@
+[
+  {
+    "id": "commit-only-when-asked",
+    "text": "Run `git commit` only when the user asks for a commit.",
+    "when": {
+      "command-matches": "git commit"
+    }
+  },
+  {
+    "id": "name-file-before-delete",
+    "text": "Before you delete a file, name it and say why."
+  },
+  {
+    "id": "why-line-after-change",
+    "text": "After each change, add a line that starts with `Why:` and gives the reason for it."
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "rename-font-size-label",
+    "text": "Rename the font-size setting's label to \"Text size\"."
+  },
+  {
+    "id": "font-size-default-15",
+    "text": "Change the font-size setting's default value to 15."
+  },
+  {
+    "id": "changelog-note",
+    "text": "Note both the label rename and the default bump in the changelog."
+  }
+]
