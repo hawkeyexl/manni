@@ -1,0 +1,9 @@
+[
+  {
+    "id": "implement-note-search",
+    "text": "Start implementing the note search feature as described in specs/004-search.",
+    "when": {
+      "file-access": "specs/004-search/**"
+    }
+  }
+]

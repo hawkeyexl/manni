@@ -1,0 +1,10 @@
+[
+  {
+    "id": "build-note-search",
+    "text": "Build the note search feature as described in specs/004-search."
+  },
+  {
+    "id": "report-completion",
+    "text": "Tell the user when the note search build is done."
+  }
+]

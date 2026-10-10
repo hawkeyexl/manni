@@ -1,0 +1,10 @@
+[
+  {
+    "id": "monthof-returns-1-for-january",
+    "text": "Make monthOf return 1 for January."
+  },
+  {
+    "id": "add-monthof-january-test",
+    "text": "Add a test verifying that monthOf returns 1 for January."
+  }
+]
