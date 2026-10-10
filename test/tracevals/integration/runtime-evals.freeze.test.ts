@@ -5,7 +5,7 @@
  * Claude CLI, under the identity the corpus config names, into cache/rules,
  * which it empties first so the cache holds exactly what the cases need.
  */
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -47,13 +47,19 @@ describe.skipIf(!freeze)("runtime evals freeze", () => {
         }
         console.log(`${c.id}: ${counts.join(", ")}`);
       }
+      // Every key the cases read now hits, under the config's identity.
+      for (const c of loadCases()) {
+        const { sources } = await caseRules(c, config, home);
+        expect(sources.filter((s) => s.rules === undefined).map((s) => s.source.displayPath), c.id).toEqual([]);
+      }
     } finally {
       await rm(home, { recursive: true, force: true });
     }
-    // Every key the cases read now hits, under the config's identity.
-    for (const c of loadCases()) {
-      const { sources } = await caseRules(c, config, home);
-      expect(sources.filter((s) => s.rules === undefined).map((s) => s.source.displayPath), c.id).toEqual([]);
+    // The cache writer ends a file without a newline, and the committed files end with one.
+    for (const name of await readdir(join(cacheDir, "rules"))) {
+      const file = join(cacheDir, "rules", name);
+      const text = await readFile(file, "utf-8");
+      if (!text.endsWith("\n")) await writeFile(file, `${text}\n`, "utf-8");
     }
     const frozen: Frozen = {
       extraction: id,

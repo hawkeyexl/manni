@@ -31,8 +31,11 @@ import {
   homeEnv,
   loadCases,
   ruleKeysOf,
+  placementOf,
   scratchConfigDir,
+  type Answer,
   type Label,
+  type Placement,
 } from "../runtime-evals.js";
 
 const live = process.env.MANNI_TRACEVALS_LIVE === "1" && claudeAvailable();
@@ -47,14 +50,6 @@ const MODEL = process.env.MANNI_RUNTIME_EVALS_MODEL ?? "claude-haiku-5-5";
  */
 const ACCURACY_FLOOR = 0.75;
 
-type Placement = "fail" | "followed" | "not-applicable" | "needs-review";
-
-interface Answer {
-  scores?: Record<TurnScore, number>;
-  reasoning?: string;
-  error?: string;
-}
-
 interface PairResult {
   key: string;
   label: Label;
@@ -62,6 +57,8 @@ interface PairResult {
   placement: Placement;
   /** False when the rule's `when` failed over the turn, so it was never sent to the judge. */
   judged: boolean;
+  /** True when the judge's call for this rule errored, which places it as needs-review. */
+  errored: boolean;
   severity: "error" | "warning" | null;
   scores: Record<TurnScore, number> | null;
   reasoning: string | null;
@@ -117,7 +114,7 @@ const pct = (n: number, of: number): string => (of === 0 ? "-" : `${(100 * n / o
 describe.skipIf(!live)(`runtime evals (live judge ${MODEL})`, () => {
   it("scores the judge against the hand labels", { timeout: 60 * 60_000 }, async () => {
     const config = await corpusConfig();
-    const autoPass = config.judge.zones.autoPass * 100;
+    const { autoPass } = config.judge.zones;
     const home = await mkdtemp(join(tmpdir(), "runtime-evals-home-"));
     const scratch = await scratchConfigDir();
     const started = new Date().toISOString();
@@ -155,11 +152,7 @@ describe.skipIf(!live)(`runtime evals (live judge ${MODEL})`, () => {
         const pairs = Object.entries(c.labels).map(([key, entry]): PairResult => {
           const answer = judge.answers.get(key);
           const finding = findings.get(key);
-          const judged = answer !== undefined;
-          let placement: Placement;
-          if (finding !== undefined) placement = finding.outcome;
-          else if (!judged) placement = "not-applicable";
-          else placement = (answer.scores?.["not-applicable"] ?? 0) >= autoPass ? "not-applicable" : "followed";
+          const placement = placementOf(finding, answer, autoPass);
           const severity = finding?.severity === "error" || finding?.severity === "warning" ? finding.severity : null;
           const blocked = placement === "fail" && severity === "error";
           return {
@@ -167,7 +160,8 @@ describe.skipIf(!live)(`runtime evals (live judge ${MODEL})`, () => {
             label: entry.label,
             debatable: entry.debatable === true,
             placement,
-            judged,
+            judged: answer !== undefined,
+            errored: answer?.error !== undefined,
             severity,
             scores: answer?.scores ?? null,
             reasoning: answer?.reasoning ?? answer?.error ?? null,
@@ -204,6 +198,7 @@ describe.skipIf(!live)(`runtime evals (live judge ${MODEL})`, () => {
       needsReview: firm.filter((p) => p.placement === "needs-review").length,
       reported: all.filter((p) => p.placement === "fail" && p.severity === "warning").length,
       debatableCorrect: all.filter((p) => p.debatable && p.correct).length,
+      errors: all.filter((p) => p.errored).length,
       ms: results.reduce((t, r) => t + r.ms, 0),
       tokens,
       costUsd: Math.round(results.reduce((t, r) => t + r.costUsd, 0) * 10_000) / 10_000,
@@ -220,7 +215,7 @@ describe.skipIf(!live)(`runtime evals (live judge ${MODEL})`, () => {
         ...rows,
         `accuracy ${pct(summary.correct, summary.firm)} (${String(summary.correct)}/${String(summary.firm)}), ` +
           `false blocks ${String(summary.falseBlocks)}, missed breaks ${String(summary.missedBreaks)}/${String(summary.breaks)}, ` +
-          `needs review ${String(summary.needsReview)}, reported ${String(summary.reported)}, ` +
+          `needs review ${String(summary.needsReview)}, reported ${String(summary.reported)}, errors ${String(summary.errors)}, ` +
           `debatable ${String(summary.debatableCorrect)}/${String(summary.debatable)} agreed`,
         `${String(tokens.inputTokens)} input and ${String(tokens.outputTokens)} output tokens, ` +
           `$${summary.costUsd.toFixed(4)} as the CLI reports it, ${(summary.ms / 1000).toFixed(1)}s`,

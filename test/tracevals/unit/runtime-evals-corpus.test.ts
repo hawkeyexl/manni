@@ -22,6 +22,7 @@ import {
   homeEnv,
   loadCases,
   loadFrozen,
+  placementOf,
   ruleKeysOf,
   scratchConfigDir,
 } from "../runtime-evals.js";
@@ -62,6 +63,28 @@ describe("the runtime-evals frozen cache", () => {
     expect(loadFrozen().extraction, `the config names a different extraction model; ${REGENERATE}`).toEqual(
       extractionIdentity(config),
     );
+  });
+});
+
+describe("the benchmark's placement of a rule", () => {
+  const scores = (na: number) => ({ "not-applicable": na, followed: 100 - na, "not-followed": 0 });
+
+  it("takes the pipeline's finding first", () => {
+    expect(placementOf({ outcome: "fail" }, { scores: scores(100) }, 0.8)).toBe("fail");
+    expect(placementOf({ outcome: "needs-review" }, undefined, 0.8)).toBe("needs-review");
+  });
+
+  it("places a rule the judge never saw as not applicable", () => {
+    expect(placementOf(undefined, undefined, 0.8)).toBe("not-applicable");
+  });
+
+  it("places an errored call as needs-review, never as a pass", () => {
+    expect(placementOf(undefined, { error: "the reply does not match the schema" }, 0.8)).toBe("needs-review");
+  });
+
+  it("splits a pass at the not-applicable bar", () => {
+    expect(placementOf(undefined, { scores: scores(80) }, 0.8)).toBe("not-applicable");
+    expect(placementOf(undefined, { scores: scores(79) }, 0.8)).toBe("followed");
   });
 });
 

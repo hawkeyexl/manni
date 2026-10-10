@@ -21,7 +21,7 @@ import { conformanceOf } from "../../src/tracevals/commands/conformance.js";
 import { discoverConfig, type TracevalsConfig } from "../../src/tracevals/core/config.js";
 import { RulesCache, rulesCacheKey } from "../../src/tracevals/rules/cache.js";
 import { promptFor, type Rule } from "../../src/tracevals/rules/extract.js";
-import { ruleKey } from "../../src/tracevals/rules/judge-prompt.js";
+import { ruleKey, type TurnScore } from "../../src/tracevals/rules/judge-prompt.js";
 import { resolveTurnSources, type RuleSource } from "../../src/tracevals/rules/sources.js";
 import { lastTurn } from "../../src/tracevals/rules/turn.js";
 import { parseTraceFile } from "../../src/tracevals/trace/claude.js";
@@ -127,6 +127,35 @@ export function ruleKeysOf(rules: CaseRules): string[] {
   return rules.sources.flatMap(({ source, rules: found }) =>
     (found ?? []).map((r) => ruleKey(source.displayPath, r.id)),
   );
+}
+
+/** Where the pipeline put one rule. */
+export type Placement = "fail" | "followed" | "not-applicable" | "needs-review";
+
+/** What the recording judge kept of one rule's call. */
+export interface Answer {
+  scores?: Record<TurnScore, number>;
+  reasoning?: string;
+  error?: string;
+  /** The call's time; a shared-prefix call's time is split evenly over its rules. */
+  ms?: number;
+}
+
+/**
+ * One rule's placement. A finding is the pipeline's own. A rule with no
+ * finding and no call never reached the judge, because its `when` failed. An
+ * errored call needs review, since manni never passes an errored item. Any
+ * other rule passed, as not applicable when that score cleared the bar.
+ */
+export function placementOf(
+  finding: { outcome: "fail" | "needs-review" } | undefined,
+  answer: Answer | undefined,
+  autoPass: number,
+): Placement {
+  if (finding !== undefined) return finding.outcome;
+  if (answer === undefined) return "not-applicable";
+  if (answer.scores === undefined) return "needs-review";
+  return answer.scores["not-applicable"] / 100 >= autoPass ? "not-applicable" : "followed";
 }
 
 /**
@@ -263,7 +292,9 @@ export class IsolatedClaudeCli implements InferenceProvider {
     // The CLI warns on stderr about a model id it does not list; stdout is the wrapper.
     const start = out.stdout.indexOf("{");
     if (out.code !== 0 || start < 0) {
-      throw new Error(`claude exited ${String(out.code)}: ${(out.stderr.trim() || out.stdout.trim()).slice(-300)}`);
+      // A timeout kill leaves no exit code.
+      const how = out.code === null ? `timed out after ${String(this.timeoutMs / 1000)}s` : `exited ${String(out.code)}`;
+      throw new Error(`claude ${how}:${(out.stderr.trim() || out.stdout.trim()).slice(-300)}`);
     }
     const wrapper = JSON.parse(out.stdout.slice(start)) as CliWrapper;
     if (typeof wrapper.total_cost_usd === "number") this.costUsd += wrapper.total_cost_usd;
