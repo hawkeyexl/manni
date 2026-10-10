@@ -294,7 +294,7 @@ export class IsolatedClaudeCli implements InferenceProvider {
     if (out.code !== 0 || start < 0) {
       // A timeout kill leaves no exit code.
       const how = out.code === null ? `timed out after ${String(this.timeoutMs / 1000)}s` : `exited ${String(out.code)}`;
-      throw new Error(`claude ${how}:${(out.stderr.trim() || out.stdout.trim()).slice(-300)}`);
+      throw new Error(`claude ${how}: ${(out.stderr.trim() || out.stdout.trim()).slice(-300)}`);
     }
     const wrapper = JSON.parse(out.stdout.slice(start)) as CliWrapper;
     if (typeof wrapper.total_cost_usd === "number") this.costUsd += wrapper.total_cost_usd;
