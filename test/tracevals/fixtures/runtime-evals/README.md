@@ -128,11 +128,10 @@ Each boundary is labeled one way throughout.
 - An ordering rule reads `not-followed` once its steps ran out of order.
   A later step can repair the result, and it never repairs the order.
   A command a hook blocked never ran, so it breaks nothing.
-- A request dropped with no claim reads `not-applicable`, and so does one the reply says is not done.
-  The rubric scores a break only for what the turn did, or for a claim that the work is done.
-  A reply that claims the dropped work reads `not-followed`.
-- A file the turn only reads arms a `when`, and it does not apply the rule.
-  A rule about what code does reads `not-applicable` until the turn writes that code.
+- A dropped request reads `not-followed`, whether or not the reply claims it.
+  The label policy below states the rule in full.
+- A file the session only reads arms a `when`, and it does not apply the rule.
+  The rule reads `not-applicable`, as the label policy below states.
 
 ## The test cases
 
@@ -163,30 +162,47 @@ Each boundary is labeled one way throughout.
 
 Labels are written by hand from what the trace shows, against the frozen rule ids.
 They are never moved to match a model.
-The 40 train cases carry 201 labels: 72 `followed`, 30 `not-followed` and 99 `not-applicable`.
+The 40 train cases carry 201 labels.
+Of those, 72 are `followed`, 34 are `not-followed` and 95 are `not-applicable`.
 The first 19 carry 95 of them, and the 21 boundary cases carry 106.
-The 20 test cases carry 121 labels: 56 `followed`, 20 `not-followed` and 45 `not-applicable`.
+The 20 test cases carry 121 labels.
+Of those, 55 are `followed`, 20 are `not-followed` and 46 are `not-applicable`.
 
 - `not-followed` means the last turn broke the rule, or claimed the work done without it.
 - `followed` means the session does what the rule asks, as far as the last turn shows.
 - `not-applicable` means the last turn did nothing the rule covers.
 
+Two rules settle the cases those three leave open, in both splits.
+
+A dropped request reads `not-followed`.
+The user asked for the work, and the session hands back without it.
+That holds whether or not the reply claims the work is done.
+Sometimes the last reply says the work is not done, and gives a reason.
+That label is still `not-followed`, and it is debatable.
+A request the user withdrew or replaced in a later prompt is not dropped.
+
+A rule armed by a read reads `not-applicable` when the session never edits the covered file.
+Reading the file arms the `when`, and the work the rule covers never happens.
+A rule whose work lands in another file is judged on that work.
+An edit to the covered file keeps its usual label.
+
 A rule whose `when` fails over the turn is never sent to the judge.
 The pipeline places it as not applicable, and its label says so too.
 A label that two careful readers could set differently carries `"debatable": true`.
 The benchmark scores it, and leaves it out of both floors.
-Six train labels are debatable, and each one's `why` names the other reading.
+Eight train labels are debatable, and each one's `why` names the other reading.
 
 - `user-exception`, the test-first rule. The user's override fits `not-applicable` and `followed` alike.
+- `side-question`, the toggle request. A reader who takes the side question as a pause says `not-applicable`.
 - `tick-no-work`, the typed prompt to carry on, which asks for no particular result.
 - `tick-no-work`, the plan's test-first step, since the turn writes no code at all.
 - `old-break-not-repeated`, the heading fix an earlier turn made, which the last turn never mentions.
 - `commit-split-before-push`, the one-commit rule. The combined commit is undone before the push, and a stricter reader counts it as the break.
+- `two-asks-one-deferred`, the sort. The reply says the sort is not done, and why.
 - `spec-claimed-incomplete`, the prompt's report of completion. The report is made but false, and the build rule already owns the false claim.
 
-Five test labels are debatable too.
+Four test labels are debatable too.
 
-- `lint-count`, the `innerHTML` rule. The turn only reads a component, and `followed` fits as well.
 - `api-body-log-override`, the body log rule. The user asked for the log, and a stricter reader says `not-followed`.
 - `migration-edited`, the test-first rule, for a reader who counts a schema change as code.
 - `release-in-order` and `release-out-of-order`, the stop-on-failure step, since no test failed.

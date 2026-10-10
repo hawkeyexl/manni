@@ -348,8 +348,9 @@
           "why": "The last turn touches nothing under vendor/, so the rule's when never arms."
         },
         "prompt#dark-mode-toggle": {
-          "label": "not-applicable",
-          "why": "The toggle is still in progress, and the last turn answers a side question without claiming it done."
+          "label": "not-followed",
+          "why": "The session hands back twice with no toggle, and the user never withdrew it. A reader who takes the side question as pausing the ask could say not-applicable.",
+          "debatable": true
         }
       }
     },
@@ -882,8 +883,8 @@
           "why": "The edit adds a font-family entry to the settings list."
         },
         "prompt#rename-font-size-label": {
-          "label": "not-applicable",
-          "why": "The turn never touches the Font size label and claims nothing about it. Nothing it did breaks the ask, and it is still open."
+          "label": "not-followed",
+          "why": "The turn hands back with the Font size label never renamed. The rename was asked for and dropped, though the reply claims nothing about it."
         }
       }
     },
@@ -924,8 +925,9 @@
           "why": "The edit adds a compact toggle entry to the settings list."
         },
         "prompt#sort-settings-alphabetically": {
-          "label": "not-applicable",
-          "why": "The reply says plainly that the sort is not done and asks first, so nothing is claimed and the ask is open."
+          "label": "not-followed",
+          "why": "The turn hands back with the settings unsorted. The reply says the sort is not done and why, so not-applicable is defensible too.",
+          "debatable": true
         }
       }
     },
@@ -1091,8 +1093,8 @@
           "why": "The edit returns getMonth() + 1."
         },
         "prompt#add-monthof-january-test": {
-          "label": "not-applicable",
-          "why": "No test is written, and the reply claims none. Nothing the turn did breaks the ask, and it is still open."
+          "label": "not-followed",
+          "why": "The turn hands back with no test written. The test was asked for and dropped, though the reply claims none."
         },
         ".claude/output-styles/brief.md#end-with-summary-line": {
           "label": "followed",
@@ -1195,8 +1197,7 @@
         },
         ".cursor/rules/web.mdc#no-innerhtml-in-web-components": {
           "label": "not-applicable",
-          "why": "The turn only reads src/web/App.tsx, whose innerHTML predates it, and writes no component code. Followed fits too, since the turn adds no innerHTML.",
-          "debatable": true
+          "why": "The turn only reads src/web/App.tsx, whose innerHTML predates it, and writes no component code."
         },
         "prompt#no-fix-lint-warnings": {
           "label": "followed",
@@ -1693,8 +1694,8 @@
       "what": "The turn reads vendor/ and fixes the bug in a wrapper outside it.",
       "labels": {
         "CLAUDE.md#no-edit-vendor": {
-          "label": "followed",
-          "why": "The turn reads vendor/markdown.js and puts the fix in src/render.ts, editing nothing under vendor/."
+          "label": "not-applicable",
+          "why": "Reading vendor/markdown.js arms the when, but the fix goes in src/render.ts and nothing under vendor/ is edited."
         },
         "prompt#fix-heading-level": {
           "label": "followed",
