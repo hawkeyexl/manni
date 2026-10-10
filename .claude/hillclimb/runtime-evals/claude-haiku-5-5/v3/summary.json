@@ -1,0 +1,8 @@
+{
+  "description": "evidence first",
+  "target": "system_prompt",
+  "judge": {
+    "provider": "claude-cli",
+    "model": "claude-haiku-5-5"
+  }
+}
