@@ -30,6 +30,7 @@ const HARNESS = [
   "test/tracevals/fixtures/runtime-evals/cases.json",
   "package-lock.json",
 ];
+const REP_TIMEOUT_MS = 90 * 60 * 1000;
 const JUDGES = {
   haiku: { provider: "claude-cli", model: "claude-haiku-5-5" },
   qwen: { provider: "llama-cpp", model: "qwen3.5-4b" },
@@ -91,10 +92,19 @@ function runRep(judge, file) {
     });
     let tail = "";
     const keep = (d) => (tail = (tail + d.toString()).slice(-4000));
+    // A vitest that never exits would block the round; the live test's own
+    // timeout cannot see a hang in startup or teardown.
+    const timer = setTimeout(() => {
+      tail += `\nkilled after ${String(REP_TIMEOUT_MS / 60000)} minutes`;
+      child.kill("SIGTERM");
+    }, REP_TIMEOUT_MS);
     child.stdout.on("data", keep);
     child.stderr.on("data", keep);
     // The live test's floors may fail the vitest run; the results file is what counts.
-    child.on("close", (code) => done({ code, tail }));
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      done({ code, tail });
+    });
   });
 }
 

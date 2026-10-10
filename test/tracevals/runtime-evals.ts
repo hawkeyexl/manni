@@ -308,7 +308,12 @@ export class IsolatedClaudeCli implements InferenceProvider {
     // Claude Code tells the model whether its cwd is a git repository. An empty
     // non-repo cwd reads as "not a git repository", which the judge took as a
     // fact about the judged session and let into rules about commits.
-    spawnSync("git", ["init", "-q"], { cwd, stdio: "ignore" });
+    // A failed init would quietly bring back the leak, so it stops the call.
+    const init = spawnSync("git", ["init", "-q"], { cwd, stdio: "ignore" });
+    if (init.status !== 0) {
+      await rm(cwd, { recursive: true, force: true });
+      throw new Error(`git init failed in ${cwd}: ${init.error?.message ?? `exit ${String(init.status)}`}`);
+    }
     let out: RunOutput;
     try {
       out = await runClaude(
