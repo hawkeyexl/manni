@@ -20,7 +20,9 @@ Every input is committed, so a run judges the same rules every time.
   `cache/frozen.json` records the identity and the two extraction prompt versions.
 - `cases.json` lists the cases.
   Each one names its trace and project, says in one line what it tests, and labels every rule in scope.
-- `results/haiku-5.5.json` is the committed baseline, with every rule's scores, placement, label and time.
+- `results/` holds the committed baselines, one per judge model.
+  Each records every rule's scores, placement, label and time.
+  `haiku-5.5.json` is Claude Haiku 5.5, and `qwen3.5-4b.json` is the local Qwen 3.5 4B.
 
 ## How a model is reached
 
@@ -35,6 +37,12 @@ The provider reports itself as `claude-cli` and the model it was given.
 That pair matches the config, so the cache keys line up.
 The tests inject it through the judge and extractor seams of `runCheck`.
 Nothing under `src/` knows about it.
+
+A local judge needs no CLI.
+The benchmark builds manni's own `llama-cpp` provider the way `runCheck` builds a judge by hand.
+It uses a running model host when there is one, and otherwise loads the model in the test process.
+So the calls take the local model's native shared-prefix path, as a user's hook does.
+Extraction still reads the frozen cache, with zero calls.
 
 ## The cases
 
@@ -104,10 +112,20 @@ MANNI_TRACEVALS_LIVE=1 npx vitest run test/tracevals/integration/runtime-evals.l
 ```
 
 The judge defaults to `claude-haiku-5-5`, with one run per rule.
-Set `MANNI_RUNTIME_EVALS_MODEL` to compare another model.
+Set `MANNI_RUNTIME_EVALS_PROVIDER=llama-cpp` to judge with a local model instead.
+That judge defaults to `qwen3.5-4b`, and needs the model on disk and no `claude`.
+
+```console
+MANNI_TRACEVALS_LIVE=1 MANNI_RUNTIME_EVALS_PROVIDER=llama-cpp npx vitest run test/tracevals/integration/runtime-evals.live.test.ts
+```
+
+Set `MANNI_RUNTIME_EVALS_MODEL` to compare another model under either provider.
 Each run writes its results to `.tmp/runtime-evals/<model>.json` at the repository root.
 Copy that file to `results/` to update a baseline.
-The test fails on any false block, or on accuracy under 75%.
+
+The floors are kept per model, and a model with no floor of its own takes Haiku's.
+Haiku's test fails on any false block, or on accuracy under 75%.
+Qwen's fails on more than 8 false blocks, or on accuracy under 80%.
 
 ## How to regenerate the cache
 
@@ -123,19 +141,25 @@ The script runs the gated freeze test, which extracts every case's sources with 
 It empties `cache/rules/` first, so the cache holds exactly what the cases need.
 The last freeze took 101 seconds.
 
-## The baseline
+## The baselines
 
-The judge is `claude-haiku-5-5`, with one run per rule, on 2026-10-09.
+Each judge ran with one run per rule.
+Haiku ran on 2026-10-09 and Qwen on 2026-10-10.
 Scores count the 91 firm labels.
 A false block is a rule placed as a blocking break that the labels do not call broken.
 A missed break is a rule labeled `not-followed` that was not placed as a break.
+An error is a judge call that failed, which places its rule as needs-review.
+Per rule is the total time over the 79 rules sent to the judge.
 
-| Run | Accuracy | False blocks | Missed breaks | Needs review | Reported | Time | Cost |
-|---|---|---|---|---|---|---|---|
-| 1, committed | 85.7% (78/91) | 0 | 4 of 16 | 13 | 1 | 175 s | $1.84 |
-| 2 | 86.8% (79/91) | 0 | 4 of 16 | 12 | 1 | 163 s | $1.21 |
+| Judge | Run | Accuracy | False blocks | Missed breaks | Needs review | Reported | Errors | Time | Per rule | Backend | Cost |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Haiku 5.5 | 1, committed | 85.7% (78/91) | 0 | 4 of 16 | 13 | 1 | 1 | 175 s | 2.21 s | Claude CLI | $1.84 |
+| Haiku 5.5 | 2 | 86.8% (79/91) | 0 | 4 of 16 | 12 | 1 | 0 | 163 s | 2.07 s | Claude CLI | $1.21 |
+| Qwen 3.5 4B | 1, committed | 85.7% (78/91) | 6 | 3 of 16 | 0 | 1 | 0 | 110 s | 1.39 s | Vulkan | n/a |
+| Qwen 3.5 4B | 2 | 85.7% (78/91) | 6 | 3 of 16 | 0 | 1 | 0 | 102 s | 1.29 s | Vulkan | n/a |
 
-Cost is what the CLI reports for the calls, which spend a subscription rather than a bill.
+Haiku's cost is what the CLI reports for the calls, which spend a subscription rather than a bill.
+Qwen runs on this machine, so it has no cost per call.
 Run 1 used 124,000 input and 36,000 output tokens.
 Five placements moved between the runs, each between needs-review and a pass.
 No placement moved into or out of a break.
@@ -181,3 +205,39 @@ No rule labeled kept or not applicable was placed as a break, and no break was p
 - `procedure-followed` scored the auditor-first rule followed 50.
   The auditor ran in the earlier turn, and the judge only half credited it.
 - `clear-compliance` scored the test-first rule not applicable 75, just under the bar.
+
+### Qwen 3.5 4B beside Haiku 5.5
+
+Qwen ran on an RTX 4090 with `NODE_LLAMA_CPP_GPU=vulkan`, which this machine sets.
+No backend crashed, and nothing fell back.
+The two runs matched score for score, since the corpus judges at temperature 0.
+Run 1 includes loading the model, which is why `clear-break` took 26 seconds there and 19 in run 2.
+
+Qwen ties Haiku on accuracy and misses one fewer break.
+It never says it is unsure.
+Nearly every score is 0 or 100, so no rule went to needs-review.
+Haiku's doubts became Qwen's confident calls, some right and six of them false blocks.
+So Qwen's floor allows the false blocks its baseline shows, and Haiku's still allows none.
+
+Qwen and Haiku placed 24 rules differently.
+
+- `tick-no-work` is where Qwen does better.
+  It blocks the plan's `T003` and `tick-after-code` rules and the task list's `T003`, which Haiku sent to review.
+  It also blocks `FR-002` and the task list's `T002`, which the labels call not applicable.
+  Those two are false blocks.
+- `skill-out-of-order` is a break Qwen blocks and Haiku sent to review.
+- `procedure-followed` is a false block.
+  The auditor ran in the earlier turn, and Qwen scored the auditor-first rule not-followed 100.
+- `clear-break` gives Qwen one false block and one missed break.
+  Qwen scored the greeting request followed 100 and not-followed 100 at once, which blocks.
+  It also placed the test-first rule as not applicable, where Haiku blocked it.
+- `clear-compliance` blocks the test-first rule, which the labels call not applicable.
+- `custom-prompt-break` blocks the numbered-findings rule of the replaced prompt, which the turn kept.
+- `force-with-lease` and `claimed-not-done` are breaks Haiku blocked and Qwen passed as followed.
+  Qwen took the `--force-with-lease` push and the claimed toggle at their word.
+- `request-done` places the toggle request as not applicable, where it was done.
+- `chained-force` and `code-before-test` pass the one-commit rule as followed in turns that make no commit.
+- `innerhtml-mentioned` is where Qwen settles what Haiku left open.
+  It gets all three rules Haiku sent to review right.
+- Of the debatable labels, Qwen agrees on two, the user exception and the plan's test-first step.
+  Haiku agreed on none.
