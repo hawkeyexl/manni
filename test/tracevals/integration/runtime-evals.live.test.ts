@@ -327,7 +327,7 @@ describe.skipIf(!live)(`runtime evals (live judge ${PROVIDER}/${MODEL})`, () => 
 
     const rows = results.map((r) => {
       const firmPairs = r.pairs.filter((p) => !p.debatable);
-      const wrong = r.pairs.filter((p) => !p.correct).map((p) => `${p.key} ${p.label}→${p.placement}`);
+      const wrong = r.pairs.filter((p) => !p.debatable && !p.correct).map((p) => `${p.key} ${p.label}→${p.placement}`);
       return `${r.id.padEnd(24)} ${String(firmPairs.filter((p) => p.correct).length).padStart(2)}/${String(firmPairs.length).padEnd(3)} ${(r.ms / 1000).toFixed(1).padStart(6)}s  ${wrong.join("; ")}`;
     });
     console.log(
