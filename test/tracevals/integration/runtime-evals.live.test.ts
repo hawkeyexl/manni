@@ -21,7 +21,7 @@
  */
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   canDecide,
@@ -355,10 +355,14 @@ describe.skipIf(!live)(`runtime evals (live judge ${PROVIDER}/${MODEL})`, () => 
           backendWarnings,
         }
       : { provider: PROVIDER, model: MODEL, runs: 1, transport: "isolated claude -p" };
-    const outDir = fileURLToPath(new URL("../../../.tmp/runtime-evals/", import.meta.url));
-    await mkdir(outDir, { recursive: true });
+    // MANNI_RUNTIME_EVALS_OUT names the results file, as the hill-climb runner
+    // does for each rep; by default it is .tmp/runtime-evals/<model>.json.
+    const outFile =
+      process.env.MANNI_RUNTIME_EVALS_OUT ??
+      join(fileURLToPath(new URL("../../../.tmp/runtime-evals/", import.meta.url)), `${slug(MODEL)}.json`);
+    await mkdir(dirname(outFile), { recursive: true });
     await writeFile(
-      join(outDir, `${slug(MODEL)}.json`),
+      outFile,
       `${JSON.stringify({ judge: judgeInfo, started, summary, cases: results }, null, 2)}\n`,
       "utf-8",
     );

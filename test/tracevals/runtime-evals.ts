@@ -236,6 +236,8 @@ interface CliWrapper {
   is_error?: unknown;
   total_cost_usd?: unknown;
   usage?: Record<string, unknown>;
+  /** Keyed by the model that served the call, which may differ from the one asked for. */
+  modelUsage?: Record<string, unknown>;
 }
 
 const tokensOf = (usage: Record<string, unknown> | undefined, ...names: string[]): number =>
@@ -302,6 +304,12 @@ export class IsolatedClaudeCli implements InferenceProvider {
     }
     const wrapper = JSON.parse(out.stdout.slice(start)) as CliWrapper;
     if (typeof wrapper.total_cost_usd === "number") this.costUsd += wrapper.total_cost_usd;
+    // Score only what the asked-for model said: a silent substitution would
+    // make every comparison between judges meaningless.
+    const served = Object.keys(wrapper.modelUsage ?? {});
+    if (served.length > 0 && !served.includes(this.model)) {
+      throw new Error(`claude served ${served.join(", ")} instead of ${this.model}`);
+    }
     if (wrapper.is_error === true || typeof wrapper.result !== "string") {
       throw new Error(`claude returned no result: ${JSON.stringify(wrapper.result ?? null).slice(0, 300)}`);
     }
