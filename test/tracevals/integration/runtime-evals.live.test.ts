@@ -238,17 +238,26 @@ describe.skipIf(!live)(`runtime evals (live judge ${PROVIDER}/${MODEL})`, () => 
         const judge = recording(local ?? cli, keys);
         const guard = extractionGuard(config);
         const t0 = performance.now();
-        const { report } = await runCheck({
-          tracePath: join(CORPUS, c.trace),
-          project: join(CORPUS, c.project),
-          configDir: scratch,
-          provider: PROVIDER,
-          model: MODEL,
-          runs: 1,
-          env: homeEnv(home),
-          judge: judge.provider,
-          extractor: guard,
-        });
+        // A case whose every judge call errored throws from runCheck. Score it
+        // as errored (needs-review) rather than end the whole pass.
+        let report: Awaited<ReturnType<typeof runCheck>>["report"];
+        try {
+          ({ report } = await runCheck({
+            tracePath: join(CORPUS, c.trace),
+            project: join(CORPUS, c.project),
+            configDir: scratch,
+            provider: PROVIDER,
+            model: MODEL,
+            runs: 1,
+            env: homeEnv(home),
+            judge: judge.provider,
+            extractor: guard,
+          }));
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          report = { findings: [], exitCode: 2, warnings: [`could not judge: ${message}`] } as unknown as typeof report;
+          for (const key of keys) if (!judge.answers.has(key)) judge.answers.set(key, { error: message });
+        }
         const ms = Math.round(performance.now() - t0);
         expect(guard.calls, `${c.id} extracted`).toBe(0);
         const findings = new Map(report.findings.map((f) => [`${f.source}#${f.rule}`, f]));

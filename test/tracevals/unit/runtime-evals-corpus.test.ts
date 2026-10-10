@@ -22,6 +22,7 @@ import {
   homeEnv,
   loadCases,
   loadFrozen,
+  firstObject,
   placementOf,
   ruleKeysOf,
   scratchConfigDir,
@@ -64,6 +65,15 @@ describe("the runtime-evals frozen cache", () => {
     expect(loadFrozen().extraction, `the config names a different extraction model; ${REGENERATE}`).toEqual(
       extractionIdentity(config),
     );
+  });
+});
+
+describe("the CLI judge's reply parsing", () => {
+  it("keeps the first balanced object and drops text after it", () => {
+    expect(firstObject('{"a":1}\n\nNote: done.')).toBe('{"a":1}');
+    expect(firstObject('Here: {"a":{"b":"}"}} and more {"c":2}')).toBe('{"a":{"b":"}"}}');
+    expect(firstObject('{"q":"a \\" brace }"}x')).toBe('{"q":"a \\" brace }"}');
+    expect(firstObject("no json")).toBe("no json");
   });
 });
 

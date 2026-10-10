@@ -231,6 +231,27 @@ function runClaude(args: string[], input: string, cwd: string, timeoutMs: number
   });
 }
 
+/**
+ * The first balanced JSON object in `text`, or `text` itself when it has none.
+ * A reply that writes its object and then keeps talking still parses.
+ */
+export function firstObject(text: string): string {
+  const start = text.indexOf("{");
+  if (start < 0) return text;
+  let depth = 0;
+  let quoted = false;
+  for (let i = start; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === "\\") i += 1;
+      else if (ch === '"') quoted = false;
+    } else if (ch === '"') quoted = true;
+    else if (ch === "{") depth += 1;
+    else if (ch === "}" && --depth === 0) return text.slice(start, i + 1);
+  }
+  return text;
+}
+
 interface CliWrapper {
   result?: unknown;
   is_error?: unknown;
@@ -313,7 +334,7 @@ export class IsolatedClaudeCli implements InferenceProvider {
     if (wrapper.is_error === true || typeof wrapper.result !== "string") {
       throw new Error(`claude returned no result: ${JSON.stringify(wrapper.result ?? null).slice(0, 300)}`);
     }
-    const json = extractJson(wrapper.result);
+    const json = extractJson(firstObject(wrapper.result));
     const validate = validatorFor(req.schema);
     if (!validate(json)) {
       throw new Error(`the reply does not match the schema: ${JSON.stringify(validate.errors?.[0] ?? {})}`);
