@@ -102,6 +102,7 @@ function runRep(judge, file) {
 async function build(judge, roundDir, cases, meta) {
   const rawDir = join(roundDir, "raw");
   const reps = (await readdir(rawDir)).filter((f) => /^rep\d+\.json$/.test(f)).sort();
+  if (reps.length === 0) throw new Error(`${rawDir}: no rep results to build a round from`);
   const split = new Map(cases.map((c) => [c.id, c]));
   const rows = [];
   await mkdir(join(roundDir, "traces"), { recursive: true });
@@ -166,7 +167,7 @@ async function build(judge, roundDir, cases, meta) {
     const rs = rows.filter((r) => r.tags[0] === s);
     const n = rs.length;
     const sum = (k) => rs.reduce((a, r) => a + r.grade[k], 0);
-    const per = reps.length || 1;
+    const per = reps.length;
     return {
       n,
       accuracy: n ? sum("accuracy") / n : 0,
