@@ -305,6 +305,10 @@ export class IsolatedClaudeCli implements InferenceProvider {
       JSON.stringify(req.schema),
     ].join("\n");
     const cwd = await mkdtemp(join(tmpdir(), "runtime-evals-cli-"));
+    // Claude Code tells the model whether its cwd is a git repository. An empty
+    // non-repo cwd reads as "not a git repository", which the judge took as a
+    // fact about the judged session and let into rules about commits.
+    spawnSync("git", ["init", "-q"], { cwd, stdio: "ignore" });
     let out: RunOutput;
     try {
       out = await runClaude(
