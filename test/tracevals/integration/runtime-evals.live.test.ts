@@ -240,7 +240,9 @@ describe.skipIf(!live)(`runtime evals (live judge ${PROVIDER}/${MODEL})`, () => 
         const t0 = performance.now();
         // A case whose every judge call errored throws from runCheck. Score it
         // as errored (needs-review) rather than end the whole pass.
-        let report: Awaited<ReturnType<typeof runCheck>>["report"];
+        // Only these three fields of the report are read, so the error path
+        // builds exactly them and needs no cast.
+        let report: Pick<Awaited<ReturnType<typeof runCheck>>["report"], "findings" | "exitCode" | "warnings">;
         try {
           ({ report } = await runCheck({
             tracePath: join(CORPUS, c.trace),
@@ -255,7 +257,7 @@ describe.skipIf(!live)(`runtime evals (live judge ${PROVIDER}/${MODEL})`, () => 
           }));
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
-          report = { findings: [], exitCode: 2, warnings: [`could not judge: ${message}`] } as unknown as typeof report;
+          report = { findings: [], exitCode: 2, warnings: [`could not judge: ${message}`] };
           for (const key of keys) if (!judge.answers.has(key)) judge.answers.set(key, { error: message });
         }
         const ms = Math.round(performance.now() - t0);

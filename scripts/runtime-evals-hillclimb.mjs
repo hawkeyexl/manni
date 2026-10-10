@@ -38,9 +38,11 @@ const JUDGES = {
 function args() {
   const out = { round: "", reps: 3, judges: Object.keys(JUDGES), desc: "", target: "code", approve: false };
   const a = process.argv.slice(2);
+  const valued = new Set(["--round", "--reps", "--judges", "--desc", "--target"]);
   for (let i = 0; i < a.length; i += 1) {
     const k = a[i];
     const v = a[i + 1];
+    if (valued.has(k) && (v === undefined || v.startsWith("--"))) throw new Error(`${k} needs a value`);
     if (k === "--round") out.round = v, i += 1;
     else if (k === "--reps") out.reps = Number(v), i += 1;
     else if (k === "--judges") out.judges = v.split(","), i += 1;
@@ -108,7 +110,8 @@ async function build(judge, roundDir, cases, meta) {
     const run = await readJson(join(rawDir, f));
     for (const result of run.cases) {
       const c = split.get(result.id);
-      if (c === undefined) continue;
+      // A results file from another case list would score the wrong set.
+      if (c === undefined) throw new Error(`${f}: case ${result.id} is not in cases.json`);
       const firm = result.pairs.filter((p) => !p.debatable);
       const share = firm.length > 0 ? 1 / result.pairs.length : 0;
       for (const p of firm) {

@@ -74,6 +74,8 @@ describe("the CLI judge's reply parsing", () => {
     expect(firstObject('Here: {"a":{"b":"}"}} and more {"c":2}')).toBe('{"a":{"b":"}"}}');
     expect(firstObject('{"q":"a \\" brace }"}x')).toBe('{"q":"a \\" brace }"}');
     expect(firstObject("no json")).toBe("no json");
+    // An object that never closes falls back to the text, which the JSON parse then rejects.
+    expect(firstObject('Reply: {"a":1, "b":')).toBe('Reply: {"a":1, "b":');
   });
 });
 
