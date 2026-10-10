@@ -1,0 +1,10 @@
+[
+  {
+    "id": "no-edit-or-write-files",
+    "text": "Never edit or write files; this session only reviews."
+  },
+  {
+    "id": "findings-numbered-list",
+    "text": "Report each finding as a numbered list item."
+  }
+]

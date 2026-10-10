@@ -1,0 +1,14 @@
+[
+  {
+    "id": "commit-parser-fix",
+    "text": "Commit the parser fix."
+  },
+  {
+    "id": "run-tests",
+    "text": "Run the tests."
+  },
+  {
+    "id": "push-changes",
+    "text": "Push the commit."
+  }
+]

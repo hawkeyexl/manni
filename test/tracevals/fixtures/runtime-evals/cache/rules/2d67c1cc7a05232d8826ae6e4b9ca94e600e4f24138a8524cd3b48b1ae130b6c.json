@@ -1,0 +1,10 @@
+[
+  {
+    "id": "fix-heading-bug",
+    "text": "Fix the heading bug in the markdown renderer."
+  },
+  {
+    "id": "add-changelog-entry",
+    "text": "Add a changelog entry for the heading bug fix in the markdown renderer."
+  }
+]

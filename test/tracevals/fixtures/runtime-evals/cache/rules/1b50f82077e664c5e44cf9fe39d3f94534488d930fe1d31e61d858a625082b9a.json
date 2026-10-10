@@ -1,0 +1,13 @@
+[
+  {
+    "id": "npm-ci-before-test",
+    "text": "Run `npm ci` before `npm test`.",
+    "when": {
+      "command-matches": "npm (test|t\\b|run test)"
+    }
+  },
+  {
+    "id": "no-force-push",
+    "text": "Never force push."
+  }
+]

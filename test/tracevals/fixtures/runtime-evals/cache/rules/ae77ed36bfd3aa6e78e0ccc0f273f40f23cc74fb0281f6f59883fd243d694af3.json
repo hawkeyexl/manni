@@ -1,0 +1,9 @@
+[
+  {
+    "id": "conventional-commits",
+    "text": "Write every commit message in Conventional Commits form.",
+    "when": {
+      "command-matches": "git\\s+commit"
+    }
+  }
+]
