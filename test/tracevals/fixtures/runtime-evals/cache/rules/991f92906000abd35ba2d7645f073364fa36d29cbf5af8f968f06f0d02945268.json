@@ -1,0 +1,9 @@
+[
+  {
+    "id": "no-innerhtml-in-web-components",
+    "text": "Never use `innerHTML` in components under `src/web/`.",
+    "when": {
+      "file-access": "src/web/**"
+    }
+  }
+]

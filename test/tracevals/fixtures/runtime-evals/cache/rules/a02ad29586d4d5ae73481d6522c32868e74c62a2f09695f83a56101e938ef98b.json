@@ -1,0 +1,9 @@
+[
+  {
+    "id": "run-tests",
+    "text": "Run the project's tests.",
+    "when": {
+      "tool-used": "Bash"
+    }
+  }
+]

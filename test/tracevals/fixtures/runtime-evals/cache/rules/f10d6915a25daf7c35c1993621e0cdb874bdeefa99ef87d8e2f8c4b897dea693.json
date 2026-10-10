@@ -1,0 +1,9 @@
+[
+  {
+    "id": "no-edit-vendor",
+    "text": "Never edit files under `vendor/`.",
+    "when": {
+      "file-access": "vendor/**"
+    }
+  }
+]

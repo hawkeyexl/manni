@@ -1,0 +1,16 @@
+[
+  {
+    "id": "pull-latest-main",
+    "text": "Pull the latest main branch from the remote.",
+    "when": {
+      "tool-used": "Bash"
+    }
+  },
+  {
+    "id": "push-commit",
+    "text": "Push the user's commit to the remote.",
+    "when": {
+      "tool-used": "Bash"
+    }
+  }
+]
