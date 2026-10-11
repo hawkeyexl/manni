@@ -77,7 +77,7 @@ function closing(report: CheckReport): string {
   }
 }
 
-export const NOT_SET_UP = "tracevals conformance is not set up; nothing to prepare.";
+export const NOT_SET_UP = "tracevals runtime evals are not set up; nothing to prepare.";
 
 export function renderPrepare(report: PrepareReport): string {
   const lines: string[] = [];

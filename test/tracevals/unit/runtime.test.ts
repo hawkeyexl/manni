@@ -1,6 +1,6 @@
 /**
  * `check`, `prepare` and `release`, through their command cores (proposal
- * 0079). Every run works on a copy of the conformance fixture project, so the
+ * 0079). Every run works on a copy of the runtime fixture project, so the
  * rules and verdict caches they write never reach the committed tree, and the
  * user-level sources come from an empty home.
  */
@@ -14,10 +14,10 @@ import {
   type InferenceProvider,
 } from "@hawkeyexl/inference";
 import { checkTurn, runCheck, type CheckOptions } from "../../../src/tracevals/commands/check.js";
-import { JUDGE_ENV } from "../../../src/tracevals/commands/conformance.js";
+import { JUDGE_ENV } from "../../../src/tracevals/commands/runtime.js";
 import { runPrepare } from "../../../src/tracevals/commands/prepare.js";
 import { runRelease } from "../../../src/tracevals/commands/release.js";
-import { renderCheck, renderRelease } from "../../../src/tracevals/reporters/conformance.js";
+import { renderCheck, renderRelease } from "../../../src/tracevals/reporters/runtime.js";
 import type { HostApi } from "../../../src/tracevals/rules/host.js";
 import type { LocalModels } from "../../../src/tracevals/rules/local.js";
 import { mockTurnJudge, mockTurnScores } from "../../../src/tracevals/rules/mock.js";
@@ -25,7 +25,7 @@ import { ledgerPath, recordTurn, writeLedger, type Ledger } from "../../../src/t
 import { JEV_OUT_OF_LOOP } from "../../../src/tracevals/judge/provider.js";
 import { resetWarnings } from "../../../src/shared/warn.js";
 
-const FIXTURE = join(import.meta.dirname, "..", "fixtures", "conformance");
+const FIXTURE = join(import.meta.dirname, "..", "fixtures", "runtime");
 const TRACES = join(FIXTURE, "traces");
 const trace = (name: string): string => join(TRACES, `${name}.jsonl`);
 
@@ -35,7 +35,7 @@ let env: Record<string, string>;
 const savedJudgeEnv = process.env[JUDGE_ENV];
 
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), "conformance-"));
+  dir = await mkdtemp(join(tmpdir(), "runtime-"));
   project = join(dir, "project");
   await cp(join(FIXTURE, "project"), project, { recursive: true });
   const home = join(dir, "home");
@@ -176,7 +176,7 @@ describe("check by hand", () => {
   });
 
   it("drops the system prompt that exclude names", async () => {
-    await config("tracevals:\n  provider: mock\n  conformance:\n    exclude: [system-prompt]\n");
+    await config("tracevals:\n  provider: mock\n  runtime:\n    exclude: [system-prompt]\n");
     const { report } = await check("system-prompt-custom");
     expect(report.sources.map((s) => s.path)).not.toContain("system-prompt");
     expect(report.exitCode).toBe(0);
@@ -260,7 +260,7 @@ describe("check by hand", () => {
   });
 
   it("refuses jev as the extraction model", async () => {
-    await config("tracevals:\n  provider: jev\n  conformance: {}\n");
+    await config("tracevals:\n  provider: jev\n  runtime: {}\n");
     await expect(check("breaks", { provider: "mock" })).rejects.toThrow(JEV_OUT_OF_LOOP);
   });
 
@@ -316,7 +316,7 @@ describe("check by hand", () => {
 });
 
 describe("checkTurn, inside a hook", () => {
-  it("stays silent when conformance is not set up (gate 1)", async () => {
+  it("stays silent when runtime evals are not set up (gate 1)", async () => {
     await config("tracevals:\n  provider: mock\n");
     expect(await hook("breaks")).toEqual({ skipped: { gate: "not-in-play" }, findings: [], exitCode: 0 });
   });
@@ -330,11 +330,11 @@ describe("checkTurn, inside a hook", () => {
     expect((await hook("empty-turn")).skipped).toEqual({ gate: "empty-turn" });
     const bare = join(dir, "bare");
     await mkdir(bare);
-    await writeFile(join(bare, "manni.config.yaml"), "tracevals:\n  provider: mock\n  conformance: {}\n");
+    await writeFile(join(bare, "manni.config.yaml"), "tracevals:\n  provider: mock\n  runtime: {}\n");
     // The typed prompts are a source of every turn, and these ask for nothing.
     expect((await hook("untouched", { cwd: bare })).skipped).toEqual({ gate: "not-applicable" });
     await config(
-      "tracevals:\n  provider: mock\n  conformance:\n    exclude: [AGENTS.md, .cursor/rules/stale.mdc]\n",
+      "tracevals:\n  provider: mock\n  runtime:\n    exclude: [AGENTS.md, .cursor/rules/stale.mdc]\n",
     );
     const none = await hook("untouched");
     expect(none.skipped).toEqual({ gate: "not-applicable" });
@@ -343,7 +343,7 @@ describe("checkTurn, inside a hook", () => {
 
   it("judges with the hook's model and extracts with the out-of-loop one", async () => {
     await config(
-      "tracevals:\n  provider: mock\n  conformance:\n    exclude: [.cursor/rules/stale.mdc]\n    hook: { model: hook-model, runs: 2 }\n",
+      "tracevals:\n  provider: mock\n  runtime:\n    exclude: [.cursor/rules/stale.mdc]\n    hook: { model: hook-model, runs: 2 }\n",
     );
     const result = await hook("breaks");
     expect(result.exitCode).toBe(1);
@@ -361,7 +361,7 @@ describe("checkTurn, inside a hook", () => {
     expect(custom.exitCode).toBe(1);
   });
 
-  it("brings a touched conformance.plans file in under the hook (proposal 0080)", async () => {
+  it("brings a touched runtime.plans file in under the hook (proposal 0080)", async () => {
     const asked = join(dir, "requests");
     await cp(join(FIXTURE, "requests"), asked, { recursive: true });
     const result = await checkTurn({
@@ -573,13 +573,13 @@ describe("the session ledger", () => {
 
     const bare = join(dir, "bare");
     await mkdir(bare);
-    await writeFile(join(bare, "manni.config.yaml"), "tracevals:\n  provider: mock\n  conformance: {}\n");
+    await writeFile(join(bare, "manni.config.yaml"), "tracevals:\n  provider: mock\n  runtime: {}\n");
     // The typed prompts are the bare project's one source, and ask for nothing.
     expect((await hook("untouched", { cwd: bare, judge })).skipped).toEqual({ gate: "not-applicable" });
     const [asked] = (JSON.parse(await readFile(ledgerPath(bare, SESSION, null), "utf-8")) as Ledger).turns;
     expect(asked).toMatchObject({ sources: ["prompt"] });
 
-    await config("tracevals:\n  provider: mock\n  conformance:\n    exclude: [AGENTS.md, .cursor/rules/stale.mdc]\n");
+    await config("tracevals:\n  provider: mock\n  runtime:\n    exclude: [AGENTS.md, .cursor/rules/stale.mdc]\n");
     expect((await hook("untouched", { judge })).skipped).toEqual({ gate: "not-applicable" });
     const ledger = await read();
     expect(ledger.turns).toContainEqual(
@@ -708,10 +708,10 @@ describe("the session ledger", () => {
 });
 
 describe("prepare", () => {
-  it("says so when conformance is not set up", async () => {
+  it("says so when runtime evals are not set up", async () => {
     await config("tracevals:\n  provider: mock\n");
     const result = await runPrepare({ stdin: "", project, env });
-    expect(result.stdout).toBe("tracevals conformance is not set up; nothing to prepare.");
+    expect(result.stdout).toBe("tracevals runtime evals are not set up; nothing to prepare.");
     expect(result.exitCode).toBe(0);
   });
 
@@ -745,7 +745,7 @@ describe("prepare", () => {
   it("lists hosted models, and fetches a local one once", async () => {
     const local = localModels();
     await config(
-      "tracevals:\n  provider: mock\n  conformance:\n    hook: { provider: llama-cpp, model: qwen3.5-4b }\n",
+      "tracevals:\n  provider: mock\n  runtime:\n    hook: { provider: llama-cpp, model: qwen3.5-4b }\n",
     );
     const result = await runPrepare({ stdin: "", project, env, localModels: local, format: "json" });
     expect(result.report.models).toEqual([
@@ -759,7 +759,7 @@ describe("prepare", () => {
   });
 
   it("names a model it could not download", async () => {
-    await config("tracevals:\n  provider: mock\n  conformance:\n    hook: { provider: llama-cpp, model: qwen3.5-4b }\n");
+    await config("tracevals:\n  provider: mock\n  runtime:\n    hook: { provider: llama-cpp, model: qwen3.5-4b }\n");
     const local = localModels({ ensure: () => Promise.reject(new Error("disk full\nmore")) });
     await expect(runPrepare({ stdin: "", project, env, localModels: local })).rejects.toThrow(
       "could not download qwen3.5-4b: disk full",
@@ -774,14 +774,14 @@ describe("prepare", () => {
   });
 
   it("skips hosted extraction under --offline", async () => {
-    await config("tracevals:\n  provider: anthropic\n  conformance: {}\n");
+    await config("tracevals:\n  provider: anthropic\n  runtime: {}\n");
     const result = await runPrepare({ stdin: "", project, env, offline: true, format: "json" });
     expect(result.report.extraction).toBeNull();
     expect(result.report.models.every((m) => m.state === "hosted")).toBe(true);
   });
 
   it("refuses jev as the extraction model", async () => {
-    await config("tracevals:\n  provider: jev\n  conformance: {}\n");
+    await config("tracevals:\n  provider: jev\n  runtime: {}\n");
     await expect(runPrepare({ stdin: "", project, env })).rejects.toThrow(JEV_OUT_OF_LOOP);
   });
 

@@ -14,7 +14,7 @@ applies-to: ["domain:family"]
 next-steps: ["family-check", "family-claude-code"]
 sample-questions: ["What does manni check run when I name files?", "What exit code does manni check use under a Claude Code hook?", "What does the manni check JSON report look like?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-07
+last-updated: 2026-10-11
 tags:
   - cli
   - exit-codes
@@ -120,7 +120,7 @@ in play.
 | `term` | The collections hold at least one term. | `term check` | `no terms in any collection` |
 | `graph` | `graph:` exists. | `graph build` in memory, writing no file, then `graph check` | `no graph: section` |
 | `a11y` | Never. `check` does not run it, since it needs a built site and a browser. | none | `run manni a11y check against a running site` |
-| `tracevals` | Only under a Claude Code hook, and only when `tracevals:` holds a `conformance:` section. A bare `check` never runs it, since it needs recorded sessions and a model. | none on the command line | `run manni tracevals run over sessions` |
+| `tracevals` | Only under a Claude Code hook, and only when `tracevals:` holds a `runtime:` section. A bare `check` never runs it, since it needs recorded sessions and a model. | none on the command line | `run manni tracevals run over sessions` |
 
 `check` reads only the files that belong to a collection declared under
 `collections:`. A file outside every collection passes silently, with one notice
@@ -292,7 +292,7 @@ The `Stop` run needs git. Outside a repository it prints nothing and exits `0`.
 
 ### `tracevals` under hooks
 
-When `tracevals.conformance` exists in `manni.config.yaml`, `manni check` also runs tracevals under a
+When `tracevals.runtime` exists in `manni.config.yaml`, `manni check` also runs tracevals under a
 hook envelope. The plugin's hooks are these. Each runs the first manni the plugin's launcher
 finds, as [Claude Code](/manni/family/claude-code/) describes.
 
@@ -305,7 +305,7 @@ finds, as [Claude Code](/manni/family/claude-code/) describes.
 
 An async hook never blocks the session, and Claude Code does not enforce its timeout.
 
-| Envelope | What runs when `conformance` exists |
+| Envelope | What runs when `runtime` exists |
 |---|---|
 | `SessionStart` | `tracevals prepare`, in the background. |
 | `Stop` | The file checks above, then a judgement of `transcript_path` with the hook model. |
@@ -313,7 +313,7 @@ An async hook never blocks the session, and Claude Code does not enforce its tim
 | `SessionEnd` | `tracevals release` for the session. |
 | none | `manni check` does not run tracevals, because there is no session to judge. |
 
-Without a `conformance` section the judgement never runs, and the `tracevals` row of `status` stays
+Without a `runtime` section the judgement never runs, and the `tracevals` row of `status` stays
 `not checked`. Every reply below exits `0` and writes JSON to stdout.
 
 | Situation | Reply |

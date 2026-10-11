@@ -5,7 +5,7 @@
  * memory now.
  */
 import { parseHookPayload, readStdin } from "../capture/hook.js";
-import { renderRelease } from "../reporters/conformance.js";
+import { renderRelease } from "../reporters/runtime.js";
 import type { SummaryFormat } from "../reporters/index.js";
 import { releaseHost, type HostApi, type ReleaseResult } from "../rules/host.js";
 import { TracevalsError } from "../types.js";

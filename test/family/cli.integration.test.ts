@@ -229,19 +229,19 @@ describe.skipIf(!gitAvailable())("manni check, under a hook", () => {
 });
 
 describe("manni check, judging the turn", () => {
-  const conformance = resolve(root, "test", "tracevals", "fixtures", "conformance");
-  const trace = (name: string): string => join(conformance, "traces", `${name}.jsonl`);
+  const runtime = resolve(root, "test", "tracevals", "fixtures", "runtime");
+  const trace = (name: string): string => join(runtime, "traces", `${name}.jsonl`);
   // The count follows the fixture's rules; the sentence around it is fixed.
   const BROKE =
     /This turn broke \d+ rules? from the files and requests that governed it\. Fix the work, or say why the rule does not apply here, then finish\.\n\n/;
   const BROKE_FIRST = new RegExp(`^${BROKE.source}`);
 
-  /** tracevals' conformance project, in a temp directory, with a home of its own. */
+  /** tracevals' runtime project, in a temp directory, with a home of its own. */
   function project(): { cwd: string; env: NodeJS.ProcessEnv } {
     const tmp = realpathSync(mkdtempSync(join(tmpdir(), "manni-family-turn-")));
     dir = tmp;
     const cwd = join(tmp, "project");
-    cpSync(join(conformance, "project"), cwd, { recursive: true });
+    cpSync(join(runtime, "project"), cwd, { recursive: true });
     const home = join(tmp, "home");
     return { cwd, env: { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home } };
   }
@@ -276,7 +276,7 @@ describe("manni check, judging the turn", () => {
     expect(run(["check"], cwd, input, env)).toEqual({ stdout: "", stderr: "", status: 0 });
   });
 
-  it("without tracevals.conformance: 0078's reply alone", () => {
+  it("without tracevals.runtime: 0078's reply alone", () => {
     const { cwd, env } = project();
     writeFileSync(join(cwd, "manni.config.yaml"), "tracevals:\n  provider: mock\n");
     const input = envelope("stop-transcript", cwd, { transcript_path: trace("breaks") });
@@ -299,8 +299,8 @@ describe("manni check, judging the turn", () => {
     const home = join(dir, ".home");
     const env = { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home };
     edit(dir, "docs/page.md", addTodo);
-    edit(dir, "manni.config.yaml", (t) => `${t}\ntracevals:\n  provider: mock\n  conformance: {}\n`);
-    cpSync(join(conformance, "project", "CLAUDE.md"), join(dir, "CLAUDE.md"));
+    edit(dir, "manni.config.yaml", (t) => `${t}\ntracevals:\n  provider: mock\n  runtime: {}\n`);
+    cpSync(join(runtime, "project", "CLAUDE.md"), join(dir, "CLAUDE.md"));
     const r = run(["check"], dir, envelope("stop-transcript", dir, { transcript_path: trace("breaks") }), env);
     expect(r.status).toBe(0);
     const { reason } = JSON.parse(r.stdout) as { reason: string };

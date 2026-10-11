@@ -2,7 +2,7 @@
 # 0080). The mock provider extracts and judges, so the corpus runs offline.
 tracevals:
   provider: mock
-  conformance:
+  runtime:
     plans:
       - docs/plans/*.md
     exclude:

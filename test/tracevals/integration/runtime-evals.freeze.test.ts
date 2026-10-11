@@ -12,7 +12,7 @@ import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promis
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { extraction } from "../../../src/tracevals/commands/conformance.js";
+import { extraction } from "../../../src/tracevals/commands/runtime.js";
 import { RulesCache } from "../../../src/tracevals/rules/cache.js";
 import { RULES_PROMPT_VERSION } from "../../../src/tracevals/rules/prompt.js";
 import { REQUIREMENTS_PROMPT_VERSION } from "../../../src/tracevals/rules/requests-prompt.js";

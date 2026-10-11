@@ -3,23 +3,23 @@ title: Catch a broken rule before the agent hands back
 description: "Put each turn of an agent session through the rules your repository declares for agents, so a broken rule reaches the agent before it reaches you."
 sidebar:
   order: 1
-id: "tracevals-conformance"
+id: "tracevals-runtime"
 type: "how-to"
-keywords: ["conformance", "hook", "Stop", "SubagentStop", "rules", "CLAUDE.md", "AGENTS.md", "check", "prompts", "plan", "specs", "procedure", "system prompt", "output style"]
+keywords: ["runtime evals", "hook", "Stop", "SubagentStop", "rules", "CLAUDE.md", "AGENTS.md", "check", "prompts", "plan", "specs", "procedure", "system prompt", "output style"]
 language: en
 intent: "Set up tracevals so an agent hears about a broken rule at the end of the turn that broke it."
 lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["How do I make an agent follow my CLAUDE.md?", "Which files does tracevals check an agent against?", "What does the agent see when it breaks a rule?", "Does tracevals check that the agent built what I asked for?", "Are the steps of a skill checked in order?", "Does tracevals check the system prompt?"]
 graph: { label: "Catch a broken rule before the agent hands back", type: task }
-last-updated: 2026-10-07
+last-updated: 2026-10-11
 ---
 
 import { Steps, Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
 
 {/* Doc Detective inline tests. The docs-as-tests workflow exposes the local
     build as `manni` via `npm link`. Every step runs from the committed
-    conformance fixture project, with `--no-cache` so nothing is written into
+    runtime evals fixture project, with `--no-cache` so nothing is written into
     the tree. The mock provider extracts and judges, which is a test seam rather
     than a documented provider. It is what makes a verdict deterministic and
     offline on a runner that has neither a key nor a local model. Config:
@@ -54,7 +54,7 @@ no work behind it, and a skill's step run out of order.
 
    ```yaml title="manni.config.yaml"
    tracevals:
-     conformance: {}
+     runtime: {}
    ```
 
 3. Choose the models. Two roles do different work, so each gets a model of its own.
@@ -64,7 +64,7 @@ no work behind it, and a skill's step run out of order.
 
 </Steps>
 
-Without a `conformance` section, tracevals stays out of every hook and `manni status` shows it as not
+Without a `runtime` section, tracevals stays out of every hook and `manni status` shows it as not
 checked. To turn the check off, delete the section.
 
 ### Choose the models
@@ -74,7 +74,7 @@ Work inside the loop and outside it have different budgets.
 | Role | Does | Set by |
 |---|---|---|
 | Out of the loop | Extracts rules from files, runs `prepare`, and judges `check` by hand | `tracevals.provider` and `tracevals.model` |
-| In the loop | Judges a turn inside a Stop or SubagentStop hook | `tracevals.conformance.hook`, then the keys above |
+| In the loop | Judges a turn inside a Stop or SubagentStop hook | `tracevals.runtime.hook`, then the keys above |
 
 The hook runs on every turn, so it wants a fast model. Extraction runs once per file version, so it
 can afford a stronger one. These recipes are examples. tracevals pins no model.
@@ -83,7 +83,7 @@ can afford a stronger one. These recipes are examples. tracevals pins no model.
 tracevals:
   provider: anthropic
   model: claude-sonnet-5-5
-  conformance:
+  runtime:
     hook: { provider: anthropic, model: claude-haiku-4-5 }
 ```
 
@@ -91,20 +91,20 @@ tracevals:
 tracevals:
   provider: llama-cpp
   model: qwen3.5-4b
-  conformance: {}
+  runtime: {}
 ```
 
 ```yaml title="Jev judges each turn, a hosted model extracts"
 tracevals:
   provider: anthropic
   model: claude-sonnet-5-5
-  conformance:
+  runtime:
     hook: { provider: jev, model: jev-latest }
 ```
 
 Jev only decides, so it can judge inside a hook and can never be `tracevals.provider`. Its key comes
 from `TYPESAFE_API_KEY`. Every key is in the
-[configuration reference](/manni/tracevals/reference/configuration/#conformance).
+[configuration reference](/manni/tracevals/reference/configuration/#runtime).
 
 ## Which sources count
 
@@ -126,7 +126,7 @@ it.
 | OpenSpec project | `openspec/project.md` | Once the agent reads it |
 | Imports | Files an `@path` line pulls into a memory file, up to four hops | With the importing file |
 | Skills, commands, agents | An invoked skill's `SKILL.md` and every file read under its directory, a slash command, and the running subagent's definition | A skill or command from its first invocation to the end of the session. A subagent's definition for its own run. |
-| Designated | Files matching `conformance.include` | Always |
+| Designated | Files matching `runtime.include` | Always |
 
 To touch a file is to read, write or edit it. That is Claude Code's own trigger for path-scoped
 rules. `paths:`, `globs` and `fileMatchPattern` each accept one glob or a list. A nearer file
@@ -187,7 +187,7 @@ done when it is not. Six more formats carry it.
 | Spec Kit spec | `specs/<feature>/spec.md`, `plan.md` and `tasks.md` | Once the session touches a file under `specs/<feature>/` |
 | Kiro spec | `.kiro/specs/<name>/requirements.md`, `design.md` and `tasks.md` | Once the session touches a file under that directory |
 | OpenSpec change | Every `.md` file under `openspec/changes/<id>/` | Once the session touches a file under that change. An archived change never counts. |
-| Plans | A file that `conformance.plans` names | Once the session touches it |
+| Plans | A file that `runtime.plans` names | Once the session touches it |
 
 - **Prompts.** Extraction returns the items that stand after your last prompt, so "forget the toggle"
   drops the toggle. A question with nothing to build yields no rules. Each new prompt costs one
@@ -196,13 +196,13 @@ done when it is not. Six more formats carry it.
 - **Specs.** Only a touched feature counts, so a tree of many specs brings in only the one in play.
   A rule keeps the spec's own id, such as `FR-001`, `T014` or `1.2`.
 
-Plans in a format of your own go in `conformance.plans`. A folder of plans holds plans for other work
+Plans in a format of your own go in `runtime.plans`. A folder of plans holds plans for other work
 too, so a file counts only once the session touches it. `include` is for files that govern every
 turn, which is why plans have a key of their own.
 
 ```yaml title="manni.config.yaml"
 tracevals:
-  conformance:
+  runtime:
     plans: [docs/plans/*.md]
 ```
 
@@ -264,10 +264,10 @@ Last turn of 3b265d00: 7 rules from 4 sources. None broken, 1 reported.
 The `!` row is a confident break of a default rule. The closing line counts it as reported, and the
 command exits `0`. The same rule in a replaced prompt prints `✖`, and the command exits `1`.
 
-{/* test {"testId":"conformance-system-prompt","description":"check reads the system prompt the session ran under, and blocks only on a prompt the user wrote."} */}
-{/* step {"description":"A break of Claude Code's default prompt is reported and exits 0.","runShell":{"command":"manni tracevals check ../traces/system-prompt.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"None broken, 1 reported"}} */}
-{/* step {"description":"A break of a replaced prompt exits 1.","runShell":{"command":"manni tracevals check ../traces/system-prompt-custom.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[1],"stdio":"1 broken."}} */}
-{/* step {"description":"A replaced prompt's trigger says it is custom.","runShell":{"command":"manni tracevals check ../traces/system-prompt-custom.jsonl --project . --no-cache -f json","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[1],"stdio":"recorded at turn 1, Claude Code 2.1.292, custom"}} */}
+{/* test {"testId":"runtime-system-prompt","description":"check reads the system prompt the session ran under, and blocks only on a prompt the user wrote."} */}
+{/* step {"description":"A break of Claude Code's default prompt is reported and exits 0.","runShell":{"command":"manni tracevals check ../traces/system-prompt.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/runtime/project","exitCodes":[0],"stdio":"None broken, 1 reported"}} */}
+{/* step {"description":"A break of a replaced prompt exits 1.","runShell":{"command":"manni tracevals check ../traces/system-prompt-custom.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/runtime/project","exitCodes":[1],"stdio":"1 broken."}} */}
+{/* step {"description":"A replaced prompt's trigger says it is custom.","runShell":{"command":"manni tracevals check ../traces/system-prompt-custom.jsonl --project . --no-cache -f json","workingDirectory":"test/tracevals/fixtures/runtime/project","exitCodes":[1],"stdio":"recorded at turn 1, Claude Code 2.1.292, custom"}} */}
 {/* test end */}
 
 To leave the system prompt out, name it in `exclude`. The names `prompt`, `plan` and
@@ -275,7 +275,7 @@ To leave the system prompt out, name it in `exclude`. The names `prompt`, `plan`
 
 ```yaml title="manni.config.yaml"
 tracevals:
-  conformance:
+  runtime:
     exclude: [system-prompt]
 ```
 
@@ -299,12 +299,12 @@ partway through does not end that. A slash command's rules work the same way. Th
 
 `manni tracevals check` judges the last turn of one session. A turn starts at the last prompt you
 typed, and tool results do not start one. Run it on yesterday's session to see what the hook would
-have said. The examples below run from the committed conformance fixture, a small project with a
+have said. The examples below run from the committed runtime evals fixture, a small project with a
 `CLAUDE.md` that declares two rules and one `AGENTS.md`. Your typed prompts are a source on every
 turn, so the count includes them.
 
 ```console
-$ cd test/tracevals/fixtures/conformance/project
+$ cd test/tracevals/fixtures/runtime/project
 $ manni tracevals check ../traces/breaks.jsonl --project . --no-cache
 CLAUDE.md
   ? run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.
@@ -324,10 +324,10 @@ scores and the judge's reasoning, grouped under the source the rule came from. T
 not-followed score as a fraction. The `?` row is a rule the judge could not settle. The `✖` rows
 are broken, so the command exits `1`.
 
-{/* test {"testId":"conformance-check","description":"check judges the last turn of a fixture session and exits by what it finds."} */}
-{/* step {"description":"A turn that broke two rules exits 1 and counts them.","runShell":{"command":"manni tracevals check ../traces/breaks.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[1],"stdio":"2 broken, 1 needs review"}} */}
-{/* step {"description":"A finding names its rule under the file it came from.","runShell":{"command":"manni tracevals check ../traces/breaks.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[1],"stdio":"never-use-innerhtml-in-components"}} */}
-{/* step {"description":"A turn that followed every rule exits 0.","runShell":{"command":"manni tracevals check ../traces/follows.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"None broken"}} */}
+{/* test {"testId":"runtime-check","description":"check judges the last turn of a fixture session and exits by what it finds."} */}
+{/* step {"description":"A turn that broke two rules exits 1 and counts them.","runShell":{"command":"manni tracevals check ../traces/breaks.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/runtime/project","exitCodes":[1],"stdio":"2 broken, 1 needs review"}} */}
+{/* step {"description":"A finding names its rule under the file it came from.","runShell":{"command":"manni tracevals check ../traces/breaks.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/runtime/project","exitCodes":[1],"stdio":"never-use-innerhtml-in-components"}} */}
+{/* step {"description":"A turn that followed every rule exits 0.","runShell":{"command":"manni tracevals check ../traces/follows.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/runtime/project","exitCodes":[0],"stdio":"None broken"}} */}
 {/* test end */}
 
 A rule from what you asked prints under its format's name. In the fixture's second project, a later
@@ -346,9 +346,9 @@ Last turn of 3b265d00: 14 rules from 10 sources. 1 broken.
 Its other sources are the approved plan, the touched Spec Kit and Kiro specs, an OpenSpec change and
 a file under `docs/plans/`. `-f json` lists each one with its trigger.
 
-{/* test {"testId":"conformance-requests","description":"check holds a turn to the prompts, the approved plan and the touched specs."} */}
-{/* step {"description":"A rule from a typed prompt prints under prompt, and its break exits 1.","runShell":{"command":"manni tracevals check ../traces/requests.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/requests","exitCodes":[1],"stdio":"do-not-edit-src-legacy"}} */}
-{/* step {"description":"A touched file that conformance.plans names is a source.","runShell":{"command":"manni tracevals check ../traces/requests.jsonl --project . --no-cache -f json","workingDirectory":"test/tracevals/fixtures/conformance/requests","exitCodes":[1],"stdio":"touched docs/plans/reset.md"}} */}
+{/* test {"testId":"runtime-requests","description":"check holds a turn to the prompts, the approved plan and the touched specs."} */}
+{/* step {"description":"A rule from a typed prompt prints under prompt, and its break exits 1.","runShell":{"command":"manni tracevals check ../traces/requests.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/runtime/requests","exitCodes":[1],"stdio":"do-not-edit-src-legacy"}} */}
+{/* step {"description":"A touched file that runtime.plans names is a source.","runShell":{"command":"manni tracevals check ../traces/requests.jsonl --project . --no-cache -f json","workingDirectory":"test/tracevals/fixtures/runtime/requests","exitCodes":[1],"stdio":"touched docs/plans/reset.md"}} */}
 {/* test end */}
 
 The other closing lines all exit `0`.
@@ -361,9 +361,9 @@ The other closing lines all exit `0`.
 | `Last turn of 3b265d00: no rule sources governed it.` | No source was in scope. Your typed prompts are one, so this is rare. |
 | `Last turn of 3b265d00: nothing happened after the last prompt.` | The turn is empty. |
 
-{/* test {"testId":"conformance-quiet-turns","description":"A turn with nothing to judge says why and exits 0."} */}
-{/* step {"description":"A turn that touches nothing a rule watches has nothing to judge.","runShell":{"command":"manni tracevals check ../traces/untouched.jsonl --project . -c narrow.config.yaml --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"none apply to this turn"}} */}
-{/* step {"description":"An empty turn is reported, not judged.","runShell":{"command":"manni tracevals check ../traces/empty-turn.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"nothing happened after the last prompt"}} */}
+{/* test {"testId":"runtime-quiet-turns","description":"A turn with nothing to judge says why and exits 0."} */}
+{/* step {"description":"A turn that touches nothing a rule watches has nothing to judge.","runShell":{"command":"manni tracevals check ../traces/untouched.jsonl --project . -c narrow.config.yaml --no-cache","workingDirectory":"test/tracevals/fixtures/runtime/project","exitCodes":[0],"stdio":"none apply to this turn"}} */}
+{/* step {"description":"An empty turn is reported, not judged.","runShell":{"command":"manni tracevals check ../traces/empty-turn.jsonl --project . --no-cache","workingDirectory":"test/tracevals/fixtures/runtime/project","exitCodes":[0],"stdio":"nothing happened after the last prompt"}} */}
 {/* test end */}
 
 For a script, `-f json` prints the whole report and `-o` also writes it to a file. It lists every
@@ -446,7 +446,7 @@ Only a confident violation blocks. A rule blocks when its not-followed score rea
 [`judge.zones.autoFail`](/manni/tracevals/reference/configuration/#judge) as a percentage, in every
 run, and no run errored. It passes when its not-applicable or followed score reaches
 `judge.zones.autoPass` in every run. Anything else needs review, including a rule the judge errored
-on. `conformance.hook.runs` sets the number of runs in a hook, and it defaults to `1`. Jev only
+on. `runtime.hook.runs` sets the number of runs in a hook, and it defaults to `1`. Jev only
 returns probabilities, so it makes one call, and each option's probability becomes its score.
 
 <Aside type="note" title="A subagent is judged on its own">
@@ -459,7 +459,7 @@ agent's own definition counts as a rule source for that run. Parallel subagents 
 A Stop runs a short list of cheap checks in order, and the first one that finds nothing to do ends
 the run. Most of them are silent.
 
-- No `conformance` section means tracevals never runs.
+- No `runtime` section means tracevals never runs.
 - A judge's own session never judges itself. tracevals sets `MANNI_TRACEVALS_JUDGE` on every process
   it spawns, so a `claude-cli` judge cannot set off the hook again.
 - An empty turn, or one with no rule source in scope, ends the run. Your typed prompts are a
@@ -490,9 +490,9 @@ model unloads, and the host exits when nothing is loaded.
 By hand, `check` uses a host that is running and never starts one, so CI and one-off runs leave no
 process behind. To free the memory right now, run `manni tracevals release --all`.
 
-{/* test {"testId":"conformance-prepare","description":"prepare extracts the rules of every file that applies to every session."} */}
-{/* step {"description":"prepare reads the files that apply to every session and extracts their rules.","runShell":{"command":"manni tracevals prepare --project . --no-cache","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"Extracted 2 rules from 1 file that applies to every session."}} */}
-{/* step {"description":"prepare says so when conformance is not set up.","runShell":{"command":"manni tracevals prepare --project . --no-config","workingDirectory":"test/tracevals/fixtures/conformance/project","exitCodes":[0],"stdio":"tracevals conformance is not set up; nothing to prepare."}} */}
+{/* test {"testId":"runtime-prepare","description":"prepare extracts the rules of every file that applies to every session."} */}
+{/* step {"description":"prepare reads the files that apply to every session and extracts their rules.","runShell":{"command":"manni tracevals prepare --project . --no-cache","workingDirectory":"test/tracevals/fixtures/runtime/project","exitCodes":[0],"stdio":"Extracted 2 rules from 1 file that applies to every session."}} */}
+{/* step {"description":"prepare says so when runtime evals are not set up.","runShell":{"command":"manni tracevals prepare --project . --no-config","workingDirectory":"test/tracevals/fixtures/runtime/project","exitCodes":[0],"stdio":"tracevals runtime evals are not set up; nothing to prepare."}} */}
 {/* test end */}
 
 <CardGrid>
@@ -503,8 +503,8 @@ process behind. To free the memory right now, run `manni tracevals release --all
   />
   <LinkCard
     title="Configuration"
-    href="/manni/tracevals/reference/configuration/#conformance"
-    description="Every conformance key, the two model roles and the provider precedence."
+    href="/manni/tracevals/reference/configuration/#runtime"
+    description="Every runtime key, the two model roles and the provider precedence."
   />
   <LinkCard
     title="Keep an agent's docs green"

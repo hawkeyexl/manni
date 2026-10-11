@@ -20,7 +20,7 @@ import {
   selectProvider,
   type ProviderSelection,
 } from "../judge/provider.js";
-import { renderCheck } from "../reporters/conformance.js";
+import { renderCheck } from "../reporters/runtime.js";
 import type { SummaryFormat } from "../reporters/index.js";
 import { hostHolds, hostSetting, queued, QUEUE_WAIT_MS, type HostApi } from "../rules/host.js";
 import {
@@ -56,7 +56,7 @@ import type { Trace } from "../trace/types.js";
 import { TracevalsError } from "../types.js";
 import {
   assertDownloaded,
-  conformanceOf,
+  runtimeOf,
   extraction,
   firstLine,
   isNetworkProvider,
@@ -68,7 +68,7 @@ import {
   type GateSkip,
   type Identity,
   type LocalGate,
-} from "./conformance.js";
+} from "./runtime.js";
 
 /** Why a judgement stopped short, as the report's `skipped` names it. */
 export type CheckSkip = "empty-turn" | "no-sources" | "not-applicable";
@@ -176,7 +176,7 @@ interface Seen {
  * records every turn it parses, judged or not. By hand the ledger is only
  * read, and summed up for the report.
  */
-async function conform(p: Params): Promise<Outcome> {
+async function runtimeCheck(p: Params): Promise<Outcome> {
   const ledgerFile = ledgerPath(p.projectDir, p.sessionId, p.agentId);
   const ledger = await readLedger(ledgerFile);
   const seen: Seen = { sources: [] };
@@ -216,7 +216,7 @@ async function record(p: Params, file: string, ledger: Ledger, seen: Seen): Prom
 /** Sources, extraction, the judge. */
 async function judgeTurnOf(p: Params, ledger: Ledger, seen: Seen): Promise<Outcome> {
   const { config, turn } = p;
-  const conformance = conformanceOf(config);
+  const runtime = runtimeOf(config);
   const local = p.localModels ?? libraryLocalModels(config.providers);
   const report: CheckReport = {
     trace: p.trace.file,
@@ -246,9 +246,9 @@ async function judgeTurnOf(p: Params, ledger: Ledger, seen: Seen): Promise<Outco
     projectDir: p.projectDir,
     ...(p.projectRoot !== undefined ? { projectRoot: p.projectRoot } : {}),
     ...(p.env !== undefined ? { env: p.env } : {}),
-    include: conformance.include,
-    exclude: conformance.exclude,
-    plans: conformance.plans,
+    include: runtime.include,
+    exclude: runtime.exclude,
+    plans: runtime.plans,
     redact: config.judge.redact,
     ...(p.agentType !== undefined ? { agentType: p.agentType } : {}),
   });
@@ -450,7 +450,7 @@ export async function runCheck(options: CheckOptions): Promise<CheckResult> {
     ...(options.local !== undefined ? { local: options.local } : {}),
   });
   const trace = await readTrace(options.tracePath);
-  const outcome = await conform({
+  const outcome = await runtimeCheck({
     config,
     configDir,
     trace,
@@ -526,7 +526,7 @@ export interface TurnCheckResult {
 export async function checkTurn(input: TurnCheckInput): Promise<TurnCheckResult> {
   const { config, dir: configDir } = await discoverConfig(input.cwd);
   // Gate 1. The transcript is not parsed.
-  if (config.conformance === null) {
+  if (config.runtime === null) {
     return { skipped: { gate: "not-in-play" }, findings: [], exitCode: 0 };
   }
   // Gate 2: a judge's own session.
@@ -536,7 +536,7 @@ export async function checkTurn(input: TurnCheckInput): Promise<TurnCheckResult>
   }
   const subagent = input.agentTranscriptPath !== undefined;
   const trace = await readTrace(input.agentTranscriptPath ?? input.transcriptPath);
-  const outcome = await conform({
+  const outcome = await runtimeCheck({
     config,
     configDir,
     trace,
@@ -547,7 +547,7 @@ export async function checkTurn(input: TurnCheckInput): Promise<TurnCheckResult>
     projectDir: input.cwd,
     ...(input.env !== undefined ? { env: input.env } : {}),
     judgeSelection: selectHookProvider(config),
-    runs: config.conformance.hook.runs,
+    runs: config.runtime.hook.runs,
     inLoop: true,
     noCache: false,
     offline: false,

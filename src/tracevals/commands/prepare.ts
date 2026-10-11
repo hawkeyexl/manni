@@ -13,7 +13,7 @@ import { DEFAULT_KEEP_ALIVE_MS } from "../../shared/providers.js";
 import { parseHookPayload, readStdin } from "../capture/hook.js";
 import { discoverConfig } from "../core/config.js";
 import { resolveSelectionIdentity, selectHookProvider } from "../judge/provider.js";
-import { NOT_SET_UP, renderPrepare } from "../reporters/conformance.js";
+import { NOT_SET_UP, renderPrepare } from "../reporters/runtime.js";
 import type { SummaryFormat } from "../reporters/index.js";
 import { hostSetting, warmModel, type HostApi } from "../rules/host.js";
 import { libraryLocalModels, type LocalModels } from "../rules/local.js";
@@ -25,7 +25,7 @@ import {
   isNetworkProvider,
   rulesCacheFor,
   type Identity,
-} from "./conformance.js";
+} from "./runtime.js";
 
 export interface PrepareModel {
   role: "hook" | "extraction";
@@ -102,8 +102,8 @@ export async function runPrepare(options: PrepareOptions = {}): Promise<PrepareR
     };
   };
 
-  const conformance = config.conformance;
-  if (conformance === null) {
+  const runtime = config.runtime;
+  if (runtime === null) {
     return finish({ models: [], extraction: null, warnings: [NOT_SET_UP], exitCode: 0 }, NOT_SET_UP);
   }
 
@@ -169,8 +169,8 @@ export async function runPrepare(options: PrepareOptions = {}): Promise<PrepareR
       projectDir: root,
       ...(options.project !== undefined ? { projectRoot: root } : {}),
       ...(options.env !== undefined ? { env: options.env } : {}),
-      include: conformance.include,
-      exclude: conformance.exclude,
+      include: runtime.include,
+      exclude: runtime.exclude,
     });
     report.warnings.push(...resolved.warnings);
     const summary = { provider: ex.identity.provider, model: ex.identity.model, extracted: 0, cached: 0, rules: 0 };

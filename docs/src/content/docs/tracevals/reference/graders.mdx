@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What options does tool-order take?", "How do I stop command evals from running?"]
 graph: { label: "Grader reference", type: reference }
-last-updated: 2026-10-06
+last-updated: 2026-10-11
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -194,7 +194,7 @@ would leave the eval armed on every session, which is the exact failure `when` e
 `command-matches` is the condition for a rule about commands. `tool-used: Bash` holds on nearly
 every turn, so it filters nothing. A pattern such as `npm (test|run)` arms the eval only for
 the turns that ran one of those commands. The same grammar scopes the rules
-[`manni tracevals check`](/manni/tracevals/conformance/) extracts from a rules file.
+[`manni tracevals check`](/manni/tracevals/runtime/) extracts from a rules file.
 
 A `when: {}` with no conditions is rejected for the same reason. It arms always while reading as a
 scoped check.

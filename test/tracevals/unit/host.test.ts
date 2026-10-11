@@ -128,7 +128,7 @@ describe("release", () => {
   });
 });
 
-const FIXTURE = join(import.meta.dirname, "..", "fixtures", "conformance");
+const FIXTURE = join(import.meta.dirname, "..", "fixtures", "runtime");
 let dir: string;
 let project: string;
 let env: Record<string, string>;
@@ -141,7 +141,7 @@ beforeEach(async () => {
   env = { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home };
   await writeFile(
     join(project, "manni.config.yaml"),
-    "tracevals:\n  provider: mock\n  conformance:\n    hook: { provider: llama-cpp, model: qwen3.5-4b }\n",
+    "tracevals:\n  provider: mock\n  runtime:\n    hook: { provider: llama-cpp, model: qwen3.5-4b }\n",
   );
 });
 

@@ -111,6 +111,7 @@ export default defineConfig({
       "/manni/meta/reference/schemas/oasis-dita-metadata/",
     "/meta/reference/claude-subagent-schema":
       "/manni/meta/reference/schemas/anthropic-claude-subagent/",
+    "/tracevals/conformance": "/manni/tracevals/runtime/",
   },
   // MDX inherits this list, so `.md` and `.mdx` pages both get it.
   markdown: {
@@ -149,7 +150,7 @@ export default defineConfig({
             {
               label: "Check each turn",
               collapsed: true,
-              items: [{ autogenerate: { directory: "tracevals/conformance" } }],
+              items: [{ autogenerate: { directory: "tracevals/runtime" } }],
             },
             {
               label: "Run it in CI",

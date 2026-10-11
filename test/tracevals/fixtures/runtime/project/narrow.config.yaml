@@ -2,7 +2,7 @@
 # `when`, so a turn that touches none of them has nothing to judge.
 tracevals:
   provider: mock
-  conformance:
+  runtime:
     exclude:
       - AGENTS.md
       - .cursor/rules/stale.mdc

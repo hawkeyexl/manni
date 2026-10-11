@@ -13,7 +13,7 @@
  *
  * Six more formats say what the session was asked (proposal 0080): the typed
  * prompts, the approved plan, a touched Spec Kit feature, Kiro spec or live
- * OpenSpec change, and a touched file `conformance.plans` names. None is known
+ * OpenSpec change, and a touched file `runtime.plans` names. None is known
  * at session start, so only a turn resolves them, and none declares evals.
  *
  * Two are read from the transcript itself (proposal 0081): the system prompt
@@ -91,13 +91,13 @@ export interface SourceOptions {
   projectRoot?: string;
   /** `CLAUDE_CONFIG_DIR` finds `~/.claude`; `HOME` / `USERPROFILE` find `~/.gemini` and `~/.kiro`. */
   env?: Record<string, string | undefined>;
-  /** `conformance.include`: globs, relative to the project root, in scope once read. */
+  /** `runtime.include`: globs, relative to the project root, in scope once read. */
   include?: string[];
-  /** `conformance.exclude`: globs never treated as sources, in any row, and source names. */
+  /** `runtime.exclude`: globs never treated as sources, in any row, and source names. */
   exclude?: string[];
   /** `judge.redact`: patterns scrubbed from what the transcript records of the system prompt. */
   redact?: string[];
-  /** `conformance.plans`: globs, relative to the project root, in scope once touched. */
+  /** `runtime.plans`: globs, relative to the project root, in scope once touched. */
   plans?: string[];
   /** Set under SubagentStop: the subagent type whose definition governs the run. */
   agentType?: string;
@@ -345,7 +345,7 @@ export async function resolveTurnSources(
 
 // ── What the transcript recorded of the prompt ───────────────────
 
-/** The sources `conformance.exclude` matches by name (proposals 0080 and 0081). */
+/** The sources `runtime.exclude` matches by name (proposals 0080 and 0081). */
 const EXCLUDABLE_BY_NAME: ReadonlySet<RuleFormat> = new Set<RuleFormat>(["prompt", "plan", "system-prompt"]);
 
 /** Claude Code's own block in its default prompt; a replaced prompt has none. */
@@ -540,7 +540,7 @@ async function addSpecs(c: Collector, touches: Touch[], plans: string[]): Promis
 }
 
 /**
- * Files named in `conformance.include`. A person chose each one to govern the
+ * Files named in `runtime.include`. A person chose each one to govern the
  * agent, so it applies to every turn, as a `CLAUDE.md` does. Waiting for the
  * agent to read one would let a turn that skipped it escape its rules.
  */
@@ -556,7 +556,7 @@ async function addDesignated(c: Collector, opts: SourceOptions): Promise<void> {
     if (c.has(abs)) continue;
     const content = await safeRead(abs);
     if (content === null) {
-      c.warnings.push(`${c.display(abs)}: matched conformance.include but could not be read`);
+      c.warnings.push(`${c.display(abs)}: matched runtime.include but could not be read`);
       continue;
     }
     c.add(abs, content, "designated", "always");

@@ -1,6 +1,6 @@
 /**
  * `check`, `prepare` and `release` through the built CLI (proposal 0079).
- * Each run works on a copy of the conformance fixture project with an empty
+ * Each run works on a copy of the runtime fixture project with an empty
  * home, so the caches it writes stay out of the committed tree and no user's
  * own CLAUDE.md is read. The mock provider extracts and judges, offline.
  * Requires `npm run build` first.
@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const cli = fileURLToPath(new URL("../../../dist/cli.js", import.meta.url));
 const built = existsSync(cli);
-const FIXTURE = fileURLToPath(new URL("../fixtures/conformance", import.meta.url));
+const FIXTURE = fileURLToPath(new URL("../fixtures/runtime", import.meta.url));
 const trace = (name: string): string => join(FIXTURE, "traces", `${name}.jsonl`);
 
 let dir: string;
@@ -23,7 +23,7 @@ let project: string;
 let home: string;
 
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), "conformance-cli-"));
+  dir = await mkdtemp(join(tmpdir(), "runtime-cli-"));
   project = join(dir, "project");
   home = join(dir, "home");
   await cp(join(FIXTURE, "project"), project, { recursive: true });
@@ -172,7 +172,7 @@ describe.skipIf(!built)("tracevals check", () => {
       if (env !== undefined) process.env["TYPESAFE_API_KEY"] = env;
     }
     const jev =
-      "manni: jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.conformance.hook.provider.\n";
+      "manni: jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.runtime.hook.provider.\n";
     const run = await manni(["run", trace("breaks"), "--provider", "jev"]);
     expect(run.code).toBe(2);
     expect(run.stderr).toBe(jev);
@@ -314,11 +314,11 @@ describe.skipIf(!built)("tracevals prepare", () => {
     expect(stderr).toBe("manni: Extracted 2 rules from 1 file that applies to every session.\n");
   });
 
-  it("says when conformance is not set up", async () => {
+  it("says when runtime evals are not set up", async () => {
     await writeFile(join(project, "manni.config.yaml"), "tracevals:\n  provider: mock\n");
     const { code, stdout } = await manni(["prepare"]);
     expect(code).toBe(0);
-    expect(stdout).toBe("tracevals conformance is not set up; nothing to prepare.\n");
+    expect(stdout).toBe("tracevals runtime evals are not set up; nothing to prepare.\n");
   });
 });
 

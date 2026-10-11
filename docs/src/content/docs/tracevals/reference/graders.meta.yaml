@@ -41,8 +41,11 @@ docs/src/content/docs/tracevals/reference/graders.mdx:
       lines: 176
       integrity: sha256-f1b901847390b0ed7e374e7c1e464ec17b46a427c487a5ad6cbd2906405083d5
     - generated-by: Claude Sonnet 5.5
-      lines: 178-181
-      integrity: sha256-99c77c3cc391f76190e2f353dc236eb3d1ecd816b793ab1ee93bea934fb146cf
+      lines: 178-180
+      integrity: sha256-d4f128e20a76a8237e4e4a8dce2f4112a9083380f327a93d2c776e833bbd32d1
+    - generated-by: Claude Opus 5.5
+      lines: 181
+      integrity: sha256-3280e4f33d24691c8eb83d2913916134c781a3d1b3b7c56b218cac3ac4f568d5
     - generated-by: Claude Opus 5
       lines: 183-272
       integrity: sha256-abadbe87a267087cd4c2ba45e04d32f8a662e850822f465f9ed6aded14e5c280
