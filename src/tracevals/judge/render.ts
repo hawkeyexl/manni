@@ -37,12 +37,15 @@ export interface RenderOptions {
    * The ordinal the judged turn starts at (proposal 0079). The whole session
    * is rendered, a heading marks where that turn starts, and over the cap the
    * lines before it go first, oldest first, before the turn itself is cut.
+   * When the session is that one turn, nothing comes before it, so there is
+   * no heading and nothing to cut first.
    */
   turnFrom?: number;
   /**
    * Called when `maxTotalChars` cut the digest: the header, the timeline, or
    * both. The cut is already visible as a marker in the text; this lets a
-   * caller say so in a warning as well.
+   * caller say so in a warning as well. It can be called more than once for
+   * one digest, once per cut.
    */
   onTruncated?: () => void;
 }
@@ -234,6 +237,8 @@ export function renderTrace(
     MIN_TIMELINE_CHARS,
   );
   if (turnAt !== undefined && turnAt > 0) {
+    // Measured before the scrub below, which can change a length only where a
+    // label matches a secret pattern. Close enough to pick how many go.
     let size = lines.reduce((n, l) => n + l.length + 1, -1);
     let cut = 0;
     while (cut < turnAt && size > budget) {
