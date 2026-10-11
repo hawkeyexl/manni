@@ -1,6 +1,6 @@
 # 0081: tracevals reads the system prompt the session ran under
 
-- **Status:** Proposed
+- **Status:** Implemented (#171)
 - **Serves:** Maya · M25, "Catch a broken rule before the agent hands back".
   It adds the instructions the agent gets before any file it reads.
 - **Depends on:** [0079](0079-tracevals-checks-each-turn-against-the-rules-it-read.md)

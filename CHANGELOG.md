@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.8.0](https://github.com/hawkeyexl/manni/compare/v4.7.0...v4.8.0) (2026-10-11)
+
+
+### Features
+
+* **tracevals:** rename the tracevals.conformance section to tracevals.runtime ([#176](https://github.com/hawkeyexl/manni/issues/176)) ([905a4eb](https://github.com/hawkeyexl/manni/commit/905a4ebcc7c057fca9d377d659971ba1c52087df))
+
 # [4.7.0](https://github.com/hawkeyexl/manni/compare/v4.6.0...v4.7.0) (2026-10-07)
 
 
