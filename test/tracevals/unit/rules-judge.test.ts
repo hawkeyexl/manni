@@ -327,8 +327,9 @@ describe("judgeTurn, scored", () => {
     expect(first?.schema).toBe(TURN_SCHEMA);
     const shared = first?.user.slice(0, first.user.indexOf("# The rule")) ?? "";
     expect(shared.startsWith("# The turn\n\n")).toBe(true);
-    expect(shared).toContain("[user] Now run the tests.");
-    expect(shared).not.toContain("Fix the handler.");
+    const order = ["Fix the handler.", "## The last turn", "[user] Now run the tests."].map((s) => shared.indexOf(s));
+    expect(order[0]).toBeGreaterThan(-1);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
     expect(shared).not.toContain("no-force-push");
     expect(first?.user).toBe(shared + buildRuleItem("CLAUDE.md", RULES[0]?.rule ?? { id: "", text: "" }));
     expect(second?.user).toBe(shared + buildRuleItem("CLAUDE.md", RULES[1]?.rule ?? { id: "", text: "" }));
