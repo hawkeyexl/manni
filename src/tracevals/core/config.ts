@@ -199,7 +199,8 @@ function camelCaseHint(key: string, parentSchema: unknown): string {
 /**
  * The hint on the old `conformance:` section, renamed `runtime:` (proposal
  * 0083). Nothing reads the old key, so it stays an unknown key; the hint says
- * where its settings went.
+ * where its settings went. Only at the section root: a `conformance` key
+ * nested anywhere else, as under `runtime:`, was never the old section.
  */
 function renamedRuntimeHint(instancePath: string, key: string): string {
   return instancePath === "" && key === "conformance" ? `; it is now "runtime"` : "";
