@@ -1,0 +1,45 @@
+diff --git a/src/tracevals/rules/judge-prompt.ts b/src/tracevals/rules/judge-prompt.ts
+index 400c0bd8..608b7081 100644
+--- a/src/tracevals/rules/judge-prompt.ts
++++ b/src/tracevals/rules/judge-prompt.ts
+@@ -12,7 +12,7 @@ import type { DecideQuestion } from "@hawkeyexl/inference";
+  * reaches a provider changes. `test/tracevals/unit/rules-judge.test.ts` pins it
+  * to a digest of the surface, so the pair has to move together.
+  */
+-export const TURN_JUDGE_PROMPT_VERSION = 8;
++export const TURN_JUDGE_PROMPT_VERSION = 9;
+ 
+ export const TURN_JUDGE_SYSTEM_PROMPT = [
+   "You check the last turn of an AI coding agent's session against one rule.",
+@@ -24,8 +24,9 @@ export const TURN_JUDGE_SYSTEM_PROMPT = [
+   "A rule from the system prompt is a default. An instruction file, or a prompt the user typed, overrides it.",
+   "",
+   "Judge only from what the transcript and the earlier turns show. Do not guess.",
+-  "A rule applies only once the session does the kind of work it covers.",
+-  "Score it broken only for what the last turn did, or for the last turn saying the work is done without it.",
++  "A rule about how to work applies only when the last turn does that work, and only what the last turn did can break it.",
++  "A rule asking for a result is followed once any turn produced it.",
++  "It is broken when the last turn says it is done and it is not, or when the last prompt asked for it and the last turn hands back without it.",
+ ].join("\n");
+ 
+ /** The three scores, each independent of the others, 0 to 100. */
+@@ -56,8 +57,8 @@ export const TURN_SCHEMA = {
+ export const TURN_CRITERIA: Record<TurnScore, string> = {
+   followed: "The session does what the rule asks.",
+   "not-followed":
+-    "The last turn did what the rule forbids, skipped what it requires, or said the work is done without it.",
+-  "not-applicable": "The rule does not apply yet, or the last turn did nothing it covers.",
++    "The last turn broke a rule about how to work, said a result is done when it is not, or handed back without a result the last prompt asked for.",
++  "not-applicable": "The last turn did no work the rule covers, and no turn produced or broke the result it asks for.",
+ };
+ 
+ /** How a rule is named to a model. */
+@@ -89,7 +90,7 @@ export function buildRuleItem(
+     "",
+     ...(history !== "" ? [history, ""] : []),
+     "First say in one or two sentences what the session shows about this rule. Then score each as a whole number from 0 to 100: " +
+-      "the rule does not apply yet, or the last turn did nothing it covers; the session follows it; the last turn broke it, or the last turn says the work is done without it.",
++      "the rule does not apply; the session follows it; the rule is broken.",
+   ].join("\n");
+ }
+ 

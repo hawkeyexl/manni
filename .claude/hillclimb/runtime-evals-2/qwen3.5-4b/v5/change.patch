@@ -1,0 +1,42 @@
+diff --git a/src/tracevals/rules/prompt.ts b/src/tracevals/rules/prompt.ts
+--- a/src/tracevals/rules/prompt.ts
++++ b/src/tracevals/rules/prompt.ts
+@@ -16,7 +16,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
+  * `test/tracevals/unit/rules-prompt.test.ts` pins this to a digest of the
+  * prompt surface so the pair has to move together.
+  */
+-export const RULES_PROMPT_VERSION = 2;
++export const RULES_PROMPT_VERSION = 3;
+ 
+ /** The `when` field and its conditions, which the requirements prompt shares. */
+ export const WHEN_GUIDE: readonly string[] = [
+@@ -63,6 +63,15 @@ export const RULES_SYSTEM_PROMPT = [
+   "  soften or merge directives, and do not invent ones the file lacks.",
+   ...WHEN_GUIDE,
+   "",
++  // A prohibition or a manner rule can only be broken by taking its action, so
++  // its trigger hides nothing. A requirement's trigger would hide its skips.
++  "A rule that forbids an action, or says how to take it, concerns only the",
++  "turns that take that action. Give it a trigger on that action, such as",
++  "`command-matches: git tag` for a rule about how to tag a release.",
++  "Leave it out when no one condition covers every way to take the action.",
++  "Never trigger a rule on an action it requires, since a turn that skips that",
++  "action breaks the rule.",
++  "",
+   "Return none at all when nothing qualifies.",
+ ].join("\n");
+ 
+diff --git a/test/tracevals/unit/rules-prompt.test.ts b/test/tracevals/unit/rules-prompt.test.ts
+--- a/test/tracevals/unit/rules-prompt.test.ts
++++ b/test/tracevals/unit/rules-prompt.test.ts
+@@ -20,8 +20,8 @@ describe("rules prompt", () => {
+       .digest("hex")
+       .slice(0, 12);
+     expect({ version: RULES_PROMPT_VERSION, digest }).toEqual({
+-      version: 2,
+-      digest: "3dda0c638abd",
++      version: 3,
++      digest: "cf681db45951",
+     });
+   });
+ 

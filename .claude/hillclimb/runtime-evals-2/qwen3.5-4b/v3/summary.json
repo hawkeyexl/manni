@@ -1,0 +1,8 @@
+{
+  "description": "a done-claim counts only for what this rule asks for",
+  "target": "prompt",
+  "judge": {
+    "provider": "llama-cpp",
+    "model": "qwen3.5-4b"
+  }
+}
