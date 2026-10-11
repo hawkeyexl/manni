@@ -1,0 +1,8 @@
+{
+  "description": "show what met a rule's trigger",
+  "target": "code",
+  "judge": {
+    "provider": "llama-cpp",
+    "model": "qwen3.5-4b"
+  }
+}

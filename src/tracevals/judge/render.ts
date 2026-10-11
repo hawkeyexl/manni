@@ -34,14 +34,24 @@ export interface RenderOptions {
    */
   window?: TraceWindow;
   /**
+   * The ordinal the judged turn starts at (proposal 0079). The whole session
+   * is rendered, a heading marks where that turn starts, and over the cap the
+   * lines before it go first, oldest first, before the turn itself is cut.
+   * When the session is that one turn, nothing comes before it, so there is
+   * no heading and nothing to cut first. When no event reaches it, the whole
+   * session renders with no heading.
+   */
+  turnFrom?: number;
+  /**
    * Called when `maxTotalChars` cut the digest: the header, the timeline, or
    * both. The cut is already visible as a marker in the text; this lets a
-   * caller say so in a warning as well.
+   * caller say so in a warning as well. It can be called more than once for
+   * one digest, once per cut.
    */
   onTruncated?: () => void;
 }
 
-const DEFAULTS: Required<Omit<RenderOptions, "window" | "onTruncated">> = {
+const DEFAULTS: Required<Omit<RenderOptions, "window" | "onTruncated" | "turnFrom">> = {
   maxBlockChars: 2_000,
   maxTotalChars: 150_000,
   redact: [],
@@ -59,6 +69,7 @@ const DEFAULTS: Required<Omit<RenderOptions, "window" | "onTruncated">> = {
 const MIN_TIMELINE_CHARS = 200;
 
 const HEADER_TRUNCATED = "\n[... header truncated ...]";
+const TURN_HEADING = "## The last turn";
 const TIMELINE_SHELL = "\n\n## Timeline\n";
 
 export function renderTrace(
@@ -178,7 +189,12 @@ export function renderTrace(
 
   const lines: string[] = [];
   let branch: string | undefined;
+  let turnAt: number | undefined;
   for (const event of events) {
+    if (turnAt === undefined && options.turnFrom !== undefined && event.index >= options.turnFrom) {
+      turnAt = lines.length;
+      if (turnAt > 0) lines.push(TURN_HEADING);
+    }
     const tag = event.branchId
       ? `:${label(event.branchId)}`
       : event.sidechain
@@ -215,18 +231,37 @@ export function renderTrace(
   }
   if (branch !== undefined) lines.push(`[/subagent ${label(branch)}]`);
 
+  // Earlier turns give way first, oldest line first, so the cap reaches the
+  // judged turn only once nothing before it is left.
+  const budget = Math.max(
+    maxTotalChars - header.length - TIMELINE_SHELL.length,
+    MIN_TIMELINE_CHARS,
+  );
+  if (turnAt !== undefined && turnAt > 0) {
+    // Measured before the scrub below, which can change a length only where a
+    // label matches a secret pattern. Close enough to pick how many go. The
+    // heading is kept and counted, and a turn still over budget alone is cut
+    // by the head-and-tail pass below.
+    let size = lines.reduce((n, l) => n + l.length + 1, -1);
+    let cut = 0;
+    while (cut < turnAt && size > budget) {
+      size -= (lines[cut]?.length ?? 0) + 1;
+      cut += 1;
+    }
+    if (cut > 0) {
+      options.onTruncated?.();
+      lines.splice(0, cut, `[... ${String(cut)} earlier lines left out ...]`);
+    }
+  }
+
   // One more pass over the assembled timeline. Every message and tool input
   // already went through `clip`, so this pass is the belt to that pair of
   // braces: it covers what is assembled here rather than clipped — tool names,
   // branch labels — and anything a later change adds to this loop without
   // remembering to scrub it. Redaction is idempotent, so it costs nothing.
   let timeline = scrub(lines.join("\n"));
-  // A floor, never a switch: `budget > 0` used to turn truncation *off* for a
-  // non-positive budget, which is the one case where it matters most.
-  const budget = Math.max(
-    maxTotalChars - header.length - TIMELINE_SHELL.length,
-    MIN_TIMELINE_CHARS,
-  );
+  // The budget is a floor, never a switch: `budget > 0` used to turn
+  // truncation *off* for a non-positive budget, the case where it matters most.
   if (timeline.length > budget) {
     options.onTruncated?.();
     // The marker counts against the budget, so the digest never exceeds what

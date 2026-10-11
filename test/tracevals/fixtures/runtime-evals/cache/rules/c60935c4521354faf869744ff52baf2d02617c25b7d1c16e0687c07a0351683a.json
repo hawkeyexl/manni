@@ -1,0 +1,16 @@
+[
+  {
+    "id": "commit-two-fixes",
+    "text": "Commit the parser trim fix and the README typo fix.",
+    "when": {
+      "tool-used": "Bash"
+    }
+  },
+  {
+    "id": "push-commits",
+    "text": "Push the committed fixes to the remote.",
+    "when": {
+      "command-matches": "git"
+    }
+  }
+]
