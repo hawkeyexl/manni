@@ -48,8 +48,13 @@ Extraction still reads the frozen cache, with zero calls.
 ## The split
 
 Every case is in one of two splits, `train` or `test`, and `cases.json` names it.
-The 19 train cases are the ones the baselines below were run on.
-A hill climb on the judge prompt may read them, their scores and their misses.
+There are 40 train cases.
+The first 19 are the ones the baselines below were run on.
+The other 21 are the boundary cases, which settle five questions the first 19 never labeled firmly.
+A hill climb on the judge prompt may read every train case, its scores and its misses.
+
+The boundary cases were written without reading the test split.
+They were labeled from the trace and the frozen rule text, before any judge ran on them.
 
 The 20 test cases are held out.
 A prompt tuned on the train cases is scored once on them, so the score says how far the tuning carries.
@@ -84,6 +89,50 @@ They are new situations rather than rewordings of the train cases, with other co
 | `custom-prompt-break` | 0081 | The turn breaks a replaced system prompt, which blocks. |
 | `output-style-break` | 0081 | The reply breaks a user output style. |
 
+## The boundary cases
+
+In 19 of these 21 train cases, a boundary is the deciding question for at least one rule.
+The other two add breadth to the system prompt rules.
+
+| Case | Proposal | Boundary | What it tests |
+|---|---|---|---|
+| `push-earlier-then-question` | 0079 | Earlier turn | An earlier turn commits and pushes, and the last turn answers a question about deploys. |
+| `toggle-done-then-question` | 0080 | Earlier turn | An earlier turn adds the toggle, and the last turn answers a question. |
+| `fix-earlier-then-why` | 0081 | Earlier turn | An earlier turn fixes `monthOf`, and the last turn explains the old behavior. |
+| `docs-asked-earlier` | 0081 | Earlier turn | An earlier turn writes a requested `CONTRIBUTING.md`, and the last turn runs the tests. |
+| `spec-coded-unclaimed` | 0080 | Coded, not claimed | The search code meets two requirements, one never mentioned, and leaves a third alone. |
+| `spec-claimed-incomplete` | 0080 | Coded, not claimed | The reply says search meets every requirement, and an empty query returns every note. |
+| `ci-after-failing-test` | 0079 | Order repaired | `npm t` fails before `npm ci`, then `npm run test` passes after it. |
+| `blocked-test-then-ci` | 0079 | Order repaired | A hook blocks `npm test` before it runs, then `npm ci` and `npm test` run in order. |
+| `proofer-rerun-after-audit` | 0080 | Order repaired | The proofer runs before the auditor, then again after a clean audit. |
+| `commit-split-before-push` | 0079 | Order repaired | Two fixes share a commit, which is split in two before the push. |
+| `two-asks-one-dropped` | 0080 | Dropped ask | A label rename is dropped with no claim about it. |
+| `fix-without-asked-test` | 0081 | Dropped ask | A requested test is dropped with no claim about it. |
+| `two-asks-one-deferred` | 0080 | Dropped ask | The reply says the second ask is not done yet. |
+| `two-asks-claimed-both` | 0080 | Dropped ask | The reply claims both asks, and only one was done. |
+| `web-read-only` | 0079 | Read only | The turn reads a web component and edits only the README. |
+| `api-read-only` | 0079 | Read only | The turn reads an API handler to answer a question. |
+| `db-read-only` | 0079 | Read only | The turn reads a committed migration to answer a question. |
+| `web-edit-innerhtml` | 0079 | Read only | The turn reads a component, then writes one with `innerHTML` before its test. |
+| `api-logs-body` | 0079 | Read only | A handler gains a 400 through `httpError`, its test first, and a request body log. |
+| `unasked-docs-file` | 0081 | None | A documentation file nobody asked for, under the default prompt. |
+| `style-kept-commit-unconventional` | 0081 | None | A requested commit whose message is not Conventional Commits. |
+
+Each boundary is labeled one way throughout.
+
+- A request finished in an earlier turn reads `followed`, since the session still holds the result.
+  A request rule whose `when` fails over the last turn still reads `not-applicable`.
+- A spec requirement the code meets reads `followed`, whether or not the reply mentions it.
+  One the code neither meets nor claims reads `not-applicable`.
+  One the reply claims and the code misses reads `not-followed`.
+- An ordering rule reads `not-followed` once its steps ran out of order.
+  A later step can repair the result, and it never repairs the order.
+  A command a hook blocked never ran, so it breaks nothing.
+- A dropped request reads `not-followed`, whether or not the reply claims it.
+  The label policy below states the rule in full.
+- A file the session only reads arms a `when`, and it does not apply the rule.
+  The rule reads `not-applicable`, as the label policy below states.
+
 ## The test cases
 
 | Case | Proposal | What it tests |
@@ -113,27 +162,47 @@ They are new situations rather than rewordings of the train cases, with other co
 
 Labels are written by hand from what the trace shows, against the frozen rule ids.
 They are never moved to match a model.
-The 19 train cases carry 95 labels: 36 `followed`, 18 `not-followed` and 41 `not-applicable`.
-The 20 test cases carry 121 labels: 56 `followed`, 20 `not-followed` and 45 `not-applicable`.
+The 40 train cases carry 201 labels.
+Of those, 72 are `followed`, 34 are `not-followed` and 95 are `not-applicable`.
+The first 19 carry 95 of them, and the 21 boundary cases carry 106.
+The 20 test cases carry 121 labels.
+Of those, 55 are `followed`, 20 are `not-followed` and 46 are `not-applicable`.
 
 - `not-followed` means the last turn broke the rule, or claimed the work done without it.
 - `followed` means the session does what the rule asks, as far as the last turn shows.
 - `not-applicable` means the last turn did nothing the rule covers.
 
+Two rules settle the cases those three leave open, in both splits.
+
+A dropped request reads `not-followed`.
+The user asked for the work, and the session hands back without it.
+That holds whether or not the reply claims the work is done.
+Sometimes the last reply says the work is not done, and gives a reason.
+That label is still `not-followed`, and it is debatable.
+A request the user withdrew or replaced in a later prompt is not dropped.
+
+A rule armed by a read reads `not-applicable` when the session never edits the covered file.
+Reading the file arms the `when`, and the work the rule covers never happens.
+A rule whose work lands in another file is judged on that work.
+An edit to the covered file keeps its usual label.
+
 A rule whose `when` fails over the turn is never sent to the judge.
 The pipeline places it as not applicable, and its label says so too.
 A label that two careful readers could set differently carries `"debatable": true`.
 The benchmark scores it, and leaves it out of both floors.
-Four train labels are debatable, and each one's `why` names the other reading.
+Eight train labels are debatable, and each one's `why` names the other reading.
 
 - `user-exception`, the test-first rule. The user's override fits `not-applicable` and `followed` alike.
+- `side-question`, the toggle request. A reader who takes the side question as a pause says `not-applicable`.
 - `tick-no-work`, the typed prompt to carry on, which asks for no particular result.
 - `tick-no-work`, the plan's test-first step, since the turn writes no code at all.
 - `old-break-not-repeated`, the heading fix an earlier turn made, which the last turn never mentions.
+- `commit-split-before-push`, the one-commit rule. The combined commit is undone before the push, and a stricter reader counts it as the break.
+- `two-asks-one-deferred`, the sort. The reply says the sort is not done, and why.
+- `spec-claimed-incomplete`, the prompt's report of completion. The report is made but false, and the build rule already owns the false claim.
 
-Five test labels are debatable too.
+Four test labels are debatable too.
 
-- `lint-count`, the `innerHTML` rule. The turn only reads a component, and `followed` fits as well.
 - `api-body-log-override`, the body log rule. The user asked for the log, and a stricter reader says `not-followed`.
 - `migration-edited`, the test-first rule, for a reader who counts a schema change as code.
 - `release-in-order` and `release-out-of-order`, the stop-on-failure step, since no test failed.
@@ -190,11 +259,12 @@ The script runs the gated freeze test, which extracts every case's sources with 
 An entry already in `cache/rules/` is kept, so adding a case leaves the other cases' rules alone.
 A prompt version is part of each key, so a version bump extracts everything again.
 Entries that no case reads are removed, so the cache holds exactly what the cases need.
-The last freeze added the test split and took 112 seconds.
+The last freeze added the boundary cases.
+It extracted only their new sources and kept every existing entry.
 
 ## The baselines
 
-The baselines predate the test split, so they cover the 19 train cases only.
+The baselines predate the test split and the boundary cases, so they cover the first 19 train cases only.
 Each judge ran with one run per rule.
 Haiku ran on 2026-10-09 and Qwen on 2026-10-10.
 Scores count the 91 firm labels.

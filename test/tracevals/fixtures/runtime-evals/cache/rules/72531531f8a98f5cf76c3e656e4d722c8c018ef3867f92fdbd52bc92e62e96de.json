@@ -1,0 +1,10 @@
+[
+  {
+    "id": "add-font-family-setting",
+    "text": "Add a font family setting."
+  },
+  {
+    "id": "rename-font-size-label",
+    "text": "Rename the Font size label to Text size."
+  }
+]

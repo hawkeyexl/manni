@@ -338,7 +338,7 @@ function planTurn(
       maxBlockChars: input.render.maxBlockChars,
       maxTotalChars: budget - tail.length,
       redact: input.render.redact,
-      window: input.turn.window,
+      turnFrom: input.turn.from,
       onTruncated: () => {
         cut.happened = true;
       },
@@ -346,8 +346,8 @@ function planTurn(
   if (cut.happened) {
     warnings.push(
       byLimit
-        ? `the turn was cut to fit the state limit of ${String(limit)} tokens of ${id.provider}/${id.model}; the judge saw its head and tail`
-        : `the turn was cut to the render cap of ${String(input.render.maxTotalChars)} characters; the judge saw its head and tail`,
+        ? `the session was cut to fit the state limit of ${String(limit)} tokens of ${id.provider}/${id.model}; earlier turns went first, then the last turn's middle`
+        : `the session was cut to the render cap of ${String(input.render.maxTotalChars)} characters; earlier turns went first, then the last turn's middle`,
     );
   }
 

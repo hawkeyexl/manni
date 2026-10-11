@@ -1,0 +1,10 @@
+[
+  {
+    "id": "line-spacing-setting",
+    "text": "Add a line spacing setting to the settings page."
+  },
+  {
+    "id": "reset-to-defaults-button",
+    "text": "Add a reset-to-defaults button to the settings page."
+  }
+]

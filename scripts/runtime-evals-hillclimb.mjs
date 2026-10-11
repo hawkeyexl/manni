@@ -3,7 +3,8 @@
  * One hill-climb round over the runtime-evals set: run the live benchmark
  * `--reps` times per judge, then write the round in the layout the claude-api
  * hillclimb report reads (`results.jsonl`, `summary.json`, `traces/`), one flow
- * per judge under `.claude/hillclimb/runtime-evals/<judge>/`.
+ * per judge under `.claude/hillclimb/<name>/<judge>/` (`--name`, default
+ * `runtime-evals`).
  *
  *   node scripts/runtime-evals-hillclimb.mjs --round baseline --reps 3
  *   node scripts/runtime-evals-hillclimb.mjs --round v1 --reps 3 --desc "show tool results"
@@ -21,7 +22,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CORPUS = join(ROOT, "test/tracevals/fixtures/runtime-evals");
-const FLOWS = join(ROOT, ".claude/hillclimb/runtime-evals");
+const HILLCLIMB = join(ROOT, ".claude/hillclimb");
 const LIVE = "test/tracevals/integration/runtime-evals.live.test.ts";
 const HARNESS = [
   "scripts/runtime-evals-hillclimb.mjs",
@@ -37,9 +38,9 @@ const JUDGES = {
 };
 
 function args() {
-  const out = { round: "", reps: 3, judges: Object.keys(JUDGES), desc: "", target: "code", approve: false };
+  const out = { round: "", reps: 3, judges: Object.keys(JUDGES), desc: "", target: "code", approve: false, name: "runtime-evals" };
   const a = process.argv.slice(2);
-  const valued = new Set(["--round", "--reps", "--judges", "--desc", "--target"]);
+  const valued = new Set(["--round", "--reps", "--judges", "--desc", "--target", "--name"]);
   for (let i = 0; i < a.length; i += 1) {
     const k = a[i];
     const v = a[i + 1];
@@ -49,12 +50,14 @@ function args() {
     else if (k === "--judges") out.judges = v.split(","), i += 1;
     else if (k === "--desc") out.desc = v, i += 1;
     else if (k === "--target") out.target = v, i += 1;
+    else if (k === "--name") out.name = v, i += 1;
     else if (k === "--approve-harness") out.approve = true;
     else throw new Error(`unknown argument ${k}`);
   }
   if (!/^(baseline|v\d+)$/.test(out.round)) throw new Error("--round must be baseline or vN");
   if (!Number.isInteger(out.reps) || out.reps < 1) throw new Error("--reps must be a whole number of at least 1");
   for (const j of out.judges) if (!(j in JUDGES)) throw new Error(`unknown judge ${j}`);
+  if (!/^[a-z0-9-]+$/.test(out.name)) throw new Error("--name must be lowercase letters, digits and hyphens");
   return out;
 }
 
@@ -197,7 +200,7 @@ async function main() {
 
   await Promise.all(
     o.judges.map(async (judge) => {
-      const flow = join(FLOWS, JUDGES[judge].model);
+      const flow = join(HILLCLIMB, o.name, JUDGES[judge].model);
       await mkdir(flow, { recursive: true });
       const statePath = join(flow, "_state.json");
       const state = existsSync(statePath) ? await readJson(statePath) : {};

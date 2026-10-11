@@ -1,0 +1,6 @@
+[
+  {
+    "id": "run-test-suite",
+    "text": "Run the project's test suite and report whether the parser tests pass."
+  }
+]

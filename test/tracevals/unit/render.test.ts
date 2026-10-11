@@ -119,6 +119,42 @@ describe("renderTrace", () => {
     expect(out).toContain("truncated");
   });
 
+  it("marks where the judged turn starts, and cuts the turns before it first", () => {
+    const events = Array.from({ length: 200 }, (_, i) => ({
+      kind: "assistant" as const,
+      text: `message number ${String(i)} ${"y".repeat(200)}`,
+      raw: {},
+      index: i,
+    }));
+    const big = makeTrace({ events });
+    const whole = renderTrace(big, { turnFrom: 150, maxTotalChars: 1_000_000 });
+    const at = whole.indexOf("## The last turn");
+    expect(whole.indexOf("message number 0 ")).toBeLessThan(at);
+    expect(at).toBeLessThan(whole.indexOf("message number 150 "));
+
+    let cut = 0;
+    const out = renderTrace(big, { turnFrom: 150, maxTotalChars: 20_000, onTruncated: () => (cut += 1) });
+    expect(cut).toBeGreaterThan(0);
+    expect(out).toMatch(/\[\.\.\. \d+ earlier lines left out \.\.\.\]\n/);
+    expect(out).not.toContain("message number 0 ");
+    expect(out).toContain("## The last turn");
+    expect(out).toContain("message number 150 ");
+    expect(out).toContain("message number 199 ");
+    expect(out).not.toContain("chars of transcript");
+  });
+
+  it("adds no heading when the session is the judged turn alone", () => {
+    const out = renderTrace(trace, { turnFrom: 0 });
+    expect(out).not.toContain("## The last turn");
+    expect(out).toContain("Fix the crash.");
+  });
+
+  it("adds no heading when no event reaches the turn boundary", () => {
+    const out = renderTrace(trace, { turnFrom: 9_999 });
+    expect(out).not.toContain("## The last turn");
+    expect(out).toContain("Fix the crash.");
+  });
+
   it("keeps the cap when the header alone is larger than the budget", () => {
     // `budget = maxTotalChars - header.length - 64` went non-positive once the
     // header listed every skill, agent type and branch — and the old

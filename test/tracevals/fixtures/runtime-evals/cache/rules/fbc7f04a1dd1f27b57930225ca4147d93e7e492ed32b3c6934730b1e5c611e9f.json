@@ -1,0 +1,10 @@
+[
+  {
+    "id": "commit-trim-fix",
+    "text": "Commit the trim fix in src/parse.ts."
+  },
+  {
+    "id": "push-to-main",
+    "text": "Push the commit containing the trim fix to the main branch."
+  }
+]

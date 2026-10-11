@@ -1,0 +1,8 @@
+{
+  "description": "baseline: shipped judge (prompt v8), 40 train sessions, unified label policy",
+  "target": "code",
+  "judge": {
+    "provider": "claude-cli",
+    "model": "claude-haiku-5-5"
+  }
+}
