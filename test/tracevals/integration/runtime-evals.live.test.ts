@@ -21,7 +21,7 @@
  */
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   canDecide,
@@ -238,17 +238,28 @@ describe.skipIf(!live)(`runtime evals (live judge ${PROVIDER}/${MODEL})`, () => 
         const judge = recording(local ?? cli, keys);
         const guard = extractionGuard(config);
         const t0 = performance.now();
-        const { report } = await runCheck({
-          tracePath: join(CORPUS, c.trace),
-          project: join(CORPUS, c.project),
-          configDir: scratch,
-          provider: PROVIDER,
-          model: MODEL,
-          runs: 1,
-          env: homeEnv(home),
-          judge: judge.provider,
-          extractor: guard,
-        });
+        // A case whose every judge call errored throws from runCheck. Score it
+        // as errored (needs-review) rather than end the whole pass.
+        // Only these three fields of the report are read, so the error path
+        // builds exactly them and needs no cast.
+        let report: Pick<Awaited<ReturnType<typeof runCheck>>["report"], "findings" | "exitCode" | "warnings">;
+        try {
+          ({ report } = await runCheck({
+            tracePath: join(CORPUS, c.trace),
+            project: join(CORPUS, c.project),
+            configDir: scratch,
+            provider: PROVIDER,
+            model: MODEL,
+            runs: 1,
+            env: homeEnv(home),
+            judge: judge.provider,
+            extractor: guard,
+          }));
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          report = { findings: [], exitCode: 2, warnings: [`could not judge: ${message}`] };
+          for (const key of keys) if (!judge.answers.has(key)) judge.answers.set(key, { error: message });
+        }
         const ms = Math.round(performance.now() - t0);
         expect(guard.calls, `${c.id} extracted`).toBe(0);
         const findings = new Map(report.findings.map((f) => [`${f.source}#${f.rule}`, f]));
@@ -355,10 +366,14 @@ describe.skipIf(!live)(`runtime evals (live judge ${PROVIDER}/${MODEL})`, () => 
           backendWarnings,
         }
       : { provider: PROVIDER, model: MODEL, runs: 1, transport: "isolated claude -p" };
-    const outDir = fileURLToPath(new URL("../../../.tmp/runtime-evals/", import.meta.url));
-    await mkdir(outDir, { recursive: true });
+    // MANNI_RUNTIME_EVALS_OUT names the results file, as the hill-climb runner
+    // does for each rep; by default it is .tmp/runtime-evals/<model>.json.
+    const outFile =
+      process.env.MANNI_RUNTIME_EVALS_OUT ??
+      join(fileURLToPath(new URL("../../../.tmp/runtime-evals/", import.meta.url)), `${slug(MODEL)}.json`);
+    await mkdir(dirname(outFile), { recursive: true });
     await writeFile(
-      join(outDir, `${slug(MODEL)}.json`),
+      outFile,
       `${JSON.stringify({ judge: judgeInfo, started, summary, cases: results }, null, 2)}\n`,
       "utf-8",
     );

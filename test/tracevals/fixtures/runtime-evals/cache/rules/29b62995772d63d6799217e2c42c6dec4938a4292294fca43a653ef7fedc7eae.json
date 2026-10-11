@@ -1,0 +1,9 @@
+[
+  {
+    "id": "log-signup-request-body",
+    "text": "Log the full request body in the signup handler.",
+    "when": {
+      "file-access": "**/*"
+    }
+  }
+]

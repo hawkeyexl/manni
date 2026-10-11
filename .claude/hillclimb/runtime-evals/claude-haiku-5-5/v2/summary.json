@@ -1,0 +1,8 @@
+{
+  "description": "every earlier turn gets a line",
+  "target": "code",
+  "judge": {
+    "provider": "claude-cli",
+    "model": "claude-haiku-5-5"
+  }
+}

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "FR-001",
+    "text": "Users can add tags to a note."
+  },
+  {
+    "id": "FR-002",
+    "text": "A note holds at most ten tags."
+  }
+]

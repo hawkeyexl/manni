@@ -22,6 +22,7 @@ import {
   homeEnv,
   loadCases,
   loadFrozen,
+  firstObject,
   placementOf,
   ruleKeysOf,
   scratchConfigDir,
@@ -29,6 +30,7 @@ import {
 
 const REGENERATE = "regenerate it with `npm run build && node scripts/runtime-evals-freeze.mjs`, then relabel cases.json";
 const LABELS = new Set(["followed", "not-followed", "not-applicable"]);
+const SPLITS = new Set(["train", "test"]);
 
 const cases = loadCases();
 let config: TracevalsConfig;
@@ -66,6 +68,17 @@ describe("the runtime-evals frozen cache", () => {
   });
 });
 
+describe("the CLI judge's reply parsing", () => {
+  it("keeps the first balanced object and drops text after it", () => {
+    expect(firstObject('{"a":1}\n\nNote: done.')).toBe('{"a":1}');
+    expect(firstObject('Here: {"a":{"b":"}"}} and more {"c":2}')).toBe('{"a":{"b":"}"}}');
+    expect(firstObject('{"q":"a \\" brace }"}x')).toBe('{"q":"a \\" brace }"}');
+    expect(firstObject("no json")).toBe("no json");
+    // An object that never closes falls back to the text, which the JSON parse then rejects.
+    expect(firstObject('Reply: {"a":1, "b":')).toBe('Reply: {"a":1, "b":');
+  });
+});
+
 describe("the benchmark's placement of a rule", () => {
   const scores = (na: number) => ({ "not-applicable": na, followed: 100 - na, "not-followed": 0 });
 
@@ -89,8 +102,9 @@ describe("the benchmark's placement of a rule", () => {
 });
 
 describe.each(cases.map((c) => [c.id, c] as const))("runtime-evals case %s", (_id, c) => {
-  it("is described and labeled with known values", () => {
+  it("is described, split and labeled with known values", () => {
     expect(c.what).not.toBe("");
+    expect(SPLITS.has(c.split), `split: ${c.split}`).toBe(true);
     expect(Object.keys(c.labels).length).toBeGreaterThan(0);
     for (const [key, entry] of Object.entries(c.labels)) {
       expect(LABELS.has(entry.label), `${key}: ${entry.label}`).toBe(true);

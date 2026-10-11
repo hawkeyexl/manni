@@ -31,6 +31,9 @@ export const CORPUS = fileURLToPath(new URL("fixtures/runtime-evals", import.met
 
 export type Label = "followed" | "not-followed" | "not-applicable";
 
+/** Train cases tune the judge prompt. Test cases are held out, written and labeled blind. */
+export type Split = "train" | "test";
+
 export interface LabelEntry {
   label: Label;
   why: string;
@@ -41,6 +44,7 @@ export interface Case {
   id: string;
   trace: string;
   project: string;
+  split: Split;
   what: string;
   /** `"<source displayPath>#<rule id>"` to its label. */
   labels: Record<string, LabelEntry>;
@@ -227,11 +231,34 @@ function runClaude(args: string[], input: string, cwd: string, timeoutMs: number
   });
 }
 
+/**
+ * The first balanced JSON object in `text`, or `text` itself when it has none.
+ * A reply that writes its object and then keeps talking still parses.
+ */
+export function firstObject(text: string): string {
+  const start = text.indexOf("{");
+  if (start < 0) return text;
+  let depth = 0;
+  let quoted = false;
+  for (let i = start; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === "\\") i += 1;
+      else if (ch === '"') quoted = false;
+    } else if (ch === '"') quoted = true;
+    else if (ch === "{") depth += 1;
+    else if (ch === "}" && --depth === 0) return text.slice(start, i + 1);
+  }
+  return text;
+}
+
 interface CliWrapper {
   result?: unknown;
   is_error?: unknown;
   total_cost_usd?: unknown;
   usage?: Record<string, unknown>;
+  /** Keyed by the model that served the call, which may differ from the one asked for. */
+  modelUsage?: Record<string, unknown>;
 }
 
 const tokensOf = (usage: Record<string, unknown> | undefined, ...names: string[]): number =>
@@ -278,6 +305,15 @@ export class IsolatedClaudeCli implements InferenceProvider {
       JSON.stringify(req.schema),
     ].join("\n");
     const cwd = await mkdtemp(join(tmpdir(), "runtime-evals-cli-"));
+    // Claude Code tells the model whether its cwd is a git repository. An empty
+    // non-repo cwd reads as "not a git repository", which the judge took as a
+    // fact about the judged session and let into rules about commits.
+    // A failed init would quietly bring back the leak, so it stops the call.
+    const init = spawnSync("git", ["init", "-q"], { cwd, stdio: "ignore" });
+    if (init.status !== 0) {
+      await rm(cwd, { recursive: true, force: true });
+      throw new Error(`git init failed in ${cwd}: ${init.error?.message ?? `exit ${String(init.status)}`}`);
+    }
     let out: RunOutput;
     try {
       out = await runClaude(
@@ -298,10 +334,16 @@ export class IsolatedClaudeCli implements InferenceProvider {
     }
     const wrapper = JSON.parse(out.stdout.slice(start)) as CliWrapper;
     if (typeof wrapper.total_cost_usd === "number") this.costUsd += wrapper.total_cost_usd;
+    // Score only what the asked-for model said: a silent substitution would
+    // make every comparison between judges meaningless.
+    const served = Object.keys(wrapper.modelUsage ?? {});
+    if (served.length > 0 && !served.includes(this.model)) {
+      throw new Error(`claude served ${served.join(", ")} instead of ${this.model}`);
+    }
     if (wrapper.is_error === true || typeof wrapper.result !== "string") {
       throw new Error(`claude returned no result: ${JSON.stringify(wrapper.result ?? null).slice(0, 300)}`);
     }
-    const json = extractJson(wrapper.result);
+    const json = extractJson(firstObject(wrapper.result));
     const validate = validatorFor(req.schema);
     if (!validate(json)) {
       throw new Error(`the reply does not match the schema: ${JSON.stringify(validate.errors?.[0] ?? {})}`);

@@ -1,0 +1,6 @@
+[
+  {
+    "id": "no-fix-lint-warnings",
+    "text": "Do not fix the lint warnings in the web code; only report how many there are."
+  }
+]
