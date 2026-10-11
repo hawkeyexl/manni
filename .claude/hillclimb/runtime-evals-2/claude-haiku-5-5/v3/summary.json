@@ -1,0 +1,8 @@
+{
+  "description": "a done-claim counts only for what this rule asks for",
+  "target": "prompt",
+  "judge": {
+    "provider": "claude-cli",
+    "model": "claude-haiku-5-5"
+  }
+}

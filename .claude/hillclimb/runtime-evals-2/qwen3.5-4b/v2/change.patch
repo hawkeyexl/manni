@@ -1,0 +1,111 @@
+diff --git a/src/tracevals/judge/render.ts b/src/tracevals/judge/render.ts
+index 79f9ff65..582aeecf 100644
+--- a/src/tracevals/judge/render.ts
++++ b/src/tracevals/judge/render.ts
+@@ -33,6 +33,12 @@ export interface RenderOptions {
+    * It takes the place of the plan's window when both are given.
+    */
+   window?: TraceWindow;
++  /**
++   * The ordinal the judged turn starts at (proposal 0079). The whole session
++   * is rendered, a heading marks where that turn starts, and over the cap the
++   * lines before it go first, oldest first, before the turn itself is cut.
++   */
++  turnFrom?: number;
+   /**
+    * Called when `maxTotalChars` cut the digest: the header, the timeline, or
+    * both. The cut is already visible as a marker in the text; this lets a
+@@ -41,7 +47,7 @@ export interface RenderOptions {
+   onTruncated?: () => void;
+ }
+ 
+-const DEFAULTS: Required<Omit<RenderOptions, "window" | "onTruncated">> = {
++const DEFAULTS: Required<Omit<RenderOptions, "window" | "onTruncated" | "turnFrom">> = {
+   maxBlockChars: 2_000,
+   maxTotalChars: 150_000,
+   redact: [],
+@@ -59,6 +65,7 @@ const DEFAULTS: Required<Omit<RenderOptions, "window" | "onTruncated">> = {
+ const MIN_TIMELINE_CHARS = 200;
+ 
+ const HEADER_TRUNCATED = "\n[... header truncated ...]";
++const TURN_HEADING = "## The last turn";
+ const TIMELINE_SHELL = "\n\n## Timeline\n";
+ 
+ export function renderTrace(
+@@ -178,7 +185,12 @@ export function renderTrace(
+ 
+   const lines: string[] = [];
+   let branch: string | undefined;
++  let turnAt: number | undefined;
+   for (const event of events) {
++    if (turnAt === undefined && options.turnFrom !== undefined && event.index >= options.turnFrom) {
++      turnAt = lines.length;
++      if (turnAt > 0) lines.push(TURN_HEADING);
++    }
+     const tag = event.branchId
+       ? `:${label(event.branchId)}`
+       : event.sidechain
+@@ -215,18 +227,33 @@ export function renderTrace(
+   }
+   if (branch !== undefined) lines.push(`[/subagent ${label(branch)}]`);
+ 
++  // Earlier turns give way first, oldest line first, so the cap reaches the
++  // judged turn only once nothing before it is left.
++  const budget = Math.max(
++    maxTotalChars - header.length - TIMELINE_SHELL.length,
++    MIN_TIMELINE_CHARS,
++  );
++  if (turnAt !== undefined && turnAt > 0) {
++    let size = lines.reduce((n, l) => n + l.length + 1, -1);
++    let cut = 0;
++    while (cut < turnAt && size > budget) {
++      size -= (lines[cut]?.length ?? 0) + 1;
++      cut += 1;
++    }
++    if (cut > 0) {
++      options.onTruncated?.();
++      lines.splice(0, cut, `[... ${String(cut)} earlier lines left out ...]`);
++    }
++  }
++
+   // One more pass over the assembled timeline. Every message and tool input
+   // already went through `clip`, so this pass is the belt to that pair of
+   // braces: it covers what is assembled here rather than clipped — tool names,
+   // branch labels — and anything a later change adds to this loop without
+   // remembering to scrub it. Redaction is idempotent, so it costs nothing.
+   let timeline = scrub(lines.join("\n"));
+-  // A floor, never a switch: `budget > 0` used to turn truncation *off* for a
+-  // non-positive budget, which is the one case where it matters most.
+-  const budget = Math.max(
+-    maxTotalChars - header.length - TIMELINE_SHELL.length,
+-    MIN_TIMELINE_CHARS,
+-  );
++  // The budget is a floor, never a switch: `budget > 0` used to turn
++  // truncation *off* for a non-positive budget, the case where it matters most.
+   if (timeline.length > budget) {
+     options.onTruncated?.();
+     // The marker counts against the budget, so the digest never exceeds what
+diff --git a/src/tracevals/rules/judge.ts b/src/tracevals/rules/judge.ts
+index 19b16a09..b25ea362 100644
+--- a/src/tracevals/rules/judge.ts
++++ b/src/tracevals/rules/judge.ts
+@@ -338,7 +338,7 @@ function planTurn(
+       maxBlockChars: input.render.maxBlockChars,
+       maxTotalChars: budget - tail.length,
+       redact: input.render.redact,
+-      window: input.turn.window,
++      turnFrom: input.turn.from,
+       onTruncated: () => {
+         cut.happened = true;
+       },
+@@ -346,8 +346,8 @@ function planTurn(
+   if (cut.happened) {
+     warnings.push(
+       byLimit
+-        ? `the turn was cut to fit the state limit of ${String(limit)} tokens of ${id.provider}/${id.model}; the judge saw its head and tail`
+-        : `the turn was cut to the render cap of ${String(input.render.maxTotalChars)} characters; the judge saw its head and tail`,
++        ? `the session was cut to fit the state limit of ${String(limit)} tokens of ${id.provider}/${id.model}; earlier turns went first, then the last turn's middle`
++        : `the session was cut to the render cap of ${String(input.render.maxTotalChars)} characters; earlier turns went first, then the last turn's middle`,
+     );
+   }
+ 

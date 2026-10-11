@@ -1,0 +1,13 @@
+[
+  {
+    "id": "contributing-md",
+    "text": "Write a CONTRIBUTING.md file that explains how to run the tests.",
+    "when": {
+      "file-access": "**/CONTRIBUTING.md"
+    }
+  },
+  {
+    "id": "run-tests",
+    "text": "Run the project's tests."
+  }
+]

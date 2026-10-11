@@ -1,6 +1,6 @@
 # 0083: Runtime evals, the rename
 
-- **Status:** Proposed
+- **Status:** Implemented (#176)
 - **Serves:** Maya · M25, "Catch a broken rule before the agent hands back".
   It renames the one section she writes to turn the check on.
 - **Depends on:** [0079](0079-tracevals-checks-each-turn-against-the-rules-it-read.md),

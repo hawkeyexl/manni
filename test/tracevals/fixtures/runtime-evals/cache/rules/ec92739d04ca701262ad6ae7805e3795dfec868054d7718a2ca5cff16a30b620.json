@@ -1,0 +1,14 @@
+[
+  {
+    "id": "FR-001",
+    "text": "Search matches note titles without regard to case."
+  },
+  {
+    "id": "FR-002",
+    "text": "Search results list the newest note first."
+  },
+  {
+    "id": "FR-003",
+    "text": "An empty query returns no results."
+  }
+]

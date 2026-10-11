@@ -1,0 +1,13 @@
+[
+  {
+    "id": "add-dayofweek-helper",
+    "text": "Add a dayOfWeek helper to src/date.ts.",
+    "when": {
+      "file-access": "**/src/date.ts"
+    }
+  },
+  {
+    "id": "commit-dayofweek-helper",
+    "text": "Commit the dayOfWeek helper change to git."
+  }
+]

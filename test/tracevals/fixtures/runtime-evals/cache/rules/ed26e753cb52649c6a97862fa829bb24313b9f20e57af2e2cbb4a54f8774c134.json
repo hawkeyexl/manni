@@ -1,0 +1,6 @@
+[
+  {
+    "id": "create-note-missing-title-400",
+    "text": "Make the create-note handler return a 400 when the title is missing."
+  }
+]

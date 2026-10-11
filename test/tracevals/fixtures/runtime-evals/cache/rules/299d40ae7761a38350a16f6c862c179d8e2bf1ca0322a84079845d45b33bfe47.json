@@ -1,0 +1,6 @@
+[
+  {
+    "id": "verify-parser-change",
+    "text": "Check that the parser change did not break anything, by verifying the existing behavior (for example by running the tests) after the parser change."
+  }
+]

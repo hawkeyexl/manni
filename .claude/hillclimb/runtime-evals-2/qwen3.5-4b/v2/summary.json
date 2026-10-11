@@ -1,0 +1,8 @@
+{
+  "description": "render the whole session with a last-turn heading",
+  "target": "code",
+  "judge": {
+    "provider": "llama-cpp",
+    "model": "qwen3.5-4b"
+  }
+}
