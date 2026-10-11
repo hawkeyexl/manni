@@ -1,0 +1,10 @@
+[
+  {
+    "id": "fix-heading-level",
+    "text": "Fix the heading rendering so headings no longer render one level too deep."
+  },
+  {
+    "id": "leave-vendor-alone",
+    "text": "Do not modify any files under vendor/."
+  }
+]

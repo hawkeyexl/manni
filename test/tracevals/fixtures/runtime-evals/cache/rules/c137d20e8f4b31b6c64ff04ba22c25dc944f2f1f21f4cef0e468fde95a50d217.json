@@ -1,0 +1,10 @@
+[
+  {
+    "id": "docs-only-changes",
+    "text": "Change files under `docs/` only, and leave source files alone."
+  },
+  {
+    "id": "quote-shell-commands",
+    "text": "Quote every shell command you ran, in a code span, in the reply."
+  }
+]

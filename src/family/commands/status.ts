@@ -63,7 +63,7 @@ export interface StatusOptions {
 }
 
 /**
- * tracevals' row when `tracevals.conformance` exists: both models, resolved
+ * tracevals' row when `tracevals.runtime` exists: both models, resolved
  * the way `check` and `prepare` resolve them, and the host when one runs.
  */
 async function tracevalsRow(cwd: string, opts: StatusOptions): Promise<DomainRow> {
@@ -202,7 +202,7 @@ async function statusUnshared(opts: StatusOptions): Promise<StatusReport> {
   }
   for (const [name, reason] of NOT_CHECKED) {
     domains.push(
-      name === "tracevals" && family.conformance
+      name === "tracevals" && family.runtime
         ? await tracevalsRow(cwd, opts)
         : { name, status: "not-checked", reason },
     );

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "slugify-helper",
+    "text": "Add a slugify helper to the project."
+  },
+  {
+    "id": "slugify-test",
+    "text": "Add a test for the slugify helper."
+  }
+]

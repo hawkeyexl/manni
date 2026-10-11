@@ -1,0 +1,59 @@
+diff --git a/src/tracevals/rules/judge-prompt.ts b/src/tracevals/rules/judge-prompt.ts
+index 400c0bd8..bf50d48a 100644
+--- a/src/tracevals/rules/judge-prompt.ts
++++ b/src/tracevals/rules/judge-prompt.ts
+@@ -12,7 +12,7 @@ import type { DecideQuestion } from "@hawkeyexl/inference";
+  * reaches a provider changes. `test/tracevals/unit/rules-judge.test.ts` pins it
+  * to a digest of the surface, so the pair has to move together.
+  */
+-export const TURN_JUDGE_PROMPT_VERSION = 8;
++export const TURN_JUDGE_PROMPT_VERSION = 9;
+ 
+ export const TURN_JUDGE_SYSTEM_PROMPT = [
+   "You check the last turn of an AI coding agent's session against one rule.",
+@@ -35,16 +35,18 @@ export type TurnScore = (typeof TURN_SCORES)[number];
+ const SCORE = { type: "integer", minimum: 0, maximum: 100 } as const;
+ 
+ /**
+- * `reasoning` is declared first and always required, so a model writing the
+- * object in order says what it saw before it commits to a score. It is not
+- * length-capped: a 240-character cap was measured, and a model cut off
++ * `evidence` then `reasoning` are declared first and always required, so a
++ * model writing the object in order copies the lines it judges from, then says
++ * what they show, before it commits to a score. Neither is length-capped: a
++ * 240-character cap on reasoning was measured, and a model cut off
+  * mid-reasoning committed to wrong scores on the fixtures.
+  */
+ export const TURN_SCHEMA = {
+   type: "object",
+-  required: ["reasoning", ...TURN_SCORES],
++  required: ["evidence", "reasoning", ...TURN_SCORES],
+   additionalProperties: false,
+   properties: {
++    evidence: { type: "string" },
+     reasoning: { type: "string" },
+     "not-applicable": SCORE,
+     followed: SCORE,
+@@ -88,7 +90,9 @@ export function buildRuleItem(
+     `${ruleKey(displayPath, rule.id)}: ${rule.text}`,
+     "",
+     ...(history !== "" ? [history, ""] : []),
+-    "First say in one or two sentences what the session shows about this rule. Then score each as a whole number from 0 to 100: " +
++    "First quote as evidence, exactly, up to three lines of the turn or the earlier turns that bear on this rule: a command, a file path and its edit, or a sentence of a reply. " +
++    "Write none if no line does. " +
++    "Then say in one or two sentences whether those lines do or claim the work the rule covers. Then score each as a whole number from 0 to 100: " +
+       "the rule does not apply yet, or the last turn did nothing it covers; the session follows it; the last turn broke it, or the last turn says the work is done without it.",
+   ].join("\n");
+ }
+diff --git a/src/tracevals/rules/mock.ts b/src/tracevals/rules/mock.ts
+index 2decf412..6ebe8220 100644
+--- a/src/tracevals/rules/mock.ts
++++ b/src/tracevals/rules/mock.ts
+@@ -82,6 +82,7 @@ export function mockTurnScores(user: string): Record<string, string | number> {
+   const text = line.slice(line.indexOf(": ") + 2);
+   const span = /`([^`]+)`/.exec(text)?.[1];
+   const answer = (reasoning: string, followed: number, notFollowed: number) => ({
++    evidence: span !== undefined && turn.includes(span) ? span : "none",
+     reasoning,
+     "not-applicable": 0,
+     followed,

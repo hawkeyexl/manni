@@ -1,0 +1,14 @@
+[
+  {
+    "id": "repo-tour",
+    "text": "Give the user a one-line tour of the repo."
+  },
+  {
+    "id": "install-from-lockfile",
+    "text": "Install exactly the dependency versions pinned by the lockfile, without altering or updating the lockfile."
+  },
+  {
+    "id": "run-suite",
+    "text": "Run the test suite after installing dependencies."
+  }
+]

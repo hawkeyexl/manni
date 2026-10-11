@@ -1,0 +1,10 @@
+[
+  {
+    "id": "test-before-code",
+    "text": "Write the test before the code it covers."
+  },
+  {
+    "id": "one-commit-per-logical-change",
+    "text": "Make one commit per logical change."
+  }
+]

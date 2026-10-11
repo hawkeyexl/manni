@@ -1,0 +1,8 @@
+{
+  "extraction": {
+    "provider": "claude-cli",
+    "model": "claude-sonnet-5-5"
+  },
+  "rulesPromptVersion": 2,
+  "requirementsPromptVersion": 1
+}

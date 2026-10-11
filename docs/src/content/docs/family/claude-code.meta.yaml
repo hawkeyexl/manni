@@ -30,14 +30,41 @@ docs/src/content/docs/family/claude-code.mdx:
       lines: 52-54
       integrity: sha256-df685a2970b8b7c68901e88242d315805de017fe249f818d9e0b6a3a59437578
     - generated-by: Claude Sonnet 5.5
-      lines: 59-88
-      integrity: sha256-5c5d46d29310a140a02ac7717d094f7d260280e321d8f8943690366108d38db2
+      lines: 59-68
+      integrity: sha256-1dc375ec9934c2287936d4e3cefad7753d4103dddd614b65b6db8df3310eea9a
+    - generated-by: Claude Opus 5.5
+      lines: 69
+      integrity: sha256-2b54ff8324993f237cd2196c060bb042a567a560e38a33ba3e83bc5ecca7e852
+    - generated-by: Claude Sonnet 5.5
+      lines: 70
+      integrity: sha256-ca24f15a9a800d4a611141d5a7b0954f1be75a86d9b1c6243451f56f2004981d
+    - generated-by: Claude Opus 5.5
+      lines: 71
+      integrity: sha256-782e98cb76374105c1c94120edc06036ef7504e410639fd4441a70bc5c37c507
+    - generated-by: Claude Sonnet 5.5
+      lines: 73-88
+      integrity: sha256-d9ac93a6236dc17da7bb98a3dc96722e58859ed006fe48ef0139a1f41a642536
     - generated-by: Claude Sonnet 5.5
       lines: 90-142
       integrity: sha256-3d5d2ce1f62dc2525e57815afc20f1722b4116d1080c09a9c81f8eba12a512b3
+    - generated-by: Claude Opus 5.5
+      lines: 150
+      integrity: sha256-d0e3fafa6a0339827cc5620aa5c7618f5fddfdbab64be235b5fbc4f7a7427c4b
     - generated-by: Claude Sonnet 5.5
-      lines: 156-237
-      integrity: sha256-22cd686817dbfcf630d308d20a634bf64e6c72ed895c297bb1dd1e4e1a1b3db2
+      lines: 156-173
+      integrity: sha256-d6754d688ae3ae46d57eac3891ffa3e43a4d9b07a0766d4ab7a1129832822e2b
+    - generated-by: Claude Opus 5.5
+      lines: 174
+      integrity: sha256-479432e7232bd19d5cbede893e93d83fa4a3802aab038514ee23a82f51730c3c
+    - generated-by: Claude Sonnet 5.5
+      lines: 175-228
+      integrity: sha256-cca18129f32d4b113e624f9f0d97b0f1f3e6c6bffe4ec5eb2c32afb90c0e85b4
+    - generated-by: Claude Opus 5.5
+      lines: 229
+      integrity: sha256-26bb95fb17234b98e6835242acc98a0197b7ddad60514451dcf137e19fac7169
+    - generated-by: Claude Sonnet 5.5
+      lines: 230-237
+      integrity: sha256-f8c3d39b579a292fb6883c629825c6843a20f5c80b84ce745d312eb124c2454f
   owner:
     - "@hawkeyexl"
   created: 2026-10-05

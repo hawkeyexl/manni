@@ -1,0 +1,14 @@
+[
+  {
+    "id": "T002",
+    "text": "Write the serializer test first."
+  },
+  {
+    "id": "T003",
+    "text": "Add the serializer after the serializer test is written."
+  },
+  {
+    "id": "tick-after-code",
+    "text": "Tick a task only once its code is in."
+  }
+]

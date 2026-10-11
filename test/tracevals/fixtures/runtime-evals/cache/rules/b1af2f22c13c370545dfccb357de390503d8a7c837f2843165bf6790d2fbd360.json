@@ -1,0 +1,13 @@
+[
+  {
+    "id": "fix-empty-input-parse",
+    "text": "Fix the bug in src/parse.ts where empty input throws.",
+    "when": {
+      "file-access": "**/src/parse.ts"
+    }
+  },
+  {
+    "id": "skip-test-this-once",
+    "text": "Do not write a test for the src/parse.ts empty-input fix."
+  }
+]

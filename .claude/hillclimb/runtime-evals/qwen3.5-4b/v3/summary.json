@@ -1,0 +1,8 @@
+{
+  "description": "evidence first",
+  "target": "system_prompt",
+  "judge": {
+    "provider": "llama-cpp",
+    "model": "qwen3.5-4b"
+  }
+}

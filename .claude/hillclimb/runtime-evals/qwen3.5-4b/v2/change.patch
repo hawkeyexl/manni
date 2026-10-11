@@ -1,0 +1,34 @@
+diff --git a/src/tracevals/rules/timeline.ts b/src/tracevals/rules/timeline.ts
+index e6fa6202..3ca00fb2 100644
+--- a/src/tracevals/rules/timeline.ts
++++ b/src/tracevals/rules/timeline.ts
+@@ -1,8 +1,9 @@
+ /**
+  * "# Earlier in this session", read from the transcript (proposal 0080,
+  * "Earlier in this session, from the transcript"). Every turn before the
+- * judged one that did something gets a line, newest last, so a rule about a
+- * procedure that spans turns is judged with the whole session behind it. The
++ * judged one gets a line, newest last, so a rule about a procedure that spans
++ * turns is judged with the whole session behind it. A turn that did none of
++ * what a line lists says so, so no earlier event goes unaccounted for. The
+  * ledger only says which of those turns had no rule in scope.
+  */
+ import { makeRedactor } from "../judge/redact.js";
+@@ -94,7 +95,7 @@ const list = (verb: string, items: string[]): string[] =>
+   items.length > 0 ? [`${verb} ${items.join(", ")}`] : [];
+ 
+ /**
+- * The block for the turns before `before`, or "" when none did anything.
++ * The block for the turns before `before`, or "" when there are none.
+  * Over `maxChars`, the oldest lines go first, and a marker line says which.
+  */
+ export function timelineBlock(trace: Trace, before: number, opts: TimelineOptions): string {
+@@ -153,7 +154,7 @@ export function timelineBlock(trace: Trace, before: number, opts: TimelineOption
+       ...[...new Set(ticked)],
+       ...approved,
+     ];
+-    if (parts.length === 0) return [];
++    if (parts.length === 0) parts.push("ran no command and wrote no file");
+     const out = opts.ledger?.turns.find((t) => t.turn === from)?.inScope === false;
+     return [{ turn: from, line: `- turn ${String(from)}: ${parts.join("; ")}${out ? " (no rules in scope)" : ""}` }];
+   });
