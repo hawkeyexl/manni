@@ -102,16 +102,16 @@ describe("parseConfig", () => {
     expect(() => parseConfig({ unknownKey: true })).toThrow(TracevalsError);
   });
 
-  describe("conformance", () => {
+  describe("runtime", () => {
     const JEV_REFUSAL =
-      "jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.conformance.hook.provider.";
+      "jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.runtime.hook.provider.";
 
     it("is null when absent, so tracevals stays out of play", () => {
-      expect(parseConfig({}).conformance).toBeNull();
+      expect(parseConfig({}).runtime).toBeNull();
     });
 
     it("puts tracevals in play as {}, every default filled", () => {
-      expect(parseConfig({ conformance: {} }).conformance).toEqual({
+      expect(parseConfig({ runtime: {} }).runtime).toEqual({
         hook: { provider: null, model: null, runs: 1 },
         include: [],
         exclude: [],
@@ -122,13 +122,13 @@ describe("parseConfig", () => {
     it("keeps explicit values", () => {
       expect(
         parseConfig({
-          conformance: {
+          runtime: {
             hook: { provider: "anthropic", model: "claude-x", runs: 3 },
             include: ["docs/content-strategy/**"],
             exclude: [".cursor/rules/old.mdc"],
             plans: ["docs/plans/*.md"],
           },
-        }).conformance,
+        }).runtime,
       ).toEqual({
         hook: { provider: "anthropic", model: "claude-x", runs: 3 },
         include: ["docs/content-strategy/**"],
@@ -139,7 +139,7 @@ describe("parseConfig", () => {
 
     it("accepts jev as the hook's provider", () => {
       expect(
-        parseConfig({ conformance: { hook: { provider: "jev" } } }).conformance?.hook.provider,
+        parseConfig({ runtime: { hook: { provider: "jev" } } }).runtime?.hook.provider,
       ).toBe("jev");
     });
 
@@ -149,27 +149,38 @@ describe("parseConfig", () => {
     });
 
     it("refuses an unknown hook provider with the shared message", () => {
-      expect(() => parseConfig({ conformance: { hook: { provider: "gemini" } } })).toThrow(
+      expect(() => parseConfig({ runtime: { hook: { provider: "gemini" } } })).toThrow(
         /Unknown provider "gemini"/,
       );
     });
 
     it("refuses runs below 1 or fractional, and lists that are not globs", () => {
-      expect(() => parseConfig({ conformance: { hook: { runs: 0 } } })).toThrow(TracevalsError);
-      expect(() => parseConfig({ conformance: { hook: { runs: 1.5 } } })).toThrow(TracevalsError);
-      expect(() => parseConfig({ conformance: { include: "docs/**" } })).toThrow(TracevalsError);
-      expect(() => parseConfig({ conformance: { exclude: [""] } })).toThrow(TracevalsError);
-      expect(() => parseConfig({ conformance: { plans: "docs/plans/*.md" } })).toThrow(TracevalsError);
-      expect(() => parseConfig({ conformance: { plans: [""] } })).toThrow(TracevalsError);
-      expect(() => parseConfig({ conformance: { hook: { model: "" } } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ runtime: { hook: { runs: 0 } } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ runtime: { hook: { runs: 1.5 } } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ runtime: { include: "docs/**" } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ runtime: { exclude: [""] } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ runtime: { plans: "docs/plans/*.md" } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ runtime: { plans: [""] } })).toThrow(TracevalsError);
+      expect(() => parseConfig({ runtime: { hook: { model: "" } } })).toThrow(TracevalsError);
     });
 
     it("refuses unknown keys, naming the camelCase one a kebab spelling meant", () => {
-      expect(() => parseConfig({ conformance: { hooks: {} } })).toThrow(/unknown key "hooks"/);
-      expect(() => parseConfig({ conformance: { hook: { timeout: 1 } } })).toThrow(
+      expect(() => parseConfig({ runtime: { hooks: {} } })).toThrow(/unknown key "hooks"/);
+      expect(() => parseConfig({ runtime: { hook: { timeout: 1 } } })).toThrow(
         /unknown key "timeout"/,
       );
-      expect(() => parseConfig({ conformance: [] })).toThrow(TracevalsError);
+      expect(() => parseConfig({ runtime: [] })).toThrow(TracevalsError);
+    });
+
+    it("refuses the old conformance key, naming the new one", () => {
+      expect(() => parseConfig({ conformance: {} })).toThrow(TracevalsError);
+      expect(() => parseConfig({ conformance: {} })).toThrow(
+        /: unknown key "conformance"; it is now "runtime"$/,
+      );
+    });
+
+    it("names the new key only at the section root", () => {
+      expect(() => parseConfig({ runtime: { conformance: {} } })).toThrow(/unknown key "conformance"$/);
     });
   });
 

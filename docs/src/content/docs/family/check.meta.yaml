@@ -17,14 +17,26 @@ docs/src/content/docs/family/check.mdx:
       grader: ai
   provenance:
     - generated-by: Claude Sonnet 5.5
-      lines: 2-27
-      integrity: sha256-b59f8e8e82243b7482d268afd6b0f8e02952dbce8166de247f235ebd82320725
+      lines: 2-52
+      integrity: sha256-8c446b2901d54d5d507a8791a8ff45f598bd3c0f72de584855c34e211e66346e
     - generated-by: Claude Opus 5.5
-      lines: 28
-      integrity: sha256-6f835e8af2d644ae9642463f802c0e368d05d7ae16256f49657d96ed03a22ef4
+      lines: 53
+      integrity: sha256-b56ce960644e2b8a9e538c0182f6df703027446aa3bd6b4511c167daaab37b46
     - generated-by: Claude Sonnet 5.5
-      lines: 29-225
-      integrity: sha256-09e4a9213a14bb90fb1f14c8454a2545f2c4522bbbd93394c4d4b89918839bda
+      lines: 55-203
+      integrity: sha256-d264eaf5f68878b7e5b6f9a7677c63bba88a7380ab6e77be7e6c191041005af2
+    - generated-by: Claude Opus 5.5
+      lines: 204
+      integrity: sha256-c6cba6616b727726161cf187704c934c6a8fb63e6d55c4033559c66955526879
+    - generated-by: Claude Sonnet 5.5
+      lines: 205
+      integrity: sha256-a384ecd48afe45b1060c1356e777709654bc9622d2a6be669fb57f18c9f01b13
+    - generated-by: Claude Opus 5.5
+      lines: 206
+      integrity: sha256-4a6c0c140fe4e96ef3d33d8f7f3636c1f23ee211e69923be55b9f599d23b3a11
+    - generated-by: Claude Sonnet 5.5
+      lines: 207-225
+      integrity: sha256-c2e379e3f02dbea9f34a2d33cadbd8899248d65f3f8f5e3c0b66592c637851d4
   owner:
     - "@hawkeyexl"
   created: 2026-10-05

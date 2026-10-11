@@ -1,0 +1,14 @@
+[
+  {
+    "id": "parse-drop-empty-items",
+    "text": "Make the parse function drop empty items."
+  },
+  {
+    "id": "fix-readme-typo",
+    "text": "Fix the 'run form CI' typo in the README."
+  },
+  {
+    "id": "commit-changes",
+    "text": "Commit the changes."
+  }
+]

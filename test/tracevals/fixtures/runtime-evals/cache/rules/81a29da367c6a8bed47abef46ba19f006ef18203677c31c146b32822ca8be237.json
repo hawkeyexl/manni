@@ -1,0 +1,23 @@
+[
+  {
+    "id": "1",
+    "text": "Add a wordCount(text) function to src/words.ts.",
+    "when": {
+      "file-access": "**/src/words.ts"
+    }
+  },
+  {
+    "id": "2",
+    "text": "Show the word count under the title in src/NoteCard.tsx.",
+    "when": {
+      "file-access": "**/src/NoteCard.tsx"
+    }
+  },
+  {
+    "id": "3",
+    "text": "Test wordCount in test/words.test.ts.",
+    "when": {
+      "file-access": "**/test/words.test.ts"
+    }
+  }
+]

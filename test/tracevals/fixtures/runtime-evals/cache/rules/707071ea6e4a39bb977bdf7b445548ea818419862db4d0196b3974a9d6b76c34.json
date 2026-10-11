@@ -1,0 +1,10 @@
+[
+  {
+    "id": "FR-001",
+    "text": "Users can export their notes as a CSV file."
+  },
+  {
+    "id": "FR-002",
+    "text": "The export includes each note's title and creation date."
+  }
+]

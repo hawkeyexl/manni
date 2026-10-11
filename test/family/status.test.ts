@@ -75,12 +75,12 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
     expect(row?.reason).toMatch(/^manni docevals run could not run: /);
   });
 
-  it("puts tracevals in play when tracevals.conformance exists, naming both models", async () => {
+  it("puts tracevals in play when tracevals.runtime exists, naming both models", async () => {
     dir = fixtureRepo("only-graph");
     const config = join(dir, "manni.config.yaml");
     writeFileSync(
       config,
-      `${readFileSync(config, "utf8")}\ntracevals:\n  provider: mock\n  conformance:\n    hook: { model: hook-model }\n`,
+      `${readFileSync(config, "utf8")}\ntracevals:\n  provider: mock\n  runtime:\n    hook: { model: hook-model }\n`,
     );
     const report = await runStatus({ cwd: dir, hostStatus: () => Promise.resolve(null) });
     expect(report.domains.find((d) => d.name === "tracevals")).toEqual({
@@ -95,7 +95,7 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
   it("names the model host when one runs, even with no collections", async () => {
     const bare = realpathSync(mkdtempSync(join(tmpdir(), "manni-family-status-")));
     dir = bare;
-    writeFileSync(join(bare, "manni.config.yaml"), "tracevals:\n  provider: mock\n  conformance: {}\n");
+    writeFileSync(join(bare, "manni.config.yaml"), "tracevals:\n  provider: mock\n  runtime: {}\n");
     const host = { pid: 1, models: [{ model: "qwen3.5-4b", sessions: 2, idleMs: 180_000, queued: 0 }] };
     const report = await runStatus({ cwd: bare, hostStatus: () => Promise.resolve(host) });
     const row = report.domains.find((d) => d.name === "tracevals");
@@ -103,7 +103,21 @@ describe.skipIf(!gitAvailable())("runStatus", () => {
     expect(row?.host).toEqual(host.models);
   });
 
-  it("leaves tracevals not checked without tracevals.conformance", async () => {
+  it("reports the old tracevals.conformance key in tracevals' row, naming the new one", async () => {
+    dir = fixtureRepo("only-graph");
+    const config = join(dir, "manni.config.yaml");
+    writeFileSync(config, `${readFileSync(config, "utf8")}
+tracevals:
+  provider: mock
+  conformance: {}
+`);
+    const report = await runStatus({ cwd: dir, hostStatus: () => Promise.resolve(null) });
+    const row = report.domains.find((d) => d.name === "tracevals");
+    expect(row?.status).toBe("unknown");
+    expect(row?.reason).toMatch(/^manni tracevals check could not run: .*unknown key "conformance"; it is now "runtime"$/);
+  });
+
+  it("leaves tracevals not checked without tracevals.runtime", async () => {
     dir = fixtureRepo("only-graph");
     const config = join(dir, "manni.config.yaml");
     writeFileSync(config, `${readFileSync(config, "utf8")}\ntracevals:\n  provider: mock\n`);

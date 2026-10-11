@@ -1,6 +1,6 @@
 /**
  * The sources that say what the session was asked (proposal 0080): the typed
- * prompts, the approved plan, touched specs and `conformance.plans` files.
+ * prompts, the approved plan, touched specs and `runtime.plans` files.
  */
 import { createHash } from "node:crypto";
 import { join } from "node:path";
@@ -14,7 +14,7 @@ import {
 import type { FileAccess, ToolCall, TraceEvent } from "../../../src/tracevals/trace/types.js";
 import { makeTrace } from "../helpers.js";
 
-const FIX = join(import.meta.dirname, "..", "fixtures", "conformance");
+const FIX = join(import.meta.dirname, "..", "fixtures", "runtime");
 const ROOT = join(FIX, "requests");
 const HOME = join(FIX, "home");
 const CONFIG_DIR = join(HOME, ".claude");

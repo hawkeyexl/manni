@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+# [4.7.0](https://github.com/hawkeyexl/manni/compare/v4.6.0...v4.7.0) (2026-10-07)
+
+
+### Features
+
+* **tracevals:** read the system prompt the session ran under (0081) ([#171](https://github.com/hawkeyexl/manni/issues/171)) ([58d7c97](https://github.com/hawkeyexl/manni/commit/58d7c97b4a22ae5df932de5200bcff53da2a446a))
+
 # [4.6.0](https://github.com/hawkeyexl/manni/compare/v4.5.0...v4.6.0) (2026-10-07)
 
 

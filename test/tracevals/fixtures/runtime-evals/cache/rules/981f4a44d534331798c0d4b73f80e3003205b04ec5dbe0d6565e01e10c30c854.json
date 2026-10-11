@@ -1,0 +1,14 @@
+[
+  {
+    "id": "changelog-greeting-entry",
+    "text": "Add a changelog entry for the greeting."
+  },
+  {
+    "id": "commit-changelog",
+    "text": "Commit the changelog entry."
+  },
+  {
+    "id": "push-branch",
+    "text": "Push the branch."
+  }
+]

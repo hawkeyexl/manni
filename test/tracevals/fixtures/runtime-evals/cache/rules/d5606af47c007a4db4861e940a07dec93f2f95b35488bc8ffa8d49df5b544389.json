@@ -1,0 +1,16 @@
+[
+  {
+    "id": "errors-via-httperror",
+    "text": "Return every error from a handler through `httpError(status, message)`, and never throw a bare `Error`.",
+    "when": {
+      "file-access": "src/api/**"
+    }
+  },
+  {
+    "id": "no-log-request-body",
+    "text": "Never log a request body, since a body can hold personal data.",
+    "when": {
+      "file-access": "src/api/**"
+    }
+  }
+]

@@ -1,0 +1,6 @@
+[
+  {
+    "id": "end-with-summary-line",
+    "text": "End every reply with a line that starts with `Summary:`."
+  }
+]

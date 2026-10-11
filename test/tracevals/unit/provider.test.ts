@@ -283,7 +283,7 @@ describe("jev", () => {
     expect(refuse).toThrow(TracevalsError);
     expect(refuse).toThrow(JEV_OUT_OF_LOOP);
     expect(JEV_OUT_OF_LOOP).toBe(
-      "jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.conformance.hook.provider.",
+      "jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.runtime.hook.provider.",
     );
   });
 
@@ -315,13 +315,13 @@ describe("jev", () => {
 });
 
 describe("selectHookProvider", () => {
-  it("takes conformance.hook first", () => {
+  it("takes runtime.hook first", () => {
     const config = family(
       { provider: "openai" },
       {
         provider: "anthropic",
         model: "claude-big",
-        conformance: { hook: { provider: "llama-cpp", model: "qwen3.5-4b" } },
+        runtime: { hook: { provider: "llama-cpp", model: "qwen3.5-4b" } },
       },
     );
     expect(selectHookProvider(config)).toEqual({ provider: "llama-cpp", model: "qwen3.5-4b" });
@@ -330,20 +330,20 @@ describe("selectHookProvider", () => {
   it("falls back to tracevals.provider, lending a hook-only model to it", () => {
     const config = family(
       {},
-      { provider: "anthropic", model: "claude-big", conformance: { hook: { model: "claude-small" } } },
+      { provider: "anthropic", model: "claude-big", runtime: { hook: { model: "claude-small" } } },
     );
     expect(selectHookProvider(config)).toEqual({ provider: "anthropic", model: "claude-small" });
     expect(
-      selectHookProvider(family({}, { provider: "anthropic", model: "claude-big", conformance: {} })),
+      selectHookProvider(family({}, { provider: "anthropic", model: "claude-big", runtime: {} })),
     ).toEqual({ provider: "anthropic", model: "claude-big" });
   });
 
   it("falls back to providers.provider, then auto", () => {
-    expect(selectHookProvider(family({ provider: "openai" }, { conformance: {} }))).toEqual({
+    expect(selectHookProvider(family({ provider: "openai" }, { runtime: {} }))).toEqual({
       provider: "openai",
       model: undefined,
     });
-    expect(selectHookProvider(family({}, { conformance: {} }))).toEqual({
+    expect(selectHookProvider(family({}, { runtime: {} }))).toEqual({
       provider: "auto",
       model: undefined,
     });
@@ -352,7 +352,7 @@ describe("selectHookProvider", () => {
   it("does not lend tracevals.model to a hook provider it does not belong to", () => {
     const config = family(
       {},
-      { provider: "anthropic", model: "claude-big", conformance: { hook: { provider: "jev" } } },
+      { provider: "anthropic", model: "claude-big", runtime: { hook: { provider: "jev" } } },
     );
     expect(selectHookProvider(config)).toEqual({ provider: "jev", model: undefined });
   });

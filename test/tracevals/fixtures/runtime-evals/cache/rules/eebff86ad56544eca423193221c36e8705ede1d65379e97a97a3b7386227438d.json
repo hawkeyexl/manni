@@ -1,0 +1,10 @@
+[
+  {
+    "id": "fix-monthof-off-by-one",
+    "text": "Fix the off-by-one bug in monthOf."
+  },
+  {
+    "id": "commit-monthof-fix",
+    "text": "Commit the monthOf fix as a fix (a fix-type commit message)."
+  }
+]
