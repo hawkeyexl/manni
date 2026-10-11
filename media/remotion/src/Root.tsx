@@ -17,6 +17,7 @@ import { beats as conformanceBeats, totalFrames as conformanceTotalFrames, TYPIN
 import { beats as sessionRulesBeats, totalFrames as sessionRulesTotalFrames, TYPING_MS as sessionRulesTypingMs } from "./session-rules/beats";
 import { beats as systemPromptBeats, totalFrames as systemPromptTotalFrames, TYPING_MS as systemPromptTypingMs } from "./system-prompt/beats";
 import { beats as graphImpactBeats, totalFrames as graphImpactTotalFrames, TYPING_MS as graphImpactTypingMs } from "./graph-impact/beats";
+import { beats as testBeats, totalFrames as testTotalFrames, TYPING_MS as testTypingMs } from "./test/beats";
 import { beats as graphFormatsBeats, totalFrames as graphFormatsTotalFrames, TYPING_MS as graphFormatsTypingMs } from "./graph-formats/beats";
 
 /** sidecar-url-1x1: 23 px / 75 columns, derived in media/sidecar-url-1x1.script.md. */
@@ -64,6 +65,12 @@ const DemoGraphImpact: React.FC = () => <DemoView beats={graphImpactBeats} fontP
  */
 const DemoGraphFormats: React.FC = () => <DemoView beats={graphFormatsBeats} fontPx={27} linePx={38} cols={64} typingMs={graphFormatsTypingMs} ligatures={false} />;
 
+/**
+ * test-run-1x1: 27 px / 64 columns, derived in media/test-run-1x1.script.md
+ * (media/capture-test/cols.mjs). Ligatures off: the page's `<!--` and `-->`
+ * and the annotation's `::` would draw as glyphs no terminal prints.
+ */
+const DemoTest: React.FC = () => <DemoView beats={testBeats} fontPx={27} linePx={38} cols={64} typingMs={testTypingMs} ligatures={false} />;
 /** family-check-1x1: 25 px / 69 columns, derived in media/family-check/family-check-1x1.script.md (media/family-check/capture/cols.mjs). */
 const DemoFamilyCheck: React.FC = () => <DemoView beats={familyCheckBeats} fontPx={25} linePx={35} cols={69} typingMs={familyCheckTypingMs} ligatures={false} />;
 
@@ -176,6 +183,14 @@ export const Root: React.FC = () => (
       height={1080}
       fps={FPS}
       durationInFrames={graphImpactTotalFrames}
+    />
+    <Composition
+      id="TestRunDemo"
+      component={DemoTest}
+      width={1080}
+      height={1080}
+      fps={FPS}
+      durationInFrames={testTotalFrames}
     />
     <Composition
       id="GraphFormatsDemo"

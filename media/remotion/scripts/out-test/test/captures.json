@@ -1,0 +1,11 @@
+{
+    "cat fail.md": "# Fail\n\n<!-- test {\"testId\":\"exit-one\"} -->\n<!-- step {\"runShell\":{\"command\":\"exit 1\",\"exitCodes\":[0]}} -->\n<!-- test end -->\n",
+    "fail": "\u001b[1mfail.md\u001b[22m\n  4  \u001b[31mFAIL   \u001b[39m  Returned exit code 1. Expected one of [0]\n\n1 test: 0 passed, 1 failed, 0 warnings, 0 skipped\n\nreal\t0m7.765s\nuser\t0m0.000s\nsys\t0m0.015s\n",
+    "github": "::error file=fail.md,line=4,title=Doc Detective::Returned exit code 1. Expected one of [0]\n1 test: 0 passed, 1 failed, 0 warnings, 0 skipped\n\nreal\t0m8.013s\nuser\t0m0.000s\nsys\t0m0.000s\n",
+    "pass": "1 test: 1 passed, 0 failed, 0 warnings, 0 skipped\n\nreal\t0m7.802s\nuser\t0m0.031s\nsys\t0m0.000s\n",
+    "exits": {
+        "fail": "1",
+        "github": "1",
+        "pass": "0"
+    }
+}

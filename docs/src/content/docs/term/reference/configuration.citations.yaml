@@ -13,9 +13,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-7d0655d425264f026c5f5d326f212ee791e1abffd5be4c9c1888551df0e07087
       source:
         file: src/shared/tools.ts
-        lines: 143-147
-        integrity: sha256-e031656b7d919f957129e2cb6d1848230e626368ce9b7ab0878bdd22a7114185
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        lines: 151-155
+        integrity: sha256-5ccf0ef6937eea39ae3b48b100b143fb976177263f0bfe234391c668ed5863a5
+        commit-sha: 58a96dd31adb6ab1d2f640b34cf13b71b00f0385
     - id: empty-term-section-no-keys
       claim:
         integrity: sha256-7d0655d425264f026c5f5d326f212ee791e1abffd5be4c9c1888551df0e07087
@@ -77,17 +77,17 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-9c5cab61e3f16882afd2267e1200f1bd9637a91a3c7fb08d64925d17f8e48a07
       source:
         file: src/shared/tools.ts
-        lines: 106-113
-        integrity: sha256-89a62db24651e4ff0d7e68e1a4eb8ff708197e112d44c4befc89a9e6bef9b3f7
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        lines: 131-137
+        integrity: sha256-cf6c669a792e0d752cc7308c52ae6f6c7ced5de941e66f50c8682279c4d66bbc
+        commit-sha: 53b5c8412b0b5c3fd8e884a05b237e8f1cc0c0c5
     - id: vale-finds-own-config
       claim:
         integrity: sha256-9c5cab61e3f16882afd2267e1200f1bd9637a91a3c7fb08d64925d17f8e48a07
       source:
         file: src/shared/tools.ts
-        lines: 138-147
-        integrity: sha256-6aff5155a3feb38d23abf880bb71b1217811969f279e30e8827145c91bd18ba5
-        commit-sha: 9c50f60641f3e5d70caafec7ea270a995285dbc9
+        lines: 146-155
+        integrity: sha256-825c348e3e8fa3b182253fae34b3d332fe6fe52aec666e2dd5d14cc9ffba29b1
+        commit-sha: 58a96dd31adb6ab1d2f640b34cf13b71b00f0385
     - id: manifests-list-of-paths
       claim:
         lines: 65
@@ -447,9 +447,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-e3fddc012ce5bb146ba5bd067310adbaab7a06782d884e4ffbca13ca5adb8d11
       source:
         file: src/meta/core/load-files.ts
-        lines: 402
+        lines: 406
         integrity: sha256-da70dbb9bcc1db6c1d1532237399e11fa14a9f72563d7fca972d0bb400e2e69f
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: 5a48da35ebb584a209b1dfb0812f155a20a5133b
     - id: duplicate-id-on-every-entry
       claim:
         integrity: sha256-44ef57a62c574467369a2141e4e556b88bba96ee6875dd0337e0ae01896c92b1
