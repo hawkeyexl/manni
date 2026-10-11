@@ -505,13 +505,13 @@ export async function runTurnCheck(
   const trace = resolve(cwd, judged);
   const sessionId = envelope.sessionId ?? basename(trace, ".jsonl");
   let result: TurnCheckResult;
-  let renderTurn: (typeof import("../../tracevals/reporters/conformance.js"))["renderCheck"];
+  let renderTurn: (typeof import("../../tracevals/reporters/runtime.js"))["renderCheck"];
   try {
     // Loaded here, as every domain is, so a run that never judges a turn never
     // loads tracevals.
     const [{ checkTurn }, reporters] = await Promise.all([
       import("../../tracevals/commands/check.js"),
-      import("../../tracevals/reporters/conformance.js"),
+      import("../../tracevals/reporters/runtime.js"),
     ]);
     renderTurn = reporters.renderCheck;
     result = await checkTurn({

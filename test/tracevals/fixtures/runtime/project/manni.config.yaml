@@ -2,6 +2,6 @@
 # extracts and judges, so the corpus runs offline.
 tracevals:
   provider: mock
-  conformance:
+  runtime:
     exclude:
       - .cursor/rules/stale.mdc

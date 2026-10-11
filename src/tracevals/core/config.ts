@@ -154,14 +154,14 @@ export interface TracevalsConfig {
   /** List offered-but-unused artifacts in coverage, not just count them. */
   reportUnusedArtifacts: boolean;
   /**
-   * Checking each turn against its rule sources (proposal 0079). `null` when
-   * the section is absent, which keeps tracevals out of every hook; `{}` puts
-   * it in play with these defaults.
+   * Runtime evals, each turn checked against its rule sources (proposals 0079
+   * and 0083). `null` when the section is absent, which keeps tracevals out of
+   * every hook; `{}` puts it in play with these defaults.
    */
-  conformance: ConformanceConfig | null;
+  runtime: RuntimeConfig | null;
 }
 
-export interface ConformanceConfig {
+export interface RuntimeConfig {
   /** The in-loop judge. `null` falls back to `tracevals.provider` / `model`. */
   hook: { provider: string | null; model: string | null; runs: number };
   /** Globs of designated rule sources, in scope once read. */
@@ -194,6 +194,16 @@ function camelCaseHint(key: string, parentSchema: unknown): string {
     Object.hasOwn(properties, camel)
     ? `; did you mean "${camel}"?`
     : "";
+}
+
+/**
+ * The hint on the old `conformance:` section, renamed `runtime:` (proposal
+ * 0083). Nothing reads the old key, so it stays an unknown key; the hint says
+ * where its settings went. Only at the section root: a `conformance` key
+ * nested anywhere else, as under `runtime:`, was never the old section.
+ */
+function renamedRuntimeHint(instancePath: string, key: string): string {
+  return instancePath === "" && key === "conformance" ? `; it is now "runtime"` : "";
 }
 
 /**
@@ -248,7 +258,7 @@ interface RawConfig {
   failOnReview?: boolean;
   plugins?: string[];
   reportUnusedArtifacts?: boolean;
-  conformance?: {
+  runtime?: {
     hook?: { provider?: string; model?: string; runs?: number };
     include?: string[];
     exclude?: string[];
@@ -289,7 +299,7 @@ export function parseConfig(
             ? (e.params as { additionalProperty?: string }).additionalProperty
             : undefined;
         return extra !== undefined
-          ? `unknown key "${extra}"${camelCaseHint(extra, e.parentSchema)}`
+          ? `unknown key "${extra}"${camelCaseHint(extra, e.parentSchema)}${renamedRuntimeHint(e.instancePath, extra)}`
           : `${CONFIG_SECTION_KEY_PATH}${e.instancePath} ${e.message ?? "is invalid"}` +
               movedProviderHint(e.instancePath, e.keyword);
       })
@@ -309,7 +319,7 @@ export function parseConfig(
     if (provider === JEV) throw new TracevalsError(JEV_OUT_OF_LOOP);
     assertKnownProvider(provider, (message) => new TracevalsError(message));
   }
-  const hookProvider = r.conformance?.hook?.provider ?? null;
+  const hookProvider = r.runtime?.hook?.provider ?? null;
   if (hookProvider !== null) {
     assertKnownProvider(hookProvider, (message) => new TracevalsError(message), { decisions: true });
   }
@@ -378,18 +388,18 @@ export function parseConfig(
     // An observation, not a gate: listing it is opt-in because a real roster
     // runs to hundreds of skills (ADR 01016).
     reportUnusedArtifacts: r.reportUnusedArtifacts ?? false,
-    conformance:
-      r.conformance === undefined
+    runtime:
+      r.runtime === undefined
         ? null
         : {
             hook: {
               provider: hookProvider,
-              model: r.conformance.hook?.model ?? null,
-              runs: r.conformance.hook?.runs ?? 1,
+              model: r.runtime.hook?.model ?? null,
+              runs: r.runtime.hook?.runs ?? 1,
             },
-            include: [...(r.conformance.include ?? [])],
-            exclude: [...(r.conformance.exclude ?? [])],
-            plans: [...(r.conformance.plans ?? [])],
+            include: [...(r.runtime.include ?? [])],
+            exclude: [...(r.runtime.exclude ?? [])],
+            plans: [...(r.runtime.plans ?? [])],
           },
   };
   // Compilability is not expressible in JSON Schema, and a pattern that cannot

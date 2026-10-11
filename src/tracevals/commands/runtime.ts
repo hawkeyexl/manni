@@ -56,9 +56,9 @@ export function firstLine(err: unknown): string {
 }
 
 /** Defaults filled for a run by hand, where the section may be absent. */
-export function conformanceOf(config: TracevalsConfig): NonNullable<TracevalsConfig["conformance"]> {
+export function runtimeOf(config: TracevalsConfig): NonNullable<TracevalsConfig["runtime"]> {
   return (
-    config.conformance ?? {
+    config.runtime ?? {
       hook: { provider: null, model: null, runs: 1 },
       include: [],
       exclude: [],

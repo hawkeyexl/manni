@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What does execution.allow do?", "Where do relocated evals live?"]
 graph: { label: "Configuration reference", type: reference }
-last-updated: 2026-10-07
+last-updated: 2026-10-11
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -228,9 +228,9 @@ tracevals:
   failOnReview: true
   plugins: []                    # grader modules to import before evals are planned
   reportUnusedArtifacts: false
-  # conformance has no default and is absent unless you write it. Present, even as {},
+  # runtime has no default and is absent unless you write it. Present, even as {},
   # it puts tracevals in play under hooks.
-  conformance:
+  runtime:
     hook:
       provider: anthropic        # default: provider
       model: <model-id>          # default: model
@@ -241,7 +241,7 @@ tracevals:
 ```
 
 Everything tracevals writes sits under **`.manni/tracevals/`**: the judge cache, the fill cache, the
-history file, captured session manifests, and the conformance hook's session ledgers. One gitignored directory per repository, shared in
+history file, captured session manifests, and the runtime evals hook's session ledgers. One gitignored directory per repository, shared in
 shape with every other tool's `.manni/<tool>/`.
 
 ## `provider` and `model`
@@ -256,7 +256,7 @@ Two optional strings. They say **which** provider judges; they never say how to 
 - **`provider`** is one of `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. Set, it
   overrides the family's `providers.provider` for tracevals only. Unknown names are **exit 2**.
   `jev` answers decisions only, so it is refused here with **exit 2**. Name it as
-  [`conformance.hook.provider`](#conformance) instead.
+  [`runtime.hook.provider`](#runtime) instead.
 - **Out of the loop**, this provider and model also extract rules from rules files and serve
   `prepare` and `check` by hand.
 - **`model`** is the model within `provider`, and needs a provider named at this level. manni pins
@@ -284,7 +284,7 @@ providers:
     thoughtTokens: 0
     keepAlive: 10m                   # how long the model host keeps a model loaded
   jev:
-    apiKeyEnv: TYPESAFE_API_KEY      # decisions only; see conformance.hook
+    apiKeyEnv: TYPESAFE_API_KEY      # decisions only; see runtime.hook
     baseUrl: https://api.typesafe.ai
 
 tracevals:
@@ -379,22 +379,28 @@ Three things to know:
 See [What leaves the machine](/manni/tracevals/judge/#what-leaves-the-machine) for the full list of
 what a judged run sends, redacted or not.
 
-## `conformance`
+## `runtime`
 
-Checking each turn against the rules the files that govern the agent declare. The section is
-optional, and its presence is the switch. Present, even as `{}`, it puts tracevals in play under
-the Claude Code hooks. Absent, tracevals stays out of them. The journey is in
-[Check each turn](/manni/tracevals/conformance/).
+Runtime evals check each turn against the rules the files that govern the agent declare. The
+section is optional, and its presence is the switch. Present, even as `{}`, it puts tracevals in
+play under the Claude Code hooks. Absent, tracevals stays out of them. The journey is in
+[Check each turn](/manni/tracevals/runtime/).
+
+A `conformance:` section is an unknown key, and the message names this one, with **exit 2**:
+
+```
+manni: /repo/manni.config.yaml: unknown key "conformance"; it is now "runtime"
+```
 
 | Key | Type | Required | Default | CLI |
 |---|---|---|---|---|
-| `conformance` | object | no | *(absent)* | none |
-| `conformance.hook.provider` | string | no | `provider` | none |
-| `conformance.hook.model` | string | no | `model` | none |
-| `conformance.hook.runs` | integer ≥ 1 | no | `1` | none |
-| `conformance.include` | array of globs | no | `[]` | none |
-| `conformance.exclude` | array of globs | no | `[]` | none |
-| `conformance.plans` | array of globs | no | `[]` | none |
+| `runtime` | object | no | *(absent)* | none |
+| `runtime.hook.provider` | string | no | `provider` | none |
+| `runtime.hook.model` | string | no | `model` | none |
+| `runtime.hook.runs` | integer ≥ 1 | no | `1` | none |
+| `runtime.include` | array of globs | no | `[]` | none |
+| `runtime.exclude` | array of globs | no | `[]` | none |
+| `runtime.plans` | array of globs | no | `[]` | none |
 
 - **`hook.provider`** is the provider that judges inside a Stop or SubagentStop hook. It is one of
   `auto`, `anthropic`, `openai`, `claude-cli`, `llama-cpp` or `jev`. `jev` answers decisions only,
@@ -416,7 +422,7 @@ the Claude Code hooks. Absent, tracevals stays out of them. The journey is in
 
 ```yaml title="manni.config.yaml"
 tracevals:
-  conformance:
+  runtime:
     plans: [docs/plans/*.md]
 ```
 
@@ -427,9 +433,9 @@ Work inside the loop and work outside it have different budgets, so they get dif
 | Role | Does | Configured by |
 |---|---|---|
 | Out of the loop | Rule extraction, `prepare`, `check` by hand, `run` and `fill` | `provider` and `model` |
-| In the loop | Judging a turn inside a Stop or SubagentStop hook | `conformance.hook.provider` and `.model`, falling back to the keys above |
+| In the loop | Judging a turn inside a Stop or SubagentStop hook | `runtime.hook.provider` and `.model`, falling back to the keys above |
 
-Inside a hook, the provider comes from `conformance.hook`, then `tracevals`, then
+Inside a hook, the provider comes from `runtime.hook`, then `tracevals`, then
 `providers.provider`, then `auto`. Outside one, the flags come first and then the chain in
 [Which provider judges](#which-provider-judges). Extraction always uses the out-of-loop model, so
 `prepare`, the hook and `check` share one rules cache. Whether a run is in the loop is detected from
@@ -443,7 +449,7 @@ today.
 tracevals:
   provider: anthropic
   model: claude-sonnet-5-5
-  conformance:
+  runtime:
     hook: { provider: anthropic, model: claude-haiku-4-5 }
 ```
 
@@ -452,7 +458,7 @@ tracevals:
 tracevals:
   provider: llama-cpp
   model: qwen3.5-4b
-  conformance: {}
+  runtime: {}
 ```
 
 ```yaml title="manni.config.yaml"
@@ -460,7 +466,7 @@ tracevals:
 tracevals:
   provider: anthropic
   model: claude-sonnet-5-5
-  conformance:
+  runtime:
     hook: { provider: jev, model: jev-latest }
 providers:
   jev:
@@ -663,7 +669,7 @@ what it *decides*. The summary counts and the exit code are identical either way
 
 Worth knowing, because they can only be changed in the config file:
 
-`conformance.*` · `judge.temperature` · `judge.zones.autoPass` · `judge.zones.autoFail` · `judge.cacheDir` ·
+`runtime.*` · `judge.temperature` · `judge.zones.autoPass` · `judge.zones.autoFail` · `judge.cacheDir` ·
 `judge.redact` · `render.maxBlockChars` · `render.maxTotalChars` · `history.file` ·
 `capture.dir` · `fill.temperature` · `fill.cacheDir` · `calibrate.sweep.ensembleRuns` ·
 `calibrate.sweep.autoPass` · `calibrate.sweep.autoFail`

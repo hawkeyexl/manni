@@ -33,11 +33,11 @@ docs/src/content/docs/tracevals/reference/glossary.mdx:
       lines: 209-210
       integrity: sha256-2af9953d9679774e67b7b592a326c98ce3d8ee7ae4b4cb601d1244c8b1c84e85
     - generated-by: Claude Opus 5.5
-      lines: 213
-      integrity: sha256-a768228b357b85e248417b5a28b07747db4983c2e4a8927b3291e63829410524
+      lines: 213-217
+      integrity: sha256-04640ddf22d16670d5c986598c56f3fa632c76ec6d2fc834116d0c31946a73a4
     - generated-by: Claude Sonnet 5.5
-      lines: 215-227
-      integrity: sha256-147f7ad680060d7dfb5208923367f9f848213eb092a50ca4fc80bc8d5901e455
+      lines: 219-227
+      integrity: sha256-5bc84117f51cbcafed79ee2dace61e666ae2d2bc737069acedcc424f8afff750
     - generated-by: Claude Opus 5
       lines: 229-254
       integrity: sha256-b0e204832fa4a014776865e6fbb5b7c52130cbdafd7eec27839d8d911d7726ac

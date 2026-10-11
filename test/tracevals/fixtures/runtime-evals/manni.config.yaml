@@ -8,6 +8,6 @@ tracevals:
   model: claude-sonnet-5-5
   judge:
     cacheDir: cache
-  conformance:
+  runtime:
     plans:
       - docs/plans/*.md

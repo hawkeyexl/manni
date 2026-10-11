@@ -17,7 +17,7 @@ import {
   type CompleteJSONResponse,
   type InferenceProvider,
 } from "@hawkeyexl/inference";
-import { conformanceOf } from "../../src/tracevals/commands/conformance.js";
+import { runtimeOf } from "../../src/tracevals/commands/runtime.js";
 import { discoverConfig, type TracevalsConfig } from "../../src/tracevals/core/config.js";
 import { RulesCache, rulesCacheKey } from "../../src/tracevals/rules/cache.js";
 import { promptFor, type Rule } from "../../src/tracevals/rules/extract.js";
@@ -99,7 +99,7 @@ export interface CaseRules {
 export async function caseRules(c: Case, config: TracevalsConfig, home: string): Promise<CaseRules> {
   const trace = await parseTraceFile(join(CORPUS, c.trace));
   const project = join(CORPUS, c.project);
-  const { include, exclude, plans } = conformanceOf(config);
+  const { include, exclude, plans } = runtimeOf(config);
   const { sources } = await resolveTurnSources(trace, lastTurn(trace), {
     projectDir: project,
     projectRoot: project,

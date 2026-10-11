@@ -1,6 +1,6 @@
 /**
  * Writes the runtime-evals traces as Claude Code session JSONL, in the record
- * shape the conformance fixtures use. Every trace is synthetic: the cwd, the
+ * shape the runtime fixtures use. Every trace is synthetic: the cwd, the
  * session ids and the system prompt blocks are made up for this test set.
  *
  * Run it from anywhere with `node test/tracevals/fixtures/runtime-evals/make-traces.mjs`.

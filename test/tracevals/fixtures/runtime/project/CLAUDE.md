@@ -14,6 +14,6 @@ metadata:
         when:
           command-matches: '\bgit push\b'
 ---
-# Conformance demo
+# Runtime evals demo
 
 This project declares its own rules, so they are never extracted.

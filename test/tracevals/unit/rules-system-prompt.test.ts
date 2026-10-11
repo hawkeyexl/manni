@@ -13,7 +13,7 @@ import {
 import { lastTurn } from "../../../src/tracevals/rules/turn.js";
 import { session, type SessionStep } from "./rules-session.js";
 
-const FIX = join(import.meta.dirname, "..", "fixtures", "conformance", "styles");
+const FIX = join(import.meta.dirname, "..", "fixtures", "runtime", "styles");
 const ROOT = join(FIX, "project");
 const HOME = join(FIX, "home");
 const ENV = { CLAUDE_CONFIG_DIR: join(HOME, ".claude"), HOME, USERPROFILE: HOME };
