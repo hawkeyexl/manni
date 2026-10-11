@@ -38,7 +38,8 @@ export interface RenderOptions {
    * is rendered, a heading marks where that turn starts, and over the cap the
    * lines before it go first, oldest first, before the turn itself is cut.
    * When the session is that one turn, nothing comes before it, so there is
-   * no heading and nothing to cut first.
+   * no heading and nothing to cut first. When no event reaches it, the whole
+   * session renders with no heading.
    */
   turnFrom?: number;
   /**
