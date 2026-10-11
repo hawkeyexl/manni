@@ -121,7 +121,7 @@ In this repository the root `package.json` names no framework, and
 
 | Framework | Marker | start | build | preview | Port / host flags | Default port |
 |---|---|---|---|---|---|---|
-| Mintlify | `mint.json`, or `docs.json` with Mintlify's `$schema` or `theme` | `mint dev` | none | none | `--port` / none | 3000 |
+| Mintlify | `mint.json`, or `docs.json` with Mintlify's `$schema`, or with a `theme` and a `navigation` | `mint dev` | none | none | `--port` / none | 3000 |
 | Fern | `fern/fern.config.json`, and the site's directory is its parent | `fern docs dev` | none | none | `--port` / none | 3000 |
 | Starlight | an `@astrojs/starlight` dependency | `dev`, else `astro dev` | `build`, else `astro build` | `preview`, else `astro preview` | `--port` / `--host` | 4321 |
 | Docusaurus | an `@docusaurus/core` dependency | `start`, else `docusaurus start` | `build` | `serve`, else `docusaurus serve` | `--port` / `--host` | 3000 |

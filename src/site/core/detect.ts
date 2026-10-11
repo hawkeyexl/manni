@@ -77,7 +77,9 @@ function mintlify(s: Site): string | null {
   try {
     const doc = JSON.parse(read(join(s.dir, "docs.json"))) as Record<string, unknown>;
     const schema = doc.$schema;
-    if ((typeof schema === "string" && schema.includes("mintlify")) || typeof doc.theme === "string") {
+    // Without Mintlify's $schema, it takes the pair its docs.json requires: a theme and a navigation.
+    const shaped = typeof doc.theme === "string" && typeof doc.navigation === "object" && doc.navigation !== null;
+    if ((typeof schema === "string" && schema.includes("mintlify")) || shaped) {
       return "docs.json";
     }
   } catch {

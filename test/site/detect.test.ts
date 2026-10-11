@@ -207,6 +207,18 @@ describe("Mintlify and Fern", () => {
     expect(argv("start", site("mintlify-docs-json"))).toEqual([["mint", "dev"]]);
   });
 
+  it("knows a docs.json without $schema by its theme and navigation", () => {
+    const dir = site("nothing", {
+      files: { "docs.json": JSON.stringify({ theme: "mint", navigation: { tabs: [] } }) },
+    });
+    expect(argv("start", dir)).toEqual([["mint", "dev"]]);
+  });
+
+  it("does not take any docs.json with a theme for Mintlify", () => {
+    const dir = site("nothing", { files: { "docs.json": JSON.stringify({ theme: "classic" }) } });
+    expect(error(() => plan("start", dir))).toMatch(/^no docs site found in /);
+  });
+
   it("has no local build", () => {
     const dir = site("mintlify");
     const message = "Mintlify has no local build. Run manni site start, or set site.commands.build.";
