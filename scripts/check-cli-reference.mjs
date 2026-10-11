@@ -6,12 +6,10 @@
  * reference page documents exactly the same commands, arguments, options, and
  * value-defaults as its `src/<domain>/cli.ts`:
  *
- *   meta → docs/src/content/docs/meta/reference/cli.mdx
- *   a11y → docs/src/content/docs/a11y/reference/cli.mdx
- *   cite → docs/src/content/docs/cite/reference/cli.mdx
- *   key  → docs/src/content/docs/key/reference/cli.mdx
- *   term → docs/src/content/docs/term/reference/cli.mdx
- *   family → docs/src/content/docs/family/reference/cli.mdx
+ *   <domain> → docs/src/content/docs/<domain>/reference/cli.mdx
+ *
+ * for every domain in `PAGES` below: meta, a11y, cite, docevals, graph, key,
+ * lint, site, term and tracevals, plus `family`.
  *
  * `family` is not a domain. It stands for the two verbs the umbrella carries
  * itself, `check` and `status`, so its page is compared against those two
@@ -25,7 +23,7 @@
  * Usage:
  *   node scripts/check-cli-reference.mjs [domain...]
  * With no arguments every domain in the map is checked; with arguments each
- * is a domain name (`meta`, `a11y`, `cite`, `key`, `term`) or `family`.
+ * is a domain name from `PAGES` (`meta`, `site`, …) or `family`.
  * Requires `npm run build` first (imports dist/cli.js).
  * Exit 0 = every page in sync, 1 = drift found on any page, 2 = setup error
  * (unknown domain, domain not mounted on the built program, page missing).
@@ -45,6 +43,7 @@ const PAGES = new Map([
   ["graph", "docs/src/content/docs/graph/reference/cli.mdx"],
   ["key", "docs/src/content/docs/key/reference/cli.mdx"],
   ["lint", "docs/src/content/docs/lint/reference/cli.mdx"],
+  ["site", "docs/src/content/docs/site/reference/cli.mdx"],
   ["term", "docs/src/content/docs/term/reference/cli.mdx"],
   ["tracevals", "docs/src/content/docs/tracevals/reference/cli.mdx"],
   ["family", "docs/src/content/docs/family/reference/cli.mdx"],
