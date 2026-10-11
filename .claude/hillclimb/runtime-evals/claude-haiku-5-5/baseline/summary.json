@@ -1,0 +1,8 @@
+{
+  "description": "baseline: shipped judge (prompt v8), CLI judge in a git repo",
+  "target": "code",
+  "judge": {
+    "provider": "claude-cli",
+    "model": "claude-haiku-5-5"
+  }
+}

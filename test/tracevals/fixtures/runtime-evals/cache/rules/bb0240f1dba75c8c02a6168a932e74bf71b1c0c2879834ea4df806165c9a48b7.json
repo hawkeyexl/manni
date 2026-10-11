@@ -1,0 +1,10 @@
+[
+  {
+    "id": "setup-project",
+    "text": "Set the project up by installing its dependencies and performing whatever setup the project requires."
+  },
+  {
+    "id": "run-tests",
+    "text": "Run the project's tests after setting it up."
+  }
+]

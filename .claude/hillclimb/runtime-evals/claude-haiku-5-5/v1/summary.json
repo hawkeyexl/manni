@@ -1,0 +1,8 @@
+{
+  "description": "absent work did not happen; only this rule's own done-claim counts",
+  "target": "system_prompt",
+  "judge": {
+    "provider": "claude-cli",
+    "model": "claude-haiku-5-5"
+  }
+}

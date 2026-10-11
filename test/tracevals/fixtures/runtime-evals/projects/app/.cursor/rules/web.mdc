@@ -1,0 +1,6 @@
+---
+description: Web components
+globs: src/web/**
+alwaysApply: false
+---
+Never use `innerHTML` in components under `src/web/`.

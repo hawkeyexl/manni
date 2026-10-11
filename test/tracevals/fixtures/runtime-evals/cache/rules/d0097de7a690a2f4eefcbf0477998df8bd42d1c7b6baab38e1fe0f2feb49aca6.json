@@ -1,0 +1,10 @@
+[
+  {
+    "id": "word-count-on-note-card",
+    "text": "Show a word count on each note card."
+  },
+  {
+    "id": "plan-first",
+    "text": "Plan the word count feature before implementing it."
+  }
+]

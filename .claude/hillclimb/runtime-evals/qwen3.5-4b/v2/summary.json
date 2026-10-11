@@ -1,0 +1,8 @@
+{
+  "description": "every earlier turn gets a line",
+  "target": "code",
+  "judge": {
+    "provider": "llama-cpp",
+    "model": "qwen3.5-4b"
+  }
+}

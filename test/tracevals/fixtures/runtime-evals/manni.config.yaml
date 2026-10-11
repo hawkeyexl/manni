@@ -1,0 +1,13 @@
+# The runtime-evals test set. Extraction runs out of the loop under the
+# identity named here, and its rules are frozen under cache/rules, so a run
+# reads them from the cache and never extracts. The freeze extracts through an
+# isolated Claude CLI that reports this same identity, so the keys line up.
+# The judge is chosen per run.
+tracevals:
+  provider: claude-cli
+  model: claude-sonnet-5-5
+  judge:
+    cacheDir: cache
+  conformance:
+    plans:
+      - docs/plans/*.md
