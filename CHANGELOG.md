@@ -4,6 +4,13 @@
 4.13.1. Entries below that version are docmeta releases; the repository
 history is the same one.
 
+## [4.8.1](https://github.com/hawkeyexl/manni/compare/v4.8.0...v4.8.1) (2026-10-11)
+
+
+### Bug Fixes
+
+* **tracevals:** show the per-turn judge the whole session, and record runtime-evals hill-climb 2 ([#177](https://github.com/hawkeyexl/manni/issues/177)) ([1363156](https://github.com/hawkeyexl/manni/commit/1363156f008002adffde360209908bdf3dcd61d9))
+
 # [4.8.0](https://github.com/hawkeyexl/manni/compare/v4.7.0...v4.8.0) (2026-10-11)
 
 
