@@ -10,7 +10,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What flags does manni tracevals run take?", "What does --newer-than accept?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-07
+last-updated: 2026-10-11
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -368,7 +368,7 @@ wiring up is in
 Fetches the local models judging needs and extracts the rules of every file that applies to every
 session. The `manni` plugin runs it in the background when a session starts. A person or a CI
 runner can run it too, so the first turn finds its rules cached and its model on disk. With no
-`tracevals.conformance` section it says so and exits `0`.
+`tracevals.runtime` section it says so and exits `0`.
 
 ```sh
 manni tracevals prepare [options]
@@ -397,21 +397,21 @@ session's lease on the model host. It loads the model too, so the first turn fin
 
 | Message | Stream | Exit |
 |---|---|---|
-| `tracevals conformance is not set up; nothing to prepare.` | stdout | `0` |
+| `tracevals runtime evals are not set up; nothing to prepare.` | stdout | `0` |
 | `manni: could not download <model>: <first line of the error>` | stderr | `2` |
 
 ## `tracevals check`
 
 Judges the last turn of one session against the rules that governed it. The turn starts at the last
 prompt the user typed. By hand it uses the out-of-loop model and `judge.ensembleRuns`. The journey is in
-[Check each turn](/manni/tracevals/conformance/).
+[Check each turn](/manni/tracevals/runtime/).
 
 ```sh
 manni tracevals check [traces...] [options]
 ```
 
 ```console
-$ cd test/tracevals/fixtures/conformance/project
+$ cd test/tracevals/fixtures/runtime/project
 $ manni tracevals check ../traces/breaks.jsonl --project . --no-cache
 CLAUDE.md
   ? run-npm-ci-first  Run `npm ci` before `npm test` in a fresh worktree.
@@ -490,7 +490,7 @@ Session so far
 | `manni: <model> is not downloaded; run manni tracevals prepare` | `2` |
 | `manni: --offline runs no network provider, and <the judge or extraction> uses <provider>` | `2` |
 | `manni: jev needs an API key in TYPESAFE_API_KEY` | `2` |
-| `manni: jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.conformance.hook.provider.` | `2` |
+| `manni: jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.runtime.hook.provider.` | `2` |
 | `manni: could not judge the last turn: <first line of the error>` | `2` |
 
 `run` and `fill` answer `--provider jev` with the same decisions-only message. The JSON report's

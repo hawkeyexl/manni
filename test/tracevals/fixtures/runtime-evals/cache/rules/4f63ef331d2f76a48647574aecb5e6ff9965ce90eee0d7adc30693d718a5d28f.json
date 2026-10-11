@@ -1,0 +1,10 @@
+[
+  {
+    "id": "users-id-404",
+    "text": "Make GET /users/:id return a 404 response for an unknown id."
+  },
+  {
+    "id": "test-first",
+    "text": "Write the test for the GET /users/:id 404 behavior before changing the implementation."
+  }
+]

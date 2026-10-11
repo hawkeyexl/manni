@@ -1,0 +1,10 @@
+[
+  {
+    "id": "show-test-output",
+    "text": "Never say that tests pass without showing the test output."
+  },
+  {
+    "id": "no-unrequested-docs",
+    "text": "Do not create documentation files unless the user asks for them."
+  }
+]

@@ -49,7 +49,7 @@ export const JEV = "jev";
 
 /** Why jev cannot serve out of the loop, and where it goes instead. */
 export const JEV_OUT_OF_LOOP =
-  "jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.conformance.hook.provider.";
+  "jev answers decisions only, so it cannot extract rules or write verdicts. Use it as tracevals.runtime.hook.provider.";
 
 /** The key a tracevals user writes, named by the refusal a bare model gets. */
 const CONFIG_KEY = "tracevals.provider";
@@ -101,18 +101,18 @@ export function selectProvider(
 
 /**
  * The judge inside a hook (proposal 0079, "Two model roles"):
- * `conformance.hook.provider`/`model`, then `tracevals.provider`/`model`, then
+ * `runtime.hook.provider`/`model`, then `tracevals.provider`/`model`, then
  * the family's `providers:`, then `auto`. No flag reaches it, because a hook
  * has no command line. A hook level naming only a model lends it to whichever
  * provider wins, as every level does.
  */
 export function selectHookProvider(config: TracevalsConfig): ProviderSelection {
-  const hook = config.conformance?.hook;
+  const hook = config.runtime?.hook;
   return selectFromLevels({}, [
     {
       ...(hook?.provider != null ? { provider: hook.provider } : {}),
       ...(hook?.model != null ? { model: hook.model } : {}),
-      origin: "tracevals.conformance.hook.provider",
+      origin: "tracevals.runtime.hook.provider",
     },
     ...configLevels(config),
   ]);

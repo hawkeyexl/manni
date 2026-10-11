@@ -1,0 +1,8 @@
+{
+  "description": "baseline: shipped judge (prompt v8)",
+  "target": "code",
+  "judge": {
+    "provider": "llama-cpp",
+    "model": "qwen3.5-4b"
+  }
+}

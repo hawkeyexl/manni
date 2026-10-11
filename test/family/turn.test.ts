@@ -3,7 +3,7 @@
  * 0079): the turn judged against the rules that governed it, merged into
  * 0078's reply, and each skip said once per session.
  *
- * The turns are tracevals' own conformance fixtures, judged by the mock
+ * The turns are tracevals' own runtime fixtures, judged by the mock
  * provider, in a temp copy of their project.
  */
 import { cp, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -23,8 +23,8 @@ import type { LocalModels } from "../../src/tracevals/rules/local.js";
 import { mockTurnJudge } from "../../src/tracevals/rules/mock.js";
 import { envelope } from "./helpers.js";
 
-const CONFORMANCE = join(import.meta.dirname, "..", "tracevals", "fixtures", "conformance");
-const trace = (name: string): string => join(CONFORMANCE, "traces", `${name}.jsonl`);
+const RUNTIME = join(import.meta.dirname, "..", "tracevals", "fixtures", "runtime");
+const trace = (name: string): string => join(RUNTIME, "traces", `${name}.jsonl`);
 
 function env(name: string, extra: Record<string, unknown> = {}): Envelope {
   const parsed = parseEnvelope(envelope(name, undefined, extra));
@@ -116,7 +116,7 @@ describe("runTurnCheck", () => {
   beforeEach(async () => {
     dir = await mkdtemp(join(tmpdir(), "manni-family-turn-"));
     project = join(dir, "project");
-    await cp(join(CONFORMANCE, "project"), project, { recursive: true });
+    await cp(join(RUNTIME, "project"), project, { recursive: true });
     const home = join(dir, "home");
     homeEnv = { CLAUDE_CONFIG_DIR: join(home, ".claude"), HOME: home, USERPROFILE: home };
   });
@@ -147,7 +147,7 @@ describe("runTurnCheck", () => {
     expect(await runTurnCheck(stop("empty-turn"), project, { env: homeEnv })).toBeUndefined();
   });
 
-  it("no conformance: nothing", async () => {
+  it("no runtime evals: nothing", async () => {
     await writeFile(join(project, "manni.config.yaml"), "tracevals:\n  provider: mock\n");
     expect(await runTurnCheck(stop("breaks"), project, { env: homeEnv })).toBeUndefined();
   });

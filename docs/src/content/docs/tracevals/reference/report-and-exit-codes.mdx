@@ -12,7 +12,7 @@ lifecycle: published
 applies-to: ["domain:tracevals"]
 sample-questions: ["What does the JSON report contain?", "How does SARIF name its rules?"]
 graph: { label: "Reports & exit codes", type: reference }
-last-updated: 2026-10-07
+last-updated: 2026-10-11
 ---
 
 import { Aside } from '@astrojs/starlight/components';
@@ -596,7 +596,7 @@ always `extracted`.
 | `speckit-spec` | `specs/<feature>/spec.md`, `plan.md` or `tasks.md` | `touched <path>`, the first file the session touched under `specs/<feature>/` |
 | `kiro-spec` | `.kiro/specs/<name>/requirements.md`, `design.md` or `tasks.md` | `touched <path>`, the first file touched under that directory |
 | `openspec-change` | A `.md` file under `openspec/changes/<id>/`, never under `changes/archive/` | `touched <path>`, the first file touched under that change |
-| `plans` | A file `conformance.plans` names | `touched <path>`, the file itself |
+| `plans` | A file `runtime.plans` names | `touched <path>`, the file itself |
 
 Two more formats come from the transcript itself. They are read from the last record of their kind
 at or before the turn's end, and never declare evals.

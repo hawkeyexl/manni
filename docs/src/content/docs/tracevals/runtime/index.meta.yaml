@@ -1,0 +1,26 @@
+docs/src/content/docs/tracevals/runtime/index.mdx:
+  personas: ["maya"]
+  journeys: ["m25"]
+  visibility: public
+  review-interval: P180D
+  source-of-truth:
+    - path: "src/tracevals/commands/check.ts"
+    - path: "src/tracevals/commands/prepare.ts"
+    - path: "src/tracevals/rules/sources.ts"
+  eval-suite: tracevals
+  evals:
+    - id: set-up-runtime-evals
+      assertion: "A reader can add tracevals.runtime, choose models for the two roles, and say which files count as rule sources."
+      type: capability
+      grader: ai
+    - id: read-a-block
+      assertion: "A reader can say what the agent sees when it breaks a rule, and why a rule the model cannot settle never blocks."
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-07
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-498
+      integrity: sha256-33777f06d373cbf7511ffe85460f5d9e44bbbfbff299d244e5b70c87c0302bc3

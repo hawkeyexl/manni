@@ -15,7 +15,7 @@ prerequisites: ["meta-reference-configuration"]
 next-steps: ["family-claude-code", "family-reference-cli"]
 sample-questions: ["How do I run every manni check in one CI step?", "What does a skipped line in the manni check report mean?", "Why did manni check skip meta in my repository?"]
 graph: { label: "Gate every check a repo has set up", type: task }
-last-updated: 2026-10-06
+last-updated: 2026-10-11
 tags:
   - ci-cd
   - cli
@@ -79,7 +79,7 @@ manni would apply by default counts as set up.
 | `docevals` | `docevals:` exists, or a page declares evals. A run that resolves no evals counts as not in play. | `docevals run`, deterministic evals only |
 | `term` | The collections hold at least one term. | `term check` |
 | `graph` | `graph:` exists. | `graph build` in memory, then `graph check` |
-| `tracevals` | `tracevals.conformance` exists. | Nothing on the command line. Under a Claude Code hook, a judgement of the turn that just ended. |
+| `tracevals` | `tracevals.runtime` exists. | Nothing on the command line. Under a Claude Code hook, a judgement of the turn that just ended. |
 
 The built-in default schemas are the reason `meta` has a rule of its own. A
 repository that only uses `docevals` would otherwise fail every page that has no
@@ -230,9 +230,9 @@ It checks the named pages, or every page with citations on a bare run.
 
 `tracevals` needs recorded sessions and a model, so a bare `manni check` does not run it either.
 Run `manni tracevals run` over recorded sessions as its own step. Inside a Claude Code session the
-`manni` plugin does more. When `tracevals.conformance` exists in `manni.config.yaml`, `manni check`
+`manni` plugin does more. When `tracevals.runtime` exists in `manni.config.yaml`, `manni check`
 also judges each turn against the rules the repository declares for agents, at Stop and at
-SubagentStop. [Catch a broken rule before the agent hands back](/manni/tracevals/conformance/) walks
+SubagentStop. [Catch a broken rule before the agent hands back](/manni/tracevals/runtime/) walks
 through it. Without that section, the row stays `not checked`.
 
 <CardGrid>

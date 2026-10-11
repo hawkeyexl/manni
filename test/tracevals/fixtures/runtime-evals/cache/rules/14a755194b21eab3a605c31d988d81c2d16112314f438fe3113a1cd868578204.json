@@ -1,0 +1,16 @@
+[
+  {
+    "id": "no-edit-committed-migrations",
+    "text": "Never edit a migration under `src/db/migrations/` once it is committed; add a new migration file instead.",
+    "when": {
+      "file-access": "src/db/migrations/**"
+    }
+  },
+  {
+    "id": "run-db-check-after-migration-change",
+    "text": "Run `npm run db:check` after any migration change.",
+    "when": {
+      "file-access": "src/db/migrations/**"
+    }
+  }
+]

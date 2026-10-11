@@ -1,0 +1,10 @@
+[
+  {
+    "id": "repo-tour",
+    "text": "Give the user a one-line tour of the repo."
+  },
+  {
+    "id": "push-parser-fix",
+    "text": "Push the committed parser fix to the remote."
+  }
+]

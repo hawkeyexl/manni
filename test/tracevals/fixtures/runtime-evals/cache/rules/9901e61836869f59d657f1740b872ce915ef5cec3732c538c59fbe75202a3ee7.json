@@ -1,0 +1,17 @@
+[
+  {
+    "id": "spawn-auditor-first",
+    "text": "Spawn the `auditor` agent on the draft as the first step of publishing a page."
+  },
+  {
+    "id": "proofer-after-clean-audit",
+    "text": "Only after the auditor reports no issues, spawn the `proofer` agent."
+  },
+  {
+    "id": "publish-docs-last",
+    "text": "Run `npm run publish:docs` last, after the auditor and proofer steps.",
+    "when": {
+      "command-matches": "npm run publish:docs"
+    }
+  }
+]

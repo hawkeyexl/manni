@@ -13,7 +13,7 @@
  * | docevals | a page resolves evals, from `docevals:` or its own declarations |
  * | term | the collections hold a term |
  * | graph | `graph:` exists |
- * | tracevals | `tracevals.conformance` exists; it judges the turn a Stop or SubagentStop hook ends |
+ * | tracevals | `tracevals.runtime` exists; it judges the turn a Stop or SubagentStop hook ends |
  * | a11y | never run by `check`: it needs a running site |
  *
  * Only members of a declared collection are file-checked. tracevals judges a
@@ -86,7 +86,7 @@ export const META_DEFAULTS_ONLY = "only the built-in default schemas cover these
 
 /**
  * The domains `check` does not run here, and what to run instead. tracevals
- * leaves this list when `tracevals.conformance` exists (`Family.conformance`).
+ * leaves this list when `tracevals.runtime` exists (`Family.runtime`).
  */
 export const NOT_CHECKED: ReadonlyArray<readonly [string, string]> = [
   ["a11y", "run manni a11y check against a running site"],
@@ -108,8 +108,8 @@ export interface Family {
   configPath: string;
   /** The top-level keys of the file: `meta`, `lint`, `graph`, … */
   sections: ReadonlySet<string>;
-  /** `tracevals.conformance` exists: tracevals judges each turn under the hooks. */
-  conformance: boolean;
+  /** `tracevals.runtime` exists: tracevals judges each turn under the hooks. */
+  runtime: boolean;
   collections: readonly CollectionConfig[];
 }
 
@@ -127,8 +127,12 @@ export async function loadFamily(cwd: string, configPath?: string): Promise<Fami
   const doc = parseYaml(file.text) as unknown;
   const top = record(doc);
   const sections = new Set(top === undefined ? [] : Object.keys(top));
-  const conformance = record(top?.tracevals)?.conformance !== undefined;
-  return { file, configPath: configPath ?? file.source, sections, conformance, collections: file.collections };
+  const tracevals = record(top?.tracevals);
+  // The old `conformance` key counts too. tracevals' loader refuses it and
+  // names `runtime`, and only a tracevals in play loads that config, so a
+  // config not yet migrated reaches `status` as an error, not as a silent skip.
+  const runtime = tracevals?.runtime !== undefined || tracevals?.conformance !== undefined;
+  return { file, configPath: configPath ?? file.source, sections, runtime, collections: file.collections };
 }
 
 function record(value: unknown): Record<string, unknown> | undefined {
