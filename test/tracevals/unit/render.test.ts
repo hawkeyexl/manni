@@ -149,6 +149,12 @@ describe("renderTrace", () => {
     expect(out).toContain("Fix the crash.");
   });
 
+  it("adds no heading when no event reaches the turn boundary", () => {
+    const out = renderTrace(trace, { turnFrom: 9_999 });
+    expect(out).not.toContain("## The last turn");
+    expect(out).toContain("Fix the crash.");
+  });
+
   it("keeps the cap when the header alone is larger than the budget", () => {
     // `budget = maxTotalChars - header.length - 64` went non-positive once the
     // header listed every skill, agent type and branch — and the old

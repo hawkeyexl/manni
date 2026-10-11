@@ -239,7 +239,9 @@ export function renderTrace(
   );
   if (turnAt !== undefined && turnAt > 0) {
     // Measured before the scrub below, which can change a length only where a
-    // label matches a secret pattern. Close enough to pick how many go.
+    // label matches a secret pattern. Close enough to pick how many go. The
+    // heading is kept and counted, and a turn still over budget alone is cut
+    // by the head-and-tail pass below.
     let size = lines.reduce((n, l) => n + l.length + 1, -1);
     let cut = 0;
     while (cut < turnAt && size > budget) {
