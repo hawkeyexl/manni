@@ -53,9 +53,28 @@ const EMPTY = { terms: [], notices: [] };
 describe("readers are registered", () => {
   it("has one reader per structured construct, with the labels term formats prints", () => {
     const labels = (
-      ["page", "manifest", "dita-glossentry", "dita-glossgroup", "docbook-glossary", "html-dl", "html-dfn"] as const
+      [
+        "page",
+        "manifest",
+        "dita-glossentry",
+        "dita-glossgroup",
+        "docbook-glossary",
+        "html-dl",
+        "html-dfn",
+        "tbx-entry",
+      ] as const
     ).map((construct) => reader(construct).label);
-    expect(labels).toEqual(["page", "manifest", "DITA glossentry", "DITA glossgroup", "DocBook glossary", "dl", "dfn"]);
+    expect(labels).toEqual([
+      "page",
+      "manifest",
+      "DITA glossentry",
+      "DITA glossgroup",
+      "DocBook glossary",
+      "dl",
+      "dfn",
+      "TBX entry",
+    ]);
+    expect(reader("tbx-entry").formats).toEqual(["tbx"]);
     expect(reader("page").formats).toEqual(["markdown", "mdx", "asciidoc", "rst", "html", "xml"]);
     expect(reader("manifest").formats).toEqual([MANIFEST_FORMAT]);
     expect(reader("html-dl").formats).toEqual(["html"]);

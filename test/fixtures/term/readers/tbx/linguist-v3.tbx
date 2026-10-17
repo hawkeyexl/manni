@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Linguist" style="dca" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>A hand-written TBX-Linguist sample.</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="save">
+        <langSec xml:lang="en">
+          <termSec>
+            <term>Save</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+            <termNote type="partOfSpeech">verb</termNote>
+            <termNote type="termLocation">menuItem</termNote>
+            <termNote type="register">neutralRegister</termNote>
+            <termNote type="transferComment">Keep it to one word.</termNote>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="de">
+          <termSec>
+            <term>Speichern</term>
+            <termNote type="grammaticalNumber">singular</termNote>
+            <termNote type="geographicalUsage">de-AT</termNote>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="ja">
+          <termSec>
+            <term>保存</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+            <adminGrp>
+              <admin type="reading">ほぞん</admin>
+              <adminNote type="readingNote">The on reading.</adminNote>
+            </adminGrp>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

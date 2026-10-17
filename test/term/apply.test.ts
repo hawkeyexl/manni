@@ -8,7 +8,7 @@ import { basename, dirname, extname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { extractorForExtension } from "../../src/meta/internal.js";
-import { MANIFEST_FORMAT } from "../../src/term/core/load-set.js";
+import { MANIFEST_FORMAT, tbxInput } from "../../src/term/core/load-set.js";
 import { TERM_READERS, readerForConstruct } from "../../src/term/core/readers/index.js";
 import { DOCUMENT_WRITERS } from "../../src/term/core/writers/documents.js";
 import { writerFor } from "../../src/term/core/writers/index.js";
@@ -32,11 +32,16 @@ function isManifest(path: string): boolean {
   return basename(dirname(path)) === "manifest" || name === "terms.yaml" || name === "terms.json";
 }
 
+function isTbx(path: string): boolean {
+  return extname(path).toLowerCase() === ".tbx";
+}
+
 function inputOf(content: string, path: string): TermInput {
   const file = relative(TERM_FIXTURES, path).replaceAll("\\", "/");
   if (isManifest(path)) {
     return { content, file, path, format: MANIFEST_FORMAT, metadata: {}, lineFor: () => undefined };
   }
+  if (isTbx(path)) return tbxInput(content, file, path);
   const extractor = extractorForExtension(extname(path));
   if (extractor === undefined) throw new Error(`no extractor for ${path}`);
   const extracted = extractor.extract(content, path);
@@ -72,7 +77,7 @@ function noOpCases(): { name: string; path: string; construct: TermConstruct }[]
   const dirs = ["readers", "readers-text", "writers-documents"].map((d) => join(TERM_FIXTURES, d));
   const cases: { name: string; path: string; construct: TermConstruct }[] = [];
   for (const path of dirs.flatMap(walk)) {
-    if (!isManifest(path) && extractorForExtension(extname(path)) === undefined) continue;
+    if (!isManifest(path) && !isTbx(path) && extractorForExtension(extname(path)) === undefined) continue;
     let input: TermInput;
     try {
       input = inputOf(readFileSync(path, "utf8"), path);
@@ -232,6 +237,61 @@ describe("an edited entry", () => {
     );
     expect(() => applyOf(r)(input, terms)).toThrow(
       new TermError('writers-documents/dl.html: term "pal" does not match an entry in the file. Read the file again before writing it.'),
+    );
+  });
+});
+
+describe("a TBX entry", () => {
+  function tbx(name: string, crlf: boolean): TermInput {
+    const path = join(TERM_FIXTURES, "readers", "tbx", name);
+    const content = readFileSync(path, "utf8");
+    return inputOf(crlf ? content.replace(/\r?\n/g, "\r\n") : content, path);
+  }
+
+  it.each([
+    { name: "tbx-basic-v2.tbx", label: "Brillenglas", crlf: false, form: "<tig>" },
+    { name: "tbx-basic-v2.tbx", label: "Brillenglas", crlf: true, form: "<tig>" },
+    { name: "tbx-basic-v3.tbx", label: "Gleitsichtglas", crlf: false, form: "<termSec>" },
+    { name: "dct-style-v3.tbx", label: "Gleitsichtglas", crlf: true, form: "<min:administrativeStatus>" },
+  ])("rewrites only the entry holding $label in $name (crlf $crlf)", ({ name, label, crlf, form }) => {
+    const r = reader("tbx-entry");
+    const input = tbx(name, crlf);
+    const before = r.read(input).terms;
+    const target = before.find((t) => t.record.label === label);
+    const span = target?.location.span;
+    if (target === undefined || span === undefined) throw new Error(`no ${label}`);
+
+    const renamed = `${label} neu`;
+    const designations = target.record.designations?.map((d) => (d.term === label ? { ...d, term: renamed } : d));
+    const record = { ...target.record, label: renamed, ...(designations === undefined ? {} : { designations }) };
+    const edited = before.map((t) => (t === target ? { ...t, record } : t));
+    const next = applyOf(r)(input, edited);
+
+    const tail = input.content.length - span.end;
+    expect(next.slice(0, span.start)).toBe(input.content.slice(0, span.start));
+    expect(next.slice(next.length - tail)).toBe(input.content.slice(span.end));
+    const entry = next.slice(span.start, next.length - tail);
+    expect(entry).toContain(form);
+    expect(entry.replaceAll("\r\n", "")).not.toContain(crlf ? "\n" : "\r");
+
+    const after = r.read(inputOf(next, input.path ?? "")).terms;
+    expect(after.map((t) => t.record.label)).toEqual(edited.map((t) => t.record.label));
+    expect(after.map((t) => [t.id, t.language])).toEqual(before.map((t) => [t.id, t.language]));
+    after.forEach((t, i) => {
+      expect(t.record).toEqual(edited[i]?.record);
+    });
+  });
+
+  it("refuses a term whose entry no longer matches the file", () => {
+    const r = reader("tbx-entry");
+    const input = tbx("tbx-basic-v2.tbx", false);
+    const terms = r.read(input).terms.map((t, i): Term =>
+      i === 0 ? { ...t, location: { ...t.location, span: { start: 1, end: 2 } } } : t,
+    );
+    expect(() => applyOf(r)(input, terms)).toThrow(
+      new TermError(
+        'readers/tbx/tbx-basic-v2.tbx: term "progressive-lens" does not match an entry in the file. Read the file again before writing it.',
+      ),
     );
   });
 });

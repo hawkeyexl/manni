@@ -1,0 +1,54 @@
+{
+  "terms": [
+    {
+      "id": "lens",
+      "language": "en",
+      "line": 23,
+      "record": {
+        "label": "lens",
+        "concept-entry": {
+          "tbx-elements": [
+            "<descrip type=\"definition\" id=\"d1\">A shaped piece of glass.</descrip>",
+            "<descripGrp>\n  <descrip type=\"context\">Hold the lens by its edge.</descrip>\n  <admin type=\"source\">Handbook</admin>\n</descripGrp>",
+            "<descripGrp>\n  <descripGrp>\n    <descrip type=\"subjectField\">optics</descrip>\n  </descripGrp>\n</descripGrp>"
+          ]
+        },
+        "designations": [
+          {
+            "term": "lens",
+            "administrative-status": "none",
+            "term-type": "fullForm",
+            "tbx-elements": [
+              "<termNote type=\"partOfSpeech\" target=\"noun-1\">noun</termNote>",
+              "<termNote type=\"termType\">variant</termNote>",
+              "<transacGrp>\n  <transac type=\"transactionType\">origination</transac>\n  <date>2026-09-01</date>\n  <transacNote type=\"responsibility\">Sara</transacNote>\n</transacGrp>"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "lens",
+      "language": "de",
+      "line": 36,
+      "record": {
+        "label": "Linse",
+        "concept-entry": {
+          "tbx-elements": [
+            "<descrip type=\"definition\" id=\"d1\">A shaped piece of glass.</descrip>",
+            "<descripGrp>\n  <descrip type=\"context\">Hold the lens by its edge.</descrip>\n  <admin type=\"source\">Handbook</admin>\n</descripGrp>",
+            "<descripGrp>\n  <descripGrp>\n    <descrip type=\"subjectField\">optics</descrip>\n  </descripGrp>\n</descripGrp>"
+          ]
+        },
+        "designations": [
+          {
+            "term": "Linse",
+            "administrative-status": "none",
+            "grammatical-gender": "feminine"
+          }
+        ]
+      }
+    }
+  ],
+  "notices": []
+}

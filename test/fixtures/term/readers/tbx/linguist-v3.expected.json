@@ -1,0 +1,55 @@
+{
+  "terms": [
+    {
+      "id": "save",
+      "language": "en",
+      "line": 13,
+      "record": {
+        "label": "Save",
+        "designations": [
+          {
+            "term": "Save",
+            "part-of-speech": "verb",
+            "term-location": "menuItem",
+            "register": "neutralRegister",
+            "transfer-comments": [
+              "Keep it to one word."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "save",
+      "language": "de",
+      "line": 23,
+      "record": {
+        "label": "Speichern",
+        "designations": [
+          {
+            "term": "Speichern",
+            "administrative-status": "none",
+            "grammatical-number": "singular",
+            "geographical-usage": "de-AT"
+          }
+        ]
+      }
+    },
+    {
+      "id": "save",
+      "language": "ja",
+      "line": 30,
+      "record": {
+        "label": "保存",
+        "designations": [
+          {
+            "term": "保存",
+            "reading": "ほぞん",
+            "reading-note": "The on reading."
+          }
+        ]
+      }
+    }
+  ],
+  "notices": []
+}

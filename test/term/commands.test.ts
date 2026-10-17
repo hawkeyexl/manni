@@ -814,7 +814,8 @@ describe("formats", () => {
     expect(pretty).toMatch(/^markdown +page +read +write$/m);
     // A dfn names a term without defining it, and is not written back.
     expect(pretty).toMatch(/^html +dfn +read$/m);
-    expect(pretty).toMatch(/^tbx +TBX v2 Core +write$/m);
+    expect(pretty).toMatch(/^tbx +TBX entry +read +write$/m);
+    expect(pretty).toMatch(/^tbx +TBX v2 +write$/m);
     expect(pretty).toMatch(/^json +write$/m);
   });
 

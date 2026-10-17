@@ -16,7 +16,7 @@ import { lstat, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises
 import { dirname, extname, join, resolve } from "node:path";
 import { extractorForExtension } from "../../meta/internal.js";
 import { errorMessage } from "../../shared/errors.js";
-import { MANIFEST_FORMAT, extractInput } from "../core/load-set.js";
+import { MANIFEST_FORMAT, extractInput, tbxInput } from "../core/load-set.js";
 import { TERM_READERS, readerForConstruct } from "../core/readers/index.js";
 import { valeLsConfig, type ValeResolvedConfig } from "../core/vale.js";
 import { TERM_WRITERS } from "../core/writers/index.js";
@@ -273,6 +273,7 @@ function inputFor(content: string, path: string, construct: TermConstruct, file:
   if (construct === "manifest") {
     return { content, file, path, format: MANIFEST_FORMAT, metadata: {}, lineFor: () => undefined };
   }
+  if (construct === "tbx-entry") return tbxInput(content, file, path);
   const extractor = extractorForExtension(extname(path));
   if (extractor === undefined) throw new TermError(`${file}: no reader for its extension.`);
   return extractInput(content, file, path, extractor.name);

@@ -1,0 +1,63 @@
+{
+  "terms": [
+    {
+      "id": "progressive-lens",
+      "language": "en",
+      "line": 15,
+      "record": {
+        "label": "progressive lens",
+        "definition": "A lens whose power changes gradually.",
+        "alt-labels": [
+          "PAL"
+        ],
+        "tbx-elements": [
+          "<basic:definition xmlns:basic=\"http://www.tbxinfo.net/ns/basic\">A second definition at the same level.</basic:definition>"
+        ],
+        "concept-entry": {
+          "subject-field": "optics",
+          "tbx-elements": [
+            "<acme:reviewed xmlns:acme=\"https://acme.example/tbx\">yes</acme:reviewed>"
+          ]
+        },
+        "designations": [
+          {
+            "term": "progressive lens",
+            "part-of-speech": "noun",
+            "term-type": "fullForm",
+            "transactions": [
+              {
+                "type": "modification",
+                "date": "2026-10-01"
+              }
+            ]
+          },
+          {
+            "term": "PAL",
+            "register": "technicalRegister"
+          }
+        ]
+      }
+    },
+    {
+      "id": "progressive-lens",
+      "language": "de",
+      "line": 34,
+      "record": {
+        "label": "Gleitsichtglas",
+        "concept-entry": {
+          "subject-field": "optics",
+          "tbx-elements": [
+            "<acme:reviewed xmlns:acme=\"https://acme.example/tbx\">yes</acme:reviewed>"
+          ]
+        },
+        "designations": [
+          {
+            "term": "Gleitsichtglas",
+            "grammatical-gender": "neuter"
+          }
+        ]
+      }
+    }
+  ],
+  "notices": []
+}
