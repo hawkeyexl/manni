@@ -50,15 +50,15 @@ function renderOne(format: TermWriteFormat, name: string): { content: string; dr
 }
 
 describe("interchange writers", () => {
-  it("registers tbx, skos, csv, json and vale", () => {
-    expect(INTERCHANGE_WRITERS.map((w) => w.format)).toEqual(["tbx", "skos", "csv", "json", "vale"]);
-    for (const format of ["tbx", "skos", "csv", "json"] as const) {
+  it("registers tbx, tbx3, skos, csv, json and vale", () => {
+    expect(INTERCHANGE_WRITERS.map((w) => w.format)).toEqual(["tbx", "tbx3", "skos", "csv", "json", "vale"]);
+    for (const format of ["tbx", "tbx3", "skos", "csv", "json"] as const) {
       expect(writer(format).shapes).toEqual(["file"]);
     }
     expect(writer("vale").shapes).toEqual(["directory"]);
   });
 
-  it.each(["tbx", "skos", "csv", "json"] as const)("%s refuses a directory target", (format) => {
+  it.each(["tbx", "tbx3", "skos", "csv", "json"] as const)("%s refuses a directory target", (format) => {
     expect(() =>
       writer(format).render(fixtureTerms(), { path: OUT, shape: "directory" }, NO_EXISTING),
     ).toThrow(TermError);
@@ -66,6 +66,7 @@ describe("interchange writers", () => {
 
   it.each([
     ["tbx", "terms.golden.tbx"],
+    ["tbx3", "terms-v3.golden.tbx"],
     ["skos", "terms.golden.jsonld"],
     ["csv", "terms.golden.csv"],
     ["json", "terms.golden.json"],
@@ -195,6 +196,75 @@ describe("tbx writer", () => {
     );
     expect(entries.item(5)?.getElementsByTagName("langSet").item(0)?.getAttribute("xml:lang")).toBe("de");
     expect(entries.item(0)?.getElementsByTagName("tig").length).toBe(4);
+  });
+
+  it("tbx3 renders the same entries as TBX v3", () => {
+    const { content, dropped } = renderOne("tbx3", "terms.tbx");
+    expect(content).toBe(golden("terms-v3.golden.tbx"));
+    expect(dropped).toEqual(renderOne("tbx", "terms.tbx").dropped);
+  });
+
+  it("tbx3 is well-formed XML in the TBX v3 namespace", () => {
+    const { content } = renderOne("tbx3", "terms.tbx");
+    const doc = new DOMParser().parseFromString(content, "text/xml");
+    const root = doc.documentElement;
+    expect(root?.tagName).toBe("tbx");
+    expect(root?.namespaceURI).toBe("urn:iso:std:iso:30042:ed-2");
+    expect(root?.getAttribute("type")).toBe("TBX-Basic");
+    expect(root?.getAttribute("style")).toBe("dca");
+    expect(doc.getElementsByTagName("conceptEntry").length).toBe(6);
+    expect(doc.getElementsByTagName("termSec").length).toBe(14);
+  });
+
+  it("tbx3 is TBX-Linguist when a designation carries a Linguist-only field", () => {
+    const linguist = term("save", { label: "Save", designations: [{ term: "Save", register: "neutralRegister" }] });
+    const content = writer("tbx3").render([linguist], fileTarget("x.tbx"), NO_EXISTING).files[0]?.content ?? "";
+    expect(content).toContain('<tbx type="TBX-Linguist" style="dca" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2">');
+    expect(content).toContain('<termNote type="register">neutralRegister</termNote>');
+  });
+
+  it.each(["tbx", "tbx3"] as const)("%s joins terms on id, one language section each, and reports where they differ", (format) => {
+    const terms = [
+      term("pal", { label: "progressive lens", "concept-entry": { definition: "A lens.", "subject-field": "optics" } }, "en"),
+      term("pal", { label: "Gleitsichtglas", "concept-entry": { "subject-field": "Optik" } }, "de"),
+      term("lens", { label: "lens" }, "en"),
+    ];
+    const render = writer(format).render(terms, fileTarget("x.tbx"), NO_EXISTING);
+    const content = render.files[0]?.content ?? "";
+    const [entryTag, languageTag] = format === "tbx" ? ["termEntry", "langSet"] : ["conceptEntry", "langSec"];
+    const doc = new DOMParser().parseFromString(content, "text/xml");
+    expect(doc.getElementsByTagName(entryTag).length).toBe(2);
+    expect(doc.getElementsByTagName(entryTag).item(0)?.getElementsByTagName(languageTag).length).toBe(2);
+    // A concept-level definition stays at the entry, before its languages.
+    expect(content).toContain(
+      [
+        `      <${entryTag} id="pal">`,
+        '        <descrip type="definition">A lens.</descrip>',
+        '        <descrip type="subjectField">optics</descrip>',
+        `        <${languageTag} xml:lang="en">`,
+      ].join("\n"),
+    );
+    expect(render.conflicts).toEqual([{ id: "pal", field: "concept-entry.subject-field" }]);
+  });
+
+  it.each(["tbx", "tbx3"] as const)("%s writes a designation's own status over its label kind", (format) => {
+    const t = term("x", {
+      label: "x",
+      "hidden-labels": ["old x"],
+      designations: [{ term: "old x", "administrative-status": "superseded" }],
+    });
+    const content = writer(format).render([t], fileTarget("x.tbx"), NO_EXISTING).files[0]?.content ?? "";
+    expect(content).toContain('<termNote type="administrativeStatus">supersededTerm-admn-sts</termNote>');
+  });
+
+  it.each(["tbx", "tbx3"] as const)("%s reports what TBX-Basic has no category for as dropped", (format) => {
+    const t = term("x", { label: "x", see: "y", "transfer-comments": ["keep"], "subject-field": "optics" });
+    const render = writer(format).render([t], fileTarget("x.tbx"), NO_EXISTING);
+    expect(render.dropped).toEqual([
+      { id: "x", field: "see" },
+      { id: "x", field: "transfer-comments" },
+    ]);
+    expect(render.droppedHeaders).toEqual([]);
   });
 
   it("escapes attribute values", () => {

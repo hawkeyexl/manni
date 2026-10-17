@@ -42,6 +42,7 @@ export const DOCUMENT_RENDERS: Partial<
 /** What `formats` calls an interchange render. */
 const INTERCHANGE_LABELS: Partial<Record<TermWriteFormat, string>> = {
   tbx: "TBX v2",
+  tbx3: "TBX v3",
   skos: "JSON-LD",
   vale: "style",
 };

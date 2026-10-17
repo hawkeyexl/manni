@@ -336,6 +336,14 @@ function droppedLine(report: WriteReport): string | undefined {
   return `  dropped from ${report.droppedFrom ?? report.format ?? "the render"}: ${parts.join(", ")}`;
 }
 
+/** `  dropped from tbx3: the headers of glossary.tbx, <stdin>`. */
+function droppedHeadersLine(report: WriteReport): string | undefined {
+  const files = report.droppedHeaders ?? [];
+  if (files.length === 0) return undefined;
+  const what = files.length === 1 ? "the header of" : "the headers of";
+  return `  dropped from ${report.droppedFrom ?? report.format ?? "the render"}: ${what} ${files.join(", ")}`;
+}
+
 /** `  skipped 2 terms a definition list cannot read without a definition: varifocal, bifocal`. */
 function skippedLine(report: WriteReport): string | undefined {
   if (report.skipped.length === 0) return undefined;
@@ -371,9 +379,15 @@ function conflictsLine(report: WriteReport): string | undefined {
   return `  kept the first language's value where languages differ: ${parts.join(", ")}`;
 }
 
-/** The dropped, skipped and conflict lines, which a write and a dry run print alike. */
+/** The dropped, dropped-header, skipped and conflict lines, which a write and a dry run print alike. */
 function renderNotes(report: WriteReport): string[] {
-  return [droppedLine(report), skippedLine(report), otherLanguagesLine(report), conflictsLine(report)].filter(
+  return [
+    droppedLine(report),
+    droppedHeadersLine(report),
+    skippedLine(report),
+    otherLanguagesLine(report),
+    conflictsLine(report),
+  ].filter(
     (line) => line !== undefined,
   );
 }

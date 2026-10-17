@@ -115,6 +115,9 @@ function parseTbx(input: TermInput): Doc {
     const inner = innerSpan(doc, bodyEl);
     if (inner !== undefined) doc.document.body = inner;
   }
+  const headerEl = structuralChildren(doc, root, version === 3 ? "tbxHeader" : "martifHeader")[0];
+  const header = headerEl === undefined ? undefined : innerSpan(doc, headerEl);
+  if (header !== undefined) doc.document.header = header;
   parsed.set(input, doc);
   return doc;
 }
@@ -608,6 +611,37 @@ function sameTerm(a: Term, b: Term): boolean {
  * whose terms changed keeps its bytes, and so does the header.
  */
 function applyTbx(input: TermInput, terms: readonly Term[]): string {
+  return spliceEntries(input, terms, false);
+}
+
+/**
+ * The TBX document the terms were all read from, written with the terms as
+ * they are now (a same-source export): unchanged entries and everything
+ * outside them keep their bytes, a changed entry is written canonically in
+ * the document's version and style, and an entry none of whose terms is
+ * given is left out.
+ */
+export function exportTbxSource(document: TbxDocument, file: string, terms: readonly Term[]): string {
+  const input: TermInput = { content: document.content, file, format: "tbx", metadata: {}, lineFor: () => undefined };
+  return spliceEntries(input, terms, true);
+}
+
+/** `content` without `[start, end)`, and without the line it sat on when nothing else is on it. */
+function removeSpan(content: string, start: number, end: number): string {
+  const lineStart = content.lastIndexOf("\n", start - 1) + 1;
+  const after = /^[ \t]*(\r?\n|$)/.exec(content.slice(end))?.[0];
+  if (!/^[ \t]*$/.test(content.slice(lineStart, start)) || after === undefined) {
+    return content.slice(0, start) + content.slice(end);
+  }
+  return content.slice(0, lineStart) + content.slice(end + after.length);
+}
+
+/**
+ * The entries of `input` with `terms` written over them. In place, an entry
+ * given no terms, or only some of its languages, keeps the rest as read; an
+ * export writes exactly the terms given.
+ */
+function spliceEntries(input: TermInput, terms: readonly Term[], exporting: boolean): string {
   const doc = parseTbx(input);
   const { content } = input;
   const groups = new Map<number, { end: number; current: Term[]; next: Term[] }>();
@@ -637,8 +671,12 @@ function applyTbx(input: TermInput, terms: readonly Term[]): string {
   const eol = lineEnding(content);
   let next = content;
   for (const [start, group] of [...groups.entries()].sort((a, b) => b[0] - a[0])) {
-    if (group.next.length === 0) continue;
-    const written = group.next.length >= group.current.length ? group.next : merge(group.current, group.next);
+    if (group.next.length === 0) {
+      if (exporting) next = removeSpan(next, start, group.end);
+      continue;
+    }
+    const written =
+      exporting || group.next.length >= group.current.length ? group.next : merge(group.current, group.next);
     const unchanged = written.length === group.current.length && written.every((t, i) => {
       const was = group.current[i];
       return was !== undefined && sameTerm(was, t);

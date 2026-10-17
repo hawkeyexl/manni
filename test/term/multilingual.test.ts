@@ -256,6 +256,24 @@ describe("a multilingual set", () => {
       );
     });
 
+    it("names the TBX headers a render left behind, after the dropped fields and before the conflicts", () => {
+      const lines = renderWritePretty({
+        ...report([{ id: "a", field: "concept-entry.notes" }]),
+        format: "tbx3",
+        droppedFrom: "tbx3",
+        dropped: [{ id: "a", field: "abstract" }],
+        droppedHeaders: ["glossary.tbx", "<stdin>"],
+      }).split("\n");
+      expect(lines.slice(1)).toEqual([
+        "  dropped from tbx3: abstract on 1 term",
+        "  dropped from tbx3: the headers of glossary.tbx, <stdin>",
+        "  kept the first language's value where languages differ: concept-entry.notes on 1 concept",
+      ]);
+      expect(
+        renderWritePretty({ ...report(undefined), droppedFrom: "a page", droppedHeaders: ["glossary.tbx"] }).split("\n")[1],
+      ).toBe("  dropped from a page: the header of glossary.tbx");
+    });
+
     it("says nothing when no field differs", () => {
       expect(renderWritePretty(report([]))).toBe("x.csv is up to date");
     });

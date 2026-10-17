@@ -351,6 +351,55 @@ describe("manni term (TBX)", () => {
     expect(readFileSync(join(cwd, "glossary.tbx"), "utf8")).toBe(before);
   });
 
+  it("writes TBX v3 from a v2 file (rung 6)", () => {
+    const cwd = join(work, "clean");
+    copyTbx("tbx-basic-v2.tbx", join(cwd, "glossary.tbx"));
+    const r = term(["write", "glossary.tbx", "-f", "tbx3", "-o", "build/glossary.tbx"], { cwd });
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toBe("Wrote 4 terms to build/glossary.tbx\n");
+    expect(r.status).toBe(0);
+    const out = readFileSync(join(cwd, "build", "glossary.tbx"), "utf8");
+    expect(out).toContain('<tbx type="TBX-Basic" style="dca" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2">');
+    expect(out).toContain("<p>A hand-written TBX-Basic sample.</p>");
+  });
+
+  it("names the header a page render leaves behind (rung 7)", () => {
+    const cwd = join(work, "clean");
+    copyTbx("tbx-basic-v2.tbx", join(cwd, "glossary.tbx"));
+    const r = term(["write", "glossary.tbx", "-f", "markdown", "-o", "out/"], { cwd });
+    expect(r.stderr).toBe("");
+    expect(r.stdout.split("\n")).toContain("  dropped from a page: the header of glossary.tbx");
+    expect(r.status).toBe(0);
+  });
+
+  it("joins pages on id and says where languages differ (rung 8)", () => {
+    const cwd = join(work, "clean");
+    for (const [lang, label, field] of [
+      ["en", "progressive lens", "optics"],
+      ["de", "Gleitsichtglas", "Optik"],
+    ] as const) {
+      mkdirSync(join(cwd, "pages", lang), { recursive: true });
+      writeFileSync(
+        join(cwd, "pages", lang, "pal.md"),
+        `---\ntype: term\nid: pal\nlanguage: ${lang}\nlabel: ${label}\nconcept-entry:\n  subject-field: ${field}\n---\n`,
+      );
+    }
+    for (const id of ["lens", "bifocal"]) {
+      writeFileSync(join(cwd, "pages", "en", `${id}.md`), `---\ntype: term\nid: ${id}\nlanguage: en\nlabel: ${id}\nabstract: A lens.\n---\n`);
+    }
+    const r = term(["write", "pages", "-f", "tbx", "-o", "build/terms.tbx"], { cwd });
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toBe(
+      [
+        "Wrote 4 terms to build/terms.tbx",
+        "  dropped from tbx: abstract on 2 terms",
+        "  kept the first language's value where languages differ: concept-entry.subject-field on 1 concept",
+        "",
+      ].join("\n"),
+    );
+    expect(r.status).toBe(0);
+  });
+
   it("refuses a .tbx whose root is not TBX", () => {
     const cwd = join(work, "clean");
     copyTbx("not-tbx.tbx", join(cwd, "notes.tbx"));
@@ -416,6 +465,7 @@ describe("manni term (usage errors)", () => {
   it("an unknown -f", () => {
     const r = term(["write", "-f", "tmx"]);
     expect(r.stderr).toBe(`manni: unknown format "tmx". Expected ${writeFormats().join(" | ")}.\n`);
+    expect(r.stderr).toContain("| docbook | tbx | tbx3 | skos |");
     expect(r.status).toBe(2);
     const list = term(["list", "-f", "xml"]);
     expect(list.stderr).toBe('manni: unknown format "xml". Expected pretty | json | csv.\n');
@@ -425,6 +475,18 @@ describe("manni term (usage errors)", () => {
   it("-f tbx with no -o", () => {
     const r = term(["write", "-f", "tbx"]);
     expect(r.stderr).toBe("manni: -f tbx needs -o <path>.\n");
+    expect(r.status).toBe(2);
+  });
+
+  it("-f tbx3 with no -o", () => {
+    const r = term(["write", "-f", "tbx3"]);
+    expect(r.stderr).toBe("manni: -f tbx3 needs -o <path>.\n");
+    expect(r.status).toBe(2);
+  });
+
+  it("-f tbx3 into a directory", () => {
+    const r = term(["write", "-f", "tbx3", "-o", "out/"]);
+    expect(r.stderr).toBe("manni: -f tbx3 writes one file, not a directory. Pass -o <file>.\n");
     expect(r.status).toBe(2);
   });
 

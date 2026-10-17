@@ -20,6 +20,7 @@ import { MANIFEST_FORMAT, extractInput, tbxInput } from "../core/load-set.js";
 import { TERM_READERS, readerForConstruct } from "../core/readers/index.js";
 import { valeLsConfig, type ValeResolvedConfig } from "../core/vale.js";
 import { TERM_WRITERS } from "../core/writers/index.js";
+import { tbxHeaderFiles } from "../core/writers/tbx.js";
 import { TermError } from "../errors.js";
 import {
   TERM_WRITE_FORMATS,
@@ -95,6 +96,8 @@ export interface WriteReport {
   otherLanguages?: TermRender["otherLanguages"];
   /** The fields where terms sharing an id disagree, and the render kept the first term's value. */
   conflicts?: MergeConflict[];
+  /** The TBX files whose header the render left behind, as their terms name them. */
+  droppedHeaders?: string[];
   check: boolean;
   dryRun: boolean;
   wiring?: ValeWiring;
@@ -270,6 +273,8 @@ export async function runWrite(opts: WriteOptions): Promise<WriteReport> {
     skipped: render.skipped,
     ...(render.otherLanguages === undefined ? {} : { otherLanguages: render.otherLanguages }),
     ...(render.conflicts === undefined ? {} : { conflicts: render.conflicts }),
+    // A Vale style is not a termbase, so a header it does not hold is not news either.
+    ...(format === "vale" ? {} : { droppedHeaders: render.droppedHeaders ?? tbxHeaderFiles(set.terms) }),
     check,
     dryRun,
     ...(wiring === undefined ? {} : { wiring }),

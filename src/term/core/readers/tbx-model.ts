@@ -52,6 +52,8 @@ export interface TbxDocument extends TbxFormat {
   prefixes: Record<TbxModule, string>;
   /** The UTF-16 offsets of `<body>`'s content in `content`, `[start, end)`: between its tags. */
   body?: { start: number; end: number };
+  /** The offsets of the header's content (`martifHeader` or `tbxHeader`), between its tags. */
+  header?: { start: number; end: number };
 }
 
 /** Where one term's entry sits. Every term of an entry shares the span. */

@@ -816,6 +816,7 @@ describe("formats", () => {
     expect(pretty).toMatch(/^html +dfn +read$/m);
     expect(pretty).toMatch(/^tbx +TBX entry +read +write$/m);
     expect(pretty).toMatch(/^tbx +TBX v2 +write$/m);
+    expect(pretty).toMatch(/^tbx +TBX v2 +write\ntbx3 +TBX v3 +write$/m);
     expect(pretty).toMatch(/^json +write$/m);
   });
 

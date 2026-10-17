@@ -294,6 +294,7 @@ export const TERM_WRITE_FORMATS = [
   "dita",
   "docbook",
   "tbx",
+  "tbx3",
   "skos",
   "csv",
   "json",
@@ -363,6 +364,12 @@ export interface TermRender {
   otherLanguages?: { written: string; terms: OtherLanguageTerm[] };
   /** Set when a render joins terms on id and they disagree on a field the joined entry holds once. */
   conflicts?: MergeConflict[];
+  /**
+   * The TBX files, as their terms name them, whose header the render did not
+   * carry. Set by a TBX render; for any other, every TBX file a term came
+   * from.
+   */
+  droppedHeaders?: string[];
 }
 
 /**
