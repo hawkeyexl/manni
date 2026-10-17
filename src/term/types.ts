@@ -328,6 +328,19 @@ export interface DroppedField {
   field: TermField;
 }
 
+/** A field the terms sharing an id disagree on, where a render that joins them on id kept the first term's value. */
+export interface MergeConflict {
+  id: string;
+  /** The record key, dotted below the root: `broader`, `concept-entry.subject-field`. */
+  field: string;
+}
+
+/** A term a construct holding one language left out, with its own language. */
+export interface OtherLanguageTerm {
+  id: string;
+  language: string;
+}
+
 export interface TermRender {
   files: RenderedFile[];
   /** Absolute paths the render owns and no longer produces. */
@@ -340,6 +353,14 @@ export interface TermRender {
    * definition. `[]` when every term was written.
    */
   skipped: string[];
+  /**
+   * Set when the target construct holds one language and the set holds more:
+   * the language written, the first term's, and the terms left out, in set
+   * order.
+   */
+  otherLanguages?: { written: string; terms: OtherLanguageTerm[] };
+  /** Set when a render joins terms on id and they disagree on a field the joined entry holds once. */
+  conflicts?: MergeConflict[];
 }
 
 /**

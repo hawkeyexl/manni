@@ -24,11 +24,13 @@ import { TermError } from "../errors.js";
 import {
   TERM_WRITE_FORMATS,
   type DroppedField,
+  type MergeConflict,
   type RenderedFile,
   type Term,
   type TermConstruct,
   type TermInput,
   type TermReader,
+  type TermRender,
   type TermShape,
   type TermTarget,
   type TermWriteFormat,
@@ -89,6 +91,10 @@ export interface WriteReport {
   droppedFrom?: string;
   /** Ids of the terms left out because the target construct cannot read them back, in set order. */
   skipped: string[];
+  /** The terms left out because the target construct holds one language, and the language it holds. */
+  otherLanguages?: TermRender["otherLanguages"];
+  /** The fields where terms sharing an id disagree, and the render kept the first term's value. */
+  conflicts?: MergeConflict[];
   check: boolean;
   dryRun: boolean;
   wiring?: ValeWiring;
@@ -262,6 +268,8 @@ export async function runWrite(opts: WriteOptions): Promise<WriteReport> {
     dropped: format === "vale" ? [] : render.dropped,
     droppedFrom: droppedFrom(format, shape, readers),
     skipped: render.skipped,
+    ...(render.otherLanguages === undefined ? {} : { otherLanguages: render.otherLanguages }),
+    ...(render.conflicts === undefined ? {} : { conflicts: render.conflicts }),
     check,
     dryRun,
     ...(wiring === undefined ? {} : { wiring }),

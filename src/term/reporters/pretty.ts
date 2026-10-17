@@ -344,9 +344,38 @@ function skippedLine(report: WriteReport): string | undefined {
   return `  skipped ${count} ${construct} cannot read without a definition: ${report.skipped.join(", ")}`;
 }
 
-/** The dropped and skipped lines, which a write and a dry run print alike. */
+/** `  skipped 2 terms in another language than en: spectacle-lens (de), progressive-lens (de)`. */
+function otherLanguagesLine(report: WriteReport): string | undefined {
+  const other = report.otherLanguages;
+  if (other === undefined || other.terms.length === 0) return undefined;
+  const terms = other.terms.map(({ id, language }) => `${id} (${language})`).join(", ");
+  return `  skipped ${plural(other.terms.length, "term")} in another language than ${other.written}: ${terms}`;
+}
+
+/**
+ * `  kept the first language's value where languages differ: concept-entry.subject-field on 1 concept`.
+ * Fields are counted in concepts, fewest first, as the dropped line counts terms.
+ */
+function conflictsLine(report: WriteReport): string | undefined {
+  const conflicts = report.conflicts ?? [];
+  if (conflicts.length === 0) return undefined;
+  const ids = new Map<string, Set<string>>();
+  for (const { id, field } of conflicts) {
+    const set = ids.get(field) ?? new Set<string>();
+    set.add(id);
+    ids.set(field, set);
+  }
+  // A stable sort keeps fields of one count in the order they were first reported.
+  const fields = [...ids.entries()].map(([field, set]) => ({ field, n: set.size })).sort((a, b) => a.n - b.n);
+  const parts = fields.map(({ field, n }, i) => `${field} on ${i === 0 ? plural(n, "concept") : String(n)}`);
+  return `  kept the first language's value where languages differ: ${parts.join(", ")}`;
+}
+
+/** The dropped, skipped and conflict lines, which a write and a dry run print alike. */
 function renderNotes(report: WriteReport): string[] {
-  return [droppedLine(report), skippedLine(report)].filter((line) => line !== undefined);
+  return [droppedLine(report), skippedLine(report), otherLanguagesLine(report), conflictsLine(report)].filter(
+    (line) => line !== undefined,
+  );
 }
 
 function unchangedLine(report: WriteReport): string {
@@ -365,7 +394,7 @@ export function renderWritePretty(report: WriteReport): string {
     return report.changes.length === 0 ? "Nothing to write" : `Wrote ${plural(report.changes.length, "file")}`;
   }
   const each = report.shape === "directory" && report.format !== "vale" ? ", one file each" : "";
-  const written = report.terms - report.skipped.length;
+  const written = report.terms - report.skipped.length - (report.otherLanguages?.terms.length ?? 0);
   const lines = [`Wrote ${plural(written, "term")} to ${report.target ?? ""}${each}`];
   if (report.format === "vale") lines.push(...valeLines(report));
   lines.push(...renderNotes(report));
