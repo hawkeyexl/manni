@@ -249,9 +249,9 @@ describe("manni term (the ladder)", () => {
   it("12. lists as csv", () => {
     const r = term(["list", "-f", "csv"]);
     expect(r.stdout.split("\n").slice(0, 3)).toEqual([
-      "id,label,alt-labels,abstract",
-      "corrective-lens,corrective lens,,",
-      "progressive-lens,progressive lens,PAL|graduated lens,Lenses that correct presbyopia without a visible line.",
+      "id,label,alt-labels,abstract,language",
+      "corrective-lens,corrective lens,,,",
+      "progressive-lens,progressive lens,PAL|graduated lens,Lenses that correct presbyopia without a visible line.,",
     ]);
   });
 

@@ -17,7 +17,11 @@ import type { ToolsConfig } from "../shared/tools.js";
 // ---------------------------------------------------------------------------
 // The record
 
-/** The ten fields of `manni:terminology:1.0.0`, in the order the reference lists them. */
+/**
+ * The root fields of `manni:terminology:1.1.0`: the ten 1.0.0 fields in the
+ * order the reference lists them, then the TBX data categories (proposal
+ * 0084), then the three blocks.
+ */
 export const TERM_FIELDS = [
   "label",
   "definition",
@@ -29,10 +33,25 @@ export const TERM_FIELDS = [
   "related-terms",
   "see",
   "scope-note",
+  "subject-field",
+  "contexts",
+  "notes",
+  "sources",
+  "customer-subsets",
+  "project-subsets",
+  "cross-references",
+  "external-cross-references",
+  "graphics",
+  "transactions",
+  "transfer-comments",
+  "tbx-elements",
+  "concept-entry",
+  "designations",
+  "tbx-markup",
 ] as const;
 export type TermField = (typeof TERM_FIELDS)[number];
 
-/** The fields that hold a list. The vocabulary accepts a string or a list; a reader always yields a list. */
+/** The fields that hold a list of labels. The vocabulary accepts a string or a list; a reader always yields a list. */
 export const TERM_LIST_FIELDS = [
   "alt-labels",
   "hidden-labels",
@@ -41,6 +60,90 @@ export const TERM_LIST_FIELDS = [
   "related-terms",
 ] as const satisfies readonly TermField[];
 export type TermListField = (typeof TERM_LIST_FIELDS)[number];
+
+/**
+ * The aux fields: valid at the root (language level), in `concept-entry`
+ * (concept level) and in a `designations` item (term level). The level of a
+ * value is where it sits.
+ */
+export const TERM_AUX_FIELDS = [
+  "definition",
+  "subject-field",
+  "contexts",
+  "notes",
+  "sources",
+  "customer-subsets",
+  "project-subsets",
+  "cross-references",
+  "external-cross-references",
+  "graphics",
+  "transactions",
+  "transfer-comments",
+  "tbx-elements",
+] as const satisfies readonly TermField[];
+export type TermAuxField = (typeof TERM_AUX_FIELDS)[number];
+
+/** The term-level keys, valid only in a `designations` item, beside its `term`. Each holds one string. */
+export const TERM_DESIGNATION_FIELDS = [
+  "administrative-status",
+  "part-of-speech",
+  "grammatical-gender",
+  "grammatical-number",
+  "term-type",
+  "term-location",
+  "geographical-usage",
+  "register",
+  "reading",
+  "reading-note",
+] as const;
+export type TermDesignationField = (typeof TERM_DESIGNATION_FIELDS)[number];
+
+/** A `cross-references`, `external-cross-references` or `graphics` item. A bare string reads as its target. */
+export interface TermLink {
+  target: string;
+  text?: string;
+}
+
+/** A `transactions` item. `date` is kept as written. */
+export interface TermTransaction {
+  type: string;
+  date?: string;
+  responsibility?: string;
+}
+
+/** The aux fields, as every level holds them. A list field is a non-empty list, or absent. */
+export interface TermAuxRecord {
+  definition?: string;
+  "subject-field"?: string;
+  contexts?: string[];
+  notes?: string[];
+  sources?: string[];
+  "customer-subsets"?: string[];
+  "project-subsets"?: string[];
+  "cross-references"?: TermLink[];
+  "external-cross-references"?: TermLink[];
+  graphics?: TermLink[];
+  transactions?: TermTransaction[];
+  "transfer-comments"?: string[];
+  /** Elements no named field maps, as XML strings in source order. */
+  "tbx-elements"?: string[];
+}
+
+/** A `designations` item: one of the term's labels, with what is said about that designation alone. */
+export interface TermDesignation extends TermAuxRecord {
+  /** The label, alt-label or hidden-label the item describes. */
+  term: string;
+  "administrative-status"?: string;
+  "part-of-speech"?: string;
+  "grammatical-gender"?: string;
+  "grammatical-number"?: string;
+  "term-type"?: string;
+  "term-location"?: string;
+  "geographical-usage"?: string;
+  register?: string;
+  reading?: string;
+  "reading-note"?: string;
+}
 
 /**
  * One term's fields, as the vocabulary names them.
@@ -52,9 +155,8 @@ export type TermListField = (typeof TERM_LIST_FIELDS)[number];
  * vocabulary but absent here when a construct cannot hold one: an HTML `<dfn>`
  * names a term without defining it.
  */
-export interface TermRecord {
+export interface TermRecord extends TermAuxRecord {
   label: string;
-  definition?: string;
   abstract?: string;
   "alt-labels"?: string[];
   "hidden-labels"?: string[];
@@ -63,6 +165,12 @@ export interface TermRecord {
   "related-terms"?: string[];
   see?: string;
   "scope-note"?: string;
+  /** Concept level: what every language's term of this id says. */
+  "concept-entry"?: TermAuxRecord;
+  /** Per-designation detail, in source order. */
+  designations?: TermDesignation[];
+  /** The marked-up form of any value whose text it matches, as inline XML. */
+  "tbx-markup"?: string[];
 }
 
 /** Every construct a term is read from. Each has exactly one reader. */
@@ -113,7 +221,7 @@ export interface Term {
    */
   id: string;
   record: TermRecord;
-  /** `language` from the file's metadata, when it carries one. */
+  /** `language` from the file's metadata, or from a manifest entry, when it carries one. */
   language?: string;
   location: TermLocation;
 }

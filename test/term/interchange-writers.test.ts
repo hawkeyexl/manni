@@ -9,10 +9,24 @@ import { describe, expect, it } from "vitest";
 import { writerFor } from "../../src/term/core/writers/index.js";
 import { INTERCHANGE_WRITERS } from "../../src/term/core/writers/interchange.js";
 import { TermError } from "../../src/term/errors.js";
-import type { DroppedField, TermTarget, TermWriteFormat, TermWriter } from "../../src/term/types.js";
+import { TERM_FIELDS, type DroppedField, type TermTarget, type TermWriteFormat, type TermWriter } from "../../src/term/types.js";
 import { fixtureTerms, golden, term } from "./writer-fixture.js";
 
 const OUT = resolve("out");
+
+/** The ten 1.0.0 fields, the ones the CSV columns hold. */
+const CSV_FIELDS = [
+  "label",
+  "definition",
+  "abstract",
+  "alt-labels",
+  "hidden-labels",
+  "broader",
+  "narrower",
+  "related-terms",
+  "see",
+  "scope-note",
+];
 const NO_EXISTING = { existing: new Map<string, string>() };
 
 function writer(format: TermWriteFormat): TermWriter {
@@ -70,7 +84,7 @@ describe("json writer", () => {
     const { content, dropped } = renderOne("json", "terms.json");
     expect(content).toBe(golden("terms.golden.json"));
     expect(dropped).toEqual([]);
-    expect(writer("json").holds("file")).toHaveLength(10);
+    expect(writer("json").holds("file")).toEqual(TERM_FIELDS);
   });
 
   it("parses back to the terms it was given", () => {
@@ -86,7 +100,24 @@ describe("csv writer", () => {
     const { content, dropped } = renderOne("csv", "terms.csv");
     expect(content).toBe(golden("terms.golden.csv"));
     expect(dropped).toEqual([]);
-    expect(writer("csv").holds("file")).toHaveLength(10);
+    expect(writer("csv").holds("file")).toEqual(CSV_FIELDS);
+  });
+
+  it("reports the 1.1.0 keys as dropped, and writes the same columns", () => {
+    const plain = term("x", { label: "x", definition: "A lens." });
+    const rich = term("x", {
+      ...plain.record,
+      "subject-field": "optics",
+      "concept-entry": { notes: ["n"] },
+      designations: [{ term: "x", "part-of-speech": "noun" }],
+    });
+    const render = writer("csv").render([rich], fileTarget("x.csv"), NO_EXISTING);
+    expect(render.files[0]?.content).toBe(writer("csv").render([plain], fileTarget("x.csv"), NO_EXISTING).files[0]?.content);
+    expect(render.dropped).toEqual([
+      { id: "x", field: "subject-field" },
+      { id: "x", field: "concept-entry" },
+      { id: "x", field: "designations" },
+    ]);
   });
 
   it("quotes a cell holding a newline", () => {

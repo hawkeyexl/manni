@@ -4,11 +4,26 @@
  * by name: `ID`, then six columns per language the set holds, then the four
  * language-neutral relation columns.
  */
-import { TERM_FIELDS, type Term, type TermField, type TermShape, type TermWriter } from "../../types.js";
+import type { Term, TermField, TermShape, TermWriter } from "../../types.js";
 import { DEFAULT_LANGUAGE, droppedFields, requireShape } from "./render-util.js";
 
+/** The fields the columns hold: the ten of terminology 1.0.0. Every other field is reported dropped. */
+const HOLDS = [
+  "label",
+  "definition",
+  "abstract",
+  "alt-labels",
+  "hidden-labels",
+  "broader",
+  "narrower",
+  "related-terms",
+  "see",
+  "scope-note",
+] as const satisfies readonly TermField[];
+type CsvField = (typeof HOLDS)[number];
+
 /** The per-language columns, in order, with their header names. */
-const LANGUAGE_COLUMNS: readonly (readonly [TermField, string])[] = [
+const LANGUAGE_COLUMNS: readonly (readonly [CsvField, string])[] = [
   ["label", "Term"],
   ["definition", "Definition"],
   ["abstract", "Abstract"],
@@ -18,7 +33,7 @@ const LANGUAGE_COLUMNS: readonly (readonly [TermField, string])[] = [
 ];
 
 /** The columns every language shares: they name other terms, not words in a language. */
-const NEUTRAL_COLUMNS: readonly (readonly [TermField, string])[] = [
+const NEUTRAL_COLUMNS: readonly (readonly [CsvField, string])[] = [
   ["broader", "Broader"],
   ["narrower", "Narrower"],
   ["related-terms", "Related terms"],
@@ -37,7 +52,7 @@ function cell(value: string): string {
   return /[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
 }
 
-function fieldText(term: Term, field: TermField): string {
+function fieldText(term: Term, field: CsvField): string {
   const value = term.record[field];
   if (value === undefined) return "";
   return typeof value === "string" ? value : value.join(LIST_SEPARATOR);
@@ -46,7 +61,7 @@ function fieldText(term: Term, field: TermField): string {
 export const csvWriter: TermWriter = {
   format: "csv",
   shapes: ["file"],
-  holds: (_shape: TermShape) => TERM_FIELDS,
+  holds: (_shape: TermShape) => HOLDS,
   render(terms, target) {
     requireShape("csv", target, "file");
     // Languages in order of first appearance, so the columns follow the set.
@@ -76,7 +91,7 @@ export const csvWriter: TermWriter = {
     return {
       files: [{ path: target.path, content }],
       removals: [],
-      dropped: droppedFields(terms, TERM_FIELDS),
+      dropped: droppedFields(terms, HOLDS),
       skipped: [],
     };
   },

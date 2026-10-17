@@ -319,3 +319,58 @@ describe("a manifest", () => {
     );
   });
 });
+
+describe("the terminology 1.1.0 keys, written in place", () => {
+  const FULL = join(TERM_FIXTURES, "vocabulary", "full-term-1-1-0.md");
+
+  it("leaves a page carrying every key byte-identical on a no-op write", () => {
+    const r = reader("page");
+    for (const crlf of [false, true]) {
+      const content = readFileSync(FULL, "utf8");
+      const input = inputOf(crlf ? content.replace(/\r?\n/g, "\r\n") : content, FULL);
+      expect(applyOf(r)(input, r.read(input).terms)).toBe(input.content);
+    }
+  });
+
+  it("writes a changed designation and concept-entry on a page, and reads them back", () => {
+    const r = reader("page");
+    const input = inputOf(readFileSync(FULL, "utf8"), FULL);
+    const [page] = r.read(input).terms;
+    if (page === undefined) throw new Error("no page term");
+    const record: TermRecord = {
+      ...page.record,
+      "concept-entry": { "subject-field": "ophthalmic optics" },
+      designations: [{ term: "PAL", "term-type": "abbreviation" }],
+    };
+    const next = applyOf(r)(input, [{ ...page, record }]);
+    expect(next).toContain("Prose about progressive lenses.");
+    expect(r.read(inputOf(next, FULL)).terms[0]?.record).toEqual(record);
+  });
+
+  it("writes a manifest entry's language and TBX keys, and leaves the rest of the file alone", () => {
+    const r = reader("manifest");
+    const path = join(TERM_FIXTURES, "readers", "manifest", "tbx-fields.yaml");
+    const input = inputOf(readFileSync(path, "utf8"), path);
+    const [entry] = r.read(input).terms;
+    if (entry === undefined) throw new Error("no manifest term");
+    const record: TermRecord = { ...entry.record, notes: ["Vom Anbieter."] };
+    const next = applyOf(r)(input, [{ ...entry, language: "de-AT", record }]);
+    expect(next.startsWith("# A manifest entry in German, with the 1.1.0 keys.\n")).toBe(true);
+    const [after] = r.read(inputOf(next, path)).terms;
+    expect(after?.language).toBe("de-AT");
+    expect(after?.record).toEqual(record);
+  });
+
+  it("writes a new manifest entry with its language", () => {
+    const r = reader("manifest");
+    const path = join(TERM_FIXTURES, "readers", "manifest", "tbx-fields.yaml");
+    const input = inputOf(readFileSync(path, "utf8"), path);
+    const extra: Term = { ...term("brille", { label: "Brille", definition: "Ein Sehbehelf." }), language: "de" };
+    const next = applyOf(r)(input, [...r.read(input).terms, extra]);
+    const after = r.read(inputOf(next, path)).terms;
+    expect(after.map((t) => [t.id, t.language])).toEqual([
+      ["progressive-lens", "de"],
+      ["brille", "de"],
+    ]);
+  });
+});

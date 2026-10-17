@@ -6,6 +6,8 @@ docs/src/content/docs/meta/reference/schemas/manni-terminology.mdx:
   source-of-truth:
     - path: src/meta/schemas/terminology/1.0.0.json
     - path: src/meta/schemas/terminology-strict/1.0.0.json
+    - path: src/meta/schemas/terminology/1.1.0.json
+    - path: src/meta/schemas/terminology-strict/1.1.0.json
     - path: src/meta/core/schema-registry.ts
   eval-suite: meta
   evals:

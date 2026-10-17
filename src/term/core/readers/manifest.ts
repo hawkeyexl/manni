@@ -1,8 +1,9 @@
 /**
  * A term manifest: a YAML or JSON mapping of id to entry, for terms held
- * outside any document. Each entry is the ten fields with no envelope. The
- * line of each entry and each field is kept, so a finding names the entry's
- * own line (proposal 0052, after 0037's sidecar).
+ * outside any document. Each entry is the terminology fields with no
+ * envelope, plus the entry's own `language` when it has one. The line of each
+ * entry and each field is kept, so a finding names the entry's own line
+ * (proposal 0052, after 0037's sidecar).
  *
  * A write edits the entries it was handed in place: YAML through the `yaml`
  * Document API, so comments, key order and other entries survive; JSON by
@@ -22,13 +23,21 @@ import {
   type TermReadResult,
   type TermRecord,
 } from "../../types.js";
-import { ignoredFields, ignoredNotice, recordOf, skipped, textOf, termOf } from "./normalize.js";
+import { issueNotice, recordOf, skipped, textOf, termOf, type RecordIssue } from "./normalize.js";
 
 const LABEL = "manifest";
 const FIELDS: ReadonlySet<string> = new Set(TERM_FIELDS);
 
 function isField(key: string): key is TermField {
   return FIELDS.has(key);
+}
+
+/** What an entry holds: core's `language`, then the terminology fields. */
+type EntryKey = "language" | TermField;
+const ENTRY_KEYS: readonly EntryKey[] = ["language", ...TERM_FIELDS];
+
+function isEntryKey(key: string): key is EntryKey {
+  return key === "language" || isField(key);
 }
 
 function read(input: TermInput): TermReadResult {
@@ -81,40 +90,54 @@ function read(input: TermInput): TermReadResult {
       raw[name] = isNode(fieldValue) ? fieldValue.toJSON() : fieldValue;
       lines[name] = lineOf(fieldKey);
     }
-    const record = recordOf(raw);
+    const issues: RecordIssue[] = [];
+    const record = recordOf(raw, issues);
     if (record === undefined) {
       notices.push(skipped(input, line, LABEL));
       continue;
     }
-    for (const ignored of ignoredFields(raw)) {
-      notices.push(ignoredNotice(input, lines[ignored.field] ?? line, record.label, ignored));
+    for (const issue of issues) {
+      // A nested value's own line; a top-level field's is its key's.
+      const nested = issue.path.length > 1 ? value.getIn(issue.path, true) : undefined;
+      const [top] = issue.path;
+      const topLine = typeof top === "string" && isField(top) ? lines[top] : undefined;
+      notices.push(issueNotice(input, (isNode(nested) ? lineOf(nested) : undefined) ?? topLine ?? line, record.label, issue));
     }
-    terms.push(termOf(input, { record, recordId: id, construct: "manifest", line, lines }));
+    const language: unknown = value.get("language");
+    terms.push(termOf(input, { record, recordId: id, construct: "manifest", line, lines, language }));
   }
   return { terms, notices };
 }
 
-/** A record as a manifest entry: its fields in the vocabulary's order. */
-function entryOf(record: TermRecord): Record<string, unknown> {
+/** What a term says under each entry key: its language and its record's fields. */
+function entryValues(language: string | undefined, record: Partial<TermRecord>): Partial<Record<EntryKey, unknown>> {
+  return { ...record, ...(language === undefined ? {} : { language }) };
+}
+
+/** A term as a manifest entry: its language, then its fields in the vocabulary's order. */
+function entryOf(term: Term): Record<string, unknown> {
+  const values = entryValues(term.language, term.record);
   const entry: Record<string, unknown> = {};
-  for (const field of TERM_FIELDS) {
-    const value = record[field];
-    if (value !== undefined) entry[field] = value;
+  for (const key of ENTRY_KEYS) {
+    const value = values[key];
+    if (value !== undefined) entry[key] = value;
   }
   return entry;
 }
 
-/** The record an entry currently holds, as a reader normalizes it; `{}` for fields when it has no label. */
-function currentRecord(value: unknown): Partial<TermRecord> {
+/** What an entry currently holds, as a reader normalizes it; no fields when it has no label. */
+function currentValues(value: unknown): Partial<Record<EntryKey, unknown>> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return {};
+  const entry = value as Record<string, unknown>;
   const raw: Partial<Record<TermField, unknown>> = {};
-  for (const field of TERM_FIELDS) raw[field] = (value as Record<string, unknown>)[field];
-  return recordOf(raw) ?? {};
+  for (const field of TERM_FIELDS) raw[field] = entry[field];
+  return entryValues(textOf(entry["language"]), recordOf(raw) ?? {});
 }
 
-/** The fields whose value differs between what the file holds and what the term says. */
-function changedFields(current: Partial<TermRecord>, record: TermRecord): TermField[] {
-  return TERM_FIELDS.filter((field) => JSON.stringify(current[field]) !== JSON.stringify(record[field]));
+/** The keys whose value differs between what the file holds and what the term says. */
+function changedKeys(current: Partial<Record<EntryKey, unknown>>, term: Term): EntryKey[] {
+  const next = entryValues(term.language, term.record);
+  return ENTRY_KEYS.filter((key) => JSON.stringify(current[key]) !== JSON.stringify(next[key]));
 }
 
 function applyJson(input: TermInput, terms: readonly Term[]): string {
@@ -135,21 +158,22 @@ function applyJson(input: TermInput, terms: readonly Term[]): string {
       if (existing !== undefined) {
         throw new TermError(`${input.file}: entry "${term.id}" is not a mapping of fields.`);
       }
-      root[term.id] = entryOf(term.record);
+      root[term.id] = entryOf(term);
       changed = true;
       continue;
     }
     const entry = existing as Record<string, unknown>;
-    const fields = changedFields(currentRecord(entry), term.record);
-    if (fields.length === 0) continue;
+    const keys = changedKeys(currentValues(entry), term);
+    if (keys.length === 0) continue;
+    const values = entryValues(term.language, term.record);
     // Rebuilt rather than mutated, so a field keeps its place and a removed one is simply not copied.
     const next: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(entry)) {
-      if (!isField(key) || !fields.includes(key)) next[key] = value;
-      else if (term.record[key] !== undefined) next[key] = term.record[key];
+      if (!isEntryKey(key) || !keys.includes(key)) next[key] = value;
+      else if (values[key] !== undefined) next[key] = values[key];
     }
-    for (const field of fields) {
-      if (term.record[field] !== undefined && !(field in next)) next[field] = term.record[field];
+    for (const key of keys) {
+      if (values[key] !== undefined && !(key in next)) next[key] = values[key];
     }
     root[term.id] = next;
     changed = true;
@@ -172,25 +196,28 @@ function entryRanges(root: YAMLMap): Map<string, { start: number; end: number }>
   return ranges;
 }
 
-/** Edit the fields of `entry` that differ from `record`. Returns whether anything changed. */
-function editEntry(doc: ReturnType<typeof parseDocument>, entry: YAMLMap, record: TermRecord): boolean {
-  const fields = changedFields(currentRecord(entry.toJSON()), record);
-  for (const field of fields) {
-    const value = record[field];
+/** Edit the keys of `entry` that differ from `term`. Returns whether anything changed. */
+function editEntry(doc: ReturnType<typeof parseDocument>, entry: YAMLMap, term: Term): boolean {
+  const keys = changedKeys(currentValues(entry.toJSON()), term);
+  const values = entryValues(term.language, term.record);
+  for (const key of keys) {
+    const value = values[key];
     if (value === undefined) {
-      entry.delete(field);
+      entry.delete(key);
     } else if (Array.isArray(value)) {
       // A list keeps the style it was written in.
-      const previous = entry.get(field, true);
+      const previous = entry.get(key, true);
       const node = doc.createNode(value);
       node.flow = isSeq(previous) && previous.flow === true;
-      entry.set(field, node);
+      entry.set(key, node);
+    } else if (typeof value === "object" && value !== null) {
+      entry.set(key, doc.createNode(value));
     } else {
       // A scalar set in place keeps its quoting and its comments.
-      entry.set(field, value);
+      entry.set(key, value);
     }
   }
-  return fields.length > 0;
+  return keys.length > 0;
 }
 
 /**
@@ -211,7 +238,7 @@ function applyYaml(input: TermInput, terms: readonly Term[]): string {
   if (root === null) {
     // An empty manifest: every entry is new, and there is nothing to keep.
     if (terms.length === 0) return content;
-    const entries = Object.fromEntries(terms.map((term) => [term.id, entryOf(term.record)]));
+    const entries = Object.fromEntries(terms.map((term) => [term.id, entryOf(term)]));
     return stringifyYaml(entries, { lineWidth: 0 }).replaceAll("\n", eol);
   }
   if (!isMap(root)) {
@@ -225,14 +252,14 @@ function applyYaml(input: TermInput, terms: readonly Term[]): string {
   for (const term of terms) {
     const pair = root.items.find((item) => isScalar(item.key) && textOf(item.key.value) === term.id);
     if (pair === undefined) {
-      root.add(doc.createPair(term.id, entryOf(term.record)));
+      root.add(doc.createPair(term.id, entryOf(term)));
       added.push(term.id);
       continue;
     }
     if (!isMap(pair.value)) {
       throw new TermError(`${input.file}: entry "${term.id}" is not a mapping of fields.`);
     }
-    if (editEntry(doc, pair.value, term.record)) changed.push(term.id);
+    if (editEntry(doc, pair.value, term)) changed.push(term.id);
   }
   if (changed.length === 0 && added.length === 0) return content;
 

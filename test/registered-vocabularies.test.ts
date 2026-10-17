@@ -154,3 +154,87 @@ describe("manni:artifact-evals:1.1.0 and its strict overlay", () => {
     expect(strict.description).toEqual(expect.stringContaining("manni:artifact-evals:1.1.0"));
   });
 });
+
+/**
+ * terminology 1.1.0 (proposal 0084) registers beside 1.0.0 and adds the TBX
+ * data categories as new root keys, with the `$defs` they share. Nothing
+ * 1.0.0 declares changes shape, so every 1.0.0 page is valid 1.1.0, and the
+ * strict overlay only narrows the new keys.
+ */
+describe("manni:terminology:1.1.0 and its strict overlay", () => {
+  const ADDED = [
+    "subject-field",
+    "contexts",
+    "notes",
+    "sources",
+    "customer-subsets",
+    "project-subsets",
+    "cross-references",
+    "external-cross-references",
+    "graphics",
+    "transactions",
+    "transfer-comments",
+    "tbx-elements",
+    "concept-entry",
+    "designations",
+    "tbx-markup",
+  ];
+
+  /** The keys strict narrows: free text and picklists stay open, the rest gain a form. */
+  const NARROWED = [
+    "subject-field",
+    "cross-references",
+    "external-cross-references",
+    "graphics",
+    "tbx-elements",
+    "concept-entry",
+    "designations",
+  ];
+
+  /** The object at `key`, or `{}` when there is none. */
+  function objectAt(schema: JsonObject, key: string): JsonObject {
+    const value = schema[key];
+    return value !== null && typeof value === "object" && !Array.isArray(value) ? value : {};
+  }
+
+  /** 1.1.0 with exactly `added` taken out of its root keys, and the `$defs` 1.0.0 lacks. */
+  function asOld(v110: JsonObject, v100: JsonObject, added: readonly string[]): JsonObject {
+    const properties = objectAt(v110, "properties");
+    expect(Object.keys(properties).filter((key) => !Object.hasOwn(objectAt(v100, "properties"), key)).sort()).toEqual(
+      [...added].sort(),
+    );
+    const { $defs: _defs, ...rest } = v110;
+    const out: JsonObject = {
+      ...rest,
+      properties: Object.fromEntries(Object.entries(properties).filter(([key]) => !added.includes(key))),
+    };
+    if (v100.$defs !== undefined) {
+      const names = Object.keys(objectAt(v100, "$defs"));
+      out.$defs = Object.fromEntries(Object.entries(objectAt(v110, "$defs")).filter(([name]) => names.includes(name)));
+    }
+    return out;
+  }
+
+  it("is 1.0.0 plus the TBX keys", async () => {
+    const v100 = await load("manni:terminology:1.0.0");
+    const v110 = await load("manni:terminology:1.1.0");
+    expect(withoutProse(asOld(v110, v100, ADDED))).toEqual(withoutProse(v100));
+  });
+
+  it("is the 1.0.0 overlay plus narrowing for the TBX keys", async () => {
+    const v100 = await load("manni:terminology-strict:1.0.0");
+    const v110 = await load("manni:terminology-strict:1.1.0");
+    expect(withoutProse(asOld(v110, v100, NARROWED))).toEqual(withoutProse(v100));
+  });
+
+  it("names its neighbours at 1.1.0, and no draft", async () => {
+    for (const ref of ["manni:terminology:1.1.0", "manni:terminology-strict:1.1.0"]) {
+      const schema = await load(ref);
+      expect(schema.$id).toBe(ref);
+      const text = JSON.stringify(schema);
+      expect({ ref, draft: /-proposal\.\d|docmeta:|:1\.0\.0"/.test(text) }).toEqual({ ref, draft: false });
+    }
+    const strict = await load("manni:terminology-strict:1.1.0");
+    expect(strict.description).toEqual(expect.stringContaining("manni:terminology:1.1.0"));
+  });
+});

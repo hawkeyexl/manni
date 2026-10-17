@@ -4,8 +4,8 @@
  * format meta reads, and is told apart from any other page by `type: term`.
  *
  * It writes back through the same extractor: a field that changed is set, a
- * field that became absent is removed, and nothing outside the ten
- * terminology fields is touched.
+ * field that became absent is removed, and nothing outside the terminology
+ * fields is touched.
  */
 import { extractorByName } from "../../../meta/internal.js";
 import { errorMessage } from "../../../shared/errors.js";
@@ -18,7 +18,16 @@ import {
   type TermReader,
   type TermReadResult,
 } from "../../types.js";
-import { declares, ignoredFields, ignoredNotice, nothing, recordOf, skipped, termOf } from "./normalize.js";
+import {
+  declares,
+  issueNotice,
+  nothing,
+  pointerOf,
+  recordOf,
+  skipped,
+  termOf,
+  type RecordIssue,
+} from "./normalize.js";
 import { sameFields } from "./splice.js";
 
 const LABEL = "page";
@@ -31,13 +40,12 @@ function read(input: TermInput): TermReadResult {
     raw[field] = input.metadata[field];
     lines[field] = input.lineFor(`/${field}`);
   }
-  const record = recordOf(raw);
+  const issues: RecordIssue[] = [];
+  const record = recordOf(raw, issues);
   if (record === undefined) return { terms: [], notices: [skipped(input, 1, LABEL)] };
   return {
     terms: [termOf(input, { record, recordId: input.metadata["id"], construct: "page", line: 1, lines })],
-    notices: ignoredFields(raw).map((ignored) =>
-      ignoredNotice(input, lines[ignored.field] ?? 1, record.label, ignored),
-    ),
+    notices: issues.map((issue) => issueNotice(input, input.lineFor(pointerOf(issue.path)) ?? 1, record.label, issue)),
   };
 }
 

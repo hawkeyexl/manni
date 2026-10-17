@@ -447,3 +447,121 @@ describe("loadTermSet with the registered readers", () => {
     expect(set.notices).toEqual([]);
   });
 });
+
+describe("the terminology 1.1.0 keys", () => {
+  it("reads every key from a page, at the root, in concept-entry and in each designation", () => {
+    const input = inputFor("../vocabulary/full-term-1-1-0.md", "markdown");
+    const { terms, notices } = reader("page").read(input);
+    expect(notices).toEqual([]);
+    expect(terms[0]?.language).toBe("en");
+    expect(terms[0]?.record).toEqual({
+      label: "progressive lens",
+      "alt-labels": ["PAL"],
+      "hidden-labels": ["no-line bifocal"],
+      definition: "Corrective lenses whose power increases continuously.",
+      "subject-field": "optics",
+      contexts: ["Fit the progressive lens first."],
+      notes: ["Spectacle lenses only."],
+      sources: ["ISO 13666"],
+      "customer-subsets": ["Acme"],
+      "project-subsets": ["Lens catalogue"],
+      "cross-references": [{ target: "spectacle-lens" }, { target: "corrective-lens", text: "corrective lens" }],
+      "external-cross-references": [{ target: "https://www.iso.org/standard/45953.html", text: "ISO 13666" }],
+      graphics: [{ target: "images/progressive-lens.png" }],
+      transactions: [
+        { type: "origination", date: "2024-03-01", responsibility: "Maya" },
+        { type: "modification" },
+      ],
+      "transfer-comments": ["Keep the acronym in German."],
+      "tbx-elements": ['<admin type="elementWorkingStatus">starterElement</admin>'],
+      "concept-entry": {
+        "subject-field": "optics",
+        definition: "A lens with a continuous gradient of power.",
+        notes: ["Concept agreed with the vendor."],
+        "tbx-elements": ['<descrip type="Client">Acme</descrip>'],
+      },
+      designations: [
+        {
+          term: "progressive lens",
+          "administrative-status": "preferred",
+          "part-of-speech": "noun",
+          "grammatical-gender": "neuter",
+          "grammatical-number": "singular",
+          "term-type": "fullForm",
+          "term-location": "menuItem",
+          "geographical-usage": "en-US",
+          register: "technicalRegister",
+          reading: "progressive lens",
+          "reading-note": "Stress on the second syllable.",
+          contexts: ["Fit the progressive lens first."],
+        },
+        { term: "PAL", "term-type": "acronym", "tbx-elements": ['<termNote type="xBool_Forbidden">False</termNote>'] },
+        { term: "no-line bifocal", "administrative-status": "superseded" },
+      ],
+      "tbx-markup": ['Fit the <hi type="bold">progressive lens</hi> first.'],
+    });
+    expect(terms[0]?.location.fieldLines["designations"]).toBe(39);
+  });
+
+  it("ignores a designation that names no label, alt-label or hidden-label, and says so", () => {
+    const { terms, notices } = reader("page").read(inputFor("../vocabulary/designation-not-a-label.md", "markdown"));
+    expect(terms[0]?.record.designations).toEqual([{ term: "PAL", "term-type": "acronym" }]);
+    expect(notices).toEqual([
+      '../vocabulary/designation-not-a-label.md:10: ignored designations item "progresive lens" on "progressive lens": it names no label, alt-label or hidden-label.',
+    ]);
+  });
+
+  it("reports a malformed value in any block, and reads the rest", () => {
+    const { terms, notices } = reader("page").read(inputFor("page/tbx-malformed.md", "markdown"));
+    expect(terms.map((t) => t.record)).toEqual([
+      { label: "varifocal", definition: "A lens whose power varies.", designations: [{ term: "varifocal" }] },
+    ]);
+    expect(notices).toEqual([
+      'page/tbx-malformed.md:5: ignored subject-field on "varifocal": a subject-field holds one value, not a list.',
+      'page/tbx-malformed.md:8: ignored cross-references item on "varifocal": a cross-references item is text or a mapping with a target.',
+      'page/tbx-malformed.md:10: ignored transactions item on "varifocal": a transactions item is a mapping with a type.',
+      'page/tbx-malformed.md:6: ignored concept-entry on "varifocal": a concept-entry holds a mapping of fields.',
+      'page/tbx-malformed.md:12: ignored designations item on "varifocal": a designations item is a mapping with a term.',
+      'page/tbx-malformed.md:14: ignored part-of-speech in designations item "varifocal" on "varifocal": a part-of-speech holds one value, not a list.',
+    ]);
+  });
+
+  it("reads a manifest entry's language and its TBX keys", () => {
+    const input = manifestInput("manifest/tbx-fields.yaml");
+    const { terms, notices } = reader("manifest").read(input);
+    expect(notices).toEqual([]);
+    expect(terms.map((t) => [t.id, t.language, t.record])).toEqual([
+      [
+        "progressive-lens",
+        "de",
+        {
+          label: "Gleitsichtglas",
+          "alt-labels": ["Gleitsichtbrille"],
+          definition: "Brillenglas mit stufenlos zunehmender Wirkung.",
+          sources: ["DIN EN ISO 13666"],
+          "concept-entry": { "subject-field": "Optik" },
+          designations: [
+            { term: "Gleitsichtglas", "grammatical-gender": "neuter", "part-of-speech": "noun" },
+            { term: "Gleitsichtbrille", "grammatical-gender": "feminine" },
+          ],
+        },
+      ],
+    ]);
+    expect(terms[0]?.location.fieldLines).toMatchObject({ label: 4, "concept-entry": 7, designations: 9, sources: 15 });
+  });
+
+  it("names the line of a malformed nested value in a manifest", () => {
+    const content = [
+      "lens:",
+      "  label: lens",
+      "  designations:",
+      "    - term: lens",
+      "      register: [a, b]",
+      "",
+    ].join("\n");
+    const input: TermInput = { content, file: "m.yaml", format: MANIFEST_FORMAT, metadata: {}, lineFor: () => undefined };
+    expect(reader("manifest").read(input).notices).toEqual([
+      'm.yaml:5: ignored register in designations item "lens" on "lens": a register holds one value, not a list.',
+    ]);
+  });
+});

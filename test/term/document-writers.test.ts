@@ -84,6 +84,22 @@ function representative(): Term[] {
     }),
     term("brille", { label: "Brille", definition: "Gläser, die man trägt." }, "de"),
     term(slugOf("C++ & co"), { label: "C++ & co", definition: `Languages <with> "quotes" & 'apostrophes'.` }),
+    term("spectacle-lens", {
+      label: "spectacle lens",
+      definition: "A lens worn in a frame.",
+      "alt-labels": ["lens"],
+      "subject-field": "optics",
+      sources: ["ISO 13666"],
+      "cross-references": [{ target: "pal" }, { target: "brille", text: "Brille" }],
+      transactions: [{ type: "origination", date: "2024-03-01", responsibility: "Maya" }],
+      "tbx-elements": ['<admin type="elementWorkingStatus">starterElement</admin>'],
+      "concept-entry": { "subject-field": "optics", notes: ["Agreed with the vendor."] },
+      designations: [
+        { term: "spectacle lens", "part-of-speech": "noun", "term-type": "fullForm" },
+        { term: "lens", "tbx-elements": ['<termNote type="xBool_Forbidden">False</termNote>'] },
+      ],
+      "tbx-markup": ['A <hi type="bold">lens</hi> worn in a frame.'],
+    }),
   ];
 }
 
@@ -379,7 +395,7 @@ describe("document writer output", () => {
     const doc = parseXml(content);
     expect(doc.documentElement?.tagName).toBe("glossgroup");
     expect(doc.documentElement?.getElementsByTagName("title").item(0)?.textContent).toBe("Glossary");
-    expect(doc.documentElement?.getElementsByTagName("glossentry").length).toBe(5);
+    expect(doc.documentElement?.getElementsByTagName("glossentry").length).toBe(representative().length);
     expect(content).toContain("<glossterm>C++ &amp; co</glossterm>");
     expect(content).toContain("<p>It prints to a terminal.</p>");
   });

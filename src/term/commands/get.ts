@@ -64,10 +64,16 @@ export function closestName(query: string, names: readonly string[]): string | u
   return bestDistance <= limit ? best : undefined;
 }
 
-export async function runGet(opts: GetOptions): Promise<Term> {
+export interface GetReport {
+  term: Term;
+  /** The set's other terms with the same id: the entry in its other languages, in set order. */
+  others: Term[];
+}
+
+export async function runGet(opts: GetOptions): Promise<GetReport> {
   const { set } = await loadTerms(opts);
   const found = findTerm(set.terms, opts.term);
-  if (found !== undefined) return found;
+  if (found !== undefined) return { term: found, others: set.terms.filter((t) => t.id === found.id && t !== found) };
   const nearest = closestName(
     opts.term,
     set.terms.flatMap((t) => [t.id, t.record.label]),

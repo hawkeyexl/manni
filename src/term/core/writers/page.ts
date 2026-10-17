@@ -2,7 +2,7 @@
  * A term page: one term per file, its record in the file's metadata channel
  * and an empty body. The metadata reads `title` (the label), `description`
  * (the abstract, when there is one), `type: term`, `id`, `language` (when the
- * term has one), then the ten fields in the vocabulary's order.
+ * term has one), then every terminology field in the vocabulary's order.
  */
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { extractorByName } from "../../../meta/internal.js";

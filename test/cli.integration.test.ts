@@ -206,6 +206,8 @@ describe("docmeta CLI (built bin)", () => {
       "manni:artifact-evals-strict:1.1.0",
       "manni:stewardship:1.1.0",
       "manni:stewardship-strict:1.1.0",
+      "manni:terminology:1.1.0",
+      "manni:terminology-strict:1.1.0",
     ]);
   });
 

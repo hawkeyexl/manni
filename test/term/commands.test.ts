@@ -125,9 +125,9 @@ describe("list", () => {
 
     expect(renderListCsv(sorted)).toBe(
       [
-        "id,label,alt-labels,abstract",
-        "corrective-lens,corrective lens,,",
-        "progressive-lens,progressive lens,PAL|graduated lens,Lenses that correct presbyopia without a visible line.",
+        "id,label,alt-labels,abstract,language",
+        "corrective-lens,corrective lens,,,",
+        "progressive-lens,progressive lens,PAL|graduated lens,Lenses that correct presbyopia without a visible line.,",
       ].join("\n"),
     );
   });
@@ -138,7 +138,7 @@ describe("list", () => {
       record: { label: 'say "hi", then', abstract: "one, two" },
       location: { file: "x.md", construct: "page", line: 1, fieldLines: {} },
     };
-    expect(renderListCsv([t]).split("\n")[1]).toBe('a,"say ""hi"", then",,"one, two"');
+    expect(renderListCsv([t]).split("\n")[1]).toBe('a,"say ""hi"", then",,"one, two",');
   });
 
   it("reads stdin alongside nothing else when given - with --as", async () => {
@@ -156,14 +156,14 @@ describe("list", () => {
 describe("get", () => {
   it("finds by id, then by label without case", async () => {
     const cwd = await lenses();
-    expect((await runGet({ cwd, inputs: [], term: "progressive-lens" })).id).toBe("progressive-lens");
-    expect((await runGet({ cwd, inputs: [], term: "Corrective Lens" })).id).toBe("corrective-lens");
+    expect((await runGet({ cwd, inputs: [], term: "progressive-lens" })).term.id).toBe("progressive-lens");
+    expect((await runGet({ cwd, inputs: [], term: "Corrective Lens" })).term.id).toBe("corrective-lens");
   });
 
   it("finds by alt-label without case, after ids and labels", async () => {
     const cwd = await lenses();
-    expect((await runGet({ cwd, inputs: [], term: "PAL" })).id).toBe("progressive-lens");
-    expect((await runGet({ cwd, inputs: [], term: "Graduated Lens" })).id).toBe("progressive-lens");
+    expect((await runGet({ cwd, inputs: [], term: "PAL" })).term.id).toBe("progressive-lens");
+    expect((await runGet({ cwd, inputs: [], term: "Graduated Lens" })).term.id).toBe("progressive-lens");
   });
 
   it("prefers a label to another entry's alt-label, and the first entry in set order", () => {
@@ -212,7 +212,7 @@ describe("get", () => {
 
   it("renders the term as rung 3 does, wrapping long values under their column", async () => {
     const cwd = await lenses();
-    const term = await runGet({ cwd, inputs: [], term: "progressive-lens" });
+    const { term } = await runGet({ cwd, inputs: [], term: "progressive-lens" });
     expect(renderGetPretty(term, { color: false })).toBe(
       [
         "progressive lens                        docs/terms/progressive-lens.md:1",
@@ -829,5 +829,123 @@ describe("formats", () => {
     expect(listFormats({ readers: [reader], writers: [] })).toEqual([
       { format: "markdown", construct: "page", label: "page", read: true, write: true },
     ]);
+  });
+});
+
+describe("the terminology 1.1.0 keys in list, get and write", () => {
+  const at = (file: string, line = 1): Term["location"] => ({ file, construct: "manifest", line, fieldLines: {} });
+  const pal: Term = {
+    id: "progressive-lens",
+    language: "en",
+    record: {
+      label: "progressive lens",
+      "alt-labels": ["PAL"],
+      "hidden-labels": ["no-line bifocal"],
+      definition: "Corrective lenses whose power increases continuously.",
+      sources: ["ISO 13666"],
+      "concept-entry": { "subject-field": "optics", "tbx-elements": ['<descrip type="Client">Acme</descrip>'] },
+      designations: [
+        { term: "progressive lens", "part-of-speech": "noun", "term-type": "fullForm" },
+        { term: "PAL", "term-type": "acronym", "tbx-elements": ['<termNote type="xBool_Forbidden">False</termNote>'] },
+        { term: "no-line bifocal", "administrative-status": "superseded" },
+      ],
+    },
+    location: at("glossary.tbx", 4),
+  };
+  const gleitsicht: Term = {
+    id: "progressive-lens",
+    language: "de",
+    record: { label: "Gleitsichtglas", "alt-labels": ["Gleitsichtbrille"] },
+    location: at("glossary.tbx", 20),
+  };
+  const spectacle: Term = { id: "spectacle-lens", record: { label: "spectacle lens" }, location: at("glossary.tbx", 30) };
+  const brille: Term = { id: "spectacle-lens", language: "de", record: { label: "Brillenglas" }, location: at("glossary.tbx", 40) };
+
+  it("lists a language column after the id when the set holds more than one language", () => {
+    expect(renderListPretty([pal, gleitsicht, spectacle, brille])).toBe(
+      [
+        "progressive-lens   en   progressive lens   PAL",
+        "progressive-lens   de   Gleitsichtglas     Gleitsichtbrille",
+        "spectacle-lens     en   spectacle lens",
+        "spectacle-lens     de   Brillenglas",
+        "4 terms",
+      ].join("\n"),
+    );
+    // A term with no language counts as en, so one language is no column.
+    expect(renderListPretty([pal, spectacle])).toBe(
+      ["progressive-lens   progressive lens   PAL", "spectacle-lens     spectacle lens", "2 terms"].join("\n"),
+    );
+  });
+
+  it("appends the language to each csv row, and carries the new keys in json", () => {
+    expect(renderListCsv([pal, spectacle])).toBe(
+      ["id,label,alt-labels,abstract,language", "progressive-lens,progressive lens,PAL,,en", "spectacle-lens,spectacle lens,,,"].join(
+        "\n",
+      ),
+    );
+    const json = JSON.parse(renderListJson([pal])) as { terms: Record<string, unknown>[] };
+    expect(json.terms[0]).toEqual({ id: "progressive-lens", language: "en", ...pal.record });
+  });
+
+  it("shows the new rows, each designation, the pass-through count and the other languages", () => {
+    expect(renderGetPretty(pal, { color: false, others: [gleitsicht] })).toBe(
+      [
+        "progressive lens                        glossary.tbx:4",
+        "  id               progressive-lens",
+        "  language         en",
+        "  alt-labels       PAL",
+        "  hidden-labels    no-line bifocal",
+        "  sources          ISO 13666",
+        "  definition       Corrective lenses whose power increases continuously.",
+        "  concept-entry    subject-field: optics",
+        "  designations     progressive lens: part-of-speech noun, term-type fullForm",
+        "                   PAL: term-type acronym",
+        "                   no-line bifocal: administrative-status superseded",
+        "  tbx-elements     1 on PAL, 1 in concept-entry",
+        "  other languages  de (Gleitsichtglas)",
+      ].join("\n"),
+    );
+  });
+
+  it("finds the other languages of the entry it gets", async () => {
+    const cwd = await tree({
+      "terms.yaml": [
+        "progressive-lens:",
+        "  label: progressive lens",
+        "  definition: A lens.",
+        "",
+      ].join("\n"),
+      "terms.de.yaml": ["progressive-lens:", "  language: de", "  label: Gleitsichtglas", ""].join("\n"),
+      "manni.config.yaml": ["term:", "  manifests: [terms.yaml, terms.de.yaml]", ""].join("\n"),
+    });
+    const { term, others } = await runGet({ cwd, inputs: [], term: "progressive lens" });
+    expect(term.record.label).toBe("progressive lens");
+    expect(others.map((t) => [t.language, t.record.label])).toEqual([["de", "Gleitsichtglas"]]);
+  });
+
+  it("names the 1.1.0 keys a render drops", async () => {
+    const cwd = await tree({
+      "docs/pal.md": [
+        "---",
+        "type: term",
+        "label: progressive lens",
+        "definition: A lens.",
+        "subject-field: optics",
+        "concept-entry:",
+        "  notes: [n]",
+        "designations:",
+        "  - term: progressive lens",
+        "    part-of-speech: noun",
+        "---",
+        "",
+      ].join("\n"),
+    });
+    const report = await runWrite({ cwd, inputs: ["docs"], format: "csv", out: "terms.csv", dryRun: true });
+    expect(renderWritePretty(report)).toBe(
+      [
+        "terms.csv would be created",
+        "  dropped from csv: subject-field on 1 term, concept-entry on 1, designations on 1",
+      ].join("\n"),
+    );
   });
 });
