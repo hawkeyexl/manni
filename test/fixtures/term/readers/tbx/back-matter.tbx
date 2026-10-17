@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<martif type="TBX" xml:lang="en">
+  <martifHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>Back matter that an entry points into.</p>
+      </sourceDesc>
+    </fileDesc>
+  </martifHeader>
+  <text>
+    <body>
+      <termEntry id="lens">
+        <langSet xml:lang="en">
+          <tig>
+            <term>lens</term>
+            <transacGrp>
+              <transac type="transactionType">origination</transac>
+              <transacNote type="responsibility" target="sara">Sara</transacNote>
+            </transacGrp>
+          </tig>
+        </langSet>
+      </termEntry>
+    </body>
+    <back>
+      <refObjectList type="respPerson">
+        <refObject id="sara">
+          <item type="fn">Sara Ortiz</item>
+          <item type="email">sara@example.com</item>
+        </refObject>
+      </refObjectList>
+    </back>
+  </text>
+</martif>

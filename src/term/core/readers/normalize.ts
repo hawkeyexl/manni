@@ -256,6 +256,8 @@ function designationsOf(
       const text = oneValue(item[key], key, [...path, key], where, issues);
       if (text !== undefined) designation[key] = text;
     }
+    const comments = listOf(item["transfer-comments"]);
+    if (comments !== undefined) designation["transfer-comments"] = comments;
     for (const field of TERM_AUX_FIELDS) setAux(designation, field, item[field], [...path, field], where, issues);
     list.push(designation);
   });

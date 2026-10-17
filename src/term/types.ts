@@ -43,7 +43,6 @@ export const TERM_FIELDS = [
   "external-cross-references",
   "graphics",
   "transactions",
-  "transfer-comments",
   "tbx-elements",
   "concept-entry",
   "designations",
@@ -78,7 +77,6 @@ export const TERM_AUX_FIELDS = [
   "external-cross-references",
   "graphics",
   "transactions",
-  "transfer-comments",
   "tbx-elements",
 ] as const satisfies readonly TermField[];
 export type TermAuxField = (typeof TERM_AUX_FIELDS)[number];
@@ -124,7 +122,6 @@ export interface TermAuxRecord {
   "external-cross-references"?: TermLink[];
   graphics?: TermLink[];
   transactions?: TermTransaction[];
-  "transfer-comments"?: string[];
   /** Elements no named field maps, as XML strings in source order. */
   "tbx-elements"?: string[];
 }
@@ -143,6 +140,8 @@ export interface TermDesignation extends TermAuxRecord {
   register?: string;
   reading?: string;
   "reading-note"?: string;
+  /** Notes for the translator. A list, and term level only: TBX-Linguist makes it a termNote. */
+  "transfer-comments"?: string[];
 }
 
 /**

@@ -491,7 +491,6 @@ describe("the terminology 1.1.0 keys", () => {
         { type: "origination", date: "2024-03-01", responsibility: "Maya" },
         { type: "modification" },
       ],
-      "transfer-comments": ["Keep the acronym in German."],
       "tbx-elements": ['<admin type="elementWorkingStatus">starterElement</admin>'],
       "concept-entry": {
         "subject-field": "optics",
@@ -514,12 +513,28 @@ describe("the terminology 1.1.0 keys", () => {
           "reading-note": "Stress on the second syllable.",
           contexts: ["Fit the progressive lens first."],
         },
-        { term: "PAL", "term-type": "acronym", "tbx-elements": ['<termNote type="xBool_Forbidden">False</termNote>'] },
+        {
+          term: "PAL",
+          "term-type": "acronym",
+          "transfer-comments": ["Keep the acronym in German."],
+          "tbx-elements": ['<termNote type="xBool_Forbidden">False</termNote>'],
+        },
         { term: "no-line bifocal", "administrative-status": "superseded" },
       ],
       "tbx-markup": ['Fit the <hi type="bold">progressive lens</hi> first.'],
     });
-    expect(terms[0]?.location.fieldLines["designations"]).toBe(39);
+    expect(terms[0]?.location.fieldLines["designations"]).toBe(38);
+  });
+
+  it("reads transfer-comments only in a designations item, as TBX-Linguist makes it a termNote", () => {
+    const { terms, notices } = reader("page").read(inputFor("../vocabulary/transfer-comments-off-term.md", "markdown"));
+    expect(terms[0]?.record).toEqual({
+      label: "lens",
+      definition: "A shaped piece of glass.",
+      "concept-entry": { "subject-field": "optics" },
+      designations: [{ term: "lens", "transfer-comments": ["Keep it to one word."] }],
+    });
+    expect(notices).toEqual([]);
   });
 
   it("ignores a designation that names no label, alt-label or hidden-label, and says so", () => {

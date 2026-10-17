@@ -54,12 +54,45 @@ export interface TbxDocument extends TbxFormat {
   body?: { start: number; end: number };
   /** The offsets of the header's content (`martifHeader` or `tbxHeader`), between its tags. */
   header?: { start: number; end: number };
+  /** The offsets of `<back>`'s content, between its tags. */
+  back?: { start: number; end: number };
+}
+
+/**
+ * An entry's structure as read, which a rewrite at the same version keeps:
+ * each structural element's attributes but those manni writes itself, as XML
+ * in source order (` id="t1"`), and whether a designation was an ntig.
+ */
+export interface TbxEntryShape {
+  /** The entry's attributes but `id`. */
+  attributes: string;
+  languages: TbxLanguageShape[];
+}
+
+export interface TbxLanguageShape {
+  /** The language its term was read with. */
+  language: string | undefined;
+  /** Its attributes but `xml:lang`. */
+  attributes: string;
+  designations: TbxDesignationShape[];
+}
+
+export interface TbxDesignationShape {
+  /** The designation's text, as its term reads. */
+  term: string;
+  /** The tig's, ntig's or termSec's attributes. */
+  attributes: string;
+  /** The `term` element's attributes. */
+  termAttributes: string;
+  /** The `termGrp`'s attributes, for an ntig. */
+  group?: string;
 }
 
 /** Where one term's entry sits. Every term of an entry shares the span. */
 export interface TbxEntrySource {
   document: TbxDocument;
   span: { start: number; end: number };
+  shape?: TbxEntryShape;
 }
 
 /**
@@ -225,8 +258,25 @@ function categoryXml(name: TbxCategoryName, value: string, ctx: Context, target?
   return `<${tag}${attributes}>${valueXml(value, ctx.markup)}</${tag}>`;
 }
 
-function plainXml(tag: string, value: string, ctx: Context): string {
-  return `<${tag}>${valueXml(value, ctx.markup)}</${tag}>`;
+function plainXml(tag: string, value: string, ctx: Context, attributes = ""): string {
+  return `<${tag}${attributes}>${valueXml(value, ctx.markup)}</${tag}>`;
+}
+
+/**
+ * Each of `wanted` with the `pool` item it takes: the first unmatched one
+ * `same` accepts, else, for one left over, the next unmatched one in order,
+ * so a renamed designation keeps its element. `undefined` once the pool runs out.
+ */
+function pair<T, S>(wanted: readonly T[], pool: readonly S[], same: (w: T, s: S) => boolean): (S | undefined)[] {
+  const used = new Set<number>();
+  const found = wanted.map((w) => {
+    const at = pool.findIndex((s, i) => !used.has(i) && same(w, s));
+    if (at === -1) return undefined;
+    used.add(at);
+    return pool[at];
+  });
+  const left = pool.filter((_, i) => !used.has(i));
+  return found.map((s) => s ?? left.shift());
 }
 
 function linkXml(name: TbxCategoryName, link: TermLink, ctx: Context): string {
@@ -324,8 +374,13 @@ export function statusValue(status: string): string | undefined {
   return status in TBX_STATUS_VALUES ? TBX_STATUS_VALUES[status as TbxStatus] : status;
 }
 
-function designationLines({ designation, status }: ResolvedDesignation, ctx: Context): string[] {
-  const tag = ctx.format.version === 3 ? "termSec" : "tig";
+function designationLines(
+  { designation, status }: ResolvedDesignation,
+  ctx: Context,
+  shape: TbxDesignationShape | undefined,
+): string[] {
+  const group = shape?.group;
+  const tag = group !== undefined ? "ntig" : ctx.format.version === 3 ? "termSec" : "tig";
   const notes: string[] = [];
   for (const [field, name] of TBX_TERM_NOTES) {
     const value = field === "administrative-status" ? statusValue(status) : designation[field];
@@ -340,19 +395,14 @@ function designationLines({ designation, status }: ResolvedDesignation, ctx: Con
     else reading.push("<adminGrp>", ...nest([admin, categoryXml("readingNote", designation["reading-note"], ctx)]), "</adminGrp>");
   }
   const { "tbx-elements": _items, ...aux } = designation;
-  return [
-    `<${tag}>`,
-    ...nest([
-      plainXml("term", designation.term, ctx),
-      ...notes,
-      ...items.filter(isTermNoteItem),
-      ...auxLines(aux, ctx, [...reading, ...items.filter((item) => !isTermNoteItem(item))]),
-    ]),
-    `</${tag}>`,
-  ];
+  const head = [plainXml("term", designation.term, ctx, shape?.termAttributes), ...notes, ...items.filter(isTermNoteItem)];
+  const rest = auxLines(aux, ctx, [...reading, ...items.filter((item) => !isTermNoteItem(item))]);
+  // An ntig groups its term and termNotes in a termGrp, and the rest follows it.
+  const body = group === undefined ? [...head, ...rest] : [`<termGrp${group}>`, ...nest(head), "</termGrp>", ...rest];
+  return [`<${tag}${shape?.attributes ?? ""}>`, ...nest(body), `</${tag}>`];
 }
 
-function languageLines(term: Term, ctx: Context): string[] {
+function languageLines(term: Term, ctx: Context, shape: TbxLanguageShape | undefined): string[] {
   const tag = ctx.format.version === 3 ? "langSec" : "langSet";
   const { record } = term;
   const aux: TermAuxRecord = {};
@@ -372,11 +422,13 @@ function languageLines(term: Term, ctx: Context): string[] {
     const value = record[field];
     if (value !== undefined) Object.assign(aux, { [field]: value });
   }
+  const designations = resolveDesignations(record);
+  const shapes = pair(designations, shape?.designations ?? [], (d, s) => d.designation.term === s.term);
   return [
-    `<${tag} xml:lang="${escapeAttribute(term.language ?? DEFAULT_LANGUAGE)}">`,
+    `<${tag} xml:lang="${escapeAttribute(term.language ?? DEFAULT_LANGUAGE)}"${shape?.attributes ?? ""}>`,
     ...nest([
       ...auxLines(aux, ctx, record["tbx-elements"] ?? []),
-      ...resolveDesignations(record).flatMap((d) => designationLines(d, ctx)),
+      ...designations.flatMap((d, i) => designationLines(d, ctx, shapes[i])),
     ]),
     `</${tag}>`,
   ];
@@ -386,20 +438,24 @@ function languageLines(term: Term, ctx: Context): string[] {
  * One entry, at indentation zero: a `termEntry` (v2) or `conceptEntry` (v3)
  * with the first term's id and `concept-entry`, and one language per term.
  * Lines may hold a multi-line `tbx-elements` item; join them with `\n`.
- * `transfer-comments` outside a designation is not written, because
- * TBX-Linguist makes it a termNote.
+ * Given the `shape` of the entry as read, which only a rewrite at its own
+ * version passes, each language and designation paired with one as read
+ * keeps that element's form; one with no pair is canonical.
  */
-export function tbxEntryLines(terms: readonly Term[], format: TbxFormat): string[] {
+export function tbxEntryLines(terms: readonly Term[], format: TbxFormat, shape?: TbxEntryShape): string[] {
   const [head] = terms;
   if (head === undefined) return [];
   const tag = format.version === 3 ? "conceptEntry" : "termEntry";
   const concept = head.record["concept-entry"] ?? {};
   const { "tbx-elements": conceptItems, ...conceptAux } = concept;
+  const languages = pair(terms, shape?.languages ?? [], (t, s) => t.language === s.language);
   return [
-    `<${tag} id="${escapeAttribute(head.id)}">`,
+    `<${tag} id="${escapeAttribute(head.id)}"${shape?.attributes ?? ""}>`,
     ...nest([
       ...auxLines(conceptAux, { format, markup: head.record["tbx-markup"] ?? [] }, conceptItems ?? []),
-      ...terms.flatMap((term) => languageLines(term, { format, markup: term.record["tbx-markup"] ?? [] })),
+      ...terms.flatMap((term, i) =>
+        languageLines(term, { format, markup: term.record["tbx-markup"] ?? [] }, languages[i]),
+      ),
     ]),
     `</${tag}>`,
   ];

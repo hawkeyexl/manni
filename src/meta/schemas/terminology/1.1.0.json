@@ -112,11 +112,6 @@
       "description": "The entry's history (TBX `transacGrp`). Each item names its `type` and may give a `date`, kept as written, and a `responsibility`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
       "x-manni-location": "page"
     },
-    "transfer-comments": {
-      "$ref": "#/$defs/textList",
-      "description": "Notes for the translator (TBX-Linguist `transferComment`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
-      "x-manni-location": "page"
-    },
     "tbx-elements": {
       "$ref": "#/$defs/xmlList",
       "description": "TBX elements no named field maps, each kept whole as an XML string in source order, so a TBX file reads back without loss. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
@@ -170,10 +165,6 @@
         "transactions": {
           "$ref": "#/$defs/transactionList",
           "description": "The entry's history (TBX `transacGrp`). Each item names its `type` and may give a `date`, kept as written, and a `responsibility`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
-        },
-        "transfer-comments": {
-          "$ref": "#/$defs/textList",
-          "description": "Notes for the translator (TBX-Linguist `transferComment`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
         },
         "tbx-elements": {
           "$ref": "#/$defs/xmlList",
@@ -295,7 +286,7 @@
           },
           "transfer-comments": {
             "$ref": "#/$defs/textList",
-            "description": "Notes for the translator (TBX-Linguist `transferComment`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+            "description": "Notes for the translator on this designation (TBX-Linguist `termNote type=\"transferComment\"`). It is valid only in a `designations` item."
           },
           "tbx-elements": {
             "$ref": "#/$defs/xmlList",

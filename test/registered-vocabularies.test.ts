@@ -173,7 +173,6 @@ describe("manni:terminology:1.1.0 and its strict overlay", () => {
     "external-cross-references",
     "graphics",
     "transactions",
-    "transfer-comments",
     "tbx-elements",
     "concept-entry",
     "designations",

@@ -223,6 +223,13 @@ describe("tbx writer", () => {
     expect(content).toContain('<termNote type="register">neutralRegister</termNote>');
   });
 
+  it("tbx3 writes a designation's transfer-comments as termNotes, and is TBX-Linguist", () => {
+    const linguist = term("save", { label: "Save", designations: [{ term: "Save", "transfer-comments": ["One word."] }] });
+    const content = writer("tbx3").render([linguist], fileTarget("x.tbx"), NO_EXISTING).files[0]?.content ?? "";
+    expect(content).toContain('<tbx type="TBX-Linguist"');
+    expect(content).toContain('<termNote type="transferComment">One word.</termNote>');
+  });
+
   it.each(["tbx", "tbx3"] as const)("%s joins terms on id, one language section each, and reports where they differ", (format) => {
     const terms = [
       term("pal", { label: "progressive lens", "concept-entry": { definition: "A lens.", "subject-field": "optics" } }, "en"),
@@ -258,12 +265,9 @@ describe("tbx writer", () => {
   });
 
   it.each(["tbx", "tbx3"] as const)("%s reports what TBX-Basic has no category for as dropped", (format) => {
-    const t = term("x", { label: "x", see: "y", "transfer-comments": ["keep"], "subject-field": "optics" });
+    const t = term("x", { label: "x", see: "y", "subject-field": "optics" });
     const render = writer(format).render([t], fileTarget("x.tbx"), NO_EXISTING);
-    expect(render.dropped).toEqual([
-      { id: "x", field: "see" },
-      { id: "x", field: "transfer-comments" },
-    ]);
+    expect(render.dropped).toEqual([{ id: "x", field: "see" }]);
     expect(render.droppedHeaders).toEqual([]);
   });
 

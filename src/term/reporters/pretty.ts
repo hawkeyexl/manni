@@ -112,7 +112,6 @@ const GET_FIELDS: readonly RowField[] = [
   "external-cross-references",
   "graphics",
   "transactions",
-  "transfer-comments",
   "definition",
 ];
 
@@ -145,6 +144,8 @@ function designationLine(designation: TermDesignation): string | undefined {
     const value = designation[key];
     if (value !== undefined) parts.push(`${key} ${value}`);
   }
+  const comments = designation["transfer-comments"];
+  if (comments !== undefined) parts.push(`transfer-comments ${valueText(comments)}`);
   for (const key of SHOWN_AUX) {
     const value = designation[key];
     if (value !== undefined) parts.push(`${key} ${valueText(value)}`);

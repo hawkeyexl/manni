@@ -250,3 +250,98 @@ describe("TBX headers on export", () => {
     expect(tbxSourceOf({ ...first, record: { ...first.record, label: "x" } })).toBe(tbxSourceOf(first));
   });
 });
+
+/** The terms with one designation renamed, in its label field and its `designations` item alike. */
+function rename(terms: readonly Term[], from: string, to: string): Term[] {
+  const swap = (s: string): string => (s === from ? to : s);
+  return terms.map((t) => {
+    const { record } = t;
+    if (![record.label, ...(record["alt-labels"] ?? []), ...(record["hidden-labels"] ?? [])].includes(from)) return t;
+    return {
+      ...t,
+      record: {
+        ...record,
+        label: swap(record.label),
+        ...(record["alt-labels"] === undefined ? {} : { "alt-labels": record["alt-labels"].map(swap) }),
+        ...(record["hidden-labels"] === undefined ? {} : { "hidden-labels": record["hidden-labels"].map(swap) }),
+        ...(record.designations === undefined
+          ? {}
+          : { designations: record.designations.map((d) => ({ ...d, term: swap(d.term) })) }),
+      },
+    };
+  });
+}
+
+function applyInPlace(name: string, terms: readonly Term[]): string {
+  const apply = reader().apply;
+  if (apply === undefined) throw new Error("no apply");
+  return apply(tbxInput(readFileSync(fixturePath(name), "utf8"), `${name}.tbx`, fixturePath(name)), terms);
+}
+
+describe("a changed entry rewritten at its own version", () => {
+  const WAYS = [
+    { way: "in place", out: (name: string, terms: readonly Term[]) => applyInPlace(name, terms) },
+    { way: "on export", out: (_name: string, terms: readonly Term[]) => write(terms, "tbx") },
+  ];
+
+  it.each(WAYS)("keeps ntig and termGrp $way, so only the edited text changes", ({ out }) => {
+    const { content, terms } = readFixture("microsoft-style");
+    const written = out("microsoft-style", rename(terms, "speichern", "sichern"));
+    expect(written).toBe(content.replace("<term>speichern</term>", "<term>sichern</term>"));
+  });
+
+  it.each(WAYS)("keeps the attributes of the structural elements $way", ({ out }) => {
+    const { terms } = readFixture("structure-attributes");
+    const edited = rename(terms, "lens", "lenses");
+    const written = out("structure-attributes", edited);
+    expect(written).toContain('<langSet xml:lang="en" id="ls-en">');
+    expect(written).toContain('<tig id="t1">');
+    expect(written).toContain('<term id="term-1">lenses</term>');
+    expect(records(read(written, "structure-attributes.tbx"))).toEqual(records(edited));
+  });
+
+  it("writes a new designation canonically beside the kept ones", () => {
+    const { terms } = readFixture("microsoft-style");
+    const edited = terms.map((t, i) => {
+      if (i !== 1) return t;
+      const designations = [...(t.record.designations ?? []), { term: "sichern" }];
+      return { ...t, record: { ...t.record, "alt-labels": ["sichern"], designations } };
+    });
+    const written = applyInPlace("microsoft-style", edited);
+    expect(written).toContain("<ntig>\n            <termGrp>\n              <term>speichern</term>");
+    expect(written).toContain("<tig>\n            <term>sichern</term>");
+    expect(records(read(written, "microsoft-style.tbx"))).toEqual(records(edited));
+  });
+
+  it("writes canonical structure at the other version", () => {
+    const { terms } = readFixture("structure-attributes");
+    const written = write(rename(terms, "lens", "lenses"), "tbx3");
+    expect(written).not.toContain("ls-en");
+    expect(written).not.toContain('id="t1"');
+  });
+});
+
+describe("TBX back matter on export", () => {
+  /** `<back>` through `</back>`. */
+  function backOf(content: string): string {
+    return content.slice(content.indexOf("<back>"), content.indexOf("</back>") + "</back>".length);
+  }
+
+  it("carries the back matter to v3 and back, renaming refObjectList to refObjectSec", () => {
+    const { content, terms } = readFixture("back-matter");
+    const v3 = write(terms, "tbx3");
+    expect(v3).toContain(
+      [
+        "    </body>",
+        "    <back>",
+        '      <refObjectSec type="respPerson">',
+        '        <refObject id="sara">',
+        '          <item type="fn">Sara Ortiz</item>',
+      ].join("\n"),
+    );
+    expect(v3).not.toContain("refObjectList");
+    const v2 = write(read(v3, "v3.tbx"), "tbx");
+    expect(backOf(v2)).toBe(backOf(content));
+    expect(records(read(v2, "back-matter.tbx"))).toEqual(records(terms));
+  });
+});

@@ -37,14 +37,18 @@ import {
   TBX_TERM_NOTES,
   TBX_TEXT_FIELDS,
   TBX_V3_NAMESPACE,
+  escapeAttribute,
   isTermNoteItem,
   lf,
   markupText,
   rememberTbxSource,
   tbxEntryLines,
+  tbxSourceOf,
   type TbxCategory,
   type TbxCategoryName,
+  type TbxDesignationShape,
   type TbxDocument,
+  type TbxEntryShape,
   type TbxModule,
   type TbxStatus,
 } from "./tbx-model.js";
@@ -118,6 +122,9 @@ function parseTbx(input: TermInput): Doc {
   const headerEl = structuralChildren(doc, root, version === 3 ? "tbxHeader" : "martifHeader")[0];
   const header = headerEl === undefined ? undefined : innerSpan(doc, headerEl);
   if (header !== undefined) doc.document.header = header;
+  const backEl = structuralChildren(doc, root, "text").flatMap((text) => structuralChildren(doc, text, "back"))[0];
+  const back = backEl === undefined ? undefined : innerSpan(doc, backEl);
+  if (back !== undefined) doc.document.back = back;
   parsed.set(input, doc);
   return doc;
 }
@@ -141,6 +148,16 @@ function onlyAttributes(el: Element, allowed: readonly string[]): boolean {
     if (!allowed.includes(name)) return false;
   }
   return true;
+}
+
+/** An element's attributes but those in `own`, which manni writes itself, as XML in source order: ` id="t1"`. */
+function attributesOf(el: Element, own: readonly string[] = []): string {
+  let out = "";
+  for (let i = 0; i < el.attributes.length; i++) {
+    const attribute = el.attributes.item(i);
+    if (attribute !== null && !own.includes(attribute.name)) out += ` ${attribute.name}="${escapeAttribute(attribute.value)}"`;
+  }
+  return out;
 }
 
 /** The category an element spells in the file's style, or `undefined`. */
@@ -454,13 +471,15 @@ interface DesignationRead {
   /** The status as read: a record status, a value as written, or `none`. */
   status: string;
   line: number;
+  shape: TbxDesignationShape;
 }
 
 /** A tig, ntig or termSec, or `undefined` when it holds no term. */
 function readDesignation(doc: Doc, el: Element): DesignationRead | undefined {
   let children = childrenOf(el);
+  let group: Element | undefined;
   if (isStructural(doc, el, "ntig")) {
-    const [group] = structuralChildren(doc, el, "termGrp");
+    [group] = structuralChildren(doc, el, "termGrp");
     if (group === undefined) return undefined;
     children = [...childrenOf(group), ...children.filter((child) => child !== group)];
   }
@@ -476,7 +495,13 @@ function readDesignation(doc: Doc, el: Element): DesignationRead | undefined {
     read,
   );
   const { "administrative-status": status, ...designation } = read.aux;
-  return { designation, markup: read.markup, status: status ?? TBX_NO_STATUS, line: lineOfElement(termEl) };
+  const shape: TbxDesignationShape = {
+    term: text,
+    attributes: attributesOf(el),
+    termAttributes: attributesOf(termEl),
+    ...(group === undefined ? {} : { group: attributesOf(group) }),
+  };
+  return { designation, markup: read.markup, status: status ?? TBX_NO_STATUS, line: lineOfElement(termEl), shape };
 }
 
 /** The label fields and designations for one language's designations, by the status rules of proposal 0084. */
@@ -538,6 +563,7 @@ function readEntry(doc: Doc, entry: Element, result: TermReadResult): void {
   const rootLanguage = doc.xml.root.getAttribute("xml:lang");
   const read: Term[] = [];
   let entryId = textOf(entry.getAttribute("id"));
+  const shape: TbxEntryShape = { attributes: attributesOf(entry, ["id"]), languages: [] };
 
   for (const langEl of children.filter((child) => isStructural(doc, child, languageTag))) {
     const designations: DesignationRead[] = [];
@@ -578,7 +604,12 @@ function readEntry(doc: Doc, entry: Element, result: TermReadResult): void {
       lines: { label: designations[0]?.line },
       ...(span === undefined ? {} : { span }),
     });
-    if (span !== undefined) rememberTbxSource(term, { document: doc.document, span });
+    if (span !== undefined) rememberTbxSource(term, { document: doc.document, span, shape });
+    shape.languages.push({
+      language: term.language,
+      attributes: attributesOf(langEl, ["xml:lang"]),
+      designations: designations.map((d) => d.shape),
+    });
     read.push(term);
   }
   result.terms.push(...read);
@@ -682,7 +713,9 @@ function spliceEntries(input: TermInput, terms: readonly Term[], exporting: bool
       return was !== undefined && sameTerm(was, t);
     });
     if (unchanged) continue;
-    const text = reindent(tbxEntryLines(written, doc.document).join("\n"), indentAt(content, start), eol);
+    // At the file's own version, each element keeps the attributes and ntig it was read with.
+    const shape = group.current[0] === undefined ? undefined : tbxSourceOf(group.current[0])?.shape;
+    const text = reindent(tbxEntryLines(written, doc.document, shape).join("\n"), indentAt(content, start), eol);
     next = next.slice(0, start) + text + next.slice(group.end);
   }
   return next;

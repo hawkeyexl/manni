@@ -504,7 +504,6 @@ const FIELDS_110 = [
   "tbx-elements",
   "tbx-markup",
   "transactions",
-  "transfer-comments",
 ].sort();
 
 describe("manni:terminology:1.1.0, the vocabulary", () => {
@@ -513,6 +512,14 @@ describe("manni:terminology:1.1.0, the vocabulary", () => {
     expect(schema.$id).toBe(TERMINOLOGY_110);
     expect(schema.additionalProperties).toBe(true);
     expect(Object.keys(schema.properties).sort()).toEqual(FIELDS_110);
+  });
+
+  it("declares transfer-comments in a designations item only, where TBX-Linguist puts it", async () => {
+    const schema = (await loadSchema(TERMINOLOGY_110)) as Draft;
+    const keysOf = (value: unknown): string[] => Object.keys((value as { properties: object }).properties);
+    const designation = (schema.properties["designations"] as { items: unknown }).items;
+    expect(keysOf(designation)).toContain("transfer-comments");
+    expect(keysOf(schema.properties["concept-entry"])).not.toContain("transfer-comments");
   });
 
   it("marks every field for the page, describes it, and spells it kebab-case", async () => {

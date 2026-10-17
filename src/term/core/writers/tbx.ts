@@ -12,7 +12,9 @@
  * - all from one TBX file, at the version `-f` names: that file, with
  *   unchanged entries and everything outside them copied byte for byte;
  * - all from one TBX file at the other version: canonical entries, under a
- *   header holding the source header's children;
+ *   header holding the source header's children, and the source's back
+ *   matter after them, `refObjectList` (v2) renamed `refObjectSec` (v3) or
+ *   back, since entries' `target`s point into it;
  * - anything else: manni's own header, and each TBX source is reported as a
  *   header dropped.
  */
@@ -31,19 +33,8 @@ import { reindent } from "./markup.js";
 import { conceptGroups, mergeFirst } from "./merge.js";
 import { DEFAULT_LANGUAGE, droppedFields, requireShape } from "./render-util.js";
 
-/**
- * TBX-Basic has no category for these. `transfer-comments` is a termNote in
- * TBX-Linguist, so it is written on a designation and not at a language.
- */
-const NOT_HELD: readonly TermField[] = [
-  "abstract",
-  "broader",
-  "narrower",
-  "related-terms",
-  "see",
-  "scope-note",
-  "transfer-comments",
-];
+/** TBX-Basic has no category for these. */
+const NOT_HELD: readonly TermField[] = ["abstract", "broader", "narrower", "related-terms", "see", "scope-note"];
 const HOLDS: readonly TermField[] = TERM_FIELDS.filter((field) => !NOT_HELD.includes(field));
 
 /** The designation fields only TBX-Linguist defines. A v3 file carrying one declares itself TBX-Linguist. */
@@ -80,16 +71,24 @@ export function tbxHeaderFiles(terms: readonly Term[]): string[] {
   return [...new Set(files.values())];
 }
 
-/** The source header's children, at the header's children's indentation and LF. */
-function carriedHeader(document: TbxDocument): string[] | undefined {
-  const span = document.header;
+/** An element's children from the source, at `indent` and LF, or `undefined` when it has none. */
+function carried(document: TbxDocument, span: { start: number; end: number } | undefined, indent: string): string[] | undefined {
   if (span === undefined) return undefined;
   const raw = lf(document.content.slice(span.start, span.end));
   const lines = raw.split("\n");
   const indents = lines.filter((line) => line.trim() !== "").map((line) => /^[ \t]*/.exec(line)?.[0].length ?? 0);
   if (indents.length === 0) return undefined;
   const strip = Math.min(...indents);
-  return lines.filter((line) => line.trim() !== "").map((line) => `    ${line.slice(strip).trimEnd()}`);
+  return lines.filter((line) => line.trim() !== "").map((line) => `${indent}${line.slice(strip).trimEnd()}`);
+}
+
+/** The source's `<back>` at the other version: the one element v3 renamed is renamed, and the rest is carried as it is. */
+function carriedBack(document: TbxDocument, version: TbxVersion): string[] {
+  if (document.back === undefined) return [];
+  const [from, to] = version === 3 ? ["refObjectList", "refObjectSec"] : ["refObjectSec", "refObjectList"];
+  const rename = new RegExp(`(</?)${from}(?=[\\s/>])`, "g");
+  const lines = carried(document, document.back, "      ")?.map((line) => line.replace(rename, `$1${to}`));
+  return lines === undefined ? ["    <back/>"] : ["    <back>", ...lines, "    </back>"];
 }
 
 /** Every entry, canonical, at the body's indentation; and where terms sharing an id disagree on `concept-entry`. */
@@ -142,7 +141,7 @@ function tbxWriterFor(format: "tbx" | "tbx3", version: TbxVersion): TermWriter {
           droppedHeaders: [],
         };
       }
-      const header = (source === undefined ? undefined : carriedHeader(source.document)) ?? OWN_HEADER;
+      const header = (source === undefined ? undefined : carried(source.document, source.document.header, "    ")) ?? OWN_HEADER;
       const [root, headerTag] = version === 2 ? ["martif", "martifHeader"] : ["tbx", "tbxHeader"];
       const body = entries(terms, version);
       const lines = [
@@ -155,6 +154,7 @@ function tbxWriterFor(format: "tbx" | "tbx3", version: TbxVersion): TermWriter {
         "    <body>",
         ...body.lines,
         "    </body>",
+        ...(source === undefined ? [] : carriedBack(source.document, version)),
         "  </text>",
         `</${root}>`,
       ];

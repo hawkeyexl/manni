@@ -27,7 +27,6 @@ transactions:
     date: 2024-03-01
     responsibility: Maya
   - type: modification
-transfer-comments: [Keep the acronym in German.]
 tbx-elements:
   - <admin type="elementWorkingStatus">starterElement</admin>
 concept-entry:
@@ -51,6 +50,7 @@ designations:
     contexts: [Fit the progressive lens first.]
   - term: PAL
     term-type: acronym
+    transfer-comments: [Keep the acronym in German.]
     tbx-elements:
       - <termNote type="xBool_Forbidden">False</termNote>
   - term: no-line bifocal
