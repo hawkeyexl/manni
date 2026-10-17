@@ -188,6 +188,8 @@ export const TERM_CONSTRUCTS = [
   "markdown-deflist",
   "asciidoc-glossary",
   "rst-glossary",
+  /** One `termEntry` (TBX v2) or `conceptEntry` (TBX v3): a term per language it holds. */
+  "tbx-entry",
 ] as const;
 export type TermConstruct = (typeof TERM_CONSTRUCTS)[number];
 
@@ -236,7 +238,7 @@ export interface TermInput {
   file: string;
   /** As `TermLocation.path`. */
   path?: string;
-  /** The extractor that read the file (`markdown`, `mdx`, `asciidoc`, `rst`, `html`, `xml`), or `manifest`. */
+  /** The extractor that read the file (`markdown`, `mdx`, `asciidoc`, `rst`, `html`, `xml`), or `manifest` or `tbx`. */
   format: string;
   /** The file's extracted metadata. `{}` for a manifest, which has none. */
   metadata: Record<string, unknown>;

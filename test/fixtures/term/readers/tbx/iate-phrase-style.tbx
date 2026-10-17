@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<martif type="TBX" xml:lang="en">
+  <martifHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>A hand-written sample in the shape of a public termbase export.</p>
+      </sourceDesc>
+    </fileDesc>
+  </martifHeader>
+  <text>
+    <body>
+      <termEntry id="IATE-1234">
+        <descrip type="subjectField">optics</descrip>
+        <descrip type="conceptId">c-42</descrip>
+        <langSet xml:lang="en">
+          <tig>
+            <term>progressive lens</term>
+            <termNote type="termType">fullForm</termNote>
+            <descrip type="reliabilityCode">3</descrip>
+          </tig>
+        </langSet>
+        <langSet xml:lang="de">
+          <descrip type="definition">Brillenglas mit stufenlos zunehmender Stärke.</descrip>
+          <tig>
+            <term>Gleitsichtglas</term>
+            <termNote type="termType">fullForm</termNote>
+            <descrip type="reliabilityCode">3</descrip>
+            <termNote type="Usage status">preferred</termNote>
+          </tig>
+        </langSet>
+      </termEntry>
+    </body>
+  </text>
+</martif>

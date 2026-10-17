@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<martif type="TBX" xml:lang="en-US">
+  <martifHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>A hand-written sample in the shape of a product terminology export.</p>
+      </sourceDesc>
+    </fileDesc>
+  </martifHeader>
+  <text>
+    <body>
+      <termEntry id="100">
+        <langSet xml:lang="en-US">
+          <descripGrp>
+            <descrip type="definition">To keep a file on disk.</descrip>
+          </descripGrp>
+          <ntig>
+            <termGrp>
+              <term>save</term>
+              <termNote type="partOfSpeech">Verb</termNote>
+            </termGrp>
+          </ntig>
+        </langSet>
+        <langSet xml:lang="de-DE">
+          <ntig>
+            <termGrp>
+              <term>speichern</term>
+              <termNote type="partOfSpeech">Verb</termNote>
+            </termGrp>
+          </ntig>
+        </langSet>
+      </termEntry>
+      <termEntry id="100">
+        <langSet xml:lang="en-US">
+          <ntig>
+            <termGrp>
+              <term>save as</term>
+              <termNote type="partOfSpeech">Verb</termNote>
+            </termGrp>
+          </ntig>
+        </langSet>
+      </termEntry>
+      <termEntry>
+        <langSet xml:lang="en-US">
+          <ntig>
+            <termGrp>
+              <term>Open File</term>
+              <termNote type="partOfSpeech">Noun</termNote>
+            </termGrp>
+          </ntig>
+        </langSet>
+        <langSet xml:lang="de-DE">
+          <ntig>
+            <termGrp>
+              <term>Datei öffnen</term>
+              <termNote type="partOfSpeech">Noun</termNote>
+            </termGrp>
+          </ntig>
+        </langSet>
+      </termEntry>
+    </body>
+  </text>
+</martif>

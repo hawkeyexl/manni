@@ -307,6 +307,67 @@ describe("manni term (the ladder)", () => {
   });
 });
 
+describe("manni term (TBX)", () => {
+  const TBX = resolve(root, "test", "fixtures", "term", "readers", "tbx");
+
+  function copyTbx(name: string, to: string): void {
+    writeFileSync(to, readFileSync(join(TBX, name), "utf8"));
+  }
+
+  it("lists a named .tbx file, one term per language", () => {
+    const cwd = join(work, "clean");
+    copyTbx("tbx-basic-v2.tbx", join(cwd, "glossary.tbx"));
+    const r = term(["list", "glossary.tbx"], { cwd });
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toContain("Gleitsichtglas");
+    expect(r.stdout).toContain("4 terms");
+    expect(r.status).toBe(0);
+  });
+
+  it("walks .tbx files in a directory", () => {
+    const cwd = join(work, "clean");
+    mkdirSync(join(cwd, "tbx"));
+    copyTbx("tbx-basic-v3.tbx", join(cwd, "tbx", "glossary.tbx"));
+    const r = term(["list", "tbx"], { cwd });
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toContain("bifocal");
+    expect(r.stdout).toContain("3 terms");
+    expect(r.status).toBe(0);
+  });
+
+  it("reads stdin with --as tbx", () => {
+    const r = term(["list", "-", "--as", "tbx", "-f", "json"], { input: readFileSync(join(TBX, "linguist-v3.tbx"), "utf8") });
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toContain('"保存"');
+    expect(r.status).toBe(0);
+  });
+
+  it("leaves an unchanged .tbx byte-identical on an in-place write", () => {
+    const cwd = join(work, "clean");
+    copyTbx("microsoft-style.tbx", join(cwd, "glossary.tbx"));
+    const before = readFileSync(join(cwd, "glossary.tbx"), "utf8");
+    const r = term(["write", "glossary.tbx"], { cwd });
+    expect(r.status).toBe(0);
+    expect(readFileSync(join(cwd, "glossary.tbx"), "utf8")).toBe(before);
+  });
+
+  it("refuses a .tbx whose root is not TBX", () => {
+    const cwd = join(work, "clean");
+    copyTbx("not-tbx.tbx", join(cwd, "notes.tbx"));
+    const r = term(["list", "notes.tbx"], { cwd });
+    expect(r.stderr).toBe("manni: notes.tbx: is not TBX: its root element is <glossary>, not <martif> or <tbx>.\n");
+    expect(r.status).toBe(2);
+  });
+
+  it("refuses a .tbx that does not parse", () => {
+    const cwd = join(work, "clean");
+    copyTbx("malformed.tbx", join(cwd, "broken.tbx"));
+    const r = term(["list", "broken.tbx"], { cwd });
+    expect(r.stderr).toMatch(/^manni: broken\.tbx: could not be read as tbx: /);
+    expect(r.status).toBe(2);
+  });
+});
+
 describe("manni term (usage errors)", () => {
   it("no terms anywhere", () => {
     const cwd = join(work, "clean");

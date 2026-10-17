@@ -16,7 +16,7 @@ export interface FormatRow {
   format: string;
   /** The construct, for a reader's row. */
   construct?: TermConstruct;
-  /** What the construct or the render is called: `definition list`, `TBX v2 Core`; empty for none. */
+  /** What the construct or the render is called: `definition list`, `TBX v2`; empty for none. */
   label: string;
   read: boolean;
   write: boolean;
@@ -41,7 +41,7 @@ export const DOCUMENT_RENDERS: Partial<
 
 /** What `formats` calls an interchange render. */
 const INTERCHANGE_LABELS: Partial<Record<TermWriteFormat, string>> = {
-  tbx: "TBX v2 Core",
+  tbx: "TBX v2",
   skos: "JSON-LD",
   vale: "style",
 };

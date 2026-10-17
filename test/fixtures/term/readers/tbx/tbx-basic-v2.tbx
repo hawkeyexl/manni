@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE martif SYSTEM "TBXBasiccoreStructV02.dtd">
+<martif type="TBX-Basic-V1" xml:lang="en">
+  <martifHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>A hand-written TBX-Basic sample.</p>
+      </sourceDesc>
+    </fileDesc>
+    <encodingDesc>
+      <p type="XCSURI">TBXBasicXCSV02.xcs</p>
+    </encodingDesc>
+  </martifHeader>
+  <text>
+    <body>
+      <termEntry id="progressive-lens">
+        <descrip type="subjectField">optics</descrip>
+        <langSet xml:lang="en">
+          <descripGrp>
+            <descrip type="definition">Corrective lenses whose power increases continuously.</descrip>
+            <admin type="source">ISO 13666</admin>
+          </descripGrp>
+          <tig>
+            <term>progressive lens</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+            <termNote type="partOfSpeech">noun</termNote>
+            <termNote type="termType">fullForm</termNote>
+            <descrip type="context">Fit the progressive lens first.</descrip>
+            <transacGrp>
+              <transac type="transactionType">origination</transac>
+              <transacNote type="responsibility">Sara</transacNote>
+              <date>2026-09-01</date>
+            </transacGrp>
+          </tig>
+          <tig>
+            <term>PAL</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+            <termNote type="termType">acronym</termNote>
+          </tig>
+          <tig>
+            <term>no-line bifocal</term>
+            <termNote type="administrativeStatus">supersededTerm-admn-sts</termNote>
+          </tig>
+        </langSet>
+        <langSet xml:lang="de">
+          <tig>
+            <term>Gleitsichtglas</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+            <termNote type="grammaticalGender">neuter</termNote>
+          </tig>
+          <tig>
+            <term>Gleitsichtbrille</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+            <termNote type="grammaticalGender">feminine</termNote>
+          </tig>
+        </langSet>
+      </termEntry>
+      <termEntry id="spectacle-lens">
+        <descrip type="definition">A lens worn in front of the eye to correct vision.</descrip>
+        <admin type="customerSubset">Acme</admin>
+        <admin type="projectSubset">Lenses</admin>
+        <xref type="xGraphic" target="lens.png">Diagram</xref>
+        <note>Reviewed in 2026.</note>
+        <langSet xml:lang="en">
+          <xref type="externalCrossReference" target="https://example.com/lens"/>
+          <tig>
+            <term>spectacle lens</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </tig>
+          <tig>
+            <term>eyeglass lens</term>
+            <termNote type="administrativeStatus">deprecatedTerm-admn-sts</termNote>
+            <ref type="crossReference" target="progressive-lens">progressive lens</ref>
+          </tig>
+        </langSet>
+        <langSet xml:lang="de">
+          <tig>
+            <term>Brillenglas</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+          </tig>
+        </langSet>
+      </termEntry>
+    </body>
+  </text>
+</martif>
