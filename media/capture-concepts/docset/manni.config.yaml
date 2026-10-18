@@ -1,0 +1,10 @@
+collections:
+  - name: pages
+    paths: ["docs/**/*.md"]
+
+graph:
+  baseIri: https://acme.dev/
+  out: graph.ttl
+  check:
+    questions:
+      top: 1

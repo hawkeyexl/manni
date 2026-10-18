@@ -1,0 +1,15 @@
+{
+  "grep": "docs/limits.md:concepts: [Upload, Quota]\ndocs/retry.md:concepts: [Upload, Retry]\n",
+  "check before": "\u001b[1mdocs/limits.md:4\u001b[22m\n  \u001b[31merror \u001b[39m manni:term/undefined-term       concepts: \"Quota\" names no entry.\n\u001b[1mdocs/retry.md:4\u001b[22m\n  \u001b[31merror \u001b[39m manni:term/undefined-term       concepts: \"Retry\" names no entry.\n\n2 errors in 1 term\n",
+  "fill": "created docs/glossary/quota.md   Quota   stub, no definition\ncreated docs/glossary/retry.md   Retry   stub, no definition\n2 terms created, 0 filled, 2 left without a definition\n",
+  "check after": "\u001b[1mdocs/glossary/quota.md:1\u001b[22m\n  \u001b[31merror \u001b[39m manni:term/missing-definition   definition: missing, so write one or run manni term fill.\n\u001b[1mdocs/glossary/retry.md:1\u001b[22m\n  \u001b[31merror \u001b[39m manni:term/missing-definition   definition: missing, so write one or run manni term fill.\n\n2 errors in 3 terms\n",
+  "build": "Wrote C:\\concepts\\graph.ttl (5 docs, 100 triples, 3 concepts (3 from the termbase))\n",
+  "graph check": "warning: https://acme.dev/doc/docs/limits.md graph:sampleQuestion — \"What is the maximum file size?\" does not find this page in the top 1 (it is not found; first is docs/retry.md) [docs/limits.md]\n\n0 errors, 1 warning, 0 notices\n",
+  "exits": {
+    "check before": "1",
+    "fill": "0",
+    "check after": "1",
+    "build": "0",
+    "graph check": "0"
+  }
+}
