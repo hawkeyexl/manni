@@ -6,16 +6,16 @@ docs/src/content/docs/term/index.mdx:
       source:
         file: src/term/core/check.ts
         lines: 97-114
-        integrity: sha256-17a764445ff56b6819f08226799ce7e19998d16719158f97c7d26aecf54a5593
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        integrity: sha256-0ab15562b6136948cd6d1f227877813f5f5cf02e8fe64109bb93ac9829149e52
+        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
     - id: concepts-read-from-metadata
       claim:
         integrity: sha256-8eaf928fa69b8abbeb9e1db43d6afa52a06d2515bac29efe1504083aab7d1a8d
       source:
         file: src/term/core/load-set.ts
         lines: 87-97
-        integrity: sha256-188a0d200627281e4a6591a229e25939f84f88562fcc467ce5d9bffd8059cbf4
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        integrity: sha256-dc9b37666b208fe341b923a59afab6342b3d37a6062a57cc564ba2fad0df4b57
+        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
     - id: term-record-fields
       claim:
         integrity: sha256-8eaf928fa69b8abbeb9e1db43d6afa52a06d2515bac29efe1504083aab7d1a8d
@@ -99,12 +99,12 @@ docs/src/content/docs/term/index.mdx:
     - id: check-ten-rules
       claim:
         lines: 34
-        integrity: sha256-0f9bb40e42624bf1edd37715238d6a5a277ff82c8ad1b942b09a317821787fa9
+        integrity: sha256-3212449529af3015bb219c48d4ccd509d7e20d050c956644bc632d2f2ec61b84
       source:
         file: src/term/types.ts
         lines: 412-423
-        integrity: sha256-038e4638a1c8b50b4472c31b9868253f1d00ad2a5bf2ab92f797c0ee543956f3
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        integrity: sha256-3345f5384d3beb1ec40d1a0aed29f2bdac691bab2135408ea0e51cfccfe1739e
+        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
     - id: lint-prose-fields
       claim:
         lines: 35
@@ -148,8 +148,8 @@ docs/src/content/docs/term/index.mdx:
       source:
         file: src/term/core/check.ts
         lines: 103-107
-        integrity: sha256-4299d6bf2633bda6a508a9c61cb174217dc218f32a398ac982d10e4127b34e5a
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        integrity: sha256-bf5fbf1b4dc71d211ff438776cce809e03e84d763b8d500b8a9002a4cb364678
+        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
     - id: proof-findings-layout
       claim:
         lines: 57-62
@@ -161,7 +161,7 @@ docs/src/content/docs/term/index.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: proof-exit-one
       claim:
-        integrity: sha256-6ab07958952c7663c92b11a4026562d1dccc140dd5ce6cabb85f4f9e6b64c2f3
+        integrity: sha256-9447cfa9f5cdc753063aa5f4f6772fcb1e3f1e6a9d9804b6dd92cef986496768
       source:
         file: src/term/cli.ts
         lines: 132
@@ -169,7 +169,7 @@ docs/src/content/docs/term/index.mdx:
         commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
     - id: proof-exit-one-error-fails
       claim:
-        integrity: sha256-6ab07958952c7663c92b11a4026562d1dccc140dd5ce6cabb85f4f9e6b64c2f3
+        integrity: sha256-9447cfa9f5cdc753063aa5f4f6772fcb1e3f1e6a9d9804b6dd92cef986496768
       source:
         file: src/term/commands/findings.ts
         lines: 94
@@ -177,7 +177,7 @@ docs/src/content/docs/term/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: proof-clean-line
       claim:
-        lines: 72
+        lines: 71
         integrity: sha256-945bac01d58f21b357c334c7ba1adf9182bf10cee9a243125ac2bcb78e98b069
       source:
         file: src/term/reporters/pretty.ts
@@ -186,15 +186,15 @@ docs/src/content/docs/term/index.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: proof-names-claiming-entry
       claim:
-        integrity: sha256-6ab07958952c7663c92b11a4026562d1dccc140dd5ce6cabb85f4f9e6b64c2f3
+        integrity: sha256-9447cfa9f5cdc753063aa5f4f6772fcb1e3f1e6a9d9804b6dd92cef986496768
       source:
         file: src/term/core/check.ts
         lines: 104-107
-        integrity: sha256-af74a6c2bb2f75df7561ef6c83abfa2506cf202638c81d00ad39dd5a05f18d54
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        integrity: sha256-bd6b20731cbf484e6ba02a98cc7b8b2d0dca18b01ec1c94bf5f65e3922297c2b
+        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
     - id: shelf-ten-fields
       claim:
-        integrity: sha256-e9b00ac697e7476560fb7bb2c149e4a91c518f5f0f4fda507786b3c4a847608f
+        integrity: sha256-78a0f43eea51ca78064ff04304ce79d9e38729691377979889aaacdcaa3c1707
       source:
         file: src/term/types.ts
         lines: 25-50
@@ -202,42 +202,42 @@ docs/src/content/docs/term/index.mdx:
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: shelf-ten-rules
       claim:
-        integrity: sha256-e9b00ac697e7476560fb7bb2c149e4a91c518f5f0f4fda507786b3c4a847608f
+        integrity: sha256-78a0f43eea51ca78064ff04304ce79d9e38729691377979889aaacdcaa3c1707
       source:
         file: src/term/types.ts
         lines: 412-423
-        integrity: sha256-038e4638a1c8b50b4472c31b9868253f1d00ad2a5bf2ab92f797c0ee543956f3
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        integrity: sha256-3345f5384d3beb1ec40d1a0aed29f2bdac691bab2135408ea0e51cfccfe1739e
+        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
     - id: checks-concepts-by-preferred-label
       claim:
-        lines: 119
-        integrity: sha256-0ef641c35788ff31425574435fc93f5928de545a222d03e1ef7e1f375d0828e1
+        lines: 119-124
+        integrity: sha256-f6dd9f9fd8b29b35aa07499023ddef3b099f9690d0b9e71fe366bd49d37478cb
       source:
         file: src/term/core/check.ts
         lines: 97-102
-        integrity: sha256-6c3d8227cbf5b7176df9d97ade84b42b7743e703cfccf49fc3f9d07f59ec6813
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        integrity: sha256-32f6e337fdcd4136da0a8082325ab687aa9569e2b1acb698f7714608c436cf15
+        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
     - id: checks-references-resolve
       claim:
-        lines: 119-123
-        integrity: sha256-bedc9544cd80d50343d76ddb1b94b2ae3e0b3f7240cc44c3920f55a7921ce2df
+        lines: 119-124
+        integrity: sha256-f6dd9f9fd8b29b35aa07499023ddef3b099f9690d0b9e71fe366bd49d37478cb
       source:
         file: src/term/core/check.ts
-        lines: 160-167
+        lines: 181-188
         integrity: sha256-0e29438868dac3bde56075ece471c81a2e3d580e46cdfda81d32b173c3b5c8d1
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
     - id: checks-no-broader-cycle
       claim:
-        lines: 121
-        integrity: sha256-9b68871ded6862eed26f61277f23ef77b1202379839270d2596d56d629a75ae2
+        lines: 121-124
+        integrity: sha256-ba2b9db7f5fb8834b8ead0aa1ee20385788aa96736cac69e3f3931839c5928e7
       source:
         file: src/term/core/check.ts
         lines: 238-244
-        integrity: sha256-4080f474213086ff98b7e6332a4695a7ef7c2df21e684368dc4ae0a592831909
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        integrity: sha256-a6f137a76ec5cf594380ae6cfc1759c39b332cdf39eb1ddac873a15888fa0d03
+        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
     - id: checks-definition-prose-with-vale
       claim:
-        lines: 122-123
+        lines: 123-124
         integrity: sha256-d3967d5cb8c587f3f05aac54436d9589a8261109a4839b2f0e2e0fb1e00a0cc0
       source:
         file: src/term/core/lint.ts
@@ -246,10 +246,10 @@ docs/src/content/docs/term/index.mdx:
         commit-sha: e104d8893a42fb936959cae6314e775b8f5a88d7
     - id: does-not-read-body
       claim:
-        lines: 126
+        lines: 127
         integrity: sha256-3aec49ace3efa7bf7d7f111c8d99e7bcefa9a38ed968942b62d616daa896eda5
       source:
         file: src/term/core/load-set.ts
         lines: 87-97
-        integrity: sha256-188a0d200627281e4a6591a229e25939f84f88562fcc467ce5d9bffd8059cbf4
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        integrity: sha256-dc9b37666b208fe341b923a59afab6342b3d37a6062a57cc564ba2fad0df4b57
+        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
