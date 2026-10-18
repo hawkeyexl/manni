@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<martif type="TBX" xml:lang="en">
+  <martifHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>A hand-written sample in the shape a CAT tool exports.</p>
+      </sourceDesc>
+    </fileDesc>
+  </martifHeader>
+  <text>
+    <body>
+      <termEntry id="1">
+        <descripGrp>
+          <descrip type="Client">Acme</descrip>
+        </descripGrp>
+        <descripGrp>
+          <descrip type="definition">A lens whose power changes gradually.</descrip>
+        </descripGrp>
+        <transacGrp>
+          <transac type="origination">sara</transac>
+          <date>2026-09-01T10:00:00Z</date>
+        </transacGrp>
+        <langSet xml:lang="en">
+          <tig>
+            <term>progressive lens</term>
+            <termNote type="xBool_Forbidden">False</termNote>
+            <termNote type="xBool_CaseSensitive">False</termNote>
+          </tig>
+          <tig>
+            <term>PAL</term>
+            <termNote type="xBool_Forbidden">False</termNote>
+          </tig>
+        </langSet>
+        <langSet xml:lang="de">
+          <tig>
+            <term>Gleitsichtglas</term>
+            <termNote type="xBool_Forbidden">False</termNote>
+          </tig>
+          <tig>
+            <term>Gleitglas</term>
+            <termNote type="xBool_Forbidden">True</termNote>
+          </tig>
+        </langSet>
+      </termEntry>
+    </body>
+  </text>
+</martif>

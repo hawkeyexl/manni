@@ -10,8 +10,8 @@
   <text>
     <body>
       <termEntry id="progressive-lens">
-        <descrip type="definition">A spectacle lens whose power changes gradually, with no visible line.</descrip>
         <langSet xml:lang="en">
+          <descrip type="definition">A spectacle lens whose power changes gradually, with no visible line.</descrip>
           <tig>
             <term>progressive lens</term>
             <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
@@ -31,8 +31,8 @@
         </langSet>
       </termEntry>
       <termEntry id="spectacle-lens">
-        <descrip type="definition">A lens worn in front of the eye to correct vision.</descrip>
         <langSet xml:lang="en">
+          <descrip type="definition">A lens worn in front of the eye to correct vision.</descrip>
           <tig>
             <term>spectacle lens</term>
             <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
@@ -40,8 +40,8 @@
         </langSet>
       </termEntry>
       <termEntry id="kubernetes">
-        <descrip type="definition">An orchestrator for "containers", services, and jobs.</descrip>
         <langSet xml:lang="en">
+          <descrip type="definition">An orchestrator for "containers", services, and jobs.</descrip>
           <tig>
             <term>Kubernetes</term>
             <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
@@ -57,8 +57,8 @@
         </langSet>
       </termEntry>
       <termEntry id="api">
-        <descrip type="definition">A contract &lt;between&gt; programs &amp; their callers.</descrip>
         <langSet xml:lang="en">
+          <descrip type="definition">A contract &lt;between&gt; programs &amp; their callers.</descrip>
           <tig>
             <term>API</term>
             <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
@@ -70,8 +70,8 @@
         </langSet>
       </termEntry>
       <termEntry id="cpp">
-        <descrip type="definition">A compiled programming language.</descrip>
         <langSet xml:lang="en">
+          <descrip type="definition">A compiled programming language.</descrip>
           <tig>
             <term>C++</term>
             <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
@@ -83,8 +83,8 @@
         </langSet>
       </termEntry>
       <termEntry id="gleitsichtglas">
-        <descrip type="definition">Ein Brillenglas, dessen Stärke stufenlos zunimmt.</descrip>
         <langSet xml:lang="de">
+          <descrip type="definition">Ein Brillenglas, dessen Stärke stufenlos zunimmt.</descrip>
           <tig>
             <term>Gleitsichtglas</term>
             <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>

@@ -1,0 +1,55 @@
+{
+  "terms": [
+    {
+      "id": "IATE-1234",
+      "language": "en",
+      "line": 15,
+      "record": {
+        "label": "progressive lens",
+        "concept-entry": {
+          "subject-field": "optics",
+          "tbx-elements": [
+            "<descrip type=\"conceptId\">c-42</descrip>"
+          ]
+        },
+        "designations": [
+          {
+            "term": "progressive lens",
+            "administrative-status": "none",
+            "term-type": "fullForm",
+            "tbx-elements": [
+              "<descrip type=\"reliabilityCode\">3</descrip>"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "IATE-1234",
+      "language": "de",
+      "line": 22,
+      "record": {
+        "label": "Gleitsichtglas",
+        "definition": "Brillenglas mit stufenlos zunehmender Stärke.",
+        "concept-entry": {
+          "subject-field": "optics",
+          "tbx-elements": [
+            "<descrip type=\"conceptId\">c-42</descrip>"
+          ]
+        },
+        "designations": [
+          {
+            "term": "Gleitsichtglas",
+            "administrative-status": "none",
+            "term-type": "fullForm",
+            "tbx-elements": [
+              "<termNote type=\"Usage status\">preferred</termNote>",
+              "<descrip type=\"reliabilityCode\">3</descrip>"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "notices": []
+}

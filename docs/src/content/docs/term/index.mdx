@@ -54,7 +54,7 @@ sample-questions:
 graph:
   label: manni term
   type: concept
-last-updated: 2026-09-26
+last-updated: 2026-10-18
 tags:
   - cli-tool
   - documentation-tools
@@ -91,7 +91,8 @@ A term reaches manni in one of two shapes.
   format has for a list of terms. A DITA `<glossgroup>`, a DocBook
   `<glossary>`, an AsciiDoc `[glossary]` list and a `.. glossary::` directive
   say what they are. A Markdown definition list and an HTML `<dl>` are read
-  where the file declares `type: term-set`.
+  where the file declares `type: term-set`. A TBX termbase, v2 or v3, holds
+  an entry per concept, and each language in it is a term.
 
 ## Six commands
 
@@ -156,7 +157,7 @@ the guide already names by its label, and the check passes:
   <LinkCard
     title="Move and hand off a termbase"
     href="/manni/term/set-up/move-and-hand-off/"
-    description="Read a glossary from DocBook, DITA, HTML, AsciiDoc, reST or Markdown, and write it as pages, TBX or CSV."
+    description="Read a glossary from DocBook, DITA, HTML, AsciiDoc, reST, Markdown or TBX, and write it as pages, TBX or CSV."
   />
   <LinkCard
     title="Run it in CI"
@@ -176,7 +177,7 @@ The reference shelf holds the detail. The
 [CLI reference](/manni/term/reference/cli/) covers every flag and every usage
 error. The [configuration reference](/manni/term/reference/configuration/)
 covers the `term:` keys. The
-[terminology reference](/manni/term/reference/terminology/) covers the ten
+[terminology reference](/manni/term/reference/terminology/) covers the
 fields, and the [rules reference](/manni/term/reference/rules/) covers the ten
 checks.
 
@@ -185,7 +186,7 @@ checks.
 <CardGrid>
   <Card title="It checks" icon="approve-check">
     That every `concepts:` value names an entry by its preferred label. That
-    ids and labels are unique, ignoring case. That `broader`, `narrower`,
+    ids and labels are unique within a language, ignoring case. That `broader`, `narrower`,
     `related-terms` and `see` resolve, and that the hierarchy has no cycle.
     With Vale, it checks the prose of each definition against your house
     voice.
@@ -198,7 +199,7 @@ checks.
 </CardGrid>
 
 Term entries are written in the built-in
-[`manni:terminology:1.0.0`](/manni/meta/reference/schemas/manni-terminology/)
+[`manni:terminology:1.1.0`](/manni/meta/reference/schemas/manni-terminology/)
 vocabulary. `manni meta validate` checks one page's shape against it when the
-page's schema set includes it, as `-s manni:terminology:1.0.0` does. `manni
+page's schema set includes it, as `-s manni:terminology:1.1.0` does. `manni
 term check` checks the set.

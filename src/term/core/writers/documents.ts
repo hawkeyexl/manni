@@ -3,6 +3,10 @@
  * construct: a directory gets one term page per term (a DITA glossentry topic
  * for DITA), a file gets every term in the format's list construct. DocBook
  * has no one-term construct, so it is written as a file only.
+ *
+ * A set in more than one language puts each page under a directory named for
+ * its language. A list construct holds one language, so a file gets the first
+ * term's, and the render reports the terms in any other.
  */
 import { join } from "node:path";
 import { TermError } from "../../errors.js";
@@ -29,7 +33,7 @@ import {
 } from "./entries.js";
 import { fileOf, reindent, sharedLanguage, xmlAttribute } from "./markup.js";
 import { htmlPage, metadataPage, yamlFrontmatter } from "./page.js";
-import { droppedFields, requireShape } from "./render-util.js";
+import { droppedFields, isMultilingual, languageKey, languageOf, requireShape } from "./render-util.js";
 
 /** Characters no file name may hold on any platform manni runs on. */
 const UNSAFE_NAME = /[/\\:*?"<>|]/;
@@ -51,18 +55,56 @@ interface DocumentSpec {
   directory?: { holds: readonly TermField[]; render: (term: Term) => string };
 }
 
+/**
+ * One path per term: `<id><ext>`, or `<lang>/<id><ext>` when the set holds
+ * more than one language. A language's directory is spelled as its first term
+ * spells it.
+ */
 function pagePaths(terms: readonly Term[], target: TermTarget, extension: string): string[] {
+  const multilingual = isMultilingual(terms);
+  const spelling = new Map<string, string>();
   const seen = new Set<string>();
   return terms.map((term) => {
     if (UNSAFE_NAME.test(term.id) || term.id === "." || term.id === "..") {
       throw new TermError(`the id "${term.id}" cannot name a file. Give the term an id without path characters.`);
     }
-    if (seen.has(term.id)) {
-      throw new TermError(`two terms have the id "${term.id}", and a directory holds one file per id.`);
+    if (!multilingual) {
+      if (seen.has(term.id)) {
+        throw new TermError(`two terms have the id "${term.id}", and a directory holds one file per id.`);
+      }
+      seen.add(term.id);
+      return join(target.path, `${term.id}${extension}`);
     }
-    seen.add(term.id);
-    return join(target.path, `${term.id}${extension}`);
+    const key = languageKey(term);
+    const language = spelling.get(key) ?? languageOf(term);
+    spelling.set(key, language);
+    if (UNSAFE_NAME.test(language) || language === "." || language === "..") {
+      throw new TermError(
+        `the language "${language}" cannot name a directory. Give the term a language without path characters.`,
+      );
+    }
+    if (seen.has(`${key} ${term.id}`)) {
+      throw new TermError(
+        `two terms have the id "${term.id}" in ${language}, and a directory holds one file per id in each language.`,
+      );
+    }
+    seen.add(`${key} ${term.id}`);
+    return join(target.path, language, `${term.id}${extension}`);
   });
+}
+
+/** The terms a one-language construct writes: the first term's language. The rest are reported. */
+function firstLanguage(terms: readonly Term[]): { kept: Term[]; otherLanguages?: TermRender["otherLanguages"] } {
+  const [first] = terms;
+  if (first === undefined || !isMultilingual(terms)) return { kept: [...terms] };
+  const key = languageKey(first);
+  return {
+    kept: terms.filter((t) => languageKey(t) === key),
+    otherLanguages: {
+      written: languageOf(first),
+      terms: terms.filter((t) => languageKey(t) !== key).map((t) => ({ id: t.id, language: languageOf(t) })),
+    },
+  };
 }
 
 function documentWriter(spec: DocumentSpec): TermWriter {
@@ -82,12 +124,14 @@ function documentWriter(spec: DocumentSpec): TermWriter {
         };
       }
       requireShape(spec.format, target, "file");
-      const written = spec.file.needsDefinition ? terms.filter((t) => t.record.definition !== undefined) : terms;
+      const { kept, otherLanguages } = firstLanguage(terms);
+      const written = spec.file.needsDefinition ? kept.filter((t) => t.record.definition !== undefined) : kept;
       return {
         files: [{ path: target.path, content: spec.file.render(written) }],
         removals: [],
         dropped: droppedFields(written, spec.file.holds),
-        skipped: terms.filter((t) => !written.includes(t)).map((t) => t.id),
+        skipped: kept.filter((t) => !written.includes(t)).map((t) => t.id),
+        ...(otherLanguages === undefined ? {} : { otherLanguages }),
       };
     },
   };

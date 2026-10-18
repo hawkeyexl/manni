@@ -1,0 +1,24 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:06.867
+A translator's termbase: glossary.tbx came from the translators: TBX concept entries, with English and German terms.
+
+2
+00:00:06.867 --> 00:00:13.233
+One term per language: manni term reads TBX v2 and v3. Each language is its own term, joined on the concept id.
+
+3
+00:00:13.233 --> 00:00:20.533
+Every field kept: get finds the entry by its alt label: part of speech, term type, inline markup, the German term.
+
+4
+00:00:20.533 --> 00:00:34.000
+Write TBX v3: -f tbx3 writes TBX v3. Read back, it lists the same records, in a byte-identical file.
+
+5
+00:00:34.000 --> 00:00:43.733
+No churn in place: Written back in place, nothing changes. check passes, exit 0: notices never fail it.
+

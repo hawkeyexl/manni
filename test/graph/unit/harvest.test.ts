@@ -9,6 +9,10 @@ import { describe, expect, it } from "vitest";
 import { harvestWarnings, HARVESTED_KEYS } from "../../../src/graph/core/harvest.js";
 import { PAGE_TYPE_TO_TOPIC_TYPE } from "../../../src/graph/core/iirds.js";
 import type { DocModel } from "../../../src/graph/types.js";
+import { TERM_FIELDS } from "../../../src/term/types.js";
+
+/** Every root key of manni:terminology:1.1.0. */
+const TERMINOLOGY_110_KEYS = [...TERM_FIELDS];
 
 function doc(
   frontmatter: Record<string, unknown>,
@@ -103,6 +107,14 @@ describe("harvestWarnings", () => {
           }),
         ]),
       ).toEqual([]);
+    });
+
+    it("on a term page carrying every terminology 1.1.0 key", () => {
+      // Proposal 0084 checked each new key's name against HARVESTED_KEYS:
+      // `contexts` is two edits from `concepts`, which is past the limit.
+      const fm: Record<string, unknown> = { type: "term", label: "progressive lens" };
+      for (const key of TERMINOLOGY_110_KEYS) fm[key] = ["x"];
+      expect(harvestWarnings([doc(fm)])).toEqual([]);
     });
 
     it("on `types`, which is one edit from `type` and means something else", () => {

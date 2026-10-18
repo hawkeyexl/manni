@@ -71,6 +71,8 @@ import manniArtifactEvals110 from "../schemas/artifact-evals/1.1.0.json" with { 
 import manniArtifactEvalsStrict110 from "../schemas/artifact-evals-strict/1.1.0.json" with { type: "json" };
 import manniStewardship110 from "../schemas/stewardship/1.1.0.json" with { type: "json" };
 import manniStewardshipStrict110 from "../schemas/stewardship-strict/1.1.0.json" with { type: "json" };
+import manniTerminology110 from "../schemas/terminology/1.1.0.json" with { type: "json" };
+import manniTerminologyStrict110 from "../schemas/terminology-strict/1.1.0.json" with { type: "json" };
 import { errorMessage } from "../../shared/errors.js";
 
 export interface BuiltinInfo {
@@ -132,6 +134,8 @@ const BUILTINS = new Map<string, Record<string, unknown>>([
   ["manni:artifact-evals-strict:1.1.0", manniArtifactEvalsStrict110],
   ["manni:stewardship:1.1.0", manniStewardship110],
   ["manni:stewardship-strict:1.1.0", manniStewardshipStrict110],
+  ["manni:terminology:1.1.0", manniTerminology110],
+  ["manni:terminology-strict:1.1.0", manniTerminologyStrict110],
 ]);
 
 /**
@@ -322,6 +326,8 @@ const PUBLISHED_PATHS: readonly (readonly [string, string])[] = [
   ["artifact-evals-strict/1.1.0.json", "manni:artifact-evals-strict:1.1.0"],
   ["stewardship/1.1.0.json", "manni:stewardship:1.1.0"],
   ["stewardship-strict/1.1.0.json", "manni:stewardship-strict:1.1.0"],
+  ["terminology/1.1.0.json", "manni:terminology:1.1.0"],
+  ["terminology-strict/1.1.0.json", "manni:terminology-strict:1.1.0"],
 ];
 
 /** Published URL → built-in id, under the current base. */

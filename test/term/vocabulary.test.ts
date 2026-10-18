@@ -478,3 +478,157 @@ describe("manni:graph:1.0.0", () => {
     }).toEqual(kg);
   });
 });
+
+/**
+ * `manni:terminology:1.1.0` (proposal 0084) registers beside 1.0.0 with the
+ * TBX data categories: aux fields at the root, the same fields in
+ * `concept-entry` and in each `designations` item, term-level keys in a
+ * `designations` item only, and `tbx-markup`. Every 1.0.0 page is valid 1.1.0.
+ */
+const TERMINOLOGY_110 = "manni:terminology:1.1.0";
+const STRICT_110 = "manni:terminology-strict:1.1.0";
+
+const FIELDS_110 = [
+  ...FIELDS,
+  "concept-entry",
+  "contexts",
+  "cross-references",
+  "customer-subsets",
+  "designations",
+  "external-cross-references",
+  "graphics",
+  "notes",
+  "project-subsets",
+  "sources",
+  "subject-field",
+  "tbx-elements",
+  "tbx-markup",
+  "transactions",
+].sort();
+
+describe("manni:terminology:1.1.0, the vocabulary", () => {
+  it("declares the 1.0.0 fields and the TBX keys at the root, and only those", async () => {
+    const schema = (await loadSchema(TERMINOLOGY_110)) as Draft;
+    expect(schema.$id).toBe(TERMINOLOGY_110);
+    expect(schema.additionalProperties).toBe(true);
+    expect(Object.keys(schema.properties).sort()).toEqual(FIELDS_110);
+  });
+
+  it("declares transfer-comments in a designations item only, where TBX-Linguist puts it", async () => {
+    const schema = (await loadSchema(TERMINOLOGY_110)) as Draft;
+    const keysOf = (value: unknown): string[] => Object.keys((value as { properties: object }).properties);
+    const designation = (schema.properties["designations"] as { items: unknown }).items;
+    expect(keysOf(designation)).toContain("transfer-comments");
+    expect(keysOf(schema.properties["concept-entry"])).not.toContain("transfer-comments");
+  });
+
+  it("marks every field for the page, describes it, and spells it kebab-case", async () => {
+    const schema = (await loadSchema(TERMINOLOGY_110)) as Draft;
+    for (const [key, prop] of Object.entries(schema.properties)) {
+      expect(key).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+      expect(prop["x-manni-location"], key).toBe("page");
+      expect(prop.description, key).toMatch(/\S/);
+    }
+  });
+
+  it("claims no field another house schema claims", async () => {
+    const schema = (await loadSchema(TERMINOLOGY_110)) as Draft;
+    const own = new Set(Object.keys(schema.properties));
+    for (const ref of HOUSE) {
+      const other = (await loadSchema(ref)) as Draft;
+      for (const key of Object.keys(other.properties)) {
+        expect(own.has(key), `${key} claimed by ${ref} and terminology`).toBe(false);
+      }
+    }
+    for (const key of ["type", "id", "language"]) expect(own.has(key), key).toBe(false);
+  });
+
+  it("carries no em dash in either schema", async () => {
+    for (const ref of [TERMINOLOGY_110, STRICT_110]) {
+      expect(JSON.stringify(await loadSchema(ref)), ref).not.toContain("—");
+    }
+  });
+});
+
+describe("manni:terminology:1.1.0, validating pages", () => {
+  it("accepts a page carrying every TBX key, stacked on core and the strict overlay", async () => {
+    const r = await check("full-term-1-1-0.md", [CORE, TERMINOLOGY_110, STRICT_110]);
+    expect(r.errors).toEqual([]);
+    expect(r.ok).toBe(true);
+  });
+
+  it("accepts every 1.0.0 page", async () => {
+    for (const fixture of ["full-term.md", "redirect-term.md", "empty-term-set.md", "unrelated-page.md"]) {
+      const r = await check(fixture, [CORE, TERMINOLOGY_110, STRICT_110]);
+      expect(r.errors, fixture).toEqual([]);
+    }
+  });
+
+  it("keeps a picklist value as written, and leaves closing it to the strict overlay", async () => {
+    const open = await check("strict-picklist-verb.md", [TERMINOLOGY_110]);
+    expect(open.errors).toEqual([]);
+    const strict = await check("strict-picklist-verb.md", [TERMINOLOGY_110, STRICT_110]);
+    expect(strict.ok).toBe(false);
+    for (const e of strict.errors) expect(e.schema).toBe(STRICT_110);
+    expect(strict.errors.some((e) => e.instancePath === "/designations/0/part-of-speech")).toBe(true);
+  });
+
+  it("rejects a designations item with no term", async () => {
+    const r = await checkStdin(
+      "type: term\nlabel: lens\ndefinition: A lens.\ndesignations:\n  - part-of-speech: noun",
+      [TERMINOLOGY_110],
+    );
+    expect(r.ok).toBe(false);
+    expect(r.errors.some((e) => e.instancePath === "/designations/0")).toBe(true);
+  });
+
+  it("rejects a transaction with no type and a reference with no target", async () => {
+    const r = await checkStdin(
+      "type: term\nlabel: lens\ndefinition: A lens.\ntransactions:\n  - date: 2024-03-01\ngraphics:\n  - text: a lens",
+      [TERMINOLOGY_110],
+    );
+    expect(r.ok).toBe(false);
+    expect(r.errors.some((e) => e.instancePath === "/transactions/0")).toBe(true);
+    expect(r.errors.some((e) => e.instancePath.startsWith("/graphics/0"))).toBe(true);
+  });
+
+  it("holds subject-field, a term and a reference target to one trimmed line under strict", async () => {
+    const yaml = [
+      "type: term",
+      "label: lens",
+      "definition: A lens.",
+      'subject-field: " optics"',
+      "cross-references: ['spectacle lens ']",
+      "concept-entry:",
+      String.raw`  subject-field: "optics\nlenses"`,
+      "designations:",
+      "  - term: \"lens \"",
+    ].join("\n");
+    expect((await checkStdin(yaml, [TERMINOLOGY_110])).errors).toEqual([]);
+    const r = await checkStdin(yaml, [TERMINOLOGY_110, STRICT_110]);
+    const paths = r.errors.map((e) => e.instancePath);
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        "/subject-field",
+        "/cross-references/0",
+        "/concept-entry/subject-field",
+        "/designations/0/term",
+      ]),
+    );
+  });
+
+  it("requires each tbx-elements item to be markup under strict", async () => {
+    const yaml = "type: term\nlabel: lens\ndefinition: A lens.\ntbx-elements: [not markup]";
+    expect((await checkStdin(yaml, [TERMINOLOGY_110])).errors).toEqual([]);
+    const r = await checkStdin(yaml, [TERMINOLOGY_110, STRICT_110]);
+    expect(r.errors.some((e) => e.instancePath === "/tbx-elements/0")).toBe(true);
+  });
+
+  it("still rejects a page carrying both definition and see under strict", async () => {
+    const r = await checkStdin("type: term\nlabel: lens\nsee: spectacle lens\ndefinition: A lens.", [
+      TERMINOLOGY_110,
+      STRICT_110,
+    ]);
+    expect(r.ok).toBe(false);
+  });
+});

@@ -1,0 +1,22 @@
+{
+  "terms": [
+    {
+      "id": "lens",
+      "language": "en",
+      "line": 13,
+      "record": {
+        "label": "lens",
+        "designations": [
+          {
+            "term": "lens",
+            "administrative-status": "none",
+            "tbx-elements": [
+              "<transacGrp>\n  <transac type=\"transactionType\">origination</transac>\n  <transacNote type=\"responsibility\" target=\"sara\">Sara</transacNote>\n</transacGrp>"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "notices": []
+}

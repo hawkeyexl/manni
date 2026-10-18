@@ -1,0 +1,44 @@
+{
+  "terms": [
+    {
+      "id": "progressive-lens",
+      "language": "en",
+      "line": 17,
+      "record": {
+        "label": "progressive lens",
+        "tbx-elements": [
+          "<descrip type=\"definition\">A lens made by &acme;.</descrip>"
+        ],
+        "concept-entry": {
+          "subject-field": "optics"
+        },
+        "designations": [
+          {
+            "term": "progressive lens",
+            "administrative-status": "none",
+            "part-of-speech": "noun"
+          }
+        ]
+      }
+    },
+    {
+      "id": "acme-lens",
+      "language": "en",
+      "line": 26,
+      "record": {
+        "label": "&acme; lens",
+        "definition": "A lens & frame, model A.",
+        "designations": [
+          {
+            "term": "&acme; lens",
+            "administrative-status": "none"
+          }
+        ],
+        "tbx-markup": [
+          "&acme; lens"
+        ]
+      }
+    }
+  ],
+  "notices": []
+}

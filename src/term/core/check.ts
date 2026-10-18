@@ -7,9 +7,15 @@
  * renders is a `swap` map keyed on the lowercased term. Two labels that differ
  * only in case collide there silently, so they collide here out loud. Ids
  * compare ignoring case too, because references resolve them that way.
+ *
+ * A set may hold one term per language, joined on `id` (proposal 0084). A term
+ * with no language counts as `en`, and languages compare ignoring case. Across
+ * languages, two labels collide only when they differ in spelling but not in
+ * case: `API` in en and de is one word, `Kubernetes`/`kubernetes` is a clash.
  */
 import { TERM_RELATION_FIELDS } from "../../shared/reference-fields.js";
 import { DEFAULT_ABSTRACT_MAX_LENGTH } from "./config.js";
+import { languageKey as language } from "./writers/render-util.js";
 import { resolveSeverity, ruleId } from "./severity.js";
 import type { Term, TermField, TermFinding, TermRule, TermSet, TermSeverity } from "../types.js";
 
@@ -49,17 +55,44 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     ...(field === undefined ? {} : { field }),
   });
 
-  // The first entry claiming each folded label, and each folded id.
+  // The first entry claiming each folded label, and each folded id, overall
+  // and per language.
   const byLabel = new Map<string, number>();
   const byId = new Map<string, number>();
+  const inLanguage = new Map<string, number>();
+  // Every entry per folded label, in set order, for the collision rules.
+  const labelled = new Map<string, number[]>();
+  const claim = (map: Map<string, number>, key: string, index: number): void => {
+    if (!map.has(key)) map.set(key, index);
+  };
   terms.forEach((t, index) => {
-    const label = fold(t.record.label);
-    if (!byLabel.has(label)) byLabel.set(label, index);
-    const id = fold(t.id);
-    if (!byId.has(id)) byId.set(id, index);
+    claim(byLabel, fold(t.record.label), index);
+    const group = labelled.get(fold(t.record.label));
+    if (group === undefined) labelled.set(fold(t.record.label), [index]);
+    else group.push(index);
+    claim(byId, fold(t.id), index);
+    claim(inLanguage, `${language(t)} label ${fold(t.record.label)}`, index);
+    claim(inLanguage, `${language(t)} id ${fold(t.id)}`, index);
   });
-  const resolveReference = (value: string): number | undefined =>
-    byLabel.get(fold(value)) ?? byId.get(fold(value));
+  /** Whether `t`'s label `a` collides with `other`'s label `b`: within a language when they fold alike, across languages only when their spelling differs too. */
+  const clash = (t: Term, a: string, other: Term, b: string): boolean =>
+    fold(a) === fold(b) && (language(t) === language(other) || a !== b);
+  /** The first entry other than `index` whose label collides with `value` on `t`, among those `before` allows. */
+  const collider = (t: Term, index: number, value: string, before: boolean): Term | undefined => {
+    for (const otherIndex of labelled.get(fold(value)) ?? []) {
+      if (otherIndex === index || (before && otherIndex > index)) continue;
+      const other = terms[otherIndex];
+      if (other !== undefined && clash(t, value, other, other.record.label)) return other;
+    }
+    return undefined;
+  };
+
+  // A same-language label, then a same-language id, then any language.
+  const resolveReference = (from: Term, value: string): number | undefined =>
+    inLanguage.get(`${language(from)} label ${fold(value)}`) ??
+    inLanguage.get(`${language(from)} id ${fold(value)}`) ??
+    byLabel.get(fold(value)) ??
+    byId.get(fold(value));
 
   // undefined-term, and the folded labels some page names, for unused-term.
   const referenced = new Set<string>();
@@ -80,11 +113,14 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     });
   }
 
+  // unused-term: a term is used when a page names any term sharing its id.
+  const usedIds = new Set(terms.filter((t) => referenced.has(fold(t.record.label))).map((t) => fold(t.id)));
+
   // duplicate-id: ignoring case, as references resolve ids, on every entry
-  // sharing the id.
+  // sharing the id in one language.
   const sharing = new Map<string, Term[]>();
   for (const t of terms) {
-    const id = fold(t.id);
+    const id = `${language(t)} ${fold(t.id)}`;
     const group = sharing.get(id);
     if (group === undefined) sharing.set(id, [t]);
     else group.push(t);
@@ -99,9 +135,8 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
 
   terms.forEach((t, index) => {
     // label-collision: on each later entry, naming the first.
-    const first = byLabel.get(fold(t.record.label));
-    const firstTerm = first === undefined ? undefined : terms[first];
-    if (first !== undefined && first !== index && firstTerm !== undefined) {
+    const firstTerm = collider(t, index, t.record.label, true);
+    if (firstTerm !== undefined) {
       drafts.push(
         onEntry(
           t,
@@ -114,7 +149,7 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
 
     // alt-label-collision: an alt-label that is another entry's label.
     for (const alt of t.record["alt-labels"] ?? []) {
-      const owner = terms.find((other, otherIndex) => otherIndex !== index && fold(other.record.label) === fold(alt));
+      const owner = collider(t, index, alt, false);
       if (owner !== undefined) {
         drafts.push(
           onEntry(t, "alt-label-collision", `alt-labels: "${alt}" is the label of ${where(owner)}`, "alt-labels"),
@@ -125,7 +160,7 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     // dangling-reference: one finding per value that resolves to nothing.
     for (const field of REFERENCE_FIELDS) {
       for (const value of referenceValues(t, field)) {
-        if (resolveReference(value) === undefined) {
+        if (resolveReference(t, value) === undefined) {
           drafts.push(onEntry(t, "dangling-reference", `${field}: "${value}" names no entry`, field));
         }
       }
@@ -151,8 +186,8 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
       );
     }
 
-    // unused-term: no reference names the label.
-    if (!referenced.has(fold(t.record.label))) {
+    // unused-term: no reference names the label of any term sharing the id.
+    if (!usedIds.has(fold(t.id))) {
       drafts.push(onEntry(t, "unused-term", "no page's concepts: names this term"));
     }
   });
@@ -162,7 +197,7 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     terms.map((t) => {
       const targets = new Set<number>();
       for (const value of referenceValues(t, field)) {
-        const target = resolveReference(value);
+        const target = resolveReference(t, value);
         if (target !== undefined) targets.add(target);
       }
       return targets;

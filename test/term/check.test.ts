@@ -13,6 +13,7 @@ import type {
 
 interface TermSpec extends TermRecord {
   id?: string;
+  language?: string;
   file?: string;
   line?: number;
   construct?: TermConstruct;
@@ -20,10 +21,11 @@ interface TermSpec extends TermRecord {
 }
 
 function term(spec: TermSpec): Term {
-  const { id, file, line, construct, fieldLines, ...record } = spec;
+  const { id, language, file, line, construct, fieldLines, ...record } = spec;
   return {
     id: id ?? record.label.toLowerCase().replace(/\s+/g, "-"),
     record,
+    ...(language === undefined ? {} : { language }),
     location: {
       file: file ?? `docs/terms/${record.label.toLowerCase().replace(/\s+/g, "-")}.md`,
       construct: construct ?? "page",
@@ -453,6 +455,111 @@ describe("checkTermSet", () => {
     it("applies an override", () => {
       const findings = checkTermSet(set(terms), { severity: { "unused-term": "error" } });
       expect(findings.map((f) => f.severity)).toEqual(["error"]);
+    });
+  });
+
+  describe("a multilingual set: one term per language, joined on id", () => {
+    const en = (spec: TermSpec): Term => term({ language: "en", ...spec });
+    const de = (spec: TermSpec): Term => term({ language: "de", file: `de/${spec.id ?? spec.label}.md`, ...spec });
+
+    it("groups duplicate-id by id and language, a term with no language counting as en", () => {
+      const terms = [
+        term({ id: "pal", label: "progressive lens", definition: "d", file: "en/pal.md" }),
+        de({ id: "pal", label: "Gleitsichtglas", definition: "d" }),
+        de({ id: "PAL", label: "Gleitsichtbrille", definition: "d", file: "de/other.md" }),
+        en({ id: "pal", label: "varifocal", definition: "d", file: "en/varifocal.md" }),
+      ];
+      const findings = only(checkTermSet(used(terms)), "duplicate-id");
+      expect(findings.map((f) => [f.file, f.message])).toEqual([
+        ["de/other.md", 'id: "PAL" is also used by de/pal.md:1'],
+        ["de/pal.md", 'id: "pal" is also used by de/other.md:1'],
+        ["en/pal.md", 'id: "pal" is also used by en/varifocal.md:1'],
+        ["en/varifocal.md", 'id: "pal" is also used by en/pal.md:1'],
+      ]);
+    });
+
+    it("compares languages ignoring case", () => {
+      const terms = [
+        de({ id: "pal", label: "Gleitsichtglas", definition: "d" }),
+        term({ id: "pal", label: "Gleitsichtbrille", definition: "d", language: "DE", file: "x.md" }),
+      ];
+      expect(only(checkTermSet(used(terms)), "duplicate-id")).toHaveLength(2);
+    });
+
+    it("lets an identical label stand in two languages, and collides on a case clash across them", () => {
+      const terms = [
+        en({ id: "api", label: "API", definition: "d" }),
+        de({ id: "api", label: "API", definition: "d" }),
+        en({ id: "kubernetes", label: "Kubernetes", definition: "d", file: "en/kubernetes.md", line: 2 }),
+        de({ id: "kubernetes", label: "kubernetes", definition: "d" }),
+      ];
+      const findings = only(checkTermSet(used(terms)), "label-collision");
+      expect(findings.map((f) => [f.file, f.message])).toEqual([
+        ["de/kubernetes.md", '"kubernetes" is claimed by en/kubernetes.md:2 as "Kubernetes"'],
+      ]);
+    });
+
+    it("still collides labels within one language ignoring case", () => {
+      const terms = [
+        de({ id: "a", label: "Linse", definition: "d" }),
+        de({ id: "b", label: "linse", definition: "d" }),
+        de({ id: "c", label: "Linse", definition: "d" }),
+      ];
+      expect(only(checkTermSet(used(terms)), "label-collision").map((f) => f.id)).toEqual(["b", "c"]);
+    });
+
+    it("applies the same rule to alt-labels", () => {
+      const terms = [
+        en({ id: "api", label: "API", definition: "d" }),
+        de({ id: "schnittstelle", label: "Schnittstelle", definition: "d", "alt-labels": ["API"] }),
+        de({ id: "k8s", label: "K8s", definition: "d", "alt-labels": ["kubernetes"] }),
+        en({ id: "kubernetes", label: "Kubernetes", definition: "d", file: "en/kubernetes.md" }),
+      ];
+      const findings = only(checkTermSet(used(terms)), "alt-label-collision");
+      expect(findings.map((f) => [f.id, f.message])).toEqual([
+        ["k8s", 'alt-labels: "kubernetes" is the label of en/kubernetes.md:1'],
+      ]);
+    });
+
+    it("resolves a reference to its own language first, then to any language", () => {
+      const terms = [
+        en({ id: "lens", label: "lens", definition: "d", narrower: ["bifocal"] }),
+        en({ id: "bifocal", label: "bifocal", definition: "d", broader: ["lens"] }),
+        de({ id: "lens", label: "Linse", definition: "d", narrower: ["bifocal"] }),
+        de({ id: "bifocal", label: "Bifokalglas", definition: "d", broader: ["Linse"] }),
+        de({ id: "optik", label: "Optik", definition: "d", "related-terms": ["lens", "prism"] }),
+      ];
+      const findings = checkTermSet(used(terms));
+      expect(only(findings, "asymmetric-hierarchy")).toEqual([]);
+      expect(only(findings, "dangling-reference").map((f) => f.message)).toEqual([
+        'related-terms: "prism" names no entry',
+      ]);
+    });
+
+    it("keeps a hierarchy within its language, so a cycle is found per language", () => {
+      const terms = [
+        en({ id: "a", label: "a", definition: "d", broader: ["b"] }),
+        en({ id: "b", label: "b", definition: "d" }),
+        de({ id: "a", label: "x", definition: "d", broader: ["b"] }),
+        de({ id: "b", label: "y", definition: "d", broader: ["a"] }),
+      ];
+      const findings = checkTermSet(used(terms));
+      expect(only(findings, "broader-cycle").map((f) => f.message)).toEqual(["broader: x > y > x"]);
+      expect(only(findings, "asymmetric-hierarchy").map((f) => [f.file, f.field])).toEqual([
+        ["de/a.md", "narrower"],
+        ["de/b.md", "narrower"],
+        ["docs/terms/b.md", "narrower"],
+      ]);
+    });
+
+    it("counts a term as used when a reference names any term sharing its id", () => {
+      const terms = [
+        en({ id: "pal", label: "progressive lens", definition: "d" }),
+        de({ id: "pal", label: "Gleitsichtglas", definition: "d" }),
+        de({ id: "linse", label: "Linse", definition: "d" }),
+      ];
+      const findings = only(checkTermSet(set(terms, [ref("progressive lens")])), "unused-term");
+      expect(findings.map((f) => f.id)).toEqual(["linse"]);
     });
   });
 

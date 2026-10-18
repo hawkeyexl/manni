@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<martif type="TBX" xml:lang="en">
+  <martifHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>One language with no term.</p>
+      </sourceDesc>
+    </fileDesc>
+  </martifHeader>
+  <text>
+    <body>
+      <termEntry id="lens">
+        <langSet xml:lang="en">
+          <tig>
+            <term>lens</term>
+          </tig>
+        </langSet>
+        <langSet xml:lang="de">
+          <descrip type="definition">Ein geschliffenes Glas.</descrip>
+          <tig>
+            <term> </term>
+          </tig>
+        </langSet>
+      </termEntry>
+    </body>
+  </text>
+</martif>

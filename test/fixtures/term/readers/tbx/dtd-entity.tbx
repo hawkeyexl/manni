@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE martif SYSTEM "TBXBasiccoreStructV02.dtd" [
+  <!ENTITY acme "Acme Optics">
+]>
+<martif type="TBX-Basic" xml:lang="en">
+  <martifHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>Values that use an entity the internal subset declares.</p>
+      </sourceDesc>
+    </fileDesc>
+  </martifHeader>
+  <text>
+    <body>
+      <termEntry id="progressive-lens">
+        <descrip type="subjectField">optics</descrip>
+        <langSet xml:lang="en">
+          <descrip type="definition">A lens made by &acme;.</descrip>
+          <tig>
+            <term>progressive lens</term>
+            <termNote type="partOfSpeech">noun</termNote>
+          </tig>
+        </langSet>
+      </termEntry>
+      <termEntry id="acme-lens">
+        <langSet xml:lang="en">
+          <descrip type="definition">A lens &amp; frame, model &#x41;.</descrip>
+          <tig>
+            <term>&acme; lens</term>
+          </tig>
+        </langSet>
+      </termEntry>
+    </body>
+  </text>
+</martif>

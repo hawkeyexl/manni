@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="https://raw.githubusercontent.com/LTAC-Global/TBX-Basic_dialect/master/DCA/TBXcoreStructV03_TBX-Basic_integrated.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<tbx type="TBX-Basic" style="dca" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2">
+  <tbxHeader>
+    <fileDesc>
+      <sourceDesc>
+        <p>A hand-written TBX-Basic v3 sample.</p>
+      </sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="progressive-lens">
+        <descrip type="subjectField">optics</descrip>
+        <langSec xml:lang="en">
+          <descrip type="definition">A lens whose power changes <sc id="b1" type="bold"/>gradually<ec startRef="b1"/>.</descrip>
+          <termSec>
+            <term>progressive lens</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+            <termNote type="partOfSpeech">noun</termNote>
+          </termSec>
+          <termSec>
+            <term>PAL</term>
+            <termNote type="administrativeStatus">admittedTerm-admn-sts</termNote>
+            <termNote type="termType">acronym</termNote>
+          </termSec>
+        </langSec>
+        <langSec xml:lang="de">
+          <termSec>
+            <term>Gleitsichtglas</term>
+            <termNote type="administrativeStatus">preferredTerm-admn-sts</termNote>
+            <termNote type="grammaticalGender">neuter</termNote>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+      <conceptEntry id="bifocal">
+        <langSec xml:lang="en">
+          <termSec>
+            <term>bifocal</term>
+          </termSec>
+          <termSec>
+            <term>dual-focus lens</term>
+            <termNote type="administrativeStatus">deprecatedTerm-admn-sts</termNote>
+          </termSec>
+        </langSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

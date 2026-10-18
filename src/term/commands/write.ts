@@ -16,19 +16,22 @@ import { lstat, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises
 import { dirname, extname, join, resolve } from "node:path";
 import { extractorForExtension } from "../../meta/internal.js";
 import { errorMessage } from "../../shared/errors.js";
-import { MANIFEST_FORMAT, extractInput } from "../core/load-set.js";
+import { MANIFEST_FORMAT, extractInput, tbxInput } from "../core/load-set.js";
 import { TERM_READERS, readerForConstruct } from "../core/readers/index.js";
 import { valeLsConfig, type ValeResolvedConfig } from "../core/vale.js";
 import { TERM_WRITERS } from "../core/writers/index.js";
+import { tbxHeaderFiles } from "../core/writers/tbx.js";
 import { TermError } from "../errors.js";
 import {
   TERM_WRITE_FORMATS,
   type DroppedField,
+  type MergeConflict,
   type RenderedFile,
   type Term,
   type TermConstruct,
   type TermInput,
   type TermReader,
+  type TermRender,
   type TermShape,
   type TermTarget,
   type TermWriteFormat,
@@ -89,6 +92,12 @@ export interface WriteReport {
   droppedFrom?: string;
   /** Ids of the terms left out because the target construct cannot read them back, in set order. */
   skipped: string[];
+  /** The terms left out because the target construct holds one language, and the language it holds. */
+  otherLanguages?: TermRender["otherLanguages"];
+  /** The fields where terms sharing an id disagree, and the render kept the first term's value. */
+  conflicts?: MergeConflict[];
+  /** The TBX files whose header the render left behind, as their terms name them. */
+  droppedHeaders?: string[];
   check: boolean;
   dryRun: boolean;
   wiring?: ValeWiring;
@@ -262,6 +271,10 @@ export async function runWrite(opts: WriteOptions): Promise<WriteReport> {
     dropped: format === "vale" ? [] : render.dropped,
     droppedFrom: droppedFrom(format, shape, readers),
     skipped: render.skipped,
+    ...(render.otherLanguages === undefined ? {} : { otherLanguages: render.otherLanguages }),
+    ...(render.conflicts === undefined ? {} : { conflicts: render.conflicts }),
+    // A Vale style is not a termbase, so a header it does not hold is not news either.
+    ...(format === "vale" ? {} : { droppedHeaders: render.droppedHeaders ?? tbxHeaderFiles(set.terms) }),
     check,
     dryRun,
     ...(wiring === undefined ? {} : { wiring }),
@@ -273,6 +286,7 @@ function inputFor(content: string, path: string, construct: TermConstruct, file:
   if (construct === "manifest") {
     return { content, file, path, format: MANIFEST_FORMAT, metadata: {}, lineFor: () => undefined };
   }
+  if (construct === "tbx-entry") return tbxInput(content, file, path);
   const extractor = extractorForExtension(extname(path));
   if (extractor === undefined) throw new TermError(`${file}: no reader for its extension.`);
   return extractInput(content, file, path, extractor.name);
@@ -293,13 +307,17 @@ function carryRecords(current: readonly Term[], edited: readonly Term[]): Term[]
   });
 }
 
-/** One file's content with each construct's entries written back through its reader, in order. */
+/**
+ * One file's content with each construct's entries written back through its
+ * reader, in order. A field the terms of one entry disagree on goes onto `conflicts`.
+ */
 export function applyInPlace(
   original: string,
   path: string,
   file: string,
   constructs: ReadonlyMap<TermConstruct, readonly Term[]>,
   readers: readonly TermReader[],
+  conflicts?: MergeConflict[],
 ): string {
   let content = original;
   let first = true;
@@ -310,7 +328,7 @@ export function applyInPlace(
     // The loaded terms carry offsets into the file as it was read. Once an
     // earlier construct has rewritten it, this one's entries are read again for
     // offsets that are the content's own, and the caller's records carried over.
-    content = reader.apply(input, first ? terms : carryRecords(reader.read(input).terms, terms));
+    content = reader.apply(input, first ? terms : carryRecords(reader.read(input).terms, terms), conflicts);
     first = false;
   }
   return content;
@@ -345,6 +363,7 @@ async function writeInPlace(
 
   const files: RenderedFile[] = [];
   const existing = new Map<string, string>();
+  const conflicts: MergeConflict[] = [];
   for (const [path, { file, constructs }] of byPath) {
     let original: string;
     try {
@@ -353,7 +372,7 @@ async function writeInPlace(
       throw new TermError(`${file}: could not be read: ${errorMessage(error)}`);
     }
     existing.set(path, original);
-    files.push({ path, content: applyInPlace(original, path, file, constructs, readers) });
+    files.push({ path, content: applyInPlace(original, path, file, constructs, readers, conflicts) });
   }
 
   const changes = await applyChanges(files, [], existing, cwd, !check && !dryRun);
@@ -364,6 +383,7 @@ async function writeInPlace(
     files: files.map((f) => ({ path: displayPath(f.path, cwd), content: f.content })),
     dropped: [],
     skipped: [],
+    ...(conflicts.length === 0 ? {} : { conflicts }),
     check,
     dryRun,
   };

@@ -1,0 +1,76 @@
+manni term and TBX, demo video transcript (silent video; text describes what is on screen)
+
+Frame: 1080x1080, 30 fps, 43.7 s. Every terminal line is real output of grep, cmp, echo and of
+`node dist/cli.js term ...` (typed as manni) run inside media/scratch-tbx/,
+a git repository holding test/fixtures/term/readers/tbx/tbx-basic-v3.tbx as glossary.tbx,
+built by media/capture-tbx/capture.sh.
+
+[0:00-0:07] Title: A translator's termbase (1 / 5)
+$ grep -E '<(conceptEntry|langSec|term)[ >]' glossary.tbx
+      <conceptEntry id="progressive-lens">
+        <langSec xml:lang="en">
+            <term>progressive lens</term>
+            <term>PAL</term>
+        <langSec xml:lang="de">
+            <term>Gleitsichtglas</term>
+      <conceptEntry id="bifocal">
+        <langSec xml:lang="en">
+            <term>bifocal</term>
+            <term>dual-focus lens</term>
+Highlighted rows: lines containing "xml:lang=\"de\"", "Gleitsichtglas"
+Caption: glossary.tbx came from the translators: TBX concept entries, with English and German terms.
+
+[0:07-0:13] Title: One term per language (2 / 5)
+$ manni term list glossary.tbx
+progressive-lens   en   progressive lens   PAL
+progressive-lens   de   Gleitsichtglas
+bifocal            en   bifocal
+3 terms
+Highlighted rows: lines containing "   de   "
+Caption: manni term reads TBX v2 and v3. Each language is its own term, joined on the concept id.
+
+[0:13-0:21] Title: Every field kept (3 / 5)
+$ manni term get PAL glossary.tbx
+progressive lens                        glossary.tbx:15   (bold, location dimmed)
+  id               progressive-lens
+  language         en
+  alt-labels       PAL
+  definition       A lens whose power changes gradually.
+  concept-entry    subject-field: optics
+  designations     progressive lens: part-of-speech noun
+                   PAL: term-type acronym
+  tbx-markup       A lens whose power changes <sc id="b1"
+                   type="bold"/>gradually<ec startRef="b1"/>.
+  other languages  de (Gleitsichtglas)
+Highlighted rows: lines containing "part-of-speech", "term-type", "tbx-markup", "startRef=\"b1\"", "other languages"
+Caption: get finds the entry by its alt label: part of speech, term type, inline markup, the German term.
+
+[0:21-0:34] Title: Write TBX v3 (4 / 5)
+$ manni term write glossary.tbx -f tbx3 -o build/glossary.tbx
+Wrote 3 terms to build/glossary.tbx
+$ manni term list build/glossary.tbx
+progressive-lens   en   progressive lens   PAL
+progressive-lens   de   Gleitsichtglas
+bifocal            en   bifocal
+3 terms
+$ cmp glossary.tbx build/glossary.tbx && echo same bytes
+same bytes
+Highlighted rows: lines containing "Wrote 3 terms", "same bytes"
+Caption: -f tbx3 writes TBX v3. Read back, it lists the same records, in a byte-identical file.
+
+[0:34-0:44] Title: No churn in place (5 / 5)
+$ manni term write glossary.tbx
+Nothing to write
+$ manni term check glossary.tbx; echo $?
+glossary.tbx:15   (bold)
+  notice manni:term/unused-term          no page's concepts: names this term   ("notice" in cyan)
+glossary.tbx:28   (bold)
+  notice manni:term/unused-term          no page's concepts: names this term   ("notice" in cyan)
+glossary.tbx:37   (bold)
+  notice manni:term/unused-term          no page's concepts: names this term   ("notice" in cyan)
+
+3 notices in 3 terms
+0
+Highlighted rows: lines containing "Nothing to write", "3 notices"
+Caption: Written back in place, nothing changes. check passes, exit 0: notices never fail it.
+

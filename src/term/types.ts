@@ -17,7 +17,11 @@ import type { ToolsConfig } from "../shared/tools.js";
 // ---------------------------------------------------------------------------
 // The record
 
-/** The ten fields of `manni:terminology:1.0.0`, in the order the reference lists them. */
+/**
+ * The root fields of `manni:terminology:1.1.0`: the ten 1.0.0 fields in the
+ * order the reference lists them, then the TBX data categories (proposal
+ * 0084), then the three blocks.
+ */
 export const TERM_FIELDS = [
   "label",
   "definition",
@@ -29,10 +33,24 @@ export const TERM_FIELDS = [
   "related-terms",
   "see",
   "scope-note",
+  "subject-field",
+  "contexts",
+  "notes",
+  "sources",
+  "customer-subsets",
+  "project-subsets",
+  "cross-references",
+  "external-cross-references",
+  "graphics",
+  "transactions",
+  "tbx-elements",
+  "concept-entry",
+  "designations",
+  "tbx-markup",
 ] as const;
 export type TermField = (typeof TERM_FIELDS)[number];
 
-/** The fields that hold a list. The vocabulary accepts a string or a list; a reader always yields a list. */
+/** The fields that hold a list of labels. The vocabulary accepts a string or a list; a reader always yields a list. */
 export const TERM_LIST_FIELDS = [
   "alt-labels",
   "hidden-labels",
@@ -41,6 +59,90 @@ export const TERM_LIST_FIELDS = [
   "related-terms",
 ] as const satisfies readonly TermField[];
 export type TermListField = (typeof TERM_LIST_FIELDS)[number];
+
+/**
+ * The aux fields: valid at the root (language level), in `concept-entry`
+ * (concept level) and in a `designations` item (term level). The level of a
+ * value is where it sits.
+ */
+export const TERM_AUX_FIELDS = [
+  "definition",
+  "subject-field",
+  "contexts",
+  "notes",
+  "sources",
+  "customer-subsets",
+  "project-subsets",
+  "cross-references",
+  "external-cross-references",
+  "graphics",
+  "transactions",
+  "tbx-elements",
+] as const satisfies readonly TermField[];
+export type TermAuxField = (typeof TERM_AUX_FIELDS)[number];
+
+/** The term-level keys, valid only in a `designations` item, beside its `term`. Each holds one string. */
+export const TERM_DESIGNATION_FIELDS = [
+  "administrative-status",
+  "part-of-speech",
+  "grammatical-gender",
+  "grammatical-number",
+  "term-type",
+  "term-location",
+  "geographical-usage",
+  "register",
+  "reading",
+  "reading-note",
+] as const;
+export type TermDesignationField = (typeof TERM_DESIGNATION_FIELDS)[number];
+
+/** A `cross-references`, `external-cross-references` or `graphics` item. A bare string reads as its target. */
+export interface TermLink {
+  target: string;
+  text?: string;
+}
+
+/** A `transactions` item. `date` is kept as written. */
+export interface TermTransaction {
+  type: string;
+  date?: string;
+  responsibility?: string;
+}
+
+/** The aux fields, as every level holds them. A list field is a non-empty list, or absent. */
+export interface TermAuxRecord {
+  definition?: string;
+  "subject-field"?: string;
+  contexts?: string[];
+  notes?: string[];
+  sources?: string[];
+  "customer-subsets"?: string[];
+  "project-subsets"?: string[];
+  "cross-references"?: TermLink[];
+  "external-cross-references"?: TermLink[];
+  graphics?: TermLink[];
+  transactions?: TermTransaction[];
+  /** Elements no named field maps, as XML strings in source order. */
+  "tbx-elements"?: string[];
+}
+
+/** A `designations` item: one of the term's labels, with what is said about that designation alone. */
+export interface TermDesignation extends TermAuxRecord {
+  /** The label, alt-label or hidden-label the item describes. */
+  term: string;
+  "administrative-status"?: string;
+  "part-of-speech"?: string;
+  "grammatical-gender"?: string;
+  "grammatical-number"?: string;
+  "term-type"?: string;
+  "term-location"?: string;
+  "geographical-usage"?: string;
+  register?: string;
+  reading?: string;
+  "reading-note"?: string;
+  /** Notes for the translator. A list, and term level only: TBX-Linguist makes it a termNote. */
+  "transfer-comments"?: string[];
+}
 
 /**
  * One term's fields, as the vocabulary names them.
@@ -52,9 +154,8 @@ export type TermListField = (typeof TERM_LIST_FIELDS)[number];
  * vocabulary but absent here when a construct cannot hold one: an HTML `<dfn>`
  * names a term without defining it.
  */
-export interface TermRecord {
+export interface TermRecord extends TermAuxRecord {
   label: string;
-  definition?: string;
   abstract?: string;
   "alt-labels"?: string[];
   "hidden-labels"?: string[];
@@ -63,6 +164,12 @@ export interface TermRecord {
   "related-terms"?: string[];
   see?: string;
   "scope-note"?: string;
+  /** Concept level: what every language's term of this id says. */
+  "concept-entry"?: TermAuxRecord;
+  /** Per-designation detail, in source order. */
+  designations?: TermDesignation[];
+  /** The marked-up form of any value whose text it matches, as inline XML. */
+  "tbx-markup"?: string[];
 }
 
 /** Every construct a term is read from. Each has exactly one reader. */
@@ -80,6 +187,8 @@ export const TERM_CONSTRUCTS = [
   "markdown-deflist",
   "asciidoc-glossary",
   "rst-glossary",
+  /** One `termEntry` (TBX v2) or `conceptEntry` (TBX v3): a term per language it holds. */
+  "tbx-entry",
 ] as const;
 export type TermConstruct = (typeof TERM_CONSTRUCTS)[number];
 
@@ -113,7 +222,7 @@ export interface Term {
    */
   id: string;
   record: TermRecord;
-  /** `language` from the file's metadata, when it carries one. */
+  /** `language` from the file's metadata, or from a manifest entry, when it carries one. */
   language?: string;
   location: TermLocation;
 }
@@ -128,7 +237,7 @@ export interface TermInput {
   file: string;
   /** As `TermLocation.path`. */
   path?: string;
-  /** The extractor that read the file (`markdown`, `mdx`, `asciidoc`, `rst`, `html`, `xml`), or `manifest`. */
+  /** The extractor that read the file (`markdown`, `mdx`, `asciidoc`, `rst`, `html`, `xml`), or `manifest` or `tbx`. */
   format: string;
   /** The file's extracted metadata. `{}` for a manifest, which has none. */
   metadata: Record<string, unknown>;
@@ -166,9 +275,11 @@ export interface TermReader {
   /**
    * Rewrite this construct's entries in `input.content` from `terms`, which are
    * the terms this reader read from the same file, possibly edited. Returns the
-   * new content. Absent for a construct that is not written in place.
+   * new content. Absent for a construct that is not written in place. A
+   * construct that writes a value once for terms that each carry it pushes
+   * onto `conflicts` every field the terms disagree on, keeping the first's.
    */
-  apply?(this: void, input: TermInput, terms: readonly Term[]): string;
+  apply?(this: void, input: TermInput, terms: readonly Term[], conflicts?: MergeConflict[]): string;
 }
 
 // ---------------------------------------------------------------------------
@@ -184,6 +295,7 @@ export const TERM_WRITE_FORMATS = [
   "dita",
   "docbook",
   "tbx",
+  "tbx3",
   "skos",
   "csv",
   "json",
@@ -220,6 +332,19 @@ export interface DroppedField {
   field: TermField;
 }
 
+/** A field the terms sharing an id disagree on, where a render that joins them on id kept the first term's value. */
+export interface MergeConflict {
+  id: string;
+  /** The record key, dotted below the root: `broader`, `concept-entry.subject-field`. */
+  field: string;
+}
+
+/** A term a construct holding one language left out, with its own language. */
+export interface OtherLanguageTerm {
+  id: string;
+  language: string;
+}
+
 export interface TermRender {
   files: RenderedFile[];
   /** Absolute paths the render owns and no longer produces. */
@@ -232,6 +357,20 @@ export interface TermRender {
    * definition. `[]` when every term was written.
    */
   skipped: string[];
+  /**
+   * Set when the target construct holds one language and the set holds more:
+   * the language written, the first term's, and the terms left out, in set
+   * order.
+   */
+  otherLanguages?: { written: string; terms: OtherLanguageTerm[] };
+  /** Set when a render joins terms on id and they disagree on a field the joined entry holds once. */
+  conflicts?: MergeConflict[];
+  /**
+   * The TBX files, as their terms name them, whose header the render did not
+   * carry. Set by a TBX render; for any other, every TBX file a term came
+   * from.
+   */
+  droppedHeaders?: string[];
 }
 
 /**
