@@ -385,9 +385,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-2c48681bb8650ec1edfb744182fbf26f69401e983b63a5e30949e1a8c7d0990d
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1132-1133
+        lines: 1147-1148
         integrity: sha256-f2998615a95c6555bad686de3c79775a92f9152fd789b7cde5171034efa1389a
-        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
+        commit-sha: 942b3afa182cd1d62ab41682675de48ec825c9b8
     - id: vendor-records-a-sha256-digest
       claim:
         integrity: sha256-a34b902aebd6b2e24ffbb1fdbb4d80cc2534e41d205ee736ab528088e829ceef
@@ -1313,9 +1313,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-6cb348ba5c4bc940657dadfa19ce5a7377da187a269a7b1de0f172fa19318523
       source:
         file: src/shared/pin.ts
-        lines: 249-251
+        lines: 264-266
         integrity: sha256-aa3738f0cf8767b0332b75a3ebcbd3438c3b02cb1ebc20c808b700139410a2db
-        commit-sha: f8b910c35c13ed40992cfd02cf545a2cdb1c9aa5
+        commit-sha: 942b3afa182cd1d62ab41682675de48ec825c9b8
     - id: derive-writes-by-default
       claim:
         lines: 1023-1024
@@ -1518,9 +1518,9 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-e27318d4c42686c307049654e9fde223f50b4f0f1a147c8b93e5289f667dbbd3
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1035-1037
+        lines: 1050-1052
         integrity: sha256-4b357a3881ddd2e2522fb9ba95b53cbb2b9a91d75a3453973dd560308068c91b
-        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
+        commit-sha: 942b3afa182cd1d62ab41682675de48ec825c9b8
     - id: fill-quiet-hides-nothing-to-show
       claim:
         lines: 797
@@ -2260,18 +2260,18 @@ docs/src/content/docs/meta/reference/cli.mdx:
         integrity: sha256-84d45b3349a8f006fd17781e163d474863e2ffd4b42b214719604ecd8ad57f01
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1035-1037
+        lines: 1050-1052
         integrity: sha256-4b357a3881ddd2e2522fb9ba95b53cbb2b9a91d75a3453973dd560308068c91b
-        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
+        commit-sha: 942b3afa182cd1d62ab41682675de48ec825c9b8
     - id: validate-offline-leaves-builtins-alone
       claim:
         lines: 87
         integrity: sha256-84d45b3349a8f006fd17781e163d474863e2ffd4b42b214719604ecd8ad57f01
       source:
         file: src/meta/core/schema-registry.ts
-        lines: 1187-1191
+        lines: 1202-1206
         integrity: sha256-77e8b12c5da1312376afb51b7c5dbf33a0c666f0d7c61083c88f9e29490bc17a
-        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
+        commit-sha: 942b3afa182cd1d62ab41682675de48ec825c9b8
     - id: validate-baseline-default-path
       claim:
         lines: 88

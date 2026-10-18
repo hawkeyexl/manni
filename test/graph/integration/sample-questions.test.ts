@@ -48,6 +48,8 @@ const RANKED =
   'warning: https://example.com/graph/doc/docs/limits.md graph:sampleQuestion — "How do I retry a failed upload?" does not find this page in the top 1 (it ranks 2; first is docs/retry.md) [docs/limits.md]';
 const LOST =
   'warning: https://example.com/graph/doc/docs/ledger.md graph:sampleQuestion — "Retry uploads?" does not find this page in the top 1 (it is not found; first is docs/retry.md) [docs/ledger.md]';
+const HIDDEN =
+  'warning: https://example.com/graph/doc/docs/hidden.md graph:sampleQuestion — "Retry uploads?" does not find this page in the top 1 (it is not found; first is docs/retry.md) [docs/hidden.md]';
 
 describe("sample questions", () => {
   let cwd: string;
@@ -73,11 +75,13 @@ describe("sample questions", () => {
     const lines = r.stdout.split("\n");
     expect(lines).toContain(RANKED);
     expect(lines).toContain(LOST);
-    // Found for its own question, in its own language, or never asked.
+    // Found for its own question, in its own language.
     expect(r.stdout).not.toContain("docs/retry.md graph:sampleQuestion");
     expect(r.stdout).not.toContain("proxy.md graph:sampleQuestion");
-    expect(r.stdout).not.toContain("hidden.md");
-    expect(r.stdout).toContain("0 errors, 2 warnings, 0 notices");
+    // hidden.md's question stays out of the graph and is still asked, because
+    // check reads questions from the page sources (proposal 0086).
+    expect(lines).toContain(HIDDEN);
+    expect(r.stdout).toContain("0 errors, 3 warnings, 0 notices");
   });
 
   it("keeps the finding shape in JSON, with no SHACL severity", () => {
@@ -89,6 +93,14 @@ describe("sample questions", () => {
       (f) => f.path === "https://hawkeyexl.github.io/manni/graph/ns#sampleQuestion",
     );
     expect(ours).toEqual([
+      {
+        severity: "warning",
+        message:
+          '"Retry uploads?" does not find this page in the top 1 (it is not found; first is docs/retry.md)',
+        focusNode: "https://example.com/graph/doc/docs/hidden.md",
+        path: "https://hawkeyexl.github.io/manni/graph/ns#sampleQuestion",
+        docs: ["docs/hidden.md"],
+      },
       {
         severity: "warning",
         message:

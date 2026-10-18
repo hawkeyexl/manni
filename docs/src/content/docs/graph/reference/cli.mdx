@@ -209,6 +209,50 @@ rank. The check measures whether a reader finds the page, not whether the page
 answers. [Configuration](/manni/graph/reference/configuration/#check) sets the
 cutoff and the severity.
 
+The questions are read from each page's source, so a question kept out of the
+published graph is still asked. A page in the graph that is no longer on disk
+is skipped, and one warning names how many and says to rebuild.
+
+A question can pin the body lines that answer it, as
+[`manni:ai-context:1.1.0`](/manni/meta/reference/schemas/manni-ai-context/)
+describes. A pinned question must find the part of the page that holds those
+lines. That is a section whose own text covers them, from its heading to the
+next heading of any rank. Text before the first heading belongs to the page
+itself. A hit on another section of the same page does not count.
+
+```console
+$ manni graph check
+warning: https://example.com/graph/doc/docs/retry.md graph:sampleQuestion — "How many times does an upload retry by default?" does not find the section that answers it, § Retry limits, in the top 1 (it ranks 2; first is docs/retry.md § Retry a failed upload) [docs/retry.md]
+```
+
+A pin with an `integrity` is compared with the page as it reads now, under the
+hashing rule citations use. A pin with none is checked where it points.
+
+| Finding | Severity | What it means |
+|---|---|---|
+| The answer moved | `notice` | The pinned lines sit elsewhere now, and are asked there. Update the pin's `lines`. |
+| The answer moved to two places | `warning` | More than one place matches, and either counts as found. Pin one of them by hand. |
+| The answer changed | `check.questions.severity` | No lines match the pin, so the question counts as not found. Re-pin it and review it. |
+
+```console
+$ manni graph check
+notice: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — the answer to "How large may an upload be?" moved from lines 4-5 to 7-8, so update its lines. [docs/upload.md]
+```
+
+After a rewrite that drops the answer, the same pin reads:
+
+```console
+warning: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — lines 4-5 no longer hold the answer to "How large may an upload be?" as pinned, so re-pin it and review it. [docs/upload.md]
+```
+
+A question marked `reviewed: false` is a draft. Its findings report at
+`notice`, whatever `check.questions.severity` says, and end
+`(drafted, not reviewed)`. A pin marked `reviewed: false` reports the same way
+and ends `(answer not reviewed)`. While every pin on a confirmed question is a
+draft, the question must also find its page at full severity. `off` silences
+every finding at `check.questions.severity`, drafts included. A moved answer
+is still reported.
+
 ### Options
 
 | Option | Argument | Default | Description |

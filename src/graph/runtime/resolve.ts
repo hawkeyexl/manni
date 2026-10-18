@@ -390,6 +390,21 @@ export function sectionOwnText(
   return slice(markdown, title, level, occurrence, true);
 }
 
+/**
+ * The file lines `sectionOwnText` slices, 1-based and inclusive: the heading
+ * down to the line before the next heading of any rank. `graph check` maps a
+ * sample question's pinned answer onto the section that owns it with this.
+ */
+export function sectionOwnLines(
+  markdown: string,
+  title: string,
+  level?: number,
+  occurrence = 0,
+): { start: number; end: number } | undefined {
+  const span = locate(markdown.split(/\r?\n/), title, level, occurrence, true);
+  return span === undefined ? undefined : { start: span.start + 1, end: span.end };
+}
+
 function slice(
   markdown: string,
   title: string,
@@ -398,6 +413,19 @@ function slice(
   ownTextOnly: boolean,
 ): string | undefined {
   const lines = markdown.split(/\r?\n/);
+  const span = locate(lines, title, level, occurrence, ownTextOnly);
+  if (span === undefined) return undefined;
+  return lines.slice(span.start, span.end).join("\n").trimEnd();
+}
+
+/** The 0-based, end-exclusive line span of a section's slice. */
+function locate(
+  lines: string[],
+  title: string,
+  level: number | undefined,
+  occurrence: number,
+  ownTextOnly: boolean,
+): { start: number; end: number } | undefined {
   const headings = sourceHeadings(lines);
   const wanted = headingKey(title);
   let remaining = occurrence;
@@ -419,8 +447,7 @@ function slice(
   const next = headings
     .slice(found + 1)
     .find((h) => ownTextOnly || h.level <= match.level);
-  const end = next?.start ?? lines.length;
-  return lines.slice(match.start, end).join("\n").trimEnd();
+  return { start: match.start, end: next?.start ?? lines.length };
 }
 
 /**
