@@ -492,6 +492,7 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
         );
         continue;
       }
+      // Z39.19 siblings share an immediate broader term, not just an ancestor.
       const parent = [...(up[index] ?? [])].find((p) => up[other]?.has(p) ?? false);
       const pair = `${String(Math.min(index, other))}~${String(Math.max(index, other))}`;
       if (parent === undefined || siblingPairs.has(pair)) continue;
@@ -548,7 +549,7 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
   for (const [key, uses] of byKeyword) {
     if (byLabel.has(key) || byId.has(key) || byAlt.has(key)) continue;
     const pages = new Set(uses.map((use) => use.file)).size;
-    const first = uses.sort((a, b) => compareText(a.file, b.file) || (a.line ?? 0) - (b.line ?? 0))[0];
+    const first = [...uses].sort((a, b) => compareText(a.file, b.file) || (a.line ?? 0) - (b.line ?? 0))[0];
     if (pages < minPages || first === undefined) continue;
     drafts.push({
       rule: "keyword-candidate",
