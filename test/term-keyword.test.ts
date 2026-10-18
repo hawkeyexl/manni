@@ -24,6 +24,8 @@ const fixtures = join(here, "fixtures", "term-keyword");
 const AUDIENCE = join(fixtures, "audience.schema.json");
 const NESTED = join(fixtures, "nested.schema.json");
 const BAD_ARGUMENT = join(fixtures, "bad-argument.schema.json");
+const AUDIENCE_AGAIN = join(fixtures, "audience-again.schema.json");
+const EMPTY_UNDER = join(fixtures, "empty-under.schema.json");
 const noKey: NodeJS.ProcessEnv = {};
 
 const TERMS: TermLabel[] = [
@@ -55,6 +57,22 @@ describe("x-manni-term: the keyword", () => {
       { pointer: "/role", value: "Writer", under: "role" },
     ]);
     expect(hits.every((h) => h.schema === NESTED)).toBe(true);
+  });
+
+  it("records one hit when two schemas mark a field the same way", async () => {
+    const data = { audiences: ["devops"] };
+    const hits = await new Validator().termMarks(data, [AUDIENCE, AUDIENCE_AGAIN]);
+    expect(hits.map(({ pointer, under, schema }) => ({ pointer, under, schema }))).toEqual([
+      { pointer: "/audiences", under: "Audience", schema: AUDIENCE },
+    ]);
+  });
+
+  it("refuses an empty under when the schema compiles", async () => {
+    const err = await new Validator().termMarks({}, [EMPTY_UNDER]).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(DocmetaError);
+    expect((err as Error).message).toBe(
+      `${EMPTY_UNDER}: "x-manni-term" must be an object with an optional "under" string.`,
+    );
   });
 
   it("records nothing for a field the data does not hold", async () => {
@@ -328,6 +346,22 @@ describe("fill: x-manni-term offers", () => {
     const run = await runFill(opts(provider, ["audiences"]));
     expect(enumsSent(provider, 0)).toEqual([]);
     expect(run.results[0]?.fields[0]).toMatchObject({ written: true, value: ["devops"] });
+  });
+});
+
+describe("fill: an under that names no term", () => {
+  it("refuses the run, as validate does", async () => {
+    registerTermLabelSource(termLabels);
+    const err = await runFill({
+      cwd: fixtures,
+      inputs: ["docs/untagged.md"],
+      cliSchemas: ["bad-under.schema.json"],
+      fields: ["audiences"],
+      dryRun: true,
+      cache: false as const,
+      inferenceProvider: script({ audiences: { value: ["Writer"], confidence: 0.9 } }),
+    }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(DocmetaError);
   });
 });
 

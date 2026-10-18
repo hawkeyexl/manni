@@ -37,7 +37,7 @@ export const TERM_FINDING_KEYWORD = "term";
 /** The meta-schema Ajv checks the argument against when a schema compiles. */
 export const TERM_MARK_META_SCHEMA = {
   type: "object",
-  properties: { under: { type: "string" } },
+  properties: { under: { type: "string", minLength: 1 } },
   additionalProperties: false,
 } as const;
 
@@ -69,7 +69,12 @@ export interface TermScheme {
 const fold = (value: string): string => value.toLowerCase();
 
 export function termScheme(terms: readonly TermLabel[]): TermScheme {
-  // A term in several languages is several entries sharing one id.
+  // A term in several languages is several entries sharing one id. Ids and
+  // labels share one map, and the last entry written for a name wins: entries
+  // sharing an id resolve to one key, so the hierarchy is the same whichever
+  // wins. A label equal to another term's id is ambiguous: here it resolves to
+  // whichever came last. `labels()` lists one label per entry, so a term in two
+  // languages offers both of its labels.
   const byName = new Map<string, TermLabel>();
   for (const term of terms) {
     byName.set(fold(term.id), term);

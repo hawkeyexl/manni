@@ -397,7 +397,12 @@ function inSchemeMappingFindings(store: Store): CheckFinding[] {
     const path = `${NS.skos}${mapping}`;
     for (const q of store.getQuads(null, DataFactory.namedNode(path), null, null)) {
       if (q.object.termType !== "NamedNode") continue;
-      if (store.getQuads(q.object, inScheme, null, null).length === 0) continue;
+      // Into *this* scheme: the target shares a scheme with the concept that
+      // maps to it. A concept of an outside scheme carried in the graph keeps
+      // its own `skos:inScheme`, and mapping to it is the point of a match.
+      const schemes = new Set(store.getObjects(q.subject, inScheme, null).map((o) => o.value));
+      const shared = store.getObjects(q.object, inScheme, null).some((o) => schemes.has(o.value));
+      if (!shared) continue;
       findings.push(
         finding("violation", {
           message: `skos:${mapping} points into this scheme (${compactIri(q.object.value)}), so use broader, narrower or related instead.`,
