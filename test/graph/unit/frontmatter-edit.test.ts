@@ -46,6 +46,13 @@ describe("applyGraphFields", () => {
     expect(result.content).toContain("concepts: [ reference ]");
   });
 
+  it("keeps the padded default on a page with no flow collection of its own", () => {
+    const content = `---\ntitle: T\ntags:\n  - x\n---${BODY}`;
+    const result = applyGraphFields(content, "a.md", { concepts: ["reference"] });
+    expect(result.content).toContain("tags:\n  - x");
+    expect(result.content).toContain("concepts: [ reference ]");
+  });
+
   it("creates a frontmatter block when the file has none", () => {
     const content = "# No frontmatter\n";
     const result = applyGraphFields(content, "a.md", { label: "Topic" });
