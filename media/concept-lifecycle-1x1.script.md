@@ -1,4 +1,4 @@
-# Video script: one concept scheme, from freeform tags to checked questions (0086, 0087)
+# The demo script for one concept scheme, from freeform tags to checked questions (0086, 0087)
 
 **Objective:** Show the loop proposals 0086 and 0087 close. Pages name concepts
 freely, and `term check` fails on the ones nobody defined. `term fill --offline`
@@ -52,15 +52,15 @@ bash's `time` or `node dist/cli.js`. The typed command reads `manni`.
   removed when the script exits.
 - **Two models, on purpose, disclosed here.** Beat 2 runs `term fill --offline`
   with `INFERENCE_MODELS_DIR` pointing at an empty directory, so it shows the
-  stub path. In a trial run on this machine the same command found a
-  local model, took 14.4 s, and still wrote stubs, because the model's confidence (0.00 and
-  0.10) is under 0.7. The env var is not typed on screen. The caption states
+  stub path. In a trial run on this machine, the same command found a local
+  model and took 14.4 s. It still wrote stubs, because the model's confidence,
+  0.00 and 0.10, is under 0.7. The env var is not typed on screen. The caption states
   the rule ("With no local model, term fill writes a stub per concept"), not a
   claim about this machine. Beat 4's `graph fill --offline` uses the docset's
   configured local model, `granite-4.1-3b-q2`, already downloaded here.
 - **Beat 4's wait is shortened, and disclosed.** `graph fill` took 7.33-8.30 s
-  on CPU. The replay shortens only the wait between Enter and output, by 1/3.5,
-  to 2.1 s. bash's own `time` line, `real 0m7.350s`, is in frame, unedited.
+  on CPU. The replay shortens only the wait between Enter and output, to
+  2.1 s. The frame shows the shell's own `time` line, `real 0m7.350s`, unedited.
   `TIMEFORMAT` is set to print only the wall clock, because `user` and `sys`
   read 0 on Windows, where they do not count the node child.
 - **Beat 5's edit is typed on screen.** `sed` changes "one gigabyte" to "two
@@ -82,9 +82,9 @@ every real line. The longest is `graph check`'s warning, 239 characters. It
 cannot fit one row at any legible size, so design.md's "column count exceeds
 the longest line" cannot be met. Every size from 30 px down wraps it at spaces
 only, never inside a token (longest token 35 characters). **23 px / 75
-columns** is the largest size at which both `undefined-term` rows, the point
-of beat 1, stay on one row each, and the typed `time manni graph fill ...`
-line (68 characters) fits. The tallest beat (5) is 15 rows, 480 px of the
+columns** is the largest size that keeps both `undefined-term` rows, the point
+of beat 1, on one row each. The typed `time manni graph fill ...` line
+(68 characters) fits too. The tallest beat (5) is 15 rows, 480 px of the
 838 px available.
 
 ## Beats (storyboard)
@@ -166,16 +166,17 @@ questions  2: 2 reviewed, 0 drafted, on 2 pages
 ## Timing rules applied
 
 - Typing 35 ms per character (spec: 35-70 ms). The cursor is a solid block.
-- Output appears after the command's measured latency, from the capture run
-  plus three timing runs (`media/capture-concepts/latency.txt`): `term check`
-  375-416 ms, `term fill --offline` 1864-1902 ms, `graph build` 708-722 ms,
-  `graph check` 604-637 ms. `grep` and `sed` get 2 frames. `graph fill`
+- Output appears after each command's measured latency. The figures come from
+  the capture run plus three timing runs (`media/capture-concepts/latency.txt`).
+  `term check` takes 375-416 ms, `term fill --offline` 1864-1902 ms,
+  `graph build` 708-722 ms and `graph check` 604-637 ms. `grep` and `sed` get 2
+  frames. `graph fill`
   (7.33-8.30 s) is the one shortened wait, above.
-- Each beat holds 3.4-4.8 s after its main output, so the 88-99 character
-  caption can be read on it, and the caption is on screen for the whole beat.
+- Each beat holds 3.4-4.8 s after its main output, so its 88-99 character
+  caption can be read. The caption stays on screen for the whole beat.
 - No narration, so no loudness pass. The AAC 48 kHz track is silence
-  (`anullsrc`), measured on the finished file: -70.0 LUFS integrated (the
-  meter's floor) and a true peak of -inf.
+  (`anullsrc`). Measured on the finished file, it reads -70.0 LUFS integrated,
+  the meter's floor, and a true peak of -inf.
 - Caption cues are one per beat, 5.6-12.1 s each, burned in over two lines of
   about 50 characters. That is longer per cue and per line than broadcast
   caption guidance (6-7 s, about 42 characters). It matches the band the
