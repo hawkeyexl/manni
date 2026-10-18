@@ -1,0 +1,189 @@
+---
+title: Hold a field's values to the termbase
+description: "Mark a property x-manni-term so each value must name a term, optionally below one branch of the hierarchy, and read what validate reports and what fill offers."
+sidebar:
+  label: Term values
+  order: 6
+type: how-to
+id: meta-schemas-term-values
+keywords:
+  - term values
+  - x-manni-term
+  - controlled vocabulary
+  - termbase
+language: en
+audiences:
+  - schema-authors
+intent: Hold a field's values to the termbase, or to one branch of it, and know what validate and fill do with them.
+lifecycle: published
+applies-to:
+  - domain:meta
+next-steps:
+  - meta-reference-cli
+  - meta-schemas-versioning
+concepts:
+  - schema
+  - x-manni-term
+sample-questions:
+  - How do I make a field's values come from the glossary?
+  - How do I limit a field to one branch of the term hierarchy?
+  - What does validate report for a value that names no term?
+graph:
+  label: Hold a field's values to the termbase
+  type: task
+last-updated: 2026-10-18
+tags:
+  - term-values
+  - schema-keywords
+  - validation
+  - terminology
+action: develop
+prerequisites:
+  - schema
+related-pages:
+  - meta-reference-cli
+  - meta-schemas-field-location
+---
+
+import { Aside, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Some fields name things your team has already defined. An `audiences` list
+names readers, and a `role` names a job. When the termbase defines those
+names, the field should hold them and nothing else.
+
+`x-manni-term` is the keyword for that. Each string value of a marked field
+must name a term in the termbase, by its label or its id, ignoring case.
+`under` narrows the values to one branch of the hierarchy.
+
+## Mark the property
+
+Put the keyword beside the property's type. The argument is an object.
+
+```json
+"audiences": {
+  "type": "array",
+  "items": { "type": "string" },
+  "x-manni-term": { "under": "Audience" }
+}
+```
+
+| Argument | Type | Required | Meaning |
+|---|---|---|---|
+| `x-manni-term` | object | | Each string value of the field must name a term, by label or id, ignoring case. A string field checks its value. An array field checks each string in it. |
+| `under` | string | no | The value must be a term below this one in the hierarchy, at any depth. The branch root itself is not a value. `under` takes a label or an id. |
+
+The hierarchy is each term's `broader` and `narrower`, read in both
+directions. A term that lists `broader: [Audience]` is below `Audience`, and
+so is one that `Audience` lists as `narrower`.
+
+The mark counts wherever the validator evaluates it. That includes a nested
+property such as `graph.concepts`, a `$ref` and an `allOf`. The built-in
+schemas carry no mark. `manni term check` already reports a `concepts:` value
+that names no term, and nothing is reported twice.
+
+A mark that is not an object with an optional `under` string stops the run
+with exit `2`:
+
+```text
+audience.schema.json: "x-manni-term" must be an object with an optional "under" string.
+```
+
+So does an `under` that names no term:
+
+```text
+audience.schema.json: x-manni-term under "Audiense" names no term.
+```
+
+## Follow a value
+
+Take a termbase with two branches. `Audience` holds `Developer` and
+`Operator`. `Developer` holds `Frontend developer`. `Operator` holds
+`Site reliability engineer`, whose alt-label is `SRE`. `Role` holds `Writer`.
+
+A page marks `audiences` with `under: "Audience"` and lists five values:
+
+```yaml
+audiences:
+  - Frontend developer
+  - Writer
+  - SRE
+  - devops
+  - Audience
+```
+
+`manni meta validate` reports four of them:
+
+```text
+✗ docs/team.md
+    /audiences/1  "Writer" is a term, but not under "Audience", which audience.schema.json requires.  (line 5)  [term:outside-branch]
+    /audiences/2  warning "SRE" is an alt-label of "Site reliability engineer", so use the label.  (line 6)  [term:alt-label]
+    /audiences/3  "devops" names no term; audience.schema.json marks this field x-manni-term.  (line 7)  [term:undefined]
+    /audiences/4  "Audience" is a term, but not under "Audience", which audience.schema.json requires.  (line 8)  [term:outside-branch]
+```
+
+`Frontend developer` passes, because it is two levels below `Audience`.
+`Writer` is a term, but it sits under `Role`. `Audience` is the branch root,
+which is never a value. `devops` names nothing. `SRE` names the right term by
+its alt-label.
+
+Mark the same field with `"x-manni-term": {}` and only two findings remain.
+`devops` is still an error, and `SRE` is still a warning.
+
+| Rule id | Severity | When |
+|---|---|---|
+| `term:undefined/term` | error | The value names no term by label, id or alt-label. |
+| `term:outside-branch/term` | error | The value names a term that is not below `under`. |
+| `term:alt-label/term` | warning | The value names a term by one of its alt-labels. |
+
+A finding's `subject` is the value, and its pointer is the value's own. So a
+baseline keeps each value apart, and an edit to one leaves the rest recorded.
+A value inside an encrypted field is not judged, so no finding shows its
+plaintext.
+
+## With no termbase, the check goes quiet
+
+`manni meta validate` reads the termbase that `manni term check` reads, from
+the same config. When there is none, it says so once and checks nothing:
+
+```text
+manni: x-manni-term marks 2 fields, and no termbase was found, so their values were not checked.
+```
+
+The exit code is unchanged. The `docmeta` bin reads no termbase, so it always
+says this when a marked field holds a value. A termbase that cannot be read
+names the reason instead, and the values go unchecked too.
+
+<Aside type="note">
+The termbase is read once per run, and only when some page holds a marked
+value.
+</Aside>
+
+## What fill offers
+
+`manni meta fill` offers a marked field the labels it accepts. With `under`,
+that is the label of every term below the branch root. Without it, that is
+every label. The model is held to the list, as it is for `concepts:`.
+
+A proposed value outside the list is asked for once more, naming the branch:
+
+```text
+/audiences/0: must be a glossary term label under "Audience"
+```
+
+A second miss skips the field as `schema-mismatch`. With no termbase, fill
+offers nothing and takes any string the schema allows.
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="CLI reference"
+    href="/manni/meta/reference/cli/"
+    description="Every validate finding and every fill option."
+  />
+  <LinkCard
+    title="Version the schema"
+    href="/manni/meta/schemas/versioning/"
+    description="Publish a schema change without breaking the pages that use it."
+  />
+</CardGrid>

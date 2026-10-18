@@ -90,9 +90,12 @@ import {
   fieldHints,
   offered,
   pageIdReader,
+  termMarkHints,
+  termMarksIn,
   termValueCheck,
   type TermIndex,
 } from "./fill-hints.js";
+import { termScheme } from "../core/term-keyword.js";
 import { PAGE_FIELDS, TERM_FIELDS, type FieldPath } from "../../shared/reference-fields.js";
 import { termLabelSource } from "../../shared/term-labels.js";
 import { writeFileAtomic } from "../core/write-file.js";
@@ -538,7 +541,10 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
   // walked once, and only when some file has a field that needs them.
   let termbase: Promise<TermIndex | undefined> | undefined;
   const readTermbase = async (): Promise<TermIndex | undefined> => {
-    if (opts.termLabels !== undefined) return { labels: [...opts.termLabels], ids: [] };
+    if (opts.termLabels !== undefined) {
+      const labels = [...opts.termLabels];
+      return { labels, ids: [], scheme: termScheme(labels.map((label) => ({ label, id: label }))) };
+    }
     const source = termLabelSource();
     if (source === undefined) return undefined;
     try {
@@ -547,7 +553,9 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
         ...(opts.configPath === undefined ? {} : { configPath: opts.configPath }),
         ...(opts.noConfig === true ? { noConfig: true } : {}),
       });
-      return { labels: terms.map((t) => t.label), ids: terms.map((t) => t.id) };
+      // No terms is no termbase, so an `x-manni-term` `under` is not refused for it.
+      if (terms.length === 0) return undefined;
+      return { labels: terms.map((t) => t.label), ids: terms.map((t) => t.id), scheme: termScheme(terms) };
     } catch (err) {
       // A termbase that cannot be read offers nothing, so the field is asked
       // for as it is where there is no termbase at all. Said once, because
@@ -564,22 +572,36 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     configDir: configDir ?? cwd,
     ...(respectGitignore === undefined ? {} : { respectGitignore }),
   });
-  /** One file's offered values, and the termbase its term values are checked against. */
+  /**
+   * One file's offered values, and the termbase its term values are checked
+   * against. `schemas` are the file's schemas, whose definitions a marked
+   * field's `$ref` is read through, and `schemaSet` names them.
+   */
   const hintsFor = async (
     label: string,
     candidates: readonly Candidate[],
+    schemas: Record<string, unknown>[],
+    schemaSet: readonly string[],
   ): Promise<{ hints: FieldHint[]; termIndex: TermIndex | undefined }> => {
     const keys = new Set(candidates.map((c) => c.key));
     const wants = (fields: readonly FieldPath[]): boolean =>
       fields.some(([key]) => key !== undefined && keys.has(key));
-    const termIndex = wants(TERM_FIELDS) ? await (termbase ??= readTermbase()) : undefined;
+    // A field its schema marks `x-manni-term` (proposal 0085 §6) is offered
+    // its branch's labels, the way a concept field is offered every label.
+    const defs = collectDefs(schemas);
+    const marks = candidates.flatMap((c) => termMarksIn(c, defs));
+    const termIndex =
+      wants(TERM_FIELDS) || marks.length > 0 ? await (termbase ??= readTermbase()) : undefined;
     const pages = wants(PAGE_FIELDS)
       ? await pageIds(resolve(base, label), mergeMembersFor(label))
       : [];
-    const hints = fieldHints(candidates, {
-      terms: termIndex === undefined ? undefined : offered(termIndex.labels),
-      pages: offered(pages),
-    });
+    const hints = [
+      ...fieldHints(candidates, {
+        terms: termIndex === undefined ? undefined : offered(termIndex.labels),
+        pages: offered(pages),
+      }),
+      ...(termIndex === undefined ? [] : termMarkHints(marks, termIndex, schemaSet.join(", "))),
+    ];
     return { hints, termIndex };
   };
   // A schema notice names its file. Preparing runs again after an accepted
@@ -974,7 +996,9 @@ export async function runFill(opts: FillOptions): Promise<FillRun> {
     if (firstSealed !== undefined && !dryRun) await writeKey(firstSealed);
 
     const { hints, termIndex } =
-      candidates.length > 0 ? await hintsFor(label, candidates) : { hints: [], termIndex: undefined };
+      candidates.length > 0
+        ? await hintsFor(label, candidates, schemas, schemaSet)
+        : { hints: [], termIndex: undefined };
 
     // ---- Propose (cache first) -------------------------------------------
     const cacheKey = buildCacheKey([
