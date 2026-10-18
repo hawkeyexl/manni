@@ -403,8 +403,9 @@ export time, so the source stays pinned, not copied.
 
 The default path is `questions.jsonl` beside the graph, and `-o` overrides it.
 `expected[].id` uses the ids `graph export search` writes, for ID-based
-recall. A gap has `"answerable": false`. Drafts are included with
-`reviewed: false`. A changed answer is exported with `"stale": true`, and one
+recall. It names the node that indexes the answer's first line. A gap has
+`"answerable": false`. Drafts are included with `reviewed: false`. A changed
+answer, or one whose page is gone, is exported with `"stale": true`, and one
 warning names the count. The CLI reference maps the format into Ragas,
 DeepEval and promptfoo datasets.
 

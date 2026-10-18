@@ -19,12 +19,12 @@ last-updated: 2026-10-05
 The graph is worth more outside CI than inside it. `manni graph export`
 reserializes what `build` produced into the shape a consumer reads. Linked data
 for an ingester. An iiRDS package for a content delivery portal. A search index
-the docs site loads in the browser.
+the docs site loads in the browser. The reader questions, for an eval tool.
 
 This is Devin's second page. The rule it carries: **publish on the run that
 gated it**, so what ships is what passed.
 
-## Three targets
+## Four targets
 
 ```sh
 manni graph export <target> [options]
@@ -35,6 +35,7 @@ manni graph export <target> [options]
 | `jsonld` | JSON-LD beside the graph | A linked-data ingester, a RAG pipeline, and the browser runtime. |
 | `iirds` | A conformant iiRDS package | A content delivery portal. RDF/XML is written inside the container. |
 | `search` | A lexical index per language, plus a localization manifest | `@hawkeyexl/manni/graph/runtime`, client-side. |
+| `questions` | One JSON line per reader question, with the text of each answer | An eval tool, such as Ragas, DeepEval or promptfoo. |
 
 ```console
 $ manni graph export jsonld -c test/graph/fixtures/dd/docs.config.yaml
@@ -45,7 +46,8 @@ The target is a positional, not a `-f`. Every other verb of the family means
 "output format" by `-f`, and one flag cannot mean two things.
 
 `-o` writes somewhere else; the default is the graph's path with the target's
-extension. An unknown target is exit `2`, with the allowed set in the message.
+extension. `questions` writes `questions.jsonl` beside the graph. An unknown
+target is exit `2`, with the allowed set in the message.
 
 ## Linked data
 
@@ -193,6 +195,23 @@ that produced them, and stops. Wiring a model is the host's job, and the trace
 is what lets an answer be argued with. See the
 [library API reference](/manni/graph/reference/library-api/#the-browser-runtime).
 
+## Questions for an eval tool
+
+`export questions` hands the golden set to a tool that judges answers. manni
+measures finding and judges nothing, so this is the path to the tools that do.
+
+```console
+$ manni graph export questions
+Wrote 8 questions to graph/questions.jsonl
+```
+
+Each line is one question, from a page's `sample-questions` or a golden-set
+file. Each answer carries the text its pin holds, read from the page at export
+time, so the source stays pinned rather than copied. Drafts are included with
+`reviewed: false`, so filter them out before you score. The
+[CLI reference](/manni/graph/reference/cli/#the-question-set) has the line
+shape and the mapping into Ragas, DeepEval and promptfoo.
+
 ## Deciding what ships
 
 A published artifact should not carry every field a page holds. An `owner`, a
@@ -205,8 +224,9 @@ Mark the property in the schema, not in a post-processing step:
 { "owner": { "type": "string", "x-manni-graph-output": false } }
 ```
 
-The filter runs once, before derivation, so the field is absent from all three
-exports and from the Turtle. A field kept in an external-metadata manifest is
+The filter runs once, before derivation, so the field is absent from the
+`jsonld`, `iirds` and `search` exports and from the Turtle. `export questions`
+reads `sample-questions` from the page itself, so the mark does not apply there. A field kept in an external-metadata manifest is
 filtered the same way, because graph reads the page as `manni meta validate`
 does. Absent means `true`. The default set already marks
 `owner`, `stakeholders` and `reviewed-by`, the stewardship fields that name
@@ -245,6 +265,6 @@ produce something nobody checked.
 
 {/* step {"description":"search writes the index and the localization manifest.","runShell":{"command":"manni graph export search -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"localizations.json"}} */}
 
-{/* step {"description":"An unknown target is refused with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Use jsonld | iirds | search."}} */}
+{/* step {"description":"An unknown target is refused with the allowed set named.","runShell":{"command":"manni graph export turtle -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[2],"stdio":"Use jsonld | iirds | search | questions."}} */}
 
 {/* step {"description":"search ranks nodes from the exported index.","runShell":{"command":"manni graph search installation -c test/graph/fixtures/dd/docs.config.yaml","exitCodes":[0],"stdio":"(lexical)"}} */}
