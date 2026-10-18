@@ -15,7 +15,7 @@ prerequisites: ["family-check"]
 next-steps: ["family-check", "family-reference-cli", "meta-set-up-machine-authorship"]
 sample-questions: ["How do I install the manni plugin for Claude Code?", "What happens when an agent edits a page and the check fails?", "How do I turn the manni plugin off?"]
 graph: { label: "Keep an agent's docs green", type: task }
-last-updated: 2026-10-11
+last-updated: 2026-10-18
 tags:
   - claude-code
   - agents
@@ -113,7 +113,8 @@ lint       not set up    no lint: section
 docevals   not set up    no page resolves any evals
 term       not set up    no terms in any collection
 graph      not set up    no graph: section
-a11y       not checked   run manni a11y check against a running site
+a11y       not checked   run manni site preview, then manni a11y check
+test       not checked   run manni test run with Doc Detective installed
 tracevals  not checked   run manni tracevals run over sessions
 
 After you edit a file in site, manni check runs on it, and errors come back to you at once.
