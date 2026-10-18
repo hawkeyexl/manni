@@ -800,7 +800,7 @@ interface ExportedAnswer {
 }
 
 /**
- * The golden set as `graph export questions` writes it (proposal 0086 § 7d):
+ * The golden set as `graph export questions` writes it (proposal 0087 § 7d):
  * one JSON line per question, each page's in path order, then each golden-set
  * file's. An answer's `id` is the node `export search` indexes its first line
  * under, so an index built from that export returns comparable ids. Its text
