@@ -1,5 +1,5 @@
 /**
- * Sample questions as findability checks (proposals 0085 §7 and 0086), the
+ * Sample questions as findability checks (proposals 0085 §7 and 0087), the
  * half of `manni graph check` no shape can express.
  *
  * Questions are read from each page's source, not from the graph: an item's
@@ -397,7 +397,7 @@ export interface FoundCount {
 }
 
 /**
- * The health of the whole question set (proposal 0086 § 7b): what `check`
+ * The health of the whole question set (proposal 0087 § 7b): what `check`
  * prints after its findings, and the `questions` key of its JSON report.
  */
 export interface QuestionSummary {

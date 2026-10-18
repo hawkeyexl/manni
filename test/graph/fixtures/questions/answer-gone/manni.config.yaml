@@ -1,4 +1,4 @@
-# The answer-gone fixture (proposal 0086). A golden-set answer names a page
+# The answer-gone fixture (proposal 0087). A golden-set answer names a page
 # that does not exist. `top: 1` keeps the corpus small.
 collections:
   - name: questions

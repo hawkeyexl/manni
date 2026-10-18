@@ -1,5 +1,5 @@
 /**
- * The two measures set health is built on (proposal 0086 § 7b): when two
+ * The two measures set health is built on (proposal 0087 § 7b): when two
  * questions are the same question, and how much of a question its answer
  * already says. 7c gates drafts with the same copied-wording measure.
  */

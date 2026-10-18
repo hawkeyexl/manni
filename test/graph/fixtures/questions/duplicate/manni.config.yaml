@@ -1,4 +1,4 @@
-# The duplicate fixture (proposal 0086). One question is asked on two pages and
+# The duplicate fixture (proposal 0087). One question is asked on two pages and
 # in the golden-set file, spelled three ways. `top: 1` keeps the corpus small.
 collections:
   - name: questions

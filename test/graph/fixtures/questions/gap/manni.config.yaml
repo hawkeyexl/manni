@@ -1,4 +1,4 @@
-# The gap fixture (proposal 0086). A golden-set question with no answers is a
+# The gap fixture (proposal 0087). A golden-set question with no answers is a
 # known gap: it is counted, and never asked. `top: 1` keeps the corpus small.
 collections:
   - name: questions
