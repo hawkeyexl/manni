@@ -85,6 +85,22 @@ describe("term concepts", () => {
     expect(has(quads, C("gizmo"), SKOS("prefLabel"), lit("Gizmo"))).toBe(true);
   });
 
+  it("keeps each language's notation when they differ, one triple per code", () => {
+    // Different notation systems may each give the concept a code; SKOS allows
+    // several notations on one concept, so both are kept.
+    const quads = build(
+      { "a.md": "# A\n" },
+      {
+        termbase: [
+          { label: "Lens", id: "lens", language: "en", notation: "OPT-1" },
+          { label: "Linse", id: "lens", language: "de", notation: "DIN-42" },
+        ],
+      },
+    );
+    const codes = objects(quads, C("lens"), SKOS("notation")).map((o) => o.value);
+    expect(codes.sort()).toEqual(["DIN-42", "OPT-1"]);
+  });
+
   it("carries a term's notation as a plain literal and each mapping as an IRI", () => {
     const quads = build(
       { "a.md": "# A\n" },
