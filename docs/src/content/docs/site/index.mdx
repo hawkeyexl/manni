@@ -1,0 +1,184 @@
+---
+title: manni site
+description: "Start, build and preview the docs site with one command per job, whatever framework it runs on, on the port the collection url names."
+tableOfContents: false
+hero:
+  tagline: Start, build and preview the docs site, whatever framework it runs on.
+  actions:
+    - text: CLI reference
+      link: /manni/site/reference/cli/
+      icon: right-arrow
+      variant: primary
+    - text: How the site is found
+      link: /manni/site/#how-the-site-is-found
+      icon: magnifier
+      variant: minimal
+id: "site"
+type: "overview"
+keywords: ["site start", "site build", "site preview", "dev server", "framework detection", "collection url"]
+language: en
+audiences: ["docs-engineers", "ci-engineers", "contributors"]
+intent: "Understand what manni site start, build and preview do, how they find the site and its framework, and where the port comes from."
+lifecycle: published
+applies-to: ["domain:site"]
+next-steps: ["site-reference-cli", "a11y-get-started"]
+related-pages: ["a11y-ci", "meta-reference-configuration"]
+risks: ["idempotent"]
+sample-questions: ["How do I run the docs site locally without knowing its framework?", "Which port does manni site preview serve on?", "How do I run a framework manni does not detect?"]
+graph: { label: "manni site", type: concept }
+last-updated: 2026-10-05
+tags:
+  - docs-site
+  - dev-server
+  - build
+  - preview
+  - cli
+action: understand
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<Aside type="note" title="Beta">
+`manni site` is in beta. Its commands, config keys and output can change in
+any release, without notice.
+</Aside>
+
+Every docs framework starts its site differently. Mintlify is `mint dev`,
+Starlight is `astro dev`, MkDocs is `mkdocs serve`, and each picks its own
+port. `manni site` finds the site, detects its framework from its files, and
+runs that framework's own command. One command per job works in every docs
+repository manni detects.
+
+`manni site` is not a document tool. It runs the site that every other domain
+checks. `manni a11y check` crawls the site it serves, on the URL your
+collection already names.
+
+## Three commands
+
+| Command | Does |
+| --- | --- |
+| `manni site start [dir]` | Runs the framework's dev server, with hot reload, until Ctrl-C. |
+| `manni site build [dir]` | Runs the framework's production build once. |
+| `manni site preview [dir]` | Runs `build`, then serves the output until Ctrl-C. It always builds first, so it never serves stale output. |
+
+There is no default subcommand. `manni site` alone prints usage and exits `2`.
+Each command prints one line on stderr before it runs anything. The line names
+the framework, the directory and the exact command. After that the output is
+the framework's own.
+
+## A 30-second proof
+
+This repository's site is Starlight, in `docs/`. Its `manni.config.yaml` has no
+`site:` section, only a collection whose `url:` is
+`http://127.0.0.1:4321/manni/`. Build and serve the site:
+
+```console
+$ manni site preview
+manni: Starlight in docs/. Running npm run build
+manni: Starlight in docs/. Running npm run preview -- --host 127.0.0.1 --port 4321
+```
+
+The host and the port came from the collection `url:`. In a second terminal,
+the accessibility check reads the same `url:` and crawls the served build with
+no flags:
+
+```sh
+manni a11y check
+```
+
+Ctrl-C stops the server, exit `0`.
+
+## How the site is found
+
+1. The directory you pass, as in `manni site start website`.
+2. Else `site.dir` in `manni.config.yaml`.
+3. Else a search, where the first match wins. It looks in the config file's
+   directory, or the working directory when there is no config. Then it looks
+   in that directory's `docs/`, `website/` and `site/`.
+
+In each directory the framework's own files decide. A `mint.json` is Mintlify,
+an `@astrojs/starlight` dependency is Starlight, and a `mkdocs.yml` is MkDocs.
+There is no `framework:` key, because the files already say which framework it
+is. A directory with two frameworks in it is an error, exit `2`, which names
+both and asks for an override.
+
+## Which command runs
+
+manni detects Mintlify, Fern, Starlight, Docusaurus, VitePress, Nextra,
+Fumadocs, Rspress, MkDocs, Zensical, Sphinx, Hugo and Jekyll. The
+[framework table](/manni/site/reference/cli/#frameworks) has each one's
+marker, commands and default port.
+
+- **A Node framework** runs the project's own script when `package.json` has
+  one, such as `npm run dev`, because it carries the project's flags. Without a
+  script, it runs the framework's binary through the package manager the
+  project uses.
+- **A Python tool** runs under `uv run` or `poetry run` when the project has a
+  `uv.lock` or `poetry.lock`. Jekyll runs under `bundle exec`.
+- **A framework with no preview server of its own** writes a static directory.
+  MkDocs, Zensical, Sphinx, Hugo and Jekyll are in this group. `preview` serves
+  that directory with a small server built into manni, bound to `127.0.0.1`.
+
+Mintlify and Fern have no local build, so `manni site build` and
+`manni site preview` stop with exit `2` there. `manni site start` works.
+
+## The port comes from the collection
+
+`manni a11y check` reads a collection's `url:` as the place to start its crawl.
+`manni site start` and `manni site preview` read the same `url:` for the port
+and host to bind, so the two agree without being told:
+
+```yaml title="manni.config.yaml"
+collections:
+  - name: site
+    paths: ["docs/**/*.md"]
+    url: http://127.0.0.1:4321/
+```
+
+Only a local `url:` counts, on `localhost`, `127.0.0.1` or `[::1]`. A public
+URL names the deployed host, not a port on your machine. `--port` and `--host`
+win over the `url:`. With neither a flag nor a local `url:`, the framework's
+default port applies, and manni passes no port flag at all. When two collections name different local URLs, manni
+warns and uses the framework's default.
+
+## A framework manni does not detect
+
+Write the commands in `manni.config.yaml`. Each one is a whole command line,
+run through the shell in the site's directory:
+
+```yaml title="manni.config.yaml"
+site:
+  dir: handbook
+  commands:
+    start: pnpm dev --port 4000
+    build: pnpm build
+    preview: npx serve dist -l 4000
+```
+
+A command you set replaces the detected one for that verb, and the others stay
+detected. `preview` still runs `build` first. When every command a verb needs
+is set, nothing is detected, so any framework works this way. `--port` and
+`--host` do not apply to a command you wrote. Put the port in the command.
+
+<CardGrid>
+  <LinkCard
+    title="CLI reference"
+    href="/manni/site/reference/cli/"
+    description="Every argument and flag of start, build and preview, the framework table, the site: config keys, and every message with its exit code."
+  />
+  <LinkCard
+    title="Get started with a11y"
+    href="/manni/a11y/get-started/"
+    description="Serve a local build with manni site preview, crawl it with manni a11y check, and fix what it finds."
+  />
+  <LinkCard
+    title="Gate accessibility in CI"
+    href="/manni/a11y/ci/"
+    description="A pull request job that previews the build, waits for the port, and crawls it with annotations."
+  />
+  <LinkCard
+    title="Collections"
+    href="/manni/meta/reference/configuration/#collections"
+    description="The family-level document sets, and the url: key that a11y seeds from and site binds to."
+  />
+</CardGrid>
