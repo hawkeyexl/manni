@@ -461,10 +461,14 @@ export function renderStats(
     lines.push(`  no language: ${report.localization.unlabelled}`);
   }
 
-  // Reported, never gated, like orphans (proposal 0087).
-  const unasked = report.conceptsWithoutQuestions;
-  lines.push("", `Concepts with no question (${String(unasked.length)}):`);
-  for (const c of unasked) lines.push(`  ${report.conceptLabels[c] ?? compactIri(c)}`);
-  if (unasked.length === 0) lines.push("  (none)");
+  // Reported, never gated, like orphans (proposal 0087). Left out on a graph
+  // with no concepts, as the localization block is on a single language: a
+  // block that says nothing on most corpora teaches readers to skip it.
+  if (report.concepts > 0) {
+    const unasked = report.conceptsWithoutQuestions;
+    lines.push("", `Concepts with no question (${String(unasked.length)}):`);
+    for (const c of unasked) lines.push(`  ${report.conceptLabels[c] ?? compactIri(c)}`);
+    if (unasked.length === 0) lines.push("  (none)");
+  }
   return lines.join("\n");
 }
