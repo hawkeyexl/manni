@@ -112,9 +112,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-c26398c24851cd2fdf9dad6fea0fdf4d2df12181319835506a931ba0e9d5e335
       source:
         file: src/term/core/load-set.ts
-        lines: 232-241
+        lines: 220-229
         integrity: sha256-27ed6936775bc40fe857e20e7e43a03922fb1960bbfc7a8215a657541bb4e62c
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: baseline-relative-to-config
       claim:
         lines: 67
@@ -375,18 +375,18 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-995dd9e69c3a1e6e98869059af1c85692375f5a68fb34a4ca06e17c67f14761d
       source:
         file: src/term/core/load-set.ts
-        lines: 232-239
+        lines: 220-227
         integrity: sha256-031fff1fe6110b3d2e56e51378927001c520461f91cafe8b09e96b8f552f4d7b
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: missing-manifest-message
       claim:
         lines: 191
         integrity: sha256-b0b378e43afd34d85aba4c9193d8038847dca55720781d6cc325e5c6b9b08d28
       source:
         file: src/term/core/load-set.ts
-        lines: 237-238
+        lines: 225-226
         integrity: sha256-d89a515f3d5182d996d201c74dfd054bcf56094a9e785ef63416d8066642bf37
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: abstract-max-length-type
       claim:
         lines: 66
@@ -429,9 +429,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-e3fddc012ce5bb146ba5bd067310adbaab7a06782d884e4ffbca13ca5adb8d11
       source:
         file: src/term/core/load-set.ts
-        lines: 244-248
+        lines: 232-236
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: allow-empty-missing-path
       claim:
         lines: 69

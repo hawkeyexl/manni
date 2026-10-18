@@ -161,18 +161,18 @@ docs/src/content/docs/term/reference/rules.mdx:
         integrity: sha256-dbb3da58f54a50a98ab0f7c04c7c83f7d3d848bfab8854d8214406a891b56b74
       source:
         file: src/term/reporters/pretty.ts
-        lines: 276
+        lines: 271
         integrity: sha256-1b331adf7840efecdd66e3c84d890f455b28de96203029f9ee9d7dfe4f829f9c
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: sample-finding-layout
       claim:
         lines: 66
         integrity: sha256-13942a5853c80c50e8b8004c294b28c4b9d09947c7c6a7b3d1b2a1d18d76c211
       source:
         file: src/term/reporters/pretty.ts
-        lines: 257-275
+        lines: 252-270
         integrity: sha256-005df0cf585716db357b80f5d653ce3543f8000303bd315f08a6d5ca4823b0bb
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: concepts-preferred-labels-only
       claim:
         integrity: sha256-77cedfecf864bf43a2b56beccc95666c9a9e3f9f828a312152d2bbbb7b46103a

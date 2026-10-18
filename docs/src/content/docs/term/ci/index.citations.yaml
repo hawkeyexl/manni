@@ -23,9 +23,9 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-8c1178f2ebfa2d3b86c9fcb940041b4781eacc3057b955076cd2562560387f13
       source:
         file: src/term/core/load-set.ts
-        lines: 244-248
+        lines: 232-236
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: exit-two-no-vale
       claim:
         lines: 22
@@ -170,26 +170,26 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-7b336fb3950b537b232c3d8a05a92f4739c570c8080612ada9a7b69e9c7e2be5
       source:
         file: src/term/reporters/pretty.ts
-        lines: 397-400
+        lines: 392-395
         integrity: sha256-a568150112aae7894fd4833352fe48ece756c9a0ee8e64251617de53fc56b8c0
-        commit-sha: 2f76d351392b3630d28855433177ef6b76e95004
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: check-prints-differences
       claim:
         integrity: sha256-ca1d8d56e47c34606b5c26f602f0672040da31e021b3bb75da7addba13017ec5
       source:
         file: src/term/reporters/pretty.ts
-        lines: 283-292
+        lines: 278-287
         integrity: sha256-4a46913a482241c5208c12db8e4c7d97048bce18ac2a671cd09593de1853404c
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: would-change-line
       claim:
         lines: 135
         integrity: sha256-220c369e7d6d8cd86ad22e8f44da711ac6b9aa3e6e9160422e96cfc4f14b56de
       source:
         file: src/term/reporters/pretty.ts
-        lines: 287-288
+        lines: 282-283
         integrity: sha256-ff52bb820e0e62c18615cca9368684fa17e3d4bbf844a230264905da38748b8f
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: baseline-records-when-missing
       claim:
         lines: 156
@@ -205,9 +205,9 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-eecaabb8cfbdc30b18cab1c93efd71e9a961609e6f978f8ea9af1e8cde0691f0
       source:
         file: src/term/reporters/pretty.ts
-        lines: 246-248
+        lines: 241-243
         integrity: sha256-19f690d3af78cd4bde2a7bd34d99403080546123865c795bbfc650f02565b59b
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: baseline-default-path
       claim:
         lines: 160
@@ -232,9 +232,9 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-6342d15258f03fb5642c014276bf28293455de35cf9ebd7995c302a4a709615f
       source:
         file: src/term/reporters/pretty.ts
-        lines: 249-255
+        lines: 244-250
         integrity: sha256-cf9da651d7ba75a8bd57cb8833f4e1dace02ff229f9ebbc7a9235c4edf11b40d
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: baseline-config-compares
       claim:
         integrity: sha256-2c0716ab2eca62285f8d5d752b060b70e418e7021097cc6cf82973f9021d119f

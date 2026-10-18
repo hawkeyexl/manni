@@ -85,17 +85,17 @@ docs/src/content/docs/term/index.mdx:
       source:
         file: src/term/reporters/pretty.ts
         lines: 75-87
-        integrity: sha256-68c80449fe63e6697f477f2d621062c7d97b5f40553a2ca18e4601034ee28900
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        integrity: sha256-760c038d026813ceecdc5dbe00dd6c9b5fe09412c17c5b2894c60eb0d6e6431a
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: get-shows-source-line
       claim:
         lines: 33
         integrity: sha256-5f5b13684d677e534945426c1d0aa7b03fcc81202c8c53ae02d10f4f49cfdfdd
       source:
         file: src/term/reporters/pretty.ts
-        lines: 175-178
+        lines: 170-173
         integrity: sha256-7563833d594bbb2440030ebae8fdda02d5897cd6a68fcd8e76953ab01987a543
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: check-ten-rules
       claim:
         lines: 34
@@ -156,9 +156,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-cb33af084d5ecff16a771daa9bd8125f0ddaa98648027b3b9389e1960b1f8356
       source:
         file: src/term/reporters/pretty.ts
-        lines: 257-276
+        lines: 252-271
         integrity: sha256-8b9e3861c60801a6eb0b10fa67f27de14e14c1edc66103e99234c86921295f69
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: proof-exit-one
       claim:
         integrity: sha256-6ab07958952c7663c92b11a4026562d1dccc140dd5ce6cabb85f4f9e6b64c2f3
@@ -181,9 +181,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-945bac01d58f21b357c334c7ba1adf9182bf10cee9a243125ac2bcb78e98b069
       source:
         file: src/term/reporters/pretty.ts
-        lines: 252-255
+        lines: 247-250
         integrity: sha256-f5c2855b5befa2bd113cf62d73a7e2f94017a2be4f621065dfefdcd8d828659e
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: proof-names-claiming-entry
       claim:
         integrity: sha256-6ab07958952c7663c92b11a4026562d1dccc140dd5ce6cabb85f4f9e6b64c2f3

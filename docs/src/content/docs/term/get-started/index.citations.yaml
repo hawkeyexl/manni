@@ -95,8 +95,8 @@ docs/src/content/docs/term/get-started/index.mdx:
       source:
         file: src/term/reporters/pretty.ts
         lines: 75-87
-        integrity: sha256-68c80449fe63e6697f477f2d621062c7d97b5f40553a2ca18e4601034ee28900
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        integrity: sha256-760c038d026813ceecdc5dbe00dd6c9b5fe09412c17c5b2894c60eb0d6e6431a
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: concepts-on-any-page
       claim:
         integrity: sha256-dc14b6d115e9770778e6bf4095cda8ff912ba6a59b92ac8788e70599086f7f5f
@@ -128,9 +128,9 @@ docs/src/content/docs/term/get-started/index.mdx:
         integrity: sha256-a9f8e365bf70986eaca1e3963fbd74fb6cdac9615ed4c4b97e103ca27eaeedb9
       source:
         file: src/term/reporters/pretty.ts
-        lines: 257-276
+        lines: 252-271
         integrity: sha256-8b9e3861c60801a6eb0b10fa67f27de14e14c1edc66103e99234c86921295f69
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: check-exit-one
       claim:
         lines: 138
@@ -155,9 +155,9 @@ docs/src/content/docs/term/get-started/index.mdx:
         integrity: sha256-b4a897dcf3ab0a3f3a6f5ee4628eae85ba1086004ba79b4df94ea9486b7436bc
       source:
         file: src/term/reporters/pretty.ts
-        lines: 252-255
+        lines: 247-250
         integrity: sha256-f5c2855b5befa2bd113cf62d73a7e2f94017a2be4f621065dfefdcd8d828659e
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: recheck-exit-zero
       claim:
         lines: 158
@@ -191,9 +191,9 @@ docs/src/content/docs/term/get-started/index.mdx:
         integrity: sha256-1e23ca061bef7cc80d0f89434ffb6d00a7435c17cbee98bf8a0f1664a6f70b16
       source:
         file: src/term/reporters/pretty.ts
-        lines: 228-235
+        lines: 223-230
         integrity: sha256-96a8c1a0b834fb4b96514ab5b34824c6a7f3a480b66e6e5aded99195e96885fe
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: neither-fails-default-levels
       claim:
         integrity: sha256-71644ee678bbf77334cac1020b412442fd26e6de7a9bef6da8c59618688eeb4c

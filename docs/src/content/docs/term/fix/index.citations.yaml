@@ -144,9 +144,9 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-7d323233238d61ba7da2cea2fe6d11dfd0e314c04908eab8788578e6d55a71a8
       source:
         file: src/term/reporters/pretty.ts
-        lines: 276
+        lines: 271
         integrity: sha256-1b331adf7840efecdd66e3c84d890f455b28de96203029f9ee9d7dfe4f829f9c
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: concepts-preferred-labels-only
       claim:
         integrity: sha256-3724c7d1a90ad3a655f3e679a1ffd8138136181f1f3afabac751077f3c212cd7
@@ -169,9 +169,9 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-9bc6fcbbe3fdf177897dd9da3af78cac47860e81ef74fbf3a6a640d34124a1ac
       source:
         file: src/term/reporters/pretty.ts
-        lines: 252-255
+        lines: 247-250
         integrity: sha256-f5c2855b5befa2bd113cf62d73a7e2f94017a2be4f621065dfefdcd8d828659e
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: unused-term-cleared
       claim:
         integrity: sha256-5f54d8aafb7c486dbccfe95b9a0316cbbc387a364f3e7af913906dbaecc404f4
@@ -314,9 +314,9 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-2055e5c3544d7ccbf1913724cf118d4df90dd2e27017e842d7da106c0ea26295
       source:
         file: src/term/reporters/pretty.ts
-        lines: 397-400
+        lines: 392-395
         integrity: sha256-a568150112aae7894fd4833352fe48ece756c9a0ee8e64251617de53fc56b8c0
-        commit-sha: 2f76d351392b3630d28855433177ef6b76e95004
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: hidden-label-in-deprecated
       claim:
         integrity: sha256-796e5ae409a33564ad71c1f3b1af4d74f5676e30b7df1ae08cf7c4e0bb7c7299
@@ -331,27 +331,27 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-e2461d8f298460a5569803dc1c7c00c6daaf50b4fb6a7e9a715550bc38e75556
       source:
         file: src/term/reporters/pretty.ts
-        lines: 408-411
+        lines: 403-406
         integrity: sha256-e4d3d0e27accdbb6f1c878f444282b5c1f077d922f1c04abdd1a48b6bbf30de4
-        commit-sha: 2f76d351392b3630d28855433177ef6b76e95004
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: write-vale-file-lines
       claim:
         lines: 330-332
         integrity: sha256-bbc51e8ea0443862644d53f2d97fb06485d1a715e90c76c6f1bffff7b7df1c35
       source:
         file: src/term/reporters/pretty.ts
-        lines: 306-322
+        lines: 301-317
         integrity: sha256-6e8079680f97a5e83fd3fb6e588242655a1cd134825f77658426e6d7105d41d1
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: check-up-to-date-line
       claim:
         lines: 334
         integrity: sha256-d62369d9663550232c28774a6a98274eb7cd407f62bed280b71bb27c22a83165
       source:
         file: src/term/reporters/pretty.ts
-        lines: 393-395
+        lines: 388-390
         integrity: sha256-51d52ae50285c965832b9a85bbe48f4ac702490287a568e31395e8b4033f1947
-        commit-sha: 2f76d351392b3630d28855433177ef6b76e95004
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: vale-generated-marker
       claim:
         integrity: sha256-66e37656f4c85f8a145b5f6c95612c6469e0d7aff0c28b0b585fef99287057c6
@@ -383,18 +383,18 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-59eb9972c2be284f54ecf35df56707a61af38ceb8fb5b2fdb0922151c8179707
       source:
         file: src/term/core/load-set.ts
-        lines: 244-248
+        lines: 232-236
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: no-terms-message
       claim:
         lines: 376
         integrity: sha256-e7ba5933eb3e19b1f2384cc7ffdf97760ee065c2e8b0626c36602571b8caaa6e
       source:
         file: src/term/core/load-set.ts
-        lines: 244-248
+        lines: 232-236
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 4e0865e39a251f5714e809190f47a646645601d2
     - id: partial-set-undefined
       claim:
         lines: 379
