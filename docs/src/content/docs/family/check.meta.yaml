@@ -20,14 +20,8 @@ docs/src/content/docs/family/check.mdx:
       lines: 2-27
       integrity: sha256-b59f8e8e82243b7482d268afd6b0f8e02952dbce8166de247f235ebd82320725
     - generated-by: Claude Opus 5.5
-      lines: 28
-      integrity: sha256-6f835e8af2d644ae9642463f802c0e368d05d7ae16256f49657d96ed03a22ef4
-    - generated-by: Claude Sonnet 5.5
-      lines: 29-52
-      integrity: sha256-9d2eeba48a2b4becb752b0d364bc058d8f138986c4316627c351d35267ee59c9
-    - generated-by: Claude Opus 5.5
-      lines: 29
-      integrity: sha256-e0819914485c638c8ed98278037dc1ca4e35c343a027f922179aae33bed24146
+      lines: 28-29
+      integrity: sha256-a9b1f28df49003c1b55c651eddbfd20dccb3ef40b2235639336c41a79f4c6dfb
     - generated-by: Claude Sonnet 5.5
       lines: 30-53
       integrity: sha256-9d2eeba48a2b4becb752b0d364bc058d8f138986c4316627c351d35267ee59c9
