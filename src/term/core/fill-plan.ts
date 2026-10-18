@@ -1,5 +1,5 @@
 /**
- * What `manni term fill` plans before any model is asked (proposal 0085 § 3):
+ * What `manni term fill` plans before any model is asked (proposal 0086 § 3):
  * the concepts pages name and the termbase lacks, the entries a `graph:` block
  * can define, where new pages go and in which format, and how the crawl's
  * candidates merge. Pure: no file is read or written here.
