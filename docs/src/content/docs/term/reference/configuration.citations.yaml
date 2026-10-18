@@ -166,9 +166,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-a2f7845ee39c9eef366455be08751280b44fd6d837956253a42e5f8c86f7a4ee
       source:
         file: src/term/core/severity.ts
-        lines: 39-44
+        lines: 41-46
         integrity: sha256-2c5a4030b11623bd661502aab5bee75d49079bba1ced2bbd57bc78d242f5af38
-        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
+        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
     - id: respect-gitignore-flag-wins
       claim:
         lines: 70
@@ -221,20 +221,20 @@ docs/src/content/docs/term/reference/configuration.mdx:
         commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
     - id: ten-rules
       claim:
-        integrity: sha256-df187d2d6e87a28a2a42c43a76e734b7a02b14a05f5e6f1bded18cd480bd1c4b
+        integrity: sha256-5e1e5a96dffcdd40514ca8b6cddfe2d6d79d18f587b5f7d4ccd28ceaa0fa9e31
       source:
         file: src/term/types.ts
-        lines: 412-423
+        lines: 440-451
         integrity: sha256-3345f5384d3beb1ec40d1a0aed29f2bdac691bab2135408ea0e51cfccfe1739e
-        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
+        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
     - id: severity-off-drops-rule
       claim:
-        integrity: sha256-df187d2d6e87a28a2a42c43a76e734b7a02b14a05f5e6f1bded18cd480bd1c4b
+        integrity: sha256-5e1e5a96dffcdd40514ca8b6cddfe2d6d79d18f587b5f7d4ccd28ceaa0fa9e31
       source:
         file: src/term/core/check.ts
-        lines: 338-339
+        lines: 361-362
         integrity: sha256-2f265af85f9d91efeb2ae0c4d46f04963f7dbc82990a636954e00086b5be55ab
-        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
+        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
     - id: severity-family-levels-plus-off
       claim:
         integrity: sha256-19bf69bbaca754e83b9842320fc2402a33cccee5e1c8993bc24b9d73c3d3861e
@@ -411,9 +411,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-39693505a29ceb78b2fd61ea4ce45f8979af2810504567876abb275f3ae6aecd
       source:
         file: src/term/core/check.ts
-        lines: 197-199
+        lines: 220-222
         integrity: sha256-1e7a0d9319bd8cce486fe3e632637e6981a768da9a86ad16ce2d0ebe22be1b0a
-        commit-sha: b4d9b1bfb7abb03eaf162930185b6d1d465e4a08
+        commit-sha: b1b8fa69ffe8762bc362b9811c691e056dd81dae
     - id: allow-empty-flag-wins
       claim:
         lines: 69
