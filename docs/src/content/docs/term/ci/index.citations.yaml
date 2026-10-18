@@ -170,9 +170,9 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-7b336fb3950b537b232c3d8a05a92f4739c570c8080612ada9a7b69e9c7e2be5
       source:
         file: src/term/reporters/pretty.ts
-        lines: 400-403
+        lines: 397-400
         integrity: sha256-a568150112aae7894fd4833352fe48ece756c9a0ee8e64251617de53fc56b8c0
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 2f76d351392b3630d28855433177ef6b76e95004
     - id: check-prints-differences
       claim:
         integrity: sha256-ca1d8d56e47c34606b5c26f602f0672040da31e021b3bb75da7addba13017ec5

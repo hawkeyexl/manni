@@ -478,24 +478,24 @@ docs/src/content/docs/term/reference/terminology.mdx:
         integrity: sha256-26537ba7230198941adbe85664ddc73d4d1b47945a5238f2d553d10cae16ff1a
       source:
         file: src/term/core/readers/tbx-model.ts
-        lines: 349-369
+        lines: 350-370
         integrity: sha256-31bdb22c2de5439c7f2acf6639d78c2820d129422bf07c64c18eb853a1c9db6c
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 2f76d351392b3630d28855433177ef6b76e95004
     - id: tbx-status-read-as
       claim:
         lines: 253-255
         integrity: sha256-1b1f618f0498d3fa5e3e7b25a6408763bd1b26713df4b171107f322c6ed6853c
       source:
         file: src/term/core/readers/tbx.ts
-        lines: 508-546
+        lines: 522-560
         integrity: sha256-8cdc0fbff618b454be4812deb45206a903fb70879ec0679e114928d290ac80e7
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 2f76d351392b3630d28855433177ef6b76e95004
     - id: tbx-term-language
       claim:
         lines: 101-104
         integrity: sha256-783ebd4aa18b34d1efb0b25600d7749429b1c1e09a9c87e51143a54ecf0867e0
       source:
         file: src/term/core/readers/tbx.ts
-        lines: 598-600
+        lines: 612-614
         integrity: sha256-30eff2d5c01b27df4543af1d874d0e10b676d91802519157472f0c22c47907a6
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: 2f76d351392b3630d28855433177ef6b76e95004

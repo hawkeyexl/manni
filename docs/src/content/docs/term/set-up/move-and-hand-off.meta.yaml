@@ -80,16 +80,22 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
       lines: 486
       integrity: sha256-415fec93356160c83bc088f2697442cdb3b7229388fbd31a792230249ea19302
     - generated-by: Claude Opus 5.5
-      lines: 488-743
-      integrity: sha256-a70f6c55dca0dc3e8b3e773f44afdeae58f32fbf22316a3ee691331c81928039
+      lines: 488-695
+      integrity: sha256-cfdf19af1315a864b9e950a88ac8a3e9bd7b3a9f42941acdd6440f429eeadfac
+    - generated-by: Claude Opus 5.5
+      lines: 697-731
+      integrity: sha256-85c39da2d60a737a7c642e35e3800c3851a898fc6f2ac8b38ff951ed6324e18b
+    - generated-by: Claude Opus 5.5
+      lines: 738-745
+      integrity: sha256-65dd1b815f4600218d98576735f757b4ea78cba52159b27522131ce6fc6621ec
     - generated-by: Claude Opus 5
-      lines: 745-774
+      lines: 747-776
       integrity: sha256-5c5ee5944fd236191e1da23e7550a8d0142a5c5bd9754165452ef248a3de1a85
     - generated-by: Claude Opus 5.5
-      lines: 775
+      lines: 777
       integrity: sha256-5f246108e19d3955b02d84110868c17c4fb90f9f6f6d11a8c41efcd6ae9035fb
     - generated-by: Claude Opus 5
-      lines: 776-782
+      lines: 778-784
       integrity: sha256-5dea0ce32493ce8ec1d7abfd4093dc1507888df8cfcd0021ba68a3ced2322070
   owner:
     - "@hawkeyexl"
