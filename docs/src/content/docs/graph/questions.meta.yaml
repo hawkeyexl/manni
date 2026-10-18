@@ -2,7 +2,7 @@ docs/src/content/docs/graph/questions.mdx:
   personas:
     - maya
   journeys:
-    - m26
+    - m27
   visibility: public
   review-interval: P180D
   source-of-truth:

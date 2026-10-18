@@ -1,6 +1,6 @@
-# Video script: one concept scheme, from freeform tags to checked questions (0085, 0086)
+# Video script: one concept scheme, from freeform tags to checked questions (0085, 0087)
 
-**Objective:** Show the loop proposals 0085 and 0086 close. Pages name concepts
+**Objective:** Show the loop proposals 0085 and 0087 close. Pages name concepts
 freely, and `term check` fails on the ones nobody defined. `term fill --offline`
 turns them into term pages, and `term check` names the definitions still to
 write. The graph takes its concepts from that termbase. `graph fill` pins each
@@ -10,7 +10,7 @@ page's question to the lines that answer it. When those lines change,
 **Duration:** 43.4 s (spec: 20-45 s).
 **Audience:** Sara, the schema author who owns the termbase (S6). Maya, who sees
 the docset as a graph (M18). Devin, who gates the graph in CI (D12).
-**Feature:** proposal 0085 and 0086 phases 7a-7d, with `--offline` meaning no
+**Feature:** proposal 0085 and 0087 phases 7a-7d, with `--offline` meaning no
 network egress. Built from `claude/concepts-7d-question-export` at `1dacfdb6`.
 
 Visual spec: `docs/content-strategy/design.md`. Accent `#58a6ff` (blue). Never
