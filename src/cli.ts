@@ -19,6 +19,14 @@
 import { Command } from "commander";
 import pkg from "../package.json" with { type: "json" };
 import { runIfMain } from "./shared/run.js";
+import { registerTermLabelSource } from "./shared/term-labels.js";
+
+// `meta fill` offers the termbase's labels, but `manni meta fill` mounts only
+// the meta domain. So the umbrella registers the source, and the source loads
+// the term domain only when `fill` asks it for labels.
+registerTermLabelSource(async (request) =>
+  (await import("./term/commands/labels.js")).termLabels(request),
+);
 
 interface Domain {
   /** The command names the loader mounts, known before it is loaded. */

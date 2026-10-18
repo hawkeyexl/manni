@@ -1,8 +1,8 @@
 /**
  * The termbase as `meta fill` reads it: each term's label and id, from the
- * same config and the same files `manni term check` reads. Registered as the
- * family's term label source by this domain's CLI module (see
- * `src/shared/term-labels.ts`).
+ * same config and the same files `manni term check` reads. The `manni`
+ * umbrella registers it as the family's term label source, loading this
+ * module on demand (see `src/shared/term-labels.ts`).
  */
 import type { TermLabel, TermLabelRequest } from "../../shared/term-labels.js";
 import { resolveTermRun } from "../core/config.js";
