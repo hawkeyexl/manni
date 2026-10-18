@@ -36,8 +36,11 @@ docs/src/content/docs/term/reference/configuration.mdx:
       lines: 97-123
       integrity: sha256-7842007903a6a8250752067cfe75db02fe55804ceb12b8ce2b4a3ef9d2e44b84
     - generated-by: Claude Opus 5
-      lines: 125-195
-      integrity: sha256-bc856a1888ea4cd8021583a8e68373ab4000b1b6b1716fa6d67312ad4b3f7ef5
+      lines: 125-128
+      integrity: sha256-80ff3519e14295b70db2b59559ad19d91c21e9de8c877654d8c520e7d17cd345
+    - generated-by: Claude Opus 5
+      lines: 130-195
+      integrity: sha256-8c0ae973006dfa8390c30aef3974595ff0ce70795b2b5709f0a59ef0d69b2b17
   owner:
     - "@hawkeyexl"
   created: 2026-09-17

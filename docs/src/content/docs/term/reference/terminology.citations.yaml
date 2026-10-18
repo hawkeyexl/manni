@@ -327,17 +327,17 @@ docs/src/content/docs/term/reference/terminology.mdx:
         integrity: sha256-5b753fbebbe976abf57df76e2ceccbf8ccb7ecb5b764edd09c575017176252ba
       source:
         file: src/term/core/check.ts
-        lines: 169-174
+        lines: 190-195
         integrity: sha256-0ec82aba94f07a6b593ef06114f291020439e0ce8fae368c78c029312ffb80f3
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
     - id: see-resolves-labels-ids
       claim:
         integrity: sha256-41b76e60b60d0b3b47ba9e1388d6c8c979c9f7933f5aa37bcf0dbdbb07563f00
       source:
         file: src/term/core/check.ts
-        lines: 58-95
-        integrity: sha256-9b2b8c934aa3c52366d960e921aa52ede6ca9b7ad20bbe4026e31fb0cc3449a2
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        lines: 62-104
+        integrity: sha256-47574a0ce0b7c5527c80cd93c7391feffaeda8ee62db7ed52e72c07370274fb4
+        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
     - id: see-is-reference-field
       claim:
         integrity: sha256-41b76e60b60d0b3b47ba9e1388d6c8c979c9f7933f5aa37bcf0dbdbb07563f00
@@ -351,17 +351,17 @@ docs/src/content/docs/term/reference/terminology.mdx:
         integrity: sha256-41b76e60b60d0b3b47ba9e1388d6c8c979c9f7933f5aa37bcf0dbdbb07563f00
       source:
         file: src/term/core/check.ts
-        lines: 169-174
+        lines: 190-195
         integrity: sha256-0ec82aba94f07a6b593ef06114f291020439e0ce8fae368c78c029312ffb80f3
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
     - id: see-dangling-reference
       claim:
         integrity: sha256-41b76e60b60d0b3b47ba9e1388d6c8c979c9f7933f5aa37bcf0dbdbb07563f00
       source:
         file: src/term/core/check.ts
-        lines: 160-167
+        lines: 181-188
         integrity: sha256-0e29438868dac3bde56075ece471c81a2e3d580e46cdfda81d32b173c3b5c8d1
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
     - id: id-order
       claim:
         integrity: sha256-794487f89d866020f14c0220e36a3fd96feecc7c4499194f02937322147e1a9a
@@ -461,9 +461,9 @@ docs/src/content/docs/term/reference/terminology.mdx:
         integrity: sha256-4442c1dcb0e6f546e656407164620a89605ccf07593b814ec157e48567e76a20
       source:
         file: src/term/types.ts
-        lines: 412-423
-        integrity: sha256-038e4638a1c8b50b4472c31b9868253f1d00ad2a5bf2ab92f797c0ee543956f3
-        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+        lines: 430-443
+        integrity: sha256-4b74ffb3882bdfca3fcbcf085a1f604bfb9db05c7aa92e83fcb49f8c14b50711
+        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
     - id: id-construct-html-dfn
       claim:
         lines: 332
