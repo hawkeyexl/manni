@@ -395,12 +395,30 @@ export interface TermReference {
   file: string;
   line?: number;
   label: string;
+  /** The field it was read from, dotted. `concepts` when absent. */
+  field?: string;
+  /** The page's `language`, which a label resolves in first. */
+  language?: string;
+}
+
+/** A page's `graph:` block, as far as the concept hierarchy reads it. */
+export interface TermBlock {
+  file: string;
+  /** The line of `graph:`. */
+  line?: number;
+  language?: string;
+  /** The block's `label`: the concept the page is about. */
+  label: string;
+  /** One per value of `broader`, `narrower` and `related-concepts`, on its field's line. */
+  edges: { field: "broader" | "narrower" | "related-concepts"; value: string; line?: number }[];
 }
 
 export interface TermSet {
   terms: Term[];
   /** Every `concepts:` and `graph.concepts` value in every file the run loaded. */
   references: TermReference[];
+  /** Every labelled `graph:` block in every file the run loaded. */
+  blocks: TermBlock[];
   /** Readers' notices, in load order. */
   notices: string[];
 }
@@ -418,8 +436,10 @@ export const TERM_RULES = [
   "broader-cycle",
   "see-not-empty",
   "asymmetric-hierarchy",
+  "alt-label-reference",
   "abstract-too-long",
   "unused-term",
+  "hierarchy-outside-termbase",
 ] as const;
 export type TermRule = (typeof TERM_RULES)[number];
 

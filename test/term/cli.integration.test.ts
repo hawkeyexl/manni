@@ -155,15 +155,34 @@ describe("manni term (the ladder)", () => {
     expect(r.status).toBe(0);
   });
 
-  it("4. fails on an undefined term, exit 1", () => {
+  it("4. fails on an undefined term, exit 1, and warns on an alt-label", () => {
     const r = term(["check"], { cwd: join(work, "failing") });
     expect(r.stdout).toBe(
       [
         "docs/guides/fitting.md:3",
-        '  error  manni:term/undefined-term       concepts: "PAL" names no entry.',
-        '                                         "progressive lens" lists it as an alt-label.',
+        '  warning manni:term/alt-label-reference  concepts: "PAL" is an alt-label of "progressive lens", so name the label.',
+        '  error  manni:term/undefined-term       concepts: "trifocal" names no entry.',
         "",
-        "1 error in 2 terms",
+        "1 error, 1 warning in 2 terms",
+        "",
+      ].join("\n"),
+    );
+    expect(r.status).toBe(1);
+  });
+
+  it("5. checks the hierarchy a page's graph: block adds to the termbase (proposal 0085)", () => {
+    const r = term(["check"], { cwd: resolve(root, "test", "fixtures", "term", "concept-scheme") });
+    expect(r.stdout).toBe(
+      [
+        "docs/guides/retrying.md:6",
+        "  error  manni:term/broader-cycle               broader: Resilience > Retry > Resilience",
+        '  notice manni:term/hierarchy-outside-termbase  graph: broader "Retry" on "Resilience" is not on its term page (docs/glossary/resilience.md), so add it there.',
+        "docs/guides/retrying.md:7",
+        '  notice manni:term/hierarchy-outside-termbase  graph: related-concepts "Networking" on "Resilience" is not on its term page (docs/glossary/resilience.md), so add it there.',
+        "docs/guides/retrying.md:8",
+        '  warning manni:term/alt-label-reference         graph.concepts: "PAL" is an alt-label of "Pluggable auth layer", so name the label.',
+        "",
+        "1 error, 1 warning, 2 notices in 3 terms",
         "",
       ].join("\n"),
     );
@@ -173,7 +192,11 @@ describe("manni term (the ladder)", () => {
   it("6. annotates the diff in CI, and says nothing when clean", () => {
     const r = term(["check", "-f", "github"], { cwd: join(work, "failing") });
     expect(r.stdout).toBe(
-      '::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.\n',
+      [
+        '::warning file=docs/guides/fitting.md,line=3,title=manni%3Aterm/alt-label-reference::concepts: "PAL" is an alt-label of "progressive lens", so name the label.',
+        '::error file=docs/guides/fitting.md,line=3,title=manni%3Aterm/undefined-term::concepts: "trifocal" names no entry.',
+        "",
+      ].join("\n"),
     );
     expect(r.status).toBe(1);
     const clean = term(["check", "-f", "github"]);
@@ -183,33 +206,36 @@ describe("manni term (the ladder)", () => {
 
   it("check renders json, sarif and junit", () => {
     const cwd = join(work, "failing");
-    const json = JSON.parse(term(["check", "-f", "json"], { cwd }).stdout) as { summary: { errors: number } };
-    expect(json.summary.errors).toBe(1);
+    const json = JSON.parse(term(["check", "-f", "json"], { cwd }).stdout) as {
+      summary: { errors: number; warnings: number };
+    };
+    expect(json.summary).toMatchObject({ errors: 1, warnings: 1 });
     const sarif = JSON.parse(term(["check", "-f", "sarif"], { cwd }).stdout) as {
       runs: {
-        tool: { driver: { rules: { shortDescription: { text: string }; helpUri?: string }[] } };
+        tool: { driver: { rules: { id: string; shortDescription: { text: string }; helpUri?: string }[] } };
         results: { ruleId: string; message: { text: string } }[];
       }[];
     };
-    expect(sarif.runs[0]?.results[0]?.ruleId).toBe("manni:term/undefined-term");
-    expect(sarif.runs[0]?.results[0]?.message.text).toBe(
-      'concepts: "PAL" names no entry. "progressive lens" lists it as an alt-label.',
-    );
-    expect(sarif.runs[0]?.tool.driver.rules[0]?.helpUri).toBe(
+    expect(sarif.runs[0]?.results.map((r) => [r.ruleId, r.message.text])).toEqual([
+      ["manni:term/alt-label-reference", 'concepts: "PAL" is an alt-label of "progressive lens", so name the label.'],
+      ["manni:term/undefined-term", 'concepts: "trifocal" names no entry.'],
+    ]);
+    expect(sarif.runs[0]?.tool.driver.rules.map((r) => r.helpUri).sort()).toEqual([
+      "https://hawkeyexl.github.io/manni/term/reference/rules/#alt-label-reference",
       "https://hawkeyexl.github.io/manni/term/reference/rules/#undefined-term",
-    );
+    ]);
     const junit = term(["check", "-f", "junit"], { cwd }).stdout;
     expect(junit).toContain('classname="manni.term"');
-    expect(junit).toContain('message="concepts: &quot;PAL&quot; names no entry.');
+    expect(junit).toContain('message="concepts: &quot;trifocal&quot; names no entry.');
   });
 
   it("7. ramps in with --baseline", () => {
     const cwd = join(work, "failing");
     const r = term(["check", "--baseline"], { cwd });
-    expect(r.stdout).toBe("✓ 1 finding recorded in .manni-term-baseline.json\n");
+    expect(r.stdout).toBe("✓ 2 findings recorded in .manni-term-baseline.json\n");
     expect(r.status).toBe(0);
     const again = term(["check", "--baseline"], { cwd });
-    expect(again.stdout).toBe("✓ 2 terms, 3 references, no findings, 1 baselined\n");
+    expect(again.stdout).toBe("✓ 2 terms, 4 references, no findings, 2 baselined\n");
     expect(again.status).toBe(0);
   });
 

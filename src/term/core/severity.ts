@@ -18,8 +18,10 @@ export const DEFAULT_SEVERITY: Readonly<Record<TermRule, TermSeverity>> = {
   "broader-cycle": "error",
   "see-not-empty": "error",
   "asymmetric-hierarchy": "warning",
+  "alt-label-reference": "warning",
   "abstract-too-long": "notice",
   "unused-term": "notice",
+  "hierarchy-outside-termbase": "notice",
 };
 
 export function ruleId(rule: TermRule): string {

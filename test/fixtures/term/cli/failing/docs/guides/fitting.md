@@ -1,5 +1,5 @@
 ---
 title: Fitting lenses
-concepts: [PAL, corrective lens, progressive lens]
+concepts: [PAL, trifocal, corrective lens, progressive lens]
 ---
 # Fitting lenses

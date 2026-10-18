@@ -12,10 +12,14 @@
  * with no language counts as `en`, and languages compare ignoring case. Across
  * languages, two labels collide only when they differ in spelling but not in
  * case: `API` in en and de is one word, `Kubernetes`/`kubernetes` is a clash.
+ *
+ * The hierarchy is the concept scheme's (proposal 0085): every term's
+ * `broader` and `narrower`, plus every page's `graph:` block. A name on a page
+ * resolves as the graph resolves it, by label, then id, then alt-label.
  */
 import { TERM_RELATION_FIELDS } from "../../shared/reference-fields.js";
 import { DEFAULT_ABSTRACT_MAX_LENGTH } from "./config.js";
-import { languageKey as language } from "./writers/render-util.js";
+import { DEFAULT_LANGUAGE, languageKey as language } from "./writers/render-util.js";
 import { resolveSeverity, ruleId } from "./severity.js";
 import type { Term, TermField, TermFinding, TermRule, TermSet, TermSeverity } from "../types.js";
 
@@ -55,11 +59,12 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     ...(field === undefined ? {} : { field }),
   });
 
-  // The first entry claiming each folded label, and each folded id, overall
+  // The first entry claiming each folded label, id and alt-label, overall
   // and per language.
   const byLabel = new Map<string, number>();
   const byId = new Map<string, number>();
   const inLanguage = new Map<string, number>();
+  const byAlt = new Map<string, number>();
   // Every entry per folded label, in set order, for the collision rules.
   const labelled = new Map<string, number[]>();
   const claim = (map: Map<string, number>, key: string, index: number): void => {
@@ -73,6 +78,10 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     claim(byId, fold(t.id), index);
     claim(inLanguage, `${language(t)} label ${fold(t.record.label)}`, index);
     claim(inLanguage, `${language(t)} id ${fold(t.id)}`, index);
+    for (const alt of t.record["alt-labels"] ?? []) {
+      claim(byAlt, fold(alt), index);
+      claim(inLanguage, `${language(t)} alt ${fold(alt)}`, index);
+    }
   });
   /** Whether `t`'s label `a` collides with `other`'s label `b`: within a language when they fold alike, across languages only when their spelling differs too. */
   const clash = (t: Term, a: string, other: Term, b: string): boolean =>
@@ -94,27 +103,39 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     byLabel.get(fold(value)) ??
     byId.get(fold(value));
 
-  // undefined-term, and the folded labels some page names, for unused-term.
-  const referenced = new Set<string>();
-  for (const reference of set.references) {
-    const label = fold(reference.label);
-    referenced.add(label);
-    if (byLabel.has(label)) continue;
-    let message = `concepts: "${reference.label}" names no entry.`;
-    const synonym = terms.find((t) => (t.record["alt-labels"] ?? []).some((alt) => fold(alt) === label));
-    if (synonym !== undefined) {
-      message += ` "${synonym.record.label}" lists it as an alt-label.`;
-    }
-    drafts.push({
-      rule: "undefined-term",
-      message,
-      file: reference.file,
-      ...(reference.line === undefined ? {} : { line: reference.line }),
-    });
-  }
+  // A name on a page, as the graph resolves it: a label or an id, then an
+  // alt-label, each in the page's language before any other.
+  const pageLanguage = (lang: string | undefined): string => (lang ?? DEFAULT_LANGUAGE).toLowerCase();
+  const resolveLabelOrId = (value: string, lang: string | undefined): number | undefined =>
+    inLanguage.get(`${pageLanguage(lang)} label ${fold(value)}`) ??
+    inLanguage.get(`${pageLanguage(lang)} id ${fold(value)}`) ??
+    byLabel.get(fold(value)) ??
+    byId.get(fold(value));
+  const resolveAlt = (value: string, lang: string | undefined): number | undefined =>
+    inLanguage.get(`${pageLanguage(lang)} alt ${fold(value)}`) ?? byAlt.get(fold(value));
+  const resolveName = (value: string, lang: string | undefined): number | undefined =>
+    resolveLabelOrId(value, lang) ?? resolveAlt(value, lang);
 
-  // unused-term: a term is used when a page names any term sharing its id.
-  const usedIds = new Set(terms.filter((t) => referenced.has(fold(t.record.label))).map((t) => fold(t.id)));
+  // undefined-term and alt-label-reference, and the ids some page names, for unused-term.
+  const usedIds = new Set<string>();
+  for (const reference of set.references) {
+    const field = reference.field ?? "concepts";
+    const at = { file: reference.file, ...(reference.line === undefined ? {} : { line: reference.line }) };
+    const named = resolveLabelOrId(reference.label, reference.language);
+    const synonym = named === undefined ? resolveAlt(reference.label, reference.language) : undefined;
+    const target = terms[named ?? synonym ?? -1];
+    if (target !== undefined) usedIds.add(fold(target.id));
+    if (named !== undefined) continue;
+    drafts.push(
+      target === undefined
+        ? { rule: "undefined-term", message: `${field}: "${reference.label}" names no entry.`, ...at }
+        : {
+            rule: "alt-label-reference",
+            message: `${field}: "${reference.label}" is an alt-label of "${target.record.label}", so name the label.`,
+            ...at,
+          },
+    );
+  }
 
   // duplicate-id: ignoring case, as references resolve ids, on every entry
   // sharing the id in one language.
@@ -186,7 +207,7 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
       );
     }
 
-    // unused-term: no reference names the label of any term sharing the id.
+    // unused-term: no reference resolves to any term sharing the id.
     if (!usedIds.has(fold(t.id))) {
       drafts.push(onEntry(t, "unused-term", "no page's concepts: names this term"));
     }
@@ -235,12 +256,81 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     }
   });
 
-  // broader-cycle: every elementary cycle once, found from its earliest entry.
-  for (const [start, path] of broaderCycles(broader)) {
+  // The concept scheme's hierarchy, child to parent: every term's broader and
+  // narrower, then every graph block's. A name no term claims is a freeform
+  // node of its own, after the terms.
+  const names = terms.map((t) => t.record.label);
+  const freeform = new Map<string, number>();
+  const node = (value: string, lang: string | undefined): number => {
+    const index = resolveName(value, lang) ?? freeform.get(fold(value));
+    if (index !== undefined) return index;
+    freeform.set(fold(value), names.length);
+    names.push(value);
+    return names.length - 1;
+  };
+  const up: Set<number>[] = [];
+  const termEdges = new Set<string>();
+  const blockEdges = new Map<string, { file: string; line?: number }>();
+  const link = (child: number, parent: number): string => {
+    (up[child] ??= new Set()).add(parent);
+    return `${String(child)}>${String(parent)}`;
+  };
+  broader.forEach((parents, child) => {
+    for (const parent of parents) termEdges.add(link(child, parent));
+  });
+  narrower.forEach((children, parent) => {
+    for (const child of children) termEdges.add(link(child, parent));
+  });
+  for (const block of set.blocks) {
+    const subject = node(block.label, block.language);
+    for (const edge of block.edges) {
+      if (edge.field === "related-concepts") continue;
+      const other = node(edge.value, block.language);
+      const key = edge.field === "broader" ? link(subject, other) : link(other, subject);
+      const line = edge.line ?? block.line;
+      if (!blockEdges.has(key)) blockEdges.set(key, { file: block.file, ...(line === undefined ? {} : { line }) });
+    }
+  }
+
+  // broader-cycle: every elementary cycle once, found from its earliest node.
+  // A cycle the terms close alone sits on that entry; one a block edge closes
+  // sits on the first such edge's page.
+  for (const [start, path] of broaderCycles(up)) {
+    const chain = [...path, start];
+    const message = `broader: ${chain.map((index) => names[index] ?? "").join(" > ")}`;
+    const hops = path.map((from, i) => `${String(from)}>${String(chain[i + 1])}`);
+    const viaBlock = hops.find((hop) => !termEdges.has(hop));
     const startTerm = terms[start];
-    if (startTerm === undefined) continue;
-    const labels = [...path, start].map((index) => terms[index]?.record.label ?? "");
-    drafts.push(onEntry(startTerm, "broader-cycle", `broader: ${labels.join(" > ")}`, "broader"));
+    if (viaBlock === undefined && startTerm !== undefined) {
+      drafts.push(onEntry(startTerm, "broader-cycle", message, "broader"));
+    } else {
+      const at = blockEdges.get(viaBlock ?? "");
+      if (at !== undefined) drafts.push({ rule: "broader-cycle", message, ...at });
+    }
+  }
+
+  // hierarchy-outside-termbase: a block whose label is a term gives it an edge
+  // the term's own field does not list. Values compare as concepts, by id.
+  const concept = (index: number | undefined, value: string): string => {
+    const t = index === undefined ? undefined : terms[index];
+    return t === undefined ? `name ${fold(value)}` : `id ${fold(t.id)}`;
+  };
+  for (const block of set.blocks) {
+    const t = terms[resolveName(block.label, block.language) ?? -1];
+    if (t === undefined) continue;
+    for (const edge of block.edges) {
+      const field = edge.field === "related-concepts" ? "related-terms" : edge.field;
+      const listed = referenceValues(t, field).map((value) => concept(resolveReference(t, value), value));
+      if (listed.includes(concept(resolveName(edge.value, block.language), edge.value))) continue;
+      const kind = t.location.construct === "page" ? "page" : "entry";
+      const line = edge.line ?? block.line;
+      drafts.push({
+        rule: "hierarchy-outside-termbase",
+        message: `graph: ${edge.field} "${edge.value}" on "${t.record.label}" is not on its term ${kind} (${t.location.file}), so add it there.`,
+        file: block.file,
+        ...(line === undefined ? {} : { line }),
+      });
+    }
   }
 
   const findings: TermFinding[] = [];
