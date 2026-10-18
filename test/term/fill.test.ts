@@ -51,14 +51,15 @@ function fill(opts: Partial<FillOptions> = {}, responses?: MockResponse[]): Retu
 describe("term fill, offline", () => {
   it("creates a page per concept pages name, carrying what the pages say", async () => {
     const report = await fill({ offline: true });
-    // The walk reads docs/api/payments.md first, so its block comes first.
+    // References first, in walk order (payments.md names Retries), then the edges.
     expect(report.entries.map((e) => [e.action, e.file, e.label, e.definition.status])).toEqual([
-      ["create", "docs/glossary/backoff.md", "Backoff", "carried"],
       ["create", "docs/glossary/retry.md", "Retry", "missing"],
       ["create", "docs/glossary/errors.md", "Errors", "missing"],
+      ["create", "docs/glossary/backoff.md", "Backoff", "carried"],
     ]);
     expect(report.summary).toEqual({ created: 3, filled: 0, skipped: 0, withoutDefinition: 2, turns: 0 });
-    expect(report.entries[1]?.from).toEqual(["docs/api/retries.md:7", "docs/api/payments.md:5", "docs/api/retries.md:5"]);
+    // A block's own label is its page naming itself, so retries.md's block is no source.
+    expect(report.entries[0]?.from).toEqual(["docs/api/payments.md:5", "docs/api/retries.md:5"]);
 
     expect(frontmatter("docs/glossary/retry.md")).toEqual({
       title: "Retry",
@@ -79,7 +80,7 @@ describe("term fill, offline", () => {
     const report = await fill({ offline: true, dryRun: true });
     expect(existsSync(join(work, "docs/glossary/retry.md"))).toBe(false);
     const text = renderFillPretty(report);
-    expect(text.split("\n")[1]).toBe("would create docs/glossary/retry.md     Retry     stub, no definition");
+    expect(text.split("\n")[0]).toBe("would create docs/glossary/retry.md     Retry     stub, no definition");
     expect(text.split("\n").at(-1)).toBe("3 terms would be created, 0 would be filled, 2 left without a definition");
   });
 
@@ -115,12 +116,12 @@ describe("term fill, with a model", () => {
       definition("Random variation added to a delay.", 0.91),
     ]);
     expect(report.entries.map((e) => [e.action, e.label, e.definition.status, e.definition.confidence])).toEqual([
-      ["create", "Backoff", "carried", undefined],
       ["create", "Retry", "drafted", 0.86],
       ["create", "Errors", "below-threshold", 0.41],
+      ["create", "Backoff", "carried", undefined],
       ["fill", "Jitter", "drafted", 0.91],
     ]);
-    expect(report.entries[1]?.definition.model).toBe("mock/mock-model");
+    expect(report.entries[0]?.definition.model).toBe("mock/mock-model");
     expect(report.summary).toEqual({ created: 3, filled: 1, skipped: 0, withoutDefinition: 1, turns: 3 });
 
     const retry = frontmatter("docs/glossary/retry.md");
@@ -157,9 +158,9 @@ describe("term fill, with a model", () => {
   it("leaves what the turn budget did not reach, saying why", async () => {
     const report = await fill({ maxTurns: 1 }, [definition("Sending a failed request again.", 0.9)]);
     expect(report.entries.map((e) => [e.action, e.label, e.reason])).toEqual([
-      ["create", "Backoff", undefined],
       ["create", "Retry", undefined],
       ["skip", "Errors", "turn budget"],
+      ["create", "Backoff", undefined],
       ["skip", "Jitter", "turn budget"],
     ]);
     expect(report.summary.turns).toBe(1);

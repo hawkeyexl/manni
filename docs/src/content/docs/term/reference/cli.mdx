@@ -716,12 +716,13 @@ manni term fill [paths...] [options]
 ```
 
 A concept is named by a page's `concepts:`, its `graph.concepts`, a section's
-`concepts`, and a `graph:` block's `label`, `broader`, `narrower` and
-`related-concepts`. A name that matches a term's label, id or alt-label,
+`concepts`, and the values of a `graph:` block's `broader`, `narrower` and
+`related-concepts`. A block's own `label` is its page naming itself, so it
+never asks for a page. A name that matches a term's label, id or alt-label,
 ignoring case, already has a page. `fill` never overwrites a value a person
 wrote, and never replaces a file that is already there.
 
-A new page carries what the naming pages say. Its alt-labels come from the
+A new page carries what the pages say about it. Its alt-labels come from the
 `graph:` blocks labelled with the concept. Its `broader`, `narrower` and
 `related-terms` are the union of those blocks' edges. Its `language` is the
 naming page's, when that page has one. A block's `definition` is carried over

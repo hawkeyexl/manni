@@ -56,15 +56,23 @@ function addUnique(list: string[], value: string): void {
 const EDGE_LISTS = { broader: "broader", narrower: "narrower", "related-concepts": "related" } as const;
 
 /**
- * Every concept the pages name, merged by label ignoring case: each `graph:`
- * block's label (with its alt-labels, edges and definition), each edge value,
- * then each `concepts:` reference. A block's alt-label names its concept, so a
- * reference spelled as one joins it rather than becoming a concept of its own.
+ * Every concept one page names on another's behalf, merged by label ignoring
+ * case: each `concepts:` reference, then each value of a `graph:` block's
+ * `broader`, `narrower` and `related-concepts`. A block's own `label` is the
+ * page naming itself, so it never makes a concept. It enriches one: a concept
+ * a block labels takes its alt-labels, edges and definition. A name spelled
+ * as a block's alt-label joins that block's concept.
  */
 export function namedConcepts(set: Pick<TermSet, "references" | "blocks">): NamedConcept[] {
+  // A block's alt-labels, each to the label it is an alt-label of.
+  const alias = new Map<string, string>();
+  for (const block of set.blocks) {
+    for (const alt of block.altLabels ?? []) if (!alias.has(fold(alt))) alias.set(fold(alt), block.label);
+  }
   const concepts: NamedConcept[] = [];
   const byKey = new Map<string, NamedConcept>();
-  const named = (label: string, at: NamedAt, language: string | undefined): NamedConcept => {
+  const named = (value: string, at: NamedAt, language: string | undefined): void => {
+    const label = alias.get(fold(value)) ?? value;
     let concept = byKey.get(fold(label));
     if (concept === undefined) {
       concept = { label: label.trim(), from: [], altLabels: [], broader: [], narrower: [], related: [] };
@@ -73,32 +81,27 @@ export function namedConcepts(set: Pick<TermSet, "references" | "blocks">): Name
     }
     if (concept.language === undefined && language !== undefined) concept.language = language;
     if (!concept.from.some((f) => f.file === at.file && f.line === at.line)) concept.from.push(at);
-    return concept;
   };
   const at = (file: string, line: number | undefined): NamedAt => (line === undefined ? { file } : { file, line });
 
-  const blockConcept = (block: TermBlock): NamedConcept => {
-    const concept = named(block.label, at(block.file, block.line), block.language);
-    for (const alt of block.altLabels ?? []) {
-      addUnique(concept.altLabels, alt);
-      if (!byKey.has(fold(alt))) byKey.set(fold(alt), concept);
-    }
-    if (concept.definition === undefined && block.definition !== undefined) concept.definition = block.definition;
-    return concept;
-  };
-  const owners = set.blocks.map(blockConcept);
-  set.blocks.forEach((block, i) => {
-    const owner = owners[i];
-    if (owner === undefined) return;
-    for (const edge of block.edges) {
-      addUnique(owner[EDGE_LISTS[edge.field]], edge.value);
-      named(edge.value, at(block.file, edge.line ?? block.line), block.language);
-    }
-  });
   for (const reference of set.references) {
     named(reference.label, at(reference.file, reference.line), reference.language);
   }
+  for (const block of set.blocks) {
+    for (const edge of block.edges) named(edge.value, at(block.file, edge.line ?? block.line), block.language);
+  }
+  for (const block of set.blocks) {
+    const concept = byKey.get(fold(block.label));
+    if (concept !== undefined) enrich(concept, block);
+  }
   return concepts;
+}
+
+/** What a block labelled with `concept` says about it. */
+function enrich(concept: NamedConcept, block: TermBlock): void {
+  for (const alt of block.altLabels ?? []) if (fold(alt) !== fold(concept.label)) addUnique(concept.altLabels, alt);
+  for (const edge of block.edges) addUnique(concept[EDGE_LISTS[edge.field]], edge.value);
+  if (concept.definition === undefined && block.definition !== undefined) concept.definition = block.definition;
 }
 
 /** What `fill` does from metadata alone: the concepts to create, and the existing entries a block defines. */
@@ -110,12 +113,12 @@ export interface MetadataPlan {
 
 export function planFromMetadata(set: TermSet): MetadataPlan {
   const index = termIndex(set.terms);
+  const create = namedConcepts(set).filter((concept) => !index.has(fold(concept.label)));
+  // A block that labels an existing entry defines it, whether or not any page names it.
   const carried = new Map<Term, string>();
-  const create: NamedConcept[] = [];
-  for (const concept of namedConcepts(set)) {
-    const term = index.get(fold(concept.label));
-    if (term === undefined) create.push(concept);
-    else if (concept.definition !== undefined && !carried.has(term)) carried.set(term, concept.definition);
+  for (const block of set.blocks) {
+    const term = index.get(fold(block.label));
+    if (term !== undefined && block.definition !== undefined && !carried.has(term)) carried.set(term, block.definition);
   }
   const missing = set.terms
     // A `see:` entry redirects, and its target holds the definition.

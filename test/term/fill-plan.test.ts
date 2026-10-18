@@ -38,41 +38,48 @@ function set(terms: Term[], references: TermReference[], blocks: TermBlock[] = [
 }
 
 describe("namedConcepts", () => {
-  it("merges blocks, their edges and references by label ignoring case", () => {
+  const retryBlock: TermBlock = {
+    file: "a.md",
+    line: 4,
+    language: "en",
+    label: "Retry",
+    altLabels: ["Retries"],
+    edges: [
+      { field: "broader", value: "Errors", line: 8 },
+      { field: "related-concepts", value: "Backoff", line: 9 },
+    ],
+  };
+
+  it("merges references and block edge values by label ignoring case, a block enriching what they name", () => {
     const concepts = namedConcepts({
-      blocks: [
-        {
-          file: "a.md",
-          line: 4,
-          language: "en",
-          label: "Retry",
-          altLabels: ["Retries"],
-          edges: [
-            { field: "broader", value: "Errors", line: 8 },
-            { field: "related-concepts", value: "Backoff", line: 9 },
-          ],
-        },
-      ],
+      blocks: [retryBlock],
       references: [
-        { file: "b.md", line: 3, label: "retry" },
-        { file: "b.md", line: 3, label: "Retries" },
+        { file: "b.md", line: 3, label: "Retry", language: "fr" },
+        { file: "b.md", line: 3, label: "retries" },
         { file: "c.md", label: "errors" },
       ],
     });
-    expect(concepts.map((c) => c.label)).toEqual(["Retry", "Errors", "Backoff"]);
+    expect(concepts.map((c) => c.label)).toEqual(["Retry", "errors", "Backoff"]);
     const retry = concepts[0];
     expect(retry?.altLabels).toEqual(["Retries"]);
     expect(retry?.broader).toEqual(["Errors"]);
     expect(retry?.related).toEqual(["Backoff"]);
-    expect(retry?.language).toBe("en");
-    expect(retry?.from).toEqual([{ file: "a.md", line: 4 }, { file: "b.md", line: 3 }]);
-    expect(concepts[1]?.from).toEqual([{ file: "a.md", line: 8 }, { file: "c.md" }]);
+    // The naming page's language, never the block's own.
+    expect(retry?.language).toBe("fr");
+    expect(retry?.from).toEqual([{ file: "b.md", line: 3 }]);
+    expect(concepts[1]?.from).toEqual([{ file: "c.md" }, { file: "a.md", line: 8 }]);
+    expect(concepts[2]?.language).toBe("en");
   });
 
-  it("carries a block's definition", () => {
+  it("never makes a concept of a block's own label", () => {
+    const concepts = namedConcepts({ blocks: [retryBlock], references: [] });
+    expect(concepts.map((c) => c.label)).toEqual(["Errors", "Backoff"]);
+  });
+
+  it("carries a block's definition to the concept it labels", () => {
     const [backoff] = namedConcepts({
       blocks: [{ file: "a.md", label: "Backoff", definition: "Waiting longer.", edges: [] }],
-      references: [],
+      references: [{ file: "b.md", label: "backoff" }],
     });
     expect(backoff?.definition).toBe("Waiting longer.");
   });

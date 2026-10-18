@@ -46,9 +46,9 @@ describe("manni term fill", () => {
     expect(r.status).toBe(0);
     expect(r.stdout).toBe(
       [
-        "created docs/glossary/backoff.md   Backoff   definition from graph: block",
         "created docs/glossary/retry.md     Retry     stub, no definition",
         "created docs/glossary/errors.md    Errors    stub, no definition",
+        "created docs/glossary/backoff.md   Backoff   definition from graph: block",
         "3 terms created, 0 filled, 2 left without a definition",
         "",
       ].join("\n"),
@@ -60,14 +60,15 @@ describe("manni term fill", () => {
     const r = fill(["--offline", "--dry-run", "-f", "json"]);
     expect(r.status).toBe(0);
     const report = JSON.parse(r.stdout) as { entries: unknown[]; summary: unknown };
-    expect(report.entries[0]).toEqual({
+    // Named by retries.md's edge; payments.md's block labelling it only enriches it.
+    expect(report.entries[2]).toEqual({
       action: "create",
       file: "docs/glossary/backoff.md",
       id: "backoff",
       label: "Backoff",
       language: "en",
       source: "metadata",
-      from: ["docs/api/payments.md:7", "docs/api/retries.md:11"],
+      from: ["docs/api/retries.md:11"],
       definition: { status: "carried" },
     });
     expect(report.summary).toEqual({ created: 3, filled: 0, skipped: 0, withoutDefinition: 2, turns: 0 });

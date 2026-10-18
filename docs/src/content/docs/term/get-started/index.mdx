@@ -255,19 +255,24 @@ ahead of its pages can turn it off with `severity: {unused-term: off}` under
 ## Start from the concepts your pages name
 
 A docset often names its concepts before it has a termbase. `manni term fill`
-writes a term page for each name no entry claims. Here a guide names
-`trifocal`, and its `graph:` block puts it under `corrective lens`:
+writes a term page for each name no entry claims. A name counts when a page
+mentions it in `concepts:` or in a `graph:` block's edges. Here a guide about
+trifocals names `trifocal`, and its `graph:` block puts it under
+`corrective lens`:
 
-```markdown title="docs/guides/fitting.md"
+```markdown title="docs/guides/trifocals.md"
 ---
-title: Fitting lenses
+title: Fitting trifocals
 concepts: [progressive lens, trifocal]
 graph:
   label: trifocal
   broader: [corrective lens]
 ---
-# Fitting lenses
+# Fitting trifocals
 ```
+
+The block's `label` alone would not count. It is the guide naming its own
+topic, so it only adds to a page another mention asks for.
 
 <Steps>
 
