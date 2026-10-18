@@ -55,7 +55,7 @@ describe("parseConfig", () => {
       "about-product-aspect",
       "not-applicable-to",
       "not-about-product-aspect",
-      // Proposal 0086: questions join the default, beside the graph block.
+      // Proposal 0087: questions join the default, beside the graph block.
       "sample-questions",
     ]);
     expect(c.fill.confidenceThreshold).toBe(0.7);

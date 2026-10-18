@@ -33,7 +33,7 @@ export function cacheKey(
 }
 
 /**
- * The key of one question request (proposal 0086): its own prompt, so its own
+ * The key of one question request (proposal 0087): its own prompt, so its own
  * key. `request` is everything the prompt says besides the text, so a page
  * whose questions or concepts change asks again.
  */

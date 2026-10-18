@@ -1,5 +1,5 @@
 /**
- * The `graph fill` question ladder through the built bin (proposal 0086):
+ * The `graph fill` question ladder through the built bin (proposal 0087):
  * its usage errors, and an `--offline` run on a machine with no local model,
  * faked with the inference library's environment seams. Needs `npm run build`.
  */

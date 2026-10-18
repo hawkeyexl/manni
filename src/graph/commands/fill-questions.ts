@@ -1,5 +1,5 @@
 /**
- * The question pass of `manni graph fill` (proposal 0086). It re-pins moved
+ * The question pass of `manni graph fill` (proposal 0087). It re-pins moved
  * answers, pairs questions with the passage that answers them, re-pairs
  * changed answers, and drafts questions until a page has `perPage`. It runs
  * beside the `graph:` field pipeline, with its own completeness rule, prompt

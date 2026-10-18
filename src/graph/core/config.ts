@@ -56,7 +56,7 @@ export type FillField =
   | "about-product-aspect"
   | "not-applicable-to"
   | "not-about-product-aspect"
-  // A page's own questions, beside the graph block (proposal 0086)
+  // A page's own questions, beside the graph block (proposal 0087)
   | "sample-questions";
 
 /** The fields `fill` writes into the `graph:` block: every fill field but questions. */
@@ -188,7 +188,7 @@ export interface GraphConfig {
     validateGraph: boolean;
     /** Also propose per-section metadata (ADR 01032). Opt-in: more output. */
     sections: boolean;
-    /** The largest body piece one question request sends (proposal 0086). */
+    /** The largest body piece one question request sends (proposal 0087). */
     chunkChars: number;
     /** Send nothing off this machine: a downloaded local model, or none. */
     offline: boolean;
