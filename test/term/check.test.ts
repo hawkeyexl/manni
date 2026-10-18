@@ -903,7 +903,7 @@ describe("checkTermSet", () => {
   });
 });
 
-describe("checkTermSet: the thesaurus rules (proposal 0085 § 4)", () => {
+describe("checkTermSet: the thesaurus rules (proposal 0086 § 4)", () => {
   const messages = (findings: TermFinding[], rule: TermRule): [string | undefined, number | undefined, string][] =>
     only(findings, rule).map((f) => [f.id, f.line, f.message]);
 
