@@ -113,6 +113,10 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
     byId.get(fold(value));
   const resolveAlt = (value: string, lang: string | undefined): number | undefined =>
     inLanguage.get(`${pageLanguage(lang)} alt ${fold(value)}`) ?? byAlt.get(fold(value));
+  // The same order as the graph's resolver (`termIndex` in
+  // src/graph/core/concepts.ts): label or id before alt-label, the page's
+  // language first. The two must change together, or term check and the graph
+  // judge different hierarchies.
   const resolveName = (value: string, lang: string | undefined): number | undefined =>
     resolveLabelOrId(value, lang) ?? resolveAlt(value, lang);
 
