@@ -455,9 +455,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-44ef57a62c574467369a2141e4e556b88bba96ee6875dd0337e0ae01896c92b1
       source:
         file: src/term/core/check.ts
-        lines: 140-155
+        lines: 144-159
         integrity: sha256-5b9975bcff91556572a69cb35f04e8ef36b75002721d21d328774cb67e5b27e2
-        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
+        commit-sha: dde3c8b89ac5c6eb2fb7caf42657ed0598ee34a5
     - id: missing-vale-config-stops-lint
       claim:
         integrity: sha256-2e3ff5e0b533e4a07d1536c19f120adb52c52c6b279e168b872870206dcac29d

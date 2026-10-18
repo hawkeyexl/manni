@@ -110,18 +110,18 @@ docs/src/content/docs/term/get-started/index.mdx:
         integrity: sha256-b306fbd13338f0164226bb9dd914dd2f0f49db07f48977136e73e7b10e86515b
       source:
         file: src/term/core/check.ts
-        lines: 106-117
-        integrity: sha256-aabab2c7d22b2070124e9d9c583bfc5ffbcce43210a2470e7b9e41aa47e7a0e7
-        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
+        lines: 106-121
+        integrity: sha256-5ea2f0cedf7fcecb5317b81e0e550a9da8d3cc682bdbc11497428d2427144eb2
+        commit-sha: dde3c8b89ac5c6eb2fb7caf42657ed0598ee34a5
     - id: check-names-claiming-entry
       claim:
         lines: 138-140
         integrity: sha256-79830fd4f18239b35046c6fc116bac8ba366bcf4c092d8083163ebdf71192d19
       source:
         file: src/term/core/check.ts
-        lines: 132-136
+        lines: 136-140
         integrity: sha256-075801ef34164c4844827f510020defe8b95e8526bebf4082f9b67e58bc6389a
-        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
+        commit-sha: dde3c8b89ac5c6eb2fb7caf42657ed0598ee34a5
     - id: recheck-clean-line
       claim:
         lines: 156
@@ -255,9 +255,9 @@ docs/src/content/docs/term/get-started/index.mdx:
         integrity: sha256-31b5b8cb1046ef69dbf426bbb972606502207d1efb975385ffc7a0fabbd552b8
       source:
         file: src/term/core/check.ts
-        lines: 129-137
+        lines: 133-141
         integrity: sha256-24200c8215e7460603f94d3087fb99bc2c7f08f3990be19d28da105ccba924c2
-        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
+        commit-sha: dde3c8b89ac5c6eb2fb7caf42657ed0598ee34a5
     - id: check-findings-layout
       claim:
         lines: 131-135
