@@ -1,0 +1,10 @@
+      <conceptEntry id="progressive-lens">
+        <langSec xml:lang="en">
+            <term>progressive lens</term>
+            <term>PAL</term>
+        <langSec xml:lang="de">
+            <term>Gleitsichtglas</term>
+      <conceptEntry id="bifocal">
+        <langSec xml:lang="en">
+            <term>bifocal</term>
+            <term>dual-focus lens</term>
