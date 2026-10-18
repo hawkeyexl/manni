@@ -149,6 +149,7 @@ error. The [strict overlay](#validating-the-shape) requires one of the two.
 
 ## Mapping to other vocabularies
 
+{/* cite mapping-fields */}
 These fields say where the term sits outside this termbase. Each match field
 takes one IRI or a list of them, and each maps to its SKOS property:
 
@@ -442,12 +443,14 @@ into one file per entry names each file after.
 
 ## Validating the shape
 
+{/* cite schema-requires-label-only */}
 `manni term check` checks the set. The shape of one page is a schema's job.
 That schema is the built-in `manni:terminology:1.2.0`, and
 `manni meta validate -s` takes its id. It requires `label` on a `type: term`
 page, and nothing else. A page with neither a `definition` nor a `see` passes
 it, and `term check` reports that page as `missing-definition`.
 
+{/* cite strict-requires-definition-or-see */}
 The strict overlay, `manni:terminology-strict:1.2.0`, requires a
 `definition` or a `see` on a `type: term` page. Stack it to fail such a page
 at validation as well:

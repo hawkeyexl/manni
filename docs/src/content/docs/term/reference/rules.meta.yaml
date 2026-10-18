@@ -105,13 +105,13 @@ docs/src/content/docs/term/reference/rules.mdx:
       lines: 162-165
       integrity: sha256-78355bb2862f1ef461d3238ac3d5cb15426f5cad39ba61961a250705bf232be6
     - generated-by: Claude Opus 5.5
-      lines: 167-188
-      integrity: sha256-d2b04852d82672910c91ceb7f95cf07cdd782e1e4c958970abba007825bc699e
+      lines: 167-190
+      integrity: sha256-9ae50617c5b1f5f80e97769c785eef1c1536dda8d14f611f2eb0458a858d070a
     - generated-by: Claude Opus 5
-      lines: 190-194
+      lines: 192-196
       integrity: sha256-4b83b30e174e7da7697a367217b74128ef1fdcfe7dbe8fabcce315f55c656ee2
     - generated-by: Claude Opus 5
-      lines: 211-224
+      lines: 213-226
       integrity: sha256-f433d4f3a14ef7e55906a3fc127e63003ff02b7eef30393db50e439603dbf07b
   owner:
     - "@hawkeyexl"
