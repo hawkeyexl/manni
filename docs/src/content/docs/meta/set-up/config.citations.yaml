@@ -128,9 +128,9 @@ docs/src/content/docs/meta/set-up/config.mdx:
         integrity: sha256-981a7d04d5bb404e8d68c177c9cf1de8f0b015d97b4bfaa854c4464b79fd7b15
       source:
         file: src/meta/core/validator.ts
-        lines: 890-897
+        lines: 892-899
         integrity: sha256-b17d26949496c0384858caf85f0898abe5e09bf3c6d24f6d21243839c4925756
-        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
+        commit-sha: dea9284bd642f9f654d4f9cb59b5e16d19fc1259
     - id: config-exclude-does-not-filter-typed-paths
       claim:
         lines: 116

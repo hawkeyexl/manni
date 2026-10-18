@@ -168,9 +168,9 @@ docs/src/content/docs/meta/schemas/index.mdx:
         integrity: sha256-ba7bfec345f3e42d7f5a289645ec9c70fb5d7cd10900c721e28767a71631eda0
       source:
         file: src/meta/core/validator.ts
-        lines: 884-886
+        lines: 886-888
         integrity: sha256-b8f39d6d21f30a400cabe25059d553fc2d70ec3f6633292881c053d55975c4ca
-        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
+        commit-sha: dea9284bd642f9f654d4f9cb59b5e16d19fc1259
     - id: tgdp-25-template-slugs
       claim:
         lines: 210
