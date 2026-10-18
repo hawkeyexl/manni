@@ -92,9 +92,9 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-8b2fca6eb5a39ab9aa82a22abcb1753aa325219b84ce3b73ca2f043a057386d0
       source:
         file: src/term/core/check.ts
-        lines: 301-333
+        lines: 305-337
         integrity: sha256-6c26b8b1745cc96c2f012405f3a91e330edbd1a53340d6941e5f0eafa31d3638
-        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
+        commit-sha: 94212f4c5563b15809553be2508128efbeec556e
     - id: row-see-not-empty
       claim:
         lines: 58
@@ -226,17 +226,17 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-d109a77c4474dd56bad5424920f3c0878181f7ff1a6514ff8ec0acca3b2eb893
       source:
         file: src/term/core/check.ts
-        lines: 321-328
+        lines: 325-332
         integrity: sha256-3bb22613c19aec6ee387f6ab2e70001ec5a032d4828cc1ab3e0a8fe5488f8def
-        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
+        commit-sha: 94212f4c5563b15809553be2508128efbeec556e
     - id: asymmetric-from-broader-edge
       claim:
         integrity: sha256-50db136fb4b8f66f7f071078341fb9d80fb1de72f45dd57437a574169a66e258
       source:
         file: src/term/core/check.ts
-        lines: 252-266
+        lines: 256-270
         integrity: sha256-e1524a4ab55bcb4bcc7919a0b4c70ccfa18ffc872955788d04ebc4b746704af9
-        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
+        commit-sha: 94212f4c5563b15809553be2508128efbeec556e
     - id: see-carries-no-definition
       claim:
         integrity: sha256-24d439fa0029cfad54ca18182bb4a07909c2d4c080b568bc78b2016fba3076b9
@@ -466,9 +466,9 @@ docs/src/content/docs/term/fix/index.mdx:
         integrity: sha256-fa0e9821db6f4d8131fa13395496ad97c01787c6c2406dcb8f7e22fd593812fd
       source:
         file: src/term/core/check.ts
-        lines: 233-236
+        lines: 237-240
         integrity: sha256-954b82577746a6912498b135e7a0dabd737721897d3f6da4c4bbca20d1fad59d
-        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
+        commit-sha: 94212f4c5563b15809553be2508128efbeec556e
     - id: concepts-preferred-labels-only
       claim:
         integrity: sha256-796e44b983aab300190f4d4136be38e972e5ed4d252f25ad73fba97bf3889ae6

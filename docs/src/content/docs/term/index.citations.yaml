@@ -172,9 +172,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-aeb7e734663193a10c0f52f4f72743f463976c7edfcaa9b236db69208b6ead9d
       source:
         file: src/term/core/check.ts
-        lines: 282-357
+        lines: 286-361
         integrity: sha256-2863285e9c53948cf71c020f155f2e1fc2f85cfb8c907e8b5b09461ce25d0cfd
-        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
+        commit-sha: 94212f4c5563b15809553be2508128efbeec556e
     - id: checks-definition-prose-with-vale
       claim:
         lines: 123-124

@@ -274,9 +274,9 @@ docs/src/content/docs/term/ci/index.mdx:
         integrity: sha256-3cd53c77449a0c68df54a4cae7376b308d1ebf40b490a20415021a176dd6d90c
       source:
         file: src/term/core/check.ts
-        lines: 233-236
+        lines: 237-240
         integrity: sha256-954b82577746a6912498b135e7a0dabd737721897d3f6da4c4bbca20d1fad59d
-        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
+        commit-sha: 94212f4c5563b15809553be2508128efbeec556e
     - id: verify-unused-term-level
       claim:
         lines: 207

@@ -232,9 +232,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-5e1e5a96dffcdd40514ca8b6cddfe2d6d79d18f587b5f7d4ccd28ceaa0fa9e31
       source:
         file: src/term/core/check.ts
-        lines: 361-362
+        lines: 365-366
         integrity: sha256-2f265af85f9d91efeb2ae0c4d46f04963f7dbc82990a636954e00086b5be55ab
-        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
+        commit-sha: 94212f4c5563b15809553be2508128efbeec556e
     - id: severity-family-levels-plus-off
       claim:
         integrity: sha256-19bf69bbaca754e83b9842320fc2402a33cccee5e1c8993bc24b9d73c3d3861e
@@ -411,9 +411,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
         integrity: sha256-39693505a29ceb78b2fd61ea4ce45f8979af2810504567876abb275f3ae6aecd
       source:
         file: src/term/core/check.ts
-        lines: 220-222
+        lines: 224-226
         integrity: sha256-1e7a0d9319bd8cce486fe3e632637e6981a768da9a86ad16ce2d0ebe22be1b0a
-        commit-sha: e7a25a5266c909a6a0dd9e3ad6db4ec6fd248a7e
+        commit-sha: 94212f4c5563b15809553be2508128efbeec556e
     - id: allow-empty-flag-wins
       claim:
         lines: 69
