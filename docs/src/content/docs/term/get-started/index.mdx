@@ -276,20 +276,21 @@ topic, so it only adds to a page another mention asks for.
 
 <Steps>
 
-1. **See what is missing.** `--offline` calls no model, and `--dry-run`
-   writes nothing:
+1. **See what is missing.** `--offline` sends nothing off this machine, and
+   `--dry-run` writes nothing. This is a machine with no local model
+   downloaded, so the run says why the page has no definition:
 
    ```sh
    manni term fill --offline --dry-run
    ```
 
    ```
-   would create docs/terms/trifocal.md          trifocal          stub, no definition
-   would create docs/terms/corrective-lens.md   corrective lens   stub, no definition
-   2 terms would be created, 0 would be filled, 2 left without a definition
+   manni: no model is available offline, so new terms have no definition; download one first with --local, or drop --offline.
+   would create docs/terms/trifocal.md   trifocal   stub, no definition
+   1 term would be created, 0 would be filled, 1 left without a definition
    ```
 
-   The pages go beside the term pages you already have, in their format.
+   The page goes beside the term pages you already have, in their format.
 
 2. **Write the pages.** With a model provider configured, drop `--offline`, and
    a model drafts each definition. A draft is written only when its confidence

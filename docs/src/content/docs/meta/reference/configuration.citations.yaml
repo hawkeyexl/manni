@@ -2910,3 +2910,11 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         lines: 278-285
         integrity: sha256-92ce81b300e9a574cd9424343dd3001a3ab55c175f85154810416157e0d62599
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
+    - id: offline-fill-runs-only-a-downloaded-model
+      claim:
+        integrity: sha256-b4cbca83b991ca0ea47406693e17462df3076d9300f849adb27df62e2fb37e3c
+      source:
+        file: src/shared/providers.ts
+        lines: 568-582
+        integrity: sha256-bb6abd06c150ff92f63c461604a2698ec710da21dd40dc6bcaf62e3b9e782795
+        commit-sha: 82b41f560f77676acec81501ed44862563251685

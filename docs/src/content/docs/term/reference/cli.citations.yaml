@@ -809,3 +809,39 @@ docs/src/content/docs/term/reference/cli.mdx:
         lines: 211
         integrity: sha256-211f1112471a08fc2839a799cc2f5e39a10509340b2e06a2f5f0e19d0a4628b0
         commit-sha: 5d1326b22705df094119f89b94dcd683afb554ee
+    - id: fill-offline-runs-only-a-downloaded-model
+      claim:
+        lines: 756
+        integrity: sha256-e025b70972b93eb45b6da941825e74a6cb9deaea16fc57ce1935cd61ae62a98c
+      source:
+        file: src/term/commands/fill.ts
+        lines: 236-241
+        integrity: sha256-0cd14bc6cf713003949c1e6007fa6e3403e9647bd7d89c5dc9c639136e66484a
+        commit-sha: 82b41f560f77676acec81501ed44862563251685
+    - id: err-fill-crawl-offline-no-model
+      claim:
+        lines: 939
+        integrity: sha256-2deda3dee314534cf07ace85dc37735a9421b1bed92ed10f1d96e7ee9febd091
+      source:
+        file: src/term/commands/fill.ts
+        lines: 312-317
+        integrity: sha256-290799a90da9c9db8742c36b2f3bad8e87f42a0b7a31c27fd35d76ac000c86b1
+        commit-sha: 82b41f560f77676acec81501ed44862563251685
+    - id: err-fill-offline-hosted-provider
+      claim:
+        lines: 940
+        integrity: sha256-1c901afb04f5d0d1647045a7c155619546fdeab65342d3a46139568739cac4a5
+      source:
+        file: src/shared/providers.ts
+        lines: 379-382
+        integrity: sha256-f3f4ea977bc49add9fee86d9206384a50f48b0db6a330638d0fe6a53ab584a3e
+        commit-sha: 82b41f560f77676acec81501ed44862563251685
+    - id: fill-offline-no-model-warning
+      claim:
+        lines: 827
+        integrity: sha256-707710d588680c1954b002ce4ec1c2a71572d3e585a888219f29823d19c37a30
+      source:
+        file: src/term/commands/fill.ts
+        lines: 319-323
+        integrity: sha256-408781c5370338b3723e3f2448164ea61150b2ef509b52cfac3e175dd9d18ed8
+        commit-sha: 82b41f560f77676acec81501ed44862563251685

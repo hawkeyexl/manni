@@ -478,9 +478,9 @@ docs/src/content/docs/meta/reference/schema-resolution.mdx:
         integrity: sha256-061e254bfe5805f32156af0e526f7f3346a24c6101e671871030623de8b0df7a
       source:
         file: src/meta/core/config.ts
-        lines: 649-654
+        lines: 651-656
         integrity: sha256-26b24c53d92b2aca997eb5a8a4fe748319c1b9b8e7d5d6e10f96aa5734b8aa3f
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 82b41f560f77676acec81501ed44862563251685
     - id: resolution-missing-vendored-file-message
       claim:
         lines: 297
