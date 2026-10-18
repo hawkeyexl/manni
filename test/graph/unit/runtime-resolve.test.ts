@@ -6,6 +6,7 @@ import {
   documentPreamble,
   documentSectionOrder,
   sectionOccurrence,
+  sectionOwnLines,
   sectionOwnText,
   sliceSection,
   splitFragment,
@@ -187,6 +188,16 @@ describe("sectionOwnText", () => {
     const sliced = defined(sliceSection(NESTED, "Top", 1));
     expect(sliced).toContain("Grandchild prose.");
     expect(sectionOwnText(NESTED, "Top", 1)).not.toContain("Grandchild prose.");
+  });
+
+  it("spans the same lines in sectionOwnLines, 1-based and inclusive", () => {
+    expect(sectionOwnLines(NESTED, "Top", 1)).toEqual({ start: 1, end: 4 });
+    expect(sectionOwnLines(NESTED, "Child", 2)).toEqual({ start: 5, end: 8 });
+    expect(sectionOwnLines(NESTED, "Grandchild", 3)).toEqual({ start: 9, end: 11 });
+    expect(sectionOwnLines(NESTED, "Missing", 2)).toBeUndefined();
+    // Frontmatter shifts every line, and is never a heading.
+    const page = `---\ntitle: T\n---\n${NESTED}`;
+    expect(sectionOwnLines(page, "Child", 2)).toEqual({ start: 8, end: 11 });
   });
 
   it("returns just the heading for a section whose body is all subsections", () => {

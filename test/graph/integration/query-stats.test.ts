@@ -311,6 +311,13 @@ describe("manni graph stats — metadata coverage", () => {
         docs: 1,
         pct: 12.5,
       },
+      // The corpus asks no question (proposal 0086).
+      {
+        field: "sample-questions",
+        predicate: "graph:sampleQuestion",
+        docs: 0,
+        pct: 0,
+      },
     ]);
   });
 

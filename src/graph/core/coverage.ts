@@ -21,6 +21,12 @@ export interface CoverageField {
   field: string;
   /** Full predicate IRI counted against `graph:Document` subjects. */
   iri: string;
+  /**
+   * Gated only when the per-field `coverageThreshold` map names it. A uniform
+   * threshold, from config or `--coverage-threshold`, leaves it ungated, so a
+   * gate that passed before the row existed keeps passing (proposal 0086).
+   */
+  namedOnly?: true;
 }
 
 /**
@@ -52,6 +58,8 @@ export const COVERAGE_FIELDS: readonly CoverageField[] = [
     iri: IIRDS_RELATES_TO_LIFECYCLE_PHASE,
   },
   { field: "about-product-aspect", iri: IIRDS_HAS_SUBJECT },
+  // Pages with a reader question (proposal 0086). Gated only by name.
+  { field: "sample-questions", iri: `${NS.graph}sampleQuestion`, namedOnly: true },
 ];
 
 /**
@@ -93,6 +101,11 @@ export const SECTION_COVERAGE_FIELDS: readonly CoverageField[] =
 /** The measured field names, in report order. */
 export const COVERAGE_FIELD_NAMES: readonly string[] = COVERAGE_FIELDS.map(
   (f) => f.field,
+);
+
+/** The fields a uniform coverage threshold gates: all but the `namedOnly` ones. */
+export const UNIFORM_COVERAGE_FIELD_NAMES: readonly string[] = COVERAGE_FIELDS.flatMap(
+  (f) => (f.namedOnly ? [] : [f.field]),
 );
 
 /**

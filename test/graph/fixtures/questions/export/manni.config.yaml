@@ -1,0 +1,14 @@
+# The export fixture (proposal 0086). Every kind of question
+# `graph export questions` writes: unpinned, pinned, moved, changed, drafted,
+# a drafted pin, a cross-page file question, and two gaps.
+collections:
+  - name: questions
+    paths:
+      - "docs/**/*.*"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  questionFiles: [questions.yaml]
+  build:
+    derive: [frontmatter, sections]
