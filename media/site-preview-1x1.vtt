@@ -1,0 +1,20 @@
+WEBVTT
+
+NOTE Silent video. Cues are the on-screen step captions; the terminal text is in the transcript.
+
+1
+00:00:00.000 --> 00:00:08.000
+Which command serves it? An Astro site. On main, CI typed the serve command by hand: astro preview, a host, a port.
+
+2
+00:00:08.000 --> 00:00:16.967
+manni site preview: It detects Starlight, builds, then serves on the host and port in the site's url: config.
+
+3
+00:00:16.967 --> 00:00:24.000
+Not only Astro: In a second terminal: Hugo is one of 13 frameworks it detects. Not installed here, and it says so.
+
+4
+00:00:24.000 --> 00:00:34.933
+a11y finds the server: No URL typed. a11y check reads the same url: and crawls the running site. 238 pages, exit 0.
+
