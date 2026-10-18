@@ -55,7 +55,7 @@ describe("a pinned answer", () => {
     expect(r.stdout).toContain("0 errors, 1 warning, 0 notices");
   });
 
-  it("keeps 0085's finding shape in JSON", () => {
+  it("keeps 0086's finding shape in JSON", () => {
     const cwd = built("pinned-answer");
     const report = JSON.parse(run(["check", "-f", "json"], cwd).stdout) as {
       findings: Record<string, unknown>[];

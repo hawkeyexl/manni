@@ -1,5 +1,5 @@
 /**
- * `x-manni-term` (proposal 0085 §6): the schema keyword that says a field's
+ * `x-manni-term` (proposal 0086 §6): the schema keyword that says a field's
  * string values must name terms, `Validator.termMarks`, and the three
  * findings `manni meta validate` reports for a marked value.
  */

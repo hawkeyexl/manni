@@ -66,7 +66,7 @@ export function mintConceptIri(base: string, label: string): string {
 }
 
 /**
- * `{base}concept/{id}` — a concept the termbase defines (proposal 0085 §1).
+ * `{base}concept/{id}` — a concept the termbase defines (proposal 0086 §1).
  * The id is the term's own, encoded as one segment. A term's id defaults to
  * its label's slug, so most term concepts keep the IRI a label would mint.
  */

@@ -1,5 +1,5 @@
 /**
- * `x-manni-term` (proposal 0085 §6): a field whose string values must name
+ * `x-manni-term` (proposal 0086 §6): a field whose string values must name
  * terms in the termbase, optionally below one branch of its hierarchy.
  *
  * The keyword is registered on every Ajv meta builds (validator.ts), next to
