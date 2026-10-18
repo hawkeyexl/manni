@@ -64,6 +64,26 @@ describe("graph build over a termbase", () => {
     );
   });
 
+  it("carries a term's notation and its mapping to another vocabulary", () => {
+    expect(ttl).toContain(`skos:closeMatch <https://example.org/vocab/authentication-module>`);
+    expect(ttl).toContain(`skos:notation "AUTH-7"`);
+  });
+
+  it("fails graph check on a mapping that points into the scheme", () => {
+    const into = detached();
+    const page = join(into, "docs", "glossary", "pluggable-auth-layer.md");
+    writeFileSync(
+      page,
+      readFileSync(page, "utf8").replace("notation:", "exact-matches: https://example.com/graph/concept/token\nnotation:"),
+    );
+    expect(run(["build"], into).status).toBe(0);
+    const check = run(["check"], into);
+    expect(check.status).toBe(1);
+    expect(check.stdout).toContain(
+      "skos:exactMatch points into this scheme (https://example.com/graph/concept/token), so use broader, narrower or related instead.",
+    );
+  });
+
   it("passes graph check", () => {
     expect(run(["check"], dir)).toEqual({ stdout: "0 errors, 0 warnings, 0 notices\n", status: 0 });
   });

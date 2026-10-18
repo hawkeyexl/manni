@@ -1,6 +1,6 @@
 ---
 title: Check rules
-description: "The twelve rules manni term check applies to a term set, with each one's default severity, the message it prints, where it is reported, and what fixes it."
+description: "The fourteen rules manni term check applies to a term set, with each one's default severity, the message it prints, where it is reported, and what fixes it."
 sidebar:
   order: 4
 type: reference
@@ -15,7 +15,7 @@ language: en
 audiences:
   - schema-authors
   - docs-engineers
-intent: Look up each of the twelve term check rules, its default severity, its message and what fixes it.
+intent: Look up each of the fourteen term check rules, its default severity, its message and what fixes it.
 lifecycle: published
 applies-to:
   - domain:term
@@ -23,6 +23,7 @@ sample-questions:
   - What rules does manni term check apply?
   - Which term rules fail a run by default?
   - How do I fix an asymmetric-hierarchy finding?
+  - What does term check report about a missing definition?
 graph:
   label: Check rules
   type: reference
@@ -63,6 +64,8 @@ set. It reads no prose; `manni term lint` does that. Each rule id is
 | `dangling-reference` | error | A value of `broader`, `narrower`, `related-terms` or `see` names no entry, by label or by id. |
 | `broader-cycle` | error | A chain of `broader` returns to where it started, across the terms and every page's `graph:` block. |
 | `see-not-empty` | error | An entry with `see` also carries a `definition`. |
+| `missing-definition` | error | An entry has neither a `definition` nor a `see`. |
+| `conflicting-matches` | error | One IRI is listed under two of an entry's match fields. |
 | `asymmetric-hierarchy` | warning | A names B as `broader`, and B omits A from `narrower`, or the reverse. |
 | `alt-label-reference` | warning | A page's `concepts:` names an entry by one of its alt-labels. |
 | `abstract-too-long` | notice | An `abstract` is longer than [`abstractMaxLength`](/manni/term/reference/configuration/#keys), `60` by default. |
@@ -105,11 +108,11 @@ docs/terms/en/kubernetes.md:5
 1 error in 6 terms
 ```
 
-## Every rule in one run
+## Twelve rules in one run
 
 {/* cite finding-line */}
-This set breaks each rule once. Each finding sits on the line of the field
-that caused it, or on the entry's first line when no field did:
+This set breaks twelve of the rules once each. Each finding sits on the line
+of the field that caused it, or on the entry's first line when no field did:
 
 ```console
 $ manni term check docs
@@ -205,6 +208,29 @@ closes it.
 
 An entry with `see` is a redirect to the entry that defines the term. Remove
 its `definition`, or remove `see` and keep it as an entry of its own.
+
+### `missing-definition`
+
+The schema requires only a `label`, so a term page can land before its
+meaning is written. This rule keeps the gap visible. It sits on the entry's
+first line and names the `definition` field. A redirect needs no definition,
+and one that carries a definition is `see-not-empty` instead. Write the
+definition, or turn the rule down under `term.severity` while a termbase is
+being filled in.
+
+### `conflicting-matches`
+
+`exact-matches`, `close-matches`, `broad-matches`, `narrow-matches` and
+`related-matches` each say how a concept elsewhere relates to this one. An IRI
+under two of them says two different things. The rule reports each such IRI
+once, on the line of the first field that lists it:
+
+```
+exact-matches: "https://www.wikidata.org/wiki/Q1424588" is also in broad-matches, and a mapping has one kind.
+```
+
+The message names the first field in the order exact, close, broad, narrow,
+related, then the other. Keep the IRI under the one kind that holds.
 
 ### `asymmetric-hierarchy`
 

@@ -8,6 +8,8 @@ docs/src/content/docs/meta/reference/schemas/manni-terminology.mdx:
     - path: src/meta/schemas/terminology-strict/1.0.0.json
     - path: src/meta/schemas/terminology/1.1.0.json
     - path: src/meta/schemas/terminology-strict/1.1.0.json
+    - path: src/meta/schemas/terminology/1.2.0.json
+    - path: src/meta/schemas/terminology-strict/1.2.0.json
     - path: src/meta/core/schema-registry.ts
   eval-suite: meta
   evals:
@@ -16,22 +18,22 @@ docs/src/content/docs/meta/reference/schemas/manni-terminology.mdx:
       type: capability
       grader: ai
     - id: turn-on
-      assertion: "A reader can point manni:terminology:1.1.0 at the folder that holds the term pages."
+      assertion: "A reader can point manni:terminology:1.2.0 at the folder that holds the term pages."
       type: capability
       grader: ai
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-17
-      integrity: sha256-4ec960e3d4128a0ee9c217e18b4407205d7825f650054439e4ab8f2ce352690e
+      lines: 2-18
+      integrity: sha256-989cb0116f16ebe23e698ce63ed53e7bf4c85f8e019c057134ae27c7eebb91c8
     - generated-by: Claude Opus 5.5
-      lines: 27-30
+      lines: 28-31
       integrity: sha256-fcd9f3139e4d117301cb23b4288f127507c4bc9b68cd700e8d7ea1295ade8af1
     - generated-by: Claude Opus 5.5
-      lines: 32-272
-      integrity: sha256-1302c499fb09fbedf8ddb34246f92db05976e3e9ceed881dccbbb9abe1b06891
+      lines: 33-293
+      integrity: sha256-a4f619f63d72b5be0ad5a1be02a2fb8b2afc2a9503746bba5da1bd1bf1bcfce2
     - generated-by: Claude Opus 5.5
-      lines: 276-330
-      integrity: sha256-19211bc51da69941c8f801504ad2b0c051c06310f58c13a4f5cca0024b8633b1
+      lines: 297-374
+      integrity: sha256-b691c75ac7c81a2e740013f175e2c64c4b6b669d626a21ca111a200462946c14
   owner:
     - "@hawkeyexl"
   created: 2026-09-26

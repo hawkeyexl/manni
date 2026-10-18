@@ -203,6 +203,56 @@ describe("validateGraph", () => {
     expect(findings).toEqual([]);
   });
 
+  it("admits a concept's notation and its mappings to other vocabularies", async () => {
+    const c = concept("setup");
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        [c, `${NS.skos}notation`, { lit: "S-1" }],
+        [c, `${NS.skos}exactMatch`, "https://www.wikidata.org/wiki/Q1"],
+        [c, `${NS.skos}closeMatch`, "https://e.org/close"],
+        [c, `${NS.skos}broadMatch`, "https://e.org/broad"],
+        [c, `${NS.skos}narrowMatch`, "https://e.org/narrow"],
+        [c, `${NS.skos}relatedMatch`, "https://e.org/related"],
+      ]),
+      SHAPES,
+    );
+    expect(findings).toEqual([]);
+  });
+
+  it("rejects a mapping whose object is a literal", async () => {
+    const c = concept("setup");
+    const findings = await validateGraph(
+      build([...conformingTriples(), [c, `${NS.skos}closeMatch`, { lit: "https://e.org/close" }]]),
+      SHAPES,
+    );
+    expect(findings.map((f) => [f.severity, f.path])).toEqual([["error", `${NS.skos}closeMatch`]]);
+  });
+
+  it("flags a mapping that points into this scheme, naming the concept", async () => {
+    const c = concept("setup");
+    const other = concept("install");
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        [other, RDF_TYPE, `${NS.skos}Concept`],
+        [other, `${NS.skos}prefLabel`, { lit: "install" }],
+        [other, `${NS.skos}inScheme`, SCHEME],
+        [c, `${NS.skos}exactMatch`, other],
+        [c, `${NS.skos}relatedMatch`, "https://e.org/related"],
+      ]),
+      SHAPES,
+    );
+    expect(findings.map((f) => [f.severity, f.focusNode, f.path, f.message])).toEqual([
+      [
+        "error",
+        c,
+        `${NS.skos}exactMatch`,
+        `skos:exactMatch points into this scheme (${other}), so use broader, narrower or related instead.`,
+      ],
+    ]);
+  });
+
   it("closed Document shape rejects unexpected predicates", async () => {
     const d = doc("docs/a.md");
     const store = build([

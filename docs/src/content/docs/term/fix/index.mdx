@@ -107,6 +107,8 @@ line naming a file.
 | [`alt-label-collision`](#two-entries-claim-one-name) | An alt-label is another entry's preferred label. | Remove the alt-label, or merge the entries. |
 | [`broader-cycle`](#a-hierarchy-loops) | A chain of `broader` returns to where it started, across the terms and every page's `graph:` block. | Remove the value that closes it. |
 | [`see-not-empty`](#a-redirect-carries-a-definition) | An entry with `see` also has a `definition`. | Remove the definition. |
+| [`missing-definition`](/manni/term/reference/rules/#missing-definition) | An entry has neither a `definition` nor a `see`. | Write the definition. |
+| [`conflicting-matches`](/manni/term/reference/rules/#conflicting-matches) | One IRI sits under two match fields of an entry. | Keep it under the one kind that holds. |
 | [`prose/<Style.Rule>`](#a-definition-breaks-the-house-voice) | Vale flagged a definition, abstract or scope note. | Rewrite the sentence. |
 | [`--check` failed](#the-vale-style-is-out-of-date) | The committed `Terms` style no longer matches the set. | Run `manni term write -f vale`, and commit it. |
 
@@ -457,7 +459,7 @@ the check.
   <LinkCard
     title="Check rules"
     href="/manni/term/reference/rules/"
-    description="All twelve rules, with each one's default level, message and fix, and one run that breaks every rule."
+    description="All fourteen rules, with each one's default level, message and fix, and one run that breaks most of them."
   />
   <LinkCard
     title="Run it in CI"

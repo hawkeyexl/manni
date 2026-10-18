@@ -12,7 +12,7 @@ concepts:
   - concept
   - closed shape
   - near miss
-last-updated: 2026-10-04
+last-updated: 2026-10-18
 ---
 
 Your pull request is red on `manni graph check` and you did not write the rule.
@@ -75,6 +75,17 @@ says narrower than A's. A concept cannot be its own ancestor.
 
 The message lists the cycle in order. One of those three `broader` values is
 wrong; usually the one that was added last. Remove or repoint it.
+
+### A mapping that points into the scheme
+
+```console
+error: https://example.com/graph/concept/pluggable-auth-layer skos:exactMatch — skos:exactMatch points into this scheme (https://example.com/graph/concept/token), so use broader, narrower or related instead. [docs/glossary/pal.md, docs/glossary/pluggable-auth-layer.md, docs/guides/login.md]
+```
+
+A term's match field names a concept of this graph's own scheme. The mapping
+properties link to concepts in other vocabularies. Inside one scheme the
+relation is `broader`, `narrower` or `related-terms`, so move the value to the
+field that says how the two concepts relate.
 
 ### A value that must not also be in another property
 

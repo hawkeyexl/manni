@@ -51,7 +51,7 @@ docs/src/content/docs/term/get-started/index.mdx:
       integrity: sha256-5f27c15d3dd153dc22d53304cd4504f5c796aae030f1b3689a93f25a5559306e
     - generated-by: Claude Opus 5.5
       lines: 225
-      integrity: sha256-0f1a9c1a8bf6732c567dc1466cff45418a6e6006709d59dc8e3cb268bb6cae8f
+      integrity: sha256-5771e00e3f7d04a0a99c7a264504d45f161936ef4b67f8d775d70e181e394d6d
     - generated-by: Claude Opus 5
       lines: 226-229
       integrity: sha256-0bfd322815c321565abe0845495733053985f58693fbc034ad42c76c24af6aa9

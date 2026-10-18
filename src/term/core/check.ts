@@ -21,7 +21,7 @@ import { TERM_RELATION_FIELDS } from "../../shared/reference-fields.js";
 import { DEFAULT_ABSTRACT_MAX_LENGTH } from "./config.js";
 import { DEFAULT_LANGUAGE, languageKey as language } from "./writers/render-util.js";
 import { resolveSeverity, ruleId } from "./severity.js";
-import type { Term, TermField, TermFinding, TermRule, TermSet, TermSeverity } from "../types.js";
+import { TERM_MATCH_FIELDS, type Term, type TermField, type TermFinding, type TermRule, type TermSet, type TermSeverity } from "../types.js";
 
 export interface CheckTermSetOptions {
   severity?: Partial<Record<TermRule, TermSeverity>>;
@@ -192,6 +192,29 @@ export function checkTermSet(set: TermSet, opts: CheckTermSetOptions = {}): Term
       drafts.push(
         onEntry(t, "see-not-empty", `see: "${t.record.see}" redirects this entry, so remove its definition`, "see"),
       );
+    }
+
+    // missing-definition: an entry that neither defines its term nor redirects.
+    if (t.record.see === undefined && t.record.definition === undefined) {
+      drafts.push(
+        onEntry(t, "missing-definition", "definition: missing, so write one or run manni term fill.", "definition"),
+      );
+    }
+
+    // conflicting-matches: once per IRI, naming the first kind it is under and the next.
+    const kindOf = new Map<string, TermField>();
+    const conflicting = new Set<string>();
+    for (const field of TERM_MATCH_FIELDS) {
+      for (const iri of t.record[field] ?? []) {
+        const first = kindOf.get(iri);
+        if (first === undefined) kindOf.set(iri, field);
+        else if (first !== field && !conflicting.has(iri)) {
+          conflicting.add(iri);
+          drafts.push(
+            onEntry(t, "conflicting-matches", `${first}: "${iri}" is also in ${field}, and a mapping has one kind.`, first),
+          );
+        }
+      }
     }
 
     // abstract-too-long.

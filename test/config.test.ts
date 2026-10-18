@@ -914,8 +914,8 @@ describe("the repository's own manni.config.yaml", () => {
       ...STRICT_DEFAULTS,
       "./docs/doc-frontmatter.schema.json",
       "astro:starlight:0.41",
-      "manni:terminology:1.1.0",
-      "manni:terminology-strict:1.1.0",
+      "manni:terminology:1.2.0",
+      "manni:terminology-strict:1.2.0",
     ]);
     // The glossary's index is not a term page. It declares a TGDP type, and
     // the glossary's glob leaves it out, so it takes the site's set.

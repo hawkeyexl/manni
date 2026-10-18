@@ -38,6 +38,9 @@ docs/src/content/docs/term/reference/configuration.mdx:
     - generated-by: Claude Opus 5
       lines: 125-128
       integrity: sha256-80ff3519e14295b70db2b59559ad19d91c21e9de8c877654d8c520e7d17cd345
+    - generated-by: Claude Opus 5.5
+      lines: 129
+      integrity: sha256-e6c23efd9a2cda9b9762804959c29c087d534f38f92ea6e00ecaab70e0ec9a60
     - generated-by: Claude Opus 5
       lines: 130-195
       integrity: sha256-8c0ae973006dfa8390c30aef3974595ff0ce70795b2b5709f0a59ef0d69b2b17

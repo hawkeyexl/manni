@@ -842,6 +842,17 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
           hierarchy(c, relation, concept(value, language));
         }
       }
+      // A code and the mappings out of the scheme belong to no language.
+      if (entry.notation !== undefined) add(c, `${NS.skos}notation`, lit(entry.notation));
+      for (const [values, predicate] of [
+        [entry.exactMatches, "exactMatch"],
+        [entry.closeMatches, "closeMatch"],
+        [entry.broadMatches, "broadMatch"],
+        [entry.narrowMatches, "narrowMatch"],
+        [entry.relatedMatches, "relatedMatch"],
+      ] as const) {
+        for (const value of values ?? []) add(c, `${NS.skos}${predicate}`, iri(value));
+      }
     }
   }
   // A `see:` entry is no concept of its own. Its label is another way to say

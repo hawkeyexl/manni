@@ -15,6 +15,8 @@ describe("term severity", () => {
       "undefined-term": "error",
       "broader-cycle": "error",
       "see-not-empty": "error",
+      "missing-definition": "error",
+      "conflicting-matches": "error",
       "asymmetric-hierarchy": "warning",
       "abstract-too-long": "notice",
       "unused-term": "notice",

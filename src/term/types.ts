@@ -18,9 +18,10 @@ import type { ToolsConfig } from "../shared/tools.js";
 // The record
 
 /**
- * The root fields of `manni:terminology:1.1.0`: the ten 1.0.0 fields in the
- * order the reference lists them, then the TBX data categories (proposal
- * 0084), then the three blocks.
+ * The root fields of `manni:terminology:1.2.0`: the ten 1.0.0 fields in the
+ * order the reference lists them, then `notation` and the five match keys
+ * (proposal 0085), then the TBX data categories (proposal 0084), then the
+ * three blocks.
  */
 export const TERM_FIELDS = [
   "label",
@@ -33,6 +34,12 @@ export const TERM_FIELDS = [
   "related-terms",
   "see",
   "scope-note",
+  "notation",
+  "exact-matches",
+  "close-matches",
+  "broad-matches",
+  "narrow-matches",
+  "related-matches",
   "subject-field",
   "contexts",
   "notes",
@@ -59,6 +66,20 @@ export const TERM_LIST_FIELDS = [
   "related-terms",
 ] as const satisfies readonly TermField[];
 export type TermListField = (typeof TERM_LIST_FIELDS)[number];
+
+/**
+ * The mapping fields, in the order a finding names them: each holds the IRIs
+ * of concepts in other vocabularies. The vocabulary accepts an IRI or a list;
+ * a reader always yields a list.
+ */
+export const TERM_MATCH_FIELDS = [
+  "exact-matches",
+  "close-matches",
+  "broad-matches",
+  "narrow-matches",
+  "related-matches",
+] as const satisfies readonly TermField[];
+export type TermMatchField = (typeof TERM_MATCH_FIELDS)[number];
 
 /**
  * The aux fields: valid at the root (language level), in `concept-entry`
@@ -164,6 +185,13 @@ export interface TermRecord extends TermAuxRecord {
   "related-terms"?: string[];
   see?: string;
   "scope-note"?: string;
+  /** A code that identifies the concept in another system. */
+  notation?: string;
+  "exact-matches"?: string[];
+  "close-matches"?: string[];
+  "broad-matches"?: string[];
+  "narrow-matches"?: string[];
+  "related-matches"?: string[];
   /** Concept level: what every language's term of this id says. */
   "concept-entry"?: TermAuxRecord;
   /** Per-designation detail, in source order. */
@@ -435,6 +463,8 @@ export const TERM_RULES = [
   "dangling-reference",
   "broader-cycle",
   "see-not-empty",
+  "missing-definition",
+  "conflicting-matches",
   "asymmetric-hierarchy",
   "alt-label-reference",
   "abstract-too-long",

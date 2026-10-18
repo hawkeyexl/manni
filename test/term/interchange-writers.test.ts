@@ -271,6 +271,29 @@ describe("tbx writer", () => {
     expect(render.droppedHeaders).toEqual([]);
   });
 
+  it.each(["tbx", "tbx3"] as const)("%s reports notation and the match keys as dropped", (format) => {
+    const t = term("x", {
+      label: "x",
+      definition: "d",
+      notation: "X-1",
+      "exact-matches": ["https://e.org/x"],
+      "related-matches": ["https://e.org/y"],
+    });
+    const render = writer(format).render([t], fileTarget("x.tbx"), NO_EXISTING);
+    expect(render.dropped).toEqual([
+      { id: "x", field: "notation" },
+      { id: "x", field: "exact-matches" },
+      { id: "x", field: "related-matches" },
+    ]);
+  });
+
+  it("json carries notation and the match keys", () => {
+    const t = term("x", { label: "x", notation: "X-1", "close-matches": ["https://e.org/x"] });
+    const render = writer("json").render([t], fileTarget("x.json"), NO_EXISTING);
+    expect(render.dropped).toEqual([]);
+    expect(render.files[0]?.content).toContain('"close-matches"');
+  });
+
   it("escapes attribute values", () => {
     const render = writer("tbx").render(
       [term('a"b<c', { label: "a" }, 'x"y')],

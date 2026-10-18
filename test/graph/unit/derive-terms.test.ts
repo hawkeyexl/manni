@@ -85,6 +85,34 @@ describe("term concepts", () => {
     expect(has(quads, C("gizmo"), SKOS("prefLabel"), lit("Gizmo"))).toBe(true);
   });
 
+  it("carries a term's notation as a plain literal and each mapping as an IRI", () => {
+    const quads = build(
+      { "a.md": "# A\n" },
+      {
+        termbase: [
+          {
+            label: "Lens",
+            id: "lens",
+            language: "en",
+            notation: "OPT-1",
+            exactMatches: ["https://www.wikidata.org/wiki/Q1"],
+            closeMatches: ["https://e.org/close"],
+            broadMatches: ["https://e.org/broad"],
+            narrowMatches: ["https://e.org/narrow"],
+            relatedMatches: ["https://e.org/related"],
+          },
+          { label: "Linse", id: "lens", language: "de", notation: "OPT-1" },
+        ],
+      },
+    );
+    expect(objects(quads, C("lens"), SKOS("notation"))).toEqual([lit("OPT-1")]);
+    expect(has(quads, C("lens"), SKOS("exactMatch"), iri("https://www.wikidata.org/wiki/Q1"))).toBe(true);
+    expect(has(quads, C("lens"), SKOS("closeMatch"), iri("https://e.org/close"))).toBe(true);
+    expect(has(quads, C("lens"), SKOS("broadMatch"), iri("https://e.org/broad"))).toBe(true);
+    expect(has(quads, C("lens"), SKOS("narrowMatch"), iri("https://e.org/narrow"))).toBe(true);
+    expect(has(quads, C("lens"), SKOS("relatedMatch"), iri("https://e.org/related"))).toBe(true);
+  });
+
   it("counts one concept per term id, never a see entry", () => {
     expect(termConceptCount(TERMBASE)).toBe(5);
   });

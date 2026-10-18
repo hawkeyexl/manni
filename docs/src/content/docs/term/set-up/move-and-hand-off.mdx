@@ -305,7 +305,7 @@ does, it prints that the target is up to date.
 | `html` | one term page per entry, fields in `<meta>` | a `<dl>` | a page holds every field. A `<dl>` holds `label`, `definition`, `alt-labels` and `id` |
 | `dita` | one `<glossentry>` topic per entry | a `<glossgroup>` | `label`, `definition`, `alt-labels`, `scope-note`, `id` |
 | `docbook` | refused | a `<glossary>` | `label`, `definition`, `alt-labels`, `see`, `related-terms`, `id` |
-| `tbx` | refused | TBX v2 | every field except `abstract`, `broader`, `narrower`, `related-terms`, `see` and `scope-note` |
+| `tbx` | refused | TBX v2 | every field except `abstract`, `broader`, `narrower`, `related-terms`, `see`, `scope-note`, `notation` and the five match fields |
 | `tbx3` | refused | TBX v3 | the same as `tbx` |
 | `skos` | refused | a SKOS concept scheme in JSON-LD | the ten SKOS fields except `abstract` and `see` |
 | `csv` | refused | one row per id | the ten SKOS fields, a column set per language |

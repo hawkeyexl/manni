@@ -543,6 +543,85 @@ describe("checkTermSet", () => {
     });
   });
 
+  describe("missing-definition", () => {
+    it("fires on an entry with neither definition nor see, at the entry's line", () => {
+      const terms = [term({ label: "lens", line: 4 }), term({ label: "bifocal", definition: "d" })];
+      const findings = only(checkTermSet(used(terms)), "missing-definition");
+      expect(findings.map((f) => [f.id, f.line, f.severity, f.field, f.message])).toEqual([
+        ["lens", 4, "error", "definition", "definition: missing, so write one or run manni term fill."],
+      ]);
+    });
+
+    it("does not fire on a redirect, and leaves a redirect with a definition to see-not-empty", () => {
+      const terms = [
+        term({ label: "PAL", see: "lens" }),
+        term({ label: "graduated lens", see: "lens", definition: "d" }),
+        term({ label: "lens", definition: "d" }),
+      ];
+      const findings = checkTermSet(used(terms));
+      expect(only(findings, "missing-definition")).toEqual([]);
+      expect(only(findings, "see-not-empty").map((f) => f.id)).toEqual(["graduated-lens"]);
+    });
+
+    it("can be turned off", () => {
+      const terms = [term({ label: "lens" })];
+      expect(only(checkTermSet(used(terms), { severity: { "missing-definition": "off" } }), "missing-definition")).toEqual(
+        [],
+      );
+    });
+  });
+
+  describe("conflicting-matches", () => {
+    const wikidata = "https://www.wikidata.org/wiki/Q1";
+
+    it("fires once per IRI listed under two kinds, naming the first kind then the other, at the first's line", () => {
+      const terms = [
+        term({
+          label: "lens",
+          definition: "d",
+          "exact-matches": [wikidata],
+          "broad-matches": [wikidata],
+          fieldLines: { "exact-matches": 7 },
+        }),
+      ];
+      const findings = only(checkTermSet(used(terms)), "conflicting-matches");
+      expect(findings.map((f) => [f.id, f.line, f.severity, f.field, f.message])).toEqual([
+        [
+          "lens",
+          7,
+          "error",
+          "exact-matches",
+          `exact-matches: "${wikidata}" is also in broad-matches, and a mapping has one kind.`,
+        ],
+      ]);
+    });
+
+    it("orders the kinds exact, close, broad, narrow, related, and reports an IRI in three kinds once", () => {
+      const iri = "https://example.org/x";
+      const terms = [
+        term({
+          label: "lens",
+          definition: "d",
+          "related-matches": [iri],
+          "narrow-matches": [iri],
+          "close-matches": [iri],
+        }),
+      ];
+      const findings = only(checkTermSet(used(terms)), "conflicting-matches");
+      expect(findings.map((f) => f.message)).toEqual([
+        `close-matches: "${iri}" is also in narrow-matches, and a mapping has one kind.`,
+      ]);
+    });
+
+    it("does not fire on distinct IRIs, or on one IRI on two entries", () => {
+      const terms = [
+        term({ label: "lens", definition: "d", "exact-matches": [wikidata], "close-matches": ["https://e.org/y"] }),
+        term({ label: "bifocal", definition: "d", "exact-matches": [wikidata] }),
+      ];
+      expect(only(checkTermSet(used(terms)), "conflicting-matches")).toEqual([]);
+    });
+  });
+
   describe("asymmetric-hierarchy", () => {
     it("fires on B when A lists B as broader and B omits A from narrower, at B's narrower line", () => {
       const terms = [
@@ -763,6 +842,7 @@ describe("checkTermSet", () => {
       term({ label: "lens", definition: "d", broader: ["corrective lens"], see: "bifocal" }),
       term({ label: "corrective lens", definition: "d", broader: ["lens"] }),
       term({ label: "monocle", definition: "d" }),
+      term({ label: "monofocal", "exact-matches": ["https://e.org/t"], "close-matches": ["https://e.org/t"] }),
     ];
     const findings = checkTermSet(set(terms, [ref("PAL"), ...terms.slice(0, 4).map((t) => ref(t.record.label))]));
     const fields = new Map<string, Set<string>>();
@@ -782,6 +862,8 @@ describe("checkTermSet", () => {
       "asymmetric-hierarchy": ["narrower"],
       "abstract-too-long": ["abstract"],
       "unused-term": ["(none)"],
+      "missing-definition": ["definition"],
+      "conflicting-matches": ["exact-matches"],
     });
   });
 

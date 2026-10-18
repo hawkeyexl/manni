@@ -102,15 +102,6 @@ docs/src/content/docs/term/reference/terminology.mdx:
         lines: 15-20
         integrity: sha256-109643767f03b009dbb0f92d80bb94382b2422e0db0acaf280e2a072797abb68
         commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
-    - id: field-definition-or-see
-      claim:
-        lines: 54
-        integrity: sha256-663065a0fc965d7c688345da633c81fa88c579732d9d8207f23f8d8acdb75c1b
-      source:
-        file: src/meta/schemas/terminology/1.0.0.json
-        lines: 81-92
-        integrity: sha256-4814ad5e874ac7cb4027a32a9968bf84d22db0aae452488a801bdd023e951429
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
     - id: field-abstract
       claim:
         lines: 55
@@ -448,22 +439,6 @@ docs/src/content/docs/term/reference/terminology.mdx:
         lines: 63-93
         integrity: sha256-a062a9dbf1719b33fc8ceb6df0f8aeb64ddbfe0481498c597f987169409c69be
         commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
-    - id: schema-requires-label-definition-or-see
-      claim:
-        integrity: sha256-4442c1dcb0e6f546e656407164620a89605ccf07593b814ec157e48567e76a20
-      source:
-        file: src/meta/schemas/terminology/1.0.0.json
-        lines: 65-95
-        integrity: sha256-08f693f21778d1fa2fbbef0f6b80706c138920c2d755e8ea3e890034781cec26
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
-    - id: check-has-no-neither-rule
-      claim:
-        integrity: sha256-4442c1dcb0e6f546e656407164620a89605ccf07593b814ec157e48567e76a20
-      source:
-        file: src/term/types.ts
-        lines: 430-443
-        integrity: sha256-4b74ffb3882bdfca3fcbcf085a1f604bfb9db05c7aa92e83fcb49f8c14b50711
-        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
     - id: id-construct-html-dfn
       claim:
         lines: 332

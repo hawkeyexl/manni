@@ -17,6 +17,8 @@ export const DEFAULT_SEVERITY: Readonly<Record<TermRule, TermSeverity>> = {
   "dangling-reference": "error",
   "broader-cycle": "error",
   "see-not-empty": "error",
+  "missing-definition": "error",
+  "conflicting-matches": "error",
   "asymmetric-hierarchy": "warning",
   "alt-label-reference": "warning",
   "abstract-too-long": "notice",

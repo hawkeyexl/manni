@@ -1,6 +1,6 @@
 ---
 title: Terminology fields
-description: "The ten SKOS fields of a term entry and the TBX data categories at three levels, one term per language, status and picklists, TBX pass-through, the type: term marker, the see redirect, and how an entry gets its id."
+description: "The ten SKOS fields of a term entry, its notation and mappings to other vocabularies, the TBX data categories at three levels, one term per language, status and picklists, TBX pass-through, the type: term marker, the see redirect, and how an entry gets its id."
 sidebar:
   order: 3
 type: reference
@@ -13,6 +13,7 @@ keywords:
   - term id
   - TBX data categories
   - multilingual terms
+  - SKOS mappings
 language: en
 audiences:
   - schema-authors
@@ -30,6 +31,7 @@ sample-questions:
   - How does the see redirect work?
   - Where does a TBX part of speech or gender go in a term page?
   - How does one concept hold a term in each language?
+  - How does a term say it matches a concept in another vocabulary?
 graph:
   label: Terminology fields
   type: reference
@@ -61,13 +63,14 @@ A term entry is a record. A term page carries it in its metadata, and a
 manifest entry holds the same record. Every reader produces it from a body
 construct or a TBX entry too. The fields sit at the root of the page, flat.
 They are the built-in
-[`manni:terminology:1.1.0`](/manni/meta/reference/schemas/manni-terminology/)
+[`manni:terminology:1.2.0`](/manni/meta/reference/schemas/manni-terminology/)
 vocabulary.
 
 Ten fields carry the term's names, its meaning and its place among other
-terms. They map onto SKOS, and they are the whole of 1.0.0. The rest of the
-record holds the TBX data categories a translation system exchanges. A page
-that carries none of them is a 1.0.0 page, and it stays valid.
+terms. They map onto SKOS, and they are the whole of 1.0.0. Six more tie the
+term to other vocabularies. The rest of the record holds the TBX data
+categories a translation system exchanges. A page that carries none of them is
+a 1.0.0 page, and it stays valid.
 
 ## Marking a file
 
@@ -107,7 +110,7 @@ definition: >-
 | Field | Type | Required | SKOS | What it holds |
 |---|---|---|---|---|
 | `label` | string | yes | `skos:prefLabel` | The one preferred name. |
-| `definition` | string | yes, unless `see` is set | `skos:definition` | What the term means, in full. |
+| `definition` | string | no | `skos:definition` | What the term means, in full. An entry carries it unless it redirects with `see`. |
 | `abstract` | string | no | none | The short form, one sentence, for a hover card or a tooltip. |
 | `alt-labels` | string or list | no | `skos:altLabel` | Other admitted names, such as synonyms, abbreviations and spelling variants. |
 | `hidden-labels` | string or list | no | `skos:hiddenLabel` | Names the term must not go by, such as deprecated spellings, obsolete forms and misspellings. |
@@ -137,6 +140,44 @@ the entry, and says so on stderr:
 ```
 manni: varifocal.md:5: ignored see on "varifocal": a see holds one value, not a list.
 ```
+
+`definition` is optional in the schema, so a term page can land before
+anyone writes its meaning. `manni term check` reports an entry with neither a
+`definition` nor a `see` as
+[`missing-definition`](/manni/term/reference/rules/#missing-definition), at
+error. The [strict overlay](#validating-the-shape) requires one of the two.
+
+## Mapping to other vocabularies
+
+These fields say where the term sits outside this termbase. Each match field
+takes one IRI or a list of them, and each maps to its SKOS property:
+
+| Field | Type | SKOS | What it holds |
+|---|---|---|---|
+| `notation` | string | `skos:notation` | A code that identifies the concept in another system. |
+| `exact-matches` | IRI or list | `skos:exactMatch` | The same concept in another vocabulary. Use it sparingly. |
+| `close-matches` | IRI or list | `skos:closeMatch` | A near-equivalent concept elsewhere. This is the common case. |
+| `broad-matches` | IRI or list | `skos:broadMatch` | A broader concept in another vocabulary. |
+| `narrow-matches` | IRI or list | `skos:narrowMatch` | A narrower concept in another vocabulary. |
+| `related-matches` | IRI or list | `skos:relatedMatch` | An associated concept in another vocabulary. |
+
+```yaml
+type: term
+id: progressive-lens
+label: progressive lens
+definition: Corrective lenses whose power increases from the top of the lens to the bottom.
+notation: OPT-0412
+exact-matches: https://www.wikidata.org/wiki/Q1424588
+close-matches:
+  - http://id.loc.gov/authorities/subjects/sh85107289
+```
+
+A mapping has one kind. An IRI listed under two of the five match fields of
+one entry is
+[`conflicting-matches`](/manni/term/reference/rules/#conflicting-matches).
+A match names a concept in another vocabulary. Inside this termbase the
+relation is `broader`, `narrower` or `related-terms`, and `manni graph check`
+reports a match that points back into the scheme.
 
 ## One term per language
 
@@ -283,13 +324,13 @@ label, alt-label, hidden-label order.
 A picklist value is kept as written, whether `fullForm`, `Verb` or `pronoun`.
 The open vocabulary types it as a string, so a TBX file from any vendor reads.
 The strict overlay,
-[`manni:terminology-strict:1.1.0`](/manni/meta/reference/schemas/manni-terminology/#strict-overlay),
+[`manni:terminology-strict:1.2.0`](/manni/meta/reference/schemas/manni-terminology/#strict-overlay),
 closes each picklist to the values TBX names:
 
 ```console
-$ manni meta validate --no-config -s manni:terminology:1.1.0 -s manni:terminology-strict:1.1.0 strict-picklist-verb.md
+$ manni meta validate --no-config -s manni:terminology:1.2.0 -s manni:terminology-strict:1.2.0 strict-picklist-verb.md
 ✗ strict-picklist-verb.md
-    /designations/0/part-of-speech  must be equal to one of the allowed values  (line 7)  [manni:terminology-strict:1.1.0]
+    /designations/0/part-of-speech  must be equal to one of the allowed values  (line 7)  [manni:terminology-strict:1.2.0]
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```
@@ -355,7 +396,7 @@ An edited value no longer matches its item, so the stale markup is never
 written. Two values of one term can read as the same text with different
 markup, such as a marked-up `H<hi type="subscript">2</hi>O` and a plain `H2O`.
 The reader then keeps one element whole in `tbx-elements`, never the `<term>`,
-so neither value gains the other's markup. Strict 1.1.0 requires each `tbx-elements` item to start with `<`.
+so neither value gains the other's markup. The strict overlay requires each `tbx-elements` item to start with `<`.
 
 ## The `see` redirect
 
@@ -401,21 +442,23 @@ into one file per entry names each file after.
 
 ## Validating the shape
 
-{/* cite schema-requires-label-definition-or-see */}
-{/* cite check-has-no-neither-rule */}
 `manni term check` checks the set. The shape of one page is a schema's job.
-That schema is the built-in `manni:terminology:1.1.0`, and
-`manni meta validate -s` takes its id. It requires
-`label` on a `type: term` page, and a `definition` or a `see`. `check` does
-not report a page that has neither, so the schema is what catches it:
+That schema is the built-in `manni:terminology:1.2.0`, and
+`manni meta validate -s` takes its id. It requires `label` on a `type: term`
+page, and nothing else. A page with neither a `definition` nor a `see` passes
+it, and `term check` reports that page as `missing-definition`.
+
+The strict overlay, `manni:terminology-strict:1.2.0`, requires a
+`definition` or a `see` on a `type: term` page. Stack it to fail such a page
+at validation as well:
 
 ```console
-$ manni meta validate --no-config -s manni:terminology:1.1.0 term-without-definition-or-see.md
+$ manni meta validate --no-config -s manni:terminology:1.2.0 -s manni:terminology-strict:1.2.0 term-without-definition-or-see.md
 ✗ term-without-definition-or-see.md
-    (root)  must have required property 'definition'  (line 1)  [manni:terminology:1.1.0]
-    (root)  must have required property 'see'  (line 1)  [manni:terminology:1.1.0]
-    (root)  must match a schema in anyOf  (line 1)  [manni:terminology:1.1.0]
-    (root)  must match "then" schema  (line 1)  [manni:terminology:1.1.0]
+    (root)  must have required property 'definition'  (line 1)  [manni:terminology-strict:1.2.0]
+    (root)  must have required property 'see'  (line 1)  [manni:terminology-strict:1.2.0]
+    (root)  must match a schema in anyOf  (line 1)  [manni:terminology-strict:1.2.0]
+    (root)  must match "then" schema  (line 1)  [manni:terminology-strict:1.2.0]
 
 1 file checked, 0 passed, 1 failed, 4 errors
 ```

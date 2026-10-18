@@ -27,6 +27,8 @@ const RULE_DESCRIPTIONS: Readonly<Record<TermRule, string>> = {
   "dangling-reference": "A value of broader, narrower, related-terms or see names no entry, by label or by id.",
   "broader-cycle": "A chain of broader returns to where it started.",
   "see-not-empty": "An entry with see also carries a definition.",
+  "missing-definition": "An entry has neither a definition nor see.",
+  "conflicting-matches": "One IRI is listed under two of an entry's match kinds.",
   "asymmetric-hierarchy": "A names B as broader, and B omits A from narrower, or the reverse.",
   "alt-label-reference": "A page's concepts: names an entry by one of its alt-labels.",
   "abstract-too-long": "An abstract is longer than term.abstractMaxLength.",
