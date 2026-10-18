@@ -177,9 +177,14 @@ function keywordsOf(value: unknown): string[] {
 }
 
 /** The 1-based line `label` first appears on in `content`, ignoring case. */
-function lineOf(content: string, label: string): number | undefined {
-  const at = content.toLowerCase().indexOf(label.toLowerCase());
-  return at === -1 ? undefined : content.slice(0, at).split("\n").length;
+/**
+ * The line a label first appears on as a whole word, ignoring case, so `API`
+ * does not land on `CAPABILITIES`. Letters and digits of any script bound it.
+ */
+export function lineOf(content: string, label: string): number | undefined {
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "iu").exec(content);
+  return match === null ? undefined : content.slice(0, match.index).split("\n").length;
 }
 
 function fromList(from: readonly NamedAt[], cwd: string): string[] {
@@ -461,8 +466,10 @@ export async function runFill(opts: FillOptions): Promise<FillReport> {
       }
       if (got !== undefined) {
         confidence = got.confidence;
-        const below = "status" in got && got.status === "below-threshold";
-        if (below || got.confidence < threshold) {
+        // draft() judges the confidence itself; a crawl candidate's definition
+        // carries none, so it is judged here.
+        const below = "status" in got ? got.status === "below-threshold" : got.confidence < threshold;
+        if (below) {
           status = "below-threshold";
         } else {
           record.definition = got.definition;

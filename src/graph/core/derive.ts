@@ -103,6 +103,9 @@ const INVERSE = {
   related: "related",
 } as const;
 
+/** The one concept scheme's title (proposal 0086). */
+export const CONCEPT_SCHEME_TITLE = "manni graph concepts";
+
 const iri = (value: string): Term => ({ kind: "iri", value });
 const lit = (value: string): Term => ({ kind: "literal", value });
 const typedLit = (value: string, datatype: string): Term => ({
@@ -884,7 +887,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
   if (mintedConcepts.size > 0) {
     const scheme = mintSchemeIri(baseIri);
     add(scheme, RDF_TYPE, iri(`${NS.skos}ConceptScheme`));
-    add(scheme, `${NS.dcterms}title`, lit("manni graph concepts"));
+    add(scheme, `${NS.dcterms}title`, lit(CONCEPT_SCHEME_TITLE));
     // A concept with no broader concept is a top concept of the scheme, both
     // ways round. Read off the quads, so every source of hierarchy counts.
     const broader = `${NS.skos}broader`;
