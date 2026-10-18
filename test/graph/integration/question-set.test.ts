@@ -244,6 +244,12 @@ describe("graph stats: question coverage", () => {
     expect(report.conceptsWithoutQuestions).toEqual(["https://example.com/graph/concept/jitter"]);
   });
 
+  it("leaves the concepts list out of a graph with no concepts", () => {
+    const r = run(["stats"], built("cross-page"));
+    expect(r.stdout).toContain("Concepts:   0");
+    expect(r.stdout).not.toContain("Concepts with no question");
+  });
+
   it("gates the row only when the per-field map names it", () => {
     const cwd = built("question-coverage");
     const uniform = JSON.parse(
