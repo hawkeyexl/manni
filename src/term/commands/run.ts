@@ -9,7 +9,7 @@ import { valeConfigPath } from "../../shared/tools.js";
 import { resolveTermRun } from "../core/config.js";
 import { loadTermSet } from "../core/load-set.js";
 import { TermError } from "../errors.js";
-import type { TermReader, TermRun, TermSet } from "../types.js";
+import type { TermInput, TermReader, TermRun, TermSet } from "../types.js";
 
 /** The inputs and flags `list`, `get`, `check`, `lint` and `write` share. */
 export interface TermCommandOptions {
@@ -37,6 +37,8 @@ export interface TermCommandOptions {
   onNotice?: (message: string) => void;
   /** The readers to offer files to. Tests hand in their own. */
   readers?: readonly TermReader[];
+  /** Every page the run extracted, as it was read. */
+  onPage?: (input: TermInput) => void;
 }
 
 export interface LoadedTerms {
@@ -77,6 +79,7 @@ export async function loadSet(run: TermRun, opts: TermCommandOptions): Promise<T
     ...(opts.as === undefined ? {} : { as: opts.as }),
     ...(opts.onNotice === undefined ? {} : { onNotice: opts.onNotice }),
     ...(opts.readers === undefined ? {} : { readers: opts.readers }),
+    ...(opts.onPage === undefined ? {} : { onPage: opts.onPage }),
   });
   for (const message of set.notices) opts.onNotice?.(message);
   return set;

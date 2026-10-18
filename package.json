@@ -54,6 +54,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:graph:real": "vitest run --config vitest.graph-real.config.ts",
+    "test:term:real": "vitest run --config vitest.term-real.config.ts",
     "test:coverage": "vitest run --coverage",
     "pretypecheck": "npm run check:deps",
     "typecheck": "tsc --noEmit",

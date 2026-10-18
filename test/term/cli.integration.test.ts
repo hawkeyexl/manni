@@ -56,11 +56,11 @@ afterEach(() => {
 });
 
 describe("manni term (grammar)", () => {
-  it("lists the six verbs", () => {
+  it("lists the seven verbs", () => {
     const r = term(["--help"]);
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^Usage: manni term /m);
-    for (const verb of ["list", "get", "check", "lint", "write", "formats"]) {
+    for (const verb of ["list", "get", "check", "lint", "write", "fill", "formats"]) {
       expect(r.stdout).toMatch(new RegExp(`^\\s+${verb}\\b`, "m"));
     }
   });
@@ -72,7 +72,7 @@ describe("manni term (grammar)", () => {
   });
 
   it("shows each verb's usage line and the shared flags", () => {
-    for (const verb of ["list", "check", "lint", "write"]) {
+    for (const verb of ["list", "check", "lint", "write", "fill"]) {
       const help = term([verb, "--help"]).stdout;
       expect(help).toMatch(new RegExp(`^Usage: manni term ${verb} \\[options\\] \\[paths\\.\\.\\.\\]$`, "m"));
       for (const flag of [

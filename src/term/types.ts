@@ -439,6 +439,10 @@ export interface TermBlock {
   label: string;
   /** One per value of `broader`, `narrower` and `related-concepts`, on its field's line. */
   edges: { field: "broader" | "narrower" | "related-concepts"; value: string; line?: number }[];
+  /** The block's `alt-labels`, when it has any. */
+  altLabels?: string[];
+  /** The block's `definition`, when it has one. */
+  definition?: string;
 }
 
 export interface TermSet {
@@ -516,6 +520,22 @@ export interface TermConfig {
   severity?: Partial<Record<TermRule, TermSeverity>>;
   allowEmpty?: boolean;
   respectGitignore?: boolean;
+  /** `term.provider`: the provider `term fill` drafts with. */
+  provider?: string;
+  /** `term.model`. */
+  model?: string;
+  fill?: TermFillConfig;
+}
+
+/** `term.fill`. */
+export interface TermFillConfig {
+  /** Where new term pages go, as written: resolved from the config directory. */
+  out?: string;
+  confidenceThreshold?: number;
+  /** Inference calls per run; `null` is unbounded. */
+  maxTurns?: number | null;
+  cacheDir?: string;
+  crawl?: { minPages?: number };
 }
 
 export interface LoadedTermConfig {

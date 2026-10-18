@@ -25,6 +25,7 @@ import {
   TERM_RULES,
   type LoadedTermConfig,
   type TermConfig,
+  type TermFillConfig,
   type TermRule,
   type TermRun,
   type TermSeverity,
@@ -44,7 +45,19 @@ const CONFIG_KEYS: readonly (keyof TermConfig)[] = [
   "severity",
   "allowEmpty",
   "respectGitignore",
+  "provider",
+  "model",
+  "fill",
 ];
+
+/** The keys `term.fill` accepts, and `term.fill.crawl`. */
+const FILL_KEYS: readonly string[] = ["out", "confidenceThreshold", "maxTurns", "cacheDir", "crawl"];
+const CRAWL_KEYS: readonly string[] = ["minPages"];
+
+/** `term.fill` when a key is unset. */
+export const DEFAULT_FILL_CONFIDENCE = 0.7;
+export const DEFAULT_FILL_CACHE_DIR = ".manni/term/cache";
+export const DEFAULT_CRAWL_MIN_PAGES = 2;
 
 /** Keys that belong to the family, refused by name with where they live. */
 const COLLECTION_KEYS: readonly string[] = ["paths", "exclude"];
@@ -122,6 +135,41 @@ function asNonNegativeInteger(value: unknown, key: string, source: string): numb
   return value;
 }
 
+function parseFill(value: unknown, source: string): TermFillConfig {
+  if (!isMapping(value)) throw wrongType("fill", "a mapping", source);
+  rejectUnknownKeys(value, FILL_KEYS, "term.fill", source);
+  const fill: TermFillConfig = {};
+  if (value.out !== undefined) fill.out = asString(value.out, "fill.out", source);
+  if (value.cacheDir !== undefined) fill.cacheDir = asString(value.cacheDir, "fill.cacheDir", source);
+  const threshold = value.confidenceThreshold;
+  if (threshold !== undefined) {
+    if (typeof threshold !== "number" || !(threshold >= 0 && threshold <= 1)) {
+      throw wrongType("fill.confidenceThreshold", "a number from 0 to 1", source);
+    }
+    fill.confidenceThreshold = threshold;
+  }
+  const turns = value.maxTurns;
+  if (turns !== undefined) {
+    if (turns !== null && (typeof turns !== "number" || !Number.isInteger(turns) || turns < 1)) {
+      throw wrongType("fill.maxTurns", "a positive integer or null", source);
+    }
+    fill.maxTurns = turns;
+  }
+  if (value.crawl !== undefined) {
+    if (!isMapping(value.crawl)) throw wrongType("fill.crawl", "a mapping", source);
+    rejectUnknownKeys(value.crawl, CRAWL_KEYS, "term.fill.crawl", source);
+    const minPages = value.crawl.minPages;
+    fill.crawl = {};
+    if (minPages !== undefined) {
+      if (typeof minPages !== "number" || !Number.isInteger(minPages) || minPages < 1) {
+        throw wrongType("fill.crawl.minPages", "a positive integer", source);
+      }
+      fill.crawl.minPages = minPages;
+    }
+  }
+  return fill;
+}
+
 function parseSeverity(value: unknown, source: string): Partial<Record<TermRule, TermSeverity>> {
   if (!isMapping(value)) throw wrongType("severity", "a mapping", source);
   rejectUnknownKeys(value, TERM_RULES, "term.severity", source);
@@ -178,6 +226,9 @@ export function parseTermConfig(raw: unknown, source: string): TermConfig {
   if (raw.respectGitignore !== undefined) {
     config.respectGitignore = asBoolean(raw.respectGitignore, "respectGitignore", source);
   }
+  if (raw.provider !== undefined) config.provider = asString(raw.provider, "provider", source);
+  if (raw.model !== undefined) config.model = asString(raw.model, "model", source);
+  if (raw.fill !== undefined) config.fill = parseFill(raw.fill, source);
   return config;
 }
 

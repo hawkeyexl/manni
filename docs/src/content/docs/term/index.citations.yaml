@@ -13,9 +13,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-8eaf928fa69b8abbeb9e1db43d6afa52a06d2515bac29efe1504083aab7d1a8d
       source:
         file: src/term/core/load-set.ts
-        lines: 99-113
+        lines: 101-115
         integrity: sha256-22d3f07e3ba16e32162c57c05faa7e4a92c4ec72b884ed1c6e175dccadd3d4bc
-        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
+        commit-sha: 5984a6679357cafa9d1f291d13d547144647207d
     - id: term-record-fields
       claim:
         integrity: sha256-8eaf928fa69b8abbeb9e1db43d6afa52a06d2515bac29efe1504083aab7d1a8d
@@ -129,9 +129,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-48592a0da9c31d0558b690f0f0dd9fdbebf39365dd693e44326b03c0fda9d541
       source:
         file: src/term/cli.ts
-        lines: 261
+        lines: 289
         integrity: sha256-f38e000dba4b5ede0c2e49d689f6214268f98d11d4025231aab30265ae5373bf
-        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
+        commit-sha: 5984a6679357cafa9d1f291d13d547144647207d
     - id: formats-lists-constructs
       claim:
         lines: 37
@@ -216,9 +216,9 @@ docs/src/content/docs/term/index.mdx:
         integrity: sha256-9447cfa9f5cdc753063aa5f4f6772fcb1e3f1e6a9d9804b6dd92cef986496768
       source:
         file: src/term/cli.ts
-        lines: 132
+        lines: 160
         integrity: sha256-642aa7bc0402e0101838821cd5ed5ee06a261d3134bb836e1a23650376a401d2
-        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
+        commit-sha: 5984a6679357cafa9d1f291d13d547144647207d
     - id: proof-exit-one-error-fails
       claim:
         integrity: sha256-9447cfa9f5cdc753063aa5f4f6772fcb1e3f1e6a9d9804b6dd92cef986496768
