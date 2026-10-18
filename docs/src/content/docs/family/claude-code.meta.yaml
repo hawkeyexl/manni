@@ -42,28 +42,34 @@ docs/src/content/docs/family/claude-code.mdx:
       lines: 71
       integrity: sha256-782e98cb76374105c1c94120edc06036ef7504e410639fd4441a70bc5c37c507
     - generated-by: Claude Sonnet 5.5
-      lines: 73-88
-      integrity: sha256-d9ac93a6236dc17da7bb98a3dc96722e58859ed006fe48ef0139a1f41a642536
+      lines: 73-85
+      integrity: sha256-7c98a1e9ddba7cc965e4598eeabfdd91c0372a36ef0e73b44ef58833ead33dfd
+    - generated-by: Claude Opus 5.5
+      lines: 86
+      integrity: sha256-e0819914485c638c8ed98278037dc1ca4e35c343a027f922179aae33bed24146
     - generated-by: Claude Sonnet 5.5
-      lines: 90-142
+      lines: 87-89
+      integrity: sha256-a3ce48f8e958a5c2f6cc2e90a8709ddf8becf91c4203835f3ee937a2070b8c78
+    - generated-by: Claude Sonnet 5.5
+      lines: 91-143
       integrity: sha256-3d5d2ce1f62dc2525e57815afc20f1722b4116d1080c09a9c81f8eba12a512b3
     - generated-by: Claude Opus 5.5
-      lines: 150
+      lines: 151
       integrity: sha256-d0e3fafa6a0339827cc5620aa5c7618f5fddfdbab64be235b5fbc4f7a7427c4b
     - generated-by: Claude Sonnet 5.5
-      lines: 156-173
+      lines: 157-174
       integrity: sha256-d6754d688ae3ae46d57eac3891ffa3e43a4d9b07a0766d4ab7a1129832822e2b
     - generated-by: Claude Opus 5.5
-      lines: 174
+      lines: 175
       integrity: sha256-479432e7232bd19d5cbede893e93d83fa4a3802aab038514ee23a82f51730c3c
     - generated-by: Claude Sonnet 5.5
-      lines: 175-228
+      lines: 176-229
       integrity: sha256-cca18129f32d4b113e624f9f0d97b0f1f3e6c6bffe4ec5eb2c32afb90c0e85b4
     - generated-by: Claude Opus 5.5
-      lines: 229
+      lines: 230
       integrity: sha256-26bb95fb17234b98e6835242acc98a0197b7ddad60514451dcf137e19fac7169
     - generated-by: Claude Sonnet 5.5
-      lines: 230-237
+      lines: 231-238
       integrity: sha256-f8c3d39b579a292fb6883c629825c6843a20f5c80b84ce745d312eb124c2454f
   owner:
     - "@hawkeyexl"

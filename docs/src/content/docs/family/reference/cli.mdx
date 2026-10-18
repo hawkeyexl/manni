@@ -14,7 +14,7 @@ applies-to: ["domain:family"]
 next-steps: ["family-check", "family-claude-code"]
 sample-questions: ["What does manni check run when I name files?", "What exit code does manni check use under a Claude Code hook?", "What does the manni check JSON report look like?"]
 graph: { label: "CLI reference", type: reference }
-last-updated: 2026-10-11
+last-updated: 2026-10-18
 tags:
   - cli
   - exit-codes
@@ -120,6 +120,7 @@ in play.
 | `term` | The collections hold at least one term. | `term check` | `no terms in any collection` |
 | `graph` | `graph:` exists. | `graph build` in memory, writing no file, then `graph check` | `no graph: section` |
 | `a11y` | Never. `check` does not run it, since it needs a built site and a browser. | none | `run manni a11y check against a running site` |
+| `test` | Never. `check` does not run it, since Doc Detective runs the shell steps the pages carry. | none | `run manni test run with Doc Detective installed` |
 | `tracevals` | Only under a Claude Code hook, and only when `tracevals:` holds a `runtime:` section. A bare `check` never runs it, since it needs recorded sessions and a model. | none on the command line | `run manni tracevals run over sessions` |
 
 `check` reads only the files that belong to a collection declared under
@@ -234,6 +235,7 @@ docevals   not set up    no page resolves any evals
 term       not set up    no terms in any collection
 graph      not set up    no graph: section
 a11y       not checked   run manni a11y check against a running site
+test       not checked   run manni test run with Doc Detective installed
 tracevals  not checked   run manni tracevals run over sessions
 # exit 0
 ```
@@ -399,6 +401,7 @@ docevals   not set up    no page resolves any evals
 term       not set up    no terms in any collection
 graph      not set up    no graph: section
 a11y       not checked   run manni a11y check against a running site
+test       not checked   run manni test run with Doc Detective installed
 tracevals  not checked   run manni tracevals run over sessions
 # exit 0
 

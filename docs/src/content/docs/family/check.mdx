@@ -15,7 +15,7 @@ prerequisites: ["meta-reference-configuration"]
 next-steps: ["family-claude-code", "family-reference-cli"]
 sample-questions: ["How do I run every manni check in one CI step?", "What does a skipped line in the manni check report mean?", "Why did manni check skip meta in my repository?"]
 graph: { label: "Gate every check a repo has set up", type: task }
-last-updated: 2026-10-11
+last-updated: 2026-10-18
 tags:
   - ci-cd
   - cli
@@ -55,6 +55,7 @@ docevals   not set up    no page resolves any evals
 term       not set up    no terms in any collection
 graph      not set up    no graph: section
 a11y       not checked   run manni a11y check against a running site
+test       not checked   run manni test run with Doc Detective installed
 tracevals  not checked   run manni tracevals run over sessions
 # exit 0
 ```
@@ -227,6 +228,9 @@ It checks the named pages, or every page with citations on a bare run.
 
 `manni check` never runs `a11y` from the command line. It needs a built site and a browser, so
 `manni status` lists it as not checked. Keep it as its own workflow step.
+
+`manni check` never runs `test` either. Doc Detective runs the shell steps the pages carry, and
+`check` also runs from Claude Code hooks. Run [`manni test run`](/manni/test/) as its own step.
 
 `tracevals` needs recorded sessions and a model, so a bare `manni check` does not run it either.
 Run `manni tracevals run` over recorded sessions as its own step. Inside a Claude Code session the

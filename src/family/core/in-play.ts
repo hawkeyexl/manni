@@ -15,6 +15,7 @@
  * | graph | `graph:` exists |
  * | tracevals | `tracevals.runtime` exists; it judges the turn a Stop or SubagentStop hook ends |
  * | a11y | never run by `check`: it needs a running site |
+ * | test | never run by `check`: Doc Detective runs the pages' shell steps |
  *
  * Only members of a declared collection are file-checked. tracevals judges a
  * turn, not files, so it needs no collection.
@@ -90,6 +91,8 @@ export const META_DEFAULTS_ONLY = "only the built-in default schemas cover these
  */
 export const NOT_CHECKED: ReadonlyArray<readonly [string, string]> = [
   ["a11y", "run manni a11y check against a running site"],
+  // Doc Detective runs the shell steps pages carry, so a hook never starts it.
+  ["test", "run manni test run with Doc Detective installed"],
   ["tracevals", "run manni tracevals run over sessions"],
 ];
 

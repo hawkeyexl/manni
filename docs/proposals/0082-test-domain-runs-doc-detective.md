@@ -290,6 +290,23 @@ The cost is smaller than it looks, for three reasons.
 - The repository's own rule is to default to latest and not to hand-pin a
   version. An unpinned install is that rule applied.
 
+### 11. `manni check` never runs it
+
+Proposal 0078's `manni check` runs every domain a repository has set up, and it
+also runs from Claude Code hooks. `test` is not one of them. Doc Detective runs
+the shell steps a page carries, and a hook that started it would run those steps
+after every edit. It also needs Doc Detective installed, which `check` cannot
+assume.
+
+So `manni status` lists `test` beside `a11y` as not checked, with what to run
+instead:
+
+```
+test       not checked   run manni test run with Doc Detective installed
+```
+
+`manni test run` stays its own CI step, as `docs-as-tests.yml` runs it.
+
 ## Known limits
 
 - **A path containing a comma breaks the input list.** `-i` takes one
