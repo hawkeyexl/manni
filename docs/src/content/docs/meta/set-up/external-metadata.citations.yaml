@@ -152,9 +152,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-756a1eb87c6a14d7fbd92fc09a0b513c213db34ea64626596c3884017ef52bec
       source:
         file: src/meta/commands/fill.ts
-        lines: 878-885
+        lines: 891-898
         integrity: sha256-8f25f70238b0f937a411e472485286c894e20f83830eecd701ba73a80a7fbfd9
-        commit-sha: ff3c96da86b0902113ec05ac4a780450486eef85
+        commit-sha: 2da00303ac0cc8ea3779f919dc683d3f41dcf3b7
     - id: query-change-line-names-manifest
       claim:
         integrity: sha256-756a1eb87c6a14d7fbd92fc09a0b513c213db34ea64626596c3884017ef52bec
@@ -495,18 +495,18 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-5d2f1225ca5f07c91f3acc7434241efbeeb41f69cca74a12b37b85a86f9166f7
       source:
         file: src/meta/core/config.ts
-        lines: 1897-1900
+        lines: 1899-1902
         integrity: sha256-97e2c7153041a93dd1f1732aff7f763b2e640bb922d7ea45555d856d7aacb622
-        commit-sha: 80f14fda27c0fd002fd9ef92b9ccb35d56fe289c
+        commit-sha: 2da00303ac0cc8ea3779f919dc683d3f41dcf3b7
     - id: override-points-at-collection-by-name
       claim:
         lines: 104
         integrity: sha256-d2c3c9e5867c78112a8aba316d3f09086e27e55a403fe2a5041eb21d531380e7
       source:
         file: src/meta/core/config.ts
-        lines: 830-832
+        lines: 832-834
         integrity: sha256-214d2e20e4eed70b2af58330270685d7cacbba6617d33b0b30ff458724ef793f
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 2da00303ac0cc8ea3779f919dc683d3f41dcf3b7
     - id: manifest-entry-unowned-key-refused
       claim:
         lines: 103
@@ -567,9 +567,9 @@ docs/src/content/docs/meta/set-up/external-metadata.mdx:
         integrity: sha256-e3241083a080cfdf0b8b123267800a91d42a6801e8646e0ba6aaab5b4df3c81c
       source:
         file: src/meta/core/config.ts
-        lines: 760-763
+        lines: 762-765
         integrity: sha256-02ba737cf99868ba4edd94f10166a97a02b2c9459f5afdd7bba4a16c50adee34
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 2da00303ac0cc8ea3779f919dc683d3f41dcf3b7
     - id: external-metadata-declared-on-collection
       claim:
         integrity: sha256-63d0c5df809c8447fee458f605d72ac3155263fb49c8c405fa865cc15842a363
