@@ -9,7 +9,7 @@
  *   <domain> → docs/src/content/docs/<domain>/reference/cli.mdx
  *
  * for every domain in `PAGES` below: meta, a11y, cite, docevals, graph, key,
- * lint, site, term and tracevals, plus `family`.
+ * lint, site, term, test and tracevals, plus `family`.
  *
  * `family` is not a domain. It stands for the two verbs the umbrella carries
  * itself, `check` and `status`, so its page is compared against those two
@@ -45,6 +45,7 @@ const PAGES = new Map([
   ["lint", "docs/src/content/docs/lint/reference/cli.mdx"],
   ["site", "docs/src/content/docs/site/reference/cli.mdx"],
   ["term", "docs/src/content/docs/term/reference/cli.mdx"],
+  ["test", "docs/src/content/docs/test/reference/cli.mdx"],
   ["tracevals", "docs/src/content/docs/tracevals/reference/cli.mdx"],
   ["family", "docs/src/content/docs/family/reference/cli.mdx"],
 ]);

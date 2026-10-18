@@ -1,0 +1,8 @@
+[1mfail.md[22m
+  4  [31mFAIL   [39m  Returned exit code 1. Expected one of [0]
+
+1 test: 0 passed, 1 failed, 0 warnings, 0 skipped
+
+real	0m7.765s
+user	0m0.000s
+sys	0m0.015s

@@ -1434,7 +1434,8 @@ provider](/manni/docevals/judge/choose-a-provider/).
 `tools:` holds the settings of an outside tool that a manni domain runs. It
 sits at the top level beside `collections:` and `encryptionKey:`, because an
 outside tool belongs to no one domain. Each tool gets a key of its own under
-`tools:`, with its own keys beneath. Vale is the one tool read.
+`tools:`, with its own keys beneath. Three tools are read: Vale, DITA Open
+Toolkit and Doc Detective.
 
 ```yaml title="manni.config.yaml"
 collections:
@@ -1444,15 +1445,25 @@ collections:
 tools:
   vale:
     config: .vale.ini
+  dita-ot:
+    home: tools/dita-ot
+  doc-detective:
+    config: .doc-detective.json
 ```
 
 | Key | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `tools.vale.config` | `string` | no | none | Vale's config file, relative to `manni.config.yaml`, or absolute. Passed to every Vale run as `--config`. Absent, Vale finds its own config, as it does when a person runs it. |
+| `tools.dita-ot.home` | `string` | no | none | DITA Open Toolkit's installation directory, relative to `manni.config.yaml`, or absolute. Absent, the `dita` on your `PATH` runs. |
+| `tools.doc-detective.config` | `string` | no | none | Doc Detective's config file, relative to `manni.config.yaml`, or absolute. Passed to `manni test run` as Doc Detective's `--config`. Absent, Doc Detective finds its own config in the working directory. |
 
 - **Who reads it.** [`manni term lint`](/manni/term/reference/cli/#term-lint)
-  and [`manni term write -f vale`](/manni/term/set-up/) start Vale with it.
-  `manni meta` starts no outside tool, and never uses the value.
+  and [`manni term write -f vale`](/manni/term/set-up/) start Vale with
+  `tools.vale.config`. [`manni lint`](/manni/lint/reference/configuration/#tools-keys)
+  starts DITA-OT from `tools.dita-ot.home`.
+  [`manni test run`](/manni/test/reference/cli/) starts Doc Detective with
+  `tools.doc-detective.config`. `manni meta` starts no outside tool, and never
+  uses a value.
 - **The key counts for discovery.** A `manni.config.yaml` carrying `tools:` and
   no `meta:` section is still this tool's config, and stops the
   [search](#discovery).
@@ -1461,16 +1472,17 @@ tools:
   nothing:
 
 ```
-manni: manni.config.yaml: tools has unknown key "prettier". Supported keys: vale.
+manni: manni.config.yaml: tools has unknown key "prettier". Supported keys: vale, dita-ot, doc-detective.
 manni: manni.config.yaml: tools.vale has unknown key "ini". Supported keys: config.
 manni: manni.config.yaml: tools.vale.config must be a non-empty string.
 ```
 
-- **The file must exist when Vale runs.** A path to a missing file is refused
-  by the command that would start Vale, not by every run:
+- **A config file must exist when its tool runs.** A path to a missing file is
+  refused by the command that would start the tool, not by every run:
 
 ```
 manni: manni.config.yaml: tools.vale.config "nowhere.ini" does not exist.
+manni: manni.config.yaml: tools.doc-detective.config "nowhere.json" does not exist.
 ```
 
 ## Keys
@@ -2783,7 +2795,7 @@ not the directory you happened to run from. That applies to:
   that same directory;
 - `collections[].externalMetadata[].file`, and every document path inside the
   manifest it names;
-- `tools.vale.config`;
+- `tools.vale.config`, `tools.dita-ot.home` and `tools.doc-detective.config`;
 - `overrides[].files`;
 - `baseline`, and any local `.json` schema file named in `schemas` or
   `overrides`.
