@@ -39,36 +39,36 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-a9c6f6e402a46301743e429c046989c42a46c17f6de79e25fdc6249dc5d149d1
       source:
         file: src/term/core/load-set.ts
-        lines: 348-363
+        lines: 358-373
         integrity: sha256-102d5f9a9c23a7c5a37ca891904aa21d30b8093a64bcf555282179cbd3f431e0
-        commit-sha: 5d1326b22705df094119f89b94dcd683afb554ee
+        commit-sha: 30b322ddca2461dbd8f84630f68bf2fba07db563
     - id: stdin-needs-as
       claim:
         lines: 73
         integrity: sha256-77f52a3438d8fcc49c524d30675cbb0753a9ec860673ed1c564ed6035c9b868d
       source:
         file: src/term/core/load-set.ts
-        lines: 306-310
+        lines: 316-320
         integrity: sha256-649eee0a9afc54e520749b805c0f6faa4f61e5143900798fde83d38902046062
-        commit-sha: 5d1326b22705df094119f89b94dcd683afb554ee
+        commit-sha: 30b322ddca2461dbd8f84630f68bf2fba07db563
     - id: every-file-contributes-references
       claim:
         lines: 79-83
         integrity: sha256-e18e0068866841ff575b1f5bb7e7e310a7f9ee33d24dd5138a77e2ec8040cf0b
       source:
         file: src/term/core/load-set.ts
-        lines: 191-227
+        lines: 201-237
         integrity: sha256-359ebfc884cd6a1bf08bd397e489a31be7850fd45e5230391a5138f54ed173b3
-        commit-sha: 5d1326b22705df094119f89b94dcd683afb554ee
+        commit-sha: 30b322ddca2461dbd8f84630f68bf2fba07db563
     - id: no-terms-exit-2
       claim:
         lines: 82-83
         integrity: sha256-e6d54f79f34568ad8f059dc9a3f6eff8b3a5752bc4a1067fce5ae80ea723197a
       source:
         file: src/term/core/load-set.ts
-        lines: 401-405
+        lines: 411-415
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: 5d1326b22705df094119f89b94dcd683afb554ee
+        commit-sha: 30b322ddca2461dbd8f84630f68bf2fba07db563
     - id: collection-not-with-paths
       claim:
         lines: 126
@@ -84,9 +84,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-76d3c8637062bba4a8c74bf20fc56fe3057ec43c44e5fa16660695448d2f80fb
       source:
         file: src/term/core/load-set.ts
-        lines: 304
+        lines: 314
         integrity: sha256-e01cac2245b2ee790bf8936bc97ae98aff04cb87fb6ff75b3357b685765f522a
-        commit-sha: 5d1326b22705df094119f89b94dcd683afb554ee
+        commit-sha: 30b322ddca2461dbd8f84630f68bf2fba07db563
     - id: config-must-exist
       claim:
         lines: 129
@@ -547,27 +547,27 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-a98520018e4ddbc4549624438ba6d756d8b1c51effd2055e620163b786f3fad2
       source:
         file: src/term/core/load-set.ts
-        lines: 401-405
+        lines: 411-415
         integrity: sha256-eee4feda1ff997c95ddd5d2e77b3e44e3adf12622e307ae9a9c70a294c5c8957
-        commit-sha: 5d1326b22705df094119f89b94dcd683afb554ee
+        commit-sha: 30b322ddca2461dbd8f84630f68bf2fba07db563
     - id: err-no-files
       claim:
         lines: 928
         integrity: sha256-cb957a22936f44d596f8c90764c57743f210b0c19cdd1cfa61ec31253e0c5047
       source:
         file: src/term/core/load-set.ts
-        lines: 311-315
+        lines: 321-325
         integrity: sha256-46dab77aa566c96dfd6f011fba5113cba1a1e6b53ff8f28221fd16fd6db50824
-        commit-sha: 5d1326b22705df094119f89b94dcd683afb554ee
+        commit-sha: 30b322ddca2461dbd8f84630f68bf2fba07db563
     - id: err-stdin-needs-as
       claim:
         lines: 929
         integrity: sha256-807a4f14ece7d47d7ecffd324a3bdd99dfd2c1a6bf629a9cf4cbed3414f8ef61
       source:
         file: src/term/core/load-set.ts
-        lines: 308-310
+        lines: 318-320
         integrity: sha256-cb26396871576319409976bf45edc2c606077ccba5a68809643557224099568b
-        commit-sha: 5d1326b22705df094119f89b94dcd683afb554ee
+        commit-sha: 30b322ddca2461dbd8f84630f68bf2fba07db563
     - id: err-file-not-found
       claim:
         lines: 930
@@ -754,9 +754,9 @@ docs/src/content/docs/term/reference/cli.mdx:
         integrity: sha256-47a867bf4a8ee3ea0c4b5956871ff1642980db6038dd047622eb45e89e7a422f
       source:
         file: src/term/core/load-set.ts
-        lines: 385-398
+        lines: 395-408
         integrity: sha256-6be5712e05eb887f103270e2a0c48bde208ff173043f53669112d230afb7b830
-        commit-sha: 5d1326b22705df094119f89b94dcd683afb554ee
+        commit-sha: 30b322ddca2461dbd8f84630f68bf2fba07db563
     - id: allow-empty-missing-path
       claim:
         lines: 127
