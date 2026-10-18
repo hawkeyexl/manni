@@ -127,7 +127,12 @@ async function rankPages(question: string, r: Retriever): Promise<string[]> {
   for (const c of entry.candidates) {
     const type = r.lexical.entry(c.iri)?.type;
     if (type === DOCUMENT_TYPE) pages.add(c.iri);
-    else if (type === SECTION_TYPE) pages.add(c.iri.slice(0, c.iri.indexOf("#")));
+    else if (type === SECTION_TYPE) {
+      // A section is `{doc}#{slug}`. One without a `#` names no page, so it
+      // is left out rather than cut to a wrong IRI.
+      const hash = c.iri.lastIndexOf("#");
+      if (hash !== -1) pages.add(c.iri.slice(0, hash));
+    }
   }
   return [...pages];
 }
