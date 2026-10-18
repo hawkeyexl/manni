@@ -330,8 +330,10 @@ documentInputs(
       // Warnings go to stderr so stdout stays the machine-readable summary;
       // a degraded build is still a successful one, so the exit code is 0.
       for (const warning of result.warnings) warn(warning);
+      const { total, fromTermbase } = result.concepts;
+      const termbase = fromTermbase > 0 ? ` (${fromTermbase} from the termbase)` : "";
       console.log(
-        `Wrote ${result.outPath} (${result.docs} docs, ${result.quads} triples)`,
+        `Wrote ${result.outPath} (${result.docs} docs, ${result.quads} triples, ${total} concepts${termbase})`,
       );
     } catch (e) {
       fail(e);

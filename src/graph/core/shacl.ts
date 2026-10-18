@@ -1,7 +1,8 @@
 /**
  * Graph-level validation: run the published SHACL shapes over a built graph,
- * plus the two SKOS integrity checks core SHACL cannot express (broader
- * cycles, related⨯broaderTransitive disjointness). Every finding carries the
+ * plus the SKOS integrity checks core SHACL cannot express (broader cycles,
+ * related⨯broaderTransitive disjointness, two untagged prefLabels on one
+ * concept). Every finding carries the
  * doc paths responsible, so writers get file names instead of bare IRIs.
  */
 import { readFileSync } from "node:fs";
@@ -336,6 +337,34 @@ function cycleFindings(store: Store): CheckFinding[] {
 }
 
 /**
+ * The prefLabel collision SHACL Core cannot express. Concept IRIs converge on
+ * slugified labels, so "Configuration" and "configuration" land on one concept
+ * with two untagged spellings. `sh:uniqueLang` (shapes 1.1.0) catches two
+ * labels in one language and ignores untagged ones, so this catches those.
+ */
+export const PREF_LABEL_COLLISION =
+  "concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling";
+
+function untaggedPrefLabelFindings(store: Store): CheckFinding[] {
+  const prefLabel = `${NS.skos}prefLabel`;
+  const untagged = new Map<string, number>();
+  for (const q of store.getQuads(null, DataFactory.namedNode(prefLabel), null, null)) {
+    if (q.object.termType !== "Literal" || q.object.language !== "") continue;
+    untagged.set(q.subject.value, (untagged.get(q.subject.value) ?? 0) + 1);
+  }
+  return [...untagged]
+    .filter(([, count]) => count > 1)
+    .map(([focusNode]) =>
+      finding("warning", {
+        message: PREF_LABEL_COLLISION,
+        focusNode,
+        path: prefLabel,
+        docs: blameDocs(store, focusNode),
+      }),
+    );
+}
+
+/**
  * The three `graph` fields a machine may never be attributed for. The old
  * `kg.provenance` schema enumerated the twelve *fillable* fields, which kept
  * these out; a free JSON Pointer cannot express that, so proposal 0046 stress
@@ -450,10 +479,18 @@ export async function validateGraph(
     );
   }
 
+  // Shapes 1.0.0 still says the untagged collision itself, with this message.
+  // The check core's copy adds nothing beside it.
+  const said = new Set(
+    findings
+      .filter((f) => f.message === PREF_LABEL_COLLISION)
+      .map((f) => f.focusNode),
+  );
   findings.push(
     ...cycleFindings(store),
     ...relatedConflicts(store),
     ...curatedFieldFindings(store),
+    ...untaggedPrefLabelFindings(store).filter((f) => !said.has(f.focusNode)),
   );
 
   findings.sort(

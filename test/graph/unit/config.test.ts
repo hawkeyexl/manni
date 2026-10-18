@@ -22,8 +22,9 @@ describe("parseConfig", () => {
       "images",
       "code",
       "provenance",
+      "terms",
     ]);
-    // empty = use the shapes bundled with manni (shapes/graph/shapes-1.0.0.ttl)
+    // empty = use the shapes bundled with manni (shapes/graph/shapes-1.1.0.ttl)
     expect(c.check.shapes).toEqual([]);
     expect(c.fill.validateGraph).toBe(true);
     // Opinionated defaults (ADR 01009/01010), minus the switch 0051 §6
@@ -494,6 +495,13 @@ describe("parseConfig", () => {
         ),
       ).toThrow(GraphError);
     }
+  });
+
+  it("accepts terms as a derive source, and a list without it stays without it", () => {
+    const derive = (list: string) =>
+      parseConfig(`build:\n  derive: [${list}]\n`, "/tmp/manni.config.yaml").build.derive;
+    expect(derive("frontmatter, terms")).toEqual(["frontmatter", "terms"]);
+    expect(derive("frontmatter, tags")).toEqual(["frontmatter", "tags"]);
   });
 
   it("rejects an unknown derive source", () => {

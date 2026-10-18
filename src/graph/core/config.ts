@@ -35,7 +35,8 @@ export type DeriveSource =
   | "tags"
   | "images"
   | "code"
-  | "provenance";
+  | "provenance"
+  | "terms";
 
 export type FillField =
   // SKOS concept fields
@@ -249,6 +250,7 @@ export const ALL_DERIVE_SOURCES: DeriveSource[] = [
   "images",
   "code",
   "provenance",
+  "terms",
 ];
 
 /**

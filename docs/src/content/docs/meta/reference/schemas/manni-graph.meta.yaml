@@ -29,7 +29,7 @@ docs/src/content/docs/meta/reference/schemas/manni-graph.mdx:
       integrity: sha256-293b1ede49d0f2a8a9525ed7ddca20f4be6896c1e0bead5d75826fb09248f73e
     - generated-by: Claude Opus 5.5
       lines: 37-213
-      integrity: sha256-638e7477d7242a0e44d4de3ad767c858149cc25b7d7ad162c238e80db8f22077
+      integrity: sha256-1cb7f186c5b26fe68e2666ab66fba395ce26620aa673747a00ecb769b84a2dbc
     - generated-by: Claude Opus 5.5
       lines: 226-260
       integrity: sha256-2c6299bad720433d8a63dd7186bf93aab91520ab53df04ee4908fcca90f9bffc

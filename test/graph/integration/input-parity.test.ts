@@ -47,7 +47,7 @@ describe("graph build reads stdin", () => {
       stdinPage,
     );
     expect(r.status, r.stderr).toBe(0);
-    expect(r.stdout).toMatch(/\(2 docs, \d+ triples\)/);
+    expect(r.stdout).toMatch(/\(2 docs, \d+ triples, \d+ concepts\)/);
     const ttl = readFileSync(out, "utf8");
     // The node is `<baseIri>stdin`, and its display path is `<stdin>`.
     expect(ttl).toContain("<https://example.com/collections/stdin>");
@@ -128,7 +128,7 @@ describe("graph build --ext and --allow-empty", () => {
       dir,
     );
     expect(r.status, r.stderr).toBe(0);
-    expect(r.stdout).toBe(`Wrote ${out} (0 docs, 0 triples)\n`);
+    expect(r.stdout).toBe(`Wrote ${out} (0 docs, 0 triples, 0 concepts)\n`);
   });
 
   it("fill exits 0 with an empty report under --allow-empty", () => {

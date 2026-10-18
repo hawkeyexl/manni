@@ -17,7 +17,7 @@ const HASH = "a".repeat(64);
 
 /** Store builder: [s, p, o] with strings; o starting with "http" is an IRI. */
 function build(
-  triples: Array<[string, string, string | { lit: string; dt?: string }]>,
+  triples: Array<[string, string, string | { lit: string; dt?: string; lang?: string }]>,
 ): Store {
   const store = new Store();
   for (const [s, p, o] of triples) {
@@ -27,7 +27,10 @@ function build(
         DataFactory.namedNode(p),
         typeof o === "string"
           ? DataFactory.namedNode(o)
-          : DataFactory.literal(o.lit, o.dt ? DataFactory.namedNode(o.dt) : undefined),
+          : DataFactory.literal(
+              o.lit,
+              o.lang ?? (o.dt ? DataFactory.namedNode(o.dt) : undefined),
+            ),
       ),
     );
   }
@@ -140,6 +143,64 @@ describe("validateGraph", () => {
     expect(hit).toBeDefined();
     expect(hit?.severity).toBe("warning");
     expect(hit?.shaclSeverity).toBe("warning");
+    expect(hit?.message).toBe(
+      "concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling",
+    );
+    expect(findings.filter((f) => f.focusNode === c)).toHaveLength(1);
+  });
+
+  it("admits one prefLabel per language, and warns on two in one language", async () => {
+    const c = concept("widget");
+    const label = (
+      lit: string,
+      lang: string,
+    ): [string, string, { lit: string; lang: string }] => [
+      c,
+      `${NS.skos}prefLabel`,
+      { lit, lang },
+    ];
+    const typed: Array<[string, string, string]> = [
+      [c, RDF_TYPE, `${NS.skos}Concept`],
+      [c, `${NS.skos}inScheme`, SCHEME],
+    ];
+    const ok = await validateGraph(
+      build([
+        ...conformingTriples(),
+        ...typed,
+        label("Widget", "en"),
+        label("Widget-Komponente", "de"),
+      ]),
+      SHAPES,
+    );
+    expect(ok.filter((f) => f.focusNode === c)).toEqual([]);
+    const twice = await validateGraph(
+      build([
+        ...conformingTriples(),
+        ...typed,
+        label("Widget", "en"),
+        label("Gadget", "en"),
+      ]),
+      SHAPES,
+    );
+    const hit = twice.find((f) => f.focusNode === c);
+    expect(hit?.severity).toBe("warning");
+    expect(hit?.path).toBe(`${NS.skos}prefLabel`);
+  });
+
+  it("admits a term concept's notes and the top concepts, both ways round", async () => {
+    const c = concept("setup");
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        [c, `${NS.skos}definition`, { lit: "Getting started.", lang: "en" }],
+        [c, `${NS.skos}scopeNote`, { lit: "Install only." }],
+        [c, `${NS.skos}hiddenLabel`, { lit: "stup" }],
+        [c, `${NS.skos}topConceptOf`, SCHEME],
+        [SCHEME, `${NS.skos}hasTopConcept`, c],
+      ]),
+      SHAPES,
+    );
+    expect(findings).toEqual([]);
   });
 
   it("closed Document shape rejects unexpected predicates", async () => {

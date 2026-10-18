@@ -6,7 +6,7 @@ id: graph-reference-cli
 language: en
 lifecycle: published
 action: remember
-last-updated: 2026-10-06
+last-updated: 2026-10-18
 ---
 
 {/* The command, argument, and option tables on this page are drift-checked
@@ -123,14 +123,22 @@ manni graph build [paths...] [options]
 
 ```console
 $ manni graph build -c test/graph/fixtures/dd/docs.config.yaml
-Wrote .tmp/dd/graph.ttl (3 docs, 157 triples)
+Wrote .tmp/dd/graph.ttl (3 docs, 157 triples, 3 concepts)
 ```
 
 A page piped in with `-` joins the graph beside the named paths:
 
 ```console
 $ cat draft.md | manni graph build - docs/ --as markdown
-Wrote graph/graph.ttl (4 docs, 152 triples)
+Wrote graph/graph.ttl (4 docs, 152 triples, 3 concepts)
+```
+
+When the `terms` derive source reads a termbase, the summary says how many
+concepts it gave:
+
+```console
+$ manni graph build
+Wrote graph.ttl (6 docs, 110 triples, 3 concepts (2 from the termbase))
 ```
 
 Warnings go to stderr, so stdout stays the one-line summary. A degraded build

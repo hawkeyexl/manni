@@ -4,6 +4,8 @@
  * structure becomes which triples.
  */
 import type { DocModel } from "../types.js";
+import type { TermLabel } from "../../shared/term-labels.js";
+import { canonicalLanguage, termIndex } from "./concepts.js";
 import type { DeriveSource } from "./config.js";
 import type { GitHistory } from "./git.js";
 import { hasScheme, resolveRelative } from "./analyze.js";
@@ -19,10 +21,10 @@ import {
   mintProductIri,
   mintSchemeIri,
   mintSectionIri,
+  mintTermConceptIri,
   normalizeDocPath,
 } from "./iri.js";
 import { byCodeUnit } from "./sort.js";
-import { canonicalLanguageTag } from "./localizations.js";
 import { NS, RDF_TYPE, ROLE } from "./vocab.js";
 import {
   GRAPH_NOT_APPLICABLE_TO_VARIANT,
@@ -56,7 +58,13 @@ function resolveProvDocPath(
 
 export type Term =
   | { kind: "iri"; value: string }
-  | { kind: "literal"; value: string; datatype?: string };
+  | {
+      kind: "literal";
+      value: string;
+      datatype?: string;
+      /** A language tag, for a literal that carries one. Never set with `datatype`. */
+      language?: string;
+    };
 
 export interface Quad {
   s: string;
@@ -73,7 +81,27 @@ export interface DeriveOptions {
   gitHistory?: GitHistory;
   /** Emit qualified attribution/association nodes (`provenance.qualified`). */
   qualified?: boolean;
+  /**
+   * The termbase, as the family term source reads it (proposal 0085 §1).
+   * Read only under the `terms` derive source.
+   */
+  termbase?: readonly TermLabel[];
 }
+
+/**
+ * How many concepts the termbase contributes: one per term id. A `see:`
+ * entry is a redirect, not a concept.
+ */
+export function termConceptCount(termbase: readonly TermLabel[]): number {
+  return termIndex(termbase).groups.size;
+}
+
+/** A SKOS hierarchy predicate and the one emitted back from its object. */
+const INVERSE = {
+  broader: "narrower",
+  narrower: "broader",
+  related: "related",
+} as const;
 
 const iri = (value: string): Term => ({ kind: "iri", value });
 const lit = (value: string): Term => ({ kind: "literal", value });
@@ -253,15 +281,29 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
    * scheme node unreachable as far as the compiler is concerned.
    */
   const mintedConcepts = new Set<string>();
+  const terms = termIndex(sources.has("terms") ? (options.termbase ?? []) : []);
 
-  /** Concept node + membership triples; returns the concept IRI. */
-  const concept = (label: string): string => {
+  /**
+   * The concept a label names (proposal 0085 §1). A label the termbase
+   * defines names that term's concept, which the termbase pass below emits,
+   * so the reference adds no label of its own. Any other label is a freeform
+   * concept, minted from its slug with the label as its prefLabel.
+   */
+  const concept = (label: string, language?: string): string => {
+    const id = terms.resolve(label, language);
+    if (id !== undefined) return mintTermConceptIri(baseIri, id);
     const c = mintConceptIri(baseIri, label);
     add(c, RDF_TYPE, iri(`${NS.skos}Concept`));
     add(c, `${NS.skos}prefLabel`, lit(label));
     add(c, `${NS.skos}inScheme`, iri(mintSchemeIri(baseIri)));
     mintedConcepts.add(c);
     return c;
+  };
+
+  /** One hierarchy edge, emitted both ways round. */
+  const hierarchy = (s: string, relation: keyof typeof INVERSE, o: string) => {
+    add(s, `${NS.skos}${relation}`, iri(o));
+    add(o, `${NS.skos}${INVERSE[relation]}`, iri(s));
   };
 
   /** ProductVariant node (type + label); returns its IRI. Positive and
@@ -410,6 +452,12 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     // provenance, the SKOS hierarchy); `harvested` folds in the page-level
     // fallbacks.
     const harvested = resolveGraph(block, fm);
+    // The page's own key outranks the route it sits under (ADR 01037): a
+    // single English page inside a translated tree can correct its label,
+    // and a corpus that declares nothing keeps deriving nothing.
+    const pageLanguage = canonicalLanguage(
+      asString(fmValue(fm, ["lang", "language"])) ?? doc.routeLanguage,
+    );
     let createdEmitted = false;
     let modifiedEmitted = false;
 
@@ -455,18 +503,10 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         modifiedEmitted = true;
       }
 
-      // The page's own key outranks the route it sits under (ADR 01037): a
-      // single English page inside a translated tree can correct its label,
-      // and a corpus that declares nothing keeps deriving nothing.
-      //
       // Written in its canonical spelling: tags are case-insensitive, and
       // `en-us` beside `en-US` would otherwise split one locale into two
       // indexes and miss a `--lang` filter typed the other way.
-      const language =
-        asString(fmValue(fm, ["lang", "language"])) ?? doc.routeLanguage;
-      if (language) {
-        add(docIri, `${NS.dcterms}language`, lit(canonicalLanguageTag(language)));
-      }
+      if (pageLanguage) add(docIri, `${NS.dcterms}language`, lit(pageLanguage));
 
       // Page-level only: the `graph` block is closed and carries no
       // translation key, so this fact lives at the altitude `lang` already
@@ -485,10 +525,11 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
 
       // The graph block: the SKOS hierarchy has no page-level twin, so it reads
       // the block as written (frontmatter key `graph`, RDF prefix `graph:`).
+      const blockLabel = block ? asString(block["label"]) : undefined;
       if (block) {
-        const label = asString(block["label"]);
+        const label = blockLabel;
         if (label) {
-          const topic = concept(label);
+          const topic = concept(label, pageLanguage);
           add(docIri, `${NS.foaf}primaryTopic`, iri(topic));
           for (const alt of asStringArray(block["alt-labels"])) {
             add(topic, `${NS.skos}altLabel`, lit(alt));
@@ -502,9 +543,23 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
             ["related-concepts", "related"],
           ] as const) {
             for (const value of asStringArray(block[key])) {
-              add(topic, `${NS.skos}${predicate}`, iri(concept(value)));
+              hierarchy(topic, predicate, concept(value, pageLanguage));
             }
           }
+        }
+      }
+
+      // A term page is about its term (proposal 0085 §1), unless its `graph`
+      // block names a topic of its own. Its id names the term, and its label
+      // does when the id is absent or names no term.
+      if (!blockLabel && asString(fm["type"]) === "term") {
+        const id = asString(fm["id"]);
+        const label = asString(fm["label"]);
+        const termId =
+          (id !== undefined && terms.groups.has(id) ? id : undefined) ??
+          (label === undefined ? undefined : terms.resolve(label, pageLanguage));
+        if (termId !== undefined) {
+          add(docIri, `${NS.foaf}primaryTopic`, iri(mintTermConceptIri(baseIri, termId)));
         }
       }
 
@@ -523,7 +578,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         ...asStringArray(harvested["concepts"]),
       ];
       for (const label of labels) {
-        add(docIri, `${NS.dcterms}subject`, iri(concept(label)));
+        add(docIri, `${NS.dcterms}subject`, iri(concept(label, pageLanguage)));
       }
     }
 
@@ -555,7 +610,7 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         const meta = asRecord(sectionMeta[section.slug]);
         emitIirdsTyping(secIri, meta);
         for (const label of asStringArray(meta["concepts"])) {
-          add(secIri, `${NS.dcterms}subject`, iri(concept(label)));
+          add(secIri, `${NS.dcterms}subject`, iri(concept(label, pageLanguage)));
         }
       }
 
@@ -720,10 +775,15 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
         }
         const label = block ? asString(block["label"]) : undefined;
         if (label && filled.has("label")) {
+          const id = terms.resolve(label, pageLanguage);
           add(
             activity,
             `${NS.prov}generated`,
-            iri(mintConceptIri(baseIri, label)),
+            iri(
+              id === undefined
+                ? mintConceptIri(baseIri, label)
+                : mintTermConceptIri(baseIri, id),
+            ),
           );
         }
       }
@@ -755,10 +815,64 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
     }
   }
 
+  // The termbase's concepts (proposal 0085 §1): one per id, each language of a
+  // term joining it, and every label tagged with the term's language.
+  const tagged = (value: string, language: string | undefined): Term =>
+    language === undefined ? lit(value) : { kind: "literal", value, language };
+  for (const [id, entries] of terms.groups) {
+    const c = mintTermConceptIri(baseIri, id);
+    add(c, RDF_TYPE, iri(`${NS.skos}Concept`));
+    add(c, `${NS.skos}inScheme`, iri(mintSchemeIri(baseIri)));
+    mintedConcepts.add(c);
+    for (const entry of entries) {
+      const language = canonicalLanguage(entry.language);
+      add(c, `${NS.skos}prefLabel`, tagged(entry.label, language));
+      for (const [values, predicate] of [
+        [entry.altLabels, "altLabel"],
+        [entry.hiddenLabels, "hiddenLabel"],
+        [entry.definition, "definition"],
+        [entry.scopeNote, "scopeNote"],
+      ] as const) {
+        for (const value of asStringArray(values)) {
+          add(c, `${NS.skos}${predicate}`, tagged(value, language));
+        }
+      }
+      for (const relation of ["broader", "narrower", "related"] as const) {
+        for (const value of entry[relation] ?? []) {
+          hierarchy(c, relation, concept(value, language));
+        }
+      }
+    }
+  }
+  // A `see:` entry is no concept of its own. Its label is another way to say
+  // its target, so it becomes an altLabel there.
+  for (const entry of terms.redirects) {
+    const language = canonicalLanguage(entry.language);
+    const target =
+      entry.see === undefined ? undefined : terms.resolve(entry.see, language);
+    if (target === undefined) continue;
+    add(
+      mintTermConceptIri(baseIri, target),
+      `${NS.skos}altLabel`,
+      tagged(entry.label, language),
+    );
+  }
+
   if (mintedConcepts.size > 0) {
     const scheme = mintSchemeIri(baseIri);
     add(scheme, RDF_TYPE, iri(`${NS.skos}ConceptScheme`));
     add(scheme, `${NS.dcterms}title`, lit("manni graph concepts"));
+    // A concept with no broader concept is a top concept of the scheme, both
+    // ways round. Read off the quads, so every source of hierarchy counts.
+    const broader = `${NS.skos}broader`;
+    const hasBroader = new Set(
+      quads.filter((q) => q.p === broader).map((q) => q.s),
+    );
+    for (const c of mintedConcepts) {
+      if (hasBroader.has(c)) continue;
+      add(c, `${NS.skos}topConceptOf`, iri(scheme));
+      add(scheme, `${NS.skos}hasTopConcept`, iri(c));
+    }
   }
 
   return dedupe(quads);
@@ -768,7 +882,7 @@ function quadKey(q: Quad): string {
   const o =
     q.o.kind === "iri"
       ? `i:${q.o.value}`
-      : `l:${q.o.value}|${q.o.datatype ?? ""}`;
+      : `l:${q.o.value}|${q.o.datatype ?? ""}|${q.o.language ?? ""}`;
   return `${q.s}|${q.p}|${o}`;
 }
 

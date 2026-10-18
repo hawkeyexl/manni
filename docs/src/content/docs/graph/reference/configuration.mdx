@@ -10,7 +10,7 @@ concepts:
   - base IRI
   - turn
   - confidence
-last-updated: 2026-10-05
+last-updated: 2026-10-18
 ---
 
 manni graph reads one file, `manni.config.yaml`, and one key in it, `graph:`. Two
@@ -58,7 +58,7 @@ graph:
       language: en
 
   build:
-    derive: [frontmatter, sections, links, tags, images, code, provenance]
+    derive: [frontmatter, sections, links, tags, images, code, provenance, terms]
 
   check:
     shapes: []
@@ -174,13 +174,13 @@ Routes are corpus-defining, so they are config-only. There is no flag.
 
 | Key | Type | Default | What it does |
 |---|---|---|---|
-| `derive` | list | all seven | Which sources become triples: `frontmatter`, `sections`, `links`, `tags`, `images`, `code`, `provenance`. Narrowing it makes a smaller graph, not a wrong one; a predicate nothing derives simply has no triples. |
+| `derive` | list | all eight | Which sources become triples: `frontmatter`, `sections`, `links`, `tags`, `images`, `code`, `provenance`, `terms`. Narrowing it makes a smaller graph, not a wrong one; a predicate nothing derives simply has no triples. `terms` reads the termbase `manni term check` reads, from the same config, and makes each term a concept. Every concept label then resolves through it first. A list that leaves `terms` out mints every concept from its label. |
 
 ### `check`
 
 | Key | Type | Default | What it does |
 |---|---|---|---|
-| `shapes` | list of paths | `[]` | The SHACL shapes `graph check` validates the built graph against. Empty means the shapes shipped in the package, `shapes/graph/shapes-1.0.0.ttl`. Naming shapes here **replaces** the bundled set rather than adding to it, so list the bundled file too when you mean to extend it. `--shapes` overrides this for one run. |
+| `shapes` | list of paths | `[]` | The SHACL shapes `graph check` validates the built graph against. Empty means the shapes shipped in the package, `shapes/graph/shapes-1.1.0.ttl`. Naming shapes here **replaces** the bundled set rather than adding to it, so list the bundled file too when you mean to extend it. `--shapes` overrides this for one run. |
 
 ### `provenance`
 

@@ -116,8 +116,9 @@ describe("manni graph build (integration)", () => {
     // must equal the triple count `build` reports for the corpus
     // (172 + 48 for the localized tree added in ADR 01037: three documents
     // with their sections, two translation edges and their inverses, and the
-    // broken translation target on docs/de/regional.md)
-    expect(quads.length).toBe(220);
+    // broken translation target on docs/de/regional.md, then 12 for proposal
+    // 0085: two inverse hierarchy edges, and five top concepts both ways)
+    expect(quads.length).toBe(232);
   });
 
   it("stamps every document with the sha256 of its file (ADR 01036)", () => {

@@ -274,12 +274,14 @@ rule, with `must match a schema in anyOf`. A `designations` item without its
   about. `abstract` says what the term is. They coincide on a well-written
   term page and diverge on a manifest entry or a definition-list entry, which
   have no page.
-- **The root fields feed the graph.** On a page with no `graph` block, a
-  graph harvest reads these fields as the fallback of their twins in the
-  [graph vocabulary](/manni/meta/reference/schemas/manni-graph/). `label`,
-  `alt-labels`, `broader`, `narrower`, `definition` and `abstract` map by
-  name, and `related-terms` maps to `graph.related-concepts`. A page that
-  opens a `graph` block keeps the block's values.
+- **The root fields feed the graph.** `manni graph build` reads the termbase
+  `manni term check` reads, and each term becomes a concept in the graph's
+  one concept scheme. `label`, `alt-labels`, `hidden-labels`, `broader`,
+  `narrower`, `definition` and `scope-note` map to their SKOS twins, and
+  `related-terms` maps to `skos:related`. A `see` entry becomes an alt-label
+  of its target. The
+  [graph vocabulary](/manni/meta/reference/schemas/manni-graph/) keeps its
+  own block, and a term page whose block names no `label` is about its term.
 
 ## Strict overlay
 

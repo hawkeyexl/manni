@@ -48,7 +48,7 @@ out: graph/graph.ttl
 
 # What to derive triples from. Remove entries to opt out.
 build:
-  derive: [frontmatter, sections, links, tags, images, code, provenance]
+  derive: [frontmatter, sections, links, tags, images, code, provenance, terms]
 
 # PROV-O settings. Git history is detected, not switched: per-file dates and
 # author agents, rename -> prov:wasRevisionOf, and the build activity's HEAD
@@ -66,7 +66,7 @@ provenance:
 # stewardship people fields (owner, stakeholders, reviewed-by) out.
 
 # SHACL shapes \`manni graph check\` validates the built graph against. Default:
-# the shapes contract bundled with manni (shapes/graph/shapes-1.0.0.ttl).
+# the shapes contract bundled with manni (shapes/graph/shapes-1.1.0.ttl).
 # check:
 #   shapes: ["./my-shapes.ttl"]
 
