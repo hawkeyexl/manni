@@ -207,7 +207,7 @@ function lastLine(position: Position): number {
  * Each graph section of a page, with the file lines its own text spans: its
  * heading down to the next heading of any rank, as the search index slices it.
  */
-function sectionSpans(
+export function sectionSpans(
   graph: GraphIndex,
   doc: string,
   path: string,
@@ -282,9 +282,10 @@ export function freshness(body: readonly string[], pin: AnswerPin): Freshness {
 /** `lines 4 and 8 both match`, or `lines 4, 8 and 12 all match`. */
 export function matchList(ranges: readonly PageLines[]): string {
   const spelled = ranges.map(spellLines);
-  const last = spelled.pop() ?? "";
-  const both = spelled.length === 1 ? "both" : "all";
-  return `lines ${spelled.join(", ")} and ${last} ${both} match`;
+  const head = spelled.slice(0, -1);
+  const last = spelled[spelled.length - 1] ?? "";
+  const both = head.length === 1 ? "both" : "all";
+  return `lines ${head.join(", ")} and ${last} ${both} match`;
 }
 
 /**
@@ -687,7 +688,9 @@ export async function askSampleQuestions(
       if (q.answers.length === 0) summary.answers.unpinned += 1;
       const tests: number[] = [];
       // 0086's test: an unpinned question, or a confirmed one whose every
-      // pin is still a draft, must find the page itself.
+      // pin is still a draft, must find the page itself. A drafted question
+      // with any pin skips it and goes straight to the pin checks, which
+      // report at notice through `drafted`.
       if (q.answers.length === 0 || (q.reviewed && q.answers.every((a) => !a.reviewed))) {
         const nodes = await rank(page.language, q.question);
         const pagesFound = [...new Set(nodes.map(pageOf))];
