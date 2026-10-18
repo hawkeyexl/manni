@@ -699,7 +699,7 @@ describe("the six house vocabularies", () => {
     expect(bad.ok).toBe(false);
   });
 
-  it("lets a question pin the lines that answer it, from ai-context 1.1.0 (proposal 0086)", async () => {
+  it("lets a question pin the lines that answer it, from ai-context 1.1.0 (proposal 0087)", async () => {
     const AI_CONTEXT_110 = "manni:ai-context:1.1.0";
     const valid = [
       "sample-questions: How do I retry a failed upload?",
@@ -826,7 +826,7 @@ describe("the default set (proposal 0070)", () => {
     ref("audience"),
     ref("structure"),
     // Stewardship's default moved past 1.0.0 for its output marks (0074), and
-    // ai-context's for pinned answers (0086).
+    // ai-context's for pinned answers (0087).
     "manni:stewardship:1.1.0",
     ref("lifecycle"),
     "manni:ai-context:1.1.0",

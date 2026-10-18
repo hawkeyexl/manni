@@ -79,7 +79,7 @@ describe("sample questions", () => {
     expect(lines.filter((l) => l.includes("docs/retry.md graph:sampleQuestion") && l.includes("does not find"))).toEqual([]);
     expect(r.stdout).not.toContain("proxy.md graph:sampleQuestion");
     // hidden.md's question stays out of the graph and is still asked, because
-    // check reads questions from the page sources (proposal 0086).
+    // check reads questions from the page sources (proposal 0087).
     expect(lines).toContain(HIDDEN);
     // Two pages ask each question, so the second copy of each is reported
     // (proposal 0086 § 7b).

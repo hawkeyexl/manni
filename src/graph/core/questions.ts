@@ -1,6 +1,6 @@
 /**
  * A page's `sample-questions`, read into one shape (manni:ai-context:1.1.0,
- * proposal 0086). An item is a string, or an object whose `answers` pin the
+ * proposal 0087). An item is a string, or an object whose `answers` pin the
  * body lines that answer it. `build` derives only the question text; `check`
  * reads the pins and the review state, which never reach the graph.
  *
