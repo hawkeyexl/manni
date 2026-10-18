@@ -71,10 +71,12 @@ runner needs Node.js 24 or newer, and the steps that run Vale need it on PATH.
 
 {/* cite default-severities */}
 {/* cite severity-config-override */}
-**Warnings and notices never fail the job.** `asymmetric-hierarchy` and
-`alt-label-reference` are warnings. `abstract-too-long`, `unused-term` and
-`hierarchy-outside-termbase` are notices. Every other `check` rule is an
-error. `term.severity` moves any of them; see the
+**Warnings and notices never fail the job.** `asymmetric-hierarchy`,
+`asymmetric-related`, `related-in-hierarchy`, `alt-label-reference`,
+`ambiguous-alt-label` and `deprecated-label` are warnings.
+`abstract-too-long`, `unused-term`, `hierarchy-outside-termbase`,
+`related-siblings`, `orphan-term` and `keyword-candidate` are notices. Every
+other `check` rule is an error. `term.severity` moves any of them; see the
 [rules reference](/manni/term/reference/rules/).
 
 {/* cite github-annotation-shape */}

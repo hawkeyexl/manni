@@ -13,6 +13,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { writeFormats } from "../../src/term/commands/write.js";
+import { TERM_RULES } from "../../src/term/types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..", "..");
@@ -174,6 +175,8 @@ describe("manni term (the ladder)", () => {
     const r = term(["check"], { cwd: resolve(root, "test", "fixtures", "term", "concept-scheme") });
     expect(r.stdout).toBe(
       [
+        "docs/glossary/pluggable-auth-layer.md:1",
+        "  notice manni:term/orphan-term                 no broader, narrower or related term, so place it in the hierarchy.",
         "docs/guides/retrying.md:6",
         "  error  manni:term/broader-cycle               broader: Resilience > Retry > Resilience",
         '  notice manni:term/hierarchy-outside-termbase  graph: broader "Retry" on "Resilience" is not on its term page (docs/glossary/resilience.md), so add it there.',
@@ -182,11 +185,25 @@ describe("manni term (the ladder)", () => {
         "docs/guides/retrying.md:8",
         '  warning manni:term/alt-label-reference         graph.concepts: "PAL" is an alt-label of "Pluggable auth layer", so name the label.',
         "",
-        "1 error, 1 warning, 2 notices in 3 terms",
+        "1 error, 1 warning, 3 notices in 3 terms",
         "",
       ].join("\n"),
     );
     expect(r.status).toBe(1);
+  });
+
+  it("breaks every check rule on the rules fixture, and SARIF describes each one", () => {
+    const cwd = resolve(root, "test", "fixtures", "term", "rules");
+    const r = term(["check", "-f", "json"], { cwd });
+    expect(r.status).toBe(1);
+    const json = JSON.parse(r.stdout) as { findings: { rule: string }[] };
+    expect(new Set(json.findings.map((f) => f.rule))).toEqual(new Set(TERM_RULES));
+    const sarif = JSON.parse(term(["check", "-f", "sarif"], { cwd }).stdout) as {
+      runs: { tool: { driver: { rules: { id: string; helpUri?: string }[] } } }[];
+    };
+    expect(sarif.runs[0]?.tool.driver.rules.map((rule) => rule.helpUri).sort()).toEqual(
+      TERM_RULES.map((rule) => `https://hawkeyexl.github.io/manni/term/reference/rules/#${rule}`).sort(),
+    );
   });
 
   it("6. annotates the diff in CI, and says nothing when clean", () => {

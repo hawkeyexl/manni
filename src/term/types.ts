@@ -451,6 +451,8 @@ export interface TermSet {
   references: TermReference[];
   /** Every labelled `graph:` block in every file the run loaded. */
   blocks: TermBlock[];
+  /** Every `keywords:` value on every page the run loaded but a term page, `field` `keywords`. */
+  keywords?: TermReference[];
   /** Readers' notices, in load order. */
   notices: string[];
 }
@@ -464,16 +466,24 @@ export const TERM_RULES = [
   "duplicate-id",
   "label-collision",
   "alt-label-collision",
+  "label-overlap",
   "dangling-reference",
   "broader-cycle",
   "see-not-empty",
   "missing-definition",
   "conflicting-matches",
   "asymmetric-hierarchy",
+  "asymmetric-related",
+  "related-in-hierarchy",
   "alt-label-reference",
+  "ambiguous-alt-label",
+  "deprecated-label",
   "abstract-too-long",
   "unused-term",
   "hierarchy-outside-termbase",
+  "related-siblings",
+  "orphan-term",
+  "keyword-candidate",
 ] as const;
 export type TermRule = (typeof TERM_RULES)[number];
 

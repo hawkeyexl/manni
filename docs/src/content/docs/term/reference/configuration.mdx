@@ -126,7 +126,7 @@ it.
 | `fill.confidenceThreshold` | number from 0 to 1 | `0.7` | `--confidence` | The confidence a drafted definition, or a crawl candidate, must reach. |
 | `fill.maxTurns` | positive integer or `null` | `null`, unbounded | `--max-turns` | Inference calls per run. A cached answer costs none. |
 | `fill.cacheDir` | path | `.manni/term/cache` | `--no-cache` turns it off | Where the model's answers are kept, relative to the config file. |
-| `fill.crawl.minPages` | positive integer | `2` | none | How many pages a term found by `--crawl` must appear on to get a page. |
+| `fill.crawl.minPages` | positive integer | `2` | none | How many pages a term found by `--crawl` must appear on to get a page. `term check` reads it too, as the pages a `keyword-candidate` needs. |
 
 ## Filling the termbase
 
@@ -214,7 +214,7 @@ covers reading TBX, and what a write back keeps.
 
 {/* cite ten-rules */}
 {/* cite severity-off-drops-rule */}
-`severity:` moves any of the fourteen rules to another level, or turns it off. The
+`severity:` moves any of the twenty-two rules to another level, or turns it off. The
 defaults and each rule's message are on the
 [rules reference](/manni/term/reference/rules/).
 

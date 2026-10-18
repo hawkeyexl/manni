@@ -142,10 +142,24 @@ function blocksOf(input: TermInput): TermBlock[] {
   ];
 }
 
-/** What every page contributes beside its terms: its references, and its graph block. */
+/** A page's free `keywords:`, which `keyword-candidate` reads. A term page's are about the term, so it has none. */
+function keywordsOf(input: TermInput): TermReference[] {
+  const type = input.metadata["type"];
+  if (type === "term" || type === "term-set") return [];
+  return labelsOf(input.metadata["keywords"]).map((label) => ({
+    file: input.file,
+    ...lineAt(input, ["keywords"]),
+    label,
+    field: "keywords",
+    ...languageOf(input),
+  }));
+}
+
+/** What every page contributes beside its terms: its references, its graph block and its keywords. */
 function pageFacts(input: TermInput, set: TermSet, onPage?: (input: TermInput) => void): void {
   set.references.push(...referencesOf(input));
   set.blocks.push(...blocksOf(input));
+  (set.keywords ??= []).push(...keywordsOf(input));
   onPage?.(input);
 }
 
@@ -208,7 +222,7 @@ export async function loadTermSet(opts: LoadTermSetOptions): Promise<TermSet> {
     );
   }
 
-  const set: TermSet = { terms: [], references: [], blocks: [], notices: [] };
+  const set: TermSet = { terms: [], references: [], blocks: [], keywords: [], notices: [] };
 
   if (inputs.length > 0) {
     const { files, gitignoreSkipped, named } = await resolveTargetSet({
