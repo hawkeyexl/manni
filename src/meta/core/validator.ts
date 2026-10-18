@@ -839,6 +839,9 @@ export class Validator {
     const { [FILE_SCHEMA_KEY]: _omit, ...subject } = data;
     void _omit;
     const hits: TermMarkHit[] = [];
+    // One hit per (pointer, under) across the whole set: two schemas marking
+    // the same field the same way are one mark, and the first ref governs.
+    const once = new Set<string>();
     for (const ref of refs) {
       const fn = await this.compile(ref);
       const seen: Omit<TermMarkHit, "schema">[] = [];
@@ -848,7 +851,6 @@ export class Validator {
       } finally {
         termRecorder = undefined;
       }
-      const once = new Set<string>();
       for (const hit of seen) {
         const key = JSON.stringify([hit.pointer, hit.under ?? null]);
         if (once.has(key)) continue;

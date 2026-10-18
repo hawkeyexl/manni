@@ -33,7 +33,9 @@ export function canonicalLanguage(tag: string | undefined): string | undefined {
   return tag === undefined || tag === "" ? undefined : canonicalLanguageTag(tag);
 }
 
-const primary = (tag: string): string => tag.split("-")[0]?.toLowerCase() ?? tag;
+// `split` always yields at least one element; the `?? ""` only satisfies the
+// index type.
+const primary = (tag: string): string => (tag.split("-")[0] ?? "").toLowerCase();
 
 /** A redirect chain longer than this is a loop, and names nothing. */
 const MAX_REDIRECTS = 8;
