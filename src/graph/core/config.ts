@@ -145,7 +145,7 @@ export interface GraphConfig {
     shapes: string[];
     /**
      * Each page's `sample-questions`, asked through the retrieval `search`
-     * uses (proposal 0085 §7). A page outside the `top` results for its own
+     * uses (proposal 0086 §7). A page outside the `top` results for its own
      * question is a finding at `severity`; `off` reports none of them.
      * `foundThreshold` fails the run when the share of reviewed questions
      * found falls below it, a percentage; `null` sets no rate gate

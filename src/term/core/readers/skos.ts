@@ -1,5 +1,5 @@
 /**
- * SKOS concept schemes (proposal 0085 § 5): each `skos:Concept` is a term
+ * SKOS concept schemes (proposal 0086 § 5): each `skos:Concept` is a term
  * per language its `skos:prefLabel` holds, all sharing the id the concept's
  * IRI ends in, so the languages join on `id` as TBX's do (proposal 0084).
  *

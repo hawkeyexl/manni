@@ -10,7 +10,7 @@
     They evaluate with Ragas, DeepEval or promptfoo, and build that dataset by
     hand.
 - **Depends on:** Two earlier proposals.
-  - [0085](0085-one-concept-scheme-from-termbase-to-graph.md) § 7 made each
+  - [0086](0086-one-concept-scheme-from-termbase-to-graph.md) § 7 made each
     page's `sample-questions` a findability check in `graph check`.
   - [0044](0044-citations-and-drift.md) is cite's pin: lines, a hash over them, and a
     search that finds them again when they move.
@@ -18,7 +18,7 @@
   - [ADR 01016](docevals/01016-golden-cases-are-seeded-from-reviews-and-gated-on-human-confirmation.md) says a generated set is
     "a candidate list, not a golden set" until a person confirms it.
   - [0046](0046-provenance-pins.md) keeps machine attribution in `meta-provenance`.
-- **Supersedes, in part:** [0085](0085-one-concept-scheme-from-termbase-to-graph.md)
+- **Supersedes, in part:** [0086](0086-one-concept-scheme-from-termbase-to-graph.md)
   § 7, in one mechanism only. `graph check` read the questions from the graph's
   derived literals, and now reads them from the page sources. Its Status line
   is the only edit.
@@ -66,7 +66,7 @@ Langfuse, Opik and Bedrock.
 
 ### There is no state to watch
 
-0085 reports misses one by one. There is no count of how many questions are
+0086 reports misses one by one. There is no count of how many questions are
 found, how many are stale, or how many a model drafted that nobody read.
 
 ### Drafted questions are not golden
@@ -77,7 +77,7 @@ reviewed.
 
 ## Design
 
-The work lands as four PRs on the 0085 stack, before its docs PR.
+The work lands as four PRs on the 0086 stack, before its docs PR.
 
 | Phase | What lands |
 |---|---|
@@ -145,13 +145,13 @@ sample-questions:
   constrains `sample-questions`, so it stays the overlay `strict` stacks beside
   1.1.0.
 - **Derive.** `graph build` derives only the `question` text, as the
-  `graph:sampleQuestion` literal 0085 defined. Pins and review state are test
+  `graph:sampleQuestion` literal 0086 defined. Pins and review state are test
   data, so the published graph does not change.
 
 ### 2. What `graph check` does with questions
 
 `check` reads questions from the page sources, not from the graph. This is the
-one mechanism of 0085 § 7 that 0087 supersedes. Pins and review state never
+one mechanism of 0086 § 7 that 0087 supersedes. Pins and review state never
 reach the graph, so the source is the only place they live.
 
 - **Reading.** `check` resolves each page's source the way `graph export
@@ -169,7 +169,7 @@ manni: 2 pages in the graph are not on disk, so their questions were not checked
 A question is found as follows.
 
 - **Unpinned.** A hit on its page, or on any section of it, is in the top
-  `top`. This is 0085's test.
+  `top`. This is 0086's test.
 - **Pinned.** The top `top` holds a hit on a node whose own text overlaps the
   pinned lines. A section owns its text from its heading to the next heading
   of any rank. Text before the first heading belongs to the page node. So a
@@ -187,7 +187,7 @@ rule and its whole-line move search, `findWindows`.
 
 | finding | severity | message |
 |---|---|---|
-| not found (0085) | `questions.severity` | `"How do I retry a failed upload?" does not find this page in the top 5 (it ranks 12; first is docs/uploads/limits.md)` |
+| not found (0086) | `questions.severity` | `"How do I retry a failed upload?" does not find this page in the top 5 (it ranks 12; first is docs/uploads/limits.md)` |
 | not found, pinned | `questions.severity` | `"How many times does an upload retry by default?" does not find the section that answers it, § Retry limits, in the top 5 (it ranks 9; first is docs/uploads/limits.md § Quotas)` |
 | answer moved | notice | `the answer to "How many times…" moved from lines 41-43 to 47-49, so manni graph fill --fields sample-questions re-pins it.` |
 | answer moved, ambiguous | warning | `the answer to "How many times…" moved, and lines 47-49 and 88-90 both match, so pin one of them by hand.` |
@@ -200,17 +200,17 @@ rule and its whole-line move search, `findWindows`.
   `claim-moved-ambiguous`.
 - **Changed.** It counts as not found, and is not asked. The test means
   nothing once the lines have changed.
-- **A confirmed question with a drafted pin.** It is held to 0085's page test
+- **A confirmed question with a drafted pin.** It is held to 0086's page test
   at full severity. The pinned result reports at notice, ending `(answer not
   reviewed)`, until the pin is confirmed.
-- **Severity.** `answer changed` shares the 0085 knob, because a stale golden
+- **Severity.** `answer changed` shares the 0086 knob, because a stale golden
   item and a missed one are both the set failing. `off` silences every finding
   on that knob, drafted copies included. The moved notices are not on the
   knob. Drafted questions report at notice whatever the knob says.
 - **Messages before 7c.** `graph fill` learns to re-pin in 7c. Until then, the
   moved and changed messages end `…so update its lines.` and `…so re-pin it
   and review it.` 7c rewrites them as in the table.
-- **Finding shape.** 0085's shape is kept. The focus node is the page, the
+- **Finding shape.** 0086's shape is kept. The focus node is the page, the
   path is `graph:sampleQuestion`, and the page is in `docs`.
 
 7a adds no config keys or flags.
@@ -218,7 +218,7 @@ rule and its whole-line move search, `findWindows`.
 ### 3. Golden-set files, and set health
 
 ```yaml
-# before (after 0085)
+# before (after 0086)
 graph:
   check:
     shapes: []
@@ -423,7 +423,7 @@ DeepEval and promptfoo datasets.
 
 ## What this does not do
 
-- **Judge answers.** This is the 0085 decision. Export is the path to the
+- **Judge answers.** This is the 0086 decision. Export is the path to the
   tools that judge.
 - **Draft cross-page and gap questions.** Synthetic multi-hop questions are the
   weakest kind in the research, and good unanswerable ones are rare. That can
@@ -442,4 +442,4 @@ The user took these on 2026-10-18.
 - Drafted questions count at notice until reviewed. Review state is a field,
   `reviewed`, not the removal of a `meta-provenance` entry.
 - `graph export questions` ships, in its own PR.
-- These phases go into the 0085 stack before its docs PR, as proposal 0087.
+- These phases go into the 0086 stack before its docs PR, as proposal 0087.
