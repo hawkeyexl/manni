@@ -20,7 +20,11 @@ describe("the term label source under the umbrella", () => {
     const source = termLabelSource();
     if (source === undefined) throw new Error("expected a registered source");
     const terms = await source({ cwd: fixtureDir });
-    expect([...terms].sort((a, b) => a.label.localeCompare(b.label))).toEqual([
+    expect(
+      [...terms]
+        .map(({ label, id }) => ({ label, id }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    ).toEqual([
       { label: "extractor", id: "metadata-extractor" },
       { label: "schema set", id: "schema-set" },
     ]);
