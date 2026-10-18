@@ -253,6 +253,22 @@ describe("validateGraph", () => {
     ]);
   });
 
+  it("leaves a mapping to a concept of another scheme alone", async () => {
+    const c = concept("setup");
+    const outside = "https://e.org/vocab/install";
+    const findings = await validateGraph(
+      build([
+        ...conformingTriples(),
+        [outside, RDF_TYPE, `${NS.skos}Concept`],
+        [outside, `${NS.skos}prefLabel`, { lit: "install" }],
+        [outside, `${NS.skos}inScheme`, "https://e.org/vocab"],
+        [c, `${NS.skos}exactMatch`, outside],
+      ]),
+      SHAPES,
+    );
+    expect(findings.filter((f) => f.path === `${NS.skos}exactMatch`)).toEqual([]);
+  });
+
   it("closed Document shape rejects unexpected predicates", async () => {
     const d = doc("docs/a.md");
     const store = build([
