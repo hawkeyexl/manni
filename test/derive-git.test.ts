@@ -4,8 +4,8 @@
  * Every repository is built at runtime by `makeTempRepo` + `commit`, with
  * author dates and identities pinned per commit, so the facts under test are
  * the ones the commits state rather than whatever the machine's clock and git
- * config would produce. Each case runs in both walk forms — per-file
- * `--follow` and the bulk whole-repository walk — because proposal 0040
+ * config would produce. Each case runs in both walk forms, one `git log`
+ * per path and the bulk whole-repository walk, because proposal 0040
  * promises the two produce the same history.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -88,6 +88,46 @@ afterEach(() => {
   for (const d of dirs.splice(0)) removeTempRepo(d);
 });
 
+const LONG = (word: string): string =>
+  Array.from({ length: 12 }, (_, i) => `${word} line ${String(i)} of a body long enough to pair.`).join("\n");
+
+/**
+ * One repository with every lineage case: `kept.md` untouched, `old.md`
+ * renamed to `moved.md` (the old path deleted), and `b.md` added with
+ * `a.md`'s old body in the commit that rewrites `a.md` (the old path kept).
+ */
+function splitRepo(): { dir: string; first: string; split: string } {
+  const dir = tempRepo({
+    "a.md": doc("title: a", LONG("alpha")),
+    "old.md": doc("title: o", LONG("omega")),
+    "kept.md": doc("title: k", "kept"),
+  });
+  const first = commit(dir, "add", { authorDate: D1 });
+  git(dir, ["mv", "old.md", "moved.md"]);
+  commit(dir, "move", { authorDate: D2 });
+  writeFile(dir, "b.md", doc("title: a", LONG("alpha")));
+  writeFile(dir, "a.md", doc("title: a", LONG("zulu")));
+  const split = commit(dir, "split", { authorDate: D3 });
+  writeFile(dir, "b.md", doc("title: a", `${LONG("alpha")}\nmore`));
+  commit(dir, "edit", { authorDate: D4 });
+  return { dir, first, split };
+}
+
+describe("deriveFromGit walk forms", () => {
+  it.each(["a.md", "b.md", "moved.md", "kept.md"])(
+    "reads the same facts for %s one file at a time as in one walk",
+    async (rel) => {
+      const { dir } = splitRepo();
+      const inputs = ["a.md", "b.md", "moved.md", "kept.md"].map((r) => input(dir, r));
+      const perFile = await deriveFromGit(inputs, { cwd: dir, now: () => NOW });
+      const bulk = await deriveFromGit(inputs, { cwd: dir, now: () => NOW, bulkThreshold: 0 });
+      expect(perFile.status).toEqual({ available: true });
+      expect(perFile.records.get(rel)).toEqual(bulk.records.get(rel));
+      expect(bulk.records.get(rel)).toBeDefined();
+    },
+  );
+});
+
 describe.each(forms)("deriveFromGit ($name)", ({ opts }) => {
   it("dates a file's birth through a rename", async () => {
     const dir = tempRepo({ "a.md": doc("title: t", "one") });
@@ -110,6 +150,26 @@ describe.each(forms)("deriveFromGit ($name)", ({ opts }) => {
     });
     expect(facts.lastBodyCommit).toBe(third);
     expect(facts.root).toBe(dir);
+  });
+
+  // A rename is a path that disappears in the commit that adds the new one.
+  // `a.md` survives its rewrite, so `b.md` is a new page with a borrowed
+  // body, not `a.md` moved, however much of `a.md`'s old text it carries.
+  it("dates a page added beside a rewrite of the page it copies by its own add", async () => {
+    const { dir, first, split } = splitRepo();
+
+    const added = await factsFor(dir, "b.md", opts(dir));
+    expect(added.created).toEqual({
+      value: "2020-03-04",
+      source: "git",
+      evidence: `added in ${split.slice(0, 7)} (2020-03-04)`,
+    });
+    const kept = await factsFor(dir, "a.md", opts(dir));
+    expect(kept.created).toEqual({
+      value: "2020-01-02",
+      source: "git",
+      evidence: `added in ${first.slice(0, 7)} (2020-01-02)`,
+    });
   });
 
   it("does not count a frontmatter-only edit as a body change", async () => {
