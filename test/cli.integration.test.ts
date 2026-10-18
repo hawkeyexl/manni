@@ -17,6 +17,7 @@ import { dirname, join, resolve } from "node:path";
 import { DOC, makeTempRepo, removeTempRepo } from "./helpers/temp-repo.js";
 import { startSchemaServer } from "./helpers/schema-server.js";
 import { spawnText } from "./helpers/spawn.js";
+import { localModelEnv } from "./helpers/local-model.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
@@ -1160,6 +1161,23 @@ describe("cli fill", () => {
     const report = JSON.parse(r.stdout);
     expect(report.provider).toBe("openai");
     expect(report.summary.files).toBe(0);
+  }, 60000);
+
+  it("exits 2 under --offline when no model is on this machine", () => {
+    const machine = localModelEnv(false);
+    try {
+      const r = run(
+        ["fill", "test/fixtures/valid.md", "--offline", "--dry-run", "--no-cache"],
+        undefined,
+        { INFERENCE_NO_AUTO_INSTALL: "1", ...machine.env },
+      );
+      expect(r.status).toBe(2);
+      expect(r.stderr).toMatch(
+        /^\w+: no model is available offline, so fill cannot propose values; download one first with --local, or drop --offline\.\n$/,
+      );
+    } finally {
+      machine.cleanup();
+    }
   }, 60000);
 
   it("runs llama-cpp when it is named, reporting the concrete model", () => {

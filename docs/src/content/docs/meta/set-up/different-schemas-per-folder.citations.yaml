@@ -185,9 +185,9 @@ docs/src/content/docs/meta/set-up/different-schemas-per-folder.mdx:
         integrity: sha256-a1eec5df37b9d116dca5c8de0ebf501dcf876c0b8d556da8a48760b5ecfeb792
       source:
         file: src/meta/core/config.ts
-        lines: 1245-1251
+        lines: 1247-1253
         integrity: sha256-a617e4baa07e2514b23c646b164d13ab8bc95d76e2f57f092d2e55ea33d1a713
-        commit-sha: bf72da9029a7ad0f3800a37939ab3c91afa944c1
+        commit-sha: 82b41f560f77676acec81501ed44862563251685
     - id: override-files-accepts-glob-or-list
       claim:
         lines: 14
