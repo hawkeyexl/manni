@@ -151,8 +151,11 @@ docs/src/content/docs/term/reference/cli.mdx:
       lines: 709-754
       integrity: sha256-a7daf2f3e261a3c7fc03d7cf955dd685654f4b7d3bbed35c9fc2e052f2dd3dd3
     - generated-by: Claude Opus 5.5
-      lines: 757-820
-      integrity: sha256-3746f524f16193a3476cc27ae8ca96cd127153ea0219269172fc8d6555493dd6
+      lines: 757-776
+      integrity: sha256-028bc3df6087321a13d516cf4ec4b34cad3915afbfd7b29c172e51116ccf1470
+    - generated-by: Claude Opus 5.5
+      lines: 778-820
+      integrity: sha256-752e5a35d32c5243fda635ef9b23deba2a9ee2a4be1ed88425b5a96ceed3f14e
     - generated-by: Claude Opus 5.5
       lines: 828-839
       integrity: sha256-b35b45d75fe79c3d99290923345eb3534fba3a5381f7ed8f932bd1dbf195bf24
