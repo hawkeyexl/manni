@@ -14,6 +14,8 @@ import {
   DEFAULT_MODELS,
   DEFAULT_OPENAI_BASE_URL,
   InferenceError,
+  modelState,
+  nodeLlamaCppStatus,
   resolveProviderIdentityAsync,
   type ProviderName,
   type ProviderSelector,
@@ -316,15 +318,20 @@ export interface ProviderChoice {
   origin?: string;
 }
 
-/** The command line's say: `--provider`, `--model` and `--local`. */
+/** The command line's say: `--provider`, `--model`, `--local` and `--offline`. */
 export interface ProviderFlags {
   provider?: string;
   model?: string;
   /** Run inference on this machine, with llama-cpp, whatever a level asks for. */
   local?: boolean;
+  /**
+   * Send nothing off this machine: the `--local` boundary, and then only a
+   * model already downloaded. See `offlineIdentity`.
+   */
+  offline?: boolean;
 }
 
-/** A configured choice that `--local` set aside. */
+/** A configured choice that `--local` or `--offline` set aside. */
 export interface ReplacedChoice {
   provider: string;
   source: string;
@@ -360,13 +367,27 @@ const LOCAL_COMPATIBLE: ReadonlySet<string> = new Set([LOCAL_PROVIDER, DEFAULT_P
  * refused as unknown first: `--local` would otherwise set it aside unread.
  */
 export function assertLocalFlag(flag: ProviderFlags, toError: ToErrorFn): void {
-  if (flag.local !== true || flag.provider === undefined) return;
+  if (flag.provider === undefined || (flag.local !== true && flag.offline !== true)) return;
   assertKnownProvider(flag.provider, toError);
   if (LOCAL_COMPATIBLE.has(flag.provider)) return;
+  if (flag.local === true) {
+    throw toError(
+      `--local and --provider ${flag.provider} contradict each other: --local runs inference ` +
+        `on this machine with ${LOCAL_PROVIDER}. Drop one of them.`,
+    );
+  }
   throw toError(
-    `--local and --provider ${flag.provider} contradict each other: --local runs inference ` +
-      `on this machine with ${LOCAL_PROVIDER}. Drop one of them.`,
+    `--offline and --provider ${flag.provider} contradict each other: --offline sends nothing ` +
+      `off this machine, so only ${LOCAL_PROVIDER} with a model already downloaded can run. Drop one of them.`,
   );
+}
+
+/**
+ * What a verb says when `--offline` finds no model it may run, completed by
+ * what that verb does without one.
+ */
+export function noOfflineModel(consequence: string): string {
+  return `no model is available offline, so ${consequence}; download one first with --local, or drop --offline.`;
 }
 
 /**
@@ -388,14 +409,16 @@ export function assertLocalFlag(flag: ProviderFlags, toError: ToErrorFn): void {
  * `--local` makes the provider llama-cpp, over every level. A level's model
  * then applies only where that level named llama-cpp, and the level whose
  * provider would otherwise have run is returned as `replaced`, unless it was
- * `auto`, which chose no hosted provider. Check the flag with
- * `assertLocalFlag` first: a contradicting `--provider` is not selected here.
+ * `auto`, which chose no hosted provider. `--offline` draws the same boundary,
+ * and `offlineIdentity` then decides whether the model is on this machine.
+ * Check the flag with `assertLocalFlag` first: a contradicting `--provider` is
+ * not selected here.
  */
 export function selectProvider(
   flag: ProviderFlags,
   levels: readonly ProviderChoice[],
 ): ProviderSelection {
-  if (flag.local === true) return selectLocal(flag, levels);
+  if (flag.local === true || flag.offline === true) return selectLocal(flag, levels);
   const provider =
     flag.provider ?? levels.find((level) => level.provider !== undefined)?.provider ?? DEFAULT_PROVIDER;
   const model =
@@ -426,11 +449,18 @@ function selectLocal(flag: ProviderFlags, levels: readonly ProviderChoice[]): Pr
   return replaced === undefined ? { provider, model } : { provider, model, replaced };
 }
 
-/** What a selection's `--local` notice says, if it replaced anything. */
-export function localNotice(selection: ProviderSelection): string | undefined {
+/**
+ * What a selection's notice says, if it replaced anything, naming the flag
+ * that drew the boundary: `--local`, or `--offline` when only it is set.
+ */
+export function localNotice(
+  selection: ProviderSelection,
+  flags: ProviderFlags = {},
+): string | undefined {
   const { replaced } = selection;
   if (replaced === undefined) return undefined;
-  return `--local: using ${LOCAL_PROVIDER} instead of "${replaced.provider}" from ${replaced.source}.`;
+  const flag = flags.local !== true && flags.offline === true ? "--offline" : "--local";
+  return `${flag}: using ${LOCAL_PROVIDER} instead of "${replaced.provider}" from ${replaced.source}.`;
 }
 
 /**
@@ -522,4 +552,31 @@ export async function resolveIdentity(
         : `Could not resolve provider "${String(spec.provider)}": ${errorMessage(err)}`,
     );
   }
+}
+
+/**
+ * The identity `--offline` may run, or `undefined` when none is on this
+ * machine. `spec` comes from a selection made with `offline` set, so it names
+ * llama-cpp, or the mock, which sends nothing anywhere.
+ *
+ * Nothing is downloaded or installed. The library answers both questions
+ * without side effects: the runtime must be importable now, and the resolved
+ * model's weights must be `ready` on disk, so a model still downloading is
+ * not. Resolving the `auto` tier probes memory through the runtime, which is
+ * why the runtime is checked first.
+ */
+export async function offlineIdentity(
+  spec: ProviderSpec,
+  toError: ToErrorFn,
+): Promise<{ provider: ProviderName; model: string } | undefined> {
+  if (spec.provider === "mock") return resolveIdentity(spec, toError);
+  if (spec.provider !== LOCAL_PROVIDER) return undefined;
+  if ((await nodeLlamaCppStatus()).state !== "present") return undefined;
+  const identity = await resolveIdentity(spec, toError);
+  const modelsDirectory = spec.llamaCpp?.modelsDirectory;
+  const state = await modelState(
+    identity.model,
+    modelsDirectory === undefined ? {} : { modelsDirectory },
+  );
+  return state === "ready" ? identity : undefined;
 }

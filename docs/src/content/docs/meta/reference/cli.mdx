@@ -795,6 +795,7 @@ which provider and model it used, in both output formats.
   `--provider` (or set a key) so a build agent never pays for this. A local
   model on a CPU runner is also slow, so run `--local` in CI only on a runner
   with a GPU. See [Local models and CI](/manni/docevals/ci/local-models/).
+  Pass `--offline` to run only a model already downloaded, and fetch nothing.
 </Aside>
 
 ### Arguments
@@ -828,7 +829,7 @@ which provider and model it used, in both output formats.
 | `-q, --quiet` | n/a | off | In `pretty` output, hide files with nothing written **and** nothing left undone. A file whose required property could not be filled, or that errored, always prints. Those are the files that make the run exit 1. Has no effect on `json` or `github`. |
 | `--allow-empty` | n/a | off | Treat zero matched files as success instead of an error (exit 2). See [empty input sets](#empty-input-sets). |
 | `--no-gitignore` | n/a | on | Fill files `.gitignore` covers as well. Filtering is on by default; see [default ignores](#default-ignores). Overrides config `respectGitignore:`. |
-| `--offline` | n/a | off | Never fetch a remote schema, exactly as on [`validate`](#meta-validate). It governs schema loading only, because the inference provider is a separate network dependency. Pass [`--local`](#meta-fill) to keep document content on this machine; the two flags bound different boundaries and are usually wanted together. Overrides config `offline:`. |
+| `--offline` | n/a | off | No network egress. A remote schema is never fetched, exactly as on [`validate`](#meta-validate). Inference stays on this machine with `llama-cpp`, as under `--local`. A configured hosted provider is set aside with a note, as in `--offline: using llama-cpp instead of "anthropic" from fill.provider.` A hosted `--provider` is a usage error (exit 2). Nothing is downloaded, so the local model must already be on disk. With none, the run exits 2 with `no model is available offline, so fill cannot propose values; download one first with --local, or drop --offline.` Overrides config `offline:`. |
 
 ### Which properties get filled
 

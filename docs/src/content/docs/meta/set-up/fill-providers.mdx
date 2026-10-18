@@ -200,13 +200,20 @@ That is exit 2. Drop whichever of the two you did not mean.
 
 `--local` never picks **`claude-cli`**, and that is the part to internalize. The rest of the CLI treats `claude-cli` as the local-ish option: no API key, no per-token bill, just a binary on your `PATH`. But the binary is what runs locally; the inference does not. It is the one provider where "local" is true of the process and false of the thing your policy is about. `--local` means `llama-cpp`, and nothing else.
 
-<Aside type="caution" title="Two flags, two boundaries">
-{/* cite offline-scoped-to-schema-loading */}
+<Aside type="caution" title="Two flags, one boundary each">
+{/* cite offline-means-no-egress */}
 {/* cite local-scoped-to-document-egress */}
-`--offline` means *never fetch a remote schema*. It says nothing about inference. `--local` means *never send document content off this machine*. It says nothing about schema fetching. Neither implies the other, so pass both when you want the run to touch no network service at all:
+`--local` means *never send document content off this machine*, and it downloads a model when none is on disk. `--offline` means *no network egress at all*. It fetches no remote schema, keeps inference on this machine as `--local` does, and runs only a model already downloaded. Download once with `--local`, then run offline:
 
 ```sh
-manni meta fill docs/internal/ --local --offline
+manni meta fill docs/internal/ --local --dry-run
+manni meta fill docs/internal/ --offline
+```
+
+With no model on disk, `--offline` exits 2 rather than fetching one:
+
+```
+manni: no model is available offline, so fill cannot propose values; download one first with --local, or drop --offline.
 ```
 </Aside>
 
