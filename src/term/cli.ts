@@ -195,7 +195,11 @@ export function buildProgram(): Command {
       try {
         const format = formatChoice(options.format, GET_FORMATS);
         const found = await runGet({ ...(await coreOptions(paths, options)), term });
-        print(format === "json" ? renderGetJson(found) : renderGetPretty(found, { color: colorFor(options) }));
+        print(
+          format === "json"
+            ? renderGetJson(found.term)
+            : renderGetPretty(found.term, { color: colorFor(options), others: found.others }),
+        );
         process.exitCode = 0;
       } catch (err) {
         fail(err);

@@ -1,26 +1,27 @@
 ---
 title: manni terminology vocabulary
-description: "The manni:terminology:1.0.0 schema gives a term entry its names, its definition and its place among other terms, flat at the page root and mapped onto SKOS."
+description: "The manni:terminology:1.1.0 schema gives a term entry its names, its definition and its place among other terms, mapped onto SKOS, and holds every TBX-Basic and TBX-Linguist data category."
 sidebar:
-  label: "manni:terminology:1.0.0"
+  label: "manni:terminology:1.1.0"
 type: reference
 id: meta-reference-schemas-manni-terminology
-keywords: ["terminology", "manni:terminology:1.0.0", "SKOS", "term", "strict overlay"]
+keywords: ["terminology", "manni:terminology:1.1.0", "SKOS", "TBX", "term", "strict overlay"]
 language: en
 audiences: ["schema-authors"]
-intent: "Give a term entry its names, definition and place among other terms with manni:terminology:1.0.0."
+intent: "Give a term entry its names, definition, place among other terms and TBX data categories with manni:terminology:1.1.0."
 lifecycle: published
 applies-to: ["domain:meta"]
 concepts: ["schema", "override"]
 sample-questions:
-  - "Which fields does manni:terminology:1.0.0 define?"
+  - "Which fields does manni:terminology:1.1.0 define?"
   - "How do terminology fields map onto SKOS?"
+  - "Which TBX data categories does the terminology vocabulary hold?"
   - "What does the terminology strict overlay narrow?"
 graph:
   label: "manni terminology vocabulary"
   type: reference
-last-updated: 2026-09-27
-resource: https://hawkeyexl.github.io/manni/schemas/terminology/1.0.0.json
+last-updated: 2026-10-18
+resource: https://hawkeyexl.github.io/manni/schemas/terminology/1.1.0.json
 action: understand
 prerequisites:
   - meta-reference-schemas-manni-core
@@ -34,9 +35,9 @@ related-pages:
 risks: read-only
 ---
 
-**Built-in id:** `manni:terminology:1.0.0`
+**Built-in id:** `manni:terminology:1.1.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/terminology/1.0.0.json`.
+Published at `https://hawkeyexl.github.io/manni/schemas/terminology/1.1.0.json`.
 A `$schema` that names this URL resolves to the bundled copy, with no network
 call.
 
@@ -46,7 +47,8 @@ page `concepts`, a list of terms from a glossary. This vocabulary is the
 glossary. A term entry names its term, defines it, lists the other names it
 goes by, and places it among other terms. It is the record
 [`manni term`](/manni/term/) reads, and any glossary tool, graph builder or
-style checker can read it too.
+style checker can read it too. It also holds every TBX-Basic and TBX-Linguist
+data category, so a TBX termbase reads into term pages and back without loss.
 
 ## Use it
 
@@ -64,7 +66,7 @@ meta:
     - files: "docs/terms/**"
       defaults: true
       schemas:
-        - manni:terminology:1.0.0
+        - manni:terminology:1.1.0
 ```
 
 `manni term check` checks the set as a whole. The schema checks the shape of
@@ -91,6 +93,62 @@ The fields sit at the root of the page, flat, as every house vocabulary's do.
 Every list takes one non-empty string, or a non-empty list of unique non-empty
 strings.
 
+### TBX data categories
+
+These carry a TBX termbase's data, one TBX category each. The level of a value
+is where it sits. The root of the page is the language level, `concept-entry`
+the concept level, and a `designations` item the term level. Every field below
+is valid at all three levels, and none is required.
+
+| Field | Type | Location | Notes |
+|---|---|---|---|
+| `subject-field` | string, non-empty | `page` | The subject field. TBX `descrip type="subjectField"` |
+| `contexts` | string or list | `page` | Sentences that show the term in use. TBX `descrip type="context"` |
+| `notes` | string or list | `page` | Free-text notes. TBX `note` |
+| `sources` | string or list | `page` | Where the information came from. TBX `admin type="source"` |
+| `customer-subsets` | string or list | `page` | The customers the entry applies to. TBX `admin type="customerSubset"` |
+| `project-subsets` | string or list | `page` | The projects the entry applies to. TBX `admin type="projectSubset"` |
+| `cross-references` | list of links | `page` | Links to other entries. TBX `ref type="crossReference"` |
+| `external-cross-references` | list of links | `page` | Links outside the termbase. TBX `xref type="externalCrossReference"` |
+| `graphics` | list of links | `page` | Images that illustrate the concept. TBX `xref type="xGraphic"` |
+| `transactions` | list | `page` | The entry's history. Each item has a `type`, and may have a `date` and a `responsibility`. TBX `transacGrp` |
+| `tbx-elements` | list of strings | `page` | TBX elements no named field maps, whole, in source order |
+
+`definition` is valid at the two inner levels as well. A link is a target
+string, or a mapping with a `target` and an optional `text`. A list of links
+and `transactions` take a list. A text field that takes a list also takes one
+string.
+
+Three blocks sit at the root:
+
+| Field | Type | Location | Notes |
+|---|---|---|---|
+| `concept-entry` | object | `page` | The concept level. It holds `definition` and the fields above. TBX `termEntry` |
+| `designations` | list of objects | `page` | Detail per designation, in TBX order. Each item requires `term`. TBX `tig`, `ntig` or `termSec` |
+| `tbx-markup` | list of strings | `page` | The marked-up form of any value whose text it matches, as inline XML |
+
+A `designations` item names the designation it describes in `term`. It holds
+the fields above, and these, which are valid nowhere else:
+
+| Field | TBX `termNote` or `admin` type |
+|---|---|
+| `administrative-status` | `administrativeStatus` |
+| `part-of-speech` | `partOfSpeech` |
+| `grammatical-gender` | `grammaticalGender` |
+| `grammatical-number` | `grammaticalNumber` |
+| `term-type` | `termType` |
+| `term-location` | `termLocation` |
+| `geographical-usage` | `geographicalUsage` |
+| `register` | `register` |
+| `reading` | `reading` |
+| `reading-note` | `readingNote` |
+| `transfer-comments` | `transferComment` |
+
+Each holds a string, and `transfer-comments` a string or a list. A picklist
+value is a string here, kept as written. The strict overlay closes the
+picklists. The [terminology fields](/manni/term/reference/terminology/#the-tbx-data-categories)
+page has the values TBX names and how a TBX file reads into them.
+
 `type: term` marks an entry, and turns on the `label` and definition
 requirements. `type: term-set` marks a file whose body holds many entries, and
 imposes nothing on the file's own metadata. Files without the vocabulary's
@@ -108,8 +166,9 @@ used.
 ## Additional properties
 
 Allowed. The root is open, so a generator's keys and the other vocabularies'
-keys pass beside terminology's. Terminology checks only the ten keys it claims,
-and the entry rule on `type: term`.
+keys pass beside terminology's. `concept-entry` and a `designations` item are
+open too. Terminology checks only the keys it claims, and the entry rule on
+`type: term`.
 
 ## Example
 
@@ -161,16 +220,22 @@ definition: Corrective lenses whose power increases from the top to the bottom.
 ```
 
 ```text
-$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:terminology:1.0.0
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:terminology:1.1.0
 ✗ page.md
-    (root)  must have required property 'label'  (line 1)  [manni:terminology:1.0.0]
-    (root)  must match "then" schema  (line 1)  [manni:terminology:1.0.0]
+    (root)  must have required property 'label'  (line 1)  [manni:terminology:1.1.0]
+    (root)  must match "then" schema  (line 1)  [manni:terminology:1.1.0]
 
 1 file checked, 0 passed, 1 failed, 2 errors
 ```
 
 The exit code is 1. An entry with neither `definition` nor `see` fails the same
-rule, with `must match a schema in anyOf`.
+rule, with `must match a schema in anyOf`. A `designations` item without its
+`term` fails at the item:
+
+```text
+✗ page.md
+    /designations/0  must have required property 'term'  (line 9)  [manni:terminology:1.1.0]
+```
 
 ## Design decisions
 
@@ -178,10 +243,21 @@ rule, with `must match a schema in anyOf`.
   one exception to flat keys. A second exception makes it a pattern. A record
   that exists only inside another tool's envelope also makes that tool a
   dependency of writing a definition.
-- **No status field.** The kind of label is the status. `label` is preferred,
-  `alt-labels` are admitted, and `hidden-labels` are deprecated, which is what
-  SKOS documents `hiddenLabel` for. DITA 2.0 removed `<glossStatus>` along
-  with most of its other glossary metadata.
+- **The kind of label is the status.** `label` is preferred, `alt-labels` are
+  admitted, and `hidden-labels` are deprecated, which is what SKOS documents
+  `hiddenLabel` for. DITA 2.0 removed `<glossStatus>` along with most of its
+  other glossary metadata. A `designations` item's `administrative-status`
+  overrides the kind only where TBX names a status the kinds cannot, such as
+  `superseded`.
+- **The level is the position.** TBX states a value about the concept, one
+  language or one designation. The record puts each where it applies, rather
+  than tagging each value with a level.
+- **A term per language.** The labels stay plain strings, because the graph,
+  Vale, `manni term check` and `manni meta query` all read them that way. A
+  concept in several languages is several entries joined on `id`.
+- **Lossless before tidy.** A picklist value is kept as written, and what no
+  field names rides in `tbx-elements`. Strict is where values are policed, so
+  reading a vendor's termbase never rejects one.
 - **Two lengths of definition.** A rendered entry wants the full text, and a
   hover card wants a sentence. Kubernetes, mdbook-termlink and GitLab each
   split the definition independently, so `abstract` is its own field.
@@ -207,9 +283,9 @@ rule, with `must match a schema in anyOf`.
 
 ## Strict overlay
 
-**Strict overlay id:** `manni:terminology-strict:1.0.0`
+**Strict overlay id:** `manni:terminology-strict:1.1.0`
 
-Published at `https://hawkeyexl.github.io/manni/schemas/terminology-strict/1.0.0.json`.
+Published at `https://hawkeyexl.github.io/manni/schemas/terminology-strict/1.1.0.json`.
 The overlay holds only what strict adds. It narrows the form of a value that is
 present and requires no key. A page with none of the vocabulary's fields
 still passes it.
@@ -218,6 +294,15 @@ still passes it.
 |---|---|
 | `label` | One line, with no leading or trailing whitespace |
 | `see` | One line, with no leading or trailing whitespace, the form a label takes |
+| `subject-field`, a designation's `term`, a link's `target` | One line, with no leading or trailing whitespace |
+| `tbx-elements` | Each item starts with `<` |
+| `administrative-status` | `preferred`, `admitted`, `deprecated`, `superseded` or `none` |
+| `part-of-speech` | `adjective`, `noun`, `other`, `verb`, `adverb` or `properNoun` |
+| `grammatical-gender` | `masculine`, `feminine`, `neuter` or `other` |
+| `grammatical-number` | `singular`, `plural`, `dual`, `mass` or `otherNumber` |
+| `term-type` | `fullForm`, `acronym`, `abbreviation`, `shortForm`, `variant` or `phrase` |
+| `term-location` | the TBX-Basic interface picklist, such as `menuItem` or `pushButton` |
+| `register` | the TBX-Linguist register picklist, such as `technicalRegister` |
 | the entry | `definition` and `see` never appear together |
 
 `strict: true` does not reach this overlay, because the vocabulary is not in the default set. List both ids to adopt it:
@@ -225,8 +310,8 @@ still passes it.
 ```yaml
 meta:
   schemas:
-    - manni:terminology:1.0.0
-    - manni:terminology-strict:1.0.0
+    - manni:terminology:1.1.0
+    - manni:terminology-strict:1.1.0
 ```
 
 Each schema is checked on its own, and a finding names the one that produced
@@ -246,11 +331,34 @@ definition: A progressive lens, under the name opticians in the UK use.
 ```
 
 ```text
-$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:terminology:1.0.0 -s manni:terminology-strict:1.0.0
+$ manni meta validate page.md --no-config -s manni:core:1.0.0 -s manni:terminology:1.1.0 -s manni:terminology-strict:1.1.0
 ✗ page.md
-    (root)  must NOT be valid  (line 1)  [manni:terminology-strict:1.0.0]
+    (root)  must NOT be valid  (line 1)  [manni:terminology-strict:1.1.0]
 
 1 file checked, 0 passed, 1 failed, 1 error
 ```
 
 The open vocabulary accepts the page, so the overlay alone fails it.
+
+## Version 1.0.0
+
+**Built-in id:** `manni:terminology:1.0.0`
+
+**Strict overlay id:** `manni:terminology-strict:1.0.0`
+
+Published at `https://hawkeyexl.github.io/manni/schemas/terminology/1.0.0.json`
+and `https://hawkeyexl.github.io/manni/schemas/terminology-strict/1.0.0.json`.
+Version 1.0.0 claims the ten SKOS fields and validates them as 1.1.0 does. It
+claims none of the TBX data categories, so it checks nothing about them. Its
+strict overlay narrows `label`, `see` and the entry rule.
+
+Both ids still resolve, and a page that names one keeps it. Every 1.0.0 page
+is valid 1.1.0, so moving a set to 1.1.0 changes only the ids it names. A set
+that stays on 1.0.0 lists them:
+
+```yaml
+meta:
+  schemas:
+    - manni:terminology:1.0.0
+    - manni:terminology-strict:1.0.0
+```

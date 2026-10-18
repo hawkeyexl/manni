@@ -34,7 +34,7 @@ export function lineEnding(content: string): string {
 }
 
 /** The whitespace that opens the line `offset` sits on. */
-function indentAt(content: string, offset: number): string {
+export function indentAt(content: string, offset: number): string {
   const lineStart = content.lastIndexOf("\n", offset - 1) + 1;
   return /^[ \t]*/.exec(content.slice(lineStart, offset))?.[0] ?? "";
 }

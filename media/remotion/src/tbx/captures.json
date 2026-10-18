@@ -1,0 +1,13 @@
+{
+  "grep": "      <conceptEntry id=\"progressive-lens\">\n        <langSec xml:lang=\"en\">\n            <term>progressive lens</term>\n            <term>PAL</term>\n        <langSec xml:lang=\"de\">\n            <term>Gleitsichtglas</term>\n      <conceptEntry id=\"bifocal\">\n        <langSec xml:lang=\"en\">\n            <term>bifocal</term>\n            <term>dual-focus lens</term>\n",
+  "list": "progressive-lens   en   progressive lens   PAL\nprogressive-lens   de   Gleitsichtglas\nbifocal            en   bifocal\n3 terms\n",
+  "get": "\u001b[1mprogressive lens                        \u001b[22m\u001b[2mglossary.tbx:15\u001b[22m\n  id               progressive-lens\n  language         en\n  alt-labels       PAL\n  definition       A lens whose power changes gradually.\n  concept-entry    subject-field: optics\n  designations     progressive lens: part-of-speech noun\n                   PAL: term-type acronym\n  tbx-markup       A lens whose power changes <sc id=\"b1\"\n                   type=\"bold\"/>gradually<ec startRef=\"b1\"/>.\n  other languages  de (Gleitsichtglas)\n",
+  "write tbx3": "Wrote 3 terms to build/glossary.tbx\n",
+  "list build": "progressive-lens   en   progressive lens   PAL\nprogressive-lens   de   Gleitsichtglas\nbifocal            en   bifocal\n3 terms\n",
+  "write inplace": "Nothing to write\n",
+  "check": "\u001b[1mglossary.tbx:15\u001b[22m\n  \u001b[36mnotice\u001b[39m manni:term/unused-term          no page's concepts: names this term\n\u001b[1mglossary.tbx:28\u001b[22m\n  \u001b[36mnotice\u001b[39m manni:term/unused-term          no page's concepts: names this term\n\u001b[1mglossary.tbx:37\u001b[22m\n  \u001b[36mnotice\u001b[39m manni:term/unused-term          no page's concepts: names this term\n\n3 notices in 3 terms\n",
+  "exits": {
+    "cmp": "0",
+    "check": "0"
+  }
+}

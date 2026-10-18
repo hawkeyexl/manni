@@ -26,7 +26,7 @@ sample-questions:
 graph:
   label: Configuration reference
   type: reference
-last-updated: 2026-09-17
+last-updated: 2026-10-18
 tags:
   - configuration
   - yaml
@@ -114,7 +114,7 @@ it.
 
 | Key | Type | Default | Mirrors | Description |
 |---|---|---|---|---|
-| `manifests` | list of paths | `[]` | none | YAML or JSON files holding entries outside any document, relative to the config file. Read on every run that loads the config. |
+| `manifests` | list of paths | `[]` | none | YAML or JSON manifests, or TBX files, holding entries outside any document. Paths are relative to the config file. Read on every run that loads the config. |
 | `abstractMaxLength` | non-negative integer | `60` | none | The length, in UTF-16 code units, past which `abstract-too-long` fires. |
 | `baseline` | path | none | `--baseline` | A [baseline](/manni/term/reference/cli/#baselines) file, relative to the config file. Setting it compares every `check` run against the file, without the flag. With `--baseline` and no key, the file is `.manni-term-baseline.json`. |
 | `severity` | mapping | the [defaults](/manni/term/reference/rules/) | none | Per-rule level: `error`, `warning`, `notice` or `off`. Only the rules named change. |
@@ -145,6 +145,34 @@ bifocal:
 A finding about an entry names the manifest and the entry's own line. When a
 manifest and a page use one id, both get a `duplicate-id` finding, and neither
 value wins.
+
+An entry may carry `language`, as a page does. A manifest key is the entry's
+id, so one manifest holds one language of a concept. Keep each language in a
+manifest of its own, or in pages:
+
+```yaml title="terms.de.yaml"
+spectacle-lens:
+  language: de
+  label: Brillenglas
+  definition: Ein Glas, das vor dem Auge getragen wird.
+```
+
+## A TBX file
+
+A `term.manifests` path ending in `.tbx` is read as a TBX termbase, v2 or v3,
+rather than as a manifest. Each entry is a term per language it holds. A
+termbase the translation team owns can sit outside the docs and still be
+checked with them:
+
+```yaml title="manni.config.yaml"
+term:
+  manifests:
+    - terms.yaml
+    - l10n/vendor.tbx
+```
+
+[Move and hand off a termbase](/manni/term/set-up/move-and-hand-off/#read-the-termbase-back)
+covers reading TBX, and what a write back keeps.
 
 ## Severity
 

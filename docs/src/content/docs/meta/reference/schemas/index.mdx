@@ -19,7 +19,7 @@ sample-questions:
 graph:
   label: "Built-in schemas"
   type: reference
-last-updated: 2026-10-05
+last-updated: 2026-10-18
 tags:
   - schemas
   - registry
@@ -44,7 +44,7 @@ prerequisites:
 import { Aside, Tabs, TabItem, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 {/* cite registry-forty-five-bundled-schemas */}
-manni meta bundles fifty-one schemas. You reference any of them by id, with no file
+manni meta bundles fifty-three schemas. You reference any of them by id, with no file
 to write, no URL to host, and no network call at validation time. This page is
 the registry: what each one constrains, whether it requires anything, and which
 are applied when you pass no flags at all. Each id links to its own page, with
@@ -95,8 +95,10 @@ installed.
 | [`manni:lifecycle-strict:1.0.0`](/manni/meta/reference/schemas/manni-lifecycle/#strict-overlay) | the form of `replaced-by`, `supersedes`, `remove-by` | nothing | No | [`lifecycle-strict/1.0.0.json`](/manni/schemas/lifecycle-strict/1.0.0.json) |
 | [`manni:structure:1.0.0`](/manni/meta/reference/schemas/manni-structure/) | `applies-to`, `not-applicable-to`, `concepts`, `prerequisites`, `next-steps`, `related-pages` | nothing | **Yes** | [`structure/1.0.0.json`](/manni/schemas/structure/1.0.0.json) |
 | [`manni:structure-strict:1.0.0`](/manni/meta/reference/schemas/manni-structure/#strict-overlay) | the form of `applies-to`, `not-applicable-to`, `prerequisites`, `next-steps`, `related-pages` | nothing | No | [`structure-strict/1.0.0.json`](/manni/schemas/structure-strict/1.0.0.json) |
-| [`manni:terminology:1.0.0`](/manni/meta/reference/schemas/manni-terminology/) | `label`, `definition`, `abstract`, `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `scope-note` | `label`, and `definition` or `see`, on a `type: term` page | No | [`terminology/1.0.0.json`](/manni/schemas/terminology/1.0.0.json) |
-| [`manni:terminology-strict:1.0.0`](/manni/meta/reference/schemas/manni-terminology/#strict-overlay) | the form of `label`, `see` | nothing | No | [`terminology-strict/1.0.0.json`](/manni/schemas/terminology-strict/1.0.0.json) |
+| [`manni:terminology:1.1.0`](/manni/meta/reference/schemas/manni-terminology/) | `label`, `definition`, `abstract`, `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `scope-note`, the TBX data categories, `concept-entry`, `designations`, `tbx-markup` | `label`, and `definition` or `see`, on a `type: term` page | No | [`terminology/1.1.0.json`](/manni/schemas/terminology/1.1.0.json) |
+| [`manni:terminology:1.0.0`](/manni/meta/reference/schemas/manni-terminology/#version-100) | `label`, `definition`, `abstract`, `alt-labels`, `hidden-labels`, `broader`, `narrower`, `related-terms`, `see`, `scope-note` | `label`, and `definition` or `see`, on a `type: term` page | No | [`terminology/1.0.0.json`](/manni/schemas/terminology/1.0.0.json) |
+| [`manni:terminology-strict:1.1.0`](/manni/meta/reference/schemas/manni-terminology/#strict-overlay) | the form of `label`, `see`, `subject-field`, `designations`, link targets, `tbx-elements`, and the TBX picklists | nothing | No | [`terminology-strict/1.1.0.json`](/manni/schemas/terminology-strict/1.1.0.json) |
+| [`manni:terminology-strict:1.0.0`](/manni/meta/reference/schemas/manni-terminology/#version-100) | the form of `label`, `see` | nothing | No | [`terminology-strict/1.0.0.json`](/manni/schemas/terminology-strict/1.0.0.json) |
 | [`manni:ai-context:1.0.0`](/manni/meta/reference/schemas/manni-ai-context/) | `provenance`, `meta-provenance`, `risks`, `sample-questions` | nothing | **Yes** | [`ai-context/1.0.0.json`](/manni/schemas/ai-context/1.0.0.json) |
 | [`manni:ai-context-strict:1.0.0`](/manni/meta/reference/schemas/manni-ai-context/#strict-overlay) | the form of `meta-provenance`, `risks` | nothing | No | [`ai-context-strict/1.0.0.json`](/manni/schemas/ai-context-strict/1.0.0.json) |
 | [`manni:evals:1.0.0`](/manni/meta/reference/schemas/manni-evals/) | `evals`, `eval-suite`, `eval-skip` | nothing | **Yes** | [`evals/1.0.0.json`](/manni/schemas/evals/1.0.0.json) |
@@ -111,7 +113,7 @@ installed.
 | [`manni:citations-strict:1.0.0`](/manni/meta/reference/schemas/manni-citations/#strict-overlay) | the form of `citations` | nothing | No | [`citations-strict/1.0.0.json`](/manni/schemas/citations-strict/1.0.0.json) |
 
 {/* cite registry-all-draft-2020-12-and-builtin-refs */}
-All fifty-one use [Draft
+All fifty-three use [Draft
 2020-12](/manni/meta/reference/schema-resolution/#dialects) and are [built-in
 references](/manni/meta/reference/schema-resolution/#reference-kinds). A typo in an
 id is reported as an unknown schema rather than a missing file.
@@ -172,6 +174,8 @@ https://hawkeyexl.github.io/manni/schemas/structure/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/structure-strict/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/terminology/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/terminology-strict/1.0.0.json
+https://hawkeyexl.github.io/manni/schemas/terminology/1.1.0.json
+https://hawkeyexl.github.io/manni/schemas/terminology-strict/1.1.0.json
 https://hawkeyexl.github.io/manni/schemas/ai-context/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/ai-context-strict/1.0.0.json
 https://hawkeyexl.github.io/manni/schemas/evals/1.0.0.json
@@ -354,7 +358,7 @@ compose](/manni/meta/reference/taxonomy-schemas/#which-ones-compose).
 ## What runs when you pass no flags
 
 {/* cite registry-only-two-in-the-default-set */}
-Eleven of the fifty-one are in the default set, in this order:
+Eleven of the fifty-three are in the default set, in this order:
 
 ```text
 google:okf:0.1

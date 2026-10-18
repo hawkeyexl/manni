@@ -10,7 +10,19 @@ import type { FormatRow } from "../commands/formats.js";
 import { displayPath, plural } from "../commands/run.js";
 import type { ValeWiring, WriteReport } from "../commands/write.js";
 import type { Severity } from "../../shared/severity.js";
-import { TERM_FIELDS, type Term, type TermField, type TermFinding } from "../types.js";
+import { isMultilingual, languageOf } from "../core/writers/render-util.js";
+import {
+  TERM_AUX_FIELDS,
+  TERM_DESIGNATION_FIELDS,
+  TERM_FIELDS,
+  type Term,
+  type TermDesignation,
+  type TermField,
+  type TermFinding,
+  type TermLink,
+  type TermRecord,
+  type TermTransaction,
+} from "../types.js";
 
 const WIDTH = 80;
 
@@ -58,17 +70,25 @@ function hanging(first: string, lines: readonly string[]): string[] {
 export function renderListPretty(terms: readonly Term[]): string {
   const idWidth = Math.max(0, ...terms.map((t) => t.id.length)) + 3;
   const labelWidth = Math.max(0, ...terms.map((t) => t.record.label.length)) + 3;
-  const rows = terms.map((t) =>
-    `${t.id.padEnd(idWidth)}${t.record.label.padEnd(labelWidth)}${(t.record["alt-labels"] ?? []).join(", ")}`.trimEnd(),
-  );
+  // The language column appears only when it tells the rows apart.
+  const multilingual = isMultilingual(terms);
+  const languageWidth = Math.max(0, ...terms.map((t) => languageOf(t).length)) + 3;
+  const rows = terms.map((t) => {
+    const language = multilingual ? languageOf(t).padEnd(languageWidth) : "";
+    const alts = (t.record["alt-labels"] ?? []).join(", ");
+    return `${t.id.padEnd(idWidth)}${language}${t.record.label.padEnd(labelWidth)}${alts}`.trimEnd();
+  });
   return [...rows, plural(terms.length, "term")].join("\n");
 }
 
 // ---------------------------------------------------------------------------
 // get
 
-/** The order `get` shows fields in: names first, then what they mean, the definition last. */
-const GET_FIELDS: readonly TermField[] = [
+/** A root field `get` shows as one row of text. */
+type RowField = Exclude<TermField, "label" | "concept-entry" | "designations" | "tbx-markup" | "tbx-elements">;
+
+/** The order `get` shows root fields in: names first, then what they mean, the definition last. */
+const GET_FIELDS: readonly RowField[] = [
   "alt-labels",
   "hidden-labels",
   "broader",
@@ -77,25 +97,113 @@ const GET_FIELDS: readonly TermField[] = [
   "see",
   "abstract",
   "scope-note",
+  "subject-field",
+  "contexts",
+  "notes",
+  "sources",
+  "customer-subsets",
+  "project-subsets",
+  "cross-references",
+  "external-cross-references",
+  "graphics",
+  "transactions",
   "definition",
 ];
 
-const KEY_WIDTH = Math.max("language".length, ...TERM_FIELDS.map((f) => f.length)) + 2;
+/** The aux fields a block's line shows; its `tbx-elements` are counted on a row of their own. */
+const SHOWN_AUX = TERM_AUX_FIELDS.filter((field) => field !== "tbx-elements");
 
-export function renderGetPretty(term: Term, opts: { color: boolean; cwd?: string }): string {
-  const c = palette(opts.color);
-  const where = `${displayPath(term.location.file, opts.cwd ?? process.cwd())}:${String(term.location.line)}`;
-  const lines = [`${c.bold(term.record.label.padEnd(40))}${c.dim(where)}`];
-  const row = (key: string, value: string): void => {
-    const prefix = `  ${key.padEnd(KEY_WIDTH)}`;
-    lines.push(...hanging(prefix, wrapWords(value, WIDTH - prefix.length)));
+/** The key column's narrowest width: the widest 1.0.0 field, `related-terms`, plus two. */
+const MIN_KEY_WIDTH = 15;
+
+function linkText(link: TermLink): string {
+  return link.text === undefined ? link.target : `${link.text} (${link.target})`;
+}
+
+function transactionText(transaction: TermTransaction): string {
+  return [transaction.type, transaction.date, transaction.responsibility].filter((part) => part !== undefined).join(" ");
+}
+
+/** One value as `get` prints it: a list joined with commas, a link as its text and target, a transaction as its parts. */
+function valueText(value: string | readonly (string | TermLink | TermTransaction)[]): string {
+  if (typeof value === "string") return value;
+  return value
+    .map((item) => (typeof item === "string" ? item : "target" in item ? linkText(item) : transactionText(item)))
+    .join(", ");
+}
+
+/** `progressive lens: part-of-speech noun, term-type fullForm`, or `undefined` when it says nothing but its term. */
+function designationLine(designation: TermDesignation): string | undefined {
+  const parts: string[] = [];
+  for (const key of TERM_DESIGNATION_FIELDS) {
+    const value = designation[key];
+    if (value !== undefined) parts.push(`${key} ${value}`);
+  }
+  const comments = designation["transfer-comments"];
+  if (comments !== undefined) parts.push(`transfer-comments ${valueText(comments)}`);
+  for (const key of SHOWN_AUX) {
+    const value = designation[key];
+    if (value !== undefined) parts.push(`${key} ${valueText(value)}`);
+  }
+  return parts.length === 0 ? undefined : `${designation.term}: ${parts.join(", ")}`;
+}
+
+/** `1 at the root, 1 on PAL, 1 in concept-entry`: where the record keeps elements no named field maps. */
+function passThroughText(record: TermRecord): string | undefined {
+  const parts: string[] = [];
+  const count = (items: readonly string[] | undefined, where: string): void => {
+    if (items !== undefined) parts.push(`${String(items.length)} ${where}`);
   };
-  row("id", term.id);
-  if (term.language !== undefined) row("language", term.language);
+  count(record["tbx-elements"], "at the root");
+  for (const designation of record.designations ?? []) count(designation["tbx-elements"], `on ${designation.term}`);
+  count(record["concept-entry"]?.["tbx-elements"], "in concept-entry");
+  return parts.length === 0 ? undefined : parts.join(", ");
+}
+
+export interface GetPrettyOptions {
+  color: boolean;
+  cwd?: string;
+  /** The entry in its other languages: the set's other terms with the same id. */
+  others?: readonly Term[];
+}
+
+export function renderGetPretty(term: Term, opts: GetPrettyOptions): string {
+  const c = palette(opts.color);
+  const { record } = term;
+  const where = `${displayPath(term.location.file, opts.cwd ?? process.cwd())}:${String(term.location.line)}`;
+
+  // Each row is a key and its lines, collected first so the key column fits the widest key shown.
+  const rows: [string, string[]][] = [["id", [term.id]]];
+  if (term.language !== undefined) rows.push(["language", [term.language]]);
   for (const field of GET_FIELDS) {
-    const value = term.record[field];
-    if (value === undefined) continue;
-    row(field, typeof value === "string" ? value : value.join(", "));
+    const value = record[field];
+    if (value !== undefined) rows.push([field, [valueText(value)]]);
+  }
+  const concept = record["concept-entry"];
+  if (concept !== undefined) {
+    const lines = SHOWN_AUX.flatMap((key) => {
+      const value = concept[key];
+      return value === undefined ? [] : [`${key}: ${valueText(value)}`];
+    });
+    if (lines.length > 0) rows.push(["concept-entry", lines]);
+  }
+  const designations = (record.designations ?? []).map(designationLine).filter((line) => line !== undefined);
+  if (designations.length > 0) rows.push(["designations", designations]);
+  if (record["tbx-markup"] !== undefined) rows.push(["tbx-markup", record["tbx-markup"]]);
+  const passThrough = passThroughText(record);
+  if (passThrough !== undefined) rows.push(["tbx-elements", [passThrough]]);
+  const others = opts.others ?? [];
+  if (others.length > 0) {
+    rows.push(["other languages", [others.map((t) => `${languageOf(t)} (${t.record.label})`).join(", ")]]);
+  }
+
+  const keyWidth = Math.max(MIN_KEY_WIDTH, ...rows.map(([key]) => key.length + 2));
+  const lines = [`${c.bold(record.label.padEnd(40))}${c.dim(where)}`];
+  for (const [key, values] of rows) {
+    values.forEach((value, i) => {
+      const prefix = `  ${(i === 0 ? key : "").padEnd(keyWidth)}`;
+      lines.push(...hanging(prefix, wrapWords(value, WIDTH - prefix.length)));
+    });
   }
   return lines.join("\n");
 }
@@ -211,17 +319,22 @@ function valeLines(report: WriteReport): string[] {
 /** `  dropped from a definition list: scope-note on 3 terms, hidden-labels on 12`. */
 function droppedLine(report: WriteReport): string | undefined {
   if (report.dropped.length === 0) return undefined;
-  const ids = new Map<TermField, Set<string>>();
-  for (const { id, field } of report.dropped) {
-    const set = ids.get(field) ?? new Set<string>();
-    set.add(id);
-    ids.set(field, set);
-  }
-  const fields = [...ids.entries()]
-    .map(([field, set]) => ({ field, n: set.size }))
+  // One entry per term per field, so counting entries counts terms: an id in two languages is two terms.
+  const counts = new Map<TermField, number>();
+  for (const { field } of report.dropped) counts.set(field, (counts.get(field) ?? 0) + 1);
+  const fields = [...counts.entries()]
+    .map(([field, n]) => ({ field, n }))
     .sort((a, b) => a.n - b.n || TERM_FIELDS.indexOf(a.field) - TERM_FIELDS.indexOf(b.field));
   const parts = fields.map(({ field, n }, i) => `${field} on ${i === 0 ? plural(n, "term") : String(n)}`);
   return `  dropped from ${report.droppedFrom ?? report.format ?? "the render"}: ${parts.join(", ")}`;
+}
+
+/** `  dropped from tbx3: the headers of glossary.tbx, <stdin>`. */
+function droppedHeadersLine(report: WriteReport): string | undefined {
+  const files = report.droppedHeaders ?? [];
+  if (files.length === 0) return undefined;
+  const what = files.length === 1 ? "the header of" : "the headers of";
+  return `  dropped from ${report.droppedFrom ?? report.format ?? "the render"}: ${what} ${files.join(", ")}`;
 }
 
 /** `  skipped 2 terms a definition list cannot read without a definition: varifocal, bifocal`. */
@@ -232,9 +345,44 @@ function skippedLine(report: WriteReport): string | undefined {
   return `  skipped ${count} ${construct} cannot read without a definition: ${report.skipped.join(", ")}`;
 }
 
-/** The dropped and skipped lines, which a write and a dry run print alike. */
+/** `  skipped 2 terms in another language than en: spectacle-lens (de), progressive-lens (de)`. */
+function otherLanguagesLine(report: WriteReport): string | undefined {
+  const other = report.otherLanguages;
+  if (other === undefined || other.terms.length === 0) return undefined;
+  const terms = other.terms.map(({ id, language }) => `${id} (${language})`).join(", ");
+  return `  skipped ${plural(other.terms.length, "term")} in another language than ${other.written}: ${terms}`;
+}
+
+/**
+ * `  kept the first language's value where languages differ: concept-entry.subject-field on 1 concept`.
+ * Fields are counted in concepts, fewest first, as the dropped line counts terms.
+ */
+function conflictsLine(report: WriteReport): string | undefined {
+  const conflicts = report.conflicts ?? [];
+  if (conflicts.length === 0) return undefined;
+  const ids = new Map<string, Set<string>>();
+  for (const { id, field } of conflicts) {
+    const set = ids.get(field) ?? new Set<string>();
+    set.add(id);
+    ids.set(field, set);
+  }
+  // A stable sort keeps fields of one count in the order they were first reported.
+  const fields = [...ids.entries()].map(([field, set]) => ({ field, n: set.size })).sort((a, b) => a.n - b.n);
+  const parts = fields.map(({ field, n }, i) => `${field} on ${i === 0 ? plural(n, "concept") : String(n)}`);
+  return `  kept the first language's value where languages differ: ${parts.join(", ")}`;
+}
+
+/** The dropped, dropped-header, skipped and conflict lines, which a write and a dry run print alike. */
 function renderNotes(report: WriteReport): string[] {
-  return [droppedLine(report), skippedLine(report)].filter((line) => line !== undefined);
+  return [
+    droppedLine(report),
+    droppedHeadersLine(report),
+    skippedLine(report),
+    otherLanguagesLine(report),
+    conflictsLine(report),
+  ].filter(
+    (line) => line !== undefined,
+  );
 }
 
 function unchangedLine(report: WriteReport): string {
@@ -250,10 +398,11 @@ export function renderWritePretty(report: WriteReport): string {
     return [...changes, ...renderNotes(report)].join("\n");
   }
   if (report.mode === "in-place") {
-    return report.changes.length === 0 ? "Nothing to write" : `Wrote ${plural(report.changes.length, "file")}`;
+    const wrote = report.changes.length === 0 ? "Nothing to write" : `Wrote ${plural(report.changes.length, "file")}`;
+    return [wrote, ...renderNotes(report)].join("\n");
   }
   const each = report.shape === "directory" && report.format !== "vale" ? ", one file each" : "";
-  const written = report.terms - report.skipped.length;
+  const written = report.terms - report.skipped.length - (report.otherLanguages?.terms.length ?? 0);
   const lines = [`Wrote ${plural(written, "term")} to ${report.target ?? ""}${each}`];
   if (report.format === "vale") lines.push(...valeLines(report));
   lines.push(...renderNotes(report));

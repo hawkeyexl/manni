@@ -1,0 +1,15 @@
+# A manifest entry in German, with the 1.1.0 keys.
+progressive-lens:
+  language: de
+  label: Gleitsichtglas
+  alt-labels: [Gleitsichtbrille]
+  definition: Brillenglas mit stufenlos zunehmender Wirkung.
+  concept-entry:
+    subject-field: Optik
+  designations:
+    - term: Gleitsichtglas
+      grammatical-gender: neuter
+      part-of-speech: noun
+    - term: Gleitsichtbrille
+      grammatical-gender: feminine
+  sources: [DIN EN ISO 13666]

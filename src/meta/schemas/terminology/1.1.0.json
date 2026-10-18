@@ -1,0 +1,446 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "manni:terminology:1.1.0",
+  "title": "manni terminology vocabulary v1.1.0",
+  "description": "What a term entry says about its term: the names it goes by, what it means, and where it sits among other terms. The fields map onto SKOS, and each description names its SKOS term. They sit at the root of the page, flat, as every house vocabulary's do. `type`, `id` and `language` belong to manni:core:1.0.0 and are not declared here. `type: term` marks an entry, which then names its `label` and either defines the term or redirects with `see`. An entry carrying both is a finding for `manni term check`, not a schema error. `type: term-set` imposes nothing. The kind of label is the status: `label` is preferred, `alt-labels` are admitted, and `hidden-labels` are deprecated. On a page without a `graph` block, these fields are the harvest fallback of their graph twins (manni:graph:1.0.0). Files without the vocabulary's fields pass. Beside the SKOS fields, the vocabulary holds every TBX-Basic and TBX-Linguist data category, so a TBX termbase reads into term pages and back. The level of a TBX value is where it sits: concept level in `concept-entry`, language level at the root, and term level in a `designations` item. A term-level key such as `part-of-speech` is valid only in a `designations` item. Picklist values are kept as written, and the strict overlay closes them.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The one preferred name of the term (skos:prefLabel). Every other name goes in `alt-labels` or `hidden-labels`. Required on a `type: term` page.",
+      "x-manni-location": "page"
+    },
+    "definition": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the term means, in full (skos:definition). This is the text a rendered entry shows. A `type: term` page carries it unless it redirects with `see`.",
+      "x-manni-location": "page"
+    },
+    "abstract": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The short form of the definition, one sentence long. A hover card or a tooltip shows it where the full `definition` would not fit. It has no SKOS term of its own and narrows skos:definition.",
+      "x-manni-location": "page"
+    },
+    "alt-labels": {
+      "$ref": "#/$defs/labelList",
+      "description": "Other admitted names for the term: synonyms, abbreviations and spelling variants (skos:altLabel). Search matches them, and writers may use them.",
+      "x-manni-location": "page"
+    },
+    "hidden-labels": {
+      "$ref": "#/$defs/labelList",
+      "description": "Names the term must not go by: deprecated spellings, obsolete forms and common misspellings (skos:hiddenLabel). Search still matches them, so a reader who types one finds the entry.",
+      "x-manni-location": "page"
+    },
+    "broader": {
+      "$ref": "#/$defs/labelList",
+      "description": "Labels of broader terms, the parents of this one (skos:broader).",
+      "x-manni-location": "page"
+    },
+    "narrower": {
+      "$ref": "#/$defs/labelList",
+      "description": "Labels of narrower terms, the children of this one (skos:narrower).",
+      "x-manni-location": "page"
+    },
+    "related-terms": {
+      "$ref": "#/$defs/labelList",
+      "description": "Labels of associatively related terms (skos:related). The `-terms` suffix says what it points at, as `related-pages` and `graph.related-concepts` do.",
+      "x-manni-location": "page"
+    },
+    "see": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The label of the entry this one redirects to. A redirect entry carries `see` in place of a definition, so a reader who looks up this name is sent to the preferred one. It has no SKOS term, and the relation it states is the one skos:altLabel states from the other side.",
+      "x-manni-location": "page"
+    },
+    "scope-note": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A note on how far the term reaches, and where it stops (skos:scopeNote). It says what the term covers in this set, not what it means.",
+      "x-manni-location": "page"
+    },
+    "subject-field": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The subject field the concept belongs to (TBX `descrip type=\"subjectField\"`). It holds one value. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
+      "x-manni-location": "page"
+    },
+    "contexts": {
+      "$ref": "#/$defs/textList",
+      "description": "Sentences that show the term in use (TBX `descrip type=\"context\"`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
+      "x-manni-location": "page"
+    },
+    "notes": {
+      "$ref": "#/$defs/textList",
+      "description": "Free-text notes (TBX `note`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
+      "x-manni-location": "page"
+    },
+    "sources": {
+      "$ref": "#/$defs/textList",
+      "description": "Where the information came from (TBX `admin type=\"source\"`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
+      "x-manni-location": "page"
+    },
+    "customer-subsets": {
+      "$ref": "#/$defs/textList",
+      "description": "The customers the entry applies to (TBX `admin type=\"customerSubset\"`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
+      "x-manni-location": "page"
+    },
+    "project-subsets": {
+      "$ref": "#/$defs/textList",
+      "description": "The projects the entry applies to (TBX `admin type=\"projectSubset\"`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
+      "x-manni-location": "page"
+    },
+    "cross-references": {
+      "$ref": "#/$defs/linkList",
+      "description": "Links to other entries (TBX `ref type=\"crossReference\"`). An item is a target, or a mapping of `target` and optional `text`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
+      "x-manni-location": "page"
+    },
+    "external-cross-references": {
+      "$ref": "#/$defs/linkList",
+      "description": "Links to resources outside the termbase, usually URLs (TBX `xref type=\"externalCrossReference\"`). An item is a target, or a mapping of `target` and optional `text`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
+      "x-manni-location": "page"
+    },
+    "graphics": {
+      "$ref": "#/$defs/linkList",
+      "description": "Images that illustrate the concept (TBX `xref type=\"xGraphic\"`). An item is a target, or a mapping of `target` and optional `text`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
+      "x-manni-location": "page"
+    },
+    "transactions": {
+      "$ref": "#/$defs/transactionList",
+      "description": "The entry's history (TBX `transacGrp`). Each item names its `type` and may give a `date`, kept as written, and a `responsibility`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
+      "x-manni-location": "page"
+    },
+    "tbx-elements": {
+      "$ref": "#/$defs/xmlList",
+      "description": "TBX elements no named field maps, each kept whole as an XML string in source order, so a TBX file reads back without loss. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes.",
+      "x-manni-location": "page"
+    },
+    "concept-entry": {
+      "type": "object",
+      "properties": {
+        "definition": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the term means at this level (TBX `descrip type=\"definition\"`). It holds one value."
+        },
+        "subject-field": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The subject field the concept belongs to (TBX `descrip type=\"subjectField\"`). It holds one value. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+        },
+        "contexts": {
+          "$ref": "#/$defs/textList",
+          "description": "Sentences that show the term in use (TBX `descrip type=\"context\"`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+        },
+        "notes": {
+          "$ref": "#/$defs/textList",
+          "description": "Free-text notes (TBX `note`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+        },
+        "sources": {
+          "$ref": "#/$defs/textList",
+          "description": "Where the information came from (TBX `admin type=\"source\"`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+        },
+        "customer-subsets": {
+          "$ref": "#/$defs/textList",
+          "description": "The customers the entry applies to (TBX `admin type=\"customerSubset\"`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+        },
+        "project-subsets": {
+          "$ref": "#/$defs/textList",
+          "description": "The projects the entry applies to (TBX `admin type=\"projectSubset\"`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+        },
+        "cross-references": {
+          "$ref": "#/$defs/linkList",
+          "description": "Links to other entries (TBX `ref type=\"crossReference\"`). An item is a target, or a mapping of `target` and optional `text`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+        },
+        "external-cross-references": {
+          "$ref": "#/$defs/linkList",
+          "description": "Links to resources outside the termbase, usually URLs (TBX `xref type=\"externalCrossReference\"`). An item is a target, or a mapping of `target` and optional `text`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+        },
+        "graphics": {
+          "$ref": "#/$defs/linkList",
+          "description": "Images that illustrate the concept (TBX `xref type=\"xGraphic\"`). An item is a target, or a mapping of `target` and optional `text`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+        },
+        "transactions": {
+          "$ref": "#/$defs/transactionList",
+          "description": "The entry's history (TBX `transacGrp`). Each item names its `type` and may give a `date`, kept as written, and a `responsibility`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+        },
+        "tbx-elements": {
+          "$ref": "#/$defs/xmlList",
+          "description": "TBX elements no named field maps, each kept whole as an XML string in source order, so a TBX file reads back without loss. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+        }
+      },
+      "description": "What the entry says about its concept, the same in every language's term of this id (TBX `termEntry` level). It holds the aux fields: `definition`, `subject-field`, `contexts`, `notes`, `sources` and the rest.",
+      "x-manni-location": "page"
+    },
+    "designations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "term"
+        ],
+        "properties": {
+          "term": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The designation this item describes. It names the entry's `label`, one of its `alt-labels` or one of its `hidden-labels`, and a reader ignores an item that names none of them."
+          },
+          "administrative-status": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The designation's status (TBX `termNote type=\"administrativeStatus\"`), as written. TBX names preferred, admitted, deprecated and superseded. When it is absent, the kind of label is the status."
+          },
+          "part-of-speech": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The designation's part of speech (TBX `termNote type=\"partOfSpeech\"`), as written. TBX-Basic names adjective, noun, other, verb, adverb and properNoun."
+          },
+          "grammatical-gender": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The designation's grammatical gender (TBX `termNote type=\"grammaticalGender\"`), as written. TBX names masculine, feminine, neuter and other."
+          },
+          "grammatical-number": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The designation's grammatical number (TBX `termNote type=\"grammaticalNumber\"`), as written. TBX names singular, plural, dual, mass and otherNumber."
+          },
+          "term-type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The kind of designation (TBX `termNote type=\"termType\"`), as written. TBX-Basic names fullForm, acronym, abbreviation, shortForm, variant and phrase."
+          },
+          "term-location": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Where the designation appears in a user interface (TBX `termNote type=\"termLocation\"`), as written. TBX-Basic names checkBox, comboBox, menuItem, pushButton, toolTip and the other interface elements of its picklist."
+          },
+          "geographical-usage": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Where the designation is used, as a region or a locale (TBX `termNote type=\"geographicalUsage\"`)."
+          },
+          "register": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The designation's register (TBX-Linguist `termNote type=\"register\"`), as written. TBX names colloquialRegister, neutralRegister, technicalRegister, in-houseRegister, bench-levelRegister, slangRegister and vulgarRegister."
+          },
+          "reading": {
+            "type": "string",
+            "minLength": 1,
+            "description": "How the designation is read aloud, such as a kana reading of a kanji term (TBX-Linguist `termNote type=\"reading\"`)."
+          },
+          "reading-note": {
+            "type": "string",
+            "minLength": 1,
+            "description": "A note on the reading (TBX-Linguist `termNote type=\"readingNote\"`)."
+          },
+          "definition": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the term means at this level (TBX `descrip type=\"definition\"`). It holds one value."
+          },
+          "subject-field": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The subject field the concept belongs to (TBX `descrip type=\"subjectField\"`). It holds one value. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+          },
+          "contexts": {
+            "$ref": "#/$defs/textList",
+            "description": "Sentences that show the term in use (TBX `descrip type=\"context\"`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+          },
+          "notes": {
+            "$ref": "#/$defs/textList",
+            "description": "Free-text notes (TBX `note`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+          },
+          "sources": {
+            "$ref": "#/$defs/textList",
+            "description": "Where the information came from (TBX `admin type=\"source\"`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+          },
+          "customer-subsets": {
+            "$ref": "#/$defs/textList",
+            "description": "The customers the entry applies to (TBX `admin type=\"customerSubset\"`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+          },
+          "project-subsets": {
+            "$ref": "#/$defs/textList",
+            "description": "The projects the entry applies to (TBX `admin type=\"projectSubset\"`). It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+          },
+          "cross-references": {
+            "$ref": "#/$defs/linkList",
+            "description": "Links to other entries (TBX `ref type=\"crossReference\"`). An item is a target, or a mapping of `target` and optional `text`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+          },
+          "external-cross-references": {
+            "$ref": "#/$defs/linkList",
+            "description": "Links to resources outside the termbase, usually URLs (TBX `xref type=\"externalCrossReference\"`). An item is a target, or a mapping of `target` and optional `text`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+          },
+          "graphics": {
+            "$ref": "#/$defs/linkList",
+            "description": "Images that illustrate the concept (TBX `xref type=\"xGraphic\"`). An item is a target, or a mapping of `target` and optional `text`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+          },
+          "transactions": {
+            "$ref": "#/$defs/transactionList",
+            "description": "The entry's history (TBX `transacGrp`). Each item names its `type` and may give a `date`, kept as written, and a `responsibility`. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+          },
+          "transfer-comments": {
+            "$ref": "#/$defs/textList",
+            "description": "Notes for the translator on this designation (TBX-Linguist `termNote type=\"transferComment\"`). It is valid only in a `designations` item."
+          },
+          "tbx-elements": {
+            "$ref": "#/$defs/xmlList",
+            "description": "TBX elements no named field maps, each kept whole as an XML string in source order, so a TBX file reads back without loss. It is valid at the root, in `concept-entry` and in a `designations` item, and the level it sits at is the level it describes."
+          }
+        },
+        "description": "One designation: its `term`, the term-level keys and any aux field."
+      },
+      "description": "Detail for each of the term's designations, in TBX order (TBX `tig` or `ntig`). A list rather than a mapping, so order and homographs survive. A designation with no item still has the status its kind of label gives it.",
+      "x-manni-location": "page"
+    },
+    "tbx-markup": {
+      "$ref": "#/$defs/xmlList",
+      "description": "The marked-up form of any value whose text it matches, as inline XML such as `<hi type=\"bold\">`. A TBX writer uses an item in place of the plain value it matches, and never writes an item whose value has changed.",
+      "x-manni-location": "page"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "term"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "required": [
+          "label"
+        ],
+        "anyOf": [
+          {
+            "required": [
+              "definition"
+            ]
+          },
+          {
+            "required": [
+              "see"
+            ]
+          }
+        ],
+        "description": "A term entry names its term, and either defines it or redirects to the entry that does. Carrying both is left to the check."
+      }
+    }
+  ],
+  "$defs": {
+    "labelList": {
+      "if": {
+        "type": "array"
+      },
+      "then": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uniqueItems": true
+      },
+      "else": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "One non-empty label, or a non-empty unique list of them."
+    },
+    "textList": {
+      "if": {
+        "type": "array"
+      },
+      "then": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "else": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "One non-empty string, or a non-empty list of them."
+    },
+    "linkList": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "anyOf": [
+          {
+            "type": "string",
+            "minLength": 1
+          },
+          {
+            "type": "object",
+            "required": [
+              "target"
+            ],
+            "properties": {
+              "target": {
+                "type": "string",
+                "minLength": 1,
+                "description": "What the link points at: an entry id, a URL or a path."
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The link's text."
+              }
+            }
+          }
+        ]
+      },
+      "description": "A non-empty list of links. A bare string is the link's target."
+    },
+    "transactionList": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What happened, such as origination or modification (TBX `transac type=\"transactionType\"`)."
+          },
+          "date": {
+            "type": "string",
+            "minLength": 1,
+            "description": "When it happened, as written (TBX `date`)."
+          },
+          "responsibility": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Who did it (TBX `transacNote type=\"responsibility\"`)."
+          }
+        }
+      },
+      "description": "A non-empty list of transactions."
+    },
+    "xmlList": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "A non-empty list of XML strings."
+    }
+  }
+}

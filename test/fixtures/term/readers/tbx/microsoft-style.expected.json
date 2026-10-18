@@ -1,0 +1,83 @@
+{
+  "terms": [
+    {
+      "id": "100",
+      "language": "en-US",
+      "line": 13,
+      "record": {
+        "label": "save",
+        "tbx-elements": [
+          "<descripGrp>\n  <descrip type=\"definition\">To keep a file on disk.</descrip>\n</descripGrp>"
+        ],
+        "designations": [
+          {
+            "term": "save",
+            "administrative-status": "none",
+            "part-of-speech": "Verb"
+          }
+        ]
+      }
+    },
+    {
+      "id": "100",
+      "language": "de-DE",
+      "line": 24,
+      "record": {
+        "label": "speichern",
+        "designations": [
+          {
+            "term": "speichern",
+            "administrative-status": "none",
+            "part-of-speech": "Verb"
+          }
+        ]
+      }
+    },
+    {
+      "id": "100",
+      "language": "en-US",
+      "line": 34,
+      "record": {
+        "label": "save as",
+        "designations": [
+          {
+            "term": "save as",
+            "administrative-status": "none",
+            "part-of-speech": "Verb"
+          }
+        ]
+      }
+    },
+    {
+      "id": "open-file",
+      "language": "en-US",
+      "line": 44,
+      "record": {
+        "label": "Open File",
+        "designations": [
+          {
+            "term": "Open File",
+            "administrative-status": "none",
+            "part-of-speech": "Noun"
+          }
+        ]
+      }
+    },
+    {
+      "id": "open-file",
+      "language": "de-DE",
+      "line": 52,
+      "record": {
+        "label": "Datei öffnen",
+        "designations": [
+          {
+            "term": "Datei öffnen",
+            "administrative-status": "none",
+            "part-of-speech": "Noun"
+          }
+        ]
+      }
+    }
+  ],
+  "notices": []
+}

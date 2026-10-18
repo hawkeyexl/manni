@@ -1,0 +1,41 @@
+{
+  "terms": [
+    {
+      "id": "water",
+      "language": "en",
+      "line": 14,
+      "record": {
+        "label": "H2O",
+        "alt-labels": [
+          "water"
+        ],
+        "concept-entry": {
+          "definition": "The compound dihydrogen monoxide, known in German as Wasser."
+        },
+        "designations": [
+          {
+            "term": "H2O",
+            "contexts": [
+              "Pour the <b>water</b> slowly.",
+              "Boil the water first."
+            ],
+            "notes": [
+              "Formula <br/> & name."
+            ]
+          },
+          {
+            "term": "water"
+          }
+        ],
+        "tbx-markup": [
+          "The compound <hi type=\"italics\">dihydrogen monoxide</hi>, known in German as <foreign xml:lang=\"de\">Wasser</foreign>.",
+          "H<hi type=\"subscript\">2</hi>O",
+          "Pour the <bpt i=\"1\">&lt;b&gt;</bpt>water<ept i=\"1\">&lt;/b&gt;</ept> slowly.",
+          "Boil the water first.<!-- reviewed -->",
+          "Formula <ph>&lt;br/&gt;</ph> &amp; name."
+        ]
+      }
+    }
+  ],
+  "notices": []
+}

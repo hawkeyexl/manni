@@ -1,0 +1,74 @@
+{
+  "terms": [
+    {
+      "id": "1",
+      "language": "en",
+      "line": 23,
+      "record": {
+        "label": "progressive lens",
+        "alt-labels": [
+          "PAL"
+        ],
+        "concept-entry": {
+          "tbx-elements": [
+            "<descripGrp>\n  <descrip type=\"Client\">Acme</descrip>\n</descripGrp>",
+            "<descripGrp>\n  <descrip type=\"definition\">A lens whose power changes gradually.</descrip>\n</descripGrp>",
+            "<transacGrp>\n  <transac type=\"origination\">sara</transac>\n  <date>2026-09-01T10:00:00Z</date>\n</transacGrp>"
+          ]
+        },
+        "designations": [
+          {
+            "term": "progressive lens",
+            "administrative-status": "none",
+            "tbx-elements": [
+              "<termNote type=\"xBool_Forbidden\">False</termNote>",
+              "<termNote type=\"xBool_CaseSensitive\">False</termNote>"
+            ]
+          },
+          {
+            "term": "PAL",
+            "administrative-status": "none",
+            "tbx-elements": [
+              "<termNote type=\"xBool_Forbidden\">False</termNote>"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "1",
+      "language": "de",
+      "line": 34,
+      "record": {
+        "label": "Gleitsichtglas",
+        "alt-labels": [
+          "Gleitglas"
+        ],
+        "concept-entry": {
+          "tbx-elements": [
+            "<descripGrp>\n  <descrip type=\"Client\">Acme</descrip>\n</descripGrp>",
+            "<descripGrp>\n  <descrip type=\"definition\">A lens whose power changes gradually.</descrip>\n</descripGrp>",
+            "<transacGrp>\n  <transac type=\"origination\">sara</transac>\n  <date>2026-09-01T10:00:00Z</date>\n</transacGrp>"
+          ]
+        },
+        "designations": [
+          {
+            "term": "Gleitsichtglas",
+            "administrative-status": "none",
+            "tbx-elements": [
+              "<termNote type=\"xBool_Forbidden\">False</termNote>"
+            ]
+          },
+          {
+            "term": "Gleitglas",
+            "administrative-status": "none",
+            "tbx-elements": [
+              "<termNote type=\"xBool_Forbidden\">True</termNote>"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "notices": []
+}

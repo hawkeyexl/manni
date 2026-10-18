@@ -1,0 +1,21 @@
+{
+  "terms": [
+    {
+      "id": "lens",
+      "language": "en",
+      "line": 13,
+      "record": {
+        "label": "lens",
+        "designations": [
+          {
+            "term": "lens",
+            "administrative-status": "none"
+          }
+        ]
+      }
+    }
+  ],
+  "notices": [
+    "no-term.tbx:18: skipped a TBX entry with no term."
+  ]
+}
