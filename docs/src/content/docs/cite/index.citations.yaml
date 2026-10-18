@@ -176,18 +176,18 @@ docs/src/content/docs/cite/index.mdx:
         integrity: sha256-0552d50a4df039ffe1807375dd327c659d8dbf2b9353fb2574d7287679454bc6
       source:
         file: src/cite/core/page.ts
-        lines: 406-417
+        lines: 400-411
         integrity: sha256-71ec1f6ed602c908f3c72c22dce660fb03692bc2e26acd4cbaad0b94a6774952
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: 942b3afa182cd1d62ab41682675de48ec825c9b8
     - id: entry-one-anchor
       claim:
         lines: 126-127
         integrity: sha256-d7540fb52257774ad5708ef32724fdc1b9b87a5e398613946c65210fd22afc1b
       source:
         file: src/cite/core/page.ts
-        lines: 471-483
+        lines: 465-477
         integrity: sha256-44e15517046895a8cacb23ce883f38f9b44106ce33befb919a46d63ef0305249
-        commit-sha: 0589010cca6fee14110a88dcf0c7e2c60fd0377e
+        commit-sha: 942b3afa182cd1d62ab41682675de48ec825c9b8
     - id: own-config-key
       claim:
         integrity: sha256-e96aa481717ef656198fcbc98f3e1348cee4a3ee66f87c8340d00bec782ff418
