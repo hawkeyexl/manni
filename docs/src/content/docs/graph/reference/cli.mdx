@@ -236,13 +236,13 @@ hashing rule citations use. A pin with none is checked where it points.
 
 ```console
 $ manni graph check
-notice: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — the answer to "How large may an upload be?" moved from lines 4-5 to 7-8, so update its lines. [docs/upload.md]
+notice: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — the answer to "How large may an upload be?" moved from lines 4-5 to 7-8, so manni graph fill --fields sample-questions re-pins it. [docs/upload.md]
 ```
 
 After a rewrite that drops the answer, the same pin reads:
 
 ```console
-warning: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — lines 4-5 no longer hold the answer to "How large may an upload be?" as pinned, so re-pin it and review it. [docs/upload.md]
+warning: https://example.com/graph/doc/docs/upload.md graph:sampleQuestion — lines 4-5 no longer hold the answer to "How large may an upload be?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it. [docs/upload.md]
 ```
 
 A question marked `reviewed: false` is a draft. Its findings report at
@@ -392,8 +392,9 @@ may carry.
 
 ## `graph fill`
 
-Proposes `graph` metadata fields from each page's content and writes the ones
-that clear a confidence gate. This is the one verb that reaches a model.
+Proposes `graph` metadata fields and sample questions from each page's content,
+and writes the ones that clear a confidence gate. This is the one verb that
+reaches a model.
 
 ```sh
 manni graph fill [paths...] [options]
@@ -428,9 +429,88 @@ The graph check vets each proposal against the whole configured corpus. A
 corpus page it cannot read is left out, and one warning lists it. A named page
 that cannot be read is that page's error.
 
-Every written value is recorded in the page's `meta-provenance`, naming the
-model and the fields. See
+Every written `graph` value is recorded in the page's `meta-provenance`, naming
+the model and the fields. See
 [Fill the vocabulary](/manni/graph/fill/).
+
+### Sample questions
+
+`sample-questions` is one of the fill fields, and it is in the default set. A
+config that lists `fill.fields` without it leaves questions alone. Questions
+run in a pass of their own beside the `graph` fields, in this order:
+
+1. **Re-pin.** An answer whose lines moved gets its new `lines`. A pin with
+   `lines` and no `integrity` gets one. This needs no model and spends no turn.
+2. **Pair.** For a question with no `answers`, the model quotes the passage that
+   answers it. `fill` finds the quote in the body and pins the whole lines it
+   touches. The quote itself is never written.
+3. **Re-pair.** An answer whose lines changed gets a new pin the same way.
+4. **Draft.** A page with fewer than `fill.questions.perPage` questions gets new
+   ones until it has that many.
+
+A new pin is written `reviewed: false`, and a paired question keeps its own
+standing. A drafted question is written `reviewed: false`, with `generated-by`
+and `confidence` when `fill.writeProvenance` is on. Questions never touch
+`meta-provenance`, and `--force` never rewrites or removes one. A page with
+enough questions, each one paired and none moved or changed, is `complete`.
+
+The gates run in this order. A draft that fails one is `dropped`, and an
+existing question that fails one is `not-paired` and kept.
+
+| Gate | Reason shown |
+|---|---|
+| The quote is not in the page. | `answer not on page` |
+| A draft repeats a question asked on any page or golden-set file. | `duplicate of <file>` |
+| A draft repeats over half its word pairs from its answer. | `copies its answer (5 of 6 word pairs)` |
+| The model finds no passage for an existing question. | `no passage answers it` |
+| The confidence is under `--confidence`. | `low confidence, not written` |
+
+A question request sends the whole body. A body over `--chunk-chars` is split
+at line boundaries, one request per piece. Drafts from every piece are pooled,
+and the most confident are kept. A golden-set file named in `questionFiles`
+gets the re-pin step only. On HTML and DITA, the questions sit inside the body
+that lines are counted from, so every pin is taken from the page as written.
+
+Pretty output adds one line per question under its page:
+
+```text
+filled    docs/retry.md (sample-questions)
+            re-pinned  "How do I resume a paused upload?"  lines 9 to 12
+            paired     "How do I retry a failed upload?"  lines 4 (0.77)
+            drafted    "How often does the client try again?"  lines 8 (0.90)
+            dropped    "Open the upload list and choose retry?"  copies its answer (6 of 6 word pairs)
+filled    questions.yaml (sample-questions)
+            re-pinned  "After rotating the key, how do I check nothing broke?"  docs/rotate.md lines 4 to 6
+```
+
+Under `-f json`, each result gains a `questions` list. Each entry holds
+`action`, `question`, and any of `file`, `lines`, `from`, `confidence` and
+`reason`. The `action` is `drafted`, `paired`, `re-paired`, `re-pinned`,
+`dropped` or `not-paired`.
+
+### Offline
+
+`--offline`, or `fill.offline` in config, sends nothing off this machine. It
+means what it means for `meta fill` and `term fill`.
+
+- `auto` resolves only to `llama-cpp`, and only to a model already downloaded.
+  Nothing is downloaded.
+- A configured hosted provider is set aside, and one notice says so:
+  `manni: --offline: using llama-cpp instead of "anthropic" from graph.provider.`
+- A hosted provider named with `--provider` is a usage error, **exit 2**.
+- With a downloaded model, the run is the same as under `--local`.
+- With none, only the re-pin step runs. Each page that needed a model is
+  `skipped` with the reason `offline`, and the run exits 0 with one warning.
+
+```text
+$ manni graph fill --fields sample-questions --offline
+manni: no model is available offline, so only answer pins were updated, and nothing was drafted or proposed; download one first with --local, or drop --offline.
+filled    docs/retry.md (sample-questions)
+            re-pinned  "How do I resume a paused upload?"  lines 9 to 12
+skipped   docs/limits.md (offline)
+```
+
+The warning is on stderr and the report on stdout.
 
 ### Arguments
 
@@ -451,16 +531,18 @@ model and the fields. See
 | `--allow-empty` | n/a | off | Zero matched files is an empty report and exit 0. |
 | `-f, --format` | `<pretty\|json>` | `pretty` | Output format. |
 | `--dry-run` | n/a | off | Report proposals without writing files. |
-| `--force` | n/a | off | Overwrite `graph` fields a human set. Without it, a field already present on the page is left alone. |
+| `--force` | n/a | off | Overwrite `graph` fields a human set. Without it, a field already present on the page is left alone. It never rewrites or removes a sample question. |
 | `--no-cache` | n/a | off | Bypass the proposal cache, so every page is asked again. |
 | `--no-validate-graph` | n/a | off | Skip the SHACL guardrail that vets each proposal against the derived graph before it is written. |
 | `--sections` | n/a | config `fill.sections`, else off | Also propose per-section metadata, not only page-level. |
 | `--max-turns` | `<n>` | config `fill.maxTurns`, else unbounded | Stop after this many inference calls. A whole number, at least 1. |
 | `--confidence` | `<n>` | config `fill.confidenceThreshold`, else `0.7` | Minimum model confidence, 0 to 1, for a field to be written. Outside that range is a usage error. |
-| `--fields` | `<list>` | config `fill.fields`, else every field | Which fields to propose, comma-separated and given once. An unknown name is a usage error naming the allowed set. |
+| `--fields` | `<list>` | config `fill.fields`, else every field | Which fields to propose, comma-separated and given once. `sample-questions` is one of them. An unknown name is a usage error naming the allowed set. |
+| `--chunk-chars` | `<n>` | config `fill.chunkChars`, else `12000` | The most characters of a page one question request sends. A whole number, at least 1. |
 | `--provider` | `<name>` | config `graph.provider`, then `providers.provider`, then `auto` | `auto`, `anthropic`, `openai`, `claude-cli`, or `llama-cpp`. An unknown name is **exit 2**. |
 | `--model` | `<model>` | config `graph.model`, else the provider's default | The model within the provider. It needs a named provider, from here or from config, because a model name does not say which provider owns it. |
 | `--local` | n/a | off | Run inference on this machine with `llama-cpp`, over `graph.provider` and the family's `providers.provider`. |
+| `--offline` | n/a | config `fill.offline`, else off | Send nothing off this machine. Only a local model already downloaded runs. See [Offline](#offline). |
 
 ## `graph query`
 

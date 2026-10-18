@@ -94,7 +94,7 @@ describe("a pinned answer", () => {
     expect(r.status, r.stdout + r.stderr).toBe(0);
     expect(findings(r.stdout)).toEqual([
       `warning: ${DOC}/docs/guide.html graph:sampleQuestion — "How many times does an upload retry by default?" does not find the section that answers it, § Retry limits, in the top 1 (it ranks 2; first is docs/guide.html § Retry a failed upload) [docs/guide.html]`,
-      `notice: ${DOC}/docs/guide.html graph:sampleQuestion — the answer to "How do I resume a paused upload?" moved from lines 16 to 19, so update its lines. [docs/guide.html]`,
+      `notice: ${DOC}/docs/guide.html graph:sampleQuestion — the answer to "How do I resume a paused upload?" moved from lines 16 to 19, so manni graph fill --fields sample-questions re-pins it. [docs/guide.html]`,
     ]);
   });
 });
@@ -105,7 +105,7 @@ describe("an answer that moved or changed", () => {
     const r = run(["check"], cwd);
     expect(r.status).toBe(0);
     expect(findings(r.stdout)).toEqual([
-      `notice: ${DOC}/docs/upload.md graph:sampleQuestion — the answer to "How large may an upload be?" moved from lines 4-5 to 7-8, so update its lines. [docs/upload.md]`,
+      `notice: ${DOC}/docs/upload.md graph:sampleQuestion — the answer to "How large may an upload be?" moved from lines 4-5 to 7-8, so manni graph fill --fields sample-questions re-pins it. [docs/upload.md]`,
     ]);
   });
 
@@ -123,7 +123,7 @@ describe("an answer that moved or changed", () => {
     const r = run(["check"], cwd);
     expect(r.status).toBe(0);
     expect(findings(r.stdout)).toEqual([
-      `warning: ${DOC}/docs/upload.md graph:sampleQuestion — lines 4-5 no longer hold the answer to "How large may an upload be?" as pinned, so re-pin it and review it. [docs/upload.md]`,
+      `warning: ${DOC}/docs/upload.md graph:sampleQuestion — lines 4-5 no longer hold the answer to "How large may an upload be?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it. [docs/upload.md]`,
     ]);
 
     const strict = run(["check"], built("changed-answer", severity("error")));
@@ -145,7 +145,7 @@ describe("review state", () => {
   it("reports a drafted question at notice, whatever the knob says", () => {
     const expected = [
       `notice: ${DOC}/docs/upload.md graph:sampleQuestion — "Which archive formats can I upload?" does not find this page in the top 1 (it ranks 2; first is docs/archive.md) (drafted, not reviewed) [docs/upload.md]`,
-      `notice: ${DOC}/docs/upload.md graph:sampleQuestion — lines 4 no longer hold the answer to "How large may an upload be?" as pinned, so re-pin it and review it. (drafted, not reviewed) [docs/upload.md]`,
+      `notice: ${DOC}/docs/upload.md graph:sampleQuestion — lines 4 no longer hold the answer to "How large may an upload be?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it. (drafted, not reviewed) [docs/upload.md]`,
     ];
     const r = run(["check"], built("drafted"));
     expect(r.status).toBe(0);

@@ -22,6 +22,8 @@ import {
   type ProvidersConfig,
 } from "../../shared/providers.js";
 import { errorMessage } from "../../shared/errors.js";
+// meta's budget, shared rather than copied, as `term fill` shares it.
+import { DEFAULT_CHUNK_CHARS } from "../../meta/commands/fill-prompt.js";
 import type { Severity } from "../../shared/severity.js";
 import { GraphError } from "../types.js";
 import { resolveBaseIri } from "./iri.js";
@@ -53,7 +55,12 @@ export type FillField =
   | "about-product-lifecycle"
   | "about-product-aspect"
   | "not-applicable-to"
-  | "not-about-product-aspect";
+  | "not-about-product-aspect"
+  // A page's own questions, beside the graph block (proposal 0086)
+  | "sample-questions";
+
+/** The fields `fill` writes into the `graph:` block: every fill field but questions. */
+export type GraphFillField = Exclude<FillField, "sample-questions">;
 
 /** Every fillable field, in a stable order — the default `fill.fields`. */
 export const ALL_FILL_FIELDS: FillField[] = [
@@ -69,6 +76,7 @@ export const ALL_FILL_FIELDS: FillField[] = [
   "about-product-aspect",
   "not-applicable-to",
   "not-about-product-aspect",
+  "sample-questions",
 ];
 
 /** Maps published-site routes back to source files. */
@@ -180,6 +188,14 @@ export interface GraphConfig {
     validateGraph: boolean;
     /** Also propose per-section metadata (ADR 01032). Opt-in: more output. */
     sections: boolean;
+    /** The largest body piece one question request sends (proposal 0086). */
+    chunkChars: number;
+    /** Send nothing off this machine: a downloaded local model, or none. */
+    offline: boolean;
+    questions: {
+      /** Draft until a page has this many questions, reviewed or drafted. */
+      perPage: number;
+    };
   };
   stats: {
     /**
@@ -342,6 +358,9 @@ interface RawGraphConfig {
     validateGraph?: boolean;
     fields?: FillField[];
     sections?: boolean;
+    chunkChars?: number;
+    offline?: boolean;
+    questions?: { perPage?: number };
   };
   embed?: {
     model?: string;
@@ -552,6 +571,9 @@ export function parseConfigSection(
       writeProvenance: r.fill?.writeProvenance ?? true,
       validateGraph: r.fill?.validateGraph ?? true,
       sections: r.fill?.sections ?? false,
+      chunkChars: r.fill?.chunkChars ?? DEFAULT_CHUNK_CHARS,
+      offline: r.fill?.offline ?? false,
+      questions: { perPage: r.fill?.questions?.perPage ?? 3 },
     },
     embed: {
       model: r.embed?.model ?? DEFAULT_EMBED_MODEL,

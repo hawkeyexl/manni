@@ -47,7 +47,7 @@ the proposals, decide the bar, then run it again without `--dry-run`.
 | `proposed` | The same, under `--dry-run`: nothing was written. |
 | `complete` | The page already carries everything in scope. Not asked. |
 | `no-op` | The model was asked and proposed nothing new. |
-| `skipped` | Not processed, with the reason. It reads `turn budget` when the budget ran out. |
+| `skipped` | Not processed, with the reason. It reads `turn budget` when the budget ran out, and `offline` when no local model was there to ask. |
 | `error` | The page could not be filled, with why. |
 
 A line can carry annotations after the fields:
@@ -85,9 +85,9 @@ $ manni graph fill --dry-run --fields label,concepts,type docs/guides
 
 The full list is `label`, `alt-labels`, `broader`, `narrower`,
 `related-concepts`, `concepts`, `type`, `applies-to`,
-`about-product-lifecycle`, `about-product-aspect`, `not-applicable-to` and
-`not-about-product-aspect`. An unknown name is a usage error, with the allowed
-set in the message.
+`about-product-lifecycle`, `about-product-aspect`, `not-applicable-to`,
+`not-about-product-aspect` and `sample-questions`. An unknown name is a usage
+error, with the allowed set in the message.
 
 Narrowing is usually the right first move. A pass that proposes only `label`
 and `concepts` produces a review you can actually do. The SKOS hierarchy keys
@@ -101,6 +101,31 @@ is one of the three hand-curated pointers. The run says so:
 ```console
 manni: Section metadata was written but is NOT recorded in meta-provenance: /graph/sections is one of the three hand-curated pointers graph refuses, with /graph/revision-of and /graph/derived-from, so recording it would make `manni graph check` report an error. Review section values by hand — the review queue will not list them.
 ```
+
+## Sample questions
+
+`sample-questions` drafts the questions readers ask of a page, and pins each
+one to the lines that answer it. It runs beside the `graph` fields:
+
+```console
+$ manni graph fill --dry-run --fields sample-questions docs/guides
+proposed  docs/guides/retry.md (sample-questions) — dry run, not written
+            re-pinned  "How do I resume a paused upload?"  lines 9 to 12
+            paired     "How do I retry a failed upload?"  lines 4 (0.77)
+            drafted    "How often does the client try again?"  lines 8 (0.90)
+```
+
+An answer whose lines moved is re-pinned with no model and no turn. A question
+with no answer is paired with the passage the model quotes, and a page with
+fewer than `fill.questions.perPage` questions gets drafts. A draft that is not
+on the page, repeats a question asked elsewhere, or copies its answer's words
+is dropped.
+
+Everything `fill` adds here is written `reviewed: false`, so `graph check`
+reports it at notice until someone confirms it. Read the diff. Set
+`reviewed: true` on a question or a pin you agree with, or delete the question.
+The [CLI reference](/manni/graph/reference/cli/#sample-questions) lists every
+gate and output line.
 
 ## The budget is turns
 
@@ -138,6 +163,11 @@ $ manni graph fill --dry-run --local docs/guides
 `--local` runs `llama-cpp` on this machine, over everything else. It is the
 answer when the pages must not leave the runner, and it is the whole answer.
 There is no partial mode where some pages go out.
+
+`--offline`, or `fill.offline: true`, goes one step further. Nothing leaves
+the machine, not even a model download. A local model already on disk runs as
+under `--local`. With none, `fill` re-pins moved answers, skips each page that
+needed a model as `offline`, and exits 0 with one warning.
 
 Unset everywhere, the provider is `auto`, detected exactly as `manni meta fill`
 detects: an Anthropic key, then an OpenAI key, then the Claude CLI, then a

@@ -1,0 +1,16 @@
+# The fill-draft fixture (proposal 0086). retry.md has no questions, so fill
+# drafts up to perPage. limits.md holds a question a draft can duplicate.
+collections:
+  - name: questions
+    paths:
+      - "docs/**/*.*"
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  build:
+    derive: [frontmatter, sections]
+  fill:
+    fields: [sample-questions]
+    questions:
+      perPage: 3

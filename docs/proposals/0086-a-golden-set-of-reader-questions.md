@@ -27,7 +27,8 @@
   `src/shared/pin.ts`, `src/graph/core/` (`questions.ts` new, `derive.ts`,
   `analyze.ts`, `config-schema.json`, `config.ts`, `coverage.ts`),
   `src/graph/runtime/resolve.ts`, `src/graph/commands/` (`questions.ts`,
-  `check.ts`, `stats.ts`, `fill.ts`, `export.ts`), `src/graph/llm/prompt.ts`,
+  `check.ts`, `stats.ts`, `fill.ts`, `fill-questions.ts` new, `export.ts`),
+  `src/graph/llm/` (`prompt.ts`, `cache.ts`, `provider.ts`),
   `src/graph/cli.ts`, `docs/src/content/docs/`, `test/`
 - **Verdict:** A sample question can pin the lines that answer it, with cite's
   pin, so it fails when the answer changes. A golden-set file holds questions
@@ -377,6 +378,7 @@ graph:
     confidenceThreshold: 0.7
     writeProvenance: true
     chunkChars: 12000      # new; integer >= 1
+    offline: false         # new; boolean
     questions:
       perPage: 3           # new; integer >= 1
 ```
@@ -385,6 +387,17 @@ graph:
 and bounds. Pretty output adds one line per question under its page. JSON
 gains a `questions` list per result, each with an `action` of `drafted`,
 `paired`, `re-paired`, `re-pinned`, `dropped` or `not-paired`.
+
+`--offline` overrides `graph.fill.offline`. It means no egress, as it does for
+`meta fill` and `term fill`, and it reuses their rule and their messages.
+`auto` resolves only to a local model already downloaded, and a hosted
+`--provider` beside it is a usage error. With no local model, only the re-pins
+run. Each page that needed a model is `skipped` as `offline`, and the run
+exits 0 with one warning.
+
+A changed answer in a golden-set file is not re-paired, because `fill` only
+moves that file's lines. Its `check` message therefore keeps `…so re-pin it
+and review it.`, while a page's changed answer names `graph fill`.
 
 ### 5. `graph export questions`
 

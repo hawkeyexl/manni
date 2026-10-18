@@ -42,6 +42,7 @@ import type { Severity } from "../../shared/severity.js";
 import { warn } from "../../shared/warn.js";
 import {
   formatOf,
+  type DocFormat,
   isTreeFormat,
   metadataOf,
   mintTreeSections,
@@ -246,12 +247,25 @@ function sectionSpans(
   return out;
 }
 
+/**
+ * A page's body as answer pins count it: the file line of body line 1, and
+ * the body's lines, normalized as cite hashes them. HTML and XML carry their
+ * metadata inside the body, so body line 1 is file line 1, as cite counts it.
+ */
+export function bodyOf(content: string, format: DocFormat): { bodyLine: number; body: string[] } {
+  const bodyLine =
+    format === "html" || format === "xml"
+      ? 1
+      : bodyLineOf(content, locateFrontmatter(content)?.closeEnd ?? 0);
+  return { bodyLine, body: splitLines(content).slice(bodyLine - 1) };
+}
+
 /** Where a pin's lines are now, judged against the page as it reads today. */
-type Freshness =
+export type Freshness =
   | { state: "current" | "moved" | "ambiguous"; ranges: PageLines[] }
   | { state: "changed" };
 
-function freshness(body: readonly string[], pin: AnswerPin): Freshness {
+export function freshness(body: readonly string[], pin: AnswerPin): Freshness {
   const { lines, integrity } = pin;
   if (integrity === undefined) {
     return lines.end <= body.length ? { state: "current", ranges: [lines] } : { state: "changed" };
@@ -265,7 +279,7 @@ function freshness(body: readonly string[], pin: AnswerPin): Freshness {
 }
 
 /** `lines 4 and 8 both match`, or `lines 4, 8 and 12 all match`. */
-function matchList(ranges: readonly PageLines[]): string {
+export function matchList(ranges: readonly PageLines[]): string {
   const spelled = ranges.map(spellLines);
   const last = spelled.pop() ?? "";
   const both = spelled.length === 1 ? "both" : "all";
@@ -323,20 +337,14 @@ async function readPages(
     const known = records.get(doc);
     if (known) return known;
     const content = contents.get(path) ?? "";
-    const format = formatOf(path);
-    // HTML and XML carry their metadata inside the body, so body line 1 is
-    // file line 1, as cite counts it.
-    const bodyLine =
-      format === "html" || format === "xml"
-        ? 1
-        : bodyLineOf(content, locateFrontmatter(content)?.closeEnd ?? 0);
+    const { bodyLine, body } = bodyOf(content, formatOf(path));
     const tag = graph.literal(doc, LANGUAGE);
     const page: Page = {
       doc,
       path,
       language: tag === undefined ? UNDETERMINED : canonicalLanguageTag(tag),
       bodyLine,
-      body: splitLines(content).slice(bodyLine - 1),
+      body,
       sections: sectionSpans(graph, doc, path, content, sectionsOf.get(doc) ?? []),
       questions,
     };
@@ -596,10 +604,16 @@ export async function askSampleQuestions(
     const fresh = freshness(page.body, pin);
     if (fresh.state === "changed") {
       summary.answers.changed += 1;
+      // `fill` re-pairs a page's own question. A golden-set file's is a
+      // person's to re-pin, because fill only moves its lines.
       const of = file === undefined ? "" : ` of ${file}`;
+      const fix =
+        file === undefined
+          ? "re-pair it with manni graph fill --fields sample-questions and review it"
+          : "re-pin it and review it";
       report(
         "knob",
-        `lines ${spellLines(pin.lines)}${of} no longer hold the answer to "${question}" as pinned, so re-pin it and review it.`,
+        `lines ${spellLines(pin.lines)}${of} no longer hold the answer to "${question}" as pinned, so ${fix}.`,
         draft,
       );
       return { position: 0 };
@@ -611,7 +625,7 @@ export async function askSampleQuestions(
     if (fresh.state === "moved" && range) {
       report(
         "notice",
-        `the answer to "${question}"${inFile} moved from lines ${spellLines(pin.lines)} to ${spellLines(range)}, so update its lines.`,
+        `the answer to "${question}"${inFile} moved from lines ${spellLines(pin.lines)} to ${spellLines(range)}, so manni graph fill --fields sample-questions re-pins it.`,
         draft,
       );
     } else if (fresh.state === "ambiguous") {

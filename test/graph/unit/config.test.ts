@@ -55,8 +55,13 @@ describe("parseConfig", () => {
       "about-product-aspect",
       "not-applicable-to",
       "not-about-product-aspect",
+      // Proposal 0086: questions join the default, beside the graph block.
+      "sample-questions",
     ]);
     expect(c.fill.confidenceThreshold).toBe(0.7);
+    expect(c.fill.chunkChars).toBe(12000);
+    expect(c.fill.offline).toBe(false);
+    expect(c.fill.questions).toEqual({ perPage: 3 });
     // Local embeddings default to granite, configurable (ADR 01020).
     expect(c.embed.model).toContain("granite-embedding-small-english-r2");
     expect(c.embed.dtype).toBe("q8");
@@ -378,6 +383,29 @@ describe("parseConfig", () => {
     expect(() =>
       parseConfig("fill:\n  maxTurns: 0\n", "/tmp/manni.config.yaml"),
     ).toThrow(GraphError);
+  });
+
+  it("parses fill.chunkChars, fill.offline and fill.questions.perPage", () => {
+    const c = parseConfig(
+      "fill:\n  chunkChars: 6000\n  offline: true\n  questions:\n    perPage: 5\n  fields: [sample-questions]\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.fill.chunkChars).toBe(6000);
+    expect(c.fill.offline).toBe(true);
+    expect(c.fill.questions).toEqual({ perPage: 5 });
+    expect(c.fill.fields).toEqual(["sample-questions"]);
+  });
+
+  it("rejects a bad fill.chunkChars, fill.offline or fill.questions", () => {
+    for (const body of [
+      "fill:\n  chunkChars: 0\n",
+      "fill:\n  chunkChars: 1.5\n",
+      "fill:\n  offline: yes please\n",
+      "fill:\n  questions:\n    perPage: 0\n",
+      "fill:\n  questions:\n    perpage: 3\n",
+    ]) {
+      expect(() => parseConfig(body, "/tmp/manni.config.yaml"), body).toThrow(GraphError);
+    }
   });
 
   it("defaults fill.sections to off", () => {
