@@ -89,6 +89,19 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "questions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "severity": {
+              "enum": ["notice", "warning", "error", "off"]
+            }
+          }
         }
       }
     },

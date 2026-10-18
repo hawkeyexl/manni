@@ -1,0 +1,22 @@
+# The sample-questions fixture (proposal 0085 §7). Each page asks one question
+# of the corpus, and graph check reports the pages that question does not
+# find. `top: 1` keeps the corpus small: a page must be the first one found.
+collections:
+  - name: sample-questions
+    paths:
+      - "docs/**/*.md"
+
+# hidden.md's question is marked out of the graph, so check never asks it.
+meta:
+  overrides:
+    - files: "docs/hidden.md"
+      schemas: ["./no-questions-in-the-graph.schema.json"]
+
+graph:
+  baseIri: https://example.com/graph/
+  out: graph.ttl
+  build:
+    derive: [frontmatter, sections]
+  check:
+    questions:
+      top: 1

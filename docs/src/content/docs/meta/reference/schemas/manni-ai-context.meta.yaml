@@ -25,10 +25,16 @@ docs/src/content/docs/meta/reference/schemas/manni-ai-context.mdx:
       lines: 22-23
       integrity: sha256-e35de401b3128816c9416d0bbf980ca3a437ccbab4b8108139bbec2b40458165
     - generated-by: Claude Opus 5.5
-      lines: 29-185
-      integrity: sha256-b362a91cafbe122f8c503221e294b37c30c529567fb5e44d62d86daa17c34d62
+      lines: 29-37
+      integrity: sha256-1a806e2984a88c1a46396f6d50d9bb1b30fdb10035767698b65a447ff29ff0c9
     - generated-by: Claude Opus 5.5
-      lines: 198-223
+      lines: 40-163
+      integrity: sha256-b57c07f1d8a8c54cb0bbb731accc344cbf164e7f55d1bc97640e03189728e500
+    - generated-by: Claude Opus 5.5
+      lines: 169-186
+      integrity: sha256-54b49b6e0ad5f1665d9bd67c23b3df4f5c229a98ca71423ec0b51afc6191ccd1
+    - generated-by: Claude Opus 5.5
+      lines: 199-224
       integrity: sha256-f4bb0d5d393f5a22a4fc87296627f6c759ba9c6249091414452046a28e476c9b
   owner:
     - "@hawkeyexl"

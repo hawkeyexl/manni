@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/sample-questions/no-questions-in-the-graph.json",
+  "title": "Keep a page's sample questions out of the graph",
+  "type": "object",
+  "properties": {
+    "sample-questions": {
+      "x-manni-graph-output": false
+    }
+  }
+}

@@ -508,6 +508,18 @@ export function deriveGraph(docs: DocModel[], options: DeriveOptions): Quad[] {
       // indexes and miss a `--lang` filter typed the other way.
       if (pageLanguage) add(docIri, `${NS.dcterms}language`, lit(pageLanguage));
 
+      // ai-context's questions this page should be found for (proposal 0085
+      // §7), in the page's language so `check` asks each in its own index.
+      for (const question of asStringArray(fmValue(fm, ["sample-questions"]))) {
+        add(
+          docIri,
+          `${NS.graph}sampleQuestion`,
+          pageLanguage
+            ? { kind: "literal", value: question, language: pageLanguage }
+            : lit(question),
+        );
+      }
+
       // Page-level only: the `graph` block is closed and carries no
       // translation key, so this fact lives at the altitude `lang` already
       // does (ADR 01023, ADR 01037). Both directions are materialized, so

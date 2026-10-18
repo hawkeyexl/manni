@@ -194,6 +194,21 @@ The bundled shapes are **closed**, so a predicate the shapes have not learned
 fails here. That is deliberate: a change to what the graph contains is not done
 until the shapes say so.
 
+`graph check` also asks each page's `sample-questions` through the retrieval
+`graph search` uses. A page outside the top `check.questions.top` results for
+its own question is a finding at `check.questions.severity`, `warning` by
+default. It names the question, the page's rank, and the page found first.
+
+```console
+$ manni graph check
+warning: https://example.com/graph/doc/docs/limits.md graph:sampleQuestion — "How do I retry a failed upload?" does not find this page in the top 1 (it ranks 2; first is docs/retry.md) [docs/limits.md]
+```
+
+A question that finds the page nowhere says `it is not found` in place of the
+rank. The check measures whether a reader finds the page, not whether the page
+answers. [Configuration](/manni/graph/reference/configuration/#check) sets the
+cutoff and the severity.
+
 ### Options
 
 | Option | Argument | Default | Description |

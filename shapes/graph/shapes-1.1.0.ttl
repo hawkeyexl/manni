@@ -23,6 +23,8 @@
 #     untagged value", so graph's check core reports that one.
 #   - The shapes namespace moves with the version: dsh: is now
 #     https://hawkeyexl.github.io/manni/graph/shapes/1.1.0#.
+#   - Document learns graph:sampleQuestion (proposal 0085 §7), a page's
+#     `sample-questions`, each a string or a language-tagged string.
 #
 # 1.0.0 was the first file the three-segment convention in CLAUDE.md bound. It
 # was MAJOR, because a graph that used to validate could fail on the language
@@ -122,6 +124,7 @@ dsh:DocumentShape
     dsh:Document-brokenSectionRef ,
     dsh:Document-image ,
     dsh:Document-codeLanguage ,
+    dsh:Document-sampleQuestion ,
     dsh:Document-topicType ,
     dsh:Document-appliesToVariant ,
     dsh:Document-softwareLifecyclePhase ,
@@ -257,6 +260,12 @@ dsh:Document-codeLanguage
   a sh:PropertyShape ;
   sh:path graph:codeLanguage ;
   sh:datatype xsd:string .
+
+# Tagged with the page's language when it declares one, so either datatype.
+dsh:Document-sampleQuestion
+  a sh:PropertyShape ;
+  sh:path graph:sampleQuestion ;
+  sh:or ( [ sh:datatype xsd:string ] [ sh:datatype rdf:langString ] ) .
 
 # iiRDS Core topic type: exactly the six published Generic* instances.
 dsh:Document-topicType

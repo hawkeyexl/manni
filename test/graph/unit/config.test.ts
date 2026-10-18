@@ -236,6 +236,37 @@ describe("parseConfig", () => {
     expect(c.fill.validateGraph).toBe(false);
   });
 
+  it("defaults check.questions to the top 5, at warning", () => {
+    const c = parseConfig("", "/tmp/manni.config.yaml");
+    expect(c.check.questions).toEqual({ top: 5, severity: "warning" });
+  });
+
+  it("parses check.questions overrides", () => {
+    const c = parseConfig(
+      "check:\n  questions:\n    top: 1\n    severity: off\n",
+      "/tmp/manni.config.yaml",
+    );
+    expect(c.check.questions).toEqual({ top: 1, severity: "off" });
+  });
+
+  it("rejects a check.questions top below 1, a bad severity and an unknown key", () => {
+    for (const body of [
+      "top: 0",
+      "top: 2.5",
+      "severity: fatal",
+      "bogus: true",
+    ]) {
+      expect(
+        () =>
+          parseConfig(
+            `check:\n  questions:\n    ${body}\n`,
+            "/tmp/manni.config.yaml",
+          ),
+        body,
+      ).toThrow(GraphError);
+    }
+  });
+
   it("rejects unknown check keys", () => {
     expect(() =>
       parseConfig(
