@@ -1427,7 +1427,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/schema-registry.ts
         lines: 1016-1024
         integrity: sha256-0fdd2bc93eb0acbc84d62eaaf5f1c7ec2795441da58714327642a7d7ee77c36c
-        commit-sha: f5ff36e35a0bf47675bcceefbf1f193ae4585724
+        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: offline-flag-is-per-run
       claim:
         integrity: sha256-50cc1fbd993bc5e2a23e9cdb9373a16358550f893478fc626477be551f7abcc7
@@ -1945,7 +1945,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/derive/git.ts
         lines: 997-1001
         integrity: sha256-2995af5177c031a75372b407718d5ea19a4c788f50b112b2cb86102d582af5e2
-        commit-sha: 27e6ca586e3a05b2ab4d43066941833ff75bbe9c
+        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: last-updated-derived-from-the-newest-body-change
       claim:
         lines: 2227-2234
@@ -1954,7 +1954,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/derive/git.ts
         lines: 1010-1015
         integrity: sha256-d6b036393c62868ef39b252948062ac3b1a77abaf199b3d621af5a7fd74af860
-        commit-sha: 27e6ca586e3a05b2ab4d43066941833ff75bbe9c
+        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: authors-derived-from-body-changing-commits
       claim:
         lines: 2240
@@ -1963,7 +1963,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/derive/git.ts
         lines: 1028-1040
         integrity: sha256-6663a76dd0c88c6d1603c22627fef7a9fdc17e24889b79e063e0e44d859c4022
-        commit-sha: 27e6ca586e3a05b2ab4d43066941833ff75bbe9c
+        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: owner-derived-from-codeowners
       claim:
         lines: 2241
@@ -2223,7 +2223,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/derive/git.ts
         lines: 997-1001
         integrity: sha256-2995af5177c031a75372b407718d5ea19a4c788f50b112b2cb86102d582af5e2
-        commit-sha: 27e6ca586e3a05b2ab4d43066941833ff75bbe9c
+        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: body-is-everything-outside-the-metadata-block
       claim:
         lines: 2449-2453
@@ -2232,7 +2232,7 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/derive/git.ts
         lines: 190-195
         integrity: sha256-087e1ad1a9b984bebaadbcf6e87b585e4df739cd1150053f1cb6c9a843996bcc
-        commit-sha: 27e6ca586e3a05b2ab4d43066941833ff75bbe9c
+        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
     - id: stale-is-a-finding-unknown-is-not
       claim:
         lines: 2454-2459
@@ -2909,4 +2909,4 @@ docs/src/content/docs/meta/reference/configuration.mdx:
         file: src/meta/core/derive/git.ts
         lines: 278-285
         integrity: sha256-92ce81b300e9a574cd9424343dd3001a3ab55c175f85154810416157e0d62599
-        commit-sha: 27e6ca586e3a05b2ab4d43066941833ff75bbe9c
+        commit-sha: df75e58da9c2ffb383db63ef9e4f7aeb6c30d0ad
