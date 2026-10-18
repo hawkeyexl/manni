@@ -82,7 +82,7 @@ describe("sample questions", () => {
     // check reads questions from the page sources (proposal 0087).
     expect(lines).toContain(HIDDEN);
     // Two pages ask each question, so the second copy of each is reported
-    // (proposal 0086 § 7b).
+    // (proposal 0087 § 7b).
     expect(lines).toContain(
       'warning: https://example.com/graph/doc/docs/ledger.md graph:sampleQuestion — "Retry uploads?" is also asked on docs/hidden.md, so keep it where it is answered. [docs/ledger.md]',
     );

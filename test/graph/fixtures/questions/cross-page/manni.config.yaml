@@ -1,4 +1,4 @@
-# The cross-page fixture (proposal 0086). One golden-set question needs two
+# The cross-page fixture (proposal 0087). One golden-set question needs two
 # pages, and each answer must be found. `top: 1` keeps the corpus small.
 collections:
   - name: questions

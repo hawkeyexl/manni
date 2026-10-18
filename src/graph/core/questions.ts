@@ -74,7 +74,7 @@ export interface FileAnswerPin extends AnswerPin {
   file: string;
 }
 
-/** One question in a golden-set file (proposal 0086). */
+/** One question in a golden-set file (proposal 0087). */
 export interface FileQuestion {
   question: string;
   /** Empty for a known gap, a question the docs don't answer. */

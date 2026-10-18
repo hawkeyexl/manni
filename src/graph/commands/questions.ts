@@ -389,7 +389,7 @@ export interface FoundCount {
 }
 
 /**
- * The health of the whole question set (proposal 0086 § 7b): what `check`
+ * The health of the whole question set (proposal 0087 § 7b): what `check`
  * prints after its findings, and the `questions` key of its JSON report.
  */
 export interface QuestionSummary {

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "manni:graph:questions",
   "title": "manni graph golden-set file",
-  "description": "A list of reader questions that span pages or that the docs don't answer (proposal 0086). Each item is a page sample question's object form, plus `answers[].file` and `language`. `graph.questionFiles` names the files, and `manni graph check` asks their questions.",
+  "description": "A list of reader questions that span pages or that the docs don't answer (proposal 0087). Each item is a page sample question's object form, plus `answers[].file` and `language`. `graph.questionFiles` names the files, and `manni graph check` asks their questions.",
   "type": "array",
   "items": {
     "type": "object",
