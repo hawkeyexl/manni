@@ -382,7 +382,7 @@ docs/src/content/docs/term/set-up/move-and-hand-off.mdx:
         file: src/term/cli.ts
         lines: 287
         integrity: sha256-6c93d7529351c9410b26d3c459bb936649605aaf66cfb3cd6e5705925fef1d56
-        commit-sha: d5196768f93c1f29d588075437a8333316f51b76
+        commit-sha: 01522e928029b17df104f3d02ee29fce500e166f
     - id: render-row-text-constructs
       claim:
         lines: 257
