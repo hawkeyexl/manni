@@ -1,0 +1,38 @@
+diff --git a/docs/limits.md b/docs/limits.md
+index 9ceff21..7d1043d 100644
+--- a/docs/limits.md
++++ b/docs/limits.md
+@@ -1,11 +1,12 @@
+ ---
+ title: Upload limits
+ description: How large an upload may be.
+-concepts: [Upload, Quota]
++concepts: [ Upload, Quota ]
+ sample-questions:
+   - question: How large can an upload be?
+     answers:
+       - lines: 2
++        integrity: sha256-2d4ea765c87e6f7c86e2d163d143e060e09ef6c1172474d1b990116d6ca14075
+ ---
+ 
+ Each upload may be one gigabyte.
+diff --git a/docs/retry.md b/docs/retry.md
+index f8445fe..9ce089d 100644
+--- a/docs/retry.md
++++ b/docs/retry.md
+@@ -1,8 +1,13 @@
+ ---
+ title: Retry a failed upload
+ description: Send a failed upload again.
+-concepts: [Upload, Retry]
+-sample-questions: How do I retry a failed upload?
++concepts: [ Upload, Retry ]
++sample-questions:
++  - question: How do I retry a failed upload?
++    answers:
++      - lines: 2
++        integrity: sha256-5de3fca8338e5d6dabe6c296a09493b6b5a5dc355f2622b910c2eaa438ee3268
++        reviewed: false
+ ---
+ 
+ Open the upload list and choose retry.

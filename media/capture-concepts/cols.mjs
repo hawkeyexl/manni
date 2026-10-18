@@ -11,7 +11,8 @@ const beats = {
   b1: ["$ grep concepts: docs/*.md", ...rd("grep-concepts.txt"), "$ manni term check; echo $?", ...rd("check-before.ans"), ex("check-before.exit"), "$ "],
   b2: ["$ manni term fill --offline", ...rd("fill.ans"), "$ "],
   b3: ["$ manni term check; echo $?", ...rd("check-after.ans"), ex("check-after.exit"), "$ "],
-  b4: ["$ manni graph build", ...rd("build.ans"), "$ manni graph check; echo $?", ...rd("graph-check.ans"), ex("graph-check.exit"), "$ "],
+  b4: ["$ manni graph build", ...rd("build.ans"), "$ time manni graph fill docs/*.md --fields sample-questions --offline", ...rd("graph-fill.ans"), "$ "],
+  b5: ["$ sed -i 's/one gigabyte/two gigabytes/' docs/limits.md", "$ manni graph check; echo $?", ...rd("graph-check.ans"), ex("graph-check.exit"), "$ "],
 };
 const all = Object.values(beats).flat();
 const longest = all.reduce((a, l) => (l.length > a.length ? l : a), "");

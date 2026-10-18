@@ -14,12 +14,14 @@ const out = {
   fill: read("fill.ans"),
   "check after": read("check-after.ans"),
   build: read("build.ans"),
+  "graph fill": read("graph-fill.ans"),
   "graph check": read("graph-check.ans"),
   exits: {
     "check before": read("check-before.exit").trim(),
     fill: read("fill.exit").trim(),
     "check after": read("check-after.exit").trim(),
     build: read("build.exit").trim(),
+    "graph fill": read("graph-fill.exit").trim(),
     "graph check": read("graph-check.exit").trim(),
   },
 };
