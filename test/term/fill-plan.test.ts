@@ -1,7 +1,7 @@
 /**
  * What `term fill` plans before a model is asked: the concepts pages name and
  * the termbase lacks, the out directory and the page format, and how crawl
- * findings merge (proposal 0085 § 3).
+ * findings merge (proposal 0086 § 3).
  */
 import { describe, expect, it } from "vitest";
 import {

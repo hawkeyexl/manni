@@ -1,5 +1,5 @@
 /**
- * `manni term fill` (proposal 0085 § 3): a term page for each concept pages
+ * `manni term fill` (proposal 0086 § 3): a term page for each concept pages
  * name and the termbase lacks, and a definition for each entry that has none.
  * A value a person wrote is never overwritten, and an existing file is never
  * replaced.

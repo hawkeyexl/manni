@@ -577,7 +577,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
       },
     };
   }
-  // The termbase, read once and only when a prompt names concepts (0085).
+  // The termbase, read once and only when a prompt names concepts (0086).
   let terms: Promise<TermIndex | undefined> | undefined;
   const termsOnce = (): Promise<TermIndex | undefined> =>
     (terms ??= (async () => {
