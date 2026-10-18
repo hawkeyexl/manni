@@ -1,4 +1,4 @@
-# The fill-html fixture (proposal 0086). HTML carries its metadata inside the
+# The fill-html fixture (proposal 0087). HTML carries its metadata inside the
 # body lines are counted from, so writing the first question adds a line
 # above every answer. fill pins against the page as written.
 collections:

@@ -1,5 +1,5 @@
 /**
- * `graph export questions` (proposal 0086 § 7d), end to end through the built
+ * `graph export questions` (proposal 0087 § 7d), end to end through the built
  * CLI. It writes one JSON line per question, from pages and golden-set files,
  * with each answer's text rendered from its pin as the page reads now.
  */

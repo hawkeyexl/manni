@@ -1,4 +1,4 @@
-# The drafted-pin fixture (proposal 0086). `top: 1` keeps the corpus small: the
+# The drafted-pin fixture (proposal 0087). `top: 1` keeps the corpus small: the
 # node that answers a question must be the first one found.
 collections:
   - name: questions

@@ -1,4 +1,4 @@
-# 0086: A golden set of reader questions, pinned to their answers
+# 0087: A golden set of reader questions, pinned to their answers
 
 - **Status:** Proposed
 - **Serves:** Three groups of readers.
@@ -151,7 +151,7 @@ sample-questions:
 ### 2. What `graph check` does with questions
 
 `check` reads questions from the page sources, not from the graph. This is the
-one mechanism of 0085 § 7 that 0086 supersedes. Pins and review state never
+one mechanism of 0085 § 7 that 0087 supersedes. Pins and review state never
 reach the graph, so the source is the only place they live.
 
 - **Reading.** `check` resolves each page's source the way `graph export
@@ -443,4 +443,4 @@ The user took these on 2026-10-18.
 - Drafted questions count at notice until reviewed. Review state is a field,
   `reviewed`, not the removal of a `meta-provenance` entry.
 - `graph export questions` ships, in its own PR.
-- These phases go into the 0085 stack before its docs PR, as proposal 0086.
+- These phases go into the 0085 stack before its docs PR, as proposal 0087.

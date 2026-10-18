@@ -73,7 +73,7 @@ export interface StatsReport {
    */
   localization: LocalizationReport;
   /**
-   * Concept IRIs no question reaches, sorted (proposal 0086). A concept has a
+   * Concept IRIs no question reaches, sorted (proposal 0087). A concept has a
    * question when a page whose primary topic or subjects name it carries a
    * `graph:sampleQuestion`. Reported, never gated, like orphans.
    */
@@ -461,7 +461,7 @@ export function renderStats(
     lines.push(`  no language: ${report.localization.unlabelled}`);
   }
 
-  // Reported, never gated, like orphans (proposal 0086).
+  // Reported, never gated, like orphans (proposal 0087).
   const unasked = report.conceptsWithoutQuestions;
   lines.push("", `Concepts with no question (${String(unasked.length)}):`);
   for (const c of unasked) lines.push(`  ${report.conceptLabels[c] ?? compactIri(c)}`);

@@ -17,7 +17,7 @@ import type { DocModel } from "../types.js";
  * JSON Pointer. A cache entry written before that replays a proposal shaped
  * for the old vocabulary, so every key misses once and is rewritten.
  *
- * 5 adds the question request (proposal 0086): a second prompt and schema,
+ * 5 adds the question request (proposal 0087): a second prompt and schema,
  * which draft sample questions and quote the passages that answer them.
  */
 export const PROMPT_VERSION = 5;
@@ -314,7 +314,7 @@ export function buildUserPrompt(
 }
 
 /**
- * The question request (proposal 0086): pair existing questions with the
+ * The question request (proposal 0087): pair existing questions with the
  * passage that answers each, and draft new ones with theirs. Quotes come back
  * verbatim, and the tool pins the lines they touch; a quote is never written.
  */

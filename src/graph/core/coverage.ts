@@ -24,7 +24,7 @@ export interface CoverageField {
   /**
    * Gated only when the per-field `coverageThreshold` map names it. A uniform
    * threshold, from config or `--coverage-threshold`, leaves it ungated, so a
-   * gate that passed before the row existed keeps passing (proposal 0086).
+   * gate that passed before the row existed keeps passing (proposal 0087).
    */
   namedOnly?: true;
 }
@@ -58,7 +58,7 @@ export const COVERAGE_FIELDS: readonly CoverageField[] = [
     iri: IIRDS_RELATES_TO_LIFECYCLE_PHASE,
   },
   { field: "about-product-aspect", iri: IIRDS_HAS_SUBJECT },
-  // Pages with a reader question (proposal 0086). Gated only by name.
+  // Pages with a reader question (proposal 0087). Gated only by name.
   { field: "sample-questions", iri: `${NS.graph}sampleQuestion`, namedOnly: true },
 ];
 

@@ -1,4 +1,4 @@
-# The question-coverage fixture (proposal 0086). One of two pages asks a
+# The question-coverage fixture (proposal 0087). One of two pages asks a
 # question, so graph stats reports half the pages covered, and the concept only
 # the other page names has no question.
 collections:

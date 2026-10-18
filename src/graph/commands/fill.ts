@@ -154,7 +154,7 @@ export interface FillDocResult {
    * that needed a model was not.
    */
   reason?: string;
-  /** What the question pass did, one entry per question it touched (proposal 0086). */
+  /** What the question pass did, one entry per question it touched (proposal 0087). */
   questions?: QuestionOutcome[];
   /** Fields written (or that would be written under --dry-run). */
   fields: string[];
@@ -361,7 +361,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
   const getProvider = (): InferenceProvider => (provider ??= construct());
 
   const configured = opts.fields ?? config.fill.fields;
-  // Questions run beside the field pipeline, not through it (proposal 0086).
+  // Questions run beside the field pipeline, not through it (proposal 0087).
   const withQuestions = configured.includes("sample-questions");
   const fields = configured.filter(
     (f): f is GraphFillField => f !== "sample-questions",
@@ -518,7 +518,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
     }
   }
 
-  // The question pass (proposal 0086): its settings, its own prompt and cache
+  // The question pass (proposal 0087): its settings, its own prompt and cache
   // key, and every question already asked, for the duplicate gate.
   const questionSettings = {
     perPage: config.fill.questions.perPage,
@@ -672,7 +672,7 @@ export async function runFill(opts: FillOptions = {}): Promise<FillReport> {
 
   // Golden-set files get the model-free half only: moved answers re-pinned,
   // and a missing `integrity` minted. Drafting cross-page questions is left
-  // to a person (proposal 0086).
+  // to a person (proposal 0087).
   if (withQuestions) {
     for (const label of config.questionFiles) {
       const repinned = repinQuestionFile(

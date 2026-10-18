@@ -217,7 +217,7 @@ function runSearchIndex(
 }
 
 /**
- * The golden set of questions (proposal 0086 § 7d): one JSON line per
+ * The golden set of questions (proposal 0087 § 7d): one JSON line per
  * question, read from the pages' sources and the golden-set files.
  */
 async function runQuestions(
