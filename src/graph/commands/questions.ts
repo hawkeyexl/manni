@@ -1,5 +1,5 @@
 /**
- * Sample questions as findability checks (proposals 0085 §7 and 0087), the
+ * Sample questions as findability checks (proposals 0086 §7 and 0087), the
  * half of `manni graph check` no shape can express.
  *
  * Questions are read from each page's source, not from the graph: an item's
@@ -424,7 +424,7 @@ export async function askSampleQuestions(
 
     for (const q of page.questions) {
       const drafted = q.reviewed ? undefined : ("question" as const);
-      // 0085's test: an unpinned question, or a confirmed one whose every
+      // 0086's test: an unpinned question, or a confirmed one whose every
       // pin is still a draft, must find the page itself.
       const pageTest =
         q.answers.length === 0 || (q.reviewed && q.answers.every((a) => !a.reviewed));
