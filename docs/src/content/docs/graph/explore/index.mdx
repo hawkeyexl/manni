@@ -11,7 +11,7 @@ concepts:
   - hub
   - section
   - concept
-last-updated: 2026-10-04
+last-updated: 2026-10-18
 ---
 
 Once the graph is built, four commands answer questions that used to mean
@@ -93,8 +93,9 @@ $ manni graph query --subject https://example.com/dd/concept/installation
 <https://example.com/dd/concept/installation> skos:inScheme <https://example.com/dd/scheme>
 <https://example.com/dd/concept/installation> skos:prefLabel "Installation"
 <https://example.com/dd/concept/installation> skos:prefLabel "installation"
+<https://example.com/dd/concept/installation> skos:topConceptOf <https://example.com/dd/scheme>
 
-4 match(es)
+5 match(es)
 ```
 
 Two preferred labels on one node, which is `graph check`'s warning about two
@@ -161,7 +162,7 @@ question into tomorrow's gate. See [Run it in CI](/manni/graph/ci/).
 
 {/* step {"description":"A predicate pattern lists what the corpus says.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --predicate dcterms:subject","exitCodes":[0],"stdio":"2 match(es)"}} */}
 
-{/* step {"description":"A subject pattern shows everything known about one node.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --subject https://example.com/dd/concept/installation","exitCodes":[0],"stdio":"4 match(es)"}} */}
+{/* step {"description":"A subject pattern shows everything known about one node.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --subject https://example.com/dd/concept/installation","exitCodes":[0],"stdio":"5 match(es)"}} */}
 
 {/* step {"description":"An object pattern matches a literal.","runShell":{"command":"manni graph query -c test/graph/fixtures/dd/docs.config.yaml --object Configuration","exitCodes":[0],"stdio":"2 match(es)"}} */}
 
