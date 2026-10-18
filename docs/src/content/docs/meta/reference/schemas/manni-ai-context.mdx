@@ -79,7 +79,7 @@ meta:
 | `provenance` | list of entries | `external` | Which body lines a machine wrote, one entry per range. Each entry names the machine, the lines, and an integrity hash that pins them. `manni meta derive` manages it |
 | `meta-provenance` | list of entries | `external` | Per-model attribution of machine-proposed metadata, meaning which fields and evals, at what confidence |
 | `risks` | string or list, open | `page` | Pre-flight flags for agents and reviewers. The seven recommended flags are `cost-incurring`, `destructive`, `irreversible`, `privileged`, `open-world`, `read-only` and `idempotent`. Any other non-empty string is valid |
-| `sample-questions` | string or list | `page` | Questions this page should answer. Retrieval evals use them |
+| `sample-questions` | string or list | `page` | Questions a reader asks that should find this page. `manni graph check` asks them and reports a page they do not find |
 
 No field is required. Both lists of entries need at least one entry, with no
 duplicates. `risks` and `sample-questions` take one non-empty string, or a
@@ -205,9 +205,10 @@ mark, which fires because `--no-config` gives the page no manifest.
   unannotated page has not been assessed, which is different from being safe.
   For the same reason, a consumer that branches on a flag treats an unknown
   value as a caution.
-- **`sample-questions` closes the retrieval loop.** Ask them against the
-  corpus and measure whether this page carries the answer. Per-page
-  assertions belong to the evals vocabulary instead.
+- **`sample-questions` closes the retrieval loop.** `manni graph check` asks
+  each one through the retrieval `manni graph search` uses. It reports a page
+  outside the top results for its own question. It measures finding, not
+  answering. Per-page assertions belong to the evals vocabulary instead.
 
 ## Strict overlay
 

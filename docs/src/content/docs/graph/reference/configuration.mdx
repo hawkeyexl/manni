@@ -62,6 +62,9 @@ graph:
 
   check:
     shapes: []
+    questions:
+      top: 5
+      severity: warning
 
   provenance:
     qualified: true
@@ -181,6 +184,12 @@ Routes are corpus-defining, so they are config-only. There is no flag.
 | Key | Type | Default | What it does |
 |---|---|---|---|
 | `shapes` | list of paths | `[]` | The SHACL shapes `graph check` validates the built graph against. Empty means the shapes shipped in the package, `shapes/graph/shapes-1.1.0.ttl`. Naming shapes here **replaces** the bundled set rather than adding to it, so list the bundled file too when you mean to extend it. `--shapes` overrides this for one run. |
+| `questions.top` | integer, 1 or more | `5` | How high a page must rank for each of its own `sample-questions`. `graph check` asks each question through the retrieval `graph search` uses, and reports a page outside the top results. |
+| `questions.severity` | `notice`, `warning`, `error` or `off` | `warning` | The severity of a question that does not find its page. `error` fails the run. `off` asks no questions. |
+
+The questions have no flag. They are asked in their page's language, against
+an index built from the graph in memory. A vector sidecar and an embedder
+beside the graph add the vector leg, as they do for `graph search`.
 
 ### `provenance`
 

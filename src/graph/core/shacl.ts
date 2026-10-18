@@ -27,8 +27,11 @@ export interface CheckFinding {
    * a11y keeps axe's `impact` (proposal 0035, stress test 10).
    */
   severity: Severity;
-  /** SHACL's own word for the same finding, kept for lookup. */
-  shaclSeverity: ShaclSeverity;
+  /**
+   * SHACL's own word for the same finding, kept for lookup. Absent on a
+   * finding no shape reported, such as a sample question that missed.
+   */
+  shaclSeverity?: ShaclSeverity;
   /** Human-readable description (IRIs compacted to prefixed names). */
   message: string;
   /** IRI of the node the finding is about. */
@@ -58,11 +61,26 @@ function finding(
   return { severity: FAMILY_SEVERITY[shaclSeverity], shaclSeverity, ...rest };
 }
 
-const SEVERITY_RANK: Record<ShaclSeverity, number> = {
-  violation: 0,
+/** Most severe first: error, warning, notice. */
+const SEVERITY_RANK: Record<Severity, number> = {
+  error: 0,
   warning: 1,
-  info: 2,
+  notice: 2,
 };
+
+/**
+ * The one order every check finding is reported in: severity, then focus
+ * node, path and message. Exported so findings from outside the shapes sort
+ * among them the same way.
+ */
+export function compareFindings(a: CheckFinding, b: CheckFinding): number {
+  return (
+    SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] ||
+    byCodeUnit(a.focusNode, b.focusNode) ||
+    byCodeUnit(a.path ?? "", b.path ?? "") ||
+    byCodeUnit(a.message, b.message)
+  );
+}
 
 /** Parse one or more shapes .ttl files into a single store. */
 export function loadShapes(paths: string[]): Store {
@@ -523,12 +541,6 @@ export async function validateGraph(
     ...untaggedPrefLabelFindings(store).filter((f) => !said.has(f.focusNode)),
   );
 
-  findings.sort(
-    (a, b) =>
-      SEVERITY_RANK[a.shaclSeverity] - SEVERITY_RANK[b.shaclSeverity] ||
-      byCodeUnit(a.focusNode, b.focusNode) ||
-      byCodeUnit(a.path ?? "", b.path ?? "") ||
-      byCodeUnit(a.message, b.message),
-  );
+  findings.sort(compareFindings);
   return findings;
 }

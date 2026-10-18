@@ -28,9 +28,9 @@ claimed to type — which is the inference manni graph's negative-scope decision
 to refuse.""" ;
     dcterms:license <https://spdx.org/licenses/MIT.html> ;
     dcterms:creator "hawkeyexl" ;
-    owl:versionInfo "1.1.0" ;
-    owl:versionIRI <https://hawkeyexl.github.io/manni/graph/ns/1.1.0> ;
-    owl:priorVersion <https://hawkeyexl.github.io/manni/graph/ns/1.0.0> ;
+    owl:versionInfo "1.2.0" ;
+    owl:versionIRI <https://hawkeyexl.github.io/manni/graph/ns/1.2.0> ;
+    owl:priorVersion <https://hawkeyexl.github.io/manni/graph/ns/1.1.0> ;
     vann:preferredNamespacePrefix "graph" ;
     vann:preferredNamespaceUri "https://hawkeyexl.github.io/manni/graph/ns#" ;
     rdfs:seeAlso <https://hawkeyexl.github.io/manni/graph/reference/vocabulary/> .
@@ -120,6 +120,19 @@ using three is findable by any of them.""" ;
     schema:domainIncludes graph:Document ;
     schema:rangeIncludes xsd:string ;
     skos:example "bash" ;
+    rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
+
+graph:sampleQuestion
+    a rdf:Property ;
+    rdfs:label "sample question" ;
+    rdfs:comment """A question a reader would ask that should find this
+Document, from the page's `sample-questions`. Tagged with the page's language
+when it declares one. manni graph check asks each question through the
+retrieval manni graph search uses, and reports a Document its own question does
+not find. Nothing here judges whether the Document answers it.""" ;
+    schema:domainIncludes graph:Document ;
+    schema:rangeIncludes xsd:string, rdf:langString ;
+    skos:example "How do I retry a failed upload?" ;
     rdfs:isDefinedBy <https://hawkeyexl.github.io/manni/graph/ns> .
 
 #

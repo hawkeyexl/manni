@@ -22,6 +22,7 @@ import {
   type ProvidersConfig,
 } from "../../shared/providers.js";
 import { errorMessage } from "../../shared/errors.js";
+import type { Severity } from "../../shared/severity.js";
 import { GraphError } from "../types.js";
 import { resolveBaseIri } from "./iri.js";
 import { COVERAGE_FIELD_NAMES } from "./coverage.js";
@@ -129,6 +130,12 @@ export interface GraphConfig {
   check: {
     /** Shapes .ttl paths; empty = the shapes bundled with manni. */
     shapes: string[];
+    /**
+     * Each page's `sample-questions`, asked through the retrieval `search`
+     * uses (proposal 0085 §7). A page outside the `top` results for its own
+     * question is a finding at `severity`; `off` asks nothing.
+     */
+    questions: { top: number; severity: Severity | "off" };
   };
   provenance: {
     /**
@@ -311,7 +318,10 @@ interface RawGraphConfig {
   out?: string;
   routes?: RawRouteMapping[];
   build?: { derive?: DeriveSource[] };
-  check?: { shapes?: string[] };
+  check?: {
+    shapes?: string[];
+    questions?: { top?: number; severity?: Severity | "off" };
+  };
   provenance?: { qualified?: boolean };
   stats?: { coverageThreshold?: number | Record<string, number> };
   fill?: {
@@ -510,6 +520,10 @@ export function parseConfigSection(
     check: {
       // Empty means: use the shapes bundled with manni (see bundledShapesPath).
       shapes: r.check?.shapes ?? [],
+      questions: {
+        top: r.check?.questions?.top ?? 5,
+        severity: r.check?.questions?.severity ?? "warning",
+      },
     },
     provenance: {
       qualified: r.provenance?.qualified ?? true,

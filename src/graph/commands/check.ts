@@ -1,15 +1,22 @@
 /**
  * `manni graph check` — graph-level validation: run the published SHACL shapes
  * (plus the TS-side SKOS integrity checks) over the built graph and report
- * findings with the doc paths responsible. Errors exit 1; warnings and
- * notices are reported but pass.
+ * findings with the doc paths responsible. Each page's sample questions are
+ * asked too (proposal 0085 §7). Errors exit 1; warnings and notices are
+ * reported but pass.
  */
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import type { Severity } from "../../shared/severity.js";
 import { loadRunConfig } from "../core/config.js";
 import { loadGraph, compactIri, parseGraph } from "../core/load.js";
+import { documentBase } from "../core/discover.js";
 import { bundledShapesPath } from "../core/pkg.js";
-import { validateGraph, type CheckFinding } from "../core/shacl.js";
+import {
+  compareFindings,
+  validateGraph,
+  type CheckFinding,
+} from "../core/shacl.js";
+import { askSampleQuestions } from "./questions.js";
 import { renderCheckGithub } from "../reporters/github.js";
 import type { CheckFormat } from "../reporters/index.js";
 
@@ -49,9 +56,10 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
     },
     cwd,
   );
+  const graphPath = resolve(cwd, opts.graph ?? config.out);
   const store =
     opts.turtle === undefined
-      ? loadGraph(resolve(cwd, opts.graph ?? config.out))
+      ? loadGraph(graphPath)
       : parseGraph(opts.turtle, "the built graph");
 
   // CLI flag over config over the bundled contract — same precedence as
@@ -63,7 +71,17 @@ export async function runCheck(opts: CheckOptions = {}): Promise<CheckReport> {
       ? shapesInput.map((p) => resolve(cwd, p))
       : [bundledShapesPath(import.meta.url)];
 
-  const findings = await validateGraph(store, shapes);
+  const findings = [
+    ...(await validateGraph(store, shapes)),
+    // Pages read from where `build` labels them, and a vector sidecar from
+    // beside the graph, as `export search` and `search` read them.
+    ...(await askSampleQuestions(
+      store,
+      config.check.questions,
+      documentBase(config, {}, cwd),
+      dirname(graphPath),
+    )),
+  ].sort(compareFindings);
   const count = (severity: Severity): number =>
     findings.filter((f) => f.severity === severity).length;
   const errors = count("error");

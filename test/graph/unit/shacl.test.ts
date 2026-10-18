@@ -578,7 +578,7 @@ describe("SHACL severity maps onto the family scale", () => {
   const EX = "https://example.com/severity#";
 
   async function findingsByMessage(): Promise<
-    Map<string, { severity: string; shaclSeverity: string }>
+    Map<string, { severity: string; shaclSeverity: string | undefined }>
   > {
     const store = build([
       [THING, RDF_TYPE, `${EX}Thing`],
