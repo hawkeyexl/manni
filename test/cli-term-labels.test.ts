@@ -15,7 +15,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const fixtureDir = join(here, "fixtures", "fill", "hints");
 
 describe("the term label source under the umbrella", () => {
-  it("is registered when only the meta domain is mounted", async () => {
+  it("is registered when the umbrella loads, and answers with only meta mounted", async () => {
+    // Importing src/cli.ts registers the source. Mounting only meta proves the
+    // source does not depend on the term domain being mounted.
     await buildProgramFor(["meta", "fill"]);
     const source = termLabelSource();
     if (source === undefined) throw new Error("expected a registered source");

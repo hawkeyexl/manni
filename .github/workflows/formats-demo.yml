@@ -70,6 +70,10 @@
 # already is: those files exist to be *counted* by `manni meta schemas infer`, one
 # of them deliberately carrying a key the other does not.
 #
+# `test/fixtures/term-keyword/` (0086) is excluded on the same principle: it
+# carries its own `manni.config.yaml` and a small termbase, and its pages are
+# shaped for the `x-manni-term` schemas it tests, not for the default set.
+#
 # `test/fixtures/get-parse-error/` is deliberately NOT excluded. Its unparseable
 # file is a real parse failure, which is exactly the explainable alert this
 # workflow exists to demonstrate — the same standing as `dd/malformed-yaml.md`.
@@ -141,6 +145,7 @@ jobs:
             --exclude "test/fixtures/derive/**" \
             --exclude "test/fixtures/location/**" \
             --exclude "test/fixtures/pinned-stewardship/**" \
+            --exclude "test/fixtures/term-keyword/**" \
             --allow-empty -f sarif > manni.sarif
           echo "results=$(jq '.runs[0].results | length' manni.sarif)" >> "$GITHUB_OUTPUT"
 
@@ -189,6 +194,7 @@ jobs:
             --exclude "test/fixtures/derive/**" \
             --exclude "test/fixtures/location/**" \
             --exclude "test/fixtures/pinned-stewardship/**" \
+            --exclude "test/fixtures/term-keyword/**" \
             --allow-empty -f junit > manni-junit.xml
 
       # GitHub renders no JUnit natively. A third-party reporter action would be
