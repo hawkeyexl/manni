@@ -634,7 +634,7 @@ describe("manni:terminology:1.1.0, validating pages", () => {
 });
 
 /**
- * `manni:terminology:1.2.0` (proposal 0085 § 2) adds `notation` and five match
+ * `manni:terminology:1.2.0` (proposal 0086 § 2) adds `notation` and five match
  * keys, each match an IRI or a list of them. A `type: term` page needs only a
  * `label` now. `term check` reports a missing definition, and the strict
  * overlay keeps the requirement.

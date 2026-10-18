@@ -171,7 +171,7 @@ describe("manni term (the ladder)", () => {
     expect(r.status).toBe(1);
   });
 
-  it("5. checks the hierarchy a page's graph: block adds to the termbase (proposal 0085)", () => {
+  it("5. checks the hierarchy a page's graph: block adds to the termbase (proposal 0086)", () => {
     const r = term(["check"], { cwd: resolve(root, "test", "fixtures", "term", "concept-scheme") });
     expect(r.stdout).toBe(
       [
