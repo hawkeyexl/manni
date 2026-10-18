@@ -273,6 +273,7 @@ export default defineConfig({
               collapsed: true,
               items: [{ autogenerate: { directory: "graph/fill" } }],
             },
+            { label: "Keep a golden set of questions", link: "/graph/questions/" },
             {
               label: "Run it in CI",
               collapsed: true,

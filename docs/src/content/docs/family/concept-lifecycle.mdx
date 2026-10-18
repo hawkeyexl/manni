@@ -12,8 +12,8 @@ intent: "Take a docset from freeform concepts to a governed termbase, metadata h
 lifecycle: published
 applies-to: ["domain:family", "domain:term", "domain:graph", "domain:meta"]
 prerequisites: ["term-get-started"]
-next-steps: ["term-reference-rules", "meta-schemas-term-values", "graph-govern"]
-concepts: ["concept scheme", "meta-provenance", "x-manni-term", "concept mapping", "sample question"]
+next-steps: ["term-reference-rules", "meta-schemas-term-values", "graph-questions"]
+concepts: ["concept scheme", "meta-provenance", "x-manni-term", "concept mapping", "sample question", "golden set"]
 sample-questions: ["How do I turn the concepts my pages name into a termbase?", "How do the termbase and the knowledge graph share one set of concepts?", "In what order do I build a vocabulary, a taxonomy and a graph with manni?"]
 graph: { label: "From tags to a knowledge graph", type: learning }
 last-updated: 2026-10-18
@@ -123,8 +123,15 @@ and a label resolves to a term by its label, its id, then an alt-label.
 $ manni graph check
 warning: https://example.com/graph/concept/idempotency-key skos:prefLabel — concept carries multiple prefLabels (same slug, different spellings) — settle on one spelling [docs/api/payments.md, docs/api/retries.md]
 
+questions  2: 2 reviewed, 0 drafted, on 2 pages
+  found    2 of 2 reviewed in the top 5 (100%), 2 first (100%)
+  answers  0 pinned, 0 not reviewed: 0 current, 0 moved, 0 changed; 2 not pinned
+
 0 errors, 1 warning, 0 notices
 ```
+
+The `questions` rows count the pages' `sample-questions`. Step 6 comes back
+to them.
 
 `manni term check` says the same thing from the termbase's side, and exits
 `1`:
@@ -151,10 +158,14 @@ docs/glossary/timeout.md:1
 ## 2. Bootstrap the termbase
 
 `manni term fill` writes a term page for each concept the pages name and the
-termbase lacks. `--offline` calls no model, and `--dry-run` writes nothing:
+termbase lacks. `--dry-run` writes nothing. `--offline` sends nothing off this
+machine, so only a model already downloaded here may run. This run points
+`INFERENCE_MODELS_DIR` at an empty directory, so it shows a machine with no
+model at all:
 
 ```console
-$ manni term fill --offline --dry-run
+$ INFERENCE_MODELS_DIR=$(mktemp -d) manni term fill --offline --dry-run
+manni: no model is available offline, so new terms have no definition; download one first with --local, or drop --offline.
 would create docs/glossary/retry.md     Retry     stub, no definition
 would create docs/glossary/errors.md    Errors    stub, no definition
 would create docs/glossary/backoff.md   Backoff   definition from graph: block
@@ -162,11 +173,12 @@ would create docs/glossary/backoff.md   Backoff   definition from graph: block
 ```
 
 `Backoff` takes its definition from the `graph:` block on the payments page.
-With a provider configured, a model drafts the rest, and fills `Jitter` too.
-This run uses a small local model:
+The other two are stubs. With a model, `fill` drafts their definitions, and
+fills `Jitter` too. This docset names a small local model in the family's
+`providers:` map, which `graph fill` reads as well:
 
 ```yaml title="manni.config.yaml"
-term:
+providers:
   provider: llama-cpp
   model: granite-4.1-3b-q2
 ```
@@ -244,7 +256,7 @@ docs/glossary/jitter.md:1
 docs/glossary/timeout.md:1
   notice manni:term/orphan-term           no broader, narrower or related term, so place it in the hierarchy.
 
-4 warnings, 7 notices in 5 terms
+4 warnings, 7 notices in 6 terms
 ```
 
 The errors are gone. What is left are the rules a thesaurus needs. A related
@@ -404,12 +416,12 @@ system takes TBX instead, with `-f tbx` or `-f tbx3`.
 [Move and hand off a termbase](/manni/term/set-up/move-and-hand-off/#bring-a-skos-scheme-in)
 covers both directions.
 
-## 6. Build and check the graph
+## 6. Build and check the graph against its questions
 
 Each page declares `sample-questions`, the questions a reader asks to reach
 it. `graph check` asks each one, and reports a page that is not found for its
 own question. `top: 1` keeps this small docset honest, because a page must be
-the first one found:
+the first one found. `perPage` comes into play when `graph fill` drafts:
 
 ```yaml title="manni.config.yaml"
 graph:
@@ -418,6 +430,9 @@ graph:
   check:
     questions:
       top: 1
+  fill:
+    questions:
+      perPage: 2
 ```
 
 A new page about rate limits asks how long to wait before a retry. Its title
@@ -441,27 +456,149 @@ $ manni graph build
 $ manni graph check
 warning: https://example.com/graph/doc/docs/api/rate-limits.md graph:sampleQuestion — "How long should I wait before I retry?" does not find this page in the top 1 (it ranks 2; first is docs/api/retries.md) [docs/api/rate-limits.md]
 
+questions  3: 3 reviewed, 0 drafted, on 3 pages
+  found    2 of 3 reviewed in the top 1 (66%), 2 first (66%)
+  answers  0 pinned, 0 not reviewed: 0 current, 0 moved, 0 changed; 3 not pinned
+
 0 errors, 1 warning, 0 notices
 ```
 
 The check measures retrieval only. It says whether a reader finds the page,
-and nothing about the page's content. Say what the page is for in the words a
-reader uses:
+and nothing about whether the page is right. Say what the page is for in the
+words a reader uses:
 
 ```yaml
 description: How long to wait before you retry a request the API turned away.
 ```
 
-The build now reports nine concepts, all nine from the termbase, and the check
-is clean:
+The build now reports nine concepts, all nine from the termbase, and all three
+questions find their pages.
+
+### Pin the answers
+
+Finding a page proves little when the page is long. A question can also pin
+the body lines that answer it, under
+[`manni:ai-context:1.1.0`](/manni/meta/reference/schemas/manni-ai-context/).
+`graph fill` pairs each question with those lines, and drafts more until a
+page has `perPage`:
+
+```console
+$ manni graph fill docs/api/ --fields sample-questions
+filled    docs/api/payments.md (sample-questions)
+            paired     "How do I stop a retry from charging a card twice?"  lines 2 (0.90)
+            dropped    "How do I stop a retry from charging a card twice?"  duplicate of docs/api/payments.md
+filled    docs/api/rate-limits.md (sample-questions)
+            paired     "How long should I wait before I retry?"  lines 3 (0.90)
+            dropped    "How long should I wait before I retry?"  duplicate of docs/api/rate-limits.md
+filled    docs/api/retries.md (sample-questions)
+            paired     "How does the client retry a request that timed out?"  lines 2 (0.90)
+            dropped    "How does the client retry a request that timed out?"  duplicate of docs/api/retries.md
+            drafted    "What should be sent with each retry?"  lines 3 (0.80)
+```
+
+The model proposed three drafts that repeat a question the page already asks,
+and the gate dropped them. A pin holds lines and a hash over them, as a
+citation does. Every new pin and draft is marked `reviewed: false`:
+
+```yaml title="docs/api/retries.md"
+sample-questions:
+  - question: How does the client retry a request that timed out?
+    answers:
+      - lines: 2
+        integrity: sha256-bff8b23baf4b1930ec50d0bef7e833de857b0a151b908593b3d072e4166350d5
+        reviewed: false
+  - question: What should be sent with each retry?
+    answers:
+      - lines: 3
+        integrity: sha256-5bf70da25ba1240afbd22b4279c03fef6c783a2812d76b59eee05addbe1cbcb2
+    generated-by: llama-cpp/granite-4.1-3b-q2
+    confidence: 0.8
+    reviewed: false
+```
+
+### Review the drafts
+
+`graph check` reports drafts at notice, and counts them apart until a person
+reviews them:
 
 ```console
 $ manni graph check
+notice: https://example.com/graph/doc/docs/api/retries.md graph:sampleQuestion — "How does the client retry a request that timed out?" repeats 5 of its 9 word pairs from its answer, so it tests matching words more than finding. [docs/api/retries.md]
+
+questions  4: 3 reviewed, 1 drafted, on 3 pages
+  found    3 of 3 reviewed in the top 1 (100%), 3 first (100%)
+  drafted  1 of 1 in the top 1, not counted until reviewed
+  answers  4 pinned, 4 not reviewed: 4 current, 0 moved, 0 changed; 0 not pinned
+
+0 errors, 0 warnings, 1 notice
+```
+
+The notice is about the hand-written question. It borrows the answer's own
+words, so it tests word matching more than finding. Reword it as a reader
+would ask:
+
+```yaml
+  - question: What does the client do when a request times out?
+```
+
+Read each pinned line and each draft, then delete every `reviewed: false`.
+A question or pin with no `reviewed` key counts as reviewed:
+
+```console
+$ manni graph check
+questions  4: 4 reviewed, 0 drafted, on 3 pages
+  found    4 of 4 reviewed in the top 1 (100%), 4 first (100%)
+  answers  4 pinned, 0 not reviewed: 4 current, 0 moved, 0 changed; 0 not pinned
+
 0 errors, 0 warnings, 0 notices
 ```
 
-[Govern the graph](/manni/graph/govern/#sample-questions-find-their-pages)
-covers the `questions` keys and the shapes the graph is checked against.
+### Gate on the found rate
+
+`foundThreshold` turns the `found` row into a gate. Below it, `graph check`
+exits `1`:
+
+```yaml title="manni.config.yaml"
+graph:
+  check:
+    questions:
+      top: 1
+      foundThreshold: 100
+```
+
+Then someone rewrites the line the rate-limits question is pinned to:
+
+```markdown
+Wait the number of seconds the header names.
+```
+
+```console
+$ manni graph check
+error: questions — 3 of 4 reviewed questions are found in the top 1 (75%), under the 100% that graph.check.questions.foundThreshold asks for.
+warning: https://example.com/graph/doc/docs/api/rate-limits.md graph:sampleQuestion — lines 3 no longer hold the answer to "How long should I wait before I retry?" as pinned, so re-pair it with manni graph fill --fields sample-questions and review it. [docs/api/rate-limits.md]
+
+questions  4: 4 reviewed, 0 drafted, on 3 pages
+  found    3 of 4 reviewed in the top 1 (75%), 3 first (75%)
+  answers  4 pinned, 0 not reviewed: 3 current, 0 moved, 1 changed; 0 not pinned
+
+1 error, 1 warning, 0 notices
+```
+
+A changed pin counts as not found. `graph fill` re-pairs it, and marks the
+new pin unreviewed:
+
+```console
+$ manni graph fill docs/api/rate-limits.md --fields sample-questions
+filled    docs/api/rate-limits.md (sample-questions)
+            re-paired  "How long should I wait before I retry?"  lines 3 (0.90)
+            dropped    "How long should I wait before I retry?"  duplicate of docs/api/rate-limits.md
+```
+
+The check passes again, with `1 not reviewed` in its `answers` row until
+someone reads line 3 and deletes the flag.
+[Keep a golden set of reader questions](/manni/graph/questions/) covers
+questions that span pages, answers that move, and handing the set to an eval
+tool.
 
 ## 7. Close the loop
 
@@ -473,7 +610,7 @@ tag `dead-letter queue`. The payments page's `graph:` block also relates
 $ manni term check
 docs/api/payments.md:7
   notice manni:term/keyword-candidate           keywords: "dead-letter queue" is on 2 pages and names no term, so add it to concepts: or run manni term fill --crawl.
-docs/api/payments.md:12
+docs/api/payments.md:16
   notice manni:term/hierarchy-outside-termbase  graph: related-concepts "Idempotency key" on "Backoff" is not on its term page (docs/glossary/backoff.md), so add it there.
 docs/glossary/audience.md:1
   notice manni:term/unused-term                 no page's concepts: names this term
@@ -493,7 +630,7 @@ termbase or drop. The next round of `term fill` picks up the keyword:
 
 ```console
 $ manni term fill --crawl --dry-run
-would create docs/glossary/dead-letter-queue.md   dead-letter queue   definition drafted (0.70)
+would create docs/glossary/dead-letter-queue.md   dead-letter queue   definition drafted (0.85)
 1 term would be created, 0 would be filled, 0 left without a definition
 ```
 

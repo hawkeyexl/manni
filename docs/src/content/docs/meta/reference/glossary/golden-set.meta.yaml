@@ -1,0 +1,21 @@
+docs/src/content/docs/meta/reference/glossary/golden-set.mdx:
+  personas:
+    - maya
+    - devin
+    - sara
+    - theo
+  visibility: public
+  review-interval: P180D
+  eval-suite: graph
+  evals:
+    - id: define-golden-set
+      assertion: "A reader can say what golden set means in manni graph."
+      type: capability
+      grader: ai
+  owner:
+    - "@hawkeyexl"
+  created: 2026-10-18
+  provenance:
+    - generated-by: Claude Opus 5.5
+      lines: 2-8
+      integrity: sha256-477de00cef1d135b426ae922f843563c49e7cc29d9215dd49c05a577d27a5381

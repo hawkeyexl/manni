@@ -29,6 +29,7 @@ swap:
   \bfront matter\b: "[Ff]ront matter"
   \bfence\b: "[Ff]ence"
   \bmetadata block\b: "[Mm]etadata block"
+  \bgolden set\b: "[Gg]olden set"
   \bgraph block\b: "[Gg]raph block"
   \bguardrail\b: "[Gg]uardrail"
   \bharvest rule\b: "[Hh]arvest rule"

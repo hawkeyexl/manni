@@ -10,6 +10,7 @@ docs/src/content/docs/family/concept-lifecycle.mdx:
     - path: "src/term/core/check.ts"
     - path: "src/graph/core/derive.ts"
     - path: "src/meta/core/validator.ts"
+    - path: "src/graph/commands/fill-questions.ts"
   eval-suite: family
   evals:
     - id: walk-the-lifecycle
@@ -25,5 +26,5 @@ docs/src/content/docs/family/concept-lifecycle.mdx:
   created: 2026-10-18
   provenance:
     - generated-by: Claude Opus 5.5
-      lines: 2-500
-      integrity: sha256-311733227b4bcdad65ce4940188fd1c75d9cd5c3fd78df9d59545ae6211eb984
+      lines: 2-637
+      integrity: sha256-624092bde95fe2f0e866b963ee18b7482b64f838495904dbb47e4a816a946342

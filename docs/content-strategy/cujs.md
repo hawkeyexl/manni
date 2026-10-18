@@ -228,6 +228,16 @@ This is the backbone of the docevals section. It is the only journey that crosse
 
 ---
 
+### M26 · Draft the questions readers ask, review them, and keep them true as pages change
+
+**Outcome.** Maya has a set of reader questions, each pinned to the lines that answer it, that a person has read. CI fails when too few of them find their answers. A page edit that moves an answer is caught and re-pinned, not discovered by a reader.
+
+**Steps.** She runs `manni graph fill --fields sample-questions --dry-run` over a docset with no questions, and reads what a model would draft. Each draft names the body lines that answer it. She writes them, and each lands in the page's `sample-questions` marked `reviewed: false`. `manni graph check` counts drafts apart and reports their misses at notice. She reviews the YAML diff. She rewrites a question the way a reader would ask it, deletes the wrong ones, and deletes `reviewed: false` from the rest. She sets `graph.check.questions.foundThreshold`, and a reviewed question that misses its section now fails the run. When the answer is on the page under a heading nobody would search for, she fixes the page, not the question. A question that needs two pages, or one the docs don't answer, goes in a golden-set file under `graph.questionFiles`. When an edit moves a pinned line, `check` reports a notice and still finds the answer. `graph fill --offline` re-pins it with no model. When an edit changes a pinned line, the question counts as not found until `fill` re-pairs it and she reviews the new pin. `manni graph export questions` hands the set to Ragas, DeepEval or promptfoo.
+
+**What success looks like.** A `found` row that only reviewed questions move, and a red run when it falls under the threshold. No pin points at lines that no longer hold its answer. manni says whether a question finds its lines, and never judges the answer. Related journeys are M18 (the graph), M20 (filling what nobody wrote) and D12 (the gate).
+
+---
+
 ## Devin, Platform / CI Engineer
 
 ### D1 · Add the gate to our CI platform
@@ -320,7 +330,7 @@ This is the highest-stakes journey in the section. It is the only one where a pl
 
 **Outcome.** A pull request that breaks the docset's structure is red before review. A concept split across two spellings, a link to a page that does not exist, coverage falling below the floor.
 
-**Steps.** He adds one step that runs `manni graph build` and `manni graph check` over the same collection the metadata gate already uses. `check` validates the built graph against SHACL shapes, which is where the emergent failures live. They exist only after N documents merge into shared nodes, so no per-file check can see them. Findings come back on the family scale, `notice | warning | error`, and `-f github` annotates the diff. `manni graph stats --check --coverage-threshold` gates the vocabulary coverage. The exit codes are the family's: 0, 1 for findings, 2 for an operational error.
+**Steps.** He adds one step that runs `manni graph build` and `manni graph check` over the same collection the metadata gate already uses. `check` validates the built graph against SHACL shapes, which is where the emergent failures live. They exist only after N documents merge into shared nodes, so no per-file check can see them. Findings come back on the family scale, `notice | warning | error`, and `-f github` annotates the diff. `manni graph stats --check --coverage-threshold` gates the vocabulary coverage. `graph.check.questions.foundThreshold` gates the share of reviewed sample questions that find their answers, so a rewrite that strands an answer fails the run. The exit codes are the family's: 0, 1 for findings, 2 for an operational error.
 
 **What success looks like.** A structural regression is caught by the same pipeline that already checks metadata, reported in the same words, with no second tool to install. S15 adds the check that each page is found for its own sample questions.
 
