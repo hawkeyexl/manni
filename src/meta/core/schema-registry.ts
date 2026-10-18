@@ -189,10 +189,10 @@ export function assertPublishableBuiltinId(id: string): void {
     );
   }
   // `term:undefined`, `term:outside-branch` and `term:alt-label` are the
-  // identities of the findings for a field marked `x-manni-term` (proposal 0085).
+  // identities of the findings for a field marked `x-manni-term` (proposal 0086).
   if (first === "term") {
     throw new Error(
-      `Built-in id "${id}" is not publishable: the "term" first segment is reserved for term finding identities (term:undefined, term:outside-branch, term:alt-label, proposal 0085).`,
+      `Built-in id "${id}" is not publishable: the "term" first segment is reserved for term finding identities (term:undefined, term:outside-branch, term:alt-label, proposal 0086).`,
     );
   }
   // `derived:stale` is the identity of a managed field whose asserted value

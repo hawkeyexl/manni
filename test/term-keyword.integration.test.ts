@@ -1,5 +1,5 @@
 /**
- * `x-manni-term` (proposal 0085 §6) through the built bins. `manni` registers
+ * `x-manni-term` (proposal 0086 §6) through the built bins. `manni` registers
  * the termbase source, so `manni meta validate` checks marked values. The
  * `docmeta` bin registers none, so it warns once and checks nothing.
  */

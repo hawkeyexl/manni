@@ -268,7 +268,7 @@ export interface TermMarkHit {
 let termRecorder: Omit<TermMarkHit, "schema">[] | undefined;
 
 /**
- * `x-manni-term` (proposal 0085 §6), on every Ajv meta builds. Like
+ * `x-manni-term` (proposal 0086 §6), on every Ajv meta builds. Like
  * `x-manni-encrypt`, it never fails a value, and records its full instance
  * pointer at any depth. Whether the value names a term is the command
  * layer's question, asked of the termbase. The meta-schema refuses a bad
